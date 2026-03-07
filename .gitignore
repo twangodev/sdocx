@@ -102,3 +102,6 @@ docs/_build/
 
 # Logs
 *.log
+
+# Rust
+target/

@@ -1,0 +1,8 @@
+[package]
+name = "sdocx-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sdocx = { path = "../sdocx" }
+clap = { version = "4", features = ["derive"] }
