@@ -3,6 +3,9 @@ name = "sdocx"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.88"
+description = "Reverse-engineered tooling and SDK for converting Samsung Notes (.sdocx) files"
+license = "GPL-3.0"
+repository = "https://github.com/twangodev/sdocx"
 
 [dependencies]
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
