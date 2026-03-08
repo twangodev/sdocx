@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/twangodev/sdocx/compare/sdocx-v0.3.0...sdocx-v0.3.1) (2026-03-08)
+
+
+### Bug Fixes
+
+* add missing newlines at end of files in error.rs and types.rs ([0eaa711](https://github.com/twangodev/sdocx/commit/0eaa7116c42c55d2cf8d836ff3dc91c4780a497a))
+
 ## [0.3.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.2.0...sdocx-v0.3.0) (2026-03-08)
 
 
