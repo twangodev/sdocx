@@ -105,3 +105,6 @@ docs/_build/
 
 # Rust
 target/
+
+# JetBrains IDEs
+.idea/
