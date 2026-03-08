@@ -1,0 +1,20 @@
+[
+  {
+    "os": "ubuntu-latest",
+    "target": "x86_64-unknown-linux-gnu",
+    "artifact": "sdocx-cli-x86_64-linux",
+    "bin": "sdocx-cli"
+  },
+  {
+    "os": "macos-latest",
+    "target": "aarch64-apple-darwin",
+    "artifact": "sdocx-cli-aarch64-macos",
+    "bin": "sdocx-cli"
+  },
+  {
+    "os": "windows-latest",
+    "target": "x86_64-pc-windows-msvc",
+    "artifact": "sdocx-cli-x86_64-windows.exe",
+    "bin": "sdocx-cli.exe"
+  }
+]

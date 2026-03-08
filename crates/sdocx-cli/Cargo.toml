@@ -1,8 +1,9 @@
 [package]
 name = "sdocx-cli"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.88"
 
 [dependencies]
 sdocx = { path = "../sdocx" }
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4.5.60", features = ["derive"] }

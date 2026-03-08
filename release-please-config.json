@@ -1,0 +1,17 @@
+{
+  "packages": {
+    "crates/sdocx": {
+      "release-type": "rust",
+      "component": "sdocx"
+    },
+    "crates/sdocx-cli": {
+      "release-type": "rust",
+      "component": "sdocx-cli"
+    }
+  },
+  "plugins": [
+    {
+      "type": "cargo-workspace"
+    }
+  ]
+}
