@@ -8,5 +8,5 @@ license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"
 
 [dependencies]
-sdocx = { path = "../sdocx" }
+sdocx = { version = "0.1.0", path = "../sdocx" }
 clap = { version = "4.5.60", features = ["derive"] }
