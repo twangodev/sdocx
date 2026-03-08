@@ -106,12 +106,16 @@ jobs:
       - run: cargo publish -p sdocx
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+      - run: cargo publish -p sdocx-cli
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
   docker:
     name: Docker
     needs: [release-please, build]
     if: needs.release-please.outputs.sdocx-cli--release_created == 'true'
     runs-on: ubuntu-latest
+    environment: docker
     permissions:
       packages: write
     steps:
