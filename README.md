@@ -2,6 +2,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/twangodev/sdocx/rust.yml?label=CI)](https://github.com/twangodev/sdocx/actions/workflows/rust.yml)
 [![crates.io (sdocx)](https://img.shields.io/crates/v/sdocx)](https://crates.io/crates/sdocx)
+[![npm](https://img.shields.io/npm/v/@twango/sdocx)](https://www.npmjs.com/package/@twango/sdocx)
 [![docs.rs](https://img.shields.io/docsrs/sdocx)](https://docs.rs/sdocx)
 [![License](https://img.shields.io/crates/l/sdocx)](https://github.com/twangodev/sdocx/blob/main/LICENSE)
 
@@ -19,6 +20,12 @@ cargo install sdocx-cli
 
 ```sh
 cargo add sdocx
+```
+
+### npm (WASM)
+
+```sh
+npm install @twango/sdocx
 ```
 
 ### Docker
@@ -71,6 +78,23 @@ fn main() -> sdocx::Result<()> {
     }
 
     Ok(())
+}
+```
+
+## JavaScript Usage
+
+```js
+import init, { parse } from "@twango/sdocx";
+
+await init();
+
+const bytes = new Uint8Array(await file.arrayBuffer());
+const doc = parse(bytes);
+
+for (const page of doc.pages) {
+  for (const stroke of page.strokes) {
+    console.log(`${stroke.points.length} points, color:`, stroke.color);
+  }
 }
 ```
 
