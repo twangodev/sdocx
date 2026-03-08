@@ -1,10 +1,12 @@
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Document {
     pub pages: Vec<Page>,
     pub metadata: DocumentMetadata,
 }
 
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DocumentMetadata {
     pub created_ms: Option<i64>,
     pub modified_ms: Option<i64>,
@@ -14,6 +16,7 @@ pub struct DocumentMetadata {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Page {
     pub uuid: String,
     pub width: u32,
@@ -23,6 +26,7 @@ pub struct Page {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Stroke {
     pub bbox: BoundingBox,
     pub points: Vec<Point>,
@@ -35,12 +39,14 @@ pub struct Stroke {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Point {
     pub x: f64,
     pub y: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -48,6 +54,7 @@ pub struct Color {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BoundingBox {
     pub x_min: f64,
     pub y_min: f64,

@@ -7,6 +7,10 @@
     "crates/sdocx-cli": {
       "release-type": "rust",
       "component": "sdocx-cli"
+    },
+    "crates/sdocx-wasm": {
+      "release-type": "rust",
+      "component": "sdocx-wasm"
     }
   },
   "plugins": [

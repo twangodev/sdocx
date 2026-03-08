@@ -2,7 +2,6 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/twangodev/sdocx/rust.yml?label=CI)](https://github.com/twangodev/sdocx/actions/workflows/rust.yml)
 [![crates.io (sdocx)](https://img.shields.io/crates/v/sdocx)](https://crates.io/crates/sdocx)
-[![crates.io (sdocx-cli)](https://img.shields.io/crates/v/sdocx-cli)](https://crates.io/crates/sdocx-cli)
 [![docs.rs](https://img.shields.io/docsrs/sdocx)](https://docs.rs/sdocx)
 [![License](https://img.shields.io/crates/l/sdocx)](https://github.com/twangodev/sdocx/blob/main/LICENSE)
 

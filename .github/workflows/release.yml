@@ -19,6 +19,7 @@ jobs:
       releases_created: ${{ steps.release.outputs.releases_created }}
       sdocx-cli--release_created: ${{ steps.release.outputs['crates/sdocx-cli--release_created'] }}
       sdocx-cli--tag_name: ${{ steps.release.outputs['crates/sdocx-cli--tag_name'] }}
+      sdocx-wasm--release_created: ${{ steps.release.outputs['crates/sdocx-wasm--release_created'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -109,6 +110,32 @@ jobs:
       - run: cargo publish -p sdocx-cli
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  npm:
+    name: Publish to npm
+    needs: [release-please]
+    if: needs.release-please.outputs.sdocx-wasm--release_created == 'true'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build WASM package
+        run: wasm-pack build crates/sdocx-wasm --out-name sdocx
+      - name: Set npm package name
+        run: npm pkg set name="@twango/sdocx"
+        working-directory: crates/sdocx-wasm/pkg
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        working-directory: crates/sdocx-wasm/pkg
 
   docker:
     name: Docker

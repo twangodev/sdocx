@@ -7,6 +7,10 @@ description = "Reverse-engineered tooling and SDK for converting Samsung Notes (
 license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"
 
+[features]
+serde = ["dep:serde"]
+
 [dependencies]
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
+serde = { version = "1.0.228", features = ["derive"], optional = true }
