@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.3.1...sdocx-v0.4.0) (2026-03-09)
+
+
+### Features
+
+* enhance page parsing and SVG rendering for .sdocx files ([a5159b0](https://github.com/twangodev/sdocx/commit/a5159b0ba42638c6e5f43e22f410fafa79d4f1c5))
+
+
+### Bug Fixes
+
+* streamline output handling and improve formatting in main.rs and page.rs ([61c0f82](https://github.com/twangodev/sdocx/commit/61c0f82bfe8ce6c136c8fb37c539924b970a5923))
+
 ## [0.3.1](https://github.com/twangodev/sdocx/compare/sdocx-v0.3.0...sdocx-v0.3.1) (2026-03-08)
 
 
