@@ -4,12 +4,15 @@ use crate::types::{BoundingBox, Page, Stroke};
 
 /// Parse a `.page` binary file into a `Page`.
 ///
-/// Uses sequential record walking from offset `0x198` as documented
-/// in the format notebooks.
+/// The first u32 (`base`) determines the location of stroke-related fields.
+/// Stroke count is at `base + 0x66`, and stroke records start at `base + 0xB5`.
 pub fn parse_page(data: &[u8]) -> Result<Page> {
-    if data.len() < 0x198 {
+    if data.len() < 0xA0 {
         return Err(Error::Format("page file too short for header".into()));
     }
+
+    // Base offset at 0x00 — shifts stroke fields for files with embedded media
+    let base = u32::from_le_bytes(data[0x00..0x04].try_into().unwrap()) as usize;
 
     // Page dimensions at 0x16 and 0x1A
     let width = u32::from_le_bytes(data[0x16..0x1A].try_into().unwrap());
@@ -32,11 +35,16 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
         y_max: f64::from_le_bytes(data[0x98..0xA0].try_into().unwrap()),
     };
 
-    // Stroke count at 0x149
-    let stroke_count = u32::from_le_bytes(data[0x149..0x14D].try_into().unwrap()) as usize;
+    // Stroke count at base + 0x66
+    let sc_off = base + 0x66;
+    if sc_off + 4 > data.len() {
+        return Err(Error::Format("page file too short for stroke count".into()));
+    }
+    let stroke_count =
+        u32::from_le_bytes(data[sc_off..sc_off + 4].try_into().unwrap()) as usize;
 
     let mut strokes = Vec::with_capacity(stroke_count);
-    let mut off = 0x198;
+    let mut off = base + 0xB5;
 
     for _ in 0..stroke_count {
         if off + 89 > data.len() {
@@ -50,14 +58,6 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
             x_max: f64::from_le_bytes(data[off + 16..off + 24].try_into().unwrap()),
             y_max: f64::from_le_bytes(data[off + 24..off + 32].try_into().unwrap()),
         };
-
-        // Sanity check: bbox values should be reasonable
-        if ![bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max]
-            .iter()
-            .all(|&v| v > 0.0 && v < 10000.0)
-        {
-            break;
-        }
 
         // 2) Metadata (41 bytes): data_len at byte 21, n_points at byte 39
         let meta_off = off + 32;
