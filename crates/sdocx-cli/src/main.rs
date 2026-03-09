@@ -160,18 +160,12 @@ fn main() {
 
     print_info(&doc);
 
-    let output_base = cli
-        .output
-        .unwrap_or_else(|| cli.path.with_extension("svg"));
+    let output_base = cli.output.unwrap_or_else(|| cli.path.with_extension("svg"));
 
     if doc.pages.len() == 1 {
         let svg = render_page_svg(&doc.pages[0], doc.metadata.background_color.as_ref());
         fs::write(&output_base, &svg).expect("failed to write SVG");
-        eprintln!(
-            "Wrote {} ({} bytes)",
-            output_base.display(),
-            svg.len()
-        );
+        eprintln!("Wrote {} ({} bytes)", output_base.display(), svg.len());
     } else {
         for (i, page) in doc.pages.iter().enumerate() {
             let stem = output_base

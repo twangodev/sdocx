@@ -40,8 +40,7 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
     if sc_off + 4 > data.len() {
         return Err(Error::Format("page file too short for stroke count".into()));
     }
-    let stroke_count =
-        u32::from_le_bytes(data[sc_off..sc_off + 4].try_into().unwrap()) as usize;
+    let stroke_count = u32::from_le_bytes(data[sc_off..sc_off + 4].try_into().unwrap()) as usize;
 
     let mut strokes = Vec::with_capacity(stroke_count);
     let mut off = base + 0xB5;
