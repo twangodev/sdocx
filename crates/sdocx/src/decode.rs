@@ -53,8 +53,7 @@ pub fn decode_coordinates(
 
         // Legacy mode: stop at non-standard flag bytes (no count available).
         if n_deltas.is_none()
-            && ((dx_flag != 0x00 && dx_flag != 0x80)
-                || (dy_flag != 0x00 && dy_flag != 0x80))
+            && ((dx_flag != 0x00 && dx_flag != 0x80) || (dy_flag != 0x00 && dy_flag != 0x80))
         {
             break;
         }
@@ -231,8 +230,7 @@ mod tests {
         // Marker + BGRA (B=0x14, G=0xA1, R=0x47, A=0xFF) + pen width
         let mut data = vec![0u8; 20];
         let marker_pos = 4;
-        data[marker_pos..marker_pos + 6]
-            .copy_from_slice(&[0x02, 0x00, 0x01, 0x00, 0x00, 0x00]);
+        data[marker_pos..marker_pos + 6].copy_from_slice(&[0x02, 0x00, 0x01, 0x00, 0x00, 0x00]);
         data[marker_pos + 6] = 0x14; // B
         data[marker_pos + 7] = 0xA1; // G
         data[marker_pos + 8] = 0x47; // R
@@ -257,8 +255,7 @@ mod tests {
         // Marker + pen width only (no 0xFF at byte 3)
         let mut data = vec![0u8; 16];
         let marker_pos = 2;
-        data[marker_pos..marker_pos + 6]
-            .copy_from_slice(&[0x02, 0x00, 0x01, 0x00, 0x00, 0x00]);
+        data[marker_pos..marker_pos + 6].copy_from_slice(&[0x02, 0x00, 0x01, 0x00, 0x00, 0x00]);
         let width_bytes = 9.12_f32.to_le_bytes();
         data[marker_pos + 6..marker_pos + 10].copy_from_slice(&width_bytes);
 

@@ -88,7 +88,8 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
         let data_blob = &data[data_off..data_off + data_len];
 
         let n_deltas = n_points.saturating_sub(1);
-        let (points, n_coord_bytes) = decode_coordinates(data_blob, start_x, start_y, Some(n_deltas));
+        let (points, n_coord_bytes) =
+            decode_coordinates(data_blob, start_x, start_y, Some(n_deltas));
         let n_delta_points = points.len().saturating_sub(1);
 
         let trailing = decode_trailing(data_blob, n_coord_bytes, n_delta_points);
