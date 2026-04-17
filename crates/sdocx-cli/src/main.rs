@@ -86,7 +86,8 @@ fn render_stroke(svg: &mut String, stroke: &Stroke) {
         .map(color_hex)
         .unwrap_or_else(|| DEFAULT_INK.into());
     let base_width = stroke.pen_width as f64 / 2.5;
-    let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1;
+    let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1
+        && stroke.pressures.iter().any(|&p| p > 0.01);
 
     if has_pressure {
         for j in 1..stroke.points.len() {

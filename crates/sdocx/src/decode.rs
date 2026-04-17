@@ -1,6 +1,8 @@
 const DELTA_SCALE: f64 = 1.0 / 32.0;
 const MAX_PRESSURE: f64 = 1400.0;
-const COLOR_MARKER: &[u8] = &[0x02, 0x00, 0x01, 0x00, 0x00, 0x00];
+/// Trailing bytes of the color marker. The leading byte is a version tag
+/// (0x02 on older Samsung Notes, 0x03 on v4.4.x+) and is matched separately.
+const COLOR_MARKER_TAIL: &[u8] = &[0x00, 0x01, 0x00, 0x00, 0x00];
 
 use crate::types::{Color, Point};
 
@@ -20,31 +22,49 @@ pub fn decode_sign_mag(data: &[u8], offset: usize, count: usize) -> Vec<i64> {
     vals
 }
 
-/// Decode delta-encoded coordinates from a data blob.
-/// Returns `(points, n_coord_bytes)` where `n_coord_bytes` is how many bytes
-/// were consumed by coordinate data.
-pub fn decode_coordinates(data: &[u8], start_x: f64, start_y: f64) -> (Vec<Point>, usize) {
+/// Decode delta-encoded coordinates. Each quartet is `[dx_mag, dx_flag, dy_mag, dy_flag]`;
+/// bit 7 of each flag is the sign, lower bits are ignored (they carry metadata in newer versions).
+///
+/// `n_deltas = Some(n_points - 1)` reads exactly that many quartets. `None` is legacy mode,
+/// which stops at the first flag byte outside {0x00, 0x80}.
+///
+/// Returns `(points, n_coord_bytes)`.
+pub fn decode_coordinates(
+    data: &[u8],
+    start_x: f64,
+    start_y: f64,
+    n_deltas: Option<usize>,
+) -> (Vec<Point>, usize) {
     let mut x = start_x;
     let mut y = start_y;
     let mut points = vec![Point { x, y }];
     let mut i = 0;
 
-    while i + 3 < data.len() {
-        let dx_mag = data[i];
-        let dx_sign = data[i + 1];
-        let dy_mag = data[i + 2];
-        let dy_sign = data[i + 3];
+    let limit = match n_deltas {
+        Some(n) => n * 4,
+        None => usize::MAX,
+    };
 
-        if (dx_sign != 0x00 && dx_sign != 0x80) || (dy_sign != 0x00 && dy_sign != 0x80) {
+    while i + 3 < data.len() && i < limit {
+        let dx_mag = data[i];
+        let dx_flag = data[i + 1];
+        let dy_mag = data[i + 2];
+        let dy_flag = data[i + 3];
+
+        // Legacy mode: stop at non-standard flag bytes (no count available).
+        if n_deltas.is_none()
+            && ((dx_flag != 0x00 && dx_flag != 0x80)
+                || (dy_flag != 0x00 && dy_flag != 0x80))
+        {
             break;
         }
 
-        let dx = if dx_sign == 0x00 {
+        let dx = if dx_flag & 0x80 == 0 {
             dx_mag as f64
         } else {
             -(dx_mag as f64)
         } * DELTA_SCALE;
-        let dy = if dy_sign == 0x00 {
+        let dy = if dy_flag & 0x80 == 0 {
             dy_mag as f64
         } else {
             -(dy_mag as f64)
@@ -118,13 +138,13 @@ fn extract_color_and_width(data_blob: &[u8]) -> (Option<Color>, f32) {
     let mut color = None;
     let mut width: f32 = 0.8;
 
-    // Find the last occurrence of the color marker
+    // Find the last color marker: [VV, 00, 01, 00, 00, 00] with VV = version byte.
     let pos = data_blob
-        .windows(COLOR_MARKER.len())
-        .rposition(|w| w == COLOR_MARKER);
+        .windows(COLOR_MARKER_TAIL.len() + 1)
+        .rposition(|w| w[1..] == *COLOR_MARKER_TAIL);
 
     if let Some(pos) = pos {
-        let after = &data_blob[pos + COLOR_MARKER.len()..];
+        let after = &data_blob[pos + COLOR_MARKER_TAIL.len() + 1..];
         if after.len() >= 4 && after[3] == 0xFF {
             // BGRA color present
             color = Some(Color {
@@ -183,7 +203,7 @@ mod tests {
             0, 0x00, 32, 0x80, // dx=+0.0, dy=-1.0
             0xFF, 0xFF, // terminator (invalid sign)
         ];
-        let (points, n_bytes) = decode_coordinates(&data, 10.0, 20.0);
+        let (points, n_bytes) = decode_coordinates(&data, 10.0, 20.0, None);
         assert_eq!(points.len(), 3);
         assert!((points[0].x - 10.0).abs() < 1e-10);
         assert!((points[0].y - 20.0).abs() < 1e-10);
@@ -199,7 +219,7 @@ mod tests {
         let data = [
             64, 0x80, 32, 0x80, // dx=-2.0, dy=-1.0
         ];
-        let (points, n_bytes) = decode_coordinates(&data, 5.0, 5.0);
+        let (points, n_bytes) = decode_coordinates(&data, 5.0, 5.0, None);
         assert_eq!(points.len(), 2);
         assert!((points[1].x - 3.0).abs() < 1e-10);
         assert!((points[1].y - 4.0).abs() < 1e-10);
@@ -211,7 +231,8 @@ mod tests {
         // Marker + BGRA (B=0x14, G=0xA1, R=0x47, A=0xFF) + pen width
         let mut data = vec![0u8; 20];
         let marker_pos = 4;
-        data[marker_pos..marker_pos + 6].copy_from_slice(COLOR_MARKER);
+        data[marker_pos..marker_pos + 6]
+            .copy_from_slice(&[0x02, 0x00, 0x01, 0x00, 0x00, 0x00]);
         data[marker_pos + 6] = 0x14; // B
         data[marker_pos + 7] = 0xA1; // G
         data[marker_pos + 8] = 0x47; // R
@@ -236,7 +257,8 @@ mod tests {
         // Marker + pen width only (no 0xFF at byte 3)
         let mut data = vec![0u8; 16];
         let marker_pos = 2;
-        data[marker_pos..marker_pos + 6].copy_from_slice(COLOR_MARKER);
+        data[marker_pos..marker_pos + 6]
+            .copy_from_slice(&[0x02, 0x00, 0x01, 0x00, 0x00, 0x00]);
         let width_bytes = 9.12_f32.to_le_bytes();
         data[marker_pos + 6..marker_pos + 10].copy_from_slice(&width_bytes);
 
