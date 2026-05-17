@@ -2,13 +2,15 @@ use crate::decode::{decode_coordinates, decode_trailing};
 use crate::error::{Error, Result};
 use crate::types::{BoundingBox, Page, Stroke};
 
+const PRE_STROKE_RECORD_LEN: usize = 71;
+const STROKE_HEADER_LEN: usize = 89; // bbox(32) + meta(41) + start(16)
+const EXTRA_LEN_BIAS: u8 = 0x79; // byte value at record+3 when no extras are present
+
 /// Parse a `.page` binary file into a `Page`.
 ///
-/// Layout: `base = u32 @ 0x00`; stroke count at `base + 0x66`; records at `base + 0xB5`.
-///
-/// Newer Samsung Notes (v4.4.x+) may inject per-stroke extra attribute blocks.
-/// The block length for the next stroke is `byte - 0x79` at `base + 0x71` (first stroke)
-/// or byte 3 of the 71-byte inter-stroke record (subsequent strokes).
+/// Layout: `base = u32 @ 0x00`; stroke count at `base + 0x66`; first stroke at `base + 0xB5`.
+/// Each stroke is preceded by a 71-byte record; on v4.4.x+, byte 3 of that record encodes
+/// an extra-attribute-block length (value − 0x79) injected inside the stroke's metadata.
 pub fn parse_page(data: &[u8]) -> Result<Page> {
     if data.len() < 0xA0 {
         return Err(Error::Format("page file too short for header".into()));
@@ -45,18 +47,19 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
     }
     let stroke_count = u32::from_le_bytes(data[sc_off..sc_off + 4].try_into().unwrap()) as usize;
 
-    // extra_len for the first stroke lives in the pre-stroke record at base + 0x71.
-    let mut extra_len: usize = if base + 0x71 < data.len() {
-        (data[base + 0x71] as usize).saturating_sub(0x79)
-    } else {
-        0
-    };
-
     let mut strokes = Vec::with_capacity(stroke_count);
-    let mut off = base + 0xB5;
+    // base + 0xB5 - 71 = base + 0x6E; byte 3 of that record is base + 0x71.
+    let mut record_off = base + 0xB5 - PRE_STROKE_RECORD_LEN;
 
     for _ in 0..stroke_count {
-        if off + 89 + extra_len > data.len() {
+        let extra_len = data
+            .get(record_off + 3)
+            .copied()
+            .unwrap_or(EXTRA_LEN_BIAS)
+            .saturating_sub(EXTRA_LEN_BIAS) as usize;
+
+        let off = record_off + PRE_STROKE_RECORD_LEN;
+        if off + STROKE_HEADER_LEN + extra_len > data.len() {
             break;
         }
 
@@ -80,19 +83,16 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
         let start_x = f64::from_le_bytes(data[sp_off..sp_off + 8].try_into().unwrap());
         let start_y = f64::from_le_bytes(data[sp_off + 8..sp_off + 16].try_into().unwrap());
 
-        // 4) Delta data — n_points lets the decoder tolerate non-standard flag bits.
+        // 4) Delta data
         let data_off = sp_off + 16;
         if data_off + data_len > data.len() {
             break;
         }
         let data_blob = &data[data_off..data_off + data_len];
 
-        let n_deltas = n_points.saturating_sub(1);
         let (points, n_coord_bytes) =
-            decode_coordinates(data_blob, start_x, start_y, Some(n_deltas));
-        let n_delta_points = points.len().saturating_sub(1);
-
-        let trailing = decode_trailing(data_blob, n_coord_bytes, n_delta_points);
+            decode_coordinates(data_blob, start_x, start_y, n_points.saturating_sub(1));
+        let trailing = decode_trailing(data_blob, n_coord_bytes, points.len().saturating_sub(1));
 
         strokes.push(Stroke {
             bbox,
@@ -105,14 +105,8 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
             pen_width: trailing.pen_width,
         });
 
-        // 5) Advance past deltas + 71-byte inter-stroke record; byte 3 carries next extra_len.
-        let inter_off = data_off + data_len;
-        if inter_off + 71 <= data.len() {
-            extra_len = (data[inter_off + 3] as usize).saturating_sub(0x79);
-        } else {
-            extra_len = 0;
-        }
-        off = inter_off + 71;
+        // Next pre-stroke record starts immediately after this stroke's delta data.
+        record_off = data_off + data_len;
     }
 
     Ok(Page {
