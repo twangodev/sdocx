@@ -18,10 +18,16 @@ pub struct DocumentMetadata {
     pub modified_ms: Option<i64>,
     /// Background color of the document.
     pub background_color: Option<Color>,
+    /// Whether Samsung Notes dark-mode compatibility is enabled.
+    pub dark_mode_compatibility: Option<bool>,
     /// Default page dimensions as `(width, height)` in pixels.
     pub page_dimensions: Option<(u32, u32)>,
     /// Ordered list of page UUIDs.
     pub page_ids: Vec<String>,
+    /// Embedded media assets from the archive.
+    pub media_assets: Vec<MediaAsset>,
+    /// Top-level typed note text from `note.note`, if present.
+    pub note_text: Option<RichTextBox>,
 }
 
 /// A single page within a document.
@@ -36,8 +42,100 @@ pub struct Page {
     pub height: u32,
     /// Bounding box enclosing all stroke content.
     pub content_bbox: BoundingBox,
+    /// Page background color, if present in the page header.
+    pub background_color: Option<Color>,
+    /// Page template metadata, if present in the page header.
+    pub template: Option<PageTemplate>,
     /// The strokes drawn on this page.
     pub strokes: Vec<Stroke>,
+    /// Non-stroke page objects parsed from the page stream.
+    pub elements: Vec<PageElement>,
+}
+
+/// An embedded media asset.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MediaAsset {
+    /// Archive path.
+    pub name: String,
+    /// MIME type, when recognized.
+    pub mime_type: String,
+    /// Raw media bytes.
+    pub data: Vec<u8>,
+}
+
+/// A non-stroke page element.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PageElement {
+    /// A placed image object.
+    Image {
+        /// Placement box in page coordinates.
+        bbox: BoundingBox,
+        /// Index into `DocumentMetadata::media_assets`.
+        media_index: usize,
+    },
+    /// A rich text object.
+    TextBox(RichTextBox),
+}
+
+/// Parsed rich text box data.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextBox {
+    /// Placement box in page coordinates.
+    pub bbox: BoundingBox,
+    /// Clockwise rotation in degrees, if present.
+    pub rotation_degrees: Option<f64>,
+    /// Full text content.
+    pub text: String,
+    /// Text foreground color.
+    pub color: Option<Color>,
+    /// Text highlight/fill color.
+    pub highlight_color: Option<Color>,
+    /// Whether underline styling is present.
+    pub underline: bool,
+    /// Font size in Samsung Notes logical units, when present.
+    pub font_size: Option<f32>,
+    /// Style runs using character indexes into `text`.
+    pub runs: Vec<RichTextRun>,
+}
+
+/// A rich text style run.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextRun {
+    /// Start character index, inclusive.
+    pub start: usize,
+    /// End character index, exclusive.
+    pub end: usize,
+    /// Whether the run is bold.
+    pub bold: bool,
+    /// Whether the run is italic.
+    pub italic: bool,
+}
+
+/// Page template metadata.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PageTemplate {
+    /// Raw Samsung Notes template identifier.
+    pub id: u32,
+    /// Template backing source.
+    pub source: PageTemplateSource,
+}
+
+/// Page template backing source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum PageTemplateSource {
+    /// Built-in Samsung Notes page template.
+    BuiltIn,
+    /// Custom PDF-backed page template.
+    CustomPdf {
+        /// Zero-based PDF page index used as the template.
+        page_index: u32,
+    },
 }
 
 /// A single pen stroke consisting of points and associated data.

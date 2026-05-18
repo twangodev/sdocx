@@ -1,5 +1,9 @@
+use base64::Engine as _;
 use clap::Parser;
-use sdocx::{Color, Document, Page, Stroke};
+use sdocx::{
+    Color, Document, MediaAsset, Page, PageElement, PageTemplate, PageTemplateSource, RichTextBox,
+    RichTextRun, Stroke,
+};
 use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::path::PathBuf;
@@ -23,37 +27,19 @@ fn color_hex(c: &Color) -> String {
     format!("#{:02x}{:02x}{:02x}", c.r, c.g, c.b)
 }
 
-fn render_page_svg(page: &Page, bg_color: Option<&Color>) -> String {
+fn render_page_svg(
+    page: &Page,
+    fallback_bg_color: Option<&Color>,
+    media_assets: &[MediaAsset],
+) -> String {
+    let bg_color = page.background_color.as_ref().or(fallback_bg_color);
     let bg = bg_color.map(color_hex).unwrap_or_else(|| "#252525".into());
-
-    // Compute content bounding box from all stroke points
-    let mut min_x = f64::MAX;
-    let mut min_y = f64::MAX;
-    let mut max_x = f64::MIN;
-    let mut max_y = f64::MIN;
-
-    for stroke in &page.strokes {
-        for pt in &stroke.points {
-            min_x = min_x.min(pt.x);
-            min_y = min_y.min(pt.y);
-            max_x = max_x.max(pt.x);
-            max_y = max_y.max(pt.y);
-        }
-    }
-
-    if page.strokes.is_empty() || min_x > max_x {
-        return r#"<svg xmlns="http://www.w3.org/2000/svg"/>"#.into();
-    }
-
-    let margin = 10.0;
-    let vb_x = min_x - margin;
-    let vb_y = min_y - margin;
-    let vb_w = max_x - min_x + 2.0 * margin;
-    let vb_h = max_y - min_y + 2.0 * margin;
-
-    let scale = (1200.0 / vb_w).min(1600.0 / vb_h).min(1.0);
-    let svg_w = (vb_w * scale) as u32;
-    let svg_h = (vb_h * scale) as u32;
+    let vb_x = 0.0;
+    let vb_y = 0.0;
+    let vb_w = page.width as f64;
+    let vb_h = page.height as f64;
+    let svg_w = page.width;
+    let svg_h = page.height;
 
     let mut svg = String::with_capacity(page.strokes.len() * 256);
 
@@ -72,9 +58,199 @@ fn render_page_svg(page: &Page, bg_color: Option<&Color>) -> String {
     for stroke in &page.strokes {
         render_stroke(&mut svg, stroke);
     }
+    for element in &page.elements {
+        render_element(&mut svg, element, page, media_assets);
+    }
 
     svg.push_str("</svg>\n");
     svg
+}
+
+fn render_element(
+    svg: &mut String,
+    element: &PageElement,
+    page: &Page,
+    media_assets: &[MediaAsset],
+) {
+    match element {
+        PageElement::Image { bbox, media_index } => {
+            let Some(asset) = media_assets.get(*media_index) else {
+                return;
+            };
+            let encoded = base64::engine::general_purpose::STANDARD.encode(&asset.data);
+            writeln!(
+                svg,
+                r#"  <image x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" href="data:{};base64,{}" preserveAspectRatio="none"/>"#,
+                bbox.x_min,
+                bbox.y_min,
+                bbox.x_max - bbox.x_min,
+                bbox.y_max - bbox.y_min,
+                asset.mime_type,
+                encoded,
+            )
+            .unwrap();
+        }
+        PageElement::TextBox(text_box) => render_text_box(svg, text_box, page),
+    }
+}
+
+fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page) {
+    let text = text_box.text.trim_end_matches('\n');
+    if text.trim().is_empty() {
+        return;
+    }
+
+    let is_note_body =
+        text_box.bbox.x_max <= text_box.bbox.x_min || text_box.bbox.y_max <= text_box.bbox.y_min;
+    let (x, y, width, height) = if is_note_body {
+        (50.0, 0.0, page.width as f64 - 100.0, page.height as f64)
+    } else {
+        (
+            text_box.bbox.x_min,
+            text_box.bbox.y_min,
+            text_box.bbox.x_max - text_box.bbox.x_min,
+            text_box.bbox.y_max - text_box.bbox.y_min,
+        )
+    };
+    let color = text_box
+        .color
+        .as_ref()
+        .map(color_hex)
+        .unwrap_or_else(|| "#252525".into());
+    let font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(37.0);
+    let line_height = font_size * 1.35;
+    let mut transform = String::new();
+    if let Some(rotation) = text_box.rotation_degrees {
+        let cx = x + width / 2.0;
+        let cy = y + height / 2.0;
+        transform = format!(r#" transform="rotate({rotation:.2} {cx:.2} {cy:.2})""#);
+    }
+
+    writeln!(svg, r#"  <g{transform}>"#).unwrap();
+    if let Some(highlight) = text_box.highlight_color.as_ref() {
+        writeln!(
+            svg,
+            r#"    <rect x="{x:.2}" y="{y:.2}" width="{width:.2}" height="{height:.2}" fill="{}"/>"#,
+            color_hex(highlight),
+        )
+        .unwrap();
+    }
+    for (line_idx, line) in text.lines().enumerate() {
+        if line.is_empty() {
+            continue;
+        }
+        let text_y = y + font_size + line_idx as f64 * line_height;
+        let decoration = if text_box.underline {
+            r#" text-decoration="underline""#
+        } else {
+            ""
+        };
+        let line_start = text
+            .lines()
+            .take(line_idx)
+            .map(|line| line.chars().count() + 1)
+            .sum::<usize>();
+        let spans = styled_line_spans(line, line_start, &text_box.runs);
+        write!(
+            svg,
+            r#"    <text x="{x:.2}" y="{text_y:.2}" fill="{color}" font-family="Arial, sans-serif" font-size="{font_size:.2}"{decoration}>"#,
+        )
+        .unwrap();
+        for span in spans {
+            write!(
+                svg,
+                r#"<tspan{}{}>{}</tspan>"#,
+                if span.bold {
+                    r#" font-weight="bold""#
+                } else {
+                    ""
+                },
+                if span.italic {
+                    r#" font-style="italic""#
+                } else {
+                    ""
+                },
+                escape_xml(span.text),
+            )
+            .unwrap();
+        }
+        svg.push_str("</text>\n");
+    }
+    svg.push_str("  </g>\n");
+}
+
+struct StyledSpan<'a> {
+    text: &'a str,
+    bold: bool,
+    italic: bool,
+}
+
+fn styled_line_spans<'a>(
+    line: &'a str,
+    line_start: usize,
+    runs: &[RichTextRun],
+) -> Vec<StyledSpan<'a>> {
+    let char_count = line.chars().count();
+    let mut boundaries = vec![0, char_count];
+    for run in runs {
+        let start = run.start.saturating_sub(line_start).min(char_count);
+        let end = run.end.saturating_sub(line_start).min(char_count);
+        if start < end {
+            boundaries.push(start);
+            boundaries.push(end);
+        }
+    }
+    boundaries.sort_unstable();
+    boundaries.dedup();
+
+    let byte_offsets = char_byte_offsets(line);
+    let mut spans = Vec::new();
+    for pair in boundaries.windows(2) {
+        let start = pair[0];
+        let end = pair[1];
+        if start == end {
+            continue;
+        }
+        let global_start = line_start + start;
+        let global_end = line_start + end;
+        let mut bold = false;
+        let mut italic = false;
+        for run in runs {
+            if run.start < global_end && run.end > global_start {
+                bold |= run.bold;
+                italic |= run.italic;
+            }
+        }
+        spans.push(StyledSpan {
+            text: &line[byte_offsets[start]..byte_offsets[end]],
+            bold,
+            italic,
+        });
+    }
+    spans
+}
+
+fn char_byte_offsets(text: &str) -> Vec<usize> {
+    let mut offsets: Vec<usize> = text.char_indices().map(|(offset, _)| offset).collect();
+    offsets.push(text.len());
+    offsets
+}
+
+fn samsung_font_to_svg(size: f32) -> f64 {
+    let size = size as f64;
+    if size.is_finite() && size > 0.0 {
+        (size * 2.18).clamp(8.0, 96.0)
+    } else {
+        37.0
+    }
+}
+
+fn escape_xml(input: &str) -> String {
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 fn render_stroke(svg: &mut String, stroke: &Stroke) {
@@ -87,7 +263,7 @@ fn render_stroke(svg: &mut String, stroke: &Stroke) {
         .as_ref()
         .map(color_hex)
         .unwrap_or_else(|| DEFAULT_INK.into());
-    let base_width = stroke.pen_width as f64 / 2.5;
+    let base_width = normalized_stroke_width(stroke.pen_width);
     let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1
         && stroke
             .pressures
@@ -124,12 +300,24 @@ fn render_stroke(svg: &mut String, stroke: &Stroke) {
     }
 }
 
+fn normalized_stroke_width(pen_width: f32) -> f64 {
+    let raw_width = pen_width as f64 / 2.5;
+    if raw_width.is_finite() && raw_width > 0.0 {
+        raw_width.clamp(0.4, 12.0)
+    } else {
+        1.0
+    }
+}
+
 fn print_info(doc: &Document) {
     if let Some(dims) = doc.metadata.page_dimensions {
         eprintln!("Page dimensions: {} x {}", dims.0, dims.1);
     }
     if let Some(bg) = doc.metadata.background_color {
-        eprintln!("Background: #{:02x}{:02x}{:02x}", bg.r, bg.g, bg.b);
+        eprintln!("Document background: #{:02x}{:02x}{:02x}", bg.r, bg.g, bg.b);
+    }
+    if let Some(enabled) = doc.metadata.dark_mode_compatibility {
+        eprintln!("Dark mode compatibility: {enabled}");
     }
     eprintln!("{} page(s)", doc.pages.len());
     for (i, page) in doc.pages.iter().enumerate() {
@@ -141,15 +329,75 @@ fn print_info(doc: &Document) {
             .filter(|s| !s.pressures.is_empty())
             .count();
         eprintln!(
-            "  Page {}: {} x {}, {} strokes, {} points, {} colors, {} with pressure",
+            "  Page {}: {} x {}, background {}, template {}, {} strokes, {} points, {} colors, {} with pressure",
             i,
             page.width,
             page.height,
+            page.background_color
+                .map(|color| format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b))
+                .unwrap_or_else(|| "none".to_string()),
+            page.template
+                .map(format_template)
+                .unwrap_or_else(|| "none".to_string()),
             page.strokes.len(),
             total_points,
             colors.len(),
             with_pressure,
         );
+    }
+}
+
+fn format_template(template: PageTemplate) -> String {
+    match template.source {
+        PageTemplateSource::BuiltIn => format!("built-in {}", template.id),
+        PageTemplateSource::CustomPdf { page_index } => {
+            format!("custom PDF page {}", page_index + 1)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{normalized_stroke_width, render_page_svg};
+    use sdocx::{BoundingBox, Color, Page};
+
+    #[test]
+    fn normalizes_invalid_stroke_widths() {
+        assert_eq!(normalized_stroke_width(f32::NAN), 1.0);
+        assert_eq!(normalized_stroke_width(f32::INFINITY), 1.0);
+        assert_eq!(normalized_stroke_width(0.0), 1.0);
+        assert_eq!(normalized_stroke_width(-1.0), 1.0);
+    }
+
+    #[test]
+    fn clamps_extreme_stroke_widths() {
+        assert_eq!(normalized_stroke_width(0.1), 0.4);
+        assert_eq!(normalized_stroke_width(10_000.0), 12.0);
+        assert_eq!(normalized_stroke_width(5.0), 2.0);
+    }
+
+    #[test]
+    fn renders_empty_page_with_page_dimensions_and_background() {
+        let page = Page {
+            uuid: "page".into(),
+            width: 1080,
+            height: 1527,
+            content_bbox: BoundingBox::default(),
+            background_color: Some(Color {
+                r: 0xcb,
+                g: 0xda,
+                b: 0xdd,
+            }),
+            template: None,
+            strokes: Vec::new(),
+            elements: Vec::new(),
+        };
+
+        let svg = render_page_svg(&page, None, &[]);
+
+        assert!(svg.contains(r#"viewBox="0.0 0.0 1080.0 1527.0""#));
+        assert!(svg.contains(r#"width="1080" height="1527""#));
+        assert!(svg.contains(r##"fill="#cbdadd""##));
     }
 }
 
@@ -169,7 +417,11 @@ fn main() {
     let output_base = cli.output.unwrap_or_else(|| cli.path.with_extension("svg"));
 
     if doc.pages.len() == 1 {
-        let svg = render_page_svg(&doc.pages[0], doc.metadata.background_color.as_ref());
+        let svg = render_page_svg(
+            &doc.pages[0],
+            doc.metadata.background_color.as_ref(),
+            &doc.metadata.media_assets,
+        );
         fs::write(&output_base, &svg).expect("failed to write SVG");
         eprintln!("Wrote {} ({} bytes)", output_base.display(), svg.len());
     } else {
@@ -183,7 +435,11 @@ fn main() {
                 .unwrap_or_default()
                 .to_string_lossy();
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            let svg = render_page_svg(page, doc.metadata.background_color.as_ref());
+            let svg = render_page_svg(
+                page,
+                doc.metadata.background_color.as_ref(),
+                &doc.metadata.media_assets,
+            );
             fs::write(&path, &svg).expect("failed to write SVG");
             eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
         }
