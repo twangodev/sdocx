@@ -5,6 +5,8 @@ use std::fs;
 use std::path::PathBuf;
 
 const DEFAULT_INK: &str = "#ffffff";
+// Pressure channel on v4.4.x files can be present but all-zero; treat as absent.
+const PRESSURE_PRESENT_EPSILON: f64 = 0.01;
 
 #[derive(Parser)]
 #[command(name = "sdocx", version, about = "Parse Samsung Notes .sdocx files")]
@@ -86,7 +88,11 @@ fn render_stroke(svg: &mut String, stroke: &Stroke) {
         .map(color_hex)
         .unwrap_or_else(|| DEFAULT_INK.into());
     let base_width = stroke.pen_width as f64 / 2.5;
-    let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1;
+    let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1
+        && stroke
+            .pressures
+            .iter()
+            .any(|&p| p > PRESSURE_PRESENT_EPSILON);
 
     if has_pressure {
         for j in 1..stroke.points.len() {
