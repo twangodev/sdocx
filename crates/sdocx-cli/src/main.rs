@@ -46,6 +46,24 @@ impl Format {
     }
 }
 
+// Used by `main` once PNG output is wired in (Task 3); exercised by tests now.
+#[allow(dead_code)]
+fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
+    let mut opt = resvg::usvg::Options::default();
+    // Load system fonts so <text> elements render instead of being silently dropped.
+    opt.fontdb_mut().load_system_fonts();
+    let tree = resvg::usvg::Tree::from_str(svg, &opt).map_err(|e| format!("invalid SVG: {e}"))?;
+    let size = tree.size().to_int_size();
+    let (w, h) = (size.width(), size.height());
+    let mut pixmap = resvg::tiny_skia::Pixmap::new(w, h)
+        .ok_or_else(|| "failed to allocate pixmap".to_string())?;
+    let mut pm = pixmap.as_mut();
+    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pm);
+    pixmap
+        .encode_png()
+        .map_err(|e| format!("PNG encode failed: {e}"))
+}
+
 // Default ink for uncolored strokes, by canvas: light on dark, dark on light.
 const DEFAULT_INK_DARK_MODE: &str = "#ffffff";
 const DEFAULT_INK_LIGHT_MODE: &str = "#1a1a1a";
@@ -420,7 +438,7 @@ fn format_template(template: PageTemplate) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Format, normalized_stroke_width, render_page_svg, resolve_format};
+    use super::{Format, normalized_stroke_width, render_page_svg, resolve_format, svg_to_png};
     use sdocx::{BoundingBox, Color, Page, Point, Stroke};
     use std::path::Path;
 
@@ -548,6 +566,18 @@ mod tests {
     #[test]
     fn unknown_extension_without_flag_is_error() {
         assert!(resolve_format(None, Some(Path::new("out.gif"))).is_err());
+    }
+
+    #[test]
+    fn svg_to_png_produces_valid_png_with_expected_size() {
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10" width="20" height="10"><rect x="0" y="0" width="20" height="10" fill="#252525"/><line x1="0" y1="0" x2="20" y2="10" stroke="#ffffff" stroke-width="1"/></svg>"##;
+        let png = svg_to_png(svg).expect("render should succeed");
+        // Full 8-byte PNG signature.
+        assert_eq!(&png[..8], b"\x89PNG\r\n\x1a\n");
+        // IHDR width/height are big-endian u32 at byte offsets 16 and 20.
+        let w = u32::from_be_bytes([png[16], png[17], png[18], png[19]]);
+        let h = u32::from_be_bytes([png[20], png[21], png[22], png[23]]);
+        assert_eq!((w, h), (20, 10));
     }
 }
 
