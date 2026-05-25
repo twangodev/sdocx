@@ -8,7 +8,12 @@ use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::path::PathBuf;
 
-const DEFAULT_INK: &str = "#ffffff";
+// Default ink for uncolored strokes, by canvas: light on dark, dark on light.
+const DEFAULT_INK_DARK_MODE: &str = "#ffffff";
+const DEFAULT_INK_LIGHT_MODE: &str = "#1a1a1a";
+// Fallback canvas when a note carries no background color, matched to the ink.
+const FALLBACK_BG_DARK_MODE: &str = "#252525";
+const FALLBACK_BG_LIGHT_MODE: &str = "#fcfcfc";
 // Pressure channel on v4.4.x files can be present but all-zero; treat as absent.
 const PRESSURE_PRESENT_EPSILON: f64 = 0.01;
 
@@ -31,9 +36,23 @@ fn render_page_svg(
     page: &Page,
     fallback_bg_color: Option<&Color>,
     media_assets: &[MediaAsset],
+    dark_mode: bool,
 ) -> String {
-    let bg_color = page.background_color.as_ref().or(fallback_bg_color);
-    let bg = bg_color.map(color_hex).unwrap_or_else(|| "#252525".into());
+    // Dark-mode notes have light ink, so prefer the document's dark background
+    // over the light page template; otherwise keep the template background.
+    let bg_color = if dark_mode {
+        fallback_bg_color.or(page.background_color.as_ref())
+    } else {
+        page.background_color.as_ref().or(fallback_bg_color)
+    };
+    let bg = bg_color.map(color_hex).unwrap_or_else(|| {
+        if dark_mode {
+            FALLBACK_BG_DARK_MODE
+        } else {
+            FALLBACK_BG_LIGHT_MODE
+        }
+        .into()
+    });
     let vb_x = 0.0;
     let vb_y = 0.0;
     let vb_w = page.width as f64;
@@ -55,8 +74,13 @@ fn render_page_svg(
     )
     .unwrap();
 
+    let default_ink = if dark_mode {
+        DEFAULT_INK_DARK_MODE
+    } else {
+        DEFAULT_INK_LIGHT_MODE
+    };
     for stroke in &page.strokes {
-        render_stroke(&mut svg, stroke);
+        render_stroke(&mut svg, stroke, default_ink);
     }
     for element in &page.elements {
         render_element(&mut svg, element, page, media_assets);
@@ -253,7 +277,7 @@ fn escape_xml(input: &str) -> String {
         .replace('"', "&quot;")
 }
 
-fn render_stroke(svg: &mut String, stroke: &Stroke) {
+fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
     if stroke.points.len() < 2 {
         return;
     }
@@ -262,7 +286,7 @@ fn render_stroke(svg: &mut String, stroke: &Stroke) {
         .color
         .as_ref()
         .map(color_hex)
-        .unwrap_or_else(|| DEFAULT_INK.into());
+        .unwrap_or_else(|| default_ink.into());
     let base_width = normalized_stroke_width(stroke.pen_width);
     let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1
         && stroke
@@ -359,7 +383,7 @@ fn format_template(template: PageTemplate) -> String {
 #[cfg(test)]
 mod tests {
     use super::{normalized_stroke_width, render_page_svg};
-    use sdocx::{BoundingBox, Color, Page};
+    use sdocx::{BoundingBox, Color, Page, Point, Stroke};
 
     #[test]
     fn normalizes_invalid_stroke_widths() {
@@ -393,11 +417,69 @@ mod tests {
             elements: Vec::new(),
         };
 
-        let svg = render_page_svg(&page, None, &[]);
+        let svg = render_page_svg(&page, None, &[], false);
 
         assert!(svg.contains(r#"viewBox="0.0 0.0 1080.0 1527.0""#));
         assert!(svg.contains(r#"width="1080" height="1527""#));
         assert!(svg.contains(r##"fill="#cbdadd""##));
+    }
+
+    fn page_with_uncolored_stroke() -> Page {
+        Page {
+            uuid: "page".into(),
+            width: 100,
+            height: 100,
+            content_bbox: BoundingBox::default(),
+            background_color: None,
+            template: None,
+            strokes: vec![Stroke {
+                bbox: BoundingBox::default(),
+                points: vec![Point { x: 1.0, y: 1.0 }, Point { x: 9.0, y: 9.0 }],
+                pressures: Vec::new(),
+                timestamps: Vec::new(),
+                tilt_x: Vec::new(),
+                tilt_y: Vec::new(),
+                color: None,
+                pen_width: 2.0,
+            }],
+            elements: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn uncolored_stroke_defaults_to_dark_ink_in_light_mode() {
+        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], false);
+        assert!(
+            svg.contains(r##"stroke="#1a1a1a""##),
+            "light-mode default ink"
+        );
+        assert!(!svg.contains(r##"stroke="#ffffff""##));
+    }
+
+    #[test]
+    fn uncolored_stroke_defaults_to_light_ink_in_dark_mode() {
+        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], true);
+        assert!(
+            svg.contains(r##"stroke="#ffffff""##),
+            "dark-mode default ink"
+        );
+        assert!(!svg.contains(r##"stroke="#1a1a1a""##));
+    }
+
+    #[test]
+    fn missing_background_falls_back_to_mode_matched_canvas() {
+        // No page or document background: the fallback canvas must match the ink
+        // mode, or dark ink lands on a dark fallback (or vice versa) and vanishes.
+        let light = render_page_svg(&page_with_uncolored_stroke(), None, &[], false);
+        assert!(
+            light.contains(r##"fill="#fcfcfc""##),
+            "light-mode fallback bg"
+        );
+        let dark = render_page_svg(&page_with_uncolored_stroke(), None, &[], true);
+        assert!(
+            dark.contains(r##"fill="#252525""##),
+            "dark-mode fallback bg"
+        );
     }
 }
 
@@ -421,6 +503,7 @@ fn main() {
             &doc.pages[0],
             doc.metadata.background_color.as_ref(),
             &doc.metadata.media_assets,
+            doc.metadata.dark_mode_compatibility.unwrap_or(false),
         );
         fs::write(&output_base, &svg).expect("failed to write SVG");
         eprintln!("Wrote {} ({} bytes)", output_base.display(), svg.len());
@@ -439,6 +522,7 @@ fn main() {
                 page,
                 doc.metadata.background_color.as_ref(),
                 &doc.metadata.media_assets,
+                doc.metadata.dark_mode_compatibility.unwrap_or(false),
             );
             fs::write(&path, &svg).expect("failed to write SVG");
             eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
