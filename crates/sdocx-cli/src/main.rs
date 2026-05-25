@@ -16,8 +16,6 @@ enum Format {
 
 /// Resolve the output format: explicit flag wins, else infer from the output
 /// file extension, else default to SVG.
-// Used by `main` once format selection is wired in (Task 3); also exercised by tests.
-#[allow(dead_code)]
 fn resolve_format(
     flag: Option<Format>,
     output: Option<&std::path::Path>,
@@ -36,8 +34,6 @@ fn resolve_format(
 }
 
 impl Format {
-    // Used by `main` once multi-page output paths are wired in (Task 3).
-    #[allow(dead_code)]
     fn ext(self) -> &'static str {
         match self {
             Format::Svg => "svg",
@@ -46,8 +42,6 @@ impl Format {
     }
 }
 
-// Used by `main` once PNG output is wired in (Task 3); exercised by tests now.
-#[allow(dead_code)]
 fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
     let mut opt = resvg::usvg::Options::default();
     // Load system fonts so <text> elements render instead of being silently dropped.
@@ -79,9 +73,13 @@ struct Cli {
     /// Path to an .sdocx file
     path: PathBuf,
 
-    /// Output SVG file (defaults to input path with .svg extension)
+    /// Output file path (format inferred from extension; defaults to the input path with a format-appropriate extension)
     #[arg(short, long)]
     output: Option<PathBuf>,
+
+    /// Output format (overrides extension inference): svg or png
+    #[arg(short, long, value_enum)]
+    format: Option<Format>,
 }
 
 fn color_hex(c: &Color) -> String {
@@ -579,6 +577,48 @@ mod tests {
         let h = u32::from_be_bytes([png[20], png[21], png[22], png[23]]);
         assert_eq!((w, h), (20, 10));
     }
+
+    #[test]
+    fn renders_sample_to_valid_png() {
+        let doc = sdocx::parse("../../samples/handwritten.sdocx").expect("parse sample");
+        assert!(!doc.pages.is_empty(), "sample has no pages");
+        let svg = render_page_svg(
+            &doc.pages[0],
+            doc.metadata.background_color.as_ref(),
+            &doc.metadata.media_assets,
+            doc.metadata.dark_mode_compatibility.unwrap_or(false),
+        );
+        let png = svg_to_png(&svg).expect("render sample to png");
+        assert_eq!(&png[..8], b"\x89PNG\r\n\x1a\n");
+        assert!(
+            png.len() > 100,
+            "PNG should be non-trivial, got {} bytes",
+            png.len()
+        );
+    }
+}
+
+fn write_page(path: &std::path::Path, svg: &str, format: Format) {
+    match format {
+        Format::Svg => {
+            if let Err(e) = fs::write(path, svg) {
+                eprintln!("Error: failed to write {}: {e}", path.display());
+                std::process::exit(1);
+            }
+            eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
+        }
+        Format::Png => {
+            let png = svg_to_png(svg).unwrap_or_else(|e| {
+                eprintln!("Error: {e}");
+                std::process::exit(1);
+            });
+            if let Err(e) = fs::write(path, &png) {
+                eprintln!("Error: failed to write {}: {e}", path.display());
+                std::process::exit(1);
+            }
+            eprintln!("Wrote {} ({} bytes)", path.display(), png.len());
+        }
+    }
 }
 
 fn main() {
@@ -594,17 +634,28 @@ fn main() {
 
     print_info(&doc);
 
-    let output_base = cli.output.unwrap_or_else(|| cli.path.with_extension("svg"));
+    let format = match resolve_format(cli.format, cli.output.as_deref()) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    let output_base = cli
+        .output
+        .unwrap_or_else(|| cli.path.with_extension(format.ext()));
+
+    let dark_mode = doc.metadata.dark_mode_compatibility.unwrap_or(false);
 
     if doc.pages.len() == 1 {
         let svg = render_page_svg(
             &doc.pages[0],
             doc.metadata.background_color.as_ref(),
             &doc.metadata.media_assets,
-            doc.metadata.dark_mode_compatibility.unwrap_or(false),
+            dark_mode,
         );
-        fs::write(&output_base, &svg).expect("failed to write SVG");
-        eprintln!("Wrote {} ({} bytes)", output_base.display(), svg.len());
+        write_page(&output_base, &svg, format);
     } else {
         for (i, page) in doc.pages.iter().enumerate() {
             let stem = output_base
@@ -613,17 +664,16 @@ fn main() {
                 .to_string_lossy();
             let ext = output_base
                 .extension()
-                .unwrap_or_default()
-                .to_string_lossy();
+                .and_then(|e| e.to_str())
+                .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
             let svg = render_page_svg(
                 page,
                 doc.metadata.background_color.as_ref(),
                 &doc.metadata.media_assets,
-                doc.metadata.dark_mode_compatibility.unwrap_or(false),
+                dark_mode,
             );
-            fs::write(&path, &svg).expect("failed to write SVG");
-            eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
+            write_page(&path, &svg, format);
         }
     }
 }
