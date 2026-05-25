@@ -11,3 +11,4 @@ repository = "https://github.com/twangodev/sdocx"
 sdocx = { version = "0.4.0", path = "../sdocx" }
 clap = { version = "4.5.60", features = ["derive"] }
 base64 = "0.22"
+resvg = "0.47.0"
