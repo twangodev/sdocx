@@ -1,5 +1,5 @@
 use base64::Engine as _;
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use sdocx::{
     Color, Document, MediaAsset, Page, PageElement, PageTemplate, PageTemplateSource, RichTextBox,
     RichTextRun, Stroke,
@@ -7,6 +7,44 @@ use sdocx::{
 use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::path::PathBuf;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
+enum Format {
+    Svg,
+    Png,
+}
+
+/// Resolve the output format: explicit flag wins, else infer from the output
+/// file extension, else default to SVG.
+// Used by `main` once format selection is wired in (Task 3); also exercised by tests.
+#[allow(dead_code)]
+fn resolve_format(
+    flag: Option<Format>,
+    output: Option<&std::path::Path>,
+) -> Result<Format, String> {
+    if let Some(f) = flag {
+        return Ok(f);
+    }
+    match output.and_then(|p| p.extension()).and_then(|e| e.to_str()) {
+        Some("svg") => Ok(Format::Svg),
+        Some("png") => Ok(Format::Png),
+        Some(other) => Err(format!(
+            "unknown output extension '.{other}'; use -f/--format to set svg or png"
+        )),
+        None => Ok(Format::Svg),
+    }
+}
+
+impl Format {
+    // Used by `main` once multi-page output paths are wired in (Task 3).
+    #[allow(dead_code)]
+    fn ext(self) -> &'static str {
+        match self {
+            Format::Svg => "svg",
+            Format::Png => "png",
+        }
+    }
+}
 
 // Default ink for uncolored strokes, by canvas: light on dark, dark on light.
 const DEFAULT_INK_DARK_MODE: &str = "#ffffff";
@@ -382,8 +420,9 @@ fn format_template(template: PageTemplate) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalized_stroke_width, render_page_svg};
+    use super::{Format, normalized_stroke_width, render_page_svg, resolve_format};
     use sdocx::{BoundingBox, Color, Page, Point, Stroke};
+    use std::path::Path;
 
     #[test]
     fn normalizes_invalid_stroke_widths() {
@@ -480,6 +519,35 @@ mod tests {
             dark.contains(r##"fill="#252525""##),
             "dark-mode fallback bg"
         );
+    }
+
+    #[test]
+    fn format_flag_wins_over_extension() {
+        let f = resolve_format(Some(Format::Svg), Some(Path::new("out.png"))).unwrap();
+        assert_eq!(f, Format::Svg);
+    }
+
+    #[test]
+    fn format_inferred_from_png_extension() {
+        let f = resolve_format(None, Some(Path::new("out.png"))).unwrap();
+        assert_eq!(f, Format::Png);
+    }
+
+    #[test]
+    fn format_inferred_from_svg_extension() {
+        let f = resolve_format(None, Some(Path::new("out.svg"))).unwrap();
+        assert_eq!(f, Format::Svg);
+    }
+
+    #[test]
+    fn format_defaults_to_svg_when_no_output_and_no_flag() {
+        let f = resolve_format(None, None).unwrap();
+        assert_eq!(f, Format::Svg);
+    }
+
+    #[test]
+    fn unknown_extension_without_flag_is_error() {
+        assert!(resolve_format(None, Some(Path::new("out.gif"))).is_err());
     }
 }
 
