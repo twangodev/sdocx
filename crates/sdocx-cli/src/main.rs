@@ -23,7 +23,12 @@ fn resolve_format(
     if let Some(f) = flag {
         return Ok(f);
     }
-    match output.and_then(|p| p.extension()).and_then(|e| e.to_str()) {
+    match output
+        .and_then(|p| p.extension())
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .as_deref()
+    {
         Some("svg") => Ok(Format::Svg),
         Some("png") => Ok(Format::Png),
         Some(other) => Err(format!(
@@ -564,6 +569,18 @@ mod tests {
     #[test]
     fn unknown_extension_without_flag_is_error() {
         assert!(resolve_format(None, Some(Path::new("out.gif"))).is_err());
+    }
+
+    #[test]
+    fn extension_inference_is_case_insensitive() {
+        assert_eq!(
+            resolve_format(None, Some(Path::new("out.PNG"))).unwrap(),
+            Format::Png
+        );
+        assert_eq!(
+            resolve_format(None, Some(Path::new("out.Svg"))).unwrap(),
+            Format::Svg
+        );
     }
 
     #[test]
