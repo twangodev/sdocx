@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.4.0...sdocx-v0.5.0) (2026-05-26)
+
+
+### Features
+
+* support Samsung Notes v4.4.x page format ([#9](https://github.com/twangodev/sdocx/issues/9)) ([7f89bda](https://github.com/twangodev/sdocx/commit/7f89bda394e70e3110642988cc2620ca6dda69ad))
+
 ## [0.4.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.3.1...sdocx-v0.4.0) (2026-03-09)
 
 
