@@ -64,8 +64,6 @@ jobs:
         with:
           report_type: test_results
           files: target/nextest/ci/junit.xml
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   coverage:
     name: Coverage
