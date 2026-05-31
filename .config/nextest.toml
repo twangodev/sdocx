@@ -1,0 +1,3 @@
+# JUnit output for Codecov Test Analytics (used by the `ci` profile in CI).
+[profile.ci.junit]
+path = "junit.xml"
