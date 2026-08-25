@@ -12,6 +12,8 @@ pub struct Document {
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DocumentMetadata {
+    /// Samsung Notes binary format version recorded by the archive.
+    pub format_version: Option<FormatVersion>,
     /// Creation timestamp in milliseconds since the Unix epoch.
     pub created_ms: Option<i64>,
     /// Last modification timestamp in milliseconds since the Unix epoch.
@@ -28,6 +30,39 @@ pub struct DocumentMetadata {
     pub media_assets: Vec<MediaAsset>,
     /// Top-level typed note text from `note.note`, if present.
     pub note_text: Option<RichTextBox>,
+}
+
+/// Samsung Notes binary format version.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct FormatVersion(pub u16);
+
+impl FormatVersion {
+    /// Earliest version recognized by the current S Pen SDK.
+    pub const INITIAL: Self = Self(2034);
+    /// Minimum version accepted by current Samsung Notes builds.
+    pub const MINIMUM_SUPPORTED: Self = Self(4000);
+    /// Version that introduced math objects.
+    pub const MATH_OBJECTS: Self = Self(5200);
+    /// Version that introduced table and code-block objects.
+    pub const TABLE_AND_CODE_BLOCK_OBJECTS: Self = Self(5400);
+    /// Current format version exposed by the analyzed SDK.
+    pub const CURRENT: Self = Self(5500);
+
+    /// Return the raw numeric format version.
+    pub const fn raw(self) -> u16 {
+        self.0
+    }
+
+    /// Whether this version can contain math objects.
+    pub const fn supports_math_objects(self) -> bool {
+        self.0 >= Self::MATH_OBJECTS.0
+    }
+
+    /// Whether this version can contain table and code-block objects.
+    pub const fn supports_table_and_code_block_objects(self) -> bool {
+        self.0 >= Self::TABLE_AND_CODE_BLOCK_OBJECTS.0
+    }
 }
 
 /// A single page within a document.
