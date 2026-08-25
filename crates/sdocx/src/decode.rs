@@ -1,5 +1,5 @@
-const DELTA_SCALE: f64 = 1.0 / 32.0;
-const MAX_PRESSURE: f64 = 1400.0;
+const POINT_DELTA_SCALE: f64 = 1.0 / 32.0;
+const FLOAT_DELTA_SCALE: f64 = 1.0 / 4096.0;
 /// Color marker: leading byte is a format version (0x02 on older Samsung Notes,
 /// 0x03 on v4.4.x+) followed by this fixed 5-byte tail.
 const COLOR_MARKER_TAIL: &[u8] = &[0x00, 0x01, 0x00, 0x00, 0x00];
@@ -7,24 +7,34 @@ const COLOR_MARKER_LEN: usize = COLOR_MARKER_TAIL.len() + 1;
 
 use crate::types::{Color, Point};
 
-/// Decode sign-magnitude byte pairs: (magnitude, sign_flag).
-/// `0x00` = positive, `0x80` = negative.
-pub fn decode_sign_mag(data: &[u8], offset: usize, count: usize) -> Vec<i64> {
-    let mut vals = Vec::with_capacity(count);
-    for i in 0..count {
-        let pos = offset + i * 2;
-        if pos + 1 >= data.len() {
-            break;
-        }
-        let mag = data[pos] as i64;
-        let sign = data[pos + 1];
-        vals.push(if sign == 0x00 { mag } else { -mag });
+/// Decode Samsung's signed-magnitude Q10.5 point delta.
+///
+/// Bit 15 is the sign and bits 0..=14 hold the magnitude. This matches the
+/// `ObjectStrokeBinaryHandler::sm_RestoreStroke` implementation in Samsung's
+/// S Pen SDK. Treating the high byte as a sign flag loses seven magnitude bits.
+fn decode_point_delta(raw: u16) -> f64 {
+    let magnitude = f64::from(raw & 0x7fff) * POINT_DELTA_SCALE;
+    if raw & 0x8000 == 0 {
+        magnitude
+    } else {
+        -magnitude
     }
-    vals
 }
 
-/// Decode delta-encoded coordinates. Each quartet is `[dx_mag, dx_flag, dy_mag, dy_flag]`;
-/// bit 7 of each flag is the sign, lower bits are ignored (they carry metadata on v4.4.x+).
+/// Decode Samsung's signed-magnitude Q3.12 floating-point delta.
+///
+/// This representation is used by pressure, tilt, and orientation channels.
+fn decode_float_delta(raw: u16) -> f64 {
+    let magnitude = f64::from(raw & 0x7fff) * FLOAT_DELTA_SCALE;
+    if raw & 0x8000 == 0 {
+        magnitude
+    } else {
+        -magnitude
+    }
+}
+
+/// Decode delta-encoded coordinates. Each quartet contains little-endian Q10.5
+/// signed-magnitude words for `dx` and `dy`.
 ///
 /// Reads exactly `n_deltas` quartets, producing `n_deltas + 1` points (including the start).
 /// Stops early if `data` runs out. Returns `(points, n_coord_bytes)`.
@@ -37,25 +47,12 @@ pub fn decode_coordinates(
     let mut x = start_x;
     let mut y = start_y;
     let mut points = vec![Point { x, y }];
-    let limit = n_deltas * 4;
+    let limit = n_deltas.saturating_mul(4);
     let mut i = 0;
 
     while i + 3 < data.len() && i < limit {
-        let dx_mag = data[i];
-        let dx_flag = data[i + 1];
-        let dy_mag = data[i + 2];
-        let dy_flag = data[i + 3];
-
-        let dx = if dx_flag & 0x80 == 0 {
-            dx_mag as f64
-        } else {
-            -(dx_mag as f64)
-        } * DELTA_SCALE;
-        let dy = if dy_flag & 0x80 == 0 {
-            dy_mag as f64
-        } else {
-            -(dy_mag as f64)
-        } * DELTA_SCALE;
+        let dx = decode_point_delta(u16::from_le_bytes([data[i], data[i + 1]]));
+        let dy = decode_point_delta(u16::from_le_bytes([data[i + 2], data[i + 3]]));
 
         x += dx;
         y += dy;
@@ -70,55 +67,137 @@ pub fn decode_coordinates(
 pub struct TrailingData {
     pub pressures: Vec<f64>,
     pub timestamps: Vec<i64>,
-    pub tilt_x: Vec<i64>,
-    pub tilt_y: Vec<i64>,
+    pub tilts: Vec<f64>,
+    pub orientations: Vec<f64>,
     pub color: Option<Color>,
     pub pen_width: f32,
 }
 
-/// Decode all trailing data: per-point channels (pressure, timestamp, tilt_x, tilt_y)
-/// and per-stroke color + pen width.
-pub fn decode_trailing(data_blob: &[u8], n_coord_bytes: usize, n_points: usize) -> TrailingData {
-    let trail_start = n_coord_bytes + 4; // 4-byte gap after coordinates
-
-    // Decode 4 per-point channels
-    let mut channels: [Vec<i64>; 4] = Default::default();
-    for (ch_idx, channel) in channels.iter_mut().enumerate() {
-        let ch_offset = trail_start + ch_idx * n_points * 2;
-        if ch_offset + n_points * 2 > data_blob.len() {
-            continue;
-        }
-        let deltas = decode_sign_mag(data_blob, ch_offset, n_points);
-        let mut cumsum: i64 = 0;
-        let mut values = Vec::with_capacity(deltas.len());
-        for d in deltas {
-            cumsum += d;
-            values.push(cumsum);
-        }
-        *channel = values;
+/// Decode the compressed per-point channels following the coordinate deltas.
+///
+/// Pressure, timestamp, tilt, and orientation each store their first value in
+/// full (four bytes), followed by `n_points - 1` two-byte deltas. Tilt and
+/// orientation are optional as a pair. The returned vectors therefore line up
+/// one-for-one with `Stroke::points`.
+pub fn decode_trailing(
+    data_blob: &[u8],
+    n_coord_bytes: usize,
+    n_points: usize,
+) -> Option<TrailingData> {
+    if n_points == 0 {
+        return None;
     }
 
-    // Normalize pressure to 0.0..1.0
-    let pressures: Vec<f64> = channels[0]
-        .iter()
-        .map(|&v| (v as f64 / MAX_PRESSURE).clamp(0.0, 1.0))
-        .collect();
+    let delta_count = n_points - 1;
+    let mut cursor = n_coord_bytes;
 
-    let timestamps = std::mem::take(&mut channels[1]);
-    let tilt_x = std::mem::take(&mut channels[2]);
-    let tilt_y = std::mem::take(&mut channels[3]);
+    let pressures = decode_float_channel(data_blob, &mut cursor, delta_count)?;
+    let timestamps = decode_timestamp_channel(data_blob, &mut cursor, delta_count)?;
+
+    let (tilts, orientations) = if has_plausible_stylus_channels(data_blob, cursor, delta_count) {
+        let tilts = decode_float_channel(data_blob, &mut cursor, delta_count)?;
+        let orientations = decode_float_channel(data_blob, &mut cursor, delta_count)?;
+        (tilts, orientations)
+    } else {
+        (Vec::new(), Vec::new())
+    };
 
     // Extract color and pen width from the color marker
     let (color, pen_width) = extract_color_and_width(data_blob);
 
-    TrailingData {
+    Some(TrailingData {
         pressures,
         timestamps,
-        tilt_x,
-        tilt_y,
+        tilts,
+        orientations,
         color,
         pen_width,
+    })
+}
+
+fn decode_float_channel(data: &[u8], cursor: &mut usize, delta_count: usize) -> Option<Vec<f64>> {
+    let first = read_f32(data, *cursor)? as f64;
+    *cursor = cursor.checked_add(4)?;
+
+    let byte_len = delta_count.checked_mul(2)?;
+    let end = cursor.checked_add(byte_len)?;
+    let deltas = data.get(*cursor..end)?;
+    *cursor = end;
+
+    let mut value = first;
+    let mut values = Vec::with_capacity(delta_count + 1);
+    values.push(value);
+    for raw in deltas.as_chunks::<2>().0 {
+        value += decode_float_delta(u16::from_le_bytes([raw[0], raw[1]]));
+        values.push(value);
     }
+    Some(values)
+}
+
+fn decode_timestamp_channel(
+    data: &[u8],
+    cursor: &mut usize,
+    delta_count: usize,
+) -> Option<Vec<i64>> {
+    let mut value = i64::from(read_i32(data, *cursor)?);
+    *cursor = cursor.checked_add(4)?;
+
+    let byte_len = delta_count.checked_mul(2)?;
+    let end = cursor.checked_add(byte_len)?;
+    let deltas = data.get(*cursor..end)?;
+    *cursor = end;
+
+    let mut values = Vec::with_capacity(delta_count + 1);
+    values.push(value);
+    for raw in deltas.as_chunks::<2>().0 {
+        // The native reader zero-extends the stored 16-bit timestamp delta.
+        value += i64::from(u16::from_le_bytes([raw[0], raw[1]]));
+        values.push(value);
+    }
+    Some(values)
+}
+
+fn has_plausible_stylus_channels(data: &[u8], cursor: usize, delta_count: usize) -> bool {
+    let channel_len = match delta_count
+        .checked_mul(2)
+        .and_then(|len| len.checked_add(4))
+    {
+        Some(len) => len,
+        None => return false,
+    };
+    let end = match channel_len
+        .checked_mul(2)
+        .and_then(|len| cursor.checked_add(len))
+    {
+        Some(end) if end <= data.len() => end,
+        _ => return false,
+    };
+
+    // A stroke's flexible style data follows the point channels. Requiring the
+    // two decoded channels to stay in the SDK's angular range avoids treating a
+    // long style block on non-stylus input as tilt/orientation samples.
+    let mut probe = cursor;
+    let Some(tilts) = decode_float_channel(data, &mut probe, delta_count) else {
+        return false;
+    };
+    let Some(orientations) = decode_float_channel(data, &mut probe, delta_count) else {
+        return false;
+    };
+    probe == end
+        && tilts
+            .iter()
+            .chain(&orientations)
+            .all(|value| value.is_finite() && value.abs() <= std::f64::consts::TAU + f64::EPSILON)
+}
+
+fn read_f32(data: &[u8], offset: usize) -> Option<f32> {
+    let end = offset.checked_add(4)?;
+    Some(f32::from_le_bytes(data.get(offset..end)?.try_into().ok()?))
+}
+
+fn read_i32(data: &[u8], offset: usize) -> Option<i32> {
+    let end = offset.checked_add(4)?;
+    Some(i32::from_le_bytes(data.get(offset..end)?.try_into().ok()?))
 }
 
 fn extract_color_and_width(data_blob: &[u8]) -> (Option<Color>, f32) {
@@ -155,34 +234,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_decode_sign_mag_positive() {
-        let data = [42, 0x00, 10, 0x00];
-        let vals = decode_sign_mag(&data, 0, 2);
-        assert_eq!(vals, vec![42, 10]);
-    }
-
-    #[test]
-    fn test_decode_sign_mag_negative() {
-        let data = [42, 0x80, 10, 0x80];
-        let vals = decode_sign_mag(&data, 0, 2);
-        assert_eq!(vals, vec![-42, -10]);
-    }
-
-    #[test]
-    fn test_decode_sign_mag_mixed() {
-        let data = [5, 0x00, 3, 0x80, 7, 0x00];
-        let vals = decode_sign_mag(&data, 0, 3);
-        assert_eq!(vals, vec![5, -3, 7]);
-    }
-
-    #[test]
-    fn test_decode_sign_mag_with_offset() {
-        let data = [0xFF, 0xFF, 5, 0x00, 3, 0x80];
-        let vals = decode_sign_mag(&data, 2, 2);
-        assert_eq!(vals, vec![5, -3]);
-    }
-
-    #[test]
     fn test_decode_coordinates_simple() {
         // Two deltas: (+32/32, +64/32) then (+0, -32/32)
         let data = [
@@ -213,15 +264,13 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_coordinates_flag_low_bits_ignored() {
-        // v4.4.x flag bytes carry metadata in low bits; only bit 7 is the sign.
-        let data = [
-            32, 0x05, 64, 0x85, // dx=+1.0 (bit7=0), dy=-2.0 (bit7=1); low bits ignored
-        ];
+    fn test_decode_coordinates_preserves_high_magnitude_bits() {
+        // +300.5 = 0x2590 / 32; -2.25 = -(0x0048 / 32).
+        let data = [0x90, 0x25, 0x48, 0x80];
         let (points, n_bytes) = decode_coordinates(&data, 0.0, 0.0, 1);
         assert_eq!(points.len(), 2);
-        assert!((points[1].x - 1.0).abs() < 1e-10);
-        assert!((points[1].y + 2.0).abs() < 1e-10);
+        assert!((points[1].x - 300.5).abs() < 1e-10);
+        assert!((points[1].y + 2.25).abs() < 1e-10);
         assert_eq!(n_bytes, 4);
     }
 
@@ -299,26 +348,42 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_trailing_pressure() {
-        // Build a minimal data blob: 4 bytes of coord data + 4-byte gap + pressure deltas
+    fn test_decode_trailing_channels() {
         let n_coord_bytes = 4;
         let n_points = 3;
 
-        let mut blob = vec![0u8; 100];
-        // Pressure deltas at offset 8 (n_coord_bytes + 4): [100, +], [50, +], [20, -]
-        let trail_start = n_coord_bytes + 4;
-        blob[trail_start] = 100;
-        blob[trail_start + 1] = 0x00; // +100
-        blob[trail_start + 2] = 50;
-        blob[trail_start + 3] = 0x00; // +50
-        blob[trail_start + 4] = 20;
-        blob[trail_start + 5] = 0x80; // -20
+        let mut blob = vec![0u8; n_coord_bytes];
+        blob.extend_from_slice(&0.25_f32.to_le_bytes());
+        blob.extend_from_slice(&0x0200_u16.to_le_bytes()); // +0.125
+        blob.extend_from_slice(&0x8100_u16.to_le_bytes()); // -0.0625
+        blob.extend_from_slice(&1000_i32.to_le_bytes());
+        blob.extend_from_slice(&5_u16.to_le_bytes());
+        blob.extend_from_slice(&7_u16.to_le_bytes());
 
-        let result = decode_trailing(&blob, n_coord_bytes, n_points);
+        let result = decode_trailing(&blob, n_coord_bytes, n_points).unwrap();
         assert_eq!(result.pressures.len(), 3);
-        // cumsum: 100, 150, 130 -> normalized: 100/1400, 150/1400, 130/1400
-        assert!((result.pressures[0] - 100.0 / 1400.0).abs() < 1e-10);
-        assert!((result.pressures[1] - 150.0 / 1400.0).abs() < 1e-10);
-        assert!((result.pressures[2] - 130.0 / 1400.0).abs() < 1e-10);
+        assert_eq!(result.pressures, vec![0.25, 0.375, 0.3125]);
+        assert_eq!(result.timestamps, vec![1000, 1005, 1012]);
+        assert!(result.tilts.is_empty());
+        assert!(result.orientations.is_empty());
+    }
+
+    #[test]
+    fn test_decode_optional_tilt_and_orientation_channels() {
+        let n_coord_bytes = 0;
+        let n_points = 2;
+        let mut blob = Vec::new();
+        blob.extend_from_slice(&0.5_f32.to_le_bytes());
+        blob.extend_from_slice(&0_u16.to_le_bytes());
+        blob.extend_from_slice(&42_i32.to_le_bytes());
+        blob.extend_from_slice(&3_u16.to_le_bytes());
+        blob.extend_from_slice(&0.25_f32.to_le_bytes());
+        blob.extend_from_slice(&0x0400_u16.to_le_bytes()); // +0.25
+        blob.extend_from_slice(&(-1.0_f32).to_le_bytes());
+        blob.extend_from_slice(&0x8200_u16.to_le_bytes()); // -0.125
+
+        let result = decode_trailing(&blob, n_coord_bytes, n_points).unwrap();
+        assert_eq!(result.tilts, vec![0.25, 0.5]);
+        assert_eq!(result.orientations, vec![-1.0, -1.125]);
     }
 }

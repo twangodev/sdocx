@@ -356,7 +356,9 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
     if has_pressure {
         for j in 1..stroke.points.len() {
             let p_idx = (j - 1).min(stroke.pressures.len() - 1);
-            let pressure = stroke.pressures[p_idx].max(0.05);
+            // Preserve raw SDK pressure values in the model, but keep malformed or
+            // unsupported records from producing unbounded SVG stroke widths.
+            let pressure = stroke.pressures[p_idx].clamp(0.05, 1.0);
             let sw = base_width * (0.3 + 0.7 * pressure);
 
             let p1 = &stroke.points[j - 1];
@@ -497,8 +499,8 @@ mod tests {
                 points: vec![Point { x: 1.0, y: 1.0 }, Point { x: 9.0, y: 9.0 }],
                 pressures: Vec::new(),
                 timestamps: Vec::new(),
-                tilt_x: Vec::new(),
-                tilt_y: Vec::new(),
+                tilts: Vec::new(),
+                orientations: Vec::new(),
                 color: None,
                 pen_width: 2.0,
             }],
@@ -524,6 +526,17 @@ mod tests {
             "dark-mode default ink"
         );
         assert!(!svg.contains(r##"stroke="#1a1a1a""##));
+    }
+
+    #[test]
+    fn clamps_pressure_when_rendering_strokes() {
+        let mut page = page_with_uncolored_stroke();
+        page.strokes[0].pressures = vec![f64::MAX, f64::MAX];
+
+        let svg = render_page_svg(&page, None, &[], false);
+
+        assert!(svg.contains(r#"stroke-width="0.80""#));
+        assert!(!svg.contains("inf"));
     }
 
     #[test]

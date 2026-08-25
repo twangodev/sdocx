@@ -155,7 +155,7 @@ fn parse_stroke(
         return None;
     }
 
-    let trailing = decode_trailing(data_blob, n_coord_bytes, points.len().saturating_sub(1));
+    let trailing = decode_trailing(data_blob, n_coord_bytes, points.len())?;
 
     Some(ParsedStroke {
         stroke: Stroke {
@@ -163,8 +163,8 @@ fn parse_stroke(
             points,
             pressures: trailing.pressures,
             timestamps: trailing.timestamps,
-            tilt_x: trailing.tilt_x,
-            tilt_y: trailing.tilt_y,
+            tilts: trailing.tilts,
+            orientations: trailing.orientations,
             color: trailing.color,
             pen_width: trailing.pen_width,
         },
