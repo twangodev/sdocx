@@ -307,13 +307,7 @@ fn parse_media_assets<R: Read + Seek>(
             names.push(name);
         }
     }
-    names.sort_by_key(|name| {
-        name.rsplit('/')
-            .next()
-            .and_then(|file| file.split('@').next())
-            .and_then(|prefix| prefix.parse::<usize>().ok())
-            .unwrap_or(usize::MAX)
-    });
+    names.sort_by_key(|name| media_archive_id(name).map(u64::from).unwrap_or(u64::MAX));
 
     let mut assets = Vec::with_capacity(names.len());
     for name in names {
@@ -327,12 +321,17 @@ fn parse_media_assets<R: Read + Seek>(
             "image/jpeg"
         };
         assets.push(MediaAsset {
+            archive_id: media_archive_id(&name),
             name,
             mime_type: mime_type.to_string(),
             data,
         });
     }
     Ok(assets)
+}
+
+fn media_archive_id(name: &str) -> Option<u32> {
+    name.rsplit('/').next()?.split('@').next()?.parse().ok()
 }
 
 fn parse_note_text(data: &[u8]) -> Option<RichTextBox> {
