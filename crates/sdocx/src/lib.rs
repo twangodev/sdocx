@@ -9,13 +9,19 @@
 //! indicate a lossless decode. Preserve the source document when fidelity is
 //! important.
 
+mod binary;
 mod container;
 mod decode;
 mod error;
 mod page;
+mod storage;
 mod types;
 
 pub use error::{Error, Result};
+pub use storage::{
+    StoredLayer, StoredObject, StoredPage, StoredPageHeader, StoredPageLayers,
+    parse_stored_page_bytes, parse_stored_page_bytes_with_limits,
+};
 pub use types::*;
 
 use std::fs::File;
@@ -39,6 +45,10 @@ pub struct ParseLimits {
     pub max_points_per_stroke: usize,
     /// Maximum number of non-stroke objects detected on one page.
     pub max_objects_per_page: usize,
+    /// Maximum number of physical layers declared by one page.
+    pub max_layers_per_page: usize,
+    /// Maximum nesting depth for child object records.
+    pub max_object_nesting_depth: usize,
 }
 
 impl Default for ParseLimits {
@@ -51,6 +61,8 @@ impl Default for ParseLimits {
             max_strokes_per_page: 100_000,
             max_points_per_stroke: u16::MAX as usize,
             max_objects_per_page: 100_000,
+            max_layers_per_page: 64,
+            max_object_nesting_depth: 64,
         }
     }
 }
