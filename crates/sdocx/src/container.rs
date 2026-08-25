@@ -1,21 +1,32 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::io::{Read, Seek, SeekFrom};
+use std::path::Path;
 
 use crate::error::{Error, Result};
 use crate::page::parse_page;
+use crate::report::{DiagnosticCode, ParseReport};
+use crate::storage::{
+    ParsedDocument, StoredArchivePage, StoredObject, parse_page_manifest_bytes_with_limits,
+    parse_stored_page_bytes_with_limits,
+};
 use crate::types::{
-    BoundingBox, Color, Document, DocumentMetadata, FormatVersion, MediaAsset, Page, RichTextBox,
-    RichTextRun,
+    BoundingBox, Color, Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page,
+    RichTextBox, RichTextRun,
 };
 use crate::{ParseLimits, ParseOptions};
 
 const PROTECTED_DOCUMENT_MARKER: &[u8] = b"Document for S-Pen SDK";
 
 /// Parse a `.sdocx` ZIP archive from a reader.
-pub fn parse_from_reader<R: Read + Seek>(
+pub fn parse_from_reader<R: Read + Seek>(reader: R, options: &ParseOptions) -> Result<Document> {
+    parse_detailed_from_reader(reader, options).map(ParsedDocument::into_document)
+}
+
+/// Parse a `.sdocx` archive while retaining its physical page structure.
+pub fn parse_detailed_from_reader<R: Read + Seek>(
     mut reader: R,
     options: &ParseOptions,
-) -> Result<Document> {
+) -> Result<ParsedDocument> {
     if is_protected_document(&mut reader)? {
         return Err(Error::ProtectedDocument);
     }
@@ -24,6 +35,7 @@ pub fn parse_from_reader<R: Read + Seek>(
     validate_archive(&mut archive, &options.limits)?;
 
     let mut metadata = DocumentMetadata::default();
+    let mut report = ParseReport::default();
 
     // Parse end_tag.bin (optional — graceful degradation)
     if let Some(buf) = read_optional_entry(&mut archive, "end_tag.bin", &options.limits)? {
@@ -39,9 +51,23 @@ pub fn parse_from_reader<R: Read + Seek>(
     }
 
     // Parse pageIdInfo.dat (optional)
-    if let Some(buf) = read_optional_entry(&mut archive, "pageIdInfo.dat", &options.limits)? {
-        parse_page_id_info(&buf, &mut metadata, &options.limits)?;
-    }
+    let page_manifest =
+        if let Some(buf) = read_optional_entry(&mut archive, "pageIdInfo.dat", &options.limits)? {
+            let manifest = parse_page_manifest_bytes_with_limits(&buf, &options.limits)?;
+            metadata.page_ids = manifest
+                .entries
+                .iter()
+                .map(|entry| entry.page_id.clone())
+                .collect();
+            Some(manifest)
+        } else {
+            report.warning(
+                DiagnosticCode::MissingPageManifest,
+                None,
+                "pageIdInfo.dat is absent; using sorted archive entry names",
+            );
+            None
+        };
 
     // Find and parse all .page files
     let mut page_names = Vec::new();
@@ -60,23 +86,142 @@ pub fn parse_from_reader<R: Read + Seek>(
         return Err(Error::Format("no .page files found in archive".into()));
     }
     check_limit("page count", options.limits.max_pages, page_names.len())?;
+    page_names.sort();
 
     metadata.media_assets = parse_media_assets(&mut archive, &options.limits)?;
 
-    let mut pages: Vec<Page> = Vec::with_capacity(page_names.len());
+    let mut page_records = Vec::with_capacity(page_names.len());
     for name in &page_names {
         let buf = read_required_entry(&mut archive, name, &options.limits)?;
         let page = parse_page(&buf, &options.limits)?;
-        pages.push(page);
+        let stored_page = parse_stored_page_bytes_with_limits(&buf, &options.limits)?;
+
+        let file_id = Path::new(name)
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or(name);
+        if file_id != stored_page.header.uuid {
+            report.warning(
+                DiagnosticCode::PageIdentifierMismatch,
+                Some(name.clone()),
+                format!(
+                    "archive filename identifies page {file_id}, but its header identifies {}",
+                    stored_page.header.uuid
+                ),
+            );
+        }
+        if page.uuid != stored_page.header.uuid {
+            return Err(Error::Format(format!(
+                "{name}: semantic and physical page parsers disagree on the embedded UUID"
+            )));
+        }
+        report_unknown_object_types(&stored_page.layers.layers, name, &mut report);
+
+        page_records.push(ParsedPageRecord {
+            semantic: page,
+            stored: StoredArchivePage {
+                archive_entry: name.clone(),
+                page: stored_page,
+            },
+        });
     }
-    pages = order_pages(pages, &metadata.page_ids);
+    page_records = order_page_records(page_records, &metadata.page_ids, &mut report);
+    let (mut pages, stored_pages): (Vec<_>, Vec<_>) = page_records
+        .into_iter()
+        .map(|record| (record.semantic, record.stored))
+        .unzip();
 
     if let (Some(page), Some(text)) = (pages.first_mut(), note_text.clone()) {
         page.elements.push(crate::types::PageElement::TextBox(text));
     }
     metadata.note_text = note_text;
 
-    Ok(Document { pages, metadata })
+    Ok(ParsedDocument {
+        document: Document { pages, metadata },
+        stored_pages,
+        page_manifest,
+        report,
+    })
+}
+
+struct ParsedPageRecord {
+    semantic: Page,
+    stored: StoredArchivePage,
+}
+
+fn order_page_records(
+    records: Vec<ParsedPageRecord>,
+    page_ids: &[String],
+    report: &mut ParseReport,
+) -> Vec<ParsedPageRecord> {
+    let mut indexes_by_id: HashMap<String, VecDeque<usize>> = HashMap::new();
+    for (index, record) in records.iter().enumerate() {
+        indexes_by_id
+            .entry(record.stored.page.header.uuid.clone())
+            .or_default()
+            .push_back(index);
+    }
+
+    let mut selected = vec![false; records.len()];
+    let mut ordered_indexes = Vec::with_capacity(records.len());
+    for page_id in page_ids {
+        if let Some(index) = indexes_by_id.get_mut(page_id).and_then(VecDeque::pop_front) {
+            selected[index] = true;
+            ordered_indexes.push(index);
+        } else {
+            report.warning(
+                DiagnosticCode::MissingPageEntry,
+                Some("pageIdInfo.dat".into()),
+                format!("page manifest references missing page {page_id}"),
+            );
+        }
+    }
+    for (index, was_selected) in selected.iter().enumerate() {
+        if !was_selected {
+            report.warning(
+                DiagnosticCode::UnlistedPageEntry,
+                Some(records[index].stored.archive_entry.clone()),
+                format!(
+                    "page {} is not listed in pageIdInfo.dat",
+                    records[index].stored.page.header.uuid
+                ),
+            );
+            ordered_indexes.push(index);
+        }
+    }
+
+    let mut records = records.into_iter().map(Some).collect::<Vec<_>>();
+    ordered_indexes
+        .into_iter()
+        .filter_map(|index| records[index].take())
+        .collect()
+}
+
+fn report_unknown_object_types(
+    layers: &[crate::storage::StoredLayer],
+    archive_entry: &str,
+    report: &mut ParseReport,
+) {
+    let mut unknown_types = BTreeSet::new();
+    for layer in layers {
+        collect_unknown_object_types(&layer.objects, &mut unknown_types);
+    }
+    for raw in unknown_types {
+        report.warning(
+            DiagnosticCode::UnknownObjectType,
+            Some(archive_entry.to_string()),
+            format!("retained unknown S Pen object type {raw}"),
+        );
+    }
+}
+
+fn collect_unknown_object_types(objects: &[StoredObject], unknown_types: &mut BTreeSet<u32>) {
+    for object in objects {
+        if let ObjectType::Other(raw) = object.object_type {
+            unknown_types.insert(raw);
+        }
+        collect_unknown_object_types(&object.children, unknown_types);
+    }
 }
 
 fn validate_archive<R: Read + Seek>(
@@ -189,6 +334,7 @@ fn check_u64_limit(resource: &'static str, limit: u64, actual: u64) -> Result<()
     }
 }
 
+#[cfg(test)]
 fn order_pages(pages: Vec<Page>, page_ids: &[String]) -> Vec<Page> {
     let mut indexes_by_id: HashMap<String, VecDeque<usize>> = HashMap::new();
     for (index, page) in pages.iter().enumerate() {
@@ -465,50 +611,6 @@ fn collect_style_runs(
             });
         }
     }
-}
-
-/// Extract page UUIDs from `pageIdInfo.dat`.
-fn parse_page_id_info(
-    data: &[u8],
-    metadata: &mut DocumentMetadata,
-    limits: &ParseLimits,
-) -> Result<()> {
-    if data.len() < 0x22 {
-        return Ok(());
-    }
-    let count = u16::from_le_bytes(data[0x20..0x22].try_into().unwrap()) as usize;
-    check_limit("page count", limits.max_pages, count)?;
-    let mut offset: usize = 0x22;
-
-    for _ in 0..count {
-        let Some(length_end) = offset.checked_add(2) else {
-            break;
-        };
-        let Some(length_bytes) = data.get(offset..length_end) else {
-            break;
-        };
-        let char_len = u16::from_le_bytes(length_bytes.try_into().unwrap()) as usize;
-        offset = length_end;
-        let Some(byte_len) = char_len.checked_mul(2) else {
-            break;
-        };
-        let Some(uuid_end) = offset.checked_add(byte_len) else {
-            break;
-        };
-        let Some(uuid_bytes) = data.get(offset..uuid_end) else {
-            break;
-        };
-        let uuid: String = uuid_bytes
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|c| u16::from_le_bytes([c[0], c[1]]))
-            .map(|c| char::from_u32(c as u32).unwrap_or('\u{FFFD}'))
-            .collect();
-        metadata.page_ids.push(uuid);
-        offset = uuid_end;
-    }
-    Ok(())
 }
 
 #[cfg(test)]

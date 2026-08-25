@@ -14,13 +14,17 @@ mod container;
 mod decode;
 mod error;
 mod page;
+mod report;
 mod storage;
 mod types;
 
 pub use error::{Error, Result};
+pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use storage::{
-    StoredLayer, StoredObject, StoredPage, StoredPageHeader, StoredPageLayers,
-    parse_stored_page_bytes, parse_stored_page_bytes_with_limits,
+    PageManifest, PageManifestEntry, ParsedDocument, StoredArchivePage, StoredLayer, StoredObject,
+    StoredPage, StoredPageHeader, StoredPageLayers, parse_page_manifest_bytes,
+    parse_page_manifest_bytes_with_limits, parse_stored_page_bytes,
+    parse_stored_page_bytes_with_limits,
 };
 pub use types::*;
 
@@ -85,6 +89,20 @@ pub fn parse_with_options(path: impl AsRef<Path>, options: &ParseOptions) -> Res
     container::parse_from_reader(file, options)
 }
 
+/// Parse a `.sdocx` file and retain its physical page structure and diagnostics.
+pub fn parse_detailed(path: impl AsRef<Path>) -> Result<ParsedDocument> {
+    parse_detailed_with_options(path, &ParseOptions::default())
+}
+
+/// Parse a `.sdocx` file in detail with explicit options.
+pub fn parse_detailed_with_options(
+    path: impl AsRef<Path>,
+    options: &ParseOptions,
+) -> Result<ParsedDocument> {
+    let file = File::open(path)?;
+    container::parse_detailed_from_reader(file, options)
+}
+
 /// Parse a `.sdocx` file from in-memory bytes.
 pub fn parse_bytes(bytes: &[u8]) -> Result<Document> {
     parse_bytes_with_options(bytes, &ParseOptions::default())
@@ -94,4 +112,18 @@ pub fn parse_bytes(bytes: &[u8]) -> Result<Document> {
 pub fn parse_bytes_with_options(bytes: &[u8], options: &ParseOptions) -> Result<Document> {
     let cursor = Cursor::new(bytes);
     container::parse_from_reader(cursor, options)
+}
+
+/// Parse in-memory `.sdocx` bytes and retain physical structure and diagnostics.
+pub fn parse_bytes_detailed(bytes: &[u8]) -> Result<ParsedDocument> {
+    parse_bytes_detailed_with_options(bytes, &ParseOptions::default())
+}
+
+/// Parse in-memory `.sdocx` bytes in detail with explicit options.
+pub fn parse_bytes_detailed_with_options(
+    bytes: &[u8],
+    options: &ParseOptions,
+) -> Result<ParsedDocument> {
+    let cursor = Cursor::new(bytes);
+    container::parse_detailed_from_reader(cursor, options)
 }

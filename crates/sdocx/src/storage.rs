@@ -1,7 +1,8 @@
 use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::error::{Error, Result};
-use crate::types::ObjectType;
+use crate::report::ParseReport;
+use crate::types::{Document, ObjectType};
 
 const LAYER_HEADER_MIN_SIZE: usize = 16;
 const LAYER_HEADER_MAX_SIZE: usize = 16 * 1024;
@@ -18,6 +19,59 @@ pub struct StoredPage {
     pub header: StoredPageHeader,
     /// Layer collection beginning at `header.raw_layer_offset`.
     pub layers: StoredPageLayers,
+}
+
+/// A parsed document together with its physical archive structure.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ParsedDocument {
+    /// Stable high-level document model used by existing callers.
+    pub document: Document,
+    /// Physical `.page` records in the same order as `document.pages`.
+    pub stored_pages: Vec<StoredArchivePage>,
+    /// Authoritative page ordering metadata, when present in the archive.
+    pub page_manifest: Option<PageManifest>,
+    /// Non-fatal compatibility findings.
+    pub report: ParseReport,
+}
+
+impl ParsedDocument {
+    /// Discard the physical representation and return the high-level model.
+    pub fn into_document(self) -> Document {
+        self.document
+    }
+}
+
+/// One physical `.page` record and its ZIP entry name.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct StoredArchivePage {
+    /// ZIP entry name containing this page.
+    pub archive_entry: String,
+    /// Parsed physical page structure.
+    pub page: StoredPage,
+}
+
+/// Parsed contents of `pageIdInfo.dat`.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PageManifest {
+    /// Integrity bytes at the beginning of `pageIdInfo.dat`.
+    pub integrity_header: [u8; INTEGRITY_TRAILER_SIZE],
+    /// Pages in authoritative Samsung Notes order.
+    pub entries: Vec<PageManifestEntry>,
+    /// Uninterpreted extension bytes from a newer writer, if any.
+    pub trailing_data: Vec<u8>,
+}
+
+/// One ordered page entry from `pageIdInfo.dat`.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PageManifestEntry {
+    /// Page UUID.
+    pub page_id: String,
+    /// Integrity bytes recorded for the corresponding `.page` entry.
+    pub integrity_hash: [u8; INTEGRITY_TRAILER_SIZE],
 }
 
 /// Fixed header fields at the beginning of a `.page` entry.
@@ -94,12 +148,22 @@ pub struct StoredObject {
     pub object_type: ObjectType,
     /// Declared object size, including the 32-byte integrity trailer.
     pub declared_size: u32,
-    /// Object bytes before the integrity trailer.
-    pub payload: Vec<u8>,
+    /// Byte offset of the payload within the uncompressed `.page` entry.
+    pub payload_offset: usize,
+    /// Number of payload bytes before the integrity trailer.
+    pub payload_size: usize,
     /// Integrity trailer belonging to this object.
     pub integrity_trailer: [u8; INTEGRITY_TRAILER_SIZE],
     /// Child objects serialized immediately after this record.
     pub children: Vec<StoredObject>,
+}
+
+impl StoredObject {
+    /// Borrow this object's payload from its original uncompressed `.page` bytes.
+    pub fn payload<'a>(&self, page_bytes: &'a [u8]) -> Option<&'a [u8]> {
+        let end = self.payload_offset.checked_add(self.payload_size)?;
+        page_bytes.get(self.payload_offset..end)
+    }
 }
 
 /// Parse the physical structure of one uncompressed `.page` archive entry.
@@ -161,6 +225,47 @@ pub fn parse_stored_page_bytes_with_limits(
             minimum_format_version,
         },
         layers,
+    })
+}
+
+/// Parse `pageIdInfo.dat` using default resource limits.
+pub fn parse_page_manifest_bytes(data: &[u8]) -> Result<PageManifest> {
+    parse_page_manifest_bytes_with_limits(data, &ParseLimits::default())
+}
+
+/// Parse `pageIdInfo.dat` with explicit resource limits.
+pub fn parse_page_manifest_bytes_with_limits(
+    data: &[u8],
+    limits: &ParseLimits,
+) -> Result<PageManifest> {
+    let mut reader = Reader::new(data, "page manifest");
+    let integrity_header = reader
+        .read_bytes(INTEGRITY_TRAILER_SIZE, "manifest integrity header")?
+        .try_into()
+        .map_err(|_| Error::Format("invalid page manifest integrity header".into()))?;
+    let entry_count = usize::from(reader.read_u16("manifest page count")?);
+    check_limit("page count", limits.max_pages, entry_count)?;
+
+    let mut entries = Vec::with_capacity(entry_count);
+    for _ in 0..entry_count {
+        let page_id = reader.read_utf16_u16("manifest page UUID")?;
+        let integrity_hash = reader
+            .read_bytes(INTEGRITY_TRAILER_SIZE, "page integrity hash")?
+            .try_into()
+            .map_err(|_| Error::Format("invalid page integrity hash".into()))?;
+        entries.push(PageManifestEntry {
+            page_id,
+            integrity_hash,
+        });
+    }
+    let trailing_data = reader
+        .read_bytes(reader.remaining(), "manifest extension data")?
+        .to_vec();
+
+    Ok(PageManifest {
+        integrity_header,
+        entries,
+        trailing_data,
     })
 }
 
@@ -290,12 +395,9 @@ fn parse_object(
         )));
     }
 
-    let payload = reader
-        .read_bytes(
-            declared_size_usize - INTEGRITY_TRAILER_SIZE,
-            "object payload",
-        )?
-        .to_vec();
+    let payload_offset = reader.position();
+    let payload_size = declared_size_usize - INTEGRITY_TRAILER_SIZE;
+    reader.skip(payload_size, "object payload")?;
     let integrity_trailer = reader
         .read_bytes(INTEGRITY_TRAILER_SIZE, "object integrity trailer")?
         .try_into()
@@ -315,7 +417,8 @@ fn parse_object(
     Ok(StoredObject {
         object_type,
         declared_size,
-        payload,
+        payload_offset,
+        payload_size,
         integrity_trailer,
         children,
     })
@@ -354,7 +457,7 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 
 #[cfg(test)]
 mod tests {
-    use super::parse_stored_page_bytes_with_limits;
+    use super::{parse_page_manifest_bytes, parse_stored_page_bytes_with_limits};
     use crate::{Error, ObjectType, ParseLimits};
 
     fn stored_page_with_object_tree() -> Vec<u8> {
@@ -417,7 +520,12 @@ mod tests {
         let object = &page.layers.layers[0].objects[0];
         assert_eq!(object.object_type, ObjectType::Container);
         assert_eq!(object.children[0].object_type, ObjectType::TextBox);
-        assert_eq!(object.children[0].payload, [1, 2, 3, 4]);
+        assert_eq!(
+            object.children[0]
+                .payload(&stored_page_with_object_tree())
+                .unwrap(),
+            [1, 2, 3, 4]
+        );
     }
 
     #[test]
@@ -438,5 +546,25 @@ mod tests {
                 actual: 2,
             }
         ));
+    }
+
+    #[test]
+    fn parses_complete_page_manifest_entries() {
+        let mut data = vec![0xaa; 32];
+        data.extend_from_slice(&2_u16.to_le_bytes());
+        for (id, hash) in [("first", 0x11), ("second", 0x22)] {
+            data.extend_from_slice(&(id.encode_utf16().count() as u16).to_le_bytes());
+            for unit in id.encode_utf16() {
+                data.extend_from_slice(&unit.to_le_bytes());
+            }
+            data.extend_from_slice(&[hash; 32]);
+        }
+
+        let manifest = parse_page_manifest_bytes(&data).unwrap();
+
+        assert_eq!(manifest.entries.len(), 2);
+        assert_eq!(manifest.entries[0].page_id, "first");
+        assert_eq!(manifest.entries[1].integrity_hash, [0x22; 32]);
+        assert!(manifest.trailing_data.is_empty());
     }
 }
