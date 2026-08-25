@@ -1,3 +1,4 @@
+use crate::ParseLimits;
 use crate::decode::{decode_coordinates, decode_trailing};
 use crate::error::{Error, Result};
 use crate::types::{
@@ -19,7 +20,7 @@ struct ParsedStroke {
 /// Layout: `base = u32 @ 0x00`; stroke count at `base + 0x66`; first stroke at `base + 0xB5`.
 /// Each stroke is preceded by a 71-byte record; on v4.4.x+, byte 3 of that record encodes
 /// an extra-attribute-block length (value − 0x79) injected inside the stroke's metadata.
-pub fn parse_page(data: &[u8]) -> Result<Page> {
+pub fn parse_page(data: &[u8], limits: &ParseLimits) -> Result<Page> {
     if data.len() < 0xA0 {
         return Err(Error::Format("page file too short for header".into()));
     }
@@ -33,9 +34,19 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
 
     // Page UUID at 0x28, length at 0x26
     let uuid_char_len = u16::from_le_bytes(data[0x26..0x28].try_into().unwrap()) as usize;
-    let uuid_bytes = &data[0x28..0x28 + uuid_char_len * 2];
+    let uuid_byte_len = uuid_char_len
+        .checked_mul(2)
+        .ok_or_else(|| Error::Format("page UUID length overflow".into()))?;
+    let uuid_end = 0x28_usize
+        .checked_add(uuid_byte_len)
+        .ok_or_else(|| Error::Format("page UUID length overflow".into()))?;
+    let uuid_bytes = data
+        .get(0x28..uuid_end)
+        .ok_or_else(|| Error::Format("page file too short for UUID".into()))?;
     let uuid: String = uuid_bytes
-        .chunks_exact(2)
+        .as_chunks::<2>()
+        .0
+        .iter()
         .map(|c| u16::from_le_bytes([c[0], c[1]]))
         .map(|c| char::from_u32(c as u32).unwrap_or('\u{FFFD}'))
         .collect();
@@ -52,25 +63,41 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
     let template = background_color.and_then(|_| page_template(data, base));
 
     // Stroke count at base + 0x66
-    let sc_off = base + 0x66;
-    if sc_off + 4 > data.len() {
-        return Err(Error::Format("page file too short for stroke count".into()));
-    }
-    let stroke_count = u32::from_le_bytes(data[sc_off..sc_off + 4].try_into().unwrap()) as usize;
+    let sc_off = base
+        .checked_add(0x66)
+        .ok_or_else(|| Error::Format("page stroke-count offset overflow".into()))?;
+    let stroke_count = read_u32(data, sc_off)
+        .ok_or_else(|| Error::Format("page file too short for stroke count".into()))?
+        as usize;
+    check_limit(
+        "strokes per page",
+        limits.max_strokes_per_page,
+        stroke_count,
+    )?;
 
     let mut strokes = Vec::with_capacity(stroke_count);
     // base + 0xB5 - 71 = base + 0x6E; byte 3 of that record is base + 0x71.
-    let mut record_off = base + 0xB5 - PRE_STROKE_RECORD_LEN;
+    let mut record_off = base
+        .checked_add(0xB5 - PRE_STROKE_RECORD_LEN)
+        .ok_or_else(|| Error::Format("first stroke offset overflow".into()))?;
 
     for _ in 0..stroke_count {
         let extra_len = data
-            .get(record_off + 3)
+            .get(record_off.saturating_add(3))
             .copied()
             .unwrap_or(EXTRA_LEN_BIAS)
             .saturating_sub(EXTRA_LEN_BIAS) as usize;
 
-        let off = record_off + PRE_STROKE_RECORD_LEN;
-        if off + STROKE_HEADER_LEN + extra_len > data.len() {
+        let Some(off) = record_off.checked_add(PRE_STROKE_RECORD_LEN) else {
+            break;
+        };
+        let Some(header_end) = off
+            .checked_add(STROKE_HEADER_LEN)
+            .and_then(|end| end.checked_add(extra_len))
+        else {
+            break;
+        };
+        if header_end > data.len() {
             break;
         }
 
@@ -87,12 +114,17 @@ pub fn parse_page(data: &[u8]) -> Result<Page> {
             (None, Some(shifted)) => shifted,
             (None, None) => break,
         };
+        check_limit(
+            "points per stroke",
+            limits.max_points_per_stroke,
+            parsed.stroke.points.len(),
+        )?;
 
         record_off = parsed.next_record_off;
         strokes.push(parsed.stroke);
     }
 
-    let elements = parse_page_elements(data, record_off, width, height);
+    let elements = parse_page_elements(data, record_off, width, height, limits)?;
 
     Ok(Page {
         uuid,
@@ -118,27 +150,40 @@ fn parse_stroke(
     extra_len: usize,
     layout: StrokeLayout,
 ) -> Option<ParsedStroke> {
+    let bbox_end = off.checked_add(32)?;
     let bbox = BoundingBox {
         x_min: read_f64(data, off)?,
-        y_min: read_f64(data, off + 8)?,
-        x_max: read_f64(data, off + 16)?,
-        y_max: read_f64(data, off + 24)?,
+        y_min: read_f64(data, off.saturating_add(8))?,
+        x_max: read_f64(data, off.saturating_add(16))?,
+        y_max: read_f64(data, off.saturating_add(24))?,
     };
 
-    let (meta_off, n_points_off, sp_off, next_record_adjust) = match layout {
-        StrokeLayout::Current => (off + 32 + extra_len, 39, off + 73 + extra_len, 0),
-        StrokeLayout::StartPointMinusThree => (off + 32, 36, off + 70, 3),
+    let offsets = match layout {
+        StrokeLayout::Current => bbox_end.checked_add(extra_len).zip(
+            off.checked_add(73)
+                .and_then(|offset| offset.checked_add(extra_len)),
+        ),
+        StrokeLayout::StartPointMinusThree => Some(bbox_end).zip(off.checked_add(70)),
+    };
+    let (meta_off, sp_off) = offsets?;
+    let (n_points_off, next_record_adjust) = match layout {
+        StrokeLayout::Current => (39, 0),
+        StrokeLayout::StartPointMinusThree => (36, 3),
     };
 
-    let data_len = read_u32(data, meta_off + 21)? as usize;
-    let n_points = read_u16(data, meta_off + n_points_off)? as usize;
+    let data_len_off = meta_off.checked_add(21)?;
+    let point_count_off = meta_off.checked_add(n_points_off)?;
+    let data_len = read_u32(data, data_len_off).map(|value| value as usize)?;
+    let n_points = read_u16(data, point_count_off).map(usize::from)?;
+
     let start_x = read_f64(data, sp_off)?;
-    let start_y = read_f64(data, sp_off + 8)?;
+    let start_y_off = sp_off.checked_add(8)?;
+    let start_y = read_f64(data, start_y_off)?;
     if !start_x.is_finite() || !start_y.is_finite() || n_points == 0 {
         return None;
     }
 
-    let data_off = sp_off + 16;
+    let data_off = sp_off.checked_add(16)?;
     let data_end = data_off.checked_add(data_len)?;
     if data_end > data.len() {
         return None;
@@ -156,6 +201,7 @@ fn parse_stroke(
     }
 
     let trailing = decode_trailing(data_blob, n_coord_bytes, points.len())?;
+    let next_record_off = data_end.checked_add(next_record_adjust)?;
 
     Some(ParsedStroke {
         stroke: Stroke {
@@ -168,26 +214,35 @@ fn parse_stroke(
             color: trailing.color,
             pen_width: trailing.pen_width,
         },
-        next_record_off: data_end + next_record_adjust,
+        next_record_off,
     })
 }
 
 fn read_u16(data: &[u8], offset: usize) -> Option<u16> {
-    Some(u16::from_le_bytes(
-        data.get(offset..offset + 2)?.try_into().ok()?,
-    ))
+    let end = offset.checked_add(2)?;
+    Some(u16::from_le_bytes(data.get(offset..end)?.try_into().ok()?))
 }
 
 fn read_u32(data: &[u8], offset: usize) -> Option<u32> {
-    Some(u32::from_le_bytes(
-        data.get(offset..offset + 4)?.try_into().ok()?,
-    ))
+    let end = offset.checked_add(4)?;
+    Some(u32::from_le_bytes(data.get(offset..end)?.try_into().ok()?))
 }
 
 fn read_f64(data: &[u8], offset: usize) -> Option<f64> {
-    Some(f64::from_le_bytes(
-        data.get(offset..offset + 8)?.try_into().ok()?,
-    ))
+    let end = offset.checked_add(8)?;
+    Some(f64::from_le_bytes(data.get(offset..end)?.try_into().ok()?))
+}
+
+fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()> {
+    if actual > limit {
+        Err(Error::LimitExceeded {
+            resource,
+            limit: u64::try_from(limit).unwrap_or(u64::MAX),
+            actual: u64::try_from(actual).unwrap_or(u64::MAX),
+        })
+    } else {
+        Ok(())
+    }
 }
 
 fn page_background_color(data: &[u8], base: usize) -> Option<crate::types::Color> {
@@ -244,20 +299,28 @@ fn is_builtin_template_id(id: u32) -> bool {
     id != 0 && id <= 0xFFFF
 }
 
-fn parse_page_elements(data: &[u8], start: usize, width: u32, height: u32) -> Vec<PageElement> {
+fn parse_page_elements(
+    data: &[u8],
+    start: usize,
+    width: u32,
+    height: u32,
+    limits: &ParseLimits,
+) -> Result<Vec<PageElement>> {
     let mut elements = Vec::new();
     let mut image_count = 0;
 
-    for uuid_off in find_ascii_uuid_offsets(data, start) {
-        let Some(bbox) = find_object_bbox(data, uuid_off, width, height) else {
+    let mut uuid_off = find_next_ascii_uuid(data, start);
+    while let Some(current_uuid_off) = uuid_off {
+        let next_uuid = current_uuid_off
+            .checked_add(36)
+            .and_then(|start| find_next_ascii_uuid(data, start));
+        let record_end = next_uuid.unwrap_or(data.len());
+
+        let Some(bbox) = find_object_bbox(data, current_uuid_off, width, height) else {
+            uuid_off = next_uuid;
             continue;
         };
-
-        let next_uuid = find_ascii_uuid_offsets(data, uuid_off + 36)
-            .into_iter()
-            .next()
-            .unwrap_or(data.len());
-        let record = &data[uuid_off..next_uuid];
+        let record = &data[current_uuid_off..record_end];
 
         if let Some(text_box) = parse_text_box_record(record, bbox) {
             elements.push(PageElement::TextBox(text_box));
@@ -268,23 +331,29 @@ fn parse_page_elements(data: &[u8], start: usize, width: u32, height: u32) -> Ve
             });
             image_count += 1;
         }
+        check_limit(
+            "objects per page",
+            limits.max_objects_per_page,
+            elements.len(),
+        )?;
+        uuid_off = next_uuid;
     }
 
-    elements
+    Ok(elements)
 }
 
-fn find_ascii_uuid_offsets(data: &[u8], start: usize) -> Vec<usize> {
-    let mut offsets = Vec::new();
+fn find_next_ascii_uuid(data: &[u8], start: usize) -> Option<usize> {
     let mut offset = start;
-    while offset + 36 <= data.len() {
-        if is_ascii_uuid(&data[offset..offset + 36]) {
-            offsets.push(offset);
-            offset += 36;
-        } else {
-            offset += 1;
+    while let Some(end) = offset.checked_add(36) {
+        let Some(candidate) = data.get(offset..end) else {
+            break;
+        };
+        if is_ascii_uuid(candidate) {
+            return Some(offset);
         }
+        offset = offset.checked_add(1)?;
     }
-    offsets
+    None
 }
 
 fn is_ascii_uuid(bytes: &[u8]) -> bool {
@@ -510,8 +579,12 @@ fn infer_rotation_degrees(record: &[u8], bbox: BoundingBox) -> Option<f64> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_page;
-    use crate::types::{Color, PageTemplate, PageTemplateSource};
+    use crate::types::{Color, Page, PageTemplate, PageTemplateSource};
+    use crate::{Error, ParseLimits, Result};
+
+    fn parse_page(data: &[u8]) -> Result<Page> {
+        super::parse_page(data, &ParseLimits::default())
+    }
 
     #[test]
     fn parses_page_header_background_color() {
@@ -605,5 +678,26 @@ mod tests {
         let page = parse_page(&data).unwrap();
 
         assert_eq!(page.template, None);
+    }
+
+    #[test]
+    fn enforces_stroke_count_limit_before_allocating() {
+        let mut data = vec![0; 0xA8];
+        data[0x66..0x6A].copy_from_slice(&2_u32.to_le_bytes());
+        let limits = ParseLimits {
+            max_strokes_per_page: 1,
+            ..ParseLimits::default()
+        };
+
+        let error = super::parse_page(&data, &limits).unwrap_err();
+
+        assert!(matches!(
+            error,
+            Error::LimitExceeded {
+                resource: "strokes per page",
+                limit: 1,
+                actual: 2,
+            }
+        ));
     }
 }

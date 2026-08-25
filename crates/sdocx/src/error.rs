@@ -14,6 +14,21 @@ pub enum Error {
     /// The file contents do not match the expected `.sdocx` format.
     #[error("format error: {0}")]
     Format(String),
+
+    /// The file uses Samsung Notes document protection and must be unlocked first.
+    #[error("protected Samsung Notes document; unlock or export it before parsing")]
+    ProtectedDocument,
+
+    /// A configurable parser resource limit was exceeded.
+    #[error("{resource} limit exceeded: {actual} > {limit}")]
+    LimitExceeded {
+        /// Resource whose limit was exceeded.
+        resource: &'static str,
+        /// Configured maximum.
+        limit: u64,
+        /// Value found in the input.
+        actual: u64,
+    },
 }
 
 /// A specialized `Result` type for sdocx operations.

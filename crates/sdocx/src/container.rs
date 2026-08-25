@@ -1,68 +1,75 @@
-use std::io::{Read, Seek};
+use std::collections::{HashMap, VecDeque};
+use std::io::{Read, Seek, SeekFrom};
 
 use crate::error::{Error, Result};
 use crate::page::parse_page;
 use crate::types::{
-    BoundingBox, Color, Document, DocumentMetadata, MediaAsset, Page, RichTextBox, RichTextRun,
+    BoundingBox, Color, Document, DocumentMetadata, FormatVersion, MediaAsset, Page, RichTextBox,
+    RichTextRun,
 };
+use crate::{ParseLimits, ParseOptions};
+
+const PROTECTED_DOCUMENT_MARKER: &[u8] = b"Document for S-Pen SDK";
 
 /// Parse a `.sdocx` ZIP archive from a reader.
-pub fn parse_from_reader<R: Read + Seek>(reader: R) -> Result<Document> {
+pub fn parse_from_reader<R: Read + Seek>(
+    mut reader: R,
+    options: &ParseOptions,
+) -> Result<Document> {
+    if is_protected_document(&mut reader)? {
+        return Err(Error::ProtectedDocument);
+    }
+    reader.seek(SeekFrom::Start(0))?;
     let mut archive = zip::ZipArchive::new(reader)?;
+    validate_archive(&mut archive, &options.limits)?;
 
     let mut metadata = DocumentMetadata::default();
 
     // Parse end_tag.bin (optional — graceful degradation)
-    if let Ok(mut entry) = archive.by_name("end_tag.bin") {
-        let mut buf = Vec::new();
-        entry.read_to_end(&mut buf)?;
+    if let Some(buf) = read_optional_entry(&mut archive, "end_tag.bin", &options.limits)? {
         parse_end_tag(&buf, &mut metadata);
     }
 
     let mut note_text = None;
 
     // Parse note.note (optional)
-    if let Ok(mut entry) = archive.by_name("note.note") {
-        let mut buf = Vec::new();
-        entry.read_to_end(&mut buf)?;
+    if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         parse_note_note(&buf, &mut metadata);
         note_text = parse_note_text(&buf);
     }
 
     // Parse pageIdInfo.dat (optional)
-    if let Ok(mut entry) = archive.by_name("pageIdInfo.dat") {
-        let mut buf = Vec::new();
-        entry.read_to_end(&mut buf)?;
-        parse_page_id_info(&buf, &mut metadata);
+    if let Some(buf) = read_optional_entry(&mut archive, "pageIdInfo.dat", &options.limits)? {
+        parse_page_id_info(&buf, &mut metadata, &options.limits)?;
     }
 
     // Find and parse all .page files
-    let page_names: Vec<String> = (0..archive.len())
-        .filter_map(|i| {
-            let entry = archive.by_index(i).ok()?;
+    let mut page_names = Vec::new();
+    for index in 0..archive.len() {
+        let name = {
+            let entry = archive.by_index(index)?;
             let name = entry.name().to_string();
-            if name.ends_with(".page") {
-                Some(name)
-            } else {
-                None
-            }
-        })
-        .collect();
+            name.ends_with(".page").then_some(name)
+        };
+        if let Some(name) = name {
+            page_names.push(name);
+        }
+    }
 
     if page_names.is_empty() {
         return Err(Error::Format("no .page files found in archive".into()));
     }
+    check_limit("page count", options.limits.max_pages, page_names.len())?;
 
-    metadata.media_assets = parse_media_assets(&mut archive)?;
+    metadata.media_assets = parse_media_assets(&mut archive, &options.limits)?;
 
     let mut pages: Vec<Page> = Vec::with_capacity(page_names.len());
     for name in &page_names {
-        let mut entry = archive.by_name(name)?;
-        let mut buf = Vec::with_capacity(entry.size() as usize);
-        entry.read_to_end(&mut buf)?;
-        let page = parse_page(&buf)?;
+        let buf = read_required_entry(&mut archive, name, &options.limits)?;
+        let page = parse_page(&buf, &options.limits)?;
         pages.push(page);
     }
+    pages = order_pages(pages, &metadata.page_ids);
 
     if let (Some(page), Some(text)) = (pages.first_mut(), note_text.clone()) {
         page.elements.push(crate::types::PageElement::TextBox(text));
@@ -72,8 +79,157 @@ pub fn parse_from_reader<R: Read + Seek>(reader: R) -> Result<Document> {
     Ok(Document { pages, metadata })
 }
 
+fn validate_archive<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    limits: &ParseLimits,
+) -> Result<()> {
+    check_limit(
+        "archive entry count",
+        limits.max_archive_entries,
+        archive.len(),
+    )?;
+
+    let mut total_size = 0_u64;
+    for index in 0..archive.len() {
+        let entry = archive.by_index(index)?;
+        check_u64_limit("archive entry size", limits.max_entry_size, entry.size())?;
+        total_size = total_size
+            .checked_add(entry.size())
+            .ok_or(Error::LimitExceeded {
+                resource: "total uncompressed size",
+                limit: limits.max_total_uncompressed_size,
+                actual: u64::MAX,
+            })?;
+        check_u64_limit(
+            "total uncompressed size",
+            limits.max_total_uncompressed_size,
+            total_size,
+        )?;
+    }
+    Ok(())
+}
+
+fn read_optional_entry<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    name: &str,
+    limits: &ParseLimits,
+) -> Result<Option<Vec<u8>>> {
+    match archive.by_name(name) {
+        Ok(entry) => read_zip_entry(entry, limits).map(Some),
+        Err(zip::result::ZipError::FileNotFound) => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn read_required_entry<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    name: &str,
+    limits: &ParseLimits,
+) -> Result<Vec<u8>> {
+    let entry = archive.by_name(name)?;
+    read_zip_entry(entry, limits)
+}
+
+fn read_zip_entry<R: Read>(
+    entry: zip::read::ZipFile<'_, R>,
+    limits: &ParseLimits,
+) -> Result<Vec<u8>> {
+    check_u64_limit("archive entry size", limits.max_entry_size, entry.size())?;
+    let mut data = Vec::new();
+    entry
+        .take(limits.max_entry_size.saturating_add(1))
+        .read_to_end(&mut data)?;
+    check_u64_limit(
+        "archive entry size",
+        limits.max_entry_size,
+        u64::try_from(data.len()).unwrap_or(u64::MAX),
+    )?;
+    Ok(data)
+}
+
+fn is_protected_document<R: Read + Seek>(reader: &mut R) -> std::io::Result<bool> {
+    let len = reader.seek(SeekFrom::End(0))?;
+    reader.seek(SeekFrom::Start(0))?;
+
+    let mut magic = [0_u8; 4];
+    let magic_len = reader.read(&mut magic)?;
+    if magic_len >= 2 && &magic[..2] == b"PK" {
+        reader.seek(SeekFrom::Start(0))?;
+        return Ok(false);
+    }
+
+    let tail_len = len.min(4096);
+    reader.seek(SeekFrom::Start(len.saturating_sub(tail_len)))?;
+    let mut tail = Vec::new();
+    reader.take(tail_len).read_to_end(&mut tail)?;
+    reader.seek(SeekFrom::Start(0))?;
+
+    Ok(tail
+        .windows(PROTECTED_DOCUMENT_MARKER.len())
+        .any(|window| window == PROTECTED_DOCUMENT_MARKER))
+}
+
+fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()> {
+    check_u64_limit(
+        resource,
+        u64::try_from(limit).unwrap_or(u64::MAX),
+        u64::try_from(actual).unwrap_or(u64::MAX),
+    )
+}
+
+fn check_u64_limit(resource: &'static str, limit: u64, actual: u64) -> Result<()> {
+    if actual > limit {
+        Err(Error::LimitExceeded {
+            resource,
+            limit,
+            actual,
+        })
+    } else {
+        Ok(())
+    }
+}
+
+fn order_pages(pages: Vec<Page>, page_ids: &[String]) -> Vec<Page> {
+    let mut indexes_by_id: HashMap<String, VecDeque<usize>> = HashMap::new();
+    for (index, page) in pages.iter().enumerate() {
+        indexes_by_id
+            .entry(page.uuid.clone())
+            .or_default()
+            .push_back(index);
+    }
+
+    let mut selected = vec![false; pages.len()];
+    let mut ordered_indexes = Vec::with_capacity(pages.len());
+    for page_id in page_ids {
+        if let Some(index) = indexes_by_id.get_mut(page_id).and_then(VecDeque::pop_front) {
+            selected[index] = true;
+            ordered_indexes.push(index);
+        }
+    }
+    ordered_indexes.extend(
+        selected
+            .iter()
+            .enumerate()
+            .filter_map(|(index, selected)| (!selected).then_some(index)),
+    );
+
+    let mut pages: Vec<Option<Page>> = pages.into_iter().map(Some).collect();
+    ordered_indexes
+        .into_iter()
+        .filter_map(|index| pages[index].take())
+        .collect()
+}
+
 /// Extract timestamps from `end_tag.bin`.
 fn parse_end_tag(data: &[u8], metadata: &mut DocumentMetadata) {
+    if let Some(version) = data
+        .get(0x02..0x04)
+        .and_then(|bytes| bytes.try_into().ok())
+        .map(u16::from_le_bytes)
+        .filter(|version| *version != 0)
+    {
+        metadata.format_version = Some(FormatVersion(version));
+    }
     if data.len() < 0x58 {
         return;
     }
@@ -85,6 +241,14 @@ fn parse_end_tag(data: &[u8], metadata: &mut DocumentMetadata) {
 
 /// Extract background color and page dimensions from `note.note`.
 fn parse_note_note(data: &[u8], metadata: &mut DocumentMetadata) {
+    if metadata.format_version.is_none() {
+        metadata.format_version = data
+            .get(0x0E..0x10)
+            .and_then(|bytes| bytes.try_into().ok())
+            .map(u16::from_le_bytes)
+            .filter(|version| *version != 0)
+            .map(FormatVersion);
+    }
     if data.len() >= 0x08 {
         let flags = u32::from_le_bytes(data[0x04..0x08].try_into().unwrap());
         metadata.dark_mode_compatibility = Some(flags & 0x0800 != 0);
@@ -118,10 +282,14 @@ fn parse_note_note(data: &[u8], metadata: &mut DocumentMetadata) {
     }
 }
 
-fn parse_media_assets<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Result<Vec<MediaAsset>> {
-    let mut names: Vec<String> = (0..archive.len())
-        .filter_map(|i| {
-            let entry = archive.by_index(i).ok()?;
+fn parse_media_assets<R: Read + Seek>(
+    archive: &mut zip::ZipArchive<R>,
+    limits: &ParseLimits,
+) -> Result<Vec<MediaAsset>> {
+    let mut names = Vec::new();
+    for index in 0..archive.len() {
+        let name = {
+            let entry = archive.by_index(index)?;
             let name = entry.name().to_string();
             let lower = name.to_ascii_lowercase();
             if name.starts_with("media/")
@@ -134,8 +302,11 @@ fn parse_media_assets<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Resul
             } else {
                 None
             }
-        })
-        .collect();
+        };
+        if let Some(name) = name {
+            names.push(name);
+        }
+    }
     names.sort_by_key(|name| {
         name.rsplit('/')
             .next()
@@ -146,9 +317,7 @@ fn parse_media_assets<R: Read + Seek>(archive: &mut zip::ZipArchive<R>) -> Resul
 
     let mut assets = Vec::with_capacity(names.len());
     for name in names {
-        let mut entry = archive.by_name(&name)?;
-        let mut data = Vec::with_capacity(entry.size() as usize);
-        entry.read_to_end(&mut data)?;
+        let data = read_required_entry(archive, &name, limits)?;
         let lower = name.to_ascii_lowercase();
         let mime_type = if lower.ends_with(".png") {
             "image/png"
@@ -300,36 +469,69 @@ fn collect_style_runs(
 }
 
 /// Extract page UUIDs from `pageIdInfo.dat`.
-fn parse_page_id_info(data: &[u8], metadata: &mut DocumentMetadata) {
-    if data.len() < 0x24 {
-        return;
+fn parse_page_id_info(
+    data: &[u8],
+    metadata: &mut DocumentMetadata,
+    limits: &ParseLimits,
+) -> Result<()> {
+    if data.len() < 0x22 {
+        return Ok(());
     }
     let count = u16::from_le_bytes(data[0x20..0x22].try_into().unwrap()) as usize;
-    let mut offset = 0x22;
+    check_limit("page count", limits.max_pages, count)?;
+    let mut offset: usize = 0x22;
 
     for _ in 0..count {
-        if offset + 2 > data.len() {
+        let Some(length_end) = offset.checked_add(2) else {
             break;
-        }
-        let char_len = u16::from_le_bytes(data[offset..offset + 2].try_into().unwrap()) as usize;
-        offset += 2;
-        if offset + char_len * 2 > data.len() {
+        };
+        let Some(length_bytes) = data.get(offset..length_end) else {
             break;
-        }
-        let uuid: String = data[offset..offset + char_len * 2]
-            .chunks_exact(2)
+        };
+        let char_len = u16::from_le_bytes(length_bytes.try_into().unwrap()) as usize;
+        offset = length_end;
+        let Some(byte_len) = char_len.checked_mul(2) else {
+            break;
+        };
+        let Some(uuid_end) = offset.checked_add(byte_len) else {
+            break;
+        };
+        let Some(uuid_bytes) = data.get(offset..uuid_end) else {
+            break;
+        };
+        let uuid: String = uuid_bytes
+            .as_chunks::<2>()
+            .0
+            .iter()
             .map(|c| u16::from_le_bytes([c[0], c[1]]))
             .map(|c| char::from_u32(c as u32).unwrap_or('\u{FFFD}'))
             .collect();
         metadata.page_ids.push(uuid);
-        offset += char_len * 2;
+        offset = uuid_end;
     }
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::parse_note_note;
-    use crate::types::DocumentMetadata;
+    use std::io::Cursor;
+
+    use super::{order_pages, parse_end_tag, parse_from_reader, parse_note_note};
+    use crate::types::{BoundingBox, DocumentMetadata, FormatVersion, Page};
+    use crate::{Error, ParseOptions};
+
+    fn page(uuid: &str) -> Page {
+        Page {
+            uuid: uuid.to_string(),
+            width: 1,
+            height: 1,
+            content_bbox: BoundingBox::default(),
+            background_color: None,
+            template: None,
+            strokes: Vec::new(),
+            elements: Vec::new(),
+        }
+    }
 
     #[test]
     fn parses_dark_mode_compatibility_flag() {
@@ -345,5 +547,43 @@ mod tests {
         parse_note_note(&data, &mut metadata);
 
         assert_eq!(metadata.dark_mode_compatibility, Some(false));
+    }
+
+    #[test]
+    fn parses_format_version_with_note_fallback() {
+        let mut metadata = DocumentMetadata::default();
+        let mut note = vec![0; 0x10];
+        note[0x0E..0x10].copy_from_slice(&4000_u16.to_le_bytes());
+        parse_note_note(&note, &mut metadata);
+        assert_eq!(metadata.format_version, Some(FormatVersion(4000)));
+
+        let mut end_tag = vec![0; 4];
+        end_tag[0x02..0x04].copy_from_slice(&5500_u16.to_le_bytes());
+        parse_end_tag(&end_tag, &mut metadata);
+        assert_eq!(metadata.format_version, Some(FormatVersion::CURRENT));
+    }
+
+    #[test]
+    fn orders_pages_by_page_id_info_then_preserves_unlisted_order() {
+        let pages = vec![page("second"), page("unlisted"), page("first")];
+        let ids = vec!["first".to_string(), "second".to_string()];
+
+        let ordered = order_pages(pages, &ids);
+
+        assert_eq!(
+            ordered
+                .iter()
+                .map(|page| page.uuid.as_str())
+                .collect::<Vec<_>>(),
+            vec!["first", "second", "unlisted"]
+        );
+    }
+
+    #[test]
+    fn reports_protected_document_marker() {
+        let bytes = b"encrypted payload Document for S-Pen SDK";
+        let error = parse_from_reader(Cursor::new(bytes), &ParseOptions::default()).unwrap_err();
+
+        assert!(matches!(error, Error::ProtectedDocument));
     }
 }
