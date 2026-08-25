@@ -104,6 +104,7 @@ pub struct MediaAsset {
 /// A non-stroke page element.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum PageElement {
     /// A placed image object.
     Image {
@@ -132,6 +133,7 @@ impl PageElement {
 /// them into Samsung's explicit `Unknown` type (`19`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum ObjectType {
     /// No object (`0`).
     None,
@@ -314,6 +316,7 @@ pub struct PageTemplate {
 /// Page template backing source.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum PageTemplateSource {
     /// Built-in Samsung Notes page template.
     BuiltIn,
