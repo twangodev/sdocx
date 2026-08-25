@@ -146,14 +146,14 @@ pub struct Stroke {
     pub bbox: BoundingBox,
     /// The (x, y) coordinates along the stroke path.
     pub points: Vec<Point>,
-    /// Pressure values for each point, normalized to `[0.0, 1.0]`.
+    /// Pressure values for each point as exposed by the S Pen SDK.
     pub pressures: Vec<f64>,
-    /// Timestamps for each point in milliseconds since the Unix epoch.
+    /// Per-point event timestamps in Samsung's native units.
     pub timestamps: Vec<i64>,
-    /// Stylus tilt along the X axis for each point.
-    pub tilt_x: Vec<i64>,
-    /// Stylus tilt along the Y axis for each point.
-    pub tilt_y: Vec<i64>,
+    /// Stylus tilt values for each point, when recorded.
+    pub tilts: Vec<f64>,
+    /// Stylus orientation values for each point, when recorded.
+    pub orientations: Vec<f64>,
     /// Stroke color, if present.
     pub color: Option<Color>,
     /// Pen width in pixels.
