@@ -14,6 +14,8 @@ fn sample_exposes_format_version_and_authoritative_page_order() {
     let document = sdocx::parse(sample_path("handwritten.sdocx")).unwrap();
 
     assert_eq!(document.metadata.format_version, Some(FormatVersion(4000)));
+    assert!(!document.metadata.page_ids.is_empty());
+    assert_eq!(document.pages.len(), document.metadata.page_ids.len());
     assert!(
         document
             .pages
