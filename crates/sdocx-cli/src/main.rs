@@ -174,6 +174,7 @@ fn render_element(
             .unwrap();
         }
         PageElement::TextBox(text_box) => render_text_box(svg, text_box, page),
+        _ => {}
     }
 }
 
@@ -438,6 +439,7 @@ fn format_template(template: PageTemplate) -> String {
         PageTemplateSource::CustomPdf { page_index } => {
             format!("custom PDF page {}", page_index + 1)
         }
+        _ => format!("template {}", template.id),
     }
 }
 

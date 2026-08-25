@@ -2,6 +2,7 @@ use std::io;
 
 /// Errors that can occur when parsing an `.sdocx` file.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     /// An I/O error occurred while reading the file.
     #[error("I/O error: {0}")]
