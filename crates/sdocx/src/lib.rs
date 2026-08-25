@@ -1,3 +1,14 @@
+//! Reverse-engineered parser for Samsung Notes `.sdocx` documents.
+//!
+//! # Accuracy and compatibility
+//!
+//! Archive structure, format versions, page ordering, and supported packed
+//! stroke channels are decoded from observed S Pen SDK contracts. Higher-level
+//! page objects, rich text, templates, and media associations remain
+//! best-effort. A successful parse can omit unsupported content and does not
+//! indicate a lossless decode. Preserve the source document when fidelity is
+//! important.
+
 mod container;
 mod decode;
 mod error;

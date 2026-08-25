@@ -8,6 +8,19 @@
 
 Reverse-engineered tooling and SDK for converting Samsung Notes (`.sdocx`) files.
 
+## Parser accuracy
+
+`sdocx` is a reverse-engineered parser, not a drop-in implementation of
+Samsung's S Pen SDK. Archive structure, format versions, page ordering, and
+supported packed stroke channels follow observed SDK contracts. Higher-level
+page objects, rich text, templates, and media associations are currently
+best-effort.
+
+A successful parse may omit unsupported objects or properties; it does not
+guarantee a lossless decode. Preserve original documents and validate output
+against Samsung Notes when fidelity matters. Protected documents must be
+unlocked or exported before parsing.
+
 ## Installation
 
 ### CLI

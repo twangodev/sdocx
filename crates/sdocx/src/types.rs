@@ -339,9 +339,9 @@ pub struct Stroke {
     pub pressures: Vec<f64>,
     /// Per-point event timestamps in Samsung's native units.
     pub timestamps: Vec<i64>,
-    /// Stylus tilt values for each point, when recorded.
+    /// Stylus tilt values for each point when stream metadata identifies the channel.
     pub tilts: Vec<f64>,
-    /// Stylus orientation values for each point, when recorded.
+    /// Stylus orientation values for each point when stream metadata identifies the channel.
     pub orientations: Vec<f64>,
     /// Stroke color, if present.
     pub color: Option<Color>,
