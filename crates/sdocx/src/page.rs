@@ -12,6 +12,7 @@ const EXTRA_LEN_BIAS: u8 = 0x79; // byte value at record+3 when no extras are pr
 
 struct ParsedStroke {
     stroke: Stroke,
+    declared_point_count: usize,
     next_record_off: usize,
 }
 
@@ -117,7 +118,7 @@ pub fn parse_page(data: &[u8], limits: &ParseLimits) -> Result<Page> {
         check_limit(
             "points per stroke",
             limits.max_points_per_stroke,
-            parsed.stroke.points.len(),
+            parsed.declared_point_count,
         )?;
 
         record_off = parsed.next_record_off;
@@ -192,7 +193,7 @@ fn parse_stroke(
 
     let (points, n_coord_bytes) =
         decode_coordinates(data_blob, start_x, start_y, n_points.saturating_sub(1));
-    if points.is_empty()
+    if points.len() != n_points
         || points
             .iter()
             .any(|point| !point.x.is_finite() || !point.y.is_finite())
@@ -217,6 +218,7 @@ fn parse_stroke(
             color: trailing.color,
             pen_width: trailing.pen_width,
         },
+        declared_point_count: n_points,
         next_record_off,
     })
 }
@@ -698,6 +700,57 @@ mod tests {
             error,
             Error::LimitExceeded {
                 resource: "strokes per page",
+                limit: 1,
+                actual: 2,
+            }
+        ));
+    }
+
+    #[test]
+    fn rejects_incomplete_declared_point_data() {
+        let mut data = vec![0; super::STROKE_HEADER_LEN + 4];
+        data[53..57].copy_from_slice(&4_u32.to_le_bytes());
+        data[71..73].copy_from_slice(&3_u16.to_le_bytes());
+
+        let parsed = super::parse_stroke(&data, 0, 0, super::StrokeLayout::Current);
+
+        assert!(parsed.is_none());
+    }
+
+    #[test]
+    fn enforces_declared_point_count_limit() {
+        let mut data = vec![0; 0x140];
+        data[0x66..0x6A].copy_from_slice(&1_u32.to_le_bytes());
+
+        let stroke_off = 0xB5;
+        let meta_off = stroke_off + 32;
+        let start_point_off = stroke_off + 73;
+        let data_off = start_point_off + 16;
+        data[meta_off + 21..meta_off + 25].copy_from_slice(&16_u32.to_le_bytes());
+        data[meta_off + 39..meta_off + 41].copy_from_slice(&2_u16.to_le_bytes());
+
+        let mut cursor = data_off;
+        for bytes in [
+            [32, 0, 32, 0],
+            0.5_f32.to_le_bytes(),
+            [0, 0, 100, 0],
+            [0, 0, 1, 0],
+        ] {
+            data[cursor..cursor + bytes.len()].copy_from_slice(&bytes);
+            cursor += bytes.len();
+        }
+
+        let limits = ParseLimits {
+            max_points_per_stroke: 1,
+            ..ParseLimits::default()
+        };
+
+        let error = super::parse_page(&data, &limits).unwrap_err();
+
+        assert!(matches!(
+            error,
+            Error::LimitExceeded {
+                resource: "points per stroke",
                 limit: 1,
                 actual: 2,
             }
