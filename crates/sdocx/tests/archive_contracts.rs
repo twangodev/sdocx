@@ -1,28 +1,16 @@
-use std::path::PathBuf;
+use std::io::{Cursor, Write};
 
-use sdocx::{Error, FormatVersion, ParseOptions};
+use sdocx::{Error, ParseOptions};
 
-fn sample_path(name: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .join("samples")
-        .join(name)
-}
-
-#[test]
-fn sample_exposes_format_version_and_authoritative_page_order() {
-    let document = sdocx::parse(sample_path("handwritten.sdocx")).unwrap();
-
-    assert_eq!(document.metadata.format_version, Some(FormatVersion(4000)));
-    assert!(!document.metadata.page_ids.is_empty());
-    assert_eq!(document.pages.len(), document.metadata.page_ids.len());
-    assert!(
-        document
-            .pages
-            .iter()
-            .zip(&document.metadata.page_ids)
-            .all(|(page, page_id)| page.uuid == *page_id)
-    );
+fn archive_with_entries(names: &[&str]) -> Vec<u8> {
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    for name in names {
+        writer
+            .start_file(*name, zip::write::SimpleFileOptions::default())
+            .unwrap();
+        writer.write_all(b"test").unwrap();
+    }
+    writer.finish().unwrap().into_inner()
 }
 
 #[test]
@@ -34,27 +22,15 @@ fn archive_entry_limit_is_configurable() {
         },
     };
 
-    let error = sdocx::parse_with_options(sample_path("quiz.sdocx"), &options).unwrap_err();
+    let bytes = archive_with_entries(&["first.bin", "second.bin"]);
+    let error = sdocx::parse_bytes_with_options(&bytes, &options).unwrap_err();
 
     assert!(matches!(
         error,
         Error::LimitExceeded {
             resource: "archive entry count",
             limit: 1,
-            actual,
-        } if actual > 1
+            actual: 2,
+        }
     ));
-}
-
-#[test]
-fn media_filename_resource_id_is_preserved() {
-    let document = sdocx::parse(sample_path("quiz.sdocx")).unwrap();
-    let asset = document
-        .metadata
-        .media_assets
-        .iter()
-        .find(|asset| asset.name.ends_with("@files_230820_133807_215.png"))
-        .unwrap();
-
-    assert_eq!(asset.archive_id, Some(7));
 }

@@ -493,7 +493,7 @@ fn media_archive_id(name: &str) -> Option<u32> {
 mod tests {
     use std::io::Cursor;
 
-    use super::{order_pages, parse_end_tag, parse_from_reader, parse_note_note};
+    use super::{media_archive_id, order_pages, parse_end_tag, parse_from_reader, parse_note_note};
     use crate::types::{BoundingBox, DocumentMetadata, FormatVersion, Page};
     use crate::{Error, ParseOptions};
 
@@ -562,5 +562,14 @@ mod tests {
         let error = parse_from_reader(Cursor::new(bytes), &ParseOptions::default()).unwrap_err();
 
         assert!(matches!(error, Error::ProtectedDocument));
+    }
+
+    #[test]
+    fn preserves_numeric_media_resource_ids() {
+        assert_eq!(
+            media_archive_id("media/7@files_230820_133807_215.png"),
+            Some(7)
+        );
+        assert_eq!(media_archive_id("media/image.png"), None);
     }
 }

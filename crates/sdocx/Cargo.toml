@@ -14,3 +14,6 @@ serde = ["dep:serde"]
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
+
+[dev-dependencies]
+sha2 = "0.10.9"

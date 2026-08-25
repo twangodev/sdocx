@@ -50,34 +50,32 @@ docker pull ghcr.io/twangodev/sdocx
 ## CLI Usage
 
 ```sh
-sdocx-cli samples/handwritten.sdocx
-```
-
-```
-Page dimensions: 1848 x 7838
-Background: #252525
-1 page(s)
-  Page 0: 1848 x 7838, 2769 strokes, 321776 points, 3 colors, 2769 with pressure
+sdocx-cli note.sdocx
 ```
 
 With Docker:
 
 ```sh
-docker run --rm -v "$(pwd)":/data ghcr.io/twangodev/sdocx /data/samples/handwritten.sdocx
+docker run --rm -v "$(pwd)":/data ghcr.io/twangodev/sdocx /data/note.sdocx
 ```
 
 ## Library Usage
 
 ```rust
-use sdocx::parse;
+use sdocx::{layout_document, parse};
 
 fn main() -> sdocx::Result<()> {
     let doc = parse("notes.sdocx")?;
+    let layout = layout_document(&doc);
 
-    println!("{} page(s)", doc.pages.len());
+    println!(
+        "{} visible page(s), {} stored page record(s)",
+        layout.pages.len(),
+        doc.pages.len()
+    );
 
-    for page in &doc.pages {
-        for stroke in &page.strokes {
+    for visible_page in &layout.pages {
+        for stroke in &visible_page.page.strokes {
             println!(
                 "Stroke: {} points, color {:?}, width {}",
                 stroke.points.len(),
@@ -110,6 +108,13 @@ for (const page of doc.pages) {
   }
 }
 ```
+
+## Compatibility corpus
+
+Large test documents and Samsung reference PDFs are kept in an external
+Hugging Face dataset rather than committed to this repository. See
+[`conformance/README.md`](conformance/README.md) for the locked manifest and
+local runner.
 
 ## Format Documentation
 

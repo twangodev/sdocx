@@ -616,16 +616,9 @@ mod tests {
     }
 
     #[test]
-    fn renders_sample_to_valid_png() {
-        let doc = sdocx::parse("../../samples/handwritten.sdocx").expect("parse sample");
-        assert!(!doc.pages.is_empty(), "sample has no pages");
-        let svg = render_page_svg(
-            &doc.pages[0],
-            doc.metadata.background_color.as_ref(),
-            &doc.metadata.media_assets,
-            doc.metadata.dark_mode_compatibility.unwrap_or(false),
-        );
-        let png = svg_to_png(&svg).expect("render sample to png");
+    fn renders_page_to_valid_png() {
+        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], false);
+        let png = svg_to_png(&svg).expect("render page to png");
         assert_eq!(&png[..8], b"\x89PNG\r\n\x1a\n");
         assert!(
             png.len() > 100,
