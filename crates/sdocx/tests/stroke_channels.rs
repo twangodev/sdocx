@@ -19,12 +19,8 @@ fn sample_stroke_channels_align_with_points() {
             assert_eq!(stroke.timestamps.len(), stroke.points.len(), "{name}");
             assert!(stroke.pressures.iter().all(|value| value.is_finite()));
 
-            if !stroke.tilts.is_empty() || !stroke.orientations.is_empty() {
-                assert_eq!(stroke.tilts.len(), stroke.points.len(), "{name}");
-                assert_eq!(stroke.orientations.len(), stroke.points.len(), "{name}");
-                assert!(stroke.tilts.iter().all(|value| value.is_finite()));
-                assert!(stroke.orientations.iter().all(|value| value.is_finite()));
-            }
+            assert!(stroke.tilts.is_empty(), "{name}");
+            assert!(stroke.orientations.is_empty(), "{name}");
         }
 
         assert!(stroke_count > 0, "{name} should contain strokes");

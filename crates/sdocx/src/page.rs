@@ -200,7 +200,10 @@ fn parse_stroke(
         return None;
     }
 
-    let trailing = decode_trailing(data_blob, n_coord_bytes, points.len())?;
+    // The legacy page parser does not yet expose the native stroke property
+    // flag that declares tilt/orientation channels. Do not infer their presence
+    // from payload values, because flexible style bytes can look like angles.
+    let trailing = decode_trailing(data_blob, n_coord_bytes, points.len(), false)?;
     let next_record_off = data_end.checked_add(next_record_adjust)?;
 
     Some(ParsedStroke {

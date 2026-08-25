@@ -77,12 +77,14 @@ pub struct TrailingData {
 ///
 /// Pressure, timestamp, tilt, and orientation each store their first value in
 /// full (four bytes), followed by `n_points - 1` two-byte deltas. Tilt and
-/// orientation are optional as a pair. The returned vectors therefore line up
-/// one-for-one with `Stroke::points`.
+/// orientation are optional as a pair and are decoded only when the containing
+/// stroke property flags explicitly declare them. The returned vectors
+/// therefore line up one-for-one with `Stroke::points`.
 pub fn decode_trailing(
     data_blob: &[u8],
     n_coord_bytes: usize,
     n_points: usize,
+    has_stylus_channels: bool,
 ) -> Option<TrailingData> {
     if n_points == 0 {
         return None;
@@ -94,7 +96,7 @@ pub fn decode_trailing(
     let pressures = decode_float_channel(data_blob, &mut cursor, delta_count)?;
     let timestamps = decode_timestamp_channel(data_blob, &mut cursor, delta_count)?;
 
-    let (tilts, orientations) = if has_plausible_stylus_channels(data_blob, cursor, delta_count) {
+    let (tilts, orientations) = if has_stylus_channels {
         let tilts = decode_float_channel(data_blob, &mut cursor, delta_count)?;
         let orientations = decode_float_channel(data_blob, &mut cursor, delta_count)?;
         (tilts, orientations)
@@ -155,39 +157,6 @@ fn decode_timestamp_channel(
         values.push(value);
     }
     Some(values)
-}
-
-fn has_plausible_stylus_channels(data: &[u8], cursor: usize, delta_count: usize) -> bool {
-    let channel_len = match delta_count
-        .checked_mul(2)
-        .and_then(|len| len.checked_add(4))
-    {
-        Some(len) => len,
-        None => return false,
-    };
-    let end = match channel_len
-        .checked_mul(2)
-        .and_then(|len| cursor.checked_add(len))
-    {
-        Some(end) if end <= data.len() => end,
-        _ => return false,
-    };
-
-    // A stroke's flexible style data follows the point channels. Requiring the
-    // two decoded channels to stay in the SDK's angular range avoids treating a
-    // long style block on non-stylus input as tilt/orientation samples.
-    let mut probe = cursor;
-    let Some(tilts) = decode_float_channel(data, &mut probe, delta_count) else {
-        return false;
-    };
-    let Some(orientations) = decode_float_channel(data, &mut probe, delta_count) else {
-        return false;
-    };
-    probe == end
-        && tilts
-            .iter()
-            .chain(&orientations)
-            .all(|value| value.is_finite() && value.abs() <= std::f64::consts::TAU + f64::EPSILON)
 }
 
 fn read_f32(data: &[u8], offset: usize) -> Option<f32> {
@@ -360,7 +329,7 @@ mod tests {
         blob.extend_from_slice(&5_u16.to_le_bytes());
         blob.extend_from_slice(&7_u16.to_le_bytes());
 
-        let result = decode_trailing(&blob, n_coord_bytes, n_points).unwrap();
+        let result = decode_trailing(&blob, n_coord_bytes, n_points, false).unwrap();
         assert_eq!(result.pressures.len(), 3);
         assert_eq!(result.pressures, vec![0.25, 0.375, 0.3125]);
         assert_eq!(result.timestamps, vec![1000, 1005, 1012]);
@@ -382,7 +351,7 @@ mod tests {
         blob.extend_from_slice(&(-1.0_f32).to_le_bytes());
         blob.extend_from_slice(&0x8200_u16.to_le_bytes()); // -0.125
 
-        let result = decode_trailing(&blob, n_coord_bytes, n_points).unwrap();
+        let result = decode_trailing(&blob, n_coord_bytes, n_points, true).unwrap();
         assert_eq!(result.tilts, vec![0.25, 0.5]);
         assert_eq!(result.orientations, vec![-1.0, -1.125]);
     }
