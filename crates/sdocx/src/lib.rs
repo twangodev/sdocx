@@ -13,6 +13,7 @@ mod binary;
 mod container;
 mod decode;
 mod error;
+mod layout;
 mod note;
 mod page;
 mod report;
@@ -20,6 +21,7 @@ mod storage;
 mod types;
 
 pub use error::{Error, Result};
+pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use note::{StoredNote, StoredNoteHeader, parse_note_bytes, parse_note_bytes_with_limits};
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use storage::{

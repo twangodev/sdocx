@@ -24,6 +24,10 @@ pub struct DocumentMetadata {
     pub dark_mode_compatibility: Option<bool>,
     /// Default page dimensions as `(width, height)` in pixels.
     pub page_dimensions: Option<(u32, u32)>,
+    /// Dimensions of the document-level flowing text canvas.
+    pub flow_dimensions: Option<(u32, u32)>,
+    /// Horizontal and vertical padding used by the flowing text canvas.
+    pub flow_page_padding: Option<(u32, u32)>,
     /// Ordered list of page UUIDs.
     pub page_ids: Vec<String>,
     /// Embedded media assets from the archive.

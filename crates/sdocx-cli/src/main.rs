@@ -1,8 +1,8 @@
 use base64::Engine as _;
 use clap::{Parser, ValueEnum};
 use sdocx::{
-    Color, Document, MediaAsset, Page, PageElement, PageTemplate, PageTemplateSource, RichTextBox,
-    RichTextRun, Stroke,
+    Color, Document, LayoutDocument, MediaAsset, Page, PageElement, PageTemplate,
+    PageTemplateSource, RichTextBox, RichTextRun, Stroke,
 };
 use std::fmt::Write as FmtWrite;
 use std::fs;
@@ -395,7 +395,7 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
     }
 }
 
-fn print_info(doc: &Document) {
+fn print_info(doc: &Document, layout: &LayoutDocument) {
     if let Some(dims) = doc.metadata.page_dimensions {
         eprintln!("Page dimensions: {} x {}", dims.0, dims.1);
     }
@@ -405,8 +405,13 @@ fn print_info(doc: &Document) {
     if let Some(enabled) = doc.metadata.dark_mode_compatibility {
         eprintln!("Dark mode compatibility: {enabled}");
     }
-    eprintln!("{} page(s)", doc.pages.len());
-    for (i, page) in doc.pages.iter().enumerate() {
+    eprintln!(
+        "{} visible page(s), {} stored page record(s)",
+        layout.pages.len(),
+        layout.stored_page_count
+    );
+    for (i, layout_page) in layout.pages.iter().enumerate() {
+        let page = &layout_page.page;
         let total_points: usize = page.strokes.iter().map(|s| s.points.len()).sum();
         let colors: std::collections::HashSet<_> = page.strokes.iter().map(|s| s.color).collect();
         let with_pressure = page
@@ -663,8 +668,9 @@ fn main() {
             std::process::exit(1);
         }
     };
+    let layout = sdocx::layout_document(&doc);
 
-    print_info(&doc);
+    print_info(&doc, &layout);
 
     let format = match resolve_format(cli.format, cli.output.as_deref()) {
         Ok(f) => f,
@@ -680,16 +686,16 @@ fn main() {
 
     let dark_mode = doc.metadata.dark_mode_compatibility.unwrap_or(false);
 
-    if doc.pages.len() == 1 {
+    if layout.pages.len() == 1 {
         let svg = render_page_svg(
-            &doc.pages[0],
+            &layout.pages[0].page,
             doc.metadata.background_color.as_ref(),
             &doc.metadata.media_assets,
             dark_mode,
         );
         write_page(&output_base, &svg, format);
     } else {
-        for (i, page) in doc.pages.iter().enumerate() {
+        for (i, layout_page) in layout.pages.iter().enumerate() {
             let stem = output_base
                 .file_stem()
                 .unwrap_or_default()
@@ -700,7 +706,7 @@ fn main() {
                 .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
             let svg = render_page_svg(
-                page,
+                &layout_page.page,
                 doc.metadata.background_color.as_ref(),
                 &doc.metadata.media_assets,
                 dark_mode,

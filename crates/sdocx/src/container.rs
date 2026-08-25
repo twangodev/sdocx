@@ -49,6 +49,11 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         parse_note_note(&buf, &mut metadata);
         let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
+        metadata.flow_dimensions = Some((parsed_note.header.width, parsed_note.header.height));
+        metadata.flow_page_padding = Some((
+            parsed_note.header.page_horizontal_padding,
+            parsed_note.header.page_vertical_padding,
+        ));
         metadata.note_title = Some(parsed_note.title.clone());
         note_text = Some(parsed_note.body.clone());
         note = Some(parsed_note);
@@ -130,13 +135,12 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         });
     }
     page_records = order_page_records(page_records, &metadata.page_ids, &mut report);
-    let (mut pages, stored_pages): (Vec<_>, Vec<_>) = page_records
+    let (pages, stored_pages): (Vec<_>, Vec<_>) = page_records
         .into_iter()
         .map(|record| (record.semantic, record.stored))
         .unzip();
-
-    if let (Some(page), Some(text)) = (pages.first_mut(), note_text.clone()) {
-        page.elements.push(crate::types::PageElement::TextBox(text));
+    if let Some(page) = pages.first() {
+        metadata.page_dimensions = Some((page.width, page.height));
     }
     metadata.note_text = note_text;
 
