@@ -43,3 +43,16 @@ fn archive_entry_limit_is_configurable() {
         } if actual > 1
     ));
 }
+
+#[test]
+fn media_filename_resource_id_is_preserved() {
+    let document = sdocx::parse(sample_path("quiz.sdocx")).unwrap();
+    let asset = document
+        .metadata
+        .media_assets
+        .iter()
+        .find(|asset| asset.name.ends_with("@files_230820_133807_215.png"))
+        .unwrap();
+
+    assert_eq!(asset.archive_id, Some(7));
+}

@@ -93,6 +93,8 @@ pub struct Page {
 pub struct MediaAsset {
     /// Archive path.
     pub name: String,
+    /// Numeric archive resource ID from the filename prefix, when present.
+    pub archive_id: Option<u32>,
     /// MIME type, when recognized.
     pub mime_type: String,
     /// Raw media bytes.
@@ -112,6 +114,155 @@ pub enum PageElement {
     },
     /// A rich text object.
     TextBox(RichTextBox),
+}
+
+impl PageElement {
+    /// Return the S Pen SDK object type represented by this element.
+    pub const fn object_type(&self) -> ObjectType {
+        match self {
+            Self::Image { .. } => ObjectType::Image,
+            Self::TextBox(_) => ObjectType::TextBox,
+        }
+    }
+}
+
+/// Object type identifiers used by `SpenObjectBase`.
+///
+/// `Other` preserves identifiers introduced by newer SDKs instead of collapsing
+/// them into Samsung's explicit `Unknown` type (`19`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum ObjectType {
+    /// No object (`0`).
+    None,
+    /// Pen stroke (`1`).
+    Stroke,
+    /// Text box (`2`).
+    TextBox,
+    /// Image (`3`).
+    Image,
+    /// Object container (`4`).
+    Container,
+    /// Shape (`7`).
+    Shape,
+    /// Line (`8`).
+    Line,
+    /// Deprecated dummy-stroke record (`9`).
+    DeprecatedDummyStroke,
+    /// Voice recording (`10`).
+    Voice,
+    /// Formula (`11`).
+    Formula,
+    /// Deprecated table record (`12`).
+    DeprecatedTable,
+    /// Web object (`13`).
+    Web,
+    /// Painting (`14`).
+    Painting,
+    /// Development-version stroke (`15`).
+    StrokeDevelopmentVersion,
+    /// Video (`16`).
+    Video,
+    /// Link (`17`).
+    Link,
+    /// Brush stroke (`18`).
+    StrokeBrush,
+    /// Samsung's explicit unknown-object marker (`19`).
+    Unknown,
+    /// Plot (`20`).
+    Plot,
+    /// Math object (`21`).
+    Math,
+    /// Current table object (`22`).
+    Table,
+    /// Code block (`23`).
+    CodeBlock,
+    /// Attached file (`24`).
+    AttachedFile,
+    /// Stroke group (`100`).
+    StrokeGroup,
+    /// Identifier not known to this version of the library.
+    Other(u32),
+}
+
+impl ObjectType {
+    /// Return the raw `SpenObjectBase` type identifier.
+    pub const fn raw(self) -> u32 {
+        match self {
+            Self::None => 0,
+            Self::Stroke => 1,
+            Self::TextBox => 2,
+            Self::Image => 3,
+            Self::Container => 4,
+            Self::Shape => 7,
+            Self::Line => 8,
+            Self::DeprecatedDummyStroke => 9,
+            Self::Voice => 10,
+            Self::Formula => 11,
+            Self::DeprecatedTable => 12,
+            Self::Web => 13,
+            Self::Painting => 14,
+            Self::StrokeDevelopmentVersion => 15,
+            Self::Video => 16,
+            Self::Link => 17,
+            Self::StrokeBrush => 18,
+            Self::Unknown => 19,
+            Self::Plot => 20,
+            Self::Math => 21,
+            Self::Table => 22,
+            Self::CodeBlock => 23,
+            Self::AttachedFile => 24,
+            Self::StrokeGroup => 100,
+            Self::Other(raw) => raw,
+        }
+    }
+
+    /// Whether this object type is available in the supplied format version.
+    pub const fn is_supported_by(self, version: FormatVersion) -> bool {
+        match self {
+            Self::Math => version.supports_math_objects(),
+            Self::Table | Self::CodeBlock => version.supports_table_and_code_block_objects(),
+            _ => true,
+        }
+    }
+}
+
+impl From<u32> for ObjectType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::None,
+            1 => Self::Stroke,
+            2 => Self::TextBox,
+            3 => Self::Image,
+            4 => Self::Container,
+            7 => Self::Shape,
+            8 => Self::Line,
+            9 => Self::DeprecatedDummyStroke,
+            10 => Self::Voice,
+            11 => Self::Formula,
+            12 => Self::DeprecatedTable,
+            13 => Self::Web,
+            14 => Self::Painting,
+            15 => Self::StrokeDevelopmentVersion,
+            16 => Self::Video,
+            17 => Self::Link,
+            18 => Self::StrokeBrush,
+            19 => Self::Unknown,
+            20 => Self::Plot,
+            21 => Self::Math,
+            22 => Self::Table,
+            23 => Self::CodeBlock,
+            24 => Self::AttachedFile,
+            100 => Self::StrokeGroup,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+impl From<ObjectType> for u32 {
+    fn from(object_type: ObjectType) -> Self {
+        object_type.raw()
+    }
 }
 
 /// Parsed rich text box data.
@@ -195,6 +346,13 @@ pub struct Stroke {
     pub pen_width: f32,
 }
 
+impl Stroke {
+    /// Return the S Pen SDK object type represented by a parsed stroke.
+    pub const fn object_type(&self) -> ObjectType {
+        ObjectType::Stroke
+    }
+}
+
 /// A 2D point.
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -239,5 +397,29 @@ impl Default for BoundingBox {
             x_max: 0.0,
             y_max: 0.0,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{FormatVersion, ObjectType};
+
+    #[test]
+    fn object_type_ids_round_trip_without_losing_future_values() {
+        for raw in 0..=100 {
+            let object_type = ObjectType::from(raw);
+            assert_eq!(object_type.raw(), raw);
+        }
+        assert_eq!(ObjectType::from(19), ObjectType::Unknown);
+        assert_eq!(ObjectType::from(25), ObjectType::Other(25));
+    }
+
+    #[test]
+    fn version_gates_match_current_sdk_contract() {
+        assert!(!ObjectType::Math.is_supported_by(FormatVersion(5199)));
+        assert!(ObjectType::Math.is_supported_by(FormatVersion::MATH_OBJECTS));
+        assert!(!ObjectType::Table.is_supported_by(FormatVersion(5399)));
+        assert!(ObjectType::Table.is_supported_by(FormatVersion::TABLE_AND_CODE_BLOCK_OBJECTS));
+        assert!(ObjectType::Stroke.is_supported_by(FormatVersion::INITIAL));
     }
 }
