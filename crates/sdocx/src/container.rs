@@ -3,6 +3,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
 use crate::error::{Error, Result};
+use crate::note::parse_note_bytes_with_limits;
 use crate::page::parse_page;
 use crate::report::{DiagnosticCode, ParseReport};
 use crate::storage::{
@@ -10,8 +11,7 @@ use crate::storage::{
     parse_stored_page_bytes_with_limits,
 };
 use crate::types::{
-    BoundingBox, Color, Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page,
-    RichTextBox, RichTextRun,
+    Color, Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page,
 };
 use crate::{ParseLimits, ParseOptions};
 
@@ -42,12 +42,16 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         parse_end_tag(&buf, &mut metadata);
     }
 
+    let mut note = None;
     let mut note_text = None;
 
     // Parse note.note (optional)
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         parse_note_note(&buf, &mut metadata);
-        note_text = parse_note_text(&buf);
+        let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
+        metadata.note_title = Some(parsed_note.title.clone());
+        note_text = Some(parsed_note.body.clone());
+        note = Some(parsed_note);
     }
 
     // Parse pageIdInfo.dat (optional)
@@ -140,6 +144,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         document: Document { pages, metadata },
         stored_pages,
         page_manifest,
+        note,
         report,
     })
 }
@@ -478,139 +483,6 @@ fn parse_media_assets<R: Read + Seek>(
 
 fn media_archive_id(name: &str) -> Option<u32> {
     name.rsplit('/').next()?.split('@').next()?.parse().ok()
-}
-
-fn parse_note_text(data: &[u8]) -> Option<RichTextBox> {
-    let (text, text_end) = first_utf16_text(data)?;
-    let styles = &data[text_end..];
-    let color = tlv_color(styles, 0x01);
-    let font_size = tlv_f32(styles, 0x03);
-    let runs = parse_rich_text_runs(styles, text.chars().count());
-    Some(RichTextBox {
-        // `note.note` stores the typed note body as the default page text layer. The body itself
-        // carries leading blank lines, so the renderer can place it from the page origin.
-        bbox: BoundingBox {
-            x_min: 0.0,
-            y_min: 0.0,
-            x_max: 0.0,
-            y_max: 0.0,
-        },
-        rotation_degrees: None,
-        text,
-        color,
-        highlight_color: None,
-        underline: false,
-        font_size,
-        runs,
-    })
-}
-
-fn first_utf16_text(data: &[u8]) -> Option<(String, usize)> {
-    let mut offset = 0;
-    while offset + 6 <= data.len() {
-        let mut end = offset;
-        let mut units = Vec::new();
-        while end + 2 <= data.len() {
-            let unit = u16::from_le_bytes(data[end..end + 2].try_into().ok()?);
-            let printable = unit == 0x0A || (0x20..=0xD7FF).contains(&unit);
-            if !printable {
-                break;
-            }
-            units.push(unit);
-            end += 2;
-        }
-        let text = String::from_utf16(&units).ok()?;
-        let trimmed = text.trim();
-        if trimmed.chars().filter(|c| !c.is_whitespace()).count() >= 3
-            && looks_like_note_text(trimmed)
-        {
-            return Some((text, end));
-        }
-        offset += 2;
-    }
-    None
-}
-
-fn looks_like_note_text(text: &str) -> bool {
-    let mut total = 0;
-    let mut common = 0;
-    for ch in text.chars() {
-        if ch.is_whitespace() {
-            continue;
-        }
-        total += 1;
-        if ch.is_ascii_alphanumeric() || ch.is_ascii_punctuation() {
-            common += 1;
-        }
-    }
-    total >= 3 && common * 4 >= total * 3
-}
-
-fn tlv_color(data: &[u8], tag: u16) -> Option<Color> {
-    let marker = [0x18, 0x00, tag as u8, (tag >> 8) as u8];
-    for offset in 0..data.len().saturating_sub(22) {
-        if data[offset..offset + 4] == marker && data[offset + 21] == 0xFF {
-            return Some(Color {
-                r: data[offset + 20],
-                g: data[offset + 19],
-                b: data[offset + 18],
-            });
-        }
-    }
-    None
-}
-
-fn tlv_f32(data: &[u8], tag: u16) -> Option<f32> {
-    let marker = [0x18, 0x00, tag as u8, (tag >> 8) as u8];
-    for offset in 0..data.len().saturating_sub(24) {
-        if data[offset..offset + 4] == marker {
-            for value_offset in [18, 20, 24] {
-                let value = f32::from_le_bytes(
-                    data[offset + value_offset..offset + value_offset + 4]
-                        .try_into()
-                        .ok()?,
-                );
-                if value.is_finite() && (4.0..=96.0).contains(&value) {
-                    return Some(value);
-                }
-            }
-        }
-    }
-    None
-}
-
-fn parse_rich_text_runs(data: &[u8], text_len: usize) -> Vec<RichTextRun> {
-    let mut runs = Vec::new();
-    collect_style_runs(data, text_len, 0x05, true, false, &mut runs);
-    collect_style_runs(data, text_len, 0x06, false, true, &mut runs);
-    runs
-}
-
-fn collect_style_runs(
-    data: &[u8],
-    text_len: usize,
-    tag: u16,
-    bold: bool,
-    italic: bool,
-    runs: &mut Vec<RichTextRun>,
-) {
-    let marker = [0x18, 0x00, tag as u8, (tag >> 8) as u8];
-    for offset in 0..data.len().saturating_sub(22) {
-        if data[offset..offset + 4] != marker {
-            continue;
-        }
-        let start = u32::from_le_bytes(data[offset + 6..offset + 10].try_into().unwrap()) as usize;
-        let end = u32::from_le_bytes(data[offset + 10..offset + 14].try_into().unwrap()) as usize;
-        let enabled = u32::from_le_bytes(data[offset + 18..offset + 22].try_into().unwrap()) != 0;
-        if enabled && start < end && end <= text_len {
-            runs.push(RichTextRun {
-                start,
-                end,
-                bold,
-                italic,
-            });
-        }
-    }
 }
 
 #[cfg(test)]

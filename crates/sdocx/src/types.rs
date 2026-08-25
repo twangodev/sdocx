@@ -30,6 +30,8 @@ pub struct DocumentMetadata {
     pub media_assets: Vec<MediaAsset>,
     /// Top-level typed note text from `note.note`, if present.
     pub note_text: Option<RichTextBox>,
+    /// Top-level note title from `note.note`, if present.
+    pub note_title: Option<RichTextBox>,
 }
 
 /// Samsung Notes binary format version.
@@ -287,6 +289,14 @@ pub struct RichTextBox {
     pub font_size: Option<f32>,
     /// Style runs using character indexes into `text`.
     pub runs: Vec<RichTextRun>,
+    /// Original Samsung style span records.
+    pub spans: Vec<RichTextSpan>,
+    /// Original Samsung paragraph records.
+    pub paragraphs: Vec<RichTextParagraph>,
+    /// Text margins in left, top, right, bottom order.
+    pub margins: Option<[f32; 4]>,
+    /// Raw Android text-gravity flags.
+    pub gravity: Option<u8>,
 }
 
 /// A rich text style run.
@@ -301,6 +311,167 @@ pub struct RichTextRun {
     pub bold: bool,
     /// Whether the run is italic.
     pub italic: bool,
+}
+
+/// A style span from Samsung's rich-text model.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextSpan {
+    /// Span attribute kind.
+    pub kind: RichTextSpanType,
+    /// Start offset in UTF-16 code units, inclusive.
+    pub start_utf16: u32,
+    /// End offset in UTF-16 code units, exclusive.
+    pub end_utf16: u32,
+    /// Raw span expansion flag.
+    pub expand: bool,
+    /// Type-specific payload retained for forward compatibility.
+    pub payload: Vec<u8>,
+}
+
+impl RichTextSpan {
+    /// Decode the on/off value used by boolean style spans.
+    pub fn boolean_value(&self) -> Option<bool> {
+        self.payload
+            .get(..2)
+            .map(|bytes| u16::from_le_bytes([bytes[0], bytes[1]]) == 1)
+    }
+
+    /// Decode a color span's BGRA payload.
+    pub fn color_value(&self) -> Option<Color> {
+        let bytes = self.payload.get(..4)?;
+        Some(Color {
+            r: bytes[2],
+            g: bytes[1],
+            b: bytes[0],
+        })
+    }
+
+    /// Decode a font-size span's floating-point payload.
+    pub fn font_size_value(&self) -> Option<f32> {
+        let bytes = self.payload.get(..4)?.try_into().ok()?;
+        Some(f32::from_le_bytes(bytes))
+    }
+}
+
+/// Samsung rich-text span identifiers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum RichTextSpanType {
+    /// No style (`0`).
+    None,
+    /// Foreground color (`1`).
+    ForegroundColor,
+    /// Font size (`3`).
+    FontSize,
+    /// Font family name (`4`).
+    FontName,
+    /// Bold (`5`).
+    Bold,
+    /// Italic (`6`).
+    Italic,
+    /// Underline (`7`).
+    Underline,
+    /// Hyperlink (`9`).
+    Hyperlink,
+    /// Composition background color (`15`).
+    ComposingBackgroundColor,
+    /// Composition marker (`16`).
+    Composing,
+    /// Background/highlight color (`17`).
+    BackgroundColor,
+    /// Composition tag (`18`).
+    ComposingTag,
+    /// Timestamp (`19`).
+    Timestamp,
+    /// Strikethrough (`20`).
+    Strikethrough,
+    /// Suggestion (`21`).
+    Suggestion,
+    /// Spell-correction marker (`22`).
+    SpellCorrection,
+    /// Formula span (`23`).
+    Formula,
+    /// Identifier not known to this library version.
+    Other(u32),
+}
+
+impl From<u32> for RichTextSpanType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::None,
+            1 => Self::ForegroundColor,
+            3 => Self::FontSize,
+            4 => Self::FontName,
+            5 => Self::Bold,
+            6 => Self::Italic,
+            7 => Self::Underline,
+            9 => Self::Hyperlink,
+            15 => Self::ComposingBackgroundColor,
+            16 => Self::Composing,
+            17 => Self::BackgroundColor,
+            18 => Self::ComposingTag,
+            19 => Self::Timestamp,
+            20 => Self::Strikethrough,
+            21 => Self::Suggestion,
+            22 => Self::SpellCorrection,
+            23 => Self::Formula,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// A paragraph attribute record from Samsung's rich-text model.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextParagraph {
+    /// Paragraph attribute kind.
+    pub kind: RichTextParagraphType,
+    /// Start offset in UTF-16 code units, inclusive.
+    pub start_utf16: u32,
+    /// End offset in UTF-16 code units, exclusive.
+    pub end_utf16: u32,
+    /// Type-specific payload retained for forward compatibility.
+    pub payload: Vec<u8>,
+}
+
+/// Samsung paragraph attribute identifiers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum RichTextParagraphType {
+    /// No paragraph attribute (`0`).
+    None,
+    /// Legacy paragraph attribute (`1`).
+    Legacy,
+    /// Indentation level (`2`).
+    IndentLevel,
+    /// Text alignment (`3`).
+    Alignment,
+    /// Line spacing (`4`).
+    LineSpacing,
+    /// Bullet, numbered-list, or checkbox state (`5`).
+    Bullet,
+    /// Markdown/parsing state (`6`).
+    ParsingState,
+    /// Identifier not known to this library version.
+    Other(u32),
+}
+
+impl From<u32> for RichTextParagraphType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::None,
+            1 => Self::Legacy,
+            2 => Self::IndentLevel,
+            3 => Self::Alignment,
+            4 => Self::LineSpacing,
+            5 => Self::Bullet,
+            6 => Self::ParsingState,
+            raw => Self::Other(raw),
+        }
+    }
 }
 
 /// Page template metadata.

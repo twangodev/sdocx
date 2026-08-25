@@ -1,6 +1,7 @@
 use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::error::{Error, Result};
+use crate::note::StoredNote;
 use crate::report::ParseReport;
 use crate::types::{Document, ObjectType};
 
@@ -31,6 +32,8 @@ pub struct ParsedDocument {
     pub stored_pages: Vec<StoredArchivePage>,
     /// Authoritative page ordering metadata, when present in the archive.
     pub page_manifest: Option<PageManifest>,
+    /// Structured `note.note` title/body and header, when present.
+    pub note: Option<StoredNote>,
     /// Non-fatal compatibility findings.
     pub report: ParseReport,
 }

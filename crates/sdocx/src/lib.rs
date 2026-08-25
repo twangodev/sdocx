@@ -13,12 +13,14 @@ mod binary;
 mod container;
 mod decode;
 mod error;
+mod note;
 mod page;
 mod report;
 mod storage;
 mod types;
 
 pub use error::{Error, Result};
+pub use note::{StoredNote, StoredNoteHeader, parse_note_bytes, parse_note_bytes_with_limits};
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use storage::{
     PageManifest, PageManifestEntry, ParsedDocument, StoredArchivePage, StoredLayer, StoredObject,
@@ -53,6 +55,12 @@ pub struct ParseLimits {
     pub max_layers_per_page: usize,
     /// Maximum nesting depth for child object records.
     pub max_object_nesting_depth: usize,
+    /// Maximum UTF-16 code units in one rich-text object.
+    pub max_text_characters: usize,
+    /// Maximum style spans in one rich-text object.
+    pub max_text_spans: usize,
+    /// Maximum paragraph records in one rich-text object.
+    pub max_text_paragraphs: usize,
 }
 
 impl Default for ParseLimits {
@@ -67,6 +75,9 @@ impl Default for ParseLimits {
             max_objects_per_page: 100_000,
             max_layers_per_page: 64,
             max_object_nesting_depth: 64,
+            max_text_characters: 250_000,
+            max_text_spans: 10_000,
+            max_text_paragraphs: 10_000,
         }
     }
 }

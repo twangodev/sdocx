@@ -33,6 +33,10 @@ impl<'a> Reader<'a> {
         self.position
     }
 
+    pub(crate) const fn len(&self) -> usize {
+        self.data.len()
+    }
+
     pub(crate) fn remaining(&self) -> usize {
         self.data.len().saturating_sub(self.position)
     }
@@ -45,12 +49,28 @@ impl<'a> Reader<'a> {
         Ok(u16::from_le_bytes(self.read_array(field)?))
     }
 
+    pub(crate) fn read_i16(&mut self, field: &'static str) -> Result<i16> {
+        Ok(i16::from_le_bytes(self.read_array(field)?))
+    }
+
     pub(crate) fn read_u32(&mut self, field: &'static str) -> Result<u32> {
         Ok(u32::from_le_bytes(self.read_array(field)?))
     }
 
     pub(crate) fn read_u64(&mut self, field: &'static str) -> Result<u64> {
         Ok(u64::from_le_bytes(self.read_array(field)?))
+    }
+
+    pub(crate) fn read_i64(&mut self, field: &'static str) -> Result<i64> {
+        Ok(i64::from_le_bytes(self.read_array(field)?))
+    }
+
+    pub(crate) fn read_f32(&mut self, field: &'static str) -> Result<f32> {
+        Ok(f32::from_le_bytes(self.read_array(field)?))
+    }
+
+    pub(crate) fn read_f64(&mut self, field: &'static str) -> Result<f64> {
+        Ok(f64::from_le_bytes(self.read_array(field)?))
     }
 
     pub(crate) fn read_bytes(&mut self, length: usize, field: &'static str) -> Result<&'a [u8]> {
@@ -76,6 +96,17 @@ impl<'a> Reader<'a> {
         self.read_bytes(length, field).map(|_| ())
     }
 
+    pub(crate) fn set_position(&mut self, position: usize, field: &'static str) -> Result<()> {
+        if position > self.data.len() {
+            return Err(Error::Format(format!(
+                "{}: {field} offset 0x{position:x} is past the end of the record",
+                self.context
+            )));
+        }
+        self.position = position;
+        Ok(())
+    }
+
     pub(crate) fn read_utf16_u16(&mut self, field: &'static str) -> Result<String> {
         let unit_count = usize::from(self.read_u16(field)?);
         if unit_count == usize::from(u16::MAX) {
@@ -88,14 +119,35 @@ impl<'a> Reader<'a> {
             .checked_mul(2)
             .ok_or_else(|| Error::Format(format!("{}: {field} length overflows", self.context)))?;
         let bytes = self.read_bytes(byte_count, field)?;
-        let units = bytes
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|pair| u16::from_le_bytes(*pair))
-            .collect::<Vec<_>>();
-        String::from_utf16(&units)
-            .map_err(|_| Error::Format(format!("{}: invalid UTF-16 in {field}", self.context)))
+        decode_utf16(bytes, self.context, field)
+    }
+
+    pub(crate) fn read_utf16_u32(
+        &mut self,
+        field: &'static str,
+        max_units: usize,
+    ) -> Result<String> {
+        let unit_count = usize::try_from(self.read_u32(field)?)
+            .map_err(|_| Error::Format(format!("{}: {field} is too long", self.context)))?;
+        if unit_count > max_units {
+            return Err(Error::LimitExceeded {
+                resource: "text characters",
+                limit: u64::try_from(max_units).unwrap_or(u64::MAX),
+                actual: u64::try_from(unit_count).unwrap_or(u64::MAX),
+            });
+        }
+        let byte_count = unit_count
+            .checked_mul(2)
+            .ok_or_else(|| Error::Format(format!("{}: {field} length overflows", self.context)))?;
+        decode_utf16(self.read_bytes(byte_count, field)?, self.context, field)
+    }
+
+    pub(crate) fn read_utf8_u16(&mut self, field: &'static str) -> Result<String> {
+        let byte_count = usize::from(self.read_u16(field)?);
+        let bytes = self.read_bytes(byte_count, field)?;
+        std::str::from_utf8(bytes)
+            .map(str::to_owned)
+            .map_err(|_| Error::Format(format!("{}: invalid UTF-8 in {field}", self.context)))
     }
 
     fn read_array<const N: usize>(&mut self, field: &'static str) -> Result<[u8; N]> {
@@ -103,6 +155,17 @@ impl<'a> Reader<'a> {
             .try_into()
             .map_err(|_| Error::Format(format!("{}: invalid {field}", self.context)))
     }
+}
+
+fn decode_utf16(bytes: &[u8], context: &'static str, field: &'static str) -> Result<String> {
+    let units = bytes
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u16::from_le_bytes(*pair))
+        .collect::<Vec<_>>();
+    String::from_utf16(&units)
+        .map_err(|_| Error::Format(format!("{context}: invalid UTF-16 in {field}")))
 }
 
 #[cfg(test)]

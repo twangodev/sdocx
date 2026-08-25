@@ -428,6 +428,10 @@ fn parse_text_box_record(record: &[u8], bbox: BoundingBox) -> Option<RichTextBox
         underline,
         font_size,
         runs,
+        spans: Vec::new(),
+        paragraphs: Vec::new(),
+        margins: None,
+        gravity: None,
     })
 }
 
