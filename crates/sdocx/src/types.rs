@@ -297,12 +297,151 @@ pub struct RichTextBox {
     pub spans: Vec<RichTextSpan>,
     /// Original Samsung paragraph records.
     pub paragraphs: Vec<RichTextParagraph>,
+    /// Embedded objects anchored to U+FFFC replacement characters.
+    pub object_spans: Vec<RichTextObjectSpan>,
     /// Per-page UTF-16 text ranges stored by Samsung Notes.
     pub text_sections: Vec<RichTextSection>,
     /// Text margins in left, top, right, bottom order.
     pub margins: Option<[f32; 4]>,
     /// Raw Android text-gravity flags.
     pub gravity: Option<u8>,
+}
+
+/// An object embedded into flowing text at a UTF-16 text index.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextObjectSpan {
+    /// Object kind encoded before the object binary.
+    pub object_type: ObjectType,
+    /// Object's WDoc binary record, retained for type-specific decoding.
+    pub object_data: Vec<u8>,
+    /// Parsed contents for supported embedded text-object kinds.
+    pub content: Option<RichTextObjectContent>,
+    /// UTF-16 index of the U+FFFC replacement character.
+    pub text_index_utf16: i32,
+    /// Inline/block placement behavior.
+    pub layout_option: ObjectSpanLayoutOption,
+    /// Cross-page placement behavior.
+    pub layout_constraint: ObjectSpanLayoutConstraint,
+}
+
+/// Parsed contents of an object embedded into flowing text.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum RichTextObjectContent {
+    /// A Samsung Notes table.
+    Table(Box<RichTextTable>),
+    /// A Samsung Notes fenced code block.
+    CodeBlock(Box<RichTextCodeBlock>),
+}
+
+/// A table embedded in flowing note text.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextTable {
+    /// Object placement box stored by the S Pen model.
+    pub bbox: BoundingBox,
+    /// Clockwise object rotation in degrees, if present.
+    pub rotation_degrees: Option<f64>,
+    /// Width of each table column in Samsung Notes coordinates.
+    pub column_widths: Vec<f32>,
+    /// Rows in stored order.
+    pub rows: Vec<RichTextTableRow>,
+}
+
+/// One row in an embedded table.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextTableRow {
+    /// Stored row index.
+    pub index: u32,
+    /// Row height in Samsung Notes coordinates.
+    pub height: f32,
+    /// Cells in stored order.
+    pub cells: Vec<RichTextTableCell>,
+}
+
+/// One cell in an embedded table.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextTableCell {
+    /// Stored zero-based column index.
+    pub column_index: u32,
+    /// Number of rows covered by the cell.
+    pub row_span: u32,
+    /// Number of columns covered by the cell.
+    pub column_span: u32,
+    /// Raw Samsung cell background color value.
+    pub background_color: u32,
+    /// Whether the background color is owned by this cell rather than inherited.
+    pub has_own_background_color: bool,
+    /// Cell placement box stored by the table model.
+    pub bbox: BoundingBox,
+    /// Raw Samsung vertical-alignment value.
+    pub vertical_alignment: u8,
+    /// Rich-text contents of the cell.
+    pub content: RichTextBox,
+}
+
+/// A fenced code block embedded in flowing note text.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextCodeBlock {
+    /// Object placement box stored by the S Pen model.
+    pub bbox: BoundingBox,
+    /// Clockwise object rotation in degrees, if present.
+    pub rotation_degrees: Option<f64>,
+    /// Code-block title or language label.
+    pub title: Option<RichTextBox>,
+    /// Code-block source text.
+    pub body: Option<RichTextBox>,
+}
+
+/// Placement option for an object embedded into text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum ObjectSpanLayoutOption {
+    Block,
+    Inline,
+    BlockWithSmallMargin,
+    BlockWithMediumMargin,
+    Other(u32),
+}
+
+impl From<u32> for ObjectSpanLayoutOption {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::Block,
+            1 => Self::Inline,
+            2 => Self::BlockWithSmallMargin,
+            3 => Self::BlockWithMediumMargin,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// Cross-page constraint for an object embedded into text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum ObjectSpanLayoutConstraint {
+    Normal,
+    OverPagesOverlapPadding,
+    OverPages,
+    Other(u32),
+}
+
+impl From<u32> for ObjectSpanLayoutConstraint {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::Normal,
+            1 => Self::OverPagesOverlapPadding,
+            2 => Self::OverPages,
+            raw => Self::Other(raw),
+        }
+    }
 }
 
 /// A page's slice of a document-level flowing text object.

@@ -63,6 +63,8 @@ pub struct ParseLimits {
     pub max_text_spans: usize,
     /// Maximum paragraph records in one rich-text object.
     pub max_text_paragraphs: usize,
+    /// Maximum embedded object spans in one rich-text object.
+    pub max_text_object_spans: usize,
 }
 
 impl Default for ParseLimits {
@@ -80,6 +82,7 @@ impl Default for ParseLimits {
             max_text_characters: 250_000,
             max_text_spans: 10_000,
             max_text_paragraphs: 10_000,
+            max_text_object_spans: 10_000,
         }
     }
 }

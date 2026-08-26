@@ -192,12 +192,26 @@ impl RichTextBox {
                 })
             })
             .collect();
+        let object_spans = self
+            .object_spans
+            .iter()
+            .filter_map(|object_span| {
+                let index = u32::try_from(object_span.text_index_utf16).ok()?;
+                (index >= start_utf16 && index < end_utf16).then(|| {
+                    let mut object_span = object_span.clone();
+                    object_span.text_index_utf16 =
+                        i32::try_from(index - start_utf16).unwrap_or(i32::MAX);
+                    object_span
+                })
+            })
+            .collect();
 
         let mut slice = self.clone();
         slice.text = self.text[byte_start..byte_end].to_string();
         slice.runs = runs;
         slice.spans = spans;
         slice.paragraphs = paragraphs;
+        slice.object_spans = object_spans;
         slice.text_sections = vec![crate::types::RichTextSection {
             start_utf16: 0,
             length_utf16: i32::try_from(end_utf16.checked_sub(start_utf16)?).ok()?,
@@ -300,6 +314,7 @@ mod tests {
                 payload: 1_u16.to_le_bytes().to_vec(),
             }],
             paragraphs: Vec::new(),
+            object_spans: Vec::new(),
             text_sections: Vec::new(),
             margins: None,
             gravity: None,
@@ -347,6 +362,7 @@ mod tests {
             runs: Vec::new(),
             spans: Vec::new(),
             paragraphs: Vec::new(),
+            object_spans: Vec::new(),
             text_sections: vec![
                 RichTextSection {
                     start_utf16: 0,
@@ -417,6 +433,7 @@ mod tests {
                 end_paragraph: 3,
                 payload: 2_u32.to_le_bytes().to_vec(),
             }],
+            object_spans: Vec::new(),
             text_sections: Vec::new(),
             margins: None,
             gravity: None,
