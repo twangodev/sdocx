@@ -1,10 +1,10 @@
 use base64::Engine as _;
 use clap::{Parser, ValueEnum};
 use sdocx::{
-    BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page, PageElement,
-    PageTemplate, PageTemplateSource, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
-    PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
-    RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke,
+    BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType, MediaAsset, Page,
+    PageElement, PageTemplate, PageTemplateSource, ParagraphAlignment, ParagraphBullet,
+    ParagraphLineSpacing, PredefinedTextStyle, RichTextBox, RichTextObjectContent,
+    RichTextObjectSpan, RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke,
 };
 use std::fmt::Write as FmtWrite;
 use std::fs;
@@ -301,6 +301,7 @@ fn render_text_box(
 const SAMSUNG_TEXT_SCALE: f64 = 3.0;
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
 const FLOW_INDENT: f64 = 48.0;
+const SAMSUNG_LINK_COLOR: &str = "#0054ff";
 
 #[derive(Clone)]
 struct SvgTextStyle {
@@ -310,6 +311,7 @@ struct SvgTextStyle {
     italic: bool,
     underline: bool,
     strikethrough: bool,
+    link_target: Option<String>,
 }
 
 #[derive(Default)]
@@ -725,7 +727,9 @@ fn text_style_at(
         italic: false,
         underline: false,
         strikethrough: false,
+        link_target: None,
     };
+    let mut is_hyperlink = false;
     for span in text_box
         .spans
         .iter()
@@ -752,10 +756,34 @@ fn text_style_at(
             RichTextSpanType::Strikethrough => {
                 style.strikethrough = span.boolean_value() == Some(true)
             }
+            RichTextSpanType::Hyperlink => {
+                is_hyperlink = true;
+                style.link_target = hyperlink_target(text_box, span);
+            }
             _ => {}
         }
     }
+    if is_hyperlink {
+        style.color = SAMSUNG_LINK_COLOR.to_string();
+    }
     style
+}
+
+fn hyperlink_target(text_box: &RichTextBox, span: &sdocx::RichTextSpan) -> Option<String> {
+    let hyperlink = span.hyperlink_value()?;
+    if let Some(target) = hyperlink.custom_data.filter(|target| !target.is_empty()) {
+        return Some(target);
+    }
+    let start = utf16_to_char_index(&text_box.text, span.start_utf16)?;
+    let end = utf16_to_char_index(&text_box.text, span.end_utf16)?;
+    let byte_offsets = char_byte_offsets(&text_box.text);
+    let visible_text = &text_box.text[byte_offsets[start]..byte_offsets[end]];
+    match hyperlink.kind {
+        HyperlinkType::Email => Some(format!("mailto:{visible_text}")),
+        HyperlinkType::Telephone => Some(format!("tel:{visible_text}")),
+        HyperlinkType::Url => Some(visible_text.to_string()),
+        _ => None,
+    }
 }
 
 fn write_styled_tspan(svg: &mut String, text: &str, style: &SvgTextStyle) {
@@ -765,6 +793,9 @@ fn write_styled_tspan(svg: &mut String, text: &str, style: &SvgTextStyle) {
         (false, true) => r#" text-decoration="line-through""#,
         (false, false) => "",
     };
+    if let Some(target) = &style.link_target {
+        write!(svg, r#"<a href="{}">"#, escape_xml(target)).unwrap();
+    }
     write!(
         svg,
         r#"<tspan fill="{}" font-size="{:.2}"{}{}{}>{}</tspan>"#,
@@ -784,6 +815,9 @@ fn write_styled_tspan(svg: &mut String, text: &str, style: &SvgTextStyle) {
         escape_xml(text),
     )
     .unwrap();
+    if style.link_target.is_some() {
+        svg.push_str("</a>");
+    }
 }
 
 fn render_embedded_object(
@@ -1192,7 +1226,10 @@ mod tests {
         Format, is_dark_background, normalized_stroke_width, object_flow_offset, render_page_svg,
         resolve_format, samsung_font_to_svg, svg_to_png,
     };
-    use sdocx::{BoundingBox, Color, Page, PageElement, Point, RichTextBox, Stroke};
+    use sdocx::{
+        BoundingBox, Color, Page, PageElement, Point, RichTextBox, RichTextSpan, RichTextSpanType,
+        Stroke,
+    };
     use std::path::Path;
 
     #[test]
@@ -1354,6 +1391,46 @@ mod tests {
         assert!(svg.contains(r#"<text x="48.00" y="45.00""#));
         assert!(svg.contains(r##"<tspan fill="#ffffff""##));
         assert!(!svg.contains(r##"<tspan fill="#252525""##));
+    }
+
+    #[test]
+    fn renders_hyperlink_color_and_target_from_the_sdk_span() {
+        let target = "https://example.com/markdown-test";
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&3_u32.to_le_bytes());
+        payload.extend_from_slice(&0_u32.to_le_bytes());
+        payload.extend_from_slice(&(target.encode_utf16().count() as u32).to_le_bytes());
+        payload.extend(target.encode_utf16().flat_map(|unit| unit.to_le_bytes()));
+        let mut page = page_with_uncolored_stroke();
+        page.width = 1080;
+        page.strokes.clear();
+        page.elements.push(PageElement::TextBox(RichTextBox {
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: "Example link".into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: Some(15.0),
+            runs: Vec::new(),
+            spans: vec![RichTextSpan {
+                kind: RichTextSpanType::Hyperlink,
+                start_utf16: 0,
+                end_utf16: 12,
+                expand: false,
+                payload,
+            }],
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }));
+
+        let svg = render_page_svg(&page, None, &[], None, false);
+
+        assert!(svg.contains(r##"<a href="https://example.com/markdown-test">"##));
+        assert!(svg.contains(r##"fill="#0054ff""##));
     }
 
     #[test]

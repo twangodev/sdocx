@@ -507,6 +507,92 @@ impl RichTextSpan {
         let bytes = self.payload.get(..4)?.try_into().ok()?;
         Some(f32::from_le_bytes(bytes))
     }
+
+    /// Decode the type and optional target stored by a hyperlink span.
+    pub fn hyperlink_value(&self) -> Option<RichTextHyperlink> {
+        if self.kind != RichTextSpanType::Hyperlink {
+            return None;
+        }
+        let kind = HyperlinkType::from(payload_u32(&self.payload, 0)?);
+        let date_time_type = payload_u32(&self.payload, 4)?;
+        let length = usize::try_from(payload_u32(&self.payload, 8)?).ok()?;
+        let byte_length = length.checked_mul(2)?;
+        let bytes = self.payload.get(12..12_usize.checked_add(byte_length)?)?;
+        let custom_data = (!bytes.is_empty())
+            .then(|| {
+                bytes
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|unit| u16::from_le_bytes([unit[0], unit[1]]))
+                    .collect::<Vec<_>>()
+            })
+            .map(|units| String::from_utf16(&units))
+            .transpose()
+            .ok()?;
+        Some(RichTextHyperlink {
+            kind,
+            date_time_type,
+            custom_data,
+        })
+    }
+}
+
+/// Decoded hyperlink metadata from a rich-text span.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextHyperlink {
+    /// Kind of action Samsung associates with the text.
+    pub kind: HyperlinkType,
+    /// Samsung date/time subtype, meaningful for [`HyperlinkType::DateTime`].
+    pub date_time_type: u32,
+    /// Explicit target for custom links, if one was stored.
+    pub custom_data: Option<String>,
+}
+
+/// Samsung hyperlink action identifiers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum HyperlinkType {
+    Unknown,
+    Email,
+    Telephone,
+    Url,
+    Date,
+    Address,
+    DateTime,
+    Formula,
+    File,
+    Custom,
+    Other(u32),
+}
+
+impl From<u32> for HyperlinkType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::Unknown,
+            1 => Self::Email,
+            2 => Self::Telephone,
+            3 => Self::Url,
+            4 => Self::Date,
+            5 => Self::Address,
+            6 => Self::DateTime,
+            7 => Self::Formula,
+            8 => Self::File,
+            9 => Self::Custom,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+fn payload_u32(payload: &[u8], offset: usize) -> Option<u32> {
+    Some(u32::from_le_bytes(
+        payload
+            .get(offset..offset.checked_add(4)?)?
+            .try_into()
+            .ok()?,
+    ))
 }
 
 /// Samsung rich-text span identifiers.
@@ -998,8 +1084,9 @@ impl Default for BoundingBox {
 #[cfg(test)]
 mod tests {
     use super::{
-        BulletType, FormatVersion, LineSpacingType, ObjectType, ParagraphAlignment,
+        BulletType, FormatVersion, HyperlinkType, LineSpacingType, ObjectType, ParagraphAlignment,
         ParagraphDirection, PredefinedTextStyle, RichTextParagraph, RichTextParagraphType,
+        RichTextSpan, RichTextSpanType,
     };
 
     fn paragraph(kind: RichTextParagraphType, values: &[u32]) -> RichTextParagraph {
@@ -1031,6 +1118,28 @@ mod tests {
         assert!(!ObjectType::Table.is_supported_by(FormatVersion(5399)));
         assert!(ObjectType::Table.is_supported_by(FormatVersion::TABLE_AND_CODE_BLOCK_OBJECTS));
         assert!(ObjectType::Stroke.is_supported_by(FormatVersion::INITIAL));
+    }
+
+    #[test]
+    fn decodes_apk_hyperlink_payload() {
+        let target = "https://example.com/markdown-test";
+        let mut payload = Vec::new();
+        payload.extend_from_slice(&3_u32.to_le_bytes());
+        payload.extend_from_slice(&0_u32.to_le_bytes());
+        payload.extend_from_slice(&(target.encode_utf16().count() as u32).to_le_bytes());
+        payload.extend(target.encode_utf16().flat_map(|unit| unit.to_le_bytes()));
+        let span = RichTextSpan {
+            kind: RichTextSpanType::Hyperlink,
+            start_utf16: 0,
+            end_utf16: 12,
+            expand: false,
+            payload,
+        };
+
+        let hyperlink = span.hyperlink_value().unwrap();
+        assert_eq!(hyperlink.kind, HyperlinkType::Url);
+        assert_eq!(hyperlink.date_time_type, 0);
+        assert_eq!(hyperlink.custom_data.as_deref(), Some(target));
     }
 
     #[test]
