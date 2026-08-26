@@ -396,8 +396,10 @@ fn render_flow_text_box(
             dark_mode,
             layout.predefined_style,
         );
-        let marker = layout.bullet.and_then(bullet_marker);
-        let marker_width = marker.as_ref().map_or(0.0, |(_, width)| *width);
+        let marker = layout
+            .bullet
+            .and_then(|bullet| bullet_marker_for_indent(bullet, layout.indent_level));
+        let marker_width = marker.as_ref().map_or(0.0, |(_, width, _, _)| *width);
         let base_x = content_left + f64::from(layout.indent_level) * FLOW_INDENT;
         let text_x = base_x + marker_width;
         let available_width = (content_right - text_x).max(base_style.font_size);
@@ -419,13 +421,15 @@ fn render_flow_text_box(
         for (line_index, line_range) in lines.iter().enumerate() {
             let baseline = cursor_y + base_style.font_size;
             if line_index == 0
-                && let Some((marker, _)) = marker.as_ref()
+                && let Some((marker, _, marker_size, marker_offset)) = marker.as_ref()
             {
                 writeln!(
                     svg,
-                    r#"    <text x="{base_x:.2}" y="{baseline:.2}" fill="{}" font-family="Roboto, Arial, sans-serif" font-size="{:.2}">{}</text>"#,
+                    r#"    <text x="{:.2}" y="{:.2}" fill="{}" font-family="Roboto, Arial, sans-serif" font-size="{:.2}">{}</text>"#,
+                    base_x + marker_offset,
+                    baseline - if *marker_size < 40.0 { 8.0 } else { 0.0 },
                     base_style.color,
-                    base_style.font_size,
+                    marker_size,
                     escape_xml(marker),
                 )
                 .unwrap();
@@ -508,8 +512,9 @@ fn paragraph_line_height(font_size: f64, spacing: Option<ParagraphLineSpacing>) 
     }
 }
 
-fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64)> {
-    let marker = match bullet.kind {
+fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64, f64, f64)> {
+    let marker_kind = bullet.kind;
+    let marker = match marker_kind {
         BulletType::None => return None,
         BulletType::Arrow => "➤".to_string(),
         BulletType::Checker => {
@@ -531,12 +536,23 @@ fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64)> {
         BulletType::WhiteSquare => "□".to_string(),
         _ => "•".to_string(),
     };
-    let width = if bullet.kind == BulletType::Digit {
-        64.0
-    } else {
-        78.0
+    let (width, font_size, offset) = match marker_kind {
+        BulletType::Digit => (64.0, 45.0, 0.0),
+        BulletType::SolidCircle => (48.0, 24.0, 20.0),
+        BulletType::WhiteCircle => (78.0, 27.0, 20.0),
+        _ => (78.0, 32.0, 12.0),
     };
-    Some((marker, width))
+    Some((marker, width, font_size, offset))
+}
+
+fn bullet_marker_for_indent(
+    mut bullet: ParagraphBullet,
+    indent_level: u32,
+) -> Option<(String, f64, f64, f64)> {
+    if bullet.kind == BulletType::SolidCircle && indent_level % 2 == 1 {
+        bullet.kind = BulletType::WhiteCircle;
+    }
+    bullet_marker(bullet)
 }
 
 fn alphabetic_marker(number: u32, uppercase: bool) -> String {
@@ -599,18 +615,28 @@ fn wrap_paragraph(
             width = next_width;
             index += 1;
             if character.is_whitespace() {
-                last_break = Some(index - 1);
+                last_break = Some((index - 1, index));
+            } else if matches!(character, '/' | '?' | '&' | '#' | '-' | '.')
+                && text_box.spans.iter().any(|span| {
+                    span.kind == RichTextSpanType::Hyperlink
+                        && span.start_utf16 <= utf16_offsets[index - 1]
+                        && span.end_utf16 > utf16_offsets[index - 1]
+                })
+            {
+                // Samsung's URL line breaker keeps a link with its prefix and
+                // prefers URL punctuation over an arbitrary character split.
+                last_break = Some((index, index));
             }
         }
         if index == range.end {
             lines.push(start..range.end);
             break;
         }
-        let end = last_break
-            .filter(|break_at| *break_at > start)
-            .unwrap_or(index);
+        let (end, next) = last_break
+            .filter(|(end, _)| *end > start)
+            .unwrap_or((index, index));
         lines.push(start..end);
-        start = if end == index { index } else { end + 1 };
+        start = next;
         while start < range.end && characters[start].is_whitespace() {
             start += 1;
         }
@@ -629,13 +655,37 @@ fn estimated_character_width(character: char, style: &SvgTextStyle) -> f64 {
         563, 530, 347, 561, 550, 243, 239, 506, 243, 876, 552, 570, 561, 568, 338, 516, 327, 551,
         484, 751, 496, 473, 496, 338, 244, 338, 680,
     ];
-    let factor = if (' '..='~').contains(&character) {
-        let glyph = character as usize - 27;
+    let latin_base = match character {
+        'À'..='Å' => Some('A'),
+        'Ç' => Some('C'),
+        'È'..='Ë' => Some('E'),
+        'Ì'..='Ï' => Some('I'),
+        'Ñ' => Some('N'),
+        'Ò'..='Ö' => Some('O'),
+        'Ù'..='Ü' => Some('U'),
+        'Ý' => Some('Y'),
+        'à'..='å' => Some('a'),
+        'ç' => Some('c'),
+        'è'..='ë' => Some('e'),
+        'ì'..='ï' => Some('i'),
+        'ñ' => Some('n'),
+        'ò'..='ö' => Some('o'),
+        'ù'..='ü' => Some('u'),
+        'ý' | 'ÿ' => Some('y'),
+        _ => None,
+    };
+    let metric_character = latin_base.unwrap_or(character);
+    let factor = if (' '..='~').contains(&metric_character) {
+        let glyph = metric_character as usize - 27;
         f64::from(ROBOTO_ADVANCES[glyph]) / 1000.0
     } else if character.is_whitespace() {
         0.248
+    } else if character == 'ß' || ('\u{0370}'..='\u{052f}').contains(&character) {
+        0.62
+    } else if ('\u{2e80}'..='\u{d7af}').contains(&character) {
+        1.0
     } else {
-        0.95
+        0.65
     };
     style.font_size * factor
 }
@@ -765,6 +815,19 @@ fn text_style_at(
     }
     if is_hyperlink {
         style.color = SAMSUNG_LINK_COLOR.to_string();
+        style.underline = true;
+    }
+    if matches!(
+        predefined_style,
+        Some(
+            PredefinedTextStyle::Heading1
+                | PredefinedTextStyle::Heading2
+                | PredefinedTextStyle::Heading3
+        )
+    ) {
+        // Markdown headings carry a bold span, but Samsung's PDF exporter uses
+        // the heading face at regular weight.
+        style.bold = false;
     }
     style
 }
@@ -796,16 +859,20 @@ fn write_styled_tspan(svg: &mut String, text: &str, style: &SvgTextStyle) {
     if let Some(target) = &style.link_target {
         write!(svg, r#"<a href="{}">"#, escape_xml(target)).unwrap();
     }
+    let bold_stroke = if style.bold {
+        format!(
+            r#" stroke="{}" stroke-width="0.45" paint-order="stroke fill""#,
+            style.color
+        )
+    } else {
+        String::new()
+    };
     write!(
         svg,
         r#"<tspan fill="{}" font-size="{:.2}"{}{}{}>{}</tspan>"#,
         style.color,
         style.font_size,
-        if style.bold {
-            r#" font-weight="700""#
-        } else {
-            ""
-        },
+        bold_stroke,
         if style.italic {
             r#" font-style="italic""#
         } else {
@@ -831,23 +898,58 @@ fn render_embedded_object(
             let offset_y =
                 object_flow_offset(table.bbox.y_min, cursor_y, object_top_margin(object));
             writeln!(svg, r#"    <g data-sdocx-object="table">"#).unwrap();
-            let stroke = if dark_mode { "#777777" } else { "#9e9e9e" };
+            let stroke = if dark_mode { "#777777" } else { "#b8b0a3" };
+            let clip_id = format!("sdocx-table-{:x}", object.text_index_utf16);
+            writeln!(
+                svg,
+                r#"      <defs><clipPath id="{clip_id}"><rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" rx="24"/></clipPath></defs>"#,
+                table.bbox.x_min,
+                table.bbox.y_min + offset_y,
+                table.bbox.x_max - table.bbox.x_min,
+                table.bbox.y_max - table.bbox.y_min,
+            )
+            .unwrap();
+            writeln!(svg, r#"      <g clip-path="url(#{clip_id})">"#).unwrap();
             for row in &table.rows {
                 for cell in &row.cells {
+                    let fill = table_cell_fill(cell, dark_mode);
                     writeln!(
                         svg,
-                        r#"      <rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" fill="none" stroke="{stroke}" stroke-width="1"/>"#,
+                        r#"        <rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" fill="{fill}"/>"#,
                         cell.bbox.x_min,
                         cell.bbox.y_min + offset_y,
                         cell.bbox.x_max - cell.bbox.x_min,
                         cell.bbox.y_max - cell.bbox.y_min,
                     )
                     .unwrap();
+                    if cell.bbox.x_min > table.bbox.x_min + 1.0 {
+                        writeln!(
+                            svg,
+                            r#"        <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{stroke}" stroke-width="1"/>"#,
+                            cell.bbox.x_min,
+                            cell.bbox.y_min + offset_y,
+                            cell.bbox.x_min,
+                            cell.bbox.y_max + offset_y,
+                        )
+                        .unwrap();
+                    }
+                    if cell.bbox.y_min > table.bbox.y_min + 1.0 {
+                        writeln!(
+                            svg,
+                            r#"        <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{stroke}" stroke-width="1"/>"#,
+                            cell.bbox.x_min,
+                            cell.bbox.y_min + offset_y,
+                            cell.bbox.x_max,
+                            cell.bbox.y_min + offset_y,
+                        )
+                        .unwrap();
+                    }
                     if let Some(line) = cell.content.text.lines().next() {
-                        let style = text_style_at(&cell.content, 0, dark_mode, None);
+                        let mut style = text_style_at(&cell.content, 0, dark_mode, None);
+                        style.bold = false;
                         write!(
                             svg,
-                            r#"      <text x="{:.2}" y="{:.2}" font-family="Roboto, Arial, sans-serif" xml:space="preserve">"#,
+                            r#"        <text x="{:.2}" y="{:.2}" font-family="Roboto, Arial, sans-serif" xml:space="preserve">"#,
                             cell.bbox.x_min + 23.0,
                             cell.bbox.y_min + offset_y + 81.0,
                         )
@@ -857,16 +959,26 @@ fn render_embedded_object(
                     }
                 }
             }
+            svg.push_str("      </g>\n");
+            writeln!(
+                svg,
+                r#"      <rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" rx="24" fill="none" stroke="{stroke}" stroke-width="1"/>"#,
+                table.bbox.x_min,
+                table.bbox.y_min + offset_y,
+                table.bbox.x_max - table.bbox.x_min,
+                table.bbox.y_max - table.bbox.y_min,
+            )
+            .unwrap();
             svg.push_str("    </g>\n");
             Some(table.bbox.y_max + offset_y)
         }
         Some(RichTextObjectContent::CodeBlock(code)) => {
             let offset_y = object_flow_offset(code.bbox.y_min, cursor_y, object_top_margin(object));
-            let fill = if dark_mode { "#333333" } else { "#f4f4f4" };
+            let fill = if dark_mode { "#333333" } else { "#efefef" };
             let stroke = if dark_mode { "#5f5f5f" } else { "#dddddd" };
             writeln!(
                 svg,
-                r#"    <g data-sdocx-object="code-block"><rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" rx="12" fill="{fill}" stroke="{stroke}" stroke-width="1"/>"#,
+                r#"    <g data-sdocx-object="code-block"><rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" rx="36" fill="{fill}" stroke="{stroke}" stroke-width="1"/>"#,
                 code.bbox.x_min,
                 code.bbox.y_min + offset_y,
                 code.bbox.x_max - code.bbox.x_min,
@@ -887,6 +999,16 @@ fn render_embedded_object(
                     dark_mode,
                 );
             }
+            let icon_stroke = if dark_mode { "#b7b7b7" } else { "#8b8b8b" };
+            writeln!(
+                svg,
+                r#"      <g fill="none" stroke="{icon_stroke}" stroke-width="6" stroke-linejoin="round"><path d="M {:.2} {:.2} v -4 q 0 -8 8 -8 h 17 q 8 0 8 8 v 29"/><rect x="{:.2}" y="{:.2}" width="31" height="38" rx="5"/></g>"#,
+                code.bbox.x_min + 895.0,
+                object_top + 61.0,
+                code.bbox.x_min + 879.0,
+                object_top + 59.0,
+            )
+            .unwrap();
             if let Some(body) = &code.body {
                 let mut baseline = object_top + 177.6;
                 let mut character_start = 0_usize;
@@ -898,7 +1020,7 @@ fn render_embedded_object(
                         character_start,
                         text_x,
                         baseline,
-                        "Roboto Mono, monospace",
+                        "Roboto, Arial, sans-serif",
                         dark_mode,
                     );
                     character_start += line.chars().count() + 1;
@@ -945,6 +1067,16 @@ fn object_flow_offset(stored_top: f64, cursor_y: f64, top_margin: f64) -> f64 {
     } else {
         cursor_y + top_margin - stored_top
     }
+}
+
+fn table_cell_fill(cell: &sdocx::RichTextTableCell, dark_mode: bool) -> String {
+    if !cell.has_own_background_color {
+        return if dark_mode { "#252525" } else { "#fcfcfc" }.to_string();
+    }
+    if cell.background_color == 0 {
+        return if dark_mode { "#45413d" } else { "#eeebe7" }.to_string();
+    }
+    format!("#{:06x}", cell.background_color & 0x00ff_ffff)
 }
 
 fn object_top_margin(object: &RichTextObjectSpan) -> f64 {
@@ -1431,6 +1563,7 @@ mod tests {
 
         assert!(svg.contains(r##"<a href="https://example.com/markdown-test">"##));
         assert!(svg.contains(r##"fill="#0054ff""##));
+        assert!(svg.contains(r#"text-decoration="underline""#));
     }
 
     #[test]
