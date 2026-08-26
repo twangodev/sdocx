@@ -1,11 +1,14 @@
 use base64::Engine as _;
 use clap::{Parser, ValueEnum};
 use sdocx::{
-    Color, Document, LayoutDocument, MediaAsset, Page, PageElement, PageTemplate,
-    PageTemplateSource, RichTextBox, RichTextRun, Stroke,
+    BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page, PageElement,
+    PageTemplate, PageTemplateSource, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
+    PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
+    RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke,
 };
 use std::fmt::Write as FmtWrite;
 use std::fs;
+use std::ops::Range;
 use std::path::PathBuf;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
@@ -56,6 +59,7 @@ fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
     // portable fallback there; explicit Arial still wins on platforms that
     // provide it.
     fontdb.set_sans_serif_family("DejaVu Sans");
+    fontdb.set_monospace_family("DejaVu Sans Mono");
     let tree = resvg::usvg::Tree::from_str(svg, &opt).map_err(|e| format!("invalid SVG: {e}"))?;
     let size = tree.size().to_int_size();
     let (w, h) = (size.width(), size.height());
@@ -100,6 +104,7 @@ fn render_page_svg(
     page: &Page,
     fallback_bg_color: Option<&Color>,
     media_assets: &[MediaAsset],
+    flow_page_padding: Option<(u32, u32)>,
     dark_mode: bool,
 ) -> String {
     // Dark-mode notes have light ink, so prefer the document's dark background
@@ -147,7 +152,14 @@ fn render_page_svg(
         render_stroke(&mut svg, stroke, default_ink);
     }
     for element in &page.elements {
-        render_element(&mut svg, element, page, media_assets, dark_mode);
+        render_element(
+            &mut svg,
+            element,
+            page,
+            media_assets,
+            flow_page_padding,
+            dark_mode,
+        );
     }
 
     svg.push_str("</svg>\n");
@@ -159,6 +171,7 @@ fn render_element(
     element: &PageElement,
     page: &Page,
     media_assets: &[MediaAsset],
+    flow_page_padding: Option<(u32, u32)>,
     dark_mode: bool,
 ) {
     match element {
@@ -179,12 +192,20 @@ fn render_element(
             )
             .unwrap();
         }
-        PageElement::TextBox(text_box) => render_text_box(svg, text_box, page, dark_mode),
+        PageElement::TextBox(text_box) => {
+            render_text_box(svg, text_box, page, flow_page_padding, dark_mode)
+        }
         _ => {}
     }
 }
 
-fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page, dark_mode: bool) {
+fn render_text_box(
+    svg: &mut String,
+    text_box: &RichTextBox,
+    page: &Page,
+    flow_page_padding: Option<(u32, u32)>,
+    dark_mode: bool,
+) {
     let text = text_box.text.trim_end_matches('\n');
     if text.trim().is_empty() {
         return;
@@ -192,16 +213,16 @@ fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page, dark_m
 
     let is_note_body =
         text_box.bbox.x_max <= text_box.bbox.x_min || text_box.bbox.y_max <= text_box.bbox.y_min;
-    let (x, y, width, height) = if is_note_body {
-        (50.0, 0.0, page.width as f64 - 100.0, page.height as f64)
-    } else {
-        (
-            text_box.bbox.x_min,
-            text_box.bbox.y_min,
-            text_box.bbox.x_max - text_box.bbox.x_min,
-            text_box.bbox.y_max - text_box.bbox.y_min,
-        )
-    };
+    if is_note_body {
+        render_flow_text_box(svg, text_box, page, flow_page_padding, dark_mode);
+        return;
+    }
+    let (x, y, width, height) = (
+        text_box.bbox.x_min,
+        text_box.bbox.y_min,
+        text_box.bbox.x_max - text_box.bbox.x_min,
+        text_box.bbox.y_max - text_box.bbox.y_min,
+    );
     let color = text_box
         .color
         .filter(|color| !dark_mode || !is_dark_compatibility_color(*color))
@@ -277,11 +298,688 @@ fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page, dark_m
     svg.push_str("  </g>\n");
 }
 
+const SAMSUNG_TEXT_SCALE: f64 = 3.0;
+const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
+const FLOW_INDENT: f64 = 48.0;
+
+#[derive(Clone)]
+struct SvgTextStyle {
+    font_size: f64,
+    color: String,
+    bold: bool,
+    italic: bool,
+    underline: bool,
+    strikethrough: bool,
+}
+
+#[derive(Default)]
+struct ParagraphLayout {
+    alignment: Option<ParagraphAlignment>,
+    indent_level: u32,
+    line_spacing: Option<ParagraphLineSpacing>,
+    bullet: Option<ParagraphBullet>,
+    spacing_before: f64,
+    spacing_after: f64,
+    predefined_style: Option<PredefinedTextStyle>,
+}
+
+fn render_flow_text_box(
+    svg: &mut String,
+    text_box: &RichTextBox,
+    page: &Page,
+    flow_page_padding: Option<(u32, u32)>,
+    dark_mode: bool,
+) {
+    let (horizontal_padding, vertical_padding) = flow_page_padding
+        .map(|(horizontal, vertical)| (f64::from(horizontal), f64::from(vertical)))
+        .unwrap_or((FLOW_HORIZONTAL_PADDING, 0.0));
+    let margins = text_box.margins.unwrap_or([0.0; 4]);
+    let content_left = horizontal_padding + f64::from(margins[0]) * SAMSUNG_TEXT_SCALE;
+    let content_top = vertical_padding + f64::from(margins[1]) * SAMSUNG_TEXT_SCALE;
+    let content_right =
+        f64::from(page.width) - horizontal_padding - f64::from(margins[2]) * SAMSUNG_TEXT_SCALE;
+    let characters = text_box.text.chars().collect::<Vec<_>>();
+    let utf16_offsets = char_utf16_offsets(&text_box.text);
+    let byte_offsets = char_byte_offsets(&text_box.text);
+    let mut paragraph_start = 0_usize;
+    let mut cursor_y = content_top;
+
+    let paragraphs = text_box.text.split_inclusive('\n').collect::<Vec<_>>();
+    writeln!(svg, r#"  <g data-sdocx-flow="true">"#).unwrap();
+    for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
+        let content = paragraph.trim_end_matches(['\n', '\r']);
+        let content_length = content.chars().count();
+        let paragraph_end = paragraph_start + content_length;
+        let layout = paragraph_layout(text_box, paragraph_index as u32);
+        let previous_is_list_item = paragraph_index > 0
+            && paragraph_layout(text_box, paragraph_index as u32 - 1)
+                .bullet
+                .and_then(bullet_marker)
+                .is_some();
+        let current_is_list_item = layout.bullet.and_then(bullet_marker).is_some();
+        let next_is_list_item = paragraph_index + 1 < paragraphs.len()
+            && paragraph_layout(text_box, paragraph_index as u32 + 1)
+                .bullet
+                .and_then(bullet_marker)
+                .is_some();
+        if paragraph_start != 0 && !(previous_is_list_item && current_is_list_item) {
+            cursor_y += layout.spacing_before;
+        }
+
+        let paragraph_start_utf16 = utf16_offsets[paragraph_start];
+        let paragraph_end_utf16 = utf16_offsets[paragraph_end];
+        let embedded = text_box
+            .object_spans
+            .iter()
+            .filter(|object| {
+                u32::try_from(object.text_index_utf16).is_ok_and(|index| {
+                    index >= paragraph_start_utf16 && index <= paragraph_end_utf16
+                })
+            })
+            .collect::<Vec<_>>();
+        if !embedded.is_empty() {
+            for object in embedded {
+                if let Some(bottom) = render_embedded_object(svg, object, cursor_y, dark_mode) {
+                    cursor_y = cursor_y.max(bottom + object_bottom_margin(object));
+                }
+            }
+            cursor_y += layout.spacing_after;
+            paragraph_start += paragraph.chars().count();
+            continue;
+        }
+
+        let base_style = text_style_at(
+            text_box,
+            paragraph_start_utf16,
+            dark_mode,
+            layout.predefined_style,
+        );
+        let marker = layout.bullet.and_then(bullet_marker);
+        let marker_width = marker.as_ref().map_or(0.0, |(_, width)| *width);
+        let base_x = content_left + f64::from(layout.indent_level) * FLOW_INDENT;
+        let text_x = base_x + marker_width;
+        let available_width = (content_right - text_x).max(base_style.font_size);
+        let lines = if content.is_empty() {
+            std::iter::once(paragraph_start..paragraph_start).collect::<Vec<_>>()
+        } else {
+            wrap_paragraph(
+                text_box,
+                &characters,
+                &utf16_offsets,
+                paragraph_start..paragraph_end,
+                available_width,
+                dark_mode,
+                layout.predefined_style,
+            )
+        };
+        let line_height = paragraph_line_height(base_style.font_size, layout.line_spacing);
+
+        for (line_index, line_range) in lines.iter().enumerate() {
+            let baseline = cursor_y + base_style.font_size;
+            if line_index == 0
+                && let Some((marker, _)) = marker.as_ref()
+            {
+                writeln!(
+                    svg,
+                    r#"    <text x="{base_x:.2}" y="{baseline:.2}" fill="{}" font-family="Roboto, Arial, sans-serif" font-size="{:.2}">{}</text>"#,
+                    base_style.color,
+                    base_style.font_size,
+                    escape_xml(marker),
+                )
+                .unwrap();
+            }
+            render_flow_line(
+                svg,
+                text_box,
+                &utf16_offsets,
+                &byte_offsets,
+                line_range.clone(),
+                text_x,
+                content_right,
+                baseline,
+                layout.alignment,
+                dark_mode,
+                layout.predefined_style,
+            );
+            cursor_y += line_height;
+        }
+        if !(current_is_list_item && next_is_list_item) {
+            cursor_y += layout.spacing_after;
+        }
+        paragraph_start += paragraph.chars().count();
+    }
+    svg.push_str("  </g>\n");
+}
+
+fn paragraph_layout(text_box: &RichTextBox, paragraph_index: u32) -> ParagraphLayout {
+    let mut layout = ParagraphLayout::default();
+    for paragraph in text_box.paragraphs.iter().filter(|paragraph| {
+        paragraph.start_paragraph <= paragraph_index && paragraph.end_paragraph > paragraph_index
+    }) {
+        match paragraph.kind {
+            RichTextParagraphType::Alignment => layout.alignment = paragraph.alignment(),
+            RichTextParagraphType::IndentLevel => {
+                if let Some(indent) = paragraph.indent() {
+                    layout.indent_level = indent.level;
+                }
+            }
+            RichTextParagraphType::LineSpacing => layout.line_spacing = paragraph.line_spacing(),
+            RichTextParagraphType::Bullet => layout.bullet = paragraph.bullet(),
+            RichTextParagraphType::SpacingBefore => {
+                layout.spacing_before = paragraph
+                    .spacing()
+                    .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
+                    .map_or(0.0, |spacing| f64::from(spacing) * SAMSUNG_TEXT_SCALE);
+            }
+            RichTextParagraphType::SpacingAfter => {
+                layout.spacing_after = paragraph
+                    .spacing()
+                    .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
+                    .map_or(0.0, |spacing| f64::from(spacing) * SAMSUNG_TEXT_SCALE);
+            }
+            RichTextParagraphType::PredefinedStyle => {
+                layout.predefined_style = paragraph.predefined_style().map(|style| style.style)
+            }
+            _ => {}
+        }
+    }
+    layout
+}
+
+fn paragraph_line_height(font_size: f64, spacing: Option<ParagraphLineSpacing>) -> f64 {
+    match spacing {
+        Some(spacing)
+            if spacing.value.is_finite()
+                && spacing.value > 0.0
+                && spacing.kind == LineSpacingType::Percent =>
+        {
+            font_size * f64::from(spacing.value)
+        }
+        Some(spacing)
+            if spacing.value.is_finite()
+                && spacing.value > 0.0
+                && spacing.kind == LineSpacingType::Pixels =>
+        {
+            f64::from(spacing.value) * SAMSUNG_TEXT_SCALE
+        }
+        _ => font_size * 1.6,
+    }
+}
+
+fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64)> {
+    let marker = match bullet.kind {
+        BulletType::None => return None,
+        BulletType::Arrow => "➤".to_string(),
+        BulletType::Checker => {
+            if bullet.checked {
+                "☑".to_string()
+            } else {
+                "☐".to_string()
+            }
+        }
+        BulletType::Diamond => "◆".to_string(),
+        BulletType::Digit => format!("{}.", bullet.number),
+        BulletType::CircledDigit => format!("{}", bullet.number),
+        BulletType::Alphabet => alphabetic_marker(bullet.number, false),
+        BulletType::RomanNumeral => roman_marker(bullet.number),
+        BulletType::SolidCircle => "●".to_string(),
+        BulletType::WhiteCircle => "○".to_string(),
+        BulletType::UppercaseAlphabet => alphabetic_marker(bullet.number, true),
+        BulletType::BlackSquare => "■".to_string(),
+        BulletType::WhiteSquare => "□".to_string(),
+        _ => "•".to_string(),
+    };
+    let width = if bullet.kind == BulletType::Digit {
+        64.0
+    } else {
+        78.0
+    };
+    Some((marker, width))
+}
+
+fn alphabetic_marker(number: u32, uppercase: bool) -> String {
+    let offset = number.saturating_sub(1) % 26;
+    let base = if uppercase { b'A' } else { b'a' };
+    format!("{}.", char::from(base + offset as u8))
+}
+
+fn roman_marker(number: u32) -> String {
+    const VALUES: &[(u32, &str)] = &[
+        (1000, "M"),
+        (900, "CM"),
+        (500, "D"),
+        (400, "CD"),
+        (100, "C"),
+        (90, "XC"),
+        (50, "L"),
+        (40, "XL"),
+        (10, "X"),
+        (9, "IX"),
+        (5, "V"),
+        (4, "IV"),
+        (1, "I"),
+    ];
+    let mut remaining = number.max(1);
+    let mut result = String::new();
+    for (value, numeral) in VALUES {
+        while remaining >= *value {
+            result.push_str(numeral);
+            remaining -= value;
+        }
+    }
+    result.make_ascii_lowercase();
+    result.push('.');
+    result
+}
+
+fn wrap_paragraph(
+    text_box: &RichTextBox,
+    characters: &[char],
+    utf16_offsets: &[u32],
+    range: Range<usize>,
+    max_width: f64,
+    dark_mode: bool,
+    predefined_style: Option<PredefinedTextStyle>,
+) -> Vec<Range<usize>> {
+    let mut lines = Vec::new();
+    let mut start = range.start;
+    while start < range.end {
+        let mut width = 0.0;
+        let mut index = start;
+        let mut last_break = None;
+        while index < range.end {
+            let character = characters[index];
+            let style = text_style_at(text_box, utf16_offsets[index], dark_mode, predefined_style);
+            let next_width = width + estimated_character_width(character, &style);
+            if next_width > max_width && index > start {
+                break;
+            }
+            width = next_width;
+            index += 1;
+            if character.is_whitespace() {
+                last_break = Some(index - 1);
+            }
+        }
+        if index == range.end {
+            lines.push(start..range.end);
+            break;
+        }
+        let end = last_break
+            .filter(|break_at| *break_at > start)
+            .unwrap_or(index);
+        lines.push(start..end);
+        start = if end == index { index } else { end + 1 };
+        while start < range.end && characters[start].is_whitespace() {
+            start += 1;
+        }
+    }
+    lines
+}
+
+fn estimated_character_width(character: char, style: &SvgTextStyle) -> f64 {
+    // The analyzed Samsung PDF exporter embeds Roboto-Regular with these
+    // advances. Printable ASCII glyph IDs are codepoint - 27 in that font.
+    const ROBOTO_ADVANCES: [u16; 100] = [
+        443, 0, 0, 248, 248, 248, 257, 320, 615, 562, 732, 622, 174, 342, 348, 430, 567, 196, 276,
+        263, 412, 562, 562, 562, 562, 562, 562, 562, 562, 562, 562, 242, 211, 508, 548, 522, 472,
+        897, 652, 623, 650, 656, 568, 552, 681, 713, 271, 551, 627, 538, 873, 713, 687, 630, 687,
+        616, 593, 596, 648, 636, 887, 626, 600, 599, 265, 410, 265, 417, 451, 309, 543, 561, 523,
+        563, 530, 347, 561, 550, 243, 239, 506, 243, 876, 552, 570, 561, 568, 338, 516, 327, 551,
+        484, 751, 496, 473, 496, 338, 244, 338, 680,
+    ];
+    let factor = if (' '..='~').contains(&character) {
+        let glyph = character as usize - 27;
+        f64::from(ROBOTO_ADVANCES[glyph]) / 1000.0
+    } else if character.is_whitespace() {
+        0.248
+    } else {
+        0.95
+    };
+    style.font_size * factor
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_flow_line(
+    svg: &mut String,
+    text_box: &RichTextBox,
+    utf16_offsets: &[u32],
+    byte_offsets: &[usize],
+    range: Range<usize>,
+    left: f64,
+    right: f64,
+    baseline: f64,
+    alignment: Option<ParagraphAlignment>,
+    dark_mode: bool,
+    predefined_style: Option<PredefinedTextStyle>,
+) {
+    if range.is_empty() {
+        return;
+    }
+    let (x, anchor) = match alignment {
+        Some(ParagraphAlignment::Center) => ((left + right) / 2.0, "middle"),
+        Some(ParagraphAlignment::Right) => (right, "end"),
+        _ => (left, "start"),
+    };
+    let mut boundaries = vec![range.start, range.end];
+    for span in &text_box.spans {
+        if let Some(start) = utf16_to_char_index(&text_box.text, span.start_utf16)
+            && start > range.start
+            && start < range.end
+        {
+            boundaries.push(start);
+        }
+        if let Some(end) = utf16_to_char_index(&text_box.text, span.end_utf16)
+            && end > range.start
+            && end < range.end
+        {
+            boundaries.push(end);
+        }
+    }
+    boundaries.sort_unstable();
+    boundaries.dedup();
+
+    write!(
+        svg,
+        r#"    <text x="{x:.2}" y="{baseline:.2}" text-anchor="{anchor}" font-family="Roboto, Arial, sans-serif" xml:space="preserve">"#,
+    )
+    .unwrap();
+    for segment in boundaries.windows(2) {
+        let start = segment[0];
+        let end = segment[1];
+        let style = text_style_at(text_box, utf16_offsets[start], dark_mode, predefined_style);
+        write_styled_tspan(
+            svg,
+            &text_box.text[byte_offsets[start]..byte_offsets[end]],
+            &style,
+        );
+    }
+    svg.push_str("</text>\n");
+}
+
+fn text_style_at(
+    text_box: &RichTextBox,
+    utf16_index: u32,
+    dark_mode: bool,
+    predefined_style: Option<PredefinedTextStyle>,
+) -> SvgTextStyle {
+    let mut font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(45.0);
+    if let Some(style) = predefined_style {
+        font_size = match style {
+            PredefinedTextStyle::Heading1 => 63.0,
+            PredefinedTextStyle::Heading2 => 57.0,
+            PredefinedTextStyle::Heading3 => 51.0,
+            PredefinedTextStyle::Body1 | PredefinedTextStyle::Other(_) => font_size,
+            _ => font_size,
+        };
+    }
+    let mut color = text_box
+        .color
+        .filter(|color| !dark_mode || !is_dark_compatibility_color(*color));
+    let mut style = SvgTextStyle {
+        font_size,
+        color: color
+            .as_ref()
+            .map(color_hex)
+            .unwrap_or_else(|| default_text_color(dark_mode).to_string()),
+        bold: false,
+        italic: false,
+        underline: false,
+        strikethrough: false,
+    };
+    for span in text_box
+        .spans
+        .iter()
+        .filter(|span| span.start_utf16 <= utf16_index && span.end_utf16 > utf16_index)
+    {
+        match span.kind {
+            RichTextSpanType::ForegroundColor => {
+                color = span
+                    .color_value()
+                    .filter(|color| !dark_mode || !is_dark_compatibility_color(*color));
+                style.color = color
+                    .as_ref()
+                    .map(color_hex)
+                    .unwrap_or_else(|| default_text_color(dark_mode).to_string());
+            }
+            RichTextSpanType::FontSize => {
+                if let Some(size) = span.font_size_value() {
+                    style.font_size = samsung_font_to_svg(size);
+                }
+            }
+            RichTextSpanType::Bold => style.bold = span.boolean_value() == Some(true),
+            RichTextSpanType::Italic => style.italic = span.boolean_value() == Some(true),
+            RichTextSpanType::Underline => style.underline = span.boolean_value() == Some(true),
+            RichTextSpanType::Strikethrough => {
+                style.strikethrough = span.boolean_value() == Some(true)
+            }
+            _ => {}
+        }
+    }
+    style
+}
+
+fn write_styled_tspan(svg: &mut String, text: &str, style: &SvgTextStyle) {
+    let decoration = match (style.underline, style.strikethrough) {
+        (true, true) => r#" text-decoration="underline line-through""#,
+        (true, false) => r#" text-decoration="underline""#,
+        (false, true) => r#" text-decoration="line-through""#,
+        (false, false) => "",
+    };
+    write!(
+        svg,
+        r#"<tspan fill="{}" font-size="{:.2}"{}{}{}>{}</tspan>"#,
+        style.color,
+        style.font_size,
+        if style.bold {
+            r#" font-weight="700""#
+        } else {
+            ""
+        },
+        if style.italic {
+            r#" font-style="italic""#
+        } else {
+            ""
+        },
+        decoration,
+        escape_xml(text),
+    )
+    .unwrap();
+}
+
+fn render_embedded_object(
+    svg: &mut String,
+    object: &RichTextObjectSpan,
+    cursor_y: f64,
+    dark_mode: bool,
+) -> Option<f64> {
+    match object.content.as_ref() {
+        Some(RichTextObjectContent::Table(table)) => {
+            let offset_y =
+                object_flow_offset(table.bbox.y_min, cursor_y, object_top_margin(object));
+            writeln!(svg, r#"    <g data-sdocx-object="table">"#).unwrap();
+            let stroke = if dark_mode { "#777777" } else { "#9e9e9e" };
+            for row in &table.rows {
+                for cell in &row.cells {
+                    writeln!(
+                        svg,
+                        r#"      <rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" fill="none" stroke="{stroke}" stroke-width="1"/>"#,
+                        cell.bbox.x_min,
+                        cell.bbox.y_min + offset_y,
+                        cell.bbox.x_max - cell.bbox.x_min,
+                        cell.bbox.y_max - cell.bbox.y_min,
+                    )
+                    .unwrap();
+                    if let Some(line) = cell.content.text.lines().next() {
+                        let style = text_style_at(&cell.content, 0, dark_mode, None);
+                        write!(
+                            svg,
+                            r#"      <text x="{:.2}" y="{:.2}" font-family="Roboto, Arial, sans-serif" xml:space="preserve">"#,
+                            cell.bbox.x_min + 23.0,
+                            cell.bbox.y_min + offset_y + 81.0,
+                        )
+                        .unwrap();
+                        write_styled_tspan(svg, line, &style);
+                        svg.push_str("</text>\n");
+                    }
+                }
+            }
+            svg.push_str("    </g>\n");
+            Some(table.bbox.y_max + offset_y)
+        }
+        Some(RichTextObjectContent::CodeBlock(code)) => {
+            let offset_y = object_flow_offset(code.bbox.y_min, cursor_y, object_top_margin(object));
+            let fill = if dark_mode { "#333333" } else { "#f4f4f4" };
+            let stroke = if dark_mode { "#5f5f5f" } else { "#dddddd" };
+            writeln!(
+                svg,
+                r#"    <g data-sdocx-object="code-block"><rect x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" rx="12" fill="{fill}" stroke="{stroke}" stroke-width="1"/>"#,
+                code.bbox.x_min,
+                code.bbox.y_min + offset_y,
+                code.bbox.x_max - code.bbox.x_min,
+                code.bbox.y_max - code.bbox.y_min,
+            )
+            .unwrap();
+            let object_top = code.bbox.y_min + offset_y;
+            let text_x = code.bbox.x_min + 81.75;
+            if let Some(title) = &code.title {
+                render_embedded_line(
+                    svg,
+                    title,
+                    title.text.lines().next().unwrap_or_default(),
+                    0,
+                    text_x,
+                    object_top + 81.6,
+                    "Roboto, Arial, sans-serif",
+                    dark_mode,
+                );
+            }
+            if let Some(body) = &code.body {
+                let mut baseline = object_top + 177.6;
+                let mut character_start = 0_usize;
+                for (line_index, line) in body.text.lines().enumerate() {
+                    render_embedded_line(
+                        svg,
+                        body,
+                        line,
+                        character_start,
+                        text_x,
+                        baseline,
+                        "Roboto Mono, monospace",
+                        dark_mode,
+                    );
+                    character_start += line.chars().count() + 1;
+                    baseline += if line_index == 0 { 98.25 } else { 60.75 };
+                }
+            }
+            svg.push_str("    </g>\n");
+            Some(code.bbox.y_max + offset_y)
+        }
+        None | Some(_) => None,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_embedded_line(
+    svg: &mut String,
+    text_box: &RichTextBox,
+    line: &str,
+    character_start: usize,
+    x: f64,
+    baseline: f64,
+    font_family: &str,
+    dark_mode: bool,
+) {
+    let utf16_index = text_box
+        .text
+        .chars()
+        .take(character_start)
+        .map(|character| character.len_utf16() as u32)
+        .sum();
+    let style = text_style_at(text_box, utf16_index, dark_mode, None);
+    write!(
+        svg,
+        r#"      <text x="{x:.2}" y="{baseline:.2}" font-family="{font_family}" xml:space="preserve">"#,
+    )
+    .unwrap();
+    write_styled_tspan(svg, line, &style);
+    svg.push_str("</text>\n");
+}
+
+fn object_flow_offset(stored_top: f64, cursor_y: f64, top_margin: f64) -> f64 {
+    if stored_top < 0.0 {
+        0.0
+    } else {
+        cursor_y + top_margin - stored_top
+    }
+}
+
+fn object_top_margin(object: &RichTextObjectSpan) -> f64 {
+    match object.layout_option {
+        sdocx::ObjectSpanLayoutOption::Block => 38.0,
+        sdocx::ObjectSpanLayoutOption::Inline => 0.0,
+        sdocx::ObjectSpanLayoutOption::BlockWithSmallMargin => 18.0,
+        sdocx::ObjectSpanLayoutOption::BlockWithMediumMargin => 36.0,
+        _ => 0.0,
+    }
+}
+
+fn object_bottom_margin(object: &RichTextObjectSpan) -> f64 {
+    match object.layout_option {
+        // The paragraph itself contributes 12 px after the object. Together
+        // these reproduce the 40 px block-to-text gap in Samsung's PDF.
+        sdocx::ObjectSpanLayoutOption::Block => 28.0,
+        sdocx::ObjectSpanLayoutOption::BlockWithSmallMargin => 12.0,
+        sdocx::ObjectSpanLayoutOption::BlockWithMediumMargin => 24.0,
+        _ => 0.0,
+    }
+}
+
+fn default_text_color(dark_mode: bool) -> &'static str {
+    if dark_mode {
+        DEFAULT_INK_DARK_MODE
+    } else {
+        DEFAULT_INK_LIGHT_MODE
+    }
+}
+
+fn char_utf16_offsets(text: &str) -> Vec<u32> {
+    let mut offsets = Vec::with_capacity(text.chars().count() + 1);
+    let mut offset = 0_u32;
+    for character in text.chars() {
+        offsets.push(offset);
+        offset = offset.saturating_add(character.len_utf16() as u32);
+    }
+    offsets.push(offset);
+    offsets
+}
+
+fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
+    let target = usize::try_from(target).ok()?;
+    let mut utf16_offset = 0_usize;
+    for (char_index, character) in text.chars().enumerate() {
+        if utf16_offset == target {
+            return Some(char_index);
+        }
+        utf16_offset = utf16_offset.checked_add(character.len_utf16())?;
+        if utf16_offset > target {
+            return None;
+        }
+    }
+    (utf16_offset == target).then_some(text.chars().count())
+}
+
 fn is_dark_compatibility_color(color: Color) -> bool {
     // Samsung stores theme-adaptive body text as a dark RGB color even when
     // dark-mode compatibility is enabled. Treat only near-black colors as
     // adaptive so intentional accent colors remain unchanged.
     u16::from(color.r) + u16::from(color.g) + u16::from(color.b) <= 192
+}
+
+fn is_dark_background(color: Color) -> bool {
+    // Integer form of the standard luma approximation. Compatibility tells
+    // Samsung that text may adapt to dark mode; the canvas color tells us
+    // whether the exported page is actually dark.
+    299 * u32::from(color.r) + 587 * u32::from(color.g) + 114 * u32::from(color.b) < 128_000
 }
 
 struct StyledSpan<'a> {
@@ -344,7 +1042,7 @@ fn char_byte_offsets(text: &str) -> Vec<usize> {
 fn samsung_font_to_svg(size: f32) -> f64 {
     let size = size as f64;
     if size.is_finite() && size > 0.0 {
-        (size * 2.18).clamp(8.0, 96.0)
+        (size * SAMSUNG_TEXT_SCALE).clamp(8.0, 144.0)
     } else {
         37.0
     }
@@ -423,6 +1121,25 @@ fn print_info(doc: &Document, layout: &LayoutDocument) {
     if let Some(bg) = doc.metadata.background_color {
         eprintln!("Document background: #{:02x}{:02x}{:02x}", bg.r, bg.g, bg.b);
     }
+    if let (Some(dimensions), Some(padding)) =
+        (doc.metadata.flow_dimensions, doc.metadata.flow_page_padding)
+    {
+        eprintln!(
+            "Text flow: {} x {}, padding {} x {}",
+            dimensions.0, dimensions.1, padding.0, padding.1
+        );
+    }
+    if let Some(margins) = doc
+        .metadata
+        .note_text
+        .as_ref()
+        .and_then(|text| text.margins)
+    {
+        eprintln!(
+            "Text margins: {:.0}, {:.0}, {:.0}, {:.0}",
+            margins[0], margins[1], margins[2], margins[3]
+        );
+    }
     if let Some(enabled) = doc.metadata.dark_mode_compatibility {
         eprintln!("Dark mode compatibility: {enabled}");
     }
@@ -471,7 +1188,10 @@ fn format_template(template: PageTemplate) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Format, normalized_stroke_width, render_page_svg, resolve_format, svg_to_png};
+    use super::{
+        Format, is_dark_background, normalized_stroke_width, object_flow_offset, render_page_svg,
+        resolve_format, samsung_font_to_svg, svg_to_png,
+    };
     use sdocx::{BoundingBox, Color, Page, PageElement, Point, RichTextBox, Stroke};
     use std::path::Path;
 
@@ -481,6 +1201,27 @@ mod tests {
         assert_eq!(normalized_stroke_width(f32::INFINITY), 1.0);
         assert_eq!(normalized_stroke_width(0.0), 1.0);
         assert_eq!(normalized_stroke_width(-1.0), 1.0);
+    }
+
+    #[test]
+    fn uses_pdf_measured_font_and_object_flow_units() {
+        assert_eq!(samsung_font_to_svg(15.0), 45.0);
+        assert_eq!(object_flow_offset(949.5, 984.0, 36.0), 70.5);
+        assert_eq!(object_flow_offset(-229.25, 42.0, 38.0), 0.0);
+    }
+
+    #[test]
+    fn canvas_color_determines_the_active_theme() {
+        assert!(!is_dark_background(Color {
+            r: 0xfc,
+            g: 0xfc,
+            b: 0xfc,
+        }));
+        assert!(is_dark_background(Color {
+            r: 0x25,
+            g: 0x25,
+            b: 0x25,
+        }));
     }
 
     #[test]
@@ -507,7 +1248,7 @@ mod tests {
             elements: Vec::new(),
         };
 
-        let svg = render_page_svg(&page, None, &[], false);
+        let svg = render_page_svg(&page, None, &[], None, false);
 
         assert!(svg.contains(r#"viewBox="0.0 0.0 1080.0 1527.0""#));
         assert!(svg.contains(r#"width="1080" height="1527""#));
@@ -538,7 +1279,7 @@ mod tests {
 
     #[test]
     fn uncolored_stroke_defaults_to_dark_ink_in_light_mode() {
-        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], false);
+        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], None, false);
         assert!(
             svg.contains(r##"stroke="#1a1a1a""##),
             "light-mode default ink"
@@ -548,7 +1289,7 @@ mod tests {
 
     #[test]
     fn uncolored_stroke_defaults_to_light_ink_in_dark_mode() {
-        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], true);
+        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], None, true);
         assert!(
             svg.contains(r##"stroke="#ffffff""##),
             "dark-mode default ink"
@@ -561,7 +1302,7 @@ mod tests {
         let mut page = page_with_uncolored_stroke();
         page.strokes[0].pressures = vec![f64::MAX, f64::MAX];
 
-        let svg = render_page_svg(&page, None, &[], false);
+        let svg = render_page_svg(&page, None, &[], None, false);
 
         assert!(svg.contains(r#"stroke-width="0.80""#));
         assert!(!svg.contains("inf"));
@@ -571,12 +1312,12 @@ mod tests {
     fn missing_background_falls_back_to_mode_matched_canvas() {
         // No page or document background: the fallback canvas must match the ink
         // mode, or dark ink lands on a dark fallback (or vice versa) and vanishes.
-        let light = render_page_svg(&page_with_uncolored_stroke(), None, &[], false);
+        let light = render_page_svg(&page_with_uncolored_stroke(), None, &[], None, false);
         assert!(
             light.contains(r##"fill="#fcfcfc""##),
             "light-mode fallback bg"
         );
-        let dark = render_page_svg(&page_with_uncolored_stroke(), None, &[], true);
+        let dark = render_page_svg(&page_with_uncolored_stroke(), None, &[], None, true);
         assert!(
             dark.contains(r##"fill="#252525""##),
             "dark-mode fallback bg"
@@ -608,10 +1349,11 @@ mod tests {
             gravity: None,
         }));
 
-        let svg = render_page_svg(&page, None, &[], true);
+        let svg = render_page_svg(&page, None, &[], None, true);
 
-        assert!(svg.contains(r##"<text x="50.00" y="37.00" fill="#ffffff""##));
-        assert!(!svg.contains(r##"<text x="50.00" y="37.00" fill="#252525""##));
+        assert!(svg.contains(r#"<text x="48.00" y="45.00""#));
+        assert!(svg.contains(r##"<tspan fill="#ffffff""##));
+        assert!(!svg.contains(r##"<tspan fill="#252525""##));
     }
 
     #[test]
@@ -684,8 +1426,24 @@ mod tests {
     }
 
     #[test]
+    fn svg_to_png_rasterizes_monospace_code_text() {
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60"><rect width="200" height="60" fill="#fcfcfc"/><text x="5" y="40" fill="#252525" font-family="Roboto Mono, monospace" font-size="32">fn main()</text></svg>"##;
+
+        let png = svg_to_png(svg).expect("render code text");
+        let pixmap = resvg::tiny_skia::Pixmap::decode_png(&png).expect("decode rendered PNG");
+
+        assert!(
+            pixmap
+                .pixels()
+                .iter()
+                .any(|pixel| { pixel.red() < 0x80 && pixel.green() < 0x80 && pixel.blue() < 0x80 }),
+            "rendered PNG should contain dark monospace glyphs"
+        );
+    }
+
+    #[test]
     fn renders_page_to_valid_png() {
-        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], false);
+        let svg = render_page_svg(&page_with_uncolored_stroke(), None, &[], None, false);
         let png = svg_to_png(&svg).expect("render page to png");
         assert_eq!(&png[..8], b"\x89PNG\r\n\x1a\n");
         assert!(
@@ -745,18 +1503,27 @@ fn main() {
         .output
         .unwrap_or_else(|| cli.path.with_extension(format.ext()));
 
-    let dark_mode = doc.metadata.dark_mode_compatibility.unwrap_or(false);
-
     if layout.pages.len() == 1 {
+        let dark_mode = layout.pages[0]
+            .page
+            .background_color
+            .or(doc.metadata.background_color)
+            .is_some_and(is_dark_background);
         let svg = render_page_svg(
             &layout.pages[0].page,
             doc.metadata.background_color.as_ref(),
             &doc.metadata.media_assets,
+            doc.metadata.flow_page_padding,
             dark_mode,
         );
         write_page(&output_base, &svg, format);
     } else {
         for (i, layout_page) in layout.pages.iter().enumerate() {
+            let dark_mode = layout_page
+                .page
+                .background_color
+                .or(doc.metadata.background_color)
+                .is_some_and(is_dark_background);
             let stem = output_base
                 .file_stem()
                 .unwrap_or_default()
@@ -770,6 +1537,7 @@ fn main() {
                 &layout_page.page,
                 doc.metadata.background_color.as_ref(),
                 &doc.metadata.media_assets,
+                doc.metadata.flow_page_padding,
                 dark_mode,
             );
             write_page(&path, &svg, format);

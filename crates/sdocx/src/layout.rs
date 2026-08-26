@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crate::types::{Document, Page, PageElement, RichTextBox};
+use crate::types::{Document, Page, PageElement, RichTextBox, RichTextObjectContent};
 
 /// A presentation-oriented view of a parsed document.
 ///
@@ -61,6 +61,12 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                     .collect()
             }
         });
+    let page_heights = document
+        .pages
+        .iter()
+        .take(visible_count)
+        .map(|page| f64::from(page.height))
+        .collect::<Vec<_>>();
     let pages = document
         .pages
         .iter()
@@ -68,13 +74,38 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .cloned()
         .enumerate()
         .map(|(source_page_index, mut page)| {
-            if let (Some(note_text), Some(range)) = (
+            if let (Some(note_text), Some(stored_range)) = (
                 document.metadata.note_text.as_ref(),
                 text_ranges.get(source_page_index).and_then(Option::as_ref),
-            ) && let Some(slice) = note_text.slice_chars(range.clone())
-                && !slice.text.is_empty()
-            {
-                page.elements.push(PageElement::TextBox(slice));
+            ) {
+                let mut range = stored_range.clone();
+                // The SDK's continuation sections overlap the preceding page by
+                // its terminating newline. It is a page-break marker, not a
+                // blank paragraph on the new page.
+                if source_page_index > 0 && note_text.text.chars().nth(range.start) == Some('\n') {
+                    range.start = range.start.saturating_add(1).min(range.end);
+                }
+                if let Some(mut slice) = note_text.slice_chars(range.clone())
+                    && !slice.text.is_empty()
+                {
+                    // Samsung collapses the normal 4-unit paragraph lead into
+                    // the top margin on continuation pages. The PDF exporter
+                    // therefore starts them 12 document pixels higher.
+                    if source_page_index > 0
+                        && let Some(margins) = &mut slice.margins
+                    {
+                        margins[1] = (margins[1] - 4.0).max(0.0);
+                    }
+                    translate_continuing_objects(
+                        &mut slice,
+                        note_text,
+                        &range,
+                        source_page_index,
+                        &text_ranges,
+                        &page_heights,
+                    );
+                    page.elements.push(PageElement::TextBox(slice));
+                }
             }
             LayoutPage {
                 source_page_index,
@@ -88,6 +119,67 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         stored_page_count: document.pages.len(),
         omitted_trailing_blank_page,
     }
+}
+
+fn translate_continuing_objects(
+    slice: &mut RichTextBox,
+    source: &RichTextBox,
+    source_range: &Range<usize>,
+    page_index: usize,
+    page_ranges: &[Option<Range<usize>>],
+    page_heights: &[f64],
+) {
+    let Some(section_start_utf16) = char_to_utf16_index(&source.text, source_range.start) else {
+        return;
+    };
+    for object_span in &mut slice.object_spans {
+        let Ok(local_index) = u32::try_from(object_span.text_index_utf16) else {
+            continue;
+        };
+        let Some(absolute_utf16) = section_start_utf16.checked_add(local_index) else {
+            continue;
+        };
+        let Some(absolute_character) = utf16_to_char_index(&source.text, absolute_utf16) else {
+            continue;
+        };
+        let Some(anchor_page) = page_ranges.iter().position(|range| {
+            range
+                .as_ref()
+                .is_some_and(|range| range.contains(&absolute_character))
+        }) else {
+            continue;
+        };
+        if anchor_page >= page_index {
+            continue;
+        }
+        let delta_y = -page_heights[anchor_page..page_index].iter().sum::<f64>();
+        translate_object_content_y(object_span.content.as_mut(), delta_y);
+    }
+}
+
+fn translate_object_content_y(content: Option<&mut RichTextObjectContent>, delta_y: f64) {
+    match content {
+        Some(RichTextObjectContent::Table(table)) => {
+            translate_bbox_y(&mut table.bbox, delta_y);
+            for row in &mut table.rows {
+                for cell in &mut row.cells {
+                    translate_bbox_y(&mut cell.bbox, delta_y);
+                    translate_bbox_y(&mut cell.content.bbox, delta_y);
+                }
+            }
+        }
+        Some(RichTextObjectContent::CodeBlock(code)) => {
+            translate_bbox_y(&mut code.bbox, delta_y);
+            // Code title/body boxes are local to the object. Only the outer
+            // document-flow box advances between pages.
+        }
+        None => {}
+    }
+}
+
+fn translate_bbox_y(bbox: &mut crate::types::BoundingBox, delta_y: f64) {
+    bbox.y_min += delta_y;
+    bbox.y_max += delta_y;
 }
 
 fn section_char_range(text: &str, section: crate::types::RichTextSection) -> Option<Range<usize>> {
@@ -413,6 +505,58 @@ mod tests {
                 "last\n"
             ]
         );
+    }
+
+    #[test]
+    fn normalizes_the_sdk_continuation_section_origin() {
+        let text = "first\n\nsecond\n";
+        let first_end = "first\n".encode_utf16().count() as i32;
+        let overlapping_start = first_end - 1;
+        let body = RichTextBox {
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: text.into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: vec![
+                RichTextSection {
+                    start_utf16: 0,
+                    length_utf16: first_end,
+                },
+                RichTextSection {
+                    start_utf16: overlapping_start,
+                    length_utf16: text.encode_utf16().count() as i32 - overlapping_start,
+                },
+            ],
+            margins: Some([16.0, 10.0, 16.0, 10.0]),
+            gravity: None,
+        };
+        let document = Document {
+            pages: (0..3).map(blank_page).collect(),
+            metadata: DocumentMetadata {
+                note_text: Some(body),
+                ..DocumentMetadata::default()
+            },
+        };
+
+        let layout = layout_document(&document);
+        let PageElement::TextBox(first) = &layout.pages[0].page.elements[0] else {
+            panic!("first page text")
+        };
+        let PageElement::TextBox(second) = &layout.pages[1].page.elements[0] else {
+            panic!("second page text")
+        };
+
+        assert_eq!(first.text, "first\n");
+        assert_eq!(second.text, "\nsecond\n");
+        assert_eq!(first.margins.unwrap()[1], 10.0);
+        assert_eq!(second.margins.unwrap()[1], 6.0);
     }
 
     #[test]
