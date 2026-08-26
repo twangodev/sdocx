@@ -2,8 +2,8 @@ use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::error::{Error, Result};
 use crate::types::{
-    BoundingBox, RichTextBox, RichTextParagraph, RichTextParagraphType, RichTextRun, RichTextSpan,
-    RichTextSpanType,
+    BoundingBox, RichTextBox, RichTextParagraph, RichTextParagraphType, RichTextRun,
+    RichTextSection, RichTextSpan, RichTextSpanType,
 };
 
 /// Structured contents of `note.note` needed by the document model.
@@ -251,6 +251,7 @@ struct TextCommon {
     text: String,
     spans: Vec<RichTextSpan>,
     paragraphs: Vec<RichTextParagraph>,
+    text_sections: Vec<RichTextSection>,
     margins: Option<[f32; 4]>,
     gravity: Option<u8>,
 }
@@ -314,6 +315,7 @@ impl TextCommon {
             runs,
             spans: self.spans,
             paragraphs: self.paragraphs,
+            text_sections: self.text_sections,
             margins: self.margins,
             gravity: self.gravity,
         }
@@ -400,11 +402,26 @@ fn parse_text_common_at(
         common.read_f32("bottom text margin")?,
     ]);
     let gravity = Some(common.read_u8("text gravity")?);
+    let text_sections = if common.remaining() >= 2 {
+        let section_count = usize::from(common.read_u16("text section count")?);
+        check_limit("text sections", limits.max_pages, section_count)?;
+        let mut sections = Vec::with_capacity(section_count);
+        for _ in 0..section_count {
+            sections.push(RichTextSection {
+                start_utf16: common.read_u32("text section start")? as i32,
+                length_utf16: common.read_u32("text section length")? as i32,
+            });
+        }
+        sections
+    } else {
+        Vec::new()
+    };
 
     Ok(TextCommon {
         text,
         spans,
         paragraphs,
+        text_sections,
         margins,
         gravity,
     })
@@ -467,6 +484,11 @@ mod tests {
             payload.extend_from_slice(&margin.to_le_bytes());
         }
         payload.push(3);
+        payload.extend_from_slice(&2_u16.to_le_bytes());
+        payload.extend_from_slice(&0_i32.to_le_bytes());
+        payload.extend_from_slice(&3_i32.to_le_bytes());
+        payload.extend_from_slice(&3_i32.to_le_bytes());
+        payload.extend_from_slice(&1_i32.to_le_bytes());
 
         let mut data = (payload.len() as u32).to_le_bytes().to_vec();
         data.extend_from_slice(&payload);
@@ -480,6 +502,10 @@ mod tests {
         assert_eq!(box_.spans[0].kind, RichTextSpanType::Bold);
         assert_eq!((box_.runs[0].start, box_.runs[0].end), (1, 2));
         assert_eq!(box_.paragraphs[0].kind, RichTextParagraphType::Bullet);
+        assert_eq!(box_.text_sections[0].start_utf16, 0);
+        assert_eq!(box_.text_sections[0].length_utf16, 3);
+        assert_eq!(box_.text_sections[1].start_utf16, 3);
+        assert_eq!(box_.text_sections[1].length_utf16, 1);
         assert_eq!(box_.margins, Some([1.0, 2.0, 3.0, 4.0]));
         assert_eq!(box_.gravity, Some(3));
     }

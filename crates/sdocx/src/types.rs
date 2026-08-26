@@ -297,10 +297,22 @@ pub struct RichTextBox {
     pub spans: Vec<RichTextSpan>,
     /// Original Samsung paragraph records.
     pub paragraphs: Vec<RichTextParagraph>,
+    /// Per-page UTF-16 text ranges stored by Samsung Notes.
+    pub text_sections: Vec<RichTextSection>,
     /// Text margins in left, top, right, bottom order.
     pub margins: Option<[f32; 4]>,
     /// Raw Android text-gravity flags.
     pub gravity: Option<u8>,
+}
+
+/// A page's slice of a document-level flowing text object.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextSection {
+    /// Start offset in UTF-16 code units, or `-1` for an empty section.
+    pub start_utf16: i32,
+    /// Number of UTF-16 code units in the section.
+    pub length_utf16: i32,
 }
 
 /// A rich text style run.

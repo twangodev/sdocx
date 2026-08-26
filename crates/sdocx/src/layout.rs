@@ -47,8 +47,20 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .metadata
         .note_text
         .as_ref()
-        .map(|text| balanced_line_ranges(&text.text, visible_count))
-        .unwrap_or_default();
+        .map_or_else(Vec::new, |text| {
+            if text.text_sections.len() >= visible_count {
+                text.text_sections
+                    .iter()
+                    .take(visible_count)
+                    .map(|section| section_char_range(&text.text, *section))
+                    .collect()
+            } else {
+                balanced_line_ranges(&text.text, visible_count)
+                    .into_iter()
+                    .map(Some)
+                    .collect()
+            }
+        });
     let pages = document
         .pages
         .iter()
@@ -58,7 +70,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .map(|(source_page_index, mut page)| {
             if let (Some(note_text), Some(range)) = (
                 document.metadata.note_text.as_ref(),
-                text_ranges.get(source_page_index),
+                text_ranges.get(source_page_index).and_then(Option::as_ref),
             ) && let Some(slice) = note_text.slice_chars(range.clone())
                 && !slice.text.is_empty()
             {
@@ -76,6 +88,13 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         stored_page_count: document.pages.len(),
         omitted_trailing_blank_page,
     }
+}
+
+fn section_char_range(text: &str, section: crate::types::RichTextSection) -> Option<Range<usize>> {
+    let start_utf16 = u32::try_from(section.start_utf16).ok()?;
+    let length_utf16 = u32::try_from(section.length_utf16).ok()?;
+    let end_utf16 = start_utf16.checked_add(length_utf16)?;
+    Some(utf16_to_char_index(text, start_utf16)?..utf16_to_char_index(text, end_utf16)?)
 }
 
 fn is_blank_storage_page(page: &Page) -> bool {
@@ -201,12 +220,27 @@ fn char_to_utf16_index(text: &str, character_index: usize) -> Option<u32> {
     u32::try_from(units).ok()
 }
 
+fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
+    let target = usize::try_from(target).ok()?;
+    let mut utf16_offset = 0_usize;
+    for (char_index, character) in text.chars().enumerate() {
+        if utf16_offset == target {
+            return Some(char_index);
+        }
+        utf16_offset = utf16_offset.checked_add(character.len_utf16())?;
+        if utf16_offset > target {
+            return None;
+        }
+    }
+    (utf16_offset == target).then_some(text.chars().count())
+}
+
 #[cfg(test)]
 mod tests {
     use super::layout_document;
     use crate::{
         BoundingBox, Document, DocumentMetadata, Page, PageElement, RichTextBox, RichTextRun,
-        RichTextSpan, RichTextSpanType,
+        RichTextSection, RichTextSpan, RichTextSpanType,
     };
 
     fn blank_page(index: usize) -> Page {
@@ -247,6 +281,7 @@ mod tests {
                 payload: 1_u16.to_le_bytes().to_vec(),
             }],
             paragraphs: Vec::new(),
+            text_sections: Vec::new(),
             margins: None,
             gravity: None,
         };
@@ -273,5 +308,75 @@ mod tests {
             })
             .collect::<String>();
         assert_eq!(reconstructed, text);
+    }
+
+    #[test]
+    fn uses_stored_text_sections_instead_of_balancing_content() {
+        let text = "short\nthis page is intentionally much longer\nlast\n";
+        let first_end = "short\n".encode_utf16().count() as i32;
+        let second_end = "short\nthis page is intentionally much longer\n"
+            .encode_utf16()
+            .count() as i32;
+        let mut body = RichTextBox {
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: text.into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            text_sections: vec![
+                RichTextSection {
+                    start_utf16: 0,
+                    length_utf16: first_end,
+                },
+                RichTextSection {
+                    start_utf16: first_end,
+                    length_utf16: second_end - first_end,
+                },
+                RichTextSection {
+                    start_utf16: second_end,
+                    length_utf16: text.encode_utf16().count() as i32 - second_end,
+                },
+            ],
+            margins: None,
+            gravity: None,
+        };
+        body.spans.push(RichTextSpan {
+            kind: RichTextSpanType::Bold,
+            start_utf16: first_end as u32,
+            end_utf16: second_end as u32,
+            expand: false,
+            payload: 1_u16.to_le_bytes().to_vec(),
+        });
+        let document = Document {
+            pages: (0..4).map(blank_page).collect(),
+            metadata: DocumentMetadata {
+                note_text: Some(body),
+                ..DocumentMetadata::default()
+            },
+        };
+
+        let layout = layout_document(&document);
+        let page_text = layout
+            .pages
+            .iter()
+            .map(|page| match &page.page.elements[0] {
+                PageElement::TextBox(text) => text.text.as_str(),
+                _ => unreachable!(),
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            page_text,
+            vec![
+                "short\n",
+                "this page is intentionally much longer\n",
+                "last\n"
+            ]
+        );
     }
 }

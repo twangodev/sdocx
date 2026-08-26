@@ -602,6 +602,7 @@ mod tests {
             runs: Vec::new(),
             spans: Vec::new(),
             paragraphs: Vec::new(),
+            text_sections: Vec::new(),
             margins: None,
             gravity: None,
         }));
