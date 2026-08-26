@@ -16,12 +16,19 @@ struct Fixture<'a> {
     title: &'a str,
     minimum_body_characters: usize,
     required_text: &'a str,
+    text_sections: usize,
+    hyperlinks: usize,
+    tables: usize,
+    code_blocks: usize,
+    required_link_target: &'a str,
+    required_table_text: &'a str,
+    required_code_text: &'a str,
 }
 
 impl<'a> Fixture<'a> {
     fn parse(line: &'a str) -> Self {
         let fields = line.split('\t').collect::<Vec<_>>();
-        assert_eq!(fields.len(), 10, "invalid corpus manifest row: {line}");
+        assert_eq!(fields.len(), 17, "invalid corpus manifest row: {line}");
         Self {
             id: fields[0],
             sdocx: fields[1],
@@ -33,6 +40,13 @@ impl<'a> Fixture<'a> {
             title: fields[7],
             minimum_body_characters: fields[8].parse().expect("minimum body characters"),
             required_text: fields[9],
+            text_sections: fields[10].parse().expect("text section count"),
+            hyperlinks: fields[11].parse().expect("hyperlink count"),
+            tables: fields[12].parse().expect("table count"),
+            code_blocks: fields[13].parse().expect("code-block count"),
+            required_link_target: fields[14],
+            required_table_text: fields[15],
+            required_code_text: fields[16],
         }
     }
 }
@@ -108,6 +122,79 @@ fn external_corpus_matches_locked_expectations() {
         assert!(
             body.contains(fixture.required_text),
             "{}: required body text is missing",
+            fixture.id
+        );
+        let flow = parsed
+            .document
+            .metadata
+            .note_text
+            .as_ref()
+            .expect("document-level text flow");
+        assert_eq!(
+            flow.text_sections.len(),
+            fixture.text_sections,
+            "{}: text section count",
+            fixture.id
+        );
+        let hyperlinks = flow
+            .spans
+            .iter()
+            .filter(|span| span.kind == sdocx::RichTextSpanType::Hyperlink)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            hyperlinks.len(),
+            fixture.hyperlinks,
+            "{}: hyperlink count",
+            fixture.id
+        );
+        assert!(
+            hyperlinks.iter().any(|span| {
+                span.hyperlink_value()
+                    .and_then(|link| link.custom_data)
+                    .is_some_and(|target| target == fixture.required_link_target)
+            }),
+            "{}: required hyperlink target is missing",
+            fixture.id
+        );
+        let tables = flow
+            .object_spans
+            .iter()
+            .filter_map(|span| match span.content.as_ref() {
+                Some(sdocx::RichTextObjectContent::Table(table)) => Some(table.as_ref()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(tables.len(), fixture.tables, "{}: table count", fixture.id);
+        assert!(
+            tables.iter().any(|table| table.rows.iter().any(|row| {
+                row.cells
+                    .iter()
+                    .any(|cell| cell.content.text.contains(fixture.required_table_text))
+            })),
+            "{}: required table text is missing",
+            fixture.id
+        );
+        let code_blocks = flow
+            .object_spans
+            .iter()
+            .filter_map(|span| match span.content.as_ref() {
+                Some(sdocx::RichTextObjectContent::CodeBlock(code)) => Some(code.as_ref()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            code_blocks.len(),
+            fixture.code_blocks,
+            "{}: code-block count",
+            fixture.id
+        );
+        assert!(
+            code_blocks.iter().any(|code| {
+                code.body
+                    .as_ref()
+                    .is_some_and(|body| body.text.contains(fixture.required_code_text))
+            }),
+            "{}: required code-block text is missing",
             fixture.id
         );
         assert!(
