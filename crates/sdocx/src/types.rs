@@ -444,12 +444,93 @@ impl From<u32> for RichTextSpanType {
 pub struct RichTextParagraph {
     /// Paragraph attribute kind.
     pub kind: RichTextParagraphType,
-    /// Start offset in UTF-16 code units, inclusive.
-    pub start_utf16: u32,
-    /// End offset in UTF-16 code units, exclusive.
-    pub end_utf16: u32,
+    /// Start paragraph ordinal, inclusive.
+    pub start_paragraph: u32,
+    /// End paragraph ordinal, exclusive.
+    pub end_paragraph: u32,
     /// Type-specific payload retained for forward compatibility.
     pub payload: Vec<u8>,
+}
+
+impl RichTextParagraph {
+    /// Decode an alignment paragraph's value.
+    pub fn alignment(&self) -> Option<ParagraphAlignment> {
+        if self.kind != RichTextParagraphType::Alignment {
+            return None;
+        }
+        Some(ParagraphAlignment::from(self.payload_u32(0)?))
+    }
+
+    /// Decode an indentation paragraph's level and writing direction.
+    pub fn indent(&self) -> Option<ParagraphIndent> {
+        if self.kind != RichTextParagraphType::IndentLevel {
+            return None;
+        }
+        Some(ParagraphIndent {
+            level: self.payload_u32(0)?,
+            direction: ParagraphDirection::from(self.payload_u32(4)?),
+        })
+    }
+
+    /// Decode a line-spacing paragraph's unit and value.
+    pub fn line_spacing(&self) -> Option<ParagraphLineSpacing> {
+        if self.kind != RichTextParagraphType::LineSpacing {
+            return None;
+        }
+        Some(ParagraphLineSpacing {
+            kind: LineSpacingType::from(self.payload_u32(0)?),
+            value: self.payload_f32(4)?,
+        })
+    }
+
+    /// Decode a bullet, numbered-list, or checkbox paragraph.
+    pub fn bullet(&self) -> Option<ParagraphBullet> {
+        if self.kind != RichTextParagraphType::Bullet {
+            return None;
+        }
+        Some(ParagraphBullet {
+            kind: BulletType::from(self.payload_u32(0)?),
+            number: self.payload_u32(4)?,
+            checked: self.payload_u32(8)? != 0,
+            initial_number: self.payload_u32(12)?,
+        })
+    }
+
+    /// Decode spacing before or after a paragraph, in logical pixels.
+    pub fn spacing(&self) -> Option<f32> {
+        matches!(
+            self.kind,
+            RichTextParagraphType::SpacingBefore | RichTextParagraphType::SpacingAfter
+        )
+        .then(|| self.payload_f32(0))?
+    }
+
+    /// Decode a predefined heading/body style and the style for the next paragraph.
+    pub fn predefined_style(&self) -> Option<ParagraphPredefinedStyle> {
+        if self.kind != RichTextParagraphType::PredefinedStyle {
+            return None;
+        }
+        Some(ParagraphPredefinedStyle {
+            style: PredefinedTextStyle::from(self.payload_u32(0)?),
+            following_style: PredefinedTextStyle::from(self.payload_u32(4)?),
+        })
+    }
+
+    /// Decode whether Samsung's Markdown parser has processed this paragraph.
+    pub fn is_parsed(&self) -> Option<bool> {
+        (self.kind == RichTextParagraphType::ParsingState)
+            .then(|| self.payload_u32(0).map(|value| value != 0))?
+    }
+
+    fn payload_u32(&self, offset: usize) -> Option<u32> {
+        let bytes = self.payload.get(offset..offset.checked_add(4)?)?;
+        Some(u32::from_le_bytes(bytes.try_into().ok()?))
+    }
+
+    fn payload_f32(&self, offset: usize) -> Option<f32> {
+        let bytes = self.payload.get(offset..offset.checked_add(4)?)?;
+        Some(f32::from_le_bytes(bytes.try_into().ok()?))
+    }
 }
 
 /// Samsung paragraph attribute identifiers.
@@ -471,6 +552,12 @@ pub enum RichTextParagraphType {
     Bullet,
     /// Markdown/parsing state (`6`).
     ParsingState,
+    /// Spacing before the paragraph (`8`).
+    SpacingBefore,
+    /// Spacing after the paragraph (`9`).
+    SpacingAfter,
+    /// Predefined heading/body style (`10`).
+    PredefinedStyle,
     /// Identifier not known to this library version.
     Other(u32),
 }
@@ -485,9 +572,188 @@ impl From<u32> for RichTextParagraphType {
             4 => Self::LineSpacing,
             5 => Self::Bullet,
             6 => Self::ParsingState,
+            8 => Self::SpacingBefore,
+            9 => Self::SpacingAfter,
+            10 => Self::PredefinedStyle,
             raw => Self::Other(raw),
         }
     }
+}
+
+/// Horizontal paragraph alignment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum ParagraphAlignment {
+    Left,
+    Right,
+    Center,
+    Both,
+    Other(u32),
+}
+
+impl From<u32> for ParagraphAlignment {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::Left,
+            1 => Self::Right,
+            2 => Self::Center,
+            3 => Self::Both,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// Writing direction attached to an indentation paragraph.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum ParagraphDirection {
+    None,
+    LeftToRight,
+    RightToLeft,
+    Other(u32),
+}
+
+impl From<u32> for ParagraphDirection {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::None,
+            1 => Self::LeftToRight,
+            2 => Self::RightToLeft,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// Decoded indentation paragraph value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ParagraphIndent {
+    /// Zero-based nesting level.
+    pub level: u32,
+    /// Writing direction for the paragraph.
+    pub direction: ParagraphDirection,
+}
+
+/// Unit used by Samsung's line-spacing paragraph value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum LineSpacingType {
+    Pixels,
+    Percent,
+    Other(u32),
+}
+
+impl From<u32> for LineSpacingType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::Pixels,
+            1 => Self::Percent,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// Decoded line-spacing paragraph value.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ParagraphLineSpacing {
+    /// Whether `value` is expressed in pixels or as a multiplier.
+    pub kind: LineSpacingType,
+    /// Pixel distance or proportional multiplier.
+    pub value: f32,
+}
+
+/// Samsung Notes list marker type.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum BulletType {
+    None,
+    Arrow,
+    Checker,
+    Diamond,
+    Digit,
+    CircledDigit,
+    Alphabet,
+    RomanNumeral,
+    SolidCircle,
+    WhiteCircle,
+    UppercaseAlphabet,
+    BlackSquare,
+    WhiteSquare,
+    Other(u32),
+}
+
+impl From<u32> for BulletType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::None,
+            1 => Self::Arrow,
+            2 => Self::Checker,
+            3 => Self::Diamond,
+            4 => Self::Digit,
+            5 => Self::CircledDigit,
+            6 => Self::Alphabet,
+            7 => Self::RomanNumeral,
+            8 => Self::SolidCircle,
+            9 => Self::WhiteCircle,
+            10 => Self::UppercaseAlphabet,
+            11 => Self::BlackSquare,
+            12 => Self::WhiteSquare,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// Decoded bullet, numbered-list, or checkbox paragraph value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ParagraphBullet {
+    /// List marker kind.
+    pub kind: BulletType,
+    /// Current sequence number for numbered markers.
+    pub number: u32,
+    /// Checkbox state when the marker is a task item.
+    pub checked: bool,
+    /// Initial sequence number for numbered markers.
+    pub initial_number: u32,
+}
+
+/// Samsung Notes predefined heading/body style.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum PredefinedTextStyle {
+    Heading1,
+    Heading2,
+    Heading3,
+    Body1,
+    Other(u32),
+}
+
+impl From<u32> for PredefinedTextStyle {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::Heading1,
+            1 => Self::Heading2,
+            2 => Self::Heading3,
+            3 => Self::Body1,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+/// Decoded predefined style and the style Samsung applies after Enter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ParagraphPredefinedStyle {
+    /// Style applied to this paragraph.
+    pub style: PredefinedTextStyle,
+    /// Style Samsung applies to the next paragraph after Enter.
+    pub following_style: PredefinedTextStyle,
 }
 
 /// Page template metadata.
@@ -592,7 +858,22 @@ impl Default for BoundingBox {
 
 #[cfg(test)]
 mod tests {
-    use super::{FormatVersion, ObjectType};
+    use super::{
+        BulletType, FormatVersion, LineSpacingType, ObjectType, ParagraphAlignment,
+        ParagraphDirection, PredefinedTextStyle, RichTextParagraph, RichTextParagraphType,
+    };
+
+    fn paragraph(kind: RichTextParagraphType, values: &[u32]) -> RichTextParagraph {
+        RichTextParagraph {
+            kind,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: values
+                .iter()
+                .flat_map(|value| value.to_le_bytes())
+                .collect(),
+        }
+    }
 
     #[test]
     fn object_type_ids_round_trip_without_losing_future_values() {
@@ -611,5 +892,49 @@ mod tests {
         assert!(!ObjectType::Table.is_supported_by(FormatVersion(5399)));
         assert!(ObjectType::Table.is_supported_by(FormatVersion::TABLE_AND_CODE_BLOCK_OBJECTS));
         assert!(ObjectType::Stroke.is_supported_by(FormatVersion::INITIAL));
+    }
+
+    #[test]
+    fn decodes_apk_paragraph_payloads() {
+        assert_eq!(
+            paragraph(RichTextParagraphType::Alignment, &[2]).alignment(),
+            Some(ParagraphAlignment::Center)
+        );
+
+        let indent = paragraph(RichTextParagraphType::IndentLevel, &[3, 2])
+            .indent()
+            .unwrap();
+        assert_eq!(indent.level, 3);
+        assert_eq!(indent.direction, ParagraphDirection::RightToLeft);
+
+        let line_spacing = paragraph(RichTextParagraphType::LineSpacing, &[1, 1.6_f32.to_bits()])
+            .line_spacing()
+            .unwrap();
+        assert_eq!(line_spacing.kind, LineSpacingType::Percent);
+        assert_eq!(line_spacing.value, 1.6);
+
+        let bullet = paragraph(RichTextParagraphType::Bullet, &[4, 2, 1, 1])
+            .bullet()
+            .unwrap();
+        assert_eq!(bullet.kind, BulletType::Digit);
+        assert_eq!(bullet.number, 2);
+        assert!(bullet.checked);
+        assert_eq!(bullet.initial_number, 1);
+
+        assert_eq!(
+            paragraph(RichTextParagraphType::SpacingBefore, &[20.0_f32.to_bits()]).spacing(),
+            Some(20.0)
+        );
+
+        let style = paragraph(RichTextParagraphType::PredefinedStyle, &[0, 3])
+            .predefined_style()
+            .unwrap();
+        assert_eq!(style.style, PredefinedTextStyle::Heading1);
+        assert_eq!(style.following_style, PredefinedTextStyle::Body1);
+
+        assert_eq!(
+            paragraph(RichTextParagraphType::ParsingState, &[1]).is_parsed(),
+            Some(true)
+        );
     }
 }

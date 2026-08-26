@@ -148,6 +148,7 @@ impl RichTextBox {
         let byte_end = *byte_offsets.get(range.end)?;
         let start_utf16 = char_to_utf16_index(&self.text, range.start)?;
         let end_utf16 = char_to_utf16_index(&self.text, range.end)?;
+        let paragraph_range = paragraph_range_for_chars(&self.text, range.clone());
 
         let runs = self
             .runs
@@ -181,12 +182,12 @@ impl RichTextBox {
             .paragraphs
             .iter()
             .filter_map(|paragraph| {
-                let start = paragraph.start_utf16.max(start_utf16);
-                let end = paragraph.end_utf16.min(end_utf16);
+                let start = paragraph.start_paragraph.max(paragraph_range.start);
+                let end = paragraph.end_paragraph.min(paragraph_range.end);
                 (start < end).then(|| {
                     let mut paragraph = paragraph.clone();
-                    paragraph.start_utf16 = start - start_utf16;
-                    paragraph.end_utf16 = end - start_utf16;
+                    paragraph.start_paragraph = start - paragraph_range.start;
+                    paragraph.end_paragraph = end - paragraph_range.start;
                     paragraph
                 })
             })
@@ -197,8 +198,26 @@ impl RichTextBox {
         slice.runs = runs;
         slice.spans = spans;
         slice.paragraphs = paragraphs;
+        slice.text_sections = vec![crate::types::RichTextSection {
+            start_utf16: 0,
+            length_utf16: i32::try_from(end_utf16.checked_sub(start_utf16)?).ok()?,
+        }];
         Some(slice)
     }
+}
+
+fn paragraph_range_for_chars(text: &str, range: Range<usize>) -> Range<u32> {
+    let mut start = 0_u32;
+    let mut end = u32::from(range.start != range.end);
+    for (index, character) in text.chars().enumerate().take(range.end) {
+        if matches!(character, '\n' | '\r') {
+            if index < range.start {
+                start = start.saturating_add(1);
+            }
+            end = end.saturating_add(1);
+        }
+    }
+    start..end
 }
 
 fn char_byte_offsets(text: &str) -> Vec<usize> {
@@ -239,8 +258,8 @@ fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
 mod tests {
     use super::layout_document;
     use crate::{
-        BoundingBox, Document, DocumentMetadata, Page, PageElement, RichTextBox, RichTextRun,
-        RichTextSection, RichTextSpan, RichTextSpanType,
+        BoundingBox, Document, DocumentMetadata, Page, PageElement, RichTextBox, RichTextParagraph,
+        RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
     };
 
     fn blank_page(index: usize) -> Page {
@@ -378,5 +397,37 @@ mod tests {
                 "last\n"
             ]
         );
+    }
+
+    #[test]
+    fn slices_paragraph_ordinals_and_text_sections() {
+        let body = RichTextBox {
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: "alpha\nbeta\ngamma".into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: vec![RichTextParagraph {
+                kind: RichTextParagraphType::Alignment,
+                start_paragraph: 1,
+                end_paragraph: 3,
+                payload: 2_u32.to_le_bytes().to_vec(),
+            }],
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        };
+
+        let slice = body.slice_chars(6..11).unwrap();
+
+        assert_eq!(slice.text, "beta\n");
+        assert_eq!(slice.paragraphs[0].start_paragraph, 0);
+        assert_eq!(slice.paragraphs[0].end_paragraph, 2);
+        assert_eq!(slice.text_sections[0].start_utf16, 0);
+        assert_eq!(slice.text_sections[0].length_utf16, 5);
     }
 }

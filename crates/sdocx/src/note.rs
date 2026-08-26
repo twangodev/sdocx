@@ -382,15 +382,15 @@ fn parse_text_common_at(
         let record_bytes = common.read_bytes(record_size, "paragraph")?;
         let mut record = Reader::new(record_bytes, context);
         let kind = RichTextParagraphType::from(record.read_u32("paragraph type")?);
-        let start_utf16 = record.read_u32("paragraph start")?;
-        let end_utf16 = record.read_u32("paragraph end")?;
+        let start_paragraph = record.read_u32("paragraph start")?;
+        let end_paragraph = record.read_u32("paragraph end")?;
         let payload = record
             .read_bytes(record.remaining(), "paragraph payload")?
             .to_vec();
         paragraphs.push(RichTextParagraph {
             kind,
-            start_utf16,
-            end_utf16,
+            start_paragraph,
+            end_paragraph,
             payload,
         });
     }
