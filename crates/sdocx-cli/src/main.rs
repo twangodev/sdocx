@@ -50,7 +50,12 @@ impl Format {
 fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
     let mut opt = resvg::usvg::Options::default();
     // Load system fonts so <text> elements render instead of being silently dropped.
-    opt.fontdb_mut().load_system_fonts();
+    let fontdb = opt.fontdb_mut();
+    fontdb.load_system_fonts();
+    // Arial is not normally installed in Linux CI images. DejaVu Sans is the
+    // portable fallback there; explicit Arial still wins on platforms that
+    // provide it.
+    fontdb.set_sans_serif_family("DejaVu Sans");
     let tree = resvg::usvg::Tree::from_str(svg, &opt).map_err(|e| format!("invalid SVG: {e}"))?;
     let size = tree.size().to_int_size();
     let (w, h) = (size.width(), size.height());
@@ -142,7 +147,7 @@ fn render_page_svg(
         render_stroke(&mut svg, stroke, default_ink);
     }
     for element in &page.elements {
-        render_element(&mut svg, element, page, media_assets);
+        render_element(&mut svg, element, page, media_assets, dark_mode);
     }
 
     svg.push_str("</svg>\n");
@@ -154,6 +159,7 @@ fn render_element(
     element: &PageElement,
     page: &Page,
     media_assets: &[MediaAsset],
+    dark_mode: bool,
 ) {
     match element {
         PageElement::Image { bbox, media_index } => {
@@ -173,12 +179,12 @@ fn render_element(
             )
             .unwrap();
         }
-        PageElement::TextBox(text_box) => render_text_box(svg, text_box, page),
+        PageElement::TextBox(text_box) => render_text_box(svg, text_box, page, dark_mode),
         _ => {}
     }
 }
 
-fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page) {
+fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page, dark_mode: bool) {
     let text = text_box.text.trim_end_matches('\n');
     if text.trim().is_empty() {
         return;
@@ -198,9 +204,17 @@ fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page) {
     };
     let color = text_box
         .color
+        .filter(|color| !dark_mode || !is_dark_compatibility_color(*color))
         .as_ref()
         .map(color_hex)
-        .unwrap_or_else(|| "#252525".into());
+        .unwrap_or_else(|| {
+            if dark_mode {
+                DEFAULT_INK_DARK_MODE
+            } else {
+                DEFAULT_INK_LIGHT_MODE
+            }
+            .into()
+        });
     let font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(37.0);
     let line_height = font_size * 1.35;
     let mut transform = String::new();
@@ -261,6 +275,13 @@ fn render_text_box(svg: &mut String, text_box: &RichTextBox, page: &Page) {
         svg.push_str("</text>\n");
     }
     svg.push_str("  </g>\n");
+}
+
+fn is_dark_compatibility_color(color: Color) -> bool {
+    // Samsung stores theme-adaptive body text as a dark RGB color even when
+    // dark-mode compatibility is enabled. Treat only near-black colors as
+    // adaptive so intentional accent colors remain unchanged.
+    u16::from(color.r) + u16::from(color.g) + u16::from(color.b) <= 192
 }
 
 struct StyledSpan<'a> {
@@ -451,7 +472,7 @@ fn format_template(template: PageTemplate) -> String {
 #[cfg(test)]
 mod tests {
     use super::{Format, normalized_stroke_width, render_page_svg, resolve_format, svg_to_png};
-    use sdocx::{BoundingBox, Color, Page, Point, Stroke};
+    use sdocx::{BoundingBox, Color, Page, PageElement, Point, RichTextBox, Stroke};
     use std::path::Path;
 
     #[test]
@@ -563,6 +584,35 @@ mod tests {
     }
 
     #[test]
+    fn dark_mode_makes_compatibility_text_visible() {
+        let mut page = page_with_uncolored_stroke();
+        page.strokes.clear();
+        page.elements.push(PageElement::TextBox(RichTextBox {
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: "visible body text".into(),
+            color: Some(Color {
+                r: 0x25,
+                g: 0x25,
+                b: 0x25,
+            }),
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            margins: None,
+            gravity: None,
+        }));
+
+        let svg = render_page_svg(&page, None, &[], true);
+
+        assert!(svg.contains(r##"<text x="50.00" y="37.00" fill="#ffffff""##));
+        assert!(!svg.contains(r##"<text x="50.00" y="37.00" fill="#252525""##));
+    }
+
+    #[test]
     fn format_flag_wins_over_extension() {
         let f = resolve_format(Some(Format::Svg), Some(Path::new("out.png"))).unwrap();
         assert_eq!(f, Format::Svg);
@@ -613,6 +663,22 @@ mod tests {
         let w = u32::from_be_bytes([png[16], png[17], png[18], png[19]]);
         let h = u32::from_be_bytes([png[20], png[21], png[22], png[23]]);
         assert_eq!((w, h), (20, 10));
+    }
+
+    #[test]
+    fn svg_to_png_rasterizes_text_with_a_system_font() {
+        let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60"><rect width="200" height="60" fill="#252525"/><text x="5" y="40" fill="#ffffff" font-family="Arial, sans-serif" font-size="32">visible</text></svg>"##;
+
+        let png = svg_to_png(svg).expect("render should succeed");
+        let pixmap = resvg::tiny_skia::Pixmap::decode_png(&png).expect("decode rendered PNG");
+
+        assert!(
+            pixmap
+                .pixels()
+                .iter()
+                .any(|pixel| pixel.red() > 0x80 && pixel.green() > 0x80 && pixel.blue() > 0x80),
+            "rendered PNG should contain light text pixels"
+        );
     }
 
     #[test]
