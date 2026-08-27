@@ -124,6 +124,9 @@ Samsung Notes `.sdocx` files are ZIP archives containing binary stroke data, met
 - [`02_strokes.ipynb`](notebooks/02_strokes.ipynb) — Stroke decoding and coordinate parsing
 - [`03_ink.ipynb`](notebooks/03_ink.ipynb) — Ink color and metadata extraction
 
+The notebooks read external documents from `SDOCX_SAMPLE`, `SDOCX_HANDWRITTEN_SAMPLE`, and
+`SDOCX_MEDIA_SAMPLE` environment variables.
+
 ## License
 
 [GPL-3.0](LICENSE)

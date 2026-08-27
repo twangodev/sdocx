@@ -106,8 +106,9 @@ docs/_build/
 # Rust
 target/
 
-# External Hugging Face compatibility corpus
+# External compatibility corpus and generated visual comparisons
 /hf/
+/tmp/
 
 # JetBrains IDEs
 .idea/
