@@ -1352,6 +1352,97 @@ fn format_template(template: PageTemplate) -> String {
     }
 }
 
+fn write_page(path: &std::path::Path, svg: &str, format: Format) {
+    match format {
+        Format::Svg => {
+            if let Err(e) = fs::write(path, svg) {
+                eprintln!("Error: failed to write {}: {e}", path.display());
+                std::process::exit(1);
+            }
+            eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
+        }
+        Format::Png => {
+            let png = svg_to_png(svg).unwrap_or_else(|e| {
+                eprintln!("Error: {e}");
+                std::process::exit(1);
+            });
+            if let Err(e) = fs::write(path, &png) {
+                eprintln!("Error: failed to write {}: {e}", path.display());
+                std::process::exit(1);
+            }
+            eprintln!("Wrote {} ({} bytes)", path.display(), png.len());
+        }
+    }
+}
+
+fn main() {
+    let cli = Cli::parse();
+
+    let doc = match sdocx::parse(&cli.path) {
+        Ok(doc) => doc,
+        Err(e) => {
+            eprintln!("Error: {e}");
+            std::process::exit(1);
+        }
+    };
+    let layout = sdocx::layout_document(&doc);
+
+    print_info(&doc, &layout);
+
+    let format = match resolve_format(cli.format, cli.output.as_deref()) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    let output_base = cli
+        .output
+        .unwrap_or_else(|| cli.path.with_extension(format.ext()));
+
+    if layout.pages.len() == 1 {
+        let dark_mode = layout.pages[0]
+            .page
+            .background_color
+            .or(doc.metadata.background_color)
+            .is_some_and(is_dark_background);
+        let svg = render_page_svg(
+            &layout.pages[0].page,
+            doc.metadata.background_color.as_ref(),
+            &doc.metadata.media_assets,
+            doc.metadata.flow_page_padding,
+            dark_mode,
+        );
+        write_page(&output_base, &svg, format);
+    } else {
+        for (i, layout_page) in layout.pages.iter().enumerate() {
+            let dark_mode = layout_page
+                .page
+                .background_color
+                .or(doc.metadata.background_color)
+                .is_some_and(is_dark_background);
+            let stem = output_base
+                .file_stem()
+                .unwrap_or_default()
+                .to_string_lossy();
+            let ext = output_base
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or(format.ext());
+            let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
+            let svg = render_page_svg(
+                &layout_page.page,
+                doc.metadata.background_color.as_ref(),
+                &doc.metadata.media_assets,
+                doc.metadata.flow_page_padding,
+                dark_mode,
+            );
+            write_page(&path, &svg, format);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -1661,96 +1752,5 @@ mod tests {
             "PNG should be non-trivial, got {} bytes",
             png.len()
         );
-    }
-}
-
-fn write_page(path: &std::path::Path, svg: &str, format: Format) {
-    match format {
-        Format::Svg => {
-            if let Err(e) = fs::write(path, svg) {
-                eprintln!("Error: failed to write {}: {e}", path.display());
-                std::process::exit(1);
-            }
-            eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
-        }
-        Format::Png => {
-            let png = svg_to_png(svg).unwrap_or_else(|e| {
-                eprintln!("Error: {e}");
-                std::process::exit(1);
-            });
-            if let Err(e) = fs::write(path, &png) {
-                eprintln!("Error: failed to write {}: {e}", path.display());
-                std::process::exit(1);
-            }
-            eprintln!("Wrote {} ({} bytes)", path.display(), png.len());
-        }
-    }
-}
-
-fn main() {
-    let cli = Cli::parse();
-
-    let doc = match sdocx::parse(&cli.path) {
-        Ok(doc) => doc,
-        Err(e) => {
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }
-    };
-    let layout = sdocx::layout_document(&doc);
-
-    print_info(&doc, &layout);
-
-    let format = match resolve_format(cli.format, cli.output.as_deref()) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Error: {e}");
-            std::process::exit(1);
-        }
-    };
-
-    let output_base = cli
-        .output
-        .unwrap_or_else(|| cli.path.with_extension(format.ext()));
-
-    if layout.pages.len() == 1 {
-        let dark_mode = layout.pages[0]
-            .page
-            .background_color
-            .or(doc.metadata.background_color)
-            .is_some_and(is_dark_background);
-        let svg = render_page_svg(
-            &layout.pages[0].page,
-            doc.metadata.background_color.as_ref(),
-            &doc.metadata.media_assets,
-            doc.metadata.flow_page_padding,
-            dark_mode,
-        );
-        write_page(&output_base, &svg, format);
-    } else {
-        for (i, layout_page) in layout.pages.iter().enumerate() {
-            let dark_mode = layout_page
-                .page
-                .background_color
-                .or(doc.metadata.background_color)
-                .is_some_and(is_dark_background);
-            let stem = output_base
-                .file_stem()
-                .unwrap_or_default()
-                .to_string_lossy();
-            let ext = output_base
-                .extension()
-                .and_then(|e| e.to_str())
-                .unwrap_or(format.ext());
-            let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            let svg = render_page_svg(
-                &layout_page.page,
-                doc.metadata.background_color.as_ref(),
-                &doc.metadata.media_assets,
-                doc.metadata.flow_page_padding,
-                dark_mode,
-            );
-            write_page(&path, &svg, format);
-        }
     }
 }
