@@ -845,18 +845,53 @@ fn text_style_at(
 fn hyperlink_target(text_box: &RichTextBox, span: &crate::RichTextSpan) -> Option<String> {
     let hyperlink = span.hyperlink_value()?;
     if let Some(target) = hyperlink.custom_data.filter(|target| !target.is_empty()) {
-        return Some(target);
+        return sanitize_hyperlink_target(target);
     }
     let start = utf16_to_char_index(&text_box.text, span.start_utf16)?;
     let end = utf16_to_char_index(&text_box.text, span.end_utf16)?;
     let byte_offsets = char_byte_offsets(&text_box.text);
     let visible_text = &text_box.text[byte_offsets[start]..byte_offsets[end]];
-    match hyperlink.kind {
+    let target = match hyperlink.kind {
         HyperlinkType::Email => Some(format!("mailto:{visible_text}")),
         HyperlinkType::Telephone => Some(format!("tel:{visible_text}")),
         HyperlinkType::Url => Some(visible_text.to_string()),
         _ => None,
+    }?;
+    sanitize_hyperlink_target(target)
+}
+
+fn sanitize_hyperlink_target(target: String) -> Option<String> {
+    let target = target.trim();
+    if target.is_empty() || target.chars().any(char::is_control) {
+        return None;
     }
+
+    if target.starts_with('#') || target.starts_with('?') {
+        return Some(target.to_string());
+    }
+    if target.starts_with("//") || target.starts_with('\\') {
+        return None;
+    }
+    if target.starts_with('/') || target.starts_with("./") || target.starts_with("../") {
+        return Some(target.to_string());
+    }
+
+    if let Some(colon_index) = target.find(':') {
+        let path_delimiter = target
+            .char_indices()
+            .find_map(|(index, character)| matches!(character, '/' | '?' | '#').then_some(index));
+        if path_delimiter.is_none_or(|index| colon_index < index) {
+            let scheme = &target[..colon_index];
+            if !["http", "https", "mailto", "tel"]
+                .iter()
+                .any(|allowed| scheme.eq_ignore_ascii_case(allowed))
+            {
+                return None;
+            }
+        }
+    }
+
+    Some(target.to_string())
 }
 
 fn write_styled_tspan(svg: &mut String, text: &str, style: &SvgTextStyle) {
@@ -1294,7 +1329,7 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 mod tests {
     use super::{
         RenderColorMode, RenderOptions, is_dark_background, normalized_stroke_width,
-        object_flow_offset, render_document_svg, samsung_font_to_svg,
+        object_flow_offset, render_document_svg, samsung_font_to_svg, sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -1491,5 +1526,49 @@ mod tests {
         );
         assert!(pages[0].svg.contains(r##"fill="#0054ff""##));
         assert!(pages[0].svg.contains(r#"text-decoration="underline""#));
+    }
+
+    #[test]
+    fn allows_only_safe_svg_hyperlink_targets() {
+        for target in [
+            "https://example.com/note",
+            "HTTP://example.com/note",
+            "mailto:notes@example.com",
+            "tel:+15551234567",
+            "/notes/one",
+            "./notes/one",
+            "../notes/one",
+            "notes/one?mode=preview#section",
+            "#section",
+            "?page=2",
+        ] {
+            assert_eq!(
+                sanitize_hyperlink_target(target.to_string()).as_deref(),
+                Some(target),
+                "expected {target:?} to remain linkable"
+            );
+        }
+
+        for target in [
+            "javascript:alert(1)",
+            "JaVaScRiPt:alert(1)",
+            "data:text/html,unsafe",
+            "file:///tmp/note",
+            "blob:https://example.com/id",
+            "//example.com/note",
+            r"\\example.com\note",
+            "https://example.com/line\nfeed",
+        ] {
+            assert_eq!(
+                sanitize_hyperlink_target(target.to_string()),
+                None,
+                "expected {target:?} to be stripped"
+            );
+        }
+
+        assert_eq!(
+            sanitize_hyperlink_target("  https://example.com/note  ".to_string()).as_deref(),
+            Some("https://example.com/note")
+        );
     }
 }
