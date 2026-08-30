@@ -8,12 +8,14 @@ license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"
 
 [features]
+render = ["dep:base64"]
 serde = ["dep:serde"]
 
 [dependencies]
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
+base64 = { version = "0.22", optional = true }
 
 [dev-dependencies]
 sha2 = "0.10.9"
