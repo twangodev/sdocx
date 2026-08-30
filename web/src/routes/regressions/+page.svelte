@@ -177,11 +177,9 @@
 <section class="regression-page" aria-labelledby="regression-title">
 	<header class="page-heading">
 		<div class="heading-copy">
-			<div class="mono-label eyebrow">Browser conformance / local</div>
 			<h1 id="regression-title">Regression lab</h1>
 			<p>
-				Verify the locked compatibility corpus, inspect parser structure, and compare generated SVG
-				pages with Samsung Notes reference PDFs.
+				Run the compatibility corpus and compare generated pages with Samsung Notes reference PDFs.
 			</p>
 		</div>
 		<div class="actions">
@@ -215,10 +213,8 @@
 	<div class="workspace">
 		<aside class="fixtures" aria-label="Compatibility fixtures">
 			<div class="panel-heading">
-				<div>
-					<div class="mono-label eyebrow">Corpus</div>
-					<h2>{results.length} fixture{results.length === 1 ? '' : 's'}</h2>
-				</div>
+				<h2>Fixtures</h2>
+				<span>{results.length}</span>
 			</div>
 
 			{#each results as result}
@@ -243,10 +239,7 @@
 		<section class="detail">
 			{#if selectedResult}
 				<div class="panel-heading detail-heading">
-					<div>
-						<div class="mono-label eyebrow">Selected fixture</div>
-						<h2>{selectedResult.fixture.id}</h2>
-					</div>
+					<h2>{selectedResult.fixture.id}</h2>
 					{#if selectedResult.durationMs !== undefined}
 						<span class="duration mono-label">{(selectedResult.durationMs / 1000).toFixed(1)} s</span>
 					{/if}
@@ -429,11 +422,10 @@
 
 <style>
 	.regression-page { width: 100%; min-width: 0; }
-	.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; border-bottom: 1px solid var(--site-border); padding-bottom: clamp(1.5rem, 3vw, 2.5rem); }
+	.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; border-bottom: 1px solid var(--site-border); padding-bottom: 1.5rem; }
 	.heading-copy { max-width: 48rem; }
-	.eyebrow { margin-bottom: 0.65rem; color: #167bff; }
 	h1, h2, h3, p { margin-top: 0; }
-	h1 { margin-bottom: 0.8rem; font-size: clamp(2.25rem, 5vw, 4.6rem); font-weight: 570; letter-spacing: -0.055em; line-height: 0.95; }
+	h1 { margin-bottom: 0.65rem; font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 600; letter-spacing: -0.045em; line-height: 1; }
 	.heading-copy p { max-width: 43rem; margin-bottom: 0; color: var(--site-muted); font-size: 1rem; line-height: 1.6; }
 	.actions { display: flex; max-width: 34rem; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
 	.error-banner, .fixture-error { border: 1px solid color-mix(in srgb, #e45a4f 55%, var(--site-border)); border-radius: 0.45rem; background: color-mix(in srgb, #e45a4f 9%, var(--site-raised)); color: var(--site-text); font-size: 0.82rem; }
@@ -443,7 +435,7 @@
 	.fixtures { align-self: start; }
 	.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--site-border); padding: 1.15rem 1.25rem; }
 	.panel-heading h2, .section-heading h3 { margin-bottom: 0; font-weight: 610; letter-spacing: -0.025em; }
-	.panel-heading .eyebrow { margin-bottom: 0.35rem; }
+	.panel-heading > span { color: var(--site-muted); font-size: 0.75rem; }
 	.fixture { display: block; width: 100%; border: 0; border-bottom: 1px solid var(--site-border); background: transparent; padding: 1rem 1.15rem; color: var(--site-text); text-align: left; cursor: pointer; }
 	.fixture:last-child { border-bottom: 0; }
 	.fixture:hover, .fixture.chosen { background: color-mix(in srgb, #167bff 7%, var(--site-raised)); }

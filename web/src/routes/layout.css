@@ -81,11 +81,7 @@ body {
 	margin: 0;
 	min-width: 320px;
 	min-height: 100svh;
-	background:
-		linear-gradient(color-mix(in srgb, var(--site-border) 24%, transparent) 1px, transparent 1px),
-		linear-gradient(90deg, color-mix(in srgb, var(--site-border) 20%, transparent) 1px, transparent 1px),
-		var(--site-bg);
-	background-size: 48px 48px;
+	background: var(--site-bg);
 	color: var(--site-text);
 }
 
@@ -112,11 +108,8 @@ input {
 }
 
 .mono-label {
-	font-family: var(--font-mono);
-	font-size: 0.68rem;
-	font-weight: 550;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+	font-size: 0.75rem;
+	font-weight: 600;
 }
 
 .control {
@@ -126,12 +119,11 @@ input {
 	justify-content: center;
 	gap: 0.5rem;
 	border: 1px solid var(--site-border);
-	border-radius: 0.45rem;
-	background: var(--site-surface);
+	border-radius: 0.4rem;
+	background: var(--site-raised);
 	padding: 0.5rem 0.8rem;
 	color: var(--site-text);
-	font-family: var(--font-mono);
-	font-size: 0.72rem;
+	font-size: 0.78rem;
 	cursor: pointer;
 	transition:
 		border-color 140ms ease,
