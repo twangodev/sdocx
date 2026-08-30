@@ -1,4 +1,4 @@
-name: Rust
+name: CI
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   msrv:
     name: MSRV
@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: taiki-e/install-action@cargo-hack
-      - run: cargo hack check --rust-version --workspace --all-targets
+      - run: cargo hack check --rust-version --workspace --all-targets --all-features
 
   test:
     name: Test (${{ matrix.os }})
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: taiki-e/install-action@nextest
-      - run: cargo nextest run --profile ci
+      - run: cargo nextest run --profile ci --all-features
       - name: Upload test results to Codecov
         if: ${{ !cancelled() && matrix.os == 'ubuntu-latest' }}
         uses: codecov/codecov-action@v5
@@ -79,3 +79,67 @@ jobs:
           files: lcov.info
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  web:
+    name: Web
+    needs: [test, coverage]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@0.15.0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install web dependencies
+        run: bun ci
+        working-directory: web
+      - name: Build browser WASM
+        run: bun run build:wasm
+        working-directory: web
+      - name: Check web application
+        run: bun run check
+        working-directory: web
+      - name: Run web unit tests
+        run: bun run test
+        working-directory: web
+      - name: Build static application
+        run: bun run build:app
+        working-directory: web
+      - name: Install browser engines
+        run: bunx playwright install --with-deps chromium firefox webkit
+        working-directory: web
+      - name: Run browser tests
+        run: bun run test:e2e
+        working-directory: web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdocx-web
+          path: web/build
+          if-no-files-found: error
+
+  deploy-web:
+    name: Deploy web
+    needs: [web]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdocx-web
+          path: web/build
+      - name: Deploy static assets to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          packageManager: bun
+          workingDirectory: web
