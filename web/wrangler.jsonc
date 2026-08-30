@@ -1,0 +1,17 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "sdocx-web",
+	"compatibility_date": "2026-08-30",
+	"workers_dev": false,
+	"routes": [
+		{
+			"pattern": "sdocx.twango.dev",
+			"custom_domain": true
+		}
+	],
+	"assets": {
+		"directory": "./build",
+		"not_found_handling": "404-page",
+		"html_handling": "auto-trailing-slash"
+	}
+}
