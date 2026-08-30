@@ -17,9 +17,9 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 
 	await expect(page).toHaveTitle(/local Samsung Notes converter/i);
 	await expect(page.getByRole('heading', { name: /Open a Samsung note/i })).toBeVisible();
-	await expect(page.getByText(/no upload/i)).toBeVisible();
+	await expect(page.locator('.lede')).toContainText('Files never leave this device.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
-	await expect(page.getByRole('link', { name: 'convert' })).toHaveAttribute('aria-current', 'page');
+	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 	expect(remoteRequests).toEqual([]);
 });
 
@@ -29,19 +29,17 @@ test('regression suite exposes explicit, user-triggered runs', async ({ page }) 
 	await expect(page).toHaveTitle(/regression/i);
 	await expect(page.getByRole('heading', { name: /Regression lab/i })).toBeVisible();
 	await expect(page.getByRole('button', { name: /Run selected/i })).toBeVisible();
-	await expect(page.getByRole('link', { name: 'regressions' })).toHaveAttribute(
-		'aria-current',
-		'page'
-	);
+	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 });
 
 test('theme preference survives navigation', async ({ page }) => {
-	await page.addInitScript(() => localStorage.setItem('sdocx-theme', 'light'));
 	await page.goto('/');
+	await page.evaluate(() => localStorage.setItem('sdocx-theme', 'light'));
+	await page.reload();
 	await page.getByRole('button', { name: 'Use dark theme' }).click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-	await page.getByRole('link', { name: 'regressions' }).click();
+	await page.goto('/regressions');
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 

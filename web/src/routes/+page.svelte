@@ -272,11 +272,10 @@
 
 {#if !hasDocument}
 	<section class="intro" aria-labelledby="intro-title">
-		<div class="eyebrow mono-label">Local document tool / alpha</div>
-		<h1 id="intro-title">Open a Samsung note.<br /><em>Keep it yours.</em></h1>
+		<h1 id="intro-title">Open a Samsung Notes file</h1>
 		<p class="lede">
-			Inspect pages, diagnose compatibility, and export clean SVG, PNG, or JSON. Parsing and
-			rendering happen inside this tab—your note is never uploaded.
+			Preview and export .sdocx documents directly in your browser. Files never leave this
+			device.
 		</p>
 
 		<button
@@ -288,12 +287,10 @@
 			ondragover={onDragOver}
 			ondragleave={() => (dragging = false)}
 		>
-			<span class="drop-icon" aria-hidden="true">↳</span>
 			<span class="drop-copy">
-				<strong>{parsing ? status : 'Drop an .sdocx here'}</strong>
-				<small>{parsing ? 'Everything is happening locally' : 'or choose one from this device · max 250 MiB'}</small>
+				<strong>{parsing ? status : 'Choose an .sdocx file'}</strong>
+				<small>{parsing ? 'Processing locally' : 'or drop it here · max 250 MiB'}</small>
 			</span>
-			<span class="pick-label mono-label">{parsing ? 'working' : 'choose file'}</span>
 		</button>
 
 		<input
@@ -307,11 +304,6 @@
 			<button class="cancel-link" type="button" onclick={cancel}>cancel parsing</button>
 		{/if}
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
-		<div class="trust-row" aria-label="Privacy guarantees">
-			<span><b>01</b> no upload</span>
-			<span><b>02</b> open source parser</span>
-			<span><b>03</b> worker isolated</span>
-		</div>
 	</section>
 {:else if summary && activeFile}
 	<section class="workspace" aria-label="Document converter">
@@ -441,47 +433,36 @@
 
 <style>
 	.intro {
-		width: min(100%, 980px);
+		width: min(100%, 720px);
 		margin: auto;
-	}
-
-	.eyebrow {
-		margin-bottom: 1.2rem;
-		color: #167bff;
 	}
 
 	h1 {
 		margin: 0;
-		font-size: clamp(2.6rem, 7vw, 6.4rem);
-		font-weight: 420;
-		letter-spacing: -0.065em;
-		line-height: 0.93;
-	}
-
-	h1 em {
-		color: var(--site-muted);
-		font-weight: 360;
+		font-size: clamp(2rem, 5vw, 3.5rem);
+		font-weight: 560;
+		letter-spacing: -0.045em;
+		line-height: 1.05;
 	}
 
 	.lede {
-		max-width: 660px;
-		margin: 2rem 0;
+		max-width: 600px;
+		margin: 1rem 0 2rem;
 		color: var(--site-muted);
-		font-size: clamp(1rem, 2vw, 1.2rem);
-		line-height: 1.5;
+		font-size: 1rem;
+		line-height: 1.6;
 	}
 
 	.drop-zone {
-		display: grid;
+		display: flex;
 		width: 100%;
-		min-height: 9rem;
-		grid-template-columns: auto 1fr auto;
+		min-height: 7rem;
 		align-items: center;
-		gap: 1.25rem;
+		gap: 1rem;
 		border: 1px dashed var(--site-muted);
 		border-radius: 0.6rem;
-		background: color-mix(in srgb, var(--site-surface) 78%, transparent);
-		padding: clamp(1.1rem, 4vw, 2rem);
+		background: var(--site-raised);
+		padding: 1.5rem;
 		color: var(--site-text);
 		text-align: left;
 		cursor: pointer;
@@ -492,17 +473,6 @@
 	.drop-zone.dragging {
 		border-color: #167bff;
 		background: color-mix(in srgb, #167bff 7%, var(--site-surface));
-	}
-
-	.drop-icon {
-		display: grid;
-		width: 3rem;
-		height: 3rem;
-		place-items: center;
-		border: 1px solid var(--site-border);
-		border-radius: 50%;
-		font-family: var(--font-mono);
-		font-size: 1.4rem;
 	}
 
 	.drop-copy {
@@ -519,27 +489,6 @@
 	.drop-copy small {
 		color: var(--site-muted);
 		font-size: 0.8rem;
-	}
-
-	.pick-label {
-		color: #167bff;
-	}
-
-	.trust-row {
-		display: flex;
-		margin-top: 1.4rem;
-		flex-wrap: wrap;
-		gap: 1rem 2rem;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-		text-transform: uppercase;
-	}
-
-	.trust-row b {
-		margin-right: 0.35rem;
-		color: var(--site-border);
-		font-weight: 400;
 	}
 
 	.visually-hidden {
@@ -897,14 +846,6 @@
 	}
 
 	@media (max-width: 520px) {
-		.drop-zone {
-			grid-template-columns: auto 1fr;
-		}
-
-		.pick-label {
-			display: none;
-		}
-
 		.preview-toolbar {
 			align-items: stretch;
 			flex-direction: column;

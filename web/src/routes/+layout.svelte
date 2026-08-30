@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { page } from '$app/state';
 	import './layout.css';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
@@ -10,31 +9,24 @@
 	<header>
 		<a class="wordmark" href="/" aria-label="sdocx home"><span>s</span>docx</a>
 		<nav aria-label="Primary navigation">
-			<a href="/" aria-current={page.url.pathname === '/' ? 'page' : undefined}>convert</a>
-			<a
-				href="/regressions"
-				aria-current={page.url.pathname.startsWith('/regressions') ? 'page' : undefined}
-				>regressions</a
-			>
 			<a href="https://github.com/twangodev/sdocx">github</a>
 			<ThemeToggle />
 		</nav>
 	</header>
 	<main>{@render children()}</main>
 	<footer>
-		<span>Samsung Notes, understood in the open.</span>
-		<span class="privacy">Files stay on this device.</span>
+		<span>Files are processed locally in your browser.</span>
 	</footer>
 </div>
 
 <style>
 	.shell {
 		display: flex;
-		width: min(100%, 1600px);
+		width: min(100%, 1320px);
 		min-height: 100svh;
 		margin: 0 auto;
 		flex-direction: column;
-		padding: 1.25rem clamp(1rem, 3vw, 3.5rem);
+		padding: 1.25rem clamp(1rem, 3vw, 2.5rem);
 	}
 
 	header,
@@ -65,7 +57,7 @@
 	nav {
 		display: flex;
 		align-items: center;
-		gap: clamp(0.75rem, 2vw, 1.6rem);
+		gap: 1rem;
 	}
 
 	nav a {
@@ -76,8 +68,7 @@
 		text-transform: lowercase;
 	}
 
-	nav a:hover,
-	nav a[aria-current='page'] {
+	nav a:hover {
 		color: #167bff;
 	}
 
@@ -85,7 +76,7 @@
 		display: flex;
 		flex: 1;
 		align-items: stretch;
-		padding: clamp(2rem, 6vw, 5rem) 0;
+		padding: clamp(2rem, 5vw, 4rem) 0;
 	}
 
 	footer {
@@ -94,12 +85,5 @@
 		color: var(--site-muted);
 		font-family: var(--font-mono);
 		font-size: 0.62rem;
-	}
-
-	@media (max-width: 600px) {
-		nav a:nth-child(3),
-		.privacy {
-			display: none;
-		}
 	}
 </style>
