@@ -8,6 +8,13 @@
 
 Reverse-engineered tooling and SDK for converting Samsung Notes (`.sdocx`) files.
 
+## Browser application
+
+The static application in [`web/`](web/) provides a local converter and a
+compatibility regression lab. Parsing, rendering, and export happen in the
+browser; user-selected documents are not uploaded. The generated site is
+configured for Workers Static Assets at `sdocx.twango.dev`.
+
 ## Parser accuracy
 
 `sdocx` is a reverse-engineered parser, not a drop-in implementation of
@@ -111,8 +118,9 @@ for (const page of doc.pages) {
 
 ## Compatibility corpus
 
-Large test documents and Samsung reference PDFs are kept in an external
-Hugging Face dataset rather than committed to this repository. See
+Large test documents and Samsung reference PDFs are kept in the
+[`twangodev/sdocx-compatibility`](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
+dataset rather than committed to this repository. See
 [`conformance/README.md`](conformance/README.md) for the locked manifest and
 local runner.
 

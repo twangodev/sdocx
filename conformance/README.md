@@ -1,9 +1,11 @@
 # Compatibility corpus
 
 Large `.sdocx` fixtures and reference exports live outside this Git repository.
-Keep them in a Hugging Face dataset and check out or download that dataset into
-the ignored `hf/` directory at the repository root. A different checkout can be
-selected with `SDOCX_CORPUS_DIR`.
+The external dataset is
+[`twangodev/sdocx-compatibility`](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
+on Hugging Face and is licensed under CC BY 4.0. Check out or download that
+dataset into the ignored `hf/` directory at the repository root. A different
+checkout can be selected with `SDOCX_CORPUS_DIR`.
 
 The tracked [`corpus.tsv`](corpus.tsv) is the lock file. Each row records the
 fixture filenames, SHA-256 digests, and a small set of stable parser/layout
@@ -25,3 +27,8 @@ SDOCX_CORPUS_DIR=/path/to/dataset cargo test -p sdocx --test conformance -- --ig
 Regular unit tests do not download or require private/large fixtures. To add a
 fixture, upload its artifacts to the dataset, calculate both SHA-256 digests,
 then append one tab-separated row to `corpus.tsv`.
+
+The static browser application reads this same manifest and, once the artifacts
+are published, downloads fixture pairs directly from Hugging Face only after a
+user starts a regression run. Local file pairs can be selected as an offline
+fallback; their hashes must match the manifest before they are processed.
