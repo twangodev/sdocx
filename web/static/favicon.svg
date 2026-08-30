@@ -1,4 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#1a1916"/>
-  <path d="M46 20.5c-3.4-2.3-7.6-3.5-12.4-3.5-8.2 0-13.7 3.9-13.7 9.8 0 5.2 3.6 8 11.4 9.5 5.6 1.1 7.4 2.2 7.4 4.5 0 2.6-2.7 4.2-7 4.2-4.4 0-8.6-1.4-12.1-4.1" fill="none" stroke="#167bff" stroke-linecap="round" stroke-width="6"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .bg { fill: #1a1916; }
+    .fg { fill: #e8e5df; }
+    @media (prefers-color-scheme: light) {
+      .bg { fill: #f8f6f1; }
+      .fg { fill: #1a1916; }
+    }
+  </style>
+  <rect class="bg" width="32" height="32" rx="6"/>
+  <path class="fg" fill-rule="evenodd" clip-rule="evenodd" d="M6 2h13l7 7v21H6V2Zm2 2v24h16V11h-7V4H8Zm11 1.5V9h3.5L19 5.5ZM11 15h10v2H11v-2Zm0 5h10v2H11v-2Zm0 5h7v2h-7v-2Z" transform="translate(16 16) scale(.76) translate(-16 -16)"/>
 </svg>

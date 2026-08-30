@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import Logo from '$lib/components/Logo.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { children } = $props();
@@ -7,7 +8,7 @@
 
 <div class="shell">
 	<header>
-		<a class="wordmark" href="/" aria-label="sdocx home"><span>s</span>docx</a>
+		<a class="wordmark" href="/" aria-label="sdocx home"><Logo size={15} />sdocx</a>
 		<nav aria-label="Primary navigation">
 			<a href="https://github.com/twangodev/sdocx">github</a>
 			<ThemeToggle />
@@ -42,15 +43,17 @@
 	}
 
 	.wordmark {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
 		color: var(--site-text);
-		font-family: var(--font-mono);
-		font-size: 1rem;
-		font-weight: 650;
-		letter-spacing: -0.04em;
+		font-size: 0.9rem;
+		font-weight: 550;
+		letter-spacing: 0.01em;
 		text-decoration: none;
 	}
 
-	.wordmark span {
+	.wordmark:hover {
 		color: #167bff;
 	}
 
