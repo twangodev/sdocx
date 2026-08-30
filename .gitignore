@@ -13,6 +13,8 @@ downloads/
 eggs/
 .eggs/
 lib/
+!/web/src/lib/
+!/web/src/lib/**
 lib64/
 parts/
 sdist/
@@ -109,6 +111,13 @@ target/
 # External compatibility corpus and generated visual comparisons
 /hf/
 /tmp/
+/web/.svelte-kit/
+/web/build/
+/web/node_modules/
+/web/playwright-report/
+/web/static/wasm/
+/web/test-results/
+/web/.wrangler/
 
 # JetBrains IDEs
 .idea/

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#1a1916" />
+		<link rel="icon" href="/favicon.svg" />
+		<script>
+			const stored = localStorage.getItem('sdocx-theme');
+			const theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
+			document.documentElement.dataset.theme = theme;
+			document.documentElement.style.colorScheme = theme;
+		</script>
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+</html>
