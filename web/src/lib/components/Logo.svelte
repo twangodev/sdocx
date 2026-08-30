@@ -6,10 +6,13 @@
 	const { size = 16 }: Props = $props();
 </script>
 
-<svg width={size} height={size} viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+<svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
 	<path
-		fill-rule="evenodd"
-		d="M6 2h13l7 7v21H6V2Zm2 2v24h16V11h-7V4H8Zm11 1.5V9h3.5L19 5.5ZM11 15h10v2H11v-2Zm0 5h10v2H11v-2Zm0 5h7v2h-7v-2Z"
-		clip-rule="evenodd"
+		d="M24 8.5c-2-1.4-4.4-2.2-7.2-2.2-4.8 0-8 2.2-8 5.7 0 3 2.1 4.6 6.7 5.5 3.3.6 4.5 1.3 4.5 2.6 0 1.5-1.6 2.4-4.2 2.4-2.7 0-5.3-.9-7.4-2.4"
+		fill="none"
+		stroke="currentColor"
+		stroke-linecap="round"
+		stroke-width="3.5"
 	/>
+	<rect x="23" y="22" width="3.5" height="3.5" rx="0.7" fill="currentColor" />
 </svg>
