@@ -561,6 +561,7 @@ dependencies = [
 name = "sdocx"
 version = "0.5.0"
 dependencies = [
+ "base64",
  "serde",
  "sha2",
  "thiserror",
@@ -571,7 +572,6 @@ dependencies = [
 name = "sdocx-cli"
 version = "0.5.0"
 dependencies = [
- "base64",
  "clap",
  "resvg",
  "sdocx",
@@ -582,7 +582,9 @@ name = "sdocx-wasm"
 version = "0.3.3"
 dependencies = [
  "sdocx",
+ "serde",
  "serde-wasm-bindgen",
+ "sha2",
  "wasm-bindgen",
 ]
 

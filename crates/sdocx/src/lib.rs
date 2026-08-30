@@ -16,6 +16,8 @@ mod error;
 mod layout;
 mod note;
 mod page;
+#[cfg(feature = "render")]
+mod render;
 mod report;
 mod storage;
 mod types;
@@ -23,6 +25,10 @@ mod types;
 pub use error::{Error, Result};
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use note::{StoredNote, StoredNoteHeader, parse_note_bytes, parse_note_bytes_with_limits};
+#[cfg(feature = "render")]
+pub use render::{
+    RenderColorMode, RenderOptions, RenderedPage, render_document_svg, render_page_svg,
+};
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use storage::{
     PageManifest, PageManifestEntry, ParsedDocument, StoredArchivePage, StoredLayer, StoredObject,
