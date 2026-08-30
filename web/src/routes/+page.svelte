@@ -274,8 +274,7 @@
 	<section class="intro" aria-labelledby="intro-title">
 		<h1 id="intro-title">Open a Samsung Notes file</h1>
 		<p class="lede">
-			Preview and export .sdocx documents directly in your browser. Files never leave this
-			device.
+			Preview and export .sdocx documents. Files stay in this browser.
 		</p>
 
 		<button
@@ -287,11 +286,9 @@
 			ondragover={onDragOver}
 			ondragleave={() => (dragging = false)}
 		>
-			<span class="drop-copy">
-				<strong>{parsing ? status : 'Choose an .sdocx file'}</strong>
-				<small>{parsing ? 'Processing locally' : 'or drop it here · max 250 MiB'}</small>
-			</span>
+			{parsing ? status : 'open .sdocx'}
 		</button>
+		<p class="drop-hint">{parsing ? 'processing locally' : 'or drop one here · max 250 MiB'}</p>
 
 		<input
 			bind:this={picker}
@@ -309,9 +306,8 @@
 	<section class="workspace" aria-label="Document converter">
 		<div class="workspace-heading">
 			<div>
-				<span class="mono-label">Current document</span>
 				<h1>{details?.title || activeFile.name}</h1>
-				<p>{activeFile.name} · {formatBytes(activeFile.size)} · processed locally</p>
+				<p>{activeFile.name} · {formatBytes(activeFile.size)} · {summary.pageCount} {summary.pageCount === 1 ? 'page' : 'pages'} · local</p>
 			</div>
 			<div class="heading-actions">
 				<button class="control" type="button" onclick={() => picker?.click()}>replace</button>
@@ -329,7 +325,7 @@
 
 		<div class="work-grid">
 			<aside class="panel document-panel" aria-label="Document information">
-				<div class="panel-title"><span class="mono-label">Inspect</span><i></i></div>
+				<div class="panel-title"><span class="mono-label">inspect</span></div>
 				<dl>
 					<div><dt>Pages</dt><dd>{summary.pageCount}</dd></div>
 					<div><dt>Format</dt><dd>{details?.formatVersion ?? 'Unknown'}</dd></div>
@@ -340,7 +336,7 @@
 				</dl>
 
 				<div class="diagnostics">
-					<div class="panel-title"><span class="mono-label">Diagnostics</span><i></i></div>
+					<div class="panel-title"><span class="mono-label">diagnostics</span></div>
 					{#if details?.diagnostics.length}
 						<ul>
 							{#each details.diagnostics as diagnostic}
@@ -399,7 +395,7 @@
 			</div>
 
 			<aside class="panel export-panel" aria-label="Export options">
-				<div class="panel-title"><span class="mono-label">Export</span><i></i></div>
+				<div class="panel-title"><span class="mono-label">export</span></div>
 				<div class="export-group">
 					<span class="group-label">Current page</span>
 					<button class="control primary" disabled={exporting || rendering} onclick={downloadCurrentSvg}>SVG <span>↓</span></button>
@@ -433,62 +429,52 @@
 
 <style>
 	.intro {
-		width: min(100%, 720px);
+		width: min(100% - 3rem, 28rem);
 		margin: auto;
 	}
 
 	h1 {
 		margin: 0;
-		font-size: clamp(2rem, 5vw, 3.5rem);
-		font-weight: 560;
-		letter-spacing: -0.045em;
-		line-height: 1.05;
+		font-size: 1.45rem;
+		font-weight: 550;
+		letter-spacing: -0.025em;
+		line-height: 1.15;
 	}
 
 	.lede {
-		max-width: 600px;
-		margin: 1rem 0 2rem;
+		margin: 0.65rem 0 1.75rem;
 		color: var(--site-muted);
-		font-size: 1rem;
-		line-height: 1.6;
+		font-size: 0.875rem;
+		line-height: 1.5;
 	}
 
 	.drop-zone {
-		display: flex;
+		display: grid;
 		width: 100%;
-		min-height: 7rem;
+		height: 2.4rem;
 		align-items: center;
-		gap: 1rem;
-		border: 1px dashed var(--site-muted);
-		border-radius: 0.6rem;
-		background: var(--site-raised);
-		padding: 1.5rem;
-		color: var(--site-text);
-		text-align: left;
+		border: 0;
+		border-radius: 0.25rem;
+		background: var(--site-text);
+		padding: 0 1rem;
+		color: var(--site-bg);
+		font-size: 0.75rem;
+		font-weight: 550;
+		text-align: center;
 		cursor: pointer;
-		transition: border-color 150ms ease, background 150ms ease;
+		transition: opacity 140ms ease, transform 140ms ease;
 	}
 
 	.drop-zone:hover,
 	.drop-zone.dragging {
-		border-color: #167bff;
-		background: color-mix(in srgb, #167bff 7%, var(--site-surface));
+		opacity: 0.82;
 	}
 
-	.drop-copy {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.drop-copy strong {
-		font-size: 1rem;
-		font-weight: 520;
-	}
-
-	.drop-copy small {
+	.drop-hint {
+		margin: 0.7rem 0 0;
 		color: var(--site-muted);
-		font-size: 0.8rem;
+		font-size: 0.7rem;
+		text-align: center;
 	}
 
 	.visually-hidden {
@@ -527,32 +513,35 @@
 		display: flex;
 		width: 100%;
 		min-width: 0;
+		min-height: 0;
 		flex-direction: column;
 	}
 
 	.workspace-heading {
 		display: flex;
-		align-items: end;
+		min-height: 3.65rem;
+		align-items: center;
 		justify-content: space-between;
-		gap: 2rem;
+		gap: 1rem;
 		border-bottom: 1px solid var(--site-border);
-		padding-bottom: 1.25rem;
+		padding: 0.55rem 1rem;
 	}
 
 	.workspace-heading h1 {
-		max-width: 800px;
-		margin-top: 0.45rem;
+		max-width: 60vw;
 		overflow: hidden;
-		font-size: clamp(1.9rem, 4vw, 3.2rem);
+		font-size: 0.875rem;
+		font-weight: 550;
+		letter-spacing: 0;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.workspace-heading p {
-		margin: 0.55rem 0 0;
+		margin: 0.2rem 0 0;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
-		font-size: 0.65rem;
+		font-size: 0.6rem;
 	}
 
 	.heading-actions {
@@ -562,22 +551,28 @@
 
 	.work-grid {
 		display: grid;
-		min-height: 650px;
-		grid-template-columns: minmax(190px, 0.7fr) minmax(360px, 2.2fr) minmax(190px, 0.7fr);
-		gap: clamp(1rem, 2vw, 2rem);
-		padding-top: 1.5rem;
+		min-height: 0;
+		flex: 1;
+		grid-template-columns: 220px minmax(360px, 1fr) 220px;
 	}
 
 	.panel,
 	.preview-panel {
 		min-width: 0;
-		border: 1px solid var(--site-border);
-		border-radius: 0.55rem;
-		background: color-mix(in srgb, var(--site-bg) 90%, transparent);
+		background: var(--site-bg);
 	}
 
 	.panel {
-		padding: 1rem;
+		overflow: auto;
+		padding: 0.9rem;
+	}
+
+	.document-panel {
+		border-right: 1px solid var(--site-border);
+	}
+
+	.export-panel {
+		border-left: 1px solid var(--site-border);
 	}
 
 	.panel-title {
@@ -587,14 +582,8 @@
 		color: var(--site-muted);
 	}
 
-	.panel-title i {
-		height: 1px;
-		flex: 1;
-		background: var(--site-border);
-	}
-
 	dl {
-		margin: 1rem 0 0;
+		margin: 0.65rem 0 0;
 	}
 
 	dl div {
@@ -602,8 +591,8 @@
 		grid-template-columns: 0.7fr 1fr;
 		gap: 0.5rem;
 		border-bottom: 1px solid var(--site-border);
-		padding: 0.65rem 0;
-		font-size: 0.75rem;
+		padding: 0.55rem 0;
+		font-size: 0.7rem;
 	}
 
 	dt {
@@ -617,7 +606,7 @@
 	}
 
 	.diagnostics {
-		margin-top: 2rem;
+		margin-top: 1.5rem;
 	}
 
 	.diagnostics ul {
@@ -660,7 +649,7 @@
 		min-height: 0;
 		flex-direction: column;
 		overflow: hidden;
-		background: var(--site-surface);
+		background: var(--site-canvas);
 	}
 
 	.preview-toolbar {
@@ -708,23 +697,21 @@
 
 	.canvas-wrap {
 		display: grid;
-		min-height: 540px;
+		min-height: 0;
 		flex: 1;
 		place-items: center;
 		overflow: auto;
-		padding: clamp(1rem, 3vw, 2.5rem);
-		background:
-			radial-gradient(circle, color-mix(in srgb, var(--site-muted) 23%, transparent) 0.7px, transparent 0.7px);
-		background-size: 12px 12px;
+		padding: clamp(1rem, 2vw, 2rem);
+		background: var(--site-canvas);
 	}
 
 	.canvas-wrap img {
 		display: block;
 		max-width: 100%;
-		max-height: 68vh;
+		max-height: calc(100svh - 10.5rem);
 		border: 1px solid color-mix(in srgb, black 15%, transparent);
 		background: white;
-		box-shadow: 0 18px 50px color-mix(in srgb, black 18%, transparent);
+		box-shadow: 0 8px 24px color-mix(in srgb, black 16%, transparent);
 	}
 
 	.rendering-state {
@@ -766,11 +753,11 @@
 
 	.export-group {
 		display: flex;
-		margin-top: 1rem;
+		margin-top: 0.75rem;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.4rem;
 		border-bottom: 1px solid var(--site-border);
-		padding-bottom: 1rem;
+		padding-bottom: 0.8rem;
 	}
 
 	.export-group.final {
@@ -808,11 +795,13 @@
 
 	@media (max-width: 1050px) {
 		.work-grid {
-			grid-template-columns: 1fr minmax(360px, 2fr);
+			grid-template-columns: 200px minmax(360px, 1fr);
 		}
 
 		.export-panel {
 			grid-column: 1 / -1;
+			border-top: 1px solid var(--site-border);
+			border-left: 0;
 		}
 
 		.export-panel .export-group {
@@ -830,6 +819,12 @@
 		.work-grid {
 			display: flex;
 			flex-direction: column;
+		}
+
+		.document-panel,
+		.export-panel {
+			border: 0;
+			border-top: 1px solid var(--site-border);
 		}
 
 		.preview-panel {

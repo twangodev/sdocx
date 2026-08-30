@@ -421,7 +421,7 @@
 </section>
 
 <style>
-	.regression-page { width: 100%; min-width: 0; }
+	.regression-page { width: 100%; min-width: 0; padding: clamp(1.25rem, 3vw, 2.5rem); }
 	.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; border-bottom: 1px solid var(--site-border); padding-bottom: 1.5rem; }
 	.heading-copy { max-width: 48rem; }
 	h1, h2, h3, p { margin-top: 0; }

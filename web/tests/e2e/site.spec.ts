@@ -17,7 +17,7 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 
 	await expect(page).toHaveTitle(/local Samsung Notes converter/i);
 	await expect(page.getByRole('heading', { name: /Open a Samsung note/i })).toBeVisible();
-	await expect(page.locator('.lede')).toContainText('Files never leave this device.');
+	await expect(page.locator('.lede')).toContainText('Files stay in this browser.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
 	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 	expect(remoteRequests).toEqual([]);

@@ -28,16 +28,17 @@
 		width: 2.25rem;
 		height: 2.25rem;
 		place-items: center;
-		border: 1px solid var(--site-border);
-		border-radius: 999px;
+		border: 0;
+		border-radius: 0.25rem;
 		background: transparent;
 		color: var(--site-muted);
 		cursor: pointer;
+		transition: background-color 140ms ease, color 140ms ease;
 	}
 
 	.theme-toggle:hover {
-		border-color: #167bff;
-		color: #167bff;
+		background: var(--site-surface);
+		color: var(--site-text);
 	}
 
 	svg {

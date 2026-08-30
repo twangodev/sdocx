@@ -10,36 +10,29 @@
 	<header>
 		<a class="wordmark" href="/" aria-label="sdocx home"><Logo size={15} />sdocx</a>
 		<nav aria-label="Primary navigation">
-			<a href="https://github.com/twangodev/sdocx">github</a>
+			<a href="https://github.com/twangodev/sdocx" target="_blank" rel="noreferrer">github</a>
 			<ThemeToggle />
 		</nav>
 	</header>
 	<main>{@render children()}</main>
-	<footer>
-		<span>Files are processed locally in your browser.</span>
-	</footer>
 </div>
 
 <style>
 	.shell {
 		display: flex;
-		width: min(100%, 1320px);
+		width: 100%;
 		min-height: 100svh;
-		margin: 0 auto;
 		flex-direction: column;
-		padding: 1.25rem clamp(1rem, 3vw, 2.5rem);
-	}
-
-	header,
-	footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
 	}
 
 	header {
+		display: flex;
 		min-height: 3rem;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		border-bottom: 1px solid var(--site-border);
+		padding: 0 1rem;
 	}
 
 	.wordmark {
@@ -77,16 +70,8 @@
 
 	main {
 		display: flex;
+		min-height: 0;
 		flex: 1;
 		align-items: stretch;
-		padding: clamp(2rem, 5vw, 4rem) 0;
-	}
-
-	footer {
-		border-top: 1px solid var(--site-border);
-		padding-top: 1rem;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
 	}
 </style>
