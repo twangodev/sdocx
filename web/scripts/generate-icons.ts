@@ -11,17 +11,25 @@ function mark(scale: number, radius = 0): string {
 	</svg>`;
 }
 
-function asIco(png: Buffer): Buffer {
-	const header = Buffer.alloc(22);
+function asIco(images: Array<{ size: number; png: Buffer }>): Buffer {
+	const directorySize = 6 + images.length * 16;
+	const header = Buffer.alloc(directorySize);
 	header.writeUInt16LE(1, 2);
-	header.writeUInt16LE(1, 4);
-	header.writeUInt8(32, 6);
-	header.writeUInt8(32, 7);
-	header.writeUInt16LE(1, 10);
-	header.writeUInt16LE(32, 12);
-	header.writeUInt32LE(png.length, 14);
-	header.writeUInt32LE(header.length, 18);
-	return Buffer.concat([header, png]);
+	header.writeUInt16LE(images.length, 4);
+
+	let imageOffset = directorySize;
+	for (const [index, image] of images.entries()) {
+		const entryOffset = 6 + index * 16;
+		header.writeUInt8(image.size, entryOffset);
+		header.writeUInt8(image.size, entryOffset + 1);
+		header.writeUInt16LE(1, entryOffset + 4);
+		header.writeUInt16LE(32, entryOffset + 6);
+		header.writeUInt32LE(image.png.length, entryOffset + 8);
+		header.writeUInt32LE(imageOffset, entryOffset + 12);
+		imageOffset += image.png.length;
+	}
+
+	return Buffer.concat([header, ...images.map(({ png }) => png)]);
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -35,9 +43,13 @@ async function render(svg: string, size: number): Promise<Buffer> {
 }
 
 try {
-	const favicon = await render(mark(0.76, 6), 32);
+	const faviconSizes = [16, 32, 48];
+	const faviconImages: Array<{ size: number; png: Buffer }> = [];
+	for (const size of faviconSizes) {
+		faviconImages.push({ size, png: await render(mark(0.76, 6), size) });
+	}
 	await Promise.all([
-		writeFile('static/favicon.ico', asIco(favicon)),
+		writeFile('static/favicon.ico', asIco(faviconImages)),
 		writeFile('static/apple-touch-icon.png', await render(mark(0.76), 180)),
 		writeFile('static/icon-192.png', await render(mark(0.76, 6), 192)),
 		writeFile('static/icon-512.png', await render(mark(0.76, 6), 512)),
