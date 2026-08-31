@@ -27,8 +27,8 @@
 	let pageIndex = $state(0);
 	let colorMode = $state<ColorMode>('auto');
 	let pngScale = $state<1 | 2>(1);
-	let previewSvg = $state('');
-	let previewUrl = $state('');
+	let previewUrls = $state<string[]>([]);
+	let previewScroller = $state<HTMLDivElement>();
 	let phase = $state<WorkerPhase | null>(null);
 	let status = $state('Waiting for a document');
 	let error = $state('');
@@ -50,23 +50,24 @@
 
 		return () => {
 			client.destroy();
-			releasePreview();
+			releasePreviews();
 		};
 	});
 
-	function releasePreview(): void {
-		if (previewUrl) URL.revokeObjectURL(previewUrl);
-		previewUrl = '';
+	function releasePreviews(): void {
+		for (const url of previewUrls) {
+			if (url) URL.revokeObjectURL(url);
+		}
+		previewUrls = [];
 	}
 
 	function clearDocument(): void {
 		renderGeneration += 1;
-		releasePreview();
+		releasePreviews();
 		activeFile = null;
 		summary = null;
 		details = null;
 		pageIndex = 0;
-		previewSvg = '';
 	}
 
 	async function closeDocument(): Promise<void> {
@@ -104,7 +105,7 @@
 			status = `${nextSummary.pageCount} ${nextSummary.pageCount === 1 ? 'page' : 'pages'} ready`;
 			phase = 'ready';
 
-			if (nextSummary.pageCount > 0) await renderPreview();
+			if (nextSummary.pageCount > 0) await renderPreviews();
 		} catch (cause) {
 			clearDocument();
 			error = messageFrom(cause);
@@ -114,18 +115,24 @@
 		}
 	}
 
-	async function renderPreview(): Promise<void> {
+	async function renderPreviews(): Promise<void> {
 		if (!summary || summary.pageCount === 0) return;
 		const generation = ++renderGeneration;
+		const pageCount = summary.pageCount;
 		rendering = true;
 		error = '';
+		releasePreviews();
+		previewUrls = Array(pageCount).fill('');
 		try {
-			const svg = await client.renderPage(pageIndex, colorMode);
-			if (generation !== renderGeneration) return;
-			previewSvg = svg;
-			releasePreview();
-			previewUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-			status = `Page ${pageIndex + 1} rendered locally`;
+			for (let index = 0; index < pageCount; index += 1) {
+				status = `Rendering page ${index + 1} of ${pageCount}`;
+				const svg = await client.renderPage(index, colorMode);
+				if (generation !== renderGeneration) return;
+				const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+				previewUrls[index] = url;
+				previewUrls = [...previewUrls];
+			}
+			status = `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} rendered locally`;
 		} catch (cause) {
 			if (generation === renderGeneration) error = messageFrom(cause);
 		} finally {
@@ -133,14 +140,37 @@
 		}
 	}
 
-	async function selectPage(nextPage: number): Promise<void> {
+	function selectPage(nextPage: number): void {
+		const page = previewScroller?.querySelector<HTMLElement>(`[data-page-index="${nextPage}"]`);
+		page?.scrollIntoView({ behavior: 'auto', block: 'start' });
 		pageIndex = nextPage;
-		await renderPreview();
 	}
 
 	async function selectColorMode(nextMode: ColorMode): Promise<void> {
 		colorMode = nextMode;
-		await renderPreview();
+		await renderPreviews();
+	}
+
+	function updatePageFromScroll(event: Event): void {
+		const scroller = event.currentTarget as HTMLDivElement;
+		const anchor = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.3;
+		const pages = scroller.querySelectorAll<HTMLElement>('[data-page-index]');
+		let nextPage = pageIndex;
+
+		for (const page of pages) {
+			const bounds = page.getBoundingClientRect();
+			const index = Number(page.dataset.pageIndex);
+			if (bounds.top <= anchor && bounds.bottom > anchor) {
+				nextPage = index;
+				break;
+			}
+			if (bounds.top > anchor) {
+				nextPage = index;
+				break;
+			}
+		}
+
+		if (nextPage !== pageIndex) pageIndex = nextPage;
 	}
 
 	function onFileInput(event: Event): void {
@@ -176,14 +206,14 @@
 
 	async function downloadCurrentSvg(): Promise<void> {
 		await withExport(async () => {
-			const svg = previewSvg || (await client.renderPage(pageIndex, colorMode));
+			const svg = await client.renderPage(pageIndex, colorMode);
 			downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), pageFilename(stem, pageIndex, 'svg'));
 		});
 	}
 
 	async function downloadCurrentPng(): Promise<void> {
 		await withExport(async () => {
-			const svg = previewSvg || (await client.renderPage(pageIndex, colorMode));
+			const svg = await client.renderPage(pageIndex, colorMode);
 			const png = await svgToPng(svg, pngScale);
 			downloadBlob(png, pageFilename(stem, pageIndex, 'png'));
 		});
@@ -360,7 +390,7 @@
 						<select
 							value={pageIndex}
 							disabled={exporting || rendering}
-							onchange={(event) => void selectPage(Number(event.currentTarget.value))}
+							onchange={(event) => selectPage(Number(event.currentTarget.value))}
 						>
 							{#each Array(summary.pageCount) as _, index}
 								<option value={index}>page {String(index + 1).padStart(2, '0')} / {String(summary.pageCount).padStart(2, '0')}</option>
@@ -378,13 +408,34 @@
 						{/each}
 					</div>
 				</div>
-				<div class="canvas-wrap" aria-busy={rendering}>
-					{#if previewUrl && !rendering}
-						<img src={previewUrl} alt={`Rendered preview of page ${pageIndex + 1}`} />
+				<div
+					bind:this={previewScroller}
+					class="canvas-wrap"
+					aria-busy={rendering}
+					onscroll={updatePageFromScroll}
+				>
+					{#if previewUrls.length}
+						<div class="page-stack">
+							{#each previewUrls as url, index}
+								<figure
+									class:active={pageIndex === index}
+									data-page-index={index}
+								>
+									{#if url}
+										<img src={url} alt={`Rendered preview of page ${index + 1}`} />
+									{:else}
+										<div class="page-placeholder">
+											<span class="spinner" aria-hidden="true"></span>
+										</div>
+									{/if}
+									<figcaption>page {index + 1}</figcaption>
+								</figure>
+							{/each}
+						</div>
 					{:else}
 						<div class="rendering-state">
-							<span class="spinner" aria-hidden="true"></span>
-							<span>{rendering ? `Rendering page ${pageIndex + 1}` : 'No visible page content'}</span>
+							{#if rendering}<span class="spinner" aria-hidden="true"></span>{/if}
+							<span>{rendering ? 'Preparing pages' : 'No visible page content'}</span>
 						</div>
 					{/if}
 				</div>
@@ -512,9 +563,11 @@
 	.workspace {
 		display: flex;
 		width: 100%;
+		height: calc(100svh - 3rem);
 		min-width: 0;
 		min-height: 0;
 		flex-direction: column;
+		overflow: hidden;
 	}
 
 	.workspace-heading {
@@ -696,27 +749,66 @@
 	}
 
 	.canvas-wrap {
-		display: grid;
+		display: block;
 		min-height: 0;
 		flex: 1;
-		place-items: center;
 		overflow: auto;
 		padding: clamp(1rem, 2vw, 2rem);
 		background: var(--site-canvas);
+		overscroll-behavior: contain;
 	}
 
-	.canvas-wrap img {
+	.page-stack {
+		display: flex;
+		width: 100%;
+		min-height: 100%;
+		align-items: center;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	figure {
+		display: flex;
+		width: 100%;
+		margin: 0;
+		align-items: center;
+		flex-direction: column;
+		gap: 0.45rem;
+		scroll-margin-top: 1rem;
+	}
+
+	figure img {
 		display: block;
 		max-width: 100%;
-		max-height: calc(100svh - 10.5rem);
 		border: 1px solid color-mix(in srgb, black 15%, transparent);
 		background: white;
 		box-shadow: 0 8px 24px color-mix(in srgb, black 16%, transparent);
 	}
 
+	figcaption {
+		color: var(--site-muted);
+		font-family: var(--font-mono);
+		font-size: 0.58rem;
+	}
+
+	figure.active figcaption {
+		color: var(--site-text);
+	}
+
+	.page-placeholder {
+		display: grid;
+		width: min(100%, 48rem);
+		min-height: 60vh;
+		place-items: center;
+		border: 1px solid var(--site-border);
+		background: var(--site-surface);
+	}
+
 	.rendering-state {
 		display: flex;
+		min-height: 100%;
 		align-items: center;
+		justify-content: center;
 		gap: 0.7rem;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
@@ -811,6 +903,12 @@
 	}
 
 	@media (max-width: 720px) {
+		.workspace {
+			height: auto;
+			min-height: calc(100svh - 3rem);
+			overflow: visible;
+		}
+
 		.workspace-heading {
 			align-items: start;
 			flex-direction: column;

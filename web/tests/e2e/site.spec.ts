@@ -59,7 +59,14 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 
 	await expect(page.getByRole('heading', { name: '01-basic-test' })).toBeVisible();
 	await expect(page.getByAltText('Rendered preview of page 1')).toBeVisible();
+	await expect(page.locator('.page-stack img')).toHaveCount(5);
 	await expect(page.getByText('No parser warnings')).toBeVisible();
+
+	const pageSelector = page.locator('.preview-toolbar select');
+	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
+	await expect(pageSelector).toHaveValue('4');
+	await pageSelector.selectOption('0');
+	await expect(pageSelector).toHaveValue('0');
 
 	const downloadStarted = page.waitForEvent('download');
 	await page.getByRole('button', { name: /^SVG/ }).click();
