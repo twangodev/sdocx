@@ -59,10 +59,22 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 
 	await expect(page.getByRole('heading', { name: '01-basic-test' })).toBeVisible();
 	await expect(page.getByAltText('Rendered preview of page 1')).toBeVisible();
-	await expect(page.locator('.page-stack img')).toHaveCount(5);
+	const pageStack = page.locator('.page-stack');
+	await expect(pageStack.locator('img')).toHaveCount(5);
 	await expect(page.getByText('No parser warnings')).toBeVisible();
+	await expect(pageStack).toHaveAttribute('data-zoom', '100');
+	await page.getByRole('button', { name: 'Zoom in' }).click();
+	await expect(pageStack).toHaveAttribute('data-zoom', '125');
+	await page.getByRole('button', { name: 'Fit page' }).click();
+	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
+	await page.getByRole('button', { name: 'Fit width' }).click();
+	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 
 	const pageSelector = page.locator('.preview-toolbar select');
+	await page.getByRole('button', { name: 'Next page' }).click();
+	await expect(pageSelector).toHaveValue('1');
+	await page.getByRole('button', { name: 'Previous page' }).click();
+	await expect(pageSelector).toHaveValue('0');
 	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
 	await expect(pageSelector).toHaveValue('4');
 	await pageSelector.selectOption('0');
