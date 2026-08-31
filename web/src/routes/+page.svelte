@@ -27,6 +27,8 @@
 	let pageIndex = $state(0);
 	let colorMode = $state<ColorMode>('auto');
 	let pngScale = $state<1 | 2>(1);
+	let previewZoom = $state(100);
+	let fitPage = $state(false);
 	let previewUrls = $state<string[]>([]);
 	let previewScroller = $state<HTMLDivElement>();
 	let phase = $state<WorkerPhase | null>(null);
@@ -41,6 +43,7 @@
 
 	const hasDocument = $derived(summary !== null && activeFile !== null);
 	const stem = $derived(activeFile ? sanitizeStem(activeFile.name) : 'document');
+	const zoomSteps = [50, 75, 100, 125, 150, 175, 200];
 
 	onMount(() => {
 		client = new ConverterClient((nextPhase, message) => {
@@ -68,6 +71,8 @@
 		summary = null;
 		details = null;
 		pageIndex = 0;
+		previewZoom = 100;
+		fitPage = false;
 	}
 
 	async function closeDocument(): Promise<void> {
@@ -144,6 +149,41 @@
 		const page = previewScroller?.querySelector<HTMLElement>(`[data-page-index="${nextPage}"]`);
 		page?.scrollIntoView({ behavior: 'auto', block: 'start' });
 		pageIndex = nextPage;
+	}
+
+	function stepPage(direction: -1 | 1): void {
+		if (!summary) return;
+		selectPage(Math.min(summary.pageCount - 1, Math.max(0, pageIndex + direction)));
+	}
+
+	function alignSelectedPage(): void {
+		const selectedPage = pageIndex;
+		requestAnimationFrame(() => selectPage(selectedPage));
+	}
+
+	function setZoom(zoom: number): void {
+		fitPage = false;
+		previewZoom = zoom;
+		alignSelectedPage();
+	}
+
+	function stepZoom(direction: -1 | 1): void {
+		const currentZoom = fitPage ? 100 : previewZoom;
+		const currentIndex = zoomSteps.indexOf(currentZoom);
+		const nextIndex = Math.min(
+			zoomSteps.length - 1,
+			Math.max(0, (currentIndex === -1 ? zoomSteps.indexOf(100) : currentIndex) + direction)
+		);
+		setZoom(zoomSteps[nextIndex]);
+	}
+
+	function fitPreviewWidth(): void {
+		setZoom(100);
+	}
+
+	function fitPreviewPage(): void {
+		fitPage = true;
+		alignSelectedPage();
 	}
 
 	async function selectColorMode(nextMode: ColorMode): Promise<void> {
@@ -385,18 +425,65 @@
 
 			<div class="preview-panel">
 				<div class="preview-toolbar">
-					<label>
-						<span class="visually-hidden">Page</span>
-						<select
-							value={pageIndex}
-							disabled={exporting || rendering}
-							onchange={(event) => selectPage(Number(event.currentTarget.value))}
+					<div class="viewer-controls page-controls" role="group" aria-label="Page navigation">
+						<button
+							type="button"
+							aria-label="Previous page"
+							disabled={exporting || rendering || pageIndex === 0}
+							onclick={() => stepPage(-1)}>‹</button
 						>
-							{#each Array(summary.pageCount) as _, index}
-								<option value={index}>page {String(index + 1).padStart(2, '0')} / {String(summary.pageCount).padStart(2, '0')}</option>
-							{/each}
-						</select>
-					</label>
+						<label>
+							<span class="visually-hidden">Page</span>
+							<select
+								value={pageIndex}
+								disabled={exporting || rendering}
+								onchange={(event) => selectPage(Number(event.currentTarget.value))}
+							>
+								{#each Array(summary.pageCount) as _, index}
+									<option value={index}>page {String(index + 1).padStart(2, '0')} / {String(summary.pageCount).padStart(2, '0')}</option>
+								{/each}
+							</select>
+						</label>
+						<button
+							type="button"
+							aria-label="Next page"
+							disabled={exporting || rendering || pageIndex === summary.pageCount - 1}
+							onclick={() => stepPage(1)}>›</button
+						>
+					</div>
+					<div class="viewer-controls zoom-controls" role="group" aria-label="Preview zoom">
+						<button
+							type="button"
+							aria-label="Zoom out"
+							disabled={exporting || rendering || (!fitPage && previewZoom === zoomSteps[0])}
+							onclick={() => stepZoom(-1)}>−</button
+						>
+						<span class="zoom-value" aria-live="polite">{fitPage ? 'fit' : `${previewZoom}%`}</span>
+						<button
+							type="button"
+							aria-label="Zoom in"
+							disabled={exporting || rendering || (!fitPage && previewZoom === zoomSteps.at(-1))}
+							onclick={() => stepZoom(1)}>+</button
+						>
+						<button
+							type="button"
+							class="fit-control"
+							class:active={!fitPage && previewZoom === 100}
+							aria-label="Fit width"
+							aria-pressed={!fitPage && previewZoom === 100}
+							disabled={exporting || rendering}
+							onclick={fitPreviewWidth}>width</button
+						>
+						<button
+							type="button"
+							class="fit-control"
+							class:active={fitPage}
+							aria-label="Fit page"
+							aria-pressed={fitPage}
+							disabled={exporting || rendering}
+							onclick={fitPreviewPage}>page</button
+						>
+					</div>
 					<div class="mode-switch" aria-label="Document color mode">
 						{#each ['auto', 'light', 'dark'] as mode}
 							<button
@@ -415,7 +502,12 @@
 					onscroll={updatePageFromScroll}
 				>
 					{#if previewUrls.length}
-						<div class="page-stack">
+						<div
+							class="page-stack"
+							class:fit-page={fitPage}
+							data-zoom={fitPage ? 'page' : previewZoom}
+							style:width={fitPage ? '100%' : `${previewZoom}%`}
+						>
 							{#each previewUrls as url, index}
 								<figure
 									class:active={pageIndex === index}
@@ -725,6 +817,68 @@
 		cursor: pointer;
 	}
 
+	.viewer-controls {
+		display: flex;
+		height: 1.9rem;
+		align-items: stretch;
+		border: 1px solid var(--site-border);
+		border-radius: 0.25rem;
+		overflow: hidden;
+	}
+
+	.viewer-controls button {
+		min-width: 1.8rem;
+		border: 0;
+		border-right: 1px solid var(--site-border);
+		background: transparent;
+		padding: 0 0.45rem;
+		color: var(--site-muted);
+		font-size: 0.75rem;
+		cursor: pointer;
+	}
+
+	.viewer-controls button:last-child {
+		border-right: 0;
+	}
+
+	.viewer-controls button:hover:not(:disabled),
+	.viewer-controls button.active {
+		background: var(--site-raised);
+		color: var(--site-text);
+	}
+
+	.viewer-controls button:disabled {
+		cursor: not-allowed;
+		opacity: 0.35;
+	}
+
+	.page-controls label {
+		display: flex;
+		flex: 1;
+		border-right: 1px solid var(--site-border);
+	}
+
+	.page-controls select {
+		width: 100%;
+		padding: 0 0.45rem;
+	}
+
+	.zoom-value {
+		display: grid;
+		min-width: 3rem;
+		place-items: center;
+		border-right: 1px solid var(--site-border);
+		color: var(--site-text);
+		font-family: var(--font-mono);
+		font-size: 0.58rem;
+	}
+
+	.viewer-controls .fit-control {
+		padding: 0 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.55rem;
+	}
+
 	.mode-switch {
 		display: flex;
 		border: 1px solid var(--site-border);
@@ -760,8 +914,8 @@
 
 	.page-stack {
 		display: flex;
-		width: 100%;
 		min-height: 100%;
+		margin: 0 auto;
 		align-items: center;
 		flex-direction: column;
 		gap: 1.5rem;
@@ -779,10 +933,16 @@
 
 	figure img {
 		display: block;
+		width: 100%;
 		max-width: 100%;
 		border: 1px solid color-mix(in srgb, black 15%, transparent);
 		background: white;
 		box-shadow: 0 8px 24px color-mix(in srgb, black 16%, transparent);
+	}
+
+	.page-stack.fit-page figure img {
+		width: auto;
+		max-height: calc(100svh - 17rem);
 	}
 
 	figcaption {
