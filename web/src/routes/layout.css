@@ -98,12 +98,6 @@ body {
 }
 
 button,
-input,
-select {
-	font: inherit;
-}
-
-button,
 a,
 select,
 input {
