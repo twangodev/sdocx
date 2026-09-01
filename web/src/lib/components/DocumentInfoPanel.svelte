@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Check } from '@lucide/svelte';
 	import type { InspectionView } from '$converter/view-model';
 
 	let { pageCount, details }: { pageCount: number; details: InspectionView | null } = $props();
@@ -47,8 +48,9 @@
 				{/each}
 			</ul>
 		{:else}
-			<p class="mt-2 font-mono text-[11px] text-muted">
-				<span class="mr-1.5 text-positive">✓</span>No parser warnings
+			<p class="mt-2 flex items-center gap-1.5 font-mono text-[11px] text-muted">
+				<Check class="text-positive" size={13} strokeWidth={2.5} aria-hidden="true" />
+				No parser warnings
 			</p>
 		{/if}
 	</div>
