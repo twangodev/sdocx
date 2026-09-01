@@ -27,10 +27,12 @@ export class DocumentZoomCamera {
 	panX = $state(0);
 	gestureZoom = $state<number | null>(null);
 	gestureOrigin = $state({ x: 0, y: 0 });
+	recentering = $state(false);
 
 	private readonly selectedPage: () => number;
 	private gestureBaseZoom = 100;
 	private gestureAnchor: ScrollAnchor | undefined;
+	private recenterFrame = 0;
 	private revision = 0;
 
 	constructor(selectedPage: () => number) {
@@ -56,6 +58,7 @@ export class DocumentZoomCamera {
 	}
 
 	reset(): void {
+		this.cancelRecentering();
 		this.revision += 1;
 		this.resetGesture();
 		this.committedZoom = 100;
@@ -68,6 +71,7 @@ export class DocumentZoomCamera {
 		anchor?: ZoomAnchor,
 		centerHorizontally = false
 	): Promise<void> => {
+		this.cancelRecentering();
 		const revision = ++this.revision;
 		const previous = this.captureAnchor(anchor);
 		this.resetGesture();
@@ -89,6 +93,7 @@ export class DocumentZoomCamera {
 	};
 
 	fitPage = (): void => {
+		this.cancelRecentering();
 		this.revision += 1;
 		this.resetGesture();
 		this.pageFit = true;
@@ -97,6 +102,7 @@ export class DocumentZoomCamera {
 
 	updateGesture = (factor: number, anchor: ZoomAnchor): void => {
 		if (!this.surface || !this.scroller || !Number.isFinite(factor) || factor <= 0) return;
+		this.cancelRecentering();
 		if (this.gestureZoom === null) {
 			const bounds = this.surface.getBoundingClientRect();
 			this.gestureBaseZoom = this.pageFit ? this.currentFitPageZoom() : this.committedZoom;
@@ -113,6 +119,7 @@ export class DocumentZoomCamera {
 
 	finishGesture = async (): Promise<void> => {
 		if (this.gestureZoom === null) return;
+		this.cancelRecentering();
 		const revision = ++this.revision;
 		const targetZoom = this.gestureZoom;
 		const previous = this.gestureAnchor;
@@ -121,7 +128,10 @@ export class DocumentZoomCamera {
 		this.resetGesture();
 		if (!previous) return;
 		await tick();
-		if (revision === this.revision) this.restoreAnchor(previous);
+		if (revision === this.revision) {
+			this.restoreAnchor(previous);
+			this.scheduleRecentering();
+		}
 	};
 
 	private currentFitPageZoom(): number {
@@ -227,6 +237,43 @@ export class DocumentZoomCamera {
 			return { kind: 'image', bounds };
 		}
 		return { kind: 'page', bounds: page.bounds };
+	}
+
+	private scheduleRecentering(): void {
+		if (!this.surface || !this.scroller || Math.abs(this.panX) < 0.1) return;
+		if (this.surface.getBoundingClientRect().width > this.scroller.clientWidth) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			this.panX = 0;
+			return;
+		}
+
+		const startPan = this.panX;
+		let startTime: number | undefined;
+		this.recentering = true;
+		const animate = (time: number) => {
+			if (startTime === undefined) {
+				startTime = time;
+				this.recenterFrame = requestAnimationFrame(animate);
+				return;
+			}
+			const progress = Math.min(1, (time - startTime) / 220);
+			const eased = 1 - (1 - progress) ** 3;
+			this.panX = Math.round(startPan * (1 - eased) * 10) / 10;
+			if (progress < 1) {
+				this.recenterFrame = requestAnimationFrame(animate);
+				return;
+			}
+			this.panX = 0;
+			this.recenterFrame = 0;
+			this.recentering = false;
+		};
+		this.recenterFrame = requestAnimationFrame(animate);
+	}
+
+	private cancelRecentering(): void {
+		if (this.recenterFrame) cancelAnimationFrame(this.recenterFrame);
+		this.recenterFrame = 0;
+		this.recentering = false;
 	}
 
 	private resetGesture(): void {

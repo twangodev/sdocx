@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -9,22 +9,6 @@ interface ImagePoint {
 	page?: string;
 	x: number;
 	y: number;
-}
-
-async function imagePointAtAnchor(page: Page): Promise<ImagePoint | undefined> {
-	return page.evaluate(({ x, y }) => {
-		const pageAtPoint = document
-			.elementFromPoint(x, y)
-			?.closest<HTMLElement>('[data-page-index]');
-		const image = pageAtPoint?.querySelector<HTMLImageElement>('img');
-		if (!pageAtPoint || !image) return undefined;
-		const bounds = image.getBoundingClientRect();
-		return {
-			page: pageAtPoint.dataset.pageIndex,
-			x: (x - bounds.left) / bounds.width,
-			y: (y - bounds.top) / bounds.height
-		};
-	}, zoomAnchor);
 }
 
 async function pinchAtAnchor(canvas: Locator, deltaY: number) {
@@ -75,17 +59,21 @@ function expectSameImagePoint(actual: ImagePoint | undefined, expected: ImagePoi
 	expect(actual?.y).toBeCloseTo(expected?.y ?? 0, 2);
 }
 
-async function expectCommittedImagePoint(page: Page, expected: ImagePoint | undefined): Promise<void> {
-	await expect
-		.poll(async () => {
-			const actual = await imagePointAtAnchor(page);
-			if (!actual || actual.page !== expected?.page) return Infinity;
-			return Math.max(
-				Math.abs(actual.x - (expected?.x ?? 0)),
-				Math.abs(actual.y - (expected?.y ?? 0))
-			);
-		})
-		.toBeLessThan(0.02);
+async function surfaceCenterOffset(canvas: Locator): Promise<number> {
+	return canvas.evaluate((element) => {
+		const surface = element.querySelector<HTMLElement>('.page-stack');
+		if (!surface) return Infinity;
+		const viewport = element.getBoundingClientRect();
+		const bounds = surface.getBoundingClientRect();
+		return Math.abs((bounds.left + bounds.right) / 2 - (viewport.left + viewport.right) / 2);
+	});
+}
+
+async function expectSmoothRecenter(canvas: Locator, surface: Locator): Promise<void> {
+	await expect(surface).toHaveClass(/recentering/);
+	expect(await surfaceCenterOffset(canvas)).toBeGreaterThan(1);
+	await expect(surface).not.toHaveClass(/recentering/);
+	await expect.poll(() => surfaceCenterOffset(canvas)).toBeLessThan(1);
 }
 
 test('converter presents a local-only upload surface', async ({ page }) => {
@@ -193,13 +181,13 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.waitForTimeout(160);
 	await expect(pageStack).toHaveAttribute('data-zoom', fitPagePinch.zoom!);
 	await expect(pageStack).not.toHaveClass(/zooming/);
-	await expectCommittedImagePoint(page, fitPagePinch.pointBefore);
+	await expectSmoothRecenter(canvas, pageStack);
 
 	const manualPinch = await pinchAtAnchor(canvas, -20);
 	expectSameImagePoint(manualPinch.pointDuring, manualPinch.pointBefore);
 	await page.waitForTimeout(160);
 	await expect(pageStack).not.toHaveClass(/zooming/);
-	await expectCommittedImagePoint(page, manualPinch.pointBefore);
+	await expectSmoothRecenter(canvas, pageStack);
 
 	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
 	await zoomMenu.click();

@@ -463,6 +463,7 @@
 							class="page-stack"
 							class:fit-page={zoom.pageFit}
 							class:zooming={zoom.gestureZoom !== null}
+							class:recentering={zoom.recentering}
 							data-zoom={zoom.visiblePageFit ? 'page' : zoom.visibleZoom}
 							style:width={zoom.pageFit ? '100%' : `${zoom.committedZoom}%`}
 							style:transform={zoom.surfaceTransform}
@@ -669,7 +670,8 @@
 		gap: 0.85rem;
 	}
 
-	.page-stack.zooming {
+	.page-stack.zooming,
+	.page-stack.recentering {
 		will-change: transform;
 	}
 
