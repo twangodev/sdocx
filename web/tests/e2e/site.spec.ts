@@ -89,6 +89,13 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageStack.locator('img')).toHaveCount(5);
 	await expect(page.getByText('No parser warnings')).toBeVisible();
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
+	const colorModes = [
+		page.getByRole('radio', { name: 'Automatic color mode' }),
+		page.getByRole('radio', { name: 'Light document mode' }),
+		page.getByRole('radio', { name: 'Dark document mode' })
+	];
+	for (const mode of colorModes) await expect(mode.locator('svg')).toHaveCount(1);
+	await expect(colorModes[0]).toHaveAttribute('data-state', 'on');
 	await page.getByRole('button', { name: 'Zoom in' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
 	await page.getByRole('button', { name: 'Fit page' }).click();
@@ -96,16 +103,16 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.getByRole('button', { name: 'Fit width' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 
-	const pageSelector = page.getByRole('button', { name: 'Choose page' });
+	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
 	await page.getByRole('button', { name: 'Next page' }).click();
-	await expect(pageSelector).toContainText('page 02 / 05');
+	await expect(pageSelector).toHaveValue('2');
 	await page.getByRole('button', { name: 'Previous page' }).click();
-	await expect(pageSelector).toContainText('page 01 / 05');
+	await expect(pageSelector).toHaveValue('1');
 	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
-	await expect(pageSelector).toContainText('page 05 / 05');
-	await pageSelector.click();
-	await page.getByRole('menuitem', { name: 'page 01 / 05' }).click();
-	await expect(pageSelector).toContainText('page 01 / 05');
+	await expect(pageSelector).toHaveValue('5');
+	await pageSelector.fill('1');
+	await pageSelector.press('Enter');
+	await expect(pageSelector).toHaveValue('1');
 
 	const pngScale = page.getByRole('button', { name: 'Choose PNG scale' });
 	await pngScale.click();

@@ -4,13 +4,17 @@
 		ChevronRight,
 		Maximize2,
 		Minus,
+		Monitor,
+		Moon,
 		MoveHorizontal,
-		Plus
+		Plus,
+		Sun
 	} from '@lucide/svelte';
 	import type { ColorMode } from '$converter/protocol';
 	import { separator, type MenuLeaf } from '$lib/menu';
 	import CompactSelectMenu from './ui/CompactSelectMenu.svelte';
 	import IconButton from './ui/IconButton.svelte';
+	import PageNumberInput from './ui/PageNumberInput.svelte';
 	import SegmentedControl from './ui/SegmentedControl.svelte';
 
 	interface Props {
@@ -49,21 +53,7 @@
 	const colorModes = ['auto', 'light', 'dark'] as const;
 	type ZoomAction = 'page' | 'width' | number;
 
-	const pageMenu = $derived(makePageMenu(pageCount, pageIndex));
 	const zoomMenu = $derived(makeZoomMenu(fitPage, previewZoom));
-
-	function pageLabel(index: number, count: number): string {
-		return `page ${String(index + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`;
-	}
-
-	function makePageMenu(count: number, selected: number): MenuLeaf<number>[] {
-		return Array.from({ length: count }, (_, index) => ({
-			kind: 'action' as const,
-			label: pageLabel(index, count),
-			action: index,
-			checked: index === selected
-		}));
-	}
 
 	function makeZoomMenu(pageFit: boolean, zoom: number): MenuLeaf<ZoomAction>[] {
 		return [
@@ -84,6 +74,12 @@
 		else if (action === 'width') onFitWidth();
 		else onSetZoom(action);
 	}
+
+	function colorModeLabel(mode: ColorMode): string {
+		if (mode === 'auto') return 'Automatic color mode';
+		if (mode === 'light') return 'Light document mode';
+		return 'Dark document mode';
+	}
 </script>
 
 <div
@@ -97,13 +93,11 @@
 		>
 			<ChevronLeft size={12} strokeWidth={1.4} />
 		</IconButton>
-		<CompactSelectMenu
-			label="Choose page"
-			value={pageLabel(pageIndex, pageCount)}
-			items={pageMenu}
-			onAction={onSelectPage}
+		<PageNumberInput
+			{pageIndex}
+			{pageCount}
+			onSelect={onSelectPage}
 			{disabled}
-			class="min-w-24"
 		/>
 		<IconButton
 			label="Next page"
@@ -156,7 +150,19 @@
 		options={colorModes}
 		label="Document color mode"
 		{disabled}
+		itemLabel={colorModeLabel}
+		itemTitle={colorModeLabel}
 		bind:value={() => colorMode, (next) => onColorMode(next)}
-		class="ml-auto w-32 max-[520px]:ml-0 max-[520px]:w-full"
-	/>
+		class="ml-auto w-24 max-[520px]:ml-0 max-[520px]:w-full"
+	>
+		{#snippet item(mode)}
+			{#if mode === 'auto'}
+				<Monitor size={12} strokeWidth={1.4} />
+			{:else if mode === 'light'}
+				<Sun size={12} strokeWidth={1.4} />
+			{:else}
+				<Moon size={12} strokeWidth={1.4} />
+			{/if}
+		{/snippet}
+	</SegmentedControl>
 </div>
