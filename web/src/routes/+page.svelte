@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Download, FolderOpen, Maximize2, MoveHorizontal, RefreshCw, X } from '@lucide/svelte';
+	import { FolderOpen } from '@lucide/svelte';
+	import ConverterToolbar from '$lib/components/ConverterToolbar.svelte';
+	import DocumentHeader from '$lib/components/DocumentHeader.svelte';
+	import DocumentInfoPanel from '$lib/components/DocumentInfoPanel.svelte';
+	import ExportPanel from '$lib/components/ExportPanel.svelte';
 	import { ConverterClient } from '$converter/client';
 	import {
 		assertAcceptedFile,
@@ -357,10 +361,6 @@
 		return cause instanceof Error ? cause.message : 'The document could not be processed.';
 	}
 
-	function formatBytes(bytes: number): string {
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
-	}
 </script>
 
 <svelte:head>
@@ -418,28 +418,14 @@
 	</section>
 {:else if summary && activeFile}
 	<section class="workspace" aria-label="Document converter">
-		<div class="workspace-heading">
-			<div>
-				<h1>{details?.title || activeFile.name}</h1>
-				<p>{activeFile.name} · {formatBytes(activeFile.size)} · {summary.pageCount} {summary.pageCount === 1 ? 'page' : 'pages'} · local</p>
-			</div>
-			<div class="heading-actions">
-				<button
-					class="control icon-control"
-					type="button"
-					aria-label="Replace document"
-					title="Replace document"
-					onclick={() => picker?.click()}><RefreshCw size={12} strokeWidth={1.4} /></button
-				>
-				<button
-					class="control icon-control"
-					type="button"
-					aria-label="Close document"
-					title="Close document"
-					onclick={() => void closeDocument()}><X size={13} strokeWidth={1.4} /></button
-				>
-			</div>
-		</div>
+		<DocumentHeader
+			title={details?.title || activeFile.name}
+			filename={activeFile.name}
+			fileSize={activeFile.size}
+			pageCount={summary.pageCount}
+			onReplace={() => picker?.click()}
+			onClose={() => void closeDocument()}
+		/>
 
 		<input
 			bind:this={picker}
@@ -450,109 +436,24 @@
 		/>
 
 		<div class="work-grid">
-			<aside class="panel document-panel" aria-label="Document information">
-				<div class="panel-title"><span class="mono-label">inspect</span></div>
-				<dl>
-					<div><dt>Pages</dt><dd>{summary.pageCount}</dd></div>
-					<div><dt>Format</dt><dd>{details?.formatVersion ?? 'Unknown'}</dd></div>
-					<div><dt>Page size</dt><dd>{details?.dimensions ?? 'Varies'}</dd></div>
-					<div><dt>Media</dt><dd>{details?.mediaCount ?? 0}</dd></div>
-					{#if details?.created}<div><dt>Created</dt><dd>{details.created}</dd></div>{/if}
-					{#if details?.modified}<div><dt>Modified</dt><dd>{details.modified}</dd></div>{/if}
-				</dl>
-
-				<div class="diagnostics">
-					<div class="panel-title"><span class="mono-label">diagnostics</span></div>
-					{#if details?.diagnostics.length}
-						<ul>
-							{#each details.diagnostics as diagnostic}
-								<li>
-									<strong>{diagnostic.code}</strong>
-									<span>{diagnostic.message}</span>
-									{#if diagnostic.entry}<code>{diagnostic.entry}</code>{/if}
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="clean"><span>✓</span> No parser warnings</p>
-					{/if}
-				</div>
-			</aside>
+			<DocumentInfoPanel pageCount={summary.pageCount} {details} />
 
 			<div class="preview-panel">
-				<div class="preview-toolbar">
-					<div class="viewer-controls page-controls" role="group" aria-label="Page navigation">
-						<button
-							type="button"
-							aria-label="Previous page"
-							disabled={exporting || rendering || pageIndex === 0}
-							onclick={() => stepPage(-1)}>‹</button
-						>
-						<label>
-							<span class="visually-hidden">Page</span>
-							<select
-								value={pageIndex}
-								disabled={exporting || rendering}
-								onchange={(event) => selectPage(Number(event.currentTarget.value))}
-							>
-								{#each Array(summary.pageCount) as _, index}
-									<option value={index}>page {String(index + 1).padStart(2, '0')} / {String(summary.pageCount).padStart(2, '0')}</option>
-								{/each}
-							</select>
-						</label>
-						<button
-							type="button"
-							aria-label="Next page"
-							disabled={exporting || rendering || pageIndex === summary.pageCount - 1}
-							onclick={() => stepPage(1)}>›</button
-						>
-					</div>
-					<div class="viewer-controls zoom-controls" role="group" aria-label="Preview zoom">
-						<button
-							type="button"
-							aria-label="Zoom out"
-							disabled={exporting || rendering || (!fitPage && previewZoom === zoomSteps[0])}
-							onclick={() => stepZoom(-1)}>−</button
-						>
-						<span class="zoom-value" aria-live="polite">{fitPage ? 'fit' : `${previewZoom}%`}</span>
-						<button
-							type="button"
-							aria-label="Zoom in"
-							disabled={exporting || rendering || (!fitPage && previewZoom === zoomSteps.at(-1))}
-							onclick={() => stepZoom(1)}>+</button
-						>
-						<button
-							type="button"
-							class="fit-control"
-							class:active={!fitPage && previewZoom === 100}
-							aria-label="Fit width"
-							aria-pressed={!fitPage && previewZoom === 100}
-							disabled={exporting || rendering}
-							title="Fit width"
-							onclick={fitPreviewWidth}><MoveHorizontal size={12} strokeWidth={1.4} /></button
-						>
-						<button
-							type="button"
-							class="fit-control"
-							class:active={fitPage}
-							aria-label="Fit page"
-							aria-pressed={fitPage}
-							disabled={exporting || rendering}
-							title="Fit page"
-							onclick={fitPreviewPage}><Maximize2 size={12} strokeWidth={1.4} /></button
-						>
-					</div>
-					<div class="mode-switch" aria-label="Document color mode">
-						{#each ['auto', 'light', 'dark'] as mode}
-							<button
-								type="button"
-								disabled={exporting || rendering}
-								class:active={colorMode === mode}
-								onclick={() => void selectColorMode(mode as ColorMode)}
-							>{mode}</button>
-						{/each}
-					</div>
-				</div>
+				<ConverterToolbar
+					{pageIndex}
+					pageCount={summary.pageCount}
+					{previewZoom}
+					{fitPage}
+					{colorMode}
+					disabled={exporting || rendering}
+					onSelectPage={selectPage}
+					onStepPage={stepPage}
+					onSetZoom={setZoom}
+					onStepZoom={stepZoom}
+					onFitWidth={fitPreviewWidth}
+					onFitPage={fitPreviewPage}
+					onColorMode={(nextMode) => void selectColorMode(nextMode)}
+				/>
 				<div
 					bind:this={previewScroller}
 					class="canvas-wrap"
@@ -595,34 +496,17 @@
 				</div>
 			</div>
 
-			<aside class="panel export-panel" aria-label="Export options">
-				<div class="panel-title"><span class="mono-label">export</span></div>
-				<div class="export-group">
-					<span class="group-label">Current page</span>
-					<button class="control primary" disabled={exporting || rendering} onclick={downloadCurrentSvg}>SVG <Download size={12} strokeWidth={1.4} /></button>
-					<button class="control" disabled={exporting || rendering} onclick={downloadCurrentPng}>PNG <Download size={12} strokeWidth={1.4} /></button>
-					<label class="scale-control">
-						<span>PNG scale</span>
-						<select bind:value={pngScale}><option value={1}>1×</option><option value={2}>2×</option></select>
-					</label>
-				</div>
-
-				<div class="export-group">
-					<span class="group-label">Whole document</span>
-					<button class="control" disabled={exporting} onclick={() => void downloadArchive('svg')}>all SVG <span>.zip</span></button>
-					<button class="control" disabled={exporting} onclick={() => void downloadArchive('png')}>all PNG <span>.zip</span></button>
-					<button class="control" disabled={exporting} onclick={() => void downloadArchive('everything')}>everything <span>.zip</span></button>
-				</div>
-
-				<div class="export-group final">
-					<span class="group-label">Structure</span>
-					<button class="control" disabled={exporting} onclick={downloadJson}>document JSON <Download size={12} strokeWidth={1.4} /></button>
-				</div>
-
-				{#if exporting}
-					<button class="cancel-link" type="button" onclick={cancel}>cancel export</button>
-				{/if}
-			</aside>
+			<ExportPanel
+				{exporting}
+				{rendering}
+				{pngScale}
+				onScale={(nextScale) => (pngScale = nextScale)}
+				onCurrentSvg={() => void downloadCurrentSvg()}
+				onCurrentPng={() => void downloadCurrentPng()}
+				onArchive={(kind) => void downloadArchive(kind)}
+				onJson={() => void downloadJson()}
+				onCancel={cancel}
+			/>
 		</div>
 		{#if error}<p class="error workspace-error" role="alert">{error}</p>{/if}
 	</section>
@@ -760,45 +644,6 @@
 		overflow: hidden;
 	}
 
-	.workspace-heading {
-		display: flex;
-		min-height: 2.85rem;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.65rem;
-		border-bottom: 1px solid var(--site-border);
-		padding: 0.4rem 0.7rem;
-	}
-
-	.workspace-heading h1 {
-		max-width: 60vw;
-		overflow: hidden;
-		font-size: 0.875rem;
-		font-weight: 550;
-		letter-spacing: 0;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.workspace-heading p {
-		margin: 0.1rem 0 0;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.6rem;
-	}
-
-	.heading-actions {
-		display: flex;
-		gap: 0.3rem;
-	}
-
-	.icon-control {
-		width: 1.75rem;
-		border: 0;
-		padding: 0;
-		color: var(--site-muted);
-	}
-
 	.work-grid {
 		display: grid;
 		min-height: 0;
@@ -806,92 +651,9 @@
 		grid-template-columns: 188px minmax(360px, 1fr) 188px;
 	}
 
-	.panel,
 	.preview-panel {
 		min-width: 0;
 		background: var(--site-bg);
-	}
-
-	.panel {
-		overflow: auto;
-		padding: 0.65rem;
-	}
-
-	.document-panel {
-		border-right: 1px solid var(--site-border);
-	}
-
-	.export-panel {
-		border-left: 1px solid var(--site-border);
-	}
-
-	.panel-title {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		color: var(--site-muted);
-	}
-
-	dl {
-		margin: 0.4rem 0 0;
-	}
-
-	dl div {
-		display: grid;
-		grid-template-columns: 0.7fr 1fr;
-		gap: 0.35rem;
-		border-bottom: 1px solid var(--site-border);
-		padding: 0.38rem 0;
-		font-size: 0.7rem;
-	}
-
-	dt {
-		color: var(--site-muted);
-	}
-
-	dd {
-		margin: 0;
-		text-align: right;
-		word-break: break-word;
-	}
-
-	.diagnostics {
-		margin-top: 1rem;
-	}
-
-	.diagnostics ul {
-		display: flex;
-		margin: 0.5rem 0 0;
-		padding: 0;
-		flex-direction: column;
-		gap: 0.45rem;
-		list-style: none;
-	}
-
-	.diagnostics li {
-		display: flex;
-		flex-direction: column;
-		gap: 0.2rem;
-		border-left: 2px solid #c9952f;
-		padding-left: 0.65rem;
-		font-size: 0.7rem;
-	}
-
-	.diagnostics li span,
-	.diagnostics code {
-		color: var(--site-muted);
-	}
-
-	.clean {
-		margin: 0.55rem 0 0;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-	}
-
-	.clean span {
-		margin-right: 0.35rem;
-		color: var(--color-success);
 	}
 
 	.preview-panel {
@@ -900,109 +662,6 @@
 		flex-direction: column;
 		overflow: hidden;
 		background: var(--site-canvas);
-	}
-
-	.preview-toolbar {
-		display: flex;
-		min-height: 2.35rem;
-		align-items: center;
-		justify-content: flex-start;
-		gap: 0.4rem;
-		border-bottom: 1px solid var(--site-border);
-		padding: 0.3rem 0.5rem;
-	}
-
-	.preview-toolbar select,
-	.scale-control select {
-		border: 0;
-		background: transparent;
-		color: var(--site-text);
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		cursor: pointer;
-	}
-
-	.viewer-controls {
-		display: flex;
-		height: 1.55rem;
-		align-items: stretch;
-		gap: 0.1rem;
-	}
-
-	.viewer-controls button {
-		min-width: 1.55rem;
-		border: 0;
-		border-radius: 0.2rem;
-		background: transparent;
-		padding: 0 0.3rem;
-		color: var(--site-muted);
-		font-size: 0.75rem;
-		cursor: pointer;
-	}
-
-	.viewer-controls button:hover:not(:disabled),
-	.viewer-controls button.active {
-		background: var(--site-raised);
-		color: var(--site-text);
-	}
-
-	.viewer-controls button:disabled {
-		cursor: not-allowed;
-		opacity: 0.35;
-	}
-
-	.page-controls label {
-		display: flex;
-		flex: 1;
-		border-radius: 0.2rem;
-	}
-
-	.page-controls label:hover {
-		background: var(--site-surface);
-	}
-
-	.page-controls select {
-		width: 100%;
-		padding: 0 0.45rem;
-	}
-
-	.zoom-value {
-		display: grid;
-		min-width: 2.7rem;
-		place-items: center;
-		color: var(--site-text);
-		font-family: var(--font-mono);
-		font-size: 0.58rem;
-	}
-
-	.viewer-controls .fit-control {
-		padding: 0;
-		font-family: var(--font-mono);
-		font-size: 0.55rem;
-	}
-
-	.mode-switch {
-		display: flex;
-		margin-left: auto;
-		border: 1px solid var(--site-border);
-		border-radius: 0.35rem;
-		padding: 0.1rem;
-	}
-
-	.mode-switch button {
-		border: 0;
-		border-radius: 0.25rem;
-		background: transparent;
-		padding: 0.22rem 0.4rem;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.58rem;
-		cursor: pointer;
-	}
-
-	.mode-switch button.active {
-		background: var(--site-raised);
-		color: var(--site-text);
 	}
 
 	.canvas-wrap {
@@ -1106,44 +765,6 @@
 		color: var(--color-success);
 	}
 
-	.export-group {
-		display: flex;
-		margin-top: 0.5rem;
-		flex-direction: column;
-		gap: 0.3rem;
-		border-bottom: 1px solid var(--site-border);
-		padding-bottom: 0.55rem;
-	}
-
-	.export-group.final {
-		border-bottom: 0;
-	}
-
-	.group-label {
-		margin-bottom: 0.05rem;
-		color: var(--site-muted);
-		font-size: 0.7rem;
-	}
-
-	.export-group .control {
-		justify-content: space-between;
-		width: 100%;
-	}
-
-	.export-group .control span {
-		opacity: 0.65;
-	}
-
-	.scale-control {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0.2rem 0.1rem;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.62rem;
-	}
-
 	.workspace-error {
 		margin-top: 1rem;
 	}
@@ -1153,16 +774,6 @@
 			grid-template-columns: 180px minmax(360px, 1fr);
 		}
 
-		.export-panel {
-			grid-column: 1 / -1;
-			border-top: 1px solid var(--site-border);
-			border-left: 0;
-		}
-
-		.export-panel .export-group {
-			display: grid;
-			grid-template-columns: repeat(3, 1fr);
-		}
 	}
 
 	@media (max-width: 720px) {
@@ -1172,20 +783,9 @@
 			overflow: visible;
 		}
 
-		.workspace-heading {
-			align-items: start;
-			flex-direction: column;
-		}
-
 		.work-grid {
 			display: flex;
 			flex-direction: column;
-		}
-
-		.document-panel,
-		.export-panel {
-			border: 0;
-			border-top: 1px solid var(--site-border);
 		}
 
 		.preview-panel {
@@ -1196,23 +796,6 @@
 			min-height: 420px;
 		}
 
-		.export-panel .export-group {
-			display: flex;
-		}
 	}
 
-	@media (max-width: 520px) {
-		.preview-toolbar {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
-		.mode-switch {
-			margin-left: 0;
-		}
-
-		.mode-switch button {
-			flex: 1;
-		}
-	}
 </style>
