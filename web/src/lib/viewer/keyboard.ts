@@ -1,6 +1,7 @@
 export type ViewerKeyboardCommand =
 	| 'zoom-in'
 	| 'zoom-out'
+	| 'reset-zoom'
 	| 'previous-page'
 	| 'next-page'
 	| 'first-page'
@@ -21,6 +22,7 @@ export function viewerCommandForKey(event: ViewerKeyStroke): ViewerKeyboardComma
 	if (primaryModifier && !event.altKey) {
 		if (event.key === '+' || event.key === '=' || event.code === 'NumpadAdd') return 'zoom-in';
 		if (event.key === '-' || event.code === 'NumpadSubtract') return 'zoom-out';
+		if (event.key === '0' || event.code === 'Numpad0') return 'reset-zoom';
 		return undefined;
 	}
 
