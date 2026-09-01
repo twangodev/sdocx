@@ -38,12 +38,17 @@
 	--color-bg: var(--site-bg);
 	--color-surface: var(--site-surface);
 	--color-raised: var(--site-raised);
+	--color-elevated: var(--site-raised);
 	--color-text: var(--site-text);
 	--color-muted: var(--site-muted);
 	--color-border: var(--site-border);
+	--color-subtle: var(--site-border);
+	--color-control-edge: #5a5a5a;
 	--color-accent: #167bff;
 	--color-danger: #e45a4f;
+	--color-negative: #e45a4f;
 	--color-success: #4e9c70;
+	--color-positive: #4e9c70;
 }
 
 :root {
@@ -56,6 +61,8 @@
 	--site-text: #1a1916;
 	--site-muted: #736f65;
 	--site-border: #dedbd3;
+	--motion-fast: 140ms;
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 	background: var(--site-bg);
 	color: var(--site-text);
 }
@@ -103,6 +110,11 @@ input {
 	-webkit-tap-highlight-color: transparent;
 }
 
+button:not(:disabled):active,
+label:has(> input[type='file']):active {
+	transform: scale(0.975);
+}
+
 :focus-visible {
 	outline: 2px solid #167bff;
 	outline-offset: 3px;
@@ -110,6 +122,37 @@ input {
 
 ::selection {
 	background: color-mix(in srgb, #167bff 35%, transparent);
+}
+
+.motion-tooltip[data-state='delayed-open'],
+.motion-tooltip[data-state='instant-open'] {
+	animation: tooltip-in var(--motion-fast) var(--ease-out) both;
+}
+
+.motion-menu[data-state='open'] {
+	animation: menu-in 120ms var(--ease-out) both;
+}
+
+@keyframes tooltip-in {
+	from {
+		opacity: 0;
+		transform: translateY(2px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes menu-in {
+	from {
+		opacity: 0;
+		transform: translateY(-3px) scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
 }
 
 .mono-label {

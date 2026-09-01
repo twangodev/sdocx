@@ -34,6 +34,7 @@
 		"wrangler": "^4.127.1"
 	},
 	"dependencies": {
+		"bits-ui": "^2.18.1",
 		"fflate": "^0.8.2",
 		"pdfjs-dist": "4.10.38"
 	}
