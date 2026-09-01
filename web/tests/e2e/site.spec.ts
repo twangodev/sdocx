@@ -102,6 +102,10 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
 	await page.getByRole('button', { name: 'Fit width' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
+	await page.keyboard.press('Control+=');
+	await expect(pageStack).toHaveAttribute('data-zoom', '125');
+	await page.keyboard.press('Control+-');
+	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 
 	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
 	await page.getByRole('button', { name: 'Next page' }).click();
@@ -112,6 +116,13 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageSelector).toHaveValue('5');
 	await pageSelector.fill('1');
 	await pageSelector.press('Enter');
+	await expect(pageSelector).toHaveValue('1');
+	await pageSelector.blur();
+	await page.keyboard.press('PageDown');
+	await expect(pageSelector).toHaveValue('2');
+	await page.keyboard.press('End');
+	await expect(pageSelector).toHaveValue('5');
+	await page.keyboard.press('Home');
 	await expect(pageSelector).toHaveValue('1');
 
 	const pngScale = page.getByRole('button', { name: 'Choose PNG scale' });

@@ -9,6 +9,7 @@
 	} from '@lucide/svelte';
 	import type { ColorMode } from '$converter/protocol';
 	import { separator, type MenuLeaf } from '$lib/menu';
+	import { viewerCommandForKey } from '$lib/viewer/keyboard';
 	import CompactSelectMenu from './ui/CompactSelectMenu.svelte';
 	import ColorModeSwitch from './ui/ColorModeSwitch.svelte';
 	import IconButton from './ui/IconButton.svelte';
@@ -71,7 +72,45 @@
 		else onSetZoom(action);
 	}
 
+	function isTextEntry(target: EventTarget | null): boolean {
+		return (
+			target instanceof HTMLElement &&
+			(target.isContentEditable ||
+				['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+				Boolean(target.closest('[contenteditable="true"]')))
+		);
+	}
+
+	function handleKeyboardShortcut(event: KeyboardEvent): void {
+		if (disabled || event.defaultPrevented || event.isComposing || isTextEntry(event.target)) return;
+
+		const command = viewerCommandForKey(event);
+		if (!command) return;
+
+		event.preventDefault();
+		switch (command) {
+			case 'zoom-in':
+				onStepZoom(1);
+				break;
+			case 'zoom-out':
+				onStepZoom(-1);
+				break;
+			case 'previous-page':
+				onStepPage(-1);
+				break;
+			case 'next-page':
+				onStepPage(1);
+				break;
+			case 'first-page':
+				onSelectPage(0);
+				break;
+			case 'last-page':
+				onSelectPage(pageCount - 1);
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleKeyboardShortcut} />
 
 <div
 	class="preview-toolbar flex h-9 shrink-0 items-center gap-1 border-b border-subtle bg-bg px-2 max-[520px]:h-auto max-[520px]:items-stretch max-[520px]:flex-col max-[520px]:py-2"
@@ -79,6 +118,7 @@
 	<div class="flex h-6 items-center gap-0.5" role="group" aria-label="Page navigation">
 		<IconButton
 			label="Previous page"
+			tooltip="Previous page · Page Up"
 			disabled={disabled || pageIndex === 0}
 			onclick={() => onStepPage(-1)}
 		>
@@ -92,6 +132,7 @@
 		/>
 		<IconButton
 			label="Next page"
+			tooltip="Next page · Page Down"
 			disabled={disabled || pageIndex === pageCount - 1}
 			onclick={() => onStepPage(1)}
 		>
@@ -114,6 +155,7 @@
 		</IconButton>
 		<IconButton
 			label="Zoom out"
+			tooltip="Zoom out · Ctrl/⌘ −"
 			disabled={disabled || (!fitPage && previewZoom === zoomSteps[0])}
 			onclick={() => onStepZoom(-1)}
 		>
@@ -130,6 +172,7 @@
 		/>
 		<IconButton
 			label="Zoom in"
+			tooltip="Zoom in · Ctrl/⌘ +"
 			disabled={disabled || (!fitPage && previewZoom === zoomSteps.at(-1))}
 			onclick={() => onStepZoom(1)}
 		>
