@@ -18,6 +18,7 @@
 		"deploy": "wrangler deploy"
 	},
 	"devDependencies": {
+		"@lucide/svelte": "^0.575.0",
 		"@playwright/test": "^1.62.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.2",
