@@ -13,6 +13,7 @@ interface ScrollAnchor {
 	height: number;
 	page?: {
 		index: number;
+		target: 'image' | 'page';
 		x: number;
 		y: number;
 	};
@@ -23,6 +24,7 @@ export class DocumentZoomCamera {
 	surface = $state<HTMLDivElement>();
 	committedZoom = $state(100);
 	pageFit = $state(true);
+	panX = $state(0);
 	gestureZoom = $state<number | null>(null);
 	gestureOrigin = $state({ x: 0, y: 0 });
 
@@ -47,22 +49,34 @@ export class DocumentZoomCamera {
 		return this.gestureZoom === null ? 1 : this.gestureZoom / this.gestureBaseZoom;
 	}
 
+	get surfaceTransform(): string | undefined {
+		const translation = `translate3d(${this.panX}px, 0, 0)`;
+		if (this.gestureZoom === null) return this.panX === 0 ? undefined : translation;
+		return `${translation} scale(${this.gestureScale})`;
+	}
+
 	reset(): void {
 		this.revision += 1;
 		this.resetGesture();
 		this.committedZoom = 100;
 		this.pageFit = true;
+		this.panX = 0;
 	}
 
-	setZoom = async (zoom: number, anchor?: ZoomAnchor): Promise<void> => {
+	setZoom = async (
+		zoom: number,
+		anchor?: ZoomAnchor,
+		centerHorizontally = false
+	): Promise<void> => {
 		const revision = ++this.revision;
 		const previous = this.captureAnchor(anchor);
 		this.resetGesture();
 		this.pageFit = false;
+		if (centerHorizontally) this.panX = 0;
 		this.committedZoom = roundedZoom(zoom);
 		if (!previous) return;
 		await tick();
-		if (revision === this.revision) this.restoreAnchor(previous);
+		if (revision === this.revision) this.restoreAnchor(previous, !centerHorizontally);
 	};
 
 	stepZoom = (direction: ZoomDirection, anchor?: ZoomAnchor): void => {
@@ -71,13 +85,14 @@ export class DocumentZoomCamera {
 	};
 
 	fitWidth = (): void => {
-		void this.setZoom(100);
+		void this.setZoom(100, undefined, true);
 	};
 
 	fitPage = (): void => {
 		this.revision += 1;
 		this.resetGesture();
 		this.pageFit = true;
+		this.panX = 0;
 	};
 
 	updateGesture = (factor: number, anchor: ZoomAnchor): void => {
@@ -129,6 +144,7 @@ export class DocumentZoomCamera {
 		const clientX = bounds.left + viewportX;
 		const clientY = bounds.top + viewportY;
 		const page = this.pageAt(clientY);
+		const target = page ? this.anchorTarget(page, clientX, clientY) : undefined;
 		return {
 			clientX,
 			clientY,
@@ -138,35 +154,48 @@ export class DocumentZoomCamera {
 			contentY: this.scroller.scrollTop + viewportY,
 			width: this.scroller.scrollWidth,
 			height: this.scroller.scrollHeight,
-			...(page
+			...(page && target
 				? {
 						page: {
 							index: Number(page.element.dataset.pageIndex),
-							x: (clientX - page.bounds.left) / page.bounds.width,
-							y: (clientY - page.bounds.top) / page.bounds.height
+							target: target.kind,
+							x: (clientX - target.bounds.left) / target.bounds.width,
+							y: (clientY - target.bounds.top) / target.bounds.height
 						}
 					}
 				: {})
 		};
 	}
 
-	private restoreAnchor(previous: ScrollAnchor): void {
+	private restoreAnchor(previous: ScrollAnchor, preserveHorizontal = true): void {
 		if (!this.scroller) return;
 		if (previous.page) {
 			const page = this.scroller.querySelector<HTMLElement>(
 				`[data-page-index="${previous.page.index}"]`
 			);
 			if (page) {
-				const bounds = page.getBoundingClientRect();
-				this.scroller.scrollLeft += bounds.left + bounds.width * previous.page.x - previous.clientX;
-				this.scroller.scrollTop += bounds.top + bounds.height * previous.page.y - previous.clientY;
+				const target =
+					previous.page.target === 'image' ? page.querySelector<HTMLElement>('img') : page;
+				const bounds = target?.getBoundingClientRect();
+				if (!bounds) return;
+				if (preserveHorizontal) {
+					const deltaX = bounds.left + bounds.width * previous.page.x - previous.clientX;
+					const previousScrollLeft = this.scroller.scrollLeft;
+					this.scroller.scrollLeft += deltaX;
+					const scrolledX = this.scroller.scrollLeft - previousScrollLeft;
+					this.panX = Math.round((this.panX - (deltaX - scrolledX)) * 10) / 10;
+				}
+				this.scroller.scrollTop +=
+					bounds.top + bounds.height * previous.page.y - previous.clientY;
 				return;
 			}
 		}
 
 		const widthScale = previous.width > 0 ? this.scroller.scrollWidth / previous.width : 1;
 		const heightScale = previous.height > 0 ? this.scroller.scrollHeight / previous.height : 1;
-		this.scroller.scrollLeft = previous.contentX * widthScale - previous.viewportX;
+		if (preserveHorizontal) {
+			this.scroller.scrollLeft = previous.contentX * widthScale - previous.viewportX;
+		}
 		this.scroller.scrollTop = previous.contentY * heightScale - previous.viewportY;
 	}
 
@@ -179,6 +208,25 @@ export class DocumentZoomCamera {
 			}
 		}
 		return undefined;
+	}
+
+	private anchorTarget(
+		page: { element: HTMLElement; bounds: DOMRect },
+		clientX: number,
+		clientY: number
+	): { kind: 'image' | 'page'; bounds: DOMRect } {
+		const image = page.element.querySelector<HTMLElement>('img');
+		const bounds = image?.getBoundingClientRect();
+		if (
+			bounds &&
+			bounds.left <= clientX &&
+			bounds.right >= clientX &&
+			bounds.top <= clientY &&
+			bounds.bottom >= clientY
+		) {
+			return { kind: 'image', bounds };
+		}
+		return { kind: 'page', bounds: page.bounds };
 	}
 
 	private resetGesture(): void {
