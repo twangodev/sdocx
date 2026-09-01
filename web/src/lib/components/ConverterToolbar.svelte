@@ -138,7 +138,7 @@
 	<div class="flex h-6 items-center gap-0.5" role="group" aria-label="Preview zoom">
 		<IconButton
 			label="Zoom out"
-			tooltip="Zoom out · Ctrl/⌘ −"
+			tooltip="Zoom out · Ctrl/⌘ − · pinch"
 			disabled={disabled || (!fitPage && previewZoom === zoomSteps[0])}
 			onclick={() => onStepZoom(-1)}
 		>
@@ -154,7 +154,7 @@
 		/>
 		<IconButton
 			label="Zoom in"
-			tooltip="Zoom in · Ctrl/⌘ +"
+			tooltip="Zoom in · Ctrl/⌘ + · pinch"
 			disabled={disabled || (!fitPage && previewZoom === zoomSteps.at(-1))}
 			onclick={() => onStepZoom(1)}
 		>
