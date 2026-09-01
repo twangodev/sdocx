@@ -21,6 +21,7 @@
 		textBytes
 	} from '$converter/files';
 	import { toInspectionView, type InspectionView } from '$converter/view-model';
+	import { wheelZoom, type ZoomAnchor } from '$lib/viewer/wheel-zoom';
 
 	let picker = $state<HTMLInputElement>();
 	let client: ConverterClient;
@@ -174,20 +175,43 @@
 		requestAnimationFrame(() => selectPage(selectedPage));
 	}
 
-	function setZoom(zoom: number): void {
-		fitPage = false;
-		previewZoom = zoom;
-		alignSelectedPage();
+	function zoomAnchor(anchor?: ZoomAnchor) {
+		if (!previewScroller) return undefined;
+		const bounds = previewScroller.getBoundingClientRect();
+		const viewportX = anchor ? anchor.clientX - bounds.left : previewScroller.clientWidth / 2;
+		const viewportY = anchor ? anchor.clientY - bounds.top : previewScroller.clientHeight / 2;
+		return {
+			viewportX,
+			viewportY,
+			contentX: previewScroller.scrollLeft + viewportX,
+			contentY: previewScroller.scrollTop + viewportY,
+			width: previewScroller.scrollWidth,
+			height: previewScroller.scrollHeight
+		};
 	}
 
-	function stepZoom(direction: -1 | 1): void {
+	function setZoom(zoom: number, anchor?: ZoomAnchor): void {
+		const previous = zoomAnchor(anchor);
+		fitPage = false;
+		previewZoom = zoom;
+		if (!previous || !previewScroller) return;
+		requestAnimationFrame(() => {
+			if (!previewScroller) return;
+			const widthScale = previous.width > 0 ? previewScroller.scrollWidth / previous.width : 1;
+			const heightScale = previous.height > 0 ? previewScroller.scrollHeight / previous.height : 1;
+			previewScroller.scrollLeft = previous.contentX * widthScale - previous.viewportX;
+			previewScroller.scrollTop = previous.contentY * heightScale - previous.viewportY;
+		});
+	}
+
+	function stepZoom(direction: -1 | 1, anchor?: ZoomAnchor): void {
 		const currentZoom = fitPage ? 100 : previewZoom;
 		const currentIndex = zoomSteps.indexOf(currentZoom);
 		const nextIndex = Math.min(
 			zoomSteps.length - 1,
 			Math.max(0, (currentIndex === -1 ? zoomSteps.indexOf(100) : currentIndex) + direction)
 		);
-		setZoom(zoomSteps[nextIndex]);
+		setZoom(zoomSteps[nextIndex], anchor);
 	}
 
 	function fitPreviewWidth(): void {
@@ -470,6 +494,10 @@
 			<div class="preview-panel">
 				<div
 					bind:this={previewScroller}
+					use:wheelZoom={{
+						disabled: exporting || rendering,
+						onZoom: (direction, anchor) => stepZoom(direction, anchor)
+					}}
 					class="canvas-wrap"
 					aria-busy={rendering}
 					onscroll={updatePageFromScroll}

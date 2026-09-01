@@ -117,6 +117,22 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
 	await page.keyboard.press('Control+0');
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
+	await page.locator('.canvas-wrap').dispatchEvent('wheel', {
+		deltaY: -100,
+		ctrlKey: true,
+		cancelable: true,
+		clientX: 500,
+		clientY: 400
+	});
+	await expect(pageStack).toHaveAttribute('data-zoom', '125');
+	await page.locator('.canvas-wrap').dispatchEvent('wheel', {
+		deltaY: 100,
+		ctrlKey: true,
+		cancelable: true,
+		clientX: 500,
+		clientY: 400
+	});
+	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 
 	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
 	await page.getByRole('button', { name: 'Next page' }).click();
