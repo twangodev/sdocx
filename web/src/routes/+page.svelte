@@ -465,9 +465,7 @@
 							class:zooming={zoom.gestureZoom !== null}
 							data-zoom={zoom.visiblePageFit ? 'page' : zoom.visibleZoom}
 							style:width={zoom.pageFit ? '100%' : `${zoom.committedZoom}%`}
-							style:transform={zoom.gestureZoom === null
-								? undefined
-								: `scale(${zoom.gestureScale})`}
+							style:transform={zoom.surfaceTransform}
 							style:transform-origin={`${zoom.gestureOrigin.x}px ${zoom.gestureOrigin.y}px`}
 						>
 							{#each previewUrls as url, index}

@@ -1,8 +1,92 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const localFixture = process.env.SDOCX_E2E_FIXTURE ?? resolve('../hf/01-basic-formatting.sdocx');
+const zoomAnchor = { x: 500, y: 400 } as const;
+
+interface ImagePoint {
+	page?: string;
+	x: number;
+	y: number;
+}
+
+async function imagePointAtAnchor(page: Page): Promise<ImagePoint | undefined> {
+	return page.evaluate(({ x, y }) => {
+		const pageAtPoint = document
+			.elementFromPoint(x, y)
+			?.closest<HTMLElement>('[data-page-index]');
+		const image = pageAtPoint?.querySelector<HTMLImageElement>('img');
+		if (!pageAtPoint || !image) return undefined;
+		const bounds = image.getBoundingClientRect();
+		return {
+			page: pageAtPoint.dataset.pageIndex,
+			x: (x - bounds.left) / bounds.width,
+			y: (y - bounds.top) / bounds.height
+		};
+	}, zoomAnchor);
+}
+
+async function pinchAtAnchor(canvas: Locator, deltaY: number) {
+	return canvas.evaluate(
+		async (element, gesture) => {
+			const pointAtAnchor = () => {
+				const pageAtPoint = document
+					.elementFromPoint(gesture.x, gesture.y)
+					?.closest<HTMLElement>('[data-page-index]');
+				const image = pageAtPoint?.querySelector<HTMLImageElement>('img');
+				if (!pageAtPoint || !image) return undefined;
+				const bounds = image.getBoundingClientRect();
+				return {
+					page: pageAtPoint.dataset.pageIndex,
+					x: (gesture.x - bounds.left) / bounds.width,
+					y: (gesture.y - bounds.top) / bounds.height
+				};
+			};
+			const pointBefore = pointAtAnchor();
+			element.dispatchEvent(
+				new WheelEvent('wheel', {
+					deltaY: gesture.deltaY,
+					ctrlKey: true,
+					cancelable: true,
+					clientX: gesture.x,
+					clientY: gesture.y
+				})
+			);
+			await new Promise<void>((resolveFrame) =>
+				requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()))
+			);
+			const stack = element.querySelector<HTMLElement>('.page-stack');
+			return {
+				pointBefore,
+				pointDuring: pointAtAnchor(),
+				zoom: stack?.dataset.zoom,
+				transform: stack ? getComputedStyle(stack).transform : 'none'
+			};
+		},
+		{ ...zoomAnchor, deltaY }
+	);
+}
+
+function expectSameImagePoint(actual: ImagePoint | undefined, expected: ImagePoint | undefined): void {
+	expect(expected).toBeDefined();
+	expect(actual?.page).toBe(expected?.page);
+	expect(actual?.x).toBeCloseTo(expected?.x ?? 0, 2);
+	expect(actual?.y).toBeCloseTo(expected?.y ?? 0, 2);
+}
+
+async function expectCommittedImagePoint(page: Page, expected: ImagePoint | undefined): Promise<void> {
+	await expect
+		.poll(async () => {
+			const actual = await imagePointAtAnchor(page);
+			if (!actual || actual.page !== expected?.page) return Infinity;
+			return Math.max(
+				Math.abs(actual.x - (expected?.x ?? 0)),
+				Math.abs(actual.y - (expected?.y ?? 0))
+			);
+		})
+		.toBeLessThan(0.02);
+}
 
 test('converter presents a local-only upload surface', async ({ page }) => {
 	const remoteRequests: string[] = [];
@@ -101,47 +185,21 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	for (const mode of colorModes) await expect(mode.locator('svg')).toHaveCount(1);
 	await expect(colorModes[0]).toHaveAttribute('data-state', 'on');
 	const canvas = page.locator('.canvas-wrap');
-	const fitPagePinch = await canvas.evaluate(async (element) => {
-		const pageAtAnchor = () =>
-			document.elementFromPoint(500, 400)?.closest<HTMLElement>('[data-page-index]')?.dataset
-				.pageIndex;
-		const pageBefore = pageAtAnchor();
-		element.dispatchEvent(
-			new WheelEvent('wheel', {
-				deltaY: -2,
-				ctrlKey: true,
-				cancelable: true,
-				clientX: 500,
-				clientY: 400
-			})
-		);
-		await new Promise<void>((resolveFrame) =>
-			requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()))
-		);
-		const stack = element.querySelector<HTMLElement>('.page-stack');
-		return {
-			pageBefore,
-			pageDuring: pageAtAnchor(),
-			zoom: stack?.dataset.zoom,
-			transform: stack ? getComputedStyle(stack).transform : 'none'
-		};
-	});
+	const fitPagePinch = await pinchAtAnchor(canvas, -40);
 	expect(fitPagePinch.zoom).not.toBe('page');
 	expect(Number(fitPagePinch.zoom)).toBeGreaterThan(0);
 	expect(fitPagePinch.transform).not.toBe('none');
-	expect(fitPagePinch.pageDuring).toBe(fitPagePinch.pageBefore);
+	expectSameImagePoint(fitPagePinch.pointDuring, fitPagePinch.pointBefore);
 	await page.waitForTimeout(160);
 	await expect(pageStack).toHaveAttribute('data-zoom', fitPagePinch.zoom!);
-	await expect.poll(() => pageStack.evaluate((element) => getComputedStyle(element).transform)).toBe('none');
-	await expect
-		.poll(() =>
-			page.evaluate(
-				() =>
-					document.elementFromPoint(500, 400)?.closest<HTMLElement>('[data-page-index]')?.dataset
-						.pageIndex
-			)
-		)
-		.toBe(fitPagePinch.pageBefore);
+	await expect(pageStack).not.toHaveClass(/zooming/);
+	await expectCommittedImagePoint(page, fitPagePinch.pointBefore);
+
+	const manualPinch = await pinchAtAnchor(canvas, -20);
+	expectSameImagePoint(manualPinch.pointDuring, manualPinch.pointBefore);
+	await page.waitForTimeout(160);
+	await expect(pageStack).not.toHaveClass(/zooming/);
+	await expectCommittedImagePoint(page, manualPinch.pointBefore);
 
 	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
 	await zoomMenu.click();
