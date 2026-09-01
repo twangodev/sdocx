@@ -14,5 +14,5 @@ const disabled: Record<ButtonVariant, string> = {
 
 export function buttonClass(variant: ButtonVariant, options: { busy?: boolean } = {}): string {
 	const cursor = options.busy ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed';
-	return `h-7 cursor-pointer rounded px-2 text-[11px] ${surfaces[variant]} ${cursor} ${disabled[variant]}`;
+	return `h-7 cursor-pointer rounded px-2 text-[10px] ${surfaces[variant]} ${cursor} ${disabled[variant]}`;
 }
