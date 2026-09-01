@@ -100,9 +100,55 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	];
 	for (const mode of colorModes) await expect(mode.locator('svg')).toHaveCount(1);
 	await expect(colorModes[0]).toHaveAttribute('data-state', 'on');
+	const canvas = page.locator('.canvas-wrap');
+	const fitPagePinch = await canvas.evaluate(async (element) => {
+		const pageAtAnchor = () =>
+			document.elementFromPoint(500, 400)?.closest<HTMLElement>('[data-page-index]')?.dataset
+				.pageIndex;
+		const pageBefore = pageAtAnchor();
+		element.dispatchEvent(
+			new WheelEvent('wheel', {
+				deltaY: -2,
+				ctrlKey: true,
+				cancelable: true,
+				clientX: 500,
+				clientY: 400
+			})
+		);
+		await new Promise<void>((resolveFrame) =>
+			requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()))
+		);
+		const stack = element.querySelector<HTMLElement>('.page-stack');
+		return {
+			pageBefore,
+			pageDuring: pageAtAnchor(),
+			zoom: stack?.dataset.zoom,
+			transform: stack ? getComputedStyle(stack).transform : 'none'
+		};
+	});
+	expect(fitPagePinch.zoom).not.toBe('page');
+	expect(Number(fitPagePinch.zoom)).toBeGreaterThan(0);
+	expect(fitPagePinch.transform).not.toBe('none');
+	expect(fitPagePinch.pageDuring).toBe(fitPagePinch.pageBefore);
+	await page.waitForTimeout(160);
+	await expect(pageStack).toHaveAttribute('data-zoom', fitPagePinch.zoom!);
+	await expect.poll(() => pageStack.evaluate((element) => getComputedStyle(element).transform)).toBe('none');
+	await expect
+		.poll(() =>
+			page.evaluate(
+				() =>
+					document.elementFromPoint(500, 400)?.closest<HTMLElement>('[data-page-index]')?.dataset
+						.pageIndex
+			)
+		)
+		.toBe(fitPagePinch.pageBefore);
+
+	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
+	await zoomMenu.click();
+	await page.getByRole('menuitem', { name: 'Fit page' }).click();
+	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
 	await page.getByRole('button', { name: 'Zoom in' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
-	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
 	await zoomMenu.click();
 	await page.getByRole('menuitem', { name: 'Fit page' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
@@ -117,16 +163,16 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
 	await page.keyboard.press('Control+0');
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
-	await page.locator('.canvas-wrap').dispatchEvent('wheel', {
-		deltaY: -100,
+	await canvas.dispatchEvent('wheel', {
+		deltaY: -10,
 		ctrlKey: true,
 		cancelable: true,
 		clientX: 500,
 		clientY: 400
 	});
-	await expect(pageStack).toHaveAttribute('data-zoom', '125');
-	await page.locator('.canvas-wrap').dispatchEvent('wheel', {
-		deltaY: 100,
+	await expect(pageStack).toHaveAttribute('data-zoom', '108.3');
+	await canvas.dispatchEvent('wheel', {
+		deltaY: 10,
 		ctrlKey: true,
 		cancelable: true,
 		clientX: 500,

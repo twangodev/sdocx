@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createWheelZoomAccumulator, type WheelZoomSample } from './wheel-zoom';
+import { pixelDelta, wheelZoomFactor, type WheelZoomSample } from './wheel-zoom';
 
 function sample(deltaY: number, timeStamp: number, overrides: Partial<WheelZoomSample> = {}) {
 	return {
@@ -11,30 +11,19 @@ function sample(deltaY: number, timeStamp: number, overrides: Partial<WheelZoomS
 	};
 }
 
-describe('trackpad zoom accumulation', () => {
-	it('turns a deliberate pinch into one zoom step', () => {
-		const accumulator = createWheelZoomAccumulator();
-		expect(accumulator.push(sample(-8, 0))).toBeUndefined();
-		expect(accumulator.push(sample(-8, 10))).toBeUndefined();
-		expect(accumulator.push(sample(-8, 20))).toBe(1);
+describe('trackpad zoom', () => {
+	it('turns every pinch delta into a proportional scale', () => {
+		expect(wheelZoomFactor(sample(-8, 0))).toBeCloseTo(1.066, 3);
+		expect(wheelZoomFactor(sample(8, 10))).toBeCloseTo(0.938, 3);
 	});
 
-	it('maps positive deltas to zooming out', () => {
-		const accumulator = createWheelZoomAccumulator();
-		expect(accumulator.push(sample(100, 0))).toBe(-1);
+	it('composes continuous deltas without quantizing them into steps', () => {
+		const combined = wheelZoomFactor(sample(-4, 0)) * wheelZoomFactor(sample(-4, 10));
+		expect(combined).toBeCloseTo(wheelZoomFactor(sample(-8, 20)), 8);
 	});
 
-	it('resets accumulation when direction changes or a gesture pauses', () => {
-		const accumulator = createWheelZoomAccumulator();
-		expect(accumulator.push(sample(-16, 0))).toBeUndefined();
-		expect(accumulator.push(sample(16, 10))).toBeUndefined();
-		expect(accumulator.push(sample(16, 20))).toBe(-1);
-		expect(accumulator.push(sample(-16, 30))).toBeUndefined();
-		expect(accumulator.push(sample(-16, 300))).toBeUndefined();
-	});
-
-	it('normalizes line-based wheel input', () => {
-		const accumulator = createWheelZoomAccumulator();
-		expect(accumulator.push(sample(-2, 0, { deltaMode: 1 }))).toBe(1);
+	it('normalizes line and page-based wheel input', () => {
+		expect(pixelDelta(sample(-2, 0, { deltaMode: 1 }))).toBe(-32);
+		expect(pixelDelta(sample(1, 0, { deltaMode: 2 }))).toBe(800);
 	});
 });
