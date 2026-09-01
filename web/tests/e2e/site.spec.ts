@@ -19,6 +19,7 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /Open a Samsung note/i })).toBeVisible();
 	await expect(page.locator('.lede')).toContainText('Files stay in this browser.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
+	await expect(page.locator('select')).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 	expect(remoteRequests).toEqual([]);
 });
@@ -53,6 +54,7 @@ test('regression suite exposes explicit, user-triggered runs', async ({ page }) 
 	await expect(page).toHaveTitle(/regression/i);
 	await expect(page.getByRole('heading', { name: /Regression lab/i })).toBeVisible();
 	await expect(page.getByRole('button', { name: /Run selected/i })).toBeVisible();
+	await expect(page.locator('select')).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 });
 
@@ -94,15 +96,21 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.getByRole('button', { name: 'Fit width' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 
-	const pageSelector = page.locator('.preview-toolbar select');
+	const pageSelector = page.getByRole('button', { name: 'Choose page' });
 	await page.getByRole('button', { name: 'Next page' }).click();
-	await expect(pageSelector).toHaveValue('1');
+	await expect(pageSelector).toContainText('page 02 / 05');
 	await page.getByRole('button', { name: 'Previous page' }).click();
-	await expect(pageSelector).toHaveValue('0');
+	await expect(pageSelector).toContainText('page 01 / 05');
 	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
-	await expect(pageSelector).toHaveValue('4');
-	await pageSelector.selectOption('0');
-	await expect(pageSelector).toHaveValue('0');
+	await expect(pageSelector).toContainText('page 05 / 05');
+	await pageSelector.click();
+	await page.getByRole('menuitem', { name: 'page 01 / 05' }).click();
+	await expect(pageSelector).toContainText('page 01 / 05');
+
+	const pngScale = page.getByRole('button', { name: 'Choose PNG scale' });
+	await pngScale.click();
+	await page.getByRole('menuitem', { name: '2×' }).click();
+	await expect(pngScale).toContainText('2×');
 
 	const downloadStarted = page.waitForEvent('download');
 	await page.getByRole('button', { name: /^SVG/ }).click();

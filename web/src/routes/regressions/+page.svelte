@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import CompactSelectMenu from '$lib/components/ui/CompactSelectMenu.svelte';
+	import type { MenuLeaf } from '$lib/menu';
 	import { CORPUS_FIXTURES } from '../../lib/regression/manifest';
 	import { disposeComparisonPages } from '../../lib/regression/pdf';
 	import {
@@ -123,6 +125,15 @@
 		selectedId = id;
 		selectedPageIndex = 0;
 		uiError = '';
+	}
+
+	function comparisonPageMenu(): MenuLeaf<number>[] {
+		return (selectedResult?.comparisons ?? []).map((page) => ({
+			kind: 'action',
+			label: `page ${page.pageIndex + 1}`,
+			action: page.pageIndex,
+			checked: page.pageIndex === selectedPageIndex
+		}));
 	}
 
 	function chooseLocalFile(kind: keyof LocalFixtureAssets, event: Event): void {
@@ -323,14 +334,17 @@
 							<p>Normalized browser render against the verified reference PDF.</p>
 						</div>
 						{#if selectedResult.comparisons.length > 0}
-							<label class="page-picker mono-label">
-								Page
-								<select bind:value={selectedPageIndex}>
-									{#each selectedResult.comparisons as page}
-										<option value={page.pageIndex}>{page.pageIndex + 1}</option>
-									{/each}
-								</select>
-							</label>
+							<div class="flex items-center gap-2 text-muted max-[720px]:mt-3">
+								<span class="mono-label">Page</span>
+								<CompactSelectMenu
+									label="Choose comparison page"
+									value={String(selectedPageIndex + 1)}
+									items={comparisonPageMenu()}
+									onAction={(page) => (selectedPageIndex = page)}
+									align="end"
+									class="min-w-12"
+								/>
+							</div>
 						{/if}
 					</div>
 
@@ -476,8 +490,6 @@
 	.check-row strong, .check-row small { display: block; overflow: hidden; text-overflow: ellipsis; }
 	.check-row strong { font-size: 0.75rem; }
 	.check-row small { margin-top: 0.18rem; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.6rem; white-space: nowrap; }
-	.page-picker { display: flex; align-items: center; gap: 0.5rem; color: var(--site-muted); }
-	.page-picker select { border: 1px solid var(--site-border); border-radius: 0.35rem; background: var(--site-surface); padding: 0.35rem 1.5rem 0.35rem 0.45rem; color: var(--site-text); }
 	.view-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
 	.view-controls button, .view-controls a { border: 1px solid var(--site-border); border-radius: 0.35rem; background: var(--site-surface); padding: 0.42rem 0.6rem; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.63rem; text-decoration: none; text-transform: lowercase; cursor: pointer; }
 	.view-controls button:hover, .view-controls button.active, .view-controls a:hover { border-color: color-mix(in srgb, #167bff 65%, var(--site-border)); color: #167bff; }
@@ -509,6 +521,5 @@
 	@media (max-width: 650px) {
 		.local-files, .side-by-side, .metrics { grid-template-columns: 1fr; }
 		.comparison-heading { display: block; }
-		.page-picker { margin-top: 0.75rem; }
 	}
 </style>
