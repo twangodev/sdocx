@@ -40,6 +40,7 @@
 	let dragging = $state(false);
 	let exportProgress = $state('');
 	let renderGeneration = 0;
+	let dragDepth = 0;
 
 	const hasDocument = $derived(summary !== null && activeFile !== null);
 	const stem = $derived(activeFile ? sanitizeStem(activeFile.name) : 'document');
@@ -89,6 +90,13 @@
 		error = '';
 		try {
 			assertAcceptedFile(file);
+		} catch (cause) {
+			error = messageFrom(cause);
+			status = 'Could not open document';
+			return;
+		}
+
+		try {
 			if (
 				isLargeFile(file) &&
 				!window.confirm(
@@ -220,17 +228,39 @@
 		input.value = '';
 	}
 
-	function onDrop(event: DragEvent): void {
-		event.preventDefault();
-		dragging = false;
-		const file = event.dataTransfer?.files[0];
-		if (file) void loadFile(file);
+	function carriesFiles(event: DragEvent): boolean {
+		return Array.from(event.dataTransfer?.types ?? []).includes('Files');
 	}
 
-	function onDragOver(event: DragEvent): void {
+	function onWindowDragEnter(event: DragEvent): void {
+		if (!carriesFiles(event)) return;
 		event.preventDefault();
-		event.dataTransfer!.dropEffect = 'copy';
+		dragDepth += 1;
 		dragging = true;
+	}
+
+	function onWindowDragOver(event: DragEvent): void {
+		if (!carriesFiles(event)) return;
+		event.preventDefault();
+		if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+		dragging = true;
+	}
+
+	function onWindowDragLeave(event: DragEvent): void {
+		if (!dragging) return;
+		event.preventDefault();
+		dragDepth = Math.max(0, dragDepth - 1);
+		if (dragDepth === 0) dragging = false;
+	}
+
+	function onWindowDrop(event: DragEvent): void {
+		const fileDrop = carriesFiles(event);
+		if (fileDrop) event.preventDefault();
+		dragDepth = 0;
+		dragging = false;
+
+		const file = event.dataTransfer?.files[0];
+		if (fileDrop && file) void loadFile(file);
 	}
 
 	function cancel(): void {
@@ -340,6 +370,22 @@
 	/>
 </svelte:head>
 
+<svelte:window
+	ondragenter={onWindowDragEnter}
+	ondragover={onWindowDragOver}
+	ondragleave={onWindowDragLeave}
+	ondrop={onWindowDrop}
+/>
+
+{#if dragging}
+	<div class="drop-overlay" role="status" aria-live="polite">
+		<div class="drop-overlay-copy">
+			<strong>{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}</strong>
+			<span>release anywhere · processed locally</span>
+		</div>
+	</div>
+{/if}
+
 {#if !hasDocument}
 	<section class="intro" aria-labelledby="intro-title">
 		<h1 id="intro-title">Open a Samsung Notes file</h1>
@@ -349,12 +395,8 @@
 
 		<button
 			type="button"
-			class:dragging
 			class="drop-zone"
 			onclick={() => picker?.click()}
-			ondrop={onDrop}
-			ondragover={onDragOver}
-			ondragleave={() => (dragging = false)}
 		>
 			{parsing ? status : 'open .sdocx'}
 		</button>
@@ -609,8 +651,46 @@
 	}
 
 	.drop-zone:hover,
-	.drop-zone.dragging {
+	.drop-zone:focus-visible {
 		opacity: 0.82;
+	}
+
+	.drop-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		place-items: center;
+		background: color-mix(in srgb, var(--site-bg) 96%, transparent);
+		pointer-events: none;
+	}
+
+	.drop-overlay::after {
+		position: absolute;
+		inset: 1rem;
+		border: 1px dashed var(--site-muted);
+		border-radius: 0.35rem;
+		content: '';
+	}
+
+	.drop-overlay-copy {
+		display: flex;
+		align-items: center;
+		flex-direction: column;
+		gap: 0.35rem;
+		text-align: center;
+	}
+
+	.drop-overlay-copy strong {
+		font-size: 1rem;
+		font-weight: 550;
+		letter-spacing: -0.015em;
+	}
+
+	.drop-overlay-copy span {
+		color: var(--site-muted);
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
 	}
 
 	.drop-hint {

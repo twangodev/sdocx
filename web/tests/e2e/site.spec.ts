@@ -23,6 +23,30 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 	expect(remoteRequests).toEqual([]);
 });
 
+test('dragging a file expands the drop target across the viewport', async ({ page }) => {
+	await page.goto('/');
+	const dataTransfer = await page.evaluateHandle(() => {
+		const transfer = new DataTransfer();
+		transfer.items.add(new File(['fixture'], 'dragged.sdocx', { type: 'application/zip' }));
+		return transfer;
+	});
+
+	await page.locator('body').dispatchEvent('dragenter', { dataTransfer });
+
+	const overlay = page.locator('.drop-overlay');
+	await expect(overlay).toBeVisible();
+	await expect(overlay).toContainText('drop .sdocx to open');
+	const bounds = await overlay.boundingBox();
+	expect(bounds).not.toBeNull();
+	expect(bounds?.x).toBe(0);
+	expect(bounds?.y).toBe(0);
+	expect(bounds?.width).toBe(page.viewportSize()?.width);
+	expect(bounds?.height).toBe(page.viewportSize()?.height);
+
+	await page.locator('body').dispatchEvent('dragleave', { dataTransfer });
+	await expect(overlay).toBeHidden();
+});
+
 test('regression suite exposes explicit, user-triggered runs', async ({ page }) => {
 	await page.goto('/regressions');
 
