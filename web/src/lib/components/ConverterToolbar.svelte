@@ -1,17 +1,8 @@
 <script lang="ts">
-	import {
-		ChevronLeft,
-		ChevronRight,
-		Maximize2,
-		Minus,
-		MoveHorizontal,
-		Plus
-	} from '@lucide/svelte';
-	import type { ColorMode } from '$converter/protocol';
+	import { ChevronLeft, ChevronRight, Minus, Plus } from '@lucide/svelte';
 	import { separator, type MenuLeaf } from '$lib/menu';
 	import { viewerCommandForKey } from '$lib/viewer/keyboard';
 	import CompactSelectMenu from './ui/CompactSelectMenu.svelte';
-	import ColorModeSwitch from './ui/ColorModeSwitch.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import PageNumberInput from './ui/PageNumberInput.svelte';
 
@@ -20,7 +11,6 @@
 		pageCount: number;
 		previewZoom: number;
 		fitPage: boolean;
-		colorMode: ColorMode;
 		disabled?: boolean;
 		onSelectPage: (page: number) => void;
 		onStepPage: (direction: -1 | 1) => void;
@@ -28,7 +18,7 @@
 		onStepZoom: (direction: -1 | 1) => void;
 		onFitWidth: () => void;
 		onFitPage: () => void;
-		onColorMode: (mode: ColorMode) => void;
+		class?: string;
 	}
 
 	let {
@@ -36,7 +26,6 @@
 		pageCount,
 		previewZoom,
 		fitPage,
-		colorMode,
 		disabled = false,
 		onSelectPage,
 		onStepPage,
@@ -44,20 +33,23 @@
 		onStepZoom,
 		onFitWidth,
 		onFitPage,
-		onColorMode
+		class: className = ''
 	}: Props = $props();
 
 	const zoomSteps = [50, 75, 100, 125, 150, 175, 200];
 	type ZoomAction = 'page' | 'width' | number;
 
 	const zoomMenu = $derived(makeZoomMenu(fitPage, previewZoom));
+	const zoomValue = $derived(
+		fitPage ? 'Fit page' : previewZoom === 100 ? 'Fit width' : `${previewZoom}%`
+	);
 
 	function makeZoomMenu(pageFit: boolean, zoom: number): MenuLeaf<ZoomAction>[] {
 		return [
-			{ kind: 'action', label: 'fit page', action: 'page', checked: pageFit },
-			{ kind: 'action', label: 'fit width', action: 'width', checked: !pageFit && zoom === 100 },
+			{ kind: 'action', label: 'Fit page', action: 'page', checked: pageFit },
+			{ kind: 'action', label: 'Fit width', action: 'width', checked: !pageFit && zoom === 100 },
 			separator(),
-			...zoomSteps.map((step) => ({
+			...zoomSteps.filter((step) => step !== 100).map((step) => ({
 				kind: 'action' as const,
 				label: `${step}%`,
 				action: step,
@@ -95,6 +87,9 @@
 			case 'zoom-out':
 				onStepZoom(-1);
 				break;
+			case 'reset-zoom':
+				onFitWidth();
+				break;
 			case 'previous-page':
 				onStepPage(-1);
 				break;
@@ -112,9 +107,7 @@
 
 <svelte:window onkeydown={handleKeyboardShortcut} />
 
-<div
-	class="preview-toolbar flex h-9 shrink-0 items-center gap-1 border-b border-subtle bg-bg px-2 max-[520px]:h-auto max-[520px]:items-stretch max-[520px]:flex-col max-[520px]:py-2"
->
+<div class="flex h-7 shrink-0 items-center gap-2 {className}">
 	<div class="flex h-6 items-center gap-0.5" role="group" aria-label="Page navigation">
 		<IconButton
 			label="Previous page"
@@ -140,19 +133,9 @@
 		</IconButton>
 	</div>
 
+	<span class="h-4 w-px bg-subtle" aria-hidden="true"></span>
+
 	<div class="flex h-6 items-center gap-0.5" role="group" aria-label="Preview zoom">
-		<IconButton label="Fit page" tooltip active={fitPage} {disabled} onclick={onFitPage}>
-			<Maximize2 size={12} strokeWidth={1.4} />
-		</IconButton>
-		<IconButton
-			label="Fit width"
-			tooltip
-			active={!fitPage && previewZoom === 100}
-			{disabled}
-			onclick={onFitWidth}
-		>
-			<MoveHorizontal size={12} strokeWidth={1.4} />
-		</IconButton>
 		<IconButton
 			label="Zoom out"
 			tooltip="Zoom out · Ctrl/⌘ −"
@@ -162,13 +145,12 @@
 			<Minus size={12} strokeWidth={1.4} />
 		</IconButton>
 		<CompactSelectMenu
-			label="Choose zoom level"
-			value={fitPage ? 'fit' : `${previewZoom}%`}
+			label="Zoom and page fit"
+			value={zoomValue}
 			items={zoomMenu}
 			onAction={runZoomAction}
 			{disabled}
-			chevron={false}
-			class="min-w-12 justify-center"
+			class="min-w-[5.5rem] justify-center"
 		/>
 		<IconButton
 			label="Zoom in"
@@ -179,11 +161,4 @@
 			<Plus size={12} strokeWidth={1.4} />
 		</IconButton>
 	</div>
-
-	<ColorModeSwitch
-		value={colorMode}
-		{disabled}
-		onChange={onColorMode}
-		class="ml-auto max-[520px]:ml-0 max-[520px]:self-end"
-	/>
 </div>

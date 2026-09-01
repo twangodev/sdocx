@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { FolderOpen } from '@lucide/svelte';
-	import ConverterToolbar from '$lib/components/ConverterToolbar.svelte';
-	import DocumentHeader from '$lib/components/DocumentHeader.svelte';
 	import DocumentInfoPanel from '$lib/components/DocumentInfoPanel.svelte';
-	import ExportPanel from '$lib/components/ExportPanel.svelte';
+	import DocumentToolbar from '$lib/components/DocumentToolbar.svelte';
 	import { ConverterClient } from '$converter/client';
 	import {
 		assertAcceptedFile,
@@ -42,6 +40,7 @@
 	let parsing = $state(false);
 	let rendering = $state(false);
 	let exporting = $state(false);
+	let detailsOpen = $state(false);
 	let dragging = $state(false);
 	let exportProgress = $state('');
 	let renderGeneration = 0;
@@ -79,6 +78,7 @@
 		pageIndex = 0;
 		previewZoom = 100;
 		fitPage = true;
+		detailsOpen = false;
 	}
 
 	async function closeDocument(): Promise<void> {
@@ -418,11 +418,34 @@
 	</section>
 {:else if summary && activeFile}
 	<section class="workspace" aria-label="Document converter">
-		<DocumentHeader
+		<DocumentToolbar
 			title={details?.title || activeFile.name}
 			filename={activeFile.name}
 			fileSize={activeFile.size}
+			{pageIndex}
 			pageCount={summary.pageCount}
+			{previewZoom}
+			{fitPage}
+			{colorMode}
+			{detailsOpen}
+			{exporting}
+			{rendering}
+			{pngScale}
+			{exportProgress}
+			onToggleDetails={() => (detailsOpen = !detailsOpen)}
+			onSelectPage={selectPage}
+			onStepPage={stepPage}
+			onSetZoom={setZoom}
+			onStepZoom={stepZoom}
+			onFitWidth={fitPreviewWidth}
+			onFitPage={fitPreviewPage}
+			onColorMode={(nextMode) => void selectColorMode(nextMode)}
+			onScale={(nextScale) => (pngScale = nextScale)}
+			onCurrentSvg={() => void downloadCurrentSvg()}
+			onCurrentPng={() => void downloadCurrentPng()}
+			onArchive={(kind) => void downloadArchive(kind)}
+			onJson={() => void downloadJson()}
+			onCancel={cancel}
 			onReplace={() => picker?.click()}
 			onClose={() => void closeDocument()}
 		/>
@@ -435,25 +458,16 @@
 			onchange={onFileInput}
 		/>
 
-		<div class="work-grid">
-			<DocumentInfoPanel pageCount={summary.pageCount} {details} />
+		<div class="viewer-body">
+			{#if detailsOpen}
+				<DocumentInfoPanel
+					pageCount={summary.pageCount}
+					{details}
+					class="w-56 shrink-0 max-[720px]:absolute max-[720px]:inset-y-0 max-[720px]:left-0 max-[720px]:z-20 max-[720px]:shadow-2xl"
+				/>
+			{/if}
 
 			<div class="preview-panel">
-				<ConverterToolbar
-					{pageIndex}
-					pageCount={summary.pageCount}
-					{previewZoom}
-					{fitPage}
-					{colorMode}
-					disabled={exporting || rendering}
-					onSelectPage={selectPage}
-					onStepPage={stepPage}
-					onSetZoom={setZoom}
-					onStepZoom={stepZoom}
-					onFitWidth={fitPreviewWidth}
-					onFitPage={fitPreviewPage}
-					onColorMode={(nextMode) => void selectColorMode(nextMode)}
-				/>
 				<div
 					bind:this={previewScroller}
 					class="canvas-wrap"
@@ -495,18 +509,6 @@
 					{exporting ? exportProgress : status}
 				</div>
 			</div>
-
-			<ExportPanel
-				{exporting}
-				{rendering}
-				{pngScale}
-				onScale={(nextScale) => (pngScale = nextScale)}
-				onCurrentSvg={() => void downloadCurrentSvg()}
-				onCurrentPng={() => void downloadCurrentPng()}
-				onArchive={(kind) => void downloadArchive(kind)}
-				onJson={() => void downloadJson()}
-				onCancel={cancel}
-			/>
 		</div>
 		{#if error}<p class="error workspace-error" role="alert">{error}</p>{/if}
 	</section>
@@ -644,21 +646,18 @@
 		overflow: hidden;
 	}
 
-	.work-grid {
-		display: grid;
+	.viewer-body {
+		position: relative;
+		display: flex;
 		min-height: 0;
 		flex: 1;
-		grid-template-columns: 188px minmax(360px, 1fr) 188px;
-	}
-
-	.preview-panel {
-		min-width: 0;
-		background: var(--site-bg);
 	}
 
 	.preview-panel {
 		display: flex;
+		min-width: 0;
 		min-height: 0;
+		flex: 1;
 		flex-direction: column;
 		overflow: hidden;
 		background: var(--site-canvas);
@@ -769,13 +768,6 @@
 		margin-top: 1rem;
 	}
 
-	@media (max-width: 1050px) {
-		.work-grid {
-			grid-template-columns: 180px minmax(360px, 1fr);
-		}
-
-	}
-
 	@media (max-width: 720px) {
 		.workspace {
 			height: auto;
@@ -783,19 +775,9 @@
 			overflow: visible;
 		}
 
-		.work-grid {
-			display: flex;
-			flex-direction: column;
-		}
-
-		.preview-panel {
-			order: -1;
-		}
-
 		.canvas-wrap {
 			min-height: 420px;
 		}
-
 	}
 
 </style>

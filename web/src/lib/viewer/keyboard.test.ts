@@ -18,6 +18,7 @@ describe('viewer keyboard shortcuts', () => {
 		expect(viewerCommandForKey(stroke('=', { ctrlKey: true }))).toBe('zoom-in');
 		expect(viewerCommandForKey(stroke('+', { metaKey: true, shiftKey: true }))).toBe('zoom-in');
 		expect(viewerCommandForKey(stroke('-', { ctrlKey: true }))).toBe('zoom-out');
+		expect(viewerCommandForKey(stroke('0', { ctrlKey: true }))).toBe('reset-zoom');
 		expect(viewerCommandForKey(stroke('Add', { ctrlKey: true, code: 'NumpadAdd' }))).toBe(
 			'zoom-in'
 		);
@@ -34,7 +35,7 @@ describe('viewer keyboard shortcuts', () => {
 	});
 
 	it('leaves browser and modified navigation shortcuts alone', () => {
-		expect(viewerCommandForKey(stroke('0', { ctrlKey: true }))).toBeUndefined();
+		expect(viewerCommandForKey(stroke('0'))).toBeUndefined();
 		expect(viewerCommandForKey(stroke('PageDown', { shiftKey: true }))).toBeUndefined();
 		expect(viewerCommandForKey(stroke('+', { altKey: true }))).toBeUndefined();
 		expect(viewerCommandForKey(stroke('ArrowRight'))).toBeUndefined();

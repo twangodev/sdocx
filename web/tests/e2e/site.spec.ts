@@ -87,7 +87,11 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(page.getByAltText('Rendered preview of page 1')).toBeVisible();
 	const pageStack = page.locator('.page-stack');
 	await expect(pageStack.locator('img')).toHaveCount(5);
+	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Document information' }).click();
 	await expect(page.getByText('No parser warnings')).toBeVisible();
+	await page.getByRole('button', { name: 'Document information' }).click();
+	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
 	const colorModes = [
 		page.getByRole('radio', { name: 'Automatic color mode' }),
@@ -98,13 +102,20 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(colorModes[0]).toHaveAttribute('data-state', 'on');
 	await page.getByRole('button', { name: 'Zoom in' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
-	await page.getByRole('button', { name: 'Fit page' }).click();
+	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
+	await zoomMenu.click();
+	await page.getByRole('menuitem', { name: 'Fit page' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
-	await page.getByRole('button', { name: 'Fit width' }).click();
+	await zoomMenu.click();
+	await page.getByRole('menuitem', { name: 'Fit width' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 	await page.keyboard.press('Control+=');
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
 	await page.keyboard.press('Control+-');
+	await expect(pageStack).toHaveAttribute('data-zoom', '100');
+	await page.keyboard.press('Control+=');
+	await expect(pageStack).toHaveAttribute('data-zoom', '125');
+	await page.keyboard.press('Control+0');
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
 
 	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
@@ -125,13 +136,13 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.keyboard.press('Home');
 	await expect(pageSelector).toHaveValue('1');
 
-	const pngScale = page.getByRole('button', { name: 'Choose PNG scale' });
-	await pngScale.click();
-	await page.getByRole('menuitem', { name: '2×' }).click();
-	await expect(pngScale).toContainText('2×');
+	const exportMenu = page.getByRole('button', { name: 'Export document' });
+	await exportMenu.click();
+	await page.getByRole('menuitem', { name: 'PNG scale: 2×' }).click();
 
 	const downloadStarted = page.waitForEvent('download');
-	await page.getByRole('button', { name: /^SVG/ }).click();
+	await exportMenu.click();
+	await page.getByRole('menuitem', { name: 'Current page as SVG' }).click();
 	const download = await downloadStarted;
 	expect(download.suggestedFilename()).toBe('01-basic-formatting-page-001.svg');
 	expect(remoteRequests).toEqual([]);

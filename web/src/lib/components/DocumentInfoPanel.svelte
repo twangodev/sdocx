@@ -2,14 +2,18 @@
 	import { Check } from '@lucide/svelte';
 	import type { InspectionView } from '$converter/view-model';
 
-	let { pageCount, details }: { pageCount: number; details: InspectionView | null } = $props();
+	let {
+		pageCount,
+		details,
+		class: className = ''
+	}: { pageCount: number; details: InspectionView | null; class?: string } = $props();
 </script>
 
 <aside
-	class="min-w-0 overflow-auto border-r border-subtle bg-bg p-2.5 max-[720px]:border-r-0 max-[720px]:border-t"
+	class="min-w-0 overflow-auto border-r border-subtle bg-bg p-2.5 {className}"
 	aria-label="Document information"
 >
-	<span class="text-[11px] font-semibold text-muted">inspect</span>
+	<span class="text-[10px] font-semibold text-muted">document info</span>
 	<dl class="mt-1.5">
 		<div class="grid grid-cols-[0.7fr_1fr] gap-1.5 border-b border-subtle py-1.5 text-[11px]">
 			<dt class="text-muted">Pages</dt><dd class="m-0 break-words text-right">{pageCount}</dd>
