@@ -108,6 +108,7 @@ test('dragging a file expands the drop target across the viewport', async ({ pag
 
 	const overlay = page.locator('.drop-overlay');
 	await expect(overlay).toBeVisible();
+	await expect.poll(() => overlay.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
 	await expect(overlay).toContainText('drop .sdocx to open');
 	const bounds = await overlay.boundingBox();
 	expect(bounds).not.toBeNull();
@@ -118,6 +119,7 @@ test('dragging a file expands the drop target across the viewport', async ({ pag
 
 	await page.locator('body').dispatchEvent('dragleave', { dataTransfer });
 	await expect(overlay).toBeHidden();
+	expect(await overlay.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeLessThan(0.1);
 });
 
 test('regression suite exposes explicit, user-triggered runs', async ({ page }) => {
@@ -141,6 +143,27 @@ test('theme preference survives navigation', async ({ page }) => {
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
+test('interface motion follows the reduced-motion preference', async ({ page }) => {
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.goto('/');
+
+	const timings = await page.locator('.intro').evaluate((element) => {
+		const introStyles = getComputedStyle(element);
+		const overlayStyles = getComputedStyle(document.querySelector('.drop-overlay')!);
+		return {
+			animationSeconds: Number.parseFloat(introStyles.animationDuration),
+			animationDelaySeconds: Number.parseFloat(introStyles.animationDelay),
+			transitionSeconds: Number.parseFloat(overlayStyles.transitionDuration),
+			transitionDelaySeconds: Number.parseFloat(overlayStyles.transitionDelay)
+		};
+	});
+
+	expect(timings.animationSeconds).toBeLessThan(0.001);
+	expect(timings.animationDelaySeconds).toBe(0);
+	expect(timings.transitionSeconds).toBeLessThan(0.001);
+	expect(timings.transitionDelaySeconds).toBe(0);
+});
+
 test('real fixture parses, renders, and exports without an upload', async ({ page }, testInfo) => {
 	test.skip(testInfo.project.name !== 'chromium', 'One real WASM smoke test is sufficient.');
 	test.skip(!existsSync(localFixture), 'Set SDOCX_E2E_FIXTURE or check out the external corpus.');
@@ -160,10 +183,15 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	const pageStack = page.locator('.page-stack');
 	await expect(pageStack.locator('img')).toHaveCount(5);
 	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
+	const viewerBody = page.locator('.viewer-body');
+	const detailsShell = page.locator('.details-shell');
 	await page.getByRole('button', { name: 'Document information' }).click();
+	await expect(viewerBody).toHaveClass(/details-open/);
+	await expect.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
 	await expect(page.getByText('No parser warnings')).toBeVisible();
 	await page.getByRole('button', { name: 'Document information' }).click();
 	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
+	await expect.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeLessThan(0.1);
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
 	const colorModes = [
 		page.getByRole('radio', { name: 'Automatic color mode' }),
@@ -225,6 +253,8 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 		clientY: 400
 	});
 	await expect(pageStack).toHaveAttribute('data-zoom', '100');
+	await expect(pageStack).not.toHaveClass(/zooming/);
+	await expect(pageStack).not.toHaveClass(/recentering/);
 
 	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
 	await page.getByRole('button', { name: 'Next page' }).click();

@@ -15,11 +15,13 @@
 </script>
 
 <button class="theme-toggle" type="button" onclick={toggle} aria-label={`Use ${theme === 'dark' ? 'light' : 'dark'} theme`}>
-	{#if theme === 'dark'}
-		<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
-	{:else}
-		<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.4 15.5A9 9 0 0 1 8.5 3.6 9 9 0 1 0 20.4 15.5Z"/></svg>
-	{/if}
+	{#key theme}
+		{#if theme === 'dark'}
+			<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+		{:else}
+			<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.4 15.5A9 9 0 0 1 8.5 3.6 9 9 0 1 0 20.4 15.5Z"/></svg>
+		{/if}
+	{/key}
 </button>
 
 <style>
@@ -33,7 +35,10 @@
 		background: transparent;
 		color: var(--site-muted);
 		cursor: pointer;
-		transition: background-color 140ms ease, color 140ms ease;
+		transition:
+			background-color var(--motion-fast) var(--ease-standard),
+			color var(--motion-fast) var(--ease-standard),
+			transform var(--motion-control) var(--ease-out);
 	}
 
 	.theme-toggle:hover {
@@ -49,5 +54,11 @@
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		stroke-width: 1.7;
+		animation: theme-icon-in var(--motion-standard) var(--ease-out) both;
+	}
+
+	@keyframes theme-icon-in {
+		from { opacity: 0; transform: rotate(-18deg) scale(0.78); }
+		to { opacity: 1; transform: rotate(0) scale(1); }
 	}
 </style>

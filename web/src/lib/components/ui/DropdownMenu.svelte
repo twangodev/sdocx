@@ -43,7 +43,8 @@
 				{:else}
 					<DropdownMenu.Item
 						disabled={entry.disabled ?? false}
-						class={itemClass}
+						class="{itemClass} motion-menu-item"
+						style={`--motion-index: ${index}`}
 						onSelect={() => select(entry)}
 					>
 						<MenuLeafBody {entry} />

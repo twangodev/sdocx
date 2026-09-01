@@ -45,7 +45,7 @@
 		aria-label="Page number"
 		{value}
 		{disabled}
-		class="h-5 w-6 rounded border border-subtle bg-transparent px-0.5 text-center text-text outline-none transition-colors focus:border-control-edge disabled:opacity-40"
+		class="h-5 w-6 rounded border border-subtle bg-transparent px-0.5 text-center text-text outline-none transition-[border-color,background-color] duration-150 ease-out focus:border-control-edge focus:bg-raised disabled:opacity-40"
 		onfocus={(event) => {
 			draft = String(pageIndex + 1);
 			editing = true;
