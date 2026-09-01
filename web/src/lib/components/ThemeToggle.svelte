@@ -25,8 +25,8 @@
 <style>
 	.theme-toggle {
 		display: grid;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 1.85rem;
+		height: 1.85rem;
 		place-items: center;
 		border: 0;
 		border-radius: 0.25rem;

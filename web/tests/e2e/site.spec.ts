@@ -24,7 +24,7 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 });
 
 test('dragging a file expands the drop target across the viewport', async ({ page }) => {
-	await page.goto('/');
+	await page.goto('/', { waitUntil: 'networkidle' });
 	const dataTransfer = await page.evaluateHandle(() => {
 		const transfer = new DataTransfer();
 		transfer.items.add(new File(['fixture'], 'dragged.sdocx', { type: 'application/zip' }));
@@ -86,7 +86,7 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	const pageStack = page.locator('.page-stack');
 	await expect(pageStack.locator('img')).toHaveCount(5);
 	await expect(page.getByText('No parser warnings')).toBeVisible();
-	await expect(pageStack).toHaveAttribute('data-zoom', '100');
+	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
 	await page.getByRole('button', { name: 'Zoom in' }).click();
 	await expect(pageStack).toHaveAttribute('data-zoom', '125');
 	await page.getByRole('button', { name: 'Fit page' }).click();

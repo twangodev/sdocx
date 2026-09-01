@@ -27,18 +27,18 @@
 
 	header {
 		display: flex;
-		min-height: 3rem;
+		min-height: 2.5rem;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 0.65rem;
 		border-bottom: 1px solid var(--site-border);
-		padding: 0 1rem;
+		padding: 0 0.7rem;
 	}
 
 	.wordmark {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45rem;
+		gap: 0.35rem;
 		color: var(--site-text);
 		font-size: 0.9rem;
 		font-weight: 550;
@@ -53,7 +53,7 @@
 	nav {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.55rem;
 	}
 
 	nav a {

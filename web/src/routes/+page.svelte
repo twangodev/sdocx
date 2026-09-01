@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { Download, FolderOpen, Maximize2, MoveHorizontal, RefreshCw, X } from '@lucide/svelte';
 	import { ConverterClient } from '$converter/client';
 	import {
 		assertAcceptedFile,
@@ -28,7 +29,7 @@
 	let colorMode = $state<ColorMode>('auto');
 	let pngScale = $state<1 | 2>(1);
 	let previewZoom = $state(100);
-	let fitPage = $state(false);
+	let fitPage = $state(true);
 	let previewUrls = $state<string[]>([]);
 	let previewScroller = $state<HTMLDivElement>();
 	let phase = $state<WorkerPhase | null>(null);
@@ -73,7 +74,7 @@
 		details = null;
 		pageIndex = 0;
 		previewZoom = 100;
-		fitPage = false;
+		fitPage = true;
 	}
 
 	async function closeDocument(): Promise<void> {
@@ -398,6 +399,7 @@
 			class="drop-zone"
 			onclick={() => picker?.click()}
 		>
+			{#if !parsing}<FolderOpen size={13} strokeWidth={1.4} />{/if}
 			{parsing ? status : 'open .sdocx'}
 		</button>
 		<p class="drop-hint">{parsing ? 'processing locally' : 'or drop one here · max 250 MiB'}</p>
@@ -422,8 +424,20 @@
 				<p>{activeFile.name} · {formatBytes(activeFile.size)} · {summary.pageCount} {summary.pageCount === 1 ? 'page' : 'pages'} · local</p>
 			</div>
 			<div class="heading-actions">
-				<button class="control" type="button" onclick={() => picker?.click()}>replace</button>
-				<button class="control" type="button" onclick={() => void closeDocument()}>close</button>
+				<button
+					class="control icon-control"
+					type="button"
+					aria-label="Replace document"
+					title="Replace document"
+					onclick={() => picker?.click()}><RefreshCw size={12} strokeWidth={1.4} /></button
+				>
+				<button
+					class="control icon-control"
+					type="button"
+					aria-label="Close document"
+					title="Close document"
+					onclick={() => void closeDocument()}><X size={13} strokeWidth={1.4} /></button
+				>
 			</div>
 		</div>
 
@@ -514,7 +528,8 @@
 							aria-label="Fit width"
 							aria-pressed={!fitPage && previewZoom === 100}
 							disabled={exporting || rendering}
-							onclick={fitPreviewWidth}>width</button
+							title="Fit width"
+							onclick={fitPreviewWidth}><MoveHorizontal size={12} strokeWidth={1.4} /></button
 						>
 						<button
 							type="button"
@@ -523,7 +538,8 @@
 							aria-label="Fit page"
 							aria-pressed={fitPage}
 							disabled={exporting || rendering}
-							onclick={fitPreviewPage}>page</button
+							title="Fit page"
+							onclick={fitPreviewPage}><Maximize2 size={12} strokeWidth={1.4} /></button
 						>
 					</div>
 					<div class="mode-switch" aria-label="Document color mode">
@@ -583,8 +599,8 @@
 				<div class="panel-title"><span class="mono-label">export</span></div>
 				<div class="export-group">
 					<span class="group-label">Current page</span>
-					<button class="control primary" disabled={exporting || rendering} onclick={downloadCurrentSvg}>SVG <span>↓</span></button>
-					<button class="control" disabled={exporting || rendering} onclick={downloadCurrentPng}>PNG <span>↓</span></button>
+					<button class="control primary" disabled={exporting || rendering} onclick={downloadCurrentSvg}>SVG <Download size={12} strokeWidth={1.4} /></button>
+					<button class="control" disabled={exporting || rendering} onclick={downloadCurrentPng}>PNG <Download size={12} strokeWidth={1.4} /></button>
 					<label class="scale-control">
 						<span>PNG scale</span>
 						<select bind:value={pngScale}><option value={1}>1×</option><option value={2}>2×</option></select>
@@ -600,7 +616,7 @@
 
 				<div class="export-group final">
 					<span class="group-label">Structure</span>
-					<button class="control" disabled={exporting} onclick={downloadJson}>document JSON <span>↓</span></button>
+					<button class="control" disabled={exporting} onclick={downloadJson}>document JSON <Download size={12} strokeWidth={1.4} /></button>
 				</div>
 
 				{#if exporting}
@@ -614,30 +630,32 @@
 
 <style>
 	.intro {
-		width: min(100% - 3rem, 28rem);
+		width: min(100% - 2rem, 25rem);
 		margin: auto;
 	}
 
 	h1 {
 		margin: 0;
-		font-size: 1.45rem;
+		font-size: 1.3rem;
 		font-weight: 550;
 		letter-spacing: -0.025em;
 		line-height: 1.15;
 	}
 
 	.lede {
-		margin: 0.65rem 0 1.75rem;
+		margin: 0.45rem 0 1.15rem;
 		color: var(--site-muted);
 		font-size: 0.875rem;
 		line-height: 1.5;
 	}
 
 	.drop-zone {
-		display: grid;
+		display: inline-flex;
 		width: 100%;
-		height: 2.4rem;
+		height: 2.15rem;
 		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
 		border: 0;
 		border-radius: 0.25rem;
 		background: var(--site-text);
@@ -694,7 +712,7 @@
 	}
 
 	.drop-hint {
-		margin: 0.7rem 0 0;
+		margin: 0.5rem 0 0;
 		color: var(--site-muted);
 		font-size: 0.7rem;
 		text-align: center;
@@ -735,7 +753,7 @@
 	.workspace {
 		display: flex;
 		width: 100%;
-		height: calc(100svh - 3rem);
+		height: calc(100svh - 2.5rem);
 		min-width: 0;
 		min-height: 0;
 		flex-direction: column;
@@ -744,12 +762,12 @@
 
 	.workspace-heading {
 		display: flex;
-		min-height: 3.65rem;
+		min-height: 2.85rem;
 		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 0.65rem;
 		border-bottom: 1px solid var(--site-border);
-		padding: 0.55rem 1rem;
+		padding: 0.4rem 0.7rem;
 	}
 
 	.workspace-heading h1 {
@@ -763,7 +781,7 @@
 	}
 
 	.workspace-heading p {
-		margin: 0.2rem 0 0;
+		margin: 0.1rem 0 0;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
 		font-size: 0.6rem;
@@ -771,14 +789,21 @@
 
 	.heading-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.3rem;
+	}
+
+	.icon-control {
+		width: 1.75rem;
+		border: 0;
+		padding: 0;
+		color: var(--site-muted);
 	}
 
 	.work-grid {
 		display: grid;
 		min-height: 0;
 		flex: 1;
-		grid-template-columns: 220px minmax(360px, 1fr) 220px;
+		grid-template-columns: 188px minmax(360px, 1fr) 188px;
 	}
 
 	.panel,
@@ -789,7 +814,7 @@
 
 	.panel {
 		overflow: auto;
-		padding: 0.9rem;
+		padding: 0.65rem;
 	}
 
 	.document-panel {
@@ -803,20 +828,20 @@
 	.panel-title {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.45rem;
 		color: var(--site-muted);
 	}
 
 	dl {
-		margin: 0.65rem 0 0;
+		margin: 0.4rem 0 0;
 	}
 
 	dl div {
 		display: grid;
 		grid-template-columns: 0.7fr 1fr;
-		gap: 0.5rem;
+		gap: 0.35rem;
 		border-bottom: 1px solid var(--site-border);
-		padding: 0.55rem 0;
+		padding: 0.38rem 0;
 		font-size: 0.7rem;
 	}
 
@@ -831,15 +856,15 @@
 	}
 
 	.diagnostics {
-		margin-top: 1.5rem;
+		margin-top: 1rem;
 	}
 
 	.diagnostics ul {
 		display: flex;
-		margin: 0.8rem 0 0;
+		margin: 0.5rem 0 0;
 		padding: 0;
 		flex-direction: column;
-		gap: 0.65rem;
+		gap: 0.45rem;
 		list-style: none;
 	}
 
@@ -858,7 +883,7 @@
 	}
 
 	.clean {
-		margin: 0.9rem 0 0;
+		margin: 0.55rem 0 0;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
 		font-size: 0.68rem;
@@ -879,12 +904,12 @@
 
 	.preview-toolbar {
 		display: flex;
-		min-height: 3rem;
+		min-height: 2.35rem;
 		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
+		justify-content: flex-start;
+		gap: 0.4rem;
 		border-bottom: 1px solid var(--site-border);
-		padding: 0.45rem 0.7rem;
+		padding: 0.3rem 0.5rem;
 	}
 
 	.preview-toolbar select,
@@ -899,26 +924,20 @@
 
 	.viewer-controls {
 		display: flex;
-		height: 1.9rem;
+		height: 1.55rem;
 		align-items: stretch;
-		border: 1px solid var(--site-border);
-		border-radius: 0.25rem;
-		overflow: hidden;
+		gap: 0.1rem;
 	}
 
 	.viewer-controls button {
-		min-width: 1.8rem;
+		min-width: 1.55rem;
 		border: 0;
-		border-right: 1px solid var(--site-border);
+		border-radius: 0.2rem;
 		background: transparent;
-		padding: 0 0.45rem;
+		padding: 0 0.3rem;
 		color: var(--site-muted);
 		font-size: 0.75rem;
 		cursor: pointer;
-	}
-
-	.viewer-controls button:last-child {
-		border-right: 0;
 	}
 
 	.viewer-controls button:hover:not(:disabled),
@@ -935,7 +954,11 @@
 	.page-controls label {
 		display: flex;
 		flex: 1;
-		border-right: 1px solid var(--site-border);
+		border-radius: 0.2rem;
+	}
+
+	.page-controls label:hover {
+		background: var(--site-surface);
 	}
 
 	.page-controls select {
@@ -945,32 +968,32 @@
 
 	.zoom-value {
 		display: grid;
-		min-width: 3rem;
+		min-width: 2.7rem;
 		place-items: center;
-		border-right: 1px solid var(--site-border);
 		color: var(--site-text);
 		font-family: var(--font-mono);
 		font-size: 0.58rem;
 	}
 
 	.viewer-controls .fit-control {
-		padding: 0 0.5rem;
+		padding: 0;
 		font-family: var(--font-mono);
 		font-size: 0.55rem;
 	}
 
 	.mode-switch {
 		display: flex;
+		margin-left: auto;
 		border: 1px solid var(--site-border);
 		border-radius: 0.35rem;
-		padding: 0.15rem;
+		padding: 0.1rem;
 	}
 
 	.mode-switch button {
 		border: 0;
 		border-radius: 0.25rem;
 		background: transparent;
-		padding: 0.3rem 0.5rem;
+		padding: 0.22rem 0.4rem;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
 		font-size: 0.58rem;
@@ -987,7 +1010,7 @@
 		min-height: 0;
 		flex: 1;
 		overflow: auto;
-		padding: clamp(1rem, 2vw, 2rem);
+		padding: clamp(0.65rem, 1.2vw, 1rem);
 		background: var(--site-canvas);
 		overscroll-behavior: contain;
 	}
@@ -998,7 +1021,7 @@
 		margin: 0 auto;
 		align-items: center;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 0.85rem;
 	}
 
 	figure {
@@ -1007,8 +1030,8 @@
 		margin: 0;
 		align-items: center;
 		flex-direction: column;
-		gap: 0.45rem;
-		scroll-margin-top: 1rem;
+		gap: 0.25rem;
+		scroll-margin-top: 0.65rem;
 	}
 
 	figure img {
@@ -1022,7 +1045,7 @@
 
 	.page-stack.fit-page figure img {
 		width: auto;
-		max-height: calc(100svh - 17rem);
+		max-height: calc(100svh - 11.5rem);
 	}
 
 	figcaption {
@@ -1067,9 +1090,9 @@
 	@keyframes spin { to { transform: rotate(360deg); } }
 
 	.status-line {
-		min-height: 2.2rem;
+		min-height: 1.75rem;
 		border-top: 1px solid var(--site-border);
-		padding: 0.65rem 0.8rem;
+		padding: 0.45rem 0.6rem;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
 		font-size: 0.59rem;
@@ -1085,11 +1108,11 @@
 
 	.export-group {
 		display: flex;
-		margin-top: 0.75rem;
+		margin-top: 0.5rem;
 		flex-direction: column;
-		gap: 0.4rem;
+		gap: 0.3rem;
 		border-bottom: 1px solid var(--site-border);
-		padding-bottom: 0.8rem;
+		padding-bottom: 0.55rem;
 	}
 
 	.export-group.final {
@@ -1097,7 +1120,7 @@
 	}
 
 	.group-label {
-		margin-bottom: 0.2rem;
+		margin-bottom: 0.05rem;
 		color: var(--site-muted);
 		font-size: 0.7rem;
 	}
@@ -1115,7 +1138,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.35rem 0.1rem;
+		padding: 0.2rem 0.1rem;
 		color: var(--site-muted);
 		font-family: var(--font-mono);
 		font-size: 0.62rem;
@@ -1127,7 +1150,7 @@
 
 	@media (max-width: 1050px) {
 		.work-grid {
-			grid-template-columns: 200px minmax(360px, 1fr);
+			grid-template-columns: 180px minmax(360px, 1fr);
 		}
 
 		.export-panel {
@@ -1145,7 +1168,7 @@
 	@media (max-width: 720px) {
 		.workspace {
 			height: auto;
-			min-height: calc(100svh - 3rem);
+			min-height: calc(100svh - 2.5rem);
 			overflow: visible;
 		}
 
@@ -1182,6 +1205,10 @@
 		.preview-toolbar {
 			align-items: stretch;
 			flex-direction: column;
+		}
+
+		.mode-switch {
+			margin-left: 0;
 		}
 
 		.mode-switch button {
