@@ -8,8 +8,6 @@
 		label: string;
 		disabled?: boolean;
 		itemLabel?: (option: T) => string;
-		itemClass?: string;
-		itemStyle?: (option: T) => string;
 		itemTitle?: (option: T) => string;
 		item?: Snippet<[T, boolean]>;
 		class?: string;
@@ -21,8 +19,6 @@
 		label,
 		disabled = false,
 		itemLabel = (option) => option,
-		itemClass = 'border-subtle text-[11px] text-muted lowercase hover:text-text data-[state=on]:border-control-edge data-[state=on]:bg-surface data-[state=on]:text-text',
-		itemStyle,
 		itemTitle,
 		item,
 		class: className = ''
@@ -33,7 +29,7 @@
 	type="single"
 	bind:value={() => value, (next) => next && (value = next as T)}
 	aria-label={label}
-	class="flex gap-1 {className}"
+	class="inline-grid h-6 grid-flow-col auto-cols-fr items-center rounded border border-subtle bg-surface p-px {className}"
 >
 	{#each options as option (option)}
 		<ToggleGroup.Item
@@ -41,8 +37,7 @@
 			aria-label={itemLabel(option)}
 			title={itemTitle?.(option)}
 			{disabled}
-			style={itemStyle?.(option)}
-			class="h-6 flex-1 cursor-pointer rounded border transition-colors {itemClass}"
+			class="flex h-5 min-w-0 cursor-pointer items-center justify-center rounded-[3px] border-0 bg-transparent p-0 leading-none text-muted outline-none transition-[background-color,color,box-shadow] hover:text-text disabled:cursor-default disabled:opacity-40 data-[state=on]:bg-raised data-[state=on]:text-text data-[state=on]:shadow-sm"
 		>
 			{#if item}{@render item(option, value === option)}{:else}{option}{/if}
 		</ToggleGroup.Item>

@@ -4,18 +4,15 @@
 		ChevronRight,
 		Maximize2,
 		Minus,
-		Monitor,
-		Moon,
 		MoveHorizontal,
-		Plus,
-		Sun
+		Plus
 	} from '@lucide/svelte';
 	import type { ColorMode } from '$converter/protocol';
 	import { separator, type MenuLeaf } from '$lib/menu';
 	import CompactSelectMenu from './ui/CompactSelectMenu.svelte';
+	import ColorModeSwitch from './ui/ColorModeSwitch.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import PageNumberInput from './ui/PageNumberInput.svelte';
-	import SegmentedControl from './ui/SegmentedControl.svelte';
 
 	interface Props {
 		pageIndex: number;
@@ -50,7 +47,6 @@
 	}: Props = $props();
 
 	const zoomSteps = [50, 75, 100, 125, 150, 175, 200];
-	const colorModes = ['auto', 'light', 'dark'] as const;
 	type ZoomAction = 'page' | 'width' | number;
 
 	const zoomMenu = $derived(makeZoomMenu(fitPage, previewZoom));
@@ -75,11 +71,6 @@
 		else onSetZoom(action);
 	}
 
-	function colorModeLabel(mode: ColorMode): string {
-		if (mode === 'auto') return 'Automatic color mode';
-		if (mode === 'light') return 'Light document mode';
-		return 'Dark document mode';
-	}
 </script>
 
 <div
@@ -146,23 +137,10 @@
 		</IconButton>
 	</div>
 
-	<SegmentedControl
-		options={colorModes}
-		label="Document color mode"
+	<ColorModeSwitch
+		value={colorMode}
 		{disabled}
-		itemLabel={colorModeLabel}
-		itemTitle={colorModeLabel}
-		bind:value={() => colorMode, (next) => onColorMode(next)}
-		class="ml-auto w-24 max-[520px]:ml-0 max-[520px]:w-full"
-	>
-		{#snippet item(mode)}
-			{#if mode === 'auto'}
-				<Monitor size={12} strokeWidth={1.4} />
-			{:else if mode === 'light'}
-				<Sun size={12} strokeWidth={1.4} />
-			{:else}
-				<Moon size={12} strokeWidth={1.4} />
-			{/if}
-		{/snippet}
-	</SegmentedControl>
+		onChange={onColorMode}
+		class="ml-auto max-[520px]:ml-0 max-[520px]:self-end"
+	/>
 </div>
