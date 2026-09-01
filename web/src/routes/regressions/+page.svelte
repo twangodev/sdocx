@@ -186,7 +186,7 @@
 	/>
 </svelte:head>
 
-<section class="regression-page" aria-labelledby="regression-title">
+<section class="regression-page motion-surface-in" aria-labelledby="regression-title">
 	<header class="page-heading">
 		<div class="heading-copy">
 			<h1 id="regression-title">Regression lab</h1>
@@ -219,7 +219,7 @@
 	</header>
 
 	{#if uiError}
-		<div class="error-banner" role="alert"><strong>Could not continue.</strong> {uiError}</div>
+		<div class="error-banner motion-surface-in" role="alert"><strong>Could not continue.</strong> {uiError}</div>
 	{/if}
 
 	<div class="workspace">
@@ -250,7 +250,7 @@
 
 		<section class="detail">
 			{#if selectedResult}
-				<div class="panel-heading detail-heading">
+				<div class="panel-heading detail-heading motion-fade-in">
 					<h2>{selectedResult.fixture.id}</h2>
 					{#if selectedResult.durationMs !== undefined}
 						<span class="duration mono-label">{(selectedResult.durationMs / 1000).toFixed(1)} s</span>
@@ -258,7 +258,7 @@
 				</div>
 
 				{#if selectedResult.error}
-					<div class="fixture-error"><strong>Run did not pass.</strong> {selectedResult.error}</div>
+					<div class="fixture-error motion-surface-in"><strong>Run did not pass.</strong> {selectedResult.error}</div>
 				{/if}
 
 				<section class="local-source" aria-labelledby="local-source-heading">
@@ -316,7 +316,7 @@
 					{:else}
 						<div class="check-grid">
 							{#each selectedResult.checks as item}
-								<div class:check-failed={!item.passed} class="check-row">
+								<div class:check-failed={!item.passed} class="check-row motion-fade-in">
 									<span class="check-icon" aria-hidden="true">
 										{#if item.passed}
 											<Check size={11} strokeWidth={2.5} />
@@ -372,20 +372,20 @@
 							>
 						</div>
 
-						{#if viewMode === 'opacity'}
-							<label class="range-control">
+					{#if viewMode === 'opacity'}
+						<label class="range-control motion-surface-in">
 								Generated opacity <strong>{opacity}%</strong>
 								<input type="range" min="0" max="100" bind:value={opacity} />
 							</label>
-						{:else if viewMode === 'swipe'}
-							<label class="range-control">
+					{:else if viewMode === 'swipe'}
+						<label class="range-control motion-surface-in">
 								Reveal generated <strong>{swipe}%</strong>
 								<input type="range" min="0" max="100" bind:value={swipe} />
 							</label>
 						{/if}
 
-						{#if viewMode === 'side-by-side'}
-							<div class="side-by-side">
+					{#if viewMode === 'side-by-side'}
+						<div class="side-by-side motion-fade-in">
 								<figure>
 									<img src={selectedPage.actualRasterUrl} alt="Generated SDOCX page" />
 									<figcaption>Generated SVG</figcaption>
@@ -395,13 +395,13 @@
 									<figcaption>Reference PDF</figcaption>
 								</figure>
 							</div>
-						{:else if viewMode === 'heatmap'}
-							<figure class="single-page heatmap">
+					{:else if viewMode === 'heatmap'}
+						<figure class="single-page heatmap motion-fade-in">
 								<img src={selectedPage.heatmapUrl} alt="Pixel difference heatmap" />
 								<figcaption>Brighter red pixels have larger RGB differences.</figcaption>
 							</figure>
-						{:else}
-							<div class="image-stack">
+					{:else}
+						<div class="image-stack motion-fade-in">
 								<img src={selectedPage.referenceUrl} alt="Samsung Notes reference PDF page" />
 								<img
 									class="generated-layer"
@@ -457,13 +457,13 @@
 	.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-bottom: 1px solid var(--site-border); padding: 1.15rem 1.25rem; }
 	.panel-heading h2, .section-heading h3 { margin-bottom: 0; font-weight: 610; letter-spacing: -0.025em; }
 	.panel-heading > span { color: var(--site-muted); font-size: 0.75rem; }
-	.fixture { display: block; width: 100%; border: 0; border-bottom: 1px solid var(--site-border); background: transparent; padding: 1rem 1.15rem; color: var(--site-text); text-align: left; cursor: pointer; }
+	.fixture { display: block; width: 100%; border: 0; border-bottom: 1px solid var(--site-border); background: transparent; padding: 1rem 1.15rem; color: var(--site-text); text-align: left; cursor: pointer; transition: background-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard), transform var(--motion-control) var(--ease-out); }
 	.fixture:last-child { border-bottom: 0; }
 	.fixture:hover, .fixture.chosen { background: color-mix(in srgb, #167bff 7%, var(--site-raised)); }
 	.fixture.chosen { box-shadow: inset 2px 0 #167bff; }
 	.fixture-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 	.fixture-top strong { font-size: 0.86rem; }
-	.status { border-radius: 999px; background: var(--site-surface); padding: 0.25rem 0.4rem; color: var(--site-muted); font-size: 0.57rem; letter-spacing: 0.04em; }
+	.status { border-radius: 999px; background: var(--site-surface); padding: 0.25rem 0.4rem; color: var(--site-muted); font-size: 0.57rem; letter-spacing: 0.04em; transition: background-color var(--motion-standard) var(--ease-standard), color var(--motion-standard) var(--ease-standard); }
 	.status[data-tone='active'] { background: color-mix(in srgb, #167bff 12%, var(--site-surface)); color: #167bff; }
 	.status[data-tone='success'] { background: color-mix(in srgb, #4e9c70 15%, var(--site-surface)); color: #4e9c70; }
 	.status[data-tone='danger'] { background: color-mix(in srgb, #e45a4f 14%, var(--site-surface)); color: #e45a4f; }
@@ -478,10 +478,10 @@
 	.section-heading p { margin: 0.3rem 0 0; color: var(--site-muted); font-size: 0.78rem; }
 	.section-heading > strong { color: #4e9c70; font-family: var(--font-mono); font-size: 1rem; }
 	.section-heading > strong.failed { color: #e45a4f; }
-	.text-button { border: 0; background: transparent; padding: 0; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.66rem; cursor: pointer; }
+	.text-button { border: 0; background: transparent; padding: 0; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.66rem; cursor: pointer; transition: color var(--motion-fast) var(--ease-standard), transform var(--motion-control) var(--ease-out); }
 	.text-button:hover { color: #167bff; }
 	.local-files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
-	.file-control { display: grid; min-width: 0; gap: 0.25rem; border: 1px dashed var(--site-border); border-radius: 0.45rem; background: var(--site-raised); padding: 0.85rem; cursor: pointer; }
+	.file-control { display: grid; min-width: 0; gap: 0.25rem; border: 1px dashed var(--site-border); border-radius: 0.45rem; background: var(--site-raised); padding: 0.85rem; cursor: pointer; transition: border-color var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard), transform var(--motion-control) var(--ease-out); }
 	.file-control:hover { border-color: color-mix(in srgb, #167bff 65%, var(--site-border)); }
 	.file-control input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 	.file-control span { color: #167bff; }
@@ -498,7 +498,7 @@
 	.check-row strong { font-size: 0.75rem; }
 	.check-row small { margin-top: 0.18rem; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.6rem; white-space: nowrap; }
 	.view-controls { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.8rem; }
-	.view-controls button, .view-controls a { border: 1px solid var(--site-border); border-radius: 0.35rem; background: var(--site-surface); padding: 0.42rem 0.6rem; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.63rem; text-decoration: none; text-transform: lowercase; cursor: pointer; }
+	.view-controls button, .view-controls a { border: 1px solid var(--site-border); border-radius: 0.35rem; background: var(--site-surface); padding: 0.42rem 0.6rem; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.63rem; text-decoration: none; text-transform: lowercase; cursor: pointer; transition: border-color var(--motion-fast) var(--ease-standard), background-color var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard), transform var(--motion-control) var(--ease-out); }
 	.view-controls button:hover, .view-controls button.active, .view-controls a:hover { border-color: color-mix(in srgb, #167bff 65%, var(--site-border)); color: #167bff; }
 	.view-controls a { margin-left: auto; }
 	.range-control { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 0.6rem; margin: 0.65rem 0 0.9rem; color: var(--site-muted); font-family: var(--font-mono); font-size: 0.65rem; }

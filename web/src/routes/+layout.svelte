@@ -44,6 +44,9 @@
 		font-weight: 550;
 		letter-spacing: 0.01em;
 		text-decoration: none;
+		transition:
+			color var(--motion-fast) var(--ease-standard),
+			transform var(--motion-control) var(--ease-out);
 	}
 
 	.wordmark:hover {
@@ -62,6 +65,7 @@
 		font-size: 0.68rem;
 		text-decoration: none;
 		text-transform: lowercase;
+		transition: color var(--motion-fast) var(--ease-standard);
 	}
 
 	nav a:hover {

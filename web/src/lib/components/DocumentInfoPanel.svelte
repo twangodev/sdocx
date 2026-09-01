@@ -5,16 +5,18 @@
 	let {
 		pageCount,
 		details,
+		open = false,
 		class: className = ''
-	}: { pageCount: number; details: InspectionView | null; class?: string } = $props();
+	}: { pageCount: number; details: InspectionView | null; open?: boolean; class?: string } = $props();
 </script>
 
 <aside
-	class="min-w-0 overflow-auto border-r border-subtle bg-bg p-2.5 {className}"
+	class="document-info-panel min-w-0 overflow-auto border-r border-subtle bg-bg p-2.5 {className}"
+	class:open
 	aria-label="Document information"
 >
-	<span class="text-[10px] font-semibold text-muted">document info</span>
-	<dl class="mt-1.5">
+	<span class="panel-reveal text-[10px] font-semibold text-muted">document info</span>
+	<dl class="panel-reveal mt-1.5 [--reveal-delay:35ms]">
 		<div class="grid grid-cols-[0.7fr_1fr] gap-1.5 border-b border-subtle py-1.5 text-[11px]">
 			<dt class="text-muted">Pages</dt><dd class="m-0 break-words text-right">{pageCount}</dd>
 		</div>
@@ -39,7 +41,7 @@
 		{/if}
 	</dl>
 
-	<div class="mt-4">
+	<div class="panel-reveal mt-4 [--reveal-delay:65ms]">
 		<span class="text-[11px] font-semibold text-muted">diagnostics</span>
 		{#if details?.diagnostics.length}
 			<ul class="mt-2 flex list-none flex-col gap-2 p-0">
@@ -59,3 +61,18 @@
 		{/if}
 	</div>
 </aside>
+
+<style>
+	.panel-reveal {
+		opacity: 0;
+		transform: translateY(3px);
+		transition:
+			opacity var(--motion-standard) var(--ease-standard) var(--reveal-delay, 0ms),
+			transform var(--motion-panel) var(--ease-out) var(--reveal-delay, 0ms);
+	}
+
+	.document-info-panel.open .panel-reveal {
+		opacity: 1;
+		transform: translateY(0);
+	}
+</style>

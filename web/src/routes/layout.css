@@ -61,7 +61,11 @@
 	--site-text: #1a1916;
 	--site-muted: #736f65;
 	--site-border: #dedbd3;
+	--motion-control: 120ms;
 	--motion-fast: 140ms;
+	--motion-standard: 200ms;
+	--motion-panel: 240ms;
+	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
 	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 	background: var(--site-bg);
 	color: var(--site-text);
@@ -123,8 +127,30 @@ label:has(> input[type='file']):active {
 	animation: tooltip-in var(--motion-fast) var(--ease-out) both;
 }
 
+.motion-tooltip[data-state='closed'] {
+	animation: tooltip-out 90ms var(--ease-standard) both;
+}
+
 .motion-menu[data-state='open'] {
-	animation: menu-in 120ms var(--ease-out) both;
+	transform-origin: var(--bits-dropdown-menu-content-transform-origin);
+	animation: menu-in var(--motion-fast) var(--ease-out) both;
+}
+
+.motion-menu[data-state='closed'] {
+	animation: menu-out 100ms var(--ease-standard) both;
+}
+
+.motion-menu[data-state='open'] .motion-menu-item {
+	animation: menu-item-in var(--motion-fast) var(--ease-out) both;
+	animation-delay: calc(var(--motion-index, 0) * 10ms);
+}
+
+.motion-surface-in {
+	animation: surface-in var(--motion-standard) var(--ease-out) both;
+}
+
+.motion-fade-in {
+	animation: fade-in var(--motion-fast) var(--ease-out) both;
 }
 
 @keyframes tooltip-in {
@@ -138,6 +164,13 @@ label:has(> input[type='file']):active {
 	}
 }
 
+@keyframes tooltip-out {
+	to {
+		opacity: 0;
+		transform: translateY(1px) scale(0.985);
+	}
+}
+
 @keyframes menu-in {
 	from {
 		opacity: 0;
@@ -147,6 +180,40 @@ label:has(> input[type='file']):active {
 		opacity: 1;
 		transform: translateY(0) scale(1);
 	}
+}
+
+@keyframes menu-out {
+	to {
+		opacity: 0;
+		transform: translateY(-2px) scale(0.99);
+	}
+}
+
+@keyframes menu-item-in {
+	from {
+		opacity: 0;
+		transform: translateY(-2px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes surface-in {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fade-in {
+	from { opacity: 0; }
+	to { opacity: 1; }
 }
 
 .mono-label {
@@ -168,10 +235,10 @@ label:has(> input[type='file']):active {
 	font-size: 0.7rem;
 	cursor: pointer;
 	transition:
-		border-color 140ms ease,
-		background-color 140ms ease,
-		color 140ms ease,
-		transform 140ms ease;
+		border-color var(--motion-fast) var(--ease-standard),
+		background-color var(--motion-fast) var(--ease-standard),
+		color var(--motion-fast) var(--ease-standard),
+		transform var(--motion-control) var(--ease-out);
 }
 
 .control:hover:not(:disabled) {
@@ -207,7 +274,9 @@ label:has(> input[type='file']):active {
 	*::after {
 		scroll-behavior: auto !important;
 		transition-duration: 0.01ms !important;
+		transition-delay: 0ms !important;
 		animation-duration: 0.01ms !important;
+		animation-delay: 0ms !important;
 		animation-iteration-count: 1 !important;
 	}
 }

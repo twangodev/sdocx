@@ -117,7 +117,7 @@
 
 	<div class="flex min-w-0 items-center justify-end gap-1">
 		{#if exporting}
-			<span class="max-w-36 truncate font-mono text-[9px] text-muted max-[620px]:hidden">
+			<span class="motion-fade-in max-w-36 truncate font-mono text-[9px] text-muted max-[620px]:hidden">
 				{exportProgress}
 			</span>
 		{/if}

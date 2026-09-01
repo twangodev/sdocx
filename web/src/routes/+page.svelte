@@ -356,17 +356,22 @@
 	ondrop={onWindowDrop}
 />
 
-{#if dragging}
-	<div class="drop-overlay" role="status" aria-live="polite">
-		<div class="drop-overlay-copy">
-			<strong>{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}</strong>
-			<span>release anywhere · processed locally</span>
-		</div>
+
+<div
+	class="drop-overlay"
+	class:visible={dragging}
+	role="status"
+	aria-live="polite"
+	aria-hidden={!dragging}
+>
+	<div class="drop-overlay-copy">
+		<strong>{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}</strong>
+		<span>release anywhere · processed locally</span>
 	</div>
-{/if}
+</div>
 
 {#if !hasDocument}
-	<section class="intro" aria-labelledby="intro-title">
+	<section class="intro motion-surface-in" aria-labelledby="intro-title">
 		<h1 id="intro-title">Open a Samsung Notes file</h1>
 		<p class="lede">
 			Preview and export .sdocx documents. Files stay in this browser.
@@ -392,10 +397,10 @@
 		{#if parsing}
 			<button class="cancel-link" type="button" onclick={cancel}>cancel parsing</button>
 		{/if}
-		{#if error}<p class="error" role="alert">{error}</p>{/if}
+		{#if error}<p class="error motion-surface-in" role="alert">{error}</p>{/if}
 	</section>
 {:else if summary && activeFile}
-	<section class="workspace" aria-label="Document converter">
+	<section class="workspace motion-surface-in" aria-label="Document converter">
 		<DocumentToolbar
 			title={details?.title || activeFile.name}
 			filename={activeFile.name}
@@ -436,14 +441,15 @@
 			onchange={onFileInput}
 		/>
 
-		<div class="viewer-body">
-			{#if detailsOpen}
+		<div class="viewer-body" class:details-open={detailsOpen}>
+			<div class="details-shell" aria-hidden={!detailsOpen} inert={!detailsOpen}>
 				<DocumentInfoPanel
 					pageCount={summary.pageCount}
 					{details}
-					class="w-56 shrink-0 max-[720px]:absolute max-[720px]:inset-y-0 max-[720px]:left-0 max-[720px]:z-20 max-[720px]:shadow-2xl"
+					open={detailsOpen}
+					class="h-full w-56"
 				/>
-			{/if}
+			</div>
 
 			<div class="preview-panel">
 				<div
@@ -460,7 +466,7 @@
 					{#if previewUrls.length}
 						<div
 							bind:this={zoom.surface}
-							class="page-stack"
+							class="page-stack motion-page-in"
 							class:fit-page={zoom.pageFit}
 							class:zooming={zoom.gestureZoom !== null}
 							class:recentering={zoom.recentering}
@@ -486,7 +492,7 @@
 							{/each}
 						</div>
 					{:else}
-						<div class="rendering-state">
+						<div class="rendering-state motion-fade-in">
 							{#if rendering}<span class="spinner" aria-hidden="true"></span>{/if}
 							<span>{rendering ? 'Preparing pages' : 'No visible page content'}</span>
 						</div>
@@ -498,7 +504,7 @@
 				</div>
 			</div>
 		</div>
-		{#if error}<p class="error workspace-error" role="alert">{error}</p>{/if}
+		{#if error}<p class="error workspace-error motion-surface-in" role="alert">{error}</p>{/if}
 	</section>
 {/if}
 
@@ -539,7 +545,9 @@
 		font-weight: 550;
 		text-align: center;
 		cursor: pointer;
-		transition: opacity 140ms ease, transform 140ms ease;
+		transition:
+			opacity var(--motion-fast) var(--ease-standard),
+			transform var(--motion-control) var(--ease-out);
 	}
 
 	.drop-zone:hover,
@@ -554,7 +562,18 @@
 		display: grid;
 		place-items: center;
 		background: color-mix(in srgb, var(--site-bg) 96%, transparent);
+		opacity: 0;
 		pointer-events: none;
+		visibility: hidden;
+		transition:
+			opacity var(--motion-standard) var(--ease-out),
+			visibility 0s linear var(--motion-standard);
+	}
+
+	.drop-overlay.visible {
+		opacity: 1;
+		visibility: visible;
+		transition-delay: 0s;
 	}
 
 	.drop-overlay::after {
@@ -563,6 +582,16 @@
 		border: 1px dashed var(--site-muted);
 		border-radius: 0.35rem;
 		content: '';
+		opacity: 0;
+		transform: scale(0.992);
+		transition:
+			opacity var(--motion-standard) var(--ease-out),
+			transform var(--motion-panel) var(--ease-out);
+	}
+
+	.drop-overlay.visible::after {
+		opacity: 1;
+		transform: scale(1);
 	}
 
 	.drop-overlay-copy {
@@ -571,6 +600,16 @@
 		flex-direction: column;
 		gap: 0.35rem;
 		text-align: center;
+		opacity: 0;
+		transform: translateY(6px) scale(0.985);
+		transition:
+			opacity var(--motion-standard) var(--ease-out),
+			transform var(--motion-panel) var(--ease-out);
+	}
+
+	.drop-overlay.visible .drop-overlay-copy {
+		opacity: 1;
+		transform: translateY(0) scale(1);
 	}
 
 	.drop-overlay-copy strong {
@@ -636,9 +675,32 @@
 
 	.viewer-body {
 		position: relative;
-		display: flex;
+		display: grid;
+		grid-template-columns: 0 minmax(0, 1fr);
 		min-height: 0;
 		flex: 1;
+		transition: grid-template-columns var(--motion-panel) var(--ease-out);
+	}
+
+	.viewer-body.details-open {
+		grid-template-columns: 14rem minmax(0, 1fr);
+	}
+
+	.details-shell {
+		min-width: 0;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+		transform: translateX(-8px);
+		transition:
+			opacity var(--motion-standard) var(--ease-standard),
+			transform var(--motion-panel) var(--ease-out);
+	}
+
+	.viewer-body.details-open .details-shell {
+		opacity: 1;
+		pointer-events: auto;
+		transform: translateX(0);
 	}
 
 	.preview-panel {
@@ -668,6 +730,10 @@
 		align-items: center;
 		flex-direction: column;
 		gap: 0.85rem;
+	}
+
+	.motion-page-in {
+		animation: page-stack-in var(--motion-standard) var(--ease-out) both;
 	}
 
 	.page-stack.zooming,
@@ -740,6 +806,11 @@
 
 	@keyframes spin { to { transform: rotate(360deg); } }
 
+	@keyframes page-stack-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
 	.status-line {
 		min-height: 1.75rem;
 		border-top: 1px solid var(--site-border);
@@ -770,6 +841,24 @@
 
 		.canvas-wrap {
 			min-height: 420px;
+		}
+
+		.viewer-body {
+			display: flex;
+		}
+
+		.details-shell {
+			position: absolute;
+			inset: 0 auto 0 0;
+			z-index: 20;
+			width: 14rem;
+			background: var(--site-bg);
+			box-shadow: 18px 0 40px color-mix(in srgb, black 18%, transparent);
+			transform: translateX(-100%);
+		}
+
+		.viewer-body.details-open .details-shell {
+			transform: translateX(0);
 		}
 	}
 
