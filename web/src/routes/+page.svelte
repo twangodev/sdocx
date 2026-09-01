@@ -21,7 +21,8 @@
 		textBytes
 	} from '$converter/files';
 	import { toInspectionView, type InspectionView } from '$converter/view-model';
-	import { wheelZoom, type ZoomAnchor } from '$lib/viewer/wheel-zoom';
+	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
+	import { wheelZoom } from '$lib/viewer/wheel-zoom';
 
 	let picker = $state<HTMLInputElement>();
 	let client: ConverterClient;
@@ -29,12 +30,10 @@
 	let summary = $state<DocumentSummary | null>(null);
 	let details = $state<InspectionView | null>(null);
 	let pageIndex = $state(0);
+	const zoom = new DocumentZoomCamera(() => pageIndex);
 	let colorMode = $state<ColorMode>('auto');
 	let pngScale = $state<1 | 2>(1);
-	let previewZoom = $state(100);
-	let fitPage = $state(true);
 	let previewUrls = $state<string[]>([]);
-	let previewScroller = $state<HTMLDivElement>();
 	let phase = $state<WorkerPhase | null>(null);
 	let status = $state('Waiting for a document');
 	let error = $state('');
@@ -49,7 +48,6 @@
 
 	const hasDocument = $derived(summary !== null && activeFile !== null);
 	const stem = $derived(activeFile ? sanitizeStem(activeFile.name) : 'document');
-	const zoomSteps = [50, 75, 100, 125, 150, 175, 200];
 
 	onMount(() => {
 		client = new ConverterClient((nextPhase, message) => {
@@ -71,14 +69,13 @@
 	}
 
 	function clearDocument(): void {
+		zoom.reset();
 		renderGeneration += 1;
 		releasePreviews();
 		activeFile = null;
 		summary = null;
 		details = null;
 		pageIndex = 0;
-		previewZoom = 100;
-		fitPage = true;
 		detailsOpen = false;
 	}
 
@@ -160,7 +157,7 @@
 	}
 
 	function selectPage(nextPage: number): void {
-		const page = previewScroller?.querySelector<HTMLElement>(`[data-page-index="${nextPage}"]`);
+		const page = zoom.scroller?.querySelector<HTMLElement>(`[data-page-index="${nextPage}"]`);
 		page?.scrollIntoView({ behavior: 'auto', block: 'start' });
 		pageIndex = nextPage;
 	}
@@ -175,51 +172,8 @@
 		requestAnimationFrame(() => selectPage(selectedPage));
 	}
 
-	function zoomAnchor(anchor?: ZoomAnchor) {
-		if (!previewScroller) return undefined;
-		const bounds = previewScroller.getBoundingClientRect();
-		const viewportX = anchor ? anchor.clientX - bounds.left : previewScroller.clientWidth / 2;
-		const viewportY = anchor ? anchor.clientY - bounds.top : previewScroller.clientHeight / 2;
-		return {
-			viewportX,
-			viewportY,
-			contentX: previewScroller.scrollLeft + viewportX,
-			contentY: previewScroller.scrollTop + viewportY,
-			width: previewScroller.scrollWidth,
-			height: previewScroller.scrollHeight
-		};
-	}
-
-	function setZoom(zoom: number, anchor?: ZoomAnchor): void {
-		const previous = zoomAnchor(anchor);
-		fitPage = false;
-		previewZoom = zoom;
-		if (!previous || !previewScroller) return;
-		requestAnimationFrame(() => {
-			if (!previewScroller) return;
-			const widthScale = previous.width > 0 ? previewScroller.scrollWidth / previous.width : 1;
-			const heightScale = previous.height > 0 ? previewScroller.scrollHeight / previous.height : 1;
-			previewScroller.scrollLeft = previous.contentX * widthScale - previous.viewportX;
-			previewScroller.scrollTop = previous.contentY * heightScale - previous.viewportY;
-		});
-	}
-
-	function stepZoom(direction: -1 | 1, anchor?: ZoomAnchor): void {
-		const currentZoom = fitPage ? 100 : previewZoom;
-		const currentIndex = zoomSteps.indexOf(currentZoom);
-		const nextIndex = Math.min(
-			zoomSteps.length - 1,
-			Math.max(0, (currentIndex === -1 ? zoomSteps.indexOf(100) : currentIndex) + direction)
-		);
-		setZoom(zoomSteps[nextIndex], anchor);
-	}
-
-	function fitPreviewWidth(): void {
-		setZoom(100);
-	}
-
 	function fitPreviewPage(): void {
-		fitPage = true;
+		zoom.fitPage();
 		alignSelectedPage();
 	}
 
@@ -448,8 +402,8 @@
 			fileSize={activeFile.size}
 			{pageIndex}
 			pageCount={summary.pageCount}
-			{previewZoom}
-			{fitPage}
+			previewZoom={zoom.visibleZoom}
+			fitPage={zoom.visiblePageFit}
 			{colorMode}
 			{detailsOpen}
 			{exporting}
@@ -459,9 +413,9 @@
 			onToggleDetails={() => (detailsOpen = !detailsOpen)}
 			onSelectPage={selectPage}
 			onStepPage={stepPage}
-			onSetZoom={setZoom}
-			onStepZoom={stepZoom}
-			onFitWidth={fitPreviewWidth}
+			onSetZoom={zoom.setZoom}
+			onStepZoom={zoom.stepZoom}
+			onFitWidth={zoom.fitWidth}
 			onFitPage={fitPreviewPage}
 			onColorMode={(nextMode) => void selectColorMode(nextMode)}
 			onScale={(nextScale) => (pngScale = nextScale)}
@@ -493,10 +447,11 @@
 
 			<div class="preview-panel">
 				<div
-					bind:this={previewScroller}
+					bind:this={zoom.scroller}
 					use:wheelZoom={{
-						disabled: exporting || rendering,
-						onZoom: (direction, anchor) => stepZoom(direction, anchor)
+						disabled: !hasDocument || exporting || rendering,
+						onZoom: zoom.updateGesture,
+						onEnd: () => void zoom.finishGesture()
 					}}
 					class="canvas-wrap"
 					aria-busy={rendering}
@@ -504,10 +459,16 @@
 				>
 					{#if previewUrls.length}
 						<div
+							bind:this={zoom.surface}
 							class="page-stack"
-							class:fit-page={fitPage}
-							data-zoom={fitPage ? 'page' : previewZoom}
-							style:width={fitPage ? '100%' : `${previewZoom}%`}
+							class:fit-page={zoom.pageFit}
+							class:zooming={zoom.gestureZoom !== null}
+							data-zoom={zoom.visiblePageFit ? 'page' : zoom.visibleZoom}
+							style:width={zoom.pageFit ? '100%' : `${zoom.committedZoom}%`}
+							style:transform={zoom.gestureZoom === null
+								? undefined
+								: `scale(${zoom.gestureScale})`}
+							style:transform-origin={`${zoom.gestureOrigin.x}px ${zoom.gestureOrigin.y}px`}
 						>
 							{#each previewUrls as url, index}
 								<figure
@@ -708,6 +669,10 @@
 		align-items: center;
 		flex-direction: column;
 		gap: 0.85rem;
+	}
+
+	.page-stack.zooming {
+		will-change: transform;
 	}
 
 	figure {

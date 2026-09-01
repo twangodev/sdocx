@@ -2,6 +2,7 @@
 	import { ChevronLeft, ChevronRight, Minus, Plus } from '@lucide/svelte';
 	import { separator, type MenuLeaf } from '$lib/menu';
 	import { viewerCommandForKey } from '$lib/viewer/keyboard';
+	import { formatZoom, MAX_ZOOM, MIN_ZOOM, ZOOM_STEPS } from '$lib/viewer/zoom';
 	import CompactSelectMenu from './ui/CompactSelectMenu.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import PageNumberInput from './ui/PageNumberInput.svelte';
@@ -36,12 +37,11 @@
 		class: className = ''
 	}: Props = $props();
 
-	const zoomSteps = [50, 75, 100, 125, 150, 175, 200];
 	type ZoomAction = 'page' | 'width' | number;
 
 	const zoomMenu = $derived(makeZoomMenu(fitPage, previewZoom));
 	const zoomValue = $derived(
-		fitPage ? 'Fit page' : previewZoom === 100 ? 'Fit width' : `${previewZoom}%`
+		fitPage ? 'Fit page' : previewZoom === 100 ? 'Fit width' : formatZoom(previewZoom)
 	);
 
 	function makeZoomMenu(pageFit: boolean, zoom: number): MenuLeaf<ZoomAction>[] {
@@ -49,7 +49,7 @@
 			{ kind: 'action', label: 'Fit page', action: 'page', checked: pageFit },
 			{ kind: 'action', label: 'Fit width', action: 'width', checked: !pageFit && zoom === 100 },
 			separator(),
-			...zoomSteps.filter((step) => step !== 100).map((step) => ({
+			...ZOOM_STEPS.filter((step) => step !== 100).map((step) => ({
 				kind: 'action' as const,
 				label: `${step}%`,
 				action: step,
@@ -139,7 +139,7 @@
 		<IconButton
 			label="Zoom out"
 			tooltip="Zoom out · Ctrl/⌘ − · pinch"
-			disabled={disabled || (!fitPage && previewZoom === zoomSteps[0])}
+			disabled={disabled || (!fitPage && previewZoom <= MIN_ZOOM)}
 			onclick={() => onStepZoom(-1)}
 		>
 			<Minus size={12} strokeWidth={1.4} />
@@ -155,7 +155,7 @@
 		<IconButton
 			label="Zoom in"
 			tooltip="Zoom in · Ctrl/⌘ + · pinch"
-			disabled={disabled || (!fitPage && previewZoom === zoomSteps.at(-1))}
+			disabled={disabled || (!fitPage && previewZoom >= MAX_ZOOM)}
 			onclick={() => onStepZoom(1)}
 		>
 			<Plus size={12} strokeWidth={1.4} />
