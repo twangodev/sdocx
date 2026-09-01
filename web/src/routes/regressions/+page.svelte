@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Check, X } from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
 	import CompactSelectMenu from '$lib/components/ui/CompactSelectMenu.svelte';
 	import type { MenuLeaf } from '$lib/menu';
@@ -316,7 +317,13 @@
 						<div class="check-grid">
 							{#each selectedResult.checks as item}
 								<div class:check-failed={!item.passed} class="check-row">
-									<span class="check-icon" aria-hidden="true">{item.passed ? '✓' : '×'}</span>
+									<span class="check-icon" aria-hidden="true">
+										{#if item.passed}
+											<Check size={11} strokeWidth={2.5} />
+										{:else}
+											<X size={11} strokeWidth={2.5} />
+										{/if}
+									</span>
 									<div>
 										<strong>{item.label}</strong>
 										<small>Expected {String(item.expected)} · got {String(item.actual)}</small>
