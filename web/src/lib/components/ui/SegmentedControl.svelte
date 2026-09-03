@@ -37,19 +37,13 @@
 			aria-label={itemLabel(option)}
 			title={itemTitle?.(option)}
 			{disabled}
-			class="segment-item flex h-5 min-w-0 cursor-pointer items-center justify-center rounded-[3px] border-0 bg-transparent p-0 leading-none text-muted outline-none transition-[background-color,color,box-shadow,transform] duration-150 ease-out hover:text-text disabled:cursor-default disabled:opacity-40 data-[state=on]:bg-raised data-[state=on]:text-text data-[state=on]:shadow-sm"
+			class="flex h-5 min-w-0 cursor-pointer items-center justify-center rounded-[3px] border-0 bg-transparent p-0 leading-none text-muted outline-none transition-[background-color,color,box-shadow,transform] duration-150 ease-out hover:text-text disabled:cursor-default disabled:opacity-40 data-[state=on]:bg-raised data-[state=on]:text-text data-[state=on]:shadow-sm"
 		>
-			{#if item}{@render item(option, value === option)}{:else}{option}{/if}
+			<span
+				class="grid place-items-center transition-transform duration-[var(--motion-fast)] ease-[var(--ease-out)] {value === option ? 'scale-[1.08]' : ''}"
+			>
+				{#if item}{@render item(option, value === option)}{:else}{option}{/if}
+			</span>
 		</ToggleGroup.Item>
 	{/each}
 </ToggleGroup.Root>
-
-<style>
-	:global(.segment-item svg) {
-		transition: transform var(--motion-fast) var(--ease-out);
-	}
-
-	:global(.segment-item[data-state='on'] svg) {
-		transform: scale(1.08);
-	}
-</style>

@@ -2,16 +2,7 @@
 	let { message }: { message: string } = $props();
 </script>
 
-<p class="error-notice motion-surface-in" role="alert">{message}</p>
-
-<style>
-	.error-notice {
-		margin: 1rem 0 0;
-		border-left: 2px solid var(--color-danger);
-		padding: 0.65rem 0.85rem;
-		background: color-mix(in srgb, var(--color-danger) 8%, transparent);
-		color: var(--site-text);
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-	}
-</style>
+<p
+	class="motion-surface-in mt-4 border-l-2 border-danger bg-danger/10 px-3.5 py-2.5 font-mono text-[0.72rem] text-text"
+	role="alert">{message}</p
+>

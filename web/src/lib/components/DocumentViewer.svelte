@@ -56,8 +56,21 @@
 	}
 </script>
 
-<div class="viewer-body" class:details-open={model.view.detailsOpen}>
-	<div class="details-shell" aria-hidden={!model.view.detailsOpen} inert={!model.view.detailsOpen}>
+<div
+	class="viewer-body relative grid min-h-0 flex-1 transition-[grid-template-columns] duration-[var(--motion-panel)] ease-[var(--ease-out)] max-[720px]:flex {model
+		.view.detailsOpen
+		? 'grid-cols-[14rem_minmax(0,1fr)]'
+		: 'grid-cols-[0_minmax(0,1fr)]'}"
+	class:details-open={model.view.detailsOpen}
+>
+	<div
+		class="details-shell min-w-0 overflow-hidden transition-[opacity,transform] duration-[var(--motion-panel)] ease-[var(--ease-out)] max-[720px]:absolute max-[720px]:inset-y-0 max-[720px]:left-0 max-[720px]:z-20 max-[720px]:w-56 max-[720px]:bg-bg max-[720px]:shadow-[18px_0_40px_rgb(0_0_0_/_0.18)] {model
+			.view.detailsOpen
+			? 'pointer-events-auto translate-x-0 opacity-100 max-[720px]:translate-x-0'
+			: 'pointer-events-none -translate-x-2 opacity-0 max-[720px]:-translate-x-full'}"
+		aria-hidden={!model.view.detailsOpen}
+		inert={!model.view.detailsOpen}
+	>
 		<DocumentInfoPanel
 			pageCount={model.document.pageCount}
 			details={model.document.details}
@@ -66,7 +79,7 @@
 		/>
 	</div>
 
-	<div class="preview-panel">
+	<div class="preview-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
 		<div
 			bind:this={zoom.scroller}
 			use:wheelZoom={{
@@ -74,14 +87,14 @@
 				onZoom: zoom.updateGesture,
 				onEnd: () => void zoom.finishGesture()
 			}}
-			class="canvas-wrap"
+			class="canvas-wrap block min-h-0 flex-1 overflow-auto bg-canvas p-[clamp(0.65rem,1.2vw,1rem)] overscroll-contain max-[720px]:min-h-[420px]"
 			aria-busy={model.view.rendering}
 			onscroll={updatePageFromScroll}
 		>
 			{#if model.document.previewUrls.length}
 				<div
 					bind:this={zoom.surface}
-					class="page-stack motion-page-in"
+					class="page-stack mx-auto my-0 flex min-h-full flex-col items-center gap-3.5 animate-[fade-in_var(--motion-standard)_var(--ease-out)_both] {zoom.gestureZoom !== null || zoom.recentering ? 'will-change-transform' : ''}"
 					class:fit-page={zoom.pageFit}
 					class:zooming={zoom.gestureZoom !== null}
 					class:recentering={zoom.recentering}
@@ -91,21 +104,36 @@
 					style:transform-origin={`${zoom.gestureOrigin.x}px ${zoom.gestureOrigin.y}px`}
 				>
 					{#each model.document.previewUrls as url, index}
-						<figure class:active={model.view.pageIndex === index} data-page-index={index}>
+						<figure
+							class="m-0 flex w-full scroll-mt-2.5 flex-col items-center gap-1"
+							class:active={model.view.pageIndex === index}
+							data-page-index={index}
+						>
 							{#if url}
-								<img src={url} alt={`Rendered preview of page ${index + 1}`} />
+								<img
+									class="block border border-black/15 bg-white shadow-[0_8px_24px_rgb(0_0_0_/_0.16)] {zoom.pageFit
+										? 'h-auto w-auto max-h-[calc(100svh-11.5rem)] max-w-full'
+										: 'w-full max-w-full'}"
+									src={url}
+									alt={`Rendered preview of page ${index + 1}`}
+								/>
 							{:else}
-								<div class="page-placeholder">
-									<span class="spinner" aria-hidden="true"></span>
+								<div class="page-placeholder grid min-h-[60vh] w-[min(100%,48rem)] place-items-center border border-subtle bg-surface">
+									<span class="spinner size-4 animate-spin rounded-full border border-subtle border-t-accent" aria-hidden="true"></span>
 								</div>
 							{/if}
-							<figcaption>page {index + 1}</figcaption>
+							<figcaption
+								class="font-mono text-[0.58rem] {model.view.pageIndex === index ? 'text-text' : 'text-muted'}"
+								>page {index + 1}</figcaption
+							>
 						</figure>
 					{/each}
 				</div>
 			{:else}
-				<div class="rendering-state motion-fade-in">
-					{#if model.view.rendering}<span class="spinner" aria-hidden="true"></span>{/if}
+				<div class="rendering-state motion-fade-in flex min-h-full items-center justify-center gap-3 font-mono text-[0.66rem] text-muted">
+					{#if model.view.rendering}
+						<span class="spinner size-4 animate-spin rounded-full border border-subtle border-t-accent" aria-hidden="true"></span>
+					{/if}
 					<span>{model.view.rendering ? 'Preparing pages' : 'No visible page content'}</span>
 				</div>
 			{/if}
@@ -118,167 +146,3 @@
 		/>
 	</div>
 </div>
-
-<style>
-	.viewer-body {
-		position: relative;
-		display: grid;
-		grid-template-columns: 0 minmax(0, 1fr);
-		min-height: 0;
-		flex: 1;
-		transition: grid-template-columns var(--motion-panel) var(--ease-out);
-	}
-
-	.viewer-body.details-open {
-		grid-template-columns: 14rem minmax(0, 1fr);
-	}
-
-	.details-shell {
-		min-width: 0;
-		overflow: hidden;
-		opacity: 0;
-		pointer-events: none;
-		transform: translateX(-8px);
-		transition:
-			opacity var(--motion-standard) var(--ease-standard),
-			transform var(--motion-panel) var(--ease-out);
-	}
-
-	.viewer-body.details-open .details-shell {
-		opacity: 1;
-		pointer-events: auto;
-		transform: translateX(0);
-	}
-
-	.preview-panel {
-		display: flex;
-		min-width: 0;
-		min-height: 0;
-		flex: 1;
-		flex-direction: column;
-		overflow: hidden;
-		background: var(--site-canvas);
-	}
-
-	.canvas-wrap {
-		display: block;
-		min-height: 0;
-		flex: 1;
-		overflow: auto;
-		padding: clamp(0.65rem, 1.2vw, 1rem);
-		background: var(--site-canvas);
-		overscroll-behavior: contain;
-	}
-
-	.page-stack {
-		display: flex;
-		min-height: 100%;
-		margin: 0 auto;
-		align-items: center;
-		flex-direction: column;
-		gap: 0.85rem;
-	}
-
-	.motion-page-in {
-		animation: page-stack-in var(--motion-standard) var(--ease-out) both;
-	}
-
-	.page-stack.zooming,
-	.page-stack.recentering {
-		will-change: transform;
-	}
-
-	figure {
-		display: flex;
-		width: 100%;
-		margin: 0;
-		align-items: center;
-		flex-direction: column;
-		gap: 0.25rem;
-		scroll-margin-top: 0.65rem;
-	}
-
-	figure img {
-		display: block;
-		width: 100%;
-		max-width: 100%;
-		border: 1px solid color-mix(in srgb, black 15%, transparent);
-		background: white;
-		box-shadow: 0 8px 24px color-mix(in srgb, black 16%, transparent);
-	}
-
-	.page-stack.fit-page figure img {
-		width: auto;
-		max-height: calc(100svh - 11.5rem);
-	}
-
-	figcaption {
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.58rem;
-	}
-
-	figure.active figcaption {
-		color: var(--site-text);
-	}
-
-	.page-placeholder {
-		display: grid;
-		width: min(100%, 48rem);
-		min-height: 60vh;
-		place-items: center;
-		border: 1px solid var(--site-border);
-		background: var(--site-surface);
-	}
-
-	.rendering-state {
-		display: flex;
-		min-height: 100%;
-		align-items: center;
-		justify-content: center;
-		gap: 0.7rem;
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.66rem;
-	}
-
-	.spinner {
-		width: 1rem;
-		height: 1rem;
-		border: 1px solid var(--site-border);
-		border-top-color: #167bff;
-		border-radius: 50%;
-		animation: spin 800ms linear infinite;
-	}
-
-	@keyframes spin { to { transform: rotate(360deg); } }
-
-	@keyframes page-stack-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
-
-	@media (max-width: 720px) {
-		.canvas-wrap {
-			min-height: 420px;
-		}
-
-		.viewer-body {
-			display: flex;
-		}
-
-		.details-shell {
-			position: absolute;
-			inset: 0 auto 0 0;
-			z-index: 20;
-			width: 14rem;
-			background: var(--site-bg);
-			box-shadow: 18px 0 40px color-mix(in srgb, black 18%, transparent);
-			transform: translateX(-100%);
-		}
-
-		.viewer-body.details-open .details-shell {
-			transform: translateX(0);
-		}
-	}
-</style>

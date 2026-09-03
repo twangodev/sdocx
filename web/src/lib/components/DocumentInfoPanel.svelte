@@ -11,12 +11,16 @@
 </script>
 
 <aside
-	class="document-info-panel min-w-0 overflow-auto border-r border-subtle bg-bg p-2.5 {className}"
-	class:open
+	class="min-w-0 overflow-auto border-r border-subtle bg-bg p-2.5 {className}"
 	aria-label="Document information"
 >
-	<span class="panel-reveal text-[10px] font-semibold text-muted">document info</span>
-	<dl class="panel-reveal mt-1.5 [--reveal-delay:35ms]">
+	<span
+		class="inline-block text-[10px] font-semibold text-muted transition-[opacity,transform] duration-[var(--motion-panel)] ease-[var(--ease-out)] {open ? 'translate-y-0 opacity-100' : 'translate-y-[3px] opacity-0'}"
+		>document info</span
+	>
+	<dl
+		class="mt-1.5 transition-[opacity,transform] delay-[35ms] duration-[var(--motion-panel)] ease-[var(--ease-out)] {open ? 'translate-y-0 opacity-100' : 'translate-y-[3px] opacity-0'}"
+	>
 		<div class="grid grid-cols-[0.7fr_1fr] gap-1.5 border-b border-subtle py-1.5 text-[11px]">
 			<dt class="text-muted">Pages</dt><dd class="m-0 break-words text-right">{pageCount}</dd>
 		</div>
@@ -41,7 +45,9 @@
 		{/if}
 	</dl>
 
-	<div class="panel-reveal mt-4 [--reveal-delay:65ms]">
+	<div
+		class="mt-4 transition-[opacity,transform] delay-[65ms] duration-[var(--motion-panel)] ease-[var(--ease-out)] {open ? 'translate-y-0 opacity-100' : 'translate-y-[3px] opacity-0'}"
+	>
 		<span class="text-[11px] font-semibold text-muted">diagnostics</span>
 		{#if details?.diagnostics.length}
 			<ul class="mt-2 flex list-none flex-col gap-2 p-0">
@@ -61,18 +67,3 @@
 		{/if}
 	</div>
 </aside>
-
-<style>
-	.panel-reveal {
-		opacity: 0;
-		transform: translateY(3px);
-		transition:
-			opacity var(--motion-standard) var(--ease-standard) var(--reveal-delay, 0ms),
-			transform var(--motion-panel) var(--ease-out) var(--reveal-delay, 0ms);
-	}
-
-	.document-info-panel.open .panel-reveal {
-		opacity: 1;
-		transform: translateY(0);
-	}
-</style>

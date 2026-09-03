@@ -47,85 +47,26 @@
 />
 
 <div
-	class="drop-overlay"
-	class:visible={dragging}
+	class="drop-overlay pointer-events-none fixed inset-0 z-100 grid place-items-center [background:color-mix(in_srgb,var(--site-bg)_96%,transparent)] {dragging
+		? 'visible opacity-100 [transition:opacity_var(--motion-standard)_var(--ease-out),visibility_0s_linear_0s]'
+		: 'invisible opacity-0 [transition:opacity_var(--motion-standard)_var(--ease-out),visibility_0s_linear_var(--motion-standard)]'}"
 	role="status"
 	aria-live="polite"
 	aria-hidden={!dragging}
 >
-	<div class="drop-overlay-copy">
-		<strong>{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}</strong>
-		<span>release anywhere · processed locally</span>
+	<div
+		class="pointer-events-none absolute inset-4 rounded-[0.35rem] border border-dashed border-muted transition-[opacity,transform] duration-[var(--motion-panel)] ease-[var(--ease-out)] {dragging
+			? 'scale-100 opacity-100'
+			: 'scale-[0.992] opacity-0'}"
+	></div>
+	<div
+		class="flex flex-col items-center gap-1.5 text-center transition-[opacity,transform] duration-[var(--motion-panel)] ease-[var(--ease-out)] {dragging
+			? 'translate-y-0 scale-100 opacity-100'
+			: 'translate-y-1.5 scale-[0.985] opacity-0'}"
+	>
+		<strong class="text-base font-[550] tracking-[-0.015em]">
+			{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}
+		</strong>
+		<span class="font-mono text-[0.65rem] text-muted">release anywhere · processed locally</span>
 	</div>
 </div>
-
-<style>
-	.drop-overlay {
-		position: fixed;
-		inset: 0;
-		z-index: 100;
-		display: grid;
-		place-items: center;
-		background: color-mix(in srgb, var(--site-bg) 96%, transparent);
-		opacity: 0;
-		pointer-events: none;
-		visibility: hidden;
-		transition:
-			opacity var(--motion-standard) var(--ease-out),
-			visibility 0s linear var(--motion-standard);
-	}
-
-	.drop-overlay.visible {
-		opacity: 1;
-		visibility: visible;
-		transition-delay: 0s;
-	}
-
-	.drop-overlay::after {
-		position: absolute;
-		inset: 1rem;
-		border: 1px dashed var(--site-muted);
-		border-radius: 0.35rem;
-		content: '';
-		opacity: 0;
-		transform: scale(0.992);
-		transition:
-			opacity var(--motion-standard) var(--ease-out),
-			transform var(--motion-panel) var(--ease-out);
-	}
-
-	.drop-overlay.visible::after {
-		opacity: 1;
-		transform: scale(1);
-	}
-
-	.drop-overlay-copy {
-		display: flex;
-		align-items: center;
-		flex-direction: column;
-		gap: 0.35rem;
-		text-align: center;
-		opacity: 0;
-		transform: translateY(6px) scale(0.985);
-		transition:
-			opacity var(--motion-standard) var(--ease-out),
-			transform var(--motion-panel) var(--ease-out);
-	}
-
-	.drop-overlay.visible .drop-overlay-copy {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
-
-	.drop-overlay-copy strong {
-		font-size: 1rem;
-		font-weight: 550;
-		letter-spacing: -0.015em;
-	}
-
-	.drop-overlay-copy span {
-		color: var(--site-muted);
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-	}
-</style>
