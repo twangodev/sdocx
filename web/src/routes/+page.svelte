@@ -3,158 +3,26 @@
 	import { FolderOpen } from '@lucide/svelte';
 	import DocumentInfoPanel from '$lib/components/DocumentInfoPanel.svelte';
 	import DocumentToolbar from '$lib/components/DocumentToolbar.svelte';
-	import { ConverterClient } from '$converter/client';
-	import {
-		assertAcceptedFile,
-		isLargeFile,
-		type ColorMode,
-		type DocumentSummary,
-		type WorkerPhase
-	} from '$converter/protocol';
-	import {
-		createExportManifest,
-		createZip,
-		downloadBlob,
-		pageFilename,
-		sanitizeStem,
-		svgToPng,
-		textBytes
-	} from '$converter/files';
-	import { toInspectionView, type InspectionView } from '$converter/view-model';
+	import { DocumentSession } from '$converter/document-session.svelte';
 	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
 	import { wheelZoom } from '$lib/viewer/wheel-zoom';
 
 	let picker = $state<HTMLInputElement>();
-	let client: ConverterClient;
-	let activeFile = $state<File | null>(null);
-	let summary = $state<DocumentSummary | null>(null);
-	let details = $state<InspectionView | null>(null);
 	let pageIndex = $state(0);
-	const zoom = new DocumentZoomCamera(() => pageIndex);
-	let colorMode = $state<ColorMode>('auto');
-	let pngScale = $state<1 | 2>(1);
-	let previewUrls = $state<string[]>([]);
-	let phase = $state<WorkerPhase | null>(null);
-	let status = $state('Waiting for a document');
-	let error = $state('');
-	let parsing = $state(false);
-	let rendering = $state(false);
-	let exporting = $state(false);
 	let detailsOpen = $state(false);
 	let dragging = $state(false);
-	let exportProgress = $state('');
-	let renderGeneration = 0;
 	let dragDepth = 0;
 
-	const hasDocument = $derived(summary !== null && activeFile !== null);
-	const stem = $derived(activeFile ? sanitizeStem(activeFile.name) : 'document');
-
-	onMount(() => {
-		client = new ConverterClient((nextPhase, message) => {
-			phase = nextPhase;
-			status = message;
-		});
-
-		return () => {
-			client.destroy();
-			releasePreviews();
-		};
+	const zoom = new DocumentZoomCamera(() => pageIndex);
+	const session = new DocumentSession({
+		onResetView: () => {
+			zoom.reset();
+			pageIndex = 0;
+			detailsOpen = false;
+		}
 	});
 
-	function releasePreviews(): void {
-		for (const url of previewUrls) {
-			if (url) URL.revokeObjectURL(url);
-		}
-		previewUrls = [];
-	}
-
-	function clearDocument(): void {
-		zoom.reset();
-		renderGeneration += 1;
-		releasePreviews();
-		activeFile = null;
-		summary = null;
-		details = null;
-		pageIndex = 0;
-		detailsOpen = false;
-	}
-
-	async function closeDocument(): Promise<void> {
-		try {
-			await client.dispose();
-		} finally {
-			clearDocument();
-			phase = null;
-			status = 'Waiting for a document';
-		}
-	}
-
-	async function loadFile(file: File): Promise<void> {
-		error = '';
-		try {
-			assertAcceptedFile(file);
-		} catch (cause) {
-			error = messageFrom(cause);
-			status = 'Could not open document';
-			return;
-		}
-
-		try {
-			if (
-				isLargeFile(file) &&
-				!window.confirm(
-					'This file is over 100 MiB. Parsing may use substantial memory. Continue locally?'
-				)
-			) {
-				return;
-			}
-
-			clearDocument();
-			activeFile = file;
-			parsing = true;
-			status = 'Reading file from this device';
-			const bytes = await file.arrayBuffer();
-			const nextSummary = await client.load(bytes);
-			summary = nextSummary;
-			details = toInspectionView(nextSummary.inspection);
-			pageIndex = 0;
-			status = `${nextSummary.pageCount} ${nextSummary.pageCount === 1 ? 'page' : 'pages'} ready`;
-			phase = 'ready';
-
-			if (nextSummary.pageCount > 0) await renderPreviews();
-		} catch (cause) {
-			clearDocument();
-			error = messageFrom(cause);
-			status = 'Could not open document';
-		} finally {
-			parsing = false;
-		}
-	}
-
-	async function renderPreviews(): Promise<void> {
-		if (!summary || summary.pageCount === 0) return;
-		const generation = ++renderGeneration;
-		const pageCount = summary.pageCount;
-		rendering = true;
-		error = '';
-		releasePreviews();
-		previewUrls = Array(pageCount).fill('');
-		try {
-			for (let index = 0; index < pageCount; index += 1) {
-				status = `Rendering page ${index + 1} of ${pageCount}`;
-				const svg = await client.renderPage(index, colorMode);
-				if (generation !== renderGeneration) return;
-				const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-				previewUrls[index] = url;
-				previewUrls = [...previewUrls];
-			}
-			status = `${pageCount} ${pageCount === 1 ? 'page' : 'pages'} rendered locally`;
-		} catch (cause) {
-			if (generation === renderGeneration) error = messageFrom(cause);
-		} finally {
-			if (generation === renderGeneration) rendering = false;
-		}
-	}
+	onMount(() => session.start());
 
 	function selectPage(nextPage: number): void {
 		const page = zoom.scroller?.querySelector<HTMLElement>(`[data-page-index="${nextPage}"]`);
@@ -163,8 +31,8 @@
 	}
 
 	function stepPage(direction: -1 | 1): void {
-		if (!summary) return;
-		selectPage(Math.min(summary.pageCount - 1, Math.max(0, pageIndex + direction)));
+		if (!session.summary) return;
+		selectPage(Math.min(session.summary.pageCount - 1, Math.max(0, pageIndex + direction)));
 	}
 
 	function alignSelectedPage(): void {
@@ -175,11 +43,6 @@
 	function fitPreviewPage(): void {
 		zoom.fitPage();
 		alignSelectedPage();
-	}
-
-	async function selectColorMode(nextMode: ColorMode): Promise<void> {
-		colorMode = nextMode;
-		await renderPreviews();
 	}
 
 	function updatePageFromScroll(event: Event): void {
@@ -207,7 +70,7 @@
 	function onFileInput(event: Event): void {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
-		if (file) void loadFile(file);
+		if (file) void session.load(file);
 		input.value = '';
 	}
 
@@ -243,102 +106,8 @@
 		dragging = false;
 
 		const file = event.dataTransfer?.files[0];
-		if (fileDrop && file) void loadFile(file);
+		if (fileDrop && file) void session.load(file);
 	}
-
-	function cancel(): void {
-		client.cancel();
-		clearDocument();
-		parsing = false;
-		rendering = false;
-		exporting = false;
-		exportProgress = '';
-		phase = null;
-		status = 'Processing cancelled';
-	}
-
-	async function downloadCurrentSvg(): Promise<void> {
-		await withExport(async () => {
-			const svg = await client.renderPage(pageIndex, colorMode);
-			downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), pageFilename(stem, pageIndex, 'svg'));
-		});
-	}
-
-	async function downloadCurrentPng(): Promise<void> {
-		await withExport(async () => {
-			const svg = await client.renderPage(pageIndex, colorMode);
-			const png = await svgToPng(svg, pngScale);
-			downloadBlob(png, pageFilename(stem, pageIndex, 'png'));
-		});
-	}
-
-	async function downloadJson(): Promise<void> {
-		await withExport(async () => {
-			const json = await client.exportJson();
-			downloadBlob(new Blob([json], { type: 'application/json' }), `${stem}.json`);
-		});
-	}
-
-	type ArchiveKind = 'svg' | 'png' | 'everything';
-
-	async function downloadArchive(kind: ArchiveKind): Promise<void> {
-		if (!summary || !activeFile) return;
-		await withExport(async () => {
-			const pageCount = summary!.pageCount;
-			const sourceName = activeFile!.name;
-			const inspectionJson = kind === 'everything' ? await client.exportJson() : '';
-			const manifest = createExportManifest(sourceName, pageCount, colorMode, pngScale);
-
-			async function* entries(): AsyncGenerator<{ name: string; bytes: Uint8Array }> {
-				if (kind === 'everything') {
-					yield { name: 'document.json', bytes: textBytes(inspectionJson) };
-					yield {
-						name: 'manifest.json',
-						bytes: textBytes(JSON.stringify(manifest, null, 2))
-					};
-				}
-
-				for (let index = 0; index < pageCount; index += 1) {
-					exportProgress = `Rendering page ${index + 1} of ${pageCount}`;
-					const svg = await client.renderPage(index, colorMode);
-					if (kind === 'svg' || kind === 'everything') {
-						yield { name: pageFilename(stem, index, 'svg'), bytes: textBytes(svg) };
-					}
-					if (kind === 'png' || kind === 'everything') {
-						exportProgress = `Rasterizing page ${index + 1} of ${pageCount}`;
-						const png = await svgToPng(svg, pngScale);
-						yield {
-							name: pageFilename(stem, index, 'png'),
-							bytes: new Uint8Array(await png.arrayBuffer())
-						};
-					}
-				}
-			}
-
-			const archive = await createZip(entries());
-			downloadBlob(archive, `${stem}-${kind}.zip`);
-		});
-	}
-
-	async function withExport(task: () => Promise<void>): Promise<void> {
-		exporting = true;
-		error = '';
-		exportProgress = 'Preparing download';
-		try {
-			await task();
-			status = 'Download ready';
-		} catch (cause) {
-			error = messageFrom(cause);
-		} finally {
-			exporting = false;
-			exportProgress = '';
-		}
-	}
-
-	function messageFrom(cause: unknown): string {
-		return cause instanceof Error ? cause.message : 'The document could not be processed.';
-	}
-
 </script>
 
 <svelte:head>
@@ -355,8 +124,6 @@
 	ondragleave={onWindowDragLeave}
 	ondrop={onWindowDrop}
 />
-
-
 <div
 	class="drop-overlay"
 	class:visible={dragging}
@@ -365,12 +132,12 @@
 	aria-hidden={!dragging}
 >
 	<div class="drop-overlay-copy">
-		<strong>{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}</strong>
+		<strong>{session.hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}</strong>
 		<span>release anywhere · processed locally</span>
 	</div>
 </div>
 
-{#if !hasDocument}
+{#if !session.hasDocument}
 	<section class="intro motion-surface-in" aria-labelledby="intro-title">
 		<h1 id="intro-title">Open a Samsung Notes file</h1>
 		<p class="lede">
@@ -382,10 +149,10 @@
 			class="drop-zone"
 			onclick={() => picker?.click()}
 		>
-			{#if !parsing}<FolderOpen size={13} strokeWidth={1.4} />{/if}
-			{parsing ? status : 'open .sdocx'}
+			{#if !session.parsing}<FolderOpen size={13} strokeWidth={1.4} />{/if}
+			{session.parsing ? session.status : 'open .sdocx'}
 		</button>
-		<p class="drop-hint">{parsing ? 'processing locally' : 'or drop one here · max 250 MiB'}</p>
+		<p class="drop-hint">{session.parsing ? 'processing locally' : 'or drop one here · max 250 MiB'}</p>
 
 		<input
 			bind:this={picker}
@@ -394,27 +161,27 @@
 			accept=".sdocx,application/zip"
 			onchange={onFileInput}
 		/>
-		{#if parsing}
-			<button class="cancel-link" type="button" onclick={cancel}>cancel parsing</button>
+		{#if session.parsing}
+			<button class="cancel-link" type="button" onclick={() => session.cancel()}>cancel parsing</button>
 		{/if}
-		{#if error}<p class="error motion-surface-in" role="alert">{error}</p>{/if}
+		{#if session.error}<p class="error motion-surface-in" role="alert">{session.error}</p>{/if}
 	</section>
-{:else if summary && activeFile}
+{:else if session.summary && session.activeFile}
 	<section class="workspace motion-surface-in" aria-label="Document converter">
 		<DocumentToolbar
-			title={details?.title || activeFile.name}
-			filename={activeFile.name}
-			fileSize={activeFile.size}
+			title={session.details?.title || session.activeFile.name}
+			filename={session.activeFile.name}
+			fileSize={session.activeFile.size}
 			{pageIndex}
-			pageCount={summary.pageCount}
+			pageCount={session.summary.pageCount}
 			previewZoom={zoom.visibleZoom}
 			fitPage={zoom.visiblePageFit}
-			{colorMode}
+			colorMode={session.colorMode}
 			{detailsOpen}
-			{exporting}
-			{rendering}
-			{pngScale}
-			{exportProgress}
+			exporting={session.exporting}
+			rendering={session.rendering}
+			pngScale={session.pngScale}
+			exportProgress={session.exportProgress}
 			onToggleDetails={() => (detailsOpen = !detailsOpen)}
 			onSelectPage={selectPage}
 			onStepPage={stepPage}
@@ -422,15 +189,15 @@
 			onStepZoom={zoom.stepZoom}
 			onFitWidth={zoom.fitWidth}
 			onFitPage={fitPreviewPage}
-			onColorMode={(nextMode) => void selectColorMode(nextMode)}
-			onScale={(nextScale) => (pngScale = nextScale)}
-			onCurrentSvg={() => void downloadCurrentSvg()}
-			onCurrentPng={() => void downloadCurrentPng()}
-			onArchive={(kind) => void downloadArchive(kind)}
-			onJson={() => void downloadJson()}
-			onCancel={cancel}
+			onColorMode={(nextMode) => void session.setColorMode(nextMode)}
+			onScale={(nextScale) => session.setPngScale(nextScale)}
+			onCurrentSvg={() => void session.downloadCurrentSvg(pageIndex)}
+			onCurrentPng={() => void session.downloadCurrentPng(pageIndex)}
+			onArchive={(kind) => void session.downloadArchive(kind)}
+			onJson={() => void session.downloadJson()}
+			onCancel={() => session.cancel()}
 			onReplace={() => picker?.click()}
-			onClose={() => void closeDocument()}
+			onClose={() => void session.close()}
 		/>
 
 		<input
@@ -444,8 +211,8 @@
 		<div class="viewer-body" class:details-open={detailsOpen}>
 			<div class="details-shell" aria-hidden={!detailsOpen} inert={!detailsOpen}>
 				<DocumentInfoPanel
-					pageCount={summary.pageCount}
-					{details}
+					pageCount={session.summary.pageCount}
+					details={session.details}
 					open={detailsOpen}
 					class="h-full w-56"
 				/>
@@ -455,15 +222,15 @@
 				<div
 					bind:this={zoom.scroller}
 					use:wheelZoom={{
-						disabled: !hasDocument || exporting || rendering,
+						disabled: !session.hasDocument || session.exporting || session.rendering,
 						onZoom: zoom.updateGesture,
 						onEnd: () => void zoom.finishGesture()
 					}}
 					class="canvas-wrap"
-					aria-busy={rendering}
+					aria-busy={session.rendering}
 					onscroll={updatePageFromScroll}
 				>
-					{#if previewUrls.length}
+					{#if session.previewUrls.length}
 						<div
 							bind:this={zoom.surface}
 							class="page-stack motion-page-in"
@@ -475,7 +242,7 @@
 							style:transform={zoom.surfaceTransform}
 							style:transform-origin={`${zoom.gestureOrigin.x}px ${zoom.gestureOrigin.y}px`}
 						>
-							{#each previewUrls as url, index}
+							{#each session.previewUrls as url, index}
 								<figure
 									class:active={pageIndex === index}
 									data-page-index={index}
@@ -493,18 +260,18 @@
 						</div>
 					{:else}
 						<div class="rendering-state motion-fade-in">
-							{#if rendering}<span class="spinner" aria-hidden="true"></span>{/if}
-							<span>{rendering ? 'Preparing pages' : 'No visible page content'}</span>
+							{#if session.rendering}<span class="spinner" aria-hidden="true"></span>{/if}
+							<span>{session.rendering ? 'Preparing pages' : 'No visible page content'}</span>
 						</div>
 					{/if}
 				</div>
 				<div class="status-line" role="status" aria-live="polite">
-					<span class:ready={phase === 'ready'}>{phase === 'ready' ? '●' : '○'}</span>
-					{exporting ? exportProgress : status}
+					<span class:ready={session.phase === 'ready'}>{session.phase === 'ready' ? '●' : '○'}</span>
+					{session.exporting ? session.exportProgress : session.status}
 				</div>
 			</div>
 		</div>
-		{#if error}<p class="error workspace-error motion-surface-in" role="alert">{error}</p>{/if}
+		{#if session.error}<p class="error workspace-error motion-surface-in" role="alert">{session.error}</p>{/if}
 	</section>
 {/if}
 
