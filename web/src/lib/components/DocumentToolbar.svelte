@@ -9,20 +9,29 @@
 	type Scale = 1 | 2;
 	type ArchiveKind = 'svg' | 'png' | 'everything';
 
-	interface Props {
-		title: string;
-		filename: string;
-		fileSize: number;
-		pageIndex: number;
-		pageCount: number;
-		previewZoom: number;
-		fitPage: boolean;
-		colorMode: ColorMode;
-		detailsOpen: boolean;
-		exporting: boolean;
-		rendering: boolean;
-		pngScale: Scale;
-		exportProgress: string;
+	interface DocumentToolbarModel {
+		document: {
+			title: string;
+			filename: string;
+			fileSize: number;
+			pageCount: number;
+		};
+		viewer: {
+			pageIndex: number;
+			previewZoom: number;
+			fitPage: boolean;
+			colorMode: ColorMode;
+			detailsOpen: boolean;
+		};
+		activity: {
+			exporting: boolean;
+			rendering: boolean;
+			pngScale: Scale;
+			exportProgress: string;
+		};
+	}
+
+	interface DocumentToolbarActions {
 		onToggleDetails: () => void;
 		onSelectPage: (page: number) => void;
 		onStepPage: (direction: -1 | 1) => void;
@@ -41,37 +50,12 @@
 		onClose: () => void;
 	}
 
-	let {
-		title,
-		filename,
-		fileSize,
-		pageIndex,
-		pageCount,
-		previewZoom,
-		fitPage,
-		colorMode,
-		detailsOpen,
-		exporting,
-		rendering,
-		pngScale,
-		exportProgress,
-		onToggleDetails,
-		onSelectPage,
-		onStepPage,
-		onSetZoom,
-		onStepZoom,
-		onFitWidth,
-		onFitPage,
-		onColorMode,
-		onScale,
-		onCurrentSvg,
-		onCurrentPng,
-		onArchive,
-		onJson,
-		onCancel,
-		onReplace,
-		onClose
-	}: Props = $props();
+	interface Props {
+		model: DocumentToolbarModel;
+		actions: DocumentToolbarActions;
+	}
+
+	let { model, actions }: Props = $props();
 
 	function formatBytes(bytes: number): string {
 		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
@@ -87,57 +71,65 @@
 		<IconButton
 			label="Document information"
 			tooltip
-			active={detailsOpen}
-			onclick={onToggleDetails}
+			active={model.viewer.detailsOpen}
+			onclick={actions.onToggleDetails}
 		>
 			<Info size={13} strokeWidth={1.4} />
 		</IconButton>
 		<div class="min-w-0 leading-tight">
-			<h1 class="block truncate text-[11px] font-[550]" title={title}>{title}</h1>
-			<span class="block truncate font-mono text-[9px] text-muted" title={filename}>
-				{formatBytes(fileSize)} · {pageCount} {pageCount === 1 ? 'page' : 'pages'} · local
+			<h1 class="block truncate text-[11px] font-[550]" title={model.document.title}>{model.document.title}</h1>
+			<span class="block truncate font-mono text-[9px] text-muted" title={model.document.filename}>
+				{formatBytes(model.document.fileSize)} · {model.document.pageCount} {model.document.pageCount === 1 ? 'page' : 'pages'} · local
 			</span>
 		</div>
 	</div>
 
 	<ConverterToolbar
-		{pageIndex}
-		{pageCount}
-		{previewZoom}
-		{fitPage}
-		disabled={exporting || rendering}
-		onSelectPage={onSelectPage}
-		onStepPage={onStepPage}
-		onSetZoom={onSetZoom}
-		onStepZoom={onStepZoom}
-		onFitWidth={onFitWidth}
-		onFitPage={onFitPage}
+		model={{
+			pageIndex: model.viewer.pageIndex,
+			pageCount: model.document.pageCount,
+			previewZoom: model.viewer.previewZoom,
+			fitPage: model.viewer.fitPage,
+			disabled: model.activity.exporting || model.activity.rendering
+		}}
+		actions={{
+			onSelectPage: actions.onSelectPage,
+			onStepPage: actions.onStepPage,
+			onSetZoom: actions.onSetZoom,
+			onStepZoom: actions.onStepZoom,
+			onFitWidth: actions.onFitWidth,
+			onFitPage: actions.onFitPage
+		}}
 		class="justify-self-center max-[820px]:order-3 max-[820px]:col-span-2"
 	/>
 
 	<div class="flex min-w-0 items-center justify-end gap-1">
-		{#if exporting}
+		{#if model.activity.exporting}
 			<span class="motion-fade-in max-w-36 truncate font-mono text-[9px] text-muted max-[620px]:hidden">
-				{exportProgress}
+				{model.activity.exportProgress}
 			</span>
 		{/if}
-		<ColorModeSwitch value={colorMode} disabled={rendering} onChange={onColorMode} />
+		<ColorModeSwitch value={model.viewer.colorMode} disabled={model.activity.rendering} onChange={actions.onColorMode} />
 		<span class="mx-0.5 h-4 w-px bg-subtle" aria-hidden="true"></span>
 		<ExportMenu
-			{exporting}
-			{rendering}
-			{pngScale}
-			onScale={onScale}
-			onCurrentSvg={onCurrentSvg}
-			onCurrentPng={onCurrentPng}
-			onArchive={onArchive}
-			onJson={onJson}
-			onCancel={onCancel}
+			model={{
+				exporting: model.activity.exporting,
+				rendering: model.activity.rendering,
+				pngScale: model.activity.pngScale
+			}}
+			actions={{
+				onScale: actions.onScale,
+				onCurrentSvg: actions.onCurrentSvg,
+				onCurrentPng: actions.onCurrentPng,
+				onArchive: actions.onArchive,
+				onJson: actions.onJson,
+				onCancel: actions.onCancel
+			}}
 		/>
-		<IconButton label="Replace document" tooltip onclick={onReplace}>
+		<IconButton label="Replace document" tooltip onclick={actions.onReplace}>
 			<RefreshCw size={12} strokeWidth={1.4} />
 		</IconButton>
-		<IconButton label="Close document" tooltip onclick={onClose}>
+		<IconButton label="Close document" tooltip onclick={actions.onClose}>
 			<X size={13} strokeWidth={1.4} />
 		</IconButton>
 	</div>

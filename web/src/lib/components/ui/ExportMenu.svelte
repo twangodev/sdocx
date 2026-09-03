@@ -16,10 +16,13 @@
 		| 'scale-1'
 		| 'scale-2';
 
-	interface Props {
+	interface ExportMenuModel {
 		exporting: boolean;
 		rendering: boolean;
 		pngScale: Scale;
+	}
+
+	interface ExportMenuActions {
 		onScale: (scale: Scale) => void;
 		onCurrentSvg: () => void;
 		onCurrentPng: () => void;
@@ -28,19 +31,14 @@
 		onCancel: () => void;
 	}
 
-	let {
-		exporting,
-		rendering,
-		pngScale,
-		onScale,
-		onCurrentSvg,
-		onCurrentPng,
-		onArchive,
-		onJson,
-		onCancel
-	}: Props = $props();
+	interface Props {
+		model: ExportMenuModel;
+		actions: ExportMenuActions;
+	}
 
-	const items = $derived(makeItems(pngScale, rendering));
+	let { model, actions }: Props = $props();
+
+	const items = $derived(makeItems(model.pngScale, model.rendering));
 
 	function makeItems(scale: Scale, isRendering: boolean): MenuLeaf<ExportAction>[] {
 		return [
@@ -71,34 +69,34 @@
 	function run(action: ExportAction): void {
 		switch (action) {
 			case 'current-svg':
-				onCurrentSvg();
+				actions.onCurrentSvg();
 				break;
 			case 'current-png':
-				onCurrentPng();
+				actions.onCurrentPng();
 				break;
 			case 'all-svg':
-				onArchive('svg');
+				actions.onArchive('svg');
 				break;
 			case 'all-png':
-				onArchive('png');
+				actions.onArchive('png');
 				break;
 			case 'everything':
-				onArchive('everything');
+				actions.onArchive('everything');
 				break;
 			case 'json':
-				onJson();
+				actions.onJson();
 				break;
 			case 'scale-1':
-				onScale(1);
+				actions.onScale(1);
 				break;
 			case 'scale-2':
-				onScale(2);
+				actions.onScale(2);
 		}
 	}
 </script>
 
-{#if exporting}
-	<IconButton label="Cancel export" tooltip tone="danger" onclick={onCancel}>
+{#if model.exporting}
+	<IconButton label="Cancel export" tooltip tone="danger" onclick={actions.onCancel}>
 		<LoaderCircle class="animate-spin" size={13} strokeWidth={1.4} />
 	</IconButton>
 {:else}
