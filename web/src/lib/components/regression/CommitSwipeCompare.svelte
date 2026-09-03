@@ -3,12 +3,13 @@
 
 	interface Props {
 		page: CommitPageDiff;
-		aspectRatio: string;
+		aspectRatio: number;
 		leftLabel: string;
 		rightLabel: string;
+		width: string;
 	}
 
-	let { page, aspectRatio, leftLabel, rightLabel }: Props = $props();
+	let { page, aspectRatio, leftLabel, rightLabel, width }: Props = $props();
 	let swipe = $state(50);
 	let dragging = false;
 	let comparisonElement = $state<HTMLDivElement>();
@@ -39,8 +40,10 @@
 
 <div
 	bind:this={comparisonElement}
-	class="relative mx-auto w-full max-w-[72rem] cursor-ew-resize touch-none overflow-hidden border border-black/15 bg-white shadow-[0_6px_20px_rgb(0_0_0_/_0.12)] select-none"
+	data-page-zoom-target
+	class="relative h-auto max-w-full cursor-ew-resize touch-none overflow-hidden border border-black/15 bg-white shadow-[0_6px_20px_rgb(0_0_0_/_0.12)] select-none"
 	style:aspect-ratio={aspectRatio}
+	style:width
 	role="slider"
 	tabindex="0"
 	aria-label="Swipe between commit renders"

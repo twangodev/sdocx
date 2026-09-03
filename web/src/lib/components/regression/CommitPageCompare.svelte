@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { Columns2, Diff, SplitSquareVertical } from '@lucide/svelte';
-	import PageNumberInput from '$lib/components/ui/PageNumberInput.svelte';
+	import ConverterToolbar from '$lib/components/ConverterToolbar.svelte';
+	import DocumentCanvas from '$lib/components/viewer/DocumentCanvas.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import type { CommitFixtureResult } from '$lib/regression/commit-runner';
-	import CommitSwipeCompare from './CommitSwipeCompare.svelte';
+	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
+	import CommitComparisonPage from './CommitComparisonPage.svelte';
 
 	type ViewMode = 'split' | 'swipe' | 'difference';
 	const VIEW_MODES: readonly ViewMode[] = ['split', 'swipe', 'difference'];
@@ -20,60 +22,98 @@
 	let pageIndex = $state(0);
 	let previousFixtureId = '';
 
-	const pageCount = $derived(result.diff?.pages.length ?? 0);
+	const pages = $derived(result.diff?.pages ?? []);
+	const pageCount = $derived(pages.length);
 	const visiblePageIndex = $derived(Math.min(Math.max(0, pageIndex), Math.max(0, pageCount - 1)));
-	const page = $derived(result.diff?.pages[visiblePageIndex]);
-	const aspectRatio = $derived(
-		page?.right
-			? `${page.right.width} / ${page.right.height}`
-			: page?.left
-				? `${page.left.width} / ${page.left.height}`
-				: '1 / 1.414'
-	);
+	const zoom = new DocumentZoomCamera(() => visiblePageIndex);
+	const controlsDisabled = $derived(pageCount === 0 || result.status === 'rendering');
 
 	$effect(() => {
-		if (previousFixtureId && previousFixtureId !== result.fixture.id) pageIndex = 0;
+		if (previousFixtureId && previousFixtureId !== result.fixture.id) {
+			pageIndex = 0;
+			zoom.reset();
+		}
 		previousFixtureId = result.fixture.id;
 	});
 
+	function selectPage(nextPage: number): void {
+		if (!pageCount) return;
+		const selected = Math.min(pageCount - 1, Math.max(0, nextPage));
+		zoom.scrollToPage(selected);
+		pageIndex = selected;
+	}
+
+	function stepPage(direction: -1 | 1): void {
+		selectPage(visiblePageIndex + direction);
+	}
 </script>
 
 <section class="motion-surface-in flex min-w-0 flex-1 flex-col bg-canvas" aria-label="Render comparison">
-	<div class="flex h-9 shrink-0 items-center justify-between border-b border-subtle bg-bg px-3">
-		<div class="min-w-0">
-			<span class="block truncate font-mono text-[11px] text-text">{result.fixture.id}</span>
-		</div>
+	<div
+		class="grid min-h-10 shrink-0 grid-cols-[minmax(7rem,1fr)_auto_minmax(15rem,1fr)] items-center gap-2 border-b border-subtle bg-bg px-2.5 max-[800px]:grid-cols-[auto_1fr]"
+	>
+		<span class="block truncate font-mono text-[10px] text-muted max-[800px]:hidden">
+			{result.fixture.id}
+		</span>
 
-		{#if page}
-			<SegmentedControl
-				options={VIEW_MODES}
-				bind:value={viewMode}
-				label="Comparison view"
-				itemLabel={(mode) => mode}
-				class="absolute left-1/2 -translate-x-1/2"
-			>
-				{#snippet item(mode)}
-					{#if mode === 'split'}
-						<Columns2 size={12} strokeWidth={1.5} />
-					{:else if mode === 'swipe'}
-						<SplitSquareVertical size={12} strokeWidth={1.5} />
-					{:else}
-						<Diff size={12} strokeWidth={1.5} />
-					{/if}
-				{/snippet}
-			</SegmentedControl>
-			<PageNumberInput
-				pageIndex={visiblePageIndex}
-				{pageCount}
-				onSelect={(nextPage) => (pageIndex = nextPage)}
-			/>
-		{:else}
-			<span class="font-mono text-[10px] text-muted">{result.message}</span>
-		{/if}
+		<SegmentedControl
+			options={VIEW_MODES}
+			bind:value={viewMode}
+			label="Comparison view"
+			itemLabel={(mode) => mode}
+			class="justify-self-center"
+		>
+			{#snippet item(mode)}
+				{#if mode === 'split'}
+					<Columns2 size={12} strokeWidth={1.5} />
+				{:else if mode === 'swipe'}
+					<SplitSquareVertical size={12} strokeWidth={1.5} />
+				{:else}
+					<Diff size={12} strokeWidth={1.5} />
+				{/if}
+			{/snippet}
+		</SegmentedControl>
+
+		<ConverterToolbar
+			model={{
+				pageIndex: visiblePageIndex,
+				pageCount,
+				previewZoom: zoom.visibleZoom,
+				fitPage: zoom.visiblePageFit,
+				disabled: controlsDisabled
+			}}
+			actions={{
+				onSelectPage: selectPage,
+				onStepPage: stepPage,
+				onSetZoom: zoom.setZoom,
+				onStepZoom: zoom.stepZoom,
+				onFitWidth: zoom.fitWidth,
+				onFitPage: zoom.fitSelectedPage
+			}}
+			class="justify-self-end max-[800px]:justify-self-stretch"
+		/>
 	</div>
 
-	<div class="min-h-0 flex-1 overflow-auto p-3 sm:p-5">
-		{#if !page}
+	<DocumentCanvas
+		{pages}
+		pageIndex={visiblePageIndex}
+		{zoom}
+		disabled={controlsDisabled}
+		busy={result.status === 'rendering'}
+		onPageChange={(nextPage) => (pageIndex = nextPage)}
+		class="p-3 sm:p-5"
+	>
+		{#snippet page(pageDiff, index)}
+			<CommitComparisonPage
+				page={pageDiff}
+				pageIndex={index}
+				{viewMode}
+				pageFit={zoom.pageFit}
+				{leftLabel}
+				{rightLabel}
+			/>
+		{/snippet}
+		{#snippet empty()}
 			<div class="flex min-h-full items-center justify-center">
 				<div class="max-w-xs text-center">
 					{#if result.status === 'idle'}
@@ -98,51 +138,6 @@
 					{/if}
 				</div>
 			</div>
-		{:else if viewMode === 'split'}
-			<div class="mx-auto grid max-w-[92rem] grid-cols-2 items-start gap-3 max-[720px]:grid-cols-1">
-				<figure class="m-0 min-w-0">
-					<figcaption class="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] text-muted">
-						<span class="size-1.5 rounded-full bg-muted"></span>{leftLabel}
-					</figcaption>
-					{#if page.leftUrl}
-						<img
-							src={page.leftUrl}
-							alt={`${leftLabel} render of page ${visiblePageIndex + 1}`}
-							class="block h-auto w-full border border-black/15 bg-white shadow-[0_6px_20px_rgb(0_0_0_/_0.12)]"
-						/>
-					{:else}
-						<div class="grid w-full place-items-center border border-dashed border-subtle text-[11px] text-muted" style:aspect-ratio={aspectRatio}>missing</div>
-					{/if}
-				</figure>
-				<figure class="m-0 min-w-0">
-					<figcaption class="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] text-muted">
-						<span class="size-1.5 rounded-full bg-accent"></span>{rightLabel}
-					</figcaption>
-					{#if page.rightUrl}
-						<img
-							src={page.rightUrl}
-							alt={`${rightLabel} render of page ${visiblePageIndex + 1}`}
-							class="block h-auto w-full border border-black/15 bg-white shadow-[0_6px_20px_rgb(0_0_0_/_0.12)]"
-						/>
-					{:else}
-						<div class="grid w-full place-items-center border border-dashed border-subtle text-[11px] text-muted" style:aspect-ratio={aspectRatio}>missing</div>
-					{/if}
-				</figure>
-			</div>
-		{:else if viewMode === 'swipe'}
-			<CommitSwipeCompare {page} {aspectRatio} {leftLabel} {rightLabel} />
-		{:else}
-			<div
-				class="relative mx-auto w-full max-w-[72rem] overflow-hidden border border-black/15 bg-black shadow-[0_6px_20px_rgb(0_0_0_/_0.12)]"
-				style:aspect-ratio={aspectRatio}
-			>
-				{#if page.leftUrl}
-					<img class="absolute inset-0 size-full" src={page.leftUrl} alt="" />
-				{/if}
-				{#if page.rightUrl}
-					<img class="absolute inset-0 size-full mix-blend-difference" src={page.rightUrl} alt="" />
-				{/if}
-			</div>
-		{/if}
-	</div>
+		{/snippet}
+	</DocumentCanvas>
 </section>
