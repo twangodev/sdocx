@@ -128,6 +128,11 @@ test('regression suite exposes explicit, user-triggered runs', async ({ page }) 
 	await expect(page).toHaveTitle(/regression/i);
 	await expect(page.getByRole('heading', { name: /Regression lab/i })).toBeVisible();
 	await expect(page.getByRole('button', { name: /Run selected/i })).toBeVisible();
+	await expect(page.getByLabel('Compatibility fixtures')).toBeVisible();
+	await expect(page.getByRole('heading', { name: '01-basic-formatting' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Local fixture fallback' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Structural checks' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Visual comparison' })).toBeVisible();
 	await expect(page.locator('select')).toHaveCount(0);
 	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 });
@@ -191,7 +196,9 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(page.getByText('No parser warnings')).toBeVisible();
 	await page.getByRole('button', { name: 'Document information' }).click();
 	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
-	await expect.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeLessThan(0.1);
+	await expect
+		.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity)))
+		.toBeLessThan(0.01);
 	await expect(pageStack).toHaveAttribute('data-zoom', 'page');
 	const colorModes = [
 		page.getByRole('radio', { name: 'Automatic color mode' }),
