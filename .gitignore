@@ -108,7 +108,7 @@ docs/_build/
 # Rust
 target/
 
-# External compatibility corpus and generated visual comparisons
+# External compatibility corpus and generated web output
 /hf/
 /tmp/
 /web/.svelte-kit/
@@ -116,7 +116,6 @@ target/
 /web/node_modules/
 /web/playwright-report/
 /web/static/wasm/
-/web/static/renderers/
 /web/test-results/
 /web/.wrangler/
 

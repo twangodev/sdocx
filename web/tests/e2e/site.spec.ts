@@ -1,21 +1,9 @@
 import { expect, test, type Locator } from '@playwright/test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const localFixture = process.env.SDOCX_E2E_FIXTURE ?? resolve('../hf/01-basic-formatting.sdocx');
-const rendererManifest = resolve('static/renderers/manifest.json');
 const zoomAnchor = { x: 500, y: 400 } as const;
-
-function preparedRendererPair(): [string, string] | undefined {
-	if (!existsSync(rendererManifest)) return undefined;
-	const manifest = JSON.parse(readFileSync(rendererManifest, 'utf8')) as {
-		renderers?: Array<{ sha?: string }>;
-	};
-	const shas = manifest.renderers?.flatMap((renderer) =>
-		typeof renderer.sha === 'string' ? [renderer.sha] : []
-	);
-	return shas && shas.length >= 2 ? [shas[0], shas[1]] : undefined;
-}
 
 interface ImagePoint {
 	page?: string;
@@ -108,7 +96,6 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 	await expect(page.locator('.lede')).toContainText('Files stay in this browser.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
 	await expect(page.locator('select')).toHaveCount(0);
-	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
 	expect(remoteRequests).toEqual([]);
 });
 
@@ -138,90 +125,14 @@ test('dragging a file expands the drop target across the viewport', async ({ pag
 	expect(await overlay.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeLessThan(0.1);
 });
 
-test('regression launcher stays focused on the commit pair', async ({ page }) => {
-	await page.goto('/regressions');
-
-	await expect(page).toHaveTitle(/regression/i);
-	await expect(page.getByRole('heading', { name: 'compare renderers' })).toBeVisible();
-	await expect(page.getByLabel('From commit')).toBeVisible();
-	await expect(page.getByLabel('To commit')).toBeVisible();
-	await expect(page.getByRole('button', { name: 'compare', exact: true })).toBeVisible();
-	await expect(page.locator('select')).toHaveCount(0);
-	await expect(page.getByRole('link', { name: 'regressions' })).toHaveCount(0);
-});
-
-test('commit comparison has a shareable ref-vs-ref workspace', async ({ page }) => {
-	const pair = preparedRendererPair();
-	test.skip(!pair, 'Prepare commit renderers before running the route smoke test.');
-	await page.goto(`/regressions/${pair![0]}/vs/${pair![1]}`);
-
-	await expect(page).toHaveTitle(/vs.*sdocx regressions/i);
-	await expect(page.getByRole('region', { name: 'Commit regression comparison' })).toBeVisible();
-	await expect(page.getByLabel('Compatibility fixtures')).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Run comparison' })).toBeEnabled();
-	await expect(page.getByRole('region', { name: 'Render comparison' })).toContainText(
-		'Ready to compare'
-	);
-});
-
-test('prepared commits render the corpus against each other', async ({ page }, testInfo) => {
-	test.skip(testInfo.project.name !== 'chromium', 'One dual-WASM browser run is sufficient.');
-	const pair = preparedRendererPair();
-	test.skip(!pair, 'Prepare commit renderers before running the comparison.');
-	test.skip(!existsSync(localFixture), 'Set SDOCX_E2E_FIXTURE or check out the external corpus.');
-	await page.route('https://huggingface.co/**/01-basic-formatting.sdocx?download=true', (route) =>
-		route.fulfill({ path: localFixture, contentType: 'application/zip' })
-	);
-	await page.goto(`/regressions/${pair![0]}/vs/${pair![1]}`);
-	await page.getByRole('button', { name: 'Run comparison' }).click();
-
-	const fixture = page.getByRole('button', { name: /01-basic-formatting/ });
-	await expect(fixture).toContainText('no changes', { timeout: 20_000 });
-	await expect(page.getByAltText(/render of page 1/)).toHaveCount(2);
-	const comparisonStack = page.locator('.page-stack');
-	await expect(comparisonStack.locator('[data-page-index]')).toHaveCount(5);
-	await expect(comparisonStack.locator('img')).toHaveCount(10);
-
-	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
-	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
-	await expect(pageSelector).toHaveValue('5');
-	await pageSelector.fill('1');
-	await pageSelector.press('Enter');
-	await expect(pageSelector).toHaveValue('1');
-
-	const rightRender = page.getByAltText(/render of page 1/).nth(1);
-	const rightBounds = await rightRender.boundingBox();
-	expect(rightBounds).not.toBeNull();
-	const comparisonPinch = await pinchAtAnchor(page.locator('.canvas-wrap'), -20, {
-		x: rightBounds!.x + rightBounds!.width / 2,
-		y: rightBounds!.y + rightBounds!.height / 2
-	});
-	expectSameImagePoint(comparisonPinch.pointDuring, comparisonPinch.pointBefore);
-	await page.waitForTimeout(160);
-
-	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
-	await zoomMenu.click();
-	await page.getByRole('menuitem', { name: 'Fit page' }).click();
-	await page.getByRole('button', { name: 'Zoom in' }).click();
-	await expect(comparisonStack).toHaveAttribute('data-zoom', '125');
-	await page.keyboard.press('Control+-');
-	await expect(comparisonStack).toHaveAttribute('data-zoom', '100');
-
-	await page.getByRole('radio', { name: 'swipe' }).click();
-	await expect(page.getByRole('slider', { name: 'Swipe between commit renders' })).toHaveCount(5);
-	await page.getByRole('radio', { name: 'difference' }).click();
-	await expect(comparisonStack.locator('[data-page-index]')).toHaveCount(5);
-	await expect(page.getByLabel('Comparison details')).toContainText('0 changed');
-});
-
-test('theme preference survives navigation', async ({ page }) => {
+test('theme preference survives a reload', async ({ page }) => {
 	await page.goto('/');
 	await page.evaluate(() => localStorage.setItem('sdocx-theme', 'light'));
 	await page.reload();
 	await page.getByRole('button', { name: 'Use dark theme' }).click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-	await page.goto('/regressions');
+	await page.reload();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
