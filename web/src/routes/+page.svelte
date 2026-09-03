@@ -75,7 +75,10 @@
 		onCancel={() => session.cancel()}
 	/>
 {:else if session.summary && session.activeFile}
-	<section class="workspace motion-surface-in" aria-label="Document converter">
+	<section
+		class="motion-surface-in flex h-[calc(100svh-2.5rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden max-[720px]:h-auto max-[720px]:min-h-[calc(100svh-2.5rem)] max-[720px]:overflow-visible"
+		aria-label="Document converter"
+	>
 		<DocumentToolbar
 			model={{
 				document: {
@@ -142,23 +145,3 @@
 		{#if session.error}<ErrorNotice message={session.error} />{/if}
 	</section>
 {/if}
-
-<style>
-	.workspace {
-		display: flex;
-		width: 100%;
-		height: calc(100svh - 2.5rem);
-		min-width: 0;
-		min-height: 0;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	@media (max-width: 720px) {
-		.workspace {
-			height: auto;
-			min-height: calc(100svh - 2.5rem);
-			overflow: visible;
-		}
-	}
-</style>

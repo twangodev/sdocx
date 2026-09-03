@@ -33,20 +33,16 @@
 			type="button"
 			aria-label={label}
 			{disabled}
-			class="compact-select flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 font-mono text-[11px] tabular-nums text-text outline-none transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface disabled:cursor-default disabled:opacity-40 {className}"
+			class="group flex h-6 cursor-pointer items-center gap-1 rounded px-1.5 font-mono text-[11px] tabular-nums text-text outline-none transition-[background-color,color,transform] duration-150 ease-out hover:bg-surface disabled:cursor-default disabled:opacity-40 {className}"
 		>
 			<span class="min-w-0 flex-1 truncate">{value}</span>
-			{#if chevron}<ChevronDown size={10} strokeWidth={1.5} class="shrink-0 text-muted" />{/if}
+			{#if chevron}
+				<ChevronDown
+					size={10}
+					strokeWidth={1.5}
+					class="shrink-0 text-muted transition-transform duration-[var(--motion-fast)] ease-[var(--ease-out)] group-data-[state=open]:rotate-180"
+				/>
+			{/if}
 		</button>
 	{/snippet}
 </DropdownMenu>
-
-<style>
-	.compact-select :global(svg) {
-		transition: transform var(--motion-fast) var(--ease-out);
-	}
-
-	.compact-select[data-state='open'] :global(svg) {
-		transform: rotate(180deg);
-	}
-</style>

@@ -36,6 +36,7 @@
 	--font-sans: 'Overused Grotesk', system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, monospace;
 	--color-bg: var(--site-bg);
+	--color-canvas: var(--site-canvas);
 	--color-surface: var(--site-surface);
 	--color-raised: var(--site-raised);
 	--color-elevated: var(--site-raised);
@@ -214,6 +215,11 @@ label:has(> input[type='file']):active {
 @keyframes fade-in {
 	from { opacity: 0; }
 	to { opacity: 1; }
+}
+
+@keyframes theme-icon-in {
+	from { opacity: 0; transform: rotate(-18deg) scale(0.78); }
+	to { opacity: 1; transform: rotate(0) scale(1); }
 }
 
 .mono-label {
