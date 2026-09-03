@@ -3,12 +3,10 @@
 This is a static SvelteKit application for `sdocx.twango.dev`. It provides:
 
 - a local `.sdocx` converter with SVG, PNG, sanitized JSON, and ZIP exports;
-- a commit-to-commit regression workspace backed by the locked compatibility manifest;
-- structural checks plus split, swipe, and difference views for renderer output.
+- a continuous, zoomable document preview.
 
-User-selected documents stay in the browser. The compatibility runner downloads
-public fixture pairs directly from Hugging Face when requested. There is no
-application server, persistence layer, or processing API.
+User-selected documents stay in the browser. There is no application server,
+persistence layer, or processing API.
 
 ## Development
 
@@ -22,19 +20,6 @@ bun run dev
 
 `bun run dev` generates the runtime WASM package before starting Vite. The
 generated `static/wasm/` directory is intentionally ignored by Git.
-
-To compare two Git commits, prepare their renderer bundles before opening the
-regression route:
-
-```sh
-bun run regression:prepare -- <from-ref> <to-ref>
-```
-
-The command builds both commits into ignored `static/renderers/` assets and
-writes the manifest consumed by `/regressions/<from>/vs/<to>`. The page runs the
-same public compatibility corpus through both WASM modules entirely in the
-browser. CI prepares the pull request base/head pair, or the previous/current
-commit for branch builds, without external object storage.
 
 Run the complete local checks with:
 

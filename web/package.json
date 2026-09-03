@@ -14,7 +14,6 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
 		"test:e2e": "playwright test",
-		"regression:prepare": "bun scripts/prepare-regression-renderers.ts",
 		"icons": "bun scripts/generate-icons.ts",
 		"deploy": "wrangler deploy"
 	},
@@ -36,7 +35,6 @@
 	},
 	"dependencies": {
 		"bits-ui": "^2.18.1",
-		"fflate": "^0.8.2",
-		"pdfjs-dist": "4.10.38"
+		"fflate": "^0.8.2"
 	}
 }

@@ -11,7 +11,7 @@ Reverse-engineered tooling and SDK for converting Samsung Notes (`.sdocx`) files
 ## Browser application
 
 The static application in [`web/`](web/) provides a local converter and a
-compatibility regression lab. Parsing, rendering, and export happen in the
+continuous document preview. Parsing, rendering, and export happen in the
 browser; user-selected documents are not uploaded. The generated site is
 configured for Workers Static Assets at `sdocx.twango.dev`.
 

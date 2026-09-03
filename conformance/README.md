@@ -28,7 +28,5 @@ Regular unit tests do not download or require private/large fixtures. To add a
 fixture, upload its artifacts to the dataset, calculate both SHA-256 digests,
 then append one tab-separated row to `corpus.tsv`.
 
-The static browser application reads this same manifest and, once the artifacts
-are published, downloads fixture pairs directly from Hugging Face only after a
-user starts a regression run. Local file pairs can be selected as an offline
-fallback; their hashes must match the manifest before they are processed.
+Future automated visual checks can use this same manifest to resolve the exact
+fixture and Samsung-generated reference PDF for each compatibility case.

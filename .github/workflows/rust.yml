@@ -103,12 +103,6 @@ jobs:
       - name: Build browser WASM
         run: bun run build:wasm
         working-directory: web
-      - name: Prepare commit comparison renderers
-        env:
-          LEFT_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'HEAD^' }}
-          RIGHT_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'HEAD' }}
-        run: bun run regression:prepare -- "$LEFT_REF" "$RIGHT_REF"
-        working-directory: web
       - name: Check web application
         run: bun run check
         working-directory: web
