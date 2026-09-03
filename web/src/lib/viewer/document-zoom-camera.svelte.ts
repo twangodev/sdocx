@@ -14,6 +14,7 @@ interface ScrollAnchor {
 	page?: {
 		index: number;
 		target: 'image' | 'page';
+		imageIndex?: number;
 		x: number;
 		y: number;
 	};
@@ -100,6 +101,17 @@ export class DocumentZoomCamera {
 		this.panX = 0;
 	};
 
+	scrollToPage = (pageIndex: number): void => {
+		const page = this.scroller?.querySelector<HTMLElement>(`[data-page-index="${pageIndex}"]`);
+		page?.scrollIntoView({ behavior: 'auto', block: 'start' });
+	};
+
+	fitSelectedPage = (): void => {
+		const selectedPage = this.selectedPage();
+		this.fitPage();
+		requestAnimationFrame(() => this.scrollToPage(selectedPage));
+	};
+
 	updateGesture = (factor: number, anchor: ZoomAnchor): void => {
 		if (!this.surface || !this.scroller || !Number.isFinite(factor) || factor <= 0) return;
 		this.cancelRecentering();
@@ -136,10 +148,13 @@ export class DocumentZoomCamera {
 
 	private currentFitPageZoom(): number {
 		if (!this.surface) return this.committedZoom;
+		const selectedPage = this.surface.querySelector<HTMLElement>(
+			`[data-page-index="${this.selectedPage()}"]`
+		);
 		const selected =
-			this.surface.querySelector<HTMLImageElement>(
-				`[data-page-index="${this.selectedPage()}"] img`
-			) ?? this.surface.querySelector<HTMLImageElement>('img');
+			selectedPage?.querySelector<HTMLElement>('[data-page-zoom-target]') ??
+			selectedPage?.querySelector<HTMLElement>('img') ??
+			this.surface.querySelector<HTMLElement>('[data-page-zoom-target], img');
 		if (!selected) return this.committedZoom;
 		const surfaceWidth = this.surface.getBoundingClientRect().width;
 		if (surfaceWidth <= 0) return this.committedZoom;
@@ -169,6 +184,7 @@ export class DocumentZoomCamera {
 						page: {
 							index: Number(page.element.dataset.pageIndex),
 							target: target.kind,
+							...(target.imageIndex === undefined ? {} : { imageIndex: target.imageIndex }),
 							x: (clientX - target.bounds.left) / target.bounds.width,
 							y: (clientY - target.bounds.top) / target.bounds.height
 						}
@@ -185,7 +201,9 @@ export class DocumentZoomCamera {
 			);
 			if (page) {
 				const target =
-					previous.page.target === 'image' ? page.querySelector<HTMLElement>('img') : page;
+					previous.page.target === 'image'
+						? page.querySelectorAll<HTMLElement>('img')[previous.page.imageIndex ?? 0]
+						: page;
 				const bounds = target?.getBoundingClientRect();
 				if (!bounds) return;
 				if (preserveHorizontal) {
@@ -224,17 +242,17 @@ export class DocumentZoomCamera {
 		page: { element: HTMLElement; bounds: DOMRect },
 		clientX: number,
 		clientY: number
-	): { kind: 'image' | 'page'; bounds: DOMRect } {
-		const image = page.element.querySelector<HTMLElement>('img');
-		const bounds = image?.getBoundingClientRect();
-		if (
-			bounds &&
-			bounds.left <= clientX &&
-			bounds.right >= clientX &&
-			bounds.top <= clientY &&
-			bounds.bottom >= clientY
-		) {
-			return { kind: 'image', bounds };
+	): { kind: 'image' | 'page'; bounds: DOMRect; imageIndex?: number } {
+		for (const [imageIndex, image] of page.element.querySelectorAll<HTMLElement>('img').entries()) {
+			const bounds = image.getBoundingClientRect();
+			if (
+				bounds.left <= clientX &&
+				bounds.right >= clientX &&
+				bounds.top <= clientY &&
+				bounds.bottom >= clientY
+			) {
+				return { kind: 'image', bounds, imageIndex };
+			}
 		}
 		return { kind: 'page', bounds: page.bounds };
 	}

@@ -24,8 +24,7 @@
 	onMount(() => session.start());
 
 	function selectPage(nextPage: number): void {
-		const page = zoom.scroller?.querySelector<HTMLElement>(`[data-page-index="${nextPage}"]`);
-		page?.scrollIntoView({ behavior: 'auto', block: 'start' });
+		zoom.scrollToPage(nextPage);
 		pageIndex = nextPage;
 	}
 
@@ -35,9 +34,7 @@
 	}
 
 	function fitPreviewPage(): void {
-		const selectedPage = pageIndex;
-		zoom.fitPage();
-		requestAnimationFrame(() => selectPage(selectedPage));
+		zoom.fitSelectedPage();
 	}
 
 	function onFileInput(event: Event): void {
