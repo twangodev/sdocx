@@ -23,14 +23,18 @@ interface ImagePoint {
 	y: number;
 }
 
-async function pinchAtAnchor(canvas: Locator, deltaY: number) {
+async function pinchAtAnchor(
+	canvas: Locator,
+	deltaY: number,
+	anchor: { x: number; y: number } = zoomAnchor
+) {
 	return canvas.evaluate(
 		async (element, gesture) => {
 			const pointAtAnchor = () => {
-				const pageAtPoint = document
-					.elementFromPoint(gesture.x, gesture.y)
-					?.closest<HTMLElement>('[data-page-index]');
-				const image = pageAtPoint?.querySelector<HTMLImageElement>('img');
+				const hit = document.elementFromPoint(gesture.x, gesture.y);
+				const pageAtPoint = hit?.closest<HTMLElement>('[data-page-index]');
+				const image =
+					hit?.closest<HTMLImageElement>('img') ?? pageAtPoint?.querySelector<HTMLImageElement>('img');
 				if (!pageAtPoint || !image) return undefined;
 				const bounds = image.getBoundingClientRect();
 				return {
@@ -60,7 +64,7 @@ async function pinchAtAnchor(canvas: Locator, deltaY: number) {
 				transform: stack ? getComputedStyle(stack).transform : 'none'
 			};
 		},
-		{ ...zoomAnchor, deltaY }
+		{ ...anchor, deltaY }
 	);
 }
 
@@ -174,6 +178,39 @@ test('prepared commits render the corpus against each other', async ({ page }, t
 	const fixture = page.getByRole('button', { name: /01-basic-formatting/ });
 	await expect(fixture).toContainText('no changes', { timeout: 20_000 });
 	await expect(page.getByAltText(/render of page 1/)).toHaveCount(2);
+	const comparisonStack = page.locator('.page-stack');
+	await expect(comparisonStack.locator('[data-page-index]')).toHaveCount(5);
+	await expect(comparisonStack.locator('img')).toHaveCount(10);
+
+	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
+	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
+	await expect(pageSelector).toHaveValue('5');
+	await pageSelector.fill('1');
+	await pageSelector.press('Enter');
+	await expect(pageSelector).toHaveValue('1');
+
+	const rightRender = page.getByAltText(/render of page 1/).nth(1);
+	const rightBounds = await rightRender.boundingBox();
+	expect(rightBounds).not.toBeNull();
+	const comparisonPinch = await pinchAtAnchor(page.locator('.canvas-wrap'), -20, {
+		x: rightBounds!.x + rightBounds!.width / 2,
+		y: rightBounds!.y + rightBounds!.height / 2
+	});
+	expectSameImagePoint(comparisonPinch.pointDuring, comparisonPinch.pointBefore);
+	await page.waitForTimeout(160);
+
+	const zoomMenu = page.getByRole('button', { name: 'Zoom and page fit' });
+	await zoomMenu.click();
+	await page.getByRole('menuitem', { name: 'Fit page' }).click();
+	await page.getByRole('button', { name: 'Zoom in' }).click();
+	await expect(comparisonStack).toHaveAttribute('data-zoom', '125');
+	await page.keyboard.press('Control+-');
+	await expect(comparisonStack).toHaveAttribute('data-zoom', '100');
+
+	await page.getByRole('radio', { name: 'swipe' }).click();
+	await expect(page.getByRole('slider', { name: 'Swipe between commit renders' })).toHaveCount(5);
+	await page.getByRole('radio', { name: 'difference' }).click();
+	await expect(comparisonStack.locator('[data-page-index]')).toHaveCount(5);
 	await expect(page.getByLabel('Comparison details')).toContainText('0 changed');
 });
 
