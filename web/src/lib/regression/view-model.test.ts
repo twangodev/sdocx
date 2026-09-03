@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampPageIndex, statusTone } from './page-model';
+import { clampPageIndex, statusTone } from './view-model';
 
 describe('regression page model', () => {
 	it('maps terminal and active fixture states to presentation tones', () => {

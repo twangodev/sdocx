@@ -1,4 +1,4 @@
-import type { FixtureStatus } from '../../lib/regression/runner';
+import type { FixtureStatus } from './runner';
 
 export type StatusTone = 'neutral' | 'active' | 'success' | 'danger';
 
