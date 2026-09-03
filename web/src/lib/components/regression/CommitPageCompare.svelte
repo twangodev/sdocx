@@ -2,6 +2,7 @@
 	import { Columns2, Diff, SplitSquareVertical } from '@lucide/svelte';
 	import ConverterToolbar from '$lib/components/ConverterToolbar.svelte';
 	import DocumentCanvas from '$lib/components/viewer/DocumentCanvas.svelte';
+	import ViewerToolbarShell from '$lib/components/viewer/ViewerToolbarShell.svelte';
 	import SegmentedControl from '$lib/components/ui/SegmentedControl.svelte';
 	import type { CommitFixtureResult } from '$lib/regression/commit-runner';
 	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
@@ -49,50 +50,53 @@
 </script>
 
 <section class="motion-surface-in flex min-w-0 flex-1 flex-col bg-canvas" aria-label="Render comparison">
-	<div
-		class="grid min-h-10 shrink-0 grid-cols-[minmax(7rem,1fr)_auto_minmax(15rem,1fr)] items-center gap-2 border-b border-subtle bg-bg px-2.5 max-[800px]:grid-cols-[auto_1fr]"
-	>
-		<span class="block truncate font-mono text-[10px] text-muted max-[800px]:hidden">
-			{result.fixture.id}
-		</span>
+	<ViewerToolbarShell label="Comparison toolbar">
+		{#snippet start()}
+			<div class="leading-tight">
+				<strong class="block truncate text-[11px] font-[550]">{result.fixture.id}</strong>
+				<span class="block truncate font-mono text-[9px] text-muted">{result.message}</span>
+			</div>
+		{/snippet}
 
-		<SegmentedControl
-			options={VIEW_MODES}
-			bind:value={viewMode}
-			label="Comparison view"
-			itemLabel={(mode) => mode}
-			class="justify-self-center"
-		>
-			{#snippet item(mode)}
-				{#if mode === 'split'}
-					<Columns2 size={12} strokeWidth={1.5} />
-				{:else if mode === 'swipe'}
-					<SplitSquareVertical size={12} strokeWidth={1.5} />
-				{:else}
-					<Diff size={12} strokeWidth={1.5} />
-				{/if}
-			{/snippet}
-		</SegmentedControl>
+		{#snippet center()}
+			<ConverterToolbar
+				model={{
+					pageIndex: visiblePageIndex,
+					pageCount,
+					previewZoom: zoom.visibleZoom,
+					fitPage: zoom.visiblePageFit,
+					disabled: controlsDisabled
+				}}
+				actions={{
+					onSelectPage: selectPage,
+					onStepPage: stepPage,
+					onSetZoom: zoom.setZoom,
+					onStepZoom: zoom.stepZoom,
+					onFitWidth: zoom.fitWidth,
+					onFitPage: zoom.fitSelectedPage
+				}}
+			/>
+		{/snippet}
 
-		<ConverterToolbar
-			model={{
-				pageIndex: visiblePageIndex,
-				pageCount,
-				previewZoom: zoom.visibleZoom,
-				fitPage: zoom.visiblePageFit,
-				disabled: controlsDisabled
-			}}
-			actions={{
-				onSelectPage: selectPage,
-				onStepPage: stepPage,
-				onSetZoom: zoom.setZoom,
-				onStepZoom: zoom.stepZoom,
-				onFitWidth: zoom.fitWidth,
-				onFitPage: zoom.fitSelectedPage
-			}}
-			class="justify-self-end max-[800px]:justify-self-stretch"
-		/>
-	</div>
+		{#snippet end()}
+			<SegmentedControl
+				options={VIEW_MODES}
+				bind:value={viewMode}
+				label="Comparison view"
+				itemLabel={(mode) => mode}
+			>
+				{#snippet item(mode)}
+					{#if mode === 'split'}
+						<Columns2 size={12} strokeWidth={1.5} />
+					{:else if mode === 'swipe'}
+						<SplitSquareVertical size={12} strokeWidth={1.5} />
+					{:else}
+						<Diff size={12} strokeWidth={1.5} />
+					{/if}
+				{/snippet}
+			</SegmentedControl>
+		{/snippet}
+	</ViewerToolbarShell>
 
 	<DocumentCanvas
 		{pages}
