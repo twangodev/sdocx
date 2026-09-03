@@ -7,41 +7,44 @@
 	import IconButton from './ui/IconButton.svelte';
 	import PageNumberInput from './ui/PageNumberInput.svelte';
 
-	interface Props {
+	interface ConverterToolbarModel {
 		pageIndex: number;
 		pageCount: number;
 		previewZoom: number;
 		fitPage: boolean;
-		disabled?: boolean;
+		disabled: boolean;
+	}
+
+	interface ConverterToolbarActions {
 		onSelectPage: (page: number) => void;
 		onStepPage: (direction: -1 | 1) => void;
 		onSetZoom: (zoom: number) => void;
 		onStepZoom: (direction: -1 | 1) => void;
 		onFitWidth: () => void;
 		onFitPage: () => void;
+	}
+
+	interface Props {
+		model: ConverterToolbarModel;
+		actions: ConverterToolbarActions;
 		class?: string;
 	}
 
 	let {
-		pageIndex,
-		pageCount,
-		previewZoom,
-		fitPage,
-		disabled = false,
-		onSelectPage,
-		onStepPage,
-		onSetZoom,
-		onStepZoom,
-		onFitWidth,
-		onFitPage,
+		model,
+		actions,
 		class: className = ''
 	}: Props = $props();
 
 	type ZoomAction = 'page' | 'width' | number;
 
-	const zoomMenu = $derived(makeZoomMenu(fitPage, previewZoom));
+	const zoomMenu = $derived(makeZoomMenu(model.fitPage, model.previewZoom));
 	const zoomValue = $derived(
-		fitPage ? 'Fit page' : previewZoom === 100 ? 'Fit width' : formatZoom(previewZoom)
+		model.fitPage
+			? 'Fit page'
+			: model.previewZoom === 100
+				? 'Fit width'
+				: formatZoom(model.previewZoom)
 	);
 
 	function makeZoomMenu(pageFit: boolean, zoom: number): MenuLeaf<ZoomAction>[] {
@@ -59,9 +62,9 @@
 	}
 
 	function runZoomAction(action: ZoomAction): void {
-		if (action === 'page') onFitPage();
-		else if (action === 'width') onFitWidth();
-		else onSetZoom(action);
+		if (action === 'page') actions.onFitPage();
+		else if (action === 'width') actions.onFitWidth();
+		else actions.onSetZoom(action);
 	}
 
 	function isTextEntry(target: EventTarget | null): boolean {
@@ -74,7 +77,7 @@
 	}
 
 	function handleKeyboardShortcut(event: KeyboardEvent): void {
-		if (disabled || event.defaultPrevented || event.isComposing || isTextEntry(event.target)) return;
+		if (model.disabled || event.defaultPrevented || event.isComposing || isTextEntry(event.target)) return;
 
 		const command = viewerCommandForKey(event);
 		if (!command) return;
@@ -82,25 +85,25 @@
 		event.preventDefault();
 		switch (command) {
 			case 'zoom-in':
-				onStepZoom(1);
+				actions.onStepZoom(1);
 				break;
 			case 'zoom-out':
-				onStepZoom(-1);
+				actions.onStepZoom(-1);
 				break;
 			case 'reset-zoom':
-				onFitWidth();
+				actions.onFitWidth();
 				break;
 			case 'previous-page':
-				onStepPage(-1);
+				actions.onStepPage(-1);
 				break;
 			case 'next-page':
-				onStepPage(1);
+				actions.onStepPage(1);
 				break;
 			case 'first-page':
-				onSelectPage(0);
+				actions.onSelectPage(0);
 				break;
 			case 'last-page':
-				onSelectPage(pageCount - 1);
+				actions.onSelectPage(model.pageCount - 1);
 		}
 	}
 </script>
@@ -112,22 +115,22 @@
 		<IconButton
 			label="Previous page"
 			tooltip="Previous page · Page Up"
-			disabled={disabled || pageIndex === 0}
-			onclick={() => onStepPage(-1)}
+			disabled={model.disabled || model.pageIndex === 0}
+			onclick={() => actions.onStepPage(-1)}
 		>
 			<ChevronLeft size={12} strokeWidth={1.4} />
 		</IconButton>
 		<PageNumberInput
-			{pageIndex}
-			{pageCount}
-			onSelect={onSelectPage}
-			{disabled}
+			pageIndex={model.pageIndex}
+			pageCount={model.pageCount}
+			onSelect={actions.onSelectPage}
+			disabled={model.disabled}
 		/>
 		<IconButton
 			label="Next page"
 			tooltip="Next page · Page Down"
-			disabled={disabled || pageIndex === pageCount - 1}
-			onclick={() => onStepPage(1)}
+			disabled={model.disabled || model.pageIndex === model.pageCount - 1}
+			onclick={() => actions.onStepPage(1)}
 		>
 			<ChevronRight size={12} strokeWidth={1.4} />
 		</IconButton>
@@ -139,8 +142,8 @@
 		<IconButton
 			label="Zoom out"
 			tooltip="Zoom out · Ctrl/⌘ − · pinch"
-			disabled={disabled || (!fitPage && previewZoom <= MIN_ZOOM)}
-			onclick={() => onStepZoom(-1)}
+			disabled={model.disabled || (!model.fitPage && model.previewZoom <= MIN_ZOOM)}
+			onclick={() => actions.onStepZoom(-1)}
 		>
 			<Minus size={12} strokeWidth={1.4} />
 		</IconButton>
@@ -149,14 +152,14 @@
 			value={zoomValue}
 			items={zoomMenu}
 			onAction={runZoomAction}
-			{disabled}
+			disabled={model.disabled}
 			class="min-w-[5.5rem] justify-center"
 		/>
 		<IconButton
 			label="Zoom in"
 			tooltip="Zoom in · Ctrl/⌘ + · pinch"
-			disabled={disabled || (!fitPage && previewZoom >= MAX_ZOOM)}
-			onclick={() => onStepZoom(1)}
+			disabled={model.disabled || (!model.fitPage && model.previewZoom >= MAX_ZOOM)}
+			onclick={() => actions.onStepZoom(1)}
 		>
 			<Plus size={12} strokeWidth={1.4} />
 		</IconButton>
