@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    io::{Cursor, Read},
+    path::PathBuf,
+};
 
 use sha2::{Digest, Sha256};
 
@@ -30,6 +34,46 @@ fn handwritten_documents_match_the_native_frame_audit() {
             parsed.report.diagnostics
         );
         assert_eq!(parsed.document.pages.len(), 1, "{name}: stored pages");
+        // These real archives also exercise the modern media manifest across
+        // versions 5202/5400, including PNG, PDF and proprietary SPI assets.
+        let mut archive = zip::ZipArchive::new(Cursor::new(&bytes)).unwrap();
+        let mut media_bytes = Vec::new();
+        archive
+            .by_name("media/mediaInfo.dat")
+            .unwrap()
+            .read_to_end(&mut media_bytes)
+            .unwrap();
+        let media = sdocx::parse_media_manifest_bytes(&media_bytes).unwrap();
+        let expected_media_count = match name {
+            "handwritten.sdocx" => 1,
+            "quiz.sdocx" => 8,
+            "cs61bl_su22.sdocx" => 12,
+            _ => panic!("add media expectations for {name}"),
+        };
+        assert_eq!(
+            media.entries.len(),
+            expected_media_count,
+            "{name}: media count"
+        );
+        for entry in &media.entries {
+            let mut asset = Vec::new();
+            archive
+                .by_name(&format!("media/{}", entry.file_name))
+                .unwrap()
+                .read_to_end(&mut asset)
+                .unwrap();
+            assert_eq!(
+                entry.sha256.as_deref(),
+                Some(format!("{:x}", Sha256::digest(&asset)).as_str()),
+                "{name}: media {}",
+                entry.bind_id
+            );
+            assert!(entry.trailing_data.is_empty(), "{name}: media extensions");
+        }
+        assert!(
+            media.trailing_data.is_empty(),
+            "{name}: manifest extensions"
+        );
         let strokes = &parsed.document.pages[0].strokes;
         assert_eq!(
             strokes.len(),

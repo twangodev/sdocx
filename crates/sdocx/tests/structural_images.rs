@@ -422,3 +422,118 @@ fn unknown_fills_and_negative_ids_do_not_invent_bindings() {
         );
     }
 }
+
+#[test]
+fn zero_id_tiny_bounds_and_wider_masks_preserve_the_reference() {
+    let mut flexible = 62_u32.to_le_bytes().to_vec();
+    flexible.push(2);
+    flexible.extend(fill(0));
+    flexible.extend_from_slice(b"future payload contains decoy media ID 7");
+    let mut shape = frame(7, 32, &shape_fixed(), &flexible);
+    // Five-byte mask with a future bit: all following fields move by one byte.
+    shape[12] = 5;
+    shape.insert(17, 1);
+    let size = shape.len() as u32;
+    shape[..4].copy_from_slice(&size.to_le_bytes());
+    shape[6..10].copy_from_slice(&((18 + shape_fixed().len()) as u32).to_le_bytes());
+    let mut payload = base();
+    for (index, value) in [0.0_f64, 0.0, 0.5, 0.25].into_iter().enumerate() {
+        payload[36 + index * 8..44 + index * 8].copy_from_slice(&value.to_le_bytes());
+    }
+    payload.extend(frame(6, 0, &[], &[]));
+    payload.extend(shape);
+    payload.extend(frame(3, 1 << 31, &[], b"future settings"));
+    payload.extend(frame(123, 0, &[], &[]));
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(0, "zero.png")]),
+        &[("zero.png", b"zero")],
+    ))
+    .unwrap();
+    let image = placed(&parsed.document.pages[0].elements[0]);
+    assert_eq!(image.media_id, Some(0));
+    assert_eq!(image.bbox.x_min, 0.0);
+    assert_eq!(image.bbox.x_max, 0.5);
+    assert_eq!(image.bbox.y_max, 0.25);
+    assert_eq!(
+        asset_bytes(&parsed.document, &parsed.document.pages[0].elements[0]),
+        b"zero"
+    );
+    let warning = parsed
+        .report
+        .diagnostics
+        .iter()
+        .find(|d| d.code == DiagnosticCode::UnsupportedImageFeature)
+        .unwrap();
+    assert!(warning.message.contains("additional shape fields"));
+    assert!(warning.message.contains("additional image frames"));
+}
+
+#[test]
+fn images_obey_object_limits_and_do_not_scan_non_image_payloads() {
+    let payload = image(7);
+    let raw = page(&[vec![object(3, &payload, &[])]], 0, &[]);
+    let options = sdocx::ParseOptions {
+        limits: sdocx::ParseLimits {
+            max_objects_per_page: 0,
+            ..sdocx::ParseLimits::default()
+        },
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&support::archive(&raw), &options),
+        Err(Error::LimitExceeded { .. })
+    ));
+    let bytes = archive(
+        &one_page(vec![object(250, &payload, &[])]),
+        Some(&[(7, "main.png")]),
+        &[("main.png", b"main")],
+    );
+    let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+    assert!(parsed.document.pages[0].elements.is_empty());
+    assert!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|d| d.code == DiagnosticCode::UnknownObjectType)
+    );
+}
+
+#[test]
+fn no_fill_means_no_main_image_even_when_an_original_asset_exists() {
+    let mut payload = base();
+    payload.extend(frame(6, 0, &[], &[]));
+    payload.extend(frame(7, 0, &shape_fixed(), &[]));
+    payload.extend(frame(3, 1 << 18, &[], &7_u32.to_le_bytes()));
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(7, "original.png")]),
+        &[("original.png", b"original")],
+    ))
+    .unwrap();
+    let image = placed(&parsed.document.pages[0].elements[0]);
+    assert_eq!(image.media_id, None);
+    assert_eq!(image.original_media_id, Some(7));
+    assert_eq!(image.media_index, None);
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn legacy_image_values_still_render_with_their_explicit_asset_index() {
+    let bytes = archive(
+        &one_page(vec![object(3, &image(7), &[])]),
+        Some(&[(7, "main.png")]),
+        &[("main.png", b"main")],
+    );
+    let mut document = sdocx::parse_bytes(&bytes).unwrap();
+    let image = placed(&document.pages[0].elements[0]);
+    document.pages[0].elements = vec![PageElement::Image {
+        bbox: image.bbox,
+        media_index: image.media_index.unwrap(),
+    }];
+    let svg = sdocx::render_page_svg(&document, 0, &sdocx::RenderOptions::default())
+        .unwrap()
+        .svg;
+    assert_eq!(svg.matches("<image ").count(), 1);
+    assert!(svg.contains("data:image/png;base64,bWFpbg=="));
+}

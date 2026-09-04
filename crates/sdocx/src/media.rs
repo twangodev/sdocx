@@ -1,6 +1,6 @@
 use crate::binary::Reader;
 use crate::{Error, ParseLimits, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub(crate) struct MediaResolver {
     bindings: HashMap<u32, std::result::Result<usize, String>>,
@@ -11,7 +11,7 @@ impl MediaResolver {
     pub(crate) fn new(
         manifest: Option<&MediaManifest>,
         assets: &[crate::MediaAsset],
-        names: &HashMap<String, usize>,
+        names: &HashSet<String>,
     ) -> Self {
         let mut bindings = HashMap::new();
         let indexes: HashMap<_, _> = assets
@@ -27,21 +27,19 @@ impl MediaResolver {
                 .collect()
         } else {
             names
-                .keys()
+                .iter()
                 .filter(|name| name.starts_with("media/"))
                 .filter_map(|name| media_archive_id(name).map(|id| (id, name.clone())))
                 .collect()
         };
         for (id, name) in records {
-            let resolved = match names.get(&name).copied().unwrap_or(0) {
-                0 => Err(format!("media ID {id} names missing archive entry {name}")),
-                1 => indexes
+            let resolved = if names.contains(&name) {
+                indexes
                     .get(name.as_str())
                     .copied()
-                    .ok_or_else(|| format!("media ID {id} names unsupported media {name}")),
-                _ => Err(format!(
-                    "media ID {id} names duplicate archive entry {name}"
-                )),
+                    .ok_or_else(|| format!("media ID {id} names unsupported media {name}"))
+            } else {
+                Err(format!("media ID {id} names missing archive entry {name}"))
             };
             match bindings.entry(id) {
                 std::collections::hash_map::Entry::Vacant(entry) => {

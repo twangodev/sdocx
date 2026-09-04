@@ -102,12 +102,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     let media_manifest = read_optional_entry(&mut archive, "media/mediaInfo.dat", &options.limits)?
         .map(|bytes| parse_media_manifest_bytes_with_limits(&bytes, &options.limits))
         .transpose()?;
-    let mut archive_names = HashMap::new();
-    for index in 0..archive.len() {
-        *archive_names
-            .entry(archive.by_index(index)?.name().to_owned())
-            .or_insert(0) += 1;
-    }
+    let archive_names = archive.file_names().map(str::to_owned).collect();
     let media = MediaResolver::new(
         media_manifest.as_ref(),
         &metadata.media_assets,

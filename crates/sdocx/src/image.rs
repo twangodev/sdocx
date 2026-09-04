@@ -32,12 +32,13 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     let mut fixed = Reader::new(shape.fixed, "image shape fixed data");
     fixed.read_u32("shape type")?;
     read_bbox(&mut fixed)?;
-    finite_f32(&mut fixed, "corner radius")?;
+    let corner_radius = finite_f32(&mut fixed, "corner radius")?;
     let path_size = fixed.read_u32("shape path size")? as usize;
     fixed.skip(path_size, "shape path")?;
     let point_count = usize::from(fixed.read_u8("control point count")?);
     fixed.skip(point_count * 16, "control points")?;
-    if path_size != 0
+    if corner_radius != 0.0
+        || path_size != 0
         || point_count != 0
         || fixed.remaining() != 0
         || shape.properties.has_other_bits(0)
