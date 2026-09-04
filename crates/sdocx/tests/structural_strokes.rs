@@ -1,0 +1,327 @@
+use std::io::{Cursor, Write};
+
+use sdocx::{Color, Error, ParseLimits, ParseOptions, Point};
+
+// Small synthetic WDoc records built from the native serializer contract.
+// These intentionally contain short strokes, unusual masks, children and
+// multiple layers that the former fixed-offset walker could not traverse.
+fn frame(kind: i16, properties: u16, fields: u32, fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
+    let offset = 18 + fixed.len();
+    let mut data = Vec::new();
+    data.extend_from_slice(&((offset + flexible.len()) as u32).to_le_bytes());
+    data.extend_from_slice(&kind.to_le_bytes());
+    data.extend_from_slice(&(offset as u32).to_le_bytes());
+    data.push(2);
+    data.extend_from_slice(&properties.to_le_bytes());
+    data.push(4);
+    data.extend_from_slice(&fields.to_le_bytes());
+    data.extend_from_slice(fixed);
+    data.extend_from_slice(flexible);
+    data
+}
+
+fn base() -> Vec<u8> {
+    let mut fixed = 5500_u32.to_le_bytes().to_vec();
+    fixed.extend_from_slice(&36_u16.to_le_bytes());
+    fixed.extend_from_slice(b"00000000-0000-0000-0000-000000000001");
+    fixed.extend_from_slice(&1234_i64.to_le_bytes());
+    for value in [10.0_f64, 17.0, 312.0, 21.0] {
+        fixed.extend_from_slice(&value.to_le_bytes());
+    }
+    fixed.extend_from_slice(&0_i32.to_le_bytes());
+    fixed.push(0);
+    frame(0, 0, 0x6000, &fixed, &[0; 16])
+}
+
+fn stroke(properties: u16, count: u16, channels: &[u8], fields: u32, style: &[u8]) -> Vec<u8> {
+    let mut fixed = count.to_le_bytes().to_vec();
+    fixed.extend_from_slice(channels);
+    fixed.extend_from_slice(&[1, 0]); // native tool/input type
+    let mut data = base();
+    data.extend(frame(1, properties, fields, &fixed, style));
+    data
+}
+
+fn compressed(stylus: bool) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&10.0_f64.to_le_bytes());
+    bytes.extend_from_slice(&20.0_f64.to_le_bytes());
+    bytes.extend_from_slice(&[0x90, 0x25, 0x48, 0x80, 0x20, 0, 0x40, 0]);
+    bytes.extend_from_slice(&0.25_f32.to_le_bytes());
+    bytes.extend_from_slice(&[0, 2, 0, 0x81]);
+    bytes.extend_from_slice(&1000_i32.to_le_bytes());
+    bytes.extend_from_slice(&[5, 0, 0xff, 0xff]);
+    if stylus {
+        bytes.extend_from_slice(&0.5_f32.to_le_bytes());
+        bytes.extend_from_slice(&[0, 4, 0, 0x82]);
+        bytes.extend_from_slice(&(-1.0_f32).to_le_bytes());
+        bytes.extend_from_slice(&[0, 0x82, 0, 1]);
+    }
+    bytes
+}
+
+fn object(kind: u8, payload: &[u8], children: &[Vec<u8>]) -> Vec<u8> {
+    let mut bytes = vec![kind];
+    bytes.extend_from_slice(&(children.len() as u16).to_le_bytes());
+    bytes.extend_from_slice(&((payload.len() + 32) as u32).to_le_bytes());
+    bytes.extend_from_slice(payload);
+    bytes.extend_from_slice(&[0xaa; 32]);
+    for child in children {
+        bytes.extend(child);
+    }
+    bytes
+}
+
+fn page(layers: &[Vec<Vec<u8>>], field_mask: u32, properties: &[u8]) -> Vec<u8> {
+    // One-byte property mask and five-byte field mask deliberately move the
+    // fixed page fields away from their old absolute offsets.
+    let mut bytes = vec![0; 8];
+    bytes.extend_from_slice(&[1, 0, 5]);
+    bytes.extend_from_slice(&field_mask.to_le_bytes());
+    bytes.push(0);
+    for value in [0_u32, 1080, 1527, 0, 0] {
+        bytes.extend_from_slice(&value.to_le_bytes());
+    }
+    bytes.extend_from_slice(&4_u16.to_le_bytes());
+    for c in "page".encode_utf16() {
+        bytes.extend_from_slice(&c.to_le_bytes());
+    }
+    bytes.extend_from_slice(&0_i64.to_le_bytes());
+    bytes.extend_from_slice(&5500_u32.to_le_bytes());
+    bytes.extend_from_slice(&4000_u32.to_le_bytes());
+    let flexible_offset = bytes.len() as u32;
+    bytes[4..8].copy_from_slice(&flexible_offset.to_le_bytes());
+    bytes.extend_from_slice(properties);
+    let layer_offset = bytes.len() as u32;
+    bytes[..4].copy_from_slice(&layer_offset.to_le_bytes());
+    bytes.extend_from_slice(&(layers.len() as u16).to_le_bytes());
+    bytes.extend_from_slice(&0_u16.to_le_bytes());
+    for (number, objects) in layers.iter().enumerate() {
+        // Variable-size layer masks, with a bounded extension after its number.
+        bytes.extend_from_slice(&20_u32.to_le_bytes());
+        bytes.extend_from_slice(&0_u32.to_le_bytes());
+        bytes.extend_from_slice(&[2, 2, 0, 3, 0, 0, 0]);
+        bytes.extend_from_slice(&(number as u32).to_le_bytes());
+        bytes.push(0);
+        bytes.extend_from_slice(&(objects.len() as u32).to_le_bytes());
+        for object in objects {
+            bytes.extend(object);
+        }
+        bytes.extend_from_slice(&[0xbb; 32]);
+    }
+    bytes.extend_from_slice(&[0xcc; 32]);
+    bytes.extend_from_slice(b"Page for SAMSUNG S-Pen SDK");
+    bytes
+}
+
+fn archive(page: &[u8]) -> Vec<u8> {
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    writer
+        .start_file("page.page", zip::write::SimpleFileOptions::default())
+        .unwrap();
+    writer.write_all(page).unwrap();
+    writer.finish().unwrap().into_inner()
+}
+
+fn single(payload: &[u8]) -> Vec<u8> {
+    archive(&page(&[vec![object(1, payload, &[])]], 0, &[]))
+}
+
+#[test]
+fn short_strokes_use_the_declared_count_and_property_selected_channels() {
+    for properties in [0x25, 0x05, 0x65, 0x425] {
+        let data = single(&stroke(properties, 3, &compressed(true), 0, &[]));
+        let doc = sdocx::parse_bytes(&data).unwrap();
+        let stroke = &doc.pages[0].strokes[0];
+        assert_eq!(
+            stroke.points,
+            [
+                Point { x: 10.0, y: 20.0 },
+                Point { x: 310.5, y: 17.75 },
+                Point { x: 311.5, y: 19.75 },
+            ]
+        );
+        assert_eq!(stroke.pressures, [0.25, 0.375, 0.3125]);
+        assert_eq!(stroke.timestamps, [1000, 1005, 66540]);
+        assert_eq!(stroke.tilts, [0.5, 0.75, 0.625]);
+        assert_eq!(stroke.orientations, [-1.0, -1.125, -1.0625]);
+    }
+}
+
+#[test]
+fn traverses_every_layer_and_child_without_scanning_unknown_payloads() {
+    let payload = stroke(1, 3, &compressed(false), 0, &[]);
+    let child = object(1, &payload, &[]);
+    let tree = object(4, b"container payload", std::slice::from_ref(&child));
+    // An unknown object's payload deliberately contains a valid-looking stroke.
+    let unknown = object(250, &payload, &[]);
+    let bytes = archive(&page(&[vec![unknown, tree], vec![child]], 0, &[]));
+    let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
+    assert_eq!(parsed.document.pages[0].strokes.len(), 2);
+    assert_eq!(parsed.document.pages[0].strokes[1].points.len(), 3);
+    assert!(parsed.document.pages[0].strokes[0].tilts.is_empty());
+    assert!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnknownObjectType)
+    );
+}
+
+#[test]
+fn uncompressed_strokes_store_complete_arrays_in_channel_order() {
+    for stylus in [false, true] {
+        let mut channels = Vec::new();
+        for value in [1.25_f64, 5.5, 12.75, 9.0] {
+            channels.extend_from_slice(&value.to_le_bytes());
+        }
+        for value in [0.25_f32, 0.875] {
+            channels.extend_from_slice(&value.to_le_bytes());
+        }
+        for value in [-100_i32, 60000] {
+            channels.extend_from_slice(&value.to_le_bytes());
+        }
+        if stylus {
+            for value in [0.5_f32, 0.75, -1.0, -0.5] {
+                channels.extend_from_slice(&value.to_le_bytes());
+            }
+        }
+        let bytes = single(&stroke(if stylus { 4 } else { 0 }, 2, &channels, 0, &[]));
+        let doc = sdocx::parse_bytes(&bytes).unwrap();
+        let stroke = &doc.pages[0].strokes[0];
+        assert_eq!(
+            stroke.points,
+            [Point { x: 1.25, y: 5.5 }, Point { x: 12.75, y: 9.0 }]
+        );
+        assert_eq!(stroke.pressures, [0.25, 0.875]);
+        assert_eq!(stroke.timestamps, [-100, 60000]);
+        assert_eq!(stroke.tilts, if stylus { vec![0.5, 0.75] } else { vec![] });
+        assert_eq!(
+            stroke.orientations,
+            if stylus { vec![-1.0, -0.5] } else { vec![] }
+        );
+    }
+}
+
+#[test]
+fn style_masks_control_color_and_width_without_marker_searches() {
+    let mut style = 7_u32.to_le_bytes().to_vec(); // pen string-table ID
+    style.extend_from_slice(&0xff47a114_u32.to_le_bytes());
+    style.extend_from_slice(&5.5_f32.to_le_bytes());
+    // Unknown later field contains a false legacy color marker and size.
+    style.extend_from_slice(&[3, 0, 1, 0, 0, 0, 255, 0, 0, 255]);
+    style.extend_from_slice(&99.0_f32.to_le_bytes());
+    let bytes = single(&stroke(1, 3, &compressed(false), (1 << 31) | 14, &style));
+    let doc = sdocx::parse_bytes(&bytes).unwrap();
+    let stroke = &doc.pages[0].strokes[0];
+    assert_eq!(
+        stroke.color,
+        Some(Color {
+            r: 0x47,
+            g: 0xa1,
+            b: 0x14
+        })
+    );
+    assert_eq!(stroke.pen_width, 5.5);
+    assert!(stroke.tilts.is_empty());
+    assert!(stroke.orientations.is_empty());
+}
+
+#[test]
+fn rejects_incomplete_or_non_finite_channels_instead_of_returning_partial_pages() {
+    let good = compressed(true);
+    for end in 0..good.len() {
+        let bytes = single(&stroke(5, 3, &good[..end], 0, &[]));
+        assert!(
+            matches!(sdocx::parse_bytes(&bytes), Err(Error::Format(_))),
+            "accepted {end} channel bytes"
+        );
+    }
+    for offset in [0, 24, 40] {
+        // first coordinate, pressure and tilt
+        let mut channels = good.clone();
+        if offset == 0 {
+            channels[..8].copy_from_slice(&f64::INFINITY.to_le_bytes());
+        } else {
+            channels[offset..offset + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+        }
+        assert!(sdocx::parse_bytes(&single(&stroke(5, 3, &channels, 0, &[]))).is_err());
+    }
+}
+
+#[test]
+fn applies_limits_to_declared_points_and_strokes_across_layers_and_children() {
+    let bytes = single(&stroke(1, u16::MAX, &[], 0, &[]));
+    let options = ParseOptions {
+        limits: ParseLimits {
+            max_points_per_stroke: 2,
+            ..ParseLimits::default()
+        },
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&bytes, &options),
+        Err(Error::LimitExceeded {
+            resource: "points per stroke",
+            limit: 2,
+            actual: 65535,
+        })
+    ));
+    let child = object(1, &stroke(1, 3, &compressed(false), 0, &[]), &[]);
+    let bytes = archive(&page(
+        &[
+            vec![object(4, &[], std::slice::from_ref(&child))],
+            vec![child],
+        ],
+        0,
+        &[],
+    ));
+    let options = ParseOptions {
+        limits: ParseLimits {
+            max_strokes_per_page: 1,
+            ..ParseLimits::default()
+        },
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&bytes, &options),
+        Err(Error::LimitExceeded {
+            resource: "strokes per page",
+            limit: 1,
+            actual: 2,
+        })
+    ));
+}
+
+#[test]
+fn zero_point_strokes_have_no_channel_seed_values() {
+    for properties in [0, 1, 4, 5] {
+        let doc = sdocx::parse_bytes(&single(&stroke(properties, 0, &[], 0, &[]))).unwrap();
+        assert!(doc.pages[0].strokes[0].points.is_empty());
+        assert!(doc.pages[0].strokes[0].pressures.is_empty());
+    }
+}
+
+#[test]
+fn page_properties_follow_masks_with_variable_headers() {
+    let mut properties = Vec::new();
+    for value in [10.0_f64, 20.0, 300.0, 400.0] {
+        properties.extend_from_slice(&value.to_le_bytes());
+    }
+    properties.extend_from_slice(&0xfff5dddd_u32.to_le_bytes());
+    properties.extend_from_slice(&10_u32.to_le_bytes());
+    let bytes = archive(&page(&[vec![]], 1 | 32 | 512, &properties));
+    let doc = sdocx::parse_bytes(&bytes).unwrap();
+    let page = &doc.pages[0];
+    assert_eq!(page.width, 1080);
+    assert_eq!(page.content_bbox.x_max, 300.0);
+    assert_eq!(
+        page.background_color,
+        Some(Color {
+            r: 0xf5,
+            g: 0xdd,
+            b: 0xdd
+        })
+    );
+    assert_eq!(page.template.unwrap().id, 10);
+}

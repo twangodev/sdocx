@@ -57,6 +57,10 @@ impl<'a> Reader<'a> {
         Ok(u32::from_le_bytes(self.read_array(field)?))
     }
 
+    pub(crate) fn read_i32(&mut self, field: &'static str) -> Result<i32> {
+        Ok(i32::from_le_bytes(self.read_array(field)?))
+    }
+
     pub(crate) fn read_u64(&mut self, field: &'static str) -> Result<u64> {
         Ok(u64::from_le_bytes(self.read_array(field)?))
     }

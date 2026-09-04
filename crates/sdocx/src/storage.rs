@@ -1,11 +1,12 @@
 use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::error::{Error, Result};
+use crate::frame::Mask;
 use crate::note::StoredNote;
 use crate::report::ParseReport;
 use crate::types::{Document, ObjectType};
 
-const LAYER_HEADER_MIN_SIZE: usize = 16;
+const LAYER_HEADER_MIN_SIZE: usize = 14;
 const LAYER_HEADER_MAX_SIZE: usize = 16 * 1024;
 const INTEGRITY_TRAILER_SIZE: usize = 32;
 
@@ -83,15 +84,15 @@ pub struct PageManifestEntry {
 pub struct StoredPageHeader {
     /// Absolute offset of the serialized layer collection.
     pub raw_layer_offset: u32,
-    /// Absolute offset of the page-property block.
+    /// Absolute offset of the page flexible-data block (legacy field name).
     pub property_offset: u32,
-    /// Undocumented byte at offset `0x08`.
+    /// Number of bytes in the property mask (legacy field name).
     pub unknown_08: u8,
-    /// Raw text-only page flag.
+    /// Low 32 property-mask bits; bit 0 is the text-only flag (legacy name).
     pub text_only_flag: u32,
-    /// Undocumented byte following `text_only_flag`.
+    /// Number of bytes in the flexible-field mask (legacy field name).
     pub unknown_0d: u8,
-    /// Bit mask describing fields in the page-property block.
+    /// Low 32 flexible-field-mask bits (legacy field name).
     pub property_mask: u32,
     /// Raw Samsung Notes orientation value.
     pub orientation: u32,
@@ -182,10 +183,23 @@ pub fn parse_stored_page_bytes_with_limits(
     let mut reader = Reader::new(data, "page header");
     let raw_layer_offset = reader.read_u32("raw layer offset")?;
     let property_offset = reader.read_u32("property offset")?;
-    let unknown_08 = reader.read_u8("unknown header byte 0x08")?;
-    let text_only_flag = reader.read_u32("text-only flag")?;
-    let unknown_0d = reader.read_u8("unknown header byte 0x0d")?;
-    let property_mask = reader.read_u32("page property mask")?;
+    let header_end = if property_offset == 0 {
+        raw_layer_offset
+    } else {
+        property_offset
+    } as usize;
+    if header_end > raw_layer_offset as usize || raw_layer_offset as usize > data.len() {
+        return Err(Error::Format(
+            "page header offsets are outside the page".into(),
+        ));
+    }
+    let mut reader = Reader::at(&data[..header_end], reader.position(), "page header")?;
+    let properties = Mask::read(&mut reader)?;
+    let unknown_08 = properties.byte_count();
+    let text_only_flag = properties.low_u32();
+    let fields = Mask::read(&mut reader)?;
+    let unknown_0d = fields.byte_count();
+    let property_mask = fields.low_u32();
     let orientation = reader.read_u32("page orientation")?;
     let width = reader.read_u32("page width")?;
     let height = reader.read_u32("page height")?;
@@ -193,13 +207,6 @@ pub fn parse_stored_page_bytes_with_limits(
     let offset_y = reader.read_u32("page y offset")?;
     let uuid = reader.read_utf16_u16("page UUID")?;
 
-    let header_end = [raw_layer_offset, property_offset]
-        .into_iter()
-        .filter(|offset| *offset != 0)
-        .map(|offset| usize::try_from(offset).unwrap_or(usize::MAX))
-        .min()
-        .unwrap_or(data.len())
-        .min(data.len());
     let modified_time_raw = read_optional_u64(&mut reader, header_end, "modified timestamp")?;
     let format_version = read_optional_u32(&mut reader, header_end, "format version")?;
     let minimum_format_version =
@@ -336,17 +343,14 @@ fn parse_layer(
         )));
     }
 
-    let metadata_offset = reader.read_u32("layer metadata offset")?;
-    reader.skip(1, "unknown layer byte 0x08")?;
-    let flags_1 = reader.read_u8("layer flags 1")?;
-    reader.skip(1, "unknown layer byte 0x0a")?;
-    let flags_2 = reader.read_u8("layer flags 2")?;
-    let number = reader.read_u32("layer number")?;
-    let header_extra = reader
-        .read_bytes(
-            header_size - LAYER_HEADER_MIN_SIZE,
-            "layer header extension",
-        )?
+    let header = reader.read_bytes(header_size - 4, "layer header")?;
+    let mut fields = Reader::new(header, "layer header");
+    let metadata_offset = fields.read_u32("layer metadata offset")?;
+    let flags_1 = Mask::read(&mut fields)?.low_u32() as u8;
+    let flags_2 = Mask::read(&mut fields)?.low_u32() as u8;
+    let number = fields.read_u32("layer number")?;
+    let header_extra = fields
+        .read_bytes(fields.remaining(), "layer header extension")?
         .to_vec();
 
     let object_count = usize::try_from(reader.read_u32("layer object count")?)
@@ -470,7 +474,7 @@ mod tests {
         data.extend_from_slice(&0_u32.to_le_bytes());
         data.push(4);
         data.extend_from_slice(&0_u32.to_le_bytes());
-        data.push(0);
+        data.push(4);
         data.extend_from_slice(&0_u32.to_le_bytes());
         data.extend_from_slice(&0_u32.to_le_bytes());
         data.extend_from_slice(&1080_u32.to_le_bytes());
@@ -490,7 +494,7 @@ mod tests {
         data.extend_from_slice(&0_u16.to_le_bytes());
         data.extend_from_slice(&16_u32.to_le_bytes());
         data.extend_from_slice(&0_u32.to_le_bytes());
-        data.extend_from_slice(&[0, 1, 0, 2]);
+        data.extend_from_slice(&[1, 1, 1, 2]);
         data.extend_from_slice(&7_u32.to_le_bytes());
         data.extend_from_slice(&1_u32.to_le_bytes());
 

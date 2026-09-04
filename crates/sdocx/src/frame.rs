@@ -25,6 +25,10 @@ impl<'a> Mask<'a> {
         u32::from_le_bytes(bytes)
     }
 
+    pub(crate) fn byte_count(self) -> u8 {
+        self.0.len() as u8
+    }
+
     fn is_empty(self) -> bool {
         self.0.iter().all(|byte| *byte == 0)
     }

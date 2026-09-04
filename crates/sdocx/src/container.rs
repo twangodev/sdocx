@@ -102,8 +102,8 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     let mut page_records = Vec::with_capacity(page_names.len());
     for name in &page_names {
         let buf = read_required_entry(&mut archive, name, &options.limits)?;
-        let page = parse_page(&buf, &options.limits)?;
         let stored_page = parse_stored_page_bytes_with_limits(&buf, &options.limits)?;
+        let page = parse_page(&buf, &stored_page, &options.limits)?;
 
         let file_id = Path::new(name)
             .file_stem()
