@@ -76,3 +76,19 @@ The repeatable runner and SHA-256 lock are described in
 fails against the previous decoder: handwritten has 322,406 decoded points
 instead of 321,776. This is a geometry regression check, not a visual-fidelity
 claim for every pen style or non-stroke object.
+
+## Media manifest regressions
+
+The image migration extended the same locked fixture runner to parse
+`media/mediaInfo.dat` and verify every manifest digest against the referenced
+asset bytes:
+
+| Fixture | Manifest version | Media entries | Hash mismatches |
+| --- | ---: | ---: | ---: |
+| handwritten | 5202 | 1 | 0 |
+| quiz | 5400 | 8 | 0 |
+| CS61BL | 5400 | 12 | 0 |
+
+All 21 manifest records have no unknown trailing bytes. Assets include PNG,
+PDF and proprietary SPI. This establishes manifest parsing/hash regression
+coverage; these fixtures do not establish standalone-image rendering fidelity.

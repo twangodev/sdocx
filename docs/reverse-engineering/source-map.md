@@ -62,6 +62,25 @@ The standalone-text implementation rechecked these arm64 locations in the same
 [`text-box-findings.md`](text-box-findings.md) distinguishes these native
 contracts from synthetic coverage and the remaining real-fixture gap.
 
+## Image frames and media resolution
+
+The image migration checked the following symbols in arm64 `libSPenModel.so`
+4.4.45.37 and the corresponding decompiled Java writers:
+
+| Symbol/source | Evidence |
+| --- | --- |
+| `ObjectImage::NewGetBinary`, `0x420b00`; `NewApplyBinary`, `0x420ba8` | Shared shape chain followed by the type-3 image component. |
+| `ObjectShapeBinaryHandler::GetOwnBinary`, `0x3a8dd0–0x3a9228` | Type-7 fixed fields; text/pen fields before sized fill effect bit 5. |
+| `ObjectShapeData::GetBinary_PenData`, `0x3ac284` | Four-byte fields at bits 2 and 4 before the fill record. |
+| `ObjectShapeData::CreateEffect`, `0x3abfe0`; `FillImageEffect::Construct`, `0x3b8030` | Fill effect type 2 selects `FillImageEffect`. |
+| `FillImageEffect::GetBinarySize`, `0x3b9060`; writer `0x3b90c8`; reader `0x3b9298` | Normal 62-byte image fill, main media ID, alternate 122-byte representation. |
+| `ComponentImage::ImageGetOwnBinary`, `0x3a4538`; flexible reader `0x3a4b20` | Type-3 crop, border and original-image fields; these do not select the displayed image. |
+| `sources/k1/a.java:790-808`, `sources/n1/a.java:49-101` | Modern manifest version/count, sized records, bind ID to filename mapping and EOFX. |
+| `sources/f2/a.java:143-176` | Fixed-byte hash reader and length-prefixed UTF-16 filenames. |
+
+See [`image-findings.md`](image-findings.md) for implemented semantics and the
+separation between native evidence, synthetic tests and real manifest coverage.
+
 ## Evidence standard
 
 A field is called confirmed when at least one writer/parser path gives its

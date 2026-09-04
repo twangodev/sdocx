@@ -686,6 +686,12 @@ does not have a standard image magic and remains undecoded. Its manifest's
 64-character hash exactly equals the lowercase hexadecimal SHA-256 of that
 payload.
 
+The SDK now parses modern manifest records and resolves displayed-image IDs
+through this mapping. A filename's numeric prefix is only a warned fallback
+when the manifest is absent. In native image objects (`0 + 6 + 7 + 3`), the main
+ID is inside type 7's bit-5 image fill; type 3's border/original IDs are separate.
+See [`image-findings.md`](image-findings.md) for field layouts and limitations.
+
 ## `end_tag.bin`
 
 The following is both the `end_tag.bin` member schema and the outer record

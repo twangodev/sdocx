@@ -3,9 +3,9 @@
 //! # Accuracy and compatibility
 //!
 //! Archive structure, format versions, page ordering, and supported packed
-//! stroke channels and standalone text-box frames are decoded from observed
-//! S Pen SDK contracts. Text rendering, other page objects, templates, and
-//! media associations remain best-effort. A successful parse can omit
+//! stroke channels, standalone text/image frames and media bind IDs are decoded
+//! from observed S Pen SDK contracts. Text rendering, image effects, other page
+//! objects and templates remain best-effort. A successful parse can omit
 //! unsupported content and does not indicate a lossless decode. Preserve the
 //! source document when fidelity is important.
 

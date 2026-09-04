@@ -93,6 +93,6 @@ not a Samsung reference export or evidence of complete visual equivalence.
 - Diagnostics describe detected unsupported features; their absence does not
   certify a lossless parse or render. Inherited base properties and nested
   extension semantics remain incomplete.
-- Images, shapes and lines still use bounded best-effort interpretation. The
-  next structural migration is image frame decoding and explicit media-ID
-  resolution, replacing encounter-order media assignment.
+- The subsequent [image migration](image-findings.md) replaces image scanning
+  and encounter-order media assignment. Shapes and lines retain bounded
+  best-effort interpretation and are the next structural migration.

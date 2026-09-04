@@ -32,10 +32,15 @@ reuses bounded `TextCommon` parsing. Embedded text recursion is limited, and
 detected unsupported features appear in `ParseReport` and CLI output. See
 [`text-box-findings.md`](text-box-findings.md) for test evidence and limits.
 
-The next implementation step is structural image decoding: follow
-`0 + 6 + 7 + 3`, resolve each explicit media reference against `mediaInfo.dat`,
-and cover reordered/missing/repeated media IDs with regression tests. Samsung
-standalone-text exports remain needed for visual comparison in parallel.
+The structural image milestone is implemented: `0 + 6 + 7 + 3` supplies bounds,
+rotation and explicit main/border/original references; the main ID resolves
+through the bounded modern media manifest. Reordered, missing, repeated and
+ambiguous IDs have regression coverage. See [`image-findings.md`](image-findings.md).
+
+The next structural step is shape/line decoding using the shared components,
+then removal of the remaining UUID/text heuristics. Samsung standalone-text
+and image exports remain needed for visual comparison, especially crop,
+wrapping and detailed style behavior.
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
@@ -54,6 +59,7 @@ standalone-text exports remain needed for visual comparison in parallel.
 ## Compatibility rules
 
 - Manifest page order overrides ZIP order.
+- Media bind IDs override asset encounter order and filename prefixes.
 - The post-EOCD end tag is authoritative and can differ from `end_tag.bin`.
 - Modern attachments use `note.note` plus `media/`; do not generate the generic
   `attach/attachInfo.dat` form.

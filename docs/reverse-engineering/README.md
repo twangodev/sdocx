@@ -17,6 +17,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   the stray top-right strokes and the exact packed-point layout.
 - [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
   bounded rich-text decoding, diagnostics, regressions and rendering limits.
+- [`image-findings.md`](image-findings.md) — displayed-image versus border/original
+  references, authoritative media bindings and image regression coverage.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

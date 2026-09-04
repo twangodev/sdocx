@@ -76,3 +76,19 @@ The native frame evidence and current rendering limits are recorded in
 [`text-box-findings.md`](../docs/reverse-engineering/text-box-findings.md).
 The real corpus still needs a Samsung standalone-text-box export and reference
 PDF; synthetic coverage does not establish Samsung visual parity.
+
+## Image and media regressions
+
+`structural_images.rs` has eleven tests with rendering enabled, and
+`media_manifest.rs` has three. They cover explicit ID resolution, reordered and
+repeated assets, ambiguous/missing/unsupported references, alternate fill
+encodings, bounded frames and records, placement and rotation:
+
+```sh
+cargo test -p sdocx --all-features --test structural_images --test media_manifest
+```
+
+The handwritten corpus runner also validates the 21 native media manifest
+entries and hashes across its three locked documents. The standalone-image
+tests are synthetic; real Samsung image/reference-PDF coverage is still needed.
+See [`image-findings.md`](../docs/reverse-engineering/image-findings.md).
