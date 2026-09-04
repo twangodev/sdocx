@@ -1,9 +1,9 @@
 //! Presentation-oriented SVG rendering for parsed Samsung Notes documents.
 
 use crate::{
-    BulletType, Color, Document, HyperlinkType, LineSpacingType, MediaAsset, Page, PageElement,
-    ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing, PredefinedTextStyle, RichTextBox,
-    RichTextObjectContent, RichTextObjectSpan, RichTextParagraphType, RichTextRun,
+    BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType, MediaAsset, Page,
+    PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing, PredefinedTextStyle,
+    RichTextBox, RichTextObjectContent, RichTextObjectSpan, RichTextParagraphType, RichTextRun,
     RichTextSpanType, Stroke, layout_document,
 };
 use base64::Engine as _;
@@ -63,6 +63,16 @@ pub fn render_page_svg(
     options: &RenderOptions,
 ) -> Option<RenderedPage> {
     let layout = layout_document(document);
+    render_layout_page_svg(document, &layout, page_index, options)
+}
+
+/// Render one visible page from a precomputed presentation layout.
+pub fn render_layout_page_svg(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_index: usize,
+    options: &RenderOptions,
+) -> Option<RenderedPage> {
     layout
         .pages
         .get(page_index)
@@ -1329,11 +1339,12 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 mod tests {
     use super::{
         RenderColorMode, RenderOptions, is_dark_background, normalized_stroke_width,
-        object_flow_offset, render_document_svg, samsung_font_to_svg, sanitize_hyperlink_target,
+        object_flow_offset, render_document_svg, render_layout_page_svg, samsung_font_to_svg,
+        sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
-        RichTextSpan, RichTextSpanType, Stroke,
+        RichTextSpan, RichTextSpanType, Stroke, layout_document,
     };
 
     fn page_with_uncolored_stroke() -> Page {
@@ -1414,6 +1425,18 @@ mod tests {
         assert_eq!((pages[0].width, pages[0].height), (1080, 1527));
         assert!(pages[0].svg.contains(r#"viewBox="0.0 0.0 1080.0 1527.0""#));
         assert!(pages[0].svg.contains(r##"fill="#cbdadd""##));
+    }
+
+    #[test]
+    fn renders_a_page_from_a_precomputed_layout() {
+        let document = document(page_with_uncolored_stroke());
+        let layout = layout_document(&document);
+        let rendered =
+            render_layout_page_svg(&document, &layout, 0, &RenderOptions::default()).unwrap();
+
+        assert_eq!(rendered.source_page_index, 0);
+        assert!(rendered.svg.contains(r#"viewBox="0.0 0.0 100.0 100.0""#));
+        assert!(render_layout_page_svg(&document, &layout, 1, &RenderOptions::default()).is_none());
     }
 
     #[test]

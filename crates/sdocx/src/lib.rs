@@ -27,7 +27,8 @@ pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use note::{StoredNote, StoredNoteHeader, parse_note_bytes, parse_note_bytes_with_limits};
 #[cfg(feature = "render")]
 pub use render::{
-    RenderColorMode, RenderOptions, RenderedPage, render_document_svg, render_page_svg,
+    RenderColorMode, RenderOptions, RenderedPage, render_document_svg, render_layout_page_svg,
+    render_page_svg,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use storage::{

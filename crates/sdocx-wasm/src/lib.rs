@@ -19,6 +19,7 @@ pub fn parse(bytes: &[u8]) -> Result<JsValue, JsError> {
 #[wasm_bindgen]
 pub struct DocumentSession {
     parsed: Option<sdocx::ParsedDocument>,
+    layout: Option<sdocx::LayoutDocument>,
     page_count: usize,
 }
 
@@ -34,9 +35,11 @@ impl DocumentSession {
         let options = browser_parse_options();
         let parsed = sdocx::parse_bytes_detailed_with_options(bytes, &options)
             .map_err(|error| JsError::new(&error.to_string()))?;
-        let page_count = sdocx::layout_document(&parsed.document).pages.len();
+        let layout = sdocx::layout_document(&parsed.document);
+        let page_count = layout.pages.len();
         Ok(Self {
             parsed: Some(parsed),
+            layout: Some(layout),
             page_count,
         })
     }
@@ -50,7 +53,7 @@ impl DocumentSession {
     /// Return the parsed document, visible layout, media summaries, and diagnostics.
     pub fn inspection(&self) -> Result<JsValue, JsError> {
         let parsed = self.parsed()?;
-        inspection_value(parsed).map_err(|error| JsError::new(&error.to_string()))
+        inspection_value(parsed, self.layout()?).map_err(|error| JsError::new(&error.to_string()))
     }
 
     /// Render one visible page as a standalone SVG document.
@@ -58,7 +61,7 @@ impl DocumentSession {
         let parsed = self.parsed()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
-        sdocx::render_page_svg(&parsed.document, page_index, &options)
+        sdocx::render_layout_page_svg(&parsed.document, self.layout()?, page_index, &options)
             .map(|page| page.svg)
             .ok_or_else(|| JsError::new("page index is out of bounds"))
     }
@@ -66,6 +69,7 @@ impl DocumentSession {
     /// Release the parsed document before the JavaScript wrapper is collected.
     pub fn dispose(&mut self) {
         self.parsed = None;
+        self.layout = None;
         self.page_count = 0;
     }
 }
@@ -73,6 +77,12 @@ impl DocumentSession {
 impl DocumentSession {
     fn parsed(&self) -> Result<&sdocx::ParsedDocument, JsError> {
         self.parsed
+            .as_ref()
+            .ok_or_else(|| JsError::new("document session has been disposed"))
+    }
+
+    fn layout(&self) -> Result<&sdocx::LayoutDocument, JsError> {
+        self.layout
             .as_ref()
             .ok_or_else(|| JsError::new("document session has been disposed"))
     }
@@ -99,7 +109,7 @@ fn parse_render_color_mode(value: &str) -> Result<sdocx::RenderColorMode, JsErro
 #[derive(Serialize)]
 struct Inspection<'a> {
     document: InspectionDocument<'a>,
-    layout: sdocx::LayoutDocument,
+    layout: &'a sdocx::LayoutDocument,
     stored_page_count: usize,
     page_manifest: &'a Option<sdocx::PageManifest>,
     report: &'a sdocx::ParseReport,
@@ -136,7 +146,10 @@ struct MediaAssetSummary<'a> {
     sha256: String,
 }
 
-fn inspection_value(parsed: &sdocx::ParsedDocument) -> Result<JsValue, serde_wasm_bindgen::Error> {
+fn inspection_value(
+    parsed: &sdocx::ParsedDocument,
+    layout: &sdocx::LayoutDocument,
+) -> Result<JsValue, serde_wasm_bindgen::Error> {
     let document = &parsed.document;
     let metadata = &document.metadata;
     let media_assets = metadata
@@ -171,7 +184,7 @@ fn inspection_value(parsed: &sdocx::ParsedDocument) -> Result<JsValue, serde_was
                 note_title: &metadata.note_title,
             },
         },
-        layout: sdocx::layout_document(document),
+        layout,
         stored_page_count: parsed.stored_pages.len(),
         page_manifest: &parsed.page_manifest,
         report: &parsed.report,
