@@ -5,10 +5,12 @@ import type { DocumentSummary } from './protocol';
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((resolvePromise) => {
+	let reject!: (reason?: unknown) => void;
+	const promise = new Promise<T>((resolvePromise, rejectPromise) => {
 		resolve = resolvePromise;
+		reject = rejectPromise;
 	});
-	return { promise, resolve };
+	return { promise, resolve, reject };
 }
 
 function file(name: string, bytes: Promise<ArrayBuffer>): File {
@@ -62,5 +64,22 @@ describe('DocumentSession loading', () => {
 		expect(session.activeFile).toBeNull();
 		expect(session.summary).toBeNull();
 		expect(session.status).toBe('Waiting for a document');
+	});
+
+	it('propagates a stale close failure without clearing a newer document', async () => {
+		const disposed = deferred<void>();
+		const client = clientWith(vi.fn(async () => emptySummary));
+		client.dispose = vi.fn(() => disposed.promise);
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+
+		const closing = session.close();
+		await session.load(file('newer.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		const rejection = expect(closing).rejects.toThrow('dispose failed');
+		disposed.reject(new Error('dispose failed'));
+		await rejection;
+
+		expect(session.activeFile?.name).toBe('newer.sdocx');
+		expect(session.summary).toBe(emptySummary);
 	});
 });
