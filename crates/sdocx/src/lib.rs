@@ -13,6 +13,7 @@ mod binary;
 mod container;
 mod decode;
 mod error;
+mod frame;
 mod layout;
 mod note;
 mod page;
