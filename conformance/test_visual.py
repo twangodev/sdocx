@@ -187,6 +187,46 @@ class VisualTests(unittest.TestCase):
         with patch.object(visual, "run", side_effect=fake_cli):
             visual.compare_fixture(fixture, Path("fake-cli"), self.root, {}, fonts)
 
+    def test_pdf_export_records_dimensions_text_hash_and_download(self):
+        fixture = visual.read_fixtures(self.fixture(), self.root, set())[0]
+
+        def fake_cli(command):
+            destination = command[command.index("--output") + 1]
+            self.assertEqual(destination.suffix, ".pdf")
+            with pymupdf.open() as pdf:
+                page = pdf.new_page(width=75, height=75)
+                page.insert_text((5, 20), "Selectable")
+                pdf.save(destination)
+            return type("Result", (), {"stdout": "", "stderr": ""})()
+
+        with patch.object(visual, "run", side_effect=fake_cli):
+            result = visual.compare_fixture(
+                fixture, Path("fake-cli"), self.root, {}, output_format="pdf"
+            )
+        page = result["pages"][0]
+        self.assertEqual(page["size"], [100, 100])
+        self.assertEqual(page["sdk_pdf_size_points"], [75, 75])
+        self.assertIn("Selectable", (self.root / page["sdk_text"]).read_text())
+        self.assertEqual(
+            result["sdk_pdf_sha256"], visual.sha256(self.root / result["sdk_pdf"])
+        )
+        visual.write_html({"fixtures": [result]}, self.root / "index.html")
+        self.assertIn('href="fixture/sdk.pdf"', (self.root / "index.html").read_text())
+
+    def test_candidate_pdf_count_and_page_order(self):
+        path = self.root / "sdk.pdf"
+        with pymupdf.open() as pdf:
+            for index in range(12):
+                page = pdf.new_page(width=75 + index * 3, height=75)
+                page.insert_text((5, 20), str(index))
+            pdf.save(path)
+        with self.assertRaisesRegex(ValueError, "SDK PDF page count"):
+            visual.rasterize_candidate_pdf(path, 11)
+        pages = visual.rasterize_candidate_pdf(path, 12)
+        self.assertEqual(len(visual.candidate_pages(self.root, 12)), 12)
+        self.assertEqual(pages[10]["sdk_pdf_size_points"], [105, 75])
+        self.assertEqual((self.root / pages[10]["sdk_text"]).read_text().strip(), "10")
+
 
 if __name__ == "__main__":
     unittest.main()

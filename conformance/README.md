@@ -48,7 +48,7 @@ and may be repeated. `--corpus-dir` (or `SDOCX_CORPUS_DIR`) selects the corpus;
 checkout. The runner does not download or modify corpus files.
 
 Pass `--font /path/to/Roboto-Regular.ttf --font /path/to/Roboto-Italic.ttf`
-to compare using explicit PNG font faces. The runner forwards them to the CLI
+to compare using explicit PNG/PDF font faces. The runner forwards them to the CLI
 in order and records their SHA-256 digests separately from system fonts. Use
 ordinary installable fonts: PDF-embedded fonts can have stripped Unicode maps
 and may be unusable for SVG text even when their family names match.
@@ -78,6 +78,24 @@ Synthetic runner tests require no external documents or Rust build:
 uv run --locked --only-group conformance python -m unittest discover \
   -s conformance -p 'test_*.py'
 ```
+
+To compare the SDK's multipage PDF export, use `--format pdf`:
+
+```sh
+cargo build -p sdocx-cli
+uv run --locked --only-group conformance python conformance/visual.py \
+  --format pdf --output tmp/visual/pdf \
+  --font /path/to/Roboto-Regular.ttf --font /path/to/Roboto-Italic.ttf
+```
+
+PDF mode saves one `sdk.pdf`, rasterizes its pages at 96 DPI for comparison,
+and records the PDF hash, physical page dimensions, per-page extracted text
+and the usual pixel metrics. The HTML report links to the generated PDF.
+The source and reference hashes are still checked against the manifest; page
+counts must agree before comparison. Omit `--format` to retain PNG mode.
+
+The [PDF export findings](../docs/reverse-engineering/pdf-export-findings.md)
+record the current converter, page-size convention, validation and limits.
 
 The initial five-page measurements and font findings are recorded in
 [`visual-conformance-findings.md`](../docs/reverse-engineering/visual-conformance-findings.md).

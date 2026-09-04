@@ -1,5 +1,3 @@
-"""Compare SDK PNG output with locked Samsung PDF exports; no corpus downloads."""
-
 import argparse
 import hashlib
 import html
@@ -170,17 +168,53 @@ def measure(reference, candidate, channel_threshold=16, ink_threshold=32, tolera
     return metrics, difference
 
 
-def compare_fixture(fixture, cli, output, options, font_files=()):
+def rasterize_candidate_pdf(path, count):
+    pages = []
+    with pymupdf.open(path) as pdf:
+        if pdf.page_count != count:
+            raise ValueError("SDK PDF page count differs from manifest")
+        for index, page in enumerate(pdf):
+            size = (round(page.rect.width * 96 / 72), round(page.rect.height * 96 / 72))
+            image_path = path.with_name(
+                "sdk.png" if count == 1 else f"sdk_page{index}.png"
+            )
+            rasterize_reference(page, size).save(image_path)
+            text_path = path.with_name(f"sdk_page{index}.txt")
+            text = page.get_text()
+            text_path.write_text(text, encoding="utf-8")
+            pages.append(
+                {
+                    "sdk_pdf_size_points": [page.rect.width, page.rect.height],
+                    "sdk_text_characters": len(text),
+                    "sdk_text": text_path.name,
+                }
+            )
+    return pages
+
+
+def compare_fixture(fixture, cli, output, options, font_files=(), output_format="png"):
+    if output_format not in ("png", "pdf"):
+        raise ValueError("SDK output format must be png or pdf")
     directory = output / fixture["id"]
     directory.mkdir()
     with pymupdf.open(fixture["reference_pdf"]) as pdf:
         if pdf.page_count != fixture["visible_pages"]:
             raise ValueError(f"{fixture['id']}: PDF page count differs from manifest")
-        command = [cli, fixture["sdocx"], "--output", directory / "sdk.png"]
+        command = [
+            cli,
+            fixture["sdocx"],
+            "--output",
+            directory / f"sdk.{output_format}",
+        ]
         for font in font_files:
             command.extend(["--font", font])
         conversion = run(command)
         (directory / "sdk.log").write_text(conversion.stdout + conversion.stderr)
+        pdf_pages = (
+            rasterize_candidate_pdf(directory / "sdk.pdf", pdf.page_count)
+            if output_format == "pdf"
+            else []
+        )
         paths = candidate_pages(directory, pdf.page_count)
         pages = []
         for index, (reference_page, candidate_path) in enumerate(
@@ -210,18 +244,33 @@ def compare_fixture(fixture, cli, output, options, font_files=()):
                     "sdk_png_sha256": sha256(candidate_path),
                 }
             )
-    return {
+            if pdf_pages:
+                pages[-1].update(pdf_pages[index])
+                pages[-1]["sdk_text"] = (
+                    (directory / pdf_pages[index]["sdk_text"])
+                    .relative_to(output)
+                    .as_posix()
+                )
+    result = {
         "id": fixture["id"],
+        "sdk_format": output_format,
         "sdocx_sha256": fixture["sdocx_sha256"],
         "reference_pdf_sha256": fixture["reference_pdf_sha256"],
         "pages": pages,
     }
+    if output_format == "pdf":
+        result["sdk_pdf"] = (directory / "sdk.pdf").relative_to(output).as_posix()
+        result["sdk_pdf_sha256"] = sha256(directory / "sdk.pdf")
+    return result
 
 
 def write_html(report, destination):
     sections = []
     for fixture in report["fixtures"]:
         sections.append(f"<h2>{html.escape(fixture['id'])}</h2>")
+        if "sdk_pdf" in fixture:
+            pdf_link = html.escape(fixture["sdk_pdf"], quote=True)
+            sections.append(f'<p><a href="{pdf_link}">Download SDK PDF</a></p>')
         for page in fixture["pages"]:
             metrics = page["metrics"]
             ref, sdk, diff = (
@@ -260,7 +309,9 @@ input.closest('details').querySelector('.candidate').style.opacity=input.value/1
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Compare SDK PNG/PDF output with locked Samsung exports"
+    )
     parser.add_argument(
         "--corpus-dir",
         type=Path,
@@ -276,6 +327,7 @@ def main(argv=None):
         help="fixture ID; repeat to select several",
     )
     parser.add_argument("--cli", type=Path, default=ROOT / "target/debug/sdocx-cli")
+    parser.add_argument("--format", choices=("png", "pdf"), default="png")
     parser.add_argument(
         "--font",
         type=Path,
@@ -334,7 +386,7 @@ def main(argv=None):
             "explicit_fonts": explicit_fonts,
         },
         "fixtures": [
-            compare_fixture(fixture, cli, output, options, font_files)
+            compare_fixture(fixture, cli, output, options, font_files, args.format)
             for fixture in fixtures
         ],
     }

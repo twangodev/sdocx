@@ -23,6 +23,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   pen references, bounded paths, rendering coverage and remaining fidelity gaps.
 - [`visual-conformance-findings.md`](visual-conformance-findings.md) — measured
   Samsung PDF comparison, explicit PNG fonts and remaining visual gaps.
+- [`pdf-export-findings.md`](pdf-export-findings.md) — shared SVG-to-PDF export,
+  page units, embedded text/fonts and measured PDF validation.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 
