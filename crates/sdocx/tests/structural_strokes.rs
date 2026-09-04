@@ -325,3 +325,79 @@ fn page_properties_follow_masks_with_variable_headers() {
     );
     assert_eq!(page.template.unwrap().id, 10);
 }
+
+#[test]
+fn malformed_frames_cannot_consume_a_sibling_or_return_a_partial_page() {
+    let valid = stroke(5, 3, &compressed(true), 0, &[]);
+    let base_size = base().len();
+    let mut mutations = Vec::new();
+    // Inflated frame size would reach the outer hash or the next object.
+    let mut bytes = valid.clone();
+    let size = u32::from_le_bytes(bytes[base_size..base_size + 4].try_into().unwrap());
+    bytes[base_size..base_size + 4].copy_from_slice(&(size + 32).to_le_bytes());
+    mutations.push(bytes);
+    // Fixed base fields cannot borrow from its flexible block or stroke frame.
+    let mut bytes = valid.clone();
+    bytes[6..10].copy_from_slice(&18_u32.to_le_bytes());
+    mutations.push(bytes);
+    // A supported outer type must contain the corresponding typed frame.
+    let mut bytes = valid.clone();
+    bytes[base_size + 4..base_size + 6].copy_from_slice(&3_i16.to_le_bytes());
+    mutations.push(bytes);
+    // A declared style must have enough bytes inside the flexible block.
+    mutations.push(stroke(5, 3, &compressed(true), 8, &[]));
+    for invalid in mutations {
+        let bytes = archive(&page(
+            &[vec![
+                object(1, &valid, &[]),
+                object(1, &invalid, &[]),
+                object(1, &valid, &[]),
+            ]],
+            0,
+            &[],
+        ));
+        let error = sdocx::parse_bytes(&bytes).unwrap_err();
+        assert!(matches!(error, Error::Format(_)));
+        assert!(error.to_string().contains("page page: stroke at 0x"));
+    }
+}
+
+#[test]
+fn unknown_late_style_fields_do_not_invent_color_width_or_stylus_channels() {
+    let style = [3, 0, 1, 0, 0, 0, 0xff, 0, 0, 0xff, 0, 0, 0x40, 0x40];
+    let bytes = single(&stroke(1, 3, &compressed(false), 1 << 31, &style));
+    let doc = sdocx::parse_bytes(&bytes).unwrap();
+    let stroke = &doc.pages[0].strokes[0];
+    assert_eq!(stroke.color, None);
+    assert_eq!(stroke.pen_width, 0.8);
+    assert!(stroke.tilts.is_empty());
+}
+
+#[test]
+fn pdf_template_index_follows_the_declared_record_instead_of_page_size() {
+    let mut properties = Vec::new();
+    properties.extend_from_slice(&1_u16.to_le_bytes());
+    properties.extend_from_slice(&7_u32.to_le_bytes()); // media ID
+    properties.extend_from_slice(&3_u32.to_le_bytes()); // PDF page index
+    for value in [0_u32, 0, 1080, 1527] {
+        properties.extend_from_slice(&value.to_le_bytes());
+    }
+    let doc = sdocx::parse_bytes(&archive(&page(&[vec![]], 1 << 8, &properties))).unwrap();
+    assert_eq!(
+        doc.pages[0].template.unwrap().source,
+        sdocx::PageTemplateSource::CustomPdf { page_index: 3 }
+    );
+}
+
+#[test]
+fn invalid_page_offsets_and_truncated_masks_are_errors() {
+    let valid = page(&[vec![]], 0, &[]);
+    for (offset, value) in [(0, 0), (0, u32::MAX), (4, 4), (4, u32::MAX)] {
+        let mut bytes = valid.clone();
+        bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        assert!(sdocx::parse_bytes(&archive(&bytes)).is_err());
+    }
+    for end in 0..16 {
+        assert!(sdocx::parse_stored_page_bytes(&valid[..end]).is_err());
+    }
+}
