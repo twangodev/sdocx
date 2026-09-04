@@ -34,6 +34,18 @@ Important native functions/symbol families include:
 - `SPen::EndTag::{ParseImpl,GetBinarySize,GetBinary,Append}`.
 - `SPen::EncryptionData::{GetBinary,Apply}`.
 
+The structural stroke implementation also rechecked these arm64 locations in
+`libSPenModel.so` 4.4.45.37:
+
+- `ObjectStrokeBinaryHandler::NewApplyBinary`, `0x2ee888`: zero-point compressed
+  strokes skip their channel seeds.
+- The same function, `0x2ee9bc–0x2eea64`: uncompressed coordinates are followed
+  by separate pressure, timestamp, tilt and orientation arrays.
+- `m_ApplyBinary_FlexibleData`, `0x2ed780–0x2ed934`: the legacy bit-0 field and
+  normal WDoc pen reference are four bytes each, followed by masked ARGB and
+  pen size. The alternate coedit string representation is outside this parser's
+  normal WDoc archive path.
+
 ## Evidence standard
 
 A field is called confirmed when at least one writer/parser path gives its

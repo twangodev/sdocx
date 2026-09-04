@@ -2,8 +2,8 @@
 
 ## Root cause of top-right artifacts
 
-The visible-stroke parser currently bypasses the structural page/layer/object
-parser and advances through records using offsets that happen to cancel on
+The former visible-stroke parser bypassed the structural page/layer/object
+parser and advanced through records using offsets that happened to cancel on
 common files.
 
 - `0x79` is the low byte of the 121-byte base-frame size, not an extension
@@ -40,9 +40,19 @@ fixed channel block.
 The full bit tables and uncompressed form are in
 [`file-format.md`](file-format.md#stroke-frame).
 
-## Required fix
+## Implemented fix
 
-Delete selection-by-larger-point-count and `StartPointMinusThree`. Parse the
-outer record and generic frames first, then decode channel presence from the
-stroke property mask. Unknown fields should remain bounded by frame size and
-preserved or skipped without affecting sibling records.
+The Rust parser now walks `StoredPage` layers and recursive object records,
+then decodes type-0/type-1 frames within each stroke's payload. It no longer has
+selection-by-larger-point-count or `StartPointMinusThree`. Channel presence
+comes from the stroke property mask; fixed channel bytes must end exactly at
+the declared flexible-data boundary. Malformed strokes return an error with
+their page ID and payload offset instead of silently returning partial content.
+
+Unknown objects remain in the stored tree, and unexposed flexible data stays
+bounded by its frame. Non-stroke semantic interpretation remains best-effort.
+
+`structural_strokes.rs` covers the synthetic format cases in normal CI.
+`stroke_conformance.rs` checks all three original handwritten fixtures against
+the native audit. It passes on the new decoder and fails on the old decoder's
+handwritten point count (322,406 versus the expected 321,776).

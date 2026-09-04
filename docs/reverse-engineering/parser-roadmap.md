@@ -18,6 +18,14 @@ SDOCX bytes
 
 ## Implementation sequence
 
+The structural stroke milestone is implemented: `StoredPage` drives traversal,
+page/layer masks are length-prefixed, and a bounded typed-frame reader handles
+compressed/uncompressed stroke channels plus color and pen size. The legacy
+stroke walker and shifted fallback are removed. Public header field names are
+retained for compatibility. The numbered sequence below remains the overall
+roadmap; full common-object metadata, remaining styles, end tags, hashes and
+non-stroke semantics are still incomplete.
+
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
 2. Make `StoredPage` traversal authoritative for layers and recursive objects.

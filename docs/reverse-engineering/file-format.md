@@ -551,9 +551,12 @@ if stroke property bit 0 (compressed points):
     u8 tool_or_input_type_1
 
 else (uncompressed):
-    repeat point_count:
-        f64 x, f64 y, f32 pressure, i32 timestamp
-        if property bit 2: f32 tilt, f32 orientation
+    repeat point_count: f64 x, f64 y
+    repeat point_count: f32 pressure
+    repeat point_count: i32 timestamp
+    if property bit 2:
+        repeat point_count: f32 tilt
+        repeat point_count: f32 orientation
     u8 tool_or_input_type_0
     u8 tool_or_input_type_1
 
@@ -564,6 +567,15 @@ frame_start + flexible_data_offset:
 The coordinate deltas use a sign bit plus Q10.5 magnitude. Pressure, tilt and
 orientation deltas use a sign bit plus Q3.12 magnitude. Timestamp deltas are
 zero-extended `u16` values.
+
+The uncompressed ordering was rechecked directly in
+`ObjectStrokeBinaryHandler::NewApplyBinary` at `0x2ee9bc–0x2eea64` in the
+4.4.45.37 arm64 library. It reads all coordinate pairs and then copies each
+remaining channel as a separate array. Earlier notes incorrectly described
+interleaved point structs. The branch at `0x2ee888` also confirms that zero-point
+compressed strokes omit every channel seed and contain only the final two
+tool/input bytes after the point count. Synthetic regression tests cover both
+cases; the three real handwritten fixtures only exercise compressed strokes.
 
 For every audited compressed stroke, the calculated end of these fixed arrays
 was exactly `frame_start + flexible_data_offset`.
@@ -608,6 +620,7 @@ Confirmed native serializer mappings:
 
 | Bit | Value | Field |
 | ---: | ---: | --- |
+| 0 | `0x000001` | legacy four-byte field; public semantic name unresolved |
 | 1 | `0x000002` | pen/name string-table ID |
 | 2 | `0x000004` | ARGB color (`u32`) |
 | 3 | `0x000008` | pen size (`f32`) |
@@ -733,10 +746,10 @@ The native append path also emits a minimal copied ZIP EOCD header before that
 tag, so encrypted files retain a discoverable tail. This path is source-
 confirmed but has not yet been checked against an encrypted fixture.
 
-## Why some strokes currently appear in the top-right corner
+## Why the legacy decoder produced top-right strokes
 
-The current visible-stroke parser does not walk the structural page/layer/object
-records. It starts one byte into an outer object header and uses offsets whose
+The former visible-stroke parser did not walk the structural page/layer/object
+records. It started one byte into an outer object header and used offsets whose
 errors happen to cancel for common files:
 
 - byte value `0x79` is the low byte of the 121-byte base-frame size, not a
@@ -791,6 +804,13 @@ Concrete changes for this repository:
    while keeping logical object/layer hash validation separately configurable.
 9. Retain unknown object types and unknown flexible fields for forward
    compatibility.
+
+The structural stroke migration implements traversal and channel decoding in
+`storage.rs`, `frame.rs`, `page.rs` and `decode.rs`. Page/layer masks are now
+length-prefixed; existing public header field names are retained for API
+compatibility. Color and pen size are read in field-mask order, with later
+unexposed style bytes safely left inside their frame. End-tag/hash work and
+complete non-stroke decoding remain separate roadmap items.
 
 ## Still unresolved
 

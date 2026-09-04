@@ -63,3 +63,16 @@ for every affected short stroke:
 
 This matches the source-level finding that `0x25` is a property mask being read
 at the wrong offset as the integer 37.
+
+## Rust regression validation
+
+The structural stroke decoder now reproduces the above stroke/point totals and
+complete pressure/timestamp/tilt/orientation arrays for all three fixtures.
+Every coordinate is within two document units of its separately stored stroke
+bbox (allowing fixed-point and floating-point rounding).
+
+The repeatable runner and SHA-256 lock are described in
+[`../../conformance/README.md`](../../conformance/README.md). The same runner
+fails against the previous decoder: handwritten has 322,406 decoded points
+instead of 321,776. This is a geometry regression check, not a visual-fidelity
+claim for every pen style or non-stroke object.
