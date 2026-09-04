@@ -1,6 +1,6 @@
 # sdocx
 
-[![CI](https://img.shields.io/github/actions/workflow/status/twangodev/sdocx/rust.yml?label=CI)](https://github.com/twangodev/sdocx/actions/workflows/rust.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/twangodev/sdocx/ci.yml?label=CI)](https://github.com/twangodev/sdocx/actions/workflows/ci.yml)
 [![crates.io (sdocx)](https://img.shields.io/crates/v/sdocx)](https://crates.io/crates/sdocx)
 [![npm](https://img.shields.io/npm/v/@twango/sdocx)](https://www.npmjs.com/package/@twango/sdocx)
 [![docs.rs](https://img.shields.io/docsrs/sdocx)](https://docs.rs/sdocx)
