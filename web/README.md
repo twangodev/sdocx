@@ -38,6 +38,7 @@ JavaScript Worker entry point or service bindings. CI builds WASM and the static
 site once, runs browser tests against that output, uploads `web/build` as an
 artifact, and deploys that exact artifact after a successful push to `main`.
 
-The repository must provide `CLOUDFLARE_API_TOKEN` and
-`CLOUDFLARE_ACCOUNT_ID` as GitHub Actions secrets. A local deployment can be
-started with `bun run deploy`, but it is not part of normal development.
+The GitHub `production` environment must provide `CLOUDFLARE_API_TOKEN` as an
+environment secret and `CLOUDFLARE_ACCOUNT_ID` as an environment variable. A
+local deployment can be started with `bun run deploy`, but it is not part of
+normal development.
