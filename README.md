@@ -22,8 +22,10 @@ Samsung's S Pen SDK. Archive structure, format versions, page ordering, and
 supported packed stroke channels follow observed SDK contracts. Standalone text
 boxes use bounded native frames and preserve Unicode, placement and rich-text
 records. Image objects also use native frames and resolve their displayed asset
-through media-manifest bind IDs. Text rendering, image crop/border effects,
-other page objects and templates remain best-effort.
+through media-manifest bind IDs. Shapes and lines decode native geometry,
+outline/fill styles and embedded shape text; common templates, straight lines
+and supported curves render to SVG. Text layout, image crop/border effects,
+advanced shape styles and other page objects remain best-effort.
 
 A successful parse may omit unsupported objects or properties; it does not
 guarantee a lossless decode. Preserve original documents and validate output
@@ -31,7 +33,7 @@ against Samsung Notes when fidelity matters. Protected documents must be
 unlocked or exported before parsing.
 
 Use `parse_detailed` or `parse_bytes_detailed` to inspect `ParseReport`, including
-detected unsupported text/image features and unresolved media. The CLI prints
+detected unsupported text/image/shape features and unresolved media. The CLI prints
 these findings during conversion, and WASM exposes them through document
 inspection. An empty report does not guarantee complete rendering fidelity.
 
@@ -40,6 +42,11 @@ media ID, optional resolved asset index, bounds and rotation. Existing
 caller-created `PageElement::Image` values remain renderable. See the
 [image findings](docs/reverse-engineering/image-findings.md) for the supported
 fields and resolution rules.
+
+Native shapes and lines are exposed as `PageElement::Shape` and
+`PageElement::Line`, with explicit geometry, styles and pen-resource references.
+See the [shape/line findings](docs/reverse-engineering/shape-line-findings.md)
+for supported templates, paths and remaining rendering limits.
 
 ## Installation
 

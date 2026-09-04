@@ -3,9 +3,10 @@
 //! # Accuracy and compatibility
 //!
 //! Archive structure, format versions, page ordering, and supported packed
-//! stroke channels, standalone text/image frames and media bind IDs are decoded
-//! from observed S Pen SDK contracts. Text rendering, image effects, other page
-//! objects and templates remain best-effort. A successful parse can omit
+//! stroke channels, standalone text/image/shape/line frames and media bind IDs
+//! are decoded from observed S Pen SDK contracts. Common shapes and supported
+//! line paths render to SVG. Text layout, image effects, advanced shape styles
+//! and other page objects remain best-effort. A successful parse can omit
 //! unsupported content and does not indicate a lossless decode. Preserve the
 //! source document when fidelity is important.
 

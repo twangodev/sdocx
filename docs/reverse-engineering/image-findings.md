@@ -12,7 +12,7 @@ Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`, writes outer image objects as
 | Type 7 fixed data | Shape type, four `f64` local bounds, `f32` rotation, sized path, one-byte control-point count, then 16 bytes per control point. |
 | Type 7 flexible bit 0 | Sized `TextCommon`, when present. |
 | Type 7 flexible bit 1 | One-byte text control. |
-| Type 7 flexible bits 2 / 4 | Four-byte pen reference / color. |
+| Type 7 flexible bits 2 / 4 | Four-byte signed string IDs for pen name / advanced pen settings. |
 | Type 7 flexible bit 5 | `u32` effect byte size, `u8` effect type, then the sized effect payload. |
 | Fill effect type 2 | `FillImageEffect`; the normal WDoc payload is 62 bytes. |
 | Type 3 | Crop, border, original-image and additional image settings. |
@@ -74,15 +74,16 @@ The SVG renderer embeds the resolved PNG/JPEG/WebP bytes and applies placement
 and stored rotation. Unsupported image features generate
 `UnsupportedImageFeature` diagnostics. CLI conversion and WASM inspection use
 the existing shared report plumbing. The image marker scanner and encounter
-counter have been removed; heuristic shape/line parsing cannot invent images.
+counter have been removed; only the native image decoder produces placed images.
 
 ## Validation
 
-- Eleven image tests cover reordered assets and mismatched filename prefixes,
+- Twelve image tests cover reordered assets and mismatched filename prefixes,
   repeated references, missing/unsupported/ambiguous bindings, cross-page and
   nested references, zero/negative IDs, tiny bounds, wider masks, future frames,
   optional fields before the fill, separate border/original references, every
-  payload truncation, resource limits, and legacy image-value rendering.
+  payload truncation, resource limits, legacy image-value rendering, and matching
+  base/shape rotations without misinterpreting the shape angle as a radius.
 - Three manifest tests cover bounded records, Unicode filenames, sparse IDs,
   empty/full hashes, extensions and count limits.
 - The previous parser at `3dd8f52` returns zero images for the three-image
@@ -107,8 +108,8 @@ inherited properties remain incomplete. Alternative fill encodings and unknown
 fields before a fill are reported without guessing a reference. `.spi`, PDF,
 audio and video assets are not raster image render inputs.
 
-The next structural migration is shape/line decoding, which will remove the
-remaining UUID/text heuristics and reuse the now-traced type-6/type-7 components.
-In parallel, a Samsung image fixture with crop, rotation, repeated media and a
-matching PDF is needed to turn the rendering approximations into measured
-compatibility work.
+The subsequent [shape/line migration](shape-line-findings.md) removes the
+remaining UUID/text heuristics. Native setters also confirm that type-7 fields
+2/4 reference pen-name/settings strings, correcting the provisional color label.
+A Samsung image fixture with crop, rotation, repeated media and a matching PDF
+is needed to turn rendering approximations into measured compatibility work.

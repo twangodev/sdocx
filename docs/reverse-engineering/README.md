@@ -19,6 +19,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   bounded rich-text decoding, diagnostics, regressions and rendering limits.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
   references, authoritative media bindings and image regression coverage.
+- [`shape-line-findings.md`](shape-line-findings.md) — native geometry and effects,
+  pen references, bounded paths, rendering coverage and remaining fidelity gaps.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

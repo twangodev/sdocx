@@ -71,7 +71,7 @@ The image migration checked the following symbols in arm64 `libSPenModel.so`
 | --- | --- |
 | `ObjectImage::NewGetBinary`, `0x420b00`; `NewApplyBinary`, `0x420ba8` | Shared shape chain followed by the type-3 image component. |
 | `ObjectShapeBinaryHandler::GetOwnBinary`, `0x3a8dd0–0x3a9228` | Type-7 fixed fields; text/pen fields before sized fill effect bit 5. |
-| `ObjectShapeData::GetBinary_PenData`, `0x3ac284` | Four-byte fields at bits 2 and 4 before the fill record. |
+| `ObjectShapeData::GetBinary_PenData`, `0x3ac284` | Four-byte pen-name and advanced-settings string IDs at bits 2 and 4 before the fill record. |
 | `ObjectShapeData::CreateEffect`, `0x3abfe0`; `FillImageEffect::Construct`, `0x3b8030` | Fill effect type 2 selects `FillImageEffect`. |
 | `FillImageEffect::GetBinarySize`, `0x3b9060`; writer `0x3b90c8`; reader `0x3b9298` | Normal 62-byte image fill, main media ID, alternate 122-byte representation. |
 | `ComponentImage::ImageGetOwnBinary`, `0x3a4538`; flexible reader `0x3a4b20` | Type-3 crop, border and original-image fields; these do not select the displayed image. |
@@ -80,6 +80,25 @@ The image migration checked the following symbols in arm64 `libSPenModel.so`
 
 See [`image-findings.md`](image-findings.md) for implemented semantics and the
 separation between native evidence, synthetic tests and real manifest coverage.
+
+## Shape and line geometry, styles and paths
+
+The shape/line migration checked Samsung Notes 4.4.45.37 arm64 writers and
+native setters/getters, plus the Java template and effect constants:
+
+| Symbol/source | Evidence |
+| --- | --- |
+| `ObjectShape::NewGetBinary`, `0x399b40` | Snapshots geometry, drawn bounds and rotation before writing `0 + 6 + 7`; clears only shape type-0 rotation. |
+| `ObjectLineBinaryHandler::GetOwnBinary`, `0x38bc34` | Type-8 geometry, native pen references and path order. |
+| `ObjectShapeBase` writer helper, `0x37c6b4`; `LineStyleEffect::GetBinary`, `0x395b44` | Sized outline effects and twelve-byte style payload. |
+| `ObjectShapeData::GetPenName`, `0x3aba3c`; `SetAdvancedPenSetting`, `0x3aba5c` | Shape fields are string-resource IDs at offsets 272/288. |
+| `ObjectLineImpl::SetPenName`, `0x387914`; `SetAdvancedPenSetting`, `0x3879a4` | Line fields are settings/name IDs at offsets 32/16; no pen-color field. |
+| `ObjectLineImpl::SetRotation`, `0x387db4` | Stored endpoints and paths include rotation. |
+| `Path::GetBinary`, WDoc branch `0x2efe10` | Command-count and double-coordinate path format. |
+| `SpenObjectShape`, `SpenObjectLine`, `shapeeffect` Java APIs | Template IDs, line kinds and style enums. |
+
+[`shape-line-findings.md`](shape-line-findings.md) records the complete evidence
+table, implemented subset, regression comparison and real-fixture gap.
 
 ## Evidence standard
 

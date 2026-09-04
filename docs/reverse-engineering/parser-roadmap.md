@@ -37,10 +37,16 @@ rotation and explicit main/border/original references; the main ID resolves
 through the bounded modern media manifest. Reordered, missing, repeated and
 ambiguous IDs have regression coverage. See [`image-findings.md`](image-findings.md).
 
-The next structural step is shape/line decoding using the shared components,
-then removal of the remaining UUID/text heuristics. Samsung standalone-text
-and image exports remain needed for visual comparison, especially crop,
-wrapping and detailed style behavior.
+The structural shape/line milestone is implemented: `0 + 6 + 7` and `0 + 6 + 8`
+expose geometry, styles, native pen references and embedded shape text. Common
+templates, straight lines and supported native curves render to SVG. The
+remaining UUID/text heuristics have been removed from page parsing. See
+[`shape-line-findings.md`](shape-line-findings.md) for evidence and limits.
+
+The next priority is real Samsung standalone-text, image and shape/line fixtures
+with reference exports, followed by measured crop, wrapping and style fixes.
+Cursor-based end tags and optional integrity validation remain the next bounded
+parser work; advanced outer objects still need native frame research.
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.

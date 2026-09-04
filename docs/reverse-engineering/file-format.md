@@ -524,6 +524,14 @@ regressions and remaining semantics. The implementation reads all fields
 relative to variable-length masks, rather than using the audited stroke
 offsets shown above for other object types.
 
+Shapes and lines follow their native `0 + 6 + 7` / `0 + 6 + 8` chains. Type 6
+contains outline effects; type 7 carries shape geometry, text and fill, while
+type 8 carries endpoints and optional native path commands. Shape rotation
+belongs to type 7, with type 0 normally storing drawn bounds and zero rotation.
+Line endpoints already include rotation. Pen fields reference name/settings
+strings rather than colors. See [`shape-line-findings.md`](shape-line-findings.md)
+for field layouts, supported rendering and unresolved semantics.
+
 ## Stroke frame
 
 ### Frame header and fixed point data

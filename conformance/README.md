@@ -79,7 +79,7 @@ PDF; synthetic coverage does not establish Samsung visual parity.
 
 ## Image and media regressions
 
-`structural_images.rs` has eleven tests with rendering enabled, and
+`structural_images.rs` has twelve tests with rendering enabled, and
 `media_manifest.rs` has three. They cover explicit ID resolution, reordered and
 repeated assets, ambiguous/missing/unsupported references, alternate fill
 encodings, bounded frames and records, placement and rotation:
@@ -92,3 +92,20 @@ The handwritten corpus runner also validates the 21 native media manifest
 entries and hashes across its three locked documents. The standalone-image
 tests are synthetic; real Samsung image/reference-PDF coverage is still needed.
 See [`image-findings.md`](../docs/reverse-engineering/image-findings.md).
+
+## Shape and line regressions
+
+`structural_shapes.rs` has eighteen synthetic archive tests for geometry,
+rotation, fills/outlines, pen references, embedded Unicode text, native paths,
+recursive objects, bounds and unsupported-feature diagnostics. SVG checks
+cover supported templates, straight lines and quadratic/cubic curves:
+
+```sh
+cargo test -p sdocx --all-features --test structural_shapes
+```
+
+The object-preservation regression fails on the previous scanner at `3c78cd2`.
+Native evidence and current limits are recorded in
+[`shape-line-findings.md`](../docs/reverse-engineering/shape-line-findings.md).
+Real Samsung shapes/lines with matching reference PDFs are still needed for
+visual compatibility coverage.

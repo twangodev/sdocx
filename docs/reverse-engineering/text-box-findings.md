@@ -94,5 +94,6 @@ not a Samsung reference export or evidence of complete visual equivalence.
   certify a lossless parse or render. Inherited base properties and nested
   extension semantics remain incomplete.
 - The subsequent [image migration](image-findings.md) replaces image scanning
-  and encounter-order media assignment. Shapes and lines retain bounded
-  best-effort interpretation and are the next structural migration.
+  and encounter-order media assignment. The [shape/line migration](shape-line-findings.md)
+  removes the remaining UUID/text heuristics and reuses `TextCommon` for
+  embedded shape text; visual comparison remains necessary.
