@@ -112,13 +112,15 @@ pub struct MediaAsset {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum PageElement {
-    /// A placed image object.
+    /// A legacy image value with a caller-supplied asset index.
     Image {
         /// Placement box in page coordinates.
         bbox: BoundingBox,
         /// Index into `DocumentMetadata::media_assets`.
         media_index: usize,
     },
+    /// A structurally decoded image with an explicit native media reference.
+    PlacedImage(PlacedImage),
     /// A rich text object.
     TextBox(RichTextBox),
 }
@@ -127,10 +129,31 @@ impl PageElement {
     /// Return the S Pen SDK object type represented by this element.
     pub const fn object_type(&self) -> ObjectType {
         match self {
-            Self::Image { .. } => ObjectType::Image,
+            Self::Image { .. } | Self::PlacedImage(_) => ObjectType::Image,
             Self::TextBox(_) => ObjectType::TextBox,
         }
     }
+}
+
+/// A native image placement. Unresolved images retain their place in the model.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct PlacedImage {
+    /// Placement in page coordinates.
+    pub bbox: BoundingBox,
+    /// Stored clockwise rotation about the placement center.
+    pub rotation_degrees: Option<f64>,
+    /// Main image bind ID from the image-fill record, excluding native negative sentinels.
+    pub media_id: Option<u32>,
+    /// Resolved index into `DocumentMetadata::media_assets`, if available and unambiguous.
+    pub media_index: Option<usize>,
+    /// Stored pixel crop rectangle. Rendering this field is not yet supported.
+    pub crop_rect: Option<[i32; 4]>,
+    /// Optional border asset ID, distinct from the main image.
+    pub border_media_id: Option<u32>,
+    /// Optional original asset ID, distinct from the displayed image.
+    pub original_media_id: Option<u32>,
 }
 
 /// Object type identifiers used by `SpenObjectBase`.

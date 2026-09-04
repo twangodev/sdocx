@@ -1,5 +1,76 @@
 use crate::binary::Reader;
 use crate::{Error, ParseLimits, Result};
+use std::collections::HashMap;
+
+pub(crate) struct MediaResolver {
+    bindings: HashMap<u32, std::result::Result<usize, String>>,
+    inferred: bool,
+}
+
+impl MediaResolver {
+    pub(crate) fn new(
+        manifest: Option<&MediaManifest>,
+        assets: &[crate::MediaAsset],
+        names: &HashMap<String, usize>,
+    ) -> Self {
+        let mut bindings = HashMap::new();
+        let indexes: HashMap<_, _> = assets
+            .iter()
+            .enumerate()
+            .map(|(i, asset)| (asset.name.as_str(), i))
+            .collect();
+        let records: Vec<_> = if let Some(manifest) = manifest {
+            manifest
+                .entries
+                .iter()
+                .map(|entry| (entry.bind_id, format!("media/{}", entry.file_name)))
+                .collect()
+        } else {
+            names
+                .keys()
+                .filter(|name| name.starts_with("media/"))
+                .filter_map(|name| media_archive_id(name).map(|id| (id, name.clone())))
+                .collect()
+        };
+        for (id, name) in records {
+            let resolved = match names.get(&name).copied().unwrap_or(0) {
+                0 => Err(format!("media ID {id} names missing archive entry {name}")),
+                1 => indexes
+                    .get(name.as_str())
+                    .copied()
+                    .ok_or_else(|| format!("media ID {id} names unsupported media {name}")),
+                _ => Err(format!(
+                    "media ID {id} names duplicate archive entry {name}"
+                )),
+            };
+            match bindings.entry(id) {
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert(resolved);
+                }
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    *entry.get_mut() = Err(format!("media ID {id} has ambiguous bindings"));
+                }
+            }
+        }
+        Self {
+            bindings,
+            inferred: manifest.is_none(),
+        }
+    }
+
+    pub(crate) fn resolve(&self, id: Option<u32>) -> std::result::Result<(usize, bool), String> {
+        let id = id.ok_or_else(|| "image has no supported main media reference".to_owned())?;
+        match self.bindings.get(&id) {
+            Some(Ok(index)) => Ok((*index, self.inferred)),
+            Some(Err(message)) => Err(message.clone()),
+            None => Err(format!("media ID {id} has no binding")),
+        }
+    }
+}
+
+pub(crate) fn media_archive_id(name: &str) -> Option<u32> {
+    name.rsplit('/').next()?.split('@').next()?.parse().ok()
+}
 
 /// Modern `media/mediaInfo.dat` (format versions newer than 3001).
 #[derive(Debug, Clone)]

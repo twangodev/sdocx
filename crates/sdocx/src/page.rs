@@ -2,6 +2,8 @@ use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::decode::decode_stroke;
 use crate::error::{Error, Result};
+use crate::image::decode_image;
+use crate::media::MediaResolver;
 use crate::note::parse_page_text_box;
 use crate::object::read_bbox;
 use crate::report::{DiagnosticCode, ParseReport};
@@ -12,13 +14,14 @@ use crate::types::{
 };
 
 /// Derive visible content from the same bounded object tree returned to SDK
-/// callers. Stroke and text records are never located by byte scanning.
+/// callers. Stroke, text and image records are never located by byte scanning.
 pub(crate) fn parse_page(
     data: &[u8],
     stored: &StoredPage,
     limits: &ParseLimits,
     archive_entry: &str,
     report: &mut ParseReport,
+    media: &MediaResolver,
 ) -> Result<Page> {
     let header = &stored.header;
     let stroke_count = stored
@@ -43,13 +46,12 @@ pub(crate) fn parse_page(
         elements: Vec::new(),
     };
     parse_page_properties(data, stored, &mut page)?;
-    let mut image_count = 0;
     for layer in &stored.layers.layers {
         decode_objects(
             data,
             &layer.objects,
             &mut page,
-            &mut image_count,
+            media,
             limits,
             archive_entry,
             report,
@@ -71,7 +73,7 @@ fn decode_objects(
     data: &[u8],
     objects: &[StoredObject],
     page: &mut Page,
-    image_count: &mut usize,
+    media: &MediaResolver,
     limits: &ParseLimits,
     archive_entry: &str,
     report: &mut ParseReport,
@@ -115,10 +117,40 @@ fn decode_objects(
                 page.elements.len() + 1,
             )?;
             page.elements.push(PageElement::TextBox(decoded.text_box));
-        } else if matches!(
-            object.object_type,
-            ObjectType::Image | ObjectType::Shape | ObjectType::Line
-        ) {
+        } else if object.object_type == ObjectType::Image {
+            let mut decoded = decode_image(payload).map_err(|error| match error {
+                Error::Format(message) => Error::Format(format!(
+                    "page {}: image at 0x{:x}: {message}",
+                    page.uuid, object.payload_offset
+                )),
+                error => error,
+            })?;
+            let location = format!("page {}: image at 0x{:x}", page.uuid, object.payload_offset);
+            if !decoded.unsupported.is_empty() {
+                report.warning(
+                    DiagnosticCode::UnsupportedImageFeature,
+                    Some(archive_entry.to_owned()),
+                    format!(
+                        "{location}: incomplete support for {}",
+                        decoded.unsupported.join(", ")
+                    ),
+                );
+            }
+            match media.resolve(decoded.image.media_id) {
+                Ok((index, inferred)) => {
+                    decoded.image.media_index = Some(index);
+                    if inferred {
+                        report.warning(DiagnosticCode::InferredImageMediaReference, Some(archive_entry.to_owned()), format!("{location}: media/mediaInfo.dat is absent; resolved media ID {} using a unique numeric filename prefix", decoded.image.media_id.unwrap()));
+                    }
+                }
+                Err(message) => report.warning(
+                    DiagnosticCode::UnresolvedImageMedia,
+                    Some(archive_entry.to_owned()),
+                    format!("{location}: {message}"),
+                ),
+            }
+            page.elements.push(PageElement::PlacedImage(decoded.image));
+        } else if matches!(object.object_type, ObjectType::Shape | ObjectType::Line) {
             // Other object interpretation remains best-effort, but scanning is
             // now confined to this object's payload, never its siblings.
             let elements = parse_page_elements(payload, 0, page.width, page.height, limits)?;
@@ -127,19 +159,13 @@ fn decode_objects(
                 limits.max_objects_per_page,
                 page.elements.len() + elements.len(),
             )?;
-            for mut element in elements {
-                if let PageElement::Image { media_index, .. } = &mut element {
-                    *media_index = *image_count;
-                    *image_count += 1;
-                }
-                page.elements.push(element);
-            }
+            page.elements.extend(elements);
         }
         decode_objects(
             data,
             &object.children,
             page,
-            image_count,
+            media,
             limits,
             archive_entry,
             report,
@@ -250,7 +276,6 @@ fn parse_page_elements(
     limits: &ParseLimits,
 ) -> Result<Vec<PageElement>> {
     let mut elements = Vec::new();
-    let mut image_count = 0;
 
     let mut uuid_off = find_next_ascii_uuid(data, start);
     while let Some(current_uuid_off) = uuid_off {
@@ -267,12 +292,6 @@ fn parse_page_elements(
 
         if let Some(text_box) = parse_text_box_record(record, bbox) {
             elements.push(PageElement::TextBox(text_box));
-        } else if looks_like_image_record(record) {
-            elements.push(PageElement::Image {
-                bbox,
-                media_index: image_count,
-            });
-            image_count += 1;
         }
         check_limit(
             "objects per page",
@@ -337,13 +356,6 @@ fn plausible_bbox(bbox: BoundingBox, width: u32, height: u32) -> bool {
         && bbox.y_max <= height as f64 * 1.25
         && bbox.x_max - bbox.x_min > 8.0
         && bbox.y_max - bbox.y_min > 8.0
-}
-
-fn looks_like_image_record(record: &[u8]) -> bool {
-    record.windows(4).any(|window| window == b"Re")
-        || record
-            .windows(4)
-            .any(|window| window == b"\x01\x00\x04\x20")
 }
 
 fn parse_text_box_record(record: &[u8], bbox: BoundingBox) -> Option<RichTextBox> {

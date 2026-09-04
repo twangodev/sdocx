@@ -3,6 +3,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
 use crate::error::{Error, Result};
+use crate::media::{MediaResolver, media_archive_id, parse_media_manifest_bytes_with_limits};
 use crate::note::parse_note_bytes_with_limits;
 use crate::page::parse_page;
 use crate::report::{DiagnosticCode, ParseReport};
@@ -98,12 +99,33 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     page_names.sort();
 
     metadata.media_assets = parse_media_assets(&mut archive, &options.limits)?;
+    let media_manifest = read_optional_entry(&mut archive, "media/mediaInfo.dat", &options.limits)?
+        .map(|bytes| parse_media_manifest_bytes_with_limits(&bytes, &options.limits))
+        .transpose()?;
+    let mut archive_names = HashMap::new();
+    for index in 0..archive.len() {
+        *archive_names
+            .entry(archive.by_index(index)?.name().to_owned())
+            .or_insert(0) += 1;
+    }
+    let media = MediaResolver::new(
+        media_manifest.as_ref(),
+        &metadata.media_assets,
+        &archive_names,
+    );
 
     let mut page_records = Vec::with_capacity(page_names.len());
     for name in &page_names {
         let buf = read_required_entry(&mut archive, name, &options.limits)?;
         let stored_page = parse_stored_page_bytes_with_limits(&buf, &options.limits)?;
-        let page = parse_page(&buf, &stored_page, &options.limits, name, &mut report)?;
+        let page = parse_page(
+            &buf,
+            &stored_page,
+            &options.limits,
+            name,
+            &mut report,
+            &media,
+        )?;
 
         let file_id = Path::new(name)
             .file_stem()
@@ -462,7 +484,13 @@ fn parse_media_assets<R: Read + Seek>(
             names.push(name);
         }
     }
-    names.sort_by_key(|name| media_archive_id(name).map(u64::from).unwrap_or(u64::MAX));
+    names.sort_by(|left, right| {
+        media_archive_id(left)
+            .map(u64::from)
+            .unwrap_or(u64::MAX)
+            .cmp(&media_archive_id(right).map(u64::from).unwrap_or(u64::MAX))
+            .then_with(|| left.cmp(right))
+    });
 
     let mut assets = Vec::with_capacity(names.len());
     for name in names {
@@ -483,10 +511,6 @@ fn parse_media_assets<R: Read + Seek>(
         });
     }
     Ok(assets)
-}
-
-fn media_archive_id(name: &str) -> Option<u32> {
-    name.rsplit('/').next()?.split('@').next()?.parse().ok()
 }
 
 #[cfg(test)]

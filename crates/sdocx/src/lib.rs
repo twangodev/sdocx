@@ -14,6 +14,7 @@ mod container;
 mod decode;
 mod error;
 mod frame;
+mod image;
 mod layout;
 mod media;
 mod note;

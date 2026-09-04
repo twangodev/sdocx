@@ -67,4 +67,10 @@ pub enum DiagnosticCode {
     UnknownObjectType,
     /// A text box contains optional fields or records without full semantic support.
     UnsupportedTextBoxFeature,
+    /// Image data is retained but includes features not fully interpreted or rendered.
+    UnsupportedImageFeature,
+    /// The main image asset is absent, unsupported, or ambiguous.
+    UnresolvedImageMedia,
+    /// Without a media manifest, a unique numeric filename prefix was used.
+    InferredImageMediaReference,
 }

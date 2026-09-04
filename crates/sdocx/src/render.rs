@@ -1,10 +1,10 @@
 //! Presentation-oriented SVG rendering for parsed Samsung Notes documents.
 
 use crate::{
-    BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType, MediaAsset, Page,
-    PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing, PredefinedTextStyle,
-    RichTextBox, RichTextObjectContent, RichTextObjectSpan, RichTextParagraphType, RichTextRun,
-    RichTextSpanType, Stroke, layout_document,
+    BoundingBox, BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType,
+    MediaAsset, Page, PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
+    PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
+    RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke, layout_document,
 };
 use base64::Engine as _;
 use std::fmt::Write as _;
@@ -198,26 +198,51 @@ fn render_element(
 ) {
     match element {
         PageElement::Image { bbox, media_index } => {
-            let Some(asset) = media_assets.get(*media_index) else {
-                return;
-            };
-            let encoded = base64::engine::general_purpose::STANDARD.encode(&asset.data);
-            writeln!(
-                svg,
-                r#"  <image x="{:.2}" y="{:.2}" width="{:.2}" height="{:.2}" href="data:{};base64,{}" preserveAspectRatio="none"/>"#,
-                bbox.x_min,
-                bbox.y_min,
-                bbox.x_max - bbox.x_min,
-                bbox.y_max - bbox.y_min,
-                asset.mime_type,
-                encoded,
-            )
-            .unwrap();
+            render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
+        PageElement::PlacedImage(image) => render_image(
+            svg,
+            image.bbox,
+            image.media_index,
+            image.rotation_degrees,
+            media_assets,
+        ),
         PageElement::TextBox(text_box) => {
             render_text_box(svg, text_box, page, flow_page_padding, dark_mode)
         }
     }
+}
+
+fn render_image(
+    svg: &mut String,
+    bbox: BoundingBox,
+    media_index: Option<usize>,
+    rotation: Option<f64>,
+    media_assets: &[MediaAsset],
+) {
+    let Some(asset) = media_index.and_then(|index| media_assets.get(index)) else {
+        return;
+    };
+    let width = bbox.x_max - bbox.x_min;
+    let height = bbox.y_max - bbox.y_min;
+    if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
+        return;
+    }
+    let transform = rotation
+        .filter(|angle| angle.is_finite())
+        .map(|angle| {
+            format!(
+                r#" transform="rotate({angle:.2} {:.2} {:.2})""#,
+                bbox.x_min + width / 2.0,
+                bbox.y_min + height / 2.0
+            )
+        })
+        .unwrap_or_default();
+    let encoded = base64::engine::general_purpose::STANDARD.encode(&asset.data);
+    writeln!(svg,
+        r#"  <image x="{:.2}" y="{:.2}" width="{width:.2}" height="{height:.2}"{transform} href="data:{};base64,{}" preserveAspectRatio="none"/>"#,
+        bbox.x_min, bbox.y_min, asset.mime_type, encoded,
+    ).unwrap();
 }
 
 fn render_text_box(
