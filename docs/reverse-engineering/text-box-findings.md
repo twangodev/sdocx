@@ -73,8 +73,9 @@ regression fails against `d52d2b8`: a five-level embedded chain is accepted with
 a limit of four. Both pass with the current implementation. These comparisons
 used isolated archive checkouts and separate Cargo target directories.
 
-The external `01-basic-formatting.sdocx` conformance check still passes, as do
-all three handwritten regressions (7,182 strokes and 924,442 points). The
+The external `01-basic-formatting.sdocx` conformance check passed during the
+migration, alongside the [historical fixture audit](fixture-validation.md)
+(7,182 strokes and 924,442 points). Those three audit inputs are retired. The
 workspace tests, Clippy, Rust 1.88 checks and WASM target checks pass.
 
 A disposable synthetic archive was converted to SVG and PNG through the CLI.

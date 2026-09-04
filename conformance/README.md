@@ -37,9 +37,14 @@ and an HTML report with side-by-side pages and adjustable overlays:
 
 ```sh
 cargo build -p sdocx-cli
-uv run --locked --only-group conformance python conformance/visual.py \
+uv run --no-project --python 3.14 --with-requirements conformance/requirements.txt \
+  python conformance/visual.py \
   --output tmp/visual/current
 ```
+
+The runner uses Python 3.14 and the three pinned dependencies in
+[`requirements.txt`](requirements.txt). `uv run --no-project` supplies this
+environment without a repository-wide Python project.
 
 Use a new output directory for each run; existing output is rejected to prevent
 stale pages from entering a comparison. `--fixture ID` selects a manifest row
@@ -75,7 +80,8 @@ placement and missing content need different interpretations.
 Synthetic runner tests require no external documents or Rust build:
 
 ```sh
-uv run --locked --only-group conformance python -m unittest discover \
+uv run --no-project --python 3.14 --with-requirements conformance/requirements.txt \
+  python -m unittest discover \
   -s conformance -p 'test_*.py'
 ```
 
@@ -84,35 +90,16 @@ The initial five-page measurements and font findings are recorded in
 Use the [capture checklist](fixture-capture.md) to prepare the missing native
 shape/line, image-placement and standalone-text reference pairs.
 
-## Handwritten stroke regressions
-
-[`strokes.tsv`](strokes.tsv) locks the three original handwritten documents by
-SHA-256 and records the independent native-frame audit's stroke/point counts.
-They are not included in the current Hugging Face corpus. A full Git checkout
-can recover the exact original blobs into ignored local storage:
-
-```sh
-mkdir -p tmp/stroke-conformance
-while IFS="$(printf '\t')" read -r filename digest blob strokes points; do
-  case "$filename" in \#*|'') continue ;; esac
-  git cat-file blob "$blob" > "tmp/stroke-conformance/$filename"
-done < conformance/strokes.tsv
-SDOCX_STROKE_CORPUS_DIR="$PWD/tmp/stroke-conformance" \
-  cargo test -p sdocx --test stroke_conformance -- --ignored
-```
-
-Use an absolute corpus directory because Cargo runs integration tests from the
-crate directory. The test checks all 7,182 strokes and 924,442 points, channel
-lengths, and coordinates against each stroke's independently stored bounding
-rectangle. It fails on the former shifted-layout decoder: handwritten alone
-produces 322,406 points instead of the audited 321,776.
+## Stroke regressions
 
 Small synthetic tests in `structural_strokes.rs` run in ordinary CI without
 external files. They exercise compressed/uncompressed channel order, short and
 empty strokes, optional stylus channels, nested objects, multiple layers,
 variable mask sizes, unknown extensions, resource limits and malformed records.
-The handwritten corpus is structural/geometry coverage; it does not establish
-pixel-for-pixel equivalence with Samsung rendering.
+Historical native-frame measurements are preserved in
+[`fixture-validation.md`](../docs/reverse-engineering/fixture-validation.md).
+The retired documents are not part of the current corpus; add new Samsung
+stroke/reference-PDF pairs using the [capture checklist](fixture-capture.md).
 
 ## Standalone text-box regressions
 
@@ -141,9 +128,8 @@ encodings, bounded frames and records, placement and rotation:
 cargo test -p sdocx --all-features --test structural_images --test media_manifest
 ```
 
-The handwritten corpus runner also validates the 21 native media manifest
-entries and hashes across its three locked documents. The standalone-image
-tests are synthetic; real Samsung image/reference-PDF coverage is still needed.
+The standalone-image tests are synthetic; real Samsung image/reference-PDF
+coverage is still needed.
 See [`image-findings.md`](../docs/reverse-engineering/image-findings.md).
 
 ## Shape and line regressions

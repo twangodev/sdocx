@@ -1,15 +1,27 @@
-# Compatibility fixture validation
+# Historical fixture validation
 
 The structural model was checked against three independently produced Samsung
-Notes documents. These documents remain outside the repository.
+Notes documents that have since been retired from the test workflow. These
+measurements preserve the evidence for the format map; they are not current
+corpus coverage. See [`conformance/README.md`](../../conformance/README.md) for
+the maintained corpus and test commands.
+
+The labels used here and in the format map identify the archived inputs by
+SHA-256, without depending on the old sample filenames:
+
+| Fixture | SHA-256 |
+| --- | --- |
+| A | `77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3` |
+| B | `38fd0ef0729d3a113e1c14bcc10557dcc263e5a3582fd80a3cf99c8c2c4ad40a` |
+| C | `fa2d3ba44023871c6a53436e810772f7b4f45b190dd28e05c172886b8f7e40a0` |
 
 ## Stroke and frame audit
 
 | Fixture | Strokes | Points | Base frame | Frame errors |
 | --- | ---: | ---: | --- | ---: |
-| handwritten | 2,769 | 321,776 | 121 bytes for all | 0 |
-| quiz | 3,228 | 431,933 | 121 bytes for all | 0 |
-| CS61BL | 1,185 | 170,733 | 121 bytes for all | 0 |
+| A | 2,769 | 321,776 | 121 bytes for all | 0 |
+| B | 3,228 | 431,933 | 121 bytes for all | 0 |
+| C | 1,185 | 170,733 | 121 bytes for all | 0 |
 | total | 7,182 | 924,442 |  | 0 |
 
 All audited strokes are compressed and include tilt/orientation channels. For
@@ -25,15 +37,15 @@ every stroke:
 
 | Fixture | Property masks |
 | --- | --- |
-| handwritten | `0x25` × 2,732; `0x05` × 37 |
-| quiz | `0x25` × 2,578; `0x05` × 644; `0x65` × 6 |
-| CS61BL | `0x25` × 1,095; `0x425` × 73; `0x05` × 17 |
+| A | `0x25` × 2,732; `0x05` × 37 |
+| B | `0x25` × 2,578; `0x05` × 644; `0x65` × 6 |
+| C | `0x25` × 1,095; `0x425` × 73; `0x05` × 17 |
 
 | Fixture | Flexible-field masks |
 | --- | --- |
-| handwritten | `0x258a` × 2,682; `0x258e` × 87 |
-| quiz | `0x248e` × 6; `0x258a` × 2,859; `0x258e` × 363 |
-| CS61BL | `0x258e` × 1,185 |
+| A | `0x258a` × 2,682; `0x258e` × 87 |
+| B | `0x248e` × 6; `0x258a` × 2,859; `0x258e` × 363 |
+| C | `0x258e` × 1,185 |
 
 ## Page and integrity audit
 
@@ -57,38 +69,37 @@ for every affected short stroke:
 
 | Fixture | Corrupt selections | Correct normal alternative |
 | --- | ---: | ---: |
-| handwritten | 74 | 74 |
-| quiz | 68 | 68 |
-| CS61BL | 49 | 49 |
+| A | 74 | 74 |
+| B | 68 | 68 |
+| C | 49 | 49 |
 
 This matches the source-level finding that `0x25` is a property mask being read
 at the wrong offset as the integer 37.
 
-## Rust regression validation
+## Historical Rust regression validation
 
-The structural stroke decoder now reproduces the above stroke/point totals and
+The structural stroke decoder reproduced the above stroke/point totals and
 complete pressure/timestamp/tilt/orientation arrays for all three fixtures.
-Every coordinate is within two document units of its separately stored stroke
+Every coordinate was within two document units of its separately stored stroke
 bbox (allowing fixed-point and floating-point rounding).
 
-The repeatable runner and SHA-256 lock are described in
-[`../../conformance/README.md`](../../conformance/README.md). The same runner
-fails against the previous decoder: handwritten has 322,406 decoded points
-instead of 321,776. This is a geometry regression check, not a visual-fidelity
-claim for every pen style or non-stroke object.
+The retired runner failed against the previous decoder: fixture A had 322,406
+decoded points instead of 321,776. This established a geometry regression,
+not visual fidelity for every pen style or non-stroke object. Current synthetic
+stroke regressions run in `structural_strokes.rs` without these documents.
 
 ## Media manifest regressions
 
-The image migration extended the same locked fixture runner to parse
+The image migration extended that historical fixture runner to parse
 `media/mediaInfo.dat` and verify every manifest digest against the referenced
 asset bytes:
 
 | Fixture | Manifest version | Media entries | Hash mismatches |
 | --- | ---: | ---: | ---: |
-| handwritten | 5202 | 1 | 0 |
-| quiz | 5400 | 8 | 0 |
-| CS61BL | 5400 | 12 | 0 |
+| A | 5202 | 1 | 0 |
+| B | 5400 | 8 | 0 |
+| C | 5400 | 12 | 0 |
 
-All 21 manifest records have no unknown trailing bytes. Assets include PNG,
-PDF and proprietary SPI. This establishes manifest parsing/hash regression
-coverage; these fixtures do not establish standalone-image rendering fidelity.
+All 21 manifest records had no unknown trailing bytes. Assets included PNG,
+PDF and proprietary SPI. This established manifest parsing/hash evidence;
+these fixtures did not establish standalone-image rendering fidelity.

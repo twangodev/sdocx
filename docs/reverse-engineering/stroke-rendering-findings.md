@@ -53,6 +53,7 @@ Unknown objects remain in the stored tree, and unexposed flexible data stays
 bounded by its frame. Non-stroke semantic interpretation remains best-effort.
 
 `structural_strokes.rs` covers the synthetic format cases in normal CI.
-`stroke_conformance.rs` checks all three original handwritten fixtures against
-the native audit. It passes on the new decoder and fails on the old decoder's
-handwritten point count (322,406 versus the expected 321,776).
+The historical three-document audit passed on the new decoder and failed on
+the old decoder's point count for fixture A (322,406 versus the expected
+321,776). Those documents and their runner are retired; the measurements remain
+in [`fixture-validation.md`](fixture-validation.md).

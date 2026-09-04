@@ -62,12 +62,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Jupyter Notebook / IPython
-.ipynb_checkpoints
-*/.ipynb_checkpoints/*
-profile_default/
-ipython_config.py
-
 # pyenv
 # .python-version
 

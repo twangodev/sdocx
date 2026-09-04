@@ -1,7 +1,7 @@
 # Samsung Notes SDOCX/WDoc file format
 
 Status: reverse-engineering note, based on Samsung Notes 4.4.45.37 APK writers,
-JNI/native symbols and three real SDOCX fixtures. This documents the modern
+JNI/native symbols and three archived SDOCX fixtures. This documents the modern
 WDoc/SDOCX path, not the older SDOC `doc.dat`/`content.dat` format.
 
 ## Executive summary
@@ -43,11 +43,15 @@ Primary writer paths in the decompiled APK:
 - `libSPenWDoc.so`: native WDoc load handlers and object serializers.
 - `libSPenModel.so`: native object model and type-specific frame serializers.
 
-Fixture validation used:
+Historical fixture validation used the three inputs identified by SHA-256 in
+[`fixture-validation.md`](fixture-validation.md):
 
-- `handwritten.sdocx`: 2,769 strokes / 321,776 points.
-- `quiz.sdocx`: 3,228 strokes / 431,933 points.
-- `cs61bl_su22.sdocx`: 1,185 strokes / 170,733 points.
+- Fixture A: 2,769 strokes / 321,776 points.
+- Fixture B: 3,228 strokes / 431,933 points.
+- Fixture C: 1,185 strokes / 170,733 points.
+
+These inputs are retired. Current corpus coverage is documented in
+[`conformance/README.md`](../../conformance/README.md).
 
 The generic frame boundaries and compressed-stroke byte counts matched all
 7,182 strokes with zero boundary errors.
@@ -71,7 +75,7 @@ usually equivalent, but they are separate serializations and can diverge; one
 audited fixture differed only in the display-modified timestamp. The native
 whole-file parser treats the post-EOCD copy as authoritative.
 
-ZIP compression choices are not semantic. In the handwritten fixture,
+ZIP compression choices are not semantic. In fixture A,
 metadata/pages are deflated while the `.spi` media payload is stored.
 
 ### Related files that are not canonical ZIP members
@@ -119,7 +123,7 @@ page logical hash
     = ASCII "Page for SAMSUNG S-Pen SDK"
 ```
 
-The handwritten fixture satisfies both equality chains byte-for-byte.
+Fixture A satisfies both equality chains byte-for-byte.
 
 Object, layer and page hashes are logical/model hashes, not hashes of their raw
 surrounding records. Their exact formulas are:
@@ -584,6 +588,13 @@ The coordinate deltas use a sign bit plus Q10.5 magnitude. Pressure, tilt and
 orientation deltas use a sign bit plus Q3.12 magnitude. Timestamp deltas are
 zero-extended `u16` values.
 
+For a packed little-endian `u16`, the sign is bit 15 and the magnitude is
+`raw & 0x7fff`. Divide the signed magnitude by 32 for coordinates or 4096 for
+pressure/tilt/orientation, then add it to the previous value. Coordinates start
+at the stored absolute X/Y seed; the bounding box does not normalize them.
+The high byte also holds magnitude bits, so testing it only for `0x00` or
+`0x80` cannot determine where a channel ends. Use the declared point count.
+
 The uncompressed ordering was rechecked directly in
 `ObjectStrokeBinaryHandler::NewApplyBinary` at `0x2ee9bc–0x2eea64` in the
 4.4.45.37 arm64 library. It reads all coordinate pairs and then copies each
@@ -591,7 +602,7 @@ remaining channel as a separate array. Earlier notes incorrectly described
 interleaved point structs. The branch at `0x2ee888` also confirms that zero-point
 compressed strokes omit every channel seed and contain only the final two
 tool/input bytes after the point count. Synthetic regression tests cover both
-cases; the three real handwritten fixtures only exercise compressed strokes.
+cases; the three archived fixtures only exercised compressed strokes.
 
 For every audited compressed stroke, the calculated end of these fixed arrays
 was exactly `frame_start + flexible_data_offset`.
@@ -626,9 +637,9 @@ Observed masks:
 
 | Fixture | Masks |
 | --- | --- |
-| handwritten | `0x25` × 2,732; `0x05` × 37 |
-| quiz | `0x25` × 2,578; `0x05` × 644; `0x65` × 6 |
-| CS61BL | `0x25` × 1,095; `0x425` × 73; `0x05` × 17 |
+| A | `0x25` × 2,732; `0x05` × 37 |
+| B | `0x25` × 2,578; `0x05` × 644; `0x65` × 6 |
+| C | `0x25` × 1,095; `0x425` × 73; `0x05` × 17 |
 
 ### Stroke flexible field mask
 
@@ -665,6 +676,12 @@ Example: the common `0x258e` mask contains bits 1, 2, 3, 7, 8, 10 and 13.
 Its 28 flexible bytes decode as seven four-byte values: pen ID, ARGB color,
 size, advanced-setting ID, fixed width, particle density and initial tolerance.
 
+The little-endian `u32` color is stored as B, G, R, A bytes. Field-mask bit 2
+declares its presence regardless of alpha; bit 3 independently declares pen
+size. A color-looking byte sequence or an `0xff` alpha byte is not a field
+delimiter. The current Rust `Stroke` exposes RGB only, so alpha fidelity remains
+a rendering limitation.
+
 ## `media/mediaInfo.dat`
 
 Modern form (`format_version > 3001`):
@@ -689,7 +706,7 @@ then uses the older S Pen end-of-file tag instead of `EOFX`.
 
 Media names are resolved as `media/<file_name>`. Media payloads are not one
 format: objects may reference PNG/JPEG/PDF/audio/video or Samsung-specific
-formats. The handwritten fixture contains `0@page_0000000.spi`; its payload
+formats. Fixture A contains `0@page_0000000.spi`; its payload
 does not have a standard image magic and remains undecoded. Its manifest's
 64-character hash exactly equals the lowercase hexadecimal SHA-256 of that
 payload.
@@ -741,10 +758,10 @@ optional utf16_u32 application_custom_data
 ASCII "Document for S-Pen SDK"         # exactly 22 bytes
 ```
 
-The handwritten file is 144 bytes: its first `u16` is 142 and its last 22
+The end tag in fixture A is 144 bytes: its first `u16` is 142 and its last 22
 bytes are the signature. Its two variable blobs are empty and it predates the
-app-custom-data field. Newer quiz/CS61BL tags include a zero-length `u32` for
-that optional string and are 148 bytes. A reader must therefore walk the
+app-custom-data field. The tags in fixtures B and C include a zero-length `u32`
+for that optional string and are 148 bytes. A reader must therefore walk the
 length-prefixed strings/blobs and use the declared size; fixed offsets such as
 `0x48` and `0x50` only work when all preceding strings are empty.
 
@@ -791,9 +808,9 @@ This was deterministic in all three fixtures:
 
 | Fixture | Bad selected strokes | Correct normal-layout alternative |
 | --- | ---: | ---: |
-| handwritten | 74 | 74 |
-| quiz | 68 | 68 |
-| CS61BL | 49 | 49 |
+| A | 74 | 74 |
+| B | 68 | 68 |
+| C | 49 | 49 |
 
 ## Parser architecture implied by the APK
 
@@ -843,7 +860,7 @@ complete non-stroke decoding remain separate roadmap items.
 
 These gaps do not block fixing stroke geometry: the frame and stroke layouts
 needed for that are now source-backed and exhaustively boundary-validated on
-the available handwritten corpus.
+the historical fixture set.
 
 ## Separate legacy SDoc family
 

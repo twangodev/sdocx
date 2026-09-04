@@ -110,8 +110,9 @@ An image regression also verifies that the inherited shape angle is not
 mistaken for a corner radius when it matches the image rotation.
 
 Workspace tests, Clippy, formatting, Rust 1.88 and the WASM target check pass.
-The external rich-text fixture still passes; the three handwritten fixtures
-retain all 7,182 strokes and 924,442 points, with all 21 media hashes verified.
+The external rich-text fixture passed during the migration. The
+[historical fixture audit](fixture-validation.md) retained all 7,182 strokes
+and 924,442 points, with all 21 media hashes verified; those inputs are retired.
 A disposable synthetic archive was converted through the CLI to SVG and PNG
 and visually checked for geometry, rotation, transparency and curved paths.
 This is runtime coverage, not a Samsung reference comparison.
