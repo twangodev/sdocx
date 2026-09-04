@@ -21,6 +21,8 @@ mod media;
 mod note;
 mod object;
 mod page;
+#[cfg(feature = "pdf")]
+pub mod pdf;
 #[cfg(feature = "render")]
 mod render;
 mod report;
@@ -36,6 +38,8 @@ pub use media::{
 };
 pub use note::{StoredNote, StoredNoteHeader, parse_note_bytes, parse_note_bytes_with_limits};
 pub use object::ObjectMetadata;
+#[cfg(feature = "pdf")]
+pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
 #[cfg(feature = "render")]
 pub use render::{
     RenderColorMode, RenderOptions, RenderedPage, render_document_svg, render_layout_page_svg,

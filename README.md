@@ -131,6 +131,38 @@ fn main() -> sdocx::Result<()> {
 }
 ```
 
+### PDF export
+
+Enable the optional `pdf` feature (`cargo add sdocx --features pdf`):
+
+```rust
+use sdocx::{PdfOptions, RenderOptions, parse, render_document_pdf};
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let document = parse("notes.sdocx")?;
+    let pdf_options = PdfOptions::default(); // Discover system fonts once.
+    let bytes = render_document_pdf(&document, &RenderOptions::default(), &pdf_options)?;
+    std::fs::write("notes.pdf", bytes)?;
+    Ok(())
+}
+```
+
+`render_document_pdf` exports all visible pages into one PDF through the shared
+SVG renderer. `render_svg_pages_pdf` accepts an existing `Vec<RenderedPage>`.
+Vectors remain vectors and available fonts are embedded with selectable text.
+For controlled fonts, populate `sdocx::pdf::fontdb::Database` and pass it in an
+`Arc` to `PdfOptions::new`; that constructor does not discover system fonts.
+
+Page dimensions use 96 SVG units per inch by default (one unit = 0.75 PDF
+points). Set `PdfOptions::dpi` to change physical size. This is an explicit
+export scale, not a decoded Samsung print setting. PDF pages are limited to
+14,400 points per side. PNG images must decode within a 64 MiB buffer limit.
+
+PDF inherits the SVG renderer's fidelity limits. Font fallback depends on the
+provided fonts, some SVG filters rasterize, and PDF link annotations and
+semantic document tags are not exported. The `pdf` feature is independent of
+the browser/WASM bindings.
+
 ## JavaScript Usage
 
 ```js
