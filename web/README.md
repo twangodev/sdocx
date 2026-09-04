@@ -1,4 +1,4 @@
-# sdocx web
+# sdocx-web
 
 Browser-only `.sdocx` viewer and converter for
 [`sdocx.twango.dev`](https://sdocx.twango.dev). Documents never leave the
@@ -23,10 +23,5 @@ bun run test:e2e
 
 ## Deployment
 
-Pushes to `main` deploy the static build to the Cloudflare Worker named `sdocx`.
-The GitHub `production` environment requires:
-
-- secret: `CLOUDFLARE_API_TOKEN`
-- variable: `CLOUDFLARE_ACCOUNT_ID`
-
-Deploy locally with `bun run deploy`.
+Pushes to `main` deploy the production site. Deploy locally with
+`bun run deploy`.
