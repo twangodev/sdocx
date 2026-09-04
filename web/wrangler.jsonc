@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "sdocx-web",
+	"name": "sdocx",
 	"compatibility_date": "2026-08-30",
 	"workers_dev": false,
 	"routes": [
