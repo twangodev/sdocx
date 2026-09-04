@@ -19,14 +19,20 @@ configured for Workers Static Assets at `sdocx.twango.dev`.
 
 `sdocx` is a reverse-engineered parser, not a drop-in implementation of
 Samsung's S Pen SDK. Archive structure, format versions, page ordering, and
-supported packed stroke channels follow observed SDK contracts. Higher-level
-page objects, rich text, templates, and media associations are currently
-best-effort.
+supported packed stroke channels follow observed SDK contracts. Standalone text
+boxes use bounded native frames and preserve Unicode, placement and rich-text
+records. Text rendering, other page objects, templates and media associations
+remain best-effort.
 
 A successful parse may omit unsupported objects or properties; it does not
 guarantee a lossless decode. Preserve original documents and validate output
 against Samsung Notes when fidelity matters. Protected documents must be
 unlocked or exported before parsing.
+
+Use `parse_detailed` or `parse_bytes_detailed` to inspect `ParseReport`, including
+detected unsupported text-box features. The CLI prints these findings during
+conversion, and WASM exposes them through document inspection. An empty report
+does not guarantee complete rendering fidelity.
 
 ## Installation
 

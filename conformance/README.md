@@ -60,3 +60,19 @@ empty strokes, optional stylus channels, nested objects, multiple layers,
 variable mask sizes, unknown extensions, resource limits and malformed records.
 The handwritten corpus is structural/geometry coverage; it does not establish
 pixel-for-pixel equivalence with Samsung rendering.
+
+## Standalone text-box regressions
+
+`structural_text_boxes.rs` adds twelve synthetic archive regressions, including
+Unicode, short/empty text, rotation, styles, paragraphs, nested objects,
+unsupported-feature diagnostics, malformed boundaries and limits. They run
+without external files. SVG checks run with the `render` feature:
+
+```sh
+cargo test -p sdocx --all-features --test structural_text_boxes
+```
+
+The native frame evidence and current rendering limits are recorded in
+[`text-box-findings.md`](../docs/reverse-engineering/text-box-findings.md).
+The real corpus still needs a Samsung standalone-text-box export and reference
+PDF; synthetic coverage does not establish Samsung visual parity.

@@ -46,6 +46,22 @@ The structural stroke implementation also rechecked these arm64 locations in
   pen size. The alternate coedit string representation is outside this parser's
   normal WDoc archive path.
 
+## Standalone text frames
+
+The standalone-text implementation rechecked these arm64 locations in the same
+`libSPenModel.so` 4.4.45.37:
+
+| Symbol/address | Evidence |
+| --- | --- |
+| `ObjectBaseBinaryHandler::ApplyOwnBinary`, `0x2db0e0`; flexible handler `0x2db6c4` | Shared identity/bounds and first flexible rotation field. |
+| `ObjectTextBox::NewGetBinary`, `0x3e1850`; `NewApplyBinary`, `0x3e18f8–0x3e1a38` | Inherited shape frames followed by the text-box-specific record. |
+| `ObjectShapeText::ApplyBinary_TextData`, `0x3b21d4–0x3b23c8` | Masked, length-prefixed `TextCommon`; optional next byte. |
+| `ObjectShape::t_TextboxGetOwnBinarySize`, `0x39a2d0`; writer `0x39a35c`; reader `0x39a3b4` | Delegation to the shared component's text-box serializer. |
+| `ComponentImage::TextboxGetOwnBinary`, `0x3a4da0–0x3a4e5c`; reader `0x3a4e5c` | Type-2 header and masked border color/width/type. |
+
+[`text-box-findings.md`](text-box-findings.md) distinguishes these native
+contracts from synthetic coverage and the remaining real-fixture gap.
+
 ## Evidence standard
 
 A field is called confirmed when at least one writer/parser path gives its

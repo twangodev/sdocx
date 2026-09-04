@@ -26,6 +26,17 @@ retained for compatibility. The numbered sequence below remains the overall
 roadmap; full common-object metadata, remaining styles, end tags, hashes and
 non-stroke semantics are still incomplete.
 
+The structural text-box milestone is also implemented. A shared type-0 reader
+exposes identity/bounds/rotation; standalone text follows `0 + 6 + 7 + 2` and
+reuses bounded `TextCommon` parsing. Embedded text recursion is limited, and
+detected unsupported features appear in `ParseReport` and CLI output. See
+[`text-box-findings.md`](text-box-findings.md) for test evidence and limits.
+
+The next implementation step is structural image decoding: follow
+`0 + 6 + 7 + 3`, resolve each explicit media reference against `mediaInfo.dat`,
+and cover reordered/missing/repeated media IDs with regression tests. Samsung
+standalone-text exports remain needed for visual comparison in parallel.
+
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
 2. Make `StoredPage` traversal authoritative for layers and recursive objects.

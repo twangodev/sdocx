@@ -516,6 +516,14 @@ attached     0 + 24
 
 Frame type 6 is a shared shape-base component, not an outer object type.
 
+Standalone text boxes now follow the `0 + 6 + 7 + 2` chain in the Rust parser.
+Frame 7 field bit 0 contains a sized `TextCommon` payload shared with note text;
+frame 2 carries text-box settings, including masked border fields. See
+[`text-box-findings.md`](text-box-findings.md) for the confirmed native layout,
+regressions and remaining semantics. The implementation reads all fields
+relative to variable-length masks, rather than using the audited stroke
+offsets shown above for other object types.
+
 ## Stroke frame
 
 ### Frame header and fixed point data

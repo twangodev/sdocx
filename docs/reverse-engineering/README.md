@@ -15,6 +15,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   across the handwritten, quiz and CS61BL documents.
 - [`stroke-rendering-findings.md`](stroke-rendering-findings.md) — root cause of
   the stray top-right strokes and the exact packed-point layout.
+- [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
+  bounded rich-text decoding, diagnostics, regressions and rendering limits.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

@@ -3,11 +3,11 @@
 //! # Accuracy and compatibility
 //!
 //! Archive structure, format versions, page ordering, and supported packed
-//! stroke channels are decoded from observed S Pen SDK contracts. Higher-level
-//! page objects, rich text, templates, and media associations remain
-//! best-effort. A successful parse can omit unsupported content and does not
-//! indicate a lossless decode. Preserve the source document when fidelity is
-//! important.
+//! stroke channels and standalone text-box frames are decoded from observed
+//! S Pen SDK contracts. Text rendering, other page objects, templates, and
+//! media associations remain best-effort. A successful parse can omit
+//! unsupported content and does not indicate a lossless decode. Preserve the
+//! source document when fidelity is important.
 
 mod binary;
 mod container;
