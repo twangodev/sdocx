@@ -170,13 +170,16 @@ def measure(reference, candidate, channel_threshold=16, ink_threshold=32, tolera
     return metrics, difference
 
 
-def compare_fixture(fixture, cli, output, options):
+def compare_fixture(fixture, cli, output, options, font_files=()):
     directory = output / fixture["id"]
     directory.mkdir()
     with pymupdf.open(fixture["reference_pdf"]) as pdf:
         if pdf.page_count != fixture["visible_pages"]:
             raise ValueError(f"{fixture['id']}: PDF page count differs from manifest")
-        conversion = run([cli, fixture["sdocx"], "--output", directory / "sdk.png"])
+        command = [cli, fixture["sdocx"], "--output", directory / "sdk.png"]
+        for font in font_files:
+            command.extend(["--font", font])
+        conversion = run(command)
         (directory / "sdk.log").write_text(conversion.stdout + conversion.stderr)
         paths = candidate_pages(directory, pdf.page_count)
         pages = []
@@ -274,6 +277,13 @@ def main(argv=None):
     )
     parser.add_argument("--cli", type=Path, default=ROOT / "target/debug/sdocx-cli")
     parser.add_argument(
+        "--font",
+        type=Path,
+        action="append",
+        default=[],
+        help="font file passed to the CLI; repeat as needed",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         required=True,
@@ -293,6 +303,10 @@ def main(argv=None):
         parser.error("channel and ink thresholds must be in 0..254")
     cli = args.cli.resolve()
     fixtures = read_fixtures(args.manifest, args.corpus_dir, set(args.fixture))
+    font_files = [path.resolve() for path in args.font]
+    explicit_fonts = [
+        {"file": str(path), "sha256": sha256(path)} for path in font_files
+    ]
     options = {
         key: getattr(args, key)
         for key in ("channel_threshold", "ink_threshold", "tolerance")
@@ -317,9 +331,11 @@ def main(argv=None):
                 run(["git", "status", "--porcelain"], cwd=ROOT).stdout
             ),
             "fontconfig": font_inventory(),
+            "explicit_fonts": explicit_fonts,
         },
         "fixtures": [
-            compare_fixture(fixture, cli, output, options) for fixture in fixtures
+            compare_fixture(fixture, cli, output, options, font_files)
+            for fixture in fixtures
         ],
     }
     (output / "report.json").write_text(

@@ -80,6 +80,18 @@ docker pull ghcr.io/twangodev/sdocx
 sdocx-cli note.sdocx
 ```
 
+For PNG export, supply font files when the document's fonts are unavailable
+locally. Repeat `--font` for additional faces; explicit faces take precedence
+over matching system fonts:
+
+```sh
+sdocx-cli note.sdocx -o note.png --font /path/to/Roboto-Regular.ttf --font /path/to/Roboto-Italic.ttf
+```
+
+Fonts are loaded once per document. Missing or invalid explicit font files
+produce an error. SVG output references font families and does not embed fonts;
+`--font` applies only to PNG export.
+
 With Docker:
 
 ```sh

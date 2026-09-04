@@ -47,6 +47,12 @@ and may be repeated. `--corpus-dir` (or `SDOCX_CORPUS_DIR`) selects the corpus;
 `--cli` selects an explicitly built executable, including one from a baseline
 checkout. The runner does not download or modify corpus files.
 
+Pass `--font /path/to/Roboto-Regular.ttf --font /path/to/Roboto-Italic.ttf`
+to compare using explicit PNG font faces. The runner forwards them to the CLI
+in order and records their SHA-256 digests separately from system fonts. Use
+ordinary installable fonts: PDF-embedded fonts can have stripped Unicode maps
+and may be unusable for SVG text even when their family names match.
+
 The report records the executable hash, workspace revision/dirty state, Python
 and image-library versions, plus fontconfig file hashes when available. The
 workspace revision identifies the reporting checkout, not necessarily the CLI

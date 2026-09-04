@@ -42,17 +42,33 @@ impl Format {
     }
 }
 
-fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
+fn png_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, String> {
     let mut opt = resvg::usvg::Options::default();
-    // Load system fonts so <text> elements render instead of being silently dropped.
     let fontdb = opt.fontdb_mut();
+    // Load explicit fonts first so they win ties with system faces. Keep one
+    // database for the whole document, including every continuation page.
+    for path in font_files {
+        let before = fontdb.faces().count();
+        fontdb
+            .load_font_file(path)
+            .map_err(|error| format!("cannot load font {}: {error}", path.display()))?;
+        if fontdb.faces().count() == before {
+            return Err(format!("no usable font faces in {}", path.display()));
+        }
+    }
+    // Load system fonts so <text> elements render instead of being silently dropped.
     fontdb.load_system_fonts();
     // Arial is not normally installed in Linux CI images. DejaVu Sans is the
     // portable fallback there; explicit Arial still wins on platforms that
     // provide it.
     fontdb.set_sans_serif_family("DejaVu Sans");
     fontdb.set_monospace_family("DejaVu Sans Mono");
-    let tree = resvg::usvg::Tree::from_str(svg, &opt).map_err(|e| format!("invalid SVG: {e}"))?;
+    Ok(opt)
+}
+
+fn svg_to_png(svg: &str, options: &resvg::usvg::Options<'_>) -> Result<Vec<u8>, String> {
+    let tree =
+        resvg::usvg::Tree::from_str(svg, options).map_err(|e| format!("invalid SVG: {e}"))?;
     let size = tree.size().to_int_size();
     let (w, h) = (size.width(), size.height());
     let mut pixmap = resvg::tiny_skia::Pixmap::new(w, h)
@@ -77,6 +93,10 @@ struct Cli {
     /// Output format (overrides extension inference): svg or png
     #[arg(short, long, value_enum)]
     format: Option<Format>,
+
+    /// Additional font file for PNG rendering; repeat to supply multiple fonts
+    #[arg(long = "font", value_name = "PATH")]
+    font_files: Vec<PathBuf>,
 }
 
 fn print_info(doc: &Document, layout: &LayoutDocument) {
@@ -151,17 +171,17 @@ fn format_template(template: PageTemplate) -> String {
     }
 }
 
-fn write_page(path: &std::path::Path, svg: &str, format: Format) {
-    match format {
-        Format::Svg => {
+fn write_page(path: &std::path::Path, svg: &str, png_options: Option<&resvg::usvg::Options<'_>>) {
+    match png_options {
+        None => {
             if let Err(e) = fs::write(path, svg) {
                 eprintln!("Error: failed to write {}: {e}", path.display());
                 std::process::exit(1);
             }
             eprintln!("Wrote {} ({} bytes)", path.display(), svg.len());
         }
-        Format::Png => {
-            let png = svg_to_png(svg).unwrap_or_else(|e| {
+        Some(options) => {
+            let png = svg_to_png(svg, options).unwrap_or_else(|e| {
                 eprintln!("Error: {e}");
                 std::process::exit(1);
             });
@@ -206,6 +226,18 @@ fn main() {
             std::process::exit(1);
         }
     };
+    if format != Format::Png && !cli.font_files.is_empty() {
+        eprintln!("Error: --font applies to PNG output; use -f png or a .png output path");
+        std::process::exit(1);
+    }
+    let png_options = if format == Format::Png {
+        Some(png_options(&cli.font_files).unwrap_or_else(|error| {
+            eprintln!("Error: {error}");
+            std::process::exit(1);
+        }))
+    } else {
+        None
+    };
 
     let output_base = cli
         .output
@@ -213,7 +245,7 @@ fn main() {
     let rendered_pages = sdocx::render_document_svg(&doc, &RenderOptions::default());
 
     if rendered_pages.len() == 1 {
-        write_page(&output_base, &rendered_pages[0].svg, format);
+        write_page(&output_base, &rendered_pages[0].svg, png_options.as_ref());
     } else {
         for (i, rendered_page) in rendered_pages.iter().enumerate() {
             let stem = output_base
@@ -225,15 +257,106 @@ fn main() {
                 .and_then(|e| e.to_str())
                 .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            write_page(&path, &rendered_page.svg, format);
+            write_page(&path, &rendered_page.svg, png_options.as_ref());
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Format, resolve_format, svg_to_png};
+    use super::{Format, png_options, resolve_format};
     use std::path::Path;
+
+    fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
+        super::svg_to_png(svg, &png_options(&[])?)
+    }
+
+    struct FontFile(std::path::PathBuf);
+
+    impl FontFile {
+        fn new(data: &[u8]) -> Self {
+            use std::io::Write;
+            use std::sync::atomic::{AtomicUsize, Ordering};
+            static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+            let path = std::env::temp_dir().join(format!(
+                "sdocx-font-{}-{}.ttf",
+                std::process::id(),
+                SEQUENCE.fetch_add(1, Ordering::Relaxed)
+            ));
+            let mut file = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&path)
+                .unwrap();
+            file.write_all(data).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for FontFile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+
+    #[test]
+    fn explicit_font_file_wins_over_the_same_system_face() {
+        use resvg::usvg::fontdb::{Family, Query, Source};
+        let system = png_options(&[]).unwrap();
+        let face = system.fontdb.faces().next().expect("system font");
+        let data = system
+            .fontdb
+            .with_face_data(face.id, |data, _| data.to_vec())
+            .unwrap();
+        let file = FontFile::new(&data);
+        let explicit = png_options(std::slice::from_ref(&file.0)).unwrap();
+        let selected = explicit
+            .fontdb
+            .query(&Query {
+                families: &[Family::Name(&face.families[0].0)],
+                weight: face.weight,
+                stretch: face.stretch,
+                style: face.style,
+            })
+            .unwrap();
+        match explicit.fontdb.face_source(selected).unwrap().0 {
+            Source::File(path) | Source::SharedFile(path, _) => assert_eq!(path, file.0),
+            _ => panic!("expected the explicitly supplied font file"),
+        }
+    }
+
+    #[test]
+    fn missing_or_invalid_explicit_fonts_fail_instead_of_falling_back() {
+        let invalid = FontFile::new(b"not a font");
+        assert!(matches!(
+            png_options(std::slice::from_ref(&invalid.0)),
+            Err(message) if message.contains("no usable font faces")
+        ));
+        assert!(matches!(
+            png_options(&[invalid.0.with_extension("missing")]),
+            Err(message) if message.contains("cannot load font")
+        ));
+    }
+
+    #[test]
+    fn cli_accepts_repeated_explicit_fonts() {
+        use clap::Parser;
+        let cli = super::Cli::try_parse_from([
+            "sdocx",
+            "note.sdocx",
+            "-f",
+            "png",
+            "--font",
+            "regular.ttf",
+            "--font",
+            "symbols.otf",
+        ])
+        .unwrap();
+        assert_eq!(
+            cli.font_files,
+            vec![Path::new("regular.ttf"), Path::new("symbols.otf")]
+        );
+    }
 
     #[test]
     fn format_flag_wins_over_extension() {

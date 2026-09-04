@@ -175,6 +175,18 @@ class VisualTests(unittest.TestCase):
                 visual.compare_fixture(fixture, Path("fake-cli"), self.root, {})
             run.assert_not_called()
 
+    def test_explicit_fonts_are_forwarded_in_order(self):
+        fixture = visual.read_fixtures(self.fixture(), self.root, set())[0]
+        fonts = [self.root / "regular.ttf", self.root / "symbols.otf"]
+
+        def fake_cli(command):
+            self.assertEqual(command[-4:], ["--font", fonts[0], "--font", fonts[1]])
+            self.ink_image().save(command[command.index("--output") + 1])
+            return type("Result", (), {"stdout": "", "stderr": ""})()
+
+        with patch.object(visual, "run", side_effect=fake_cli):
+            visual.compare_fixture(fixture, Path("fake-cli"), self.root, {}, fonts)
+
 
 if __name__ == "__main__":
     unittest.main()
