@@ -177,13 +177,24 @@ fn write_page(path: &std::path::Path, svg: &str, format: Format) {
 fn main() {
     let cli = Cli::parse();
 
-    let doc = match sdocx::parse(&cli.path) {
-        Ok(doc) => doc,
+    let parsed = match sdocx::parse_detailed(&cli.path) {
+        Ok(parsed) => parsed,
         Err(e) => {
             eprintln!("Error: {e}");
             std::process::exit(1);
         }
     };
+    for diagnostic in &parsed.report.diagnostics {
+        if let Some(entry) = &diagnostic.archive_entry {
+            eprintln!(
+                "Warning [{:?}] {entry}: {}",
+                diagnostic.code, diagnostic.message
+            );
+        } else {
+            eprintln!("Warning [{:?}]: {}", diagnostic.code, diagnostic.message);
+        }
+    }
+    let doc = parsed.document;
     let layout = sdocx::layout_document(&doc);
 
     print_info(&doc, &layout);
