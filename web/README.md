@@ -20,8 +20,3 @@ bun run build
 bunx playwright install chromium firefox webkit
 bun run test:e2e
 ```
-
-## Deployment
-
-Pushes to `main` deploy the production site. Deploy locally with
-`bun run deploy`.
