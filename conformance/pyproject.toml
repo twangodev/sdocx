@@ -1,0 +1,13 @@
+[project]
+name = "sdocx-conformance"
+version = "0.1.0"
+description = "Visual comparison of sdocx output with Samsung Notes reference exports"
+requires-python = ">=3.14"
+dependencies = [
+    "numpy>=2.4.2",
+    "pillow>=12.1.1",
+    "pymupdf>=1.28.2",
+]
+
+[tool.uv]
+package = false

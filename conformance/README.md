@@ -37,14 +37,20 @@ and an HTML report with side-by-side pages and adjustable overlays:
 
 ```sh
 cargo build -p sdocx-cli
-uv run --no-project --python 3.14 --with-requirements conformance/requirements.txt \
-  python conformance/visual.py \
+uv run --project conformance --locked python conformance/visual.py \
   --output tmp/visual/current
 ```
 
-The runner uses Python 3.14 and the three pinned dependencies in
-[`requirements.txt`](requirements.txt). `uv run --no-project` supplies this
-environment without a repository-wide Python project.
+The runner is a dedicated uv project in `conformance/`, with Python 3.14 selected
+by [`.python-version`](.python-version), dependencies declared in
+[`pyproject.toml`](pyproject.toml), and resolved versions and hashes recorded in
+[`uv.lock`](uv.lock). Run these commands from the repository root;
+`--project conformance` selects its environment without changing the working
+directory. `--locked` checks that the lockfile matches the project.
+
+Use `uv add --project conformance PACKAGE` to add dependencies or
+`uv lock --project conformance --upgrade` to update locked versions, then rerun
+the synthetic tests below and commit the dependency changes together.
 
 Use a new output directory for each run; existing output is rejected to prevent
 stale pages from entering a comparison. `--fixture ID` selects a manifest row
@@ -80,8 +86,7 @@ placement and missing content need different interpretations.
 Synthetic runner tests require no external documents or Rust build:
 
 ```sh
-uv run --no-project --python 3.14 --with-requirements conformance/requirements.txt \
-  python -m unittest discover \
+uv run --project conformance --locked python -m unittest discover \
   -s conformance -p 'test_*.py'
 ```
 

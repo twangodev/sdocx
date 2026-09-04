@@ -1,4 +1,0 @@
-# Pinned dependencies for the visual comparison runner and its synthetic tests.
-numpy==2.4.2
-pillow==12.1.1
-pymupdf==1.28.2
