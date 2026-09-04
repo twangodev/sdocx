@@ -129,10 +129,11 @@ export class DocumentSession {
 		try {
 			await this.requireClient().dispose(generation);
 		} finally {
-			if (generation !== this.loadGeneration) return;
-			this.clearDocument();
-			this.phase = null;
-			this.status = 'Waiting for a document';
+			if (generation === this.loadGeneration) {
+				this.clearDocument();
+				this.phase = null;
+				this.status = 'Waiting for a document';
+			}
 		}
 	}
 
