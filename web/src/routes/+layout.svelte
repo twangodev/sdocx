@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SiGithub } from '@icons-pack/svelte-simple-icons';
 	import './layout.css';
 	import Logo from '$lib/components/Logo.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
@@ -15,10 +16,12 @@
 		>
 		<nav class="flex items-center gap-2" aria-label="Primary navigation">
 			<a
-				class="font-mono text-[0.68rem] text-muted no-underline lowercase transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:text-accent"
+				class="grid size-[1.85rem] place-items-center rounded text-muted no-underline transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-surface hover:text-text"
 				href="https://github.com/twangodev/sdocx"
 				target="_blank"
-				rel="noreferrer">github</a
+				rel="noreferrer"
+				title="Source on GitHub"
+				aria-label="Source on GitHub"><SiGithub size={15} aria-hidden="true" /></a
 			>
 			<ThemeToggle />
 		</nav>
