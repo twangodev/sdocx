@@ -95,6 +95,19 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  visual-tooling:
+    name: Visual comparison / Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: '3.14'
+      - name: Test visual comparison without external fixtures
+        run: uv run --locked --only-group conformance python -m unittest discover -s conformance -p 'test_*.py'
+
   web-check:
     name: Web / Check
     runs-on: ubuntu-latest

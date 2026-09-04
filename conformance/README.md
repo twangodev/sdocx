@@ -28,8 +28,50 @@ Regular unit tests do not download or require private/large fixtures. To add a
 fixture, upload its artifacts to the dataset, calculate both SHA-256 digests,
 then append one tab-separated row to `corpus.tsv`.
 
-Future automated visual checks can use this same manifest to resolve the exact
-fixture and Samsung-generated reference PDF for each compatibility case.
+## Visual comparison
+
+The local runner validates both file hashes and visible page counts, converts
+through the CLI, and compares each page with the Samsung PDF rasterized at the
+same size. It writes `report.json`, reference/SDK/difference PNGs, CLI diagnostics
+and an HTML report with side-by-side pages and adjustable overlays:
+
+```sh
+cargo build -p sdocx-cli
+uv run --locked --only-group conformance python conformance/visual.py \
+  --output tmp/visual/current
+```
+
+Use a new output directory for each run; existing output is rejected to prevent
+stale pages from entering a comparison. `--fixture ID` selects a manifest row
+and may be repeated. `--corpus-dir` (or `SDOCX_CORPUS_DIR`) selects the corpus;
+`--cli` selects an explicitly built executable, including one from a baseline
+checkout. The runner does not download or modify corpus files.
+
+The report records the executable hash, workspace revision/dirty state, Python
+and image-library versions, plus fontconfig file hashes when available. The
+workspace revision identifies the reporting checkout, not necessarily the CLI
+build. Compare runs with the same toolchain and fonts. Fontconfig inventories
+available fonts; it does not prove which font the SVG rasterizer selected.
+
+Metrics include normalized mean absolute RGB error, changed-pixel fraction
+(any channel differs by more than 16), and missing/extra ink fractions. Ink is
+any channel below 223 against a white or near-white canvas, with one pixel of
+matching tolerance. This catches blank output that could score deceptively
+well on a mostly empty page. Dark/colored canvases require separate metric
+interpretation. Thresholds and tolerance are configurable and recorded.
+
+Only page dimensions are normalized, with at most one pixel of aspect-ratio
+rounding; content is never shifted or aligned to improve the score. A mismatch
+in hashes, page count or aspect ratio fails the run. Pixel differences are
+reported without a universal pass/fail threshold: fonts, antialiasing, line
+placement and missing content need different interpretations.
+
+Synthetic runner tests require no external documents or Rust build:
+
+```sh
+uv run --locked --only-group conformance python -m unittest discover \
+  -s conformance -p 'test_*.py'
+```
 
 ## Handwritten stroke regressions
 

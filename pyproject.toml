@@ -6,6 +6,11 @@ requires-python = ">=3.14"
 dependencies = []
 
 [dependency-groups]
+conformance = [
+    "numpy>=2.4.2",
+    "pillow>=12.1.1",
+    "pymupdf>=1.28.2",
+]
 dev = [
     "jupyter>=1.1.1",
     "matplotlib>=3.10.8",
