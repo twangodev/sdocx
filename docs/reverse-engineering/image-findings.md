@@ -9,7 +9,7 @@ Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`, writes outer image objects as
 | --- | --- |
 | Type 0 | Common UUID, timestamp, bounds and optional rotation. |
 | Type 6 | Shared shape-base component. |
-| Type 7 fixed data | Shape type, four `f64` local bounds, `f32` radius, sized path, one-byte control-point count, then 16 bytes per control point. |
+| Type 7 fixed data | Shape type, four `f64` local bounds, `f32` rotation, sized path, one-byte control-point count, then 16 bytes per control point. |
 | Type 7 flexible bit 0 | Sized `TextCommon`, when present. |
 | Type 7 flexible bit 1 | One-byte text control. |
 | Type 7 flexible bits 2 / 4 | Four-byte pen reference / color. |

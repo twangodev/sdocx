@@ -215,6 +215,28 @@ fn parse_text_frames(
     {
         unsupported.push("shape-text extension fields");
     }
+    Ok(finish_shape_text(common, object_base, unsupported))
+}
+
+pub(crate) fn parse_shape_text(
+    reader: &mut Reader<'_>,
+    limits: &ParseLimits,
+    metadata: ObjectMetadata,
+) -> Result<DecodedTextBox> {
+    check_limit(
+        "rich-text object nesting depth",
+        limits.max_object_nesting_depth,
+        1,
+    )?;
+    let common = parse_text_common(reader, limits, "shape text", 0)?;
+    Ok(finish_shape_text(common, metadata, Vec::new()))
+}
+
+fn finish_shape_text(
+    common: TextCommon,
+    object_base: ObjectMetadata,
+    mut unsupported: Vec<&'static str>,
+) -> DecodedTextBox {
     if common.has_extensions {
         unsupported.push("text-common extension data");
     }
@@ -239,10 +261,10 @@ fn parse_text_frames(
     {
         unsupported.push("unsupported embedded text objects");
     }
-    Ok(DecodedTextBox {
+    DecodedTextBox {
         text_box: common.into_rich_text_box(object_base),
         unsupported,
-    })
+    }
 }
 
 fn read_bitfield(reader: &mut Reader<'_>, field: &'static str) -> Result<u32> {

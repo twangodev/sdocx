@@ -28,16 +28,16 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         unsupported.push("inherited shape settings");
     }
     // ObjectShapeBinaryHandler writes these fixed fields before its flexible
-    // data: shape type, local bounds, corner radius, sized path, control points.
+    // data: shape type, local bounds, rotation, sized path, control points.
     let mut fixed = Reader::new(shape.fixed, "image shape fixed data");
     fixed.read_u32("shape type")?;
     read_bbox(&mut fixed)?;
-    let corner_radius = finite_f32(&mut fixed, "corner radius")?;
+    let shape_rotation = finite_f32(&mut fixed, "shape rotation")?;
     let path_size = fixed.read_u32("shape path size")? as usize;
     fixed.skip(path_size, "shape path")?;
     let point_count = usize::from(fixed.read_u8("control point count")?);
     fixed.skip(point_count * 16, "control points")?;
-    if corner_radius != 0.0
+    if (shape_rotation != 0.0 && f64::from(shape_rotation) != base.rotation_degrees.unwrap_or(0.0))
         || path_size != 0
         || point_count != 0
         || fixed.remaining() != 0

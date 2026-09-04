@@ -210,7 +210,148 @@ fn render_element(
         PageElement::TextBox(text_box) => {
             render_text_box(svg, text_box, page, flow_page_padding, dark_mode)
         }
+        PageElement::Shape(shape) => {
+            render_shape(svg, shape, dark_mode);
+            if let Some(text) = &shape.text {
+                render_text_box(svg, text, page, flow_page_padding, dark_mode);
+            }
+        }
+        PageElement::Line(line) => render_line(svg, line, dark_mode),
     }
+}
+
+fn render_shape(svg: &mut String, shape: &crate::NativeShape, dark_mode: bool) {
+    let bbox = shape.geometry_bbox;
+    let width = bbox.x_max - bbox.x_min;
+    let height = bbox.y_max - bbox.y_min;
+    if ![bbox.x_min, bbox.y_min, width, height]
+        .iter()
+        .all(|v| v.is_finite())
+        || width <= 0.0
+        || height <= 0.0
+        || !shape.rotation_degrees.is_finite()
+    {
+        return;
+    }
+    let cx = bbox.x_min + width / 2.0;
+    let cy = bbox.y_min + height / 2.0;
+    let geometry = match shape.shape_type {
+        1 => format!(
+            r#"ellipse cx="{cx:.2}" cy="{cy:.2}" rx="{:.2}" ry="{:.2}""#,
+            width / 2.0,
+            height / 2.0
+        ),
+        2 => format!(
+            r#"polygon points="{cx:.2},{:.2} {:.2},{:.2} {:.2},{:.2}""#,
+            bbox.y_min, bbox.x_max, bbox.y_max, bbox.x_min, bbox.y_max
+        ),
+        3 => format!(
+            r#"polygon points="{:.2},{:.2} {:.2},{:.2} {:.2},{:.2}""#,
+            bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max, bbox.x_min, bbox.y_max
+        ),
+        4 => format!(
+            r#"rect x="{:.2}" y="{:.2}" width="{width:.2}" height="{height:.2}""#,
+            bbox.x_min, bbox.y_min
+        ),
+        8 => format!(
+            r#"polygon points="{cx:.2},{:.2} {:.2},{cy:.2} {cx:.2},{:.2} {:.2},{cy:.2}""#,
+            bbox.y_min, bbox.x_max, bbox.y_max, bbox.x_min
+        ),
+        _ => return,
+    };
+    let (fill, opacity) = shape_paint(&shape.fill, dark_mode);
+    writeln!(svg, r#"  <{geometry} fill="{fill}" fill-opacity="{opacity:.4}" {} transform="rotate({:.2} {cx:.2} {cy:.2})"/>"#,
+        shape_outline(&shape.style, dark_mode), shape.rotation_degrees).unwrap();
+}
+
+fn render_line(svg: &mut String, line: &crate::NativeLine, dark_mode: bool) {
+    // SetRotation updates the serialized endpoints. Applying metadata.rotation
+    // here would rotate this geometry a second time.
+    if line.line_type > 2 || line.begin.iter().chain(&line.end).any(|v| !v.is_finite()) {
+        return;
+    }
+    if !line.path_data.is_empty() {
+        let mut path = String::new();
+        let parsed = crate::shape::visit_path(&line.path_data, |verb, values| {
+            let command = match verb {
+                1 => 'M',
+                2 => 'L',
+                3 => 'Q',
+                4 => 'C',
+                6 => 'Z',
+                _ => return,
+            };
+            path.push(command);
+            for value in values {
+                write!(path, " {value:.2}").unwrap();
+            }
+            path.push(' ');
+        });
+        if parsed.is_ok_and(|(size, supported)| supported && size == line.path_data.len()) {
+            writeln!(
+                svg,
+                r#"  <path d="{}" fill="none" {}/>"#,
+                path.trim_end(),
+                shape_outline(&line.style, dark_mode)
+            )
+            .unwrap();
+        }
+        return;
+    }
+    if line.line_type != 0 {
+        return;
+    }
+    writeln!(
+        svg,
+        r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" fill="none" {}/>"#,
+        line.begin[0],
+        line.begin[1],
+        line.end[0],
+        line.end[1],
+        shape_outline(&line.style, dark_mode)
+    )
+    .unwrap();
+}
+
+fn shape_paint(paint: &crate::ShapePaint, dark_mode: bool) -> (String, f64) {
+    match paint {
+        crate::ShapePaint::Solid(argb) => {
+            let color = Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: *argb as u8,
+            };
+            let color = if dark_mode && is_dark_compatibility_color(color) {
+                DEFAULT_INK_DARK_MODE.to_owned()
+            } else {
+                color_hex(&color)
+            };
+            (color, f64::from((argb >> 24) as u8) / 255.0)
+        }
+        _ => ("none".into(), 0.0),
+    }
+}
+
+fn shape_outline(style: &crate::ShapeStyle, dark_mode: bool) -> String {
+    let (paint, opacity) = shape_paint(&style.paint, dark_mode);
+    let cap = match style.cap {
+        1 => "round",
+        2 => "square",
+        _ => "butt",
+    };
+    let join = match style.join {
+        1 => "round",
+        2 => "bevel",
+        _ => "miter",
+    };
+    let width = if style.width.is_finite() {
+        style.width.max(0.0)
+    } else {
+        0.0
+    };
+    format!(
+        r#"stroke="{paint}" stroke-opacity="{opacity:.4}" stroke-width="{width:.2}" stroke-linecap="{cap}" stroke-linejoin="{join}""#
+    )
 }
 
 fn render_image(

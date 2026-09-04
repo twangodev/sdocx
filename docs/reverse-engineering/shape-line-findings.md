@@ -8,7 +8,7 @@ The native sources remain ignored, alongside the APK analysis artifacts.
 
 | Symbol/address | Contract |
 | --- | --- |
-| `ObjectShape::NewGetBinary`, `0x399b40` | Shape chain `0 + 6 + 7`. |
+| `ObjectShape::NewGetBinary`, `0x399b40` | Shape chain `0 + 6 + 7`; snapshots unrotated bounds, drawn bounds and rotation, then writes type 0 with drawn bounds and zero rotation. |
 | `ObjectLine::NewGetBinary`, `0x386a64` | Line chain `0 + 6 + 8`. |
 | `ObjectShapeBase::NewGetBinary`, helper `0x37c6b4–0x37ca9c` | Type 6 connection data and optional sized line color/style effects at field bits 2/3. |
 | `ObjectShapeBinaryHandler::GetOwnBinary`, `0x3a8dd0–0x3a9228` | Type 7 geometry, an extra rectangle for outer type 7, then text/pen/fill fields. |
@@ -26,13 +26,18 @@ record count), then one reserved byte. The size excludes its own size prefix.
 Type 6 has no fill color; its color effect describes the outline.
 
 Type 7 fixed data begins with a `u32` shape type, four `f64` local coordinates,
-an `f32` corner value, a sized path and a one-byte control-point count with
+an `f32` rotation, a sized path and a one-byte control-point count with
 16 bytes per point. Outer shape objects then append another four `f64`
 rectangle coordinates; images and text boxes omit this rectangle. Flexible
 fields include sized `TextCommon` at bit 0, one text-control byte at bit 1,
 pen reference at bit 2, pen color at bit 4 and a sized fill at bit 5. The fill
 size excludes both the size prefix and the following one-byte effect kind.
 Color fills use effect kind 1; image fills use kind 2.
+
+The rotation field corrects the earlier image note's provisional "radius"
+interpretation: `0x399bb8–0x399be8` stores `GetRotation()` and temporarily
+clears the common rotation only for shape objects. Render shape geometry from
+the first type-7 rectangle and this angle, not from the drawn type-0 bounds.
 
 Type 8 fixed data starts with one-byte line type, one routing byte, one-byte
 control-point count and pairs of `f64`. Two endpoint pairs, two four-`f64`

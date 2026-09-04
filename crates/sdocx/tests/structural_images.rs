@@ -46,7 +46,7 @@ fn shape_fixed() -> Vec<u8> {
     for value in [0.0_f64, 0.0, 100.0, 80.0] {
         fixed.extend_from_slice(&value.to_le_bytes());
     }
-    fixed.extend_from_slice(&0.0_f32.to_le_bytes()); // radius
+    fixed.extend_from_slice(&0.0_f32.to_le_bytes()); // shape rotation
     fixed.extend_from_slice(&0_u32.to_le_bytes()); // path size
     fixed.push(0); // control points
     fixed

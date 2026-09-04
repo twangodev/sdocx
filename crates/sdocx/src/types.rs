@@ -123,6 +123,10 @@ pub enum PageElement {
     PlacedImage(PlacedImage),
     /// A rich text object.
     TextBox(RichTextBox),
+    /// A native geometric shape, including its embedded text and styles.
+    Shape(crate::NativeShape),
+    /// A native line with explicit endpoints and styles.
+    Line(crate::NativeLine),
 }
 
 impl PageElement {
@@ -131,6 +135,8 @@ impl PageElement {
         match self {
             Self::Image { .. } | Self::PlacedImage(_) => ObjectType::Image,
             Self::TextBox(_) => ObjectType::TextBox,
+            Self::Shape(_) => ObjectType::Shape,
+            Self::Line(_) => ObjectType::Line,
         }
     }
 }

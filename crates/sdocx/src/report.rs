@@ -73,4 +73,6 @@ pub enum DiagnosticCode {
     UnresolvedImageMedia,
     /// Without a media manifest, a unique numeric filename prefix was used.
     InferredImageMediaReference,
+    /// Shape or line data is retained but not fully interpreted or rendered.
+    UnsupportedShapeFeature,
 }

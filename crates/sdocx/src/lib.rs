@@ -23,6 +23,7 @@ mod page;
 #[cfg(feature = "render")]
 mod render;
 mod report;
+mod shape;
 mod storage;
 mod types;
 
@@ -40,6 +41,7 @@ pub use render::{
     render_page_svg,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
+pub use shape::{NativeLine, NativeShape, ShapePaint, ShapeStyle};
 pub use storage::{
     PageManifest, PageManifestEntry, ParsedDocument, StoredArchivePage, StoredLayer, StoredObject,
     StoredPage, StoredPageHeader, StoredPageLayers, parse_page_manifest_bytes,
