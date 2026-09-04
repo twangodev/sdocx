@@ -252,6 +252,9 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageStack).not.toHaveClass(/recentering/);
 
 	const pageSelector = page.getByRole('textbox', { name: 'Page number' });
+	await pageSelector.fill('1');
+	await pageSelector.press('Enter');
+	await expect(pageSelector).toHaveValue('1');
 	await page.getByRole('button', { name: 'Next page' }).click();
 	await expect(pageSelector).toHaveValue('2');
 	await page.getByRole('button', { name: 'Previous page' }).click();
