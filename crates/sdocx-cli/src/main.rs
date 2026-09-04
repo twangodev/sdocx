@@ -7,10 +7,9 @@ use std::path::PathBuf;
 enum Format {
     Svg,
     Png,
+    Pdf,
 }
 
-/// Resolve the output format: explicit flag wins, else infer from the output
-/// file extension, else default to SVG.
 fn resolve_format(
     flag: Option<Format>,
     output: Option<&std::path::Path>,
@@ -26,8 +25,9 @@ fn resolve_format(
     {
         Some("svg") => Ok(Format::Svg),
         Some("png") => Ok(Format::Png),
+        Some("pdf") => Ok(Format::Pdf),
         Some(other) => Err(format!(
-            "unknown output extension '.{other}'; use -f/--format to set svg or png"
+            "unknown output extension '.{other}'; use -f/--format to set svg, png or pdf"
         )),
         None => Ok(Format::Svg),
     }
@@ -38,15 +38,14 @@ impl Format {
         match self {
             Format::Svg => "svg",
             Format::Png => "png",
+            Format::Pdf => "pdf",
         }
     }
 }
 
-fn png_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, String> {
+fn svg_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, String> {
     let mut opt = resvg::usvg::Options::default();
     let fontdb = opt.fontdb_mut();
-    // Load explicit fonts first so they win ties with system faces. Keep one
-    // database for the whole document, including every continuation page.
     for path in font_files {
         let before = fontdb.faces().count();
         fontdb
@@ -56,14 +55,18 @@ fn png_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, 
             return Err(format!("no usable font faces in {}", path.display()));
         }
     }
-    // Load system fonts so <text> elements render instead of being silently dropped.
     fontdb.load_system_fonts();
-    // Arial is not normally installed in Linux CI images. DejaVu Sans is the
-    // portable fallback there; explicit Arial still wins on platforms that
-    // provide it.
     fontdb.set_sans_serif_family("DejaVu Sans");
     fontdb.set_monospace_family("DejaVu Sans Mono");
     Ok(opt)
+}
+
+fn parse_pdf_dpi(value: &str) -> Result<f32, String> {
+    let dpi = value.parse::<f32>().map_err(|error| error.to_string())?;
+    if !dpi.is_finite() || dpi <= 0.0 {
+        return Err("PDF DPI must be finite and greater than zero".into());
+    }
+    Ok(dpi)
 }
 
 fn svg_to_png(svg: &str, options: &resvg::usvg::Options<'_>) -> Result<Vec<u8>, String> {
@@ -83,20 +86,33 @@ fn svg_to_png(svg: &str, options: &resvg::usvg::Options<'_>) -> Result<Vec<u8>, 
 #[derive(Parser)]
 #[command(name = "sdocx", version, about = "Parse Samsung Notes .sdocx files")]
 struct Cli {
-    /// Path to an .sdocx file
+    #[arg(help = "Path to an .sdocx file")]
     path: PathBuf,
 
-    /// Output file path (format inferred from extension; defaults to the input path with a format-appropriate extension)
-    #[arg(short, long)]
+    #[arg(
+        short,
+        long,
+        help = "Output path (format inferred from extension; defaults to input with the selected format extension)"
+    )]
     output: Option<PathBuf>,
 
-    /// Output format (overrides extension inference): svg or png
-    #[arg(short, long, value_enum)]
+    #[arg(
+        short,
+        long,
+        value_enum,
+        help = "Output format (overrides extension inference)"
+    )]
     format: Option<Format>,
 
-    /// Additional font file for PNG rendering; repeat to supply multiple fonts
-    #[arg(long = "font", value_name = "PATH")]
+    #[arg(
+        long = "font",
+        value_name = "PATH",
+        help = "Additional font for PNG/PDF rendering; repeat for multiple files"
+    )]
     font_files: Vec<PathBuf>,
+
+    #[arg(long, value_parser = parse_pdf_dpi, help = "SVG units per inch for PDF physical page size (default: 96)")]
+    pdf_dpi: Option<f32>,
 }
 
 fn print_info(doc: &Document, layout: &LayoutDocument) {
@@ -226,12 +242,16 @@ fn main() {
             std::process::exit(1);
         }
     };
-    if format != Format::Png && !cli.font_files.is_empty() {
-        eprintln!("Error: --font applies to PNG output; use -f png or a .png output path");
+    if format == Format::Svg && !cli.font_files.is_empty() {
+        eprintln!("Error: --font applies to PNG/PDF output; use -f png or -f pdf");
         std::process::exit(1);
     }
-    let png_options = if format == Format::Png {
-        Some(png_options(&cli.font_files).unwrap_or_else(|error| {
+    if format != Format::Pdf && cli.pdf_dpi.is_some() {
+        eprintln!("Error: --pdf-dpi applies to PDF output; use -f pdf or a .pdf output path");
+        std::process::exit(1);
+    }
+    let svg_options = if format != Format::Svg {
+        Some(svg_options(&cli.font_files).unwrap_or_else(|error| {
             eprintln!("Error: {error}");
             std::process::exit(1);
         }))
@@ -244,8 +264,30 @@ fn main() {
         .unwrap_or_else(|| cli.path.with_extension(format.ext()));
     let rendered_pages = sdocx::render_document_svg(&doc, &RenderOptions::default());
 
+    if format == Format::Pdf {
+        let mut options = sdocx::PdfOptions::new(svg_options.as_ref().unwrap().fontdb.clone());
+        if let Some(dpi) = cli.pdf_dpi {
+            options.dpi = dpi;
+        }
+        let pdf = sdocx::render_svg_pages_pdf(&rendered_pages, &options).unwrap_or_else(|error| {
+            eprintln!("Error: {error}");
+            std::process::exit(1);
+        });
+        if let Err(error) = fs::write(&output_base, &pdf) {
+            eprintln!("Error: failed to write {}: {error}", output_base.display());
+            std::process::exit(1);
+        }
+        eprintln!(
+            "Wrote {} ({} bytes, {} pages)",
+            output_base.display(),
+            pdf.len(),
+            rendered_pages.len()
+        );
+        return;
+    }
+
     if rendered_pages.len() == 1 {
-        write_page(&output_base, &rendered_pages[0].svg, png_options.as_ref());
+        write_page(&output_base, &rendered_pages[0].svg, svg_options.as_ref());
     } else {
         for (i, rendered_page) in rendered_pages.iter().enumerate() {
             let stem = output_base
@@ -257,18 +299,18 @@ fn main() {
                 .and_then(|e| e.to_str())
                 .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            write_page(&path, &rendered_page.svg, png_options.as_ref());
+            write_page(&path, &rendered_page.svg, svg_options.as_ref());
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Format, png_options, resolve_format};
+    use super::{Format, resolve_format, svg_options};
     use std::path::Path;
 
     fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
-        super::svg_to_png(svg, &png_options(&[])?)
+        super::svg_to_png(svg, &svg_options(&[])?)
     }
 
     struct FontFile(std::path::PathBuf);
@@ -302,14 +344,14 @@ mod tests {
     #[test]
     fn explicit_font_file_wins_over_the_same_system_face() {
         use resvg::usvg::fontdb::{Family, Query, Source};
-        let system = png_options(&[]).unwrap();
+        let system = svg_options(&[]).unwrap();
         let face = system.fontdb.faces().next().expect("system font");
         let data = system
             .fontdb
             .with_face_data(face.id, |data, _| data.to_vec())
             .unwrap();
         let file = FontFile::new(&data);
-        let explicit = png_options(std::slice::from_ref(&file.0)).unwrap();
+        let explicit = svg_options(std::slice::from_ref(&file.0)).unwrap();
         let selected = explicit
             .fontdb
             .query(&Query {
@@ -329,11 +371,11 @@ mod tests {
     fn missing_or_invalid_explicit_fonts_fail_instead_of_falling_back() {
         let invalid = FontFile::new(b"not a font");
         assert!(matches!(
-            png_options(std::slice::from_ref(&invalid.0)),
+            svg_options(std::slice::from_ref(&invalid.0)),
             Err(message) if message.contains("no usable font faces")
         ));
         assert!(matches!(
-            png_options(&[invalid.0.with_extension("missing")]),
+            svg_options(&[invalid.0.with_extension("missing")]),
             Err(message) if message.contains("cannot load font")
         ));
     }
@@ -362,10 +404,18 @@ mod tests {
     fn format_flag_wins_over_extension() {
         let format = resolve_format(Some(Format::Svg), Some(Path::new("out.png"))).unwrap();
         assert_eq!(format, Format::Svg);
+        assert_eq!(
+            resolve_format(Some(Format::Pdf), Some(Path::new("out.svg"))).unwrap(),
+            Format::Pdf
+        );
     }
 
     #[test]
     fn format_is_inferred_from_extension() {
+        assert_eq!(
+            resolve_format(None, Some(Path::new("out.PDF"))).unwrap(),
+            Format::Pdf
+        );
         assert_eq!(
             resolve_format(None, Some(Path::new("out.png"))).unwrap(),
             Format::Png
@@ -379,6 +429,38 @@ mod tests {
     #[test]
     fn format_defaults_to_svg_without_an_output() {
         assert_eq!(resolve_format(None, None).unwrap(), Format::Svg);
+    }
+
+    #[test]
+    fn pdf_scale_must_be_finite_and_positive() {
+        use clap::Parser;
+        for value in ["0", "NaN", "inf", "-96", "words"] {
+            assert!(
+                super::Cli::try_parse_from([
+                    "sdocx",
+                    "note.sdocx",
+                    "-f",
+                    "pdf",
+                    "--pdf-dpi",
+                    value
+                ])
+                .is_err()
+            );
+        }
+        let cli = super::Cli::try_parse_from([
+            "sdocx",
+            "note.sdocx",
+            "-f",
+            "pdf",
+            "--pdf-dpi",
+            "129.6",
+            "--font",
+            "Roboto.ttf",
+        ])
+        .unwrap();
+        assert_eq!(cli.format, Some(Format::Pdf));
+        assert_eq!(cli.pdf_dpi, Some(129.6));
+        assert_eq!(cli.font_files, vec![Path::new("Roboto.ttf")]);
     }
 
     #[test]

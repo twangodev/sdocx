@@ -80,7 +80,7 @@ docker pull ghcr.io/twangodev/sdocx
 sdocx-cli note.sdocx
 ```
 
-For PNG export, supply font files when the document's fonts are unavailable
+For PNG or PDF export, supply font files when the document's fonts are unavailable
 locally. Repeat `--font` for additional faces; explicit faces take precedence
 over matching system fonts:
 
@@ -90,7 +90,19 @@ sdocx-cli note.sdocx -o note.png --font /path/to/Roboto-Regular.ttf --font /path
 
 Fonts are loaded once per document. Missing or invalid explicit font files
 produce an error. SVG output references font families and does not embed fonts;
-`--font` applies only to PNG export.
+`--font` applies to PNG and PDF export.
+
+PDF export writes all visible pages into one file:
+
+```sh
+sdocx-cli note.sdocx -o note.pdf --font /path/to/Roboto-Regular.ttf
+sdocx-cli note.sdocx --format pdf
+```
+
+`--format` overrides the output extension. SVG remains the default when neither
+is supplied. SVG and PNG use separate files for multiple pages; PDF uses one
+file. `--pdf-dpi 144` sets the physical scale to 144 SVG units per inch; the
+default is 96. This option applies only to PDF and does not rasterize vectors.
 
 With Docker:
 
@@ -133,14 +145,14 @@ fn main() -> sdocx::Result<()> {
 
 ### PDF export
 
-Enable the optional `pdf` feature (`cargo add sdocx --features pdf`):
+Rust 1.92 or newer is required. Enable the optional `pdf` feature (`cargo add sdocx --features pdf`):
 
 ```rust
 use sdocx::{PdfOptions, RenderOptions, parse, render_document_pdf};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let document = parse("notes.sdocx")?;
-    let pdf_options = PdfOptions::default(); // Discover system fonts once.
+    let pdf_options = PdfOptions::default();
     let bytes = render_document_pdf(&document, &RenderOptions::default(), &pdf_options)?;
     std::fs::write("notes.pdf", bytes)?;
     Ok(())

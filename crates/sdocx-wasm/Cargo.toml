@@ -2,7 +2,7 @@
 name = "sdocx-wasm"
 version = "0.3.3"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 description = "WASM bindings for sdocx — parse Samsung Notes (.sdocx) files in the browser"
 license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"

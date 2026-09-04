@@ -58,8 +58,6 @@ fn pages_keep_order_dimensions_vectors_and_selectable_embedded_text() {
             .collect();
         assert_eq!(dimensions, [0.0, 0.0, expected[0], expected[1]]);
     }
-    // SVG positions glyphs individually. lopdf inserts a newline for each
-    // text matrix; discard those synthetic line breaks when checking Unicode.
     let first = pdf.extract_text(&[1]).unwrap().replace('\n', "");
     let second = pdf.extract_text(&[2]).unwrap().replace('\n', "");
     assert!(first.contains("First page"), "extracted: {first:?}");
@@ -92,7 +90,6 @@ fn pages_keep_order_dimensions_vectors_and_selectable_embedded_text() {
 fn scale_controls_physical_size_and_embedded_images_survive() {
     let mut options = no_fonts();
     options.dpi = 144.0;
-    // One opaque pixel; a data URL must remain available with external files disabled.
     let image = r#"<image width="40" height="20" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"/>"#;
     let bytes = render_svg_pages_pdf(&[page(200, 100, image)], &options).unwrap();
     let pdf = lopdf::Document::load_mem(&bytes).unwrap();
@@ -153,8 +150,6 @@ fn invalid_input_returns_errors_instead_of_a_partial_pdf() {
 
 #[test]
 fn corrupt_png_returns_an_error_before_the_converter_can_panic() {
-    // Valid dimensions, corrupt IDAT CRC: krilla 0.5 otherwise aborts while
-    // unwinding a drawing surface. The SDK must validate the complete frame.
     let image = r#"<image width="40" height="20" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV1cAAAAASUVORK5CYII="/>"#;
     assert!(matches!(
         render_svg_pages_pdf(&[page(200, 100, image)], &no_fonts()),

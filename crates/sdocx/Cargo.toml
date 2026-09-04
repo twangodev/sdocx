@@ -2,7 +2,7 @@
 name = "sdocx"
 version = "0.5.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 description = "Reverse-engineered tooling and SDK for converting Samsung Notes (.sdocx) files"
 license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"
@@ -17,11 +17,10 @@ zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 base64 = { version = "0.22", optional = true }
-# These releases retain Rust 1.88 support. Newer krilla releases require 1.89+.
-krilla = { version = "0.5.0", optional = true, default-features = false }
-krilla-svg = { version = "0.2.0", optional = true }
-usvg = { version = "0.45.1", optional = true }
-png = { version = "0.17.16", optional = true }
+krilla = { version = "0.8.2", optional = true, default-features = false }
+krilla-svg = { version = "0.8.1", optional = true }
+usvg = { version = "0.47.0", optional = true }
+png = { version = "0.18.1", optional = true }
 
 [dev-dependencies]
 sha2 = "0.10.9"

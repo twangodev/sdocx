@@ -2,12 +2,16 @@
 name = "sdocx-cli"
 version = "0.5.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.92"
 description = "Reverse-engineered tooling and SDK for converting Samsung Notes (.sdocx) files"
 license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"
 
 [dependencies]
-sdocx = { version = "0.5.0", path = "../sdocx", features = ["render"] }
+sdocx = { version = "0.5.0", path = "../sdocx", features = ["pdf"] }
 clap = { version = "4.5.60", features = ["derive"] }
 resvg = "0.47.0"
+
+[dev-dependencies]
+zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
+lopdf = { version = "0.42.0", default-features = false }
