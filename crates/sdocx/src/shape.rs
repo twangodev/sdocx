@@ -83,10 +83,10 @@ pub struct NativeShape {
     pub style: ShapeStyle,
     /// Interior paint.
     pub fill: ShapePaint,
-    /// Optional native pen resource reference.
-    pub pen_id: Option<i32>,
-    /// Optional native pen color, including alpha.
-    pub pen_color: Option<u32>,
+    /// Optional string-resource ID for the native pen name.
+    pub pen_name_id: Option<i32>,
+    /// Optional string-resource ID for advanced native pen settings.
+    pub pen_settings_id: Option<i32>,
     /// Embedded shape text, decoded with the rich-text limits.
     pub text: Option<Box<RichTextBox>>,
 }
@@ -114,10 +114,10 @@ pub struct NativeLine {
     pub reference_bbox: BoundingBox,
     /// Remaining fixed setting, preserved without assigning a semantic name.
     pub raw_setting: u32,
-    /// Optional native pen resource reference.
-    pub pen_id: Option<i32>,
-    /// Optional native pen color, including alpha.
-    pub pen_color: Option<u32>,
+    /// Optional string-resource ID for the native pen name.
+    pub pen_name_id: Option<i32>,
+    /// Optional string-resource ID for advanced native pen settings.
+    pub pen_settings_id: Option<i32>,
     /// Native custom path bytes, when present.
     pub path_data: Vec<u8>,
     /// Outline settings.
@@ -174,20 +174,20 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     if frame.fields.contains(1) && fields.read_u8("text control")? != 0 {
         unsupported.push("shape text control");
     }
-    let pen_id = frame
+    let pen_name_id = frame
         .fields
         .contains(2)
-        .then(|| fields.read_i32("pen ID"))
+        .then(|| fields.read_i32("pen name ID"))
         .transpose()?;
-    let mut pen_color = None;
+    let mut pen_settings_id = None;
     let mut fill = ShapePaint::None;
     if frame.fields.contains(3) {
         unsupported.push("unknown field before shape fill");
     } else {
-        pen_color = frame
+        pen_settings_id = frame
             .fields
             .contains(4)
-            .then(|| fields.read_u32("pen color"))
+            .then(|| fields.read_i32("pen settings ID"))
             .transpose()?;
         if frame.fields.contains(5) {
             let size = fields.read_u32("fill size")? as usize;
@@ -204,7 +204,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
             };
         }
     }
-    if pen_id.is_some() || pen_color.is_some() {
+    if pen_name_id.is_some() || pen_settings_id.is_some() {
         unsupported.push("native pen rendering");
     }
     if fields.remaining() != 0 || frame.fields.has_other_bits(0x37) {
@@ -222,8 +222,8 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
             path_data,
             style,
             fill,
-            pen_id,
-            pen_color,
+            pen_name_id,
+            pen_settings_id,
             text,
         },
         unsupported,
@@ -253,19 +253,19 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
         unsupported.push("line geometry extensions or properties");
     }
     let mut fields = Reader::new(frame.flexible, "line fields");
-    let mut pen_id = None;
-    let mut pen_color = None;
+    let mut pen_name_id = None;
+    let mut pen_settings_id = None;
     let mut path_data = Vec::new();
     if !frame.fields.contains(0) {
-        pen_id = frame
+        pen_settings_id = frame
             .fields
             .contains(1)
-            .then(|| fields.read_i32("pen ID"))
+            .then(|| fields.read_i32("pen settings ID"))
             .transpose()?;
-        pen_color = frame
+        pen_name_id = frame
             .fields
             .contains(2)
-            .then(|| fields.read_u32("pen color"))
+            .then(|| fields.read_i32("pen name ID"))
             .transpose()?;
         if frame.fields.contains(3) {
             let bytes = &frame.flexible[fields.position()..];
@@ -276,7 +276,7 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
             }
         }
     }
-    if pen_id.is_some() || pen_color.is_some() {
+    if pen_name_id.is_some() || pen_settings_id.is_some() {
         unsupported.push("native pen rendering");
     }
     if fields.remaining() != 0 || frame.fields.has_other_bits(0x0e) {
@@ -297,8 +297,8 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
             geometry_bbox,
             reference_bbox,
             raw_setting,
-            pen_id,
-            pen_color,
+            pen_name_id,
+            pen_settings_id,
             path_data,
             style,
         },
@@ -461,7 +461,7 @@ pub(crate) fn visit_path(
         ));
     }
     let mut supported = count != 0;
-    for _ in 0..count {
+    for index in 0..count {
         let verb = reader.read_u8("path verb")?;
         let values = match verb {
             1 | 2 => 2,
@@ -477,7 +477,7 @@ pub(crate) fn visit_path(
                 return Err(Error::Format("non-finite path coordinate".into()));
             }
         }
-        supported &= matches!(verb, 1..=4 | 6);
+        supported &= matches!(verb, 1..=4 | 6) && (index != 0 || verb == 1);
         visitor(verb, &coordinates[..values]);
     }
     Ok((reader.position(), supported))

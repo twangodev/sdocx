@@ -331,3 +331,254 @@ fn unknown_line_types_or_path_verbs_do_not_become_straight_lines() {
         }
     }
 }
+
+#[test]
+fn native_shapes_and_lines_survive_document_parsing() {
+    let bytes = archive(&page(
+        &[vec![
+            object(7, &shape(4), &[]),
+            object(8, &line(0, 0, &[]), &[]),
+        ]],
+        0,
+        &[],
+    ));
+    let document = sdocx::parse_bytes(&bytes).unwrap();
+    assert_eq!(document.pages[0].elements.len(), 2);
+}
+
+fn text_common(text: &str) -> Vec<u8> {
+    let mut bytes = (text.encode_utf16().count() as u32).to_le_bytes().to_vec();
+    for unit in text.encode_utf16() {
+        bytes.extend(unit.to_le_bytes());
+    }
+    bytes.extend(1_u32.to_le_bytes()); // one font-size span
+    bytes.extend(20_u16.to_le_bytes());
+    for value in [3_u32, 0, text.encode_utf16().count() as u32, 1] {
+        bytes.extend(value.to_le_bytes());
+    }
+    bytes.extend(18.0_f32.to_le_bytes());
+    bytes.extend([0; 4 + 16 + 1 + 2 + 8]); // paragraphs, margins, gravity, sections, object flags
+    sized(&bytes)
+}
+
+#[test]
+fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
+    let common = text_common("A日本語😀");
+    let mut fields = common.clone();
+    fields.push(1); // text control
+    fields.extend((-9_i32).to_le_bytes()); // pen name ID is before fill
+    fields.extend(123456_i32.to_le_bytes()); // advanced pen settings ID
+    fields.extend(shape_fields());
+    let mut payload = base(0.0);
+    payload.extend(outline());
+    payload.extend(frame(7, 0x37, &shape_fixed(4, 30.0), &fields));
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    let text = shape.text.as_ref().unwrap();
+    assert_eq!(text.text, "A日本語😀");
+    assert_eq!(text.spans[0].end_utf16, 6);
+    assert_eq!(text.bbox.x_min, -10.0);
+    assert_eq!(text.rotation_degrees, Some(30.0));
+    assert_eq!(shape.pen_name_id, Some(-9));
+    assert_eq!(shape.pen_settings_id, Some(123456));
+    assert!(matches!(shape.style.paint, ShapePaint::Solid(0x800000ff)));
+    assert!(matches!(shape.fill, ShapePaint::Solid(0x40ff0000)));
+    assert!(has_shape_warning(&parsed));
+    for limits in [
+        ParseLimits {
+            max_text_characters: 5,
+            ..Default::default()
+        },
+        ParseLimits {
+            max_text_spans: 0,
+            ..Default::default()
+        },
+        ParseLimits {
+            max_object_nesting_depth: 0,
+            ..Default::default()
+        },
+    ] {
+        assert!(matches!(
+            sdocx::parse_bytes_with_options(&single(7, &payload), &ParseOptions { limits }),
+            Err(Error::LimitExceeded { .. })
+        ));
+    }
+    for end in 0..common.len() {
+        let mut broken = base(0.0);
+        broken.extend(outline());
+        broken.extend(frame(7, 1, &shape_fixed(4, 0.0), &common[..end]));
+        assert_format(7, &broken);
+    }
+    #[cfg(feature = "render")]
+    assert!(
+        sdocx::render_document_svg(&parsed.document, &Default::default())[0]
+            .svg
+            .contains("A日本語😀")
+    );
+}
+
+#[test]
+fn line_pen_settings_and_name_ids_precede_the_path_in_native_order() {
+    let path = native_path(&[(1, &[90.0, 45.0]), (2, &[-10.0, 45.0])]);
+    let mut fields = (-9_i32).to_le_bytes().to_vec(); // advanced settings, bit 1
+    fields.extend(123456_i32.to_le_bytes()); // pen name, bit 2
+    fields.extend(&path);
+    let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 14, &fields))).unwrap();
+    let decoded = as_line(&parsed.document.pages[0].elements[0]);
+    assert_eq!(decoded.pen_settings_id, Some(-9));
+    assert_eq!(decoded.pen_name_id, Some(123456));
+    assert_eq!(decoded.path_data, path);
+    assert!(matches!(decoded.style.paint, ShapePaint::Solid(0x800000ff)));
+    assert!(has_shape_warning(&parsed));
+    for end in 0..8 {
+        assert_format(8, &line(0, 6, &fields[..end]));
+    }
+    #[cfg(feature = "render")]
+    {
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        assert!(svg.contains("d=\"M 90.00 45.00 L -10.00 45.00\""));
+        assert!(svg.contains("stroke=\"#0000ff\""));
+    }
+}
+
+#[test]
+fn effect_sizes_and_fixed_geometry_cannot_consume_adjacent_fields() {
+    for (mask, effect) in [(4, color(true, 0, 0xff123456)), (8, style(4.0))] {
+        for end in 0..effect.len() {
+            let mut payload = base(0.0);
+            payload.extend(frame(6, mask, &base_fixed(), &sized(&effect[..end])));
+            payload.extend(frame(7, 32, &shape_fixed(4, 0.0), &shape_fields()));
+            assert_format(7, &payload);
+        }
+    }
+    for end in 0..shape_fixed(4, 0.0).len() {
+        let mut payload = base(0.0);
+        payload.extend(outline());
+        payload.extend(frame(7, 32, &shape_fixed(4, 0.0)[..end], &shape_fields()));
+        assert_format(7, &payload);
+    }
+    let fill = color(false, 0, 0xffff0000);
+    for end in 0..fill.len() {
+        let mut fields = (end as u32).to_le_bytes().to_vec();
+        fields.push(1);
+        fields.extend(&fill[..end]);
+        let mut payload = base(0.0);
+        payload.extend(outline());
+        payload.extend(frame(7, 32, &shape_fixed(4, 0.0), &fields));
+        assert_format(7, &payload);
+    }
+}
+
+#[test]
+fn unknown_preceding_fields_prevent_guessing_later_effects() {
+    let mut payload = base(0.0);
+    payload.extend(outline());
+    let mut fields = 77_i32.to_le_bytes().to_vec();
+    fields.extend(b"unknown");
+    fields.extend(shape_fields());
+    payload.extend(frame(7, 4 | 8 | 32, &shape_fixed(4, 0.0), &fields));
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    assert_eq!(shape.pen_name_id, Some(77));
+    assert!(matches!(shape.fill, ShapePaint::None));
+    assert!(has_shape_warning(&parsed));
+    let path = native_path(&[(1, &[0.0, 0.0]), (2, &[10.0, 20.0])]);
+    let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 1 | 8, &path))).unwrap();
+    assert!(
+        as_line(&parsed.document.pages[0].elements[0])
+            .path_data
+            .is_empty()
+    );
+    assert!(has_shape_warning(&parsed));
+}
+
+#[test]
+fn future_frames_masks_and_outline_settings_are_retained_or_reported() {
+    let mut native_style = style(5.0);
+    native_style[4..12].copy_from_slice(&[1, 3, 2, 1, 2, 1, 4, 2]);
+    let mut payload = base(0.0);
+    payload.extend(frame(6, 8, &base_fixed(), &sized(&native_style)));
+    let mut shape_frame = frame(7, 32, &shape_fixed(4, 0.0), &shape_fields());
+    shape_frame[17] = 1; // field 32, after the known fill
+    payload.extend(shape_frame);
+    payload.extend(frame(66, 0, b"future", &[]));
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    assert_eq!(shape.style.compound, 1);
+    assert_eq!(shape.style.dash, 3);
+    assert_eq!(shape.style.begin_arrow, [2, 1]);
+    assert_eq!(shape.style.end_arrow, [4, 2]);
+    assert!(matches!(shape.fill, ShapePaint::Solid(0x40ff0000)));
+    assert!(has_shape_warning(&parsed));
+}
+
+#[test]
+fn no_outline_and_unsupported_gradient_are_distinct_from_solid_black() {
+    for kind in [1, 2, 99] {
+        let effect = color(true, kind, 0xff000000);
+        let mut payload = base(0.0);
+        payload.extend(frame(6, 4, &base_fixed(), &sized(&effect)));
+        payload.extend(frame(7, 32, &shape_fixed(4, 0.0), &shape_fields()));
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        if kind == 2 {
+            assert!(matches!(shape.style.paint, ShapePaint::None));
+        } else {
+            assert!(
+                matches!(&shape.style.paint, ShapePaint::Unsupported { data, .. } if data == &effect)
+            );
+        }
+        assert_eq!(has_shape_warning(&parsed), kind != 2);
+        #[cfg(feature = "render")]
+        assert!(
+            sdocx::render_document_svg(&parsed.document, &Default::default())[0]
+                .svg
+                .contains("stroke=\"none\"")
+        );
+    }
+}
+
+#[test]
+fn connection_counts_and_shape_paths_are_bounded_before_allocation() {
+    for fixed in [
+        u32::MAX.to_le_bytes().to_vec(),
+        [0_u32, u32::MAX]
+            .iter()
+            .flat_map(|v| v.to_le_bytes())
+            .collect(),
+    ] {
+        let mut payload = base(0.0);
+        payload.extend(frame(6, 0, &fixed, &[]));
+        payload.extend(frame(7, 0, &shape_fixed(4, 0.0), &[]));
+        assert_format(7, &payload);
+    }
+    let mut fixed = shape_fixed(4, 0.0);
+    fixed[40..44].copy_from_slice(&u32::MAX.to_le_bytes()); // path length
+    let mut payload = base(0.0);
+    payload.extend(outline());
+    payload.extend(frame(7, 0, &fixed, &[]));
+    assert_format(7, &payload);
+}
+
+#[test]
+fn unsupported_arc_oval_and_missing_move_paths_remain_bounded() {
+    for path in [
+        native_path(&[(1, &[0.0, 0.0]), (5, &[0.0, 0.0, 40.0, 40.0, 0.0, 90.0])]),
+        native_path(&[(7, &[0.0, 0.0, 40.0, 40.0])]),
+        native_path(&[(2, &[30.0, 40.0])]),
+        native_path(&[]),
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 8, &path))).unwrap();
+        assert_eq!(
+            as_line(&parsed.document.pages[0].elements[0]).path_data,
+            path
+        );
+        assert!(has_shape_warning(&parsed));
+        #[cfg(feature = "render")]
+        {
+            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+            assert!(!svg.contains("<path "));
+            assert!(!svg.contains("<line "));
+        }
+    }
+}

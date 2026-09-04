@@ -54,7 +54,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         fields.read_u8("text control")?;
     }
     if shape.fields.contains(2) {
-        fields.read_u32("shape pen ID")?;
+        fields.read_i32("shape pen name ID")?;
     }
     let media_id = if shape.fields.contains(3) {
         // This gap is not emitted by the observed writer. Its unknown width
@@ -63,7 +63,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         None
     } else {
         if shape.fields.contains(4) {
-            fields.read_u32("shape pen color")?;
+            fields.read_i32("shape pen settings ID")?;
         }
         if shape.fields.contains(5) {
             let size = fields.read_u32("fill size")? as usize;

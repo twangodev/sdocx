@@ -537,3 +537,27 @@ fn legacy_image_values_still_render_with_their_explicit_asset_index() {
     assert_eq!(svg.matches("<image ").count(), 1);
     assert!(svg.contains("data:image/png;base64,bWFpbg=="));
 }
+
+#[test]
+fn matching_shape_rotation_is_not_mistaken_for_a_corner_radius() {
+    let mut payload = image(7);
+    let rotation_offset = base().len() + frame(6, 0, &[], &[]).len() + 17 + 4 + 32;
+    payload[rotation_offset..rotation_offset + 4].copy_from_slice(&30.0_f32.to_le_bytes());
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(7, "7@image.png")]),
+        &[("7@image.png", b"image")],
+    ))
+    .unwrap();
+    assert_eq!(
+        placed(&parsed.document.pages[0].elements[0]).rotation_degrees,
+        Some(30.0)
+    );
+    assert!(
+        !parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|d| d.code == DiagnosticCode::UnsupportedImageFeature)
+    );
+}
