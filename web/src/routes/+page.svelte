@@ -10,14 +10,14 @@
 
 	let picker = $state<HTMLInputElement>();
 	let pageIndex = $state(0);
-	let detailsOpen = $state(false);
+	let detailsOpen = $state(true);
 
 	const zoom = new DocumentZoomCamera(() => pageIndex);
 	const session = new DocumentSession({
 		onResetView: () => {
 			zoom.reset();
 			pageIndex = 0;
-			detailsOpen = false;
+			detailsOpen = true;
 		}
 	});
 

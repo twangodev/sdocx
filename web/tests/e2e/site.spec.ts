@@ -175,10 +175,9 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(page.getByAltText('Rendered preview of page 1')).toBeVisible();
 	const pageStack = page.locator('.page-stack');
 	await expect(pageStack.locator('img')).toHaveCount(5);
-	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
 	const viewerBody = page.locator('.viewer-body');
 	const detailsShell = page.locator('.details-shell');
-	await page.getByRole('button', { name: 'Document information' }).click();
+	await expect(page.getByRole('complementary', { name: 'Document information' })).toBeVisible();
 	await expect(viewerBody).toHaveClass(/details-open/);
 	await expect.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
 	await expect(page.getByText('No parser warnings')).toBeVisible();
