@@ -10,11 +10,11 @@ export interface DocumentSummary {
 }
 
 export type ConverterRequest =
-	| { id: number; type: 'load'; bytes: ArrayBuffer }
-	| { id: number; type: 'inspect' }
-	| { id: number; type: 'renderPage'; pageIndex: number; colorMode: ColorMode }
-	| { id: number; type: 'exportJson' }
-	| { id: number; type: 'dispose' };
+	| { id: number; generation: number; type: 'load'; bytes: ArrayBuffer }
+	| { id: number; generation: number; type: 'inspect' }
+	| { id: number; generation: number; type: 'renderPage'; pageIndex: number; colorMode: ColorMode }
+	| { id: number; generation: number; type: 'exportJson' }
+	| { id: number; generation: number; type: 'dispose' };
 
 export type ConverterResult =
 	| { id: number; type: 'result'; value: DocumentSummary | unknown | string | null }
@@ -22,7 +22,7 @@ export type ConverterResult =
 
 export type ConverterEvent =
 	| ConverterResult
-	| { type: 'progress'; phase: WorkerPhase; message: string };
+	| { type: 'progress'; generation: number; phase: WorkerPhase; message: string };
 
 export function assertAcceptedFile(file: Pick<File, 'name' | 'size'>): void {
 	if (!file.name.toLowerCase().endsWith('.sdocx')) {

@@ -11,40 +11,58 @@ type Pending = {
 	reject: (reason: Error) => void;
 };
 
-type ProgressListener = (phase: WorkerPhase, message: string) => void;
+export type ProgressListener = (generation: number, phase: WorkerPhase, message: string) => void;
 type RequestPayload = ConverterRequest extends infer Request
 	? Request extends { id: number }
 		? Omit<Request, 'id'>
 		: never
 	: never;
 
-export class ConverterClient {
+export interface ConverterClientPort {
+	load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary>;
+	inspect(): Promise<unknown>;
+	renderPage(pageIndex: number, colorMode: ColorMode): Promise<string>;
+	exportJson(): Promise<string>;
+	dispose(generation: number): Promise<void>;
+	cancel(): void;
+	destroy(): void;
+}
+
+export class ConverterClient implements ConverterClientPort {
 	private worker: Worker;
 	private nextId = 1;
+	private generation = 0;
 	private readonly pending = new Map<number, Pending>();
 
 	constructor(private readonly onProgress?: ProgressListener) {
 		this.worker = this.createWorker();
 	}
 
-	async load(bytes: ArrayBuffer): Promise<DocumentSummary> {
-		return (await this.request({ type: 'load', bytes }, [bytes])) as DocumentSummary;
+	async load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary> {
+		this.generation = generation;
+		return (await this.request({ type: 'load', generation, bytes }, [bytes])) as DocumentSummary;
 	}
 
 	async inspect(): Promise<unknown> {
-		return this.request({ type: 'inspect' });
+		return this.request({ type: 'inspect', generation: this.generation });
 	}
 
 	async renderPage(pageIndex: number, colorMode: ColorMode): Promise<string> {
-		return (await this.request({ type: 'renderPage', pageIndex, colorMode })) as string;
+		return (await this.request({
+			type: 'renderPage',
+			generation: this.generation,
+			pageIndex,
+			colorMode
+		})) as string;
 	}
 
 	async exportJson(): Promise<string> {
-		return (await this.request({ type: 'exportJson' })) as string;
+		return (await this.request({ type: 'exportJson', generation: this.generation })) as string;
 	}
 
-	async dispose(): Promise<void> {
-		await this.request({ type: 'dispose' });
+	async dispose(generation: number): Promise<void> {
+		this.generation = generation;
+		await this.request({ type: 'dispose', generation });
 	}
 
 	cancel(): void {
@@ -80,7 +98,7 @@ export class ConverterClient {
 
 	private handleMessage(event: ConverterEvent): void {
 		if (event.type === 'progress') {
-			this.onProgress?.(event.phase, event.message);
+			this.onProgress?.(event.generation, event.phase, event.message);
 			return;
 		}
 

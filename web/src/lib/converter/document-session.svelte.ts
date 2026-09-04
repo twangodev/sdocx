@@ -1,4 +1,8 @@
-import { ConverterClient } from './client';
+import {
+	ConverterClient,
+	type ConverterClientPort,
+	type ProgressListener
+} from './client';
 import {
 	createExportManifest,
 	createZip,
@@ -22,6 +26,7 @@ export type ArchiveKind = 'svg' | 'png' | 'everything';
 
 interface DocumentSessionOptions {
 	onResetView?: () => void;
+	createClient?: (onProgress: ProgressListener) => ConverterClientPort;
 }
 
 export class DocumentSession {
@@ -39,12 +44,15 @@ export class DocumentSession {
 	exporting = $state(false);
 	exportProgress = $state('');
 
-	private client: ConverterClient | undefined;
+	private client: ConverterClientPort | undefined;
+	private loadGeneration = 0;
 	private renderGeneration = 0;
 	private readonly onResetView?: () => void;
+	private readonly createClient: (onProgress: ProgressListener) => ConverterClientPort;
 
 	constructor(options: DocumentSessionOptions = {}) {
 		this.onResetView = options.onResetView;
+		this.createClient = options.createClient ?? ((onProgress) => new ConverterClient(onProgress));
 	}
 
 	get hasDocument(): boolean {
@@ -56,7 +64,8 @@ export class DocumentSession {
 	}
 
 	start(): () => void {
-		this.client = new ConverterClient((phase, message) => {
+		this.client = this.createClient((generation, phase, message) => {
+			if (generation !== this.loadGeneration) return;
 			this.phase = phase;
 			this.status = message;
 		});
@@ -64,6 +73,7 @@ export class DocumentSession {
 	}
 
 	destroy(): void {
+		this.loadGeneration += 1;
 		this.client?.destroy();
 		this.client = undefined;
 		this.releasePreviews();
@@ -79,22 +89,25 @@ export class DocumentSession {
 			return;
 		}
 
-		try {
-			if (
-				isLargeFile(file) &&
-				!window.confirm(
-					'This file is over 100 MiB. Parsing may use substantial memory. Continue locally?'
-				)
-			) {
-				return;
-			}
+		if (
+			isLargeFile(file) &&
+			!window.confirm(
+				'This file is over 100 MiB. Parsing may use substantial memory. Continue locally?'
+			)
+		) {
+			return;
+		}
 
+		const generation = ++this.loadGeneration;
+		try {
 			this.clearDocument();
 			this.activeFile = file;
 			this.parsing = true;
 			this.status = 'Reading file from this device';
 			const bytes = await file.arrayBuffer();
-			const nextSummary = await this.requireClient().load(bytes);
+			if (generation !== this.loadGeneration) return;
+			const nextSummary = await this.requireClient().load(bytes, generation);
+			if (generation !== this.loadGeneration) return;
 			this.summary = nextSummary;
 			this.details = toInspectionView(nextSummary.inspection);
 			this.status = `${nextSummary.pageCount} ${nextSummary.pageCount === 1 ? 'page' : 'pages'} ready`;
@@ -102,18 +115,21 @@ export class DocumentSession {
 
 			if (nextSummary.pageCount > 0) await this.renderPreviews();
 		} catch (cause) {
+			if (generation !== this.loadGeneration) return;
 			this.clearDocument();
 			this.error = messageFrom(cause);
 			this.status = 'Could not open document';
 		} finally {
-			this.parsing = false;
+			if (generation === this.loadGeneration) this.parsing = false;
 		}
 	}
 
 	async close(): Promise<void> {
+		const generation = ++this.loadGeneration;
 		try {
-			await this.requireClient().dispose();
+			await this.requireClient().dispose(generation);
 		} finally {
+			if (generation !== this.loadGeneration) return;
 			this.clearDocument();
 			this.phase = null;
 			this.status = 'Waiting for a document';
@@ -121,6 +137,7 @@ export class DocumentSession {
 	}
 
 	cancel(): void {
+		this.loadGeneration += 1;
 		this.client?.cancel();
 		this.clearDocument();
 		this.parsing = false;
@@ -269,7 +286,7 @@ export class DocumentSession {
 		}
 	}
 
-	private requireClient(): ConverterClient {
+	private requireClient(): ConverterClientPort {
 		if (!this.client) throw new Error('The converter is not ready yet.');
 		return this.client;
 	}
