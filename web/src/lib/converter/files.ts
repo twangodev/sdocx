@@ -106,7 +106,7 @@ export function createExportManifest(
 export async function createZip(
 	entries: AsyncIterable<{ name: string; bytes: Uint8Array }>
 ): Promise<Blob> {
-	return new Promise<Blob>(async (resolve, reject) => {
+	return new Promise<Blob>((resolve, reject) => {
 		const chunks: ArrayBuffer[] = [];
 		const zip = new Zip((error, data, final) => {
 			if (error) {
@@ -119,18 +119,23 @@ export async function createZip(
 			if (final) resolve(new Blob(chunks, { type: 'application/zip' }));
 		});
 
-		try {
-			for await (const entry of entries) {
-				const file = new ZipPassThrough(entry.name);
-				zip.add(file);
-				file.push(entry.bytes, true);
-			}
-			zip.end();
-		} catch (error) {
+		void addZipEntries(zip, entries).catch((error) => {
 			zip.terminate();
 			reject(error);
-		}
+		});
 	});
+}
+
+async function addZipEntries(
+	zip: Zip,
+	entries: AsyncIterable<{ name: string; bytes: Uint8Array }>
+): Promise<void> {
+	for await (const entry of entries) {
+		const file = new ZipPassThrough(entry.name);
+		zip.add(file);
+		file.push(entry.bytes, true);
+	}
+	zip.end();
 }
 
 export function textBytes(value: string): Uint8Array {
