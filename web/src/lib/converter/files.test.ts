@@ -38,4 +38,13 @@ describe('converter filenames', () => {
 		expect(strFromU8(files['page-001.svg'])).toBe('<svg/>');
 		expect(strFromU8(files['manifest.json'])).toBe('{"pages":1}');
 	});
+
+	it('rejects when producing an archive entry fails', async () => {
+		async function* entries() {
+			yield { name: 'page-001.svg', bytes: textBytes('<svg/>') };
+			throw new Error('render failed');
+		}
+
+		await expect(createZip(entries())).rejects.toThrow('render failed');
+	});
 });
