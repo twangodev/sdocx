@@ -33,10 +33,6 @@ impl<'a> Reader<'a> {
         self.position
     }
 
-    pub(crate) const fn len(&self) -> usize {
-        self.data.len()
-    }
-
     pub(crate) fn remaining(&self) -> usize {
         self.data.len().saturating_sub(self.position)
     }
@@ -98,17 +94,6 @@ impl<'a> Reader<'a> {
 
     pub(crate) fn skip(&mut self, length: usize, field: &'static str) -> Result<()> {
         self.read_bytes(length, field).map(|_| ())
-    }
-
-    pub(crate) fn set_position(&mut self, position: usize, field: &'static str) -> Result<()> {
-        if position > self.data.len() {
-            return Err(Error::Format(format!(
-                "{}: {field} offset 0x{position:x} is past the end of the record",
-                self.context
-            )));
-        }
-        self.position = position;
-        Ok(())
     }
 
     pub(crate) fn read_utf16_u16(&mut self, field: &'static str) -> Result<String> {

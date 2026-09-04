@@ -2,7 +2,9 @@ use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::decode::decode_stroke;
 use crate::error::{Error, Result};
+use crate::note::parse_page_text_box;
 use crate::object::read_bbox;
+use crate::report::{DiagnosticCode, ParseReport};
 use crate::storage::{StoredObject, StoredPage};
 use crate::types::{
     BoundingBox, Color, ObjectType, Page, PageElement, PageTemplate, PageTemplateSource,
@@ -10,8 +12,14 @@ use crate::types::{
 };
 
 /// Derive visible content from the same bounded object tree returned to SDK
-/// callers. Stroke records are never located by offsets or byte scanning.
-pub(crate) fn parse_page(data: &[u8], stored: &StoredPage, limits: &ParseLimits) -> Result<Page> {
+/// callers. Stroke and text records are never located by byte scanning.
+pub(crate) fn parse_page(
+    data: &[u8],
+    stored: &StoredPage,
+    limits: &ParseLimits,
+    archive_entry: &str,
+    report: &mut ParseReport,
+) -> Result<Page> {
     let header = &stored.header;
     let stroke_count = stored
         .layers
@@ -37,7 +45,15 @@ pub(crate) fn parse_page(data: &[u8], stored: &StoredPage, limits: &ParseLimits)
     parse_page_properties(data, stored, &mut page)?;
     let mut image_count = 0;
     for layer in &stored.layers.layers {
-        decode_objects(data, &layer.objects, &mut page, &mut image_count, limits)?;
+        decode_objects(
+            data,
+            &layer.objects,
+            &mut page,
+            &mut image_count,
+            limits,
+            archive_entry,
+            report,
+        )?;
     }
     Ok(page)
 }
@@ -57,6 +73,8 @@ fn decode_objects(
     page: &mut Page,
     image_count: &mut usize,
     limits: &ParseLimits,
+    archive_entry: &str,
+    report: &mut ParseReport,
 ) -> Result<()> {
     for object in objects {
         let payload = object
@@ -71,11 +89,37 @@ fn decode_objects(
                 error => error,
             })?;
             page.strokes.push(stroke);
+        } else if object.object_type == ObjectType::TextBox {
+            let decoded = parse_page_text_box(payload, limits).map_err(|error| match error {
+                Error::Format(message) => Error::Format(format!(
+                    "page {}: text box at 0x{:x}: {message}",
+                    page.uuid, object.payload_offset
+                )),
+                error => error,
+            })?;
+            if !decoded.unsupported.is_empty() {
+                report.warning(
+                    DiagnosticCode::UnsupportedTextBoxFeature,
+                    Some(archive_entry.to_owned()),
+                    format!(
+                        "page {}: text box at 0x{:x}: incomplete semantic support for {}",
+                        page.uuid,
+                        object.payload_offset,
+                        decoded.unsupported.join(", ")
+                    ),
+                );
+            }
+            check_limit(
+                "objects per page",
+                limits.max_objects_per_page,
+                page.elements.len() + 1,
+            )?;
+            page.elements.push(PageElement::TextBox(decoded.text_box));
         } else if matches!(
             object.object_type,
-            ObjectType::TextBox | ObjectType::Image | ObjectType::Shape | ObjectType::Line
+            ObjectType::Image | ObjectType::Shape | ObjectType::Line
         ) {
-            // Non-stroke interpretation remains best-effort, but scanning is
+            // Other object interpretation remains best-effort, but scanning is
             // now confined to this object's payload, never its siblings.
             let elements = parse_page_elements(payload, 0, page.width, page.height, limits)?;
             check_limit(
@@ -91,7 +135,15 @@ fn decode_objects(
                 page.elements.push(element);
             }
         }
-        decode_objects(data, &object.children, page, image_count, limits)?;
+        decode_objects(
+            data,
+            &object.children,
+            page,
+            image_count,
+            limits,
+            archive_entry,
+            report,
+        )?;
     }
     Ok(())
 }

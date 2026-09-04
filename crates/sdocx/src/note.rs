@@ -1,5 +1,6 @@
 use crate::binary::Reader;
 use crate::error::{Error, Result};
+use crate::frame::Frame;
 use crate::types::{
     BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType, RichTextBox,
     RichTextCodeBlock, RichTextObjectContent, RichTextObjectSpan, RichTextParagraph,
@@ -118,11 +119,51 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
     })
 }
 
-struct ObjectFrame {
-    start: usize,
-    end: usize,
-    flexible_offset: u32,
-    fields: u32,
+/// Structured page text plus optional features retained/skipped without full
+/// semantic support. The page parser turns these into caller-visible findings.
+pub(crate) struct DecodedTextBox {
+    pub(crate) text_box: RichTextBox,
+    pub(crate) unsupported: Vec<&'static str>,
+}
+
+pub(crate) fn parse_page_text_box(data: &[u8], limits: &ParseLimits) -> Result<DecodedTextBox> {
+    let mut reader = Reader::new(data, "page text box");
+    let mut decoded = parse_text_frames(&mut reader, limits, "page text box")?;
+    let tail = Frame::read(&mut reader)?;
+    tail.expect_kind(2)?;
+    // Native ComponentImage::TextboxGetOwnBinary writes border color, width
+    // and type as field bits 1, 2 and 3. They are not text-formatting spans.
+    let mut border = Reader::new(tail.flexible, "text box border");
+    if !tail.fields.contains(0) {
+        if tail.fields.contains(1) {
+            border.read_u32("border color")?;
+        }
+        if tail.fields.contains(2) {
+            let width = border.read_f32("border width")?;
+            if !width.is_finite() || width < 0.0 {
+                return Err(Error::Format("invalid text box border width".into()));
+            }
+        }
+        if tail.fields.contains(3) {
+            border.read_u16("border type")?;
+        }
+    }
+    if tail.fields.has_other_bits(0)
+        || tail.properties.has_other_bits(0)
+        || !tail.fixed.is_empty()
+        || border.remaining() != 0
+    {
+        decoded
+            .unsupported
+            .push("text box border or extension settings");
+    }
+    while reader.remaining() != 0 {
+        Frame::read(&mut reader)?;
+        if !decoded.unsupported.contains(&"additional text box frames") {
+            decoded.unsupported.push("additional text box frames");
+        }
+    }
+    Ok(decoded)
 }
 
 fn parse_text_object(
@@ -131,55 +172,56 @@ fn parse_text_object(
     context: &'static str,
 ) -> Result<RichTextBox> {
     let mut reader = Reader::new(data, context);
-    let object_base = ObjectMetadata::read(&mut reader)?;
-    skip_frame(&mut reader, "shape base")?;
-    let shape_text = open_object_frame(&mut reader, 7, "shape text")?;
+    Ok(parse_text_frames(&mut reader, limits, context)?.text_box)
+}
 
-    let common = if shape_text.flexible_offset != 0 && shape_text.fields & 1 != 0 {
-        let common_offset = shape_text
-            .start
-            .checked_add(shape_text.flexible_offset as usize)
-            .ok_or_else(|| Error::Format(format!("{context}: text payload offset overflows")))?;
-        parse_text_common_at(data, common_offset, limits, context)?
+fn parse_text_frames(
+    reader: &mut Reader<'_>,
+    limits: &ParseLimits,
+    context: &'static str,
+) -> Result<DecodedTextBox> {
+    let object_base = ObjectMetadata::read(reader)?;
+    let shape = Frame::read(reader)?;
+    shape.expect_kind(6)?;
+    let shape_text = Frame::read(reader)?;
+    shape_text.expect_kind(7)?;
+    let mut flexible = Reader::new(shape_text.flexible, context);
+    let common = if shape_text.fields.contains(0) {
+        parse_text_common(&mut flexible, limits, context)?
     } else {
         TextCommon::default()
     };
-    reader.set_position(shape_text.end, "shape text end")?;
-
-    Ok(common.into_rich_text_box(object_base))
-}
-
-fn open_object_frame(
-    reader: &mut Reader<'_>,
-    expected_data_type: i16,
-    field: &'static str,
-) -> Result<ObjectFrame> {
-    let start = reader.position();
-    let size = usize::try_from(reader.read_u32(field)?)
-        .map_err(|_| Error::Format(format!("{field} size does not fit in memory")))?;
-    let end = start
-        .checked_add(size)
-        .ok_or_else(|| Error::Format(format!("{field} size overflows")))?;
-    if size < 4 || end > reader.len() {
-        return Err(Error::Format(format!(
-            "{field} ends at 0x{end:x}, outside its {}-byte record",
-            reader.len()
-        )));
+    let mut unsupported = Vec::new();
+    if shape_text.fields.has_other_bits(1) || flexible.remaining() != 0 {
+        unsupported.push("shape-text extension fields");
     }
-    let data_type = reader.read_i16("object frame type")?;
-    if data_type != expected_data_type {
-        return Err(Error::Format(format!(
-            "expected {field} type {expected_data_type}, found {data_type} at offset 0x{start:x}"
-        )));
+    if common.has_extensions {
+        unsupported.push("text-common extension data");
     }
-    let flexible_offset = reader.read_u32("object flexible-data offset")?;
-    read_bitfield(reader, "object property mask")?;
-    let fields = read_bitfield(reader, "object field mask")?;
-    Ok(ObjectFrame {
-        start,
-        end,
-        flexible_offset,
-        fields,
+    if common
+        .spans
+        .iter()
+        .any(|span| matches!(span.kind, RichTextSpanType::Other(_)))
+    {
+        unsupported.push("unknown text style spans");
+    }
+    if common
+        .paragraphs
+        .iter()
+        .any(|paragraph| matches!(paragraph.kind, RichTextParagraphType::Other(_)))
+    {
+        unsupported.push("unknown text paragraph records");
+    }
+    if common
+        .object_spans
+        .iter()
+        .any(|span| span.content.is_none())
+    {
+        unsupported.push("unsupported embedded text objects");
+    }
+    Ok(DecodedTextBox {
+        text_box: common.into_rich_text_box(object_base),
+        unsupported,
     })
 }
 
@@ -196,23 +238,9 @@ fn read_bitfield(reader: &mut Reader<'_>, field: &'static str) -> Result<u32> {
     Ok(u32::from_le_bytes(padded))
 }
 
-fn skip_frame(reader: &mut Reader<'_>, field: &'static str) -> Result<()> {
-    let start = reader.position();
-    let size = usize::try_from(reader.read_u32(field)?)
-        .map_err(|_| Error::Format(format!("{field} size does not fit in memory")))?;
-    if size < 4 {
-        return Err(Error::Format(format!(
-            "{field} size {size} is smaller than 4"
-        )));
-    }
-    let end = start
-        .checked_add(size)
-        .ok_or_else(|| Error::Format(format!("{field} size overflows")))?;
-    reader.set_position(end, field)
-}
-
 #[derive(Default)]
 struct TextCommon {
+    has_extensions: bool,
     text: String,
     spans: Vec<RichTextSpan>,
     paragraphs: Vec<RichTextParagraph>,
@@ -289,13 +317,11 @@ impl TextCommon {
     }
 }
 
-fn parse_text_common_at(
-    data: &[u8],
-    offset: usize,
+fn parse_text_common(
+    reader: &mut Reader<'_>,
     limits: &ParseLimits,
     context: &'static str,
 ) -> Result<TextCommon> {
-    let mut reader = Reader::at(data, offset, context)?;
     let common_size = usize::try_from(reader.read_u32("text common size")?)
         .map_err(|_| Error::Format(format!("{context}: text common size is too large")))?;
     let common_bytes = reader.read_bytes(common_size, "text common payload")?;
@@ -396,6 +422,7 @@ fn parse_text_common_at(
     };
 
     Ok(TextCommon {
+        has_extensions: common.remaining() != 0,
         text,
         spans,
         paragraphs,
@@ -480,8 +507,8 @@ fn parse_code_block_object(
     let mut reader = Reader::new(data, context);
     let object_base = ObjectMetadata::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 23, "code block")?;
-    let mut flexible = open_flexible_reader(data, &frame, context, "code block")?;
-    let title = if frame.fields & 1 != 0 {
+    let mut flexible = Reader::new(frame.flexible, context);
+    let title = if frame.fields.contains(0) {
         Some(parse_sized_text_object(
             &mut flexible,
             limits,
@@ -490,7 +517,7 @@ fn parse_code_block_object(
     } else {
         None
     };
-    let body = if frame.fields & 2 != 0 {
+    let body = if frame.fields.contains(1) {
         Some(parse_sized_text_object(
             &mut flexible,
             limits,
@@ -516,16 +543,16 @@ fn parse_table_object(
     let mut reader = Reader::new(data, context);
     let object_base = ObjectMetadata::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 22, "table")?;
-    let mut flexible = open_flexible_reader(data, &frame, context, "table")?;
+    let mut flexible = Reader::new(frame.flexible, context);
 
-    if frame.fields & 1 != 0 {
+    if frame.fields.contains(0) {
         flexible.read_f32("table vertical cell padding")?;
     }
-    if frame.fields & 2 != 0 {
+    if frame.fields.contains(1) {
         flexible.read_f32("table horizontal cell padding")?;
     }
 
-    let column_widths = if frame.fields & 4 != 0 {
+    let column_widths = if frame.fields.contains(2) {
         let count = usize::try_from(flexible.read_u32("table column count")?)
             .map_err(|_| Error::Format(format!("{context}: table column count is too large")))?;
         check_limit("table columns", limits.max_objects_per_page, count)?;
@@ -538,7 +565,7 @@ fn parse_table_object(
         Vec::new()
     };
 
-    let rows = if frame.fields & 8 != 0 {
+    let rows = if frame.fields.contains(3) {
         let count = usize::try_from(flexible.read_u32("table row count")?)
             .map_err(|_| Error::Format(format!("{context}: table row count is too large")))?;
         check_limit("table rows", limits.max_objects_per_page, count)?;
@@ -652,52 +679,16 @@ fn parse_sized_text_object(
     parse_text_object(reader.read_bytes(size, field)?, limits, field)
 }
 
-fn open_flexible_reader<'a>(
-    data: &'a [u8],
-    frame: &ObjectFrame,
-    context: &'static str,
-    field: &'static str,
-) -> Result<Reader<'a>> {
-    if frame.flexible_offset == 0 {
-        return Err(Error::Format(format!(
-            "{context}: {field} has no flexible-data payload"
-        )));
-    }
-    let offset = frame
-        .start
-        .checked_add(frame.flexible_offset as usize)
-        .ok_or_else(|| Error::Format(format!("{context}: {field} offset overflows")))?;
-    if offset > frame.end {
-        return Err(Error::Format(format!(
-            "{context}: {field} flexible data starts outside its frame"
-        )));
-    }
-    Ok(Reader::new(&data[offset..frame.end], context))
-}
-
-fn open_next_object_frame(
-    reader: &mut Reader<'_>,
+fn open_next_object_frame<'a>(
+    reader: &mut Reader<'a>,
     expected_data_type: i16,
     field: &'static str,
-) -> Result<ObjectFrame> {
-    while reader.remaining() >= 6 {
-        let start = reader.position();
-        let size = usize::try_from(reader.read_u32(field)?)
-            .map_err(|_| Error::Format(format!("{field} size does not fit in memory")))?;
-        let data_type = reader.read_i16("object frame type")?;
-        reader.set_position(start, field)?;
-        if data_type == expected_data_type {
-            return open_object_frame(reader, expected_data_type, field);
+) -> Result<Frame<'a>> {
+    while reader.remaining() != 0 {
+        let frame = Frame::read(reader)?;
+        if frame.kind == expected_data_type {
+            return Ok(frame);
         }
-        if size < 6 {
-            return Err(Error::Format(format!(
-                "{field} encountered a {size}-byte object frame"
-            )));
-        }
-        let end = start
-            .checked_add(size)
-            .ok_or_else(|| Error::Format(format!("{field} size overflows")))?;
-        reader.set_position(end, field)?;
     }
     Err(Error::Format(format!(
         "{field} frame type {expected_data_type} was not found"
@@ -733,9 +724,7 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        ObjectMetadata, parse_code_block_object, parse_table_object, parse_text_common_at,
-    };
+    use super::{ObjectMetadata, parse_code_block_object, parse_table_object, parse_text_common};
     use crate::{
         ObjectSpanLayoutConstraint, ObjectType, ParseLimits, RichTextParagraphType,
         RichTextSpanType,
@@ -760,7 +749,7 @@ mod tests {
 
     fn empty_text_object() -> Vec<u8> {
         let mut data = object_base_frame();
-        data.extend_from_slice(&4_u32.to_le_bytes());
+        data.extend_from_slice(&object_frame(6, 0, &[]));
         data.extend_from_slice(&12_u32.to_le_bytes());
         data.extend_from_slice(&7_i16.to_le_bytes());
         data.extend_from_slice(&0_u32.to_le_bytes());
@@ -884,7 +873,12 @@ mod tests {
 
         let mut data = (payload.len() as u32).to_le_bytes().to_vec();
         data.extend_from_slice(&payload);
-        let common = parse_text_common_at(&data, 0, &ParseLimits::default(), "test text").unwrap();
+        let common = parse_text_common(
+            &mut crate::binary::Reader::new(&data, "test text"),
+            &ParseLimits::default(),
+            "test text",
+        )
+        .unwrap();
         let box_ = common.into_rich_text_box(
             ObjectMetadata::read(&mut crate::binary::Reader::new(
                 &object_base_frame(),

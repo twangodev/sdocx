@@ -103,7 +103,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     for name in &page_names {
         let buf = read_required_entry(&mut archive, name, &options.limits)?;
         let stored_page = parse_stored_page_bytes_with_limits(&buf, &options.limits)?;
-        let page = parse_page(&buf, &stored_page, &options.limits)?;
+        let page = parse_page(&buf, &stored_page, &options.limits, name, &mut report)?;
 
         let file_id = Path::new(name)
             .file_stem()
