@@ -129,6 +129,12 @@ jobs:
     needs: [web]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://sdocx.twango.dev
+    concurrency:
+      group: sdocx-production
+      cancel-in-progress: false
     permissions:
       contents: read
     steps:
@@ -137,6 +143,9 @@ jobs:
         with:
           name: sdocx-web
           path: web/build
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
       - name: Deploy static assets to Cloudflare Workers
         uses: cloudflare/wrangler-action@v4
         with:
