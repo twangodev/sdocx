@@ -65,7 +65,7 @@ pub struct ParseLimits {
     pub max_objects_per_page: usize,
     /// Maximum number of physical layers declared by one page.
     pub max_layers_per_page: usize,
-    /// Maximum nesting depth for child object records.
+    /// Maximum nesting depth in physical child records or embedded rich-text objects.
     pub max_object_nesting_depth: usize,
     /// Maximum UTF-16 code units in one rich-text object.
     pub max_text_characters: usize,

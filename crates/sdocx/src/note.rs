@@ -87,6 +87,7 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
         reader.read_bytes(title_size, "title object")?,
         limits,
         "note title",
+        0,
     )?;
     let body_size = usize::try_from(reader.read_u32("body object size")?)
         .map_err(|_| Error::Format("body object size does not fit in memory".into()))?;
@@ -94,6 +95,7 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
         reader.read_bytes(body_size, "body object")?,
         limits,
         "note body",
+        0,
     )?;
 
     Ok(StoredNote {
@@ -128,7 +130,7 @@ pub(crate) struct DecodedTextBox {
 
 pub(crate) fn parse_page_text_box(data: &[u8], limits: &ParseLimits) -> Result<DecodedTextBox> {
     let mut reader = Reader::new(data, "page text box");
-    let mut decoded = parse_text_frames(&mut reader, limits, "page text box")?;
+    let mut decoded = parse_text_frames(&mut reader, limits, "page text box", 0)?;
     let tail = Frame::read(&mut reader)?;
     tail.expect_kind(2)?;
     // Native ComponentImage::TextboxGetOwnBinary writes border color, width
@@ -170,16 +172,23 @@ fn parse_text_object(
     data: &[u8],
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<RichTextBox> {
     let mut reader = Reader::new(data, context);
-    Ok(parse_text_frames(&mut reader, limits, context)?.text_box)
+    Ok(parse_text_frames(&mut reader, limits, context, depth)?.text_box)
 }
 
 fn parse_text_frames(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<DecodedTextBox> {
+    check_limit(
+        "rich-text object nesting depth",
+        limits.max_object_nesting_depth,
+        depth.saturating_add(1),
+    )?;
     let object_base = ObjectMetadata::read(reader)?;
     let shape = Frame::read(reader)?;
     shape.expect_kind(6)?;
@@ -187,12 +196,23 @@ fn parse_text_frames(
     shape_text.expect_kind(7)?;
     let mut flexible = Reader::new(shape_text.flexible, context);
     let common = if shape_text.fields.contains(0) {
-        parse_text_common(&mut flexible, limits, context)?
+        parse_text_common(&mut flexible, limits, context, depth)?
     } else {
         TextCommon::default()
     };
     let mut unsupported = Vec::new();
-    if shape_text.fields.has_other_bits(1) || flexible.remaining() != 0 {
+    if shape.fields.has_other_bits(0)
+        || shape.properties.has_other_bits(0)
+        || !shape.fixed.is_empty()
+        || !shape.flexible.is_empty()
+    {
+        unsupported.push("shape settings");
+    }
+    if shape_text.fields.has_other_bits(1)
+        || shape_text.properties.has_other_bits(0)
+        || !shape_text.fixed.is_empty()
+        || flexible.remaining() != 0
+    {
         unsupported.push("shape-text extension fields");
     }
     if common.has_extensions {
@@ -321,6 +341,7 @@ fn parse_text_common(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<TextCommon> {
     let common_size = usize::try_from(reader.read_u32("text common size")?)
         .map_err(|_| Error::Format(format!("{context}: text common size is too large")))?;
@@ -388,12 +409,15 @@ fn parse_text_common(
         });
     }
 
-    let margins = Some([
+    let margins = [
         common.read_f32("left text margin")?,
         common.read_f32("top text margin")?,
         common.read_f32("right text margin")?,
         common.read_f32("bottom text margin")?,
-    ]);
+    ];
+    if margins.iter().any(|margin| !margin.is_finite()) {
+        return Err(Error::Format(format!("{context}: non-finite text margin")));
+    }
     let gravity = Some(common.read_u8("text gravity")?);
     let text_sections = if common.remaining() >= 2 {
         let section_count = usize::from(common.read_u16("text section count")?);
@@ -409,11 +433,13 @@ fn parse_text_common(
     } else {
         Vec::new()
     };
+    let mut has_extensions = false;
     let object_spans = if common.remaining() >= 8 {
         let object_span_flags = common.read_u32("object span flags")?;
+        has_extensions |= object_span_flags & !1 != 0;
         common.read_u32("object span reserved field")?;
         if object_span_flags & 1 != 0 {
-            parse_object_spans(&mut common, limits, context)?
+            parse_object_spans(&mut common, limits, context, depth)?
         } else {
             Vec::new()
         }
@@ -422,13 +448,13 @@ fn parse_text_common(
     };
 
     Ok(TextCommon {
-        has_extensions: common.remaining() != 0,
+        has_extensions: has_extensions || common.remaining() != 0,
         text,
         spans,
         paragraphs,
         object_spans,
         text_sections,
-        margins,
+        margins: Some(margins),
         gravity,
     })
 }
@@ -437,6 +463,7 @@ fn parse_object_spans(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<Vec<RichTextObjectSpan>> {
     let count = usize::try_from(reader.read_u32("object span count")?)
         .map_err(|_| Error::Format(format!("{context}: object span count is too large")))?;
@@ -463,7 +490,13 @@ fn parse_object_spans(
         let object_data = span
             .read_bytes(object_size, "object span object binary")?
             .to_vec();
-        let content = parse_object_span_content(object_type, &object_data, limits, context)?;
+        let content = parse_object_span_content(
+            object_type,
+            &object_data,
+            limits,
+            context,
+            depth.saturating_add(1),
+        )?;
         let text_index_utf16 = span.read_u32("object span text index")? as i32;
         let layout_option = ObjectSpanLayoutOption::from(span.read_u32("object span layout")?);
         let layout_constraint =
@@ -485,13 +518,14 @@ fn parse_object_span_content(
     data: &[u8],
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<Option<RichTextObjectContent>> {
     match object_type {
-        ObjectType::Table => parse_table_object(data, limits, context)
+        ObjectType::Table => parse_table_object(data, limits, context, depth)
             .map(Box::new)
             .map(RichTextObjectContent::Table)
             .map(Some),
-        ObjectType::CodeBlock => parse_code_block_object(data, limits, context)
+        ObjectType::CodeBlock => parse_code_block_object(data, limits, context, depth)
             .map(Box::new)
             .map(RichTextObjectContent::CodeBlock)
             .map(Some),
@@ -503,7 +537,13 @@ fn parse_code_block_object(
     data: &[u8],
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<RichTextCodeBlock> {
+    check_limit(
+        "rich-text object nesting depth",
+        limits.max_object_nesting_depth,
+        depth.saturating_add(1),
+    )?;
     let mut reader = Reader::new(data, context);
     let object_base = ObjectMetadata::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 23, "code block")?;
@@ -513,6 +553,7 @@ fn parse_code_block_object(
             &mut flexible,
             limits,
             "code block title",
+            depth,
         )?)
     } else {
         None
@@ -522,6 +563,7 @@ fn parse_code_block_object(
             &mut flexible,
             limits,
             "code block body",
+            depth,
         )?)
     } else {
         None
@@ -539,7 +581,13 @@ fn parse_table_object(
     data: &[u8],
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<RichTextTable> {
+    check_limit(
+        "rich-text object nesting depth",
+        limits.max_object_nesting_depth,
+        depth.saturating_add(1),
+    )?;
     let mut reader = Reader::new(data, context);
     let object_base = ObjectMetadata::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 22, "table")?;
@@ -575,7 +623,7 @@ fn parse_table_object(
             let row_size = usize::try_from(flexible.read_u32("table row size")?)
                 .map_err(|_| Error::Format(format!("{context}: table row size is too large")))?;
             let row_data = flexible.read_bytes(row_size, "table row")?;
-            let row = parse_table_row(row_data, limits, context)?;
+            let row = parse_table_row(row_data, limits, context, depth)?;
             total_cells = total_cells
                 .checked_add(row.cells.len())
                 .ok_or_else(|| Error::Format(format!("{context}: table cell count overflows")))?;
@@ -599,6 +647,7 @@ fn parse_table_row(
     data: &[u8],
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<RichTextTableRow> {
     let mut reader = Reader::new(data, context);
     let flexible_offset = reader.read_u32("table row flexible-data offset")?;
@@ -617,6 +666,7 @@ fn parse_table_row(
             reader.read_bytes(cell_size, "table cell")?,
             limits,
             context,
+            depth,
         )?);
     }
     if flexible_offset != 0 && flexible_offset as usize > data.len() {
@@ -635,6 +685,7 @@ fn parse_table_cell(
     data: &[u8],
     limits: &ParseLimits,
     context: &'static str,
+    depth: usize,
 ) -> Result<RichTextTableCell> {
     let mut reader = Reader::new(data, context);
     let flexible_offset = reader.read_u32("table cell flexible-data offset")?;
@@ -651,7 +702,7 @@ fn parse_table_cell(
         y_max: reader.read_f64("table cell bottom")?,
     };
     let vertical_alignment = reader.read_u8("table cell vertical alignment")?;
-    let content = parse_sized_text_object(&mut reader, limits, "table cell text")?;
+    let content = parse_sized_text_object(&mut reader, limits, "table cell text", depth)?;
     if flexible_offset != 0 && flexible_offset as usize > data.len() {
         return Err(Error::Format(format!(
             "{context}: table cell flexible-data offset is outside its record"
@@ -673,10 +724,16 @@ fn parse_sized_text_object(
     reader: &mut Reader<'_>,
     limits: &ParseLimits,
     field: &'static str,
+    depth: usize,
 ) -> Result<RichTextBox> {
     let size = usize::try_from(reader.read_u32(field)?)
         .map_err(|_| Error::Format(format!("{field} size is too large")))?;
-    parse_text_object(reader.read_bytes(size, field)?, limits, field)
+    parse_text_object(
+        reader.read_bytes(size, field)?,
+        limits,
+        field,
+        depth.saturating_add(1),
+    )
 }
 
 fn open_next_object_frame<'a>(
@@ -778,7 +835,7 @@ mod tests {
         let mut data = object_base_frame();
         data.extend_from_slice(&object_frame(23, 1, &flexible));
 
-        let code = parse_code_block_object(&data, &ParseLimits::default(), "test code").unwrap();
+        let code = parse_code_block_object(&data, &ParseLimits::default(), "test code", 0).unwrap();
 
         assert_eq!(code.title.unwrap().text, "");
         assert!(code.body.is_none());
@@ -818,7 +875,7 @@ mod tests {
         let mut data = object_base_frame();
         data.extend_from_slice(&object_frame(22, 0x0c, &flexible));
 
-        let table = parse_table_object(&data, &ParseLimits::default(), "test table").unwrap();
+        let table = parse_table_object(&data, &ParseLimits::default(), "test table", 0).unwrap();
 
         assert_eq!(table.column_widths, [50.0]);
         assert_eq!(table.rows[0].index, 7);
@@ -877,6 +934,7 @@ mod tests {
             &mut crate::binary::Reader::new(&data, "test text"),
             &ParseLimits::default(),
             "test text",
+            0,
         )
         .unwrap();
         let box_ = common.into_rich_text_box(

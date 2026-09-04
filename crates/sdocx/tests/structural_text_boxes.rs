@@ -310,3 +310,226 @@ fn applies_text_limits_before_allocating_declared_contents() {
         })
     ));
 }
+
+fn embedded_common(kind: u32, payload: &[u8]) -> Vec<u8> {
+    let mut bytes = common("\u{fffc}", &[]);
+    bytes.truncate(bytes.len() - 8);
+    for value in [
+        1_u32,
+        0,
+        1,
+        (payload.len() + 20) as u32,
+        payload.len() as u32,
+        kind,
+    ] {
+        bytes.extend_from_slice(&value.to_le_bytes());
+    }
+    bytes.extend_from_slice(payload);
+    for value in [0_u32, 0, 2] {
+        // UTF-16 index, layout option, constraint
+        bytes.extend_from_slice(&value.to_le_bytes());
+    }
+    bytes
+}
+
+#[test]
+fn preserves_unsupported_inline_objects_and_reports_the_omission() {
+    let payload = text_payload(
+        &embedded_common(250, b"unknown object bytes"),
+        [0.0; 4],
+        0.0,
+        &frame(2, &[], &[], &[]),
+    );
+    let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
+    let decoded = text_box(&parsed.document.pages[0].elements[0]);
+    assert_eq!(decoded.text, "\u{fffc}");
+    assert_eq!(decoded.object_spans[0].object_data, b"unknown object bytes");
+    assert_eq!(
+        decoded.object_spans[0].object_type,
+        sdocx::ObjectType::Other(250)
+    );
+    assert!(decoded.object_spans[0].content.is_none());
+    assert!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|d| d.code == DiagnosticCode::UnsupportedTextBoxFeature
+                && d.message.contains("unsupported embedded text objects"))
+    );
+    let options = ParseOptions {
+        limits: ParseLimits {
+            max_text_object_spans: 0,
+            ..ParseLimits::default()
+        },
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&single(&payload), &options),
+        Err(Error::LimitExceeded {
+            resource: "text object spans",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn bounds_recursion_through_embedded_code_block_text() {
+    // text -> code -> text -> code -> text: five object levels. These inner
+    // objects are length-prefixed text spans, not StoredObject children.
+    let mut text = text_payload(&common("leaf", &[]), [0.0; 4], 0.0, &[]);
+    for _ in 0..2 {
+        let mut code = base([0.0; 4], 0.0);
+        let mut body = (text.len() as u32).to_le_bytes().to_vec();
+        body.extend(text);
+        code.extend(frame(23, &[2], &[], &body));
+        text = text_payload(&embedded_common(23, &code), [0.0; 4], 0.0, &[]);
+    }
+    text.extend(frame(2, &[], &[], &[]));
+    let bytes = single(&text);
+    let mut options = ParseOptions {
+        limits: ParseLimits {
+            max_object_nesting_depth: 5,
+            ..ParseLimits::default()
+        },
+    };
+    let parsed = sdocx::parse_bytes_with_options(&bytes, &options).unwrap();
+    let mut decoded = text_box(&parsed.pages[0].elements[0]);
+    for _ in 0..2 {
+        let Some(sdocx::RichTextObjectContent::CodeBlock(code)) = &decoded.object_spans[0].content
+        else {
+            panic!("expected code block")
+        };
+        decoded = code.body.as_ref().unwrap();
+    }
+    assert_eq!(decoded.text, "leaf");
+    options.limits.max_object_nesting_depth = 4;
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&bytes, &options),
+        Err(Error::LimitExceeded {
+            resource: "rich-text object nesting depth",
+            limit: 4,
+            actual: 5
+        })
+    ));
+}
+
+#[test]
+fn preserves_paragraphs_and_sections_without_treating_payloads_as_text() {
+    let mut data = common("one\ntwo", &[]);
+    let paragraph_offset = 4 + 7 * 2 + 4;
+    data[paragraph_offset..paragraph_offset + 4].copy_from_slice(&1_u32.to_le_bytes());
+    let mut paragraph = 16_u16.to_le_bytes().to_vec();
+    for value in [3_u32, 0, 1, 2] {
+        // alignment, range, centered
+        paragraph.extend_from_slice(&value.to_le_bytes());
+    }
+    data.splice(paragraph_offset + 4..paragraph_offset + 4, paragraph);
+    let section_offset = data.len() - 10;
+    data[section_offset..section_offset + 2].copy_from_slice(&1_u16.to_le_bytes());
+    let mut section = 0_u32.to_le_bytes().to_vec();
+    section.extend_from_slice(&7_u32.to_le_bytes());
+    data.splice(section_offset + 2..section_offset + 2, section);
+    let payload = text_payload(&data, [0.0; 4], 0.0, &frame(2, &[], &[], &[]));
+    let doc = sdocx::parse_bytes(&single(&payload)).unwrap();
+    let decoded = text_box(&doc.pages[0].elements[0]);
+    assert_eq!(decoded.text, "one\ntwo");
+    assert_eq!(
+        decoded.paragraphs[0].alignment(),
+        Some(sdocx::ParagraphAlignment::Center)
+    );
+    assert_eq!(decoded.text_sections[0].length_utf16, 7);
+    let options = ParseOptions {
+        limits: ParseLimits {
+            max_text_paragraphs: 0,
+            ..ParseLimits::default()
+        },
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&single(&payload), &options),
+        Err(Error::LimitExceeded {
+            resource: "text paragraphs",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn future_fields_and_frames_are_bounded_and_reported() {
+    for tail in [
+        frame(2, &[0, 0, 0, 0, 1], &[], b"future border"),
+        frame(2, &[], &[], &[]),
+    ] {
+        let mut data = common("kept", &[]);
+        let flags_offset = data.len() - 8;
+        data[flags_offset..flags_offset + 4].copy_from_slice(&2_u32.to_le_bytes());
+        let mut payload = text_payload(&data, [0.0; 4], 0.0, &tail);
+        payload.extend(frame(123, &[], &[], &[]));
+        let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
+        assert_eq!(text_box(&parsed.document.pages[0].elements[0]).text, "kept");
+        let finding = parsed
+            .report
+            .diagnostics
+            .iter()
+            .find(|d| d.code == DiagnosticCode::UnsupportedTextBoxFeature)
+            .unwrap();
+        assert!(finding.message.contains("text-common extension data"));
+        assert!(finding.message.contains("additional text box frames"));
+    }
+}
+
+#[test]
+fn empty_text_without_a_common_field_is_a_valid_object() {
+    let mut payload = base([0.0; 4], 0.0);
+    payload.extend(frame(6, &[], &[], &[]));
+    payload.extend(frame(7, &[], &[], &[]));
+    payload.extend(frame(2, &[], &[], &[]));
+    let doc = sdocx::parse_bytes(&single(&payload)).unwrap();
+    assert!(text_box(&doc.pages[0].elements[0]).text.is_empty());
+}
+
+#[test]
+fn rejects_non_finite_placement_and_truncated_declared_borders() {
+    for bbox in [[f64::NAN, 0.0, 1.0, 1.0], [0.0, 0.0, f64::INFINITY, 1.0]] {
+        let payload = text_payload(&common("a", &[]), bbox, 0.0, &frame(2, &[], &[], &[]));
+        assert!(matches!(
+            sdocx::parse_bytes(&single(&payload)),
+            Err(Error::Format(_))
+        ));
+    }
+    for rotation in [f32::NAN, f32::INFINITY] {
+        let payload = text_payload(
+            &common("a", &[]),
+            [0.0; 4],
+            rotation,
+            &frame(2, &[], &[], &[]),
+        );
+        assert!(matches!(
+            sdocx::parse_bytes(&single(&payload)),
+            Err(Error::Format(_))
+        ));
+    }
+    for border in [
+        &[][..],
+        &[0; 3],
+        &f32::NAN.to_le_bytes(),
+        &(-1.0_f32).to_le_bytes(),
+    ] {
+        let payload = text_payload(
+            &common("a", &[]),
+            [0.0; 4],
+            0.0,
+            &frame(2, &[4], &[], border),
+        );
+        assert!(matches!(
+            sdocx::parse_bytes(&single(&payload)),
+            Err(Error::Format(_))
+        ));
+    }
+    let mut data = common("a", &[]);
+    data[14..18].copy_from_slice(&f32::NAN.to_le_bytes());
+    let payload = text_payload(&data, [0.0; 4], 0.0, &frame(2, &[], &[], &[]));
+    assert!(matches!(
+        sdocx::parse_bytes(&single(&payload)),
+        Err(Error::Format(_))
+    ));
+}
