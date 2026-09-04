@@ -83,10 +83,44 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  web:
-    name: Web
-    needs: [test, coverage]
+  web-check:
+    name: Web / Check
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install dependencies
+        run: bun ci
+      - name: Check application
+        run: bun run check
+
+  web-test:
+    name: Web / Unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install dependencies
+        run: bun ci
+      - name: Run unit tests
+        run: bun run test
+
+  web-build:
+    name: Web / Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
     steps:
       - uses: actions/checkout@v4
         with:
@@ -100,36 +134,44 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
-      - name: Install web dependencies
+      - name: Install dependencies
         run: bun ci
-        working-directory: web
       - name: Build browser WASM
         run: bun run build:wasm
-        working-directory: web
-      - name: Check web application
-        run: bun run check
-        working-directory: web
-      - name: Run web unit tests
-        run: bun run test
-        working-directory: web
       - name: Build static application
         run: bun run build:app
-        working-directory: web
-      - name: Install browser engines
-        run: bunx playwright install --with-deps chromium firefox webkit
-        working-directory: web
-      - name: Run browser tests
-        run: bun run test:e2e
-        working-directory: web
       - uses: actions/upload-artifact@v4
         with:
           name: sdocx-web
           path: web/build
           if-no-files-found: error
 
+  web-e2e:
+    name: Web / Browser tests
+    needs: [web-build]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install dependencies
+        run: bun ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdocx-web
+          path: web/build
+      - name: Install browser engines
+        run: bunx playwright install --with-deps chromium firefox webkit
+      - name: Run browser tests
+        run: bun run test:e2e
+
   deploy-web:
     name: Deploy web
-    needs: [web]
+    needs: [test, coverage, web-check, web-test, web-build, web-e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
