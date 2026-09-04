@@ -16,6 +16,7 @@ mod error;
 mod frame;
 mod layout;
 mod note;
+mod object;
 mod page;
 #[cfg(feature = "render")]
 mod render;
@@ -26,6 +27,7 @@ mod types;
 pub use error::{Error, Result};
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use note::{StoredNote, StoredNoteHeader, parse_note_bytes, parse_note_bytes_with_limits};
+pub use object::ObjectMetadata;
 #[cfg(feature = "render")]
 pub use render::{
     RenderColorMode, RenderOptions, RenderedPage, render_document_svg, render_layout_page_svg,

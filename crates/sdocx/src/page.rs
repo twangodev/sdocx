@@ -1,7 +1,8 @@
 use crate::ParseLimits;
 use crate::binary::Reader;
-use crate::decode::{decode_stroke, read_bbox};
+use crate::decode::decode_stroke;
 use crate::error::{Error, Result};
+use crate::object::read_bbox;
 use crate::storage::{StoredObject, StoredPage};
 use crate::types::{
     BoundingBox, Color, ObjectType, Page, PageElement, PageTemplate, PageTemplateSource,

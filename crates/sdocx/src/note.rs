@@ -1,4 +1,3 @@
-use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::error::{Error, Result};
 use crate::types::{
@@ -7,6 +6,7 @@ use crate::types::{
     RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
     RichTextTable, RichTextTableCell, RichTextTableRow,
 };
+use crate::{ObjectMetadata, ParseLimits};
 
 /// Structured contents of `note.note` needed by the document model.
 #[derive(Debug, Clone)]
@@ -118,11 +118,6 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
     })
 }
 
-struct ObjectBase {
-    bbox: BoundingBox,
-    rotation_degrees: Option<f64>,
-}
-
 struct ObjectFrame {
     start: usize,
     end: usize,
@@ -136,7 +131,7 @@ fn parse_text_object(
     context: &'static str,
 ) -> Result<RichTextBox> {
     let mut reader = Reader::new(data, context);
-    let object_base = parse_object_base(data, &mut reader)?;
+    let object_base = ObjectMetadata::read(&mut reader)?;
     skip_frame(&mut reader, "shape base")?;
     let shape_text = open_object_frame(&mut reader, 7, "shape text")?;
 
@@ -152,38 +147,6 @@ fn parse_text_object(
     reader.set_position(shape_text.end, "shape text end")?;
 
     Ok(common.into_rich_text_box(object_base))
-}
-
-fn parse_object_base(data: &[u8], reader: &mut Reader<'_>) -> Result<ObjectBase> {
-    let frame = open_object_frame(reader, 0, "object base")?;
-    reader.read_u32("object format version")?;
-    reader.read_utf8_u16("object UUID")?;
-    reader.read_i64("object modification timestamp")?;
-    let bbox = BoundingBox {
-        x_min: reader.read_f64("object left")?,
-        y_min: reader.read_f64("object top")?,
-        x_max: reader.read_f64("object right")?,
-        y_max: reader.read_f64("object bottom")?,
-    };
-    reader.read_u32("object timestamp")?;
-    reader.read_u8("object resize mode")?;
-
-    let rotation_degrees = if frame.flexible_offset != 0 && frame.fields & 1 != 0 {
-        let rotation_offset = frame
-            .start
-            .checked_add(frame.flexible_offset as usize)
-            .ok_or_else(|| Error::Format("object rotation offset overflows".into()))?;
-        let mut rotation_reader = Reader::at(data, rotation_offset, "object rotation")?;
-        Some(f64::from(rotation_reader.read_f32("rotation degrees")?))
-    } else {
-        None
-    };
-    reader.set_position(frame.end, "object base end")?;
-
-    Ok(ObjectBase {
-        bbox,
-        rotation_degrees,
-    })
 }
 
 fn open_object_frame(
@@ -260,7 +223,7 @@ struct TextCommon {
 }
 
 impl TextCommon {
-    fn into_rich_text_box(self, object_base: ObjectBase) -> RichTextBox {
+    fn into_rich_text_box(self, object_base: ObjectMetadata) -> RichTextBox {
         let mut runs = Vec::new();
         for span in &self.spans {
             let (bold, italic) = match span.kind {
@@ -515,7 +478,7 @@ fn parse_code_block_object(
     context: &'static str,
 ) -> Result<RichTextCodeBlock> {
     let mut reader = Reader::new(data, context);
-    let object_base = parse_object_base(data, &mut reader)?;
+    let object_base = ObjectMetadata::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 23, "code block")?;
     let mut flexible = open_flexible_reader(data, &frame, context, "code block")?;
     let title = if frame.fields & 1 != 0 {
@@ -551,7 +514,7 @@ fn parse_table_object(
     context: &'static str,
 ) -> Result<RichTextTable> {
     let mut reader = Reader::new(data, context);
-    let object_base = parse_object_base(data, &mut reader)?;
+    let object_base = ObjectMetadata::read(&mut reader)?;
     let frame = open_next_object_frame(&mut reader, 22, "table")?;
     let mut flexible = open_flexible_reader(data, &frame, context, "table")?;
 
@@ -770,9 +733,11 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 
 #[cfg(test)]
 mod tests {
-    use super::{ObjectBase, parse_code_block_object, parse_table_object, parse_text_common_at};
+    use super::{
+        ObjectMetadata, parse_code_block_object, parse_table_object, parse_text_common_at,
+    };
     use crate::{
-        BoundingBox, ObjectSpanLayoutConstraint, ObjectType, ParseLimits, RichTextParagraphType,
+        ObjectSpanLayoutConstraint, ObjectType, ParseLimits, RichTextParagraphType,
         RichTextSpanType,
     };
 
@@ -920,10 +885,13 @@ mod tests {
         let mut data = (payload.len() as u32).to_le_bytes().to_vec();
         data.extend_from_slice(&payload);
         let common = parse_text_common_at(&data, 0, &ParseLimits::default(), "test text").unwrap();
-        let box_ = common.into_rich_text_box(ObjectBase {
-            bbox: BoundingBox::default(),
-            rotation_degrees: None,
-        });
+        let box_ = common.into_rich_text_box(
+            ObjectMetadata::read(&mut crate::binary::Reader::new(
+                &object_base_frame(),
+                "test base",
+            ))
+            .unwrap(),
+        );
 
         assert_eq!(box_.text, text);
         assert_eq!(box_.spans[0].kind, RichTextSpanType::Bold);

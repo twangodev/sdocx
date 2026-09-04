@@ -303,6 +303,21 @@ fn zero_point_strokes_have_no_channel_seed_values() {
 }
 
 #[test]
+fn stored_objects_expose_shared_identity_and_placement_metadata() {
+    let payload = stroke(1, 3, &compressed(false), 0, &[]);
+    let raw = page(&[vec![object(1, &payload, &[])]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
+    let metadata = stored.base_metadata(&raw).unwrap();
+    assert_eq!(metadata.uuid, "00000000-0000-0000-0000-000000000001");
+    assert_eq!(metadata.modified_time_raw, 1234);
+    assert_eq!(metadata.format_version, 5500);
+    assert_eq!(metadata.bbox, parsed.document.pages[0].strokes[0].bbox);
+    assert_eq!(metadata.rotation_degrees, None);
+    assert!(stored.base_metadata(&raw[..stored.payload_offset]).is_err());
+}
+
+#[test]
 fn page_properties_follow_masks_with_variable_headers() {
     let mut properties = Vec::new();
     for value in [10.0_f64, 20.0, 300.0, 400.0] {

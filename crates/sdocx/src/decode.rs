@@ -1,20 +1,12 @@
 use crate::binary::Reader;
 use crate::frame::Frame;
-use crate::{BoundingBox, Color, Error, ParseLimits, Point, Result, Stroke};
+use crate::{Color, Error, ObjectMetadata, ParseLimits, Point, Result, Stroke};
 
 /// Decode a type-1 outer object's base/stroke frame chain. The caller supplies
 /// only its payload, excluding the object hash and recursive child records.
 pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke> {
     let mut frames = Reader::new(data, "stroke object");
-    let base = Frame::read(&mut frames)?;
-    base.expect_kind(0)?;
-    let mut fixed = Reader::new(base.fixed, "stroke base");
-    fixed.read_u32("format version")?;
-    fixed.read_utf8_u16("UUID")?;
-    fixed.read_i64("modification time")?;
-    let bbox = read_bbox(&mut fixed)?;
-    fixed.read_i32("replay timestamp")?;
-    fixed.read_u8("resize mode")?;
+    let base = ObjectMetadata::read(&mut frames)?;
 
     let frame = Frame::read(&mut frames)?;
     frame.expect_kind(1)?;
@@ -105,7 +97,7 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
         Frame::read(&mut frames)?;
     }
     Ok(Stroke {
-        bbox,
+        bbox: base.bbox,
         points,
         pressures,
         timestamps,
@@ -114,22 +106,6 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
         color,
         pen_width,
     })
-}
-
-pub(crate) fn read_bbox(reader: &mut Reader<'_>) -> Result<BoundingBox> {
-    let bbox = BoundingBox {
-        x_min: reader.read_f64("left")?,
-        y_min: reader.read_f64("top")?,
-        x_max: reader.read_f64("right")?,
-        y_max: reader.read_f64("bottom")?,
-    };
-    if [bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max]
-        .iter()
-        .any(|value| !value.is_finite())
-    {
-        return Err(Error::Format("non-finite bounding rectangle".into()));
-    }
-    Ok(bbox)
 }
 
 fn signed_delta(raw: u16, divisor: f64) -> f64 {
