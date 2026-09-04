@@ -79,6 +79,11 @@ uv run --locked --only-group conformance python -m unittest discover \
   -s conformance -p 'test_*.py'
 ```
 
+The initial five-page measurements and font findings are recorded in
+[`visual-conformance-findings.md`](../docs/reverse-engineering/visual-conformance-findings.md).
+Use the [capture checklist](fixture-capture.md) to prepare the missing native
+shape/line, image-placement and standalone-text reference pairs.
+
 ## Handwritten stroke regressions
 
 [`strokes.tsv`](strokes.tsv) locks the three original handwritten documents by

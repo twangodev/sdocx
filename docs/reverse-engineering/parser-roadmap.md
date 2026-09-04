@@ -43,8 +43,13 @@ templates, straight lines and supported native curves render to SVG. The
 remaining UUID/text heuristics have been removed from page parsing. See
 [`shape-line-findings.md`](shape-line-findings.md) for evidence and limits.
 
+The visual comparison runner is implemented and measured against the existing
+five-page formatting export. Explicit PNG font selection reduces the observed
+font-substitution mismatch; see [visual findings](visual-conformance-findings.md).
 The next priority is real Samsung standalone-text, image and shape/line fixtures
-with reference exports, followed by measured crop, wrapping and style fixes.
+using the [capture checklist](../../conformance/fixture-capture.md), followed by
+measured crop, wrapping and style fixes. Controlled Unicode font coverage is the
+next improvement measurable on the existing pair.
 Cursor-based end tags and optional integrity validation remain the next bounded
 parser work; advanced outer objects still need native frame research.
 
