@@ -3,7 +3,7 @@
 ## Evidence and scope
 
 Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
-`libSPenPredictor.so` and `libSPenBase.so` from the
+`libSPenPredictor.so`, `libSPenBase.so` and `libSPenComposer.so` from the
 [identified APK](README.md#sources-and-validation).
 This extends the [output conversion trace](neural-output-findings.md)
 through horizon selection and construction of the callback event.
@@ -38,7 +38,53 @@ microsecond horizon into member 1792 without division. They also clear
 the multi-output byte. The explicit maximum-time setter therefore cannot
 be assumed to have run from the field's presence alone. With these raw
 default values, the selector below chooses the last configured horizon.
-The order of application configuration calls remains a device-level question.
+The Composer configuration path below applies that setter after selecting
+the predictor.
+
+## Composer enables multiple outputs after predictor selection
+
+Composer function `0x4da3bc` is identified by the signature string at
+`0x1d7c50` as `TouchPresenter::setPredictionType(PredictionType, float)`.
+It invokes the [proxy's selection function](predictor-callback-findings.md#the-proxy-loads-a-bundled-factory)
+at `0x4da410`, then performs these two virtual calls on the presenter’s
+proxy at member 64:
+
+| Operation | Composer call | Proxy slot | Concrete predictor slot |
+| --- | --- | --- | --- |
+| Read `GetPredictionTime()` | `0x4da420`–`0x4da424` | 112 | 112 |
+| Call `SetMaxPredictionTime(value, true)` | `0x4da430`–`0x4da444` | 120 | 120 |
+
+The second call receives the first call's float return value unchanged
+in `s0`. Instruction `0x4da434` supplies the literal true boolean in
+`w1`; the function restores its stack and tail-calls the setter.
+
+Proxy address point `0x5810b0` maps those slots to `0x4daee4` and
+`0x4daec4`. Both read the concrete predictor at proxy offset 8.
+The getter forwards through `0x4daef0`–`0x4daef4`; the setter masks
+the boolean to one bit and forwards through `0x4daed0`–`0x4daed8`.
+The neural address point `0x40998` resolves them to `0x25690` and
+`0x25564` respectively.
+
+For a newly created bundled neural predictor, this passes its raw last
+microsecond horizon through the explicit millisecond clamp:
+
+| Model | Raw getter value after creation | Getter value after Composer configuration | Multi-output byte |
+| --- | --- | --- | --- |
+| M16 | 16,000 | `f32(16.0)` | 1 |
+| M20 | 19,400 | `f32(19.4)` | 1 |
+| M22 | 22,900 | `f32(22.9)` | 1 |
+
+The selector therefore marks every configured horizon after this path.
+Any surviving prefix produced by acceleration discarding is also marked.
+Removing candidates through the motion gates cannot make a nonempty
+subset unmarked while this configuration remains in effect.
+
+This resolves the raw-default unit discrepancy and the discard-only
+unmarked-vector example for this specific creation/configuration sequence.
+The proxy can also reuse an existing matching predictor through
+`0x4dab18`; the presenter still applies the setter afterward, using
+that predictor's current value. This is not a complete audit of later
+configuration changes or direct users of the predictor factory.
 
 ## Selection compares truncated whole milliseconds
 
@@ -122,8 +168,9 @@ copies the final vector record, including an unmarked one, to base member
 
 An all-unmarked nonempty vector leaves the backward scan index at -1.
 There is no separate rejection between that scan and the address calculation
-at `0x314f4`. This establishes an edge requiring a caller-invariant audit;
-it does not establish that normal application settings reach it.
+at `0x314f4`. This establishes an edge requiring a caller-invariant audit.
+The Composer creation/configuration sequence above preserves the invariant;
+normal application reachability of an unmarked vector is not established.
 
 ## Event builders restore the millisecond time base
 
@@ -167,19 +214,22 @@ The completed event then follows the previously recovered
 
 ## Validation and remaining work
 
-Both native byte streams were matched to the identified APK. Maximum-time
+All three native byte streams were matched to the identified APK. Maximum-time
 stores, float conversions, index comparisons, candidate-byte handling,
-event builders, Base time getters and history-vector writes were checked
-against ARM64 instructions.
+event builders, Base time getters, history-vector writes and Composer's
+configuration calls were checked against ARM64 instructions and relocations.
 
 Disposable calculations checked explicit-limit clamping, default selection,
 fractional-millisecond boundaries, single/multiple output ranges and the
-independent horizon timestamp conversions. The reference is not native
-execution or device conformance evidence.
+independent horizon timestamp conversions. They also checked Composer's
+default-value clamping and every nonempty surviving subset of each bundled
+model's admitted output prefixes. The reference is not native execution
+or device conformance evidence.
 
 The [admission trace](neural-admission-findings.md) recovers task expiry
 and acceleration-based output discarding. It also supplies a static
-configuration whose processed prefix and selected range do not intersect.
+single-output configuration whose processed prefix and selected range do
+not intersect; the Composer sequence above instead enables multiple outputs.
 The [motion trace](neural-motion-findings.md) recovers candidate rejection;
 application reachability of that configuration remains to be checked.
 No SDK code or corpus fixture changed.

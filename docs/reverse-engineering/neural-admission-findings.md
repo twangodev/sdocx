@@ -94,8 +94,11 @@ only index 2, leaving the processed prefix entirely unmarked if either
 candidate survives. This is a concrete static configuration that exposes
 the previously identified callback invariant. It is not evidence that
 the application supplies this combination or that a device crashes.
-The estimator, configuration callers and candidate gates still need a
-combined reachability check.
+The [Composer configuration trace](neural-selection-findings.md#composer-enables-multiple-outputs-after-predictor-selection)
+shows that its presenter enables multiple outputs and clamps the maximum
+after creating a predictor. That sequence marks all configured horizons
+and prevents this discard-only example. Other callers or subsequent
+configuration changes still require a combined reachability check.
 
 ## Two expiry checks use a shared aligned origin
 

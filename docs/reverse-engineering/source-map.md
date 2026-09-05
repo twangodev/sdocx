@@ -225,7 +225,11 @@ integer-millisecond horizon comparison at `0x2cc04`–`0x2cc18` and
 candidate marker byte 73. `GetPredictedPenEvent`, `0x313e0`, uses marked
 records for current/history construction. Base `GetEventTime`, `0xc0634`,
 subtracts down time; Predictor builders `0x31c7c`/`0x31d68` add it back
-while passing nanoseconds independently.
+while passing nanoseconds independently. Composer `TouchPresenter::setPredictionType`,
+`0x4da3bc`, then connects configuration to these rules: it reads the
+selected predictor's time value and calls the maximum-time setter with
+multi-output enabled at `0x4da424`–`0x4da444`. For newly created bundled
+models this clamps the raw default to milliseconds and marks every horizon.
 
 [Neural admission findings](neural-admission-findings.md) identify the
 acceleration fields used by `DoPredict`, `0x25abc`, and discarded-output

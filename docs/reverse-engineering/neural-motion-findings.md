@@ -194,6 +194,9 @@ shows that the explicit setter stores milliseconds, while constructor and
 model-length defaults store the raw last microsecond horizon in the same
 getter-backed field. This cap uses the value unchanged and performs no
 unit correction. Its effective scale therefore depends on configuration.
+The [Composer selection sequence](neural-selection-findings.md#composer-enables-multiple-outputs-after-predictor-selection)
+applies the millisecond setter immediately after creating a predictor,
+resolving the raw-default discrepancy for that path.
 
 For a real displacement of 4 coordinate units over 4 ms and an explicit
 time value of 20, the cap is 200 coordinate units from the last point.
