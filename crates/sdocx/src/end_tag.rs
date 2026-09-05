@@ -4,6 +4,13 @@ use crate::error::{Error, Result};
 
 pub(crate) const END_TAG_SIGNATURE: &[u8] = b"Document for S-Pen SDK";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum EndTagSource {
+    ArchiveEntry,
+    Appended,
+}
+
 #[derive(Debug, Clone, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]

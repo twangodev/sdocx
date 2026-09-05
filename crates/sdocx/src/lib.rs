@@ -10,6 +10,7 @@
 //! unsupported content and does not indicate a lossless decode. Preserve the
 //! source document when fidelity is important.
 
+mod archive_tail;
 mod binary;
 mod container;
 mod decode;
@@ -32,7 +33,7 @@ mod storage;
 mod types;
 
 pub use end_tag::{
-    EndTagDisplayTimestamps, EndTagFixedStyle, StoredEndTag, parse_end_tag_bytes,
+    EndTagDisplayTimestamps, EndTagFixedStyle, EndTagSource, StoredEndTag, parse_end_tag_bytes,
     parse_end_tag_bytes_with_limits,
 };
 pub use error::{Error, Result};

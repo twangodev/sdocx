@@ -45,7 +45,8 @@ string fields represent both absence and null as `None`.
 ## SDK implementation
 
 `parse_end_tag_bytes` and `parse_end_tag_bytes_with_limits` read complete file
-records. `ParsedDocument.end_tag` retains their structured metadata. Strings,
+records. `ParsedDocument.end_tag` retains the authoritative structured metadata,
+and `end_tag_source` distinguishes the appended record from the archive member. Strings,
 blobs and extension groups are bounded by the declared payload, excluding the
 signature. Unknown bytes after application custom data are retained.
 
@@ -69,6 +70,28 @@ and resource limits. These are binary-contract tests, not Samsung export or
 visual fidelity measurements.
 
 The stream reader skips the ZIP EOCD's variable-length comment before reading
-the outer tag. The outer record can differ from `end_tag.bin`, so implementing
-its precedence remains the next step. Protected-document encryption appendices
-still need structured decoding and validation against a future protected sample.
+the outer tag. The SDK now uses that record in preference to `end_tag.bin`.
+It scans a bounded tail large enough for both maximum `u16` lengths: the ZIP
+comment and the end-tag payload, plus their fixed headers. The native reader's
+65,535-byte scan window is smaller; supporting both maximum lengths together
+is a parser extension validated synthetically.
+
+ZIP decoding receives a reader ending immediately before the appended tag.
+Consequently an EOCD-shaped byte sequence inside tag metadata cannot replace
+the archive directory. A malformed recognized outer tag produces a diagnostic
+and permits fallback to the inner member; configured limit violations remain
+fatal. A tag inside the ZIP comment is not an appended record.
+
+Tests cover differing inner/outer timestamps, absent inner members, ZIP comments,
+ZIP64, preambles, maximum lengths, false footer bytes in metadata, malformed
+trailers and limits. A marker in a valid prefixed ZIP no longer triggers the
+legacy protected-document heuristic; that fallback only applies after ZIP
+opening fails. ZIP directory validation remains delegated to the ZIP library.
+The appended layout assumes a single-disk archive and a trailer ending at EOF.
+No new Samsung-exported or protected document has been used to validate it.
+
+Protected-document encryption appendices still need structured decoding and
+validation against a future protected sample. Native `SPen::EndTag::Append`
+at `0x2a9810` writes the saved 20-byte EOCD prefix, a zero comment length, then
+the serialized tag; `0x2a9bc4` starts those three writes. This explains why
+protected ciphertext retains a discoverable ZIP-shaped tail.

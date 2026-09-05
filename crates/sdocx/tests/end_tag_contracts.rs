@@ -4,8 +4,9 @@ mod support;
 use std::io::{Cursor, Write};
 
 use sdocx::{
-    DiagnosticCode, Error, FormatVersion, ParseLimits, ParseOptions, parse_bytes_detailed,
-    parse_bytes_detailed_with_options, parse_end_tag_bytes, parse_end_tag_bytes_with_limits,
+    DiagnosticCode, EndTagSource, Error, FormatVersion, ParseLimits, ParseOptions,
+    parse_bytes_detailed, parse_bytes_detailed_with_options, parse_end_tag_bytes,
+    parse_end_tag_bytes_with_limits,
 };
 
 fn string(value: &str) -> Vec<u8> {
@@ -66,15 +67,22 @@ fn record(fields: &[Vec<u8>]) -> Vec<u8> {
 }
 
 fn archive(tag: &[u8]) -> Vec<u8> {
+    archive_with_comment(Some(tag), Vec::new())
+}
+
+fn archive_with_comment(tag: Option<&[u8]>, comment: Vec<u8>) -> Vec<u8> {
     let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    writer.set_raw_comment(comment.into_boxed_slice());
     writer
         .start_file("page.page", zip::write::SimpleFileOptions::default())
         .unwrap();
     writer.write_all(&support::page(&[vec![]], 0, &[])).unwrap();
-    writer
-        .start_file("end_tag.bin", zip::write::SimpleFileOptions::default())
-        .unwrap();
-    writer.write_all(tag).unwrap();
+    if let Some(tag) = tag {
+        writer
+            .start_file("end_tag.bin", zip::write::SimpleFileOptions::default())
+            .unwrap();
+        writer.write_all(tag).unwrap();
+    }
     writer.finish().unwrap().into_inner()
 }
 
@@ -124,6 +132,155 @@ fn decodes_variable_strings_and_distinct_raw_and_display_timestamps() {
         Some(FormatVersion::CURRENT)
     );
     assert_eq!(parsed.end_tag.unwrap().created_time, -102);
+    assert_eq!(parsed.end_tag_source, Some(EndTagSource::ArchiveEntry));
+}
+
+#[test]
+fn appended_tags_override_members_after_the_complete_zip_comment() {
+    let inner = record(&fields());
+    let mut outer = fields();
+    outer[5] = [901_i64.to_le_bytes(), 902_i64.to_le_bytes()].concat();
+    for comment in [Vec::new(), b"export PK\x05\x06 comment".to_vec()] {
+        let mut bytes = archive_with_comment(Some(&inner), comment);
+        bytes.extend(record(&outer));
+        let parsed = parse_bytes_detailed(&bytes).unwrap();
+        assert_eq!(parsed.document.metadata.created_ms, Some(901));
+        assert_eq!(parsed.document.metadata.modified_ms, Some(902));
+        assert_eq!(parsed.end_tag_source, Some(EndTagSource::Appended));
+        assert!(
+            !parsed
+                .report
+                .diagnostics
+                .iter()
+                .any(|d| d.code == DiagnosticCode::InvalidEndTag)
+        );
+    }
+}
+
+#[test]
+fn appended_tags_work_without_a_member_and_cannot_supply_a_fake_zip_footer() {
+    let mut groups = fields();
+    let mut fake_footer = b"PK\x05\x06".to_vec();
+    fake_footer.resize(22, 0);
+    groups[3] = [
+        (fake_footer.len() as u32).to_le_bytes().to_vec(),
+        fake_footer,
+    ]
+    .concat();
+    let mut bytes = archive_with_comment(None, Vec::new());
+    bytes.extend(record(&groups));
+    let parsed = parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.document.pages.len(), 1);
+    assert_eq!(parsed.end_tag_source, Some(EndTagSource::Appended));
+    assert_eq!(parsed.document.metadata.modified_ms, Some(202));
+}
+
+#[test]
+fn bounds_tail_search_for_maximum_zip_comment_and_record_lengths() {
+    let mut groups = fields();
+    let extra = usize::from(u16::MAX) + 2 - record(&groups).len();
+    groups.push(vec![0x91; extra]);
+    let mut bytes = archive_with_comment(None, vec![b'c'; usize::from(u16::MAX)]);
+    bytes.extend(record(&groups));
+    let parsed = parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.end_tag_source, Some(EndTagSource::Appended));
+    assert_eq!(parsed.end_tag.unwrap().trailing_data.len(), extra);
+}
+
+#[test]
+fn malformed_appended_tags_report_their_source_and_fall_back_to_the_member() {
+    let inner = record(&fields());
+    let mut corruptions = Vec::new();
+    let mut invalid_size = inner.clone();
+    invalid_size[0] ^= 1;
+    corruptions.push(invalid_size);
+    let mut invalid_signature = inner.clone();
+    *invalid_signature.last_mut().unwrap() = 0;
+    corruptions.push(invalid_signature);
+    let mut invalid_string = inner.clone();
+    invalid_string[8..10].copy_from_slice(&0xdc00_u16.to_le_bytes());
+    corruptions.push(invalid_string);
+    for outer in corruptions {
+        let mut bytes = archive(&inner);
+        bytes.extend(outer);
+        let parsed = parse_bytes_detailed(&bytes).unwrap();
+        assert_eq!(parsed.end_tag_source, Some(EndTagSource::ArchiveEntry));
+        assert_eq!(parsed.document.metadata.modified_ms, Some(202));
+        let warning = parsed
+            .report
+            .diagnostics
+            .iter()
+            .find(|d| d.code == DiagnosticCode::InvalidEndTag)
+            .unwrap();
+        assert!(warning.archive_entry.is_none());
+        assert!(warning.message.contains("Appended"));
+    }
+}
+
+#[test]
+fn signatures_in_zip_comments_are_not_appended_records() {
+    let mut comment = b"PK\x05\x06".to_vec();
+    comment.resize(22, 0);
+    comment[8..12].fill(0xff);
+    comment.extend(record(&fields()));
+    let bytes = archive_with_comment(None, comment);
+    let parsed = parse_bytes_detailed(&bytes).unwrap();
+    assert!(parsed.end_tag.is_none());
+    assert!(parsed.end_tag_source.is_none());
+    assert_eq!(parsed.document.metadata.created_ms, None);
+}
+
+#[test]
+fn appended_tags_preserve_zip64_directory_offsets() {
+    let mut bytes = archive_with_comment(None, Vec::new());
+    let footer_position = bytes.len() - 22;
+    let mut footer = bytes.split_off(footer_position);
+    let directory_size = u32::from_le_bytes(footer[12..16].try_into().unwrap());
+    let directory_offset = u32::from_le_bytes(footer[16..20].try_into().unwrap());
+    bytes.extend(b"PK\x06\x06");
+    bytes.extend(44_u64.to_le_bytes());
+    bytes.extend(45_u16.to_le_bytes());
+    bytes.extend(45_u16.to_le_bytes());
+    bytes.extend([0; 8]);
+    for value in [1, 1, u64::from(directory_size), u64::from(directory_offset)] {
+        bytes.extend(value.to_le_bytes());
+    }
+    bytes.extend(b"PK\x06\x07");
+    bytes.extend(0_u32.to_le_bytes());
+    bytes.extend((footer_position as u64).to_le_bytes());
+    bytes.extend(1_u32.to_le_bytes());
+    footer[8..20].fill(0xff);
+    bytes.extend(footer);
+    bytes.extend(record(&fields()));
+    let parsed = parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.document.pages.len(), 1);
+    assert_eq!(parsed.end_tag_source, Some(EndTagSource::Appended));
+}
+
+#[test]
+fn appended_tags_preserve_archives_with_a_preamble() {
+    let mut bytes = b"archive preamble".to_vec();
+    bytes.extend(archive_with_comment(None, Vec::new()));
+    bytes.extend(record(&fields()));
+    let parsed = parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.document.pages.len(), 1);
+    assert_eq!(parsed.end_tag_source, Some(EndTagSource::Appended));
+}
+
+#[test]
+fn appended_metadata_obeys_limits_even_when_the_member_is_valid() {
+    let inner = record(&fields());
+    let mut outer = fields();
+    outer[11] = (u32::MAX - 1).to_le_bytes().to_vec();
+    let mut bytes = archive(&inner);
+    bytes.extend(record(&outer));
+    assert!(matches!(
+        parse_bytes_detailed(&bytes),
+        Err(Error::LimitExceeded {
+            resource: "text characters",
+            ..
+        })
+    ));
 }
 
 #[test]

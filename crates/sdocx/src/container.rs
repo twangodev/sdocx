@@ -2,7 +2,8 @@ use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
-use crate::end_tag::{StoredEndTag, parse_end_tag_bytes_with_limits};
+use crate::archive_tail::{ArchiveReader, ArchiveTail};
+use crate::end_tag::{EndTagSource, StoredEndTag, parse_end_tag_bytes_with_limits};
 use crate::error::{Error, Result};
 use crate::media::{MediaResolver, media_archive_id, parse_media_manifest_bytes_with_limits};
 use crate::note::parse_note_bytes_with_limits;
@@ -29,20 +30,42 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     mut reader: R,
     options: &ParseOptions,
 ) -> Result<ParsedDocument> {
-    if is_protected_document(&mut reader)? {
-        return Err(Error::ProtectedDocument);
-    }
-    reader.seek(SeekFrom::Start(0))?;
-    let mut archive = zip::ZipArchive::new(reader)?;
+    let protected_marker = is_protected_document(&mut reader)?;
+    let tail = ArchiveTail::read(&mut reader)?;
+    let mut report = ParseReport::default();
+    let appended_tag = tail
+        .end_tag
+        .as_deref()
+        .map(|data| {
+            parse_optional_end_tag(data, EndTagSource::Appended, &options.limits, &mut report)
+        })
+        .transpose()?
+        .flatten();
+    let mut archive = match zip::ZipArchive::new(ArchiveReader::new(reader, tail.archive_length)?) {
+        Ok(archive) => archive,
+        Err(_) if protected_marker => return Err(Error::ProtectedDocument),
+        Err(error) => return Err(error.into()),
+    };
     validate_archive(&mut archive, &options.limits)?;
 
     let mut metadata = DocumentMetadata::default();
-    let mut report = ParseReport::default();
-
-    let end_tag = read_optional_entry(&mut archive, "end_tag.bin", &options.limits)?
-        .map(|data| parse_optional_end_tag(&data, &options.limits, &mut report))
-        .transpose()?
-        .flatten();
+    let (end_tag, end_tag_source) = if let Some(tag) = appended_tag {
+        (Some(tag), Some(EndTagSource::Appended))
+    } else {
+        let tag = read_optional_entry(&mut archive, "end_tag.bin", &options.limits)?
+            .map(|data| {
+                parse_optional_end_tag(
+                    &data,
+                    EndTagSource::ArchiveEntry,
+                    &options.limits,
+                    &mut report,
+                )
+            })
+            .transpose()?
+            .flatten();
+        let source = tag.as_ref().map(|_| EndTagSource::ArchiveEntry);
+        (tag, source)
+    };
     if let Some(tag) = &end_tag {
         apply_end_tag_metadata(tag, &mut metadata);
     }
@@ -171,6 +194,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         page_manifest,
         note,
         end_tag,
+        end_tag_source,
         report,
     })
 }
@@ -399,6 +423,7 @@ fn order_pages(pages: Vec<Page>, page_ids: &[String]) -> Vec<Page> {
 
 fn parse_optional_end_tag(
     data: &[u8],
+    source: EndTagSource,
     limits: &ParseLimits,
     report: &mut ParseReport,
 ) -> Result<Option<StoredEndTag>> {
@@ -408,8 +433,8 @@ fn parse_optional_end_tag(
         Err(error) => {
             report.warning(
                 DiagnosticCode::InvalidEndTag,
-                Some("end_tag.bin".into()),
-                error.to_string(),
+                (source == EndTagSource::ArchiveEntry).then(|| "end_tag.bin".into()),
+                format!("{source:?}: {error}"),
             );
             Ok(None)
         }
