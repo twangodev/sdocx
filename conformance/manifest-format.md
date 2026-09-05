@@ -76,10 +76,12 @@ within one diagnostic category.
 
 ## Adding a pair
 
-1. Put the Samsung-exported `.sdocx` and PDF in the external corpus directory.
+1. Put the Samsung-exported `.sdocx` and PDF in the `hf/` dataset submodule.
 2. Add the asset paths and hashes under a new fixture ID in `corpus.json`.
 3. Record page counts and the specific object/text checks exercised by the note.
 4. Run the structural and visual checks from [the corpus instructions](README.md).
+5. Push the dataset commit to Hugging Face, then commit its `hf` submodule
+   pointer and the manifest changes together in the SDK repository.
 
 The former 17-column `corpus.tsv` has been replaced. Custom visual-runner
 manifests passed with `--manifest` must use this JSON format.

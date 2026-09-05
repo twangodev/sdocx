@@ -102,8 +102,6 @@ docs/_build/
 # Rust
 target/
 
-# External compatibility corpus and generated web output
-/hf/
 /tmp/
 /web/.svelte-kit/
 /web/build/

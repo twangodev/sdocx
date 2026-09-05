@@ -1,11 +1,26 @@
 # Compatibility corpus
 
-Large `.sdocx` fixtures and reference exports live outside this Git repository.
-The external dataset is
+Large `.sdocx` fixtures and reference exports live in the
 [`twangodev/sdocx-compatibility`](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
-on Hugging Face and is licensed under CC BY 4.0. Check out or download that
-dataset into the ignored `hf/` directory at the repository root. A different
-checkout can be selected with `SDOCX_CORPUS_DIR`.
+dataset on Hugging Face, licensed under CC BY 4.0. The `hf/` Git submodule pins
+its revision. Install [Git LFS](https://git-lfs.com/), then initialize the corpus
+from the repository root:
+
+```sh
+git submodule update --init hf
+git -C hf lfs install --local
+git -C hf lfs pull
+```
+
+Run these commands again after pulling SDK changes to check out the recorded
+dataset revision and download its large files. A different checkout can be
+selected with `SDOCX_CORPUS_DIR`.
+
+The current dataset revision stores `01-basic-formatting.sdocx` as a regular
+Git blob even though its attributes select Git LFS. An LFS-enabled checkout can
+report this file as modified without any change to its bytes. Correcting the
+dataset's storage metadata requires an upstream commit; the manifest's SHA-256
+check still verifies the downloaded source.
 
 The tracked [`corpus.json`](corpus.json) is the versioned lock file. Each fixture
 records filenames, SHA-256 digests, page counts and selected parser/layout
@@ -25,9 +40,12 @@ SDOCX_CORPUS_DIR=/path/to/dataset cargo test -p sdocx --test conformance -- --ig
 ```
 
 Regular unit tests do not download or require private/large fixtures. To add a
-fixture, upload its artifacts to the dataset, calculate both SHA-256 digests,
-then add its entry to `corpus.json`. See [manifest expectations](manifest-format.md)
-for optional text checks, exact page-object counts and diagnostic counts.
+fixture, commit and push its artifacts in the Hugging Face dataset, calculate
+both SHA-256 digests, then add its entry to `corpus.json`. Commit the updated
+`hf` submodule pointer together with the manifest changes in this repository.
+The dataset commit must be published before the SDK commit that references it.
+See [manifest expectations](manifest-format.md) for optional text checks, exact
+page-object counts and diagnostic counts.
 
 ## Visual comparison
 

@@ -34,7 +34,7 @@ fixtures can follow once the basic pair is validated.
 
 1. Reopen the saved source in Samsung Notes and inspect every PDF page for the
    intended content. Confirm that the PDF came from the same saved revision.
-2. Store the pair outside this Git repository, following the corpus license
+2. Store the pair in the `hf/` dataset submodule, following the corpus license
    and attribution conventions. Keep APKs, fonts and document binaries out of
    the reverse-engineering knowledge base.
 3. Compute SHA-256 for both files. Inspect parsed structure and visible page
@@ -45,6 +45,8 @@ fixtures can follow once the basic pair is validated.
 4. Run structural conformance and the visual runner with the new ID. Preserve
    diagnostics, reference/SDK images, tool versions and font hashes. Add focused
    synthetic regressions for each confirmed parser or renderer defect.
+5. Commit and push the dataset changes to Hugging Face, then commit the `hf`
+   submodule pointer and manifest changes together in the SDK repository.
 
 Successful parsing and similar pixel scores establish coverage of these cases;
 broader compatibility still requires additional app versions and documents.

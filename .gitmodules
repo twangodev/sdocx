@@ -1,0 +1,3 @@
+[submodule "hf"]
+	path = hf
+	url = https://huggingface.co/datasets/twangodev/sdocx-compatibility.git

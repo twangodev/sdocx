@@ -196,9 +196,10 @@ for (const page of doc.pages) {
 
 Large test documents and Samsung reference PDFs are kept in the
 [`twangodev/sdocx-compatibility`](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
-dataset rather than committed to this repository. See
-[`conformance/README.md`](conformance/README.md) for the locked manifest and
-local runner.
+dataset, tracked at `hf/` as a Git submodule. Each SDK revision pins the dataset
+commit used by its conformance checks. See
+[`conformance/README.md`](conformance/README.md) for Git LFS setup, the locked
+manifest and the local runner.
 
 ## Format Documentation
 
