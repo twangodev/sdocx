@@ -200,6 +200,8 @@ points. The [presentation trace](stroke-prediction-findings.md) separates
 ordinary Marker2 recording from prediction drawing, and the
 [finalization trace](stroke-finalization-findings.md) identifies an optional
 coordinate replacement that preserves the count and parallel channels.
-Further APK targets include nonnull coordinate providers, document-insertion
-transforms and single-point import handling. Tap and short-stroke SDOCX/PDF
+The [insertion trace](stroke-insertion-findings.md) resolves first-point
+page selection and page-offset translation. Further APK targets include
+nonnull coordinate providers, transforms before recording and single-point
+import handling. Tap and short-stroke SDOCX/PDF
 pairs can test stored counts, repeated coordinates, tool types and marks.

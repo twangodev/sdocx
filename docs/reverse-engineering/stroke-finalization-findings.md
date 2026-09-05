@@ -15,8 +15,9 @@ selects no transformer. Other factory selections can change stored color
 or replace stored coordinates after event recording.
 
 These findings recover selection, inputs and model mutation. They do not
-establish that a device enables the smoother, fully reproduce its spline
-solver, or resolve the separate document-insertion coordinate transform.
+establish that a device enables the smoother or fully reproduce its spline
+solver. The separate [insertion trace](stroke-insertion-findings.md) resolves
+page selection and translation after this stage.
 
 ## Construction selects no transformer
 
@@ -194,6 +195,7 @@ input filter or optional finalizer may already have changed them; rerunning
 that processing would apply it twice. Ordinary pen replay, including its
 own mask sampling, remains a separate step.
 
-The next coordinate target is the pen action's insertion helper and its
-object/page transforms. Recovering that path is necessary before equating
-final saved coordinates with the original screen-space event values.
+The [insertion trace](stroke-insertion-findings.md) establishes a later
+translation into the selected page for page mode 0. The input transform
+before recording remains unresolved, so final saved coordinates still
+cannot be equated with the original screen-space event values.

@@ -114,6 +114,14 @@ at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
 `0x4dc480`; Model `0x2df5f8` requires the original count, and `0x2e9cec`
 replaces only the coordinate vector while refreshing object/cache state.
 
+[Stroke insertion findings](stroke-insertion-findings.md) connect Composer
+`WritingViewPenAction::addStroke`, `0x500424`, to the page-mode adapters
+constructed by `ContentsView::SetDocument`, `0x417940`. Mode 0 selects a
+page from the first point at `0x4f683c` and applies its negative offset
+at `0x4f6a20`; continuous mode appends to page 0 at `0x4ed234`.
+Model `SetMillisecondMode`, `0x2e135c`, changes a flag without rescaling
+the recorded timestamp array.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

@@ -171,7 +171,9 @@ code changed.
 
 The [presentation trace](stroke-prediction-findings.md) establishes the
 ordinary real-event dispatch and separate Marker2 V2 prediction drawable.
-Remaining APK targets include final coordinate transforms, prediction
-algorithms, the PointBeautifier's numerical behavior and later insertion
-callbacks. Long-gesture and InkPen2 SDOCX/PDF pairs can
+The [finalization](stroke-finalization-findings.md) and
+[insertion](stroke-insertion-findings.md) traces resolve optional coordinate
+replacement and later page-offset translation. Remaining APK targets include
+transforms before recording, prediction algorithms, the PointBeautifier's
+numerical behavior and insertion callbacks. Long-gesture and InkPen2 SDOCX/PDF pairs can
 eventually validate stored counts, split boundaries and filtered geometry.

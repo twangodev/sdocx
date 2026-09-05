@@ -65,6 +65,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
+- [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point
+  page selection, page-local translation and millisecond flags during insertion.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
