@@ -174,9 +174,8 @@ construction, callback registration, vtable relocations, view setter
 imports, scale arithmetic and remover RTTI were checked against the
 ARM64 binaries. Documentation links were checked. No SDK code changed.
 
-The next bounded target is the live pen-setting path: how the application
-assigns the selected pen's size and how that value reaches the recording
-pen. The other zoom listeners and specialized input modes remain outside
-the scope of this callback trace. The existing
-[recorded-width getter](view-input-transform-findings.md#recorded-pen-width-comes-from-a-separate-getter)
-is the downstream anchor for that work.
+The [pen size trace](pen-size-findings.md) now resolves the note-writing
+manager's document-relative conversion and native size assignment, plus
+the stroke view's separate recording-pen copy. The action that connects
+those PenData pointers, density-based sizing, other zoom listeners and
+specialized input modes remain outside the scope of this callback trace.

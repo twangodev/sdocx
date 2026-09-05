@@ -137,6 +137,13 @@ scales and integer deltas into the contents-view transform. View getters
 `0x51e91c` through two concrete vtables; its division by zoom is not an
 ordinary saved-pen-width conversion.
 
+[Pen size findings](pen-size-findings.md) trace the note-writing manager's
+document-relative conversion to PenCommon `0x53cd8`: pen pixel bounds
+are scaled by the shorter document dimension divided by 360. Engine JNI
+entry `0xc6454` passes the Java size float to the selected pen's setter
+at `0xc6a84`. Composer copies input pen width into recording PenData
+at `0x4d3868`–`0x4d3878`, separately from event-coordinate transforms.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.
