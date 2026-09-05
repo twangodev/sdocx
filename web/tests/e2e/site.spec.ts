@@ -1,9 +1,33 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const localFixture = process.env.SDOCX_E2E_FIXTURE ?? resolve('../hf/01-basic-formatting.sdocx');
+const analyticsScriptUrl = 'https://rybbit.twango.dev/api/script.js';
 const zoomAnchor = { x: 500, y: 400 } as const;
+
+test.beforeEach(async ({ page }) => {
+	await page.route(analyticsScriptUrl, (route) =>
+		route.fulfill({ contentType: 'application/javascript', body: '' })
+	);
+});
+
+function collectUnexpectedRemoteRequests(page: Page): string[] {
+	const requests: string[] = [];
+	page.on('request', (request) => {
+		const url = new URL(request.url());
+		if (!['http:', 'https:'].includes(url.protocol) || url.hostname === '127.0.0.1') return;
+		if (
+			request.url() === analyticsScriptUrl &&
+			request.method() === 'GET' &&
+			request.postData() === null
+		) {
+			return;
+		}
+		requests.push(request.url());
+	});
+	return requests;
+}
 
 interface ImagePoint {
 	page?: string;
@@ -81,13 +105,7 @@ async function expectSmoothRecenter(canvas: Locator, surface: Locator): Promise<
 }
 
 test('converter presents a local-only upload surface', async ({ page }) => {
-	const remoteRequests: string[] = [];
-	page.on('request', (request) => {
-		const url = new URL(request.url());
-		if (['http:', 'https:'].includes(url.protocol) && url.hostname !== '127.0.0.1') {
-			remoteRequests.push(request.url());
-		}
-	});
+	const remoteRequests = collectUnexpectedRemoteRequests(page);
 
 	await page.goto('/');
 
@@ -96,6 +114,9 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 	await expect(page.locator('.lede')).toContainText('Files stay in this browser.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
 	await expect(page.locator('select')).toHaveCount(0);
+	const analyticsScript = page.locator(`head script[src="${analyticsScriptUrl}"]`);
+	await expect(analyticsScript).toHaveAttribute('data-site-id', '84f39267b7e1');
+	await expect(analyticsScript).toHaveAttribute('defer', '');
 	expect(remoteRequests).toEqual([]);
 });
 
@@ -160,13 +181,7 @@ test('interface motion follows the reduced-motion preference', async ({ page }) 
 test('real fixture parses, renders, and exports without an upload', async ({ page }, testInfo) => {
 	test.skip(testInfo.project.name !== 'chromium', 'One real WASM smoke test is sufficient.');
 	test.skip(!existsSync(localFixture), 'Set SDOCX_E2E_FIXTURE or check out the external corpus.');
-	const remoteRequests: string[] = [];
-	page.on('request', (request) => {
-		const url = new URL(request.url());
-		if (['http:', 'https:'].includes(url.protocol) && url.hostname !== '127.0.0.1') {
-			remoteRequests.push(request.url());
-		}
-	});
+	const remoteRequests = collectUnexpectedRemoteRequests(page);
 
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles(localFixture);
