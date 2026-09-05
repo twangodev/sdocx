@@ -12,6 +12,7 @@ No newly captured document was needed for this analysis.
 | Decompiled `f2/a.java`, `Y` and `Z` | Little-endian UTF-16 unit counts, including null sentinels |
 | ARM64 `libSPenModel.so`, `SPen::EndTag::ParseImpl(IInputStream*, bool)`, `0x2a77b4` | ZIP EOCD lookup, comment skipping and outer record extraction |
 | ARM64 `libSPenModel.so`, buffer `EndTag::ParseImpl`, `0x2a7d20` | Signature validation, WDoc minimum version and historical extension boundaries |
+| ARM64 `libSPenModel.so`, `EndTag::EncryptionData::ApplyBinary`, `0x2a7308` | Plaintext size and length-prefixed salt, IV and wrapped key |
 
 The buffer reader receives the payload without its two-byte length prefix.
 The file representation includes that prefix, and its count includes the final
@@ -58,7 +59,12 @@ it can represent and otherwise remains eligible for the note-header fallback.
 
 Malformed optional ZIP members produce `InvalidEndTag` diagnostics and do not
 populate metadata. Configured byte or text-limit failures remain fatal.
-Encryption data is retained as bytes; this change does not decrypt documents.
+Encryption data is retained as bytes. `StoredEndTag::encryption_info()` decodes
+the original plaintext size and the salt, initialization vector and wrapped key,
+preserving unknown trailing bytes. The method bounds each length against the
+encryption blob itself, so fields cannot borrow bytes from later timestamps.
+The pure end-tag parser retains opaque encryption bytes; archive parsing also
+validates their structure before accepting a tag.
 
 ## Validation and remaining work
 
@@ -90,8 +96,20 @@ opening fails. ZIP directory validation remains delegated to the ZIP library.
 The appended layout assumes a single-disk archive and a trailer ending at EOF.
 No new Samsung-exported or protected document has been used to validate it.
 
-Protected-document encryption appendices still need structured decoding and
-validation against a future protected sample. Native `SPen::EndTag::Append`
+Native `SPen::EndTag::Append`
 at `0x2a9810` writes the saved 20-byte EOCD prefix, a zero comment length, then
 the serialized tag; `0x2a9bc4` starts those three writes. This explains why
 protected ciphertext retains a discoverable ZIP-shaped tail.
+
+The SDK reports `ProtectedDocument` when the selected tag contains a nonempty,
+structurally decodable encryption appendix. It checks appended metadata before
+ZIP decoding, including when ciphertext happens to begin with `PK`. This is
+conservative classification: it does not authenticate ciphertext, validate AES
+parameters, reproduce the native pointer-based `IsEncrypted` predicate, or
+decrypt anything. Malformed appendices receive end-tag diagnostics and the
+normal metadata fallback behavior.
+
+Synthetic coverage includes a copied footer after an opaque payload, ZIP-like
+payload prefixes, inner and outer protection metadata, every truncated appendix,
+oversized blob counts and unknown extension bytes. A future protected Samsung
+export is still required for end-to-end cryptographic validation.

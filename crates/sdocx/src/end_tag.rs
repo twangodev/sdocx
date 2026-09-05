@@ -59,6 +59,39 @@ pub struct EndTagFixedStyle {
     pub background_theme: i32,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct EndTagEncryption {
+    pub original_plaintext_size: u32,
+    pub salt: Vec<u8>,
+    pub initialization_vector: Vec<u8>,
+    pub wrapped_key: Vec<u8>,
+    pub trailing_data: Vec<u8>,
+}
+
+impl StoredEndTag {
+    pub fn encryption_info(&self) -> Result<Option<EndTagEncryption>> {
+        let Some(data) = self
+            .encryption_data
+            .as_deref()
+            .filter(|bytes| !bytes.is_empty())
+        else {
+            return Ok(None);
+        };
+        let mut reader = Reader::new(data, "end tag encryption");
+        Ok(Some(EndTagEncryption {
+            original_plaintext_size: reader.read_u32("original plaintext size")?,
+            salt: read_blob(&mut reader, "salt")?,
+            initialization_vector: read_blob(&mut reader, "initialization vector")?,
+            wrapped_key: read_blob(&mut reader, "wrapped key")?,
+            trailing_data: reader
+                .read_bytes(reader.remaining(), "trailing data")?
+                .to_vec(),
+        }))
+    }
+}
+
 pub fn parse_end_tag_bytes(data: &[u8]) -> Result<StoredEndTag> {
     parse_end_tag_bytes_with_limits(data, &ParseLimits::default())
 }

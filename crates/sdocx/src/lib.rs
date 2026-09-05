@@ -33,8 +33,8 @@ mod storage;
 mod types;
 
 pub use end_tag::{
-    EndTagDisplayTimestamps, EndTagFixedStyle, EndTagSource, StoredEndTag, parse_end_tag_bytes,
-    parse_end_tag_bytes_with_limits,
+    EndTagDisplayTimestamps, EndTagEncryption, EndTagFixedStyle, EndTagSource, StoredEndTag,
+    parse_end_tag_bytes, parse_end_tag_bytes_with_limits,
 };
 pub use error::{Error, Result};
 pub use layout::{LayoutDocument, LayoutPage, layout_document};

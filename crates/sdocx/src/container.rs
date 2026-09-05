@@ -41,6 +41,9 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         })
         .transpose()?
         .flatten();
+    if appended_tag.as_ref().is_some_and(has_encryption_data) {
+        return Err(Error::ProtectedDocument);
+    }
     let mut archive = match zip::ZipArchive::new(ArchiveReader::new(reader, tail.archive_length)?) {
         Ok(archive) => archive,
         Err(_) if protected_marker => return Err(Error::ProtectedDocument),
@@ -67,6 +70,9 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         (tag, source)
     };
     if let Some(tag) = &end_tag {
+        if has_encryption_data(tag) {
+            return Err(Error::ProtectedDocument);
+        }
         apply_end_tag_metadata(tag, &mut metadata);
     }
 
@@ -427,7 +433,11 @@ fn parse_optional_end_tag(
     limits: &ParseLimits,
     report: &mut ParseReport,
 ) -> Result<Option<StoredEndTag>> {
-    match parse_end_tag_bytes_with_limits(data, limits) {
+    let parsed = parse_end_tag_bytes_with_limits(data, limits).and_then(|tag| {
+        tag.encryption_info()?;
+        Ok(tag)
+    });
+    match parsed {
         Ok(tag) => Ok(Some(tag)),
         Err(error @ Error::LimitExceeded { .. }) => Err(error),
         Err(error) => {
@@ -439,6 +449,12 @@ fn parse_optional_end_tag(
             Ok(None)
         }
     }
+}
+
+fn has_encryption_data(tag: &StoredEndTag) -> bool {
+    tag.encryption_data
+        .as_ref()
+        .is_some_and(|data| !data.is_empty())
 }
 
 fn apply_end_tag_metadata(tag: &StoredEndTag, metadata: &mut DocumentMetadata) {

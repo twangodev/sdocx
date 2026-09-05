@@ -66,6 +66,21 @@ fn record(fields: &[Vec<u8>]) -> Vec<u8> {
     bytes
 }
 
+fn encryption_blob() -> Vec<u8> {
+    let mut bytes = 4096_u32.to_le_bytes().to_vec();
+    for data in [vec![0x51; 32], vec![0x61; 16], vec![0x71; 48]] {
+        bytes.extend((data.len() as u32).to_le_bytes());
+        bytes.extend(data);
+    }
+    bytes
+}
+
+fn fields_with_encryption(blob: &[u8]) -> Vec<Vec<u8>> {
+    let mut groups = fields();
+    groups[4] = [(blob.len() as u32).to_le_bytes().as_slice(), blob].concat();
+    groups
+}
+
 fn archive(tag: &[u8]) -> Vec<u8> {
     archive_with_comment(Some(tag), Vec::new())
 }
@@ -281,6 +296,93 @@ fn appended_metadata_obeys_limits_even_when_the_member_is_valid() {
             ..
         })
     ));
+}
+
+#[test]
+fn decodes_bounded_encryption_appendices_and_retains_future_bytes() {
+    let mut blob = encryption_blob();
+    blob.extend([0xa1, 0xa2]);
+    let tag = parse_end_tag_bytes(&record(&fields_with_encryption(&blob))).unwrap();
+    let info = tag.encryption_info().unwrap().unwrap();
+    assert_eq!(info.original_plaintext_size, 4096);
+    assert_eq!(info.salt, vec![0x51; 32]);
+    assert_eq!(info.initialization_vector, vec![0x61; 16]);
+    assert_eq!(info.wrapped_key, vec![0x71; 48]);
+    assert_eq!(info.trailing_data, [0xa1, 0xa2]);
+    assert_eq!(tag.encryption_data.as_deref(), Some(blob.as_slice()));
+    assert!(
+        parse_end_tag_bytes(&record(&fields()))
+            .unwrap()
+            .encryption_info()
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn encryption_lengths_cannot_consume_following_metadata_or_allocate_unbounded_data() {
+    let blob = encryption_blob();
+    for length in 1..blob.len() {
+        let tag = parse_end_tag_bytes(&record(&fields_with_encryption(&blob[..length]))).unwrap();
+        assert!(
+            tag.encryption_info().is_err(),
+            "encryption blob length {length}"
+        );
+        assert_eq!(tag.display_timestamps.unwrap().modified_time, 202);
+    }
+    for offset in [4, 40, 60] {
+        let mut invalid = blob.clone();
+        invalid[offset..offset + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+        let tag = parse_end_tag_bytes(&record(&fields_with_encryption(&invalid))).unwrap();
+        assert!(tag.encryption_info().is_err());
+    }
+}
+
+#[test]
+fn recognizes_structured_protection_before_opening_zip_like_ciphertext() {
+    let plain_archive = archive_with_comment(None, Vec::new());
+    let copied_footer = &plain_archive[plain_archive.len() - 22..];
+    for prefix in [b"PK\x03\x04", b"\x81\x82\x83\x84"] {
+        let mut bytes = vec![0x80; 4096];
+        bytes[..4].copy_from_slice(prefix);
+        bytes.extend(copied_footer);
+        bytes.extend(record(&fields_with_encryption(&encryption_blob())));
+        assert!(matches!(
+            parse_bytes_detailed(&bytes),
+            Err(Error::ProtectedDocument)
+        ));
+    }
+}
+
+#[test]
+fn encryption_metadata_in_members_or_appended_records_prevents_partial_plaintext_parses() {
+    let protected = record(&fields_with_encryption(&encryption_blob()));
+    assert!(matches!(
+        parse_bytes_detailed(&archive(&protected)),
+        Err(Error::ProtectedDocument)
+    ));
+    let mut bytes = archive(&record(&fields()));
+    bytes.extend(protected);
+    assert!(matches!(
+        parse_bytes_detailed(&bytes),
+        Err(Error::ProtectedDocument)
+    ));
+}
+
+#[test]
+fn malformed_encryption_appendices_produce_end_tag_diagnostics() {
+    let mut bytes = archive(&record(&fields()));
+    bytes.extend(record(&fields_with_encryption(&[0xff; 8])));
+    let parsed = parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.end_tag_source, Some(EndTagSource::ArchiveEntry));
+    let warning = parsed
+        .report
+        .diagnostics
+        .iter()
+        .find(|d| d.code == DiagnosticCode::InvalidEndTag)
+        .unwrap();
+    assert!(warning.message.contains("end tag encryption"));
+    assert!(warning.message.contains("salt"));
 }
 
 #[test]
