@@ -37,6 +37,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   container traversal, replay-order assignment and layer collection boundaries.
 - [`capture-composition-findings.md`](capture-composition-findings.md) — base,
   top and masking passes, object layer filters and capture clone state.
+- [`stroke-metadata-findings.md`](stroke-metadata-findings.md) — stroke property
+  polarity, ARGB colors, pen settings and legacy partial-rectangle records.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

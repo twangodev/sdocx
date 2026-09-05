@@ -36,6 +36,7 @@ mod render;
 mod report;
 mod shape;
 mod storage;
+mod stroke_metadata;
 mod table;
 mod types;
 
@@ -81,6 +82,7 @@ pub use storage::{
     parse_page_manifest_bytes_with_limits, parse_stored_page_bytes,
     parse_stored_page_bytes_with_limits,
 };
+pub use stroke_metadata::{StrokeMetadata, StrokeProperties, StrokeStyle};
 pub use table::{TableAutoFit, TableBorder, TableEdgeStyle, TableRecordMetadata, TableStyle};
 pub use types::*;
 

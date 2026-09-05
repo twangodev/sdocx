@@ -66,6 +66,12 @@ The structural stroke implementation also rechecked these arm64 locations in
   pen size. The alternate coedit string representation is outside this parser's
   normal WDoc archive path.
 
+The extended [stroke metadata inspection](stroke-metadata-findings.md) also
+uses the full property reader/writer (`0x2ed138` / `0x2ec080`), named stroke
+getters, and flexible reader `0x2ed720`–`0x2ede28`. The call at `0x2ed978`
+identifies legacy field 5's count as common partial rectangles. The fallback
+at `0x2eda38`–`0x2eda68` identifies field 0 as a legacy advanced-settings ID.
+
 ## Standalone text frames
 
 The standalone-text implementation rechecked these arm64 locations in the same

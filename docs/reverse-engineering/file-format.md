@@ -697,11 +697,12 @@ Confirmed native serializer mappings:
 
 | Bit | Value | Field |
 | ---: | ---: | --- |
-| 0 | `0x000001` | legacy four-byte field; public semantic name unresolved |
+| 0 | `0x000001` | legacy advanced-settings string-table ID (`i32`), used as a fallback for field 7 |
 | 1 | `0x000002` | pen/name string-table ID |
 | 2 | `0x000004` | ARGB color (`u32`) |
 | 3 | `0x000008` | pen size (`f32`) |
 | 4 | `0x000010` | one-byte property |
+| 5 | `0x000020` | four raw bytes per common partial rectangle; numerical meaning unresolved |
 | 7 | `0x000080` | advanced pen-setting string-table ID |
 | 8 | `0x000100` | fixed width (`f32`) |
 | 9 | `0x000200` | size level |
@@ -730,7 +731,10 @@ The little-endian `u32` color is stored as B, G, R, A bytes. Field-mask bit 2
 declares its presence regardless of alpha; bit 3 independently declares pen
 size. A color-looking byte sequence or an `0xff` alpha byte is not a field
 delimiter. The current Rust `Stroke` exposes RGB only, so alpha fidelity remains
-a rendering limitation.
+a rendering limitation. Explicit `StoredObject::stroke_metadata` inspection
+now preserves the full ARGB value, native properties and 25 mapped optional
+fields. See [stroke metadata findings](stroke-metadata-findings.md) for exact
+types, native call sites, unknown-field boundaries and parser validation.
 
 ## `media/mediaInfo.dat`
 

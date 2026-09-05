@@ -1,6 +1,6 @@
 use crate::binary::Reader;
 use crate::frame::Frame;
-use crate::{Color, Error, ObjectMetadata, ParseLimits, Point, Result, Stroke};
+use crate::{Color, Error, ObjectMetadata, ParseLimits, Point, Result, Stroke, StrokeStyle};
 
 /// Decode a type-1 outer object's base/stroke frame chain. The caller supplies
 /// only its payload, excluding the object hash and recursive child records.
@@ -10,33 +10,11 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
 
     let frame = Frame::read(&mut frames)?;
     frame.expect_kind(1)?;
-    let mut fixed = Reader::new(frame.fixed, "stroke channels");
-    let count = usize::from(fixed.read_u16("point count")?);
-    if count > limits.max_points_per_stroke {
-        return Err(Error::LimitExceeded {
-            resource: "points per stroke",
-            limit: limits.max_points_per_stroke as u64,
-            actual: count as u64,
-        });
-    }
-    let compressed = frame.properties.contains(0);
-    let stylus = frame.properties.contains(2);
-    // Validate the entire fixed block before allocating any channel arrays.
-    // Native NewApplyBinary skips all arrays for zero-point strokes.
-    let channel_bytes = if count == 0 {
-        0
-    } else if compressed {
-        16 + (count - 1) * 4 + (2 + usize::from(stylus) * 2) * (4 + (count - 1) * 2)
-    } else {
-        count * (24 + usize::from(stylus) * 8)
-    };
-    if fixed.remaining() != channel_bytes + 2 {
-        return Err(Error::Format(format!(
-            "stroke channels: {count} points require {} fixed bytes, found {}",
-            channel_bytes + 2,
-            fixed.remaining()
-        )));
-    }
+    let channels = StrokeChannels::read(&frame, limits)?;
+    let count = usize::from(channels.point_count);
+    let compressed = channels.compressed;
+    let stylus = channels.stylus;
+    let mut fixed = Reader::new(channels.data, "stroke channels");
 
     let mut points = Vec::with_capacity(count);
     if count != 0 && compressed {
@@ -88,9 +66,7 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
     } else {
         (Vec::new(), Vec::new())
     };
-    fixed.read_u16("tool/input type")?;
-
-    let (color, pen_width) = stroke_style(&frame)?;
+    let (style, _) = StrokeStyle::read_prefix(&frame)?;
     // Future frame extensions are bounded too; no frame may borrow its bytes
     // from the object hash or the next sibling.
     while frames.remaining() != 0 {
@@ -103,8 +79,12 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
         timestamps,
         tilts,
         orientations,
-        color,
-        pen_width,
+        color: style.color_argb.map(|argb| Color {
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
+        }),
+        pen_width: style.pen_size.unwrap_or(0.8),
     })
 }
 
@@ -139,37 +119,52 @@ fn float_channel(reader: &mut Reader<'_>, count: usize, compressed: bool) -> Res
     Ok(values)
 }
 
-fn stroke_style(frame: &Frame<'_>) -> Result<(Option<Color>, f32)> {
-    let mut fields = Reader::new(frame.flexible, "stroke style");
-    // Normal WDoc stores string-table references as u32. Bit 0 is a legacy
-    // four-byte field preceding the pen-name reference (native reader).
-    for bit in 0..2 {
-        if frame.fields.contains(bit) {
-            fields.read_u32("pen reference")?;
+pub(crate) struct StrokeChannels<'a> {
+    pub(crate) point_count: u16,
+    pub(crate) compressed: bool,
+    pub(crate) stylus: bool,
+    pub(crate) tool_type_raw: u16,
+    pub(crate) data: &'a [u8],
+}
+
+impl<'a> StrokeChannels<'a> {
+    pub(crate) fn read(frame: &Frame<'a>, limits: &ParseLimits) -> Result<Self> {
+        let mut fixed = Reader::new(frame.fixed, "stroke channels");
+        let point_count = fixed.read_u16("point count")?;
+        let count = usize::from(point_count);
+        if count > limits.max_points_per_stroke {
+            return Err(Error::LimitExceeded {
+                resource: "points per stroke",
+                limit: limits.max_points_per_stroke as u64,
+                actual: count as u64,
+            });
         }
-    }
-    let color = if frame.fields.contains(2) {
-        let argb = fields.read_u32("ARGB color")?;
-        Some(Color {
-            r: (argb >> 16) as u8,
-            g: (argb >> 8) as u8,
-            b: argb as u8,
+        let compressed = frame.properties.contains(0);
+        let stylus = frame.properties.contains(2);
+        let channel_bytes = if count == 0 {
+            0
+        } else if compressed {
+            16 + (count - 1) * 4 + (2 + usize::from(stylus) * 2) * (4 + (count - 1) * 2)
+        } else {
+            count * (24 + usize::from(stylus) * 8)
+        };
+        if fixed.remaining() != channel_bytes + 2 {
+            return Err(Error::Format(format!(
+                "stroke channels: {count} points require {} fixed bytes, found {}",
+                channel_bytes + 2,
+                fixed.remaining()
+            )));
+        }
+        let data = fixed.read_bytes(channel_bytes, "point channels")?;
+        let tool_type_raw = fixed.read_u16("tool/input type")?;
+        Ok(Self {
+            point_count,
+            compressed,
+            stylus,
+            tool_type_raw,
+            data,
         })
-    } else {
-        None
-    };
-    let pen_width = if frame.fields.contains(3) {
-        let width = fields.read_f32("pen size")?;
-        if !width.is_finite() || width < 0.0 {
-            return Err(Error::Format("invalid stroke pen size".into()));
-        }
-        width
-    } else {
-        0.8
-    };
-    // Later pen settings are not exposed by Stroke yet. Leave that remainder
-    // inside this frame; never scan it for a color-looking marker.
-    Ok((color, pen_width))
+    }
 }
 
 #[cfg(test)]
