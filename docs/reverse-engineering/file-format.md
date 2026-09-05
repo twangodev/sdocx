@@ -541,9 +541,9 @@ The current type-0 base-frame fixed layout is:
 
 Every audited stroke uses a 121-byte base frame, flexible offset 105 and field
 mask `0x6000`. Confirmed base property bits describe rotatable (0), selectable
-(1), movable (2), visible (3), replayable (4), template (6), flip-enabled (7),
-locked (9) and inverted removable (12) behavior. Bits 5 and 8 remain raw in the
-SDK pending confirmation of their meanings. See
+(1), movable (2), visible (3), replayable (4), out-of-canvas-enabled (5),
+template (6), flip-enabled (7), floating drawn bounds (8), locked (9) and
+inverted removable (12) behavior. See
 [common object findings](object-base-findings.md) for getter evidence and the
 bounded metadata API. Known flexible fields include rotation; attachment/media
 IDs; min/max dimensions; append time; owner dimensions; layout type; pivot;

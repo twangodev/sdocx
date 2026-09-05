@@ -25,8 +25,10 @@ The getters independently identify their meanings.
 | 2 | 65 | `IsMovable`, `0x2cc150` | `movable` |
 | 3 | 61 | `IsVisible`, `0x2cb1e8` | `visible` |
 | 4 | 60 | `IsReplayable`, `0x2cabd8` | `replayable` |
+| 5 | 63 | `IsOutOfCanvasEnabled`, `0x2cbf28` | `out_of_canvas_enabled` |
 | 6 | 67 | `GetTemplateProperty`, `0x2ccc48` | `template` |
 | 7 | 66 | `IsFlipEnabled`, `0x2cc258` | `flip_enabled` |
+| 8 | 192 | `IsFloatDrawnRect`, `0x2d2190` | `float_drawn_rect` |
 | 9 | 193 | `GetLockState`, `0x2d29f4` | `locked` |
 | 12, inverted | 208 | `IsRemovable`, `0x2ca0c8` | `removable` |
 
@@ -44,11 +46,15 @@ Object visibility differs from layer visibility. Objects use positive bit 3;
 layers use inverted bit 0. Formula drawn bounds explicitly skip invisible
 source and answer strokes; see [formula rendering findings](formula-rendering-findings.md).
 
-Bits 5 and 8 store booleans at base-data offsets 63 and 192. Earlier notes
-called these clippable and ATT. This pass did not confirm those names through
-getters, so they remain available only in `property_mask`. In particular,
+Earlier notes called bits 5 and 8 clippable and ATT. Bit 5's getter confirms
+the more specific meaning of enabling placement outside the canvas. Java's
+`SpenObjectBase.getOutOfViewEnabled` calls `ObjectBase_isClippable`; its native
+bridge at `0x307a98` directly calls `IsOutOfCanvasEnabled`. Bit 8's getter
+identifies floating drawn bounds. These names describe the native API;
+automatic clipping and float-layout behavior still require drawing research.
+In particular,
 `HasSavedAttValue` at `0x2d22f0` reads implementation offset 135, a different
-location from base-data offset 192. It does not establish bit 8's meaning.
+location from base-data offset 192. It is a separate state.
 Unknown bits, including mask bytes beyond the native reader's two-byte copy,
 remain intact in the SDK.
 
@@ -70,8 +76,15 @@ The fixed layout follows the variable property and field masks:
 `GetReplayTimeStamp` at `0x2cc36c` and `GetResizeOption` at `0x2cb348` read those
 members. The resize getter accepts 0–2 and returns 0 for larger values; the
 binary reader stores the byte directly. The SDK retains `resize_mode_raw`
-without applying that getter normalization. Enum names and timestamp units
-remain unresolved.
+without applying that getter normalization. Timestamp units remain unresolved.
+
+Java `SpenObjectBase` declares `RESIZE_OPTION_FREE = 0`,
+`RESIZE_OPTION_KEEP_RATIO = 1`, and `RESIZE_OPTION_DISABLE = 2`.
+`ObjectBase_getResizeOption` at `0x307808` dispatches through vtable slot 72;
+the `ObjectBase` vtable relocation at `0x492150` points to `GetResizeOption`.
+The SDK exposes these names through `ObjectMetadata::resize_mode`, with
+`ObjectResizeMode::Other` retaining unknown values rather than normalizing
+them to free resizing.
 
 Flexible bit 0 is a four-byte rotation. Its reader branch at `0x2db744`–
 `0x2db75c` reads into base-data offset 68. Absent rotation stays `None` in the
@@ -85,13 +98,14 @@ flexible fields remain undecoded in this change.
 
 ## Implementation and verification
 
-`ObjectMetadata` exposes the nine confirmed properties, replay timestamp,
+`ObjectMetadata` exposes the eleven confirmed properties, replay timestamp,
 resize byte, masks and bounded extensions. Existing page rendering does not
 yet apply these visibility flags automatically. This metadata is a prerequisite
 for the visible-stroke bounds needed by formula rendering.
 
 Synthetic regressions cover independent property bits across five mask bytes,
 inverted removable behavior, zero-extension, raw resize values, UTF-8 identity,
-extension preservation, and fixed/rotation truncation that cannot borrow bytes
+named resize modes with unknown-value preservation, extension preservation,
+and fixed/rotation truncation that cannot borrow bytes
 from flexible data or later frames. They also retain non-finite rotation
 rejection. Real-file visual conformance remains a separate task.

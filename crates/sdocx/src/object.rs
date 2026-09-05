@@ -17,8 +17,10 @@ pub struct ObjectMetadata {
     pub movable: bool,
     pub visible: bool,
     pub replayable: bool,
+    pub out_of_canvas_enabled: bool,
     pub template: bool,
     pub flip_enabled: bool,
+    pub float_drawn_rect: bool,
     pub locked: bool,
     pub removable: bool,
     pub rotation_degrees: Option<f64>,
@@ -28,7 +30,26 @@ pub struct ObjectMetadata {
     pub flexible_trailing_data: Vec<u8>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum ObjectResizeMode {
+    Free,
+    KeepRatio,
+    Disabled,
+    Other(u8),
+}
+
 impl ObjectMetadata {
+    pub const fn resize_mode(&self) -> ObjectResizeMode {
+        match self.resize_mode_raw {
+            0 => ObjectResizeMode::Free,
+            1 => ObjectResizeMode::KeepRatio,
+            2 => ObjectResizeMode::Disabled,
+            value => ObjectResizeMode::Other(value),
+        }
+    }
+
     pub(crate) fn read(reader: &mut Reader<'_>) -> Result<Self> {
         let frame = Frame::read(reader)?;
         frame.expect_kind(0)?;
@@ -61,8 +82,10 @@ impl ObjectMetadata {
             movable: frame.properties.contains(2),
             visible: frame.properties.contains(3),
             replayable: frame.properties.contains(4),
+            out_of_canvas_enabled: frame.properties.contains(5),
             template: frame.properties.contains(6),
             flip_enabled: frame.properties.contains(7),
+            float_drawn_rect: frame.properties.contains(8),
             locked: frame.properties.contains(9),
             removable: !frame.properties.contains(12),
             rotation_degrees,

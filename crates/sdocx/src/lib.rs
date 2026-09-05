@@ -60,7 +60,7 @@ pub use note_metadata::{
     NoteApplicationVersion, NoteAttachment, NoteAuthor, NoteLocation, NoteMetadata, NotePageEdit,
     NotePenExtension, NotePenSettings, NoteStringId, NoteStringTable, NoteVoice, NoteVoiceEvent,
 };
-pub use object::ObjectMetadata;
+pub use object::{ObjectMetadata, ObjectResizeMode};
 #[cfg(feature = "pdf")]
 pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
 #[cfg(feature = "render")]

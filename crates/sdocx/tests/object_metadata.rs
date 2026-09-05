@@ -1,7 +1,7 @@
 #[allow(dead_code)]
 mod support;
 
-use sdocx::{ObjectMetadata, Result, parse_stored_page_bytes};
+use sdocx::{ObjectMetadata, ObjectResizeMode, Result, parse_stored_page_bytes};
 
 fn frame(properties: &[u8], fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
     let offset = 12 + properties.len() + fields.len() + fixed.len();
@@ -77,13 +77,32 @@ fn native_property_bits_are_independent_and_removable_is_inverted() {
             value.movable,
             value.visible,
             value.replayable,
+            value.out_of_canvas_enabled,
             value.template,
             value.flip_enabled,
+            value.float_drawn_rect,
             value.locked,
             !value.removable,
         ];
-        let expected = [0, 1, 2, 3, 4, 6, 7, 9, 12].map(|property_bit| bit == property_bit);
+        let expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12].map(|property_bit| bit == property_bit);
         assert_eq!(properties, expected, "property bit {bit}");
+    }
+}
+
+#[test]
+fn resize_modes_preserve_values_outside_the_native_getters_supported_range() {
+    for (raw, expected) in [
+        (0, ObjectResizeMode::Free),
+        (1, ObjectResizeMode::KeepRatio),
+        (2, ObjectResizeMode::Disabled),
+        (3, ObjectResizeMode::Other(3)),
+        (255, ObjectResizeMode::Other(255)),
+    ] {
+        let mut data = fixed();
+        *data.last_mut().unwrap() = raw;
+        let value = metadata(&frame(&[8], &[], &data, &[])).unwrap();
+        assert_eq!(value.resize_mode_raw, raw);
+        assert_eq!(value.resize_mode(), expected);
     }
 }
 
