@@ -227,6 +227,12 @@ records for current/history construction. Base `GetEventTime`, `0xc0634`,
 subtracts down time; Predictor builders `0x31c7c`/`0x31d68` add it back
 while passing nanoseconds independently.
 
+[Neural admission findings](neural-admission-findings.md) identify the
+acceleration fields used by `DoPredict`, `0x25abc`, and discarded-output
+stores at task offset 112 in both creation paths. `IsExpired` at
+`0x25f64` and `0x2d2c4` uses separate 85%-frame and full-frame budgets;
+both rejection branches consult `GetUnbufferedDispatch`, `0x301c0`.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

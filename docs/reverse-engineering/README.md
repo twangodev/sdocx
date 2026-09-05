@@ -95,6 +95,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   scaling, inverse rotation, copied pen channels and independent timestamp fields.
 - [`neural-selection-findings.md`](neural-selection-findings.md) — whole-ms
   horizon selection, candidate marking and callback current/history construction.
+- [`neural-admission-findings.md`](neural-admission-findings.md) — acceleration
+  gates, discarded output prefixes, expiry budgets and unbuffered bypasses.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

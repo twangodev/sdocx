@@ -88,8 +88,10 @@ an unselected candidate that passes the other per-candidate gates.
 The output-processing loop begins at index 0. Its upper bound is
 `OutputSize - task_member_112`, tested at `0x2cce0`–`0x2ccec` and
 `0x2d020`–`0x2d038`. The task constructor zeroes member 112 as part
-of its eight-byte store at `0x2be54`; function `0x2dc04` can overwrite
-that member. Callers and semantics of that overwrite remain untraced.
+of its eight-byte store at `0x2be54`. The
+[admission trace](neural-admission-findings.md#member-112-is-the-discarded-output-count)
+identifies it as the discarded-output count and recovers the inline
+stores in both `DoPredict` task creation paths.
 
 These are separate controls: the loop bound limits which outputs are
 processed, while byte 73 marks which processed candidates belong in the
@@ -175,6 +177,8 @@ fractional-millisecond boundaries, single/multiple output ranges and the
 independent horizon timestamp conversions. The reference is not native
 execution or device conformance evidence.
 
-Next work is task expiry, candidate rejection, the member-112 setter's
-callers and the invariant ensuring a nonempty prediction vector contains
-a marked candidate. No SDK code or corpus fixture changed.
+The [admission trace](neural-admission-findings.md) recovers task expiry
+and acceleration-based output discarding. It also supplies a static
+configuration whose processed prefix and selected range do not intersect.
+Candidate rejection and application reachability of that configuration
+remain to be checked. No SDK code or corpus fixture changed.
