@@ -178,14 +178,15 @@ fn formula_inspection_decodes_native_field_order_strokes_and_label_graphs() {
     assert_eq!(graph.labels.len(), 2);
     assert_eq!(graph.labels[0].text, "𝑥");
     assert_eq!(graph.labels[0].bbox.x_min, -1.0);
-    assert_eq!(graph.labels[0].index_values, [0, u32::MAX]);
+    assert_eq!(graph.labels[0].stroke_indices, [0, u32::MAX]);
     assert_eq!(graph.labels[1].text, "+");
-    assert_eq!(graph.labels[1].index_values, [1]);
+    assert_eq!(graph.labels[1].stroke_indices, [1]);
     assert_eq!(graph.relations.len(), 1);
     assert_eq!(graph.relations[0].from_label, 0);
     assert_eq!(graph.relations[0].to_label, 1);
     assert_eq!(graph.relations[0].kind_raw, u32::MAX);
-    assert_eq!(graph.trailing_values, [5, u32::MAX]);
+    assert_eq!(graph.start_label, 5);
+    assert_eq!(graph.end_label, u32::MAX);
     assert_eq!(value.property_mask, [3]);
     assert_eq!(value.field_mask, [255, 255]);
     assert!(value.fixed_trailing_data.is_empty());
@@ -545,4 +546,27 @@ fn formula_label_relations_expose_native_names_without_indexing_or_losing_unknow
         assert_eq!(relation.kind_raw, raw);
         assert_eq!(relation.kind(), expected);
     }
+}
+
+#[test]
+fn formula_graph_endpoints_preserve_empty_and_unresolved_graphs() {
+    let data = [1_u32, 0, 0, u32::MAX, u32::MAX]
+        .into_iter()
+        .flat_map(u32::to_le_bytes)
+        .collect::<Vec<_>>();
+    let value = FormulaMetadata::parse_bytes(&formula(1 << 14, &data)).unwrap();
+    let graph = &value.label_graphs[0];
+    assert!(graph.labels.is_empty());
+    assert!(graph.relations.is_empty());
+    assert_eq!(graph.start_label, u32::MAX);
+    assert_eq!(graph.end_label, u32::MAX);
+    let mut data = label_graphs();
+    data[121..125].copy_from_slice(&0_u32.to_le_bytes());
+    data[125..129].copy_from_slice(&1_u32.to_le_bytes());
+    let value = FormulaMetadata::parse_bytes(&formula(1 << 14, &data)).unwrap();
+    let graph = &value.label_graphs[0];
+    assert_eq!(graph.start_label, 0);
+    assert_eq!(graph.end_label, 1);
+    assert_eq!(graph.labels[graph.start_label as usize].text, "𝑥");
+    assert_eq!(graph.labels[graph.end_label as usize].text, "+");
 }

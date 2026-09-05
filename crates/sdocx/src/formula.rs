@@ -51,7 +51,8 @@ pub struct FormulaStroke {
 pub struct FormulaLabelGraph {
     pub labels: Vec<FormulaLabel>,
     pub relations: Vec<FormulaLabelRelation>,
-    pub trailing_values: [u32; 2],
+    pub start_label: u32,
+    pub end_label: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +61,7 @@ pub struct FormulaLabelGraph {
 pub struct FormulaLabel {
     pub text: String,
     pub bbox: BoundingBox,
-    pub index_values: Vec<u32>,
+    pub stroke_indices: Vec<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -347,14 +348,14 @@ impl FormulaDecoder<'_> {
                 }
                 let bbox = crate::object::read_bbox(reader)?;
                 let count = self.count(reader, 4)?;
-                let mut index_values = Vec::with_capacity(count);
+                let mut stroke_indices = Vec::with_capacity(count);
                 for _ in 0..count {
-                    index_values.push(reader.read_u32("formula label index value")?);
+                    stroke_indices.push(reader.read_u32("formula label stroke index")?);
                 }
                 labels.push(FormulaLabel {
                     text: text.to_owned(),
                     bbox,
-                    index_values,
+                    stroke_indices,
                 });
             }
             let count = self.count(reader, 12)?;
@@ -369,10 +370,8 @@ impl FormulaDecoder<'_> {
             graphs.push(FormulaLabelGraph {
                 labels,
                 relations,
-                trailing_values: [
-                    reader.read_u32("label graph value 0")?,
-                    reader.read_u32("label graph value 1")?,
-                ],
+                start_label: reader.read_u32("label graph start label")?,
+                end_label: reader.read_u32("label graph end label")?,
             });
         }
         Ok(graphs)

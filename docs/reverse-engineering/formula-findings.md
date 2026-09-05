@@ -17,7 +17,7 @@ these findings do not depend on new Samsung-generated documents.
 | `ObjectFormulaImpl::applyBinary_FlexibleData` | `0x42fdd4` | Reads the same fields, including bit 3 before bit 2 |
 | `ObjectFormulaImpl::getBinary_StrokeData` | `0x42f484` | Counted and separately sized stroke objects |
 | `ObjectFormulaImpl::applyBinary_StrokeData` | `0x4306dc` | Creates type-1 objects from those bounded binaries |
-| `ObjectFormulaImpl::getBinary_FlexiableDataLabelGraph` | `0x42f674` | Serializes labels, index sets, relations and two graph values |
+| `ObjectFormulaImpl::getBinary_FlexiableDataLabelGraph` | `0x42f674` | Serializes labels, stroke-index sets, relations and graph endpoints |
 | `ObjectFormulaImpl::applyBinary_FlexiableDataLabelGraph` | `0x430824` | Restores the same nested layout |
 | `SPen::ReadString2` | `0x2788ac` | Reads an unsigned `u16` UTF-16 unit count without a null sentinel |
 
@@ -98,15 +98,15 @@ repeat graph_count:
         u32 text_byte_count
         u8[text_byte_count] text_utf8
         f64 left, top, right, bottom
-        u32 index_count
-        u32[index_count] index_values
+        u32 stroke_index_count
+        u32[stroke_index_count] stroke_indices
     u32 relation_count
     repeat relation_count:
         u32 from_label
         u32 to_label
         u32 kind
-    u32 trailing_value_0
-    u32 trailing_value_1
+    u32 start_label
+    u32 end_label
 ```
 
 The writer calls `U32string2string` at `0x42f870`, converting the native char32
@@ -117,8 +117,10 @@ LaTeX prefixes and the answer's UTF-16 unit count. The rectangle is written at
 and index set at 40. Its in-memory layout is not the wire layout.
 
 The index reader at `0x430aa4` sign-extends a 32-bit value into a native set.
-The SDK retains its original `u32` bits in `index_values`; the indices' role is
-not yet established. Native relations occupy 24 bytes but only write 12.
+The SDK retains its original `u32` bits in `stroke_indices`. The recognition
+bridge below establishes that these values refer to recognition strokes;
+the SDK does not assume they directly index the formula's stored stroke list.
+Native relations occupy 24 bytes but only write 12.
 The three reader stores are at `0x430cf4`, `0x430d14` and `0x430d30`.
 
 `LabelGraph::PrintLabelGraph` at `0xb27b4` in `libSPenBase.so` confirms that the
@@ -130,8 +132,33 @@ original bits. Out-of-range references remain inspectable values; the API never
 indexes with them.
 
 The two graph-tail reads at `0x430e58` and `0x430e70` widen `u32` wire values
-into native members at offsets 48 and 56. Their meanings remain unresolved and
-they are exposed as `trailing_values`.
+into native members at offsets 48 and 56. They are the start and end label
+indices, exposed as `start_label` and `end_label`. Values are preserved even
+when they do not resolve to a label in the same graph.
+
+### Recognition bridge
+
+The APK also contains `libSPenRecognizerMathRecognition.so` and
+`libSPenRecogUIFeature.so`. In the recognition library,
+`Math::HME::Expression::LabelGraph::Node::getStrokeIndexes` at `0xe0200`
+returns the set at offset 40. Its neighboring getters establish the label at
+offset 0 and rectangle at offset 24 (`0xe01f4`, `0xe01f8`).
+
+A conversion helper at `0x1d10b0` in the UI library walks the recognizer's nodes
+and constructs 64-byte labels. At `0x1d1228` it calls `getStrokeIndexes`, then
+copies that set into the destination label at offset 40 (`0x1d1238`–`0x1d1240`).
+The node loop uses `x21` as its zero-based index, initialized at `0x1d1100`
+and incremented at `0x1d152c`. It compares the current node with
+`getStartNode` and `getEndNode` at `0x1d1428` and `0x1d1448`. Matching indices
+are stored at destination graph offsets 48 and 56 at `0x1d1440` and `0x1d1460`.
+
+`SPen::MathUtils::convertLabelGraph` connects the recognizer-facing
+`HwrLabelGraph` and serialized `SPen::LabelGraph` forms in both directions
+(`0x1d61f8` and `0x1d66fc`). It copies the label's index set at offset 40;
+the relevant source/destination accesses are `0x1d62e4`–`0x1d62ec` and
+`0x1d6324`–`0x1d632c`. The endpoint pair at offsets 48/56 is copied together
+at `0x1d65d0`–`0x1d65d4` and `0x1d6a84`–`0x1d6a88`. This ties the recognition
+getter meanings to the members written by the formula serializer.
 
 ### Relation names
 
@@ -180,15 +207,17 @@ remain in flexible trailing bytes. Ordinary page decoding still reports
 `UnsupportedObjectType` for formulas: this API exposes stored structure and
 does not add expression layout or rendering.
 
-Eleven synthetic integration tests cover all fields and their native order,
+Twelve synthetic integration tests cover all fields and their native order,
 truncation of every field prefix beside a decoy frame, nested strokes and
 extensions, labels and relations, cumulative budgets, invalid strings and
 rectangles, empty/surrogate-pair/65,535-unit answers, unknown masks/enums,
 stored-object bounds and explicit inspection of an embedded math formula. The
 relation test covers every mapped name, future values and an out-of-range
-label reference without dereferencing it.
+label reference without dereferencing it. Endpoint tests cover an empty graph
+and valid start/end indices, while the complete fixture preserves unresolved
+endpoints and raw stroke-index bits.
 
-Remaining work includes expression enum semantics, label index and
-graph-tail meanings, image resolution, and native layout/evaluation. Samsung
+Remaining work includes expression enum semantics, matching recognition stroke
+indices to stored strokes, image resolution, and native layout/evaluation. Samsung
 SDOCX/PDF pairs are still needed to verify real writer variants and visual
 output.
