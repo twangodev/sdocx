@@ -105,8 +105,11 @@ active input source or model configuration.
 
 `NNPredictor::SetPredictionLength`, `0x25378`, returns immediately
 when the requested value already matches. Otherwise it stores the new
-ID, obtains its holder, waits for an existing worker, and updates both
-worker and local TFLite holders through `0x253c8`–`0x253f8`.
+ID, obtains its holder, calls `Wait(true)` on an existing worker, and updates
+both worker and local TFLite holders through `0x253c8`–`0x253f8`.
+The [worker trace](predictor-worker-findings.md#waitinit-and-wait-have-different-predicates)
+shows that this call can wait for a running task's mutex, but does not
+drain a pending task or hold the mutex across model replacement.
 
 It obtains the current tool's model and applies:
 
