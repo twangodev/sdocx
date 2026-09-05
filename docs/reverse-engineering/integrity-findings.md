@@ -42,6 +42,11 @@ unsupported base frames and invalid or missing hash trailers produce
 and configured resource-limit violations remain errors. Callers decide whether
 the reported coverage and mismatches permit their intended use.
 
+The CLI exposes the same checks through `--verify-integrity`, printing all five
+count groups and diagnostics to stderr. Hash findings do not stop conversion or
+change its exit status. The CLI integration test exercises mismatched page hashes
+and unavailable layer/manifest checks while confirming that PDF export completes.
+
 ## What is checked
 
 The note digest covers every raw byte before its final 32 bytes, including

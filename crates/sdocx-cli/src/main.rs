@@ -90,6 +90,12 @@ struct Cli {
     path: PathBuf,
 
     #[arg(
+        long,
+        help = "Report stored hash matches, mismatches and unavailable checks during conversion"
+    )]
+    verify_integrity: bool,
+
+    #[arg(
         short,
         long,
         help = "Output path (format inferred from extension; defaults to input with the selected format extension)"
@@ -213,7 +219,11 @@ fn write_page(path: &std::path::Path, svg: &str, png_options: Option<&resvg::usv
 fn main() {
     let cli = Cli::parse();
 
-    let parsed = match sdocx::parse_detailed(&cli.path) {
+    let options = sdocx::ParseOptions {
+        verify_integrity: cli.verify_integrity,
+        ..Default::default()
+    };
+    let parsed = match sdocx::parse_detailed_with_options(&cli.path, &options) {
         Ok(parsed) => parsed,
         Err(e) => {
             eprintln!("Error: {e}");
@@ -228,6 +238,20 @@ fn main() {
             );
         } else {
             eprintln!("Warning [{:?}]: {}", diagnostic.code, diagnostic.message);
+        }
+    }
+    if let Some(integrity) = &parsed.integrity {
+        for (name, counts) in [
+            ("note", integrity.note),
+            ("objects", integrity.objects),
+            ("layers", integrity.layers),
+            ("pages", integrity.pages),
+            ("manifest", integrity.manifest),
+        ] {
+            eprintln!(
+                "Integrity {name}: {} matched, {} mismatched, {} unavailable",
+                counts.matched, counts.mismatched, counts.unavailable
+            );
         }
     }
     let doc = parsed.document;

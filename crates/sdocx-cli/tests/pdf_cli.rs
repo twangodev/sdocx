@@ -73,6 +73,28 @@ fn assert_pdf(path: &Path, size: [f32; 2]) {
 }
 
 #[test]
+fn integrity_flag_reports_hash_failures_and_missing_coverage_during_conversion() {
+    let fixture = Fixture::new();
+    let ordinary = fixture.run(&["-o", "ordinary.pdf"]);
+    assert!(ordinary.status.success());
+    assert!(!String::from_utf8_lossy(&ordinary.stderr).contains("Integrity"));
+    let checked = fixture.run(&["--verify-integrity", "-o", "checked.pdf"]);
+    assert!(
+        checked.status.success(),
+        "{}",
+        String::from_utf8_lossy(&checked.stderr)
+    );
+    let diagnostics = String::from_utf8_lossy(&checked.stderr);
+    assert!(diagnostics.contains("Warning [IntegrityMismatch]"));
+    assert!(diagnostics.contains("Warning [IntegrityUnavailable]"));
+    assert!(diagnostics.contains("Integrity layers: 0 matched, 0 mismatched, 2 unavailable"));
+    assert!(diagnostics.contains("Integrity pages: 0 matched, 2 mismatched, 0 unavailable"));
+    assert!(diagnostics.contains("Integrity manifest: 0 matched, 0 mismatched, 1 unavailable"));
+    assert_pdf(&fixture.0.join("ordinary.pdf"), [810.0, 1145.25]);
+    assert_pdf(&fixture.0.join("checked.pdf"), [810.0, 1145.25]);
+}
+
+#[test]
 fn pdf_extension_flag_override_and_default_path_write_one_document() {
     let fixture = Fixture::new();
     for (args, output) in [

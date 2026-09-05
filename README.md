@@ -37,6 +37,12 @@ detected unsupported text/image/shape features and unresolved media. The CLI pri
 these findings during conversion, and WASM exposes them through document
 inspection. An empty report does not guarantee complete rendering fidelity.
 
+For stored-hash checks, enable `ParseOptions.verify_integrity` with a detailed
+parse API. `ParsedDocument.integrity` reports matched, mismatched and unavailable
+checks for notes, objects, layers, pages and manifest links. These checks follow
+Samsung's hash formulas; object hashes exclude geometry and content. See the
+[integrity findings](docs/reverse-engineering/integrity-findings.md) for coverage.
+
 Native image objects are exposed as `PageElement::PlacedImage`, including their
 media ID, optional resolved asset index, bounds and rotation. Existing
 caller-created `PageElement::Image` values remain renderable. See the
@@ -79,6 +85,16 @@ docker pull ghcr.io/twangodev/sdocx
 ```sh
 sdocx-cli note.sdocx
 ```
+
+To include stored-hash diagnostics and coverage counts during conversion:
+
+```sh
+sdocx-cli note.sdocx --verify-integrity
+```
+
+Hash mismatches and unavailable checks are reported on stderr and do not stop
+conversion or change its exit status. A successful conversion with this flag
+does not establish that every integrity check passed.
 
 For PNG or PDF export, supply font files when the document's fonts are unavailable
 locally. Repeat `--font` for additional faces; explicit faces take precedence
