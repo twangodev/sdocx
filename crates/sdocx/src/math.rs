@@ -113,7 +113,7 @@ impl StoredObject {
     }
 }
 
-fn checked_payload<'a>(
+pub(crate) fn checked_payload<'a>(
     object: &StoredObject,
     page_bytes: &'a [u8],
     expected: ObjectType,
@@ -199,7 +199,7 @@ fn parse_math_metadata(payload: &[u8], limits: &ParseLimits) -> Result<MathMetad
     })
 }
 
-fn read_count(
+pub(crate) fn read_count(
     reader: &mut Reader<'_>,
     minimum_record_size: usize,
     entries: &mut u64,
@@ -297,7 +297,7 @@ fn parse_plot_metadata(payload: &[u8], limits: &ParseLimits) -> Result<PlotMetad
     })
 }
 
-fn read_latex(reader: &mut Reader<'_>, limits: &ParseLimits) -> Result<String> {
+pub(crate) fn read_latex(reader: &mut Reader<'_>, limits: &ParseLimits) -> Result<String> {
     let value = reader.read_utf8_u16("LaTeX")?;
     let units = value.encode_utf16().count();
     if units > limits.max_text_characters {

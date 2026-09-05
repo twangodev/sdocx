@@ -42,6 +42,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,
   substitutions, colors, widths and visibility.
+- [`formula-findings.md`](formula-findings.md) — formula expressions, answers,
+  embedded strokes, image references and label graphs.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

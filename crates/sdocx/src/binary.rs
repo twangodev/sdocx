@@ -137,6 +137,22 @@ impl<'a> Reader<'a> {
         decode_utf16(bytes, self.context, field).map(Some)
     }
 
+    pub(crate) fn read_utf16_u16_without_null_sentinel(
+        &mut self,
+        field: &'static str,
+        max_units: usize,
+    ) -> Result<String> {
+        let unit_count = usize::from(self.read_u16(field)?);
+        if unit_count > max_units {
+            return Err(Error::LimitExceeded {
+                resource: "text characters",
+                limit: max_units as u64,
+                actual: unit_count as u64,
+            });
+        }
+        decode_utf16(self.read_bytes(unit_count * 2, field)?, self.context, field)
+    }
+
     pub(crate) fn read_utf16_u32(
         &mut self,
         field: &'static str,

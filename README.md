@@ -49,6 +49,12 @@ settings, voice and attachment references, and fixed text/background properties.
 See [note metadata findings](docs/reverse-engineering/note-metadata-findings.md)
 for bounded decoding and unknown-field handling.
 
+Stored math, plot and formula objects have explicit inspection APIs for
+expressions, styles, embedded strokes and label graphs. They still produce
+unsupported-object diagnostics during page conversion because math rendering
+is not implemented. See [formula findings](docs/reverse-engineering/formula-findings.md)
+for the APIs and remaining gaps.
+
 Native image objects are exposed as `PageElement::PlacedImage`, including their
 media ID, optional resolved asset index, bounds and rotation. Existing
 caller-created `PageElement::Image` values remain renderable. See the

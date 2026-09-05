@@ -48,7 +48,9 @@ then advances by the payload size. The size excludes its own four-byte prefix.
 The reader creates an outer-type-11 formula object at `0x45a7c0`–`0x45a7c8`
 and applies the sized binary. These records are contained inside the math
 payload; they do not use the outer page object's type/child-count/hash wrapper.
-Formula internals are not decoded by this pass.
+Envelope inspection preserves formula internals as raw binaries. They can be
+decoded explicitly with `FormulaMetadata::parse_bytes`; see
+[formula findings](formula-findings.md).
 
 Field 1 widens four in-memory `f32` margins to `f64`. The reader consumes 32
 bytes and narrows them back to the native rectangle. These values are margins,
@@ -116,7 +118,8 @@ wrong outer/frame types and out-of-bounds stored payload offsets. Formula bytes
 are checked for exact preservation rather than interpreted as valid formulas.
 
 Type-20 plot fields and graph expressions now have their own bounded inspection
-API; see [plot findings](plot-findings.md). Next work can trace type-11 formula
-serialization and the links to referred strokes and rendered assets. Samsung-generated
+API; see [plot findings](plot-findings.md). Type-11 formulas also expose their
+expressions, embedded strokes and label graphs; see
+[formula findings](formula-findings.md). Samsung-generated
 math/formula/plot documents and matching PDF exports are still needed to check
 real writer variants, layout and visual fidelity.

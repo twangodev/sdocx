@@ -79,8 +79,10 @@ Known outer object types without semantic decoders now produce
 `UnsupportedObjectType` diagnostics, including container/group payloads whose
 children are still traversed. Unknown future IDs retain their distinct warning.
 Math objects have explicit envelope inspection for sized formula binaries,
-margins, angle mode and connected plot references. Formula internals and math
-rendering remain unsupported; see [math findings](math-findings.md).
+margins, angle mode and connected plot references; see [math findings](math-findings.md).
+Formula metadata exposes LaTeX inputs/results/substitutions, answer text,
+image references, embedded strokes and label graphs. Expression/relation enum
+semantics and math rendering remain open; see [formula findings](formula-findings.md).
 Plot metadata and graph expressions/styles also have explicit bounded inspection;
 evaluation and graph rendering remain open. See [plot findings](plot-findings.md).
 
@@ -114,8 +116,8 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
 ## Remaining research
 
 - Multiple layers and recursive child/container fixtures.
-- Formula internals and graph evaluation, native table/code layout, and standalone decoding
-  for the remaining non-stroke object types.
+- Formula label-graph semantics, expression and graph evaluation, native
+  table/code layout, and standalone decoding for remaining non-stroke types.
 - Page custom-object internals and a few legacy common fields.
 - Proprietary `.spi` payload semantics.
 - Byte-for-byte encrypted-file validation with a protected fixture.

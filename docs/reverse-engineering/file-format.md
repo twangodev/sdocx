@@ -482,6 +482,13 @@ expressions and substitutions, line styles and angle mode through
 `StoredObject::plot_metadata`. Graph strings use `u16` byte lengths; graph
 records have no enclosing size or field mask. See [plot findings](plot-findings.md).
 
+Outer type 11 uses `0 + 11`. `StoredObject::formula_metadata` exposes LaTeX
+inputs/results/substitutions, image and rectangle fields, embedded strokes,
+answer text and label graphs. Its physical field order places bit 3 before
+bit 2. `FormulaMetadata::parse_bytes` also accepts the sized formula binaries
+inside math objects. See [formula findings](formula-findings.md) for the mixed
+string encodings, nested limits and unresolved enum meanings.
+
 ## Generic object payload frames
 
 An object payload is a chain of one or more typed frames. The common header is:

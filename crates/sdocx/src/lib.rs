@@ -16,6 +16,7 @@ mod container;
 mod decode;
 mod end_tag;
 mod error;
+mod formula;
 mod frame;
 mod image;
 mod integrity;
@@ -42,6 +43,9 @@ pub use end_tag::{
     parse_end_tag_bytes, parse_end_tag_bytes_with_limits,
 };
 pub use error::{Error, Result};
+pub use formula::{
+    FormulaLabel, FormulaLabelGraph, FormulaLabelRelation, FormulaMetadata, FormulaStroke,
+};
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
