@@ -215,6 +215,7 @@ all four mode combinations, microsecond truncation, and the one/two-frame
 boundaries at three rates.
 
 These checks reconstruct static control flow and arithmetic; they do not
-execute native prediction or measure device scheduling. Base callback
-decisions and the coefficient caller chain are separate remaining work.
+execute native prediction or measure device scheduling. The
+[base dispatch trace](predictor-dispatch-findings.md) recovers callback
+decisions around this gate. The coefficient caller chain remains separate work.
 No SDK code or corpus fixture changed.

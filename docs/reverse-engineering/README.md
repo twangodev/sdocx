@@ -103,6 +103,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   averaging, endpoint history windows and Composer's low-speed threshold.
 - [`predictor-chrono-findings.md`](predictor-chrono-findings.md) — time/VSync
   task pacing, phase thresholds and completion-dependent timer resets.
+- [`predictor-dispatch-findings.md`](predictor-dispatch-findings.md) — base
+  branch conditions, history-driven completion and separate Boolean returns.
 - [`neural-motion-findings.md`](neural-motion-findings.md) — minimum movement,
   real/output speed statistics and per-candidate distance limits.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled

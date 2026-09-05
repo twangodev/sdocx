@@ -60,6 +60,9 @@ zeros at 0/24/32. The paths at `0x2ed7c`–`0x2eda4` instead use the
 retained-record reference. A complete callback schema must therefore
 preserve the reference's branch-dependent origin.
 
+The [base dispatch trace](predictor-dispatch-findings.md) identifies which
+status, speed, pacing and history conditions select those completion paths.
+
 ## Neural prediction adds VSync and refresh-period fields
 
 At the start of `NNPredictor::DoPredict`, the code gets refresh rate

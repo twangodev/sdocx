@@ -193,8 +193,9 @@ retention, unweighted averaging, long-interval retention and all four
 threshold rows with adjacent float comparisons. These checks do not execute
 the native input pipeline.
 
-The separate [task-pacing trace](predictor-chrono-findings.md) recovers the
-time/VSync gate. Base callback scheduling and a complete audit of
-threshold-mode changes remain separate work.
+The [task-pacing trace](predictor-chrono-findings.md) recovers the time/VSync
+gate, and the [base dispatch trace](predictor-dispatch-findings.md) recovers
+its callback scheduling. A complete audit of threshold-mode changes remains
+separate work.
 Actual device sampling and prediction outcomes remain unmeasured.
 No SDK code or corpus fixture changed.
