@@ -85,6 +85,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time
   forwarding, native receiver subscriptions and neural predictor lifecycle.
+- [`neural-model-findings.md`](neural-model-findings.md) — bundled M16/M20/M22
+  selection, input gates, prediction horizons and filter configuration.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

@@ -192,6 +192,13 @@ Composer callbacks `0x4db0dc`/`0x4db048` register and remove the neural
 secondary interface. The first native receiver subscribes to Java frame
 callbacks and the final removal unsubscribes.
 
+[Neural model findings](neural-model-findings.md) map prediction-length IDs
+1–3 through `GetModelInfoHolder`, `0x3a910`, to M16/M20/M22 holders at
+`0x111bb0`, `0x111bc8` and `0x111be0`. `GetModel`, `0x3ab6c`, admits
+only input type 1 and lazily invokes the codec. `SetPredictionLength`,
+`0x25378`, sets minimum sample count to model input size plus one and
+applies each model's prediction horizons and Kalman configuration.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
