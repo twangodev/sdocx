@@ -91,6 +91,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   differences, timestamp gates, DPI scaling and model input-buffer order.
 - [`neural-inference-setup-findings.md`](neural-inference-setup-findings.md) —
   requested tensor shapes, signature/interpreter setup and time-feature limits.
+- [`neural-lifecycle-findings.md`](neural-lifecycle-findings.md) — runtime
+  replacement, failure state, runner ownership and pending-task bindings.
 - [`neural-output-findings.md`](neural-output-findings.md) — output coordinate
   scaling, inverse rotation, copied pen channels and independent timestamp fields.
 - [`neural-selection-findings.md`](neural-selection-findings.md) — whole-ms

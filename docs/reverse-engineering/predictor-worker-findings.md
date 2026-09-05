@@ -211,8 +211,9 @@ single return instruction and provides no additional cleanup.
 updating the holder. `NNPredictor::SetPredictionLength` similarly calls
 `Wait(true)` at `0x253e0`, then updates worker and local holders. It
 stores the new prediction ID earlier, at `0x253bc`. These calls cannot
-be described as draining pending work. Holder replacement and the
-lifetime of already-bound inference pointers require their own trace.
+be described as draining pending work. The
+[model lifecycle trace](neural-lifecycle-findings.md) follows holder
+replacement and the lifetime of already-bound inference pointers.
 
 ## Validation and follow-up
 
@@ -227,8 +228,8 @@ rejection, successive submissions before execution, and stop before or
 after task completion. These checks validate the reconstruction, not
 native execution or the absence of additional application synchronization.
 
-The next lifecycle questions are whether holder replacement invalidates
-pending task bindings, and which outer callers serialize model changes
-and teardown. Saved SDOCX/PDF pairs alone cannot resolve these scheduling
-questions; they need runtime input and lifecycle traces. No SDK code or
+The model lifecycle trace establishes that replacement destroys resources
+referenced by earlier task bindings. Which outer callers serialize model
+changes and teardown remains unresolved. Saved SDOCX/PDF pairs alone cannot
+resolve these scheduling questions; they need runtime input and lifecycle traces. No SDK code or
 corpus fixture changed.

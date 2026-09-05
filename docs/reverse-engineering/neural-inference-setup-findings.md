@@ -161,5 +161,7 @@ values. Markdown links and whitespace checks passed.
 The [output conversion trace](neural-output-findings.md) follows output
 tensors into candidate coordinates, pen channels and timestamp fields.
 Horizon selection and rejection after inference remain separate work.
+The [lifecycle trace](neural-lifecycle-findings.md) recovers resource
+replacement, failure state, and the ownership of copied task handles.
 Model graph contents and actual inference remain unvalidated. No SDK code
 or corpus fixture changed.
