@@ -71,10 +71,14 @@ kind values concretely:
 - Other kind values return null at `0x35ab0`.
 
 The factory applies DPI, prediction length and refresh rate through
-slots 64, 184 and 144 at `0x35a78`, `0x35a90` and `0x35aa4`.
+slots 64, 184 and 144 at `0x35a80`, `0x35a94` and `0x35aa8`.
 Predictor vtables `0x40868`/`0x40988` identify the linear and neural
 classes. Both bind slot 40 to `PredictorBase::SetTouchConsumer`,
 `0x301d8`.
+
+The [reconfiguration trace](predictor-reconfiguration-findings.md) shows
+that Composer deletes and recreates the concrete predictor for a changed
+selection, configuring its length before publication and registration.
 
 ## Registration captures a consumer and a thread identifier
 

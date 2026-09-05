@@ -161,8 +161,11 @@ precede the retained-point/minimum-count comparison at `0x2c704`.
 That later count check is therefore not a guard for this lifetime edge.
 
 This establishes a missing local lifetime guarantee for the specified
-sequence. Whether outer callers exclude it remains unresolved. It does
-not establish an observed use-after-free in Samsung Notes.
+sequence. The [Composer reconfiguration trace](predictor-reconfiguration-findings.md)
+shows that its selection setter recreates the predictor and configures
+the new instance before publishing it. That path does not establish this
+pending-task ordering. Other live-instance callers remain unresolved;
+this is not an observed use-after-free in Samsung Notes.
 
 ## Predictor teardown preserves the distinction between its two holders
 
@@ -193,6 +196,6 @@ five setup outcomes, missing-record preservation, stable map identity,
 and stale task bindings after replacement.
 
 No native inference, fault injection, or device lifecycle stress test was
-performed. The next useful trace is Composer's outer serialization around
-prediction reconfiguration and deletion. This work changes only research
+performed. Composer's selection and deletion ordering is now traced;
+callback queue ownership and cancellation remain open. This work changes only research
 documentation; it supplies no new saved-stroke decoding rule or SDK behavior.

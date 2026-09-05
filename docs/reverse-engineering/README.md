@@ -109,6 +109,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   branch conditions, history-driven completion and separate Boolean returns.
 - [`predictor-worker-findings.md`](predictor-worker-findings.md) — inline/worker
   routing, pending-task ownership, wait predicates and delayed input capture.
+- [`predictor-reconfiguration-findings.md`](predictor-reconfiguration-findings.md) —
+  instance recreation, enable-state preservation and presenter teardown order.
 - [`predictor-position-findings.md`](predictor-position-findings.md) — last-history
   presentation delays, coefficient arithmetic and backend-switch ordering.
 - [`unbuffered-draw-findings.md`](unbuffered-draw-findings.md) — separate drawing
