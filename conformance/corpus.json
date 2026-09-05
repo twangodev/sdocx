@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "id": "01-basic-formatting",
+      "sdocx": {
+        "path": "01-basic-formatting.sdocx",
+        "sha256": "86716d1ccc070d101272ff0760276b8e2d913bfcde88e34d3d64c5c51a1fd21b"
+      },
+      "reference_pdf": {
+        "path": "01-basic-formatting.pdf",
+        "sha256": "fb1437be8c1c172374b6c798cb65ace68e7ccffaad61db3807e4e8e0d2dcc2a1"
+      },
+      "expected": {
+        "stored_pages": 6,
+        "visible_pages": 5,
+        "title": "01-basic-test",
+        "body": {
+          "minimum_characters": 1600,
+          "required_text": [
+            "Final sentence: The quick brown fox jumps over the lazy dog."
+          ]
+        },
+        "flow": {
+          "text_sections": 6,
+          "hyperlinks": 6,
+          "tables": 1,
+          "code_blocks": 1,
+          "required_link_targets": [
+            "https://example.com/markdown-test"
+          ],
+          "required_table_text": [
+            "Alpha"
+          ],
+          "required_code_text": [
+            "Markdown code fence"
+          ]
+        },
+        "diagnostics": {}
+      }
+    }
+  ]
+}

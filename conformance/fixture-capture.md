@@ -38,9 +38,10 @@ fixtures can follow once the basic pair is validated.
    and attribution conventions. Keep APKs, fonts and document binaries out of
    the reverse-engineering knowledge base.
 3. Compute SHA-256 for both files. Inspect parsed structure and visible page
-   counts before adding the matching row to `corpus.tsv`; do not guess counts
-   from ZIP entry order. The current manifest also requires text expectations,
-   so extend the conformance schema deliberately if a new fixture has no flow text.
+   counts before adding the matching entry to `corpus.json`; do not guess counts
+   from ZIP entry order. Text expectations are optional. Add exact page-object
+   counts and any confirmed diagnostic counts using the
+   [manifest format](manifest-format.md).
 4. Run structural conformance and the visual runner with the new ID. Preserve
    diagnostics, reference/SDK images, tool versions and font hashes. Add focused
    synthetic regressions for each confirmed parser or renderer defect.

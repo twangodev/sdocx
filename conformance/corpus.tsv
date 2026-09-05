@@ -1,2 +1,0 @@
-# id	sdocx	sha256	reference_pdf	reference_pdf_sha256	stored_pages	visible_pages	title	minimum_body_characters	required_text	text_sections	hyperlinks	tables	code_blocks	required_link_target	required_table_text	required_code_text
-01-basic-formatting	01-basic-formatting.sdocx	86716d1ccc070d101272ff0760276b8e2d913bfcde88e34d3d64c5c51a1fd21b	01-basic-formatting.pdf	fb1437be8c1c172374b6c798cb65ace68e7ccffaad61db3807e4e8e0d2dcc2a1	6	5	01-basic-test	1600	Final sentence: The quick brown fox jumps over the lazy dog.	6	6	1	1	https://example.com/markdown-test	Alpha	Markdown code fence

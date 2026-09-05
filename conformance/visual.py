@@ -26,35 +26,81 @@ def sha256(path):
 
 
 def read_fixtures(manifest, corpus, selected):
+    document = json.loads(manifest.read_text(encoding="utf-8"))
+    if (
+        not isinstance(document, dict)
+        or set(document) != {"version", "fixtures"}
+        or type(document["version"]) is not int
+        or document["version"] != 1
+        or not isinstance(document["fixtures"], list)
+        or not document["fixtures"]
+    ):
+        raise ValueError("manifest must use version 1 and contain fixtures")
     fixtures = []
     seen = set()
-    for number, line in enumerate(manifest.read_text().splitlines(), 1):
-        if not line.strip() or line.startswith("#"):
-            continue
-        fields = line.split("\t")
-        if len(fields) != 17 or not re.fullmatch(r"[A-Za-z0-9_-]+", fields[0]):
-            raise ValueError(f"invalid manifest row {number}")
-        fixture_id = fields[0]
+    for entry in document["fixtures"]:
+        if not isinstance(entry, dict) or set(entry) != {
+            "id",
+            "sdocx",
+            "reference_pdf",
+            "expected",
+        }:
+            raise ValueError("invalid fixture fields")
+        fixture_id = entry["id"]
+        if not isinstance(fixture_id, str) or not re.fullmatch(
+            r"[A-Za-z0-9_-]+", fixture_id
+        ):
+            raise ValueError("invalid fixture ID")
         if fixture_id in seen:
             raise ValueError(f"duplicate fixture ID: {fixture_id}")
         seen.add(fixture_id)
-        if selected and fixture_id not in selected:
-            continue
-        fixture = {"id": fixture_id, "visible_pages": int(fields[6])}
-        if fixture["visible_pages"] < 1:
-            raise ValueError(f"{fixture_id}: visible page count must be positive")
-        for key, filename, digest in (
-            ("sdocx", fields[1], fields[2]),
-            ("reference_pdf", fields[3], fields[4]),
+        expected = entry["expected"]
+        if not isinstance(expected, dict) or set(expected) - {
+            "stored_pages",
+            "visible_pages",
+            "title",
+            "body",
+            "flow",
+            "page_objects",
+            "diagnostics",
+        }:
+            raise ValueError(f"{fixture_id}: invalid expectation fields")
+        stored, visible = expected.get("stored_pages"), expected.get("visible_pages")
+        if (
+            type(stored) is not int
+            or type(visible) is not int
+            or not 0 < visible <= stored
         ):
+            raise ValueError(f"{fixture_id}: invalid page counts")
+        fixture = {"id": fixture_id, "visible_pages": visible}
+        for key in ("sdocx", "reference_pdf"):
+            asset = entry[key]
+            if not isinstance(asset, dict) or set(asset) != {"path", "sha256"}:
+                raise ValueError(f"{fixture_id}: invalid asset fields")
+            filename, digest = asset["path"], asset["sha256"]
+            if (
+                not isinstance(filename, str)
+                or not filename
+                or any(part in filename for part in ("\\", ":"))
+                or Path(filename).is_absolute()
+                or any(part == ".." for part in Path(filename).parts)
+            ):
+                raise ValueError(
+                    f"{fixture_id}: file is outside the corpus or has an invalid path"
+                )
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise ValueError(f"{fixture_id}: invalid SHA-256")
+            if selected and fixture_id not in selected:
+                continue
             path = (corpus / filename).resolve()
             if not path.is_relative_to(corpus.resolve()):
                 raise ValueError(f"{fixture_id}: file is outside the corpus")
-            if not re.fullmatch(r"[0-9a-f]{64}", digest) or sha256(path) != digest:
+            if sha256(path) != digest:
                 raise ValueError(f"{fixture_id}: SHA-256 mismatch for {filename}")
             fixture[key] = path
             fixture[f"{key}_sha256"] = digest
-        fixtures.append(fixture)
+        if not selected or fixture_id in selected:
+            fixtures.append(fixture)
     if selected - seen:
         raise ValueError(f"unknown fixture IDs: {', '.join(sorted(selected - seen))}")
     if not fixtures:
@@ -318,7 +364,7 @@ def main(argv=None):
         default=Path(os.environ.get("SDOCX_CORPUS_DIR", ROOT / "hf")),
     )
     parser.add_argument(
-        "--manifest", type=Path, default=ROOT / "conformance/corpus.tsv"
+        "--manifest", type=Path, default=ROOT / "conformance/corpus.json"
     )
     parser.add_argument(
         "--fixture",

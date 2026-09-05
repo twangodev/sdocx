@@ -3,7 +3,7 @@
 ## Evidence and scope
 
 The first measured visual pass uses the locked `01-basic-formatting` pair in
-[`conformance/corpus.tsv`](../../conformance/corpus.tsv). Both source hashes
+[`conformance/corpus.json`](../../conformance/corpus.json). Both source hashes
 were verified before rendering. The document has six stored records and five
 visible pages; its Samsung PDF has five 600 × 848 point pages. The SDK renders
 1080 × 1527 pixel pages. Reference rasterization uses those pixel dimensions,

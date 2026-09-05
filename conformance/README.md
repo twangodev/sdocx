@@ -7,8 +7,8 @@ on Hugging Face and is licensed under CC BY 4.0. Check out or download that
 dataset into the ignored `hf/` directory at the repository root. A different
 checkout can be selected with `SDOCX_CORPUS_DIR`.
 
-The tracked [`corpus.tsv`](corpus.tsv) is the lock file. Each row records the
-fixture filenames, SHA-256 digests, and a small set of stable parser/layout
+The tracked [`corpus.json`](corpus.json) is the versioned lock file. Each fixture
+records filenames, SHA-256 digests, page counts and selected parser/layout
 expectations. Store the source `.sdocx` and its Samsung-generated reference PDF
 side by side in the dataset repository.
 
@@ -26,7 +26,8 @@ SDOCX_CORPUS_DIR=/path/to/dataset cargo test -p sdocx --test conformance -- --ig
 
 Regular unit tests do not download or require private/large fixtures. To add a
 fixture, upload its artifacts to the dataset, calculate both SHA-256 digests,
-then append one tab-separated row to `corpus.tsv`.
+then add its entry to `corpus.json`. See [manifest expectations](manifest-format.md)
+for optional text checks, exact page-object counts and diagnostic counts.
 
 ## Visual comparison
 
@@ -53,7 +54,7 @@ Use `uv add --project conformance PACKAGE` to add dependencies or
 the synthetic tests below and commit the dependency changes together.
 
 Use a new output directory for each run; existing output is rejected to prevent
-stale pages from entering a comparison. `--fixture ID` selects a manifest row
+stale pages from entering a comparison. `--fixture ID` selects a manifest entry
 and may be repeated. `--corpus-dir` (or `SDOCX_CORPUS_DIR`) selects the corpus;
 `--cli` selects an explicitly built executable, including one from a baseline
 checkout. The runner does not download or modify corpus files.

@@ -1,5 +1,6 @@
 """Small synthetic checks for the visual runner, independent of corpus files."""
 
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -30,17 +31,17 @@ class VisualTests(unittest.TestCase):
             page = pdf.new_page(width=100, height=100)
             page.draw_rect(pymupdf.Rect(10, 10, 20, 20), fill=(0, 0, 0))
             pdf.save(reference)
-        fields = [
-            "fixture",
-            source.name,
-            visual.sha256(source),
-            reference.name,
-            visual.sha256(reference),
-            "1",
-            "1",
-        ] + [""] * 10
-        manifest = self.root / "corpus.tsv"
-        manifest.write_text("\t".join(fields) + "\n")
+        entry = {
+            "id": "fixture",
+            "sdocx": {"path": source.name, "sha256": visual.sha256(source)},
+            "reference_pdf": {
+                "path": reference.name,
+                "sha256": visual.sha256(reference),
+            },
+            "expected": {"stored_pages": 1, "visible_pages": 1},
+        }
+        manifest = self.root / "corpus.json"
+        manifest.write_text(json.dumps({"version": 1, "fixtures": [entry]}))
         return manifest
 
     def test_identical_blank_and_transparent_images(self):
@@ -102,7 +103,9 @@ class VisualTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown fixture"):
             visual.read_fixtures(manifest, self.root, {"missing"})
         original = manifest.read_text()
-        manifest.write_text(original * 2)
+        duplicate = json.loads(original)
+        duplicate["fixtures"] *= 2
+        manifest.write_text(json.dumps(duplicate))
         with self.assertRaisesRegex(ValueError, "duplicate fixture"):
             visual.read_fixtures(manifest, self.root, set())
         manifest.write_text(original)
@@ -117,6 +120,41 @@ class VisualTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "outside the corpus"):
             visual.read_fixtures(manifest, self.root, set())
+
+    def test_manifest_requires_supported_version_integer_counts_and_known_fields(self):
+        manifest = self.fixture()
+        original = json.loads(manifest.read_text())
+        invalid = []
+        for version in (2, True, "1"):
+            invalid.append({**original, "version": version})
+        for stored, visible in ((0, 1), (1, 0), (1, 2), (1, True), (1, 1.0)):
+            value = json.loads(json.dumps(original))
+            value["fixtures"][0]["expected"] = {
+                "stored_pages": stored,
+                "visible_pages": visible,
+            }
+            invalid.append(value)
+        value = json.loads(json.dumps(original))
+        value["fixtures"][0]["expected"]["image_count_typo"] = 1
+        invalid.append(value)
+        for value in invalid:
+            manifest.write_text(json.dumps(value))
+            with self.assertRaises(ValueError):
+                visual.read_fixtures(manifest, self.root, set())
+
+    def test_unselected_fixture_metadata_is_validated_without_reading_its_files(self):
+        manifest = self.fixture()
+        value = json.loads(manifest.read_text())
+        extra = json.loads(json.dumps(value["fixtures"][0]))
+        extra["id"] = "extra"
+        extra["sdocx"]["path"] = "not-present.sdocx"
+        value["fixtures"].append(extra)
+        manifest.write_text(json.dumps(value))
+        self.assertEqual(len(visual.read_fixtures(manifest, self.root, {"fixture"})), 1)
+        extra["sdocx"]["sha256"] = "invalid"
+        manifest.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, "invalid SHA-256"):
+            visual.read_fixtures(manifest, self.root, {"fixture"})
 
     def test_page_order_is_numeric_and_extra_or_missing_pages_fail(self):
         for index in reversed(range(12)):
