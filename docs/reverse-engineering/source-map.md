@@ -171,6 +171,13 @@ delays. Engine's JNI table at `0x192de0` and configuration vtable at
 `0x17bb40` bind the hardware rate, rotation and real display dimensions.
 Fresh `SpenLatencyConfiguration` decompilation confirms the Java sources.
 
+[Predictor callback findings](predictor-callback-findings.md) connect Composer's
+`PredictorProxy`, `0x4daa1c`, to the bundled `libSPenPredictor.so` factory,
+`CreatePredictor`, `0x359f0`. Predictor completion `0x2fb28` forwards its
+40-byte timing entity through `TouchSynchronizer`, `0x3950c`, to Composer
+consumer `0x4da4bc`, preserving the entity across synchronous and queued
+delivery and releasing generated events after consumption.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
