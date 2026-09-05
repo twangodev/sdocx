@@ -63,6 +63,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   selection, raster recorder bindings and long-gesture splitting.
 - [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
+- [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
+  constructor default, optional CSAPS processing and count-preserving replacement.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

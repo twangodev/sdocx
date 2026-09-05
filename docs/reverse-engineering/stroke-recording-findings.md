@@ -196,7 +196,10 @@ changed and no new device fixtures were used.
 
 The [pen-action input trace](stroke-input-findings.md) establishes a
 separate InkPen2 filter and an ordinary long-gesture split at 65501 recorded
-points. Further APK targets include stroke-view event preprocessing, the
-nonnull coordinate provider, later stroke insertion/transformation and
-single-point import handling. Tap and short-stroke SDOCX/PDF pairs can test
-the stored counts, repeated coordinates, tool types and resulting marks.
+points. The [presentation trace](stroke-prediction-findings.md) separates
+ordinary Marker2 recording from prediction drawing, and the
+[finalization trace](stroke-finalization-findings.md) identifies an optional
+coordinate replacement that preserves the count and parallel channels.
+Further APK targets include nonnull coordinate providers, document-insertion
+transforms and single-point import handling. Tap and short-stroke SDOCX/PDF
+pairs can test stored counts, repeated coordinates, tool types and marks.

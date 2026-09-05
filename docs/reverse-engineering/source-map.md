@@ -108,6 +108,12 @@ recorder call at `0x4d8bdc`. Marker2 V2's prediction getter at `0x1f13c`
 supplies the separate drawable called by `OnPredictTouch`, `0x4d94e0`;
 V1 returns null. Drawing appends only the primary event at `0xb7570`.
 
+[Stroke finalization findings](stroke-finalization-findings.md) resolve
+Composer factory `0x4db914` and the stroke-view constructor's null selection
+at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
+`0x4dc480`; Model `0x2df5f8` requires the original count, and `0x2e9cec`
+replaces only the coordinate vector while refreshing object/cache state.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

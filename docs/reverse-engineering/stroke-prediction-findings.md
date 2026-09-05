@@ -168,11 +168,12 @@ event's matrix at `0x4d356c`, and invokes helper `0x4d3110`. This establishes
 the matrix sequence, not the complete semantics of the retained-event list.
 
 Later presenter processing can call
-`TouchStrokeDrawing::TransformStroke` at `0x4d9404`. Therefore the absence
-of direct prediction appends does not imply that recorded coordinates
-never change after the ordinary event dispatch. The transformer and final
-insertion path remain necessary targets for recovering document-space
-coordinates.
+`TouchStrokeDrawing::TransformStroke` at `0x4d9404`. The
+[finalization trace](stroke-finalization-findings.md) resolves this as
+optional processing whose constructor default is disabled. Its CSAPS
+implementation can replace recorded X/Y while retaining the original count
+and parallel channels. This is separate from the still-unresolved
+document-insertion coordinate transform.
 
 ## Validation and SDK implications
 
