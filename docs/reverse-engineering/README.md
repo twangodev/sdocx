@@ -91,6 +91,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   differences, timestamp gates, DPI scaling and model input-buffer order.
 - [`neural-inference-setup-findings.md`](neural-inference-setup-findings.md) —
   requested tensor shapes, signature/interpreter setup and time-feature limits.
+- [`neural-output-findings.md`](neural-output-findings.md) — output coordinate
+  scaling, inverse rotation, copied pen channels and independent timestamp fields.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

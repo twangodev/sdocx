@@ -213,6 +213,13 @@ positional fallback. It installs an `s` validator with threshold bits
 `0x3f4ccccd`; `InputTimeValidator::Validate`, `0x36594`, supplies the
 inclusive upper limit used before inference.
 
+[Neural output findings](neural-output-findings.md) trace the two-float read
+at `0x2cdc4` through DPI conversion and `GetPenEvent`, `0x26354`.
+`RotateOverPoint`, `0x26408`, reverses the input rotation before anchoring
+each output at the last real point and copying pen channels. `Run` builds
+millisecond and nanosecond horizon offsets separately; `AddPredictedPoint`,
+`0x311a0`, adds the separate VSync-aligned field at record offset 80.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

@@ -158,6 +158,8 @@ were checked against the ELF and disassembly. Disposable numerical checks
 covered all six integer-interval examples and the three adjacent float
 values. Markdown links and whitespace checks passed.
 
-Next work is the conversion from output tensors to candidate points,
-horizon selection and rejection after inference. Model graph contents and
-actual inference remain unvalidated. No SDK code or corpus fixture changed.
+The [output conversion trace](neural-output-findings.md) follows output
+tensors into candidate coordinates, pen channels and timestamp fields.
+Horizon selection and rejection after inference remain separate work.
+Model graph contents and actual inference remain unvalidated. No SDK code
+or corpus fixture changed.
