@@ -149,11 +149,11 @@ WDoc page headers; their caller and format dispatch must be checked first.
 The SDK still stores strokes and other page elements in separate collections.
 The native page-capture path has separate base, top and masking passes,
 described in [capture composition findings](capture-composition-findings.md).
-Its object selection is a different method from this sorted all-layer
-collection. A complete paint-order implementation still needs the physical
-layer selection rules and an ordered SDK representation that can interleave
-strokes and other elements. The confirmed comparator alone is insufficient
-to choose that ordering.
+Its object selection queries the current physical layer through a different
+method from this sorted all-layer collection. A complete paint-order
+implementation still needs the higher-level export setup and an ordered SDK
+representation that can interleave strokes and other elements. The confirmed
+comparator alone is insufficient to choose that ordering.
 
 ## SDK behavior and validation
 

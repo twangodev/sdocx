@@ -2,8 +2,9 @@
 
 ## Evidence and scope
 
-Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenComposer.so` and
-`libSPenModel.so`. Addresses below belong to Composer unless marked Model.
+Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenComposer.so`,
+`libSPenModel.so` and `libSPenGraphics.so`. Addresses below belong to Composer
+unless marked Model or Graphics.
 These are native capture-path findings. No new SDOCX or Samsung PDF captures
 were available to validate the resulting pixels.
 
@@ -69,6 +70,12 @@ common render-layer ID. Non-top-layer strokes follow the ordinary ID test.
 Consequently, sorting solely by the stored render-layer ID cannot reproduce
 this selection.
 
+The top-layer pen flag is serialized stroke property bit 6. Model
+`ObjectStrokeBinaryHandler::m_ApplyBinary_Property`, `0x2ed138`, extracts that
+bit at `0x2ed174` and stores it at stroke-data offset 341 at `0x2ed180`.
+`IsTopLayerPen`, `0x2e1ea0`, reads the same byte at `0x2e1ea8`. The property
+writer reads it at `0x2ec104` and sets mask `0x40` at `0x2ec110`.
+
 `ObjectFlexibleMetadata::render_layer()` exposes the three names through
 `ObjectRenderLayer::{Base, Top, Masking}`. Unknown signed values remain
 `Other(i32)`, absent fields remain `None`, and `render_layer_id` retains its
@@ -87,9 +94,54 @@ Before composition, `SPPaint::SetXFermode` at `0x330270` receives native mode
 16 or 17. A page with a PDF selects 16 at `0x330214`. Otherwise, the capture
 settings convert the page background color at `0x33024c`, and
 `Color::IsDarkColor` tests the result at `0x330258`: dark selects 17, the
-other branch selects 16. These numeric modes still need to be traced to
-their actual blend operations. Ordinary alpha-over drawing is not established
-by this path.
+other branch selects 16.
+
+The graphics implementation establishes the actual operations:
+
+| Paint mode | Shader mode | Operation on unpremultiplied source and destination RGB |
+| ---: | ---: | --- |
+| 16 | 1 | Component-wise minimum: darken |
+| 17 | 2 | Component-wise maximum: lighten |
+
+Graphics `SPPaint::SetXFermode`, `0xbdafc`, stores the mode at paint offset
+44. `SPBitmapDrawable::DrawBitmapRT`, `0x95f24`, reads that member at
+`0x9632c`. Its test at `0x96370`–`0x96378` selects the advanced branch for
+exactly modes 16 and 17. At `0x96504`–`0x96518`, mode 16 becomes shader
+value 1 and mode 17 becomes 2. The value is passed at `0x9651c` to the
+uniform object at shader member 56.
+
+The drawable initializes its shader member 48 at `0x951ec`–`0x951f4` through
+helper `0x954e0`. That helper constructs `SPBitmapAdvancedBlendingShader`
+at `0x9556c`. The shader constructor's program inputs resolve through
+relocations `0xd7280` and `0xd7288` to its exported vertex and fragment
+sources, including the fragment source at `0x56fce`.
+
+`SPBitmapAdvancedBlendingShader` construction associates member 56 with the
+string `uBlendingMode` at `0xc4a84`–`0xc4a94`; the string is at `0x4ccaf`.
+The exported fragment-shader source at Graphics `0x56fce` uses component-wise
+minimum for uniform value 1 and maximum for value 2. This resolves the
+mapping from the capture paint mode to the shader equation.
+
+The shader first applies paint alpha, edge coverage and optional tint, then
+unpremultiplies source and destination RGB. If their alphas are `As` and
+`Ad`, and their unpremultiplied colors are `Cs` and `Cd`, its output is:
+
+```text
+overlap = As * Ad
+source_only = As * (1 - Ad)
+destination_only = Ad * (1 - As)
+output_rgb = blend(Cs, Cd) * overlap
+           + Cs * source_only
+           + Cd * destination_only
+output_alpha = overlap + source_only + destination_only
+```
+
+The output RGB is premultiplied. For example, an opaque source channel 0.8
+and destination channel 0.4 produce 0.4 with darken and 0.8 with lighten.
+With source alpha 0.5 and destination alpha 1, those channels produce 0.4
+and 0.6 respectively, both with output alpha 1. This establishes the blend
+math for this GPU path; texture sampling, edge coverage, color conversion
+and pen rasterization still need separate conformance checks.
 
 ## Clone state and collection boundaries
 
@@ -109,10 +161,26 @@ collection path from `LayerManagerBase::GetAllLayerObjectList`, whose replay
 order comparator is documented separately. The intersection collector does
 not itself establish a replay-order sort or visible-layer traversal.
 
-The intervening layer-manager and object-handler methods still need their
-physical-layer selection traced. SDK exports also need an ordered object
-representation, stroke render properties, and the verified blend mapping
-before this evidence can support a complete composition change. New captures
-should combine body text, ordinary strokes, highlighters, masking and
+The intervening path uses the currently assigned physical layer:
+
+| Library/address | Operation |
+| --- | --- |
+| WDoc `WPage::FindObjectInRectIntersect`, `0xc5054` | Load objects at `0xc5090`, then forward to the page implementation at `0xc50cc` |
+| Model `PageImplBase::FindObjectInRectIntersect`, `0x345250` | Load its layer manager at member 144 and that manager's object handler at member 64 |
+| Model `ObjectHandlerBase::FindObjectInRectIntersect`, `0x365944` | Load the handler's assigned layer from member 0 at `0x3659b0`, then call the layer at `0x3659c4` |
+| Model `LayerDocBase::FindObjectInRectIntersect`, `0x33f1a0` | Forward to the layer's object manager at `0x33f1ac` |
+
+Model `PageImplBase::GetLayerManager`, `0x3468d0`, independently identifies
+member 144. `LayerManagerBase::m_SetCurrentLayer`, `0x3476dc`, stores the
+same layer pointer in manager member 40 and handler member 0 at
+`0x3476e8`–`0x3476ec`. Thus this intersection query is scoped to the current
+physical layer, while its filter chooses a render pass within that layer.
+This does not yet prove whether a higher-level export caller changes the
+current layer or prepares a flattened page before capture. That setup must
+be traced before restricting SDK exports to a single stored layer.
+
+SDK exports also need an ordered object representation and stroke render
+properties before this evidence can support a complete composition change.
+New captures should combine body text, ordinary strokes, highlighters, masking and
 overlapping objects across physical layers, with light, dark and PDF
 backgrounds.

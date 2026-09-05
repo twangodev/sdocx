@@ -24,6 +24,7 @@ are more stable evidence than class-field names.
 | `libSPenWDoc.so` | WDoc archive/page loading, `pageIdInfo.dat`, page signatures, quick-save/cache sidecars. |
 | `libSPenModel.so` | Generic object frames, object type handlers, packed stroke channels, end-tag parser and encryption appendix. |
 | `libSPenComposer.so` | Page capture sequence, base/top/masking pass selection and capture-specific object clones. |
+| `libSPenGraphics.so` | Capture blend-mode dispatch and embedded GPU shader equations. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |
 
 Important native functions/symbol families include:
@@ -46,10 +47,12 @@ ARM64 entry points:
   `0x32e700`: capture sequence and base/top/masking passes.
 - Composer `NoteCapturePage::getCloneObjectList`, `0x330494`: intersection
   selection, cloning and selected-object alpha/text-visibility reset.
+- Graphics `SPBitmapDrawable::DrawBitmapRT`, `0x95f24`, and advanced shader
+  source `0x56fce`: paint modes 16 and 17 select darken and lighten blending.
 
 See [object drawing findings](object-drawing-findings.md) and
 [capture composition findings](capture-composition-findings.md) for the
-call-site evidence and remaining physical-layer and blend-mode questions.
+call-site evidence and the remaining export setup and rasterization questions.
 
 The structural stroke implementation also rechecked these arm64 locations in
 `libSPenModel.so` 4.4.45.37:
