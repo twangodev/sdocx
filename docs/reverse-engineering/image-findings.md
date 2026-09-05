@@ -90,10 +90,10 @@ counter have been removed; only the native image decoder produces placed images.
   synthetic regression; the new parser returns all three with the intended
   blue/red/blue asset references. The comparison used an isolated archived
   checkout and its own Cargo target directory.
-- The existing rich-text conformance fixture still passes. All three original
-  handwritten fixtures retain 7,182 strokes and 924,442 points. Their manifests
-  contain 1, 8 and 12 entries at versions 5202/5400; the extended conformance
-  test verifies all 21 recorded media hashes against the actual PNG/PDF/SPI bytes.
+- The rich-text conformance fixture passed during the migration. The
+  [historical fixture audit](fixture-validation.md) also retained 7,182 strokes
+  and 924,442 points and verified all 21 media hashes at versions 5202/5400
+  against the actual PNG/PDF/SPI bytes. Those three audit inputs are retired.
 - Workspace tests, Clippy, formatting, Rust 1.88 and WASM target checks pass.
 - A disposable synthetic archive converted through the CLI to SVG and PNG
   displays the expected blue/red/blue sequence, one rotated placement, and a

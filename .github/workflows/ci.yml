@@ -106,7 +106,7 @@ jobs:
         with:
           python-version: '3.14'
       - name: Test visual comparison without external fixtures
-        run: uv run --locked --only-group conformance python -m unittest discover -s conformance -p 'test_*.py'
+        run: uv run --project conformance --locked python -m unittest discover -s conformance -p 'test_*.py'
 
   web-check:
     name: Web / Check

@@ -11,8 +11,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   end tags.
 - [`source-map.md`](source-map.md) — where each conclusion comes from in the
   decompiled Java and native libraries.
-- [`fixture-validation.md`](fixture-validation.md) — repeatable facts measured
-  across the handwritten, quiz and CS61BL documents.
+- [`fixture-validation.md`](fixture-validation.md) — historical measurements
+  from three retired fixtures, preserving the evidence behind the format map.
 - [`stroke-rendering-findings.md`](stroke-rendering-findings.md) — root cause of
   the stray top-right strokes and the exact packed-point layout.
 - [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
@@ -41,10 +41,12 @@ Notes APK, native serializers, or real compatibility fixtures.
 - Keep the knowledge base Markdown-only. One-off disassembly/audit programs can
   remain disposable local tooling; durable conclusions belong in these files.
 
-## Current baseline
+## Sources and validation
 
 - Samsung Notes APK: 4.4.45.37 (`arm64-v8a`/`armeabi-v7a`), SHA-256
   `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-- Fixtures: handwritten, quiz and CS61BL.
-- Validated: 7,182 stroke objects, 924,442 points, three layer hashes and three
-  page hashes with zero structural/hash mismatches.
+- Historical audit: 7,182 stroke objects, 924,442 points, three layer hashes
+  and three page hashes with zero structural/hash mismatches. The retired
+  fixtures are identified by digest in [fixture validation](fixture-validation.md).
+- Current corpus and test commands: [`conformance/README.md`](../../conformance/README.md).
+  Historical audit totals do not describe current corpus coverage.

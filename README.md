@@ -202,14 +202,11 @@ local runner.
 
 ## Format Documentation
 
-Samsung Notes `.sdocx` files are ZIP archives containing binary stroke data, metadata, and page definitions. The [`notebooks/`](notebooks/) directory contains Jupyter notebooks that document the reverse-engineering process:
-
-- [`01_container.ipynb`](notebooks/01_container.ipynb) — Archive structure and container parsing
-- [`02_strokes.ipynb`](notebooks/02_strokes.ipynb) — Stroke decoding and coordinate parsing
-- [`03_ink.ipynb`](notebooks/03_ink.ipynb) — Ink color and metadata extraction
-
-The notebooks read external documents from `SDOCX_SAMPLE`, `SDOCX_HANDWRITTEN_SAMPLE`, and
-`SDOCX_MEDIA_SAMPLE` environment variables.
+The maintained [reverse-engineering documentation](docs/reverse-engineering/README.md)
+describes the archive format, native serializers, parser behavior and remaining
+fidelity gaps. Start with the [file-format map](docs/reverse-engineering/file-format.md)
+for record layouts and the [source map](docs/reverse-engineering/source-map.md)
+for supporting APK/native evidence.
 
 ## License
 
