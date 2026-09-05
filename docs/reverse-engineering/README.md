@@ -101,6 +101,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   sampled motion history, cached contributions, weighting and integer angles.
 - [`predictor-speed-findings.md`](predictor-speed-findings.md) — interval-speed
   averaging, endpoint history windows and Composer's low-speed threshold.
+- [`predictor-chrono-findings.md`](predictor-chrono-findings.md) — time/VSync
+  task pacing, phase thresholds and completion-dependent timer resets.
 - [`neural-motion-findings.md`](neural-motion-findings.md) — minimum movement,
   real/output speed statistics and per-candidate distance limits.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled

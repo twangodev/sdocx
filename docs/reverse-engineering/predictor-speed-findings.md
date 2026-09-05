@@ -193,7 +193,8 @@ retention, unweighted averaging, long-interval retention and all four
 threshold rows with adjacent float comparisons. These checks do not execute
 the native input pipeline.
 
-Remaining admission work includes the separate readiness/chronology gate
-and its callback scheduling, plus a complete audit of threshold-mode changes.
+The separate [task-pacing trace](predictor-chrono-findings.md) recovers the
+time/VSync gate. Base callback scheduling and a complete audit of
+threshold-mode changes remain separate work.
 Actual device sampling and prediction outcomes remain unmeasured.
 No SDK code or corpus fixture changed.

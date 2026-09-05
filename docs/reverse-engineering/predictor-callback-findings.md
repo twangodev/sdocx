@@ -122,6 +122,11 @@ the saved transform at `0x2fbb4`. Both the non-null and null event
 paths can reach `TouchSynchronizer::OnTouch` at `0x2fbe4` when a
 synchronizer is registered.
 
+The non-null branch also calls `ResetWithSavedTime` through the task
+chronometer at `0x2fb98`, before checking the synchronizer. Null completion
+skips that reset. The [pacing trace](predictor-chrono-findings.md) explains
+why this advances the time backend but leaves the VSync backend unchanged.
+
 The completion call copies the supplied entity unchanged and sets the
 event-deletion flag to true at `0x2fbd8`. After consumer delivery:
 
