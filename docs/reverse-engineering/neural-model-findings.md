@@ -158,8 +158,10 @@ configuration stores and filter calls were checked against the ELF and
 ARM64 instructions.
 
 The [feature preparation trace](neural-feature-findings.md) recovers the
-buffer's sample differences, normalization and flat memory order. Model
-tensor metadata, output conversion and candidate rejection remain separate
-work. No SDK behavior or saved stroke decoding changed. These findings
+buffer's sample differences, normalization and flat memory order.
+[Interpreter setup](neural-inference-setup-findings.md) identifies requested
+tensor shapes, names and the time-feature validator. Serialized model
+metadata, output conversion and candidate rejection remain separate work.
+No SDK behavior or saved stroke decoding changed. These findings
 concern live pen prediction; they do not establish that predicted points
 are serialized into SDOCX.

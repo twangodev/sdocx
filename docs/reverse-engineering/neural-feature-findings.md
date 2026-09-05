@@ -192,7 +192,9 @@ x1, y1, s1, o1, t1, p1, x2, y2, s2, o2, t2, p2, ...
 | M22 | 29 | 174 |
 
 These are counts and memory order derived from the native caller.
-They do not identify the tensor's declared rank or dimensions. The
+The [interpreter setup trace](neural-inference-setup-findings.md) additionally
+recovers the requested three-dimensional resize shapes and time validator;
+the model's serialized declarations remain unvalidated. The
 signature-runner path obtains the tensor named `input` through
 `0x2c604`–`0x2c62c`; the alternate path obtains the interpreter's
 first input and requires its type code to equal 1.
@@ -230,7 +232,8 @@ The APK digest and extracted library byte stream were verified. Function
 bindings, referenced instructions, record fields, vtable slots, constants,
 buffer strides and Markdown links were checked against the local evidence.
 
-Remaining work includes declared tensor metadata, per-feature checker
-configuration, output selection and rejection, the output rotation and
-actual device behavior. The reference checks do not run Samsung's native
-code or establish rendering conformance. No SDK code changed.
+The [setup trace](neural-inference-setup-findings.md) identifies the installed
+time-feature checker. Remaining work includes declared model metadata,
+output selection and rejection, the output rotation and actual device
+behavior. The reference checks do not run Samsung's native code or establish
+rendering conformance. No SDK code changed.

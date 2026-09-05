@@ -206,6 +206,13 @@ and adjacent-record differences at `0x2699c`. `PredictionTask::SetTFParams`,
 its 1.15 factor. Scalar conversion at `0x2d194` feeds the record-then-feature
 buffer loop at `0x2c7c0`–`0x2c878`.
 
+[Neural inference setup findings](neural-inference-setup-findings.md) recover
+`TFLiteHolder::AddModel`, `0x3822c`, including requested input dimensions
+`[1, InputSize, featureString.length]`, the `serving_default` signature and
+positional fallback. It installs an `s` validator with threshold bits
+`0x3f4ccccd`; `InputTimeValidator::Validate`, `0x36594`, supplies the
+inclusive upper limit used before inference.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
