@@ -149,6 +149,14 @@ Composer's presenter constructs `PredStrokeLengthController` at
 That method selects a non-resampled prediction anchor, or uses the last
 history/current fallback for state -1, without removing input samples.
 
+[Prediction length findings](prediction-length-findings.md) recover
+Composer `TransformPredStrokeLength`, `0x4d555c`, whose final prefix
+selects current index `min(index_budget, count - 1)` at `0x4d6480`.
+Slot 32 at `0x4d671c` periodically advances that budget; its false branch
+resets budget/phase only for the exact InkPen2 name. Slot 40 at `0x4d6788`
+sets the update period from the supplied rate with float multiplication
+and integer truncation.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

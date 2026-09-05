@@ -73,6 +73,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   exact noise constants, down reset and independent X/Y correction equations.
 - [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
+- [`prediction-length-findings.md`](prediction-length-findings.md) — prediction
+  sample prefixes, gradual index-budget updates and the InkPen2 reset exception.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

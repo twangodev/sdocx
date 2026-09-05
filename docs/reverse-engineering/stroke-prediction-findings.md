@@ -125,8 +125,10 @@ The signature string at Composer `0x1f496a` identifies `0x4d94e0` as
 `TouchPresenter::OnPredictTouch(MotionEvent*, MotionEventEntity const&)`.
 It accepts a separate event, and can replace that event through a
 member-528 processing interface at `0x4d96d4`. The binding below identifies
-that interface as `PredStrokeLengthController`; its numerical prediction
-modification still needs independent tracing.
+that interface as `PredStrokeLengthController`. The
+[length-control trace](prediction-length-findings.md) recovers final sample
+prefixes and gradual counter updates; uniform-latency modification remains
+a separate numerical target.
 
 For its drawable path, it retrieves pen slot 248 at `0x4d9abc`, saves the
 event's original action at `0x4d9ad8`, then temporarily sets the action to
@@ -201,8 +203,9 @@ This method reads the input event and changes controller state. It neither
 removes samples from the event's history nor calls the stroke recorder.
 Its selection is therefore not a rule to discard resampled points from a
 decoded stroke. The already traced ordinary Marker2 recorder path remains
-separate from this prediction anchor; other input filters and the
-controller's numerical output processing require their own analysis.
+separate from this prediction anchor. The
+[length-control trace](prediction-length-findings.md) follows the final
+output prefix and its counter state.
 
 ## Input source and later transforms remain separate boundaries
 
