@@ -117,6 +117,13 @@ caps finite pressure at 1. `GetResult`, `0x5cfe8`, can replace its event
 through the Kalman filter; `ApplyFilter`, `0x5d304`, discards that filter's
 temporary result in the separate down/up fallback.
 
+[InkPen2 prediction findings](inkpen2-prediction-findings.md) resolve
+PenCommon `PointBeautifier::doPredict`, `0x5c864`, and its independent
+X/Y least-squares calls to helper `0x5d9a8`. The integer horizon at
+`0x5cd28` is `16 / (12 - retained_count)`. The candidate keeps both
+last-sample timestamps at `0x5cd20` while evaluating future coordinates;
+the distance check can reject the whole candidate before `0x5ce6c`.
+
 [Stroke prediction findings](stroke-prediction-findings.md) resolve
 Composer `TouchPresenter::PresentTouch` at `0x4d76bc` and its event-list
 recorder call at `0x4d8bdc`. Marker2 V2's prediction getter at `0x1f13c`

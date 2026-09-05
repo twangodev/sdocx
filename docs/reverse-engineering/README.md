@@ -65,6 +65,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   selection, raster recorder bindings and long-gesture splitting.
 - [`inkpen2-input-findings.md`](inkpen2-input-findings.md) — beautifier sample
   admission, millisecond ordering, pressure cap and result/fallback routing.
+- [`inkpen2-prediction-findings.md`](inkpen2-prediction-findings.md) — linear
+  coordinate fitting, adaptive horizon, distance limits and retained timestamps.
 - [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled

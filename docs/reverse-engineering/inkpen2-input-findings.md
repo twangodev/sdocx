@@ -158,7 +158,9 @@ ARM64 code. Disposable reconstruction checked admission equality, the
 finite pressure examples and queue trimming. No SDK code changed and no
 new device fixture or native execution was used.
 
-Further work can recover `doPredict`, result construction's geometric
+The [prediction trace](inkpen2-prediction-findings.md) now recovers
+`doPredict`'s linear fits, horizon, distance rejection and timestamp
+retention. Further work can recover result construction's geometric
 selection and the Kalman filter numerically. Synthetic queue cases can
 bound those algorithms, but actual InkPen2 SDOCX/PDF pairs are still needed
 to test the complete stored geometry and rendered appearance. The SDK
