@@ -11,9 +11,10 @@ InkPen2 name and tool type 2 or 6. Marker2 does not enter that branch.
 
 `PointBeautifier` has its own sample queue, time checks and pressure cap
 before it produces a replacement event. This trace establishes queue
-admission and result routing. It does not yet recover the numerical
-prediction or Kalman filter, or equate the input queue with final stored
-stroke points.
+admission and result routing. Separate traces recover numerical
+[prediction](inkpen2-prediction-findings.md) and
+[Kalman filtering](inkpen2-kalman-findings.md); the input queue is not
+equated with final stored stroke points.
 
 ## Move events select history or current input
 
@@ -160,8 +161,9 @@ new device fixture or native execution was used.
 
 The [prediction trace](inkpen2-prediction-findings.md) now recovers
 `doPredict`'s linear fits, horizon, distance rejection and timestamp
-retention. Further work can recover result construction's geometric
-selection and the Kalman filter numerically. Synthetic queue cases can
+retention. The [Kalman trace](inkpen2-kalman-findings.md) recovers channel
+defaults and correction equations. Further work can recover result
+construction's geometric selection. Synthetic queue cases can
 bound those algorithms, but actual InkPen2 SDOCX/PDF pairs are still needed
 to test the complete stored geometry and rendered appearance. The SDK
 should preserve already decoded points and channels rather than applying

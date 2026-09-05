@@ -67,6 +67,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   admission, millisecond ordering, pressure cap and result/fallback routing.
 - [`inkpen2-prediction-findings.md`](inkpen2-prediction-findings.md) — linear
   coordinate fitting, adaptive horizon, distance limits and retained timestamps.
+- [`inkpen2-kalman-findings.md`](inkpen2-kalman-findings.md) — channel masks,
+  exact noise constants, down reset and independent X/Y correction equations.
 - [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled

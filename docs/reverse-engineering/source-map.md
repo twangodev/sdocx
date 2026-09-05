@@ -124,6 +124,14 @@ X/Y least-squares calls to helper `0x5d9a8`. The integer horizon at
 last-sample timestamps at `0x5cd20` while evaluating future coordinates;
 the distance check can reject the whole candidate before `0x5ce6c`.
 
+[InkPen2 Kalman findings](inkpen2-kalman-findings.md) resolve PenCommon's
+constructor at `0x595e8`, position-only enabled mask at `0x5969c`, and
+sample routing in `transformPenEvent`, `0x59a90`. `getFilteredValue`,
+`0x5b238`, resets active channels on down; helpers `0x5b3c4` and `0x5b444`
+add fixed process covariance and apply a diagonal Kalman correction.
+Position measurement variance is the exact float `0x3951b718` at
+`0x2c1e0`, rather than the nearest float to decimal 0.0002.
+
 [Stroke prediction findings](stroke-prediction-findings.md) resolve
 Composer `TouchPresenter::PresentTouch` at `0x4d76bc` and its event-list
 recorder call at `0x4d8bdc`. Marker2 V2's prediction getter at `0x1f13c`
