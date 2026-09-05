@@ -98,3 +98,9 @@ filter effects may become bitmaps. Hyperlink annotations, semantic document
 tags, editable Samsung object structure and original pen channels are not
 preserved as PDF features. The new PDF API is currently Rust/CLI functionality;
 browser export requires a separate integration.
+
+The APK's own vector list exporter rasterizes stroke batches before PDF
+insertion, as documented in [native PDF stroke findings](native-pdf-stroke-findings.md).
+Its output is not an all-vector ground truth for pen geometry. The SDK's
+SVG-based architecture can preserve supported paths while pen appearance
+and opacity are investigated independently.

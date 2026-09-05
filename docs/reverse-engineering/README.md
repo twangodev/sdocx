@@ -25,6 +25,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   Samsung PDF comparison, explicit PNG fonts and remaining visual gaps.
 - [`pdf-export-findings.md`](pdf-export-findings.md) — shared SVG-to-PDF export,
   page units, embedded text/fonts and measured PDF validation.
+- [`native-pdf-stroke-findings.md`](native-pdf-stroke-findings.md) — native
+  vector-export stroke bitmaps, PDF image handoff and separate opacity inputs.
 - [`end-tag-findings.md`](end-tag-findings.md) — native metadata boundaries,
   appended trailer precedence, bounded decoding and synthetic regressions.
 - [`layer-findings.md`](layer-findings.md) — native layer identity, alpha-lock

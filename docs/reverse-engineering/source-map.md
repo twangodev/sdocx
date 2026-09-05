@@ -23,7 +23,9 @@ are more stable evidence than class-field names.
 | --- | --- |
 | `libSPenWDoc.so` | WDoc archive/page loading, `pageIdInfo.dat`, page signatures, quick-save/cache sidecars. |
 | `libSPenModel.so` | Generic object frames, object type handlers, packed stroke channels, end-tag parser and encryption appendix. |
-| `libSPenComposer.so` | Page capture sequence, base/top/masking pass selection and capture-specific object clones. |
+| `libSPenComposer.so` | Page capture sequence, base/top/masking passes, object clones and native PDF stroke rasterization. |
+| `libSPenDrawing.so` | Object visibility, common-alpha drawing options and stroke pen configuration. |
+| `libSPenPdf.so` | Native PDF image insertion and pixel-alpha conversion. |
 | `libSPenGraphics.so` | Capture blend-mode dispatch and embedded GPU shader equations. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |
 
@@ -55,7 +57,13 @@ ARM64 entry points:
 
 See [object drawing findings](object-drawing-findings.md) and
 [capture composition findings](capture-composition-findings.md) for the
-call-site evidence and the remaining export setup and rasterization questions.
+call-site evidence and the remaining export setup questions.
+
+[Native PDF stroke findings](native-pdf-stroke-findings.md) continue that
+trace through Composer `ObjectStrokePdfExporter::ExportObject`, `0x34f684`,
+Drawing `ObjectDrawing::DrawObjectList`, `0x7f098`, and PDF
+`PdfiumImageHandler::AddImage`, `0x82810`. PDF `CreateARGBBuffer`, `0x8aa7c`,
+preserves pixel alpha while converting premultiplied color channels.
 
 The structural stroke implementation also rechecked these arm64 locations in
 `libSPenModel.so` 4.4.45.37:

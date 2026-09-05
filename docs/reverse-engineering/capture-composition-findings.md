@@ -227,8 +227,11 @@ Within the vector export loop:
 A non-stroke object therefore triggers export of preceding accumulated
 strokes before its individual export. This establishes an export sequence
 that can interleave strokes with other content. The list-exporter factory
-and its handling of top-layer pens,
-opacity and rasterization still need to be traced.
+creates `ObjectStrokePdfExporter`, which draws each exported batch into a
+bitmap and embeds it as a PDF image. The factory, coordinate scaling, PNG
+handoff and distinct opacity mechanisms are now traced in
+[native PDF stroke findings](native-pdf-stroke-findings.md). Pen-specific
+blending and higher-level export preparation remain separate questions.
 
 The tail condition also needs separate treatment. At `0x361ebc`–`0x361ecc`,
 the loop increments its stroke counter and compares it against the original
