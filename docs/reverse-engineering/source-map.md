@@ -185,6 +185,13 @@ and a double-derived refresh period at `0x25b14`. `PredictionTask`
 stores its separate aligned task time at offset 88 while preserving
 the entity at offsets 48–87 through completion.
 
+[VSync delivery findings](vsync-delivery-findings.md) bind Java
+`SpenVSyncProvider.doFrame` through Engine JNI entry `0x192f48` and
+`VSyncProvider::DispatchVSync`, `0xc7b58`, to Predictor thunk `0x259cc`.
+Composer callbacks `0x4db0dc`/`0x4db048` register and remove the neural
+secondary interface. The first native receiver subscribes to Java frame
+callbacks and the final removal unsubscribes.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

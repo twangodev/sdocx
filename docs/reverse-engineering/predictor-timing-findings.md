@@ -187,8 +187,9 @@ checked against ARM64 instructions. Disposable reconstruction checked
 three rates, both sides of alignment boundaries, zero-VSync behavior,
 the separate task time and four consumer coefficient examples.
 
-The origin and delivery of the `OnVSync` argument, active device
-configuration and neural model behavior remain separate work. No SDK
-code changed and no native device execution or new SDOCX fixture was
-used. The callback timing must not be reapplied to stored timestamps
-during export.
+The [VSync delivery trace](vsync-delivery-findings.md) identifies the
+`OnVSync` argument as the unchanged Java frame-callback timestamp and
+recovers subscription/removal. Active device configuration and neural
+model behavior remain separate work. No SDK code changed and no native
+device execution or new SDOCX fixture was used. The callback timing must
+not be reapplied to stored timestamps during export.
