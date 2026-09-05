@@ -11,9 +11,10 @@ decompilation from the APK identified in the
 The note-writing manager has separate document-relative and density-based
 size-level conversions. On the document-relative branch, the native
 utility scales the selected pen's width range by the document's shorter
-dimension and interpolates using the requested size level. The native
-setting bridge passes the resulting `size` float directly to the pen's
-size setter.
+dimension and interpolates using the requested size level. The density
+branch interpolates the pen's separate DP bounds and multiplies the result
+by `densityDpi / 160`. The native setting bridge passes the resulting
+`size` float directly to the pen's size setter.
 
 The low-latency recorder has a separate, verified copy of pen size from
 its input PenData to its recording PenData. Connecting every action that
@@ -46,8 +47,8 @@ conversion without the note-writing manager's `isDpSize` branch.
 
 These branches were checked in fresh fallback decompilation of both
 classes from the identified APK. Neither supplies the current zoom
-factor to the document-relative conversion. The density-based conversion
-is a separate investigation target.
+factor to the document-relative conversion. The density-based branch
+uses the application context's display metrics, as traced below.
 
 ## Pixel conversion uses the shorter document dimension
 
@@ -111,6 +112,71 @@ These are arithmetic reconstructions, not measurements from device files.
 Changing only the longer document dimension does not change this utility's
 result. Doubling the shorter dimension doubles the example widths before
 any subsequent setter clamp.
+
+## Density conversion interpolates DP bounds before scaling
+
+`SpenPenUtil.convertSizeLevelToDpSize` obtains
+`context.getApplicationContext().getResources().getDisplayMetrics().densityDpi`.
+It passes that integer, the pen name and the size level to
+`Native_convertSizeLevelToDpSize`; fresh fallback decompilation confirms
+the property access and argument order.
+
+Engine's JNI table entry at `0x1926d8` binds that method, signature
+`(ILjava/lang/String;I)F`, to `EngineUtilGlue::Native_convertSizeLevelToDpSize`,
+`0xc2610`. On successful native string construction it forwards the
+arguments to PenCommon at `0xc266c`; failed construction returns zero.
+
+PenCommon `PenUtil::ConvertSizeLevelToDpSize`, `0x53fe0`, caches the
+pen's DP bounds separately from the pixel-bound cache. On a cache miss,
+the calls at `0x540e4` and `0x540f8` use pen slots 56 and 48 for
+maximum and minimum DP size, respectively. It caches the pair at
+`0x54138`.
+
+The recovered arithmetic is:
+
+```text
+if size_level < 2:
+    dp_size = pen_min_dp_size
+else if size_level > 99:
+    dp_size = pen_max_dp_size
+else:
+    dp_size = pen_min_dp_size
+        + ((pen_max_dp_size - pen_min_dp_size) * float(size_level)) / 100.0
+
+density_scale = float(density_dpi) / 160.0
+size = density_scale * dp_size
+```
+
+Level selection is at `0x54158`–`0x5416c`, float interpolation at
+`0x54170`–`0x54188`, and integer-to-float density conversion at
+`0x5418c`. The divisor 160 is loaded at `0x54190`–`0x5419c`;
+division and final multiplication are at `0x541b4`–`0x541b8`.
+Each arithmetic step uses floats, without integer rounding of the output.
+
+Thus the public method's result already includes density scaling. The
+name `convertSizeLevelToDpSize` does not mean it returns an unscaled DP
+number that the caller must multiply by density again. The method takes
+neither document dimensions nor a zoom factor. Positive-density validation
+is not present in this native arithmetic; the ordinary Java caller obtains
+its value from display metrics.
+
+Marker2 relocations `0x2eaf8` and `0x2eb00` resolve slots 48/56 to
+`GetMinDpSize`, `0x1f020`, and `GetMaxDpSize`, `0x1f02c`. They return
+the float constants at `0x11b74` and `0x11b70`, approximately `1.142`
+and `33.714`. The density branch therefore produces these reconstructed
+widths, rounded for display:
+
+| Density DPI | Level 1 | Level 2 | Level 50 | Level 100 |
+| --- | --- | --- | --- | --- |
+| 160 | 1.142 | 1.79344 | 17.428 | 33.714 |
+| 240 | 1.713 | 2.69016 | 26.142 | 50.571 |
+| 320 | 2.284 | 3.58688 | 34.856 | 67.428 |
+
+The ordering differs from the pixel branch: density conversion
+interpolates first, then scales, while pixel conversion scales both
+bounds before interpolating. Reordering those float operations can
+change rounding. Both utilities remain distinct from the common size
+setter's subsequent clamp and from the recorded size getter.
 
 ## The JNI bridge sets the pen's size float directly
 
@@ -178,10 +244,11 @@ The APK digest and five native library byte streams were verified.
 JNI names/signatures, view-core and pen vtable slots, Marker2 constants,
 the float arithmetic and recording-pointer transfer were checked against
 the binaries. Fresh fallback Java output confirmed the manager conversion
-branches, and disposable float reconstruction checked the example widths
-and level boundaries. Documentation links were checked. No SDK code changed.
+branches and the density source, and disposable float reconstruction
+checked both utilities' example widths and level boundaries. Documentation
+links were checked. No SDK code changed.
 
-Next targets are the density-based size conversion and the assignment
-from the pen action into the stroke view. Existing decoded widths remain
+The next target is the assignment from the pen action into the stroke
+view. Existing decoded widths remain
 the authority for saved-file rendering: document-relative size-level
 conversion, setter clamping and live view zoom are creation-time concerns.

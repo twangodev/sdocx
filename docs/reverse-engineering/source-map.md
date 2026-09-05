@@ -143,6 +143,9 @@ are scaled by the shorter document dimension divided by 360. Engine JNI
 entry `0xc6454` passes the Java size float to the selected pen's setter
 at `0xc6a84`. Composer copies input pen width into recording PenData
 at `0x4d3868`–`0x4d3878`, separately from event-coordinate transforms.
+The alternative DP utility, PenCommon `0x53fe0`, interpolates different
+pen bounds and then multiplies by display `densityDpi / 160` at
+`0x541b4`–`0x541b8`; its returned width already includes density scaling.
 
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI

@@ -71,8 +71,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   view conversion, event-history transforms, float precision and pen-width source.
 - [`zoom-scale-findings.md`](zoom-scale-findings.md) — contents-view scale and
   scroll configuration, axis stretch and separate cutter/eraser scale dispatch.
-- [`pen-size-findings.md`](pen-size-findings.md) — document-relative size levels,
-  Marker2 width bounds, native setting assignment and recording-pen size copies.
+- [`pen-size-findings.md`](pen-size-findings.md) — document-relative and density
+  size levels, Marker2 bounds, native settings and recording-pen size copies.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
