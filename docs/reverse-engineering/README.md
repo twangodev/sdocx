@@ -87,6 +87,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   forwarding, native receiver subscriptions and neural predictor lifecycle.
 - [`neural-model-findings.md`](neural-model-findings.md) — bundled M16/M20/M22
   selection, input gates, prediction horizons and filter configuration.
+- [`neural-feature-findings.md`](neural-feature-findings.md) — rotated sample
+  differences, timestamp gates, DPI scaling and model input-buffer order.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

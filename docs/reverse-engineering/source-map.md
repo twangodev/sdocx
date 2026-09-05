@@ -199,6 +199,13 @@ only input type 1 and lazily invokes the codec. `SetPredictionLength`,
 `0x25378`, sets minimum sample count to model input size plus one and
 applies each model's prediction horizons and Kalman configuration.
 
+[Neural feature findings](neural-feature-findings.md) trace
+`NNPredictorHelper::GetSampleData`, `0x264f4`, through coordinate rotation
+and adjacent-record differences at `0x2699c`. `PredictionTask::SetTFParams`,
+`0x2be88`, supplies DPI and the model-rate-derived time normalizer including
+its 1.15 factor. Scalar conversion at `0x2d194` feeds the record-then-feature
+buffer loop at `0x2c7c0`–`0x2c878`.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
