@@ -69,6 +69,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   page selection, page-local translation and millisecond flags during insertion.
 - [`view-input-transform-findings.md`](view-input-transform-findings.md) — child
   view conversion, event-history transforms, float precision and pen-width source.
+- [`zoom-scale-findings.md`](zoom-scale-findings.md) — contents-view scale and
+  scroll configuration, axis stretch and separate cutter/eraser scale dispatch.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

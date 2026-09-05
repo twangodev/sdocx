@@ -129,6 +129,14 @@ position before applying the inverse child matrix. Base `MotionEvent::Transform`
 arithmetic at `0xc0e08`. Drawing obtains the new stroke's pen width through
 pen slot 24 at `0xb76c4`, separately from these event transformations.
 
+[Zoom scale findings](zoom-scale-findings.md) bind Composer callback
+`0x3960a4` to the constructed `ViewZoomScroller`. It copies total axis
+scales and integer deltas into the contents-view transform. View getters
+`0x7af78` and `0x7aff0` include axis stretch. Composer
+`NoteWritingView::SetScale`, `0x4284f0`, reaches cutter/eraser implementation
+`0x51e91c` through two concrete vtables; its division by zoom is not an
+ordinary saved-pen-width conversion.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

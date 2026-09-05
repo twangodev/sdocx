@@ -178,10 +178,8 @@ coordinates can already include view conversion, filtering, optional
 finalization and later page translation. Reapplying those editing-time
 operations to a saved stroke would introduce additional changes.
 
-The next target is the runtime configuration of the view matrices and pen
-size. Composer `ContentsView::OnZoomUpdated`, `0x41b5dc`, forwards its two
-float arguments in reversed order to the writing view's slot 952 at
-`0x41b638`. Relocation `0x575680` resolves that slot to
-`NoteWritingView::SetScale`, `0x4284f0`, which forwards scale values to
-other components and a diagram transformer. These are investigation entry
-points; their presence does not yet resolve ordinary pen width.
+The [zoom scale trace](zoom-scale-findings.md) now connects Composer's
+registered scroller callback to the contents-view scale and translation
+setters. It also resolves `NoteWritingView::SetScale`, `0x4284f0`, to
+cutter/eraser scale updates and the diagram transformer. The ordinary
+upstream pen-setting path remains a separate investigation.
