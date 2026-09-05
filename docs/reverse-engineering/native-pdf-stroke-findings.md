@@ -136,6 +136,9 @@ The serialized counterparts are recorded in
 [stroke metadata findings](stroke-metadata-findings.md). Retained ARGB,
 fixed opacity, common object alpha, and the capture compositor's darken or
 lighten mode are distinct inputs. No one field replaces the others.
+The [pen opacity findings](pen-opacity-findings.md) continue through concrete
+plugin bindings, theme conversion, queued ARGB settings and Marker2 V1's
+separate maximum-coverage mask and source-over color composite.
 
 Neither this batch exporter nor the traced PDF image insertion path calls
 the top-layer capture compositor or explicitly sets its darken/lighten

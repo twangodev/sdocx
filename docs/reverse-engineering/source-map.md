@@ -27,6 +27,10 @@ are more stable evidence than class-field names.
 | `libSPenDrawing.so` | Object visibility, common-alpha drawing options and stroke pen configuration. |
 | `libSPenPdf.so` | Native PDF image insertion and pixel-alpha conversion. |
 | `libSPenGraphics.so` | Capture blend-mode dispatch and embedded GPU shader equations. |
+| `libSPenPenCommon.so` | Shared pen settings, packed ARGB conversion and render-thread alpha. |
+| `libSPenDefaultPen.so`, `libSPenMarker.so` through `libSPenMarker4.so` | Concrete pen interfaces, fixed-opacity bindings and Marker2 coverage shaders. |
+| `libSPenRenderer.so` | Blend descriptors, native-to-OpenGL enum tables and state activation. |
+| `libSPenView.so`, `libSPenBase.so` | Active color-theme selection and alpha-preserving RGB conversion. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |
 
 Important native functions/symbol families include:
@@ -64,6 +68,13 @@ trace through Composer `ObjectStrokePdfExporter::ExportObject`, `0x34f684`,
 Drawing `ObjectDrawing::DrawObjectList`, `0x7f098`, and PDF
 `PdfiumImageHandler::AddImage`, `0x82810`. PDF `CreateARGBBuffer`, `0x8aa7c`,
 preserves pixel alpha while converting premultiplied color channels.
+
+[Pen opacity findings](pen-opacity-findings.md) follow Drawing's morphable
+dispatch at `0x81eec` and color setter at `0x81c48` into the pen plugins.
+PenCommon `PenDrawableRT::SetPenData`, `0x4a558`, retains normalized ARGB;
+Marker2's V1 composite at `0x24180` uses its alpha with mask coverage.
+Renderer blend tables `0x308b8` and `0x30880` establish maximum blending
+inside the mask and source-over composition for its colored output.
 
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI

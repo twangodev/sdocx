@@ -133,6 +133,11 @@ provides the complete ARGB value, including transparent colors, and the
 additional pen properties. It does not yet apply these fields to SVG or PDF.
 Top-layer strokes require the separate capture selection and blend behavior
 documented in [capture composition findings](capture-composition-findings.md).
+The subsequent [pen opacity trace](pen-opacity-findings.md) confirms
+alpha-preserving color conversion and Marker2 V1 mask/composite behavior.
+It also establishes that the fixed-opacity setting has no effect through
+the inspected DefaultPen and Marker bindings, while Marker2–4 expose no
+morphable interface in that drawing path.
 
 Nine synthetic tests cover all 25 mapped fields, truncated prefixes of every
 field, both inverted properties, future mask bytes, unknown-field stops,
