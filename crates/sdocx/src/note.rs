@@ -300,19 +300,6 @@ fn finish_shape_text(
     }
 }
 
-fn read_bitfield(reader: &mut Reader<'_>, field: &'static str) -> Result<u32> {
-    let byte_count = usize::from(reader.read_u8(field)?);
-    if byte_count > 4 {
-        return Err(Error::Format(format!(
-            "{field} uses {byte_count} bytes; at most 4 are supported"
-        )));
-    }
-    let bytes = reader.read_bytes(byte_count, field)?;
-    let mut padded = [0_u8; 4];
-    padded[..byte_count].copy_from_slice(bytes);
-    Ok(u32::from_le_bytes(padded))
-}
-
 #[derive(Default)]
 struct TextCommon {
     has_extensions: bool,
@@ -704,10 +691,7 @@ fn parse_table_row(
     context: &'static str,
     depth: usize,
 ) -> Result<RichTextTableRow> {
-    let mut reader = Reader::new(data, context);
-    let flexible_offset = reader.read_u32("table row flexible-data offset")?;
-    read_bitfield(&mut reader, "table row property mask")?;
-    read_bitfield(&mut reader, "table row field mask")?;
+    let (_, mut reader) = table_fixed_data(data, context)?;
     let height = reader.read_f32("table row height")?;
     let index = reader.read_u32("table row index")?;
     let count = usize::try_from(reader.read_u32("table row cell count")?)
@@ -724,11 +708,6 @@ fn parse_table_row(
             depth,
         )?);
     }
-    if flexible_offset != 0 && flexible_offset as usize > data.len() {
-        return Err(Error::Format(format!(
-            "{context}: table row flexible-data offset is outside its record"
-        )));
-    }
     Ok(RichTextTableRow {
         index,
         height,
@@ -742,10 +721,7 @@ fn parse_table_cell(
     context: &'static str,
     depth: usize,
 ) -> Result<RichTextTableCell> {
-    let mut reader = Reader::new(data, context);
-    let flexible_offset = reader.read_u32("table cell flexible-data offset")?;
-    let properties = read_bitfield(&mut reader, "table cell property mask")?;
-    read_bitfield(&mut reader, "table cell field mask")?;
+    let (properties, mut reader) = table_fixed_data(data, context)?;
     let column_index = reader.read_u32("table cell column index")?;
     let row_span = reader.read_u32("table cell row span")?;
     let column_span = reader.read_u32("table cell column span")?;
@@ -758,21 +734,37 @@ fn parse_table_cell(
     };
     let vertical_alignment = reader.read_u8("table cell vertical alignment")?;
     let content = parse_sized_text_object(&mut reader, limits, "table cell text", depth)?;
-    if flexible_offset != 0 && flexible_offset as usize > data.len() {
-        return Err(Error::Format(format!(
-            "{context}: table cell flexible-data offset is outside its record"
-        )));
-    }
     Ok(RichTextTableCell {
         column_index,
         row_span,
         column_span,
         background_color,
-        has_own_background_color: properties & 1 != 0,
+        has_own_background_color: properties.contains(0),
         bbox,
         vertical_alignment,
         content,
     })
+}
+
+fn table_fixed_data<'a>(data: &'a [u8], context: &'static str) -> Result<(Mask<'a>, Reader<'a>)> {
+    let mut reader = Reader::new(data, context);
+    let flexible_offset = reader.read_u32("table flexible-data offset")? as usize;
+    let properties = Mask::read(&mut reader)?;
+    let fields = Mask::read(&mut reader)?;
+    let fixed_end = if flexible_offset == 0 && !fields.has_other_bits(0) {
+        data.len()
+    } else {
+        flexible_offset
+    };
+    if fixed_end < reader.position() || fixed_end > data.len() {
+        return Err(Error::Format(format!(
+            "{context}: table flexible-data offset is outside its record"
+        )));
+    }
+    Ok((
+        properties,
+        Reader::at(&data[..fixed_end], reader.position(), context)?,
+    ))
 }
 
 fn parse_sized_text_object(
@@ -836,7 +828,10 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 
 #[cfg(test)]
 mod tests {
-    use super::{ObjectMetadata, parse_code_block_object, parse_table_object, parse_text_common};
+    use super::{
+        ObjectMetadata, parse_code_block_object, parse_table_cell, parse_table_object,
+        parse_table_row, parse_text_common,
+    };
     use crate::{
         ObjectSpanLayoutConstraint, ObjectType, ParseLimits, RichTextParagraphType,
         RichTextSpanType,
@@ -941,6 +936,118 @@ mod tests {
         assert_eq!(cell.column_span, 1);
         assert!(cell.has_own_background_color);
         assert_eq!(cell.content.text, "");
+    }
+
+    fn table_record(fixed: &[u8], properties: &[u8], fields: &[u8], flexible: &[u8]) -> Vec<u8> {
+        let mut data = vec![0; 4];
+        data.push(properties.len() as u8);
+        data.extend(properties);
+        data.push(fields.len() as u8);
+        data.extend(fields);
+        data.extend(fixed);
+        if fields.iter().any(|byte| *byte != 0) {
+            let offset = data.len() as u32;
+            data[..4].copy_from_slice(&offset.to_le_bytes());
+        }
+        data.extend(flexible);
+        data
+    }
+
+    fn table_cell_fixed() -> Vec<u8> {
+        let mut fixed = Vec::new();
+        for value in [3_u32, 2, 4, 0xff123456] {
+            fixed.extend(value.to_le_bytes());
+        }
+        for value in [10.0_f64, 20.0, 50.0, 60.0] {
+            fixed.extend(value.to_le_bytes());
+        }
+        fixed.push(2);
+        let text = empty_text_object();
+        fixed.extend((text.len() as u32).to_le_bytes());
+        fixed.extend(text);
+        fixed
+    }
+
+    fn table_row_fixed(cell: &[u8]) -> Vec<u8> {
+        let mut fixed = 24.0_f32.to_le_bytes().to_vec();
+        fixed.extend(7_u32.to_le_bytes());
+        fixed.extend(1_u32.to_le_bytes());
+        fixed.extend((cell.len() as u32).to_le_bytes());
+        fixed.extend(cell);
+        fixed
+    }
+
+    #[test]
+    fn table_records_support_variable_masks_and_zero_offsets_without_flexible_fields() {
+        let limits = ParseLimits::default();
+        for width in [0, 1, 2, 5] {
+            let mut properties = vec![0; width];
+            if width != 0 {
+                properties[0] = 1;
+            }
+            let fields = vec![0; width];
+            let cell = table_record(&table_cell_fixed(), &properties, &fields, &[]);
+            let row = table_record(&table_row_fixed(&cell), &properties, &fields, &[]);
+            let parsed = parse_table_row(&row, &limits, "test table row", 0).unwrap();
+            assert_eq!(parsed.index, 7);
+            assert_eq!(parsed.height, 24.0);
+            let parsed = &parsed.cells[0];
+            assert_eq!(parsed.column_index, 3);
+            assert_eq!(parsed.row_span, 2);
+            assert_eq!(parsed.column_span, 4);
+            assert_eq!(parsed.background_color, 0xff123456);
+            assert_eq!(parsed.has_own_background_color, width != 0);
+            assert_eq!(parsed.bbox.x_min, 10.0);
+            assert_eq!(parsed.bbox.y_max, 60.0);
+            assert_eq!(parsed.vertical_alignment, 2);
+        }
+    }
+
+    #[test]
+    fn table_cells_and_rows_cannot_consume_their_flexible_data_as_fixed_fields() {
+        let limits = ParseLimits::default();
+        let cell = table_record(&table_cell_fixed(), &[1, 0], &[1, 0], &[0xee; 32]);
+        let fixed_end = u32::from_le_bytes(cell[..4].try_into().unwrap()) as usize;
+        let parsed = parse_table_cell(&cell, &limits, "test cell", 0).unwrap();
+        assert_eq!(parsed.column_index, 3);
+        for offset in (0..fixed_end).chain([cell.len() + 1, u32::MAX as usize]) {
+            let mut invalid = cell.clone();
+            invalid[..4].copy_from_slice(&(offset as u32).to_le_bytes());
+            assert!(
+                parse_table_cell(&invalid, &limits, "test cell", 0).is_err(),
+                "cell offset {offset}"
+            );
+        }
+        let row = table_record(&table_row_fixed(&cell), &[0], &[0, 2], &[0xef; 8]);
+        let fixed_end = u32::from_le_bytes(row[..4].try_into().unwrap()) as usize;
+        assert_eq!(
+            parse_table_row(&row, &limits, "test row", 0)
+                .unwrap()
+                .cells
+                .len(),
+            1
+        );
+        for offset in (0..fixed_end).chain([row.len() + 1, u32::MAX as usize]) {
+            let mut invalid = row.clone();
+            invalid[..4].copy_from_slice(&(offset as u32).to_le_bytes());
+            assert!(
+                parse_table_row(&invalid, &limits, "test row", 0).is_err(),
+                "row offset {offset}"
+            );
+        }
+    }
+
+    #[test]
+    fn wider_table_field_masks_still_require_a_valid_flexible_offset() {
+        let mut cell = table_record(&table_cell_fixed(), &[1], &[0, 0, 0, 0, 1], &[0xaa]);
+        parse_table_cell(&cell, &ParseLimits::default(), "test cell", 0).unwrap();
+        cell[..4].copy_from_slice(&0_u32.to_le_bytes());
+        assert!(parse_table_cell(&cell, &ParseLimits::default(), "test cell", 0).is_err());
+        for length in 0..12 {
+            assert!(
+                parse_table_cell(&cell[..length], &ParseLimits::default(), "test cell", 0).is_err()
+            );
+        }
     }
 
     #[test]
