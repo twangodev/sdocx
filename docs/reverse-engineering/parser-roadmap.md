@@ -63,6 +63,12 @@ See [layer findings](layer-findings.md) for the Java transparency discrepancy an
 the remaining rendering work. Layer identity supplies the inputs used by logical
 hash verification.
 
+Common object metadata exposes confirmed visibility/editing flags, replay and
+resize values, full masks and bounded frame extensions. Object and layer
+visibility have different bit encodings. Applying visibility during rendering
+and decoding later common flexible fields remain; see
+[common object findings](object-base-findings.md).
+
 Note headers now use their declared mask lengths and flexible-data boundary.
 Container metadata uses the decoded header and page background rather than
 fixed offsets or color-pattern searches. See [note-header findings](note-header-findings.md).

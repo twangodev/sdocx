@@ -29,6 +29,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   appended trailer precedence, bounded decoding and synthetic regressions.
 - [`layer-findings.md`](layer-findings.md) — native layer identity, alpha-lock
   and shadow fields, bounded decoding and the Java transparency discrepancy.
+- [`object-base-findings.md`](object-base-findings.md) — shared object visibility,
+  editing flags, replay/resize values and preserved frame extensions.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
