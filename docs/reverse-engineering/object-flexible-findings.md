@@ -3,9 +3,9 @@
 ## Evidence and status
 
 Confirmed from Samsung Notes 4.4.45.37, `arm64-v8a/libSPenModel.so` and
-`libSPenBase.so`, without new SDOCX/PDF samples. This is a field map for further
-implementation. The SDK currently decodes rotation and preserves the remaining
-common flexible bytes; see [common metadata](object-base-findings.md).
+`libSPenBase.so`, without new SDOCX/PDF samples. The SDK exposes the mapped
+fields through `ObjectMetadata::flexible_metadata` and its `_with_limits`
+variant. Rotation remains in [common metadata](object-base-findings.md).
 
 The modern typed-frame writer is `ObjectBaseBinaryHandler::GetOwnBinary` at
 `0x2daad8`. Its matching loader is `ApplyOwnBinary` at `0x2db0e0`, followed by
@@ -72,7 +72,8 @@ metadata does not apply that scaling.
 The field-16 writer calls `BelongsToSpan` at `0x2daecc` and emits 20 bytes only
 under additional context conditions. The loader marks saved ATT state after
 reading them. The rectangle's coordinate system and trailing value need more
-tracing before a public semantic type is chosen.
+tracing before a public semantic type is chosen. The SDK retains these 20 bytes
+as `saved_span_data`, and the 16-byte partial-rectangle records as raw arrays.
 
 ## A different static extraction format
 
@@ -113,10 +114,50 @@ consuming text. String-array lengths are unsigned at `0xa24a8`–`0xa24c0`.
 Byte counts are `u32` for document types >= 2 and `u16` for 0/1, selected at
 `0xa25a8`–`0xa25c0`; the writer mirrors this at `0xa2084`–`0xa20ac`.
 
-A bounded bundle decoder is therefore a prerequisite to locating later object
-fields when either bundle is present. It must limit aggregate record counts,
-text and byte allocations; retain duplicate records until key replacement
-semantics are deliberately chosen; and stop on unknown category bits rather
-than assume they consume no bytes. A byte-array key also has special handling
-at `0xa25ec`–`0xa2664`; its meaning remains to be traced. These constraints
-provide the next implementation work without requiring new documents.
+The byte-array key `SPEN_SDK_KEY_SYSTEM_RESERVED_EXTRA_DATA` has special handling
+at `0xa25ec`–`0xa2664`; the comparison string is at virtual address `0x2e5ca`.
+The native reader returns its bytes through optional out-parameters instead of
+putting it in the ordinary bundle. The SDK preserves it as a named byte-array
+entry. Its payload semantics remain unresolved.
+
+## Explicit SDK decoding
+
+```rust
+let base = stored_object.base_metadata(&page_bytes)?;
+let details = base.flexible_metadata()?;
+```
+
+`ObjectFlexibleMetadata` contains all 17 mapped fields after rotation, including
+both bundles. Every optional field preserves absent versus present-empty values.
+It exposes raw IDs, dimensions and times without applying native runtime
+normalization. Layout values use `ObjectLayoutType`, including `Other(u8)`.
+This explicit inspection step leaves ordinary page rendering independent of
+optional application metadata.
+
+Each `ObjectBundle` contains ordered `ObjectBundleEntry` records with a typed
+`ObjectBundleValue`, its category mask, and its exact bounded `data` bytes.
+Repeated keys survive within and across categories. Raw data also preserves
+noncanonical negative null lengths. It ends at the bundle boundary and excludes
+later fields. Empty bundles, including present categories with zero entries,
+remain distinguishable from absent bundles.
+
+The decoder uses the existing flexible tail, which starts after any decoded
+rotation and ends at the type-0 frame boundary. It does not consume later typed
+frames, child objects or integrity trailers. Unknown object field bits or bundle
+category bits set `first_unparsed_field` and preserve that whole field and the
+remaining bytes in `trailing_data`. In particular, fields 9–12 are not filled
+from the alternate static extractor. A malformed known record returns an error.
+
+`max_object_metadata_entries` defaults to 10,000 and bounds the aggregate count
+of partial rectangles, entries in both bundles, and string-array elements.
+`max_text_characters` bounds aggregate UTF-16 units across optional strings,
+bundle keys and bundle values. Both counters are checked before allocation.
+`max_entry_size` bounds the input flexible tail; byte-array lengths are checked
+against the bounded remainder before copying. The original base metadata and
+its raw tail remain available after explicit decoding.
+
+Twelve synthetic integration tests cover every mapped field and every truncated
+prefix, unknown masks, both bundles, duplicate/reserved keys, signed null lengths,
+unsigned 65,535-unit strings, 70,000-byte arrays, old-version gates, empty values,
+aggregate limits and malformed encodings. Rendering and saved-span semantics
+still require further native tracing and real-file visual conformance.

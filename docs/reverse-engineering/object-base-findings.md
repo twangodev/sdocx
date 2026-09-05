@@ -94,8 +94,9 @@ be finite.
 The SDK retains both complete masks, all remaining fixed bytes, and all
 flexible bytes after rotation. These tails end at the declared frame boundary;
 they exclude subsequent typed frames and the outer integrity trailer. Later
-flexible fields remain undecoded in this change. Their native map and the
-bundle prerequisite are recorded in [optional object findings](object-flexible-findings.md).
+flexible fields are available through a separate `flexible_metadata` call.
+Their native map, bounded bundle decoding and remaining unknowns are recorded
+in [optional object findings](object-flexible-findings.md).
 
 ## Implementation and verification
 

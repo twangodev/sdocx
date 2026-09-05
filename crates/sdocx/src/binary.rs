@@ -37,6 +37,10 @@ impl<'a> Reader<'a> {
         self.data.len().saturating_sub(self.position)
     }
 
+    pub(crate) fn remaining_bytes(&self) -> &'a [u8] {
+        &self.data[self.position..]
+    }
+
     pub(crate) fn read_u8(&mut self, field: &'static str) -> Result<u8> {
         Ok(self.read_array::<1>(field)?[0])
     }
@@ -123,18 +127,8 @@ impl<'a> Reader<'a> {
         if unit_count == usize::from(u16::MAX) {
             return Ok(None);
         }
-        if unit_count > max_units {
-            return Err(Error::LimitExceeded {
-                resource: "text characters",
-                limit: max_units as u64,
-                actual: unit_count as u64,
-            });
-        }
-        let byte_count = unit_count
-            .checked_mul(2)
-            .ok_or_else(|| Error::Format(format!("{}: {field} length overflows", self.context)))?;
-        let bytes = self.read_bytes(byte_count, field)?;
-        decode_utf16(bytes, self.context, field).map(Some)
+        self.read_utf16_units(unit_count, field, max_units)
+            .map(Some)
     }
 
     pub(crate) fn read_utf16_u16_without_null_sentinel(
@@ -143,14 +137,7 @@ impl<'a> Reader<'a> {
         max_units: usize,
     ) -> Result<String> {
         let unit_count = usize::from(self.read_u16(field)?);
-        if unit_count > max_units {
-            return Err(Error::LimitExceeded {
-                resource: "text characters",
-                limit: max_units as u64,
-                actual: unit_count as u64,
-            });
-        }
-        decode_utf16(self.read_bytes(unit_count * 2, field)?, self.context, field)
+        self.read_utf16_units(unit_count, field, max_units)
     }
 
     pub(crate) fn read_utf16_u32(
@@ -160,6 +147,15 @@ impl<'a> Reader<'a> {
     ) -> Result<String> {
         let unit_count = usize::try_from(self.read_u32(field)?)
             .map_err(|_| Error::Format(format!("{}: {field} is too long", self.context)))?;
+        self.read_utf16_units(unit_count, field, max_units)
+    }
+
+    pub(crate) fn read_utf16_units(
+        &mut self,
+        unit_count: usize,
+        field: &'static str,
+        max_units: usize,
+    ) -> Result<String> {
         if unit_count > max_units {
             return Err(Error::LimitExceeded {
                 resource: "text characters",

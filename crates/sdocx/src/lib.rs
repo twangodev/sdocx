@@ -27,6 +27,7 @@ mod media;
 mod note;
 mod note_metadata;
 mod object;
+mod object_flexible;
 mod page;
 #[cfg(feature = "pdf")]
 pub mod pdf;
@@ -61,6 +62,10 @@ pub use note_metadata::{
     NotePenExtension, NotePenSettings, NoteStringId, NoteStringTable, NoteVoice, NoteVoiceEvent,
 };
 pub use object::{ObjectMetadata, ObjectResizeMode};
+pub use object_flexible::{
+    ObjectBundle, ObjectBundleEntry, ObjectBundleValue, ObjectFlexibleMetadata, ObjectLayoutType,
+    ObjectPageSize, ObjectSize,
+};
 #[cfg(feature = "pdf")]
 pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
 #[cfg(feature = "render")]
@@ -113,6 +118,7 @@ pub struct ParseLimits {
     /// Maximum embedded object spans in one rich-text object.
     pub max_text_object_spans: usize,
     pub max_note_metadata_entries: usize,
+    pub max_object_metadata_entries: usize,
 }
 
 impl Default for ParseLimits {
@@ -132,6 +138,7 @@ impl Default for ParseLimits {
             max_text_paragraphs: 10_000,
             max_text_object_spans: 10_000,
             max_note_metadata_entries: 10_000,
+            max_object_metadata_entries: 10_000,
         }
     }
 }
