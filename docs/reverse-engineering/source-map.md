@@ -95,6 +95,13 @@ and end `0x22390` apply midpoint smoothing without a separate terminal stamp.
 append path. Marker2's slot-88 provider returns null at `0x20a5c`, while
 Base's stored-array MotionEvent constructor leaves source at its default 0.
 
+[Pen-action input findings](stroke-input-findings.md) trace Composer
+`NoteWritingViewPenAction::handWritingBeautification`, `0x422d14`, which
+selects InkPen2 for tool types 2 and 6. The ordinary action's comparison at
+`0x422750` triggers stroke splitting at 65501 recorded points. Raster
+drawing's slot 208 resolves to `LowLatencyStrokeView`, whose counter at
+`0x4d43d8` forwards to Drawing `GetStrokePointCount`, `0xb8160`.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

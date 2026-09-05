@@ -194,7 +194,9 @@ and source initialization were checked against their instructions. The
 down/up and source-flag cases are static derivations; no SDK rendering code
 changed and no new device fixtures were used.
 
-Next APK targets include event preprocessing before `TouchStrokeDrawing`,
-the nonnull coordinate provider, later stroke insertion/transformation and
+The [pen-action input trace](stroke-input-findings.md) establishes a
+separate InkPen2 filter and an ordinary long-gesture split at 65501 recorded
+points. Further APK targets include stroke-view event preprocessing, the
+nonnull coordinate provider, later stroke insertion/transformation and
 single-point import handling. Tap and short-stroke SDOCX/PDF pairs can test
 the stored counts, repeated coordinates, tool types and resulting marks.

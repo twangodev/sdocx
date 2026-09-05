@@ -59,6 +59,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   distance approximation, stored-point replay and ordinary stroke completion.
 - [`stroke-recording-findings.md`](stroke-recording-findings.md) — event-sample
   appends, repeated-coordinate taps, optional replacement and replay source reset.
+- [`stroke-input-findings.md`](stroke-input-findings.md) — InkPen2 input-filter
+  selection, raster recorder bindings and long-gesture splitting.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
