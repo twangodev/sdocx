@@ -202,7 +202,9 @@ Applying this subtraction again during replay would translate the stroke
 twice. The adapter's page selection also does not justify splitting an
 existing stored stroke at every page boundary.
 
-The next coordinate target is the event transform before recording and its
-relationship to pen size. New SDOCX/PDF pairs containing a stroke across a
-page boundary, a second-page stroke and zoomed drawing can test the recovered
+The [view input trace](view-input-transform-findings.md) resolves child
+position and inverse-matrix application before recording. Runtime matrix
+configuration and its relationship to pen size remain open. New SDOCX/PDF
+pairs containing a stroke across a page boundary, a second-page stroke and
+zoomed drawing can test the recovered
 page assignment and distinguish input scaling from insertion translation.

@@ -67,6 +67,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point
   page selection, page-local translation and millisecond flags during insertion.
+- [`view-input-transform-findings.md`](view-input-transform-findings.md) — child
+  view conversion, event-history transforms, float precision and pen-width source.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

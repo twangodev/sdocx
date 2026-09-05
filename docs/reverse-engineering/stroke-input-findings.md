@@ -50,8 +50,9 @@ If a result exists, it transforms that result with the original matrix at
 `0x422e20` and sends the result to the drawing interface at `0x422e6c`.
 The filter therefore operates after undoing the event's accumulated
 transform and restores that transform before dispatching its result.
-The numerical filter and the origins of the accumulated matrix remain
-separate investigation targets.
+The [view input trace](view-input-transform-findings.md) identifies shared
+child-view operations that accumulate this matrix. Its runtime configuration
+and the numerical filter remain separate investigation targets.
 
 If no result exists, actions 0 and 1 take a fallback: `ApplyFilter` receives
 the copy at `0x422ee0`, then the drawing interface receives the original

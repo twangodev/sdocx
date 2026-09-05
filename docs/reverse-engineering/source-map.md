@@ -122,6 +122,13 @@ at `0x4f6a20`; continuous mode appends to page 0 at `0x4ed234`.
 Model `SetMillisecondMode`, `0x2e135c`, changes a flag without rescaling
 the recorded timestamp array.
 
+[View input transform findings](view-input-transform-findings.md) resolve
+View `ViewGroup::applyTransformToEvent`, `0x73e20`, which removes child
+position before applying the inverse child matrix. Base `MotionEvent::Transform`,
+`0xc0d2c`, transforms current and historical coordinates through the float
+arithmetic at `0xc0e08`. Drawing obtains the new stroke's pen width through
+pen slot 24 at `0xb76c4`, separately from these event transformations.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.
