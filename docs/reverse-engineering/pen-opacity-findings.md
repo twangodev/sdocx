@@ -173,12 +173,12 @@ blend operation to the resulting highlighter batch. That later Darken or
 Lighten operation is separate from the pen's mask and alpha calculation.
 
 The [pen selection trace](pen-selection-findings.md) resolves stored name
-and setting IDs and Marker2's choice between GL V1 and V2. Unresolved work
-includes other brush plugins, the complete V2 and StrokeTip paths,
-reveal/effect overrides and the effect of render-thread `SetAlpha(float)`.
-That setter at PenCommon
-`0x4a5a0` can replace member 56, so the existence of the ARGB path alone does
-not prove that every caller retains its alpha until drawing.
+and setting IDs and Marker2's choice between GL V1 and V2. The subsequent
+[V1/V2 comparison](marker2-rendering-findings.md) confirms shared color-alpha
+composition and identifies V2's thin-stroke smoothing change. Its static
+call-site audit finds no identified callers of `PenDrawableRT::SetAlpha`
+inside the APK. Other brush plugins, StrokeTip opacity, reveal/effect
+overrides and dynamic state changes remain outside these conclusions.
 
 Useful new pairs are one self-crossing highlighter stroke, two separate
 overlapping strokes of the same color, and strokes crossing text or images,

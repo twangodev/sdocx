@@ -76,6 +76,13 @@ Marker2's V1 composite at `0x24180` uses its alpha with mask coverage.
 Renderer blend tables `0x308b8` and `0x30880` establish maximum blending
 inside the mask and source-over composition for its colored output.
 
+[Marker2 V1/V2 comparison](marker2-rendering-findings.md) checks the V2
+mask shader at `0x12447`, antialiasing uniform selection at `0x25fc0`,
+composite at `0x260dc` and shared size conversion at PenCommon `0x4a588`.
+The V1/V2 composite shader strings are identical; V2's mask changes precision
+and the edge ramp for drawing sizes below 3. No static call site for
+PenCommon `PenDrawableRT::SetAlpha`, `0x4a5a0`, was identified in the APK audit.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

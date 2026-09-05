@@ -201,8 +201,9 @@ otherwise it is destroyed at `0x1f0ac` and recreated.
 Consequently, null advanced settings select V1 for Marker2, while a stored
 `2;` selects V2. Empty settings and the -1 token can retain the constructor's
 version or a previously applied version on a cached pen. The
-[V1 opacity findings](pen-opacity-findings.md) must not be silently applied
-to every Marker2 stroke on the strength of its name alone.
+[subsequent V1/V2 comparison](marker2-rendering-findings.md) confirms their
+shared alpha composition and identifies a thin-stroke smoothing difference;
+the pen name alone still does not establish the renderer version.
 
 ## Validation and remaining work
 
@@ -216,8 +217,8 @@ checking, the WASM target and the cached `01-basic-formatting` corpus check
 passed. The corpus check retained its locked parser/layout expectations;
 it does not validate the newly traced pen rendering behavior.
 
-Remaining APK work includes the complete Marker2 V2 draw path, per-plugin
-advanced-setting overrides, alias-specific configuration and the later
-effect of render-thread alpha setters. New SDOCX/PDF pairs should record
+Remaining APK work includes exact curve sampling, StrokeTip opacity,
+per-plugin advanced-setting overrides and alias-specific configuration.
+New SDOCX/PDF pairs should record
 pen selection and export mode; the stored string table can then distinguish
 the exact name and settings used in each visual comparison.

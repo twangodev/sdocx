@@ -53,6 +53,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   opacity dispatch, theme-preserved alpha and Marker2 mask/composite equations.
 - [`pen-selection-findings.md`](pen-selection-findings.md) — corrected stroke
   string IDs, native pen registry, fallback lookup and Marker2 version selection.
+- [`marker2-rendering-findings.md`](marker2-rendering-findings.md) — V1/V2
+  coverage comparison, size conversion, thin-stroke smoothing and alpha-call audit.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
