@@ -16,11 +16,12 @@ branch interpolates the pen's separate DP bounds and multiplies the result
 by `densityDpi / 160`. The native setting bridge passes the resulting
 `size` float directly to the pen's size setter.
 
-The low-latency recorder has a separate, verified copy of pen size from
-its input PenData to its recording PenData. Connecting every action that
-assigns that input PenData remains open. These findings do not establish
-every application setting path or justify recomputing a saved stroke's
-width from a UI size level.
+On the ordinary raster path, the pen action assigns ViewCore's selected
+PenData to the stroke view during down-event initialization. The
+low-latency recorder then has a separate, verified copy of pen size from
+that input PenData to its recording PenData. These findings do not
+establish every application setting or drawing path, or justify
+recomputing a saved stroke's width from a UI size level.
 
 ## The note-writing manager chooses the conversion
 
@@ -207,6 +208,47 @@ For Marker2, relocation `0x2ead8` binds pen slot 16 to PenCommon
 and stores the result at pen member 24. `Pen::GetSize`, `0x4600c`,
 reads that float through Marker2 slot 24.
 
+## Down-event initialization assigns the selected PenData
+
+Composer creates the writing view's ViewCore through `0x4cf708` and
+stores it at writing-view member 720 at `0x530e10`. Later,
+`NoteWritingView::createActions` supplies that same member as the
+`IPenSetting*` argument at `0x42534c`, and supplies the drawing interface
+through members `728 -> 632 -> 648` at `0x425340`–`0x425354`.
+The `NoteWritingViewPenAction` constructor call is at `0x425358`.
+
+Its constructor, `0x422354`, forwards these arguments to the base
+constructor at `0x422368`. That constructor stores the setting pointer
+at action member 16 at `0x4fed28`, and the drawing pointer at member
+416 at `0x4fed74`. The action therefore reads the same ViewCore object
+whose selected PenData is assigned by the native setting bridge.
+
+In `NoteWritingViewPenAction::OnTouch`, `0x422444`, action 0 enters
+down-event initialization at `0x422580`. Document/page checks precede
+the pen assignment. For an event that reaches `0x4228c8`, the action:
+
+1. Loads the setting from member 16 and calls its slot 16 at `0x4228d4`.
+   The ViewCore binding returns its selected PenData at member 72.
+2. If the result is null, clears the action's active byte at member 64
+   and returns through `0x422940`–`0x422944`.
+3. Otherwise, passes the returned pointer unchanged to drawing-interface
+   slot 112 at `0x4228ec`, using the drawing object at action member 416.
+
+For the [raster factory branch](stroke-input-findings.md#the-ordinary-raster-branch-exposes-the-recorders-count),
+primary-vtable relocation `0x583a60` binds drawing slot 112 to
+`0x50f7b4`. It obtains the stroke view through drawing member 64 and
+wrapper member 8, then tail-calls that view's slot 152 at `0x50f7c4`.
+The input PenData remains in argument `x1` throughout this forwarding
+method.
+
+The concrete `LowLatencyStrokeView` binding, relocation `0x580d10`,
+resolves slot 152 to `0x4d4220`, which stores the pointer at member 88.
+Its tail helper, `0x4d29f4`, compares the pen name with three literals
+and updates presenter byte 392; it does not rewrite the pen's size.
+This connects the setting bridge to the input used by the width copy
+below. Other factory branches and specialized actions require their
+own dispatch checks.
+
 ## The low-latency path copies width into its recording pen
 
 The previously identified low-latency stroke-view helper, Composer
@@ -234,21 +276,25 @@ member 88 otherwise.
 The recorder subsequently obtains width through that pen's getter when
 [creating the stored stroke](view-input-transform-findings.md#recorded-pen-width-comes-from-a-separate-getter).
 
-This supplies a downstream path from the stroke view's assigned PenData
-to recorded width. The application actions that select or replace that
-input pointer still need to be linked to the setting bridge above.
+Together with down-event assignment, this supplies the ordinary raster
+path from the selected ViewCore pen to recorded width. The path carries
+PenData and copies its size through pen setters; it does not derive width
+from the event's inverse coordinate-transform matrix.
 
 ## Validation and remaining work
 
 The APK digest and five native library byte streams were verified.
-JNI names/signatures, view-core and pen vtable slots, Marker2 constants,
-the float arithmetic and recording-pointer transfer were checked against
-the binaries. Fresh fallback Java output confirmed the manager conversion
+JNI names/signatures, view-core and pen vtable slots, action constructor
+arguments, raster forwarding, Marker2 constants, the float arithmetic
+and recording-pointer transfer were checked against the binaries.
+Fresh fallback Java output confirmed the manager conversion
 branches and the density source, and disposable float reconstruction
 checked both utilities' example widths and level boundaries. Documentation
 links were checked. No SDK code changed.
 
-The next target is the assignment from the pen action into the stroke
-view. Existing decoded widths remain
-the authority for saved-file rendering: document-relative size-level
-conversion, setter clamping and live view zoom are creation-time concerns.
+The ordinary raster assignment is now resolved. Other drawing factory
+branches, specialized actions, setting changes during an active stroke
+and application decisions that choose `isDpSize` remain separate targets.
+Existing decoded widths remain the authority for saved-file rendering:
+size-level conversion, setter clamping and live view zoom are
+creation-time concerns.

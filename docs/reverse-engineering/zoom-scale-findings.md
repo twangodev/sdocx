@@ -176,7 +176,7 @@ ARM64 binaries. Documentation links were checked. No SDK code changed.
 
 The [pen size trace](pen-size-findings.md) now resolves the note-writing
 manager's document-relative conversion and native size assignment, plus
-the alternative density conversion and the stroke view's separate
-recording-pen copy. The action that connects those PenData pointers, other
-zoom listeners and specialized input modes remain outside the scope of
-this callback trace.
+the alternative density conversion, ordinary down-event pen assignment
+and the stroke view's separate recording-pen copy. Other zoom listeners,
+setting changes during a stroke and specialized input modes remain
+outside the scope of this callback trace.

@@ -146,6 +146,10 @@ at `0x4d3868`–`0x4d3878`, separately from event-coordinate transforms.
 The alternative DP utility, PenCommon `0x53fe0`, interpolates different
 pen bounds and then multiplies by display `densityDpi / 160` at
 `0x541b4`–`0x541b8`; its returned width already includes density scaling.
+On down-event initialization, Composer `NoteWritingViewPenAction`
+reads ViewCore's selected PenData at `0x4228d4` and forwards it through
+raster slot 112, `0x50f7b4`, into the stroke view's member 88 at
+`0x4d4220`. This connects the setting bridge to the recording-pen copy.
 
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI

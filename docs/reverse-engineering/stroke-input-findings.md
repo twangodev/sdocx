@@ -87,6 +87,11 @@ This trace resolves the count interface for branch 0; the table does not
 claim that all four implementations have identical input processing or
 that a particular device always selects branch 0.
 
+The [pen-size trace](pen-size-findings.md#down-event-initialization-assigns-the-selected-pendata)
+connects down-event initialization to the raster branch's pen assignment:
+the action reads ViewCore's selected PenData, forwards it through drawing
+slot 112, and stores it in the low-latency stroke view before presentation.
+
 The raster constructor's GOT entry `0x5a2e10` resolves to vtable `0x5839e0`.
 Its primary address point is `0x5839f0`; slot 208 at relocation `0x583ac0`
 resolves to `0x50faf0`. That function returns the object in member 8 of the
