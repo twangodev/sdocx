@@ -3,7 +3,8 @@
 ## Evidence and scope
 
 Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
-`libSPenComposer.so`, `libSPenDrawing.so` and `libSPenMarker2.so` from the
+`libSPenComposer.so`, `libSPenDrawing.so`, `libSPenMarker2.so` and
+`libSPenBase.so` from the
 APK identified in the [knowledge base](README.md#sources-and-validation).
 This continues the [pen-action input trace](stroke-input-findings.md)
 through the raster stroke view into its presenter.
@@ -123,8 +124,9 @@ is configured separately at `0x4d77fc`.
 The signature string at Composer `0x1f496a` identifies `0x4d94e0` as
 `TouchPresenter::OnPredictTouch(MotionEvent*, MotionEventEntity const&)`.
 It accepts a separate event, and can replace that event through a
-member-528 processing interface at `0x4d96d4`. The prediction algorithm
-and this processing interface still need independent numerical tracing.
+member-528 processing interface at `0x4d96d4`. The binding below identifies
+that interface as `PredStrokeLengthController`; its numerical prediction
+modification still needs independent tracing.
 
 For its drawable path, it retrieves pen slot 248 at `0x4d9abc`, saves the
 event's original action at `0x4d9ad8`, then temporarily sets the action to
@@ -146,6 +148,61 @@ at `0x4d9844` supplies the prediction event as the secondary argument,
 then clears the queue at `0x4d986c`. This is why the recorder's two event
 arguments must be distinguished. It is not evidence that the prediction
 event itself is directly appended to the stored point array.
+
+## Prediction length control selects a non-resampled anchor
+
+The presenter constructs its member-528 object through helper `0x4d01fc`
+at `0x4d7114` and stores it at `0x4d711c`. The helper calls constructor
+`0x4d546c`, which installs primary vtable address point `0x580f20` at
+`0x4d54b4`. GOT entry `0x5a2bc8` resolves to the underlying vtable, and
+RTTI at `0x59baa0` names `PredStrokeLengthController`.
+
+`PresentTouch` calls this object's slot 64 with the primary payload event
+at `0x4d849c`. Relocation `0x580f60` resolves that slot to `0x4d6928`;
+the embedded signature at `0x1bd172` identifies
+`PredStrokeLengthController::SetLastEvent(MotionEvent*)`. The same vtable's
+slot 24 resolves to `0x4d555c`, the prediction-processing call used by
+`OnPredictTouch` above.
+
+`SetLastEvent` first checks controller byte 104 at `0x4d6948`–`0x4d694c`.
+When zero, it returns without changing the saved anchor. The constructor
+initializes that byte to zero at `0x4d54cc`; setup through slot 56 can
+change it, so constructor state alone does not establish runtime use.
+
+When enabled, it resets the 72-byte saved PointerCoords at member 32 and
+chooses a pointer-0 sample using the
+[adapter's resampled state](motion-event-adapter-findings.md#resampled-metadata-has-two-gates):
+
+| Current resampled state | Selected anchor |
+| --- | --- |
+| -1, history exists | Last historical sample |
+| -1, no history | Current sample |
+| 0 | Current sample |
+| Other value | Search history backward for the last sample whose state is 0 |
+
+The unknown-state branch is at `0x4d69dc`; it does not inspect the chosen
+historical sample's resampled flag. The backward search tests history at
+`0x4d69c4`–`0x4d69c8`. If it finds no zero state, it logs the missing
+non-resampled event at `0x4d6a34`–`0x4d6a70` and leaves the anchor in its
+reset state. In the ordinary Android adapter, known states are 0 and 1;
+this consumer's branch treats every value other than -1 and 0 the same.
+
+For example, a current state of 1 and historical states `[0, 1, 1]`
+select history index 0. With current state -1, the same history instead
+selects index 2. These are static branch examples, not device captures.
+
+The helper at `0x4d6a78` reconstructs a PointerCoords record for the
+selected sample. It adds `GetDownTime()` back to the millisecond getter
+at `0x4d6af0` or `0x4d6ba8`, restoring the absolute stored time, while
+copying the nanosecond getter directly. `SetLastEvent` then copies that
+record into controller member 32 at `0x4d6a0c`.
+
+This method reads the input event and changes controller state. It neither
+removes samples from the event's history nor calls the stroke recorder.
+Its selection is therefore not a rule to discard resampled points from a
+decoded stroke. The already traced ordinary Marker2 recorder path remains
+separate from this prediction anchor; other input filters and the
+controller's numerical output processing require their own analysis.
 
 ## Input source and later transforms remain separate boundaries
 
@@ -177,10 +234,12 @@ document-insertion coordinate transform.
 
 ## Validation and SDK implications
 
-The APK digest and all three library byte streams were checked. Vtable
+The APK digest and all four library byte streams were checked. Vtable
 bindings, RTTI, the version table, event argument registers and the source
-bitwise operation were verified against the binary. The source example
-is a static derivation; no device prediction trace or new document pair
+bitwise operation were verified against the binary. The controller's
+constructor, slot bindings and resampled-state branches were also checked.
+The source and anchor-selection examples are static derivations;
+no device prediction trace or new document pair
 was used, and no SDK code changed.
 
 Keep ordinary Marker2 stored-array rendering distinct from prediction

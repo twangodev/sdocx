@@ -136,8 +136,11 @@ Native conversion applies a further check at `0xe2608` and `0xe282c`.
 When the unsigned value at Base `0xf6c34` is at least 35, it stores the
 Java boolean as 0 or 1; otherwise it stores -1. `System::SetSDKVersion`,
 `0xc757c`, and `GetSDKVersion`, `0xc7588`, identify this global as the
-native configured SDK version. Its initialization and the downstream
-interpretation of the three states remain separate research targets.
+native configured SDK version. Its initialization remains a separate
+research target. The [prediction-length controller](stroke-prediction-findings.md#prediction-length-control-selects-a-non-resampled-anchor)
+uses -1 as a fallback case, accepts 0 directly and searches history when
+the current sample has another state. This does not remove event samples
+from the ordinary recorder's append loop.
 
 ## Millisecond getters subtract down time
 

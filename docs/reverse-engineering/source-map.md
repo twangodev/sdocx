@@ -115,6 +115,10 @@ Composer `TouchPresenter::PresentTouch` at `0x4d76bc` and its event-list
 recorder call at `0x4d8bdc`. Marker2 V2's prediction getter at `0x1f13c`
 supplies the separate drawable called by `OnPredictTouch`, `0x4d94e0`;
 V1 returns null. Drawing appends only the primary event at `0xb7570`.
+Composer's presenter constructs `PredStrokeLengthController` at
+`0x4d7114`; its member-528 slot 64 resolves to `SetLastEvent`, `0x4d6928`.
+That method selects a non-resampled prediction anchor, or uses the last
+history/current fallback for state -1, without removing input samples.
 
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
