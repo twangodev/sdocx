@@ -57,6 +57,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   coverage comparison, size conversion, thin-stroke smoothing and alpha-call audit.
 - [`marker2-sampling-findings.md`](marker2-sampling-findings.md) — quadratic
   distance approximation, stored-point replay and ordinary stroke completion.
+- [`stroke-recording-findings.md`](stroke-recording-findings.md) — event-sample
+  appends, repeated-coordinate taps, optional replacement and replay source reset.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

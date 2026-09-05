@@ -195,6 +195,8 @@ the APK digest were rechecked. No SDK rendering code changed in this step.
 Useful new comparisons include thin Marker2 strokes around drawing size 3,
 fractional sizes, one self-crossing stroke, two overlapping strokes and
 strokes recorded with different input tools. Their stored name, advanced
-settings, width and export scale should be recorded with the PDF. Saved-point
-producers, StrokeTip opacity and the remaining brush plugins are still
-available for APK-only investigation.
+settings, width and export scale should be recorded with the PDF. The
+[touch-recording trace](stroke-recording-findings.md) distinguishes stored
+samples from these stamps and identifies a live/replay source difference.
+Upstream event preprocessing, StrokeTip opacity and the remaining brush
+plugins are still available for APK-only investigation.

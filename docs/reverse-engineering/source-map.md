@@ -89,6 +89,12 @@ at `0xbc494`. Base's array-based MotionEvent constructor at `0xbfd84`
 preserves the last stored point as current input. Marker2 redraw `0x22808`
 and end `0x22390` apply midpoint smoothing without a separate terminal stamp.
 
+[Stroke recording findings](stroke-recording-findings.md) trace Drawing
+`TouchStrokeDrawing::addEventPointsToObjectStroke`, `0xb7dc0`, into Model
+`ObjectStrokeImpl::AddPoint`, `0x2e9d6c`. Repeated coordinates survive the
+append path. Marker2's slot-88 provider returns null at `0x20a5c`, while
+Base's stored-array MotionEvent constructor leaves source at its default 0.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

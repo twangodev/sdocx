@@ -220,7 +220,9 @@ and the synthetic example's single-precision arithmetic was checked with
 assertions. No SDK code changed and no visual parity claim follows from
 these static checks.
 
-Remaining APK work includes saved-point producers, the one-point invariant,
-StrokeTip and other pen plugins. New SDOCX/PDF pairs with short straight
+[Touch-recording findings](stroke-recording-findings.md) now explain repeated
+tap coordinates, Marker2's null replacement provider and replay source reset.
+Upstream event preprocessing, single-point imports, StrokeTip and other pen
+plugins remain open. New SDOCX/PDF pairs with short straight
 strokes, taps, bends and widely spaced final samples can test these findings
 against saved data and visible output.
