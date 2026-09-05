@@ -470,6 +470,13 @@ and child traversal continues. Unknown future IDs retain the separate
 `UnknownObjectType` diagnostic. Neither category implies that omitted content
 was rendered.
 
+Outer type 21 has the frame chain `0 + 21`. The math frame contains optional
+sized formula binaries, four `f64` margins, a `u32` angle mode and
+length-prefixed textual UUID references to plots. These embedded formula
+binaries differ from the outer page's child records. See
+[math-object findings](math-findings.md) for the evidence and explicit
+`StoredObject::math_metadata` inspection API.
+
 ## Generic object payload frames
 
 An object payload is a chain of one or more typed frames. The common header is:

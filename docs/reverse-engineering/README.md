@@ -38,6 +38,8 @@ Notes APK, native serializers, or real compatibility fixtures.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   table styles, per-edge borders, bounded row/cell data and the nonnumerical
   row-height field order.
+- [`math-findings.md`](math-findings.md) — native math envelopes, embedded
+  formula boundaries, angle modes and connected plot references.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

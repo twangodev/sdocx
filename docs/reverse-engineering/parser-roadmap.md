@@ -78,6 +78,9 @@ standalone support remain; see
 Known outer object types without semantic decoders now produce
 `UnsupportedObjectType` diagnostics, including container/group payloads whose
 children are still traversed. Unknown future IDs retain their distinct warning.
+Math objects have explicit envelope inspection for sized formula binaries,
+margins, angle mode and connected plot references. Formula internals and math
+rendering remain unsupported; see [math findings](math-findings.md).
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
@@ -109,8 +112,8 @@ children are still traversed. Unknown future IDs retain their distinct warning.
 ## Remaining research
 
 - Multiple layers and recursive child/container fixtures.
-- Full non-stroke frame layouts, especially math and newer native table/code
-  objects.
+- Formula and plot internals, native table/code layout, and standalone decoding
+  for the remaining non-stroke object types.
 - Page custom-object internals and a few legacy common fields.
 - Proprietary `.spi` payload semantics.
 - Byte-for-byte encrypted-file validation with a protected fixture.
