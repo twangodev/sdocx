@@ -75,6 +75,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
 - [`prediction-length-findings.md`](prediction-length-findings.md) — prediction
   sample prefixes, gradual index-budget updates and the InkPen2 reset exception.
+- [`uniform-latency-findings.md`](uniform-latency-findings.md) — callback timing,
+  time-fraction cutoffs, timestamp interpolation and exact-boundary behavior.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

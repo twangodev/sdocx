@@ -10,8 +10,9 @@ Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 prediction drawable.
 
 This trace recovers the controller's final sample-prefix selection,
-counter updates and event reconstruction. Its optional uniform-latency
-stage runs before this selection and remains a separate numerical target.
+counter updates and event reconstruction. The
+[uniform-latency trace](uniform-latency-findings.md) recovers the optional
+time-based cutoff that runs before this selection.
 Disabling uniform latency does not bypass the final sample-prefix limit.
 None of these steps directly appends prediction samples to Marker2's
 stored stroke array.
@@ -147,8 +148,9 @@ checked against the ARM64 image. Disposable reconstruction checked five
 setup rates, 21 successive output selections, a shorter supplied list,
 Marker2 counter retention and exact-name InkPen2 reset.
 
-The uniform-latency coefficient and cutoff interpolation still need their
-own documented contract, including caller timing fields and display
-configuration. No native execution, new device fixture or SDK change was
+[Uniform-latency findings](uniform-latency-findings.md) recover the
+coefficient, strict cutoff comparisons and interpolation. External timing
+producers and display configuration still need independent tracing.
+No native execution, new device fixture or SDK change was
 used here. The recovered sample prefix belongs to temporary prediction
 presentation; stored Marker2 replay should continue to use decoded points.

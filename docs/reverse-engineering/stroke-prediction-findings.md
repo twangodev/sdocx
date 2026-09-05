@@ -127,8 +127,9 @@ It accepts a separate event, and can replace that event through a
 member-528 processing interface at `0x4d96d4`. The binding below identifies
 that interface as `PredStrokeLengthController`. The
 [length-control trace](prediction-length-findings.md) recovers final sample
-prefixes and gradual counter updates; uniform-latency modification remains
-a separate numerical target.
+prefixes and gradual counter updates. The
+[uniform-latency trace](uniform-latency-findings.md) recovers the preceding
+time-based cutoff and interpolation.
 
 For its drawable path, it retrieves pen slot 248 at `0x4d9abc`, saves the
 event's original action at `0x4d9ad8`, then temporarily sets the action to

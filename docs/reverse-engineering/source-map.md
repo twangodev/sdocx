@@ -157,6 +157,13 @@ resets budget/phase only for the exact InkPen2 name. Slot 40 at `0x4d6788`
 sets the update period from the supplied rate with float multiplication
 and integer truncation.
 
+[Uniform-latency findings](uniform-latency-findings.md) recover the
+optional stage in Composer `0x4d555c`: callback fields at offsets 8–32,
+the signed 32-bit prediction span at `0x4d5a18`, and coefficient division
+at `0x4d5b14`. The cutoff uses time fractions, with strict comparisons at
+`0x4d5f38` and `0x4d5f74`; interpolation replaces X/Y and both timestamps
+at `0x4d5fd8`–`0x4d5fdc` while retaining endpoint axes and pressure.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at
