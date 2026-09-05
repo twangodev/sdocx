@@ -50,8 +50,10 @@ The next priority is real Samsung standalone-text, image and shape/line fixtures
 using the [capture checklist](../../conformance/fixture-capture.md), followed by
 measured crop, wrapping and style fixes. Controlled Unicode font coverage is the
 next improvement measurable on the existing pair.
-Cursor-based end tags and optional integrity validation remain the next bounded
-parser work; advanced outer objects still need native frame research.
+Cursor-based ZIP-member end tags are implemented, including historical optional
+fields and bounded strings. See [end-tag findings](end-tag-findings.md).
+Appended end-tag precedence and optional integrity validation remain the next
+bounded parser work; advanced outer objects still need native frame research.
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.

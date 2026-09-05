@@ -2,6 +2,7 @@ use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
+use crate::end_tag::{StoredEndTag, parse_end_tag_bytes_with_limits};
 use crate::error::{Error, Result};
 use crate::media::{MediaResolver, media_archive_id, parse_media_manifest_bytes_with_limits};
 use crate::note::parse_note_bytes_with_limits;
@@ -38,9 +39,12 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     let mut metadata = DocumentMetadata::default();
     let mut report = ParseReport::default();
 
-    // Parse end_tag.bin (optional — graceful degradation)
-    if let Some(buf) = read_optional_entry(&mut archive, "end_tag.bin", &options.limits)? {
-        parse_end_tag(&buf, &mut metadata);
+    let end_tag = read_optional_entry(&mut archive, "end_tag.bin", &options.limits)?
+        .map(|data| parse_optional_end_tag(&data, &options.limits, &mut report))
+        .transpose()?
+        .flatten();
+    if let Some(tag) = &end_tag {
+        apply_end_tag_metadata(tag, &mut metadata);
     }
 
     let mut note = None;
@@ -166,6 +170,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         stored_pages,
         page_manifest,
         note,
+        end_tag,
         report,
     })
 }
@@ -392,23 +397,35 @@ fn order_pages(pages: Vec<Page>, page_ids: &[String]) -> Vec<Page> {
         .collect()
 }
 
-/// Extract timestamps from `end_tag.bin`.
-fn parse_end_tag(data: &[u8], metadata: &mut DocumentMetadata) {
-    if let Some(version) = data
-        .get(0x02..0x04)
-        .and_then(|bytes| bytes.try_into().ok())
-        .map(u16::from_le_bytes)
-        .filter(|version| *version != 0)
-    {
-        metadata.format_version = Some(FormatVersion(version));
+fn parse_optional_end_tag(
+    data: &[u8],
+    limits: &ParseLimits,
+    report: &mut ParseReport,
+) -> Result<Option<StoredEndTag>> {
+    match parse_end_tag_bytes_with_limits(data, limits) {
+        Ok(tag) => Ok(Some(tag)),
+        Err(error @ Error::LimitExceeded { .. }) => Err(error),
+        Err(error) => {
+            report.warning(
+                DiagnosticCode::InvalidEndTag,
+                Some("end_tag.bin".into()),
+                error.to_string(),
+            );
+            Ok(None)
+        }
     }
-    if data.len() < 0x58 {
-        return;
-    }
-    let created = i64::from_le_bytes(data[0x48..0x50].try_into().unwrap());
-    let modified = i64::from_le_bytes(data[0x50..0x58].try_into().unwrap());
-    metadata.created_ms = Some(created);
-    metadata.modified_ms = Some(modified);
+}
+
+fn apply_end_tag_metadata(tag: &StoredEndTag, metadata: &mut DocumentMetadata) {
+    metadata.format_version = u16::try_from(tag.format_version).ok().map(FormatVersion);
+    metadata.created_ms = Some(
+        tag.display_timestamps
+            .map_or(tag.created_time, |times| times.created_time),
+    );
+    metadata.modified_ms = Some(
+        tag.display_timestamps
+            .map_or(tag.modified_time, |times| times.modified_time),
+    );
 }
 
 /// Extract background color and page dimensions from `note.note`.
@@ -512,7 +529,7 @@ fn parse_media_assets<R: Read + Seek>(
 mod tests {
     use std::io::Cursor;
 
-    use super::{media_archive_id, order_pages, parse_end_tag, parse_from_reader, parse_note_note};
+    use super::{media_archive_id, order_pages, parse_from_reader, parse_note_note};
     use crate::types::{BoundingBox, DocumentMetadata, FormatVersion, Page};
     use crate::{Error, ParseOptions};
 
@@ -553,9 +570,8 @@ mod tests {
         parse_note_note(&note, &mut metadata);
         assert_eq!(metadata.format_version, Some(FormatVersion(4000)));
 
-        let mut end_tag = vec![0; 4];
-        end_tag[0x02..0x04].copy_from_slice(&5500_u16.to_le_bytes());
-        parse_end_tag(&end_tag, &mut metadata);
+        metadata.format_version = Some(FormatVersion::CURRENT);
+        parse_note_note(&note, &mut metadata);
         assert_eq!(metadata.format_version, Some(FormatVersion::CURRENT));
     }
 

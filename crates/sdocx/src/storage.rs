@@ -1,5 +1,6 @@
 use crate::ParseLimits;
 use crate::binary::Reader;
+use crate::end_tag::StoredEndTag;
 use crate::error::{Error, Result};
 use crate::frame::Mask;
 use crate::note::StoredNote;
@@ -35,6 +36,7 @@ pub struct ParsedDocument {
     pub page_manifest: Option<PageManifest>,
     /// Structured `note.note` title/body and header, when present.
     pub note: Option<StoredNote>,
+    pub end_tag: Option<StoredEndTag>,
     /// Non-fatal compatibility findings.
     pub report: ParseReport,
 }

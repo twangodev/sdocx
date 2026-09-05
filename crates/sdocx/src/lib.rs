@@ -13,6 +13,7 @@
 mod binary;
 mod container;
 mod decode;
+mod end_tag;
 mod error;
 mod frame;
 mod image;
@@ -30,6 +31,10 @@ mod shape;
 mod storage;
 mod types;
 
+pub use end_tag::{
+    EndTagDisplayTimestamps, EndTagFixedStyle, StoredEndTag, parse_end_tag_bytes,
+    parse_end_tag_bytes_with_limits,
+};
 pub use error::{Error, Result};
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use media::{
