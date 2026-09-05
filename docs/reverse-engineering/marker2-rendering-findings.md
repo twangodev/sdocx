@@ -155,9 +155,10 @@ next segment at `0x22d88`–`0x22da0`. The matching V1 routine at `0x21a54`
 has the same operations; its differing literal identifies V1 in the log.
 
 These steps explain why connecting raw input coordinates directly is not
-the complete native point-generation model. The internal arclength
-approximation in `SmPath` and end-of-stroke completion still require their
-own investigation before claiming an exact reproduction.
+the complete native point-generation model. The subsequent
+[sampling and completion trace](marker2-sampling-findings.md) resolves
+`SmPath`'s bounded distance approximation and confirms that normal redraw
+and end routines add no separate stamp at the final input coordinate.
 
 ## The standalone alpha setter has no identified static callers
 
@@ -194,6 +195,6 @@ the APK digest were rechecked. No SDK rendering code changed in this step.
 Useful new comparisons include thin Marker2 strokes around drawing size 3,
 fractional sizes, one self-crossing stroke, two overlapping strokes and
 strokes recorded with different input tools. Their stored name, advanced
-settings, width and export scale should be recorded with the PDF. Exact
-curve sampling, StrokeTip opacity and the remaining brush plugins are still
+settings, width and export scale should be recorded with the PDF. Saved-point
+producers, StrokeTip opacity and the remaining brush plugins are still
 available for APK-only investigation.

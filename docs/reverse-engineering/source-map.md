@@ -83,6 +83,12 @@ The V1/V2 composite shader strings are identical; V2's mask changes precision
 and the edge ramp for drawing sizes below 3. No static call site for
 PenCommon `PenDrawableRT::SetAlpha`, `0x4a5a0`, was identified in the APK audit.
 
+[Marker2 sampling findings](marker2-sampling-findings.md) follow Base
+`SmPath::helper_compute_quad_segs`, `0xbcde0`, and distance interpolation
+at `0xbc494`. Base's array-based MotionEvent constructor at `0xbfd84`
+preserves the last stored point as current input. Marker2 redraw `0x22808`
+and end `0x22390` apply midpoint smoothing without a separate terminal stamp.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

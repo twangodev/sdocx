@@ -55,6 +55,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   string IDs, native pen registry, fallback lookup and Marker2 version selection.
 - [`marker2-rendering-findings.md`](marker2-rendering-findings.md) — V1/V2
   coverage comparison, size conversion, thin-stroke smoothing and alpha-call audit.
+- [`marker2-sampling-findings.md`](marker2-sampling-findings.md) — quadratic
+  distance approximation, stored-point replay and ordinary stroke completion.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

@@ -217,8 +217,10 @@ checking, the WASM target and the cached `01-basic-formatting` corpus check
 passed. The corpus check retained its locked parser/layout expectations;
 it does not validate the newly traced pen rendering behavior.
 
-Remaining APK work includes exact curve sampling, StrokeTip opacity,
-per-plugin advanced-setting overrides and alias-specific configuration.
+[Curve sampling and ordinary completion](marker2-sampling-findings.md) have
+since been traced. Remaining APK work includes saved-point producers,
+StrokeTip opacity, per-plugin advanced-setting overrides and alias-specific
+configuration.
 New SDOCX/PDF pairs should record
 pen selection and export mode; the stored string table can then distinguish
 the exact name and settings used in each visual comparison.
