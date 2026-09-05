@@ -62,6 +62,11 @@ the caller does not subsequently dispatch the ordinary input. The fallback
 argument identities are confirmed, but this trace does not infer the
 effects of `ApplyFilter` or event-copy ownership from their names.
 
+The [InkPen2 queue trace](inkpen2-input-findings.md) now resolves sample
+admission, the finite pressure cap and the Kalman result/fallback calls.
+The no-result fallback discards the filter's returned temporary event;
+the numerical prediction and smoothing remain separate targets.
+
 ## The ordinary raster branch exposes the recorder's count
 
 `NoteWritingView::createActions`, `0x425050`, supplies the drawing argument

@@ -110,6 +110,13 @@ selects InkPen2 for tool types 2 and 6. The ordinary action's comparison at
 drawing's slot 208 resolves to `LowLatencyStrokeView`, whose counter at
 `0x4d43d8` forwards to Drawing `GetStrokePointCount`, `0xb8160`.
 
+[InkPen2 input findings](inkpen2-input-findings.md) continue into PenCommon
+`PointBeautifier::OnTouch`, `0x5c028`, and `addRealPenEvent`, `0x5c32c`.
+Move input selects history when present, rejects older milliseconds and
+caps finite pressure at 1. `GetResult`, `0x5cfe8`, can replace its event
+through the Kalman filter; `ApplyFilter`, `0x5d304`, discards that filter's
+temporary result in the separate down/up fallback.
+
 [Stroke prediction findings](stroke-prediction-findings.md) resolve
 Composer `TouchPresenter::PresentTouch` at `0x4d76bc` and its event-list
 recorder call at `0x4d8bdc`. Marker2 V2's prediction getter at `0x1f13c`

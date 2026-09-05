@@ -63,6 +63,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   sample channels, pointer-major history, raw coordinates and time origins.
 - [`stroke-input-findings.md`](stroke-input-findings.md) — InkPen2 input-filter
   selection, raster recorder bindings and long-gesture splitting.
+- [`inkpen2-input-findings.md`](inkpen2-input-findings.md) — beautifier sample
+  admission, millisecond ordering, pressure cap and result/fallback routing.
 - [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event
   dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
