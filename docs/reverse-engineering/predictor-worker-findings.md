@@ -25,8 +25,10 @@ Composer copies its presenter's Boolean constructor argument into proxy
 byte 33 at `0x4d7068`/`0x4d7078`. Proxy creation later passes that byte
 as the factory's third integer argument at `0x4dab44`–`0x4dab5c`.
 `CreatePredictor` normalizes that argument and passes it to the neural
-constructor at `0x35a38`/`0x35a3c`. This establishes propagation, not
-the active device value of the original argument.
+constructor at `0x35a38`/`0x35a3c`. The
+[device-policy trace](predictor-device-policy-findings.md) recovers the
+model-prefix and cached-SDK checks producing the original argument;
+the active device values remain unmeasured.
 
 After the earlier [admission checks](neural-admission-findings.md),
 `NNPredictor::DoPredict` selects its execution route at
