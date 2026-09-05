@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dev } from '$app/environment';
 	import { SiGithub } from '@icons-pack/svelte-simple-icons';
 	import './layout.css';
 	import Logo from '$lib/components/Logo.svelte';
@@ -6,6 +7,16 @@
 
 	let { children } = $props();
 </script>
+
+<svelte:head>
+	{#if !dev}
+		<script
+			src="https://rybbit.twango.dev/api/script.js"
+			data-site-id="84f39267b7e1"
+			defer
+		></script>
+	{/if}
+</svelte:head>
 
 <div class="flex min-h-svh w-full flex-col">
 	<header class="flex min-h-10 items-center justify-between gap-2.5 border-b border-subtle px-2.5">
