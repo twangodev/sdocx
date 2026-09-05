@@ -180,5 +180,6 @@ execution or device conformance evidence.
 The [admission trace](neural-admission-findings.md) recovers task expiry
 and acceleration-based output discarding. It also supplies a static
 configuration whose processed prefix and selected range do not intersect.
-Candidate rejection and application reachability of that configuration
-remain to be checked. No SDK code or corpus fixture changed.
+The [motion trace](neural-motion-findings.md) recovers candidate rejection;
+application reachability of that configuration remains to be checked.
+No SDK code or corpus fixture changed.

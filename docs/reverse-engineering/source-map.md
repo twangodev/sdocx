@@ -233,6 +233,13 @@ stores at task offset 112 in both creation paths. `IsExpired` at
 `0x25f64` and `0x2d2c4` uses separate 85%-frame and full-frame budgets;
 both rejection branches consult `GetUnbufferedDispatch`, `0x301c0`.
 
+[Neural motion findings](neural-motion-findings.md) trace the 480 Hz model's
+minimum-displacement branch at `0x2ca84` and the alternate call to
+`checkPredictionDeviation`, `0x2d368`. The latter compares speed means
+or sample deviations across real and reconstructed output intervals.
+The main output loop separately caps candidate distance at
+`0x2cf54`–`0x2cf6c`, using `GetPredictionTime` without unit conversion.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

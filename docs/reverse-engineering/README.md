@@ -97,6 +97,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   horizon selection, candidate marking and callback current/history construction.
 - [`neural-admission-findings.md`](neural-admission-findings.md) — acceleration
   gates, discarded output prefixes, expiry budgets and unbuffered bypasses.
+- [`neural-motion-findings.md`](neural-motion-findings.md) — minimum movement,
+  real/output speed statistics and per-candidate distance limits.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

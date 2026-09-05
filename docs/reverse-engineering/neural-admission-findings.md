@@ -168,6 +168,7 @@ They also checked the disjoint selected-range/processed-prefix example.
 These checks reproduce recovered arithmetic; they do not execute the
 native predictor or its model weights.
 
-Remaining work includes post-inference motion/deviation gates, the
-acceleration estimator and application-level reachability of the
+The [motion trace](neural-motion-findings.md) recovers post-inference
+displacement, deviation and candidate-distance gates. Remaining work includes
+the acceleration estimator and application-level reachability of the
 unmarked-vector case. No SDK code or corpus fixture changed.
