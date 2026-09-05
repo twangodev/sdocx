@@ -221,3 +221,7 @@ Remaining work includes expression enum semantics, matching recognition stroke
 indices to stored strokes, image resolution, and native layout/evaluation. Samsung
 SDOCX/PDF pairs are still needed to verify real writer variants and visual
 output.
+
+The drawing path now has a separate trace covering image/ink precedence,
+placement dependencies and the expression setter's accepted range; see
+[formula rendering findings](formula-rendering-findings.md).

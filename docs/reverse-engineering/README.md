@@ -44,6 +44,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   substitutions, colors, widths and visibility.
 - [`formula-findings.md`](formula-findings.md) — formula expressions, answers,
   embedded strokes, image references and label graphs.
+- [`formula-rendering-findings.md`](formula-rendering-findings.md) — image/ink
+  precedence, image placement, visible-stroke bounds and expression-type limits.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

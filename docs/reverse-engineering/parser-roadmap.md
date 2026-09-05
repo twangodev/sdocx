@@ -85,6 +85,9 @@ image references, embedded strokes and label graphs with named relation kinds,
 recognition stroke indices and start/end labels.
 Expression-type semantics and math rendering remain open; see
 [formula findings](formula-findings.md).
+Native formula image/ink precedence and placement dependencies are traced in
+[formula rendering findings](formula-rendering-findings.md); visible-stroke
+bounds and enclosing transforms remain before automatic rendering.
 Plot metadata and graph expressions/styles also have explicit bounded inspection;
 evaluation and graph rendering remain open. See [plot findings](plot-findings.md).
 
