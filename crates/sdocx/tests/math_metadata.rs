@@ -28,7 +28,7 @@ fn base() -> Vec<u8> {
         fixed.extend(value.to_le_bytes());
     }
     fixed.extend([0; 5]);
-    frame(0, &[0], &[1], &fixed, &15.5_f32.to_le_bytes())
+    frame(0, &[1 << 3], &[1], &fixed, &15.5_f32.to_le_bytes())
 }
 
 fn math(properties: &[u8], fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {

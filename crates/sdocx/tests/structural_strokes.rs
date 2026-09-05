@@ -32,7 +32,7 @@ fn base() -> Vec<u8> {
     }
     fixed.extend_from_slice(&0_i32.to_le_bytes());
     fixed.push(0);
-    frame(0, 0, 0x6000, &fixed, &[0; 16])
+    frame(0, 1 << 3, 0x6000, &fixed, &[0; 16])
 }
 
 fn stroke(properties: u16, count: u16, channels: &[u8], fields: u32, style: &[u8]) -> Vec<u8> {
@@ -64,6 +64,85 @@ fn compressed(stylus: bool) -> Vec<u8> {
 
 fn single(payload: &[u8]) -> Vec<u8> {
     archive(&page(&[vec![object(1, payload, &[])]], 0, &[]))
+}
+
+#[test]
+fn hidden_strokes_and_containers_keep_their_records_without_visible_content() {
+    let visible = stroke(1, 3, &compressed(false), 0, &[]);
+    let mut hidden = visible.clone();
+    hidden[11] &= !(1 << 3);
+    let visible_child = object(1, &visible, &[]);
+    let hidden_child = object(1, &hidden, &[]);
+    let raw = page(
+        &[vec![
+            hidden_child.clone(),
+            object(4, &hidden, std::slice::from_ref(&visible_child)),
+            object(4, &base(), &[hidden_child, visible_child]),
+        ]],
+        0,
+        &[],
+    );
+    let bytes = archive(&raw);
+    let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    let objects = &parsed.stored_pages[0].page.layers.layers[0].objects;
+    assert_eq!(objects.len(), 3);
+    assert_eq!(objects[0].payload(&raw).unwrap(), hidden);
+    assert!(!objects[0].base_metadata(&raw).unwrap().visible);
+    assert_eq!(objects[1].children.len(), 1);
+    assert_eq!(objects[1].children[0].payload(&raw).unwrap(), visible);
+    assert_eq!(objects[2].children.len(), 2);
+    assert_eq!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnsupportedObjectType)
+            .count(),
+        1
+    );
+    let options = ParseOptions {
+        limits: ParseLimits {
+            max_strokes_per_page: 3,
+            ..ParseLimits::default()
+        },
+        ..Default::default()
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&bytes, &options),
+        Err(Error::LimitExceeded {
+            resource: "strokes per page",
+            limit: 3,
+            actual: 4,
+        })
+    ));
+}
+
+#[test]
+fn unknown_objects_do_not_infer_child_visibility_from_a_common_looking_payload() {
+    let child = object(1, &stroke(1, 3, &compressed(false), 0, &[]), &[]);
+    let mut hidden = base();
+    hidden[11] = 0;
+    let raw = page(&[vec![object(250, &hidden, &[child])]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    assert!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == sdocx::DiagnosticCode::UnknownObjectType })
+    );
+}
+
+#[test]
+fn unreadable_base_metadata_still_reaches_the_supported_object_decoder() {
+    for payload in [Vec::new(), vec![0; 32], frame(0, 0, 0, &[], &[])] {
+        assert!(matches!(
+            sdocx::parse_bytes(&single(&payload)),
+            Err(Error::Format(_))
+        ));
+    }
 }
 
 #[test]

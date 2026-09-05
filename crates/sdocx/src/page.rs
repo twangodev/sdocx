@@ -13,8 +13,6 @@ use crate::types::{
     BoundingBox, Color, ObjectType, Page, PageElement, PageTemplate, PageTemplateSource,
 };
 
-/// Derive visible content from the same bounded object tree returned to SDK
-/// callers. Supported objects are decoded from native frames without byte scanning.
 pub(crate) fn parse_page(
     data: &[u8],
     stored: &StoredPage,
@@ -82,6 +80,11 @@ fn decode_objects(
         let payload = object
             .payload(data)
             .ok_or_else(|| Error::Format("object payload is outside its page".into()))?;
+        if !matches!(object.object_type, ObjectType::Other(_))
+            && object.base_metadata(data).is_ok_and(|base| !base.visible)
+        {
+            continue;
+        }
         if object.object_type == ObjectType::Stroke {
             let stroke = decode_stroke(payload, limits).map_err(|error| match error {
                 Error::Format(message) => Error::Format(format!(

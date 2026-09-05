@@ -33,6 +33,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   editing flags, replay/resize values and preserved frame extensions.
 - [`object-flexible-findings.md`](object-flexible-findings.md) — optional common
   fields, bundle boundaries and the distinct static extraction format.
+- [`object-drawing-findings.md`](object-drawing-findings.md) — common visibility,
+  container traversal, drawing conditions and layer collection boundaries.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

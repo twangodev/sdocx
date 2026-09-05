@@ -13,7 +13,7 @@ fn frame(kind: i16, fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
     let mut bytes = ((offset + flexible.len()) as u32).to_le_bytes().to_vec();
     bytes.extend_from_slice(&kind.to_le_bytes());
     bytes.extend_from_slice(&(offset as u32).to_le_bytes());
-    bytes.extend_from_slice(&[1, 0, fields.len() as u8]);
+    bytes.extend_from_slice(&[1, u8::from(kind == 0) << 3, fields.len() as u8]);
     bytes.extend_from_slice(fields);
     bytes.extend_from_slice(fixed);
     bytes.extend_from_slice(flexible);
@@ -31,6 +31,33 @@ fn base(bbox: [f64; 4], rotation: f32) -> Vec<u8> {
     fixed.extend_from_slice(&0_i32.to_le_bytes());
     fixed.push(0);
     frame(0, &[1, 0, 0, 0, 0], &fixed, &rotation.to_le_bytes())
+}
+
+#[test]
+fn hidden_text_is_retained_without_entering_svg_exports() {
+    let mut hidden = simple("hidden phrase");
+    hidden[11] &= !(1 << 3);
+    let raw = page(
+        &[vec![
+            object(2, &hidden, &[]),
+            object(2, &simple("visible phrase"), &[]),
+        ]],
+        0,
+        &[],
+    );
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    assert_eq!(parsed.document.pages[0].elements.len(), 1);
+    let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
+    assert_eq!(stored.len(), 2);
+    assert_eq!(stored[0].payload(&raw).unwrap(), hidden);
+    assert!(!stored[0].base_metadata(&raw).unwrap().visible);
+    #[cfg(feature = "render")]
+    {
+        let rendered =
+            sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default()).unwrap();
+        assert!(rendered.svg.contains("visible phrase"));
+        assert!(!rendered.svg.contains("hidden phrase"));
+    }
 }
 
 fn span(kind: u32, start: u32, end: u32, payload: &[u8]) -> Vec<u8> {

@@ -9,7 +9,7 @@ fn frame(kind: i16, fields: u32, fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
     let mut bytes = ((offset + flexible.len()) as u32).to_le_bytes().to_vec();
     bytes.extend_from_slice(&kind.to_le_bytes());
     bytes.extend_from_slice(&(offset as u32).to_le_bytes());
-    bytes.extend_from_slice(&[1, 0, 4]);
+    bytes.extend_from_slice(&[1, u8::from(kind == 0) << 3, 4]);
     bytes.extend_from_slice(&fields.to_le_bytes());
     bytes.extend_from_slice(fixed);
     bytes.extend_from_slice(flexible);
@@ -72,6 +72,31 @@ fn image_with_fill(
 
 fn image(id: i32) -> Vec<u8> {
     image_with_fill(2, &fill(id), 0, &[], &frame(3, 0, &[], &[]))
+}
+
+#[test]
+fn hidden_images_keep_media_references_without_resolving_or_drawing_them() {
+    let mut payload = image(42);
+    payload[11] &= !(1 << 3);
+    let raw = page(&[vec![object(3, &payload, &[])]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&support::archive(&raw)).unwrap();
+    assert!(parsed.document.pages[0].elements.is_empty());
+    let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
+    assert_eq!(stored.payload(&raw).unwrap(), payload);
+    assert!(!stored.base_metadata(&raw).unwrap().visible);
+    assert!(
+        !parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == DiagnosticCode::UnresolvedImageMedia })
+    );
+    #[cfg(feature = "render")]
+    {
+        let rendered =
+            sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default()).unwrap();
+        assert!(!rendered.svg.contains("<image "));
+    }
 }
 
 fn manifest(bindings: &[(u32, &str)]) -> Vec<u8> {

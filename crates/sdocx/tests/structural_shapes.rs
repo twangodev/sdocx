@@ -13,7 +13,7 @@ fn frame(kind: i16, mask: u32, fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
     let mut bytes = ((offset + flexible.len()) as u32).to_le_bytes().to_vec();
     bytes.extend(kind.to_le_bytes());
     bytes.extend((offset as u32).to_le_bytes());
-    bytes.extend([1, 0, 5]);
+    bytes.extend([1, u8::from(kind == 0) << 3, 5]);
     bytes.extend(mask.to_le_bytes());
     bytes.push(0);
     bytes.extend(fixed);
@@ -103,6 +103,20 @@ fn line(kind: u8, fields: u32, flexible: &[u8]) -> Vec<u8> {
 fn single(kind: u8, payload: &[u8]) -> Vec<u8> {
     archive(&page(&[vec![object(kind, payload, &[])]], 0, &[]))
 }
+
+#[test]
+fn hidden_shapes_and_lines_are_retained_outside_the_visible_page() {
+    for (kind, mut payload) in [(7, shape(1)), (8, line(0, 0, &[]))] {
+        payload[11] &= !(1 << 3);
+        let raw = page(&[vec![object(kind, &payload, &[])]], 0, &[]);
+        let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+        assert!(parsed.document.pages[0].elements.is_empty());
+        let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
+        assert_eq!(stored.payload(&raw).unwrap(), payload);
+        assert!(!stored.base_metadata(&raw).unwrap().visible);
+    }
+}
+
 fn as_shape(element: &PageElement) -> &NativeShape {
     let PageElement::Shape(value) = element else {
         panic!("expected shape")

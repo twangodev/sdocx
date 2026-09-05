@@ -31,7 +31,7 @@ fn base() -> Vec<u8> {
     fixed.extend(1234_i64.to_le_bytes());
     fixed.extend(bbox([10.0, 20.0, 300.0, 400.0]));
     fixed.extend([0; 5]);
-    frame(0, &[0], &[1], &fixed, &15.5_f32.to_le_bytes())
+    frame(0, &[1 << 3], &[1], &fixed, &15.5_f32.to_le_bytes())
 }
 
 fn formula(mask: u16, flexible: &[u8]) -> Vec<u8> {

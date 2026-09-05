@@ -45,6 +45,9 @@ not define the meaning of a successfully decoded serialized object.
 Object visibility differs from layer visibility. Objects use positive bit 3;
 layers use inverted bit 0. Formula drawn bounds explicitly skip invisible
 source and answer strokes; see [formula rendering findings](formula-rendering-findings.md).
+The ordinary drawing dispatcher also skips hidden objects before traversing
+container children. Page decoding now follows that confirmed gate while
+preserving their physical records; see [object drawing findings](object-drawing-findings.md).
 
 Earlier notes called bits 5 and 8 clippable and ATT. Bit 5's getter confirms
 the more specific meaning of enabling placement outside the canvas. Java's
