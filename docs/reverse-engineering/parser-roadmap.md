@@ -70,8 +70,10 @@ All 20 mapped note flexible fields have an explicit bounded metadata decoder,
 with null author strings, pen variants, voice/attachment references and fixed
 style properties. See [note metadata findings](note-metadata-findings.md).
 Native table/code-block inheritance chains are confirmed, and embedded table
-row/cell fixed data is bounded by its declared flexible offsets. Additional
-table styles and standalone support remain; see
+row/cell fixed data is bounded by its declared flexible offsets. All 14 table
+fields, row-height constraints and sized borders are decoded, with complete
+masks and trailing bytes retained. Applying those styles to rendering and
+standalone support remain; see
 [table/code-block findings](table-code-findings.md).
 
 1. Correct page and note header names: flexible offsets and variable-length

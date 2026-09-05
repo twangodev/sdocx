@@ -1,13 +1,14 @@
 use crate::binary::Reader;
 use crate::error::{Error, Result};
 use crate::frame::{Frame, Mask};
+use crate::table::{TableRecord, read_column_widths, read_sized_border};
 use crate::types::{
     BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType, RichTextBox,
     RichTextCodeBlock, RichTextObjectContent, RichTextObjectSpan, RichTextParagraph,
     RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
     RichTextTable, RichTextTableCell, RichTextTableRow,
 };
-use crate::{ObjectMetadata, ParseLimits};
+use crate::{ObjectMetadata, ParseLimits, TableStyle};
 
 /// Structured contents of `note.note` needed by the document model.
 #[derive(Debug, Clone)]
@@ -635,22 +636,19 @@ fn parse_table_object(
     let frame = open_next_object_frame(&mut reader, 22, "table")?;
     let mut flexible = Reader::new(frame.flexible, context);
 
-    if frame.fields.contains(0) {
-        flexible.read_f32("table vertical cell padding")?;
-    }
-    if frame.fields.contains(1) {
-        flexible.read_f32("table horizontal cell padding")?;
-    }
+    let vertical_cell_padding = frame
+        .fields
+        .contains(0)
+        .then(|| flexible.read_f32("table vertical cell padding"))
+        .transpose()?;
+    let horizontal_cell_padding = frame
+        .fields
+        .contains(1)
+        .then(|| flexible.read_f32("table horizontal cell padding"))
+        .transpose()?;
 
     let column_widths = if frame.fields.contains(2) {
-        let count = usize::try_from(flexible.read_u32("table column count")?)
-            .map_err(|_| Error::Format(format!("{context}: table column count is too large")))?;
-        check_limit("table columns", limits.max_objects_per_page, count)?;
-        let mut widths = Vec::with_capacity(count);
-        for _ in 0..count {
-            widths.push(flexible.read_f32("table column width")?);
-        }
-        widths
+        read_column_widths(&mut flexible, limits)?
     } else {
         Vec::new()
     };
@@ -677,7 +675,72 @@ fn parse_table_object(
         Vec::new()
     };
 
+    let style = TableStyle {
+        heading_column_enabled: frame.properties.contains(0),
+        heading_row_enabled: frame.properties.contains(1),
+        max_height_enabled: !frame.properties.contains(2),
+        vertical_cell_padding,
+        horizontal_cell_padding,
+        content_bbox: frame
+            .fields
+            .contains(4)
+            .then(|| crate::object::read_bbox(&mut flexible))
+            .transpose()?,
+        border: frame
+            .fields
+            .contains(5)
+            .then(|| read_sized_border(&mut flexible))
+            .transpose()?,
+        auto_fit: frame
+            .fields
+            .contains(6)
+            .then(|| flexible.read_u8("table auto-fit mode").map(Into::into))
+            .transpose()?,
+        min_column_widths: frame
+            .fields
+            .contains(7)
+            .then(|| read_column_widths(&mut flexible, limits))
+            .transpose()?,
+        max_column_widths: frame
+            .fields
+            .contains(8)
+            .then(|| read_column_widths(&mut flexible, limits))
+            .transpose()?,
+        max_height: frame
+            .fields
+            .contains(9)
+            .then(|| flexible.read_f32("table maximum height"))
+            .transpose()?,
+        max_width: frame
+            .fields
+            .contains(10)
+            .then(|| flexible.read_f32("table maximum width"))
+            .transpose()?,
+        default_cell_border: frame
+            .fields
+            .contains(11)
+            .then(|| read_sized_border(&mut flexible))
+            .transpose()?,
+        heading_background_color: frame
+            .fields
+            .contains(12)
+            .then(|| flexible.read_u32("table heading background color"))
+            .transpose()?,
+        default_cell_background_color: frame
+            .fields
+            .contains(13)
+            .then(|| flexible.read_u32("table default cell background color"))
+            .transpose()?,
+        metadata: TableRecord {
+            properties: frame.properties,
+            fields: frame.fields,
+            fixed: Reader::new(frame.fixed, "table fixed fields"),
+            flexible,
+        }
+        .finish()?,
+    };
     Ok(RichTextTable {
+        style,
         bbox: object_base.bbox,
         rotation_degrees: object_base.rotation_degrees,
         column_widths,
@@ -691,7 +754,8 @@ fn parse_table_row(
     context: &'static str,
     depth: usize,
 ) -> Result<RichTextTableRow> {
-    let (_, mut reader) = table_fixed_data(data, context)?;
+    let mut record = TableRecord::read(data, context)?;
+    let reader = &mut record.fixed;
     let height = reader.read_f32("table row height")?;
     let index = reader.read_u32("table row index")?;
     let count = usize::try_from(reader.read_u32("table row cell count")?)
@@ -708,7 +772,26 @@ fn parse_table_row(
             depth,
         )?);
     }
+    let (max_height, min_height) = if record.fields.has_other_bits((1 << 9) | (1 << 1)) {
+        (None, None)
+    } else {
+        (
+            record
+                .fields
+                .contains(9)
+                .then(|| record.flexible.read_f32("table row maximum height"))
+                .transpose()?,
+            record
+                .fields
+                .contains(1)
+                .then(|| record.flexible.read_f32("table row minimum height"))
+                .transpose()?,
+        )
+    };
     Ok(RichTextTableRow {
+        max_height,
+        min_height,
+        metadata: record.finish()?,
         index,
         height,
         cells,
@@ -721,7 +804,8 @@ fn parse_table_cell(
     context: &'static str,
     depth: usize,
 ) -> Result<RichTextTableCell> {
-    let (properties, mut reader) = table_fixed_data(data, context)?;
+    let mut record = TableRecord::read(data, context)?;
+    let reader = &mut record.fixed;
     let column_index = reader.read_u32("table cell column index")?;
     let row_span = reader.read_u32("table cell row span")?;
     let column_span = reader.read_u32("table cell column span")?;
@@ -733,38 +817,25 @@ fn parse_table_cell(
         y_max: reader.read_f64("table cell bottom")?,
     };
     let vertical_alignment = reader.read_u8("table cell vertical alignment")?;
-    let content = parse_sized_text_object(&mut reader, limits, "table cell text", depth)?;
+    let content = parse_sized_text_object(reader, limits, "table cell text", depth)?;
+    let border = record
+        .fields
+        .contains(0)
+        .then(|| read_sized_border(&mut record.flexible))
+        .transpose()?;
+    let has_own_background_color = record.properties.contains(0);
     Ok(RichTextTableCell {
+        border,
+        metadata: record.finish()?,
         column_index,
         row_span,
         column_span,
         background_color,
-        has_own_background_color: properties.contains(0),
+        has_own_background_color,
         bbox,
         vertical_alignment,
         content,
     })
-}
-
-fn table_fixed_data<'a>(data: &'a [u8], context: &'static str) -> Result<(Mask<'a>, Reader<'a>)> {
-    let mut reader = Reader::new(data, context);
-    let flexible_offset = reader.read_u32("table flexible-data offset")? as usize;
-    let properties = Mask::read(&mut reader)?;
-    let fields = Mask::read(&mut reader)?;
-    let fixed_end = if flexible_offset == 0 && !fields.has_other_bits(0) {
-        data.len()
-    } else {
-        flexible_offset
-    };
-    if fixed_end < reader.position() || fixed_end > data.len() {
-        return Err(Error::Format(format!(
-            "{context}: table flexible-data offset is outside its record"
-        )));
-    }
-    Ok((
-        properties,
-        Reader::at(&data[..fixed_end], reader.position(), context)?,
-    ))
 }
 
 fn parse_sized_text_object(
@@ -977,6 +1048,212 @@ mod tests {
         fixed
     }
 
+    fn table_border_data(color: u32) -> Vec<u8> {
+        let mut border = vec![0, 0, 0, 0, 1, 0, 2, 0, 0];
+        for index in 0..4 {
+            border.extend((color + index).to_le_bytes());
+            for value in [1.0_f32, 2.0, 3.0] {
+                border.extend((value + index as f32).to_le_bytes());
+            }
+        }
+        [(border.len() as u32).to_le_bytes().as_slice(), &border].concat()
+    }
+
+    fn table_object_with_style(properties: &[u8], fields: &[u8], flexible: &[u8]) -> Vec<u8> {
+        let fixed = [0xa1, 0xa2];
+        let header_size = 12 + properties.len() + fields.len();
+        let fixed_end = header_size + fixed.len();
+        let mut frame = ((fixed_end + flexible.len()) as u32).to_le_bytes().to_vec();
+        frame.extend(22_i16.to_le_bytes());
+        frame.extend((fixed_end as u32).to_le_bytes());
+        frame.push(properties.len() as u8);
+        frame.extend(properties);
+        frame.push(fields.len() as u8);
+        frame.extend(fields);
+        frame.extend(fixed);
+        frame.extend(flexible);
+        [object_base_frame(), frame].concat()
+    }
+
+    fn table_style_fields() -> Vec<Vec<u8>> {
+        let cell = table_record(
+            &table_cell_fixed(),
+            &[1],
+            &[1],
+            &table_border_data(0xff010203),
+        );
+        let row = table_record(
+            &table_row_fixed(&cell),
+            &[0],
+            &[2, 2],
+            &[800.0_f32.to_le_bytes(), 80.0_f32.to_le_bytes()].concat(),
+        );
+        vec![
+            11.0_f32.to_le_bytes().to_vec(),
+            12.0_f32.to_le_bytes().to_vec(),
+            [
+                2_u32.to_le_bytes(),
+                100.0_f32.to_le_bytes(),
+                200.0_f32.to_le_bytes(),
+            ]
+            .concat(),
+            [
+                1_u32.to_le_bytes().to_vec(),
+                (row.len() as u32).to_le_bytes().to_vec(),
+                row,
+            ]
+            .concat(),
+            [
+                1.0_f64.to_le_bytes(),
+                2.0_f64.to_le_bytes(),
+                300.0_f64.to_le_bytes(),
+                400.0_f64.to_le_bytes(),
+            ]
+            .concat(),
+            table_border_data(0xff112233),
+            vec![1],
+            [
+                2_u32.to_le_bytes(),
+                50.0_f32.to_le_bytes(),
+                60.0_f32.to_le_bytes(),
+            ]
+            .concat(),
+            [
+                2_u32.to_le_bytes(),
+                500.0_f32.to_le_bytes(),
+                600.0_f32.to_le_bytes(),
+            ]
+            .concat(),
+            1000.0_f32.to_le_bytes().to_vec(),
+            2000.0_f32.to_le_bytes().to_vec(),
+            table_border_data(0xff445566),
+            0xff778899_u32.to_le_bytes().to_vec(),
+            0xffaabbcc_u32.to_le_bytes().to_vec(),
+        ]
+    }
+
+    #[test]
+    fn decodes_all_table_styles_nested_borders_and_row_height_constraints() {
+        let bytes = table_object_with_style(&[7], &[0xff, 0x3f], &table_style_fields().concat());
+        let table = parse_table_object(&bytes, &ParseLimits::default(), "test table", 0).unwrap();
+        let style = table.style;
+        assert!(style.heading_column_enabled);
+        assert!(style.heading_row_enabled);
+        assert!(!style.max_height_enabled);
+        assert_eq!(style.vertical_cell_padding, Some(11.0));
+        assert_eq!(style.horizontal_cell_padding, Some(12.0));
+        assert_eq!(table.column_widths, [100.0, 200.0]);
+        assert_eq!(style.min_column_widths.unwrap(), [50.0, 60.0]);
+        assert_eq!(style.max_column_widths.unwrap(), [500.0, 600.0]);
+        assert_eq!(style.max_height, Some(1000.0));
+        assert_eq!(style.max_width, Some(2000.0));
+        let bbox = style.content_bbox.unwrap();
+        assert_eq!(
+            (bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max),
+            (1.0, 2.0, 300.0, 400.0)
+        );
+        assert_eq!(style.auto_fit, Some(crate::TableAutoFit::Horizontal));
+        assert_eq!(style.heading_background_color, Some(0xff778899));
+        assert_eq!(style.default_cell_background_color, Some(0xffaabbcc));
+        assert_eq!(style.border.unwrap().left.color, 0xff112233);
+        assert_eq!(style.default_cell_border.unwrap().right.color, 0xff445568);
+        let row = &table.rows[0];
+        assert_eq!(row.max_height, Some(800.0));
+        assert_eq!(row.min_height, Some(80.0));
+        assert_eq!(
+            row.cells[0].border.as_ref().unwrap().bottom.color,
+            0xff010206
+        );
+        assert_eq!(row.metadata.field_mask, [2, 2]);
+        assert!(row.metadata.flexible_trailing_data.is_empty());
+        assert!(row.cells[0].metadata.flexible_trailing_data.is_empty());
+        assert_eq!(style.metadata.fixed_trailing_data, [0xa1, 0xa2]);
+        assert!(style.metadata.flexible_trailing_data.is_empty());
+    }
+
+    #[test]
+    fn every_table_style_field_decodes_alone_and_rejects_truncated_data() {
+        for (bit, payload) in table_style_fields().into_iter().enumerate() {
+            let mut fields = vec![0; 2];
+            fields[bit / 8] = 1 << (bit % 8);
+            let bytes = table_object_with_style(&[], &fields, &payload);
+            parse_table_object(&bytes, &ParseLimits::default(), "test table", 0).unwrap();
+            for length in 0..payload.len() {
+                let bytes = table_object_with_style(&[], &fields, &payload[..length]);
+                assert!(
+                    parse_table_object(&bytes, &ParseLimits::default(), "test table", 0).is_err(),
+                    "bit {bit}, length {length}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn table_flags_modes_and_future_fields_remain_distinct() {
+        for flags in 0..8 {
+            let bytes = table_object_with_style(&[flags], &[], &[]);
+            let style = parse_table_object(&bytes, &ParseLimits::default(), "test table", 0)
+                .unwrap()
+                .style;
+            assert_eq!(style.heading_column_enabled, flags & 1 != 0);
+            assert_eq!(style.heading_row_enabled, flags & 2 != 0);
+            assert_eq!(style.max_height_enabled, flags & 4 == 0);
+            assert!(style.auto_fit.is_none());
+            assert!(style.max_height.is_none());
+        }
+        for (raw, expected) in [
+            (0, crate::TableAutoFit::None),
+            (1, crate::TableAutoFit::Horizontal),
+            (2, crate::TableAutoFit::Vertical),
+            (3, crate::TableAutoFit::Both),
+            (99, crate::TableAutoFit::Other(99)),
+        ] {
+            let bytes =
+                table_object_with_style(&[0, 0, 0, 0, 1], &[64, 0, 0, 0, 2], &[raw, 0xee, 0xef]);
+            let style = parse_table_object(&bytes, &ParseLimits::default(), "test table", 0)
+                .unwrap()
+                .style;
+            assert_eq!(style.auto_fit, Some(expected));
+            assert_eq!(style.metadata.property_mask, [0, 0, 0, 0, 1]);
+            assert_eq!(style.metadata.field_mask, [64, 0, 0, 0, 2]);
+            assert_eq!(style.metadata.flexible_trailing_data, [0xee, 0xef]);
+        }
+    }
+
+    #[test]
+    fn row_height_order_and_unknown_boundaries_follow_the_native_record() {
+        let mut fixed = 25.0_f32.to_le_bytes().to_vec();
+        fixed.extend([0; 8]);
+        for (fields, payload, max, min) in [
+            (
+                vec![0, 2],
+                900.0_f32.to_le_bytes().to_vec(),
+                Some(900.0),
+                None,
+            ),
+            (vec![2], 90.0_f32.to_le_bytes().to_vec(), None, Some(90.0)),
+            (
+                vec![2, 2],
+                [900.0_f32.to_le_bytes(), 90.0_f32.to_le_bytes()].concat(),
+                Some(900.0),
+                Some(90.0),
+            ),
+            (vec![3, 2], vec![0xee; 8], None, None),
+        ] {
+            let bytes = table_record(&fixed, &[0], &fields, &payload);
+            let row = parse_table_row(&bytes, &ParseLimits::default(), "test row", 0).unwrap();
+            assert_eq!(row.max_height, max);
+            assert_eq!(row.min_height, min);
+            if fields[0] & 1 != 0 {
+                assert_eq!(row.metadata.flexible_trailing_data, payload);
+            } else {
+                assert!(row.metadata.flexible_trailing_data.is_empty());
+            }
+        }
+        let bytes = table_record(&fixed, &[], &[2, 2], &900.0_f32.to_le_bytes());
+        assert!(parse_table_row(&bytes, &ParseLimits::default(), "test row", 0).is_err());
+    }
+
     #[test]
     fn table_records_support_variable_masks_and_zero_offsets_without_flexible_fields() {
         let limits = ParseLimits::default();
@@ -1006,7 +1283,7 @@ mod tests {
     #[test]
     fn table_cells_and_rows_cannot_consume_their_flexible_data_as_fixed_fields() {
         let limits = ParseLimits::default();
-        let cell = table_record(&table_cell_fixed(), &[1, 0], &[1, 0], &[0xee; 32]);
+        let cell = table_record(&table_cell_fixed(), &[1, 0], &[2, 0], &[0xee; 32]);
         let fixed_end = u32::from_le_bytes(cell[..4].try_into().unwrap()) as usize;
         let parsed = parse_table_cell(&cell, &limits, "test cell", 0).unwrap();
         assert_eq!(parsed.column_index, 3);

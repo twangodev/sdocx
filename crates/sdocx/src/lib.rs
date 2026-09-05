@@ -33,6 +33,7 @@ mod render;
 mod report;
 mod shape;
 mod storage;
+mod table;
 mod types;
 
 pub use end_tag::{
@@ -68,6 +69,7 @@ pub use storage::{
     parse_page_manifest_bytes_with_limits, parse_stored_page_bytes,
     parse_stored_page_bytes_with_limits,
 };
+pub use table::{TableAutoFit, TableBorder, TableEdgeStyle, TableRecordMetadata, TableStyle};
 pub use types::*;
 
 use std::fs::File;

@@ -36,7 +36,8 @@ Notes APK, native serializers, or real compatibility fixtures.
 - [`note-metadata-findings.md`](note-metadata-findings.md) — optional application,
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
-  bounded row/cell data and the nonnumerical row-height field order.
+  table styles, per-edge borders, bounded row/cell data and the nonnumerical
+  row-height field order.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

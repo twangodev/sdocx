@@ -369,6 +369,7 @@ pub enum RichTextObjectContent {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextTable {
+    pub style: crate::TableStyle,
     /// Object placement box stored by the S Pen model.
     pub bbox: BoundingBox,
     /// Clockwise object rotation in degrees, if present.
@@ -383,6 +384,9 @@ pub struct RichTextTable {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextTableRow {
+    pub max_height: Option<f32>,
+    pub min_height: Option<f32>,
+    pub metadata: crate::TableRecordMetadata,
     /// Stored row index.
     pub index: u32,
     /// Row height in Samsung Notes coordinates.
@@ -395,6 +399,8 @@ pub struct RichTextTableRow {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextTableCell {
+    pub border: Option<crate::TableBorder>,
+    pub metadata: crate::TableRecordMetadata,
     /// Stored zero-based column index.
     pub column_index: u32,
     /// Number of rows covered by the cell.
