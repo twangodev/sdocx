@@ -382,7 +382,8 @@ layer_start:
 In current Java output the layer frame starts with a 12-byte reserved header;
 after writing its fields, the writer backfills its total header size, absolute
 flexible offset and one-byte masks. Property bits 0, 1 and 2 mean invisible,
-event-forwardable and locked. Flexible-field bits are:
+event-forwardable and locked. Native property bits 3 and 4 mean alpha-locked
+and shadow-visible. Flexible-field bits are:
 
 | Bit | Field |
 | ---: | --- |
@@ -392,6 +393,12 @@ event-forwardable and locked. Flexible-field bits are:
 | 3 | layer UUID (`utf16_u16`) |
 | 4 | modified time (`i64`) |
 | 5 | thumbnail media ID (`u32`) |
+| 6 | shadow effect (`u32` byte count followed by payload; currently 20 bytes) |
+
+The native writer and Java reader consume a one-byte transparency value, but
+the decompiled Java writer emits four bytes for that field. See
+[layer findings](layer-findings.md) for the exact call sites, decoding contract
+and unresolved export behavior.
 
 All three fixtures contain one layer with property mask `0x02`, field mask
 `0x18`, and a 98-byte header carrying UUID plus modified time.

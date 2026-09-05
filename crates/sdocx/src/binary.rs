@@ -97,12 +97,27 @@ impl<'a> Reader<'a> {
     }
 
     pub(crate) fn read_utf16_u16(&mut self, field: &'static str) -> Result<String> {
+        self.read_utf16_u16_with_limit(field, usize::MAX)
+    }
+
+    pub(crate) fn read_utf16_u16_with_limit(
+        &mut self,
+        field: &'static str,
+        max_units: usize,
+    ) -> Result<String> {
         let unit_count = usize::from(self.read_u16(field)?);
         if unit_count == usize::from(u16::MAX) {
             return Err(Error::Format(format!(
                 "{}: {field} uses the null string sentinel",
                 self.context
             )));
+        }
+        if unit_count > max_units {
+            return Err(Error::LimitExceeded {
+                resource: "text characters",
+                limit: max_units as u64,
+                actual: unit_count as u64,
+            });
         }
         let byte_count = unit_count
             .checked_mul(2)

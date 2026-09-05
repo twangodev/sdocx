@@ -131,6 +131,8 @@ pub struct StoredPageLayers {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StoredLayer {
+    pub header_offset: usize,
+    pub header_size: usize,
     /// Absolute metadata offset recorded by Samsung Notes.
     pub metadata_offset: u32,
     /// First raw layer flag byte.
@@ -145,6 +147,27 @@ pub struct StoredLayer {
     pub objects: Vec<StoredObject>,
     /// Integrity trailer following the layer's object tree.
     pub integrity_trailer: [u8; INTEGRITY_TRAILER_SIZE],
+}
+
+impl StoredLayer {
+    pub fn metadata(&self, page_bytes: &[u8]) -> Result<crate::LayerMetadata> {
+        self.metadata_with_limits(page_bytes, &ParseLimits::default())
+    }
+
+    pub fn metadata_with_limits(
+        &self,
+        page_bytes: &[u8],
+        limits: &ParseLimits,
+    ) -> Result<crate::LayerMetadata> {
+        let end = self
+            .header_offset
+            .checked_add(self.header_size)
+            .ok_or_else(|| Error::Format("layer header offset overflows".into()))?;
+        let header = page_bytes
+            .get(self.header_offset..end)
+            .ok_or_else(|| Error::Format("layer header is outside its page".into()))?;
+        crate::layer::parse_layer_metadata(header, self.header_offset, limits)
+    }
 }
 
 /// One object record in a stored layer, including its nested child records.
@@ -347,6 +370,7 @@ fn parse_layer(
     limits: &ParseLimits,
     total_objects: &mut usize,
 ) -> Result<StoredLayer> {
+    let header_offset = reader.position();
     let header_size = usize::try_from(reader.read_u32("layer header size")?)
         .map_err(|_| Error::Format("layer header size does not fit in memory".into()))?;
     if !(LAYER_HEADER_MIN_SIZE..=LAYER_HEADER_MAX_SIZE).contains(&header_size) {
@@ -379,6 +403,8 @@ fn parse_layer(
         .map_err(|_| Error::Format("invalid layer integrity trailer".into()))?;
 
     Ok(StoredLayer {
+        header_offset,
+        header_size,
         metadata_offset,
         flags_1,
         flags_2,

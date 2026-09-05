@@ -27,6 +27,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   page units, embedded text/fonts and measured PDF validation.
 - [`end-tag-findings.md`](end-tag-findings.md) — native metadata boundaries,
   appended trailer precedence, bounded decoding and synthetic regressions.
+- [`layer-findings.md`](layer-findings.md) — native layer identity, alpha-lock
+  and shadow fields, bounded decoding and the Java transparency discrepancy.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

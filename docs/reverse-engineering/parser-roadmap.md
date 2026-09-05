@@ -55,6 +55,12 @@ optional fields, bounded strings, ZIP comments and authoritative outer metadata.
 See [end-tag findings](end-tag-findings.md). Optional integrity validation remains
 the next bounded parser work; advanced outer objects still need native frame research.
 
+Layer identity and style metadata are available through bounded explicit
+decoding, including native alpha-lock/shadow flags and retained shadow payloads.
+See [layer findings](layer-findings.md) for the Java transparency discrepancy and
+the remaining rendering work. Layer identity now supplies the inputs needed for
+logical hash verification.
+
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
 2. Make `StoredPage` traversal authoritative for layers and recursive objects.

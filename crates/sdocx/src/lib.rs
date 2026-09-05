@@ -18,6 +18,7 @@ mod end_tag;
 mod error;
 mod frame;
 mod image;
+mod layer;
 mod layout;
 mod media;
 mod note;
@@ -37,6 +38,7 @@ pub use end_tag::{
     parse_end_tag_bytes, parse_end_tag_bytes_with_limits,
 };
 pub use error::{Error, Result};
+pub use layer::LayerMetadata;
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use media::{
     MediaManifest, MediaManifestEntry, parse_media_manifest_bytes,

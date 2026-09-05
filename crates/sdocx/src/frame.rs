@@ -29,6 +29,10 @@ impl<'a> Mask<'a> {
         self.0.len() as u8
     }
 
+    pub(crate) fn bytes(self) -> &'a [u8] {
+        self.0
+    }
+
     pub(crate) fn has_other_bits(self, known: u32) -> bool {
         self.low_u32() & !known != 0 || self.0.iter().skip(4).any(|byte| *byte != 0)
     }
