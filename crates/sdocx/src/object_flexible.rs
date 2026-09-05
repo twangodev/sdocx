@@ -1,5 +1,5 @@
 use crate::binary::Reader;
-use crate::{Error, ObjectMetadata, ParseLimits, Point, Result};
+use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Point, Result};
 
 #[derive(Debug, Clone, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -24,6 +24,33 @@ pub struct ObjectFlexibleMetadata {
     pub render_layer_id: Option<i32>,
     pub first_unparsed_field: Option<usize>,
     pub trailing_data: Vec<u8>,
+}
+
+impl ObjectFlexibleMetadata {
+    pub fn saved_span_snapshot(&self) -> Option<ObjectSpanSnapshot> {
+        self.saved_span_data.map(|data| {
+            let components = data.as_chunks::<4>().0;
+            let [left, top, right, bottom, rotation_degrees] =
+                std::array::from_fn(|index| f32::from_le_bytes(components[index]));
+            ObjectSpanSnapshot {
+                bbox: BoundingBox {
+                    x_min: f64::from(left),
+                    y_min: f64::from(top),
+                    x_max: f64::from(right),
+                    y_max: f64::from(bottom),
+                },
+                rotation_degrees,
+            }
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct ObjectSpanSnapshot {
+    pub bbox: BoundingBox,
+    pub rotation_degrees: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

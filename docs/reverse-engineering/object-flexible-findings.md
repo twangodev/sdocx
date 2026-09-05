@@ -31,7 +31,7 @@ format version stored in the fixed area.
 | 13 | `i64` | Append time; reader `0x2db990`, base offset 160, `GetAppendTime` at `0x2cc774` |
 | 14 | Two `i32` | Owner-page width/height; reader `0x2db9b8`–`0x2db9f4`, base offsets 176/180; getters `0x2d2c60` and `0x2d2cbc` |
 | 15 | `u8` | Layout type; reader `0x2db9fc`, byte helper `0x2dc794`, base offset 172, `GetLayoutType` at `0x2d1d94` |
-| 16 | 16-byte rectangle and four-byte value | Saved span data; reader `0x2dba78`–`0x2dbab8`, base offsets 232/248; detailed coordinate/value semantics unresolved |
+| 16 | Four `f32` rectangle components, then `f32` rotation | Saved span snapshot; reader `0x2dba78`–`0x2dbab8`, base offsets 232/248 |
 | 17 | `i32` | Captured-thumbnail media ID; reader `0x2dba24`–`0x2dba70` converts it to an `ImageCommon` index stored at base offset 196 |
 | 18 | Two `f64` | Pivot x/y; reader `0x2dbac4`–`0x2dbb00` converts to floats at base offset 200; `GetPivot` at `0x2ca044` |
 | 19 | `u16` UTF-16 unit count and text | Group ID; reader `0x2dbb08`–`0x2dbb48`, implementation offset 216, `GetGroupId` at `0x2cfcc8` |
@@ -69,11 +69,37 @@ serialized dimensions. The modern loader also scales bounds using the owner
 dimension and requested load dimension at `0x2db434`–`0x2db4f4`; the SDK's raw
 metadata does not apply that scaling.
 
-The field-16 writer calls `BelongsToSpan` at `0x2daecc` and emits 20 bytes only
-under additional context conditions. The loader marks saved ATT state after
-reading them. The rectangle's coordinate system and trailing value need more
-tracing before a public semantic type is chosen. The SDK retains these 20 bytes
-as `saved_span_data`, and the 16-byte partial-rectangle records as raw arrays.
+The SDK retains the 20-byte field-16 payload as `saved_span_data` and exposes its
+rectangle and rotation through `saved_span_snapshot()`. Partial-rectangle
+records from field 1 remain raw 16-byte arrays.
+
+## Saved span snapshot
+
+`ObjectBase::UpdateAttValue` at `0x2d2268` explains field 16. When no saved ATT
+value is pending, it clears base offsets 232–248, checks `BelongsToSpan`, then
+calls virtual slot 168 at `0x2d22c4`. It stores the returned four floats at
+`0x2d22c8` and `0x2d22d0`. Virtual slot 136 is called at `0x2d22dc`, and its
+float result is stored at offset 248 at `0x2d22e0`.
+
+The base vtable relocations identify those slots as `GetRect` (`0x4921b0` ->
+`0x2caa60`) and `GetRotation` (`0x492190` -> `0x2cbd08`). Thus the five floats
+are left/top/right/bottom and rotation, not drawn bounds or a pivot.
+
+`OnBelongedToSpan` at `0x2d1f90` updates the membership byte at implementation
+offset 120, then calls virtual slot 384 at `0x2d2024`. The relocation at
+`0x492288` identifies that slot as `UpdateAttValue`. A membership change to
+true can therefore capture the object's current rectangle and rotation;
+a change to false clears the snapshot when no saved value is pending.
+
+If `HasSavedAttValue` is already true, `UpdateAttValue` clears that flag and
+returns without replacing the snapshot (`0x2d2284`–`0x2d229c`). The binary
+loader sets the flag after reading field 16 at `0x2dbab8`, preserving the
+loaded snapshot across the next update. The writer emits these 20 bytes only
+when `BelongsToSpan` and additional context checks pass (`0x2daecc`–`0x2daef0`).
+
+`ObjectSpanSnapshot` exposes these stored values without applying the text
+layout's later transforms. The snapshot's relation to final page placement,
+and derived-object overrides of the update behavior, remain rendering work.
 
 ## A different static extraction format
 
@@ -156,8 +182,8 @@ bundle keys and bundle values. Both counters are checked before allocation.
 against the bounded remainder before copying. The original base metadata and
 its raw tail remain available after explicit decoding.
 
-Twelve synthetic integration tests cover every mapped field and every truncated
+Thirteen synthetic integration tests cover every mapped field and every truncated
 prefix, unknown masks, both bundles, duplicate/reserved keys, signed null lengths,
 unsigned 65,535-unit strings, 70,000-byte arrays, old-version gates, empty values,
-aggregate limits and malformed encodings. Rendering and saved-span semantics
-still require further native tracing and real-file visual conformance.
+aggregate limits, malformed encodings and the five-float saved span snapshot.
+Rendering still requires further native tracing and real-file visual conformance.

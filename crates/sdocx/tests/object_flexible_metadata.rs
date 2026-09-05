@@ -451,3 +451,20 @@ fn layout_types_and_unknown_values_preserve_the_stored_byte() {
         );
     }
 }
+
+#[test]
+fn saved_span_snapshot_uses_five_floats_and_preserves_the_original_data() {
+    let data: Vec<_> = [-12.5_f32, 2.25, 123.75, 400.5, -45.0]
+        .into_iter()
+        .flat_map(f32::to_le_bytes)
+        .collect();
+    let value = metadata(1 << 16, &data).unwrap();
+    let snapshot = value.saved_span_snapshot().unwrap();
+    assert_eq!(snapshot.bbox.x_min, -12.5);
+    assert_eq!(snapshot.bbox.y_min, 2.25);
+    assert_eq!(snapshot.bbox.x_max, 123.75);
+    assert_eq!(snapshot.bbox.y_max, 400.5);
+    assert_eq!(snapshot.rotation_degrees, -45.0);
+    assert_eq!(value.saved_span_data.unwrap().as_slice(), data);
+    assert_eq!(metadata(0, &[]).unwrap().saved_span_snapshot(), None);
+}

@@ -64,7 +64,7 @@ pub use note_metadata::{
 pub use object::{ObjectMetadata, ObjectResizeMode};
 pub use object_flexible::{
     ObjectBundle, ObjectBundleEntry, ObjectBundleValue, ObjectFlexibleMetadata, ObjectLayoutType,
-    ObjectPageSize, ObjectSize,
+    ObjectPageSize, ObjectSize, ObjectSpanSnapshot,
 };
 #[cfg(feature = "pdf")]
 pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
