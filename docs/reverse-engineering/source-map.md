@@ -80,6 +80,12 @@ this method. Composer `NotePDFExporterRasterListX::initializeExport`,
 `0x35a40c`, obtains existing note page pointers through WDoc
 `WNote::GetPageList`, `0x944f4`, and Base `ArrayList::Copy`, `0xd1ba8`.
 
+[Object order and container selection](object-order-findings.md) links Model
+`Load_ObjectList_WDoc` insertion at `0x3585b8`, container-child append at
+`0x358bd4`, and Drawing child dispatch at `0x7fd04`. The surrounding
+intersection collector at Model `0x35e670` restricts top-only queries to
+strokes at `0x35e6cc`–`0x35e6dc`; the layer matcher alone omits this condition.
+
 The structural stroke implementation also rechecked these arm64 locations in
 `libSPenModel.so` 4.4.45.37:
 

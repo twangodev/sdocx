@@ -133,8 +133,13 @@ under the Standard option.
 `addHighlighter` passes filter 2 at `0x35ac6c`; `addTape` passes filter 4 at
 `0x35b63c`. These are the same render-layer bit masks established for page
 capture. They select objects by native render-layer matching, including the
-stroke top-layer override. The method names do not narrow the collector to
-one pen name or to stroke objects only.
+stroke top-layer override. The surrounding native intersection collector also
+reduces the object-type mask to strokes when the render filter is exactly 2,
+at Model `0x35e6cc`–`0x35e6dc`. The highlighter pass therefore collects
+strokes only. Filter 4 retains the full caller-supplied type mask for the
+masking pass. Neither path tests a specific pen name. The
+[complete selection table](object-order-findings.md#top-only-selection-restricts-the-object-type-mask)
+supersedes the earlier conclusion drawn from the render-layer helper alone.
 
 ## Ordinary objects retain interleaving and flush the tail
 
@@ -182,7 +187,7 @@ confirms both names. The inspected highlighter method supplies 4 directly,
 without the dark-background Lighten selection used by `NoteCapturePage`.
 
 The blend applies to the exported bitmap containing the collected top-layer
-objects. It is not evidence for applying Darken separately to each primitive
+strokes. It is not evidence for applying Darken separately to each primitive
 inside that bitmap. Pen drawing, pixel alpha, overlapping highlighter strokes
 and PDF composition remain distinct operations.
 
@@ -198,8 +203,8 @@ from the `PdfImageAdapter` used by `NotePDFExporterVectorList`.
 
 Standard PDF evidence supports explicit base, top and masking passes,
 interleaving within the ordinary pass, and a Darken-composited top batch.
-The SDK still needs an ordered representation and native pen behavior before
-it can reproduce this pipeline. Moving every stroke ahead of text and images,
+The SDK still needs an ordered representation with container boundaries and
+native pen behavior before it can reproduce this pipeline. Moving every stroke ahead of text and images,
 sorting by replay timestamp, or applying a single per-stroke opacity would
 not reproduce the confirmed sequence.
 

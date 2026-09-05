@@ -75,8 +75,9 @@ the object. This parameter is effectively an include-hidden option.
 The method does not call `LayerDocBase::IsVisible`. Its output is also sorted:
 the callback loaded at `0x34a358`–`0x34a35c` resolves through relocation
 `0x4a3de8` to `sm_SortObjectByReplayOrderASC`, `0x34a65c`. The comparator and
-its loading inputs are described below; their relation to final paint order
-still needs further investigation.
+its loading inputs are described below. The separately traced capture and
+Standard list-page PDF collectors use the current layer's existing list,
+without calling this sort.
 
 Layer visibility has its own inverted property bit, documented in
 [layer findings](layer-findings.md). This collection method alone does not
@@ -150,10 +151,14 @@ The SDK still stores strokes and other page elements in separate collections.
 The native page-capture path has separate base, top and masking passes,
 described in [capture composition findings](capture-composition-findings.md).
 Its object selection queries the current physical layer through a different
-method from this sorted all-layer collection. A complete paint-order
-implementation still needs the higher-level export setup and an ordered SDK
-representation that can interleave strokes and other elements. The confirmed
-comparator alone is insufficient to choose that ordering.
+method from this sorted all-layer collection. The
+[saved-layer trace](page-layer-selection-findings.md) establishes the loader
+and Standard list-page export setup. The
+[object-order trace](object-order-findings.md) confirms file-order insertion,
+child order and the top-only type restriction. A complete paint-order
+implementation needs an ordered SDK representation that interleaves strokes
+and other elements while retaining container boundaries. The replay comparator
+is not a replacement for that representation.
 
 ## SDK behavior and validation
 

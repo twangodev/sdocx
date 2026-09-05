@@ -43,6 +43,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   fields, bundle boundaries and the distinct static extraction format.
 - [`object-drawing-findings.md`](object-drawing-findings.md) — common visibility,
   container traversal, replay-order assignment and layer collection boundaries.
+- [`object-order-findings.md`](object-order-findings.md) — file-order insertion,
+  nested container order, stroke-only top selection and grouping boundaries.
 - [`capture-composition-findings.md`](capture-composition-findings.md) — base,
   top and masking passes, object layer filters and capture clone state.
 - [`stroke-metadata-findings.md`](stroke-metadata-findings.md) — stroke property

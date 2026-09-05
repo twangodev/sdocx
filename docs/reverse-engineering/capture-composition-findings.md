@@ -45,16 +45,16 @@ Each pass calls `NoteCapturePage::getCloneObjectList`, `0x330494`. At
 `0x3304f4` it calls the `WPage::FindObjectInRectIntersect` overload that takes
 both a type mask and a layer filter.
 
-Model `ObjectManager::isMatchLayerFilter`, `0x35e5cc`, resolves the meaning
-of that filter. For ordinary objects it calls `ObjectBase::GetRenderLayerId`
+Model `ObjectManager::isMatchLayerFilter`, `0x35e5cc`, supplies the render-ID
+part of that selection. For ordinary objects it calls `ObjectBase::GetRenderLayerId`
 at `0x35e60c`, shifts the filter right by that ID at `0x35e610`, and tests
 bit 0 at `0x35e614`. Combined with the capture pass names and masks, this
 establishes:
 
-| Stored render-layer ID | Capture pass |
+| Stored render-layer ID | Render-filter bit |
 | ---: | --- |
 | 0 | Base |
-| 1 | Top |
+| 1 | Top, subject to the collector's stroke-only restriction |
 | 2 | Masking |
 
 These IDs come from common type-0 flexible field 21, decoded as a signed
@@ -81,6 +81,21 @@ writer reads it at `0x2ec104` and sets mask `0x40` at `0x2ec110`.
 `Other(i32)`, absent fields remain `None`, and `render_layer_id` retains its
 original value. The accessor identifies the stored field; it does not apply
 the stroke override or choose a physical layer.
+
+The surrounding intersection collector has an additional type gate. In
+`ObjectManager::FindObjectInRectIntersect`, `0x35e670`, instructions
+`0x35e6cc`–`0x35e6dc` reduce the object-type mask to bit 0 when the render
+filter is exactly 2. The type test uses bit `type - 1`, so only strokes can
+enter this top-only query. Combined filter 7 keeps the original type mask.
+Thus a non-stroke object with common render ID 1 passes the helper's Top
+bit test but is excluded by the earlier type test. See
+[object order and container selection](object-order-findings.md#top-only-selection-restricts-the-object-type-mask)
+for the complete decision table.
+
+The same collector selects root objects without traversing container children.
+The draw dispatcher later visits those children in their stored order on the
+existing canvas, without repeating page render-pass selection. An ordered
+renderer must retain these container boundaries.
 
 ## Top-pass composition
 
