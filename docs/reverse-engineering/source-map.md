@@ -65,6 +65,14 @@ Drawing `ObjectDrawing::DrawObjectList`, `0x7f098`, and PDF
 `PdfiumImageHandler::AddImage`, `0x82810`. PDF `CreateARGBBuffer`, `0x8aa7c`,
 preserves pixel alpha while converting premultiplied color channels.
 
+[Standard PDF composition findings](standard-pdf-composition-findings.md)
+resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
+`Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.
+Standard list-page export reaches `NotePDFExporterRasterListX::updatePage`,
+`0x35af00`, rather than the native class named `VectorList`. Its highlighter
+bitmap blend reaches `PdfiumImageHandler::DrawImage` at PDF `0x82ebc`;
+the enum-name table relocation at `0xb1b38` confirms Darken.
+
 The structural stroke implementation also rechecked these arm64 locations in
 `libSPenModel.so` 4.4.45.37:
 

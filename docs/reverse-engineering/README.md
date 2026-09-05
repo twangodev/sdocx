@@ -27,6 +27,9 @@ Notes APK, native serializers, or real compatibility fixtures.
   page units, embedded text/fonts and measured PDF validation.
 - [`native-pdf-stroke-findings.md`](native-pdf-stroke-findings.md) — native
   vector-export stroke bitmaps, PDF image handoff and separate opacity inputs.
+- [`standard-pdf-composition-findings.md`](standard-pdf-composition-findings.md)
+  — public export option selection, Standard paint order, Darken highlighters
+  and final object-batch flushing.
 - [`end-tag-findings.md`](end-tag-findings.md) — native metadata boundaries,
   appended trailer precedence, bounded decoding and synthetic regressions.
 - [`layer-findings.md`](layer-findings.md) — native layer identity, alpha-lock

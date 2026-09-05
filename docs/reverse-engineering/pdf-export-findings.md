@@ -104,3 +104,9 @@ insertion, as documented in [native PDF stroke findings](native-pdf-stroke-findi
 Its output is not an all-vector ground truth for pen geometry. The SDK's
 SVG-based architecture can preserve supported paths while pen appearance
 and opacity are investigated independently.
+
+Public export option names also differ from the native factory types.
+[Standard PDF composition findings](standard-pdf-composition-findings.md)
+trace the actual UI choice to its X delegate, ordered ordinary-object
+batches and explicit Darken highlighter pass. Reference captures should
+record the UI option instead of inferring the implementation from its name.

@@ -193,6 +193,12 @@ at `0x360674`. Option 1 constructs `NotePDFExporterVector` at `0x360654`.
 These are distinct implementations; the capture pass sequence above cannot
 be assumed to describe every PDF export.
 
+The normal Java Standard PDF option passes native factory type 0 with
+different editable/system-font flags, selecting `NotePDFExporterRasterListX`
+for list-page notes. Its call chain and paint sequence are now mapped in
+[Standard PDF composition findings](standard-pdf-composition-findings.md).
+The native `VectorList` implementation described below is a separate path.
+
 The vector list-page implementation calls `WNote::GetPageList` at `0x3618b0`,
 gets a `WPage` at `0x3618f0`, and saves it in exporter member 176 at
 `0x361998`. `NotePDFExporterVectorList::exportPage`, `0x361aac`, calls
@@ -240,6 +246,10 @@ at `0x3621bc`–`0x3621c0`. These instructions alone do not establish correct
 flushing for every mixed list ending in strokes. Do not generalize the
 observed non-stroke-triggered flush into an unconditional final flush without
 checking list preparation or runtime behavior.
+
+The Standard X implementation has its own explicit final bitmap flush at
+`0x35b99c`. The unresolved condition above does not establish a defect in
+that public export option.
 
 The raster list exporter reaches capture directly: `capturePage`,
 `0x3594a8`, passes its page into `NoteCapturePage::SetPageContents` at

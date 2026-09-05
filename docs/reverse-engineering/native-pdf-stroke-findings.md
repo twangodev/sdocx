@@ -13,6 +13,13 @@ exports, as described in [capture composition findings](capture-composition-find
 Those batches become bitmap images. The word `Vector` in the native exporter
 name does not mean that its stroke output consists of PDF paths.
 
+The normal Java Standard PDF option actually selects the separate
+`NotePDFExporterRasterListX` implementation. Its confirmed selection,
+highlighter Darken blend and final object-batch flush are documented in
+[Standard PDF composition findings](standard-pdf-composition-findings.md).
+The native `VectorList` behavior below must not be attributed to that public
+option solely from the class name.
+
 ## Batch factory and bitmap coordinates
 
 Composer `ObjectPdfExporterFactory::CreateObjectListPdfExporter`, `0x34e840`,
@@ -136,6 +143,8 @@ mode. Pen-specific blending can still occur inside the drawing engine.
 Higher-level export preparation may also alter the supplied list or note.
 The evidence therefore does not establish that every native PDF highlighter
 uses normal blending, or that raster and vector export look identical.
+The Standard X implementation explicitly assigns Darken through a different
+PDF writer, as recorded in the linked composition findings.
 
 ## SDK implications and remaining validation
 
