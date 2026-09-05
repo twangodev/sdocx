@@ -477,6 +477,11 @@ binaries differ from the outer page's child records. See
 [math-object findings](math-findings.md) for the evidence and explicit
 `StoredObject::math_metadata` inspection API.
 
+Outer type 20 uses `0 + 20` and exposes coordinate/color fields, graph
+expressions and substitutions, line styles and angle mode through
+`StoredObject::plot_metadata`. Graph strings use `u16` byte lengths; graph
+records have no enclosing size or field mask. See [plot findings](plot-findings.md).
+
 ## Generic object payload frames
 
 An object payload is a chain of one or more typed frames. The common header is:

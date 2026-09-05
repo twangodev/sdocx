@@ -40,6 +40,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   row-height field order.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
+- [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,
+  substitutions, colors, widths and visibility.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

@@ -81,6 +81,8 @@ children are still traversed. Unknown future IDs retain their distinct warning.
 Math objects have explicit envelope inspection for sized formula binaries,
 margins, angle mode and connected plot references. Formula internals and math
 rendering remain unsupported; see [math findings](math-findings.md).
+Plot metadata and graph expressions/styles also have explicit bounded inspection;
+evaluation and graph rendering remain open. See [plot findings](plot-findings.md).
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
@@ -112,7 +114,7 @@ rendering remain unsupported; see [math findings](math-findings.md).
 ## Remaining research
 
 - Multiple layers and recursive child/container fixtures.
-- Formula and plot internals, native table/code layout, and standalone decoding
+- Formula internals and graph evaluation, native table/code layout, and standalone decoding
   for the remaining non-stroke object types.
 - Page custom-object internals and a few legacy common fields.
 - Proprietary `.spi` payload semantics.

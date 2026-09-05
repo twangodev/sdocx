@@ -45,7 +45,7 @@ pub use error::{Error, Result};
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
-pub use math::{MathAngleType, MathMargins, MathMetadata};
+pub use math::{MathAngleType, MathMargins, MathMetadata, PlotGraph, PlotMetadata};
 pub use media::{
     MediaManifest, MediaManifestEntry, parse_media_manifest_bytes,
     parse_media_manifest_bytes_with_limits,

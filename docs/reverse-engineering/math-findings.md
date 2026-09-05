@@ -115,7 +115,8 @@ entry limits, invalid lengths, non-finite margins, invalid UUID text encoding,
 wrong outer/frame types and out-of-bounds stored payload offsets. Formula bytes
 are checked for exact preservation rather than interpreted as valid formulas.
 
-Next work can trace type-11 formula serialization and type-20 plot metadata,
-including their links to referred strokes and rendered assets. Samsung-generated
+Type-20 plot fields and graph expressions now have their own bounded inspection
+API; see [plot findings](plot-findings.md). Next work can trace type-11 formula
+serialization and the links to referred strokes and rendered assets. Samsung-generated
 math/formula/plot documents and matching PDF exports are still needed to check
 real writer variants, layout and visual fidelity.
