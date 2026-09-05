@@ -228,6 +228,7 @@ horizon differences, both deviation rules, equality boundaries, zero-time
 cap bypass and the wider squared-norm fallback. These are independent
 arithmetic checks, not execution of the bundled model or device validation.
 
-The acceleration estimator and application configuration still need tracing
-to resolve the [unmarked-vector reachability question](neural-admission-findings.md#member-112-is-the-discarded-output-count).
+The [acceleration estimator](predictor-acceleration-findings.md) is now traced.
+Earlier low-speed admission and application configuration/runtime evidence
+remain relevant to the [unmarked-vector reachability question](neural-admission-findings.md#member-112-is-the-discarded-output-count).
 No SDK code or corpus fixture changed.

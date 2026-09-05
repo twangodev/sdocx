@@ -22,8 +22,9 @@ SDOCX fields or saved-stroke behavior.
 
 `PredictorBase::calculateAcceleration`, `0x2e200`, clears both fields
 at `0x2e23c` and writes its calculated results at `0x2e568`–`0x2e56c`.
-The gate below uses the stored values directly. The estimator's sampling,
-weighting and physical units require a separate trace.
+The gate below uses the stored values directly. The
+[acceleration estimator trace](predictor-acceleration-findings.md) recovers
+its sampling, cache reuse, weighting and coordinate/ms² versus degree/ms² units.
 
 Let `P = f32(A * G)` and `N = model.OutputSize`. For finite values,
 the single-output path at `0x25b48`–`0x25b78` rejects when either:
@@ -172,6 +173,7 @@ These checks reproduce recovered arithmetic; they do not execute the
 native predictor or its model weights.
 
 The [motion trace](neural-motion-findings.md) recovers post-inference
-displacement, deviation and candidate-distance gates. Remaining work includes
-the acceleration estimator and application-level reachability of the
-unmarked-vector case. No SDK code or corpus fixture changed.
+displacement, deviation and candidate-distance gates. The
+[estimator trace](predictor-acceleration-findings.md) supplies the acceleration
+fields. Remaining work includes earlier low-speed admission and application-level
+configuration/runtime reachability. No SDK code or corpus fixture changed.

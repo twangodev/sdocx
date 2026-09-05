@@ -237,6 +237,13 @@ stores at task offset 112 in both creation paths. `IsExpired` at
 `0x25f64` and `0x2d2c4` uses separate 85%-frame and full-frame budgets;
 both rejection branches consult `GetUnbufferedDispatch`, `0x301c0`.
 
+[Predictor acceleration findings](predictor-acceleration-findings.md) recover
+`calculateAcceleration`, `0x2e200`, after filtering of newly admitted points.
+Its separate 50-record array supplies up to nine five-sample steps, cached
+contributions and asymmetric speed weighting. `sumAngleAccelerator`,
+`0x2e61c`, uses an approximate pi constant and retains whole-degree
+direction history before the results are stored at offsets 1752/1756.
+
 [Neural motion findings](neural-motion-findings.md) trace the 480 Hz model's
 minimum-displacement branch at `0x2ca84` and the alternate call to
 `checkPredictionDeviation`, `0x2d368`. The latter compares speed means

@@ -97,6 +97,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   horizon selection, candidate marking and callback current/history construction.
 - [`neural-admission-findings.md`](neural-admission-findings.md) — acceleration
   gates, discarded output prefixes, expiry budgets and unbuffered bypasses.
+- [`predictor-acceleration-findings.md`](predictor-acceleration-findings.md) —
+  sampled motion history, cached contributions, weighting and integer angles.
 - [`neural-motion-findings.md`](neural-motion-findings.md) — minimum movement,
   real/output speed statistics and per-candidate distance limits.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
