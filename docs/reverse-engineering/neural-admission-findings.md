@@ -175,5 +175,6 @@ native predictor or its model weights.
 The [motion trace](neural-motion-findings.md) recovers post-inference
 displacement, deviation and candidate-distance gates. The
 [estimator trace](predictor-acceleration-findings.md) supplies the acceleration
-fields. Remaining work includes earlier low-speed admission and application-level
-configuration/runtime reachability. No SDK code or corpus fixture changed.
+fields. The [input-speed trace](predictor-speed-findings.md) recovers earlier
+low-speed admission. Readiness/chronology checks and application-level
+configuration/runtime reachability remain. No SDK code or corpus fixture changed.

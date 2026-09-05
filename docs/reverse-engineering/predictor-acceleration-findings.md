@@ -248,6 +248,7 @@ by recomputation. Separate checks exercised direction conversion and the
 constant-motion angular example. They reproduce the recovered arithmetic
 and control flow; they do not execute the native estimator.
 
-The earlier low-input-speed gate and its threshold/configuration sources
-remain to be traced. Actual device sampling, cache histories and admission
-outcomes require runtime evidence. No SDK code or corpus fixture changed.
+The [input-speed trace](predictor-speed-findings.md) recovers the earlier
+low-speed gate and its threshold/configuration sources. Actual device
+sampling, cache histories and admission outcomes require runtime evidence.
+No SDK code or corpus fixture changed.

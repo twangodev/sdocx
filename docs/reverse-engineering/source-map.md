@@ -244,6 +244,12 @@ contributions and asymmetric speed weighting. `sumAngleAccelerator`,
 `0x2e61c`, uses an approximate pi constant and retains whole-degree
 direction history before the results are stored at offsets 1752/1756.
 
+[Predictor speed findings](predictor-speed-findings.md) connect
+`AddRealInputSpeed`, `0x32294`, to the separate endpoint-timed speed queue
+and mean update at `0x3111c`. `IsLowInputSpeed`, `0x2e724`, can use
+Composer's `LowInputSpeedThreshold`: update `0x4d1d58` derives a base
+threshold from prediction time, and getter `0x4d1e04` applies its mode factor.
+
 [Neural motion findings](neural-motion-findings.md) trace the 480 Hz model's
 minimum-displacement branch at `0x2ca84` and the alternate call to
 `checkPredictionDeviation`, `0x2d368`. The latter compares speed means
