@@ -705,13 +705,13 @@ Confirmed native serializer mappings:
 
 | Bit | Value | Field |
 | ---: | ---: | --- |
-| 0 | `0x000001` | legacy advanced-settings string-table ID (`i32`), used as a fallback for field 7 |
-| 1 | `0x000002` | pen/name string-table ID |
+| 0 | `0x000001` | legacy pen-name string-table ID (`i32`), used as a fallback for field 7 |
+| 1 | `0x000002` | advanced pen-setting string-table ID |
 | 2 | `0x000004` | ARGB color (`u32`) |
 | 3 | `0x000008` | pen size (`f32`) |
 | 4 | `0x000010` | one-byte property |
 | 5 | `0x000020` | four raw bytes per common partial rectangle; numerical meaning unresolved |
-| 7 | `0x000080` | advanced pen-setting string-table ID |
+| 7 | `0x000080` | pen-name string-table ID |
 | 8 | `0x000100` | fixed width (`f32`) |
 | 9 | `0x000200` | size level |
 | 10 | `0x000400` | particle density |
@@ -732,8 +732,10 @@ Confirmed native serializer mappings:
 | 25 | `0x2000000` | color type (`u16`) |
 
 Example: the common `0x258e` mask contains bits 1, 2, 3, 7, 8, 10 and 13.
-Its 28 flexible bytes decode as seven four-byte values: pen ID, ARGB color,
-size, advanced-setting ID, fixed width, particle density and initial tolerance.
+Its 28 flexible bytes decode as seven four-byte values: advanced-setting ID,
+ARGB color, size, pen-name ID, fixed width, particle density and initial tolerance.
+The [native getters and writer](pen-selection-findings.md#stored-reference-identity)
+confirm the two reference identities; earlier documentation had swapped them.
 
 The little-endian `u32` color is stored as B, G, R, A bytes. Field-mask bit 2
 declares its presence regardless of alpha; bit 3 independently declares pen

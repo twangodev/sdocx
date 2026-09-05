@@ -104,16 +104,20 @@ The structural stroke implementation also rechecked these arm64 locations in
   strokes skip their channel seeds.
 - The same function, `0x2ee9bc–0x2eea64`: uncompressed coordinates are followed
   by separate pressure, timestamp, tilt and orientation arrays.
-- `m_ApplyBinary_FlexibleData`, `0x2ed780–0x2ed934`: the legacy bit-0 field and
-  normal WDoc pen reference are four bytes each, followed by masked ARGB and
-  pen size. The alternate coedit string representation is outside this parser's
-  normal WDoc archive path.
+- `m_ApplyBinary_FlexibleData`, `0x2ed780–0x2ed934`: the legacy bit-0 pen-name
+  ID and bit-1 advanced-settings ID are four bytes each, followed by masked
+  ARGB and pen size. The alternate coedit string representation is outside
+  this parser's normal WDoc archive path.
 
 The extended [stroke metadata inspection](stroke-metadata-findings.md) also
 uses the full property reader/writer (`0x2ed138` / `0x2ec080`), named stroke
 getters, and flexible reader `0x2ed720`–`0x2ede28`. The call at `0x2ed978`
 identifies legacy field 5's count as common partial rectangles. The fallback
-at `0x2eda38`–`0x2eda68` identifies field 0 as a legacy advanced-settings ID.
+at `0x2eda38`–`0x2eda68` identifies field 0 as a legacy pen-name ID. The
+[pen selection trace](pen-selection-findings.md) confirms the reference names
+against `ObjectStroke::GetPenName`, `0x2de974`, and `GetAdvancedPenSetting`,
+`0x2dec00`. PenCommon's registry at `0x78968` and `SetAdvancedSetting` at
+`0x46160` connect the resulting strings to native libraries and versions.
 
 ## Standalone text frames
 

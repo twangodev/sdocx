@@ -62,13 +62,13 @@ impl StrokeProperties {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct StrokeStyle {
-    pub legacy_advanced_pen_setting_id: Option<i32>,
-    pub pen_name_id: Option<i32>,
+    pub legacy_pen_name_id: Option<i32>,
+    pub advanced_pen_setting_id: Option<i32>,
     pub color_argb: Option<u32>,
     pub pen_size: Option<f32>,
     pub field_4_raw: Option<u8>,
     pub legacy_partial_rectangle_data: Option<Vec<[u8; 4]>>,
-    pub advanced_pen_setting_id: Option<i32>,
+    pub pen_name_id: Option<i32>,
     pub fixed_width: Option<f32>,
     pub size_level: Option<i32>,
     pub particle_density: Option<i32>,
@@ -141,10 +141,10 @@ impl StrokeStyle {
         let mut reader = Reader::new(frame.flexible, "stroke style");
         let mut style = Self::default();
         if frame.fields.contains(0) {
-            style.legacy_advanced_pen_setting_id = Some(reader.read_i32("legacy pen settings ID")?);
+            style.legacy_pen_name_id = Some(reader.read_i32("legacy pen name ID")?);
         }
         if frame.fields.contains(1) {
-            style.pen_name_id = Some(reader.read_i32("pen name ID")?);
+            style.advanced_pen_setting_id = Some(reader.read_i32("pen settings ID")?);
         }
         if frame.fields.contains(2) {
             style.color_argb = Some(reader.read_u32("ARGB color")?);
@@ -174,7 +174,7 @@ impl StrokeStyle {
                     let bytes = reader.read_bytes(count * 4, "legacy partial rectangle data")?;
                     style.legacy_partial_rectangle_data = Some(bytes.as_chunks::<4>().0.to_vec());
                 }
-                7 => style.advanced_pen_setting_id = Some(reader.read_i32("pen settings ID")?),
+                7 => style.pen_name_id = Some(reader.read_i32("pen name ID")?),
                 8 => style.fixed_width = Some(finite_float(&mut reader, "fixed width")?),
                 9 => style.size_level = Some(reader.read_i32("size level")?),
                 10 => style.particle_density = Some(reader.read_i32("particle density")?),

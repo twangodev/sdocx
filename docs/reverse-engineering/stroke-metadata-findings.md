@@ -56,13 +56,13 @@ references:
 
 | Bit | SDK field | Stored representation | Reader evidence |
 | ---: | --- | --- | --- |
-| 0 | `legacy_advanced_pen_setting_id` | `i32` | Read `0x2ed798`; fallback assignment `0x2eda38`–`0x2eda68` |
-| 1 | `pen_name_id` | `i32` | Normal WDoc read `0x2ed8ac`, store member 32 at `0x2ed8d0` |
+| 0 | `legacy_pen_name_id` | `i32` | Read `0x2ed798`; fallback assignment `0x2eda38`–`0x2eda68` |
+| 1 | `advanced_pen_setting_id` | `i32` | Normal WDoc read `0x2ed8ac`, store member 32 at `0x2ed8d0` |
 | 2 | `color_argb` | `u32` | Read/store member 288 at `0x2ed8ec`–`0x2ed8f0` |
 | 3 | `pen_size` | `f32` | Read to member 292 at `0x2ed904`–`0x2ed918` |
 | 4 | `field_4_raw` | `u8` | Read to member 312 at `0x2ed968`–`0x2ed96c` |
 | 5 | `legacy_partial_rectangle_data` | Four bytes per common partial rectangle | Count and bounded skip `0x2ed974`–`0x2ed998` |
-| 7 | `advanced_pen_setting_id` | `i32` | Normal WDoc read `0x2eda10`, store member 16 at `0x2eda34` |
+| 7 | `pen_name_id` | `i32` | Normal WDoc read `0x2eda10`, store member 16 at `0x2eda34` |
 | 8 | `fixed_width` | `f32` | Read to member 336 at `0x2eda78`–`0x2eda8c` |
 | 9 | `size_level` | `i32` | Read to member 296 at `0x2edabc`–`0x2edacc` |
 | 10 | `particle_density` | `i32` | Read to member 300 at `0x2edae4`–`0x2edaf4` |
@@ -88,13 +88,22 @@ The integer/float distinctions also match `GetSizeLevel`, `GetParticleDensity`,
 `GetRainbowOffset`. In particular, original width is an integer field;
 particle size and pattern scale are floating-point fields.
 
-### Legacy settings and partial rectangles
+### Legacy pen names and partial rectangles
 
-Field 0 was previously left unnamed. The reader retains its value while
-processing the other fields. If the advanced-settings member is `-1` and
+The reader retains field 0 while processing the other fields. If the
+pen-name member is `-1` and
 the legacy value is not `-1`, `0x2eda38`–`0x2eda68` resolves/copies that
-legacy reference into the advanced-settings member. The SDK keeps both
+legacy reference into the pen-name member. The SDK keeps both
 stored references independently, including signed sentinel values.
+
+The original inspection mislabeled fields 1 and 7 and consequently called
+field 0 a legacy advanced-settings reference. The subsequent getter trace
+corrected this: `ObjectStroke::GetPenName`, `0x2de974`, reads implementation
+member 16; `GetAdvancedPenSetting`, `0x2dec00`, reads member 32. Both the
+reader and writer agree with these getters. See
+[pen selection findings](pen-selection-findings.md#stored-reference-identity)
+for the complete chain and the regression that resolves a pen name and
+version through deliberately distinct string IDs.
 
 The call at `0x2ed978` is `ObjectBase::GetPartialRectCount`, followed by a
 left shift of two at `0x2ed97c`. Field 5 consequently occupies four bytes
@@ -139,10 +148,12 @@ It also establishes that the fixed-opacity setting has no effect through
 the inspected DefaultPen and Marker bindings, while Marker2–4 expose no
 morphable interface in that drawing path.
 
-Nine synthetic tests cover all 25 mapped fields, truncated prefixes of every
+Eleven synthetic tests cover all 25 mapped fields, truncated prefixes of every
 field, both inverted properties, future mask bytes, unknown-field stops,
 signed IDs, transparent colors, empty lists, aggregate budgets, malformed
 base rectangles, nonfinite style values and all four channel encodings.
+They also distinguish pen-name IDs from advanced-settings IDs and preserve
+legacy names independently of modern references and sentinel values.
 The partial-rectangle test has zero stroke points and two partial rectangles,
 so a mistaken dependency on point count cannot pass through alignment.
 These are parser contract checks; new Samsung captures remain necessary

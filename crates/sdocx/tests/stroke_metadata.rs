@@ -115,8 +115,8 @@ fn complete_native_style_keeps_signed_ids_argb_and_following_records_aligned() {
     assert_eq!(metadata.field_mask, mask.to_le_bytes());
     assert_eq!(metadata.trailing_data, extension);
     let style = metadata.style;
-    assert_eq!(style.legacy_advanced_pen_setting_id, Some(-101));
-    assert_eq!(style.pen_name_id, Some(102));
+    assert_eq!(style.legacy_pen_name_id, Some(-101));
+    assert_eq!(style.advanced_pen_setting_id, Some(102));
     assert_eq!(style.color_argb, Some(0x12345678));
     assert_eq!(style.pen_size, Some(4.25));
     assert_eq!(style.field_4_raw, Some(255));
@@ -124,7 +124,7 @@ fn complete_native_style_keeps_signed_ids_argb_and_following_records_aligned() {
         style.legacy_partial_rectangle_data,
         Some(vec![[1, 2, 3, 4], [5, 6, 7, 8]])
     );
-    assert_eq!(style.advanced_pen_setting_id, Some(-1));
+    assert_eq!(style.pen_name_id, Some(-1));
     assert_eq!(style.fixed_width, Some(8.5));
     assert_eq!(style.size_level, Some(-9));
     assert_eq!(style.particle_density, Some(1010));
@@ -148,6 +148,44 @@ fn complete_native_style_keeps_signed_ids_argb_and_following_records_aligned() {
     assert_eq!(style.color_type_raw, Some(255));
     assert_eq!(style.first_unparsed_field, None);
     assert!(style.trailing_data.is_empty());
+}
+
+#[test]
+fn native_reference_slots_resolve_pen_identity_and_renderer_version_independently() {
+    let strings = [
+        (3, "2;"),
+        (7, "com.samsung.android.sdk.pen.pen.preload.Marker2"),
+    ];
+    let resolve = |id| {
+        strings
+            .iter()
+            .find(|(key, _)| Some(*key) == id)
+            .map(|(_, value)| *value)
+    };
+    let bytes = payload(&[], &[0x82], &[3, 0, 0, 0, 7, 0, 0, 0], None);
+    let style = inspect(&bytes, &ParseLimits::default()).unwrap().style;
+    assert_eq!(
+        resolve(style.pen_name_id),
+        Some("com.samsung.android.sdk.pen.pen.preload.Marker2")
+    );
+    assert_eq!(resolve(style.advanced_pen_setting_id), Some("2;"));
+}
+
+#[test]
+fn legacy_pen_names_remain_separate_from_modern_names_and_advanced_settings() {
+    for (mask, ids, legacy_name, name, setting) in [
+        (0x03, vec![41_i32, 13], Some(41), None, Some(13)),
+        (0x83, vec![41, 13, -1], Some(41), Some(-1), Some(13)),
+        (0x83, vec![41, 13, 77], Some(41), Some(77), Some(13)),
+        (0x81, vec![41, 77], Some(41), Some(77), None),
+    ] {
+        let flexible: Vec<_> = ids.into_iter().flat_map(i32::to_le_bytes).collect();
+        let bytes = payload(&[], &[mask], &flexible, None);
+        let style = inspect(&bytes, &ParseLimits::default()).unwrap().style;
+        assert_eq!(style.legacy_pen_name_id, legacy_name);
+        assert_eq!(style.pen_name_id, name);
+        assert_eq!(style.advanced_pen_setting_id, setting);
+    }
 }
 
 #[test]
@@ -265,7 +303,7 @@ fn absent_and_empty_lists_remain_distinct_and_partial_count_comes_from_base() {
         )
         .unwrap();
         assert_eq!(value.style.legacy_partial_rectangle_data, Some(vec![]));
-        assert_eq!(value.style.advanced_pen_setting_id, Some(77));
+        assert_eq!(value.style.pen_name_id, Some(77));
         assert_eq!(value.style.gradient_colors_argb, Some(vec![]));
     }
     let mut malformed = base(Some(2));

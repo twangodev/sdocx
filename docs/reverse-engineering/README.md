@@ -51,6 +51,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   polarity, ARGB colors, pen settings and legacy partial-rectangle records.
 - [`pen-opacity-findings.md`](pen-opacity-findings.md) — pen-specific fixed
   opacity dispatch, theme-preserved alpha and Marker2 mask/composite equations.
+- [`pen-selection-findings.md`](pen-selection-findings.md) — corrected stroke
+  string IDs, native pen registry, fallback lookup and Marker2 version selection.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

@@ -172,9 +172,11 @@ The [capture compositor](capture-composition-findings.md) and
 blend operation to the resulting highlighter batch. That later Darken or
 Lighten operation is separate from the pen's mask and alpha calculation.
 
-Unresolved work includes stored pen-name/version selection, other brush
-plugins, the complete V2 and StrokeTip paths, reveal/effect overrides and
-the effect of render-thread `SetAlpha(float)`. That setter at PenCommon
+The [pen selection trace](pen-selection-findings.md) resolves stored name
+and setting IDs and Marker2's choice between GL V1 and V2. Unresolved work
+includes other brush plugins, the complete V2 and StrokeTip paths,
+reveal/effect overrides and the effect of render-thread `SetAlpha(float)`.
+That setter at PenCommon
 `0x4a5a0` can replace member 56, so the existence of the ARGB path alone does
 not prove that every caller retains its alpha until drawing.
 
