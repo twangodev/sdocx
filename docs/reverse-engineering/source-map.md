@@ -220,6 +220,13 @@ each output at the last real point and copying pen channels. `Run` builds
 millisecond and nanosecond horizon offsets separately; `AddPredictedPoint`,
 `0x311a0`, adds the separate VSync-aligned field at record offset 80.
 
+[Neural selection findings](neural-selection-findings.md) recover the
+integer-millisecond horizon comparison at `0x2cc04`–`0x2cc18` and
+candidate marker byte 73. `GetPredictedPenEvent`, `0x313e0`, uses marked
+records for current/history construction. Base `GetEventTime`, `0xc0634`,
+subtracts down time; Predictor builders `0x31c7c`/`0x31d68` add it back
+while passing nanoseconds independently.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

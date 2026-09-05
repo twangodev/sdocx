@@ -95,8 +95,11 @@ counterparts at `0x26c34`–`0x26c58`.
 
 The underlying real-record time field comes from
 `MotionEvent::GetEventTime()` at `0x2f1d0`, paired with the separate
-nanosecond value at `0x2f254`. The feature helper uses the millisecond
-field, not the separate nanosecond or VSync-aligned timestamp.
+nanosecond value at `0x2f254`. This getter returns milliseconds relative
+to down time, as confirmed in the
+[event-construction trace](neural-selection-findings.md). The feature helper
+uses differences of that millisecond field, not the separate nanosecond
+or VSync-aligned timestamp.
 
 Its time rules are:
 

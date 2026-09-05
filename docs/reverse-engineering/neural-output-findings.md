@@ -104,14 +104,17 @@ After successful coordinate conversion, `0x2ce44`–`0x2ce80`
 constructs the candidate times:
 
 ```text
-candidate_ms = last_real_ms + trunc_i64(f32(horizon_us / 1000))
+candidate_relative_ms = last_real_relative_ms + trunc_i64(f32(horizon_us / 1000))
 candidate_ns = last_real_ns + trunc_i64(f32(horizon_us * 1000))
 ```
 
 The float results are widened to double before signed 64-bit truncation;
 integer addition to the real timestamps occurs afterward. The two fields
 are not derived from one another. Candidate offset 8 is separately copied
-from last-real offset 8 at `0x2ce84`–`0x2ce88`.
+from last-real offset 8 at `0x2ce84`–`0x2ce88`. The
+[event-construction trace](neural-selection-findings.md) identifies offset 8
+as down time, offset 16 as relative milliseconds, and the addition that
+restores absolute millisecond time when building callback events.
 
 The bundled horizon conversions are:
 
@@ -160,7 +163,8 @@ coordinate offsets, the one-ULP scaling example and all seven bundled
 horizon conversions. Five ideal geometric rotations were inverted as a
 separate check, without claiming native trigonometric equivalence.
 
-Remaining work includes output-index selection, task rejection and the
-conversion of selected records into callback events. These findings do
-not establish which candidates a device delivers or serializes. No SDK
+The [selection trace](neural-selection-findings.md) recovers output-index
+marking and construction of callback events from selected records. Task
+rejection and active device settings remain separate work. These findings
+do not establish which candidates a device delivers or serializes. No SDK
 code or fixture changed.
