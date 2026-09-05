@@ -20,6 +20,7 @@ fn archive_entry_limit_is_configurable() {
             max_archive_entries: 1,
             ..sdocx::ParseLimits::default()
         },
+        ..Default::default()
     };
 
     let bytes = archive_with_entries(&["first.bin", "second.bin"]);

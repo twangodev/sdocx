@@ -286,6 +286,7 @@ fn applies_text_limits_before_allocating_declared_contents() {
             max_text_spans: 0,
             ..ParseLimits::default()
         },
+        ..Default::default()
     };
     assert!(matches!(
         sdocx::parse_bytes_with_options(&single(&simple("a😀")), &options),
@@ -362,6 +363,7 @@ fn preserves_unsupported_inline_objects_and_reports_the_omission() {
             max_text_object_spans: 0,
             ..ParseLimits::default()
         },
+        ..Default::default()
     };
     assert!(matches!(
         sdocx::parse_bytes_with_options(&single(&payload), &options),
@@ -391,6 +393,7 @@ fn bounds_recursion_through_embedded_code_block_text() {
             max_object_nesting_depth: 5,
             ..ParseLimits::default()
         },
+        ..Default::default()
     };
     let parsed = sdocx::parse_bytes_with_options(&bytes, &options).unwrap();
     let mut decoded = text_box(&parsed.pages[0].elements[0]);
@@ -443,6 +446,7 @@ fn preserves_paragraphs_and_sections_without_treating_payloads_as_text() {
             max_text_paragraphs: 0,
             ..ParseLimits::default()
         },
+        ..Default::default()
     };
     assert!(matches!(
         sdocx::parse_bytes_with_options(&single(&payload), &options),

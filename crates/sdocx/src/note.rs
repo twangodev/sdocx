@@ -13,6 +13,7 @@ use crate::{ObjectMetadata, ParseLimits};
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StoredNote {
+    pub fixed_data_end: usize,
     /// Fixed document header.
     pub header: StoredNoteHeader,
     /// Rich-text title object.
@@ -99,6 +100,7 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
     )?;
 
     Ok(StoredNote {
+        fixed_data_end: reader.position(),
         header: StoredNoteHeader {
             integrity_offset,
             header_constant_1,

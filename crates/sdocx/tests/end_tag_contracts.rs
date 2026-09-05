@@ -503,7 +503,13 @@ fn enforces_byte_and_text_limits_in_public_and_archive_parsers() {
         })
     ));
     assert!(matches!(
-        parse_bytes_detailed_with_options(&archive(&bytes), &ParseOptions { limits }),
+        parse_bytes_detailed_with_options(
+            &archive(&bytes),
+            &ParseOptions {
+                limits,
+                ..Default::default()
+            }
+        ),
         Err(Error::LimitExceeded {
             resource: "text characters",
             ..

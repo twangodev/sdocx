@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::archive_tail::{ArchiveReader, ArchiveTail};
 use crate::end_tag::{EndTagSource, StoredEndTag, parse_end_tag_bytes_with_limits};
 use crate::error::{Error, Result};
+use crate::integrity::IntegrityVerifier;
 use crate::media::{MediaResolver, media_archive_id, parse_media_manifest_bytes_with_limits};
 use crate::note::parse_note_bytes_with_limits;
 use crate::page::parse_page;
@@ -33,6 +34,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     let protected_marker = is_protected_document(&mut reader)?;
     let tail = ArchiveTail::read(&mut reader)?;
     let mut report = ParseReport::default();
+    let mut integrity = options.verify_integrity.then(IntegrityVerifier::default);
     let appended_tag = tail
         .end_tag
         .as_deref()
@@ -83,6 +85,9 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         parse_note_note(&buf, &mut metadata);
         let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
+        if let Some(verifier) = &mut integrity {
+            verifier.verify_note(&buf, &parsed_note);
+        }
         metadata.flow_dimensions = Some((parsed_note.header.width, parsed_note.header.height));
         metadata.flow_page_padding = Some((
             parsed_note.header.page_horizontal_padding,
@@ -146,6 +151,9 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     for name in &page_names {
         let buf = read_required_entry(&mut archive, name, &options.limits)?;
         let stored_page = parse_stored_page_bytes_with_limits(&buf, &options.limits)?;
+        if let Some(verifier) = &mut integrity {
+            verifier.verify_page(&buf, &stored_page, name, &options.limits)?;
+        }
         let page = parse_page(
             &buf,
             &stored_page,
@@ -193,6 +201,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         metadata.page_dimensions = Some((page.width, page.height));
     }
     metadata.note_text = note_text;
+    let integrity = integrity.map(|verifier| verifier.finish(page_manifest.as_ref(), &mut report));
 
     Ok(ParsedDocument {
         document: Document { pages, metadata },
@@ -201,6 +210,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         note,
         end_tag,
         end_tag_source,
+        integrity,
         report,
     })
 }

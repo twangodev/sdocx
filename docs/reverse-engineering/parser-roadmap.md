@@ -23,7 +23,7 @@ page/layer masks are length-prefixed, and a bounded typed-frame reader handles
 compressed/uncompressed stroke channels plus color and pen size. The legacy
 stroke walker and shifted fallback are removed. Public header field names are
 retained for compatibility. The numbered sequence below remains the overall
-roadmap; full common-object metadata, remaining styles, end tags, hashes and
+roadmap; full common-object metadata, remaining styles and
 non-stroke semantics are still incomplete.
 
 The structural text-box milestone is also implemented. A shared type-0 reader
@@ -52,14 +52,16 @@ measured crop, wrapping and style fixes. Controlled Unicode font coverage is the
 next improvement measurable on the existing pair.
 Cursor-based inner and appended end tags are implemented, including historical
 optional fields, bounded strings, ZIP comments and authoritative outer metadata.
-See [end-tag findings](end-tag-findings.md). Optional integrity validation remains
-the next bounded parser work; advanced outer objects still need native frame research.
+See [end-tag findings](end-tag-findings.md). Optional note, object, layer, page
+and manifest integrity checks are implemented with separate mismatch and
+unavailable counts; see [integrity findings](integrity-findings.md). Advanced
+outer objects still need native frame research.
 
 Layer identity and style metadata are available through bounded explicit
 decoding, including native alpha-lock/shadow flags and retained shadow payloads.
 See [layer findings](layer-findings.md) for the Java transparency discrepancy and
-the remaining rendering work. Layer identity now supplies the inputs needed for
-logical hash verification.
+the remaining rendering work. Layer identity supplies the inputs used by logical
+hash verification.
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.

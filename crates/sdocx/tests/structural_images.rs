@@ -478,6 +478,7 @@ fn images_obey_object_limits_and_do_not_scan_non_image_payloads() {
             max_objects_per_page: 0,
             ..sdocx::ParseLimits::default()
         },
+        ..Default::default()
     };
     assert!(matches!(
         sdocx::parse_bytes_with_options(&support::archive(&raw), &options),

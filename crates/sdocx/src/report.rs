@@ -55,6 +55,8 @@ pub enum DiagnosticSeverity {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum DiagnosticCode {
+    IntegrityMismatch,
+    IntegrityUnavailable,
     InvalidEndTag,
     /// `pageIdInfo.dat` is absent, so filename order is used.
     MissingPageManifest,

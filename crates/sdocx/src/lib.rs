@@ -18,6 +18,7 @@ mod end_tag;
 mod error;
 mod frame;
 mod image;
+mod integrity;
 mod layer;
 mod layout;
 mod media;
@@ -38,6 +39,7 @@ pub use end_tag::{
     parse_end_tag_bytes, parse_end_tag_bytes_with_limits,
 };
 pub use error::{Error, Result};
+pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{LayoutDocument, LayoutPage, layout_document};
 pub use media::{
@@ -121,6 +123,7 @@ impl Default for ParseLimits {
 /// Options controlling `.sdocx` parsing.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ParseOptions {
+    pub verify_integrity: bool,
     /// Resource limits for untrusted input.
     pub limits: ParseLimits,
 }

@@ -29,6 +29,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   appended trailer precedence, bounded decoding and synthetic regressions.
 - [`layer-findings.md`](layer-findings.md) — native layer identity, alpha-lock
   and shadow fields, bounded decoding and the Java transparency discrepancy.
+- [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
+  exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

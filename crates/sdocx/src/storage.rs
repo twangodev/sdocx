@@ -18,6 +18,7 @@ const INTEGRITY_TRAILER_SIZE: usize = 32;
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StoredPage {
+    pub integrity_offset: usize,
     /// Fixed page header.
     pub header: StoredPageHeader,
     /// Layer collection beginning at `header.raw_layer_offset`.
@@ -38,6 +39,7 @@ pub struct ParsedDocument {
     pub note: Option<StoredNote>,
     pub end_tag: Option<StoredEndTag>,
     pub end_tag_source: Option<EndTagSource>,
+    pub integrity: Option<crate::IntegrityReport>,
     /// Non-fatal compatibility findings.
     pub report: ParseReport,
 }
@@ -249,9 +251,10 @@ pub fn parse_stored_page_bytes_with_limits(
 
     let layer_offset = usize::try_from(raw_layer_offset)
         .map_err(|_| Error::Format("page layer offset does not fit in memory".into()))?;
-    let layers = parse_layers(data, layer_offset, limits)?;
+    let (layers, integrity_offset) = parse_layers(data, layer_offset, limits)?;
 
     Ok(StoredPage {
+        integrity_offset,
         header: StoredPageHeader {
             raw_layer_offset,
             property_offset,
@@ -338,7 +341,11 @@ fn read_optional_u64(
     }
 }
 
-fn parse_layers(data: &[u8], offset: usize, limits: &ParseLimits) -> Result<StoredPageLayers> {
+fn parse_layers(
+    data: &[u8],
+    offset: usize,
+    limits: &ParseLimits,
+) -> Result<(StoredPageLayers, usize)> {
     let mut reader = Reader::at(data, offset, "page layers")?;
     let layer_count = usize::from(reader.read_u16("layer count")?);
     if layer_count == 0 {
@@ -359,10 +366,13 @@ fn parse_layers(data: &[u8], offset: usize, limits: &ParseLimits) -> Result<Stor
         layers.push(parse_layer(&mut reader, limits, &mut total_objects)?);
     }
 
-    Ok(StoredPageLayers {
-        current_layer_index,
-        layers,
-    })
+    Ok((
+        StoredPageLayers {
+            current_layer_index,
+            layers,
+        },
+        reader.position(),
+    ))
 }
 
 fn parse_layer(

@@ -94,7 +94,10 @@ fn browser_parse_options() -> sdocx::ParseOptions {
         max_total_uncompressed_size: MAX_BROWSER_TOTAL_UNCOMPRESSED_SIZE,
         ..sdocx::ParseLimits::default()
     };
-    sdocx::ParseOptions { limits }
+    sdocx::ParseOptions {
+        limits,
+        ..Default::default()
+    }
 }
 
 fn parse_render_color_mode(value: &str) -> Result<sdocx::RenderColorMode, JsError> {

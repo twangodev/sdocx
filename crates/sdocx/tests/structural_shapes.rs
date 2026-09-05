@@ -260,7 +260,13 @@ fn recursive_objects_and_layers_use_structural_order_without_phantom_text() {
         ..Default::default()
     };
     assert!(matches!(
-        sdocx::parse_bytes_with_options(&bytes, &ParseOptions { limits }),
+        sdocx::parse_bytes_with_options(
+            &bytes,
+            &ParseOptions {
+                limits,
+                ..Default::default()
+            }
+        ),
         Err(Error::LimitExceeded { .. })
     ));
 }
@@ -399,7 +405,13 @@ fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
         },
     ] {
         assert!(matches!(
-            sdocx::parse_bytes_with_options(&single(7, &payload), &ParseOptions { limits }),
+            sdocx::parse_bytes_with_options(
+                &single(7, &payload),
+                &ParseOptions {
+                    limits,
+                    ..Default::default()
+                }
+            ),
             Err(Error::LimitExceeded { .. })
         ));
     }

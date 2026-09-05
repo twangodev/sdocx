@@ -198,6 +198,7 @@ fn applies_limits_to_declared_points_and_strokes_across_layers_and_children() {
             max_points_per_stroke: 2,
             ..ParseLimits::default()
         },
+        ..Default::default()
     };
     assert!(matches!(
         sdocx::parse_bytes_with_options(&bytes, &options),
@@ -221,6 +222,7 @@ fn applies_limits_to_declared_points_and_strokes_across_layers_and_children() {
             max_strokes_per_page: 1,
             ..ParseLimits::default()
         },
+        ..Default::default()
     };
     assert!(matches!(
         sdocx::parse_bytes_with_options(&bytes, &options),
