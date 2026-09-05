@@ -89,8 +89,15 @@ calls `NoteTextManager::SetTextSectionData(true)` at `0x357608`.
 `SetTextSectionData`, `0x3a253c`, obtains body text, measures a body-text layout
 and updates its page text ranges through `SetTextSectionData(int,int,int)`
 at `0x3a26bc`. Its inspected body performs text-section preparation, without
-an explicit physical-layer merge. This narrows the setup investigation;
-document loading and other note preparation remain outside that conclusion.
+an explicit physical-layer merge.
+
+The [saved physical-layer investigation](page-layer-selection-findings.md)
+traces the remaining load and list setup. Model `PageImplBase::LoadLayer`
+assigns the serialized current-layer index to the page's object handler at
+`0x346c78`–`0x346c8c`. X list initialization obtains the note's existing
+page pointers at `0x35a488`; WDoc `WNote::GetPageList` and Base
+`ArrayList::Copy` copy the pointer array without cloning or flattening pages.
+The inspected capture setup preserves those pointers and the layer selection.
 
 `NotePDFExporterRasterListX::getPageObjectList`, `0x35ad54`, gets a page from
 the exporter's array, builds its full-page rectangle and calls
@@ -98,9 +105,9 @@ the exporter's array, builds its full-page rectangle and calls
 `0x00ffffff` and the supplied render-layer filter. The
 [previously traced WPage/Model path](capture-composition-findings.md#clone-state-and-collection-boundaries)
 uses the currently assigned physical layer's object manager and existing
-list order. This method does not itself call the replay-sorted all-layer
-collector. How document loading and earlier export preparation establish
-that layer and its object list still needs separate investigation.
+list order. It does not call the replay-sorted all-layer collector. Together
+with the loader and setup evidence, this supports selecting the saved current
+physical layer when constructing the SDK's semantic page.
 
 ## Standard list-page paint sequence
 
@@ -201,5 +208,5 @@ Record the actual UI choice, page mode and background kind for each pair.
 Useful comparisons include Standard and Notes-compatible exports of the
 same light/dark/PDF-background page, with interleaved text boxes, images,
 ordinary strokes, highlighters and masking objects. Single-page segmentation,
-physical-layer loading and pen-level blending remain open APK investigations;
+editor changes to layer selection and pen-level blending remain open APK investigations;
 visual fidelity still requires new captured pairs.

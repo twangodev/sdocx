@@ -4,7 +4,7 @@ use sdocx::{
     DiagnosticCode, Error, NativeLine, NativeShape, PageElement, ParseLimits, ParseOptions,
     ShapePaint, TextAreaType,
 };
-use support::{archive, object, page};
+use support::{archive, object, page, page_with_current_layer};
 
 // Different mask widths exercise the generic reader, independent of native
 // fixed header offsets. Short identities deliberately defeat UUID scanning.
@@ -249,40 +249,53 @@ fn rejects_nonfinite_geometry_and_negative_or_nonfinite_widths() {
 }
 
 #[test]
-fn recursive_objects_and_layers_use_structural_order_without_phantom_text() {
+fn current_layer_shapes_keep_child_order_without_phantom_text() {
     let decoy = shape(4);
-    let bytes = archive(&page(
-        &[
-            vec![object(
-                4,
-                &[],
-                &[object(7, &shape(1), &[]), object(8, &line(0, 0, &[]), &[])],
-            )],
-            vec![object(7, &shape(8), &[]), object(200, &decoy, &[])],
-        ],
-        0,
-        &[],
-    ));
-    let parsed = sdocx::parse_bytes(&bytes).unwrap();
-    let elements = &parsed.pages[0].elements;
-    assert_eq!(elements.len(), 3);
-    assert_eq!(as_shape(&elements[0]).shape_type, 1);
-    assert_eq!(as_line(&elements[1]).line_type, 0);
-    assert_eq!(as_shape(&elements[2]).shape_type, 8);
-    let limits = ParseLimits {
-        max_objects_per_page: 2,
-        ..Default::default()
-    };
-    assert!(matches!(
-        sdocx::parse_bytes_with_options(
-            &bytes,
-            &ParseOptions {
-                limits,
-                ..Default::default()
-            }
-        ),
-        Err(Error::LimitExceeded { .. })
-    ));
+    let layers = [
+        vec![object(
+            4,
+            &[],
+            &[object(7, &shape(1), &[]), object(8, &line(0, 0, &[]), &[])],
+        )],
+        vec![object(7, &shape(8), &[]), object(200, &decoy, &[])],
+    ];
+    for current_layer_index in [0, 1] {
+        let bytes = archive(&page_with_current_layer(
+            &layers,
+            current_layer_index,
+            0,
+            &[],
+        ));
+        let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+        let elements = &parsed.document.pages[0].elements;
+        if current_layer_index == 0 {
+            assert_eq!(elements.len(), 2);
+            assert_eq!(as_shape(&elements[0]).shape_type, 1);
+            assert_eq!(as_line(&elements[1]).line_type, 0);
+        } else {
+            assert_eq!(elements.len(), 1);
+            assert_eq!(as_shape(&elements[0]).shape_type, 8);
+        }
+        assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
+        let limits = ParseLimits {
+            max_objects_per_page: 4,
+            ..Default::default()
+        };
+        assert!(matches!(
+            sdocx::parse_bytes_with_options(
+                &bytes,
+                &ParseOptions {
+                    limits,
+                    ..Default::default()
+                }
+            ),
+            Err(Error::LimitExceeded {
+                resource: "objects per page",
+                limit: 4,
+                actual: 5,
+            })
+        ));
+    }
 }
 
 fn native_path(commands: &[(u8, &[f64])]) -> Vec<u8> {

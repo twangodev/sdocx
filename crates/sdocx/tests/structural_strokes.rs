@@ -1,6 +1,6 @@
 mod support;
 
-use support::{archive, object, page};
+use support::{archive, object, page, page_with_current_layer};
 
 use sdocx::{Color, Error, ParseLimits, ParseOptions, Point};
 
@@ -167,7 +167,7 @@ fn short_strokes_use_the_declared_count_and_property_selected_channels() {
 }
 
 #[test]
-fn traverses_every_layer_and_child_without_scanning_unknown_payloads() {
+fn retains_every_layer_and_decodes_current_layer_children_without_scanning_unknown_payloads() {
     let payload = stroke(1, 3, &compressed(false), 0, &[]);
     let child = object(1, &payload, &[]);
     let tree = object(4, b"container payload", std::slice::from_ref(&child));
@@ -176,8 +176,8 @@ fn traverses_every_layer_and_child_without_scanning_unknown_payloads() {
     let bytes = archive(&page(&[vec![unknown, tree], vec![child]], 0, &[]));
     let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
     assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
-    assert_eq!(parsed.document.pages[0].strokes.len(), 2);
-    assert_eq!(parsed.document.pages[0].strokes[1].points.len(), 3);
+    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    assert_eq!(parsed.document.pages[0].strokes[0].points.len(), 3);
     assert!(parsed.document.pages[0].strokes[0].tilts.is_empty());
     assert!(
         parsed
@@ -186,6 +186,84 @@ fn traverses_every_layer_and_child_without_scanning_unknown_payloads() {
             .iter()
             .any(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnknownObjectType)
     );
+}
+
+#[test]
+fn current_layer_index_selects_strokes_independently_of_layer_numbers() {
+    let colors = [0xffff0000_u32, 0xff0000ff];
+    let payloads =
+        colors.map(|color| stroke(1, 3, &compressed(false), 1 << 2, &color.to_le_bytes()));
+    let layers = payloads
+        .each_ref()
+        .map(|payload| vec![object(1, payload, &[])]);
+    for current_layer_index in [0, 1] {
+        let mut raw = page_with_current_layer(&layers, current_layer_index, 0, &[]);
+        let stored = sdocx::parse_stored_page_bytes(&raw).unwrap();
+        for (layer, number) in stored.layers.layers.iter().zip([91_u32, 37]) {
+            let property_mask_offset = layer.header_offset + 8;
+            let field_mask_offset =
+                property_mask_offset + 1 + usize::from(raw[property_mask_offset]);
+            let number_offset = field_mask_offset + 1 + usize::from(raw[field_mask_offset]);
+            raw[number_offset..number_offset + 4].copy_from_slice(&number.to_le_bytes());
+        }
+        let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+        let stored = &parsed.stored_pages[0].page.layers;
+        assert_eq!(stored.current_layer_index, current_layer_index);
+        assert_eq!(stored.layers[0].number, 91);
+        assert_eq!(stored.layers[1].number, 37);
+        for (layer, payload) in stored.layers.iter().zip(&payloads) {
+            assert_eq!(layer.objects[0].payload(&raw).unwrap(), payload);
+        }
+        let strokes = &parsed.document.pages[0].strokes;
+        assert_eq!(strokes.len(), 1);
+        let expected = [Color { r: 255, g: 0, b: 0 }, Color { r: 0, g: 0, b: 255 }];
+        assert_eq!(
+            strokes[0].color,
+            Some(expected[usize::from(current_layer_index)])
+        );
+    }
+}
+
+#[test]
+fn an_empty_current_layer_does_not_fall_back_to_another_layer() {
+    let child = object(1, &stroke(1, 3, &compressed(false), 0, &[]), &[]);
+    for layers in [[vec![], vec![child.clone()]], [vec![child], vec![]]] {
+        let current_layer_index = u16::from(!layers[0].is_empty());
+        let raw = page_with_current_layer(&layers, current_layer_index, 0, &[]);
+        let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+        assert!(parsed.document.pages[0].strokes.is_empty());
+        assert!(parsed.document.pages[0].elements.is_empty());
+        assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
+    }
+}
+
+#[test]
+fn inactive_layer_payloads_are_retained_without_semantic_decoding() {
+    let valid = stroke(1, 3, &compressed(false), 0, &[]);
+    let layers = [
+        vec![object(1, &valid, &[])],
+        vec![object(4, &base(), &[object(1, b"invalid stroke", &[])])],
+    ];
+    let raw = page_with_current_layer(&layers, 0, 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    assert!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .all(|diagnostic| { diagnostic.code != sdocx::DiagnosticCode::UnsupportedObjectType })
+    );
+    let inactive = &parsed.stored_pages[0].page.layers.layers[1].objects[0].children[0];
+    assert_eq!(inactive.payload(&raw).unwrap(), b"invalid stroke");
+    assert!(matches!(
+        sdocx::parse_bytes(&archive(&page_with_current_layer(&layers, 1, 0, &[]))),
+        Err(Error::Format(_))
+    ));
+    let mut invalid_boundary = raw.clone();
+    let size_offset = inactive.payload_offset - 4;
+    invalid_boundary[size_offset..size_offset + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(sdocx::parse_bytes(&archive(&invalid_boundary)).is_err());
 }
 
 #[test]
@@ -208,7 +286,7 @@ fn known_unsupported_objects_report_their_location_and_keep_decoded_children() {
         &[],
     );
     let parsed = sdocx::parse_bytes_detailed(&archive(&page_bytes)).unwrap();
-    assert_eq!(parsed.document.pages[0].strokes.len(), kinds.len() + 1);
+    assert_eq!(parsed.document.pages[0].strokes.len(), kinds.len());
     assert!(parsed.document.pages[0].elements.is_empty());
     let warnings = parsed
         .report

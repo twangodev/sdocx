@@ -321,6 +321,14 @@ layer_offset:
     ASCII "Page for SAMSUNG S-Pen SDK"   # exactly 26 bytes
 ```
 
+`current_layer_index` selects a position in the stored layer collection,
+independently of each layer's number. Native page loading assigns that layer
+to the object handler used by page queries and Standard list-page PDF export.
+The SDK decodes its semantic page objects from this layer while retaining and
+structurally validating all layers. See
+[saved physical-layer selection](page-layer-selection-findings.md) for the
+loader and exporter evidence.
+
 ### Page header
 
 ```text

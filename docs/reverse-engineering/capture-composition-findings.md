@@ -175,9 +175,12 @@ member 144. `LayerManagerBase::m_SetCurrentLayer`, `0x3476dc`, stores the
 same layer pointer in manager member 40 and handler member 0 at
 `0x3476e8`–`0x3476ec`. Thus this intersection query is scoped to the current
 physical layer, while its filter chooses a render pass within that layer.
-This does not yet prove whether a higher-level export caller changes the
-current layer or prepares a flattened page before capture. That setup must
-be traced before restricting SDK exports to a single stored layer.
+The subsequent [saved physical-layer investigation](page-layer-selection-findings.md)
+traces the loader's assignment of the serialized current-layer index and
+Standard list-page export's reuse of the note's existing page pointers.
+Those inspected setup paths preserve the separate physical layers. The SDK
+now constructs semantic page objects from the saved current layer while
+retaining all layers in its structural representation.
 
 SDK exports also need an ordered object representation and stroke render
 properties before this evidence can support a complete composition change.

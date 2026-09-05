@@ -33,6 +33,7 @@ pub(crate) fn parse_page(
         limits.max_strokes_per_page,
         stroke_count,
     )?;
+    let current_layer = &stored.layers.layers[usize::from(stored.layers.current_layer_index)];
     let mut page = Page {
         uuid: header.uuid.clone(),
         width: header.width,
@@ -40,21 +41,19 @@ pub(crate) fn parse_page(
         content_bbox: BoundingBox::default(),
         background_color: None,
         template: None,
-        strokes: Vec::with_capacity(stroke_count),
+        strokes: Vec::with_capacity(count_strokes(&current_layer.objects)),
         elements: Vec::new(),
     };
     parse_page_properties(data, stored, &mut page)?;
-    for layer in &stored.layers.layers {
-        decode_objects(
-            data,
-            &layer.objects,
-            &mut page,
-            media,
-            limits,
-            archive_entry,
-            report,
-        )?;
-    }
+    decode_objects(
+        data,
+        &current_layer.objects,
+        &mut page,
+        media,
+        limits,
+        archive_entry,
+        report,
+    )?;
     Ok(page)
 }
 

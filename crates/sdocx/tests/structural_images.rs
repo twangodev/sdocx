@@ -2,7 +2,7 @@ mod support;
 
 use sdocx::{DiagnosticCode, Error, PageElement, PlacedImage};
 use std::io::{Cursor, Write};
-use support::{object, page};
+use support::{object, page, page_with_current_layer};
 
 fn frame(kind: i16, fields: u32, fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
     let offset = 17 + fixed.len();
@@ -301,11 +301,12 @@ fn image_references_are_global_across_pages_layers_and_children() {
         ("b.page", page(&[vec![object(3, &image(7), &[])]], 0, &[])),
         (
             "a.page",
-            page(
+            page_with_current_layer(
                 &[
                     vec![object(250, &image(7), &[])],
                     vec![object(4, b"group", &[object(3, &image(42), &[])])],
                 ],
+                1,
                 0,
                 &[],
             ),

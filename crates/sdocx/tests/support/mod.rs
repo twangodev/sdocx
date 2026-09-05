@@ -13,6 +13,15 @@ pub fn object(kind: u8, payload: &[u8], children: &[Vec<u8>]) -> Vec<u8> {
 }
 
 pub fn page(layers: &[Vec<Vec<u8>>], field_mask: u32, properties: &[u8]) -> Vec<u8> {
+    page_with_current_layer(layers, 0, field_mask, properties)
+}
+
+pub fn page_with_current_layer(
+    layers: &[Vec<Vec<u8>>],
+    current_layer_index: u16,
+    field_mask: u32,
+    properties: &[u8],
+) -> Vec<u8> {
     // One-byte property mask and five-byte field mask deliberately move the
     // fixed page fields away from their old absolute offsets.
     let mut bytes = vec![0; 8];
@@ -35,7 +44,7 @@ pub fn page(layers: &[Vec<Vec<u8>>], field_mask: u32, properties: &[u8]) -> Vec<
     let layer_offset = bytes.len() as u32;
     bytes[..4].copy_from_slice(&layer_offset.to_le_bytes());
     bytes.extend_from_slice(&(layers.len() as u16).to_le_bytes());
-    bytes.extend_from_slice(&0_u16.to_le_bytes());
+    bytes.extend_from_slice(&current_layer_index.to_le_bytes());
     for (number, objects) in layers.iter().enumerate() {
         // Variable-size layer masks, with a bounded extension after its number.
         bytes.extend_from_slice(&20_u32.to_le_bytes());

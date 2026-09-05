@@ -4,7 +4,7 @@ use sdocx::{
     DiagnosticCode, Error, PageElement, ParseLimits, ParseOptions, RichTextBox, RichTextSpanType,
     TextAreaType,
 };
-use support::{archive, object, page};
+use support::{archive, object, page, page_with_current_layer};
 
 // Native ObjectTextBox serialization is ObjectBase (0), ObjectShape (6),
 // ObjectShapeText (7), then ComponentImage's Textbox record (2). Deliberately
@@ -261,36 +261,42 @@ fn uses_declared_bounds_rotation_and_utf16_style_ranges() {
 }
 
 #[test]
-fn reads_text_across_layers_and_children_alongside_strokes() {
+fn reads_and_renders_text_and_strokes_from_the_current_layer() {
     let mut stroke = base([0.0, 0.0, 1.0, 1.0], 0.0);
     stroke.extend(frame(1, &[], &[0, 0, 1, 0], &[])); // empty uncompressed stroke
     let child = object(2, &simple("child"), &[]);
     let unknown = object(250, &simple("decoy text"), &[]);
-    let bytes = archive(&page(
-        &[
-            vec![
-                object(1, &stroke, &[]),
-                object(4, b"group", &[child]),
-                unknown,
-            ],
-            vec![object(2, &simple("second layer"), &[])],
+    let layers = [
+        vec![
+            object(1, &stroke, &[]),
+            object(4, b"group", &[child]),
+            unknown,
         ],
-        0,
-        &[],
-    ));
-    let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
-    let page = &parsed.document.pages[0];
-    assert_eq!(page.strokes.len(), 1);
-    assert_eq!(page.elements.len(), 2);
-    assert_eq!(text_box(&page.elements[0]).text, "child");
-    assert_eq!(text_box(&page.elements[1]).text, "second layer");
-    assert!(
-        parsed
-            .report
-            .diagnostics
-            .iter()
-            .any(|d| d.code == DiagnosticCode::UnknownObjectType)
-    );
+        vec![object(2, &simple("second layer"), &[])],
+    ];
+    for (current_layer_index, visible, inactive) in
+        [(0, "child", "second layer"), (1, "second layer", "child")]
+    {
+        let raw = page_with_current_layer(&layers, current_layer_index, 0, &[]);
+        let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+        let page = &parsed.document.pages[0];
+        assert_eq!(page.strokes.len(), usize::from(current_layer_index == 0));
+        assert_eq!(page.elements.len(), 1);
+        assert_eq!(text_box(&page.elements[0]).text, visible);
+        assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
+        let svg =
+            sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default()).unwrap();
+        assert!(svg.svg.contains(visible));
+        assert!(!svg.svg.contains(inactive));
+        assert!(!svg.svg.contains("decoy text"));
+        assert!(
+            parsed
+                .report
+                .diagnostics
+                .iter()
+                .any(|d| d.code == DiagnosticCode::UnknownObjectType)
+        );
+    }
 }
 
 #[test]

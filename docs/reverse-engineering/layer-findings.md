@@ -79,6 +79,8 @@ specific error. The decoder bounds fixed fields and flexible fields separately,
 honors text limits, and cannot consume an object's count, hash or sibling layer.
 Layer visibility, transparency, alpha lock and shadow effects are exposed for
 future rendering work; this change does not apply them to the rendered page.
+The semantic decoder selects the saved current physical layer, as documented
+in [saved physical-layer selection](page-layer-selection-findings.md).
 
 `crates/sdocx/tests/layer_metadata.rs` covers complete native fields, nonempty
 Unicode strings, negative timestamps, independent layers, wide masks, unknown

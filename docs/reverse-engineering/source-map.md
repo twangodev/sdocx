@@ -73,6 +73,13 @@ Standard list-page export reaches `NotePDFExporterRasterListX::updatePage`,
 bitmap blend reaches `PdfiumImageHandler::DrawImage` at PDF `0x82ebc`;
 the enum-name table relocation at `0xb1b38` confirms Darken.
 
+[Saved physical-layer selection](page-layer-selection-findings.md) follows
+Model `PageImplBase::LoadLayer`, `0x346ad4`, through the index lookup at
+`0x346c78` and handler assignment at `0x346c8c`. WDoc lazy loading reaches
+this method. Composer `NotePDFExporterRasterListX::initializeExport`,
+`0x35a40c`, obtains existing note page pointers through WDoc
+`WNote::GetPageList`, `0x944f4`, and Base `ArrayList::Copy`, `0xd1ba8`.
+
 The structural stroke implementation also rechecked these arm64 locations in
 `libSPenModel.so` 4.4.45.37:
 

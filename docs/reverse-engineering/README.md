@@ -34,6 +34,9 @@ Notes APK, native serializers, or real compatibility fixtures.
   appended trailer precedence, bounded decoding and synthetic regressions.
 - [`layer-findings.md`](layer-findings.md) — native layer identity, alpha-lock
   and shadow fields, bounded decoding and the Java transparency discrepancy.
+- [`page-layer-selection-findings.md`](page-layer-selection-findings.md) —
+  saved current-layer assignment, Standard PDF page pointers and semantic
+  selection with complete structural retention.
 - [`object-base-findings.md`](object-base-findings.md) — shared object visibility,
   editing flags, replay/resize values and preserved frame extensions.
 - [`object-flexible-findings.md`](object-flexible-findings.md) — optional common
