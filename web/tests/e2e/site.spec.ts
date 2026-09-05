@@ -8,7 +8,7 @@ const zoomAnchor = { x: 500, y: 400 } as const;
 
 test.beforeEach(async ({ page }) => {
 	await page.route(analyticsScriptUrl, (route) =>
-		route.fulfill({ contentType: 'application/javascript', body: '' })
+		route.fulfill({ contentType: 'application/javascript', body: 'window.rybbit = {};' })
 	);
 });
 
@@ -117,6 +117,7 @@ test('converter presents a local-only upload surface', async ({ page }) => {
 	const analyticsScript = page.locator(`head script[src="${analyticsScriptUrl}"]`);
 	await expect(analyticsScript).toHaveAttribute('data-site-id', '84f39267b7e1');
 	await expect(analyticsScript).toHaveAttribute('defer', '');
+	await expect.poll(() => page.evaluate(() => 'rybbit' in window)).toBe(true);
 	expect(remoteRequests).toEqual([]);
 });
 
