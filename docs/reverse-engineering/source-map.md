@@ -102,6 +102,12 @@ selects InkPen2 for tool types 2 and 6. The ordinary action's comparison at
 drawing's slot 208 resolves to `LowLatencyStrokeView`, whose counter at
 `0x4d43d8` forwards to Drawing `GetStrokePointCount`, `0xb8160`.
 
+[Stroke prediction findings](stroke-prediction-findings.md) resolve
+Composer `TouchPresenter::PresentTouch` at `0x4d76bc` and its event-list
+recorder call at `0x4d8bdc`. Marker2 V2's prediction getter at `0x1f13c`
+supplies the separate drawable called by `OnPredictTouch`, `0x4d94e0`;
+V1 returns null. Drawing appends only the primary event at `0xb7570`.
+
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 resolve the public option through `SpenNotePdfExport(Context,int)`, JNI
 `Native_init` at Composer `0x3149e8`, and raster dispatch at `0x355d68`.

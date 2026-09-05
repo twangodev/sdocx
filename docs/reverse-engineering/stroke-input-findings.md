@@ -115,8 +115,10 @@ stamps or a renderer's vertex count.
 The ordinary event dispatch is also distinct from the counter lookup.
 Raster slot 16 resolves to `0x50e914`, which calls the wrapper at
 `0x512d1c`; that wrapper dispatches the original event through the stroke
-view's slot 136 at `0x512d9c`. Processing inside that stroke-view method
-remains an additional boundary before the touch recorder.
+view's slot 136 at `0x512d9c`. The subsequent
+[presentation and prediction trace](stroke-prediction-findings.md) follows
+that method into the presenter and distinguishes its real-event recording
+from prediction drawing.
 
 ## A long gesture can become multiple objects
 
@@ -167,7 +169,9 @@ threshold were checked against the ARM64 instructions and relocations.
 No new device fixtures or native execution were used, and no SDK rendering
 code changed.
 
-Remaining APK targets include the stroke-view event queue, coordinate
-transforms, latency prediction, the PointBeautifier's numerical behavior
-and later insertion callbacks. Long-gesture and InkPen2 SDOCX/PDF pairs can
+The [presentation trace](stroke-prediction-findings.md) establishes the
+ordinary real-event dispatch and separate Marker2 V2 prediction drawable.
+Remaining APK targets include final coordinate transforms, prediction
+algorithms, the PointBeautifier's numerical behavior and later insertion
+callbacks. Long-gesture and InkPen2 SDOCX/PDF pairs can
 eventually validate stored counts, split boundaries and filtered geometry.

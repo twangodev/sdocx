@@ -8,6 +8,8 @@ the [knowledge base](README.md#sources-and-validation). The
 [pen selection trace](pen-selection-findings.md#advanced-settings-select-marker2s-version)
 establishes when Marker2 selects GL V1 or GL V2. This document compares their
 ordinary stroke paths; StrokeTip and preview drawables remain separate.
+The [presentation trace](stroke-prediction-findings.md) subsequently
+identifies the V2 StrokeTip drawable as a separate live prediction path.
 
 V2 retains V1's color-alpha composition and circle-mask model. Confirmed
 differences include mask-fragment precision and a thinner antialiasing ramp

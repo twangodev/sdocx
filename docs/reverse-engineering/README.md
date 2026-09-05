@@ -61,6 +61,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   appends, repeated-coordinate taps, optional replacement and replay source reset.
 - [`stroke-input-findings.md`](stroke-input-findings.md) — InkPen2 input-filter
   selection, raster recorder bindings and long-gesture splitting.
+- [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event
+  dispatch, separate Marker2 V2 prediction drawing and input-source mutation.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
