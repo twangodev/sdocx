@@ -105,12 +105,23 @@ impl<'a> Reader<'a> {
         field: &'static str,
         max_units: usize,
     ) -> Result<String> {
+        self.read_nullable_utf16_u16(field, max_units)?
+            .ok_or_else(|| {
+                Error::Format(format!(
+                    "{}: {field} uses the null string sentinel",
+                    self.context
+                ))
+            })
+    }
+
+    pub(crate) fn read_nullable_utf16_u16(
+        &mut self,
+        field: &'static str,
+        max_units: usize,
+    ) -> Result<Option<String>> {
         let unit_count = usize::from(self.read_u16(field)?);
         if unit_count == usize::from(u16::MAX) {
-            return Err(Error::Format(format!(
-                "{}: {field} uses the null string sentinel",
-                self.context
-            )));
+            return Ok(None);
         }
         if unit_count > max_units {
             return Err(Error::LimitExceeded {
@@ -123,7 +134,7 @@ impl<'a> Reader<'a> {
             .checked_mul(2)
             .ok_or_else(|| Error::Format(format!("{}: {field} length overflows", self.context)))?;
         let bytes = self.read_bytes(byte_count, field)?;
-        decode_utf16(bytes, self.context, field)
+        decode_utf16(bytes, self.context, field).map(Some)
     }
 
     pub(crate) fn read_utf16_u32(

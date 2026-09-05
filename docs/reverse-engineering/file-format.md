@@ -206,8 +206,8 @@ The APK Java writer confirms these currently used bits:
 | ---: | ---: | --- |
 | 0 | `0x000001` | application name (`utf16_u16`) |
 | 1 | `0x000002` | app major, minor (`u32`, `u32`) and patch name |
-| 2 | `0x000004` | account/user triplet plus integer metadata |
-| 3 | `0x000008` | two `f64` values |
+| 2 | `0x000004` | nullable author name, phone, email and image media ID |
+| 3 | `0x000008` | `f64` latitude and longitude |
 | 6 | `0x000040` | template URI |
 | 7 | `0x000080` | last edited page index |
 | 9 | `0x000200` | last edited page image ID and time |
@@ -224,6 +224,11 @@ The APK Java writer confirms these currently used bits:
 | 20 | `0x100000` | text summarization |
 | 21 | `0x200000` | stroke-group size |
 | 22 | `0x400000` | app custom data (`utf16_u32`) |
+
+`StoredNote::metadata` explicitly decodes these fields from a complete
+uncompressed note entry. See [note metadata findings](note-metadata-findings.md)
+for native evidence, size-prefix conventions, historical optional fields,
+unknown-bit handling and allocation limits.
 
 Title and body are themselves object/frame chains. In the current documents
 they contain a base object frame, shape frame and type-7 shape-text frame; the

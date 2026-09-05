@@ -33,6 +33,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
   bounded fixed data and structured document metadata.
+- [`note-metadata-findings.md`](note-metadata-findings.md) — optional application,
+  author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

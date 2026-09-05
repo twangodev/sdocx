@@ -66,6 +66,9 @@ hash verification.
 Note headers now use their declared mask lengths and flexible-data boundary.
 Container metadata uses the decoded header and page background rather than
 fixed offsets or color-pattern searches. See [note-header findings](note-header-findings.md).
+All 20 mapped note flexible fields have an explicit bounded metadata decoder,
+with null author strings, pen variants, voice/attachment references and fixed
+style properties. See [note metadata findings](note-metadata-findings.md).
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.

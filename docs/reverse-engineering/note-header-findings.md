@@ -68,7 +68,7 @@ by complete synthetic archive cases. Integrity tests still cover raw-note hashes
 an offset outside the record now fails structurally instead of reaching optional
 integrity reporting. These checks do not replace comparison with future exports.
 
-Document-level flexible fields remain the next note-specific decoding work:
+Document-level flexible fields now have an explicit bounded decoder, including
 application metadata, pen settings, attachment/voice references and fixed font,
-text-direction and background-theme properties. Their mask order is recorded in
-the [format map](file-format.md#document-flexible-field-mask).
+text-direction and background-theme properties. See
+[note metadata findings](note-metadata-findings.md) for its evidence and limits.

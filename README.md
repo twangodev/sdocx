@@ -43,6 +43,12 @@ checks for notes, objects, layers, pages and manifest links. These checks follow
 Samsung's hash formulas; object hashes exclude geometry and content. See the
 [integrity findings](docs/reverse-engineering/integrity-findings.md) for coverage.
 
+For optional document metadata, call `StoredNote::metadata` with the complete
+uncompressed `note.note` bytes. It exposes application/author information, pen
+settings, voice and attachment references, and fixed text/background properties.
+See [note metadata findings](docs/reverse-engineering/note-metadata-findings.md)
+for bounded decoding and unknown-field handling.
+
 Native image objects are exposed as `PageElement::PlacedImage`, including their
 media ID, optional resolved asset index, bounds and rotation. Existing
 caller-created `PageElement::Image` values remain renderable. See the
