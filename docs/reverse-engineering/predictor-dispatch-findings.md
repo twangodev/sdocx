@@ -184,6 +184,7 @@ checked all 64 combinations of enabled/status/speed/due/unbuffered/history
 conditions, plus equality and first-forced-count boundaries at three rates.
 
 These are static control-flow checks, not native execution or measured
-callback rates. Full input-status producer semantics, coefficient caller
-ordering and concurrent worker behavior remain separate work. No SDK code
-or corpus fixture changed.
+callback rates. The [position trace](predictor-position-findings.md) recovers
+coefficient caller ordering. Full input-status producer semantics and
+concurrent worker behavior remain separate work. No SDK code or corpus
+fixture changed.

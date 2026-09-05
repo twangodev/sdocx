@@ -167,6 +167,10 @@ expression before bounding against the prediction span. A longer bottom
 delay can therefore change the retained prediction fraction, subject to
 the separate [cutoff rules](uniform-latency-findings.md).
 
+Composer also uses this helper for the
+[prediction pacing coefficient](predictor-position-findings.md), with its
+own sample selection, 3 ms subtraction and presenter-rate denominator.
+
 ## Validation and remaining work
 
 The APK digest and all three native byte streams were verified. JNI

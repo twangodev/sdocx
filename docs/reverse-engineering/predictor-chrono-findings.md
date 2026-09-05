@@ -187,8 +187,10 @@ Base `SetPenLocationInScreenCoef`, `0x301c8`, forwards its float through
 wrapper slot 56. The wrapper at `0x39348` forwards only to the backend
 active at that moment. Calling it while the time backend is active has
 no effect on the VSync backend's stored coefficient. Switching mode later
-does not replay the earlier setter. Caller ordering and active device
-coefficient values remain to be traced.
+does not replay the earlier setter. The
+[position-coefficient trace](predictor-position-findings.md) recovers
+Composer's calculation and setter-before-dispatch ordering. Active device
+coefficient values remain unmeasured.
 
 ## Boundary reconstruction and validation
 
@@ -217,5 +219,7 @@ boundaries at three rates.
 These checks reconstruct static control flow and arithmetic; they do not
 execute native prediction or measure device scheduling. The
 [base dispatch trace](predictor-dispatch-findings.md) recovers callback
-decisions around this gate. The coefficient caller chain remains separate work.
+decisions around this gate, and the
+[position trace](predictor-position-findings.md) identifies the coefficient
+caller chain. Concurrent worker behavior remains separate work.
 No SDK code or corpus fixture changed.

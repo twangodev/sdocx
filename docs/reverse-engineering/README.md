@@ -105,6 +105,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   task pacing, phase thresholds and completion-dependent timer resets.
 - [`predictor-dispatch-findings.md`](predictor-dispatch-findings.md) — base
   branch conditions, history-driven completion and separate Boolean returns.
+- [`predictor-position-findings.md`](predictor-position-findings.md) — last-history
+  presentation delays, coefficient arithmetic and backend-switch ordering.
 - [`neural-motion-findings.md`](neural-motion-findings.md) — minimum movement,
   real/output speed statistics and per-candidate distance limits.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
