@@ -179,6 +179,18 @@ fn decode_objects(
                 );
             }
             page.elements.push(element);
+        } else if !matches!(object.object_type, ObjectType::Other(_)) {
+            report.warning(
+                DiagnosticCode::UnsupportedObjectType,
+                Some(archive_entry.to_owned()),
+                format!(
+                    "page {}: {:?} (type {}) at 0x{:x}: payload retained without semantic decoding; child records are traversed separately",
+                    page.uuid,
+                    object.object_type,
+                    object.object_type.raw(),
+                    object.payload_offset
+                ),
+            );
         }
         decode_objects(
             data,

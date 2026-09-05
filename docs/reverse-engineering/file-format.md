@@ -462,6 +462,14 @@ Known outer object type IDs:
 
 Unknown future IDs must be retained rather than treated as corruption.
 
+Recognized outer object types without semantic decoders produce
+`UnsupportedObjectType` diagnostics with the page entry, raw type and payload
+offset. This includes undecoded container/group payloads even when their child
+records can be decoded. Payload bytes remain accessible through `StoredObject`,
+and child traversal continues. Unknown future IDs retain the separate
+`UnknownObjectType` diagnostic. Neither category implies that omitted content
+was rendered.
+
 ## Generic object payload frames
 
 An object payload is a chain of one or more typed frames. The common header is:

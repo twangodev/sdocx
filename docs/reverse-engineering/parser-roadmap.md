@@ -75,6 +75,9 @@ fields, row-height constraints and sized borders are decoded, with complete
 masks and trailing bytes retained. Applying those styles to rendering and
 standalone support remain; see
 [table/code-block findings](table-code-findings.md).
+Known outer object types without semantic decoders now produce
+`UnsupportedObjectType` diagnostics, including container/group payloads whose
+children are still traversed. Unknown future IDs retain their distinct warning.
 
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.

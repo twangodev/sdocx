@@ -110,6 +110,58 @@ fn traverses_every_layer_and_child_without_scanning_unknown_payloads() {
 }
 
 #[test]
+fn known_unsupported_objects_report_their_location_and_keep_decoded_children() {
+    let kinds = [
+        0, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 100,
+    ];
+    let payload = stroke(1, 3, &compressed(false), 0, &[]);
+    let child = object(1, &payload, &[]);
+    let parents = kinds
+        .iter()
+        .map(|kind| object(*kind, &payload, std::slice::from_ref(&child)))
+        .collect::<Vec<_>>();
+    let page_bytes = page(
+        &[
+            parents,
+            vec![object(250, &payload, std::slice::from_ref(&child))],
+        ],
+        0,
+        &[],
+    );
+    let parsed = sdocx::parse_bytes_detailed(&archive(&page_bytes)).unwrap();
+    assert_eq!(parsed.document.pages[0].strokes.len(), kinds.len() + 1);
+    assert!(parsed.document.pages[0].elements.is_empty());
+    let warnings = parsed
+        .report
+        .diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnsupportedObjectType)
+        .collect::<Vec<_>>();
+    assert_eq!(warnings.len(), kinds.len());
+    let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
+    for ((kind, object), warning) in kinds.iter().zip(stored).zip(warnings) {
+        assert_eq!(object.object_type.raw(), u32::from(*kind));
+        assert_eq!(object.payload(&page_bytes).unwrap(), payload);
+        assert_eq!(warning.archive_entry.as_deref(), Some("page.page"));
+        assert!(warning.message.contains(&format!("type {kind}")));
+        assert!(
+            warning
+                .message
+                .contains(&format!("0x{:x}", object.payload_offset))
+        );
+    }
+    assert_eq!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnknownObjectType)
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn uncompressed_strokes_store_complete_arrays_in_channel_order() {
     for stylus in [false, true] {
         let mut channels = Vec::new();

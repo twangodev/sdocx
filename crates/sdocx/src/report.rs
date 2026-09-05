@@ -68,6 +68,7 @@ pub enum DiagnosticCode {
     PageIdentifierMismatch,
     /// An object identifier is newer than the currently known SDK mapping.
     UnknownObjectType,
+    UnsupportedObjectType,
     /// A text box contains optional fields or records without full semantic support.
     UnsupportedTextBoxFeature,
     /// Image data is retained but includes features not fully interpreted or rendered.
