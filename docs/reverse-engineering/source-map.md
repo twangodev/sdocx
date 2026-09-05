@@ -23,6 +23,7 @@ are more stable evidence than class-field names.
 | --- | --- |
 | `libSPenWDoc.so` | WDoc archive/page loading, `pageIdInfo.dat`, page signatures, quick-save/cache sidecars. |
 | `libSPenModel.so` | Generic object frames, object type handlers, packed stroke channels, end-tag parser and encryption appendix. |
+| `libSPenComposer.so` | Page capture sequence, base/top/masking pass selection and capture-specific object clones. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |
 
 Important native functions/symbol families include:
@@ -33,6 +34,22 @@ Important native functions/symbol families include:
 - `SPen::ObjectStroke` setters and stroke binary handlers.
 - `SPen::EndTag::{ParseImpl,GetBinarySize,GetBinary,Append}`.
 - `SPen::EncryptionData::{GetBinary,Apply}`.
+
+Replay-order assignment and capture composition were traced through these
+ARM64 entry points:
+
+- Model `LayerManagerBase::sm_GetReplaceOrderForLayer`, `0x34b44c`: returns
+  and increments the manager's shared 64-bit replay-order counter.
+- Model `ObjectManager::isMatchLayerFilter`, `0x35e5cc`: per-object render
+  layer filtering with a top-layer stroke override.
+- Composer `NoteCapturePage::drawPage`, `0x32dd44`, and `drawObject`,
+  `0x32e700`: capture sequence and base/top/masking passes.
+- Composer `NoteCapturePage::getCloneObjectList`, `0x330494`: intersection
+  selection, cloning and selected-object alpha/text-visibility reset.
+
+See [object drawing findings](object-drawing-findings.md) and
+[capture composition findings](capture-composition-findings.md) for the
+call-site evidence and remaining physical-layer and blend-mode questions.
 
 The structural stroke implementation also rechecked these arm64 locations in
 `libSPenModel.so` 4.4.45.37:

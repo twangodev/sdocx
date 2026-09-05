@@ -120,9 +120,24 @@ vtable relocation at `0x4922c8` resolves that slot to
 
 `LayerDocBase::OnAttach` copies an attached callback into the layer's function
 storage at offset 288 via `0x33f6f4`–`0x33f700`, and attached-data member 48
-into layer member 336 at `0x33f730`–`0x33f738`. The concrete callback target
-and how its state spans layers remain to be traced. A missing order therefore
-must not be replaced with a guessed timestamp or a guessed per-layer index.
+into layer member 336 at `0x33f730`–`0x33f738`.
+
+The callback is now resolved. `LayerManagerBase::OnAttach`, `0x34b218`, loads
+relocation `0x4a3df0` at `0x34b25c`. That relocation names
+`LayerManagerBase::sm_GetReplaceOrderForLayer(void*)`, `0x34b44c`; the native
+symbol uses the spelling `Replace`. The manager constructs the function at
+`0x34b260`, stores its own pointer at `0x34b268`, and copies that pointer into
+attached-data member 48 at `0x34b2d4`–`0x34b2d8` before attaching each layer
+at `0x34b2e8`.
+
+The function wrapper's slot-48 relocation, `0x493c58`, targets `0x34defc`.
+That thunk dereferences the supplied `void*` argument and calls the stored
+function. The concrete callback locks the global recursive mutex at
+`0x34b46c`, reads manager member 48 at `0x34b470`, increments it at
+`0x34b478`–`0x34b47c`, unlocks at `0x34b480`, and returns the previous value
+at `0x34b484`. Missing orders therefore consume a shared manager counter
+across attached layers. They are not derived from replay timestamps or
+independent per-layer indices.
 
 `LayerManagerBase` also has a separate next-order state at member 48.
 `LoadNextReplayOrder`, `0x34c9a0`, reads eight bytes into it when its boolean
@@ -132,10 +147,13 @@ helpers do not independently establish the field's location or use in modern
 WDoc page headers; their caller and format dispatch must be checked first.
 
 The SDK still stores strokes and other page elements in separate collections.
-A complete paint-order implementation needs the concrete native draw-list
-construction, layer composition rules, and an ordered SDK representation
-that can interleave those kinds. The confirmed comparator alone is
-insufficient to choose that ordering.
+The native page-capture path has separate base, top and masking passes,
+described in [capture composition findings](capture-composition-findings.md).
+Its object selection is a different method from this sorted all-layer
+collection. A complete paint-order implementation still needs the physical
+layer selection rules and an ordered SDK representation that can interleave
+strokes and other elements. The confirmed comparator alone is insufficient
+to choose that ordering.
 
 ## SDK behavior and validation
 

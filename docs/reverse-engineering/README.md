@@ -34,7 +34,9 @@ Notes APK, native serializers, or real compatibility fixtures.
 - [`object-flexible-findings.md`](object-flexible-findings.md) — optional common
   fields, bundle boundaries and the distinct static extraction format.
 - [`object-drawing-findings.md`](object-drawing-findings.md) — common visibility,
-  container traversal, drawing conditions and layer collection boundaries.
+  container traversal, replay-order assignment and layer collection boundaries.
+- [`capture-composition-findings.md`](capture-composition-findings.md) — base,
+  top and masking passes, object layer filters and capture clone state.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,

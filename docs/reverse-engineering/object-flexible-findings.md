@@ -161,6 +161,9 @@ let details = base.flexible_metadata()?;
 both bundles. Every optional field preserves absent versus present-empty values.
 It exposes raw IDs, dimensions and times without applying native runtime
 normalization. Layout values use `ObjectLayoutType`, including `Other(u8)`.
+`render_layer()` names IDs 0, 1 and 2 as base, top and masking while preserving
+other signed IDs and absence. This identifies the stored field, before any
+stroke-specific override described in [capture composition findings](capture-composition-findings.md).
 This explicit inspection step leaves ordinary page rendering independent of
 optional application metadata.
 

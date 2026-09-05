@@ -27,6 +27,10 @@ pub struct ObjectFlexibleMetadata {
 }
 
 impl ObjectFlexibleMetadata {
+    pub fn render_layer(&self) -> Option<ObjectRenderLayer> {
+        self.render_layer_id.map(ObjectRenderLayer::from)
+    }
+
     pub fn saved_span_snapshot(&self) -> Option<ObjectSpanSnapshot> {
         self.saved_span_data.map(|data| {
             let components = data.as_chunks::<4>().0;
@@ -87,6 +91,27 @@ impl From<u8> for ObjectLayoutType {
             1 => Self::Flow,
             2 => Self::Block,
             3 => Self::Undefined,
+            value => Self::Other(value),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum ObjectRenderLayer {
+    Base,
+    Top,
+    Masking,
+    Other(i32),
+}
+
+impl From<i32> for ObjectRenderLayer {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => Self::Base,
+            1 => Self::Top,
+            2 => Self::Masking,
             value => Self::Other(value),
         }
     }
