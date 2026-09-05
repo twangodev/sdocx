@@ -75,12 +75,67 @@ the object. This parameter is effectively an include-hidden option.
 The method does not call `LayerDocBase::IsVisible`. Its output is also sorted:
 the callback loaded at `0x34a358`–`0x34a35c` resolves through relocation
 `0x4a3de8` to `sm_SortObjectByReplayOrderASC`, `0x34a65c`. The comparator and
-its relation to final paint order need further investigation.
+its loading inputs are described below; their relation to final paint order
+still needs further investigation.
 
 Layer visibility has its own inverted property bit, documented in
 [layer findings](layer-findings.md). This collection method alone does not
 prove how layer visibility is applied to a final page export. Layer compositing,
 transparency, alpha lock and shadows remain separate rendering work.
+
+## Replay order is a distinct 64-bit value
+
+`sm_SortObjectByReplayOrderASC` calls `ObjectBase::GetReplayOrder` for both
+objects at `0x34a66c` and `0x34a678`. It compares the 64-bit results at
+`0x34a67c`, returning signed less-than at `0x34a680`. The comparator contains
+no secondary key for equal orders. This does not establish stable ordering
+for ties in the surrounding sort.
+
+`GetReplayOrder`, `0x2cc874`, follows the object's implementation and base-data
+pointers, then reads eight bytes from base-data offset 80 at `0x2cc880`.
+`SetReplayOrder`, `0x2cc7d0`, stores eight bytes there at `0x2cc820`.
+`GetReplayTimeStamp` is a different getter over the four-byte field at
+base-data offset 72. `ObjectMetadata::replay_timestamp_raw` must not be used
+as the key for this native collection sort.
+
+The alternate static base extractor's field bit 9 reads eight bytes and
+stores them at base-data offset 80 at `0x2dc4b0`–`0x2dc4c4`. The getter now
+identifies that alternate field as replay order. This does not make bit 9 a
+supported field in the modern typed base frame: its reader follows a
+different layout, as documented in [optional object findings](object-flexible-findings.md).
+
+The modern physical-object loader also has a fallback for missing orders.
+Within `LayerDocLoadHandler::Load_ObjectList_WDoc`, `0x358410`, the following
+path runs after insertion and a successful virtual slot-448 call. The base
+vtable relocation at `0x4922c8` resolves that slot to
+`ObjectBase::CheckBoundFilesValidity`.
+
+| Address | Operation |
+| --- | --- |
+| `0x3585e0`–`0x3585e8` | Read replay order; retain it if it is not `-1` |
+| `0x3585ec`–`0x3585f4` | Copy layer implementation member 336 into a local argument |
+| `0x3585f0` | Load the callback target from layer implementation member 320 |
+| `0x3585fc`–`0x358608` | Call callback slot 48 with that local argument |
+| `0x35860c`–`0x358614` | Pass its 64-bit result to `SetReplayOrder` |
+
+`LayerDocBase::OnAttach` copies an attached callback into the layer's function
+storage at offset 288 via `0x33f6f4`–`0x33f700`, and attached-data member 48
+into layer member 336 at `0x33f730`–`0x33f738`. The concrete callback target
+and how its state spans layers remain to be traced. A missing order therefore
+must not be replaced with a guessed timestamp or a guessed per-layer index.
+
+`LayerManagerBase` also has a separate next-order state at member 48.
+`LoadNextReplayOrder`, `0x34c9a0`, reads eight bytes into it when its boolean
+argument is true, or zeros it at `0x34ca2c` otherwise. `SaveNextReplayOrder`,
+`0x34ca48`, writes eight bytes and sets the caller-supplied mask bit. These
+helpers do not independently establish the field's location or use in modern
+WDoc page headers; their caller and format dispatch must be checked first.
+
+The SDK still stores strokes and other page elements in separate collections.
+A complete paint-order implementation needs the concrete native draw-list
+construction, layer composition rules, and an ordered SDK representation
+that can interleave those kinds. The confirmed comparator alone is
+insufficient to choose that ordering.
 
 ## SDK behavior and validation
 

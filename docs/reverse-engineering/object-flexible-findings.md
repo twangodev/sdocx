@@ -107,6 +107,10 @@ and derived-object overrides of the update behavior, remain rendering work.
 modern typed-frame loader. It reads additional fields at bits 9, 10 and 12:
 an eight-byte value into base offset 80, a UUID into offset 136, and a timestamp
 into offset 152. It does not follow the modern field-16/19/20/21 sequence.
+The eight-byte field is replay order: `ObjectBase::GetReplayOrder` reads that
+member at `0x2cc880`. Its signed comparison and load-time fallback are recorded
+in [object drawing findings](object-drawing-findings.md). This is distinct from
+the four-byte replay timestamp in the modern fixed area.
 
 The distinction is broader than the function's WDoc name. Its caller
 `sm_GetBaseDataImpl_WDoc` at `0x2da6b0` starts with a four-byte flexible offset,

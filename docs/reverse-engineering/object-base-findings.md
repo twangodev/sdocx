@@ -80,6 +80,9 @@ The fixed layout follows the variable property and field masks:
 members. The resize getter accepts 0–2 and returns 0 for larger values; the
 binary reader stores the byte directly. The SDK retains `resize_mode_raw`
 without applying that getter normalization. Timestamp units remain unresolved.
+The native collection comparator uses a separate signed 64-bit replay order
+at base-data offset 80, rather than this timestamp; see
+[object drawing findings](object-drawing-findings.md).
 
 Java `SpenObjectBase` declares `RESIZE_OPTION_FREE = 0`,
 `RESIZE_OPTION_KEEP_RATIO = 1`, and `RESIZE_OPTION_DISABLE = 2`.
