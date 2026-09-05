@@ -20,6 +20,11 @@ configuration or special input path needed for an exact screen-to-note
 conversion. They precede the separate
 [page-local insertion translation](stroke-insertion-findings.md).
 
+The preceding [Android event adapter](motion-event-adapter-findings.md)
+already supplies float-derived coordinates and copies pressure and pen
+axes without normalization. It gives current samples independent raw X/Y,
+but initializes historical raw X/Y from the corresponding ordinary X/Y.
+
 ## Note views use the shared child-dispatch machinery
 
 Composer `ContentsView::DispatchTouch`, `0x4182f4`, forwards its ordinary

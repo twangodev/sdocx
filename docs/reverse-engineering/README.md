@@ -59,6 +59,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   distance approximation, stored-point replay and ordinary stroke completion.
 - [`stroke-recording-findings.md`](stroke-recording-findings.md) — event-sample
   appends, repeated-coordinate taps, optional replacement and replay source reset.
+- [`motion-event-adapter-findings.md`](motion-event-adapter-findings.md) — Android
+  sample channels, pointer-major history, raw coordinates and time origins.
 - [`stroke-input-findings.md`](stroke-input-findings.md) — InkPen2 input-filter
   selection, raster recorder bindings and long-gesture splitting.
 - [`stroke-prediction-findings.md`](stroke-prediction-findings.md) — real-event

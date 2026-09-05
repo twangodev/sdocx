@@ -95,6 +95,14 @@ and end `0x22390` apply midpoint smoothing without a separate terminal stamp.
 append path. Marker2's slot-88 provider returns null at `0x20a5c`, while
 Base's stored-array MotionEvent constructor leaves source at its default 0.
 
+[Motion-event adapter findings](motion-event-adapter-findings.md) connect
+Java `SpenMotionEvent(MotionEvent)` to Base `ConvertMotionEvent`, `0xe1e90`.
+The adapter preserves float pressure and axes and promotes X/Y to doubles.
+Historical `AddBatch`, `0xc01b4`, duplicates X/Y into raw coordinates.
+Base `GetEventTime`, `0xc0634`, and `GetHistoricalEventTime`, `0xc0670`,
+subtract down time; their nanosecond counterparts do not. Drawing's
+recorder imports the millisecond getters at `0xb7e68` and `0xb7ee8`.
+
 [Pen-action input findings](stroke-input-findings.md) trace Composer
 `NoteWritingViewPenAction::handWritingBeautification`, `0x422d14`, which
 selects InkPen2 for tool types 2 and 6. The ordinary action's comparison at

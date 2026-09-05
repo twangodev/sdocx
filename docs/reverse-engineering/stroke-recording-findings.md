@@ -57,6 +57,11 @@ floats, and timestamp arguments use the low 32 bits for this integer API.
 There is no coordinate-equality check or extra extrapolated endpoint in
 these loops.
 
+The [Android adapter trace](motion-event-adapter-findings.md#millisecond-getters-subtract-down-time)
+resolves those timestamp getters: they return sample time minus the event's
+down time. The append loop uses this millisecond channel, not the separate
+nanosecond getters, and does not subtract the first recorded timestamp.
+
 ## Repeated coordinates are retained by the model
 
 Model `ObjectStroke::AddPoint`, `0x2e011c`, validates its implementation,
