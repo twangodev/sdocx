@@ -1,6 +1,9 @@
 mod support;
 
-use sdocx::{DiagnosticCode, Error, FormulaMetadata, MathAngleType, ObjectType, ParseLimits};
+use sdocx::{
+    DiagnosticCode, Error, FormulaLabelRelationKind, FormulaMetadata, MathAngleType, ObjectType,
+    ParseLimits,
+};
 use support::{archive, object, page};
 
 fn frame(kind: i16, properties: &[u8], fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
@@ -516,4 +519,30 @@ fn embedded_math_formulas_can_be_inspected_without_changing_envelope_parsing() {
     let formula = FormulaMetadata::parse_bytes(&math.formula_objects[0]).unwrap();
     assert_eq!(formula.answer.as_deref(), Some("答😀"));
     assert_eq!(formula.strokes.len(), 1);
+}
+
+#[test]
+fn formula_label_relations_expose_native_names_without_indexing_or_losing_unknown_values() {
+    for (raw, expected) in [
+        (0_u32, FormulaLabelRelationKind::Unknown),
+        (1, FormulaLabelRelationKind::Right),
+        (2, FormulaLabelRelationKind::Subscript),
+        (3, FormulaLabelRelationKind::Superscript),
+        (4, FormulaLabelRelationKind::Inside),
+        (5, FormulaLabelRelationKind::Below),
+        (6, FormulaLabelRelationKind::Above),
+        (7, FormulaLabelRelationKind::Index),
+        (8, FormulaLabelRelationKind::Other(8)),
+        (u32::MAX, FormulaLabelRelationKind::Other(u32::MAX)),
+    ] {
+        let mut data = label_graphs();
+        data[109..113].copy_from_slice(&u32::MAX.to_le_bytes());
+        data[117..121].copy_from_slice(&raw.to_le_bytes());
+        let value = FormulaMetadata::parse_bytes(&formula(1 << 14, &data)).unwrap();
+        let relation = &value.label_graphs[0].relations[0];
+        assert_eq!(relation.from_label, u32::MAX);
+        assert_eq!(relation.to_label, 1);
+        assert_eq!(relation.kind_raw, raw);
+        assert_eq!(relation.kind(), expected);
+    }
 }

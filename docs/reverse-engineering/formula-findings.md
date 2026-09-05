@@ -124,13 +124,40 @@ The three reader stores are at `0x430cf4`, `0x430d14` and `0x430d30`.
 `LabelGraph::PrintLabelGraph` at `0xb27b4` in `libSPenBase.so` confirms that the
 first two relation values index the labels: loads at `0xb2940` and indexing at
 `0xb2944` select 64-byte label records. The third value selects a relation name
-for the printed separator. The relation enum names remain unmapped, so the
-SDK exposes `kind_raw` without inventing variants. Out-of-range references
-remain inspectable values; the API never indexes with them.
+for the printed separator. `FormulaLabelRelation::kind` names the eight values
+established by the native lookup table below, while `kind_raw` retains the
+original bits. Out-of-range references remain inspectable values; the API never
+indexes with them.
 
 The two graph-tail reads at `0x430e58` and `0x430e70` widen `u32` wire values
 into native members at offsets 48 and 56. Their meanings remain unresolved and
 they are exposed as `trailing_values`.
+
+### Relation names
+
+The initializer at `0xb2f20` in `libSPenBase.so` copies 128 bytes from
+`0xecfe8` at `0xb2f38`–`0xb2f4c`, then constructs the map at `0xf7a08` with
+eight entries at `0xb2f54`–`0xb2f68`. Each entry occupies 16 bytes: a 32-bit
+enum key, alignment padding and a relocated pointer to a string. The print
+routine looks up the relation's member at offset 16 in that same map, whose
+tree root is at `0xf7a10`.
+
+| Raw value | Native name | Entry address | String address |
+| ---: | --- | --- | --- |
+| 0 | Unknown | `0xecfe8` | `0x3252e` |
+| 1 | Right | `0xecff8` | `0x31da0` |
+| 2 | Subscript | `0xed008` | `0x30f9f` |
+| 3 | Superscript | `0xed018` | `0x31615` |
+| 4 | Inside | `0xed028` | `0x2f21a` |
+| 5 | Below | `0xed038` | `0x2d571` |
+| 6 | Above | `0xed048` | `0x2c97e` |
+| 7 | Index | `0xed058` | `0x2dd52` |
+
+The pointers are `R_AARCH64_RELATIVE` relocations, so reading only their
+unrelocated file bytes would miss the names. `FormulaLabelRelationKind` keeps
+native zero (`Unknown`) distinct from unmapped numbers (`Other(u32)`). These
+names establish the stored categories; layout rules and the exact interpretation
+of `Index` still need tracing.
 
 ## SDK inspection and validation
 
@@ -153,13 +180,15 @@ remain in flexible trailing bytes. Ordinary page decoding still reports
 `UnsupportedObjectType` for formulas: this API exposes stored structure and
 does not add expression layout or rendering.
 
-Ten synthetic integration tests cover all fields and their native order,
+Eleven synthetic integration tests cover all fields and their native order,
 truncation of every field prefix beside a decoy frame, nested strokes and
 extensions, labels and relations, cumulative budgets, invalid strings and
 rectangles, empty/surrogate-pair/65,535-unit answers, unknown masks/enums,
-stored-object bounds and explicit inspection of an embedded math formula.
+stored-object bounds and explicit inspection of an embedded math formula. The
+relation test covers every mapped name, future values and an out-of-range
+label reference without dereferencing it.
 
-Remaining work includes expression/relation enum semantics, label index and
+Remaining work includes expression enum semantics, label index and
 graph-tail meanings, image resolution, and native layout/evaluation. Samsung
 SDOCX/PDF pairs are still needed to verify real writer variants and visual
 output.

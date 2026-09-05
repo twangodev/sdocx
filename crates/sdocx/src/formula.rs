@@ -72,6 +72,43 @@ pub struct FormulaLabelRelation {
     pub kind_raw: u32,
 }
 
+impl FormulaLabelRelation {
+    pub fn kind(&self) -> FormulaLabelRelationKind {
+        self.kind_raw.into()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum FormulaLabelRelationKind {
+    Unknown,
+    Right,
+    Subscript,
+    Superscript,
+    Inside,
+    Below,
+    Above,
+    Index,
+    Other(u32),
+}
+
+impl From<u32> for FormulaLabelRelationKind {
+    fn from(value: u32) -> Self {
+        match value {
+            0 => Self::Unknown,
+            1 => Self::Right,
+            2 => Self::Subscript,
+            3 => Self::Superscript,
+            4 => Self::Inside,
+            5 => Self::Below,
+            6 => Self::Above,
+            7 => Self::Index,
+            value => Self::Other(value),
+        }
+    }
+}
+
 impl FormulaMetadata {
     pub fn parse_bytes(bytes: &[u8]) -> Result<Self> {
         Self::parse_bytes_with_limits(bytes, &ParseLimits::default())

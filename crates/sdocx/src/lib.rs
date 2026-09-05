@@ -44,7 +44,8 @@ pub use end_tag::{
 };
 pub use error::{Error, Result};
 pub use formula::{
-    FormulaLabel, FormulaLabelGraph, FormulaLabelRelation, FormulaMetadata, FormulaStroke,
+    FormulaLabel, FormulaLabelGraph, FormulaLabelRelation, FormulaLabelRelationKind,
+    FormulaMetadata, FormulaStroke,
 };
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;

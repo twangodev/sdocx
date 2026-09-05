@@ -81,8 +81,9 @@ children are still traversed. Unknown future IDs retain their distinct warning.
 Math objects have explicit envelope inspection for sized formula binaries,
 margins, angle mode and connected plot references; see [math findings](math-findings.md).
 Formula metadata exposes LaTeX inputs/results/substitutions, answer text,
-image references, embedded strokes and label graphs. Expression/relation enum
-semantics and math rendering remain open; see [formula findings](formula-findings.md).
+image references, embedded strokes and label graphs with named relation kinds.
+Expression-type semantics and math rendering remain open; see
+[formula findings](formula-findings.md).
 Plot metadata and graph expressions/styles also have explicit bounded inspection;
 evaluation and graph rendering remain open. See [plot findings](plot-findings.md).
 
