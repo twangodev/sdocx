@@ -166,3 +166,9 @@ measure the relationship between frame callbacks and physical display
 scanout, active device refresh settings, or neural model output. Those
 remain separate from this value trace. No SDK code changed and no new
 SDOCX fixture or device execution was used.
+
+Composer's separate [unbuffered drawing chronometer](unbuffered-draw-findings.md)
+also installs provider callbacks and a receiver interface. Its initial
+registration invocation remains unresolved; the neural predictor's
+action-based subscription trace above does not establish that other
+receiver's lifecycle.

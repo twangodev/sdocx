@@ -191,7 +191,8 @@ Disposable reconstruction covered three rates, the 3 ms boundary, last-history
 selection, zero output from helper guards, values above one, differing helper
 and presenter rates, and coefficient retention across backend changes.
 
-These checks do not execute native drawing or prediction. The separate
-unbuffered draw chronometer's full lifecycle, runtime configuration and
-worker scheduling remain additional work. No SDK code or corpus fixture
-changed.
+These checks do not execute native drawing or prediction. The
+[drawing-cadence trace](unbuffered-draw-findings.md) recovers the separate
+chronometer's checks and reset sites while preserving the unresolved initial
+registration edge. Runtime configuration and worker scheduling remain
+additional work. No SDK code or corpus fixture changed.

@@ -107,6 +107,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   branch conditions, history-driven completion and separate Boolean returns.
 - [`predictor-position-findings.md`](predictor-position-findings.md) — last-history
   presentation delays, coefficient arithmetic and backend-switch ordering.
+- [`unbuffered-draw-findings.md`](unbuffered-draw-findings.md) — separate drawing
+  cadence, receiver state, due checks and post-drawing reset points.
 - [`neural-motion-findings.md`](neural-motion-findings.md) — minimum movement,
   real/output speed statistics and per-candidate distance limits.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
