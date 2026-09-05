@@ -49,6 +49,9 @@ ARM64 entry points:
   selection, cloning and selected-object alpha/text-visibility reset.
 - Graphics `SPBitmapDrawable::DrawBitmapRT`, `0x95f24`, and advanced shader
   source `0x56fce`: paint modes 16 and 17 select darken and lighten blending.
+- Composer `NotePDFExporterVectorList::exportObjects`, `0x361d7c`, and WDoc
+  vtable relocation `0x103ae8`: vector export obtains the current-layer
+  object list and batches strokes before individual non-stroke exports.
 
 See [object drawing findings](object-drawing-findings.md) and
 [capture composition findings](capture-composition-findings.md) for the

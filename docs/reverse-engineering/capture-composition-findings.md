@@ -184,3 +184,65 @@ properties before this evidence can support a complete composition change.
 New captures should combine body text, ordinary strokes, highlighters, masking and
 overlapping objects across physical layers, with light, dark and PDF
 backgrounds.
+
+## Vector PDF export uses a separate collection path
+
+`NotePDFExporterFactory::CreateNotePDFExporter`, `0x360610`, chooses the
+raster exporter when the low 32 bits of its option are 0, constructing it
+at `0x360674`. Option 1 constructs `NotePDFExporterVector` at `0x360654`.
+These are distinct implementations; the capture pass sequence above cannot
+be assumed to describe every PDF export.
+
+The vector list-page implementation calls `WNote::GetPageList` at `0x3618b0`,
+gets a `WPage` at `0x3618f0`, and saves it in exporter member 176 at
+`0x361998`. `NotePDFExporterVectorList::exportPage`, `0x361aac`, calls
+`exportBackground`, `exportBodyText` and `exportObjects`, in that order,
+at `0x361aec`, `0x361af8` and `0x361b04`.
+
+`exportObjects`, `0x361d7c`, calls the page's virtual slot 48 at `0x361dc4`.
+This slot is resolved by the WDoc `WPage` vtable relocation at `0x103ae8`
+to `WPage::GetObjectList()`, `0xc4450`. That method loads objects and calls
+Model `PageImplBase::GetObjectList`, `0x3450e4`. The implementation follows
+the same manager/handler/current-layer members described above and calls
+`LayerDocBase::GetObjectList`, `0x33e94c`. The layer returns its object
+manager's existing list at `0x33e954`–`0x33e960`.
+
+This path does not call the replay-sorted all-layer collector or the
+intersection collector used by `NoteCapturePage`. It obtains the current
+physical layer's whole object list through a separate API. Higher-level
+note preparation and any mutation of list order remain separate questions.
+
+Within the vector export loop:
+
+| Address | Operation |
+| --- | --- |
+| `0x361e3c`–`0x361e50` | Read the next object and test whether its type is 1 |
+| `0x361e5c` | Add a stroke to a temporary object list |
+| `0x361e64`–`0x361ec8` | Accumulate the stroke bounds and advance a stroke counter |
+| `0x361ed4`–`0x361f04` | If the temporary list is nonempty, create its list PDF exporter |
+| `0x361fcc`, `0x361fe4` | Invoke that exporter's virtual slot 16, then clear the temporary list |
+| `0x36201c`–`0x36204c` | For a non-stroke object, create its individual PDF exporter |
+| `0x362104`, `0x362190` | Invoke the individual exporter's slot 16, then advance the source list |
+
+A non-stroke object therefore triggers export of preceding accumulated
+strokes before its individual export. This establishes an export sequence
+that can interleave strokes with other content. The list-exporter factory
+and its handling of top-layer pens,
+opacity and rasterization still need to be traced.
+
+The tail condition also needs separate treatment. At `0x361ebc`–`0x361ecc`,
+the loop increments its stroke counter and compares it against the original
+total object count. The ordinary iterator-end path reaches list destruction
+at `0x3621bc`–`0x3621c0`. These instructions alone do not establish correct
+flushing for every mixed list ending in strokes. Do not generalize the
+observed non-stroke-triggered flush into an unconditional final flush without
+checking list preparation or runtime behavior.
+
+The raster list exporter reaches capture directly: `capturePage`,
+`0x3594a8`, passes its page into `NoteCapturePage::SetPageContents` at
+`0x359554`, then calls `saveThumbnailByPage` at `0x3595c0`. That helper
+calls `NoteCapturePage::CapturePage` at `0x356e5c` with the supplied layer
+mode. `SetPageContents`, `0x330758`, assigns the page and body-text inputs
+and updates document width/density; it does not itself merge physical layers.
+This narrows where any flattening or current-layer changes must occur, but
+does not establish how every raster or vector export variant is prepared.
