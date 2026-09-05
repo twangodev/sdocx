@@ -81,6 +81,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   orientation, hardware configuration and screen-position prediction delays.
 - [`predictor-callback-findings.md`](predictor-callback-findings.md) — bundled
   predictor selection, callback registration, thread dispatch and event lifetime.
+- [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
+  clock, VSync and refresh-period sources in external prediction callbacks.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

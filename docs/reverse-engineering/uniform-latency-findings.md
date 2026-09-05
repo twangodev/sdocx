@@ -272,8 +272,10 @@ both timestamp channels and retention of endpoint pressure.
 
 The [presentation-time trace](presentation-time-findings.md) recovers the
 helper's orientation/geometry equations and configuration field identities.
-The external callback's timing producer, runtime configuration values and
-enablement still need their own evidence.
+The [external timing producer trace](predictor-timing-findings.md) identifies
+the real-event reference, clock sample, VSync origin and frame period.
+Runtime configuration values, enablement and VSync delivery still need
+their own evidence.
 These findings establish the local numerical behavior without new SDOCX
 files, but matching device exports remain necessary to measure rendering
 fidelity. No SDK code changed.

@@ -154,7 +154,8 @@ functions, RTTI, vtable targets, dynamic-loader relocations and all
 documented instruction addresses were checked. The 40-byte payload
 copies and the two event-deletion paths were followed separately.
 
-The timing-field producer and neural task contents need their own trace.
-Runtime predictor selection, handler/looper delivery and device behavior
-remain unmeasured. No SDK code changed, and no new SDOCX fixture or
-device execution was used.
+The [timing producer trace](predictor-timing-findings.md) identifies the
+entity fields and their separation from the neural task's later time.
+Runtime predictor selection, handler/looper delivery, neural model
+behavior and device behavior remain unmeasured. No SDK code changed,
+and no new SDOCX fixture or device execution was used.

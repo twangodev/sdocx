@@ -178,6 +178,13 @@ Fresh `SpenLatencyConfiguration` decompilation confirms the Java sources.
 consumer `0x4da4bc`, preserving the entity across synchronous and queued
 delivery and releasing generated events after consumption.
 
+[Predictor timing findings](predictor-timing-findings.md) trace the entity's
+reference and clock sample to `PredictorBase::Predict`, `0x2e7e4`.
+`NNPredictor::DoPredict`, `0x25abc`, adds the last `OnVSync` argument
+and a double-derived refresh period at `0x25b14`. `PredictionTask`
+stores its separate aligned task time at offset 88 while preserving
+the entity at offsets 48–87 through completion.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

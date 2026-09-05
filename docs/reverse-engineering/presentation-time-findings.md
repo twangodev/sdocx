@@ -179,8 +179,9 @@ origins, unclamped positions, unchanged outputs on guard returns and
 float-derived frame durations.
 
 The helper's numerical mapping and configuration field identities are
-established statically. The external prediction callback's timing producer,
-runtime display configuration and device timing behavior remain separate
-work. No SDK code changed and no device capture or new SDOCX fixture was
-used. This live display-timing model should not be reapplied to stored
-stroke timestamps during export.
+established statically. The [external timing producer](predictor-timing-findings.md)
+uses a separate rate source and double-derived period. Runtime display
+configuration and device timing behavior remain separate work. No SDK
+code changed and no device capture or new SDOCX fixture was used. This
+live display-timing model should not be reapplied to stored stroke
+timestamps during export.
