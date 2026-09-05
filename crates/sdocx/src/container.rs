@@ -7,16 +7,14 @@ use crate::end_tag::{EndTagSource, StoredEndTag, parse_end_tag_bytes_with_limits
 use crate::error::{Error, Result};
 use crate::integrity::IntegrityVerifier;
 use crate::media::{MediaResolver, media_archive_id, parse_media_manifest_bytes_with_limits};
-use crate::note::parse_note_bytes_with_limits;
+use crate::note::{StoredNoteHeader, parse_note_bytes_with_limits};
 use crate::page::parse_page;
 use crate::report::{DiagnosticCode, ParseReport};
 use crate::storage::{
     ParsedDocument, StoredArchivePage, StoredObject, parse_page_manifest_bytes_with_limits,
     parse_stored_page_bytes_with_limits,
 };
-use crate::types::{
-    Color, Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page,
-};
+use crate::types::{Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page};
 use crate::{ParseLimits, ParseOptions};
 
 const PROTECTED_DOCUMENT_MARKER: &[u8] = b"Document for S-Pen SDK";
@@ -83,8 +81,8 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
 
     // Parse note.note (optional)
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
-        parse_note_note(&buf, &mut metadata);
         let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
+        apply_note_metadata(&parsed_note.header, &mut metadata);
         if let Some(verifier) = &mut integrity {
             verifier.verify_note(&buf, &parsed_note);
         }
@@ -199,6 +197,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         .unzip();
     if let Some(page) = pages.first() {
         metadata.page_dimensions = Some((page.width, page.height));
+        metadata.background_color = page.background_color;
     }
     metadata.note_text = note_text;
     let integrity = integrity.map(|verifier| verifier.finish(page_manifest.as_ref(), &mut report));
@@ -479,47 +478,16 @@ fn apply_end_tag_metadata(tag: &StoredEndTag, metadata: &mut DocumentMetadata) {
     );
 }
 
-/// Extract background color and page dimensions from `note.note`.
-fn parse_note_note(data: &[u8], metadata: &mut DocumentMetadata) {
+fn apply_note_metadata(header: &StoredNoteHeader, metadata: &mut DocumentMetadata) {
     if metadata.format_version.is_none() {
-        metadata.format_version = data
-            .get(0x0E..0x10)
-            .and_then(|bytes| bytes.try_into().ok())
-            .map(u16::from_le_bytes)
+        metadata.format_version = u16::try_from(header.format_version)
+            .ok()
             .filter(|version| *version != 0)
             .map(FormatVersion);
     }
-    if data.len() >= 0x08 {
-        let flags = u32::from_le_bytes(data[0x04..0x08].try_into().unwrap());
-        metadata.dark_mode_compatibility = Some(flags & 0x0800 != 0);
-    }
-
-    // Page dimensions at 0x28, 0x2C
-    if data.len() >= 0x30 {
-        let w = u32::from_le_bytes(data[0x28..0x2C].try_into().unwrap());
-        let h = u32::from_le_bytes(data[0x2C..0x30].try_into().unwrap());
-        if w > 0 && h > 0 {
-            metadata.page_dimensions = Some((w, h));
-        }
-    }
-
-    // Background color: pattern [18 00] [00 00 01 00 00 00] [R] [G] [B] [FF]
-    if data.len() >= 12 {
-        for i in 0..data.len() - 12 {
-            if data[i] == 0x18
-                && data[i + 1] == 0x00
-                && data[i + 2..i + 8] == [0x00, 0x00, 0x01, 0x00, 0x00, 0x00]
-                && data[i + 11] == 0xFF
-            {
-                metadata.background_color = Some(Color {
-                    r: data[i + 8],
-                    g: data[i + 9],
-                    b: data[i + 10],
-                });
-                break;
-            }
-        }
-    }
+    metadata.dark_mode_compatibility = Some(header.inverts_background_color());
+    metadata.created_ms.get_or_insert(header.created_time_raw);
+    metadata.modified_ms.get_or_insert(header.modified_time_raw);
 }
 
 fn parse_media_assets<R: Read + Seek>(
@@ -580,8 +548,8 @@ fn parse_media_assets<R: Read + Seek>(
 mod tests {
     use std::io::Cursor;
 
-    use super::{media_archive_id, order_pages, parse_from_reader, parse_note_note};
-    use crate::types::{BoundingBox, DocumentMetadata, FormatVersion, Page};
+    use super::{media_archive_id, order_pages, parse_from_reader};
+    use crate::types::{BoundingBox, Page};
     use crate::{Error, ParseOptions};
 
     fn page(uuid: &str) -> Page {
@@ -595,35 +563,6 @@ mod tests {
             strokes: Vec::new(),
             elements: Vec::new(),
         }
-    }
-
-    #[test]
-    fn parses_dark_mode_compatibility_flag() {
-        let mut metadata = DocumentMetadata::default();
-        let mut data = vec![0; 0x30];
-        data[0x04..0x08].copy_from_slice(&0x0804_u32.to_le_bytes());
-
-        parse_note_note(&data, &mut metadata);
-
-        assert_eq!(metadata.dark_mode_compatibility, Some(true));
-
-        data[0x04..0x08].copy_from_slice(&0x0004_u32.to_le_bytes());
-        parse_note_note(&data, &mut metadata);
-
-        assert_eq!(metadata.dark_mode_compatibility, Some(false));
-    }
-
-    #[test]
-    fn parses_format_version_with_note_fallback() {
-        let mut metadata = DocumentMetadata::default();
-        let mut note = vec![0; 0x10];
-        note[0x0E..0x10].copy_from_slice(&4000_u16.to_le_bytes());
-        parse_note_note(&note, &mut metadata);
-        assert_eq!(metadata.format_version, Some(FormatVersion(4000)));
-
-        metadata.format_version = Some(FormatVersion::CURRENT);
-        parse_note_note(&note, &mut metadata);
-        assert_eq!(metadata.format_version, Some(FormatVersion::CURRENT));
     }
 
     #[test]

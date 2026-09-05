@@ -195,6 +195,8 @@ EOF-32:
 
 The existing Rust name `integrity_offset` is misleading: offset 0 is the start
 of the document-level flexible field area, not the final hash offset.
+The SDK exposes its meaning through `flexible_data_offset()` and now retains
+both complete masks; see [note-header findings](note-header-findings.md).
 
 ### Document flexible-field mask
 

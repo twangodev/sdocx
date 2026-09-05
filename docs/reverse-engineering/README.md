@@ -31,6 +31,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   and shadow fields, bounded decoding and the Java transparency discrepancy.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
+- [`note-header-findings.md`](note-header-findings.md) — variable note masks,
+  bounded fixed data and structured document metadata.
 - [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
   compatibility rules for the Rust parser.
 

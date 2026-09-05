@@ -41,6 +41,8 @@ unsupported base frames and invalid or missing hash trailers produce
 `IntegrityUnavailable`. These diagnostics are nonfatal; normal decoding errors
 and configured resource-limit violations remain errors. Callers decide whether
 the reported coverage and mismatches permit their intended use.
+Structural note offsets outside the record now fail before integrity checking;
+the [note-header decoder](note-header-findings.md) enforces their boundary.
 
 The CLI exposes the same checks through `--verify-integrity`, printing all five
 count groups and diagnostics to stderr. Hash findings do not stop conversion or

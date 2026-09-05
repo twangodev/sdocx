@@ -365,14 +365,7 @@ fn note_flexible_fields_precede_the_hash_and_missing_trailers_are_unavailable() 
     assert_eq!(report.manifest.unavailable, 1);
     let mut invalid = note.clone();
     invalid[..4].copy_from_slice(&u32::MAX.to_le_bytes());
-    assert_eq!(
-        verify(&invalid, &page(), &manifest)
-            .integrity
-            .unwrap()
-            .note
-            .unavailable,
-        1
-    );
+    assert!(sdocx::parse_note_bytes(&invalid).is_err());
 }
 
 #[test]

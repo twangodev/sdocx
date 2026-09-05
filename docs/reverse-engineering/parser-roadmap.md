@@ -63,6 +63,10 @@ See [layer findings](layer-findings.md) for the Java transparency discrepancy an
 the remaining rendering work. Layer identity supplies the inputs used by logical
 hash verification.
 
+Note headers now use their declared mask lengths and flexible-data boundary.
+Container metadata uses the decoded header and page background rather than
+fixed offsets or color-pattern searches. See [note-header findings](note-header-findings.md).
+
 1. Correct page and note header names: flexible offsets and variable-length
    property/field masks.
 2. Make `StoredPage` traversal authoritative for layers and recursive objects.

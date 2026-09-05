@@ -1,6 +1,6 @@
 use crate::binary::Reader;
 use crate::error::{Error, Result};
-use crate::frame::Frame;
+use crate::frame::{Frame, Mask};
 use crate::types::{
     BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType, RichTextBox,
     RichTextCodeBlock, RichTextObjectContent, RichTextObjectSpan, RichTextParagraph,
@@ -14,6 +14,7 @@ use crate::{ObjectMetadata, ParseLimits};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StoredNote {
     pub fixed_data_end: usize,
+    pub fixed_trailing_data: Vec<u8>,
     /// Fixed document header.
     pub header: StoredNoteHeader,
     /// Rich-text title object.
@@ -26,16 +27,15 @@ pub struct StoredNote {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StoredNoteHeader {
-    /// Absolute offset of the note integrity block.
     pub integrity_offset: u32,
-    /// First raw header marker byte.
     pub header_constant_1: u8,
     /// Raw header flags.
     pub header_flags: u32,
-    /// Second raw header marker byte.
     pub header_constant_2: u8,
     /// Bit mask for optional note properties.
     pub property_flags: u32,
+    pub property_mask: Vec<u8>,
+    pub field_mask: Vec<u8>,
     /// Samsung Notes binary format version.
     pub format_version: u32,
     /// Note identifier.
@@ -58,6 +58,20 @@ pub struct StoredNoteHeader {
     pub minimum_format_version: u32,
 }
 
+impl StoredNoteHeader {
+    pub fn flexible_data_offset(&self) -> u32 {
+        self.integrity_offset
+    }
+
+    pub fn inverts_background_color(&self) -> bool {
+        self.header_flags & 8 != 0
+    }
+
+    pub fn tape_visible(&self) -> bool {
+        self.header_flags & 16 == 0
+    }
+}
+
 /// Parse the structured title and body from an uncompressed `note.note` entry.
 pub fn parse_note_bytes(data: &[u8]) -> Result<StoredNote> {
     parse_note_bytes_with_limits(data, &ParseLimits::default())
@@ -65,14 +79,26 @@ pub fn parse_note_bytes(data: &[u8]) -> Result<StoredNote> {
 
 /// Parse an uncompressed `note.note` entry with explicit resource limits.
 pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result<StoredNote> {
+    if data.len() as u64 > limits.max_entry_size {
+        return Err(Error::LimitExceeded {
+            resource: "note size",
+            limit: limits.max_entry_size,
+            actual: data.len() as u64,
+        });
+    }
     let mut reader = Reader::new(data, "note header");
-    let integrity_offset = reader.read_u32("integrity offset")?;
-    let header_constant_1 = reader.read_u8("header marker 1")?;
-    let header_flags = reader.read_u32("header flags")?;
-    let header_constant_2 = reader.read_u8("header marker 2")?;
-    let property_flags = reader.read_u32("property flags")?;
+    let flexible_data_offset = reader.read_u32("flexible-data offset")?;
+    let fixed_end = flexible_data_offset as usize;
+    if fixed_end < reader.position() || fixed_end > data.len() {
+        return Err(Error::Format(
+            "note flexible-data offset is outside the record".into(),
+        ));
+    }
+    let mut reader = Reader::at(&data[..fixed_end], reader.position(), "note fixed data")?;
+    let properties = Mask::read(&mut reader)?;
+    let fields = Mask::read(&mut reader)?;
     let format_version = reader.read_u32("format version")?;
-    let note_id = reader.read_utf16_u16("note ID")?;
+    let note_id = reader.read_utf16_u16_with_limit("note ID", limits.max_text_characters)?;
     let file_revision = reader.read_u32("file revision")?;
     let created_time_raw = reader.read_i64("creation timestamp")?;
     let modified_time_raw = reader.read_i64("modification timestamp")?;
@@ -101,12 +127,17 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
 
     Ok(StoredNote {
         fixed_data_end: reader.position(),
+        fixed_trailing_data: reader
+            .read_bytes(reader.remaining(), "fixed trailing data")?
+            .to_vec(),
         header: StoredNoteHeader {
-            integrity_offset,
-            header_constant_1,
-            header_flags,
-            header_constant_2,
-            property_flags,
+            integrity_offset: flexible_data_offset,
+            header_constant_1: properties.byte_count(),
+            header_flags: properties.low_u32(),
+            header_constant_2: fields.byte_count(),
+            property_flags: fields.low_u32(),
+            property_mask: properties.bytes().to_vec(),
+            field_mask: fields.bytes().to_vec(),
             format_version,
             note_id,
             file_revision,

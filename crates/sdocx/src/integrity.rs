@@ -47,7 +47,7 @@ impl IntegrityVerifier {
             self.unavailable(Scope::Note, "note.note", "note hash trailer is absent");
             return;
         };
-        let flexible_offset = note.header.integrity_offset as usize;
+        let flexible_offset = note.header.flexible_data_offset() as usize;
         if payload.len() < note.fixed_data_end
             || flexible_offset < note.fixed_data_end
             || flexible_offset > payload.len()
