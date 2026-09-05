@@ -11,7 +11,7 @@ Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`, writes outer image objects as
 | Type 6 | Shared shape-base component. |
 | Type 7 fixed data | Shape type, four `f64` local bounds, `f32` rotation, sized path, one-byte control-point count, then 16 bytes per control point. |
 | Type 7 flexible bit 0 | Sized `TextCommon`, when present. |
-| Type 7 flexible bit 1 | One-byte text control. |
+| Type 7 flexible bit 1 | One-byte text-area mode: margin 0, free 1, path 2. |
 | Type 7 flexible bits 2 / 4 | Four-byte signed string IDs for pen name / advanced pen settings. |
 | Type 7 flexible bit 5 | `u32` effect byte size, `u8` effect type, then the sized effect payload. |
 | Fill effect type 2 | `FillImageEffect`; the normal WDoc payload is 62 bytes. |

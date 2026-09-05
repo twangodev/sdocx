@@ -2,7 +2,7 @@ mod support;
 
 use sdocx::{
     DiagnosticCode, Error, NativeLine, NativeShape, PageElement, ParseLimits, ParseOptions,
-    ShapePaint,
+    ShapePaint, TextAreaType,
 };
 use support::{archive, object, page};
 
@@ -385,7 +385,7 @@ fn text_common(text: &str) -> Vec<u8> {
 fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
     let common = text_common("A日本語😀");
     let mut fields = common.clone();
-    fields.push(1); // text control
+    fields.push(1);
     fields.extend((-9_i32).to_le_bytes()); // pen name ID is before fill
     fields.extend(123456_i32.to_le_bytes()); // advanced pen settings ID
     fields.extend(shape_fields());
@@ -395,6 +395,8 @@ fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
     let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
     let shape = as_shape(&parsed.document.pages[0].elements[0]);
     let text = shape.text.as_ref().unwrap();
+    assert_eq!(shape.text_area_type, Some(TextAreaType::Free));
+    assert_eq!(text.text_area_type, shape.text_area_type);
     assert_eq!(text.text, "A日本語😀");
     assert_eq!(text.spans[0].end_utf16, 6);
     assert_eq!(text.bbox.x_min, -10.0);
@@ -441,6 +443,31 @@ fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
             .svg
             .contains("A日本語😀")
     );
+}
+
+#[test]
+fn text_area_modes_without_text_keep_shape_fill_aligned() {
+    for raw in 0..=u8::MAX {
+        let mut fields = vec![raw];
+        fields.extend(shape_fields());
+        let mut payload = base(0.0);
+        payload.extend(outline());
+        payload.extend(frame(7, 0x22, &shape_fixed(4, 30.0), &fields));
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        let expected = match raw {
+            0 => TextAreaType::Margin,
+            1 => TextAreaType::Free,
+            2 => TextAreaType::Path,
+            raw => TextAreaType::Other(raw),
+        };
+        assert_eq!(shape.text_area_type, Some(expected));
+        assert_eq!(shape.text_area_type.unwrap().raw(), raw);
+        assert!(shape.text.is_none());
+        assert!(matches!(shape.fill, ShapePaint::Solid(0x40ff0000)));
+    }
+    let parsed = sdocx::parse_bytes(&single(7, &shape(1))).unwrap();
+    assert_eq!(as_shape(&parsed.pages[0].elements[0]).text_area_type, None);
 }
 
 #[test]

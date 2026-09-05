@@ -51,7 +51,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         unsupported.push("image text content");
     }
     if shape.fields.contains(1) {
-        fields.read_u8("text control")?;
+        fields.read_u8("text area type")?;
     }
     if shape.fields.contains(2) {
         fields.read_i32("shape pen name ID")?;

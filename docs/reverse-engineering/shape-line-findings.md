@@ -33,7 +33,7 @@ Type 7 fixed data begins with a `u32` shape type, four `f64` local coordinates,
 an `f32` rotation, a sized path and a one-byte control-point count with
 16 bytes per point. Outer shape objects then append another four `f64`
 rectangle coordinates; images and text boxes omit this rectangle. Flexible
-fields include sized `TextCommon` at bit 0, one text-control byte at bit 1,
+fields include sized `TextCommon` at bit 0, one text-area-mode byte at bit 1,
 pen-name ID at bit 2, advanced-pen-settings ID at bit 4 and a sized fill at bit 5. The fill
 size excludes both the size prefix and the following one-byte effect kind.
 Color fills use effect kind 1; image fills use kind 2.

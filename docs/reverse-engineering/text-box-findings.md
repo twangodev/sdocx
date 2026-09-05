@@ -10,8 +10,8 @@ Confirmed from Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`:
   then applies the text-box remainder.
 - Frame 7 field bit 0 contains a `u32` byte length followed by `TextCommon`.
   `ObjectShapeText::ApplyBinary_TextData` advances by that declared length.
-  Its optional field bit 1 consumes a further byte; its meaning remains
-  unresolved here.
+  Its optional field bit 1 consumes a further byte containing the text-area
+  mode, detailed below.
 - `ComponentImage::TextboxGetOwnBinary` writes final frame type 2 with a
   one-byte property mask and a two-byte field mask. Its minimum header is 15
   bytes, with no fixed data. Flexible field bits 1, 2 and 3 store a four-byte
@@ -24,6 +24,56 @@ Confirmed from Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`:
 See [`source-map.md`](source-map.md) for the disassembly addresses. These are
 serializer findings; the available real-document corpus does not yet contain
 a Samsung-exported standalone-text-box case.
+
+## Text-area mode and separate visibility state
+
+Frame 7 flexible bit 1 stores the text-area mode after the sized `TextCommon`
+at bit 0. It can also appear without bit 0. Modern
+`ObjectShapeBinaryHandler::GetOwnBinary` reads `ObjectShapeText` member 16 at
+`0x3a8fc8`, omits zero at `0x3a8fcc`, and writes one byte at `0x3a8fd0`. The
+field mask is set to 2 without text or 3 with text at `0x3a8fb4`–`0x3a8fdc`.
+
+`ObjectShapeText::ApplyBinary_TextData` checks bit 1 at `0x3b2230`, validates
+one available byte, and consumes it at `0x3b2244`–`0x3b2250`. Values below 3
+are stored in member 16 at `0x3b2344`; absent or larger values set that member
+to zero at `0x3b225c`. `ObjectShapeText::GetTextAreaType`, `0x3b30f8`, and
+`ComponentText::GetTextAreaType`, `0x3a0bc8`, read the same member. The JNI
+bridge `ObjectShape_getTextAreaType` reads it at `0x3bda24`–`0x3bda28`.
+
+Decompiled `SpenObjectShape.java:64-66` names the values:
+
+| Stored byte | Native name | SDK variant |
+| --- | --- | --- |
+| 0 | `TEXT_AREA_TYPE_MARGIN` | `TextAreaType::Margin` |
+| 1 | `TEXT_AREA_TYPE_FREE` | `TextAreaType::Free` |
+| 2 | `TEXT_AREA_TYPE_PATH` | `TextAreaType::Path` |
+| 3–255 | Native reader normalizes to zero | `TextAreaType::Other(byte)` |
+
+The SDK exposes `text_area_type: Option<TextAreaType>` on `RichTextBox` and
+`NativeShape`, including a shape with no text payload. Embedded shape text
+receives the same mode. `None` preserves absence, and `Some(Margin)` preserves
+an explicit zero. `TextAreaType::raw` retains the byte, including unknown
+values. Text slicing preserves the mode. Parsing consumes the byte within the
+frame so later pen and fill fields stay aligned. Free, path and unknown modes
+continue to report incomplete text-area layout support; naming the mode does
+not implement its native wrapping or geometry.
+
+Text visibility is a different state. `ComponentText::IsTextVisible` at
+`0x3a0e1c` reads `ObjectShapeText` byte 20. `SetTextVisibility` at `0x3b1b0c`
+updates that byte at `0x3b1b60` and forwards the value to
+`TextCommon::SetTextVisibility`, whose store at `0x3e5330` updates its own
+implementation byte 68. The `ObjectShapeText` constructor initializes byte 20
+to true at `0x3af0b8` and the text-area member to zero at `0x3af0c4`.
+`GetShapeBinary_PropertyFlag` at `0x3a7f84` reads byte 21 for property bit 2;
+it does not serialize byte 20 through that flag. A text-area byte or the
+editable flag must not be used as a visibility substitute. The drawing check
+is documented in [object drawing findings](object-drawing-findings.md).
+
+Synthetic tests exercise every byte value with and without text, absent versus
+explicit zero, text slicing, the complete visible object path, and following
+shape fills. A truncated field cannot borrow its byte from the next frame.
+The workspace suite, Clippy with warnings denied, Rust 1.92, WASM checking and
+the existing locked formatting corpus pass with this field decoded.
 
 ## Implemented decoding
 

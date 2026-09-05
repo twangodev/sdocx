@@ -173,6 +173,7 @@ fn document_export_uses_visible_layout_and_color_options() {
         pages: vec![page.clone(), page],
         metadata: sdocx::DocumentMetadata {
             note_text: Some(sdocx::RichTextBox {
+                text_area_type: None,
                 bbox: Default::default(),
                 rotation_degrees: None,
                 text: "visible text".into(),

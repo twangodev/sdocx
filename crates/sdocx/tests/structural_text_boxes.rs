@@ -2,6 +2,7 @@ mod support;
 
 use sdocx::{
     DiagnosticCode, Error, PageElement, ParseLimits, ParseOptions, RichTextBox, RichTextSpanType,
+    TextAreaType,
 };
 use support::{archive, object, page};
 
@@ -105,6 +106,63 @@ fn simple(text: &str) -> Vec<u8> {
         0.0,
         &frame(2, &[], &[], &[]),
     )
+}
+
+#[test]
+fn text_area_modes_preserve_unknown_values_and_do_not_control_visibility() {
+    for with_text in [false, true] {
+        for raw in 0..=u8::MAX {
+            let mut fields = Vec::new();
+            if with_text {
+                let text = common("A😀B", &[]);
+                fields.extend((text.len() as u32).to_le_bytes());
+                fields.extend(text);
+            }
+            fields.push(raw);
+            let mut payload = base([1.0, 2.0, 3.0, 4.0], 0.0);
+            payload.extend(frame(6, &[], &[], &[]));
+            payload.extend(frame(7, &[2 | u8::from(with_text)], &[], &fields));
+            payload.extend(frame(2, &[], &[], &[]));
+            let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
+            assert_eq!(parsed.document.pages[0].elements.len(), 1);
+            let text = text_box(&parsed.document.pages[0].elements[0]);
+            let expected = match raw {
+                0 => TextAreaType::Margin,
+                1 => TextAreaType::Free,
+                2 => TextAreaType::Path,
+                raw => TextAreaType::Other(raw),
+            };
+            assert_eq!(text.text_area_type, Some(expected));
+            assert_eq!(text.text_area_type.unwrap().raw(), raw);
+            assert_eq!(text.text, if with_text { "A😀B" } else { "" });
+            assert_eq!(
+                parsed.report.diagnostics.iter().any(|diagnostic| {
+                    diagnostic.code == DiagnosticCode::UnsupportedTextBoxFeature
+                }),
+                raw != 0
+            );
+            if with_text {
+                assert_eq!(
+                    text.slice_chars(1..2).unwrap().text_area_type,
+                    Some(expected)
+                );
+            }
+        }
+    }
+    let parsed = sdocx::parse_bytes(&single(&simple("absent mode"))).unwrap();
+    assert_eq!(text_box(&parsed.pages[0].elements[0]).text_area_type, None);
+}
+
+#[test]
+fn text_area_byte_cannot_come_from_the_next_frame() {
+    let mut payload = base([1.0, 2.0, 3.0, 4.0], 0.0);
+    payload.extend(frame(6, &[], &[], &[]));
+    payload.extend(frame(7, &[2], &[], &[]));
+    payload.extend(frame(2, &[], &[], &[1; 64]));
+    assert!(matches!(
+        sdocx::parse_bytes(&single(&payload)),
+        Err(Error::Format(message)) if message.contains("text area type")
+    ));
 }
 
 fn single(payload: &[u8]) -> Vec<u8> {

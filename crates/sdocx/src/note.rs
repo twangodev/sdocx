@@ -8,7 +8,7 @@ use crate::types::{
     RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
     RichTextTable, RichTextTableCell, RichTextTableRow,
 };
-use crate::{ObjectMetadata, ParseLimits, TableStyle};
+use crate::{ObjectMetadata, ParseLimits, TableStyle, TextAreaType};
 
 /// Structured contents of `note.note` needed by the document model.
 #[derive(Debug, Clone)]
@@ -234,7 +234,15 @@ fn parse_text_frames(
     } else {
         TextCommon::default()
     };
+    let text_area_type = shape_text
+        .fields
+        .contains(1)
+        .then(|| flexible.read_u8("text area type").map(TextAreaType::from))
+        .transpose()?;
     let mut unsupported = Vec::new();
+    if text_area_type.is_some_and(|area| area != TextAreaType::Margin) {
+        unsupported.push("text area layout");
+    }
     if shape.fields.has_other_bits(0)
         || shape.properties.has_other_bits(0)
         || !shape.fixed.is_empty()
@@ -242,14 +250,16 @@ fn parse_text_frames(
     {
         unsupported.push("shape settings");
     }
-    if shape_text.fields.has_other_bits(1)
+    if shape_text.fields.has_other_bits(3)
         || shape_text.properties.has_other_bits(0)
         || !shape_text.fixed.is_empty()
         || flexible.remaining() != 0
     {
         unsupported.push("shape-text extension fields");
     }
-    Ok(finish_shape_text(common, object_base, unsupported))
+    let mut decoded = finish_shape_text(common, object_base, unsupported);
+    decoded.text_box.text_area_type = text_area_type;
+    Ok(decoded)
 }
 
 pub(crate) fn parse_shape_text(
@@ -362,6 +372,7 @@ impl TextCommon {
         });
 
         RichTextBox {
+            text_area_type: None,
             bbox: object_base.bbox,
             rotation_degrees: object_base.rotation_degrees,
             text: self.text,

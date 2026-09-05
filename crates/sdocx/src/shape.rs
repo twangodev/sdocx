@@ -2,7 +2,7 @@ use crate::binary::Reader;
 use crate::frame::{Frame, Mask};
 use crate::note::parse_shape_text;
 use crate::object::read_bbox;
-use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox};
+use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
 /// Paint supported by the shape renderer, or an uninterpreted native effect.
 #[derive(Debug, Clone)]
@@ -65,6 +65,7 @@ impl Default for ShapeStyle {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct NativeShape {
+    pub text_area_type: Option<TextAreaType>,
     /// Stored type-0 metadata. Normal shape writers put drawn bounds here.
     pub metadata: ObjectMetadata,
     /// Native shape-template ID; unfamiliar values are preserved.
@@ -161,7 +162,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
         unsupported.push("additional base placement transform");
     }
     let mut fields = Reader::new(frame.flexible, "shape fields");
-    let text = if frame.fields.contains(0) {
+    let mut text = if frame.fields.contains(0) {
         let mut text_metadata = metadata.clone();
         text_metadata.bbox = geometry_bbox;
         text_metadata.rotation_degrees = Some(f64::from(rotation_degrees));
@@ -171,8 +172,16 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     } else {
         None
     };
-    if frame.fields.contains(1) && fields.read_u8("text control")? != 0 {
-        unsupported.push("shape text control");
+    let text_area_type = frame
+        .fields
+        .contains(1)
+        .then(|| fields.read_u8("text area type").map(TextAreaType::from))
+        .transpose()?;
+    if let Some(text) = &mut text {
+        text.text_area_type = text_area_type;
+    }
+    if text_area_type.is_some_and(|area| area != TextAreaType::Margin) {
+        unsupported.push("text area layout");
     }
     let pen_name_id = frame
         .fields
@@ -213,6 +222,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     read_extensions(&mut reader, &mut unsupported)?;
     Ok(Decoded {
         value: NativeShape {
+            text_area_type,
             metadata,
             shape_type,
             geometry_bbox,

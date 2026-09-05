@@ -55,7 +55,7 @@ The standalone-text implementation rechecked these arm64 locations in the same
 | --- | --- |
 | `ObjectBaseBinaryHandler::ApplyOwnBinary`, `0x2db0e0`; flexible handler `0x2db6c4` | Shared identity/bounds and first flexible rotation field. |
 | `ObjectTextBox::NewGetBinary`, `0x3e1850`; `NewApplyBinary`, `0x3e18f8–0x3e1a38` | Inherited shape frames followed by the text-box-specific record. |
-| `ObjectShapeText::ApplyBinary_TextData`, `0x3b21d4–0x3b23c8` | Masked, length-prefixed `TextCommon`; optional next byte. |
+| `ObjectShapeText::ApplyBinary_TextData`, `0x3b21d4–0x3b23c8` | Masked, length-prefixed `TextCommon`; optional text-area byte: margin 0, free 1, path 2. |
 | `ObjectShape::t_TextboxGetOwnBinarySize`, `0x39a2d0`; writer `0x39a35c`; reader `0x39a3b4` | Delegation to the shared component's text-box serializer. |
 | `ComponentImage::TextboxGetOwnBinary`, `0x3a4da0–0x3a4e5c`; reader `0x3a4e5c` | Type-2 header and masked border color/width/type. |
 

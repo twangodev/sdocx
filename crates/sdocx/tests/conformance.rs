@@ -429,6 +429,7 @@ fn expected_diagnostics_are_exact_counts_not_a_warning_allowlist() {
 #[test]
 fn zero_flow_object_counts_do_not_require_a_table_link_or_code_block() {
     let flow = sdocx::RichTextBox {
+        text_area_type: None,
         bbox: Default::default(),
         rotation_degrees: None,
         text: "simple text".into(),

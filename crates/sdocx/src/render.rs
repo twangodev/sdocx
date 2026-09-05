@@ -1642,6 +1642,7 @@ mod tests {
         let mut page = page_with_uncolored_stroke();
         page.strokes.clear();
         page.elements.push(PageElement::TextBox(RichTextBox {
+            text_area_type: None,
             bbox: BoundingBox::default(),
             rotation_degrees: None,
             text: "visible body text".into(),
@@ -1685,6 +1686,7 @@ mod tests {
         page.width = 1080;
         page.strokes.clear();
         page.elements.push(PageElement::TextBox(RichTextBox {
+            text_area_type: None,
             bbox: BoundingBox::default(),
             rotation_degrees: None,
             text: "Example link".into(),

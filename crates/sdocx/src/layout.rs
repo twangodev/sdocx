@@ -385,6 +385,7 @@ mod tests {
     fn separates_visible_flow_pages_from_trailing_storage_page() {
         let text = "one\ntwo 😀\nthree\nfour\nfive\n";
         let body = RichTextBox {
+            text_area_type: None,
             bbox: BoundingBox::default(),
             rotation_degrees: None,
             text: text.into(),
@@ -444,6 +445,7 @@ mod tests {
             .encode_utf16()
             .count() as i32;
         let mut body = RichTextBox {
+            text_area_type: None,
             bbox: BoundingBox::default(),
             rotation_degrees: None,
             text: text.into(),
@@ -513,6 +515,7 @@ mod tests {
         let first_end = "first\n".encode_utf16().count() as i32;
         let overlapping_start = first_end - 1;
         let body = RichTextBox {
+            text_area_type: None,
             bbox: BoundingBox::default(),
             rotation_degrees: None,
             text: text.into(),
@@ -562,6 +565,7 @@ mod tests {
     #[test]
     fn slices_paragraph_ordinals_and_text_sections() {
         let body = RichTextBox {
+            text_area_type: None,
             bbox: BoundingBox::default(),
             rotation_degrees: None,
             text: "alpha\nbeta\ngamma".into(),

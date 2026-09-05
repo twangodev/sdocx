@@ -302,10 +302,42 @@ impl From<ObjectType> for u32 {
     }
 }
 
-/// Parsed rich text box data.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum TextAreaType {
+    Margin,
+    Free,
+    Path,
+    Other(u8),
+}
+
+impl From<u8> for TextAreaType {
+    fn from(raw: u8) -> Self {
+        match raw {
+            0 => Self::Margin,
+            1 => Self::Free,
+            2 => Self::Path,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+impl TextAreaType {
+    pub const fn raw(self) -> u8 {
+        match self {
+            Self::Margin => 0,
+            Self::Free => 1,
+            Self::Path => 2,
+            Self::Other(raw) => raw,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextBox {
+    pub text_area_type: Option<TextAreaType>,
     /// Placement box in page coordinates.
     pub bbox: BoundingBox,
     /// Clockwise rotation in degrees, if present.
