@@ -191,8 +191,9 @@ equivalence, including 100 updates with varying X/Y, and constant-input
 behavior with explicit float rounding.
 No SDK code changed and no native execution or new device fixture was used.
 
-Result construction's geometric selection remains a separate numerical
-target. Real InkPen2 SDOCX/PDF pairs are still required to establish which
+[Result construction](inkpen2-result-findings.md) separately establishes
+geometric selection, resampled-state rewriting and candidate lifetime.
+Real InkPen2 SDOCX/PDF pairs are still required to establish which
 settings and input paths produced stored geometry, and to measure export
 fidelity. Reapplying this live-input filter to decoded points would change
 the geometry that the document already stores.

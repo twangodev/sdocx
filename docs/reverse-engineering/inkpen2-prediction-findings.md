@@ -188,9 +188,9 @@ zero/nonzero constant axes, closed motion, zero-span distance limits and
 an insufficient queue.
 
 These checks establish the recovered candidate computation, not measured
-Samsung rendering parity. Result construction can still select candidates
-geometrically, and the [Kalman stage](inkpen2-kalman-findings.md) can replace
-their coordinates using the separately recovered correction equations.
-Geometric selection is the next numerical target. Saved SDOCX points
-already reflect their recording path; applying this prediction again during export would
-change the decoded geometry.
+Samsung rendering parity. [Result construction](inkpen2-result-findings.md)
+selects candidates geometrically, and the
+[Kalman stage](inkpen2-kalman-findings.md) can replace their coordinates
+using the separately recovered correction equations.
+Saved SDOCX points already reflect their recording path; applying this
+prediction again during export would change the decoded geometry.

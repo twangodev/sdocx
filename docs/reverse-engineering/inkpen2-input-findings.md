@@ -162,8 +162,9 @@ new device fixture or native execution was used.
 The [prediction trace](inkpen2-prediction-findings.md) now recovers
 `doPredict`'s linear fits, horizon, distance rejection and timestamp
 retention. The [Kalman trace](inkpen2-kalman-findings.md) recovers channel
-defaults and correction equations. Further work can recover result
-construction's geometric selection. Synthetic queue cases can
+defaults and correction equations. The
+[result trace](inkpen2-result-findings.md) establishes geometric selection,
+resampled-state rewriting and candidate lifetime. Synthetic queue cases can
 bound those algorithms, but actual InkPen2 SDOCX/PDF pairs are still needed
 to test the complete stored geometry and rendered appearance. The SDK
 should preserve already decoded points and channels rather than applying

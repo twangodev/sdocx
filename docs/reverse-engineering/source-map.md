@@ -124,6 +124,13 @@ X/Y least-squares calls to helper `0x5d9a8`. The integer horizon at
 last-sample timestamps at `0x5cd20` while evaluating future coordinates;
 the distance check can reject the whole candidate before `0x5ce6c`.
 
+[InkPen2 result findings](inkpen2-result-findings.md) recover
+`getPredictedPenEvent`, `0x5d05c`: current selection compares original
+adjacent candidates, while history selection compares the last accepted
+sample, both against float 300. The method rewrites output resampled
+states to -1 at `0x5d178`/`0x5d238` and clears the complete candidate
+vector at `0x5d28c`. `OnTouch` also clears candidates at `0x5c054`.
+
 [InkPen2 Kalman findings](inkpen2-kalman-findings.md) resolve PenCommon's
 constructor at `0x595e8`, position-only enabled mask at `0x5969c`, and
 sample routing in `transformPenEvent`, `0x59a90`. `getFilteredValue`,
