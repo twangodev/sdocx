@@ -77,6 +77,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   sample prefixes, gradual index-budget updates and the InkPen2 reset exception.
 - [`uniform-latency-findings.md`](uniform-latency-findings.md) — callback timing,
   time-fraction cutoffs, timestamp interpolation and exact-boundary behavior.
+- [`presentation-time-findings.md`](presentation-time-findings.md) — display
+  orientation, hardware configuration and screen-position prediction delays.
 - [`stroke-finalization-findings.md`](stroke-finalization-findings.md) — disabled
   constructor default, optional CSAPS processing and count-preserving replacement.
 - [`stroke-insertion-findings.md`](stroke-insertion-findings.md) — first-point

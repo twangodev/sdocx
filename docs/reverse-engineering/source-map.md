@@ -164,6 +164,13 @@ at `0x4d5b14`. The cutoff uses time fractions, with strict comparisons at
 `0x4d5f38` and `0x4d5f74`; interpolation replaces X/Y and both timestamps
 at `0x4d5fd8`–`0x4d5fdc` while retaining endpoint axes and pressure.
 
+[Presentation-time findings](presentation-time-findings.md) recover Composer
+`PresentTimeFinder::CalcPresentTime`, `0x4d4be4`, including combined screen
+and hardware rotation, rectangle-edge mapping and unclamped float-derived
+delays. Engine's JNI table at `0x192de0` and configuration vtable at
+`0x17bb40` bind the hardware rate, rotation and real display dimensions.
+Fresh `SpenLatencyConfiguration` decompilation confirms the Java sources.
+
 [Stroke finalization findings](stroke-finalization-findings.md) resolve
 Composer factory `0x4db914` and the stroke-view constructor's null selection
 at `0x4d1fc4`. CSAPS transformer `0x4dbbb0` calls Model `ReplacePoint` at

@@ -270,9 +270,10 @@ were checked against the ARM64 image. Disposable calculations covered
 six coefficient cases, six cutoff cases, the adjacent-float boundary,
 both timestamp channels and retention of endpoint pressure.
 
-The presentation-time helper's complete orientation/geometry contract
-and the external callback's timing producer remain to be documented.
-Configuration values and runtime enablement also need their own evidence.
+The [presentation-time trace](presentation-time-findings.md) recovers the
+helper's orientation/geometry equations and configuration field identities.
+The external callback's timing producer, runtime configuration values and
+enablement still need their own evidence.
 These findings establish the local numerical behavior without new SDOCX
 files, but matching device exports remain necessary to measure rendering
 fidelity. No SDK code changed.
