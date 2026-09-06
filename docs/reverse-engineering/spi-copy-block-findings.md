@@ -187,9 +187,12 @@ No SDK code changed.
 
 ## Remaining work
 
-Modes 2, 3 and 4 still need independent payload reconstruction. Other
-packet-byte and header-flag combinations, reference selection, auxiliary
-marker state, integer limits and malformed copy regions also remain open.
+Modes 2, 3 and 4 still need complete independent payload reconstruction.
+The [alpha residual trace](spi-alpha-residual-findings.md) specifies one
+mode-3 coefficient representation, with prediction and final pixels still
+unresolved. Other packet-byte and header-flag combinations, reference
+selection, auxiliary marker state, integer limits and malformed copy
+regions also remain open.
 The current scratch decoder supports only the specified combination of
 literal blocks and copies within a frame. General SPI compatibility still
 requires device-exported files and rendered references.

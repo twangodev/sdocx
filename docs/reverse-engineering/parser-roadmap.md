@@ -142,6 +142,9 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   [Native codec emulation](spi-codec-validation.md) now round-trips
   synthetic bitmaps. [Mode-5 literals](spi-literal-block-findings.md) and
   [mode-0/1 copies](spi-copy-block-findings.md) have an independent scratch
-  encoder/decoder checked against native output. Modes 2–4, general SPI
-  compatibility and SDK integration remain open.
+  encoder/decoder checked against native output.
+  [Mode-3 alpha residuals](spi-alpha-residual-findings.md) have independently
+  verified coefficient arrays; prediction and final alpha reconstruction
+  remain open. Complete modes 2–4, general SPI compatibility and SDK
+  integration remain open.
 - Byte-for-byte encrypted-file validation with a protected fixture.

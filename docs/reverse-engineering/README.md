@@ -105,6 +105,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   plane layout, independent reconstruction, packet groups and alpha ordering.
 - [`spi-copy-block-findings.md`](spi-copy-block-findings.md) — mode-0/1
   frame copies, displacement codes and independent mixed-block validation.
+- [`spi-alpha-residual-findings.md`](spi-alpha-residual-findings.md) — partial
+  mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time
