@@ -109,6 +109,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`spi-alpha-payload-findings.md`](spi-alpha-payload-findings.md) — mode-3
   prediction fields, partition masks, marker updates and complete payload traces.
+- [`spi-alpha-pixel-findings.md`](spi-alpha-pixel-findings.md) — alpha edge
+  selection, prediction equations, residual accumulation and pixel comparisons.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

@@ -13,7 +13,8 @@ This specifies one residual representation inside alpha mode 3, whose
 is `0001`. The subsequent
 [prediction and partition trace](spi-alpha-payload-findings.md) adds the
 preceding fields and complete payload parsing given starting neighbor
-state. Final alpha pixel reconstruction remains native in these checks.
+state. [Pixel reconstruction](spi-alpha-pixel-findings.md) also reproduces
+alpha output given external block-edge arrays.
 
 The complete-image tests used wire color index 4, header flags `0xe0` and
 packet byte B zero. Only the coefficient branch with worker byte 56 zero
@@ -179,11 +180,11 @@ been matched against native behavior.
 ## Remaining work
 
 The [payload trace](spi-alpha-payload-findings.md) now decodes prediction
-modes and coded-partition masks. Independently reconstruct neighbor setup,
-prediction pixels and coefficient combination in `0x6ce0c`. Other mode-3
-submodes, nonzero selector paths and primary-pass compressed modes remain
-unresolved. Device-exported SPI files and visual
-references remain necessary for compatibility validation.
+modes and coded-partition masks. The [pixel trace](spi-alpha-pixel-findings.md)
+covers prediction and coefficient combination in `0x6ce0c`; independent
+neighbor setup remains open. Other mode-3 submodes, nonzero selector paths
+and primary-pass compressed modes remain unresolved. Device-exported SPI
+files and visual references remain necessary for compatibility validation.
 
 Only Markdown findings are maintained. Scratch readers, native harnesses
 and generated artifacts are disposable local tooling. No SDK code changed.

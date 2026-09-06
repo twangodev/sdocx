@@ -191,7 +191,8 @@ Modes 2, 3 and 4 still need complete independent payload reconstruction.
 The [alpha residual trace](spi-alpha-residual-findings.md) specifies one
 mode-3 coefficient representation, extended by the
 [prediction/partition fields](spi-alpha-payload-findings.md) into complete
-payload parsing given neighbor state. Neighbor setup and final pixels remain
+payload parsing given neighbor state. The [pixel trace](spi-alpha-pixel-findings.md)
+also reconstructs alpha pixels given external edges. Neighbor setup remains
 unresolved. Other packet-byte and header-flag combinations, reference
 selection, auxiliary marker state, integer limits and malformed copy
 regions also remain open.

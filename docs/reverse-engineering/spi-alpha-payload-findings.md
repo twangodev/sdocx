@@ -16,9 +16,10 @@ the unsplit 16×16 path absent from that original sample set.
 
 Scope remains wire color index 4, header flags `0xe0`, packet byte B zero,
 implicit alpha submode 1 and worker selector byte 56 zero. The initial
-neighbor-state setup and final pixel reconstruction still run in Samsung's
-decoder. Complete independent image decoding and device-file validation
-remain open.
+neighbor-state setup still runs in Samsung's decoder. Subsequent
+[pixel reconstruction](spi-alpha-pixel-findings.md) independently converts
+these payloads into alpha pixels given the block's external edge arrays.
+Complete independent image decoding and device-file validation remain open.
 
 ## The block divides into one or four sections
 
@@ -172,15 +173,17 @@ For complete payload traces, the initial marker bytes were captured after
 native neighbor preparation. The independent reader then consumed the
 whole payload without taking subsequent prediction, mask or coefficient
 values from native execution; those native values were comparison targets.
-Final pixels remained native-produced. The original 30 images retained
-exact pixel round trips; the 98 new images establish payload acceptance
-and field agreement, not an independent pixel-rendering result.
+Final pixels remained native-produced in these field checks. The original
+30 images retained exact pixel round trips; the 98 new images established
+payload acceptance and field agreement. The subsequent pixel findings add
+independent reconstruction and intermediate-buffer comparisons.
 
 ## Remaining work
 
-Recover marker initialization and block-row transitions independently,
-then specify neighbor-edge preparation, prediction pixels and residual
-combination in `0x6ce0c`. Other submodes, selector values, invalid neighbor
-states and general truncated-payload behavior remain unresolved. No SDK
+Recover marker initialization, block-row transitions and external edge
+preparation independently. Prediction pixels and residual combination in
+`0x6ce0c` are now covered by the pixel findings. Other submodes, selector
+values, invalid neighbor states and general truncated-payload behavior
+remain unresolved. No SDK
 code changed; maintained results are Markdown-only, with scratch tooling
 and generated cases remaining disposable local artifacts.

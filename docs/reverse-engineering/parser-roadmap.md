@@ -145,7 +145,8 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   encoder/decoder checked against native output.
   [Mode-3 alpha residuals](spi-alpha-residual-findings.md) and
   [prediction/partition fields](spi-alpha-payload-findings.md) now support
-  independent payload traces given starting neighbor state. Neighbor setup
-  and final alpha pixel reconstruction remain open, along with complete
-  modes 2–4, general SPI compatibility and SDK integration.
+  independent payload traces given starting neighbor state.
+  [Alpha pixel reconstruction](spi-alpha-pixel-findings.md) matches native
+  output given external block edges. Neighbor setup remains open, along
+  with complete modes 2–4, general SPI compatibility and SDK integration.
 - Byte-for-byte encrypted-file validation with a protected fixture.
