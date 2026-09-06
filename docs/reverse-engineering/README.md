@@ -99,6 +99,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   with native routines, dimensions, color indices and packet acceptance.
 - [`spi-data-packet-findings.md`](spi-data-packet-findings.md) — packed data
   prefixes, block-row groups, buffer reuse and native boundary checks.
+- [`spi-codec-validation.md`](spi-codec-validation.md) — complete native
+  bitmap round trips, block-mode coverage, alpha and output-capacity limits.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

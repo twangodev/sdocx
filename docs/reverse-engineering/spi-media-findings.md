@@ -12,8 +12,9 @@ dispatch identifies SPI as input to Samsung's Maetel codec wrapper.
 This investigation recovers the outer framing and native entry points.
 The [header trace](spi-header-findings.md) resolves the selected codec's
 20-byte header packet, and the [data-packet trace](spi-data-packet-findings.md)
-recovers kind-2 prefixes and block-row groups. Compressed pixels remain
-undecoded.
+recovers kind-2 prefixes and block-row groups. Subsequent
+[native codec tests](spi-codec-validation.md) round-trip synthetic
+bitmaps; independent pixel decoding remains unimplemented.
 
 ## Extension dispatch selects the Maetel writer
 
@@ -72,6 +73,9 @@ ceil(width / 16) * ceil(height / 16) * 1026 + 60
 
 This is an allocation formula for the native output buffer, not a decoded
 tile schema or a safe allocation rule for arbitrary untrusted dimensions.
+The later [capacity experiment](spi-codec-validation.md#a-wrapper-derived-capacity-failed-in-the-single-worker-experiment)
+also found it insufficient for a synthetic bitmap in the single-worker
+codec configuration.
 
 ## The buffer reader checks a marker inside the first block
 
@@ -139,8 +143,10 @@ bytes. They did not invoke or emulate the native codec.
 The [header trace](spi-header-findings.md) follows consumption at
 `0x5da00` and property queries at `0x5d938` into concrete implementations.
 The [data-packet trace](spi-data-packet-findings.md) follows image-data
-consumption through packet prefixes and block coordinates. Block payload
-decoding and pixel output at `0x5da34` remain further targets. A real SPI
-payload and rendered reference are still needed to validate a future
-decoder. No SPI pixel decoding, device execution or SDK support is
-claimed here.
+consumption through packet prefixes and block coordinates. The
+[native codec tests](spi-codec-validation.md) now exercise block payloads
+and pixel output at `0x5da34` on synthetic bitmaps. They also expose a
+capacity limitation in a single-worker experiment using the wrapper's
+allocation formula. Complete payload syntax, device execution and SDK
+support remain unresolved; device SPI payloads and rendered references
+are still needed for compatibility validation.

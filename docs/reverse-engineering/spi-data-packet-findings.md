@@ -9,8 +9,9 @@ refer to that ELF.
 The [SPI header trace](spi-header-findings.md) resolves packet kind 1.
 This trace resolves the kind-2 prefix and its connection to decoder block
 coordinates. Isolated native routines were executed under Unicorn with
-synthetic inputs. Compressed pixel syntax and complete image decoding
-remain unresolved.
+synthetic inputs. Subsequent [native codec tests](spi-codec-validation.md)
+round-trip complete synthetic images; the full compressed pixel syntax
+and independent reconstruction remain unresolved.
 
 ## Kind 2 has a 14-byte prefix
 
@@ -113,8 +114,40 @@ These operations still need tracing before pixel coding can be specified.
 The loop performs one pass, plus another when context byte 1025 is 1;
 `0x5c5ec` through `0x5c604` controls repetition and clears buffered bits
 between passes. The header consumer sets this byte for API color values
-43 and 500–503 at `0x5cbfc` through `0x5cc34`. The channel meaning of the
-additional pass remains unassigned.
+43 and 500–503 at `0x5cbfc` through `0x5cc34`. The later
+[input/output trace](spi-codec-validation.md#the-fourth-byte-connects-to-alpha-handling)
+identifies the additional pass as alpha for API value 500.
+
+## Block-mode prefixes select six dispatch entries
+
+Routine `0x6b36c` reads one bit at `0x6b384`. A set bit selects mode 0.
+Otherwise it reads another bit at `0x6b39c`; a set bit selects mode 1.
+Two clear bits cause a two-bit read at `0x6b3c0`, selecting mode 2 plus
+that value. The selected mode is stored at worker offset 48.
+
+The first callback table resolves through GOT entry `0xeef00` to
+`0xf68b8`, with six pointers per pass. The following callback table is
+at `0xebd38`, also with six pointers per pass:
+
+| Prefix bits | Mode | Primary payload callback | Additional-pass payload callback |
+| --- | --- | --- | --- |
+| `1` | 0 | `0x67fcc` | `0x67fcc` |
+| `01` | 1 | `0x68054` | `0x68054` |
+| `0000` | 2 | `0x68264` | `0x6881c` |
+| `0001` | 3 | `0x68470` | `0x68824` |
+| `0010` | 4 | `0x68718` | `0x6881c` |
+| `0011` | 5 | `0x68774` | `0x68950` |
+
+The entry at `0x6881c` returns `-202`, so modes 2 and 4 are rejected by
+the additional-pass payload dispatch even though their prefixes parse.
+For modes 2–5, the prefix reader also clears worker byte 2495. It leaves
+that byte unchanged for modes 0 and 1.
+
+An isolated native check covered all 256 possible first bytes, verifying
+the selected mode, consumption of exactly 1/2/4 bits, and that state
+change. The [complete native bitmap tests](spi-codec-validation.md)
+exercise modes 0, 1, 3, 4 and 5. Their payload formats remain only partly
+traced; the mode numbers do not yet imply named compression algorithms.
 
 ## The shortcut copies existing buffers
 
@@ -157,6 +190,7 @@ were checked. Native ARM64 execution covered:
 
 These checks executed 450 distinct APK instructions without replacing
 native helpers. They did not execute the buffer-copy shortcut, complete
-block traversal, pixel callbacks, allocation or worker threads. Real SPI
-payloads and rendered references are still needed to validate a decoder.
-No SDK code changed.
+block traversal, pixel callbacks, allocation or worker threads. Later
+[native codec tests](spi-codec-validation.md) execute complete synthetic
+bitmap round trips. Device SPI payloads and rendered references remain
+needed for compatibility validation. No SDK code changed.
