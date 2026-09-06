@@ -10,8 +10,10 @@ The [SPI header trace](spi-header-findings.md) resolves packet kind 1.
 This trace resolves the kind-2 prefix and its connection to decoder block
 coordinates. Isolated native routines were executed under Unicorn with
 synthetic inputs. Subsequent [native codec tests](spi-codec-validation.md)
-round-trip complete synthetic images; the full compressed pixel syntax
-and independent reconstruction remain unresolved.
+round-trip complete synthetic images, and the
+[literal-block trace](spi-literal-block-findings.md) independently
+reconstructs mode 5. Full pixel syntax and general independent decoding
+remain unresolved.
 
 ## Kind 2 has a 14-byte prefix
 
@@ -146,8 +148,10 @@ that byte unchanged for modes 0 and 1.
 An isolated native check covered all 256 possible first bytes, verifying
 the selected mode, consumption of exactly 1/2/4 bits, and that state
 change. The [complete native bitmap tests](spi-codec-validation.md)
-exercise modes 0, 1, 3, 4 and 5. Their payload formats remain only partly
-traced; the mode numbers do not yet imply named compression algorithms.
+exercise modes 0, 1, 3, 4 and 5. The subsequent
+[mode-5 trace](spi-literal-block-findings.md) resolves its literal planes.
+The other payload formats remain only partly traced; their mode numbers
+do not yet imply named compression algorithms.
 
 ## The shortcut copies existing buffers
 

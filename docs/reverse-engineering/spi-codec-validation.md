@@ -8,9 +8,10 @@ Unicorn 2.1.4. Thirty synthetic bitmaps were encoded and decoded by its
 native codec with exact recovery of every input pixel byte.
 
 This establishes a way to generate and check compressed SPI samples
-without SDOCX files. It does not establish device-export compatibility,
-an independent decoder, or SDK support. The native codec performed the
-pixel work; its complete compression format is not yet specified.
+without SDOCX files. The native codec performed the pixel work in these
+tests. Subsequent [literal-block work](spi-literal-block-findings.md)
+independently reconstructs mode 5; general independent decoding,
+device-export compatibility and SDK support remain open.
 
 ## Executed API sequence
 
@@ -172,8 +173,10 @@ mode-dispatch tables and output digests were checked. Generated samples,
 raw pixels and the emulator harness remain disposable local artifacts.
 Only Markdown findings are maintained here.
 
-Remaining targets include mode payload syntax, prediction and residual
-coding, mode 2, multiple packets, buffer-copy shortcuts, other color and
-quality settings, malformed-input behavior and independent reconstruction.
+The [mode-5 trace](spi-literal-block-findings.md) now specifies literal
+planes and validates independently constructed multiple-packet images.
+Remaining targets include other payload syntax, prediction and residual
+coding, mode 2, mixed-mode packets, buffer-copy shortcuts, other color and
+quality settings, malformed-input behavior and general independent decoding.
 Device-exported SPI files and rendered references remain necessary for
 compatibility validation. No SDK code changed.

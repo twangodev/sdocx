@@ -14,7 +14,8 @@ The [header trace](spi-header-findings.md) resolves the selected codec's
 20-byte header packet, and the [data-packet trace](spi-data-packet-findings.md)
 recovers kind-2 prefixes and block-row groups. Subsequent
 [native codec tests](spi-codec-validation.md) round-trip synthetic
-bitmaps; independent pixel decoding remains unimplemented.
+bitmaps, and [literal-block work](spi-literal-block-findings.md)
+independently reconstructs mode 5. SDK pixel decoding remains unimplemented.
 
 ## Extension dispatch selects the Maetel writer
 

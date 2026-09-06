@@ -101,6 +101,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   prefixes, block-row groups, buffer reuse and native boundary checks.
 - [`spi-codec-validation.md`](spi-codec-validation.md) — complete native
   bitmap round trips, block-mode coverage, alpha and output-capacity limits.
+- [`spi-literal-block-findings.md`](spi-literal-block-findings.md) — mode-5
+  plane layout, independent reconstruction, packet groups and alpha ordering.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

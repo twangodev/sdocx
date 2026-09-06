@@ -166,8 +166,10 @@ executed 427 distinct APK instructions, without running the full decoder.
 
 The routines used the APK's bit-reading and writing helpers without host
 replacements. The subsequent [data-packet trace](spi-data-packet-findings.md)
-recovers kind-2 prefixes and block coordinates. Real-file compatibility,
-auxiliary field semantics, independent pixel reconstruction and rendering
-remain unvalidated. Complete native reconstruction of synthetic bitmaps
-is now covered by the [codec tests](spi-codec-validation.md).
+recovers kind-2 prefixes and block coordinates. Complete native
+reconstruction of synthetic bitmaps is covered by the
+[codec tests](spi-codec-validation.md), and the
+[literal-block trace](spi-literal-block-findings.md) independently
+reconstructs mode 5. Real-file compatibility, auxiliary field semantics,
+general independent decoding and rendering remain unvalidated.
 No SDK code changed.
