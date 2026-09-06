@@ -97,7 +97,9 @@ the division at `0x5cc64` and store at `0x5cca8` establish:
 group_count = ceil(ceil(height / 16) / row_group_size)
 ```
 
-Pixel coding within those groups remains unresolved. Header byte 18 drives
+The [data-packet trace](spi-data-packet-findings.md) connects packet group
+indices to rows of 16 by 16 blocks; their pixel coding remains unresolved.
+Header byte 18 drives
 an additional buffer-allocation loop at `0x5cf24` through `0x5cf6c`;
 its broader codec meaning remains unassigned.
 
@@ -161,6 +163,7 @@ Accepted dispatch cases stopped at that reader's entry. These checks
 executed 427 distinct APK instructions, without running the full decoder.
 
 The routines used the APK's bit-reading and writing helpers without host
-replacements. Real-file compatibility, auxiliary field semantics, image
-data packets, pixel reconstruction and rendering remain unvalidated.
-No SDK code changed.
+replacements. The subsequent [data-packet trace](spi-data-packet-findings.md)
+recovers kind-2 prefixes and block coordinates. Real-file compatibility,
+auxiliary field semantics, pixel reconstruction and rendering remain
+unvalidated. No SDK code changed.

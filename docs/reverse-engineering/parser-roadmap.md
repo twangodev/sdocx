@@ -135,7 +135,8 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
 - Formula label-graph semantics, expression and graph evaluation, native
   table/code layout, and standalone decoding for remaining non-stroke types.
 - Page custom-object internals and a few legacy common fields.
-- SPI auxiliary header semantics and pixel decoding; the
+- SPI auxiliary field semantics and pixel decoding; the
   [native wrapper framing](spi-media-findings.md) and
-  [header layout](spi-header-findings.md) are now recovered.
+  [header layout](spi-header-findings.md) are recovered, along with
+  [data-packet prefixes and block groups](spi-data-packet-findings.md).
 - Byte-for-byte encrypted-file validation with a protected fixture.

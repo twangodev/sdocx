@@ -97,6 +97,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   length-prefixed media blocks and native decoder entry points.
 - [`spi-header-findings.md`](spi-header-findings.md) — header layout checked
   with native routines, dimensions, color indices and packet acceptance.
+- [`spi-data-packet-findings.md`](spi-data-packet-findings.md) — packed data
+  prefixes, block-row groups, buffer reuse and native boundary checks.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

@@ -10,8 +10,10 @@ The [document image-cache trace](document-image-cache-findings.md) follows
 page-cache bitmap saving into `BitmapFactory::SaveBitmap`. Its extension
 dispatch identifies SPI as input to Samsung's Maetel codec wrapper.
 This investigation recovers the outer framing and native entry points.
-The [header trace](spi-header-findings.md) now resolves the selected
-codec's 20-byte header packet. Compressed pixels remain undecoded.
+The [header trace](spi-header-findings.md) resolves the selected codec's
+20-byte header packet, and the [data-packet trace](spi-data-packet-findings.md)
+recovers kind-2 prefixes and block-row groups. Compressed pixels remain
+undecoded.
 
 ## Extension dispatch selects the Maetel writer
 
@@ -136,7 +138,9 @@ bytes. They did not invoke or emulate the native codec.
 
 The [header trace](spi-header-findings.md) follows consumption at
 `0x5da00` and property queries at `0x5d938` into concrete implementations.
-Pixel output at `0x5da34` and image-data consumption remain further
-targets. A real SPI payload and rendered
-reference are still needed to validate a future decoder. No SPI pixel
-decoding, device execution or SDK support is claimed here.
+The [data-packet trace](spi-data-packet-findings.md) follows image-data
+consumption through packet prefixes and block coordinates. Block payload
+decoding and pixel output at `0x5da34` remain further targets. A real SPI
+payload and rendered reference are still needed to validate a future
+decoder. No SPI pixel decoding, device execution or SDK support is
+claimed here.
