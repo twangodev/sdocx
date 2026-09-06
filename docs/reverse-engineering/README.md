@@ -91,6 +91,10 @@ Notes APK, native serializers, or real compatibility fixtures.
   — first-draw capture callbacks, document detachment and initialization posts.
 - [`save-preparation-cancellation-findings.md`](save-preparation-cancellation-findings.md)
   — mode-gated shape cancellation, recognition flags and gesture-unlock callbacks.
+- [`document-image-cache-findings.md`](document-image-cache-findings.md)
+  — bitmap-save waits, SPI cache filenames and page canvas-cache associations.
+- [`spi-media-findings.md`](spi-media-findings.md) — Maetel codec dispatch,
+  length-prefixed media blocks and native decoder entry points.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

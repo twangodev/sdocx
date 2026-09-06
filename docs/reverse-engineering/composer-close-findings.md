@@ -147,8 +147,10 @@ different callable storage from the optional member-1920 save callback.
 In the raster branch, primary `0x5839f0` binds slot 320 to `0x50fc18`.
 That loads the raster object's member 32 and branches to `0x53c61c`.
 The target logs `DocumentImageCache::SaveCache`, using strings at
-`0x230a02` and `0x1e4279`, and processes cache entries. Its complete
-cache behavior and the optional member-1920 callback remain unresolved.
+`0x230a02` and `0x1e4279`, and processes cache entries. The
+[image-cache trace](document-image-cache-findings.md) follows bitmap-save
+waiting, SPI file production and page canvas-cache metadata. The complete
+cache state machine and optional member-1920 callback remain unresolved.
 The name `requestReadyForSave` alone is not evidence that queued predictor
 callbacks have been delivered or cancelled.
 

@@ -770,8 +770,11 @@ then uses the older S Pen end-of-file tag instead of `EOFX`.
 
 Media names are resolved as `media/<file_name>`. Media payloads are not one
 format: objects may reference PNG/JPEG/PDF/audio/video or Samsung-specific
-formats. Fixture A contains `0@page_0000000.spi`; its payload
-does not have a standard image magic and remains undecoded. Its manifest's
+formats. Fixture A contains `0@page_0000000.spi`; its pixels remain
+undecoded. The [native SPI trace](spi-media-findings.md) now identifies
+Maetel codec dispatch and two length-prefixed blocks, with an encoded-header
+marker after the first length. This framing has not been validated against
+that fixture in this investigation. Its manifest's
 64-character hash exactly equals the lowercase hexadecimal SHA-256 of that
 payload.
 
