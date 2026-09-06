@@ -9,8 +9,9 @@ All addresses below are in Base.
 The [document image-cache trace](document-image-cache-findings.md) follows
 page-cache bitmap saving into `BitmapFactory::SaveBitmap`. Its extension
 dispatch identifies SPI as input to Samsung's Maetel codec wrapper.
-This investigation recovers the outer framing and native entry points;
-the compressed pixel representation remains undecoded.
+This investigation recovers the outer framing and native entry points.
+The [header trace](spi-header-findings.md) now resolves the selected
+codec's 20-byte header packet. Compressed pixels remain undecoded.
 
 ## Extension dispatch selects the Maetel writer
 
@@ -115,8 +116,9 @@ operation `0x5d938` with these integer property IDs:
 | 413 | Encoded color-type value | `0xd7444` |
 
 The accepted color-type values are 400, 500 and 501, checked at
-`0xd7448` through `0xd745c`. These numbers are codec API values,
-not proven field offsets or wire enum values inside the SPI header.
+`0xd7448` through `0xd745c`. These numbers are codec API values. The
+[header trace](spi-header-findings.md#color-indices-differ-from-wrapper-color-type-values)
+resolves the wire byte to table indices 2, 4 and 5 for those values.
 
 The wrapper requests output color type 500 and a stride of width times
 four at `0xd7478` through `0xd74d8`. That establishes a four-byte pixel
@@ -132,8 +134,9 @@ binary bytes. Disposable framing checks covered both accepted markers,
 positive lengths, truncation and the wrapper's allowance for trailing
 bytes. They did not invoke or emulate the native codec.
 
-The next native targets are header consumption at `0x5da00`, property
-queries at `0x5d938`, and pixel output at `0x5da34`, together with the
-corresponding encoder operations. A real SPI payload and rendered
+The [header trace](spi-header-findings.md) follows consumption at
+`0x5da00` and property queries at `0x5d938` into concrete implementations.
+Pixel output at `0x5da34` and image-data consumption remain further
+targets. A real SPI payload and rendered
 reference are still needed to validate a future decoder. No SPI pixel
 decoding, device execution or SDK support is claimed here.

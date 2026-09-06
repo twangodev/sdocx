@@ -95,6 +95,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   — bitmap-save waits, SPI cache filenames and page canvas-cache associations.
 - [`spi-media-findings.md`](spi-media-findings.md) — Maetel codec dispatch,
   length-prefixed media blocks and native decoder entry points.
+- [`spi-header-findings.md`](spi-header-findings.md) — header layout checked
+  with native routines, dimensions, color indices and packet acceptance.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time
