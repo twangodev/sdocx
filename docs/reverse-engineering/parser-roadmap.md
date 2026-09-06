@@ -143,8 +143,9 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   synthetic bitmaps. [Mode-5 literals](spi-literal-block-findings.md) and
   [mode-0/1 copies](spi-copy-block-findings.md) have an independent scratch
   encoder/decoder checked against native output.
-  [Mode-3 alpha residuals](spi-alpha-residual-findings.md) have independently
-  verified coefficient arrays; prediction and final alpha reconstruction
-  remain open. Complete modes 2–4, general SPI compatibility and SDK
-  integration remain open.
+  [Mode-3 alpha residuals](spi-alpha-residual-findings.md) and
+  [prediction/partition fields](spi-alpha-payload-findings.md) now support
+  independent payload traces given starting neighbor state. Neighbor setup
+  and final alpha pixel reconstruction remain open, along with complete
+  modes 2–4, general SPI compatibility and SDK integration.
 - Byte-for-byte encrypted-file validation with a protected fixture.

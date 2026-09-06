@@ -10,9 +10,10 @@ matching both native signed values and consumed bits.
 
 This specifies one residual representation inside alpha mode 3, whose
 [block prefix](spi-data-packet-findings.md#block-mode-prefixes-select-six-dispatch-entries)
-is `0001`. It does not independently decode the preceding prediction and
-partition fields or reconstruct final alpha pixels. Those stages still ran
-in Samsung's native decoder during complete-image comparisons.
+is `0001`. The subsequent
+[prediction and partition trace](spi-alpha-payload-findings.md) adds the
+preceding fields and complete payload parsing given starting neighbor
+state. Final alpha pixel reconstruction remains native in these checks.
 
 The complete-image tests used wire color index 4, header flags `0xe0` and
 packet byte B zero. Only the coefficient branch with worker byte 56 zero
@@ -39,9 +40,10 @@ base-2 logarithm at byte 31.
 
 Before the residual bytes, `0x6a7bc` calls prediction-mode reader
 `0x6b584`, and `0x6a7d8` calls coded-partition reader `0x6b704`. The
-scratch trace takes their resulting state as input; these two readers
-have not been independently reproduced here. A coded partition is
-zero-filled at `0x6a858`, then populated with signed 16-bit coefficients.
+coefficient-only scratch trace takes their resulting state as input;
+their independent decoding is covered in the payload findings. A coded
+partition is zero-filled at `0x6a858`, then populated with signed 16-bit
+coefficients.
 
 ## Scan order maps run positions into the coefficient array
 
@@ -176,10 +178,11 @@ been matched against native behavior.
 
 ## Remaining work
 
-Independently decode prediction modes and coded-partition masks, then
-reconstruct neighboring-edge prediction and coefficient combination in
-`0x6ce0c`. Other mode-3 submodes, nonzero selector paths and primary-pass
-compressed modes remain unresolved. Device-exported SPI files and visual
+The [payload trace](spi-alpha-payload-findings.md) now decodes prediction
+modes and coded-partition masks. Independently reconstruct neighbor setup,
+prediction pixels and coefficient combination in `0x6ce0c`. Other mode-3
+submodes, nonzero selector paths and primary-pass compressed modes remain
+unresolved. Device-exported SPI files and visual
 references remain necessary for compatibility validation.
 
 Only Markdown findings are maintained. Scratch readers, native harnesses

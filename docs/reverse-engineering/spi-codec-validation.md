@@ -13,7 +13,9 @@ tests. Subsequent [literal-block work](spi-literal-block-findings.md)
 independently reconstructs mode 5, and
 [copy-block work](spi-copy-block-findings.md) adds modes 0 and 1 for the
 tested configuration. [Alpha residual work](spi-alpha-residual-findings.md)
-also reproduces intermediate mode-3 coefficient arrays. General independent
+also reproduces intermediate mode-3 coefficient arrays, and
+[payload-field work](spi-alpha-payload-findings.md) adds prediction modes
+and partition masks given starting neighbor state. General independent
 decoding, device-export compatibility and SDK support remain open.
 
 ## Executed API sequence
@@ -181,9 +183,11 @@ planes and validates independently constructed multiple-packet images.
 The [copy-block trace](spi-copy-block-findings.md) adds independently
 constructed images combining modes 0, 1 and 5. The
 [alpha residual trace](spi-alpha-residual-findings.md) independently
-reproduces one mode-3 coefficient representation. Remaining targets include
-complete modes 2–4, prediction and other residual paths, reference-buffer
-behavior, other color and quality settings, malformed-input behavior and
-general independent decoding.
+reproduces one mode-3 coefficient representation, extended by the
+[prediction/partition trace](spi-alpha-payload-findings.md) into complete
+payload parsing given neighbor state. Remaining targets include complete
+modes 2–4, neighbor setup, prediction pixels and other residual paths,
+reference-buffer behavior, other color and quality settings, malformed-input
+behavior and general independent decoding.
 Device-exported SPI files and rendered references remain necessary for
 compatibility validation. No SDK code changed.
