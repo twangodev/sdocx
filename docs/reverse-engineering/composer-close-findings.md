@@ -139,6 +139,11 @@ Vtable entry `0x575688` resolves that slot to
 3. Follows members 728, 632 and 648 to the drawing object, then calls its
    slot 320 at `0x42720c`.
 
+The [shape-cancellation trace](save-preparation-cancellation-findings.md)
+resolves byte 2656 as a mode predicate and follows cancellation into a
+recognition flag and gesture-unlock notification. That notification uses
+different callable storage from the optional member-1920 save callback.
+
 In the raster branch, primary `0x5839f0` binds slot 320 to `0x50fc18`.
 That loads the raster object's member 32 and branches to `0x53c61c`.
 The target logs `DocumentImageCache::SaveCache`, using strings at
