@@ -87,6 +87,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   Java close order, native raster ownership and separate Handler cancellation.
 - [`composer-close-findings.md`](composer-close-findings.md) — main-editor
   release order, Composer ownership, capture callbacks and save preparation.
+- [`editor-release-preparation-findings.md`](editor-release-preparation-findings.md)
+  — first-draw capture callbacks, document detachment and initialization posts.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time
