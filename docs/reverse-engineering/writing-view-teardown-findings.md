@@ -14,9 +14,11 @@ through ordinary destructor calls. The writing view also cancels its own
 Handlers, but those are separate allocations from the per-completion
 Handlers in the [prediction queue trace](predictor-queue-findings.md).
 
-This narrows the teardown question to the caller's scheduling and any
-behavior inside other cleanup delegates. It does not establish a device
-failure or prove that every application call site permits stale delivery.
+This traces the generic writing-view API. The main editor uses the separate
+[Composer close entry](composer-close-findings.md), which reaches the same
+raster ownership chain. Caller scheduling and other cleanup delegates remain
+relevant; neither trace establishes a device failure or proves that every
+application call site permits stale delivery.
 
 ## Java closes the native view before the draw loop
 
@@ -170,9 +172,11 @@ The traced close methods do not demonstrate a wait for queued prediction
 callbacks. Main-thread execution alone would not establish that wait:
 if native deletion runs while a completion is pending, the completion
 still needs to be delivered or cancelled before its consumer is freed.
-Whether the application ensures that ordering before entering `close()`
-requires its call sites and scheduling. The helper delegates called
-during close also remain possible sources of additional constraints.
+The [main-editor release trace](composer-close-findings.md) now identifies
+the Composer call site and its optional capture callback. Whether its
+scheduling ensures prediction completion before consumer destruction remains
+unresolved. The helper delegates called during close also remain possible
+sources of additional constraints.
 
 The APK digest, fresh DEX and three native streams were verified. JNI
 registration, import targets, constructor stores, vtable slots and

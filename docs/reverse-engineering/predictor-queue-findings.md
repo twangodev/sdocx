@@ -223,6 +223,8 @@ recovered operations, not execution of the Android queue or native code.
 
 The [writing-view teardown trace](writing-view-teardown-findings.md)
 now follows Java close through the native raster owner chain and separates
-the writing view's own Handler cancellations. Its callers' scheduling and
-other cleanup delegates remain unresolved. No SDK code, saved-stroke format
-rule, corpus fixture or device execution changed.
+the writing view's own Handler cancellations. The separate
+[main-editor Composer trace](composer-close-findings.md) covers application
+release, capture callbacks and native Composer ownership. Prediction ordering
+inside capture and other cleanup delegates remains unresolved. No SDK code,
+saved-stroke format rule, corpus fixture or device execution changed.
