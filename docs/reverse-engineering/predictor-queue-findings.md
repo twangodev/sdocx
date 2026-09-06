@@ -221,6 +221,8 @@ Handler cancellation, missing bridge state, colliding IDs, and node
 removal between registry lookup and invocation. These are checks of the
 recovered operations, not execution of the Android queue or native code.
 
-The next unresolved boundary is the application's outer teardown order
-and any serialization it imposes. No SDK code, saved-stroke format rule,
-corpus fixture or device execution changed.
+The [writing-view teardown trace](writing-view-teardown-findings.md)
+now follows Java close through the native raster owner chain and separates
+the writing view's own Handler cancellations. Its callers' scheduling and
+other cleanup delegates remain unresolved. No SDK code, saved-stroke format
+rule, corpus fixture or device execution changed.

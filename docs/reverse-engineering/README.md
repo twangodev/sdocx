@@ -83,6 +83,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   predictor selection, callback registration, thread dispatch and event lifetime.
 - [`predictor-queue-findings.md`](predictor-queue-findings.md) — main-looper
   delivery, Handler registry keys, callback cleanup and teardown boundaries.
+- [`writing-view-teardown-findings.md`](writing-view-teardown-findings.md) —
+  Java close order, native raster ownership and separate Handler cancellation.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

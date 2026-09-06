@@ -125,9 +125,10 @@ or confirmation that the predictor is currently enabled.
 ## Presenter teardown deletes the proxy before its consumer
 
 `TouchPresenter` destruction at `0x4d758c` first clears drawing hooks,
-releases drawing state, and invokes its prediction controller's cleanup
-slot at `0x4d75f0`. At `0x4d7604` it calls proxy slot 104 with a
-null pointer.
+releases drawing state, and invokes its `PredStrokeLengthController`
+cleanup slot at `0x4d75f0`. The [outer teardown trace](writing-view-teardown-findings.md#presenter-controller-cleanup-also-does-not-drain-callbacks)
+resolves this as controller deletion, including its scratch allocation.
+At `0x4d7604` it calls proxy slot 104 with a null pointer.
 
 Proxy slot 104 resolves to `0x4daf58`, which forwards concrete slot 104.
 Both neural and linear vtables bind that slot to Predictor `0x328f8`,
@@ -154,7 +155,9 @@ operations. The [Handler and queue trace](predictor-queue-findings.md)
 confirms main-looper dispatch and separate per-completion Handlers, whose
 destructors cancel by Handler ID. The synchronizer does not retain those
 Handlers, and no message-drain call was identified in this presenter/proxy
-sequence. Outer application teardown ordering remains unresolved.
+sequence. The Java close and raster-owner deletion chain are now traced
+in [writing-view teardown](writing-view-teardown-findings.md); scheduling
+at the application call sites remains unresolved.
 
 ## Validation and remaining work
 
@@ -168,6 +171,6 @@ getter overrides, creation failure, and the preserved requested selection.
 These findings narrow the earlier holder-replacement example to callers
 that change a live instance's model directly. They do not prove all such
 callers absent or establish the safety of pending work during destruction.
-Callback queue ownership and cancellation are now traced separately;
-the next boundary is outer application teardown ordering. No SDK code,
+Callback queue ownership, Java close and raster deletion are now traced
+separately; the next boundary is application call-site ordering. No SDK code,
 saved-stroke decoding rule, or corpus fixture changed.

@@ -185,6 +185,13 @@ bridge selects the main looper; native registration `0x977f0` uses a
 32-bit address key, and Handler destruction `0xafa88` cancels that ID.
 Queued payload ownership is separate from the synchronizer and worker.
 
+[Writing-view teardown findings](writing-view-teardown-findings.md) bind
+fresh Java close methods to Engine `Native_finalize`, `0xc8bdc`, and
+Composer's raster deletion chain ending at presenter `0x4d758c`.
+`SmartWritingView`, `0x545360`, cancels its own constructor-allocated
+Handlers; controller cleanup `0x4d5550` deletes `PredStrokeLengthController`.
+Neither operation is a global prediction callback drain.
+
 [Predictor timing findings](predictor-timing-findings.md) trace the entity's
 reference and clock sample to `PredictorBase::Predict`, `0x2e7e4`.
 `NNPredictor::DoPredict`, `0x25abc`, adds the last `OnVSync` argument
