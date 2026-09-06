@@ -140,7 +140,8 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   [header layout](spi-header-findings.md) are recovered, along with
   [data-packet prefixes and block groups](spi-data-packet-findings.md).
   [Native codec emulation](spi-codec-validation.md) now round-trips
-  synthetic bitmaps. [Mode-5 literal blocks](spi-literal-block-findings.md)
-  also have an independent scratch encoder/decoder checked against native
-  output; general SPI decoding and SDK integration remain open.
+  synthetic bitmaps. [Mode-5 literals](spi-literal-block-findings.md) and
+  [mode-0/1 copies](spi-copy-block-findings.md) have an independent scratch
+  encoder/decoder checked against native output. Modes 2–4, general SPI
+  compatibility and SDK integration remain open.
 - Byte-for-byte encrypted-file validation with a protected fixture.

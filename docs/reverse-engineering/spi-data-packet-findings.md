@@ -12,8 +12,9 @@ coordinates. Isolated native routines were executed under Unicorn with
 synthetic inputs. Subsequent [native codec tests](spi-codec-validation.md)
 round-trip complete synthetic images, and the
 [literal-block trace](spi-literal-block-findings.md) independently
-reconstructs mode 5. Full pixel syntax and general independent decoding
-remain unresolved.
+reconstructs mode 5. The [copy-block trace](spi-copy-block-findings.md)
+adds modes 0 and 1 for the tested frame-copy configuration. Full pixel
+syntax and general independent decoding remain unresolved.
 
 ## Kind 2 has a 14-byte prefix
 
@@ -150,8 +151,9 @@ the selected mode, consumption of exactly 1/2/4 bits, and that state
 change. The [complete native bitmap tests](spi-codec-validation.md)
 exercise modes 0, 1, 3, 4 and 5. The subsequent
 [mode-5 trace](spi-literal-block-findings.md) resolves its literal planes.
-The other payload formats remain only partly traced; their mode numbers
-do not yet imply named compression algorithms.
+The [mode-0/1 trace](spi-copy-block-findings.md) specifies copies within
+a frame for packet byte B zero and the tested header flags. The remaining
+payload formats and reference-buffer variants are only partly traced.
 
 ## The shortcut copies existing buffers
 

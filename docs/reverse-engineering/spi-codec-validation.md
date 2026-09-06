@@ -10,8 +10,10 @@ native codec with exact recovery of every input pixel byte.
 This establishes a way to generate and check compressed SPI samples
 without SDOCX files. The native codec performed the pixel work in these
 tests. Subsequent [literal-block work](spi-literal-block-findings.md)
-independently reconstructs mode 5; general independent decoding,
-device-export compatibility and SDK support remain open.
+independently reconstructs mode 5, and
+[copy-block work](spi-copy-block-findings.md) adds modes 0 and 1 for the
+tested configuration. General independent decoding, device-export
+compatibility and SDK support remain open.
 
 ## Executed API sequence
 
@@ -175,8 +177,10 @@ Only Markdown findings are maintained here.
 
 The [mode-5 trace](spi-literal-block-findings.md) now specifies literal
 planes and validates independently constructed multiple-packet images.
-Remaining targets include other payload syntax, prediction and residual
-coding, mode 2, mixed-mode packets, buffer-copy shortcuts, other color and
-quality settings, malformed-input behavior and general independent decoding.
+The [copy-block trace](spi-copy-block-findings.md) adds independently
+constructed images combining modes 0, 1 and 5. Remaining targets include
+modes 2–4, prediction and residual coding, reference-buffer behavior,
+other color and quality settings, malformed-input behavior and general
+independent decoding.
 Device-exported SPI files and rendered references remain necessary for
 compatibility validation. No SDK code changed.

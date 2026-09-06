@@ -10,7 +10,9 @@ Mode 5 carries literal byte planes. An independent scratch implementation
 reconstructed these payloads in native-generated samples and assembled
 complete images accepted by Samsung's decoder under Unicorn. This extends the
 [native codec validation](spi-codec-validation.md) to an independently
-specified block format. Other modes and general SDK decoding remain open.
+specified block format. Subsequent [copy-block work](spi-copy-block-findings.md)
+adds modes 0 and 1 in the tested frame-copy configuration. General SDK
+decoding remains open.
 
 The complete-image checks used API color value 500, wire color index 4,
 header flags `0xe0`, and no packet buffer-copy shortcut. They do not
@@ -180,8 +182,9 @@ local tooling. No SDK code changed.
 
 ## Remaining work
 
-Next targets are the other modes' prediction and residual coding, the
-auxiliary marker state, reference-buffer behavior, color/flag variants
-and malformed-input limits. An independent decoder for arbitrary SPI
-images is still incomplete. Device-exported files and rendered references
-remain necessary for compatibility validation.
+The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
+and 1 alongside literals. Next targets are modes 2–4, auxiliary marker
+state, reference-buffer behavior, color/flag variants and malformed-input
+limits. An independent decoder for arbitrary SPI images is still incomplete.
+Device-exported files and rendered references remain necessary for
+compatibility validation.
