@@ -178,6 +178,13 @@ Fresh `SpenLatencyConfiguration` decompilation confirms the Java sources.
 consumer `0x4da4bc`, preserving the entity across synchronous and queued
 delivery and releasing generated events after consumption.
 
+[Predictor queue findings](predictor-queue-findings.md) connect freshly
+decompiled `SpenHandler` in `classes8.dex` to Base JNI table `0xf6b70`,
+registry dispatch `0x971a4`, and Predictor callback `0x39778`. The Java
+bridge selects the main looper; native registration `0x977f0` uses a
+32-bit address key, and Handler destruction `0xafa88` cancels that ID.
+Queued payload ownership is separate from the synchronizer and worker.
+
 [Predictor timing findings](predictor-timing-findings.md) trace the entity's
 reference and clock sample to `PredictorBase::Predict`, `0x2e7e4`.
 `NNPredictor::DoPredict`, `0x25abc`, adds the last `OnVSync` argument

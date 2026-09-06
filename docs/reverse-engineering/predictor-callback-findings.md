@@ -114,9 +114,11 @@ with `TouchSynchronizer::HandlerCallback`, `0x39778`, and calls
 The callback reconstructs the same entity and invokes consumer slot 16
 at `0x397cc`–`0x397f0`.
 
-This establishes the branch and payload behavior. It does not by itself
-establish which looper handles the queued message; that requires the
-separate `Handler` implementation.
+The [Handler and queue trace](predictor-queue-findings.md) establishes
+main-looper delivery for the asynchronous branch. The saved thread
+identifier only selects inline versus queued dispatch; it does not select
+the queue's looper. Each queued payload has an independent Handler and
+retains its copied consumer pointer across synchronizer replacement.
 
 ## Completion delivers a generated event or a null event
 
@@ -165,6 +167,8 @@ copies and the two event-deletion paths were followed separately.
 
 The [timing producer trace](predictor-timing-findings.md) identifies the
 entity fields and their separation from the neural task's later time.
-Runtime predictor selection, handler/looper delivery, neural model
-behavior and device behavior remain unmeasured. No SDK code changed,
-and no new SDOCX fixture or device execution was used.
+The Handler trace identifies queue selection and local cancellation;
+outer teardown ordering and actual delivery timing remain unmeasured.
+Runtime predictor selection, neural model behavior and device behavior
+also remain unmeasured. No SDK code changed, and no new SDOCX fixture or
+device execution was used.

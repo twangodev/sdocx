@@ -81,6 +81,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   orientation, hardware configuration and screen-position prediction delays.
 - [`predictor-callback-findings.md`](predictor-callback-findings.md) — bundled
   predictor selection, callback registration, thread dispatch and event lifetime.
+- [`predictor-queue-findings.md`](predictor-queue-findings.md) — main-looper
+  delivery, Handler registry keys, callback cleanup and teardown boundaries.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

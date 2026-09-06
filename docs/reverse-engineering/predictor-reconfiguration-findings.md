@@ -150,8 +150,11 @@ This ordering is not a guarantee that previously queued callback messages
 have finished. The [callback trace](predictor-callback-findings.md#registration-captures-a-consumer-and-a-thread-identifier)
 shows that asynchronous completion messages copy a raw consumer pointer.
 Joining the prediction worker and delivering those messages are distinct
-operations. No message-drain call was identified in this presenter/proxy
-sequence; the Handler and looper implementation still needs tracing.
+operations. The [Handler and queue trace](predictor-queue-findings.md)
+confirms main-looper dispatch and separate per-completion Handlers, whose
+destructors cancel by Handler ID. The synchronizer does not retain those
+Handlers, and no message-drain call was identified in this presenter/proxy
+sequence. Outer application teardown ordering remains unresolved.
 
 ## Validation and remaining work
 
@@ -165,5 +168,6 @@ getter overrides, creation failure, and the preserved requested selection.
 These findings narrow the earlier holder-replacement example to callers
 that change a live instance's model directly. They do not prove all such
 callers absent or establish the safety of pending work during destruction.
-The next trace is callback queue ownership and cancellation. No SDK code,
+Callback queue ownership and cancellation are now traced separately;
+the next boundary is outer application teardown ordering. No SDK code,
 saved-stroke decoding rule, or corpus fixture changed.
