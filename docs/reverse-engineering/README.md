@@ -135,6 +135,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   selection, prediction equations, residual accumulation and pixel comparisons.
 - [`spi-alpha-state-findings.md`](spi-alpha-state-findings.md) — neighbor
   initialization, packet boundaries, independent images and literal marker writes.
+- [`spi-alpha-literal-state-findings.md`](spi-alpha-literal-state-findings.md)
+  — literal marker offsets, bounded mixed sequences and allocation-dependent output.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

@@ -182,8 +182,9 @@ as in these color-index-four comparisons.
 
 These temporal callbacks use worker word 32 as their marker offset.
 For section zero, `0x6d3f0` computes `pixel_x/4` at
-`0x6d414`–`0x6d42c`. This is distinct from the unresolved alpha-literal
-marker-coordinate behavior described in the earlier state findings.
+`0x6d414`–`0x6d42c`. Alpha literals instead pass unscaled pixel X; the
+[literal-state trace](spi-alpha-literal-state-findings.md) recovers their
+different write footprint and effects on later prediction.
 
 The independent mixed decoder maintains markers across blocks, copies
 current marker rows into the previous-row region at row completion, and
@@ -251,8 +252,11 @@ digests were checked after generation. Local documentation paths and
 heading anchors also pass validation.
 
 These findings close the ordinary binary-availability edge rules for the
-tested intra/temporal mixtures. Remaining work includes alpha literal
-marker behavior, non-binary availability values, broader malformed-input
-limits, other color/header configurations and real-file compatibility.
+tested intra/temporal mixtures. The
+[literal-state trace](spi-alpha-literal-state-findings.md) adds bounded
+alpha literal mixtures and demonstrates selected non-binary availability
+values caused by marker overruns. Remaining work includes portable
+handling of those cases, broader malformed-input limits, other
+color/header configurations and real-file compatibility.
 Generated artifacts and scripts remain disposable. Maintained changes
 are Markdown-only, and no SDK code changed.

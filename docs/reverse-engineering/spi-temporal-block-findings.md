@@ -287,7 +287,9 @@ separately, as is [primary submode 3](spi-selected-plane-findings.md).
 [Multi-reference selection and temporal copy blocks](spi-reference-cache-findings.md)
 are also covered separately. The [mixed-prediction trace](spi-mixed-prediction-findings.md)
 adds all sixteen binary edge-availability rules and complete sequences
-containing intra blocks. Alpha literal marker behavior and broader
+containing intra blocks. The [literal-state trace](spi-alpha-literal-state-findings.md)
+adds bounded alpha literal mixtures and recovers their distinct marker
+offsets. Portable handling of literal marker overruns and broader
 malformed-input limits remain open. In particular, successful
 submode-0/2 sequences do not establish all packet-B-one combinations.
 Device exports and rendered references remain necessary for compatibility

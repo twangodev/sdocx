@@ -165,10 +165,13 @@ direct codec calls under Unicorn with recorded allocation sizes and
 memory writes; no host-memory overrun or device reproduction is claimed.
 Pixel agreement alone did not validate auxiliary marker writes.
 
-The new decoder rejects alpha mode 5 instead of modeling writes outside
-its marker buffer. Its interaction with following predicted blocks and
-the intended portable behavior remain open. The earlier literal-only
-pixel reader does not consume these prediction markers.
+The decoder used for this trace rejects alpha mode 5. The subsequent
+[literal-state trace](spi-alpha-literal-state-findings.md) recovers its
+exact write footprint, independently decodes cases that fit the buffer,
+and demonstrates changed prediction even without an overrun. Separate
+native probes show allocation-dependent output when writes reach another
+buffer. Portable handling of those cases remains open. The earlier
+literal-only pixel reader does not consume these prediction markers.
 
 ## Validation
 
@@ -210,9 +213,11 @@ The [differential trace](spi-differential-block-findings.md) also adds primary
 mode 2. The [mode-3 color trace](spi-color-intra-findings.md) adds full-size
 planes with zero quantization and independent color marker grids. The
 [mixed-prediction trace](spi-mixed-prediction-findings.md) extends edge
-completion and marker transitions to temporal neighbors. Resolve alpha
-literal marker behavior and extend other packet/header variants and
-malformed-input handling. Device-exported files are still needed to
-establish compatibility beyond these synthetic cases. The selected
+completion and marker transitions to temporal neighbors. The
+[literal-state trace](spi-alpha-literal-state-findings.md) recovers alpha
+literal offsets and their prediction effects. Extend other packet/header
+variants and malformed-input handling, including a portable policy for
+literal writes beyond the marker buffer. Device-exported files are still
+needed to establish compatibility beyond these synthetic cases. The selected
 configuration now has complete independent decoding for its supported
 color and alpha mode combinations.

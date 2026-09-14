@@ -185,8 +185,11 @@ local tooling. No SDK code changed.
 The later [alpha neighbor-state trace](spi-alpha-state-findings.md#alpha-literal-marker-writes-need-separate-treatment)
 found that native alpha literals pass pixel X directly to a marker helper
 expecting cell offsets. Selected writes crossed the requested marker
-allocation even while literal pixel output remained exact. Mixing alpha
-literals with predicted blocks needs further investigation.
+allocation even while literal pixel output remained exact. The
+[literal-state trace](spi-alpha-literal-state-findings.md) now establishes
+the exact write footprint, mixed prediction effects within the allocation,
+and allocation-dependent native output for selected overruns. Portable
+handling of cases outside its bounded model remains open.
 
 The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
 and 1 alongside literals, and the [palette trace](spi-palette-block-findings.md)
