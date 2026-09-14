@@ -277,7 +277,8 @@ not a claim that the SDOCX bitmap wrapper emits that multi-frame layout.
 APK/ELF identity, cited instruction words, dispatch/callback bindings and
 numeric tables were verified against the binary.
 
-Reduced temporal submode 2, primary submode 3, multi-reference selection,
+[Reduced temporal submode 2](spi-reduced-temporal-findings.md) is covered
+separately. Primary submode 3, multi-reference selection,
 mixed temporal/intra edge fallback, alpha literal marker behavior and
 broader malformed-input limits remain open. In particular, successful
 submode-0/2 sequences do not establish all packet-B-one combinations.

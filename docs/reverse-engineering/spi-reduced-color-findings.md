@@ -297,8 +297,10 @@ numeric tables were checked against the binary. Scratch scripts and
 generated streams remain disposable local artifacts.
 
 The [temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2
-with full-size reference planes. Reduced temporal submode 2, primary
-submode 3, multi-reference selection, alpha literal marker
+with full-size reference planes. The
+[reduced temporal trace](spi-reduced-temporal-findings.md) adds submode 2
+with bundled secondary residuals. Primary submode 3, multi-reference
+selection, alpha literal marker
 behavior, broader malformed-input handling and SDK integration remain
 open. Device-exported SPI data and rendered references are still needed
 to establish compatibility with real documents.

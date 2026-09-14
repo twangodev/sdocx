@@ -31,6 +31,8 @@ submode to nonzero quantization. The
 `0xf0` using independently constructed streams. The
 [temporal decoder](spi-temporal-block-findings.md) adds retained reference
 images and primary/alpha submodes 0 and 2 across constructed sequences.
+The [reduced temporal decoder](spi-reduced-temporal-findings.md) adds
+flags `0xb0`, bundled secondary residuals and reference-image filtering.
 Other mode-3 paths/configurations,
 device-export compatibility and SDK support remain open.
 

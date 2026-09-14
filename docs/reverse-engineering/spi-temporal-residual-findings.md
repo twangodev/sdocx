@@ -188,6 +188,8 @@ functions. Complete temporal sequence comparisons additionally validate
 the mask tables and coefficient arrays in their decoder context. APK/ELF
 identity, numeric tables and cited instruction bytes were verified.
 
-Reduced temporal residuals, primary submode 3, broader malformed-input
-policy and device-export compatibility remain open. Scratch tools and
+[Reduced temporal decoding](spi-reduced-temporal-findings.md) separately
+validates bundled primary/secondary residuals and their reconstruction.
+Primary submode 3, broader malformed-input policy and device-export
+compatibility remain open. Scratch tools and
 generated streams remain disposable; maintained findings are Markdown-only.
