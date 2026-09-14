@@ -154,6 +154,8 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   adds full-size and reduced secondary planes across all four packet
   selectors. [Mode-3 color reconstruction](spi-color-intra-findings.md)
   adds full-size planes with zero quantization, including native-generated
-  inputs. Nonzero quantization, other mode-3 submodes, alpha literal marker
-  behavior, general SPI compatibility and SDK integration remain open.
+  inputs. [Quantized color reconstruction](spi-quantized-color-findings.md)
+  adds nonzero quantization, integer inverse transforms and bit-depth clipping
+  for the same mode-3 submode. Reduced mode-3 planes, other submodes, alpha
+  literal marker behavior, general SPI compatibility and SDK integration remain open.
 - Byte-for-byte encrypted-file validation with a protected fixture.

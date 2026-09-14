@@ -233,8 +233,9 @@ Markdown-only and no SDK code changed.
 ## Remaining work
 
 The [mode-3 color trace](spi-color-intra-findings.md) now recovers full-size
-planes with zero quantization. Nonzero quantization, other mode-3 submodes,
-other header/packet paths and reference-buffer behavior remain open.
+planes with zero quantization; the [quantized color trace](spi-quantized-color-findings.md)
+adds nonzero quantization for the same submode. Reduced mode-3 planes,
+other submodes, other header/packet paths and reference-buffer behavior remain open.
 Alpha literal marker behavior and general malformed-input policy
 also remain open. Mode 2 now has independent decoding in the tested
 configuration, but these synthetic comparisons do not establish arbitrary

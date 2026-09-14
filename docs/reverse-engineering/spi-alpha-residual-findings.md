@@ -183,9 +183,11 @@ The [payload trace](spi-alpha-payload-findings.md) now decodes prediction
 modes and coded-partition masks. The [pixel trace](spi-alpha-pixel-findings.md)
 covers prediction and coefficient combination in `0x6ce0c`, and the
 [neighbor-state trace](spi-alpha-state-findings.md) supplies independent
-initialization. Other mode-3 submodes, nonzero selector paths
-and primary-pass compressed modes remain unresolved. Device-exported SPI
-files and visual references remain necessary for compatibility validation.
+initialization. The later [quantized color trace](spi-quantized-color-findings.md)
+recovers nonzero-Q coefficients and complete primary mode-3 reconstruction
+for full-size submode 1. Other submodes and configurations remain unresolved.
+Device-exported SPI files and visual references remain necessary for
+compatibility validation.
 
 Only Markdown findings are maintained. Scratch readers, native harnesses
 and generated artifacts are disposable local tooling. No SDK code changed.

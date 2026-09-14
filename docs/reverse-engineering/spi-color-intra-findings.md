@@ -16,8 +16,9 @@ modes. The constructed corpus contains 329 primary mode-3 blocks and
 exercises all 18 prediction modes and all partition-mask codes.
 
 The complete reader supports primary modes 0/1/2/3/4/5 and alpha modes
-0/1/3 within these limits. Mode 3 with nonzero quantization, reduced planes
-or other submodes remains open. No SDK implementation changed, and generated
+0/1/3 within these limits. Later [quantized color work](spi-quantized-color-findings.md)
+adds nonzero quantization for the same full-size submode. Reduced planes
+and other submodes remain open. No SDK implementation changed, and generated
 codec inputs do not establish compatibility with device-exported documents.
 
 ## A block selects its quantizer before three plane payloads
@@ -65,8 +66,8 @@ can use different subdivision and prediction choices.
 
 Q nonzero instead calls coefficient reader `0x6b8a8` at `0x6a890` and
 adds the transform stage `0x6abec`, called for the three planes at
-`0x69760`, `0x69b40` and `0x69d98`. Those paths are not implemented in
-the independent reader.
+`0x69760`, `0x69b40` and `0x69d98`. The subsequent
+[quantized color findings](spi-quantized-color-findings.md) recover those paths.
 
 ## Color planes have separate prediction-marker state
 
@@ -156,7 +157,8 @@ addition is at `0x626f8`–`0x626fc`; the scalar addition is at
 `0x62740`–`0x62744`. Uncoded partitions copy prediction samples.
 
 Q nonzero selects context callback 1568 instead, resolving through
-`0xeedd8` to `0x62254`. Its quantized reconstruction remains open.
+`0xeedd8` to `0x62254`. Its [quantized reconstruction](spi-quantized-color-findings.md#combination-broadcasts-dc-and-clamps-to-each-planes-bit-depth)
+is recovered separately.
 
 ## The output callback converts signed planes back to bytes
 
@@ -207,7 +209,9 @@ encoder quality arguments. Every primary block selects C directly:
 
 These are measured native encode/decode results, not a general quality
 mapping or fidelity metric. In particular, quality 24 is not universally
-lossless. Only Q zero in this sweep is independently decoded. Its SPI
+lossless. At this milestone only Q zero was independently decoded;
+the later [quantized decoder](spi-quantized-color-findings.md) matches all
+seven outputs. The Q-zero SPI
 SHA-256 is `73ceef275fbcf6a65acf685bbb4000fbae25c9a9cdf713ebeab30f2abe04a161`;
 the decoded pixels hash to
 `fe10dfe40e46151052bd470688f4731a9d6d8d1ff519b2f5c6fb36112ae03965`.
@@ -257,8 +261,9 @@ are Markdown-only.
 
 ## Remaining work
 
-Recover nonzero-Q coefficient reader `0x6b8a8`, transform stage `0x6abec`
-and its reconstruction callback, then mode-3 reduced planes and other
-submodes. Reference buffers, alpha literal marker behavior, other header
+The [quantized color trace](spi-quantized-color-findings.md) now recovers
+nonzero-Q coefficients, scaling, inverse transforms and reconstruction.
+Next targets are mode-3 reduced planes and other submodes.
+Reference buffers, alpha literal marker behavior, other header
 and packet configurations, malformed-input limits, SDK integration and
 device-export validation also remain open.
