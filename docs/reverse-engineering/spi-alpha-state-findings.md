@@ -9,7 +9,7 @@ Recovered from Samsung Notes 4.4.45.37 ARM64 `libSPenBase.so` in the
 their own alpha neighbor state. Complete synthetic images decode without
 native parsing or native state as an input.
 
-The scratch image decoder supports primary color modes 0, 1 and 5,
+The scratch image decoder in this trace supports primary color modes 0, 1 and 5,
 and alpha modes 0, 1 and 3, with wire color index 4, header flags `0xe0`
 and packet byte B zero. Every pixel matched Samsung's native decoder in
 155 complete-image cases. General SPI compatibility, other configurations,
@@ -202,7 +202,9 @@ Markdown-only and no SDK code changed.
 
 ## Remaining work
 
-Recover primary color modes 2–4, resolve alpha literal marker behavior,
+Subsequent [palette work](spi-palette-block-findings.md) adds primary mode 4
+and independent decoding of the 30 original native-generated images.
+Recover primary color modes 2 and 3, resolve alpha literal marker behavior,
 and extend reference selection, packet/header variants and malformed-input
 handling. Device-exported files are still needed to establish compatibility
 beyond these synthetic cases. The selected configuration now has complete

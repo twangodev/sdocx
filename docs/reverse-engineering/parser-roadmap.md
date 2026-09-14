@@ -148,7 +148,9 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   independent payload traces given starting neighbor state.
   [Alpha pixel reconstruction](spi-alpha-pixel-findings.md) and
   [neighbor state](spi-alpha-state-findings.md) now support complete scratch
-  image decoding for primary modes 0/1/5 and alpha modes 0/1/3. Primary
-  modes 2–4, alpha literal marker behavior, general SPI compatibility and
-  SDK integration remain open.
+  image decoding for primary modes 0/1/5 and alpha modes 0/1/3.
+  [Mode-4 color palettes](spi-palette-block-findings.md) extend that reader
+  to all 30 original native-generated images. Primary modes 2/3, alpha
+  literal marker behavior, general SPI compatibility and SDK integration
+  remain open.
 - Byte-for-byte encrypted-file validation with a protected fixture.

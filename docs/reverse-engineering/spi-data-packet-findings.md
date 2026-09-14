@@ -13,8 +13,10 @@ synthetic inputs. Subsequent [native codec tests](spi-codec-validation.md)
 round-trip complete synthetic images, and the
 [literal-block trace](spi-literal-block-findings.md) independently
 reconstructs mode 5. The [copy-block trace](spi-copy-block-findings.md)
-adds modes 0 and 1 for the tested frame-copy configuration. Full pixel
-syntax and general independent decoding remain unresolved.
+adds modes 0 and 1 for the tested frame-copy configuration. The
+[palette trace](spi-palette-block-findings.md) adds primary mode 4 and
+combines with alpha reconstruction to decode all 30 native-generated images
+independently. Other pixel syntax and general SPI compatibility remain open.
 
 ## Kind 2 has a 14-byte prefix
 

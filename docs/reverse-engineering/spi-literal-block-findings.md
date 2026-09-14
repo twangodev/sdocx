@@ -189,8 +189,9 @@ allocation even while literal pixel output remained exact. Mixing alpha
 literals with predicted blocks needs further investigation.
 
 The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
-and 1 alongside literals. Next targets are primary color modes 2–4, remaining marker
-state, reference-buffer behavior, color/flag variants and malformed-input
+and 1 alongside literals, and the [palette trace](spi-palette-block-findings.md)
+adds primary mode 4. Next targets are primary color modes 2/3, remaining
+marker state, reference-buffer behavior, color/flag variants and malformed-input
 limits. An independent decoder for arbitrary SPI images is still incomplete.
 Device-exported files and rendered references remain necessary for
 compatibility validation.

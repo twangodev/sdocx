@@ -105,6 +105,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   plane layout, independent reconstruction, packet groups and alpha ordering.
 - [`spi-copy-block-findings.md`](spi-copy-block-findings.md) — mode-0/1
   frame copies, displacement codes and independent mixed-block validation.
+- [`spi-palette-block-findings.md`](spi-palette-block-findings.md) — mode-4
+  palettes, index runs, packet cache state and original-image reconstruction.
 - [`spi-alpha-residual-findings.md`](spi-alpha-residual-findings.md) — partial
   mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`spi-alpha-payload-findings.md`](spi-alpha-payload-findings.md) — mode-3
