@@ -199,8 +199,11 @@ also reconstructs alpha pixels. The [neighbor-state trace](spi-alpha-state-findi
 adds independent initialization and complete images with primary modes
 0/1/5 and alpha modes 0/1/3; palettes and differential blocks extend this
 to primary 0/1/2/4/5.
-Other packet-byte and header-flag combinations,
-reference selection, remaining marker behavior, integer limits and malformed
-copy regions remain open. The copy/literal reference described here covers
-the specified frame-copy configuration. General SPI compatibility still
+The [reference-cache trace](spi-reference-cache-findings.md) adds mode-0/1
+syntax for packet B one, cache capacities 1–5, and the distinct color/alpha
+copy sources. It also covers overlapping alpha copies in that configuration.
+Other packet-byte and header-flag combinations, remaining marker behavior,
+integer limits and malformed copy regions remain open. The copy/literal
+reference described here covers the specified frame-copy configuration.
+General SPI compatibility still
 requires device-exported files and rendered references.

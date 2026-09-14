@@ -218,9 +218,12 @@ to nonzero quantization. The [reduced-plane trace](spi-reduced-color-findings.md
 adds submode 1 with reduced secondary planes and byte reconstruction.
 The [temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2
 with reference images, motion prediction and a distinct residual syntax.
+The [reference-cache trace](spi-reference-cache-findings.md) adds per-block
+rank selection for capacities 1–5 and temporal mode-0/1 copies, including
+the distinct alpha source and overlap behavior.
 Remaining targets include other mode-3 paths, alpha literal
 marker behavior and other residual paths,
-reference-buffer behavior, other color and quality settings, malformed-input
+other reference-buffer configurations, color and quality settings, malformed-input
 behavior and general independent decoding.
 Device-exported SPI files and rendered references remain necessary for
 compatibility validation. No SDK code changed.

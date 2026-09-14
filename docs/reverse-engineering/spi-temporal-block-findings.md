@@ -55,8 +55,10 @@ The tested retained configuration also sets header byte 18 to one.
 When flag B is clear, setup at `0x5cf24` allocates that additional image,
 and `0x60478` initializes per-block reference-index arrays. The output
 paths update that cache as well as the destination image. The count-one
-case avoids selection among multiple cached references; the complete
-reference-cache selection policy remains open.
+case avoids selection among multiple cached references. The separate
+[reference-cache trace](spi-reference-cache-findings.md) recovers per-block
+orders and the shared fill count for capacities 1–5, including temporal
+mode-0/1 cache reads and displaced copies.
 
 ## Packet byte B exposes the submode field
 
@@ -282,9 +284,10 @@ numeric tables were verified against the binary.
 
 [Reduced temporal submode 2](spi-reduced-temporal-findings.md) is covered
 separately, as is [primary submode 3](spi-selected-plane-findings.md).
-Multi-reference selection,
-mixed temporal/intra edge fallback, alpha literal marker behavior and
-broader malformed-input limits remain open. In particular, successful
+[Multi-reference selection and temporal copy blocks](spi-reference-cache-findings.md)
+are also covered separately. Mixed temporal/intra edge fallback, alpha
+literal marker behavior and broader malformed-input limits remain open.
+In particular, successful
 submode-0/2 sequences do not establish all packet-B-one combinations.
 Device exports and rendered references remain necessary for compatibility
 validation. Maintained changes are Markdown-only; generated sequences

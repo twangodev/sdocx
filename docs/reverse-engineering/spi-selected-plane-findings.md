@@ -175,8 +175,9 @@ from context reference image 1000 at the same block coordinates.
 The cache-write calls for selected planes 0, 1 and 2 are `0x5df58`,
 `0x5e10c` and `0x5e090`. The corresponding current-image writes are
 `0x5df74`, `0x5e148` and `0x5e0ec`. This path does not call cache-order
-helper `0x6e728`. The complete policy for multiple cache entries remains
-separate work.
+helper `0x6e728`. The separate
+[reference-cache trace](spi-reference-cache-findings.md) validates this
+behavior with capacities 1–5 and recovers the other blocks' rank updates.
 
 ### Selector 3 is accepted but writes no primary color plane
 
@@ -261,7 +262,8 @@ calls, two scan pointers, two combination callbacks and 372 mask/class
 table bytes were verified against the native binary. Local documentation
 paths and heading links also pass validation.
 
-Multiple-cache selection, mixed temporal/intra spatial-edge fallback,
+[Multiple-cache selection](spi-reference-cache-findings.md) is now covered
+for capacities 1–5. Mixed temporal/intra spatial-edge fallback,
 broader malformed-input handling and device-export compatibility remain
 open. Maintained changes are Markdown-only; scripts and constructed
 sequences remain disposable local evidence.
