@@ -54,9 +54,7 @@
         "page_objects": {
           "images": 0
         },
-        "diagnostics": {
-          "UnsupportedImageFeature": 7
-        }
+        "diagnostics": {}
       },
       "sdocx": {
         "path": "03-image-placement.sdocx",

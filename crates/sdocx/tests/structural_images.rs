@@ -42,7 +42,7 @@ fn fill(id: i32) -> Vec<u8> {
 }
 
 fn shape_fixed() -> Vec<u8> {
-    let mut fixed = 1_u32.to_le_bytes().to_vec();
+    let mut fixed = 4_u32.to_le_bytes().to_vec();
     for value in [0.0_f64, 0.0, 100.0, 80.0] {
         fixed.extend_from_slice(&value.to_le_bytes());
     }
@@ -72,6 +72,223 @@ fn image_with_fill(
 
 fn image(id: i32) -> Vec<u8> {
     image_with_fill(2, &fill(id), 0, &[], &frame(3, 0, &[], &[]))
+}
+
+fn rectangle_path(points: [[f64; 2]; 4]) -> Vec<u8> {
+    let mut bytes = 5_u32.to_le_bytes().to_vec();
+    for (index, point) in points.into_iter().enumerate() {
+        bytes.push(if index == 0 { 1 } else { 2 });
+        bytes.extend(point.into_iter().flat_map(f64::to_le_bytes));
+    }
+    bytes.push(6);
+    bytes
+}
+
+fn image_outline(kind: u8, width: f32) -> Vec<u8> {
+    let mut fixed = 4_u32.to_le_bytes().to_vec();
+    for point in [[40.0_f64, 20.0], [90.0, 60.0], [40.0, 100.0], [-10.0, 60.0]] {
+        fixed.extend(point.into_iter().flat_map(f64::to_le_bytes));
+    }
+    fixed.extend(4_u32.to_le_bytes());
+    fixed.extend([0; 5]);
+    let mut color = vec![1, 0, kind];
+    color.extend(0xff000000_u32.to_le_bytes());
+    color.extend([0; 12]);
+    let mut flexible = (color.len() as u32).to_le_bytes().to_vec();
+    flexible.extend(color);
+    flexible.extend(12_u32.to_le_bytes());
+    flexible.extend(width.to_le_bytes());
+    flexible.extend([0; 8]);
+    frame(6, 12, &fixed, &flexible)
+}
+
+fn native_image(rotation: f32, path: &[u8], outline: &[u8], fill_data: &[u8]) -> Vec<u8> {
+    let mut bytes = base();
+    let rotation_offset = bytes.len() - 4;
+    bytes[rotation_offset..].copy_from_slice(&rotation.to_le_bytes());
+    bytes.extend(outline);
+    let mut fixed = 4_u32.to_le_bytes().to_vec();
+    for coordinate in [-10.0_f64, 20.0, 90.0, 100.0] {
+        fixed.extend(coordinate.to_le_bytes());
+    }
+    fixed.extend(rotation.to_le_bytes());
+    fixed.extend((path.len() as u32).to_le_bytes());
+    fixed.extend(path);
+    fixed.push(0);
+    let mut flexible = (fill_data.len() as u32).to_le_bytes().to_vec();
+    flexible.push(2);
+    flexible.extend(fill_data);
+    bytes.extend(frame(7, 32, &fixed, &flexible));
+    bytes.extend(frame(3, 0, &[], &[]));
+    bytes
+}
+
+fn parse_native_image(payload: &[u8]) -> sdocx::ParsedDocument {
+    sdocx::parse_bytes_detailed(&with_note(
+        archive(
+            &one_page(vec![object(3, payload, &[])]),
+            Some(&[(7, "main.png")]),
+            &[("main.png", b"image")],
+        ),
+        "\n\u{fffc}",
+        &[(1, payload.to_vec())],
+    ))
+    .unwrap()
+}
+
+#[test]
+fn standard_rectangular_images_accept_inactive_outline_and_nine_patch_settings() {
+    let mut fill_data = fill(7);
+    fill_data[58..62].copy_from_slice(&1080_i32.to_le_bytes());
+    for (rotation, points) in [
+        (
+            0.0,
+            [[-10.0, 20.0], [90.0, 20.0], [90.0, 100.0], [-10.0, 100.0]],
+        ),
+        (
+            90.0,
+            [[80.0, 10.0], [80.0, 110.0], [0.0, 110.0], [0.0, 10.0]],
+        ),
+    ] {
+        for outline in [
+            image_outline(2, 0.0),
+            image_outline(2, 2.0),
+            image_outline(0, 0.0),
+        ] {
+            let payload = native_image(rotation, &rectangle_path(points), &outline, &fill_data);
+            let parsed = parse_native_image(&payload);
+            assert!(
+                !parsed.report.diagnostics.iter().any(|diagnostic| matches!(
+                    diagnostic.code,
+                    DiagnosticCode::UnsupportedImageFeature
+                        | DiagnosticCode::UnresolvedImageMedia
+                        | DiagnosticCode::InferredImageMediaReference
+                )),
+                "{:?}",
+                parsed.report.diagnostics
+            );
+            assert_eq!(
+                placed(&parsed.document.pages[0].elements[0]).media_index,
+                Some(0)
+            );
+            let span = &parsed.note.as_ref().unwrap().body.object_spans[0];
+            assert_eq!(embedded_image(span).media_index, Some(0));
+            assert_eq!(span.object_data, payload);
+        }
+    }
+}
+
+#[test]
+fn custom_image_paths_visible_outlines_and_active_fill_effects_still_warn() {
+    let points = [[-10.0, 20.0], [90.0, 20.0], [90.0, 100.0], [-10.0, 100.0]];
+    let rectangular = rectangle_path(points);
+    let outline = image_outline(2, 0.0);
+    let plain_fill = fill(7);
+    let mut custom_points = points;
+    custom_points[1][0] -= 1.0;
+    let mut open_path = rectangular.clone();
+    open_path[..4].copy_from_slice(&4_u32.to_le_bytes());
+    open_path.pop();
+    let mut trailing_path = rectangular.clone();
+    trailing_path.push(0);
+    let mut cases = vec![
+        (
+            native_image(0.0, &rectangle_path(custom_points), &outline, &plain_fill),
+            "image shape geometry",
+        ),
+        (
+            native_image(90.0, &rectangular, &outline, &plain_fill),
+            "image shape geometry",
+        ),
+        (
+            native_image(0.0, &open_path, &outline, &plain_fill),
+            "image shape geometry",
+        ),
+        (
+            native_image(0.0, &trailing_path, &outline, &plain_fill),
+            "image shape geometry",
+        ),
+        (
+            native_image(0.0, &rectangular, &image_outline(0, 2.0), &plain_fill),
+            "image outlines",
+        ),
+    ];
+    for (offset, replacement) in [
+        (0, vec![1]),
+        (5, 1.0_f32.to_le_bytes().to_vec()),
+        (37, 25.0_f32.to_le_bytes().to_vec()),
+        (41, vec![1]),
+        (
+            42,
+            [1_i32, 2, 30, 40]
+                .into_iter()
+                .flat_map(i32::to_le_bytes)
+                .collect(),
+        ),
+    ] {
+        let mut fill_data = plain_fill.clone();
+        fill_data[offset..offset + replacement.len()].copy_from_slice(&replacement);
+        cases.push((
+            native_image(0.0, &rectangular, &outline, &fill_data),
+            "image fill transforms",
+        ));
+    }
+    let mut extended_outline = outline.clone();
+    extended_outline[11] = 1;
+    cases.push((
+        native_image(0.0, &rectangular, &extended_outline, &plain_fill),
+        "shape connections or base extensions",
+    ));
+    let mut different_template = native_image(0.0, &rectangular, &outline, &plain_fill);
+    let shape_fixed_offset = base().len() + outline.len() + 17;
+    different_template[shape_fixed_offset..shape_fixed_offset + 4]
+        .copy_from_slice(&1_u32.to_le_bytes());
+    cases.push((different_template, "image shape geometry"));
+    let mut different_bounds = native_image(0.0, &rectangular, &outline, &plain_fill);
+    different_bounds[shape_fixed_offset + 4..shape_fixed_offset + 12]
+        .copy_from_slice(&0.0_f64.to_le_bytes());
+    cases.push((different_bounds, "image shape geometry"));
+    for (payload, expected) in cases {
+        let parsed = parse_native_image(&payload);
+        let warnings: Vec<_> = parsed
+            .report
+            .diagnostics
+            .iter()
+            .filter(|d| d.code == DiagnosticCode::UnsupportedImageFeature)
+            .collect();
+        assert_eq!(warnings.len(), 2);
+        assert!(
+            warnings.iter().all(|d| d.message.contains(expected)),
+            "{warnings:?}"
+        );
+        assert!(
+            warnings
+                .iter()
+                .any(|d| d.message.starts_with("embedded image at UTF-16 index 1:"))
+        );
+    }
+}
+
+#[test]
+fn native_image_paths_and_inherited_settings_remain_bounded() {
+    let path = rectangle_path([[-10.0, 20.0], [90.0, 20.0], [90.0, 100.0], [-10.0, 100.0]]);
+    let outline = image_outline(2, 0.0);
+    let fill_data = fill(7);
+    let mut invalid_paths: Vec<_> = (1..path.len()).map(|end| path[..end].to_vec()).collect();
+    let mut nonfinite = path.clone();
+    nonfinite[5..13].copy_from_slice(&f64::NAN.to_le_bytes());
+    invalid_paths.push(nonfinite);
+    let mut payloads: Vec<_> = invalid_paths
+        .iter()
+        .map(|path| native_image(0.0, path, &outline, &fill_data))
+        .collect();
+    let mut invalid_outline = outline.clone();
+    invalid_outline[17..21].copy_from_slice(&u32::MAX.to_le_bytes());
+    payloads.push(native_image(0.0, &path, &invalid_outline, &fill_data));
+    for payload in payloads {
+        let bytes = archive(&one_page(vec![object(3, &payload, &[])]), None, &[]);
+        assert!(matches!(sdocx::parse_bytes(&bytes), Err(Error::Format(_))));
+    }
 }
 
 fn embedded_text(text: &str, objects: &[(i32, Vec<u8>)]) -> Vec<u8> {

@@ -316,7 +316,10 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
     })
 }
 
-fn read_style(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) -> Result<ShapeStyle> {
+pub(crate) fn read_style(
+    frame: &Frame<'_>,
+    unsupported: &mut Vec<&'static str>,
+) -> Result<ShapeStyle> {
     frame.expect_kind(6)?;
     let mut fixed = Reader::new(frame.fixed, "shape base");
     let magnetic_count = fixed.read_u32("magnetic point count")? as usize;

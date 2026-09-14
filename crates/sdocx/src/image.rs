@@ -2,9 +2,11 @@ use crate::binary::Reader;
 use crate::frame::Frame;
 use crate::media::MediaResolver;
 use crate::object::read_bbox;
+use crate::shape::{read_style, visit_path};
 use crate::{
-    DiagnosticCode, Error, ObjectMetadata, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption,
-    ObjectType, ParseReport, PlacedImage, Result, RichTextBox, RichTextObjectContent,
+    BoundingBox, DiagnosticCode, Error, ObjectMetadata, ObjectSpanLayoutConstraint,
+    ObjectSpanLayoutOption, ObjectType, ParseReport, PlacedImage, Result, RichTextBox,
+    RichTextObjectContent, ShapePaint,
 };
 
 pub(crate) struct DecodedImage {
@@ -113,8 +115,6 @@ fn decode_text_images_in_context(
     Ok(())
 }
 
-/// Native ObjectImage: 0 + 6 + 7 + 3. The displayed media ID is in frame 7's
-/// FillImageEffect, not frame 3's optional border/original-image references.
 pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     let mut reader = Reader::new(data, "image object");
     let base = ObjectMetadata::read(&mut reader)?;
@@ -125,25 +125,22 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     let tail = Frame::read(&mut reader)?;
     tail.expect_kind(3)?;
     let mut unsupported = Vec::new();
-    if shape_base.fields.has_other_bits(0)
-        || shape_base.properties.has_other_bits(0)
-        || !shape_base.fixed.is_empty()
-        || !shape_base.flexible.is_empty()
-    {
-        unsupported.push("inherited shape settings");
-    }
-    // ObjectShapeBinaryHandler writes these fixed fields before its flexible
-    // data: shape type, local bounds, rotation, sized path, control points.
+    read_image_outline(&shape_base, &mut unsupported)?;
     let mut fixed = Reader::new(shape.fixed, "image shape fixed data");
-    fixed.read_u32("shape type")?;
-    read_bbox(&mut fixed)?;
+    let shape_type = fixed.read_u32("shape type")?;
+    let geometry_bbox = read_bbox(&mut fixed)?;
     let shape_rotation = finite_f32(&mut fixed, "shape rotation")?;
     let path_size = fixed.read_u32("shape path size")? as usize;
-    fixed.skip(path_size, "shape path")?;
+    let path = fixed.read_bytes(path_size, "shape path")?;
+    let rectangular_path = path.is_empty()
+        || (is_placement_rectangle(path, base.bbox, base.rotation_degrees.unwrap_or(0.0))?
+            && matches_placement(geometry_bbox, base.bbox));
     let point_count = usize::from(fixed.read_u8("control point count")?);
     fixed.skip(point_count * 16, "control points")?;
-    if (shape_rotation != 0.0 && f64::from(shape_rotation) != base.rotation_degrees.unwrap_or(0.0))
-        || path_size != 0
+    if shape_type != 4
+        || (shape_rotation != 0.0
+            && f64::from(shape_rotation) != base.rotation_degrees.unwrap_or(0.0))
+        || !rectangular_path
         || point_count != 0
         || fixed.remaining() != 0
         || shape.properties.has_other_bits(0)
@@ -162,8 +159,6 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         fields.read_i32("shape pen name ID")?;
     }
     let media_id = if shape.fields.contains(3) {
-        // This gap is not emitted by the observed writer. Its unknown width
-        // prevents locating later fields safely; never search for a fill marker.
         unsupported.push("unknown field before the image fill");
         None
     } else {
@@ -233,7 +228,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
                 skip_sized(&mut fields, "image path")?;
                 fields.skip(32, "image path rectangles")?;
             }
-            _ => break, // Unknown preceding field: leave the remainder bounded.
+            _ => break,
         }
     }
     if tail.fields.has_other_bits((1 << 1) | (1 << 17))
@@ -257,9 +252,73 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
     })
 }
 
+fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) -> Result<()> {
+    if frame.fixed.is_empty() {
+        if frame.fields.has_other_bits(0)
+            || frame.properties.has_other_bits(0)
+            || !frame.flexible.is_empty()
+        {
+            unsupported.push("inherited shape settings");
+        }
+        return Ok(());
+    }
+    let style = read_style(frame, unsupported)?;
+    let invisible = match style.paint {
+        ShapePaint::None => true,
+        ShapePaint::Solid(argb) => argb >> 24 == 0,
+        ShapePaint::Unsupported { .. } => false,
+    };
+    if style.width != 0.0 && !invisible {
+        unsupported.push("image outlines");
+    }
+    Ok(())
+}
+
+fn matches_placement(a: BoundingBox, b: BoundingBox) -> bool {
+    a.x_min == b.x_min && a.y_min == b.y_min && a.x_max == b.x_max && a.y_max == b.y_max
+}
+
+fn is_placement_rectangle(data: &[u8], bbox: BoundingBox, rotation: f64) -> Result<bool> {
+    let mut points = [[0.0; 2]; 4];
+    let mut commands = 0;
+    let mut rectangular = true;
+    let (consumed, supported) = visit_path(data, |verb, coordinates| {
+        if commands < 4 && verb == if commands == 0 { 1 } else { 2 } {
+            points[commands].copy_from_slice(coordinates);
+        } else if commands != 4 || verb != 6 {
+            rectangular = false;
+        }
+        commands += 1;
+    })?;
+    if !supported || !rectangular || commands != 5 || consumed != data.len() {
+        return Ok(false);
+    }
+    let cx = (bbox.x_min + bbox.x_max) / 2.0;
+    let cy = (bbox.y_min + bbox.y_max) / 2.0;
+    let (sin, cos) = rotation.to_radians().sin_cos();
+    let corners = [
+        [bbox.x_min, bbox.y_min],
+        [bbox.x_max, bbox.y_min],
+        [bbox.x_max, bbox.y_max],
+        [bbox.x_min, bbox.y_max],
+    ];
+    let coordinate_scale = corners
+        .iter()
+        .flatten()
+        .fold(1.0_f64, |scale, value| scale.max(value.abs()));
+    let tolerance = coordinate_scale * f64::from(f32::EPSILON) * 8.0;
+    Ok(points.iter().zip(corners).all(|(point, [x, y])| {
+        let expected = [
+            cx + cos * (x - cx) - sin * (y - cy),
+            cy + sin * (x - cx) + cos * (y - cy),
+        ];
+        point.iter().zip(expected).all(|(actual, expected)| {
+            expected.is_finite() && (actual - expected).abs() <= tolerance
+        })
+    }))
+}
+
 fn parse_image_fill(data: &[u8], unsupported: &mut Vec<&'static str>) -> Result<Option<u32>> {
-    // Normal WDoc is 62 bytes. Coedit substitutes a 64-byte hash for the
-    // four-byte bind ID (122 bytes); never interpret that hash as a numeric ID.
     if data.len() > 62 {
         unsupported.push("alternate or extended image-fill encoding");
         return Ok(None);
@@ -273,14 +332,13 @@ fn parse_image_fill(data: &[u8], unsupported: &mut Vec<&'static str>) -> Result<
     }
     let rotatable = reader.read_u8("fill rotatable flag")?;
     let nine_patch = read_rect(&mut reader)?;
-    let nine_patch_width = reader.read_i32("nine-patch width")?;
+    reader.read_i32("nine-patch width")?;
     if fill_type != 0
         || settings[..6].iter().any(|value| *value != 0.0)
         || settings[6..8].iter().any(|value| *value != 100.0)
         || settings[8] != 0.0
         || rotatable != 0
         || nine_patch != [0; 4]
-        || nine_patch_width != 0
     {
         unsupported.push("image fill transforms, tiling, transparency or nine-patch");
     }

@@ -105,7 +105,7 @@ counter have been removed; only the native image decoder produces placed images.
 Crop rectangles with an original-image placement are rendered by clipping the
 original placement to the displayed bounds. Pixel crops without that placement
 and border/original media IDs remain incomplete.
-Fill transforms, tiling, transparency, nine-patch, shape paths and several
+Fill transforms, tiling, transparency, active nine-patch, custom shape paths and several
 inherited properties remain incomplete. Alternative fill encodings and unknown
 fields before a fill are reported without guessing a reference. `.spi`, PDF,
 audio and video assets are not raster image render inputs.
@@ -150,12 +150,54 @@ Both report no missing foreground at the runner's one-pixel tolerance.
 The executable and input hashes are recorded by the
 conformance runner; these figures describe this pair and its raster settings.
 
-Seven conservative `UnsupportedImageFeature` warnings remain for inherited
-shape/style/path/fill settings. They are not evidence that seven images are
-missing. Inline, alternate-margin, cross-page and nested text-object image
+The initial implementation emitted seven conservative `UnsupportedImageFeature`
+warnings for inherited shape/style/path/fill settings. The bounded handling
+below removes these warnings for this fixture. Inline, alternate-margin,
+cross-page and nested text-object image
 layouts are also explicitly reported as incomplete. The corpus now locks both
 decoded and resolved embedded-image counts, and a rendering regression checks
 the per-page placement counts. Synthetic regressions cover UTF-16 anchors,
 media binding, hidden images, truncation, limits, crops and page slicing.
 Workspace tests, the full external corpus and Clippy pass. The existing five
 formatting SVG pages are byte-identical to the pre-change SDK output.
+
+## Standard image settings and diagnostic precision
+
+The seven images use type-6 magnetic points with no connections, explicit
+no-outline color kind 2 and zero line width. Images now reuse the bounded
+shape-outline reader. Magnetic points do not change the displayed image;
+no-outline paint, transparent solid paint and zero-width outlines require
+no additional rendering. Visible outlines and unrecognized inherited settings
+still produce `UnsupportedImageFeature`.
+
+Their type-7 shape is rectangle 4, with matching base/local bounds and a
+five-command path: move, three lines, close. The coordinates describe the
+placement corners after the stored rotation. The SDK recognizes this redundant
+rectangle, checking every command and coordinate, with eight `f32` epsilon
+units of tolerance relative to the placement coordinate scale. This accounts
+for native float geometry serialized as doubles; the 45-degree fixture's
+largest corner discrepancy is about 0.0000462 document units. Other templates,
+custom or open paths, extra commands and inconsistent placement still warn.
+Known path commands are bounded and reject truncated/non-finite coordinates.
+
+Every image fill stores nine-patch width 1080 with rectangle `[0,0,0,0]`.
+The width alone does not activate nine-patch rendering: ARM64
+`libSPenDrawing.so` function `ObjectImageDrawing::hasNinePatchRect` at
+`0x85a94` obtains the rectangle at `0x85abc`, calls `Rect::IsEmpty` at
+`0x85ac8` and negates that result at `0x85acc`. The parser consumes the width
+without reporting an unsupported effect when the rectangle is all zero.
+Nonzero rectangles, stretch/tiling changes, transparency and alternate fill
+flags remain diagnostic conditions.
+
+The locked image fixture now expects zero diagnostics while retaining all
+seven resolved images and the three/two/two page distribution. New synthetic
+cases cover both standalone and embedded images, rotated rectangles, inactive
+outline variants, dormant nine-patch width, active effects, custom paths,
+unknown properties and malformed path/outline lengths. All three image SVG
+pages and all five formatting SVG pages remain byte-identical to the output
+before this diagnostic correction.
+
+Validation passes all 259 workspace tests, both external corpus tests,
+Clippy with warnings denied, formatting, Rust 1.92 checks and the WASM target
+check. The source/reference hashes were verified in an isolated corpus copy;
+the existing `hf` checkout was preserved.
