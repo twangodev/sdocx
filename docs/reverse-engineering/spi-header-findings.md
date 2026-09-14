@@ -170,6 +170,9 @@ recovers kind-2 prefixes and block coordinates. Complete native
 reconstruction of synthetic bitmaps is covered by the
 [codec tests](spi-codec-validation.md), and the
 [literal-block trace](spi-literal-block-findings.md) independently
-reconstructs mode 5. Real-file compatibility, auxiliary field semantics,
+reconstructs mode 5. The [reduced-plane trace](spi-reduced-color-findings.md)
+connects flag D to primary mode-3 secondary-plane reduction and validates
+complete constructed images with flags `0xf0`.
+Real-file compatibility, other auxiliary field semantics,
 general independent decoding and rendering remain unvalidated.
 No SDK code changed.

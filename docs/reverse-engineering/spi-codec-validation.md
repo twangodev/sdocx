@@ -26,7 +26,9 @@ also recovers primary mode 2 using separately constructed images.
 [Mode-3 color work](spi-color-intra-findings.md) adds full-size planes with
 zero quantization, including new native-generated inputs. The
 [quantized color decoder](spi-quantized-color-findings.md) extends the same
-submode to nonzero quantization. Other mode-3 paths/configurations,
+submode to nonzero quantization. The
+[reduced-plane decoder](spi-reduced-color-findings.md) adds header flags
+`0xf0` using independently constructed streams. Other mode-3 paths/configurations,
 device-export compatibility and SDK support remain open.
 
 ## Executed API sequence
@@ -205,7 +207,9 @@ color reconstruction and complete independent decoding of this original
 also adds primary mode 2 using new synthetic images. The
 [mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
 zero quantization, extended by the [quantized color trace](spi-quantized-color-findings.md)
-to nonzero quantization. Remaining targets include other mode-3 paths, alpha literal
+to nonzero quantization. The [reduced-plane trace](spi-reduced-color-findings.md)
+adds submode 1 with reduced secondary planes and byte reconstruction.
+Remaining targets include other mode-3 paths, alpha literal
 marker behavior and other residual paths,
 reference-buffer behavior, other color and quality settings, malformed-input
 behavior and general independent decoding.

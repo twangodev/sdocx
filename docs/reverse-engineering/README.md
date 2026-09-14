@@ -113,6 +113,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   planes with zero quantization, signed prediction and reversible color conversion.
 - [`spi-quantized-color-findings.md`](spi-quantized-color-findings.md) — nonzero
   quantization, coefficient escapes, integer inverse transforms and color clipping.
+- [`spi-reduced-color-findings.md`](spi-reduced-color-findings.md) — mode-3
+  reduced secondary planes, shared masks, mapped quantization and byte reconstruction.
 - [`spi-alpha-residual-findings.md`](spi-alpha-residual-findings.md) — partial
   mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`spi-alpha-payload-findings.md`](spi-alpha-payload-findings.md) — mode-3

@@ -19,7 +19,9 @@ combines with alpha reconstruction to decode all 30 native-generated images
 independently. The [differential trace](spi-differential-block-findings.md)
 also adds primary mode 2 with constructed images. The
 [mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
-zero quantization. Other pixel syntax and general SPI compatibility remain open.
+zero quantization. Later [quantized color work](spi-quantized-color-findings.md)
+and [reduced-plane work](spi-reduced-color-findings.md) extend submode 1.
+Other pixel syntax and general SPI compatibility remain open.
 
 ## Kind 2 has a 14-byte prefix
 

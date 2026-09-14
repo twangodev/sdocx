@@ -19,9 +19,11 @@ and final inverse color conversion follow the earlier findings.
 
 Q zero retains the earlier residual path. Q nonzero changes the side-4
 mask table, coefficient escape representation, coefficient scan, scaling,
-inverse transform and prediction/residual combination. Reduced mode-3
-planes, other submodes, broader configurations and device-export validation
-remain open. Maintained changes are Markdown-only; no SDK code changed.
+inverse transform and prediction/residual combination. Later
+[reduced-plane work](spi-reduced-color-findings.md) recovers the same submode
+with header flags `0xf0`, including its distinct Q-zero behavior. Other
+submodes, broader configurations and device-export validation remain open.
+Maintained changes are Markdown-only; no SDK code changed.
 
 ## The side-4 partition mask depends on Q
 
@@ -411,8 +413,9 @@ Scratch code and generated artifacts remain disposable.
 
 ## Remaining work
 
-Recover reduced mode-3 planes and submodes other than 1, then extend
-reference selection and other header/packet configurations. Alpha literal
+The [reduced-plane trace](spi-reduced-color-findings.md) now recovers mode-3
+submode 1 with reduced secondary planes. Recover the other submodes, then
+extend reference selection and other header/packet configurations. Alpha literal
 marker behavior, broader malformed-input policy, SDK integration and real
 document/rendered-reference validation remain open. The recovered path
 does not establish arbitrary SPI compatibility.

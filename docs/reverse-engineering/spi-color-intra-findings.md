@@ -17,8 +17,10 @@ exercises all 18 prediction modes and all partition-mask codes.
 
 The complete reader supports primary modes 0/1/2/3/4/5 and alpha modes
 0/1/3 within these limits. Later [quantized color work](spi-quantized-color-findings.md)
-adds nonzero quantization for the same full-size submode. Reduced planes
-and other submodes remain open. No SDK implementation changed, and generated
+adds nonzero quantization for the same full-size submode. The
+[reduced-plane trace](spi-reduced-color-findings.md) adds header flags `0xf0`
+with separate secondary-plane sizing and quantization. Other submodes
+remain open. No SDK implementation changed, and generated
 codec inputs do not establish compatibility with device-exported documents.
 
 ## A block selects its quantizer before three plane payloads
@@ -263,7 +265,8 @@ are Markdown-only.
 
 The [quantized color trace](spi-quantized-color-findings.md) now recovers
 nonzero-Q coefficients, scaling, inverse transforms and reconstruction.
-Next targets are mode-3 reduced planes and other submodes.
+The [reduced-plane trace](spi-reduced-color-findings.md) adds submode 1 with
+reduced secondary planes. Other mode-3 submodes remain open.
 Reference buffers, alpha literal marker behavior, other header
 and packet configurations, malformed-input limits, SDK integration and
 device-export validation also remain open.
