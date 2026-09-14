@@ -417,7 +417,9 @@ The [reduced-plane trace](spi-reduced-color-findings.md) now recovers mode-3
 submode 1 with reduced secondary planes. The
 [temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2;
 its full-size quantized residuals reuse the transforms recovered here.
-Reduced temporal planes, primary submode 3, multi-reference selection and
+The [reduced temporal trace](spi-reduced-temporal-findings.md) and
+[selected-plane trace](spi-selected-plane-findings.md) extend the
+same transforms to those temporal branches. Multi-reference selection and
 other header/packet configurations remain open. Alpha literal
 marker behavior, broader malformed-input policy, SDK integration and real
 document/rendered-reference validation remain open. The recovered path

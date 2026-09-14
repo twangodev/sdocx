@@ -299,7 +299,9 @@ generated streams remain disposable local artifacts.
 The [temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2
 with full-size reference planes. The
 [reduced temporal trace](spi-reduced-temporal-findings.md) adds submode 2
-with bundled secondary residuals. Primary submode 3, multi-reference
+with bundled secondary residuals. The
+[selected-plane trace](spi-selected-plane-findings.md) covers primary
+submode 3. Multi-reference
 selection, alpha literal marker
 behavior, broader malformed-input handling and SDK integration remain
 open. Device-exported SPI data and rendered references are still needed

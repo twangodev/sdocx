@@ -203,7 +203,8 @@ a little-endian length; it does not assert a multi-frame SDOCX wrapper
 layout. APK/ELF identity, forty cited instruction words, callback/table
 relocations and local documentation links were verified.
 
-Primary submode 3, multi-reference selection, mixed temporal/intra edge
+The [selected-plane trace](spi-selected-plane-findings.md) adds primary
+submode 3. Multi-reference selection, mixed temporal/intra edge
 fallback, broader malformed-input handling and device-export compatibility
 remain open. This result does not establish every packet-B-one path or
 the SDOCX wrapper's use of multi-frame SPI data.

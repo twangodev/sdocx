@@ -65,8 +65,9 @@ partially characterized.
 
 The [intra color trace](spi-color-intra-findings.md) specifies selection
 between C and `min(C,D)`. The [temporal trace](spi-temporal-block-findings.md)
-connects B to explicit submodes, validates submodes 0 and 2, and identifies
-the submode-3 signed-E adjustment statically. These roles do not assign
+connects B to explicit submodes and validates submodes 0 and 2. The
+[selected-plane trace](spi-selected-plane-findings.md) validates submode 3
+and its signed-E adjustment. These roles do not assign
 every packet byte's meaning in all configurations.
 
 This synthetic output from the isolated writer uses byte A = 3, group

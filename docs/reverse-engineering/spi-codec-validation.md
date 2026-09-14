@@ -33,6 +33,8 @@ submode to nonzero quantization. The
 images and primary/alpha submodes 0 and 2 across constructed sequences.
 The [reduced temporal decoder](spi-reduced-temporal-findings.md) adds
 flags `0xb0`, bundled secondary residuals and reference-image filtering.
+The [selected-plane decoder](spi-selected-plane-findings.md) adds primary
+submode 3, including its distinct Q-zero partition and flag behavior.
 Other mode-3 paths/configurations,
 device-export compatibility and SDK support remain open.
 

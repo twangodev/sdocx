@@ -268,7 +268,9 @@ nonzero-Q coefficients, scaling, inverse transforms and reconstruction.
 The [reduced-plane trace](spi-reduced-color-findings.md) adds submode 1 with
 reduced secondary planes. The [temporal trace](spi-temporal-block-findings.md)
 adds primary and alpha submodes 0 and 2 with retained reference images.
-Reduced temporal planes, submode 3, multi-reference selection,
+The [reduced temporal trace](spi-reduced-temporal-findings.md) adds reduced
+secondary residuals, and the [selected-plane trace](spi-selected-plane-findings.md)
+adds primary submode 3. Multi-reference selection,
 alpha literal marker behavior, other header
 and packet configurations, malformed-input limits, SDK integration and
 device-export validation also remain open.

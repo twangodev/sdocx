@@ -190,6 +190,7 @@ identity, numeric tables and cited instruction bytes were verified.
 
 [Reduced temporal decoding](spi-reduced-temporal-findings.md) separately
 validates bundled primary/secondary residuals and their reconstruction.
-Primary submode 3, broader malformed-input policy and device-export
+The [selected-plane trace](spi-selected-plane-findings.md) adds primary
+submode 3. Broader malformed-input policy and device-export
 compatibility remain open. Scratch tools and
 generated streams remain disposable; maintained findings are Markdown-only.

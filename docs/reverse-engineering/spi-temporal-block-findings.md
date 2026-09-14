@@ -78,16 +78,19 @@ alpha passes:
 | 2 | `0x69124`: motion deltas and residuals | `0x68f7c`: motion deltas and residuals |
 | 3 | `0x693d8`: selected-plane update | `0x69a2c`: returns the dispatch error |
 
-The tables are at `0x2a950` and `0x2a948`, respectively. Primary submode
-3 has only been followed statically here and remains unmodeled. Its entry
-selects `min(C,D)`, forces sampling off and reads a two-bit plane selector.
-The dispatcher then subtracts signed packet byte E and floors Q at zero.
-That is a routing observation, not validation of its complete syntax.
+The tables are at `0x2a950` and `0x2a948`, respectively. The separate
+[selected-plane trace](spi-selected-plane-findings.md) validates primary
+submode 3. Its entry selects `min(C,D)`, forces sampling off and reads
+a two-bit plane selector. The dispatcher then subtracts signed packet
+byte E and floors Q at zero; the linked findings recover its distinct
+Q-zero payload and flag behavior.
 
 Primary submode 0 selects Q = C without a further quantizer-choice bit.
 Submode 2 reads one bit: zero selects C; one selects `min(C,D)`. For
 submode 2, header flag D still selects full-size versus reduced secondary
-planes. The current temporal reader supports flag D zero. Neither
+planes. This document covers flag D zero; the
+[reduced temporal trace](spi-reduced-temporal-findings.md) covers flag D
+one. Neither
 submode 0 nor submode 2 reads spatial prediction-mode fields.
 
 ## Motion prediction uses neighboring block vectors
@@ -278,7 +281,8 @@ APK/ELF identity, cited instruction words, dispatch/callback bindings and
 numeric tables were verified against the binary.
 
 [Reduced temporal submode 2](spi-reduced-temporal-findings.md) is covered
-separately. Primary submode 3, multi-reference selection,
+separately, as is [primary submode 3](spi-selected-plane-findings.md).
+Multi-reference selection,
 mixed temporal/intra edge fallback, alpha literal marker behavior and
 broader malformed-input limits remain open. In particular, successful
 submode-0/2 sequences do not establish all packet-B-one combinations.
