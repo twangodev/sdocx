@@ -187,7 +187,8 @@ No SDK code changed.
 
 ## Remaining work
 
-Primary mode 3 still needs independent payload reconstruction.
+The [mode-3 color trace](spi-color-intra-findings.md) recovers full-size
+planes with zero quantization; other mode-3 paths remain open.
 The [palette trace](spi-palette-block-findings.md) adds mode 4.
 The [differential trace](spi-differential-block-findings.md) adds mode 2.
 The [alpha residual trace](spi-alpha-residual-findings.md) specifies one

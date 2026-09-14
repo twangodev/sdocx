@@ -23,8 +23,9 @@ independent images using primary modes 0/1/5 and alpha modes 0/1/3.
 independently recovers every original input byte from all 30 native-generated
 streams. [Differential-color work](spi-differential-block-findings.md)
 also recovers primary mode 2 using separately constructed images.
-Other modes/configurations, device-export compatibility and SDK support
-remain open.
+[Mode-3 color work](spi-color-intra-findings.md) adds full-size planes with
+zero quantization, including new native-generated inputs. Other mode-3
+paths/configurations, device-export compatibility and SDK support remain open.
 
 ## Executed API sequence
 
@@ -199,8 +200,9 @@ removes its dependency on native marker/edge inputs for the tested mode
 combinations. The [palette trace](spi-palette-block-findings.md) adds mode-4
 color reconstruction and complete independent decoding of this original
 30-image corpus. The [differential trace](spi-differential-block-findings.md)
-also adds primary mode 2 using new synthetic images. Remaining targets
-include primary mode 3, alpha literal
+also adds primary mode 2 using new synthetic images. The
+[mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
+zero quantization. Remaining targets include other mode-3 paths, alpha literal
 marker behavior and other residual paths,
 reference-buffer behavior, other color and quality settings, malformed-input
 behavior and general independent decoding.

@@ -109,6 +109,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   palettes, index runs, packet cache state and original-image reconstruction.
 - [`spi-differential-block-findings.md`](spi-differential-block-findings.md)
   — mode-2 symbol runs, row prediction, reduced planes and native boundary behavior.
+- [`spi-color-intra-findings.md`](spi-color-intra-findings.md) — mode-3 color
+  planes with zero quantization, signed prediction and reversible color conversion.
 - [`spi-alpha-residual-findings.md`](spi-alpha-residual-findings.md) — partial
   mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`spi-alpha-payload-findings.md`](spi-alpha-payload-findings.md) — mode-3

@@ -183,8 +183,9 @@ remain disposable. Maintained changes are Markdown-only; no SDK code changed.
 ## Remaining work
 
 The [differential trace](spi-differential-block-findings.md) now adds primary
-mode 2. Primary color mode 3, other packet/header configurations, reference
-buffers, alpha literal marker behavior and broader malformed-input handling
+mode 2. The [mode-3 color trace](spi-color-intra-findings.md) adds full-size
+planes with zero quantization. Other mode-3 paths, packet/header configurations,
+reference buffers, alpha literal marker behavior and broader malformed-input handling
 remain open. The selected configuration has independent complete-image
 decoding for every block mode emitted by the original 30-image native corpus.
 That corpus does not establish compatibility with arbitrary SPI files or

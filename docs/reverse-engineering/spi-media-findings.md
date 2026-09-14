@@ -37,8 +37,10 @@ alone does not establish the byte order of a standalone decoder's output.
 
 The page-cache caller supplies quality 100. The Maetel wrapper changes
 that value to 24 at `0xd7bb0` through `0xd7bbc`, then stores it in the
-codec setup at `0xd7cb4`. The interpretation of 24, including whether it
-implies lossless coding, has not been established.
+codec setup at `0xd7cb4`. A later [native quality sweep](spi-color-intra-findings.md#native-generated-quality-settings-expose-the-next-decoding-gap)
+shows that quality 24 does not universally preserve input pixels: a
+synthetic gradient selects nonzero mode-3 quantization and changes pixels.
+The complete quality mapping remains open.
 
 ## The wrapper writes two length-prefixed blocks
 

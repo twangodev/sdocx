@@ -191,8 +191,9 @@ literals with predicted blocks needs further investigation.
 The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
 and 1 alongside literals, and the [palette trace](spi-palette-block-findings.md)
 adds primary mode 4. The [differential trace](spi-differential-block-findings.md)
-adds primary mode 2. Next targets are primary color mode 3, remaining
-marker state, reference-buffer behavior, color/flag variants and malformed-input
+adds primary mode 2. The [mode-3 color trace](spi-color-intra-findings.md)
+adds full-size planes with zero quantization. Next targets are the remaining
+mode-3 paths, marker state, reference-buffer behavior, color/flag variants and malformed-input
 limits. An independent decoder for arbitrary SPI images is still incomplete.
 Device-exported files and rendered references remain necessary for
 compatibility validation.

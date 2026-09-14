@@ -17,8 +17,9 @@ adds modes 0 and 1 for the tested frame-copy configuration. The
 [palette trace](spi-palette-block-findings.md) adds primary mode 4 and
 combines with alpha reconstruction to decode all 30 native-generated images
 independently. The [differential trace](spi-differential-block-findings.md)
-also adds primary mode 2 with constructed images. Other pixel syntax and
-general SPI compatibility remain open.
+also adds primary mode 2 with constructed images. The
+[mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
+zero quantization. Other pixel syntax and general SPI compatibility remain open.
 
 ## Kind 2 has a 14-byte prefix
 
