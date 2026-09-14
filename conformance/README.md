@@ -30,13 +30,13 @@ side by side in the dataset repository.
 Run the external corpus locally with:
 
 ```sh
-cargo test -p sdocx --test conformance -- --ignored
+cargo test -p sdocx --all-features --test conformance -- --ignored
 ```
 
 Or point at an existing dataset checkout:
 
 ```sh
-SDOCX_CORPUS_DIR=/path/to/dataset cargo test -p sdocx --test conformance -- --ignored
+SDOCX_CORPUS_DIR=/path/to/dataset cargo test -p sdocx --all-features --test conformance -- --ignored
 ```
 
 Regular unit tests do not download or require private/large fixtures. To add a
@@ -161,7 +161,7 @@ PDF; synthetic coverage does not establish Samsung visual parity.
 
 ## Image and media regressions
 
-`structural_images.rs` has twelve tests with rendering enabled, and
+`structural_images.rs` has nineteen tests with rendering enabled, and
 `media_manifest.rs` has three. They cover explicit ID resolution, reordered and
 repeated assets, ambiguous/missing/unsupported references, alternate fill
 encodings, bounded frames and records, placement and rotation:
@@ -170,8 +170,11 @@ encodings, bounded frames and records, placement and rotation:
 cargo test -p sdocx --all-features --test structural_images --test media_manifest
 ```
 
-The standalone-image tests are synthetic; real Samsung image/reference-PDF
-coverage is still needed.
+The `03-image-placement` pair contains seven Chelsea image spans in document
+text flow across three visible pages. The corpus checks decoded and resolved
+image counts, diagnostics, and three/two/two rendered placements. It covers
+resizing, rotation and rectangular cropping. The standalone page-image tests
+remain synthetic; this note stores no standalone page images.
 See [`image-findings.md`](../docs/reverse-engineering/image-findings.md).
 
 ## Shape and line regressions

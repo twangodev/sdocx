@@ -59,6 +59,8 @@ struct FlowExpectations {
     hyperlinks: Option<usize>,
     tables: Option<usize>,
     code_blocks: Option<usize>,
+    images: Option<usize>,
+    resolved_images: Option<usize>,
     #[serde(default)]
     required_link_targets: Vec<String>,
     #[serde(default)]
@@ -237,6 +239,24 @@ fn check_document(parsed: &sdocx::ParsedDocument, expected: &Expectations) -> Re
 }
 
 fn check_flow(flow: &sdocx::RichTextBox, expected: &FlowExpectations) -> Result<(), String> {
+    let images: Vec<_> = flow
+        .object_spans
+        .iter()
+        .filter_map(|span| match &span.content {
+            Some(sdocx::RichTextObjectContent::Image(image)) => Some(image),
+            _ => None,
+        })
+        .collect();
+    check_count("embedded images", images.len(), expected.images)?;
+    check_count(
+        "resolved embedded images",
+        images
+            .iter()
+            .filter(|image| image.media_index.is_some())
+            .count(),
+        expected.resolved_images,
+    )?;
+
     check_count(
         "text sections",
         flow.text_sections.len(),
@@ -446,10 +466,15 @@ fn zero_flow_object_counts_do_not_require_a_table_link_or_code_block() {
         gravity: None,
     };
     let expected = serde_json::from_value(serde_json::json!({
-        "text_sections": 0, "hyperlinks": 0, "tables": 0, "code_blocks": 0
+        "text_sections": 0, "hyperlinks": 0, "tables": 0, "code_blocks": 0, "images": 0, "resolved_images": 0
     }))
     .unwrap();
     check_flow(&flow, &expected).unwrap();
+    for key in ["images", "resolved_images"] {
+        let mut expected = serde_json::json!({});
+        expected[key] = serde_json::json!(1);
+        assert!(check_flow(&flow, &serde_json::from_value(expected).unwrap()).is_err());
+    }
     for key in [
         "required_link_targets",
         "required_table_text",
@@ -537,4 +562,28 @@ fn external_corpus_matches_locked_expectations() {
         check_document(&parsed, &fixture.expected)
             .unwrap_or_else(|error| panic!("{}: {error}", fixture.id));
     }
+}
+
+#[test]
+#[cfg(feature = "render")]
+#[ignore = "requires the external Hugging Face compatibility corpus"]
+fn image_fixture_renders_all_embedded_images_on_their_reference_pages() {
+    let root = corpus_root().canonicalize().unwrap();
+    let fixture = read_manifest(MANIFEST)
+        .unwrap()
+        .fixtures
+        .into_iter()
+        .find(|fixture| fixture.id == "03-image-placement")
+        .unwrap();
+    let document = sdocx::parse(verified_asset(&root, &fixture.sdocx).unwrap()).unwrap();
+    let rendered = sdocx::render_document_svg(&document, &sdocx::RenderOptions::default());
+    assert_eq!(rendered.len(), 3);
+    assert_eq!(
+        rendered
+            .iter()
+            .map(|page| page.svg.matches("<image ").count())
+            .collect::<Vec<_>>(),
+        [3, 2, 2]
+    );
+    assert!(rendered[2].svg.contains("overflow=\"hidden\""));
 }

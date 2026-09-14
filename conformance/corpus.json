@@ -38,6 +38,34 @@
         },
         "diagnostics": {}
       }
+    },
+    {
+      "id": "03-image-placement",
+      "expected": {
+        "stored_pages": 4,
+        "visible_pages": 3,
+        "flow": {
+          "text_sections": 4,
+          "images": 7,
+          "resolved_images": 7,
+          "tables": 0,
+          "code_blocks": 0
+        },
+        "page_objects": {
+          "images": 0
+        },
+        "diagnostics": {
+          "UnsupportedImageFeature": 7
+        }
+      },
+      "sdocx": {
+        "path": "03-image-placement.sdocx",
+        "sha256": "8bfa5a5117ab2d11a28058dee0f8fc61fdeaeb40a454af971e3bfb9a0ab7af9a"
+      },
+      "reference_pdf": {
+        "path": "03-image-placement.pdf",
+        "sha256": "9d304575876ada6a32da5c4d8a5ffa6bc6c8f64aa4df1a4372d16daa2d60d854"
+      }
     }
   ]
 }

@@ -24,6 +24,8 @@ count must not exceed the stored count. The remaining checks are optional:
 | `flow.hyperlinks` | Exact count of document-level hyperlink spans. |
 | `flow.required_link_targets` | Every listed target must occur in a hyperlink's custom data. |
 | `flow.tables`, `flow.code_blocks` | Exact counts of decoded objects directly in document-level text flow. |
+| `flow.images` | Exact count of decoded images directly in document-level text flow. |
+| `flow.resolved_images` | Count of those embedded images with a resolved media asset. |
 | `flow.required_table_text` | Every listed substring must occur in a table cell. |
 | `flow.required_code_text` | Every listed substring must occur in a code-block body. |
 | `page_objects.strokes` | Total decoded strokes across stored document pages. |

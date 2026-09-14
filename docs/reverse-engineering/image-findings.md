@@ -41,8 +41,8 @@ bytes), no fixed payload, and these flexible fields in ascending bit order:
 
 The main, border and original-image IDs have different roles. Source addresses
 and Java manifest writers are indexed in [`source-map.md`](source-map.md).
-These contracts are confirmed from native serialization; full image placement
-still needs a real Samsung image fixture and reference export.
+These contracts are confirmed from native serialization. The measured
+`03-image-placement` fixture below covers images embedded in text flow.
 
 ## Resolution and public API
 
@@ -102,7 +102,9 @@ counter have been removed; only the native image decoder produces placed images.
 
 ## Remaining gaps and next work
 
-Crop rectangles and border/original IDs are retained but not fully rendered.
+Crop rectangles with an original-image placement are rendered by clipping the
+original placement to the displayed bounds. Pixel crops without that placement
+and border/original media IDs remain incomplete.
 Fill transforms, tiling, transparency, nine-patch, shape paths and several
 inherited properties remain incomplete. Alternative fill encodings and unknown
 fields before a fill are reported without guessing a reference. `.spi`, PDF,
@@ -111,5 +113,49 @@ audio and video assets are not raster image render inputs.
 The subsequent [shape/line migration](shape-line-findings.md) removes the
 remaining UUID/text heuristics. Native setters also confirm that type-7 fields
 2/4 reference pen-name/settings strings, correcting the provisional color label.
-A Samsung image fixture with crop, rotation, repeated media and a matching PDF
-is needed to turn rendering approximations into measured compatibility work.
+Standalone image objects still need a Samsung reference pair; text-flow image
+coverage does not establish fidelity for every image container or style.
+
+## Images embedded in document text flow
+
+The `03-image-placement` pair at dataset revision `aa89121` contains one
+451 × 300 RGB PNG and seven image spans in `note.note`. Its four stored page
+records have no image objects; the Samsung PDF has three visible pages with
+three, two and two placements. The references exercise original size,
+enlargement, 180°/90°/−90°/45° rotation, and a rectangular crop.
+
+Full archive parsing decodes these raw span payloads through the same bounded
+`0 + 6 + 7 + 3` reader as standalone images, resolves their media IDs, and
+exposes `RichTextObjectContent::Image`. Both `ParsedDocument.note` and the
+document's text-flow metadata receive the resolved contents. Standalone
+`parse_note_bytes` retains the raw image spans without archive media resolution.
+Hidden image spans retain their raw bytes and do not resolve or render media.
+Missing and ambiguous bindings remain explicit unresolved images with warnings.
+
+Rendering uses the rotated image footprint for vertical flow advancement.
+The image-only flow default has a line height of 1.35 times the font size and
+0.35 times the font size between image paragraphs; explicit paragraph spacing
+is retained. Continuation pages start at their text margin without the baseline
+adjustment used for flowing text. These defaults are measured against this
+fixture and do not establish typography for arbitrary mixed text and images.
+
+The cropped span stores `[73, 50, 405, 222]` pixel bounds and an original placement
+of `[-26, 587, 428, 890]`. The renderer clips that placement to the image bounds
+before applying the object's rotation and flow translation.
+
+Before this support, all three SVG/PNG/PDF pages were blank and the parser
+reported no diagnostics. PNG comparison after implementation measures 1.06%,
+0.04% and 0.21% changed pixels. PDF comparison measures 0.07%, 0.33% and 0.09%.
+Both report no missing foreground at the runner's one-pixel tolerance.
+The executable and input hashes are recorded by the
+conformance runner; these figures describe this pair and its raster settings.
+
+Seven conservative `UnsupportedImageFeature` warnings remain for inherited
+shape/style/path/fill settings. They are not evidence that seven images are
+missing. Inline, alternate-margin, cross-page and nested text-object image
+layouts are also explicitly reported as incomplete. The corpus now locks both
+decoded and resolved embedded-image counts, and a rendering regression checks
+the per-page placement counts. Synthetic regressions cover UTF-16 anchors,
+media binding, hidden images, truncation, limits, crops and page slicing.
+Workspace tests, the full external corpus and Clippy pass. The existing five
+formatting SVG pages are byte-identical to the pre-change SDK output.
