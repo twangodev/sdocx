@@ -262,8 +262,10 @@ The 98 constructed images exercised 4639 distinct native instructions.
 
 The [neighbor-state trace](spi-alpha-state-findings.md) now initializes
 markers and external edges independently and combines alpha reconstruction
-with the recovered copy/literal color modes. Primary compressed color modes,
-alpha literal marker behavior, reference buffers, other packet/header
-settings and malformed-input behavior remain open, as does device-export
-compatibility. Maintained findings are Markdown-only; no SDK code changed
+with the recovered copy/literal color modes. The
+[mixed-prediction trace](spi-mixed-prediction-findings.md) adds every binary
+edge-availability pattern and complete sequences combining compressed color,
+intra alpha and temporal blocks. Alpha literal marker behavior, other
+packet/header settings and malformed-input behavior remain open, as does
+device-export compatibility. Maintained findings are Markdown-only; no SDK code changed
 and scratch implementations remain disposable local tooling.

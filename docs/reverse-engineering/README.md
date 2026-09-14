@@ -125,6 +125,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   plane updates, signed quantizer adjustment and Q-zero flag behavior.
 - [`spi-reference-cache-findings.md`](spi-reference-cache-findings.md) — per-block
   cache ranks, shared fill counts, temporal copy syntax and alpha overlap behavior.
+- [`spi-mixed-prediction-findings.md`](spi-mixed-prediction-findings.md) — all
+  binary availability masks, edge completion and mixed intra/temporal sequences.
 - [`spi-alpha-residual-findings.md`](spi-alpha-residual-findings.md) — partial
   mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`spi-alpha-payload-findings.md`](spi-alpha-payload-findings.md) — mode-3

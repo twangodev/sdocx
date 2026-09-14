@@ -267,9 +267,10 @@ anchors. Generated sequences, native harnesses
 and independent decoder scripts remain disposable local artifacts;
 maintained changes are Markdown-only.
 
-Remaining work includes mixed temporal/intra spatial-edge fallback,
-alpha literal marker behavior, capacities outside 1–5, wrapped rank codes,
-larger displacement limits and a complete malformed-input policy. These
-experiments do not establish which temporal/cache configurations Samsung
+The [mixed-prediction trace](spi-mixed-prediction-findings.md) adds ordinary
+intra/temporal spatial-edge completion and marker transitions. Remaining
+work includes alpha literal marker behavior, capacities outside 1–5,
+wrapped rank codes, larger displacement limits and a complete malformed-input
+policy. These experiments do not establish which temporal/cache configurations Samsung
 actually emits in device-exported SDOCX files. Real files and rendered
 references remain necessary for that compatibility claim. No SDK code changed.

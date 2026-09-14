@@ -270,7 +270,10 @@ reduced secondary planes. The [temporal trace](spi-temporal-block-findings.md)
 adds primary and alpha submodes 0 and 2 with retained reference images.
 The [reduced temporal trace](spi-reduced-temporal-findings.md) adds reduced
 secondary residuals, and the [selected-plane trace](spi-selected-plane-findings.md)
-adds primary submode 3. Multi-reference selection,
-alpha literal marker behavior, other header
+adds primary submode 3. The [reference-cache trace](spi-reference-cache-findings.md)
+adds multiple-cache selection, and the
+[mixed-prediction trace](spi-mixed-prediction-findings.md) combines intra
+and temporal blocks with complete binary edge-availability rules.
+Alpha literal marker behavior, other header
 and packet configurations, malformed-input limits, SDK integration and
 device-export validation also remain open.

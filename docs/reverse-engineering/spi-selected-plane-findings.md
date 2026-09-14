@@ -263,7 +263,8 @@ table bytes were verified against the native binary. Local documentation
 paths and heading links also pass validation.
 
 [Multiple-cache selection](spi-reference-cache-findings.md) is now covered
-for capacities 1–5. Mixed temporal/intra spatial-edge fallback,
-broader malformed-input handling and device-export compatibility remain
-open. Maintained changes are Markdown-only; scripts and constructed
-sequences remain disposable local evidence.
+for capacities 1–5. The [mixed-prediction trace](spi-mixed-prediction-findings.md)
+adds intra/temporal edge completion and marker transitions, including
+selected-plane blocks. Broader malformed-input handling and device-export
+compatibility remain open. Maintained changes are Markdown-only; scripts
+and constructed sequences remain disposable local evidence.

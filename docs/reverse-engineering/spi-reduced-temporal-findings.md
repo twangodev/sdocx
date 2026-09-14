@@ -205,8 +205,8 @@ relocations and local documentation links were verified.
 
 The [selected-plane trace](spi-selected-plane-findings.md) adds primary
 submode 3. The [reference-cache trace](spi-reference-cache-findings.md)
-adds multiple-reference selection and temporal copy blocks. Mixed
-temporal/intra edge fallback, broader malformed-input handling and
-device-export compatibility
-remain open. This result does not establish every packet-B-one path or
-the SDOCX wrapper's use of multi-frame SPI data.
+adds multiple-reference selection and temporal copy blocks. The
+[mixed-prediction trace](spi-mixed-prediction-findings.md) adds intra/temporal
+edge completion and marker transitions. Broader malformed-input handling
+and device-export compatibility remain open. This result does not establish
+every packet-B-one path or the SDOCX wrapper's use of multi-frame SPI data.

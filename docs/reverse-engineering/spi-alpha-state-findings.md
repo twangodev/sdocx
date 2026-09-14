@@ -102,7 +102,9 @@ selector = left + 16*above + 256*above_right + 4096*above_left
 
 This selects the native edge-completion branch. The rules below cover
 the neighbor patterns reached by modes 0/1/3 in the tested configuration.
-Other availability values and reference-buffer paths remain uncharacterized.
+The later [mixed-prediction trace](spi-mixed-prediction-findings.md)
+recovers all sixteen binary availability patterns and combines intra and
+temporal blocks in retained-reference sequences.
 
 ## External alpha edges can be reconstructed from earlier pixels
 
@@ -206,9 +208,11 @@ Subsequent [palette work](spi-palette-block-findings.md) adds primary mode 4
 and independent decoding of the 30 original native-generated images.
 The [differential trace](spi-differential-block-findings.md) also adds primary
 mode 2. The [mode-3 color trace](spi-color-intra-findings.md) adds full-size
-planes with zero quantization and independent color marker grids. Recover
-the remaining mode-3 paths, resolve alpha literal marker behavior, and
-extend reference selection, packet/header variants and malformed-input
-handling. Device-exported files are still needed to establish compatibility
-beyond these synthetic cases. The selected configuration now has complete
-independent decoding for its supported color and alpha mode combinations.
+planes with zero quantization and independent color marker grids. The
+[mixed-prediction trace](spi-mixed-prediction-findings.md) extends edge
+completion and marker transitions to temporal neighbors. Resolve alpha
+literal marker behavior and extend other packet/header variants and
+malformed-input handling. Device-exported files are still needed to
+establish compatibility beyond these synthetic cases. The selected
+configuration now has complete independent decoding for its supported
+color and alpha mode combinations.

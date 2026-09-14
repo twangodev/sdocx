@@ -221,6 +221,8 @@ with reference images, motion prediction and a distinct residual syntax.
 The [reference-cache trace](spi-reference-cache-findings.md) adds per-block
 rank selection for capacities 1–5 and temporal mode-0/1 copies, including
 the distinct alpha source and overlap behavior.
+The [mixed-prediction trace](spi-mixed-prediction-findings.md) combines intra
+and temporal blocks using all sixteen binary edge-availability patterns.
 Remaining targets include other mode-3 paths, alpha literal
 marker behavior and other residual paths,
 other reference-buffer configurations, color and quality settings, malformed-input

@@ -285,9 +285,10 @@ numeric tables were verified against the binary.
 [Reduced temporal submode 2](spi-reduced-temporal-findings.md) is covered
 separately, as is [primary submode 3](spi-selected-plane-findings.md).
 [Multi-reference selection and temporal copy blocks](spi-reference-cache-findings.md)
-are also covered separately. Mixed temporal/intra edge fallback, alpha
-literal marker behavior and broader malformed-input limits remain open.
-In particular, successful
+are also covered separately. The [mixed-prediction trace](spi-mixed-prediction-findings.md)
+adds all sixteen binary edge-availability rules and complete sequences
+containing intra blocks. Alpha literal marker behavior and broader
+malformed-input limits remain open. In particular, successful
 submode-0/2 sequences do not establish all packet-B-one combinations.
 Device exports and rendered references remain necessary for compatibility
 validation. Maintained changes are Markdown-only; generated sequences
