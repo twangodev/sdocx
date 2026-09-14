@@ -187,15 +187,17 @@ No SDK code changed.
 
 ## Remaining work
 
-Primary modes 2 and 3 still need independent payload reconstruction.
+Primary mode 3 still needs independent payload reconstruction.
 The [palette trace](spi-palette-block-findings.md) adds mode 4.
+The [differential trace](spi-differential-block-findings.md) adds mode 2.
 The [alpha residual trace](spi-alpha-residual-findings.md) specifies one
 mode-3 coefficient representation, extended by the
 [prediction/partition fields](spi-alpha-payload-findings.md) into complete
 payload parsing given neighbor state. The [pixel trace](spi-alpha-pixel-findings.md)
 also reconstructs alpha pixels. The [neighbor-state trace](spi-alpha-state-findings.md)
 adds independent initialization and complete images with primary modes
-0/1/5 and alpha modes 0/1/3; palettes extend this to primary 0/1/4/5.
+0/1/5 and alpha modes 0/1/3; palettes and differential blocks extend this
+to primary 0/1/2/4/5.
 Other packet-byte and header-flag combinations,
 reference selection, remaining marker behavior, integer limits and malformed
 copy regions remain open. The copy/literal reference described here covers

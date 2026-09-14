@@ -182,9 +182,10 @@ remain disposable. Maintained changes are Markdown-only; no SDK code changed.
 
 ## Remaining work
 
-Primary color modes 2 and 3, other packet/header configurations, reference
+The [differential trace](spi-differential-block-findings.md) now adds primary
+mode 2. Primary color mode 3, other packet/header configurations, reference
 buffers, alpha literal marker behavior and broader malformed-input handling
-remain open. The selected configuration now has independent complete-image
+remain open. The selected configuration has independent complete-image
 decoding for every block mode emitted by the original 30-image native corpus.
 That corpus does not establish compatibility with arbitrary SPI files or
 with the document-saving wrapper's premultiplication and threading behavior.

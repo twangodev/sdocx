@@ -21,8 +21,10 @@ and [neighbor-state work](spi-alpha-state-findings.md) supports complete
 independent images using primary modes 0/1/5 and alpha modes 0/1/3.
 [Palette work](spi-palette-block-findings.md) adds primary mode 4 and
 independently recovers every original input byte from all 30 native-generated
-streams. Other modes/configurations, device-export compatibility and SDK
-support remain open.
+streams. [Differential-color work](spi-differential-block-findings.md)
+also recovers primary mode 2 using separately constructed images.
+Other modes/configurations, device-export compatibility and SDK support
+remain open.
 
 ## Executed API sequence
 
@@ -196,7 +198,9 @@ adds alpha reconstruction, and the [neighbor-state trace](spi-alpha-state-findin
 removes its dependency on native marker/edge inputs for the tested mode
 combinations. The [palette trace](spi-palette-block-findings.md) adds mode-4
 color reconstruction and complete independent decoding of this original
-30-image corpus. Remaining targets include primary modes 2/3, alpha literal
+30-image corpus. The [differential trace](spi-differential-block-findings.md)
+also adds primary mode 2 using new synthetic images. Remaining targets
+include primary mode 3, alpha literal
 marker behavior and other residual paths,
 reference-buffer behavior, other color and quality settings, malformed-input
 behavior and general independent decoding.

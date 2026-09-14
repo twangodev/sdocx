@@ -16,7 +16,9 @@ reconstructs mode 5. The [copy-block trace](spi-copy-block-findings.md)
 adds modes 0 and 1 for the tested frame-copy configuration. The
 [palette trace](spi-palette-block-findings.md) adds primary mode 4 and
 combines with alpha reconstruction to decode all 30 native-generated images
-independently. Other pixel syntax and general SPI compatibility remain open.
+independently. The [differential trace](spi-differential-block-findings.md)
+also adds primary mode 2 with constructed images. Other pixel syntax and
+general SPI compatibility remain open.
 
 ## Kind 2 has a 14-byte prefix
 
@@ -39,7 +41,7 @@ use the same big-endian, most-significant-bit-first helpers as kind 1.
 | 56–71 | `u16_be` | Block-row group index | `0x67f1c` / `0x79e08` |
 | 72–79 | `u8` | Unassigned byte B | `0x67f2c` / `0x79e18` |
 | 80 | `u1` | Buffer-copy shortcut flag | `0x67f38` / `0x79e24` |
-| 81–82 | `u2` | Unassigned selector | `0x67f5c` / `0x79e34` |
+| 81–82 | `u2` | Selector; controls mode-2 differential step | `0x67f5c` / `0x79e34` |
 | 83–90 | `u8` | Unassigned byte C | `0x67f6c` / `0x79e44` |
 | 91–98 | `u8` | Unassigned byte D | `0x67f7c` / `0x79e54` |
 | 99–106 | `u8` | Unassigned byte E | `0x67f8c` / `0x79e64` |
@@ -50,6 +52,11 @@ The nine-byte native field storage has a different order: byte B at
 offset 0, byte A at 1, selector at 2, bytes C/D/E at 3/4/5, group index
 as a native `u16` at 6, and the shortcut flag at 8. A direct memory copy
 does not reproduce the packed prefix.
+
+The [mode-2 trace](spi-differential-block-findings.md#the-packet-selector-controls-differential-reconstruction)
+connects selector values 0/1/2/3 to reconstruction steps 1/2/4/1 and
+distinct vector/scalar branches. Its meaning in other coding modes remains
+partially characterized.
 
 This synthetic output from the isolated writer uses byte A = 3, group
 index `0x1234`, byte B = 5, shortcut = 1, selector = 2, and bytes C/D/E

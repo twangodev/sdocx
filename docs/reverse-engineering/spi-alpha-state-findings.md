@@ -204,7 +204,8 @@ Markdown-only and no SDK code changed.
 
 Subsequent [palette work](spi-palette-block-findings.md) adds primary mode 4
 and independent decoding of the 30 original native-generated images.
-Recover primary color modes 2 and 3, resolve alpha literal marker behavior,
+The [differential trace](spi-differential-block-findings.md) also adds primary
+mode 2. Recover primary color mode 3, resolve alpha literal marker behavior,
 and extend reference selection, packet/header variants and malformed-input
 handling. Device-exported files are still needed to establish compatibility
 beyond these synthetic cases. The selected configuration now has complete
