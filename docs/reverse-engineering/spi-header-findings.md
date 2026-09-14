@@ -50,9 +50,9 @@ four-byte little-endian length:
 | 16 | `u16_be` | Row-group size | `0x67e54` / `0x79d44` |
 | 18 | `u8` | Additional buffer-count byte | `0x67e8c` / `0x79d54` |
 | 19, bit 7 | `u1` | Unassigned flag A | `0x67e98` / `0x79d60` |
-| 19, bit 6 | `u1` | Unassigned flag B | `0x67ea4` / `0x79d6c` |
+| 19, bit 6 | `u1` | Flag B; clearing it enables completed-image reference retention | `0x67ea4` / `0x79d6c` |
 | 19, bit 5 | `u1` | Unassigned flag C | `0x67eb0` / `0x79d78` |
-| 19, bit 4 | `u1` | Unassigned flag D | `0x67ebc` / `0x79d84` |
+| 19, bit 4 | `u1` | Flag D; enables mode-3 secondary-plane reduction | `0x67ebc` / `0x79d84` |
 | 19, bits 3–0 | `u4` | Required zero | `0x67ecc`, `0x67edc` / `0x79d94`, `0x79da8` |
 
 The field reader fills an 18-byte native structure whose padding and member
@@ -173,6 +173,8 @@ reconstruction of synthetic bitmaps is covered by the
 reconstructs mode 5. The [reduced-plane trace](spi-reduced-color-findings.md)
 connects flag D to primary mode-3 secondary-plane reduction and validates
 complete constructed images with flags `0xf0`.
+The [temporal trace](spi-temporal-block-findings.md) connects flag B to
+completed-image retention and tests repeated image decoding with flags `0xa0`.
 Real-file compatibility, other auxiliary field semantics,
 general independent decoding and rendering remain unvalidated.
 No SDK code changed.

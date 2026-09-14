@@ -266,7 +266,9 @@ are Markdown-only.
 The [quantized color trace](spi-quantized-color-findings.md) now recovers
 nonzero-Q coefficients, scaling, inverse transforms and reconstruction.
 The [reduced-plane trace](spi-reduced-color-findings.md) adds submode 1 with
-reduced secondary planes. Other mode-3 submodes remain open.
-Reference buffers, alpha literal marker behavior, other header
+reduced secondary planes. The [temporal trace](spi-temporal-block-findings.md)
+adds primary and alpha submodes 0 and 2 with retained reference images.
+Reduced temporal planes, submode 3, multi-reference selection,
+alpha literal marker behavior, other header
 and packet configurations, malformed-input limits, SDK integration and
 device-export validation also remain open.

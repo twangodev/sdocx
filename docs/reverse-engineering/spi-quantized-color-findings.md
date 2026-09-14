@@ -414,8 +414,11 @@ Scratch code and generated artifacts remain disposable.
 ## Remaining work
 
 The [reduced-plane trace](spi-reduced-color-findings.md) now recovers mode-3
-submode 1 with reduced secondary planes. Recover the other submodes, then
-extend reference selection and other header/packet configurations. Alpha literal
+submode 1 with reduced secondary planes. The
+[temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2;
+its full-size quantized residuals reuse the transforms recovered here.
+Reduced temporal planes, primary submode 3, multi-reference selection and
+other header/packet configurations remain open. Alpha literal
 marker behavior, broader malformed-input policy, SDK integration and real
 document/rendered-reference validation remain open. The recovered path
 does not establish arbitrary SPI compatibility.

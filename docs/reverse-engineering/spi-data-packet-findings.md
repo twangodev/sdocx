@@ -21,6 +21,8 @@ also adds primary mode 2 with constructed images. The
 [mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
 zero quantization. Later [quantized color work](spi-quantized-color-findings.md)
 and [reduced-plane work](spi-reduced-color-findings.md) extend submode 1.
+The [temporal trace](spi-temporal-block-findings.md) adds explicit
+submodes 0 and 2 in packet-B-one image sequences.
 Other pixel syntax and general SPI compatibility remain open.
 
 ## Kind 2 has a 14-byte prefix
@@ -42,12 +44,12 @@ use the same big-endian, most-significant-bit-first helpers as kind 1.
 | 16–47 | `u32_be` | Complete packet length, initially zero | `0x5c994` / `0x79de8` |
 | 48–55 | `u8` | Unassigned byte A | `0x67f0c` / `0x79df8` |
 | 56–71 | `u16_be` | Block-row group index | `0x67f1c` / `0x79e08` |
-| 72–79 | `u8` | Unassigned byte B | `0x67f2c` / `0x79e18` |
+| 72–79 | `u8` | Byte B; value 1 exposes mode-3 submode bits | `0x67f2c` / `0x79e18` |
 | 80 | `u1` | Buffer-copy shortcut flag | `0x67f38` / `0x79e24` |
 | 81–82 | `u2` | Selector; controls mode-2 differential step | `0x67f5c` / `0x79e34` |
-| 83–90 | `u8` | Unassigned byte C | `0x67f6c` / `0x79e44` |
-| 91–98 | `u8` | Unassigned byte D | `0x67f7c` / `0x79e54` |
-| 99–106 | `u8` | Unassigned byte E | `0x67f8c` / `0x79e64` |
+| 83–90 | `u8` | Byte C; primary quantizer candidate | `0x67f6c` / `0x79e44` |
+| 91–98 | `u8` | Byte D; alternate primary quantizer candidate | `0x67f7c` / `0x79e54` |
+| 99–106 | `u8` | Byte E; signed adjustment in primary submode 3 | `0x67f8c` / `0x79e64` |
 | 107–110 | `u4` | Required zero | `0x67f9c` / `0x79e74` |
 | 111 | `u1` | Required zero | `0x67fac` / `0x79e88` |
 
@@ -60,6 +62,12 @@ The [mode-2 trace](spi-differential-block-findings.md#the-packet-selector-contro
 connects selector values 0/1/2/3 to reconstruction steps 1/2/4/1 and
 distinct vector/scalar branches. Its meaning in other coding modes remains
 partially characterized.
+
+The [intra color trace](spi-color-intra-findings.md) specifies selection
+between C and `min(C,D)`. The [temporal trace](spi-temporal-block-findings.md)
+connects B to explicit submodes, validates submodes 0 and 2, and identifies
+the submode-3 signed-E adjustment statically. These roles do not assign
+every packet byte's meaning in all configurations.
 
 This synthetic output from the isolated writer uses byte A = 3, group
 index `0x1234`, byte B = 5, shortcut = 1, selector = 2, and bytes C/D/E

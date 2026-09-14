@@ -28,7 +28,10 @@ zero quantization, including new native-generated inputs. The
 [quantized color decoder](spi-quantized-color-findings.md) extends the same
 submode to nonzero quantization. The
 [reduced-plane decoder](spi-reduced-color-findings.md) adds header flags
-`0xf0` using independently constructed streams. Other mode-3 paths/configurations,
+`0xf0` using independently constructed streams. The
+[temporal decoder](spi-temporal-block-findings.md) adds retained reference
+images and primary/alpha submodes 0 and 2 across constructed sequences.
+Other mode-3 paths/configurations,
 device-export compatibility and SDK support remain open.
 
 ## Executed API sequence
@@ -209,6 +212,8 @@ also adds primary mode 2 using new synthetic images. The
 zero quantization, extended by the [quantized color trace](spi-quantized-color-findings.md)
 to nonzero quantization. The [reduced-plane trace](spi-reduced-color-findings.md)
 adds submode 1 with reduced secondary planes and byte reconstruction.
+The [temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2
+with reference images, motion prediction and a distinct residual syntax.
 Remaining targets include other mode-3 paths, alpha literal
 marker behavior and other residual paths,
 reference-buffer behavior, other color and quality settings, malformed-input

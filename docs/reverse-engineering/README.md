@@ -115,6 +115,10 @@ Notes APK, native serializers, or real compatibility fixtures.
   quantization, coefficient escapes, integer inverse transforms and color clipping.
 - [`spi-reduced-color-findings.md`](spi-reduced-color-findings.md) — mode-3
   reduced secondary planes, shared masks, mapped quantization and byte reconstruction.
+- [`spi-temporal-block-findings.md`](spi-temporal-block-findings.md) — retained
+  reference images, motion prediction and mode-3 submode-0/2 sequence decoding.
+- [`spi-temporal-residual-findings.md`](spi-temporal-residual-findings.md) — temporal
+  mask banks, side-specific coefficient tokens, scans and native bounds.
 - [`spi-alpha-residual-findings.md`](spi-alpha-residual-findings.md) — partial
   mode-3 alpha decoding, signed run tokens, coefficient scans and native checks.
 - [`spi-alpha-payload-findings.md`](spi-alpha-payload-findings.md) — mode-3
