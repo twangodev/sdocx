@@ -19,7 +19,9 @@ implicit alpha submode 1 and worker selector byte 56 zero. The initial
 neighbor-state setup still runs in Samsung's decoder. Subsequent
 [pixel reconstruction](spi-alpha-pixel-findings.md) independently converts
 these payloads into alpha pixels given the block's external edge arrays.
-Complete independent image decoding and device-file validation remain open.
+The later [neighbor-state trace](spi-alpha-state-findings.md) removes
+those native-state inputs for the selected mode combinations. General
+independent image decoding and device-file validation remain open.
 
 ## The block divides into one or four sections
 
@@ -180,10 +182,10 @@ independent reconstruction and intermediate-buffer comparisons.
 
 ## Remaining work
 
-Recover marker initialization, block-row transitions and external edge
-preparation independently. Prediction pixels and residual combination in
-`0x6ce0c` are now covered by the pixel findings. Other submodes, selector
-values, invalid neighbor states and general truncated-payload behavior
-remain unresolved. No SDK
+Marker initialization, block-row transitions and external edge preparation
+are now covered by the [neighbor-state findings](spi-alpha-state-findings.md).
+Prediction pixels and residual combination in `0x6ce0c` are covered by
+the pixel findings. Other submodes, selector values, invalid neighbor
+states and general truncated-payload behavior remain unresolved. No SDK
 code changed; maintained results are Markdown-only, with scratch tooling
 and generated cases remaining disposable local artifacts.

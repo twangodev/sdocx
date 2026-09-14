@@ -15,10 +15,10 @@ pixels were compared separately, not just the final bitmap.
 Scope remains wire color index 4, header flags `0xe0`, packet byte B zero,
 implicit alpha submode 1 and worker selector byte 56 zero. Each block's
 starting prediction-marker state and two external pixel-edge arrays were
-supplied by native neighbor preparation. Marker initialization, block-row
-transitions and external edge construction are still required for a
-standalone SPI decoder. Other passes and configurations remain outside
-this result.
+supplied by native neighbor preparation in these tests. Subsequent
+[neighbor-state work](spi-alpha-state-findings.md) reproduces that
+initialization and supports independent complete images in the selected
+configuration. Other passes and configurations remain outside this result.
 
 ## Reconstruction callbacks
 
@@ -260,10 +260,10 @@ The 98 constructed images exercised 4639 distinct native instructions.
 
 ## Remaining work
 
-Remove the remaining dependency on native prediction-marker and external
-edge preparation, including block-row resets and unavailable neighbors.
-Then combine alpha reconstruction with the other independently recovered
-block modes. Primary compressed color modes, reference buffers, other
-packet/header settings and malformed-input behavior remain open, as does
-device-export compatibility. Maintained findings are Markdown-only; no SDK
-code changed and scratch implementations remain disposable local tooling.
+The [neighbor-state trace](spi-alpha-state-findings.md) now initializes
+markers and external edges independently and combines alpha reconstruction
+with the recovered copy/literal color modes. Primary compressed color modes,
+alpha literal marker behavior, reference buffers, other packet/header
+settings and malformed-input behavior remain open, as does device-export
+compatibility. Maintained findings are Markdown-only; no SDK code changed
+and scratch implementations remain disposable local tooling.

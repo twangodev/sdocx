@@ -182,8 +182,14 @@ local tooling. No SDK code changed.
 
 ## Remaining work
 
+The later [alpha neighbor-state trace](spi-alpha-state-findings.md#alpha-literal-marker-writes-need-separate-treatment)
+found that native alpha literals pass pixel X directly to a marker helper
+expecting cell offsets. Selected writes crossed the requested marker
+allocation even while literal pixel output remained exact. Mixing alpha
+literals with predicted blocks needs further investigation.
+
 The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
-and 1 alongside literals. Next targets are modes 2–4, auxiliary marker
+and 1 alongside literals. Next targets are primary color modes 2–4, remaining marker
 state, reference-buffer behavior, color/flag variants and malformed-input
 limits. An independent decoder for arbitrary SPI images is still incomplete.
 Device-exported files and rendered references remain necessary for

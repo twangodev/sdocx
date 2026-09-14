@@ -146,7 +146,9 @@ evaluation and graph rendering remain open. See [plot findings](plot-findings.md
   [Mode-3 alpha residuals](spi-alpha-residual-findings.md) and
   [prediction/partition fields](spi-alpha-payload-findings.md) now support
   independent payload traces given starting neighbor state.
-  [Alpha pixel reconstruction](spi-alpha-pixel-findings.md) matches native
-  output given external block edges. Neighbor setup remains open, along
-  with complete modes 2–4, general SPI compatibility and SDK integration.
+  [Alpha pixel reconstruction](spi-alpha-pixel-findings.md) and
+  [neighbor state](spi-alpha-state-findings.md) now support complete scratch
+  image decoding for primary modes 0/1/5 and alpha modes 0/1/3. Primary
+  modes 2–4, alpha literal marker behavior, general SPI compatibility and
+  SDK integration remain open.
 - Byte-for-byte encrypted-file validation with a protected fixture.

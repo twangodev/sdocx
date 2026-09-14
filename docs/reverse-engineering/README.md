@@ -111,6 +111,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   prediction fields, partition masks, marker updates and complete payload traces.
 - [`spi-alpha-pixel-findings.md`](spi-alpha-pixel-findings.md) — alpha edge
   selection, prediction equations, residual accumulation and pixel comparisons.
+- [`spi-alpha-state-findings.md`](spi-alpha-state-findings.md) — neighbor
+  initialization, packet boundaries, independent images and literal marker writes.
 - [`predictor-timing-findings.md`](predictor-timing-findings.md) — real-event,
   clock, VSync and refresh-period sources in external prediction callbacks.
 - [`vsync-delivery-findings.md`](vsync-delivery-findings.md) — Java frame-time

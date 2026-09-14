@@ -187,15 +187,15 @@ No SDK code changed.
 
 ## Remaining work
 
-Modes 2, 3 and 4 still need complete independent payload reconstruction.
+Primary modes 2, 3 and 4 still need independent payload reconstruction.
 The [alpha residual trace](spi-alpha-residual-findings.md) specifies one
 mode-3 coefficient representation, extended by the
 [prediction/partition fields](spi-alpha-payload-findings.md) into complete
 payload parsing given neighbor state. The [pixel trace](spi-alpha-pixel-findings.md)
-also reconstructs alpha pixels given external edges. Neighbor setup remains
-unresolved. Other packet-byte and header-flag combinations, reference
-selection, auxiliary marker state, integer limits and malformed copy
-regions also remain open.
-The current scratch decoder supports only the specified combination of
-literal blocks and copies within a frame. General SPI compatibility still
+also reconstructs alpha pixels. The [neighbor-state trace](spi-alpha-state-findings.md)
+adds independent initialization and complete images with primary modes
+0/1/5 and alpha modes 0/1/3. Other packet-byte and header-flag combinations,
+reference selection, remaining marker behavior, integer limits and malformed
+copy regions remain open. The copy/literal reference described here covers
+the specified frame-copy configuration. General SPI compatibility still
 requires device-exported files and rendered references.

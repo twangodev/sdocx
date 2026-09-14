@@ -16,9 +16,11 @@ tested configuration. [Alpha residual work](spi-alpha-residual-findings.md)
 also reproduces intermediate mode-3 coefficient arrays, and
 [payload-field work](spi-alpha-payload-findings.md) adds prediction modes
 and partition masks given starting neighbor state.
-[Alpha pixel work](spi-alpha-pixel-findings.md) reconstructs those blocks
-given external edge arrays. General independent decoding, device-export
-compatibility and SDK support remain open.
+[Alpha pixel work](spi-alpha-pixel-findings.md) reconstructs those blocks,
+and [neighbor-state work](spi-alpha-state-findings.md) supports complete
+independent images using primary modes 0/1/5 and alpha modes 0/1/3.
+General independent decoding, device-export compatibility and SDK support
+remain open.
 
 ## Executed API sequence
 
@@ -188,8 +190,10 @@ constructed images combining modes 0, 1 and 5. The
 reproduces one mode-3 coefficient representation, extended by the
 [prediction/partition trace](spi-alpha-payload-findings.md) into complete
 payload parsing given neighbor state. The [pixel trace](spi-alpha-pixel-findings.md)
-adds alpha reconstruction given external edges. Remaining targets include
-complete modes 2–4, neighbor setup and other residual paths,
+adds alpha reconstruction, and the [neighbor-state trace](spi-alpha-state-findings.md)
+removes its dependency on native marker/edge inputs for the tested mode
+combinations. Remaining targets include primary modes 2–4, alpha literal
+marker behavior and other residual paths,
 reference-buffer behavior, other color and quality settings, malformed-input
 behavior and general independent decoding.
 Device-exported SPI files and rendered references remain necessary for

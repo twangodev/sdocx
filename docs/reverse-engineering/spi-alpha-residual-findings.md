@@ -181,8 +181,9 @@ been matched against native behavior.
 
 The [payload trace](spi-alpha-payload-findings.md) now decodes prediction
 modes and coded-partition masks. The [pixel trace](spi-alpha-pixel-findings.md)
-covers prediction and coefficient combination in `0x6ce0c`; independent
-neighbor setup remains open. Other mode-3 submodes, nonzero selector paths
+covers prediction and coefficient combination in `0x6ce0c`, and the
+[neighbor-state trace](spi-alpha-state-findings.md) supplies independent
+initialization. Other mode-3 submodes, nonzero selector paths
 and primary-pass compressed modes remain unresolved. Device-exported SPI
 files and visual references remain necessary for compatibility validation.
 
