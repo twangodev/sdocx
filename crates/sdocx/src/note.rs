@@ -301,7 +301,7 @@ fn finish_shape_text(
     if common
         .object_spans
         .iter()
-        .any(|span| span.content.is_none())
+        .any(|span| span.content.is_none() && span.object_type != ObjectType::Image)
     {
         unsupported.push("unsupported embedded text objects");
     }

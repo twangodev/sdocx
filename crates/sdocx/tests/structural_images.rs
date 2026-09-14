@@ -74,6 +74,315 @@ fn image(id: i32) -> Vec<u8> {
     image_with_fill(2, &fill(id), 0, &[], &frame(3, 0, &[], &[]))
 }
 
+fn embedded_text(text: &str, objects: &[(i32, Vec<u8>)]) -> Vec<u8> {
+    let mut common = (text.encode_utf16().count() as u32).to_le_bytes().to_vec();
+    common.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+    common.extend([0; 8]);
+    for margin in [16.0_f32, 10.0, 16.0, 10.0] {
+        common.extend(margin.to_le_bytes());
+    }
+    common.extend([0; 3]);
+    common.extend(1_u32.to_le_bytes());
+    common.extend(0_u32.to_le_bytes());
+    common.extend((objects.len() as u32).to_le_bytes());
+    for (index, payload) in objects {
+        common.extend(((payload.len() + 20) as u32).to_le_bytes());
+        common.extend((payload.len() as u32).to_le_bytes());
+        common.extend(3_u32.to_le_bytes());
+        common.extend(payload);
+        common.extend(index.to_le_bytes());
+        common.extend([0; 8]);
+    }
+    let mut fixed = 5500_u32.to_le_bytes().to_vec();
+    fixed.extend(4_u16.to_le_bytes());
+    fixed.extend(b"flow");
+    fixed.extend([0; 45]);
+    let mut flexible = (common.len() as u32).to_le_bytes().to_vec();
+    flexible.extend(common);
+    [
+        frame(0, 0, &fixed, &[]),
+        frame(6, 0, &[], &[]),
+        frame(7, 1, &[], &flexible),
+    ]
+    .concat()
+}
+
+fn with_note(archive: Vec<u8>, text: &str, objects: &[(i32, Vec<u8>)]) -> Vec<u8> {
+    let mut note = vec![0; 6];
+    note.extend(5500_u32.to_le_bytes());
+    note.extend([0; 22]);
+    for value in [1080_u32, 1527, 0, 24, 4000] {
+        note.extend(value.to_le_bytes());
+    }
+    for text in [embedded_text("", &[]), embedded_text(text, objects)] {
+        note.extend((text.len() as u32).to_le_bytes());
+        note.extend(text);
+    }
+    let offset = note.len() as u32;
+    note[..4].copy_from_slice(&offset.to_le_bytes());
+    note.extend([0; 32]);
+    let mut writer = zip::ZipWriter::new_append(Cursor::new(archive)).unwrap();
+    writer
+        .start_file("note.note", zip::write::SimpleFileOptions::default())
+        .unwrap();
+    writer.write_all(&note).unwrap();
+    writer.finish().unwrap().into_inner()
+}
+
+fn embedded_image(span: &sdocx::RichTextObjectSpan) -> &PlacedImage {
+    let Some(sdocx::RichTextObjectContent::Image(image)) = &span.content else {
+        panic!("expected decoded embedded image");
+    };
+    image
+}
+
+#[test]
+fn embedded_images_resolve_media_and_preserve_utf16_anchors_and_raw_records() {
+    let payloads = [(3, image(7)), (5, image(9))];
+    let parsed = sdocx::parse_bytes_detailed(&with_note(
+        archive(
+            &one_page(vec![]),
+            Some(&[(7, "90@red.png"), (9, "80@blue.png")]),
+            &[("80@blue.png", b"blue"), ("90@red.png", b"red")],
+        ),
+        "🖊\n\u{fffc}\n\u{fffc}",
+        &payloads,
+    ))
+    .unwrap();
+    for text in [
+        &parsed.note.as_ref().unwrap().body,
+        parsed.document.metadata.note_text.as_ref().unwrap(),
+    ] {
+        assert_eq!(text.object_spans.len(), 2);
+        for (span, (index, payload)) in text.object_spans.iter().zip(&payloads) {
+            assert_eq!(span.text_index_utf16, *index);
+            assert_eq!(span.object_data, *payload);
+        }
+        for (span, expected) in text
+            .object_spans
+            .iter()
+            .zip([b"red".as_slice(), b"blue".as_slice()])
+        {
+            let asset =
+                &parsed.document.metadata.media_assets[embedded_image(span).media_index.unwrap()];
+            assert_eq!(asset.data, expected);
+        }
+    }
+    assert!(
+        !parsed
+            .report
+            .diagnostics
+            .iter()
+            .any(|d| d.code == DiagnosticCode::UnresolvedImageMedia)
+    );
+    #[cfg(feature = "render")]
+    {
+        let pages = sdocx::render_document_svg(&parsed.document, &sdocx::RenderOptions::default());
+        assert_eq!(pages[0].svg.matches("<image ").count(), 2);
+        assert!(pages[0].svg.contains("rotate(30.00"));
+    }
+}
+
+#[test]
+fn missing_and_ambiguous_embedded_media_remain_unresolved_with_diagnostics() {
+    for bindings in [
+        vec![(7, "missing.png")],
+        vec![(7, "red.png"), (7, "blue.png")],
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&with_note(
+            archive(
+                &one_page(vec![]),
+                Some(&bindings),
+                &[("red.png", b"red"), ("blue.png", b"blue")],
+            ),
+            "\u{fffc}",
+            &[(0, image(7))],
+        ))
+        .unwrap();
+        let span = &parsed
+            .document
+            .metadata
+            .note_text
+            .as_ref()
+            .unwrap()
+            .object_spans[0];
+        assert_eq!(embedded_image(span).media_id, Some(7));
+        assert_eq!(embedded_image(span).media_index, None);
+        assert!(
+            parsed
+                .report
+                .diagnostics
+                .iter()
+                .any(|d| d.code == DiagnosticCode::UnresolvedImageMedia
+                    && d.archive_entry.as_deref() == Some("note.note"))
+        );
+        #[cfg(feature = "render")]
+        assert!(
+            !sdocx::render_document_svg(&parsed.document, &sdocx::RenderOptions::default())[0]
+                .svg
+                .contains("<image ")
+        );
+    }
+}
+
+#[test]
+fn hidden_embedded_images_retain_bytes_without_media_warnings_or_rendering() {
+    let mut payload = image(99);
+    payload[11] &= !(1 << 3);
+    let parsed = sdocx::parse_bytes_detailed(&with_note(
+        archive(&one_page(vec![]), None, &[]),
+        "\u{fffc}",
+        &[(0, payload.clone())],
+    ))
+    .unwrap();
+    let span = &parsed
+        .document
+        .metadata
+        .note_text
+        .as_ref()
+        .unwrap()
+        .object_spans[0];
+    assert_eq!(span.object_data, payload);
+    assert!(span.content.is_none());
+    assert!(!parsed.report.diagnostics.iter().any(|d| matches!(
+        d.code,
+        DiagnosticCode::UnresolvedImageMedia | DiagnosticCode::UnsupportedImageFeature
+    )));
+    #[cfg(feature = "render")]
+    assert!(
+        !sdocx::render_document_svg(&parsed.document, &sdocx::RenderOptions::default())[0]
+            .svg
+            .contains("<image ")
+    );
+}
+
+#[test]
+fn embedded_image_frames_cannot_borrow_from_sibling_spans() {
+    let payload = image(7);
+    for end in 0..payload.len() {
+        let bytes = with_note(
+            archive(&one_page(vec![]), None, &[]),
+            "\u{fffc}\u{fffc}",
+            &[(0, payload[..end].to_vec()), (1, payload.clone())],
+        );
+        assert!(
+            sdocx::parse_bytes_detailed(&bytes).is_err(),
+            "truncated at {end}"
+        );
+    }
+    let bytes = with_note(
+        archive(&one_page(vec![]), None, &[]),
+        "\u{fffc}",
+        &[(0, payload)],
+    );
+    let options = sdocx::ParseOptions {
+        limits: sdocx::ParseLimits {
+            max_text_object_spans: 0,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_detailed_with_options(&bytes, &options),
+        Err(Error::LimitExceeded {
+            resource: "text object spans",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn cropped_embedded_images_keep_original_placement_and_clip_the_render() {
+    let mut tail = Vec::new();
+    for value in [10_i32, 20, 110, 100] {
+        tail.extend(value.to_le_bytes());
+    }
+    for value in [-20.0_f64, 0.0, 180.0, 160.0] {
+        tail.extend(value.to_le_bytes());
+    }
+    let payload = image_with_fill(
+        2,
+        &fill(7),
+        0,
+        &[],
+        &frame(3, (1 << 1) | (1 << 17), &[], &tail),
+    );
+    let parsed = sdocx::parse_bytes_detailed(&with_note(
+        archive(
+            &one_page(vec![]),
+            Some(&[(7, "red.png")]),
+            &[("red.png", b"red")],
+        ),
+        "\u{fffc}",
+        &[(0, payload)],
+    ))
+    .unwrap();
+    let image = embedded_image(
+        &parsed
+            .document
+            .metadata
+            .note_text
+            .as_ref()
+            .unwrap()
+            .object_spans[0],
+    );
+    assert_eq!(image.crop_rect, Some([10, 20, 110, 100]));
+    assert_eq!(image.original_bbox.unwrap().x_min, -20.0);
+    #[cfg(feature = "render")]
+    {
+        let svg =
+            &sdocx::render_document_svg(&parsed.document, &sdocx::RenderOptions::default())[0].svg;
+        assert!(svg.contains("overflow=\"hidden\""));
+        assert!(svg.contains("viewBox=\"-10.0000 20.0000 100.0000 80.0000\""));
+        assert!(svg.contains("rotate(30.0000"));
+        assert!(svg.contains("<image x=\"-20.00\" y=\"0.00\" width=\"200.00\" height=\"160.00\""));
+    }
+}
+
+#[test]
+fn image_flow_sections_render_each_anchor_once_and_preserve_page_margins() {
+    let mut document = sdocx::parse_bytes_detailed(&with_note(
+        archive(
+            &one_page(vec![]),
+            Some(&[(7, "red.png")]),
+            &[("red.png", b"red")],
+        ),
+        "\u{fffc}\n\u{fffc}\n",
+        &[(0, image(7)), (2, image(7))],
+    ))
+    .unwrap()
+    .document;
+    document.pages = vec![document.pages[0].clone(); 3];
+    document.metadata.note_text.as_mut().unwrap().text_sections = vec![
+        sdocx::RichTextSection {
+            start_utf16: 0,
+            length_utf16: 2,
+        },
+        sdocx::RichTextSection {
+            start_utf16: 2,
+            length_utf16: 2,
+        },
+        sdocx::RichTextSection {
+            start_utf16: 4,
+            length_utf16: 0,
+        },
+    ];
+    let layout = sdocx::layout_document(&document);
+    assert_eq!(layout.pages.len(), 2);
+    for page in &layout.pages {
+        let PageElement::TextBox(text) = &page.page.elements[0] else {
+            panic!("text flow")
+        };
+        assert_eq!(text.object_spans.len(), 1);
+        assert_eq!(text.object_spans[0].text_index_utf16, 0);
+        assert_eq!(text.margins.unwrap()[1], 10.0);
+    }
+    #[cfg(feature = "render")]
+    for page in sdocx::render_document_svg(&document, &sdocx::RenderOptions::default()) {
+        assert_eq!(page.svg.matches("<image ").count(), 1);
+    }
+}
+
 #[test]
 fn hidden_images_keep_media_references_without_resolving_or_drawing_them() {
     let mut payload = image(42);

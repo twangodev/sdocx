@@ -3,7 +3,7 @@
 use crate::{
     BoundingBox, BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType,
     MediaAsset, Page, PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
-    PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
+    PlacedImage, PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
     RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke, layout_document,
 };
 use base64::Engine as _;
@@ -200,20 +200,19 @@ fn render_element(
         PageElement::Image { bbox, media_index } => {
             render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
-        PageElement::PlacedImage(image) => render_image(
+        PageElement::PlacedImage(image) => render_placed_image(svg, image, media_assets),
+        PageElement::TextBox(text_box) => render_text_box(
             svg,
-            image.bbox,
-            image.media_index,
-            image.rotation_degrees,
+            text_box,
+            page,
             media_assets,
+            flow_page_padding,
+            dark_mode,
         ),
-        PageElement::TextBox(text_box) => {
-            render_text_box(svg, text_box, page, flow_page_padding, dark_mode)
-        }
         PageElement::Shape(shape) => {
             render_shape(svg, shape, dark_mode);
             if let Some(text) = &shape.text {
-                render_text_box(svg, text, page, flow_page_padding, dark_mode);
+                render_text_box(svg, text, page, media_assets, flow_page_padding, dark_mode);
             }
         }
         PageElement::Line(line) => render_line(svg, line, dark_mode),
@@ -386,10 +385,53 @@ fn render_image(
     ).unwrap();
 }
 
+fn image_drawn_bbox(image: &PlacedImage) -> BoundingBox {
+    let bbox = image.bbox;
+    let (sin, cos) = image.rotation_degrees.unwrap_or(0.0).to_radians().sin_cos();
+    let width = bbox.x_max - bbox.x_min;
+    let height = bbox.y_max - bbox.y_min;
+    let drawn_width = width * cos.abs() + height * sin.abs();
+    let drawn_height = width * sin.abs() + height * cos.abs();
+    let cx = (bbox.x_min + bbox.x_max) / 2.0;
+    let cy = (bbox.y_min + bbox.y_max) / 2.0;
+    BoundingBox {
+        x_min: cx - drawn_width / 2.0,
+        y_min: cy - drawn_height / 2.0,
+        x_max: cx + drawn_width / 2.0,
+        y_max: cy + drawn_height / 2.0,
+    }
+}
+
+fn render_placed_image(svg: &mut String, image: &PlacedImage, media_assets: &[MediaAsset]) {
+    if let (Some(_), Some(original)) = (image.crop_rect, image.original_bbox) {
+        let bbox = image.bbox;
+        let width = bbox.x_max - bbox.x_min;
+        let height = bbox.y_max - bbox.y_min;
+        if width <= 0.0 || height <= 0.0 || !width.is_finite() || !height.is_finite() {
+            return;
+        }
+        let angle = image.rotation_degrees.unwrap_or(0.0);
+        let cx = (bbox.x_min + bbox.x_max) / 2.0;
+        let cy = (bbox.y_min + bbox.y_max) / 2.0;
+        writeln!(svg, r#"    <g transform="rotate({angle:.4} {cx:.4} {cy:.4})"><svg x="{:.4}" y="{:.4}" width="{width:.4}" height="{height:.4}" viewBox="{:.4} {:.4} {width:.4} {height:.4}" overflow="hidden">"#, bbox.x_min, bbox.y_min, bbox.x_min, bbox.y_min).unwrap();
+        render_image(svg, original, image.media_index, None, media_assets);
+        svg.push_str("    </svg></g>\n");
+    } else {
+        render_image(
+            svg,
+            image.bbox,
+            image.media_index,
+            image.rotation_degrees,
+            media_assets,
+        );
+    }
+}
+
 fn render_text_box(
     svg: &mut String,
     text_box: &RichTextBox,
     page: &Page,
+    media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     dark_mode: bool,
 ) {
@@ -401,7 +443,14 @@ fn render_text_box(
     let is_note_body =
         text_box.bbox.x_max <= text_box.bbox.x_min || text_box.bbox.y_max <= text_box.bbox.y_min;
     if is_note_body {
-        render_flow_text_box(svg, text_box, page, flow_page_padding, dark_mode);
+        render_flow_text_box(
+            svg,
+            text_box,
+            page,
+            media_assets,
+            flow_page_padding,
+            dark_mode,
+        );
         return;
     }
     let (x, y, width, height) = (
@@ -482,10 +531,16 @@ fn render_text_box(
         }
         svg.push_str("</text>\n");
     }
+    for span in &text_box.object_spans {
+        if let Some(RichTextObjectContent::Image(image)) = &span.content {
+            render_placed_image(svg, image, media_assets);
+        }
+    }
     svg.push_str("  </g>\n");
 }
 
 const SAMSUNG_TEXT_SCALE: f64 = 3.0;
+const IMAGE_FLOW_LINE_HEIGHT_RATIO: f64 = 1.35;
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
 const FLOW_INDENT: f64 = 48.0;
 const SAMSUNG_LINK_COLOR: &str = "#0054ff";
@@ -516,6 +571,7 @@ fn render_flow_text_box(
     svg: &mut String,
     text_box: &RichTextBox,
     page: &Page,
+    media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     dark_mode: bool,
 ) {
@@ -524,7 +580,9 @@ fn render_flow_text_box(
         .unwrap_or((FLOW_HORIZONTAL_PADDING, 0.0));
     let margins = text_box.margins.unwrap_or([0.0; 4]);
     let content_left = horizontal_padding + f64::from(margins[0]) * SAMSUNG_TEXT_SCALE;
-    let content_top = vertical_padding + f64::from(margins[1]) * SAMSUNG_TEXT_SCALE;
+    let image_flow = text_box.is_image_flow();
+    let content_top = f64::from(margins[1]) * SAMSUNG_TEXT_SCALE
+        + if image_flow { 0.0 } else { vertical_padding };
     let content_right =
         f64::from(page.width) - horizontal_padding - f64::from(margins[2]) * SAMSUNG_TEXT_SCALE;
     let characters = text_box.text.chars().collect::<Vec<_>>();
@@ -557,6 +615,12 @@ fn render_flow_text_box(
 
         let paragraph_start_utf16 = utf16_offsets[paragraph_start];
         let paragraph_end_utf16 = utf16_offsets[paragraph_end];
+        let base_style = text_style_at(
+            text_box,
+            paragraph_start_utf16,
+            dark_mode,
+            layout.predefined_style,
+        );
         let embedded = text_box
             .object_spans
             .iter()
@@ -568,8 +632,16 @@ fn render_flow_text_box(
             .collect::<Vec<_>>();
         if !embedded.is_empty() {
             for object in embedded {
-                if let Some(bottom) = render_embedded_object(svg, object, cursor_y, dark_mode) {
-                    cursor_y = cursor_y.max(bottom + object_bottom_margin(object));
+                if let Some(bottom) =
+                    render_embedded_object(svg, object, cursor_y, media_assets, dark_mode)
+                {
+                    let bottom_margin =
+                        if matches!(object.content, Some(RichTextObjectContent::Image(_))) {
+                            base_style.font_size * (IMAGE_FLOW_LINE_HEIGHT_RATIO - 1.0)
+                        } else {
+                            object_bottom_margin(object)
+                        };
+                    cursor_y = cursor_y.max(bottom + bottom_margin);
                 }
             }
             cursor_y += layout.spacing_after;
@@ -577,12 +649,6 @@ fn render_flow_text_box(
             continue;
         }
 
-        let base_style = text_style_at(
-            text_box,
-            paragraph_start_utf16,
-            dark_mode,
-            layout.predefined_style,
-        );
         let marker = layout
             .bullet
             .and_then(|bullet| bullet_marker_for_indent(bullet, layout.indent_level));
@@ -603,7 +669,11 @@ fn render_flow_text_box(
                 layout.predefined_style,
             )
         };
-        let line_height = paragraph_line_height(base_style.font_size, layout.line_spacing);
+        let line_height = if image_flow && layout.line_spacing.is_none() {
+            base_style.font_size * IMAGE_FLOW_LINE_HEIGHT_RATIO
+        } else {
+            paragraph_line_height(base_style.font_size, layout.line_spacing)
+        };
 
         for (line_index, line_range) in lines.iter().enumerate() {
             let baseline = cursor_y + base_style.font_size;
@@ -1112,9 +1182,30 @@ fn render_embedded_object(
     svg: &mut String,
     object: &RichTextObjectSpan,
     cursor_y: f64,
+    media_assets: &[MediaAsset],
     dark_mode: bool,
 ) -> Option<f64> {
     match object.content.as_ref() {
+        Some(RichTextObjectContent::Image(image)) => {
+            let drawn = image_drawn_bbox(image);
+            if ![drawn.x_min, drawn.y_min, drawn.x_max, drawn.y_max]
+                .iter()
+                .all(|value| value.is_finite())
+                || drawn.x_max <= drawn.x_min
+                || drawn.y_max <= drawn.y_min
+            {
+                return None;
+            }
+            let offset_y = object_flow_offset(drawn.y_min, cursor_y, 0.0);
+            writeln!(
+                svg,
+                r#"    <g data-sdocx-object="image" transform="translate(0 {offset_y:.4})">"#
+            )
+            .unwrap();
+            render_placed_image(svg, image, media_assets);
+            svg.push_str("    </g>\n");
+            Some(drawn.y_max + offset_y)
+        }
         Some(RichTextObjectContent::Table(table)) => {
             let offset_y =
                 object_flow_offset(table.bbox.y_min, cursor_y, object_top_margin(object));

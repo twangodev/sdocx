@@ -2,7 +2,7 @@ use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::decode::decode_stroke;
 use crate::error::{Error, Result};
-use crate::image::decode_image;
+use crate::image::{decode_image, decode_text_images};
 use crate::media::MediaResolver;
 use crate::note::parse_page_text_box;
 use crate::object::read_bbox;
@@ -94,13 +94,15 @@ fn decode_objects(
             })?;
             page.strokes.push(stroke);
         } else if object.object_type == ObjectType::TextBox {
-            let decoded = parse_page_text_box(payload, limits).map_err(|error| match error {
-                Error::Format(message) => Error::Format(format!(
-                    "page {}: text box at 0x{:x}: {message}",
-                    page.uuid, object.payload_offset
-                )),
-                error => error,
-            })?;
+            let mut decoded =
+                parse_page_text_box(payload, limits).map_err(|error| match error {
+                    Error::Format(message) => Error::Format(format!(
+                        "page {}: text box at 0x{:x}: {message}",
+                        page.uuid, object.payload_offset
+                    )),
+                    error => error,
+                })?;
+            decode_text_images(&mut decoded.text_box, media, archive_entry, report)?;
             if !decoded.unsupported.is_empty() {
                 report.warning(
                     DiagnosticCode::UnsupportedTextBoxFeature,
@@ -120,7 +122,7 @@ fn decode_objects(
             )?;
             page.elements.push(PageElement::TextBox(decoded.text_box));
         } else if object.object_type == ObjectType::Image {
-            let mut decoded = decode_image(payload).map_err(|error| match error {
+            let decoded = decode_image(payload).map_err(|error| match error {
                 Error::Format(message) => Error::Format(format!(
                     "page {}: image at 0x{:x}: {message}",
                     page.uuid, object.payload_offset
@@ -128,30 +130,9 @@ fn decode_objects(
                 error => error,
             })?;
             let location = format!("page {}: image at 0x{:x}", page.uuid, object.payload_offset);
-            if !decoded.unsupported.is_empty() {
-                report.warning(
-                    DiagnosticCode::UnsupportedImageFeature,
-                    Some(archive_entry.to_owned()),
-                    format!(
-                        "{location}: incomplete support for {}",
-                        decoded.unsupported.join(", ")
-                    ),
-                );
+            if let Some(image) = decoded.resolve(media, archive_entry, &location, report) {
+                page.elements.push(PageElement::PlacedImage(image));
             }
-            match media.resolve(decoded.image.media_id) {
-                Ok((index, inferred)) => {
-                    decoded.image.media_index = Some(index);
-                    if inferred {
-                        report.warning(DiagnosticCode::InferredImageMediaReference, Some(archive_entry.to_owned()), format!("{location}: media/mediaInfo.dat is absent; resolved media ID {} using a unique numeric filename prefix", decoded.image.media_id.unwrap()));
-                    }
-                }
-                Err(message) => report.warning(
-                    DiagnosticCode::UnresolvedImageMedia,
-                    Some(archive_entry.to_owned()),
-                    format!("{location}: {message}"),
-                ),
-            }
-            page.elements.push(PageElement::PlacedImage(decoded.image));
         } else if matches!(object.object_type, ObjectType::Shape | ObjectType::Line) {
             let decoded = if object.object_type == ObjectType::Shape {
                 decode_shape(payload, limits)
@@ -160,7 +141,7 @@ fn decode_objects(
                 decode_line(payload)
                     .map(|decoded| (PageElement::Line(decoded.value), decoded.unsupported))
             };
-            let (element, unsupported) = decoded.map_err(|error| match error {
+            let (mut element, unsupported) = decoded.map_err(|error| match error {
                 Error::Format(message) => Error::Format(format!(
                     "page {}: {:?} at 0x{:x}: {message}",
                     page.uuid, object.object_type, object.payload_offset
@@ -179,6 +160,11 @@ fn decode_objects(
                         unsupported.join(", ")
                     ),
                 );
+            }
+            if let PageElement::Shape(shape) = &mut element
+                && let Some(text) = &mut shape.text
+            {
+                decode_text_images(text, media, archive_entry, report)?;
             }
             page.elements.push(element);
         } else if !matches!(object.object_type, ObjectType::Other(_)) {

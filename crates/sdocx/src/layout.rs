@@ -92,6 +92,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                     // the top margin on continuation pages. The PDF exporter
                     // therefore starts them 12 document pixels higher.
                     if source_page_index > 0
+                        && !slice.is_image_flow()
                         && let Some(margins) = &mut slice.margins
                     {
                         margins[1] = (margins[1] - 4.0).max(0.0);
@@ -159,6 +160,12 @@ fn translate_continuing_objects(
 
 fn translate_object_content_y(content: Option<&mut RichTextObjectContent>, delta_y: f64) {
     match content {
+        Some(RichTextObjectContent::Image(image)) => {
+            translate_bbox_y(&mut image.bbox, delta_y);
+            if let Some(original) = &mut image.original_bbox {
+                translate_bbox_y(original, delta_y);
+            }
+        }
         Some(RichTextObjectContent::Table(table)) => {
             translate_bbox_y(&mut table.bbox, delta_y);
             for row in &mut table.rows {
@@ -230,6 +237,18 @@ fn balanced_line_ranges(text: &str, page_count: usize) -> Vec<Range<usize>> {
 }
 
 impl RichTextBox {
+    pub(crate) fn is_image_flow(&self) -> bool {
+        !self.object_spans.is_empty()
+            && self
+                .object_spans
+                .iter()
+                .all(|span| span.object_type == crate::ObjectType::Image)
+            && self
+                .text
+                .chars()
+                .all(|character| character.is_whitespace() || character == '\u{fffc}')
+    }
+
     /// Return a character-indexed slice with intersecting style records rebased.
     pub fn slice_chars(&self, range: Range<usize>) -> Option<Self> {
         if range.start > range.end {

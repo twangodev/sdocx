@@ -1,11 +1,116 @@
 use crate::binary::Reader;
 use crate::frame::Frame;
+use crate::media::MediaResolver;
 use crate::object::read_bbox;
-use crate::{Error, ObjectMetadata, PlacedImage, Result};
+use crate::{
+    DiagnosticCode, Error, ObjectMetadata, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption,
+    ObjectType, ParseReport, PlacedImage, Result, RichTextBox, RichTextObjectContent,
+};
 
 pub(crate) struct DecodedImage {
     pub(crate) image: PlacedImage,
     pub(crate) unsupported: Vec<&'static str>,
+    visible: bool,
+}
+
+impl DecodedImage {
+    pub(crate) fn resolve(
+        mut self,
+        media: &MediaResolver,
+        archive_entry: &str,
+        location: &str,
+        report: &mut ParseReport,
+    ) -> Option<PlacedImage> {
+        if !self.visible {
+            return None;
+        }
+        if !self.unsupported.is_empty() {
+            report.warning(
+                DiagnosticCode::UnsupportedImageFeature,
+                Some(archive_entry.to_owned()),
+                format!(
+                    "{location}: incomplete support for {}",
+                    self.unsupported.join(", ")
+                ),
+            );
+        }
+        match media.resolve(self.image.media_id) {
+            Ok((index, inferred)) => {
+                self.image.media_index = Some(index);
+                if inferred {
+                    report.warning(DiagnosticCode::InferredImageMediaReference, Some(archive_entry.to_owned()), format!("{location}: media/mediaInfo.dat is absent; resolved media ID {} using a unique numeric filename prefix", self.image.media_id.unwrap()));
+                }
+            }
+            Err(message) => report.warning(
+                DiagnosticCode::UnresolvedImageMedia,
+                Some(archive_entry.to_owned()),
+                format!("{location}: {message}"),
+            ),
+        }
+        Some(self.image)
+    }
+}
+
+pub(crate) fn decode_text_images(
+    text: &mut RichTextBox,
+    media: &MediaResolver,
+    archive_entry: &str,
+    report: &mut ParseReport,
+) -> Result<()> {
+    decode_text_images_in_context(text, media, archive_entry, report, false)
+}
+
+fn decode_text_images_in_context(
+    text: &mut RichTextBox,
+    media: &MediaResolver,
+    archive_entry: &str,
+    report: &mut ParseReport,
+    nested: bool,
+) -> Result<()> {
+    for span in &mut text.object_spans {
+        if span.object_type == ObjectType::Image {
+            let location = format!("embedded image at UTF-16 index {}", span.text_index_utf16);
+            let mut decoded = decode_image(&span.object_data)?;
+            if nested {
+                decoded
+                    .unsupported
+                    .push("image layout inside another embedded text object");
+            }
+            if span.layout_option != ObjectSpanLayoutOption::Block
+                || span.layout_constraint != ObjectSpanLayoutConstraint::Normal
+            {
+                decoded
+                    .unsupported
+                    .push("inline, alternate-margin or cross-page image layout");
+            }
+            span.content = decoded
+                .resolve(media, archive_entry, &location, report)
+                .map(Box::new)
+                .map(RichTextObjectContent::Image);
+        }
+        match span.content.as_mut() {
+            Some(RichTextObjectContent::Table(table)) => {
+                for row in &mut table.rows {
+                    for cell in &mut row.cells {
+                        decode_text_images_in_context(
+                            &mut cell.content,
+                            media,
+                            archive_entry,
+                            report,
+                            true,
+                        )?;
+                    }
+                }
+            }
+            Some(RichTextObjectContent::CodeBlock(code)) => {
+                for text in code.title.iter_mut().chain(code.body.iter_mut()) {
+                    decode_text_images_in_context(text, media, archive_entry, report, true)?;
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 /// Native ObjectImage: 0 + 6 + 7 + 3. The displayed media ID is in frame 7's
@@ -88,6 +193,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         media_id,
         media_index: None,
         crop_rect: None,
+        original_bbox: None,
         border_media_id: None,
         original_media_id: None,
     };
@@ -120,7 +226,7 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
                 fields.read_u32("border nine-patch width")?;
             }
             17 => {
-                read_bbox(&mut fields)?;
+                image.original_bbox = Some(read_bbox(&mut fields)?);
             }
             18 => image.original_media_id = read_media_id(&mut fields)?,
             19 => {
@@ -130,7 +236,8 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
             _ => break, // Unknown preceding field: leave the remainder bounded.
         }
     }
-    if tail.fields.has_other_bits(0)
+    if tail.fields.has_other_bits((1 << 1) | (1 << 17))
+        || (image.crop_rect.is_some() && image.original_bbox.is_none())
         || tail.properties.has_other_bits(0)
         || !tail.fixed.is_empty()
         || fields.remaining() != 0
@@ -143,7 +250,11 @@ pub(crate) fn decode_image(data: &[u8]) -> Result<DecodedImage> {
         }
         unsupported.push("additional image frames");
     }
-    Ok(DecodedImage { image, unsupported })
+    Ok(DecodedImage {
+        image,
+        unsupported,
+        visible: base.visible,
+    })
 }
 
 fn parse_image_fill(data: &[u8], unsupported: &mut Vec<&'static str>) -> Result<Option<u32>> {

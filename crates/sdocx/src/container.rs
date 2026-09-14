@@ -5,6 +5,7 @@ use std::path::Path;
 use crate::archive_tail::{ArchiveReader, ArchiveTail};
 use crate::end_tag::{EndTagSource, StoredEndTag, parse_end_tag_bytes_with_limits};
 use crate::error::{Error, Result};
+use crate::image::decode_text_images;
 use crate::integrity::IntegrityVerifier;
 use crate::media::{MediaResolver, media_archive_id, parse_media_manifest_bytes_with_limits};
 use crate::note::{StoredNoteHeader, parse_note_bytes_with_limits};
@@ -77,7 +78,6 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     }
 
     let mut note = None;
-    let mut note_text = None;
 
     // Parse note.note (optional)
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
@@ -91,8 +91,6 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
             parsed_note.header.page_horizontal_padding,
             parsed_note.header.page_vertical_padding,
         ));
-        metadata.note_title = Some(parsed_note.title.clone());
-        note_text = Some(parsed_note.body.clone());
         note = Some(parsed_note);
     }
 
@@ -144,6 +142,12 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         &metadata.media_assets,
         &archive_names,
     );
+    if let Some(note) = &mut note {
+        decode_text_images(&mut note.title, &media, "note.note", &mut report)?;
+        decode_text_images(&mut note.body, &media, "note.note", &mut report)?;
+        metadata.note_title = Some(note.title.clone());
+        metadata.note_text = Some(note.body.clone());
+    }
 
     let mut page_records = Vec::with_capacity(page_names.len());
     for name in &page_names {
@@ -199,7 +203,6 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         metadata.page_dimensions = Some((page.width, page.height));
         metadata.background_color = page.background_color;
     }
-    metadata.note_text = note_text;
     let integrity = integrity.map(|verifier| verifier.finish(page_manifest.as_ref(), &mut report));
 
     Ok(ParsedDocument {

@@ -154,8 +154,8 @@ pub struct PlacedImage {
     pub media_id: Option<u32>,
     /// Resolved index into `DocumentMetadata::media_assets`, if available and unambiguous.
     pub media_index: Option<usize>,
-    /// Stored pixel crop rectangle. Rendering this field is not yet supported.
     pub crop_rect: Option<[i32; 4]>,
+    pub original_bbox: Option<BoundingBox>,
     /// Optional border asset ID, distinct from the main image.
     pub border_media_id: Option<u32>,
     /// Optional original asset ID, distinct from the displayed image.
@@ -391,6 +391,7 @@ pub struct RichTextObjectSpan {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum RichTextObjectContent {
+    Image(Box<PlacedImage>),
     /// A Samsung Notes table.
     Table(Box<RichTextTable>),
     /// A Samsung Notes fenced code block.
