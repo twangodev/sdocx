@@ -27,20 +27,13 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Feature latest stable SDK release
+      - name: Feature SDK release
+        if: steps.release.outputs['crates/sdocx--release_created'] == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        shell: bash
-        run: |
-          sdk_tag=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp | jq -r '
-            [.[][] | select(.draft == false and .prerelease == false)
-              | select(.tag_name | test("^sdocx-v[0-9]+\\.[0-9]+\\.[0-9]+$"))]
-            | max_by(.published_at) | .tag_name // empty
-          ')
-          if [[ -n "$sdk_tag" ]]; then
-            gh release edit "$sdk_tag" --latest
-          fi
+          SDK_TAG: ${{ steps.release.outputs['crates/sdocx--tag_name'] }}
+        run: gh release edit "$SDK_TAG" --latest
 
   build:
     name: Build (${{ matrix.artifact }})
