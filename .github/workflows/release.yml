@@ -27,6 +27,21 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Feature latest stable SDK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          sdk_tag=$(gh api "repos/$GH_REPO/releases?per_page=100" --paginate --slurp | jq -r '
+            [.[][] | select(.draft == false and .prerelease == false)
+              | select(.tag_name | test("^sdocx-v[0-9]+\\.[0-9]+\\.[0-9]+$"))]
+            | max_by(.published_at) | .tag_name // empty
+          ')
+          if [[ -n "$sdk_tag" ]]; then
+            gh release edit "$sdk_tag" --latest
+          fi
+
   build:
     name: Build (${{ matrix.artifact }})
     needs: [release-please]
