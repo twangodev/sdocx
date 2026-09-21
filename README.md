@@ -15,6 +15,10 @@ continuous document preview. Parsing, rendering, and export happen in the
 browser; user-selected documents are not uploaded. The generated site is
 configured for Workers Static Assets at `sdocx.twango.dev`.
 
+Choose **Debugger** to browse stored records and raw bytes, inspect stroke
+samples, and replay handwriting on the selected page. See the
+[web debugger guide](docs/web-debugger.md) for timing semantics and limits.
+
 ## Parser accuracy
 
 `sdocx` is a reverse-engineered parser, not a drop-in implementation of
