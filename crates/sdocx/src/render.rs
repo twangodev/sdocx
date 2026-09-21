@@ -1539,25 +1539,12 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
         return;
     }
 
-    let color = stroke
-        .color
-        .as_ref()
-        .map(color_hex)
-        .unwrap_or_else(|| default_ink.into());
-    let base_width = normalized_stroke_width(stroke.pen_width);
-    let has_pressure = stroke.pressures.len() >= stroke.points.len() - 1
-        && stroke
-            .pressures
-            .iter()
-            .any(|&p| p > PRESSURE_PRESENT_EPSILON);
-
-    if has_pressure {
+    let paint = stroke_paint(stroke, default_ink == DEFAULT_INK_DARK_MODE);
+    let color = &paint.color;
+    let base_width = paint.width;
+    if let Some(widths) = &paint.segment_widths {
         for j in 1..stroke.points.len() {
-            let p_idx = (j - 1).min(stroke.pressures.len() - 1);
-            // Preserve raw SDK pressure values in the model, but keep malformed or
-            // unsupported records from producing unbounded SVG stroke widths.
-            let pressure = stroke.pressures[p_idx].clamp(0.05, 1.0);
-            let sw = base_width * (0.3 + 0.7 * pressure);
+            let sw = widths[j - 1];
 
             let p1 = &stroke.points[j - 1];
             let p2 = &stroke.points[j];
@@ -1580,6 +1567,45 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
             r#"  <polyline points="{pts_str}" fill="none" stroke="{color}" stroke-width="{base_width:.2}" stroke-linecap="round" stroke-linejoin="round"/>"#,
         )
         .unwrap();
+    }
+}
+
+/// Shared paint values for SVG output and interactive stroke inspection.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct StrokePaint {
+    pub color: String,
+    pub width: f64,
+    /// One width per point-to-point segment; absent for a constant-width polyline.
+    pub segment_widths: Option<Vec<f64>>,
+}
+
+/// Resolve exactly the same colors and pressure widths as the SVG renderer.
+pub fn stroke_paint(stroke: &Stroke, dark_mode: bool) -> StrokePaint {
+    let width = normalized_stroke_width(stroke.pen_width);
+    let pressure = stroke.pressures.len() >= stroke.points.len().saturating_sub(1)
+        && stroke
+            .pressures
+            .iter()
+            .any(|&p| p > PRESSURE_PRESENT_EPSILON);
+    StrokePaint {
+        color: stroke.color.as_ref().map(color_hex).unwrap_or_else(|| {
+            if dark_mode {
+                DEFAULT_INK_DARK_MODE
+            } else {
+                DEFAULT_INK_LIGHT_MODE
+            }
+            .into()
+        }),
+        width,
+        segment_widths: pressure.then(|| {
+            stroke
+                .pressures
+                .iter()
+                .take(stroke.points.len().saturating_sub(1))
+                .map(|pressure| width * (0.3 + 0.7 * pressure.clamp(0.05, 1.0)))
+                .collect()
+        }),
     }
 }
 

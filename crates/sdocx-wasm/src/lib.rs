@@ -1,3 +1,4 @@
+mod debugger;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use wasm_bindgen::prelude::*;
@@ -21,6 +22,7 @@ pub struct DocumentSession {
     parsed: Option<sdocx::ParsedDocument>,
     layout: Option<sdocx::LayoutDocument>,
     page_count: usize,
+    debugger: Option<debugger::Source>,
 }
 
 #[wasm_bindgen]
@@ -38,6 +40,7 @@ impl DocumentSession {
         let layout = sdocx::layout_document(&parsed.document);
         let page_count = layout.pages.len();
         Ok(Self {
+            debugger: Some(debugger::Source::new(bytes)?),
             parsed: Some(parsed),
             layout: Some(layout),
             page_count,
@@ -66,8 +69,26 @@ impl DocumentSession {
             .ok_or_else(|| JsError::new("page index is out of bounds"))
     }
 
+    /// Lazy debugger request. Large integers are returned as decimal strings.
+    pub fn debug(&mut self, request: &str) -> Result<String, JsError> {
+        let parsed = self
+            .parsed
+            .as_ref()
+            .ok_or_else(|| JsError::new("session disposed"))?;
+        let layout = self
+            .layout
+            .as_ref()
+            .ok_or_else(|| JsError::new("session disposed"))?;
+        self.debugger
+            .as_mut()
+            .ok_or_else(|| JsError::new("session disposed"))?
+            .request(parsed, layout, request)
+            .map_err(|e| JsError::new(&e))
+    }
+
     /// Release the parsed document before the JavaScript wrapper is collected.
     pub fn dispose(&mut self) {
+        self.debugger = None;
         self.parsed = None;
         self.layout = None;
         self.page_count = 0;

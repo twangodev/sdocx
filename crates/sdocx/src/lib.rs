@@ -71,8 +71,8 @@ pub use object_flexible::{
 pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
 #[cfg(feature = "render")]
 pub use render::{
-    RenderColorMode, RenderOptions, RenderedPage, render_document_svg, render_layout_page_svg,
-    render_page_svg,
+    RenderColorMode, RenderOptions, RenderedPage, StrokePaint, render_document_svg,
+    render_layout_page_svg, render_page_svg, stroke_paint,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use shape::{NativeLine, NativeShape, ShapePaint, ShapeStyle};
@@ -201,4 +201,9 @@ pub fn parse_bytes_detailed_with_options(
 ) -> Result<ParsedDocument> {
     let cursor = Cursor::new(bytes);
     container::parse_detailed_from_reader(cursor, options)
+}
+
+/// Length of the ZIP portion, excluding Samsung's appended end tag.
+pub fn archive_zip_length(bytes: &[u8]) -> Result<u64> {
+    Ok(archive_tail::ArchiveTail::read(&mut std::io::Cursor::new(bytes))?.archive_length)
 }

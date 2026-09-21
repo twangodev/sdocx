@@ -566,3 +566,39 @@ fn invalid_page_offsets_and_truncated_masks_are_errors() {
         assert!(sdocx::parse_stored_page_bytes(&valid[..end]).is_err());
     }
 }
+
+#[test]
+fn source_stroke_inspection_keeps_hidden_and_nested_identities() {
+    let visible = stroke(0x21, 3, &compressed(false), 0, &[]);
+    let mut hidden = visible.clone();
+    hidden[11] &= !(1 << 3);
+    let bytes = archive(&page(
+        &[vec![
+            object(99, &[1, 2, 3], &[]),
+            object(1, &hidden, &[]),
+            object(4, &base(), &[object(1, &visible, &[])]),
+        ]],
+        0,
+        &[],
+    ));
+    let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).unwrap();
+    let mut raw = Vec::new();
+    std::io::Read::read_to_end(&mut zip.by_name("page.page").unwrap(), &mut raw).unwrap();
+    let records = &parsed.stored_pages[0].page.layers.layers[0].objects;
+    let limits = ParseLimits::default();
+    assert!(records[0].decode_stroke(&raw, &limits).is_err());
+    let hidden_stroke = records[1].decode_stroke(&raw, &limits).unwrap();
+    let child = &records[2].children[0];
+    assert_ne!(records[1].payload_offset, child.payload_offset);
+    assert_eq!(hidden_stroke.points.len(), 3);
+    assert_eq!(
+        child.decode_stroke(&raw, &limits).unwrap().timestamps,
+        parsed.document.pages[0].strokes[0].timestamps
+    );
+    assert!(
+        child
+            .decode_stroke(&raw[..child.payload_offset], &limits)
+            .is_err()
+    );
+}

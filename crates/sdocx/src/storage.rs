@@ -191,6 +191,18 @@ pub struct StoredObject {
 }
 
 impl StoredObject {
+    /// Decode this stored stroke directly, preserving its source record identity.
+    pub fn decode_stroke(&self, page_bytes: &[u8], limits: &ParseLimits) -> Result<crate::Stroke> {
+        if self.object_type != ObjectType::Stroke {
+            return Err(Error::Format("object is not a stroke".into()));
+        }
+        crate::decode::decode_stroke(
+            self.payload(page_bytes)
+                .ok_or_else(|| Error::Format("object payload is outside its page".into()))?,
+            limits,
+        )
+    }
+
     /// Decode the common type-0 metadata from the original uncompressed page.
     /// Unknown objects without a supported base frame return a format error.
     pub fn base_metadata(&self, page_bytes: &[u8]) -> Result<crate::ObjectMetadata> {
