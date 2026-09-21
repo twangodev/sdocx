@@ -77,7 +77,7 @@
 		>
 			{#each pages as pageItem, index}
 				<figure
-					class="m-0 flex w-full scroll-mt-2.5 flex-col items-center gap-1"
+					class="relative m-0 flex w-full scroll-mt-2.5 flex-col items-center gap-1"
 					class:active={pageIndex === index}
 					data-page-index={index}
 				>
