@@ -1587,19 +1587,29 @@ fn escape_xml(input: &str) -> String {
 }
 
 fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
-    if stroke.points.len() < 2 {
-        return;
-    }
-
-    let paint = stroke_paint(stroke, default_ink == DEFAULT_INK_DARK_MODE);
+    let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
     let color = &paint.color;
     let base_width = paint.width;
+    if let [point] = paint.points.as_ref() {
+        writeln!(
+            svg,
+            r#"  <circle cx="{}" cy="{}" r="{}" fill="{color}"/>"#,
+            point.x,
+            point.y,
+            base_width / 2.0
+        )
+        .unwrap();
+        return;
+    }
+    if paint.points.is_empty() {
+        return;
+    }
     if let Some(widths) = &paint.segment_widths {
-        for j in 1..stroke.points.len() {
+        for j in 1..paint.points.len() {
             let sw = widths[j - 1];
 
-            let p1 = &stroke.points[j - 1];
-            let p2 = &stroke.points[j];
+            let p1 = &paint.points[j - 1];
+            let p2 = &paint.points[j];
             writeln!(
                 svg,
                 r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{color}" stroke-width="{sw:.2}" stroke-linecap="round"/>"#,
@@ -1608,7 +1618,7 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
             .unwrap();
         }
     } else {
-        let pts_str: String = stroke
+        let pts_str: String = paint
             .points
             .iter()
             .map(|p| format!("{:.2},{:.2}", p.x, p.y))

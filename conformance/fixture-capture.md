@@ -50,3 +50,30 @@ fixtures can follow once the basic pair is validated.
 
 Successful parsing and similar pixel scores establish coverage of these cases;
 broader compatibility still requires additional app versions and documents.
+
+## Full bundled-pen parity captures
+
+Capture each pen available in the installed Samsung Notes UI, keeping the
+saved SDOCX and its matching PDF together. Include the exact app/device/OS
+version and the pen/settings shown by the debugger. Do not substitute a
+similarly named pen for one unavailable in that UI; record it as unavailable.
+The native registry and alias mapping are in
+[`pen-selection-findings.md`](../docs/reverse-engineering/pen-selection-findings.md).
+
+For each pen, use a labeled page with three sizes and the following cases:
+
+- Taps and very short strokes; slow circles, loops, tight turns and zigzags.
+- Light-to-heavy and heavy-to-light pressure ramps, abrupt pressure changes,
+  and strokes made at different speeds with comparable pressure.
+- Upright and tilted stylus strokes, repeated directions, and visible starts
+  and ends. Include any fixed-width option separately.
+- Self-overlaps, overlaps between separate strokes, opaque/translucent ink,
+  and light/dark backgrounds. For erasers or destination-dependent brushes,
+  preserve the drawing order and include earlier ink beneath the effect.
+- Each available texture, advanced setting and straight-line alias separately.
+
+Use the existing 02 FountainPen calibration as the first reference, not as a
+proxy for all pens. Registry recognition and implementation status are
+separate from reference-validated rendering. Pens without matching captures
+remain unverified; full bundled coverage must not be inferred from page-wide
+pixel scores on the existing corpus.

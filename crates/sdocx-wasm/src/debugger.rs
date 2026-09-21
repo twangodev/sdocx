@@ -339,7 +339,7 @@ impl Source {
                                 }
                                 if o.object_type == ObjectType::Stroke {
                                     match o.decode_stroke(bytes,limits) {
-                                        Ok(mut stroke) => { resources.resolve(&mut stroke); strokes.push(json!({"offset":o.payload_offset,"paint":sdocx::stroke_paint(&stroke,false),"stroke":stroke,
+                                        Ok(mut stroke) => { resources.resolve(&mut stroke); strokes.push(json!({"offset":o.payload_offset,"geometry":sdocx::prepare_stroke(&stroke,false),"stroke":stroke,
                                             "milliseconds":o.stroke_metadata_with_limits(bytes,limits).is_ok_and(|m| m.properties.millisecond_timestamps)})); },
                                         Err(e) => objects.push(json!({"offset":o.payload_offset,"error":e.to_string()}))
                                     }
@@ -400,6 +400,42 @@ mod source_tests {
         }
         writer.finish().unwrap().into_inner()
     }
+    #[test]
+    #[ignore = "requires the external conformance corpus"]
+    fn replay_and_exports_share_resolved_pen_inputs_and_prepared_geometry() {
+        let root = std::env::var("SDOCX_CORPUS_DIR").expect("SDOCX_CORPUS_DIR");
+        let bytes =
+            std::fs::read(std::path::Path::new(&root).join("02-shapes-and-dot-calibration.sdocx"))
+                .unwrap();
+        let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+        let layout = sdocx::layout_document(&parsed.document);
+        let mut source = Source::new(&bytes).unwrap();
+        let replay: Value = serde_json::from_str(
+            &source
+                .request(&parsed, &layout, r#"{"kind":"replay","page":0}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        let items = replay["strokes"].as_array().unwrap();
+        assert_eq!(items.len(), 77);
+        for (item, stroke) in items.iter().zip(&parsed.document.pages[0].strokes) {
+            // Use the same Value-to-wire roundtrip as the debugger, including
+            // float32 promotion and JSON number parsing.
+            let expected: Value = serde_json::from_str(
+                &json!({
+                    "stroke": stroke,
+                    "geometry": sdocx::prepare_stroke(stroke, false)
+                })
+                .to_string(),
+            )
+            .unwrap();
+            assert_eq!(item["stroke"], expected["stroke"]);
+            assert_eq!(item["geometry"], expected["geometry"]);
+            assert_eq!(item["geometry"]["profile"], "FountainPen");
+            assert_eq!(item["geometry"]["support"], "approximate");
+        }
+    }
+
     #[test]
     fn lazy_bytes_are_bounded_and_entry_cache_is_replaced() {
         let bytes = fixture();

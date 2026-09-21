@@ -47,18 +47,15 @@ export class ReplayRaster {
 		private defaultInk: string
 	) {
 		for (let i = 0; i < replay.strokes.length; i++) {
-			const { stroke, paint } = replay.strokes[i];
-			let width = paint.width;
-			for (const value of paint.segment_widths ?? [])
-				width = Math.max(width, value);
-			const bounds = emptyBounds();
-			for (const point of stroke.points)
-				include(bounds, {
-					left: point.x - width / 2,
-					top: point.y - width / 2,
-					right: point.x + width / 2,
-					bottom: point.y + width / 2
-				});
+			const box = replay.strokes[i].geometry.bounds;
+			const bounds = box
+				? {
+						left: box.x_min,
+						top: box.y_min,
+						right: box.x_max,
+						bottom: box.y_max
+					}
+				: emptyBounds();
 			this.bounds.push(bounds);
 			const batch = Math.floor(i / BATCH_SIZE);
 			this.batches[batch] ??= emptyBounds();
@@ -103,26 +100,37 @@ export class ReplayRaster {
 		return true;
 	}
 	drawStroke(ctx: CanvasRenderingContext2D, index: number, last: number) {
-		if (last < 1) return;
-		const { stroke, paint } = this.replay.strokes[index];
-		ctx.strokeStyle = stroke.color ? paint.color : this.defaultInk;
+		if (last < 0) return;
+		const { stroke, geometry } = this.replay.strokes[index];
+		const points = geometry.points ?? stroke.points;
+		last =
+			(geometry.sample_ends?.[last] ?? Math.min(last + 1, points.length)) - 1;
+		if (last < 0) return;
+		ctx.strokeStyle = stroke.color ? geometry.color : this.defaultInk;
+		if (points.length === 1) {
+			ctx.fillStyle = ctx.strokeStyle;
+			ctx.beginPath();
+			ctx.arc(points[0].x, points[0].y, geometry.width / 2, 0, Math.PI * 2);
+			ctx.fill();
+			return;
+		}
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
-		if (paint.segment_widths) {
+		if (geometry.segment_widths) {
 			for (let j = 1; j <= last; j++) {
-				const a = stroke.points[j - 1],
-					b = stroke.points[j];
-				ctx.lineWidth = paint.segment_widths[j - 1];
+				const a = points[j - 1],
+					b = points[j];
+				ctx.lineWidth = geometry.segment_widths[j - 1];
 				ctx.beginPath();
 				ctx.moveTo(a.x, a.y);
 				ctx.lineTo(b.x, b.y);
 				ctx.stroke();
 			}
 		} else {
-			ctx.lineWidth = paint.width;
+			ctx.lineWidth = geometry.width;
 			ctx.beginPath();
 			for (let j = 0; j <= last; j++) {
-				const p = stroke.points[j];
+				const p = points[j];
 				if (j) ctx.lineTo(p.x, p.y);
 				else ctx.moveTo(p.x, p.y);
 			}

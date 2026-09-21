@@ -188,12 +188,16 @@
 			tracks.findLast((t) => t.end <= position);
 		if (track) {
 			if (selectedOffset !== track.offset) {
+				const item = replay?.strokes.find((s) => s.offset === track.offset);
 				properties = {
 					offset: track.offset,
 					timing: track.synthetic
 						? 'Synthetic sample timing'
 						: 'Recorded millisecond timing',
-					stroke: replay?.strokes.find((s) => s.offset === track.offset)?.stroke
+					stroke: item?.stroke,
+					rendering: item
+						? { profile: item.geometry.profile, support: item.geometry.support }
+						: null
 				};
 				selected = JSON.stringify({
 					kind: 'object',

@@ -7,7 +7,15 @@ function stroke(
 ): ReplayStroke {
 	return {
 		offset: 17,
-		paint: { color: '#1a1a1a', width: 1, segment_widths: null },
+		geometry: {
+			width: 1,
+			segment_widths: null,
+			bounds: null,
+			color: '#1a1a1a',
+			opacity: 1,
+			profile: null,
+			support: 'approximate'
+		},
 		milliseconds,
 		stroke: {
 			points: Array.from({ length: points }, (_, i) => ({ x: i, y: i })),

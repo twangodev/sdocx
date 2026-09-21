@@ -35,7 +35,17 @@ export interface Stroke {
 	bbox: Box;
 }
 export interface ReplayStroke {
-	paint: { color: string; width: number; segment_widths: number[] | null };
+	geometry: {
+		points?: Stroke['points'];
+		sample_ends?: number[];
+		width: number;
+		segment_widths: number[] | null;
+		bounds: Box | null;
+		color: string;
+		opacity: number;
+		profile: string | null;
+		support: 'approximate';
+	};
 	offset: number;
 	milliseconds: boolean;
 	stroke: Stroke;

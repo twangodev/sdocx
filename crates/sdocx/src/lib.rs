@@ -19,6 +19,8 @@ mod error;
 mod formula;
 mod frame;
 mod image;
+#[cfg(feature = "render")]
+mod ink;
 mod integrity;
 mod layer;
 mod layout;
@@ -50,6 +52,8 @@ pub use formula::{
     FormulaLabel, FormulaLabelGraph, FormulaLabelRelation, FormulaLabelRelationKind,
     FormulaMetadata, FormulaStroke,
 };
+#[cfg(feature = "render")]
+pub use ink::{InkSupport, PEN_PROFILES, PenProfile, PreparedStroke, prepare_stroke};
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{LayoutDocument, LayoutPage, layout_document};

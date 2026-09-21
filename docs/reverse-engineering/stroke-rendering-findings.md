@@ -160,3 +160,57 @@ All 77 strokes in fixture 02 resolve to
 DefaultPen curve findings alone therefore cannot establish parity for this
 fixture. FountainPen has separate renderer versions, pressure/speed width
 calculation, width smoothing and tip handling requiring their own trace.
+
+## Implementation progress: shared preparation and replay
+
+`prepare_stroke` supplies geometry inputs, paint, conservative bounds and
+profile/support status for both SVG exports and Canvas replay. The initial
+profile preserves the old pressure/width approximation and borrows original
+samples. Single-sample strokes now produce a dot. The debugger uses prepared
+bounds instead of independently estimating them, and exposes profile/support
+status without asserting native parity.
+
+The native registry is represented by `PEN_PROFILES`: 44 names, with aliases
+kept separate and 30 distinct bundled library stems. Recognized profiles still
+report `Approximate`; names alone do not activate an unverified renderer.
+The existing 48 MiB replay tile cache and optimized backend primitives are
+retained. A filled-capsule path experiment was rejected after cold seeks rose
+from approximately 322 ms to 461 ms; splitting it into fragments did not fix
+that regression. None of that experimental path/cache code is shipped.
+
+Native per-pen curves, width laws, textures and blending remain unfinished.
+Shared preparation is a foundation, not a claim of full Samsung parity.
+
+### FountainPen version selection refinement
+
+FountainPen `GetStrokeDrawableGL` (`0x61a8c`) clamps the setting version to
+1–18. GOT relocation `0xd5e78` resolves to `versionTable` (`0xdb8f0`), whose
+8-byte entries select drawing and outline versions independently. Entry 18
+is `(16, 12)`: fixture 02 selects drawing V16, not V17 or a hypothetical V18.
+V16 `RedrawPen(MotionEvent...)` (`0x777c4`) calls `drawLine` (`0x77fd4`) at
+`0x77c88`. That drawing routine constructs midpoint quadratics and passes
+computed width through `WidthSmoothManager::getSmoothedWidthFromList` at
+`0x7830c`, then interpolates widths across distance-spaced samples at
+`0x78358`–`0x7839c`.
+
+This is not a pure pressure law. The drawing routine uses a three-entry
+geometric-ratio history, pressure, a tilt-derived parameter, previous width
+and tool type. Saved-event redraw transforms tilt from radians to degrees,
+clamps to 75 degrees and maps the portion above 15 degrees to 0–3
+(`0x77c08`–`0x77c48`). Tolerance, width-manager mode, endpoint/tip processing
+and the render-thread coverage shader must be matched before enabling V16.
+
+The pure V16 width-limiter helper at `0x79298`–`0x792f4` now has a bounded
+native oracle in [`conformance/native_ink.py`](../../conformance/native_ink.py).
+It checks the library SHA-256, executes only that helper in ARM64 emulation,
+and compares a float32 reconstruction over 4,128 deterministic cases. All
+cases match bit-for-bit, exercising all 23 helper instructions. The helper
+limits width changes, enforces pressure/size lower bounds and retains prior
+width in its non-stylus unchanged-pressure branch. This validates one numeric
+primitive, not the complete pressure law or full rendered pen.
+
+After rejecting filled paths, the final prepared-primitive backend measures
+346 ms cold seek versus 322 ms baseline, and 50 ms median/p95 warm seeks in
+both builds. The reverse-seek test reproduces identical pixels; accounted
+raster surfaces remain approximately 654 KiB for that measured viewport.
+These are single-run host measurements, not a cross-device performance claim.
