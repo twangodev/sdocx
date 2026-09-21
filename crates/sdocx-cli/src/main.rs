@@ -541,6 +541,7 @@ mod tests {
                 template: None,
                 background: Default::default(),
                 strokes: vec![sdocx::Stroke {
+                    rendering: None,
                     bbox: sdocx::BoundingBox::default(),
                     points: vec![
                         sdocx::Point { x: 1.0, y: 1.0 },

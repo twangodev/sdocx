@@ -78,10 +78,16 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     }
 
     let mut note = None;
+    let mut stroke_resources = crate::StrokeResources::default();
 
     // Parse note.note (optional)
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
+        if let Ok(extra) = parsed_note.metadata_with_limits(&buf, &options.limits)
+            && let Some(table) = extra.string_table
+        {
+            stroke_resources = crate::StrokeResources::new(&table);
+        }
         apply_note_metadata(&parsed_note.header, &mut metadata);
         metadata.default_page_dimensions = parsed_note.default_page_dimensions();
         if let Some(verifier) = &mut integrity {
@@ -157,7 +163,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         if let Some(verifier) = &mut integrity {
             verifier.verify_page(&buf, &stored_page, name, &options.limits)?;
         }
-        let page = parse_page(
+        let mut page = parse_page(
             &buf,
             &stored_page,
             &options.limits,
@@ -165,6 +171,10 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
             &mut report,
             &media,
         )?;
+
+        for stroke in &mut page.strokes {
+            stroke_resources.resolve(stroke);
+        }
 
         let file_id = Path::new(name)
             .file_stem()

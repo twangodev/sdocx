@@ -456,3 +456,41 @@ fn metadata_and_visible_strokes_share_channel_boundaries_and_style_prefix() {
         }
     }
 }
+
+#[cfg(feature = "serde")]
+#[test]
+fn semantic_strokes_preserve_rendering_settings_and_resolve_saved_references() {
+    let mut fields = Vec::new();
+    fields.extend(7_i32.to_le_bytes()); // legacy name
+    fields.extend(8_i32.to_le_bytes()); // advanced settings
+    fields.extend(0x80402010_u32.to_le_bytes());
+    fields.extend(9_f32.to_le_bytes());
+    fields.extend((-1_i32).to_le_bytes()); // modern sentinel uses legacy
+    fields.extend(3_f32.to_le_bytes()); // fixed width
+    let data = payload(&[0x10], &[0x8f, 1], &fields, None);
+    let raw = page(&[vec![object(1, &data, &[])]], 0, &[]);
+    let stored = sdocx::parse_stored_page_bytes(&raw).unwrap();
+    let mut stroke = stored.layers.layers[0].objects[0]
+        .decode_stroke(&raw, &ParseLimits::default())
+        .unwrap();
+    let table: sdocx::NoteStringTable = serde_json::from_value(serde_json::json!({
+        "entries": [{"id":7,"text":"com.samsung.android.sdk.pen.pen.preload.FountainPen"},
+                    {"id":8,"text":"18;0;100;"}], "trailing_data":[]
+    }))
+    .unwrap();
+    let resources = sdocx::StrokeResources::new(&table);
+    resources.resolve(&mut stroke);
+    let rendering = stroke.rendering.as_ref().unwrap();
+    assert_eq!(
+        rendering.pen_name.as_deref(),
+        Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
+    );
+    assert_eq!(rendering.advanced_settings.as_deref(), Some("18;0;100;"));
+    assert!(rendering.properties.fixed_width);
+    assert_eq!(rendering.style.fixed_width, Some(3.0));
+    assert_eq!(rendering.style.color_argb, Some(0x80402010));
+    // An unresolved modern ID must not silently select the legacy pen.
+    stroke.rendering.as_mut().unwrap().style.pen_name_id = Some(99);
+    resources.resolve(&mut stroke);
+    assert!(stroke.rendering.as_ref().unwrap().pen_name.is_none());
+}

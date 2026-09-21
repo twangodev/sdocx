@@ -143,3 +143,20 @@ partial-stroke handling, rather than independently rebuilding straight lines.
 Keep unsupported pens explicitly approximate. Validate with enlarged curves,
 pressure transitions, dots, sharp corners and stroke ends against paired
 Samsung exports before replacing the current renderer.
+
+## Implementation progress: saved rendering inputs
+
+The semantic `Stroke` now carries optional `StrokeRendering`, populated by the
+existing bounded style decoder. It retains the complete known style,
+properties and tool type, plus resolved pen/settings strings. Both document
+parsing and debugger inspection/replay use `StrokeResources` to resolve IDs.
+The modern name takes precedence; only an absent or -1 modern ID uses the
+legacy ID. Original sample arrays are unchanged. Old serialized strokes default
+to no rendering metadata; Rust callers constructing `Stroke` literals must add
+`rendering: None` (or supply decoded settings).
+
+All 77 strokes in fixture 02 resolve to
+`com.samsung.android.sdk.pen.pen.preload.FountainPen`, settings `18;0;100;`.
+DefaultPen curve findings alone therefore cannot establish parity for this
+fixture. FountainPen has separate renderer versions, pressure/speed width
+calculation, width smoothing and tip handling requiring their own trace.

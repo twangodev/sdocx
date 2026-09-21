@@ -7,6 +7,7 @@ use wasm_bindgen::JsError;
 pub struct Source {
     bytes: Vec<u8>,
     zip_length: usize,
+    stroke_resources: Option<sdocx::StrokeResources>,
     cache: Option<(usize, Vec<u8>)>,
 }
 
@@ -77,6 +78,7 @@ impl Source {
         Ok(Self {
             bytes: bytes.to_vec(),
             zip_length,
+            stroke_resources: None,
             cache: None,
         })
     }
@@ -122,6 +124,25 @@ impl Source {
     ) -> Result<String, String> {
         let r: Value = serde_json::from_str(request).map_err(|e| e.to_string())?;
         let limits = super::browser_parse_options().limits;
+        let resources = if matches!(r["kind"].as_str(), Some("replay" | "object")) {
+            if self.stroke_resources.is_none() {
+                let resources = if let Some(note) = &parsed.note {
+                    self.entry_index("note.note")
+                        .ok()
+                        .and_then(|index| self.entry(index).ok())
+                        .and_then(|bytes| note.metadata_with_limits(bytes, &limits).ok())
+                        .and_then(|metadata| metadata.string_table)
+                        .map(|table| sdocx::StrokeResources::new(&table))
+                        .unwrap_or_default()
+                } else {
+                    sdocx::StrokeResources::default()
+                };
+                self.stroke_resources = Some(resources);
+            }
+            self.stroke_resources.clone().unwrap_or_default()
+        } else {
+            sdocx::StrokeResources::default()
+        };
         let mut result = match r["kind"].as_str().unwrap_or("") {
             "index" => {
                 let mut archive = self.archive()?;
@@ -241,7 +262,10 @@ impl Source {
                             _ => Value::Null,
                         };
                         let stroke = if o.object_type == ObjectType::Stroke {
-                            decoded(o.decode_stroke(bytes, &limits))
+                            decoded(o.decode_stroke(bytes, &limits).map(|mut stroke| {
+                                resources.resolve(&mut stroke);
+                                stroke
+                            }))
                         } else {
                             Value::Null
                         };
@@ -301,6 +325,7 @@ impl Source {
                             items: &[StoredObject],
                             bytes: &[u8],
                             limits: &sdocx::ParseLimits,
+                            resources: &sdocx::StrokeResources,
                             strokes: &mut Vec<Value>,
                             objects: &mut Vec<Value>,
                         ) {
@@ -314,17 +339,24 @@ impl Source {
                                 }
                                 if o.object_type == ObjectType::Stroke {
                                     match o.decode_stroke(bytes,limits) {
-                                        Ok(stroke) => strokes.push(json!({"offset":o.payload_offset,"paint":sdocx::stroke_paint(&stroke,false),"stroke":stroke,
-                                            "milliseconds":o.stroke_metadata_with_limits(bytes,limits).is_ok_and(|m| m.properties.millisecond_timestamps)})),
+                                        Ok(mut stroke) => { resources.resolve(&mut stroke); strokes.push(json!({"offset":o.payload_offset,"paint":sdocx::stroke_paint(&stroke,false),"stroke":stroke,
+                                            "milliseconds":o.stroke_metadata_with_limits(bytes,limits).is_ok_and(|m| m.properties.millisecond_timestamps)})); },
                                         Err(e) => objects.push(json!({"offset":o.payload_offset,"error":e.to_string()}))
                                     }
                                 }
-                                walk(&o.children, bytes, limits, strokes, objects);
+                                walk(&o.children, bytes, limits, resources, strokes, objects);
                             }
                         }
                         let layer = &stored.page.layers.layers
                             [usize::from(stored.page.layers.current_layer_index)];
-                        walk(&layer.objects, bytes, &limits, &mut strokes, &mut objects);
+                        walk(
+                            &layer.objects,
+                            bytes,
+                            &limits,
+                            &resources,
+                            &mut strokes,
+                            &mut objects,
+                        );
                         json!({"entry":entry,"width":stored.page.header.width,"height":stored.page.header.height,"strokes":strokes,"objects":objects})
                     }
                 }

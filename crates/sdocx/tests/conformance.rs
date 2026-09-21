@@ -622,6 +622,14 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     assert_eq!(page.template.unwrap().id, 7);
     assert_eq!(page.background.image_mode, Some(2));
     assert_eq!(page.background.width, Some(1848));
+    for stroke in &page.strokes {
+        let rendering = stroke.rendering.as_ref().unwrap();
+        assert_eq!(
+            rendering.pen_name.as_deref(),
+            Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
+        );
+        assert_eq!(rendering.advanced_settings.as_deref(), Some("18;0;100;"));
+    }
     for stroke in &page.strokes[47..59] {
         assert!((297..=462).contains(&stroke.points.len()));
         assert_eq!(stroke.pressures.len(), stroke.points.len());

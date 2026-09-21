@@ -1102,6 +1102,9 @@ pub enum PageTemplateSource {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Stroke {
+    /// Saved pen settings, independent of the original sample arrays.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub rendering: Option<crate::StrokeRendering>,
     /// Bounding box of the stroke.
     pub bbox: BoundingBox,
     /// The (x, y) coordinates along the stroke path.

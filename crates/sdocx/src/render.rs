@@ -1692,6 +1692,7 @@ mod tests {
             template: None,
             background: Default::default(),
             strokes: vec![Stroke {
+                rendering: None,
                 bbox: BoundingBox::default(),
                 points: vec![Point { x: 1.0, y: 1.0 }, Point { x: 9.0, y: 9.0 }],
                 pressures: Vec::new(),

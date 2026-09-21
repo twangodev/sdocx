@@ -38,7 +38,7 @@ pub struct StrokeProperties {
 }
 
 impl StrokeProperties {
-    fn read(mask: Mask<'_>) -> Self {
+    pub(crate) fn read(mask: Mask<'_>) -> Self {
         Self {
             compressed: mask.contains(0),
             replay_only: mask.contains(1),
@@ -159,7 +159,11 @@ impl StrokeStyle {
         Ok((style, reader))
     }
 
-    fn read(frame: &Frame<'_>, base: &ObjectMetadata, limits: &ParseLimits) -> Result<Self> {
+    pub(crate) fn read(
+        frame: &Frame<'_>,
+        base: &ObjectMetadata,
+        limits: &ParseLimits,
+    ) -> Result<Self> {
         let (mut style, mut reader) = Self::read_prefix(frame)?;
         let mut entries = 0;
         for bit in 4..usize::from(frame.fields.byte_count()) * 8 {
@@ -267,4 +271,46 @@ fn reserve_entries(
         ));
     }
     Ok(())
+}
+
+/// Rendering inputs retained from a saved stroke. Missing references remain unresolved.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct StrokeRendering {
+    pub pen_name: Option<String>,
+    pub advanced_settings: Option<String>,
+    pub tool_type_raw: u16,
+    pub properties: StrokeProperties,
+    pub style: StrokeStyle,
+}
+
+/// Resolve saved IDs once per document; use the same resolver for debugger strokes.
+#[derive(Debug, Clone, Default)]
+pub struct StrokeResources(std::collections::BTreeMap<u32, String>);
+
+impl StrokeResources {
+    pub fn new(table: &crate::NoteStringTable) -> Self {
+        Self(
+            table
+                .entries
+                .iter()
+                .map(|entry| (entry.id, entry.text.clone()))
+                .collect(),
+        )
+    }
+
+    pub fn resolve(&self, stroke: &mut crate::Stroke) {
+        let Some(rendering) = &mut stroke.rendering else {
+            return;
+        };
+        let lookup = |id: Option<i32>| {
+            id.and_then(|id| u32::try_from(id).ok())
+                .and_then(|id| self.0.get(&id))
+                .cloned()
+        };
+        let modern = rendering.style.pen_name_id.filter(|id| *id != -1);
+        rendering.pen_name = lookup(modern.or(rendering.style.legacy_pen_name_id));
+        rendering.advanced_settings = lookup(rendering.style.advanced_pen_setting_id);
+    }
 }

@@ -66,7 +66,7 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
     } else {
         (Vec::new(), Vec::new())
     };
-    let (style, _) = StrokeStyle::read_prefix(&frame)?;
+    let style = StrokeStyle::read(&frame, &base, limits)?;
     // Future frame extensions are bounded too; no frame may borrow its bytes
     // from the object hash or the next sibling.
     while frames.remaining() != 0 {
@@ -85,6 +85,13 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
             b: argb as u8,
         }),
         pen_width: style.pen_size.unwrap_or(0.8),
+        rendering: Some(crate::StrokeRendering {
+            pen_name: None,
+            advanced_settings: None,
+            tool_type_raw: channels.tool_type_raw,
+            properties: crate::StrokeProperties::read(frame.properties),
+            style,
+        }),
     })
 }
 

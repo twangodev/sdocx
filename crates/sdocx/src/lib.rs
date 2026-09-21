@@ -83,7 +83,9 @@ pub use storage::{
     parse_page_manifest_bytes_with_limits, parse_stored_page_bytes,
     parse_stored_page_bytes_with_limits,
 };
-pub use stroke_metadata::{StrokeMetadata, StrokeProperties, StrokeStyle};
+pub use stroke_metadata::{
+    StrokeMetadata, StrokeProperties, StrokeRendering, StrokeResources, StrokeStyle,
+};
 pub use table::{TableAutoFit, TableBorder, TableEdgeStyle, TableRecordMetadata, TableStyle};
 pub use types::*;
 
