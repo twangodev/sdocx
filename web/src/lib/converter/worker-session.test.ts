@@ -70,3 +70,15 @@ describe('ConverterWorkerSession generations', () => {
 		expect(staleSession.dispose).toHaveBeenCalledOnce();
 	});
 });
+
+it('routes debugger requests only to the current session', async () => {
+ const session = { ...fakeSession('debug'), debug: vi.fn(() => ({ offset: 42 })) };
+ const worker = new ConverterWorkerSession(vi.fn(), async () => session);
+ await worker.handle({ id: 1, generation: 2, type: 'load', bytes: new ArrayBuffer(1) });
+ const request = { kind: 'object', page: 0, offset: 42 } as const;
+ await expect(worker.handle({ id: 2, generation: 2, type: 'debug', request })).resolves.toEqual({ offset: 42 });
+ await expect(worker.handle({ id: 3, generation: 1, type: 'debug', request })).rejects.toThrow(/superseded/);
+ expect(session.debug).toHaveBeenCalledTimes(1);
+ await worker.handle({ id: 4, generation: 3, type: 'dispose' });
+ await expect(worker.handle({ id: 5, generation: 3, type: 'debug', request })).rejects.toThrow(/Load a document/);
+});

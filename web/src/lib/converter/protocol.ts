@@ -1,3 +1,4 @@
+import type { DebugRequest } from '$lib/debugger/model';
 export const MAX_INPUT_BYTES = 250 * 1024 * 1024;
 export const LARGE_INPUT_BYTES = 100 * 1024 * 1024;
 
@@ -12,6 +13,7 @@ export interface DocumentSummary {
 export type ConverterRequest =
 	| { id: number; generation: number; type: 'load'; bytes: ArrayBuffer }
 	| { id: number; generation: number; type: 'inspect' }
+	| { id: number; generation: number; type: 'debug'; request: DebugRequest }
 	| { id: number; generation: number; type: 'renderPage'; pageIndex: number; colorMode: ColorMode }
 	| { id: number; generation: number; type: 'exportJson' }
 	| { id: number; generation: number; type: 'dispose' };

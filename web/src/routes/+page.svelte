@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { getContext, onMount } from 'svelte';
+	import { WORKSPACE, type WorkspaceState } from '$lib/workspace';
+	import Debugger from '$lib/debugger/Debugger.svelte';
+	import type { DebugPreview } from '$lib/debugger/model';
 	import DocumentViewer from '$lib/components/DocumentViewer.svelte';
 	import DocumentToolbar from '$lib/components/DocumentToolbar.svelte';
 	import DropOverlay from '$lib/components/DropOverlay.svelte';
@@ -11,17 +14,33 @@
 	let picker = $state<HTMLInputElement>();
 	let pageIndex = $state(0);
 	let detailsOpen = $state(true);
+	const workspace = getContext<WorkspaceState>(WORKSPACE);
+	const debuggerOpen = $derived(workspace.debuggerOpen);
+	let debugPreview = $state.raw<DebugPreview | null>(null);
+	$effect(() => {
+		workspace.hasDocument = session.hasDocument;
+	});
 
 	const zoom = new DocumentZoomCamera(() => pageIndex);
 	const session = new DocumentSession({
 		onResetView: () => {
+			workspace.debuggerOpen = false;
+			debugPreview = null;
 			zoom.reset();
 			pageIndex = 0;
 			detailsOpen = true;
 		}
 	});
 
-	onMount(() => session.start());
+	onMount(() => {
+		const stop = session.start();
+		return () => {
+			stop();
+			workspace.hasDocument = false;
+			workspace.debuggerOpen = false;
+			debugPreview = null;
+		};
+	});
 
 	function selectPage(nextPage: number): void {
 		zoom.scrollToPage(nextPage);
@@ -30,7 +49,12 @@
 
 	function stepPage(direction: -1 | 1): void {
 		if (!session.summary) return;
-		selectPage(Math.min(session.summary.pageCount - 1, Math.max(0, pageIndex + direction)));
+		selectPage(
+			Math.min(
+				session.summary.pageCount - 1,
+				Math.max(0, pageIndex + direction)
+			)
+		);
 	}
 
 	function fitPreviewPage(): void {
@@ -53,7 +77,10 @@
 	/>
 </svelte:head>
 
-<DropOverlay hasDocument={session.hasDocument} onFile={(file) => void session.load(file)} />
+<DropOverlay
+	hasDocument={session.hasDocument}
+	onFile={(file) => void session.load(file)}
+/>
 
 <input
 	bind:this={picker}
@@ -75,6 +102,8 @@
 	<section
 		class="motion-surface-in flex h-[calc(100svh-2.5rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden max-[720px]:h-auto max-[720px]:min-h-[calc(100svh-2.5rem)] max-[720px]:overflow-visible"
 		aria-label="Document converter"
+		style:height={debuggerOpen ? 'calc(100svh - 2.5rem)' : undefined}
+		style:overflow={debuggerOpen ? 'hidden' : undefined}
 	>
 		<DocumentToolbar
 			model={{
@@ -117,28 +146,46 @@
 				onClose: () => void session.close()
 			}}
 		/>
-		<DocumentViewer
-			model={{
-				document: {
-					pageCount: session.summary.pageCount,
-					details: session.details,
-					previewUrls: session.previewUrls
-				},
-				view: {
-					pageIndex,
-					detailsOpen,
-					rendering: session.rendering,
-					exporting: session.exporting
-				},
-				status: {
-					phase: session.phase,
-					message: session.status,
-					exportProgress: session.exportProgress
-				}
-			}}
-			{zoom}
-			onPageChange={(nextPage) => (pageIndex = nextPage)}
-		/>
+		<div class="relative flex min-h-0 min-w-0 flex-1">
+			<DocumentViewer
+				model={{
+					document: {
+						pageCount: session.summary.pageCount,
+						details: session.details,
+						previewUrls: session.previewUrls
+					},
+					view: {
+						pageIndex,
+						detailsOpen,
+						rendering: session.rendering,
+						exporting: session.exporting
+					},
+					status: {
+						phase: session.phase,
+						message: session.status,
+						exportProgress: session.exportProgress
+					}
+				}}
+				{zoom}
+				debugPreview={debuggerOpen ? debugPreview : null}
+				{session}
+				onPageChange={(nextPage) => (pageIndex = nextPage)}
+			/>
+			{#if debuggerOpen}
+				{#key session.activeFile}
+					<Debugger
+						{session}
+						viewerPage={pageIndex}
+						onPageChange={selectPage}
+						onPreviewChange={(preview) => (debugPreview = preview)}
+						onClose={() => {
+							workspace.debuggerOpen = false;
+							debugPreview = null;
+						}}
+					/>
+				{/key}
+			{/if}
+		</div>
 		{#if session.error}<ErrorNotice message={session.error} />{/if}
 	</section>
 {/if}

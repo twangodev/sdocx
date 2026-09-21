@@ -1,3 +1,4 @@
+import type { DebugRequest } from '$lib/debugger/model';
 import type {
 	ColorMode,
 	ConverterRequest,
@@ -9,6 +10,7 @@ import { BrowserDocumentSession } from './wasm-adapter';
 interface ActiveDocumentSession {
 	summary(): DocumentSummary;
 	inspection(): unknown;
+	debug?(request: DebugRequest): unknown;
 	renderPage(pageIndex: number, colorMode: ColorMode): string;
 	dispose(): void;
 }
@@ -36,6 +38,11 @@ export class ConverterWorkerSession {
 
 		this.assertCurrent(request.generation);
 		switch (request.type) {
+			case 'debug': {
+				const session = this.requireSession();
+				if (!session.debug) throw new Error('Debugger unavailable');
+				return session.debug(request.request);
+			}
 			case 'inspect':
 				return this.requireSession().inspection();
 			case 'renderPage':

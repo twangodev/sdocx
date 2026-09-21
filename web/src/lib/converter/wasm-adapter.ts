@@ -1,8 +1,10 @@
+import type { DebugRequest } from '$lib/debugger/model';
 import type { ColorMode, DocumentSummary } from './protocol';
 
 interface WasmDocumentSession {
 	page_count: number | (() => number);
 	inspection: unknown | (() => unknown);
+	debug?: (request: string) => string;
 	render_svg(pageIndex: number, colorMode: ColorMode): unknown;
 	dispose?: () => void;
 	free?: () => void;
@@ -81,6 +83,12 @@ export class BrowserDocumentSession {
 	renderPage(pageIndex: number, colorMode: ColorMode): string {
 		this.assertActive();
 		return normalizeSvg(this.inner.render_svg(pageIndex, colorMode));
+	}
+
+	debug(request: DebugRequest): unknown {
+		this.assertActive();
+		if (!this.inner.debug) throw new Error("Rebuild WASM to enable the debugger.");
+		return JSON.parse(this.inner.debug(JSON.stringify(request)));
 	}
 
 	dispose(): void {

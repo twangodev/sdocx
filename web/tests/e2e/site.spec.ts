@@ -70,6 +70,8 @@ async function pinchAtAnchor(
 			);
 			const stack = element.querySelector<HTMLElement>('.page-stack');
 			return {
+				cachedPages: [...element.querySelectorAll<HTMLCanvasElement>('[data-gesture-preview]')]
+					.filter((preview) => preview.style.display === 'block').length,
 				pointBefore,
 				pointDuring: pointAtAnchor(),
 				zoom: stack?.dataset.zoom,
@@ -211,14 +213,19 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	for (const mode of colorModes) await expect(mode.locator('svg')).toHaveCount(1);
 	await expect(colorModes[0]).toHaveAttribute('data-state', 'on');
 	const canvas = page.locator('.canvas-wrap');
+	const preview = pageStack.locator('[data-gesture-preview]').first();
+	await expect.poll(() => preview.evaluate((element) => (element as HTMLCanvasElement).width)).toBeGreaterThan(0);
 	const fitPagePinch = await pinchAtAnchor(canvas, -40);
 	expect(fitPagePinch.zoom).not.toBe('page');
 	expect(Number(fitPagePinch.zoom)).toBeGreaterThan(0);
 	expect(fitPagePinch.transform).not.toBe('none');
+	expect(fitPagePinch.cachedPages).toBeGreaterThan(0);
 	expectSameImagePoint(fitPagePinch.pointDuring, fitPagePinch.pointBefore);
 	await page.waitForTimeout(160);
 	await expect(pageStack).toHaveAttribute('data-zoom', fitPagePinch.zoom!);
 	await expect(pageStack).not.toHaveClass(/zooming/);
+	await expect(preview).toBeHidden();
+	await expect(pageStack.locator('img').first()).toBeVisible();
 	await expectSmoothRecenter(canvas, pageStack);
 
 	const manualPinch = await pinchAtAnchor(canvas, -20);
@@ -276,6 +283,7 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(pageSelector).toHaveValue('1');
 	await page.locator('.canvas-wrap').evaluate((element) => (element.scrollTop = element.scrollHeight));
 	await expect(pageSelector).toHaveValue('5');
+	await expect.poll(() => preview.evaluate((element) => (element as HTMLCanvasElement).width)).toBe(0);
 	await pageSelector.fill('1');
 	await pageSelector.press('Enter');
 	await expect(pageSelector).toHaveValue('1');
@@ -296,5 +304,15 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.getByRole('menuitem', { name: 'Current page as SVG' }).click();
 	const download = await downloadStarted;
 	expect(download.suggestedFilename()).toBe('01-basic-formatting-page-001.svg');
+	const oldPreview = await preview.elementHandle();
+	const oldSource = await pageStack.locator('img').first().getAttribute('src');
+	await colorModes[2].click();
+	await expect(pageStack.locator('img').first()).not.toHaveAttribute('src', oldSource!);
+	await expect.poll(() => oldPreview!.evaluate((element) => (element as HTMLCanvasElement).width)).toBe(0);
+	await expect.poll(() => preview.evaluate((element) => (element as HTMLCanvasElement).width)).toBeGreaterThan(0);
+	const backingPixels = await pageStack.locator('[data-gesture-preview]').evaluateAll((elements) =>
+		elements.reduce((total, element) => total + (element as HTMLCanvasElement).width * (element as HTMLCanvasElement).height, 0)
+	);
+	expect(backingPixels).toBeLessThanOrEqual(3 * 4 * 1024 * 1024);
 	expect(remoteRequests).toEqual([]);
 });

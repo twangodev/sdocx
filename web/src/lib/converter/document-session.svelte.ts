@@ -1,3 +1,4 @@
+import type { DebugRequest } from '$lib/debugger/model';
 import {
 	ConverterClient,
 	type ConverterClientPort,
@@ -122,6 +123,15 @@ export class DocumentSession {
 		} finally {
 			if (generation === this.loadGeneration) this.parsing = false;
 		}
+	}
+
+	async debug(request: DebugRequest): Promise<unknown> {
+		const generation = this.loadGeneration;
+		const client = this.requireClient();
+		if (!client.debug) throw new Error('Debugger unavailable');
+		const result = await client.debug(request);
+		if (generation !== this.loadGeneration) throw new Error('Document replaced');
+		return result;
 	}
 
 	async close(): Promise<void> {

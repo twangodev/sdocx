@@ -1,10 +1,14 @@
 <script lang="ts">
+	import ReplayOverlay from '$lib/debugger/ReplayOverlay.svelte';
+	import type { DebugPreview } from '$lib/debugger/model';
+	import type { DocumentSession } from '$converter/document-session.svelte';
 	import type { WorkerPhase } from '$converter/protocol';
 	import type { InspectionView } from '$converter/view-model';
 	import type { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
 	import DocumentInfoPanel from './DocumentInfoPanel.svelte';
 	import DocumentCanvas from './viewer/DocumentCanvas.svelte';
 	import ViewerStatus from './ViewerStatus.svelte';
+	import { gesturePreview } from '$lib/viewer/gesture-preview';
 
 	interface DocumentViewerModel {
 		document: {
@@ -29,14 +33,21 @@
 		model: DocumentViewerModel;
 		zoom: DocumentZoomCamera;
 		onPageChange: (pageIndex: number) => void;
+		debugPreview?: DebugPreview | null;
+		session: DocumentSession;
 	}
 
-	let { model, zoom, onPageChange }: Props = $props();
-
+	let {
+		model,
+		zoom,
+		onPageChange,
+		debugPreview = null,
+		session
+	}: Props = $props();
 </script>
 
 <div
-	class="viewer-body relative grid min-h-0 flex-1 transition-[grid-template-columns] duration-[var(--motion-panel)] ease-[var(--ease-out)] max-[720px]:flex {model
+	class="viewer-body relative grid min-h-0 min-w-0 flex-1 transition-[grid-template-columns] duration-[var(--motion-panel)] ease-[var(--ease-out)] max-[720px]:flex {model
 		.view.detailsOpen
 		? 'grid-cols-[14rem_minmax(0,1fr)]'
 		: 'grid-cols-[0_minmax(0,1fr)]'}"
@@ -58,7 +69,9 @@
 		/>
 	</div>
 
-	<div class="preview-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas">
+	<div
+		class="preview-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas"
+	>
 		<DocumentCanvas
 			pages={model.document.previewUrls}
 			pageIndex={model.view.pageIndex}
@@ -69,26 +82,69 @@
 		>
 			{#snippet page(url, index)}
 				{#if url}
-					<img
-						data-page-zoom-target
-						class="block border border-black/15 bg-white shadow-[0_8px_24px_rgb(0_0_0_/_0.16)] {zoom.pageFit
-							? 'h-auto w-auto max-h-[calc(100svh-11.5rem)] max-w-full'
-							: 'w-full max-w-full'}"
-						src={url}
-						alt={`Rendered preview of page ${index + 1}`}
-					/>
+					{@const overlay =
+						debugPreview?.pageIndex === index ? debugPreview : null}
+					<div
+						class="viewer-page relative max-w-full"
+						class:w-full={!zoom.pageFit}
+						class:replaying={overlay &&
+							overlay.position < (overlay.tracks.at(-1)?.end ?? 0)}
+					>
+						<img
+							use:gesturePreview={{
+								src: url,
+								active: zoom.gestureZoom !== null,
+								suppressed:
+									!!overlay &&
+									overlay.position < (overlay.tracks.at(-1)?.end ?? 0)
+							}}
+							data-page-zoom-target
+							class="block border border-black/15 bg-white shadow-[0_8px_24px_rgb(0_0_0_/_0.16)] {zoom.pageFit
+								? 'h-auto w-auto max-h-[calc(100svh-11.5rem)] max-w-full'
+								: 'w-full max-w-full'}"
+							src={url}
+							alt={`Rendered preview of page ${index + 1}`}
+						/>
+						{#if overlay}
+							<ReplayOverlay
+								camera={zoom}
+								replay={overlay.replay}
+								tracks={overlay.tracks}
+								position={overlay.position}
+								selectedOffset={overlay.selectedOffset}
+								sampleIndex={overlay.sampleIndex}
+								onselect={overlay.onSelect}
+								sourcePage={overlay.sourcePage}
+								{session}
+							/>
+						{/if}
+					</div>
 				{:else}
-					<div class="page-placeholder grid min-h-[60vh] w-[min(100%,48rem)] place-items-center border border-subtle bg-surface">
-						<span class="spinner size-4 animate-spin rounded-full border border-subtle border-t-accent" aria-hidden="true"></span>
+					<div
+						class="page-placeholder grid min-h-[60vh] w-[min(100%,48rem)] place-items-center border border-subtle bg-surface"
+					>
+						<span
+							class="spinner size-4 animate-spin rounded-full border border-subtle border-t-accent"
+							aria-hidden="true"
+						></span>
 					</div>
 				{/if}
 			{/snippet}
 			{#snippet empty()}
-				<div class="rendering-state motion-fade-in flex min-h-full items-center justify-center gap-3 font-mono text-[0.66rem] text-muted">
+				<div
+					class="rendering-state motion-fade-in flex min-h-full items-center justify-center gap-3 font-mono text-[0.66rem] text-muted"
+				>
 					{#if model.view.rendering}
-						<span class="spinner size-4 animate-spin rounded-full border border-subtle border-t-accent" aria-hidden="true"></span>
+						<span
+							class="spinner size-4 animate-spin rounded-full border border-subtle border-t-accent"
+							aria-hidden="true"
+						></span>
 					{/if}
-					<span>{model.view.rendering ? 'Preparing pages' : 'No visible page content'}</span>
+					<span
+						>{model.view.rendering
+							? 'Preparing pages'
+							: 'No visible page content'}</span
+					>
 				</div>
 			{/snippet}
 		</DocumentCanvas>
@@ -100,3 +156,11 @@
 		/>
 	</div>
 </div>
+
+<style>
+	/* Keep the SVG and its gesture cache mounted, but skip its expensive paint
+	   and hit-testing while the replay surface covers it. */
+	.viewer-page.replaying > img {
+		visibility: hidden;
+	}
+</style>

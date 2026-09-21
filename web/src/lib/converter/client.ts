@@ -1,3 +1,4 @@
+import type { DebugRequest } from '$lib/debugger/model';
 import type {
 	ColorMode,
 	ConverterEvent,
@@ -21,6 +22,7 @@ type RequestPayload = ConverterRequest extends infer Request
 export interface ConverterClientPort {
 	load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary>;
 	inspect(): Promise<unknown>;
+	debug?(request: DebugRequest): Promise<unknown>;
 	renderPage(pageIndex: number, colorMode: ColorMode): Promise<string>;
 	exportJson(): Promise<string>;
 	dispose(generation: number): Promise<void>;
@@ -41,6 +43,10 @@ export class ConverterClient implements ConverterClientPort {
 	async load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary> {
 		this.generation = generation;
 		return (await this.request({ type: 'load', generation, bytes }, [bytes])) as DocumentSummary;
+	}
+
+	async debug(request: DebugRequest): Promise<unknown> {
+		return this.request({ type: 'debug', generation: this.generation, request });
 	}
 
 	async inspect(): Promise<unknown> {
