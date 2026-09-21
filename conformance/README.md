@@ -27,6 +27,12 @@ records filenames, SHA-256 digests, page counts and selected parser/layout
 expectations. Store the source `.sdocx` and its Samsung-generated reference PDF
 side by side in the dataset repository.
 
+Fixture `02-shapes-and-dot-calibration` covers built-in dotted paper, five native
+shape paths, one line and 77 handwriting strokes, including twelve pressure/time
+calibration marks. Its two stored pages map to one visible page. The detailed
+[APK and reference findings](../docs/reverse-engineering/shapes-dot-calibration-findings.md)
+record the supported rendering rules and remaining property warnings.
+
 Run the external corpus locally with:
 
 ```sh
@@ -96,7 +102,7 @@ matching tolerance. This catches blank output that could score deceptively
 well on a mostly empty page. Dark/colored canvases require separate metric
 interpretation. Thresholds and tolerance are configurable and recorded.
 
-Only page dimensions are normalized, with at most one pixel of aspect-ratio
+Only page dimensions are normalized, with at most one raster pixel or half a PDF point of aspect-ratio
 rounding; content is never shifted or aligned to improve the score. A mismatch
 in hashes, page count or aspect ratio fails the run. Pixel differences are
 reported without a universal pass/fail threshold: fonts, antialiasing, line

@@ -97,6 +97,15 @@ class VisualTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "aspect ratio"):
                 visual.rasterize_reference(page, (400, 400))
 
+    def test_pdf_integer_page_box_has_a_bounded_rounding_allowance(self):
+        with pymupdf.open() as pdf:
+            page = pdf.new_page(width=600, height=848)
+            self.assertEqual(
+                visual.rasterize_reference(page, (1848, 2613)).size, (1848, 2613)
+            )
+            with self.assertRaisesRegex(ValueError, "aspect ratio"):
+                visual.rasterize_reference(page, (1848, 2614))
+
     def test_manifest_checks_hashes_selection_and_unique_ids(self):
         manifest = self.fixture()
         self.assertEqual(len(visual.read_fixtures(manifest, self.root, {"fixture"})), 1)

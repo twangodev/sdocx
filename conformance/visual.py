@@ -150,9 +150,10 @@ def rasterize_reference(page, size):
     rect = page.rect
     if width < 1 or height < 1 or rect.width <= 0 or rect.height <= 0:
         raise ValueError("invalid page dimensions")
-    # Permit rounding by one pixel, not a different page aspect ratio.
+    # Permit one raster pixel or half a PDF point: Samsung can round the
+    # MediaBox height to integer points (e.g. 848.3766 becomes 848 in fixture 02).
     expected_height = width * rect.height / rect.width
-    if abs(height - expected_height) > 1:
+    if abs(height - expected_height) > max(1, 0.5 * width / rect.width):
         raise ValueError(
             f"page aspect ratio mismatch: SDK {width}x{height}, PDF {rect.width}x{rect.height}"
         )

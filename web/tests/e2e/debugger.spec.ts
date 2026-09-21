@@ -528,3 +528,100 @@ test.describe('replay at high screen density', () => {
 		expect(errors).toEqual([]);
 	});
 });
+
+test('dotted fixture shares native geometry between the viewer and replay', async ({
+	page
+}, testInfo) => {
+	const shapes = resolve('../hf/02-shapes-and-dot-calibration.sdocx');
+	test.skip(!existsSync(shapes), 'Local shapes fixture is absent');
+	const errors: string[] = [];
+	page.on('pageerror', (error) => errors.push(error.message));
+	await page.goto('/');
+	await page.evaluate(() => {
+		const blobs = new Map<string, Blob>();
+		const create = URL.createObjectURL.bind(URL);
+		URL.createObjectURL = (value) => {
+			const url = create(value);
+			if (value instanceof Blob) blobs.set(url, value);
+			return url;
+		};
+		Object.assign(window, { templateTestBlobs: blobs });
+	});
+	await page.locator('input[type=file]').setInputFiles(shapes);
+	const viewer = page.locator(
+		'[data-page-index="0"] img[data-page-zoom-target]'
+	);
+	await expect(viewer).toBeVisible({ timeout: 60000 });
+	await expect(page.locator('img[data-page-zoom-target]')).toHaveCount(1);
+	await expect
+		.poll(() =>
+			viewer.evaluate(
+				(image: HTMLImageElement) => image.complete && image.naturalWidth > 0
+			)
+		)
+		.toBe(true);
+	const svg = await viewer.evaluate((image: HTMLImageElement) =>
+		(
+			window as unknown as { templateTestBlobs: Map<string, Blob> }
+		).templateTestBlobs
+			.get(image.src)!
+			.text()
+	);
+	expect(svg).toContain('data-page-template="dots"');
+	expect(svg).toContain('M 466.05 403.90');
+	expect(svg).toContain('M 678.82 398.50');
+	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
+	await expect(page.getByLabel('Debugger page').locator('option')).toHaveCount(
+		2
+	);
+	await expect(
+		page.getByRole('button', { name: 'Play', exact: true })
+	).toBeEnabled();
+	await page.getByRole('button', { name: 'Restart replay' }).click();
+	const background = page.locator('[data-replay-overlay] img');
+	await expect(background).toBeVisible();
+	await expect
+		.poll(() =>
+			background.evaluate(
+				(image: HTMLImageElement) => image.complete && image.naturalWidth > 0
+			)
+		)
+		.toBe(true);
+	const replaySvg = await background.evaluate((image: HTMLImageElement) =>
+		(
+			window as unknown as { templateTestBlobs: Map<string, Blob> }
+		).templateTestBlobs
+			.get(image.src)!
+			.text()
+	);
+	const templatePath = (value: string) =>
+		value.match(/<path data-page-template="dots"[^>]*\/>/)?.[0];
+	expect(templatePath(replaySvg)).toBe(templatePath(svg));
+	expect(replaySvg.match(/<path d=/g)).toHaveLength(6);
+	const pixels = await background.evaluate((image: HTMLImageElement) => {
+		const canvas = document.createElement('canvas');
+		canvas.width = image.naturalWidth;
+		canvas.height = image.naturalHeight;
+		const context = canvas.getContext('2d')!;
+		context.drawImage(image, 0, 0);
+		return {
+			dot: Array.from(context.getImageData(917, 1054, 1, 1).data),
+			margin: Array.from(context.getImageData(917, 20, 1, 1).data)
+		};
+	});
+	expect(pixels.dot[0]).toBeLessThan(225);
+	expect(pixels.margin).toEqual([252, 252, 252, 255]);
+	await page.getByRole('button', { name: 'Next stroke' }).click();
+	await expect(
+		page.getByRole('heading', { name: /Stroke samples/ })
+	).toBeVisible();
+	await page.screenshot({
+		path: testInfo.outputPath('dot-template-replay.png')
+	});
+	await page.getByLabel('Debugger page').selectOption('1');
+	await expect(
+		page.getByText('This stored page has no visible preview.')
+	).toBeVisible();
+	await expect(page.locator('img[data-page-zoom-target]')).toHaveCount(1);
+	expect(errors).toEqual([]);
+});

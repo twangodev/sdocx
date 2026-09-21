@@ -274,7 +274,7 @@ fn reads_and_renders_text_and_strokes_from_the_current_layer() {
         ],
         vec![object(2, &simple("second layer"), &[])],
     ];
-    for (current_layer_index, visible, inactive) in
+    for (current_layer_index, visible, _inactive) in
         [(0, "child", "second layer"), (1, "second layer", "child")]
     {
         let raw = page_with_current_layer(&layers, current_layer_index, 0, &[]);
@@ -284,11 +284,14 @@ fn reads_and_renders_text_and_strokes_from_the_current_layer() {
         assert_eq!(page.elements.len(), 1);
         assert_eq!(text_box(&page.elements[0]).text, visible);
         assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
-        let svg =
-            sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default()).unwrap();
-        assert!(svg.svg.contains(visible));
-        assert!(!svg.svg.contains(inactive));
-        assert!(!svg.svg.contains("decoy text"));
+        #[cfg(feature = "render")]
+        {
+            let svg = sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default())
+                .unwrap();
+            assert!(svg.svg.contains(visible));
+            assert!(!svg.svg.contains(_inactive));
+            assert!(!svg.svg.contains("decoy text"));
+        }
         assert!(
             parsed
                 .report

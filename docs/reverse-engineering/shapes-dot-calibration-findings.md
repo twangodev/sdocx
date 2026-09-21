@@ -205,3 +205,13 @@ The Samsung PDF MediaBox is 600 × 848 points while its captured background is
 848.3766 points tall. The comparison runner allows one raster pixel or half a
 PDF point of page-size rounding; a larger mismatch still fails. Content is not
 translated or aligned to reduce the error.
+
+Final validation also covers CLI PDF output (0.87% changed pixels, 1.58% missing
+ink, 0.63% extra ink), a PNG regression sampling distant grid intersections,
+and the actual WASM viewer/replay path in Chromium and Firefox. The browser
+check verifies that both views share identical template geometry, all six
+native shape/line paths survive the replay background, the clear top margin
+renders correctly, and the second stored page stays inspectable without a
+second visible preview. WebKit could not launch on this host because its system
+libraries are missing. Workspace all-feature tests, parser-only checks, Clippy,
+formatting, web type checks, 39 web unit tests and the production build pass.
