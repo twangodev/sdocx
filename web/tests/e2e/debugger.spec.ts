@@ -339,6 +339,12 @@ test('dense scrubbing measures reverse seeks and preserves pixels', async ({
 			'[aria-label="Replay position"]'
 		)!;
 		let strokes = 0;
+		let fills = 0;
+		const originalFill = CanvasRenderingContext2D.prototype.fill;
+		CanvasRenderingContext2D.prototype.fill = function (...args: unknown[]) {
+			fills++;
+			return Reflect.apply(originalFill, this, args);
+		};
 		const original = CanvasRenderingContext2D.prototype.stroke;
 		CanvasRenderingContext2D.prototype.stroke = function (path?: Path2D) {
 			strokes++;
@@ -379,9 +385,11 @@ test('dense scrubbing measures reverse seeks and preserves pixels', async ({
 			await seek(0.5);
 
 			const startStrokes = strokes;
+			const startFills = fills;
 			const values = [];
 			for (let i = 0; i < 24; i++) values.push(await seek(0.9 - i * 0.015));
 			const warmStrokes = strokes - startStrokes;
+			const warmFills = fills - startFills;
 			// Rapidly changing targets must settle on the latest request.
 			for (let i = 0; i < 12; i++) {
 				slider.value = String(
@@ -398,6 +406,7 @@ test('dense scrubbing measures reverse seeks and preserves pixels', async ({
 			await new Promise(requestAnimationFrame);
 			await new Promise(requestAnimationFrame);
 			const beforeReturn = strokes;
+			const fillsBeforeReturn = fills;
 			await seek(0.2);
 			await seek(0.5);
 			return {
@@ -405,6 +414,8 @@ test('dense scrubbing measures reverse seeks and preserves pixels', async ({
 				medianSeekMs: values.sort((a, b) => a - b)[12],
 				p95SeekMs: values[22],
 				warmStrokes,
+				warmFills,
+				returnFills: fills - fillsBeforeReturn,
 				returnStrokes: strokes - beforeReturn,
 				stableBackground:
 					background ===
@@ -420,6 +431,7 @@ test('dense scrubbing measures reverse seeks and preserves pixels', async ({
 			};
 		} finally {
 			CanvasRenderingContext2D.prototype.stroke = original;
+			CanvasRenderingContext2D.prototype.fill = originalFill;
 		}
 	});
 	console.log('Debugger dense scrubbing', JSON.stringify(metrics));
@@ -429,8 +441,8 @@ test('dense scrubbing measures reverse seeks and preserves pixels', async ({
 	});
 	expect(metrics.samePixels).toBe(true);
 	// The fixture previously issued nearly five million segment draws here.
-	expect(metrics.warmStrokes).toBeLessThan(150000);
-	expect(metrics.returnStrokes).toBeLessThan(15000);
+	expect(metrics.warmStrokes + metrics.warmFills).toBeLessThan(150000);
+	expect(metrics.returnStrokes + metrics.returnFills).toBeLessThan(15000);
 	expect(metrics.stableBackground).toBe(true);
 	expect(metrics.cacheBytes).toBeLessThanOrEqual(112 * 1024 * 1024);
 	await page
@@ -570,6 +582,8 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 	expect(svg).toContain('data-page-template="dots"');
 	expect(svg).toContain('M 466.05 403.90');
 	expect(svg).toContain('M 678.82 398.50');
+	// Each of the 77 FountainPen strokes uses one native circular-stamp path.
+	expect(svg.match(/<path fill="[^"]+" d="M[^"]+a/g)).toHaveLength(77);
 	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
 	await expect(page.getByLabel('Debugger page').locator('option')).toHaveCount(
 		2
@@ -615,6 +629,9 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 	await expect(
 		page.getByRole('heading', { name: /Stroke samples/ })
 	).toBeVisible();
+	await page.getByRole('button', { name: /Properties \(/ }).click();
+	await page.getByRole('button', { name: /rendering \(/ }).click();
+	await expect(page.getByText('reconstructed', { exact: true })).toBeVisible();
 	await page.screenshot({
 		path: testInfo.outputPath('dot-template-replay.png')
 	});

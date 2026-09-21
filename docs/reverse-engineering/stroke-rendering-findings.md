@@ -214,3 +214,101 @@ After rejecting filled paths, the final prepared-primitive backend measures
 both builds. The reverse-seek test reproduces identical pixels; accounted
 raster surfaces remain approximately 654 KiB for that measured viewport.
 These are single-run host measurements, not a cross-device performance claim.
+
+## FountainPen V16 saved geometry implementation
+
+`ink/fountain.rs` now reconstructs the saved stylus profile selected by
+`FountainPen` / `18;0;100;`. This is active shared rendering, not just registry
+recognition. Other versions, fixed-width strokes, unsupported inputs and
+expansion beyond the preparation budget retain `Approximate`. The new profile
+reports `Reconstructed`: native geometry is reproduced, while SVG/Canvas
+antialiasing is not the Samsung GPU shader.
+
+The native saved-object entry (`0x7851c`) performs a width collection pass,
+completes smoothing, then redraws with timestamp-indexed widths. A nonzero tip
+length enables these passes (`0x78794`–`0x7886c`); `18;0;100;` sets tip unit 0
+and length 100 through `SetAdvancedSetting`. The saved redraw itself calls
+`drawLine` for interior samples and `endPen` for the last sample; it does not
+run the live PointTipManager event prediction again.
+
+The implementation includes:
+
+- PenTolerance's large/small thresholds, direction checks and farthest dropped
+  event, plus V16's alternating short-movement filtering.
+- Midpoint quadratics, native SmPath subdivision/length parameterization and
+  distance-spaced circular stamps. The canonical inverse scale is one, giving
+  repeat distance 0.82. Native `getInverseScale` multiplies that repeat distance
+  by the minimum inverse canvas scale; our prepared geometry is currently
+  stable across zoom levels rather than resampled for each native GPU scale.
+- Float32 pressure, direction-history and tilt calculations, width limits,
+  timestamp deduplication/interpolation and forward-window width smoothing.
+  The stylus smoothing configuration is `(4, 8)` with factor 0.15. The native
+  collection pass finalizes index `count - window + 1`; reproducing that timing
+  matters, rather than applying a generic moving average afterward.
+- The native ratio ring surviving between collection and redraw, constant-width
+  final quadratic/endpoint, tap radius and minimum radius 0.1.
+- Original-sample-to-generated-dot mapping, bounds from actual dot radii,
+  bounded geometry expansion, and one fill per stroke in each backend.
+
+`conformance/fountain_native.py` executes the actual hash-pinned FountainPen,
+PenCommon and Base helpers in Unicorn. Memory allocation is bounded, each
+native call has an instruction limit, and unresolved imports fail closed.
+Object initialization/two-pass orchestration are reconstructed; native
+MotionEvent endpoint getters are stubbed, and `drawPoint` is intercepted to
+capture circles. This is an independent geometry oracle, not a GPU capture.
+The checked-in `fountain-v16.json` contains synthetic channels and native
+results for 26 cases (1,869 dots), covering taps, short strokes, repeats,
+turns, reversals, tilt/pressure changes, timestamps, sizes and seeded paths.
+It is checked by ordinary Rust tests without needing the APK or Unicorn.
+
+To check the native reference and a real parsed document:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_native.py
+cargo run --offline -p sdocx --features render,serde --example ink_geometry -- hf/02-shapes-and-dot-calibration.sdocx > /tmp/ink-geometry.json
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_native.py --prepared /tmp/ink-geometry.json
+```
+
+All 77 fixture-02 strokes produce the same 3,777 dots and sample mappings as
+the native helpers. Maximum position difference is 0.0000611 page units;
+maximum radius difference is 0.000000716. The ordinary whole-page PDF visual
+comparison improves from 1.25% missing / 0.72% extra ink to 0.72% missing /
+0.69% extra ink (0.83% changed pixels). These percentages include the page's
+shapes and background; they are not per-pen or cross-device parity guarantees.
+Texture pens, other FountainPen versions, fixed-width mode and the native
+scale-dependent shader's thin-line/antialias coverage remain outside this
+profile's validated scope.
+
+The union of all 77 prepared stroke bounds, padded by three pixels, gives a
+more relevant pen-focused comparison than the whole page: at the existing
+ink threshold 32 and one-pixel tolerance, missing ink improves from 3.7626%
+to 0.0360%, with 0% extra ink in both cases. The measurement uses 13,900
+reference ink pixels; gray background dots or other objects overlapping these
+regions are included. Reproduce it with:
+
+```sh
+.venv/bin/python conformance/ink_visual.py /tmp/ink-geometry.json /path/to/reference_page0.png /path/to/sdk.png
+```
+
+A same-fixture Chromium comparison against the isolated pre-preparation
+`119705d` build measures cold seek at 26.1 ms before and 25.2 ms after; both
+measure 50 ms median / 50.1 ms p95 warm seeks, identical pixels on reverse
+seeks, and approximately 1.38 MB accounted raster surfaces. These are single
+host runs. The browser metric now counts fills as well as stroke calls so
+native circular paths are included in drawing-work reports. Chromium and
+Firefox both pass the replay interaction checks for this fixture.
+
+The older dense `handwritten.sdocx` fixture resolves to FountainPen `14;`.
+It intentionally remains `Approximate`; V16 is not silently applied to that
+older drawing version. Its native renderer needs a separate port/reference
+check before it can use reconstructed geometry.
+
+The same APK already contains `FountainPenStrokeDrawableGLV14`, so another
+APK download is not currently necessary to investigate `14;`. Its saved
+redraw (`0x727dc`, inner loop `0x72c20`) differs from V16: it uses a single
+pass without the width-history smoothing, a simpler distance filter, and
+includes the final sample in the line loop before `endPen`. Its `drawPoint`
+(`0x731b0`) passes a tangent to `FountainPenStrokeDrawableRTV4::AddPoint`.
+That tangent-dependent backend still needs tracing before circular stamps
+can be assumed to reproduce V14 coverage. These are investigation findings,
+not enabled V14 support.

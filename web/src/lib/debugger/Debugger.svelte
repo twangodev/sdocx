@@ -134,6 +134,12 @@
 			if (alive && id === pageRequest) busy = false;
 		}
 	}
+	function renderingProperties(data: Record<string, unknown>, offset: number) {
+		const geometry = replay?.strokes.find((s) => s.offset === offset)?.geometry;
+		return geometry
+			? { ...data, rendering: { profile: geometry.profile, support: geometry.support } }
+			: data;
+	}
 	function selectRecord(request: DebugRequest, data: Record<string, unknown>) {
 		if (!alive) return;
 		++selectionRequest;
@@ -146,6 +152,7 @@
 		if ('page' in request && request.page !== page) void loadPage(request.page);
 		if (request.kind === 'object') {
 			selectedOffset = request.offset;
+			if (request.page === page) properties = renderingProperties(data, request.offset);
 			selectedStroke =
 				data.stroke &&
 				typeof data.stroke === 'object' &&
@@ -242,7 +249,7 @@
 					offset
 				});
 				if (cancelled || !alive) return;
-				properties = data;
+				properties = renderingProperties(data, offset);
 				entry = data.entry as number;
 				void readHex(offset);
 			} catch (cause) {

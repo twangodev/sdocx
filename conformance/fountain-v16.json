@@ -1,4 +1,7 @@
 {
+  "version": 1,
+  "inverse_scale": 1.0,
+  "provenance": "Samsung Notes 4.4.45.37; library hashes pinned in fountain_native.py; synthetic input channels",
   "stroke": {
     "bbox": {
       "x_min": 0.0,
