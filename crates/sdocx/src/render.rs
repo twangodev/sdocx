@@ -1590,6 +1590,23 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
     let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
     let color = &paint.color;
     let base_width = paint.width;
+    if let Some(radii) = &paint.dot_radii {
+        write!(svg, "  <path fill=\"{color}\" d=\"").unwrap();
+        for (p, r) in paint.points.iter().zip(radii) {
+            write!(
+                svg,
+                "M{:.4},{:.4}a{r:.4},{r:.4} 0 1 0 {:.4},0a{r:.4},{r:.4} 0 1 0 {:.4},0Z",
+                p.x - r,
+                p.y,
+                r * 2.,
+                -r * 2.
+            )
+            .unwrap();
+        }
+        writeln!(svg, "\"/>").unwrap();
+        return;
+    }
+
     if let [point] = paint.points.as_ref() {
         writeln!(
             svg,

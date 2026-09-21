@@ -39,12 +39,13 @@ export interface ReplayStroke {
 		points?: Stroke['points'];
 		sample_ends?: number[];
 		width: number;
+		dot_radii?: number[];
 		segment_widths: number[] | null;
 		bounds: Box | null;
 		color: string;
 		opacity: number;
 		profile: string | null;
-		support: 'approximate';
+		support: 'approximate' | 'reconstructed';
 	};
 	offset: number;
 	milliseconds: boolean;

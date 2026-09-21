@@ -107,6 +107,17 @@ export class ReplayRaster {
 			(geometry.sample_ends?.[last] ?? Math.min(last + 1, points.length)) - 1;
 		if (last < 0) return;
 		ctx.strokeStyle = stroke.color ? geometry.color : this.defaultInk;
+		if (geometry.dot_radii) {
+			ctx.fillStyle = ctx.strokeStyle;
+			ctx.beginPath();
+			for (let j = 0; j <= last; j++) {
+				const p = points[j], r = geometry.dot_radii[j];
+				ctx.moveTo(p.x + r, p.y);
+				ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+			}
+			ctx.fill();
+			return;
+		}
 		if (points.length === 1) {
 			ctx.fillStyle = ctx.strokeStyle;
 			ctx.beginPath();

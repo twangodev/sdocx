@@ -1,6 +1,7 @@
 //! Shared, sample-addressable ink geometry for exports and interactive replay.
 use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
+mod fountain;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -78,6 +79,9 @@ const fn pen(name: &'static str, library: &'static str, bundled: bool) -> PenPro
 pub enum InkSupport {
     /// Preserved legacy pressure approximation; no native parity claim.
     Approximate,
+    /// Native geometry reconstructed and checked against the APK; backend
+    /// antialiasing still differs from Samsung's GPU shader.
+    Reconstructed,
 }
 
 /// Geometry and paint shared by SVG and Canvas adapters. The compatibility
@@ -92,6 +96,9 @@ pub struct PreparedStroke<'a> {
     /// Exclusive prepared-point counts at each original sample, when resampled.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub sample_ends: Option<Vec<usize>>,
+    /// Native circular stamps; one radius per prepared point.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub dot_radii: Option<Vec<f64>>,
     pub segment_widths: Option<Vec<f64>>,
     pub width: f64,
     pub bounds: Option<BoundingBox>,
@@ -107,10 +114,21 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
     matches!(points, Cow::Borrowed(_))
 }
 
-/// Prepare the explicit fallback profile. Native profiles must pass their
-/// reference gates before replacing it; recognition alone does not enable one.
+/// Prepare a verified native geometry profile when its saved inputs match.
+/// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
-    let paint = stroke_paint(stroke, dark_mode);
+    let mut paint = stroke_paint(stroke, dark_mode);
+    let native = fountain::prepare(stroke);
+    let (points, sample_ends, dot_radii) = if let Some(ink) = native {
+        paint.segment_widths = None;
+        (
+            Cow::Owned(ink.points),
+            Some(ink.sample_ends),
+            Some(ink.radii),
+        )
+    } else {
+        (Cow::Borrowed(stroke.points.as_slice()), None, None)
+    };
     let profile = stroke
         .rendering
         .as_ref()
@@ -121,16 +139,21 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         })
         .and_then(|name| PEN_PROFILES.iter().find(|p| p.name == name));
     let mut bounds: Option<BoundingBox> = None;
-    for (index, point) in stroke.points.iter().enumerate() {
+    for (index, point) in points.iter().enumerate() {
         // A vertex belongs to its incoming and outgoing segment. Include both
         // widths so rapidly changing pressure cannot clip the larger cap.
-        let radius = paint.segment_widths.as_ref().map_or(paint.width, |widths| {
-            widths
-                .get(index.saturating_sub(1))
-                .copied()
-                .unwrap_or(paint.width)
-                .max(widths.get(index).copied().unwrap_or(0.0))
-        }) / 2.0;
+        let radius = dot_radii.as_ref().map_or_else(
+            || {
+                paint.segment_widths.as_ref().map_or(paint.width, |widths| {
+                    widths
+                        .get(index.saturating_sub(1))
+                        .copied()
+                        .unwrap_or(paint.width)
+                        .max(widths.get(index).copied().unwrap_or(0.0))
+                }) / 2.0
+            },
+            |radii| radii[index],
+        );
         if !point.x.is_finite() || !point.y.is_finite() {
             continue;
         }
@@ -150,15 +173,20 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         }
     }
     PreparedStroke {
-        points: Cow::Borrowed(&stroke.points),
-        sample_ends: None,
+        support: if dot_radii.is_some() {
+            InkSupport::Reconstructed
+        } else {
+            InkSupport::Approximate
+        },
+        points,
+        sample_ends,
+        dot_radii,
         segment_widths: paint.segment_widths,
         width: paint.width,
         bounds,
         color: paint.color,
         opacity: 1.0,
         profile: profile.map(|p| p.name),
-        support: InkSupport::Approximate,
     }
 }
 

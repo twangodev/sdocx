@@ -432,7 +432,7 @@ mod source_tests {
             assert_eq!(item["stroke"], expected["stroke"]);
             assert_eq!(item["geometry"], expected["geometry"]);
             assert_eq!(item["geometry"]["profile"], "FountainPen");
-            assert_eq!(item["geometry"]["support"], "approximate");
+            assert_eq!(item["geometry"]["support"], "reconstructed");
         }
     }
 
