@@ -219,7 +219,44 @@ fn render_element(
     }
 }
 
+// Both shape and line writers serialize the drawing path in page coordinates,
+// including rotation. Reject an unsupported path as a whole, never draw a prefix.
+fn native_svg_path(data: &[u8]) -> Option<String> {
+    let mut path = String::new();
+    let parsed = crate::shape::visit_path(data, |verb, values| {
+        let command = match verb {
+            1 => 'M',
+            2 => 'L',
+            3 => 'Q',
+            4 => 'C',
+            6 => 'Z',
+            _ => return,
+        };
+        path.push(command);
+        for value in values {
+            write!(path, " {value:.2}").unwrap();
+        }
+        path.push(' ');
+    });
+    parsed
+        .ok()
+        .filter(|(size, supported)| *supported && *size == data.len())?;
+    Some(path.trim_end().to_owned())
+}
+
 fn render_shape(svg: &mut String, shape: &crate::NativeShape, dark_mode: bool) {
+    if !shape.path_data.is_empty() {
+        if let Some(path) = native_svg_path(&shape.path_data) {
+            let (fill, opacity) = shape_paint(&shape.fill, dark_mode);
+            writeln!(
+                svg,
+                r#"  <path d="{path}" fill="{fill}" fill-opacity="{opacity:.4}" {}/>"#,
+                shape_outline(&shape.style, dark_mode)
+            )
+            .unwrap();
+        }
+        return;
+    }
     let bbox = shape.geometry_bbox;
     let width = bbox.x_max - bbox.x_min;
     let height = bbox.y_max - bbox.y_min;
@@ -270,27 +307,10 @@ fn render_line(svg: &mut String, line: &crate::NativeLine, dark_mode: bool) {
         return;
     }
     if !line.path_data.is_empty() {
-        let mut path = String::new();
-        let parsed = crate::shape::visit_path(&line.path_data, |verb, values| {
-            let command = match verb {
-                1 => 'M',
-                2 => 'L',
-                3 => 'Q',
-                4 => 'C',
-                6 => 'Z',
-                _ => return,
-            };
-            path.push(command);
-            for value in values {
-                write!(path, " {value:.2}").unwrap();
-            }
-            path.push(' ');
-        });
-        if parsed.is_ok_and(|(size, supported)| supported && size == line.path_data.len()) {
+        if let Some(path) = native_svg_path(&line.path_data) {
             writeln!(
                 svg,
-                r#"  <path d="{}" fill="none" {}/>"#,
-                path.trim_end(),
+                r#"  <path d="{path}" fill="none" {}/>"#,
                 shape_outline(&line.style, dark_mode)
             )
             .unwrap();

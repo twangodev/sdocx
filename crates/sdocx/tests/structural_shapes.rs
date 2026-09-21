@@ -648,3 +648,75 @@ fn unsupported_arc_oval_and_missing_move_paths_remain_bounded() {
         }
     }
 }
+
+fn shape_with_path(kind: u32, path: &[u8]) -> Vec<u8> {
+    let mut fixed = shape_fixed(kind, 30.0);
+    // Replace the empty sized path; retain one adjustment control point.
+    fixed.splice(
+        40..45,
+        [sized(path), vec![1], numbers(&[75.0, 42.0])].concat(),
+    );
+    [base(0.0), outline(), frame(7, 32, &fixed, &shape_fields())].concat()
+}
+
+#[test]
+fn native_shape_paths_override_templates_and_already_include_rotation() {
+    let path = native_path(&[
+        (1, &[10.0, 20.0]),
+        (2, &[90.0, 25.0]),
+        (3, &[110.0, 30.0, 80.0, 70.0]),
+        (4, &[60.0, 90.0, 20.0, 60.0, 10.0, 20.0]),
+        (6, &[]),
+    ]);
+    for kind in [1, 2, 4, 6, 11, 999] {
+        let parsed =
+            sdocx::parse_bytes_detailed(&single(7, &shape_with_path(kind, &path))).unwrap();
+        assert!(!has_shape_warning(&parsed));
+        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        assert_eq!(shape.path_data, path);
+        assert_eq!(shape.control_points, [[75.0, 42.0]]);
+        assert_eq!(shape.shape_type, kind);
+        #[cfg(feature = "render")]
+        {
+            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+            assert!(svg.contains("M 10.00 20.00 L 90.00 25.00 Q 110.00 30.00 80.00 70.00 C 60.00 90.00 20.00 60.00 10.00 20.00 Z"));
+            assert!(svg.contains("fill=\"#ff0000\" fill-opacity=\"0.2510\""));
+            assert!(!svg.contains("rotate("));
+            assert!(!svg.contains("<ellipse "));
+            assert!(!svg.contains("<polygon "));
+        }
+    }
+}
+
+#[test]
+fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
+    let mut trailing = native_path(&[(1, &[1.0, 2.0]), (2, &[3.0, 4.0])]);
+    trailing.push(0xff);
+    for path in [
+        native_path(&[(1, &[1.0, 2.0]), (99, &[])]),
+        native_path(&[(1, &[1.0, 2.0]), (5, &[0.0; 6])]),
+        native_path(&[(2, &[1.0, 2.0])]),
+        trailing,
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &shape_with_path(4, &path))).unwrap();
+        assert!(has_shape_warning(&parsed));
+        assert_eq!(
+            as_shape(&parsed.document.pages[0].elements[0]).path_data,
+            path
+        );
+        #[cfg(feature = "render")]
+        {
+            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+            assert!(!svg.contains("<path "));
+            assert!(!svg.contains("rotate("));
+        }
+    }
+    let path = native_path(&[(1, &[1.0, 2.0]), (2, &[3.0, 4.0])]);
+    for end in 1..path.len() {
+        assert_format(7, &shape_with_path(11, &path[..end]));
+    }
+    assert_format(
+        7,
+        &shape_with_path(6, &native_path(&[(1, &[f64::NAN, 0.0])])),
+    );
+}

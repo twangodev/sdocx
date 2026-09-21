@@ -127,3 +127,28 @@ gradients, dashed/compound outlines and arrowheads remain incomplete. Known
 basic templates may render approximately when unsupported adjustments exist.
 Text wrapping, margins, gravity and embedded-object layout retain the existing
 text-renderer limitations. An empty report does not certify a lossless render.
+
+## Saved shape paths (fixture 02)
+
+The 02 fixture contains explicit drawing paths for all five shapes, including
+pentagon 11 and hexagon 6. The shared SVG converter now uses those paths before
+falling back to the basic templates. Adjustment control points are retained;
+a complete saved path already expresses their effect. Unsupported verbs or
+trailing bytes reject the entire path rather than substitute a basic shape.
+
+Additional arm64 evidence from the same APK:
+
+- `ObjectShapeImpl::GetPath` (`0x3a5b04`) and
+  `ObjectShapeBinaryHandler::GetOwnBinary` (`0x3a8e60`) both read the template
+  at implementation offset 32 and call `0x20d630`, returning its drawing path.
+- `ObjectShapeData::SetRotation` (`0x3abc04`) reaches `0x20cb6c`, then
+  `0x20d9e8`: it copies the original path into the drawing path and rotates
+  its coordinates. `ObjectShapeDrawing::ShapePathType::GetPath` (`0x8bc90`
+  in `libSPenDrawing.so`) consumes that same path. Applying the saved angle
+  again would double-rotate it. Path-less basic templates still need the angle.
+
+Synthetic regressions cover adjusted paths, rotations, fill/outline alpha,
+quadratic/cubic segments, unknown template IDs with explicit geometry,
+truncation, non-finite coordinates, unknown verbs and trailing path bytes.
+The existing geometry-property warning remains: fixture 02 sets bit 2 of the
+shape property mask, whose full rendering contract has not been established.

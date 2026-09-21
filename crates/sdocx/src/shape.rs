@@ -142,18 +142,24 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     let geometry_bbox = read_bbox(&mut fixed)?;
     let rotation_degrees = finite_f32(&mut fixed, "shape rotation")?;
     let path_data = sized(&mut fixed, "shape path")?.to_vec();
-    if !path_data.is_empty() {
-        visit_path(&path_data, |_, _| {})?;
-    }
+    let supported_path = if path_data.is_empty() {
+        false
+    } else {
+        let (size, supported) = visit_path(&path_data, |_, _| {})?;
+        if !supported || size != path_data.len() {
+            unsupported.push("unsupported native path commands or trailing data");
+        }
+        supported && size == path_data.len()
+    };
     let control_points = read_points(&mut fixed)?;
     let drawn_bbox = read_bbox(&mut fixed)?;
     if fixed.remaining() != 0 || frame.properties.has_other_bits(0) {
         unsupported.push("shape geometry extensions or properties");
     }
-    if !path_data.is_empty() || !control_points.is_empty() {
+    if !supported_path && !control_points.is_empty() {
         unsupported.push("custom paths or template control points");
     }
-    if !matches!(shape_type, 1..=4 | 8) {
+    if !supported_path && !matches!(shape_type, 1..=4 | 8) {
         unsupported.push("shape template");
     }
     if metadata.rotation_degrees.is_some_and(|angle| angle != 0.0)
