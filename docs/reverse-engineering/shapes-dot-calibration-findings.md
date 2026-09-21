@@ -117,3 +117,37 @@ shape support.
 3. Use the twelve marks to evaluate pressure/width fidelity independently. Do
    not change decoded coordinates merely to compensate for a missing pattern
    or a stroke-paint approximation.
+
+## APK-backed implementation: page layout and native dimensions
+
+Samsung Notes 4.4.45.37 arm64 `libSPenComposer.so`,
+`NotePDFExporterVectorList::exportPages` (`0x361864`), obtains the complete
+`WNote::GetPageList`, subtracts one from its count at `0x3618d0`, and iterates
+only those preceding pages. This is list-mode compatibility storage, not a
+body-text-dependent blank-page heuristic. The 02 end tag explicitly records
+page mode 0 (LIST); its flow height is `2 * 2613 + 41 = 5267`.
+
+The SDK now exposes raw page mode and orientation from the already bounded end
+tag decoder. Layout recognizes list-mode compatibility only with a complete
+flow-height/padding match, at least two records, an empty decoded final page,
+and matching final/previous dimensions, template and background. Intermediate
+blank or template-only pages remain visible; a one-page blank note remains
+one page. Continuous/unknown modes and ambiguous final backgrounds are retained.
+The older text-only fallback is limited to notes with no page-mode metadata.
+This deliberately supports less than the native exporter's unconditional final
+record exclusion. Raw pages and source-page indices are unchanged.
+
+`libSPenWDoc.so`, `WNoteLoadHandler::loadNoteFile_FixedData`
+(`0xa9290–0xa92f0`) reads two optional `u32` dimensions after the body object
+when bytes remain before the flexible offset, into members 176/180. These are
+the default page dimensions, not the multi-page flow canvas. The decoder keeps
+the original trailing bytes and exposes the dimensions separately.
+`WNote::GetDocumentDensity` (`0x9ec70`) selects width for portrait, height for
+landscape, then divides by 360. This supplies native template scaling without
+inferring a scale from the exported PDF.
+
+The manifest now locks the 02 hashes, two stored/one visible page, 77 strokes,
+five shapes, one line, and five retained geometry-property warnings. All three
+locked corpus pairs pass structural and reference page-count checks. The deleted
+01 PDF in the working dataset was left untouched; that check used its local LFS
+object in a temporary corpus directory.

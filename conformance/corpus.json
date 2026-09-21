@@ -40,6 +40,31 @@
       }
     },
     {
+      "id": "02-shapes-and-dot-calibration",
+      "sdocx": {
+        "path": "02-shapes-and-dot-calibration.sdocx",
+        "sha256": "dd6580a0531cf1712ef6526f1b0d51c42adaeb0d11feacca5d23ba562239da82"
+      },
+      "reference_pdf": {
+        "path": "02-shapes-and-dot-calibration.pdf",
+        "sha256": "2971d07e8aeb8e63d6322d535d4db91311e54830482506828b67273f22e0e507"
+      },
+      "expected": {
+        "stored_pages": 2,
+        "visible_pages": 1,
+        "page_objects": {
+          "strokes": 77,
+          "shapes": 5,
+          "lines": 1,
+          "images": 0,
+          "text_boxes": 0
+        },
+        "diagnostics": {
+          "UnsupportedShapeFeature": 5
+        }
+      }
+    },
+    {
       "id": "03-image-placement",
       "expected": {
         "stored_pages": 4,

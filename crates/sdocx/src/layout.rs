@@ -35,7 +35,12 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .note_text
         .as_ref()
         .is_some_and(|text| !text.text.trim().is_empty());
-    let omitted_trailing_blank_page = has_flowing_text
+    // Native list-mode export excludes its final compatibility record, even
+    // when the body text is empty. Require a complete flow canvas and matching
+    // background so incomplete/ambiguous documents retain their final page.
+    let list_compatibility_page = has_list_compatibility_page(document);
+    let legacy_text_compatibility = document.metadata.page_mode.is_none() && has_flowing_text;
+    let omitted_trailing_blank_page = (list_compatibility_page || legacy_text_compatibility)
         && document.pages.len() > 1
         && document.pages.last().is_some_and(is_blank_storage_page);
     let visible_count = document
@@ -194,6 +199,33 @@ fn section_char_range(text: &str, section: crate::types::RichTextSection) -> Opt
     let length_utf16 = u32::try_from(section.length_utf16).ok()?;
     let end_utf16 = start_utf16.checked_add(length_utf16)?;
     Some(utf16_to_char_index(text, start_utf16)?..utf16_to_char_index(text, end_utf16)?)
+}
+
+fn has_list_compatibility_page(document: &Document) -> bool {
+    let metadata = &document.metadata;
+    if metadata.page_mode != Some(0) || document.pages.len() < 2 {
+        return false;
+    }
+    let Some((flow_width, flow_height)) = metadata.flow_dimensions else {
+        return false;
+    };
+    let Some((_, padding)) = metadata.flow_page_padding else {
+        return false;
+    };
+    let total_height = document
+        .pages
+        .iter()
+        .map(|page| u64::from(page.height))
+        .sum::<u64>()
+        + (document.pages.len() as u64 - 1) * u64::from(padding);
+    let last = &document.pages[document.pages.len() - 1];
+    let previous = &document.pages[document.pages.len() - 2];
+    total_height == u64::from(flow_height)
+        && flow_width == last.width
+        && last.width == previous.width
+        && last.height == previous.height
+        && last.template == previous.template
+        && last.background_color == previous.background_color
 }
 
 fn is_blank_storage_page(page: &Page) -> bool {
@@ -398,6 +430,64 @@ mod tests {
             strokes: Vec::new(),
             elements: Vec::new(),
         }
+    }
+
+    #[test]
+    fn list_mode_omits_only_the_trailing_compatibility_record() {
+        let template = crate::PageTemplate {
+            id: 7,
+            source: crate::PageTemplateSource::BuiltIn,
+        };
+        let mut document = Document {
+            pages: (0..3).map(blank_page).collect(),
+            metadata: DocumentMetadata {
+                page_mode: Some(0),
+                flow_dimensions: Some((1080, 3 * 1527 + 2 * 41)),
+                flow_page_padding: Some((0, 41)),
+                ..Default::default()
+            },
+        };
+        for page in &mut document.pages {
+            page.template = Some(template);
+        }
+        // Empty body text does not prevent list-mode compatibility handling;
+        // the two intentionally blank/template-only pages remain visible.
+        let layout = layout_document(&document);
+        assert_eq!(layout.pages.len(), 2);
+        assert_eq!(document.pages.len(), 3);
+        assert!(layout.omitted_trailing_blank_page);
+        assert_eq!(layout.pages[1].source_page_index, 1);
+        assert_eq!(layout.pages[1].page.template, Some(template));
+        for mode in [None, Some(1), Some(99)] {
+            document.metadata.page_mode = mode;
+            assert_eq!(layout_document(&document).pages.len(), 3);
+        }
+        document.metadata.page_mode = Some(0);
+        document.pages[2].template = None;
+        assert_eq!(layout_document(&document).pages.len(), 3);
+        document.pages[2].template = Some(template);
+        document.metadata.flow_dimensions = Some((1080, 1527));
+        assert_eq!(layout_document(&document).pages.len(), 3);
+        document.pages.truncate(1);
+        assert_eq!(layout_document(&document).pages.len(), 1);
+    }
+
+    #[test]
+    fn list_mode_keeps_a_final_page_with_decoded_content() {
+        let mut document = Document {
+            pages: (0..2).map(blank_page).collect(),
+            metadata: DocumentMetadata {
+                page_mode: Some(0),
+                flow_dimensions: Some((1080, 3054)),
+                flow_page_padding: Some((0, 0)),
+                ..Default::default()
+            },
+        };
+        document.pages[1].elements.push(PageElement::Image {
+            bbox: BoundingBox::default(),
+            media_index: 0,
+        });
+        assert_eq!(layout_document(&document).pages.len(), 2);
     }
 
     #[test]

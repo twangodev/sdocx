@@ -277,3 +277,33 @@ fn masks_and_strings_are_bounded_and_full_width_versions_are_retained() {
             .unwrap();
     assert_eq!(parsed.document.metadata.format_version, None);
 }
+
+#[test]
+fn native_default_dimensions_are_retained_separately_from_the_flow_canvas() {
+    let extra = [1848_u32.to_le_bytes(), 2613_u32.to_le_bytes()].concat();
+    let bytes = note(&[8], &[1], "sized note", &extra);
+    let parsed = parse_note_bytes(&bytes).unwrap();
+    assert_eq!(parsed.default_page_dimensions(), Some((1848, 2613)));
+    assert_eq!(parsed.fixed_trailing_data, extra);
+    let document = sdocx::parse_bytes_detailed(&archive(
+        &bytes,
+        &support::page(&[vec![]], 0, &[]),
+        Some(&end_tag()),
+    ))
+    .unwrap()
+    .document;
+    assert_eq!(
+        document.metadata.default_page_dimensions,
+        Some((1848, 2613))
+    );
+    assert_eq!(document.metadata.flow_dimensions, Some((2000, 3000)));
+    assert_eq!(document.metadata.page_mode, Some(0));
+    for extra in [vec![], vec![0; 7], vec![0; 8]] {
+        assert_eq!(
+            parse_note_bytes(&note(&[8], &[1], "", &extra))
+                .unwrap()
+                .default_page_dimensions(),
+            None
+        );
+    }
+}

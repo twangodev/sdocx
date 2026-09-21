@@ -83,6 +83,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
         apply_note_metadata(&parsed_note.header, &mut metadata);
+        metadata.default_page_dimensions = parsed_note.default_page_dimensions();
         if let Some(verifier) = &mut integrity {
             verifier.verify_note(&buf, &parsed_note);
         }
@@ -470,6 +471,8 @@ fn has_encryption_data(tag: &StoredEndTag) -> bool {
 }
 
 fn apply_end_tag_metadata(tag: &StoredEndTag, metadata: &mut DocumentMetadata) {
+    metadata.page_mode = Some(tag.page_mode);
+    metadata.orientation = tag.new_orientation;
     metadata.format_version = u16::try_from(tag.format_version).ok().map(FormatVersion);
     metadata.created_ms = Some(
         tag.display_timestamps

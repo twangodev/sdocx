@@ -24,6 +24,17 @@ pub struct StoredNote {
     pub body: RichTextBox,
 }
 
+impl StoredNote {
+    /// Optional native default page dimensions following the title/body objects.
+    /// Raw bytes remain in `fixed_trailing_data`, including unknown extensions.
+    pub fn default_page_dimensions(&self) -> Option<(u32, u32)> {
+        let bytes = self.fixed_trailing_data.get(..8)?;
+        let width = u32::from_le_bytes(bytes[..4].try_into().ok()?);
+        let height = u32::from_le_bytes(bytes[4..].try_into().ok()?);
+        (width > 0 && height > 0).then_some((width, height))
+    }
+}
+
 /// Fixed header fields at the beginning of `note.note`.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

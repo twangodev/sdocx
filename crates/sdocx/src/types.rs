@@ -24,6 +24,15 @@ pub struct DocumentMetadata {
     pub dark_mode_compatibility: Option<bool>,
     /// Default page dimensions as `(width, height)` in pixels.
     pub page_dimensions: Option<(u32, u32)>,
+    /// Native default page size stored after the note body (not the flow canvas).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub default_page_dimensions: Option<(u32, u32)>,
+    /// Raw native page mode: 0 is a page list, 1 is a continuous canvas.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub page_mode: Option<u16>,
+    /// Raw document orientation: 0 portrait, 1 landscape.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub orientation: Option<i32>,
     /// Dimensions of the document-level flowing text canvas.
     pub flow_dimensions: Option<(u32, u32)>,
     /// Horizontal and vertical padding used by the flowing text canvas.
