@@ -57,3 +57,89 @@ The historical three-document audit passed on the new decoder and failed on
 the old decoder's point count for fixture A (322,406 versus the expected
 321,776). Those documents and their runner are retired; the measurements remain
 in [`fixture-validation.md`](fixture-validation.md).
+
+## Drawing-time curves and width interpolation
+
+Fresh static inspection of the Samsung Notes 4.4.45.37 ARM64 libraries
+confirms a rendering gap independent of the historical parser issue above.
+This is instruction-level evidence, not a native runtime or pixel-equivalence
+comparison. The selected pen for a particular reported rough stroke still
+needs to be identified before choosing its native algorithm.
+
+### Current SDK behavior
+
+`render.rs::render_stroke` draws one straight, round-capped SVG line per
+point pair when pressure is present. Each line has a constant width derived
+from its starting sample. Otherwise it draws a straight polyline.
+`stroke_paint` applies `pen_width / 2.5`, clamped to 0.4–12, then multiplies
+by `0.3 + 0.7 * clamp(pressure, 0.05, 1)`. This is a common approximation,
+not a recovered per-pen width law. Neither centerline curves nor continuous
+width transitions are constructed. The web debugger's
+`replay-raster.ts::drawStroke` repeats the same segment geometry in Canvas.
+
+Consequently, round caps do not guarantee a smooth stroke silhouette:
+straight segments can show angular turns, and independently changing widths
+can show shoulders or bumps. Increasing raster resolution cannot correct
+those geometry differences. Their contribution to any particular screenshot
+still requires matching the stroke and comparing renderings.
+
+The high-level `Stroke` currently lacks the pen identity and fixed-width
+settings available separately through `StrokeMetadata`; the renderer also
+does not use timestamps, tilt or orientation to choose its width behavior.
+
+### DefaultPen curve-enabled branch
+
+In `libSPenDefaultPen.so`:
+
+- `RedrawPen(ObjectStroke const*, RectF*)`, `0x18b54`, retrieves stored
+  points, pressures, timestamps, tilt and orientation, constructs a
+  `MotionEvent` and dispatches redraw. This path applies to saved strokes.
+- `RedrawPen(MotionEvent const*, RectF*)` calls `redrawLine` at `0x18694`.
+  `redrawLine`, `0x18928`, forms a midpoint between the previous input
+  point and the next accepted point. It calls `SmPath::moveTo` at `0x18a04`
+  and `quadTo` at `0x18a14`, with the previous point as the control point
+  and the midpoint as the endpoint.
+- It obtains curve length at `0x18a48`, chooses a repeat count through
+  `getRepeat`, and samples position/tangent at `0x18ab8`. Width changes
+  are divided across the repeats at `0x18a70` / `0x18a80` and accumulated
+  at `0x18adc`. The drawing call receives half the interpolated width,
+  with a lower bound of 1 (`0x18ac0` onward).
+- The live `drawLine`, `0x18c80`, has the analogous curve construction
+  (`0x18d5c`, `0x18d6c`) and distance sampling (`0x18e10`).
+
+These routines also have sample-acceptance thresholds and startup/end state.
+A generic midpoint spline alone is not a full reproduction. This trace
+establishes width interpolation, not the upstream pressure-to-width law.
+There is also an explicit no-curve branch; this algorithm is not universal.
+
+### Marker2 and shared smoothing helpers
+
+In `libSPenMarker2.so`, V2 saved-event redraw calls `drawLine` at `0x22a24`
+and `0x22aa0`. That routine (`0x22c10`) constructs the midpoint quadratic
+at `0x22ce4`–`0x22d08`, obtains its length at `0x22d1c`, samples positions
+at `0x22d58`, and submits them to `Marker2StrokeDrawableRTV2::AddPoint`
+at `0x22d68`. It carries the residual sample distance across segments.
+This establishes curved, distance-spaced rendering, not pressure-dependent
+width for Marker2.
+
+PenCommon `WidthSmoothManager::getSmoothedWidth`, `0x593ec`, computes
+`second + factor * (first - second)`. However, the base
+`PenStrokeTipDrawableGL::CalculateSmoothedWidths`, `0x525dc`, is just a
+return instruction. Symbol names alone therefore cannot prove a selected
+pen actually applies smoothing. Callers and overrides must be traced.
+
+The optional post-input coordinate smoother is a separate mechanism:
+[stroke finalization](stroke-finalization-findings.md) documents that the
+ordinary constructor selects no transformer. Do not rerun input prediction
+or optional beautification blindly on samples already saved by the app.
+
+### Implementation direction
+
+Resolve each stroke's saved pen identity/settings into a rendering profile,
+then implement the verified profile's curve, sampling and width rules in a
+shared Rust geometry layer. Preserve original samples for inspection. SVG
+exports and Canvas replay should consume that geometry, including consistent
+partial-stroke handling, rather than independently rebuilding straight lines.
+Keep unsupported pens explicitly approximate. Validate with enlarged curves,
+pressure transitions, dots, sharp corners and stroke ends against paired
+Samsung exports before replacing the current renderer.
