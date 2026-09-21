@@ -166,6 +166,7 @@ fn document_export_uses_visible_layout_and_color_options() {
         content_bbox: Default::default(),
         background_color: None,
         template: None,
+        background: Default::default(),
         strokes: vec![],
         elements: vec![],
     };

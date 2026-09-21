@@ -531,7 +531,7 @@ mod tests {
 
     #[test]
     fn shared_renderer_output_rasterizes_to_png() {
-        let document = sdocx::Document {
+        let mut document = sdocx::Document {
             pages: vec![sdocx::Page {
                 uuid: "page".into(),
                 width: 100,
@@ -539,6 +539,7 @@ mod tests {
                 content_bbox: sdocx::BoundingBox::default(),
                 background_color: None,
                 template: None,
+                background: Default::default(),
                 strokes: vec![sdocx::Stroke {
                     bbox: sdocx::BoundingBox::default(),
                     points: vec![
@@ -561,5 +562,28 @@ mod tests {
 
         assert_eq!(&png[..8], b"\x89PNG\r\n\x1a\n");
         assert!(png.len() > 100, "PNG should be non-trivial");
+
+        document.pages[0].width = 1080;
+        document.pages[0].height = 1527;
+        document.pages[0].strokes.clear();
+        document.pages[0].template = Some(sdocx::PageTemplate {
+            id: 7,
+            source: sdocx::PageTemplateSource::BuiltIn,
+        });
+        document.metadata.default_page_dimensions = Some((1080, 1527));
+        document.metadata.orientation = Some(0);
+        let svg = &sdocx::render_document_svg(&document, &Default::default())[0].svg;
+        let png = svg_to_png(svg).unwrap();
+        let pixels = resvg::tiny_skia::Pixmap::decode_png(&png).unwrap();
+        // Far-away intersections catch cumulative rounding of fractional tile
+        // pitches (53.5 x 48.6), which a first-dot assertion would miss.
+        for (x, y) in [(963, 859), (107, 1491)] {
+            let offset = (y * 1080 + x) * 4;
+            assert!(
+                pixels.data()[offset] < 225,
+                "missing grid intersection at {x},{y}"
+            );
+        }
+        assert_eq!(&pixels.data()[(20 * 1080 + 963) * 4..][..3], &[252; 3]);
     }
 }

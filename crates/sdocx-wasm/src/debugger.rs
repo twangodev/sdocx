@@ -137,6 +137,7 @@ impl Source {
                 let m = &parsed.document.metadata;
                 let metadata = json!({"format_version":m.format_version,"created_ms":m.created_ms,"modified_ms":m.modified_ms,
                     "background_color":m.background_color,"dark_mode_compatibility":m.dark_mode_compatibility,
+                    "default_page_dimensions":m.default_page_dimensions,"page_mode":m.page_mode,"orientation":m.orientation,
                     "page_dimensions":m.page_dimensions,"flow_dimensions":m.flow_dimensions,"flow_page_padding":m.flow_page_padding,
                     "page_ids":m.page_ids,"note_text":m.note_text,"note_title":m.note_title,
                     "media_assets":m.media_assets.iter().map(|a| json!({"name":a.name,"archive_id":a.archive_id,"mime_type":a.mime_type,"byte_length":a.data.len()})).collect::<Vec<_>>()});
@@ -195,7 +196,7 @@ impl Source {
                 let bytes = self.entry(entry)?;
                 match r["kind"].as_str().unwrap() {
                     "page" => {
-                        json!({"entry":entry,"header":stored.page.header,"integrityOffset":stored.page.integrity_offset,"semanticElements":parsed.document.pages[page_index].elements,"template":parsed.document.pages[page_index].template,"backgroundColor":parsed.document.pages[page_index].background_color,"contentBounds":parsed.document.pages[page_index].content_bbox,"currentLayer":stored.page.layers.current_layer_index,
+                        json!({"entry":entry,"header":stored.page.header,"integrityOffset":stored.page.integrity_offset,"semanticElements":parsed.document.pages[page_index].elements,"template":parsed.document.pages[page_index].template,"backgroundColor":parsed.document.pages[page_index].background_color,"background":parsed.document.pages[page_index].background,"contentBounds":parsed.document.pages[page_index].content_bbox,"currentLayer":stored.page.layers.current_layer_index,
                         "layers":stored.page.layers.layers.iter().enumerate().map(|(i,l)| json!({"index":i,"number":l.number,"objects":l.objects.len(),"offset":l.header_offset})).collect::<Vec<_>>() })
                     }
                     "layer" => {
@@ -395,11 +396,18 @@ mod source_tests {
     #[test]
     fn replay_reuses_layout_identity_and_renders_background_only_on_request() {
         let bytes = fixture();
-        let parsed = sdocx::parse_bytes_detailed_with_options(
+        let mut parsed = sdocx::parse_bytes_detailed_with_options(
             &bytes,
             &super::super::browser_parse_options(),
         )
         .unwrap();
+        parsed.document.metadata.default_page_dimensions = Some((1080, 1527));
+        parsed.document.metadata.orientation = Some(0);
+        parsed.document.pages[0].template = Some(sdocx::PageTemplate {
+            id: 7,
+            source: sdocx::PageTemplateSource::BuiltIn,
+        });
+        parsed.document.pages[0].background.width = Some(1080);
         let layout = sdocx::layout_document(&parsed.document);
         let mut source = Source::new(&bytes).unwrap();
         let index: Value = serde_json::from_str(
@@ -430,6 +438,24 @@ mod source_tests {
         options.color_mode = sdocx::RenderColorMode::Dark;
         let expected =
             sdocx::render_layout_page_svg(&parsed.document, &layout, 0, &options).unwrap();
+        assert!(expected.svg.contains("data-page-template=\"dots\""));
+        let metadata: Value = serde_json::from_str(
+            &source
+                .request(&parsed, &layout, r#"{"kind":"document"}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            metadata["metadata"]["default_page_dimensions"],
+            json!([1080, 1527])
+        );
+        let page: Value = serde_json::from_str(
+            &source
+                .request(&parsed, &layout, r#"{"kind":"page","page":0}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(page["background"]["width"], 1080);
         assert_eq!(background["svg"], expected.svg);
         assert_eq!(background["defaultInk"], "#ffffff");
     }

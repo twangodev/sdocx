@@ -96,6 +96,10 @@ pub struct Page {
     pub background_color: Option<Color>,
     /// Page template metadata, if present in the page header.
     pub template: Option<PageTemplate>,
+    /// Raw background settings retained for inspection and template validation.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub background: PageBackground,
+
     /// The strokes drawn on this page.
     pub strokes: Vec<Stroke>,
     /// Non-stroke page objects parsed from the page stream.
@@ -1056,6 +1060,18 @@ pub struct ParagraphPredefinedStyle {
     pub style: PredefinedTextStyle,
     /// Style Samsung applies to the next paragraph after Enter.
     pub following_style: PredefinedTextStyle,
+}
+
+/// Optional fields of the native page background. Unknown values stay intact.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct PageBackground {
+    pub template_uri: Option<String>,
+    pub image_id: Option<u32>,
+    pub image_mode: Option<u32>,
+    pub width: Option<u32>,
+    pub rotation: Option<u32>,
 }
 
 /// Page template metadata.

@@ -204,6 +204,15 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         metadata.page_dimensions = Some((page.width, page.height));
         metadata.background_color = page.background_color;
     }
+    for (page, stored) in pages.iter().zip(&stored_pages) {
+        if let Err(reason) = crate::page_background::dot_pattern(page, &metadata) {
+            report.warning(
+                DiagnosticCode::UnsupportedPageTemplate,
+                Some(stored.archive_entry.clone()),
+                format!("page {}: {reason}", page.uuid),
+            );
+        }
+    }
     let integrity = integrity.map(|verifier| verifier.finish(page_manifest.as_ref(), &mut report));
 
     Ok(ParsedDocument {
@@ -566,6 +575,7 @@ mod tests {
             content_bbox: BoundingBox::default(),
             background_color: None,
             template: None,
+            background: Default::default(),
             strokes: Vec::new(),
             elements: Vec::new(),
         }

@@ -587,3 +587,61 @@ fn image_fixture_renders_all_embedded_images_on_their_reference_pages() {
     );
     assert!(rendered[2].svg.contains("overflow=\"hidden\""));
 }
+
+#[test]
+#[cfg(feature = "render")]
+#[ignore = "requires the external Hugging Face compatibility corpus"]
+fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
+    let root = corpus_root().canonicalize().unwrap();
+    let fixture = read_manifest(MANIFEST)
+        .unwrap()
+        .fixtures
+        .into_iter()
+        .find(|fixture| fixture.id == "02-shapes-and-dot-calibration")
+        .unwrap();
+    let document = sdocx::parse(verified_asset(&root, &fixture.sdocx).unwrap()).unwrap();
+    assert_eq!(document.pages.len(), 2);
+    assert_eq!(
+        document.metadata.default_page_dimensions,
+        Some((1848, 2613))
+    );
+    let page = &document.pages[0];
+    assert_eq!(page.template.unwrap().id, 7);
+    assert_eq!(page.background.image_mode, Some(2));
+    assert_eq!(page.background.width, Some(1848));
+    for stroke in &page.strokes[47..59] {
+        assert!((297..=462).contains(&stroke.points.len()));
+        assert_eq!(stroke.pressures.len(), stroke.points.len());
+        assert_eq!(stroke.timestamps.len(), stroke.points.len());
+    }
+    let rendered = sdocx::render_document_svg(&document, &Default::default());
+    assert_eq!(rendered.len(), 1);
+    assert_eq!(rendered[0].source_page_index, 0);
+    assert_eq!(rendered[0].svg.matches("data-page-template=").count(), 1);
+    let layout = sdocx::layout_document(&document);
+    assert_eq!(
+        sdocx::render_layout_page_svg(&document, &layout, 0, &Default::default())
+            .unwrap()
+            .svg,
+        rendered[0].svg
+    );
+    // A debugger background removes ink, but shares template and native objects.
+    let mut background = document.clone();
+    background.pages[0].strokes.clear();
+    let svg = &sdocx::render_document_svg(&background, &Default::default())[0].svg;
+    assert_eq!(
+        svg.matches("<path d=").count(),
+        6,
+        "five native shapes and one line"
+    );
+    assert!(svg.contains("M 466.05 403.90"), "pentagon path");
+    assert!(svg.contains("M 678.82 398.50"), "hexagon path");
+    assert!(svg.contains("data-page-template="));
+    #[cfg(feature = "pdf")]
+    {
+        let bytes = sdocx::render_document_pdf(&document, &Default::default(), &Default::default())
+            .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        assert_eq!(pdf.get_pages().len(), 1);
+    }
+}

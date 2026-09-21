@@ -224,6 +224,7 @@ fn has_list_compatibility_page(document: &Document) -> bool {
         && flow_width == last.width
         && last.width == previous.width
         && last.height == previous.height
+        && last.background == previous.background
         && last.template == previous.template
         && last.background_color == previous.background_color
 }
@@ -427,6 +428,7 @@ mod tests {
             content_bbox: BoundingBox::default(),
             background_color: None,
             template: None,
+            background: Default::default(),
             strokes: Vec::new(),
             elements: Vec::new(),
         }

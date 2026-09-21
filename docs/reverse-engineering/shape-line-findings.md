@@ -122,7 +122,7 @@ This is runtime coverage, not a Samsung reference comparison.
 Native contracts and synthetic tests do not establish Samsung visual equivalence.
 Obtain real shape/line documents with matching Samsung PDF exports to measure
 placement, template geometry and style fidelity. Rounded/specialized templates,
-shape custom paths, arc/oval path commands, connector routing, pen simulation,
+arc/oval path commands, connector routing, pen simulation,
 gradients, dashed/compound outlines and arrowheads remain incomplete. Known
 basic templates may render approximately when unsupported adjustments exist.
 Text wrapping, margins, gravity and embedded-object layout retain the existing

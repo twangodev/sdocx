@@ -73,6 +73,8 @@ pub enum DiagnosticCode {
     UnsupportedTextBoxFeature,
     /// Image data is retained but includes features not fully interpreted or rendered.
     UnsupportedImageFeature,
+    /// Page template or background settings have no verified renderer.
+    UnsupportedPageTemplate,
     /// The main image asset is absent, unsupported, or ambiguous.
     UnresolvedImageMedia,
     /// Without a media manifest, a unique numeric filename prefix was used.

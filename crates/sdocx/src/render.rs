@@ -96,7 +96,7 @@ fn render_layout_page(
     let page = &layout_page.page;
     let svg = render_page_contents_svg(
         page,
-        document.metadata.background_color.as_ref(),
+        &document.metadata,
         &document.metadata.media_assets,
         document.metadata.flow_page_padding,
         dark_mode,
@@ -124,11 +124,12 @@ fn color_hex(c: &Color) -> String {
 
 fn render_page_contents_svg(
     page: &Page,
-    fallback_bg_color: Option<&Color>,
+    metadata: &crate::DocumentMetadata,
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     dark_mode: bool,
 ) -> String {
+    let fallback_bg_color = metadata.background_color.as_ref();
     // Dark-mode notes have light ink, so prefer the document's dark background
     // over the light page template; otherwise keep the template background.
     let bg_color = if dark_mode {
@@ -165,6 +166,10 @@ fn render_page_contents_svg(
     )
     .unwrap();
 
+    if let Ok(Some(dots)) = crate::page_background::dot_pattern(page, metadata) {
+        render_dot_background(&mut svg, page, dots, dark_mode);
+    }
+
     let default_ink = if dark_mode {
         DEFAULT_INK_DARK_MODE
     } else {
@@ -186,6 +191,33 @@ fn render_page_contents_svg(
 
     svg.push_str("</svg>\n");
     svg
+}
+
+fn render_dot_background(
+    svg: &mut String,
+    page: &Page,
+    dots: crate::page_background::DotPattern,
+    dark_mode: bool,
+) {
+    let crate::page_background::DotPattern {
+        pitch_x,
+        pitch_y,
+        top,
+        radius_x,
+        radius_y,
+        rows,
+    } = dots;
+    let color = if dark_mode { "#fafafa" } else { "#010102" };
+    let scale_y = radius_y / radius_x;
+    // Samsung draws round, zero-length dashes. Explicit row subpaths avoid
+    // fractional SVG pattern-tile rounding in raster exporters. Dash phase
+    // restarts at x=0 for every row; the outer SVG clips the page boundaries.
+    let mut path = String::new();
+    for row in 0..rows {
+        let y = (top + radius_y + f64::from(row) * pitch_y) / scale_y;
+        write!(path, "M 0 {y:.6} H {} ", page.width).unwrap();
+    }
+    writeln!(svg, r#"  <path data-page-template="dots" d="{}" fill="none" stroke="{color}" stroke-opacity="0.2" stroke-width="{:.6}" stroke-linecap="round" stroke-dasharray="0 {pitch_x:.6}" transform="scale(1 {scale_y:.9})"/>"#, path.trim_end(), 2.0 * radius_x).unwrap();
 }
 
 fn render_element(
@@ -1658,6 +1690,7 @@ mod tests {
             content_bbox: BoundingBox::default(),
             background_color: None,
             template: None,
+            background: Default::default(),
             strokes: vec![Stroke {
                 bbox: BoundingBox::default(),
                 points: vec![Point { x: 1.0, y: 1.0 }, Point { x: 9.0, y: 9.0 }],

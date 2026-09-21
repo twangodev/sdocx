@@ -27,8 +27,10 @@ supported packed stroke channels follow observed SDK contracts. Standalone text
 boxes use bounded native frames and preserve Unicode, placement and rich-text
 records. Image objects also use native frames and resolve their displayed asset
 through media-manifest bind IDs. Shapes and lines decode native geometry,
-outline/fill styles and embedded shape text; common templates, straight lines
-and supported curves render to SVG. Text layout, image crop/border effects,
+outline/fill styles and embedded shape text; saved drawing paths preserve adjusted
+shapes, polygons and supported curves. Narrow/medium/wide dot backgrounds use
+APK-derived dimensions and spacing through the shared SVG renderer used by
+viewing, replay and exports. See the [02 fixture findings](docs/reverse-engineering/shapes-dot-calibration-findings.md). Text layout, image crop/border effects,
 advanced shape styles and other page objects remain best-effort.
 
 A successful parse may omit unsupported objects or properties; it does not
@@ -37,7 +39,7 @@ against Samsung Notes when fidelity matters. Protected documents must be
 unlocked or exported before parsing.
 
 Use `parse_detailed` or `parse_bytes_detailed` to inspect `ParseReport`, including
-detected unsupported text/image/shape features and unresolved media. The CLI prints
+detected unsupported text/image/shape/template features and unresolved media. The CLI prints
 these findings during conversion, and WASM exposes them through document
 inspection. An empty report does not guarantee complete rendering fidelity.
 

@@ -41,6 +41,7 @@ pub(crate) fn parse_page(
         content_bbox: BoundingBox::default(),
         background_color: None,
         template: None,
+        background: Default::default(),
         strokes: Vec::with_capacity(count_strokes(&current_layer.objects)),
         elements: Vec::new(),
     };
@@ -216,11 +217,12 @@ fn parse_page_properties(data: &[u8], stored: &StoredPage, page: &mut Page) -> R
                 }
             }
             2 => {
-                fields.read_utf16_u16("template URI")?;
+                page.background.template_uri = Some(fields.read_utf16_u16("template URI")?);
             }
-            3 | 4 | 6 | 7 => {
-                fields.read_u32("background property")?;
-            }
+            3 => page.background.image_id = Some(fields.read_u32("background image ID")?),
+            4 => page.background.image_mode = Some(fields.read_u32("background image mode")?),
+            6 => page.background.width = Some(fields.read_u32("background width")?),
+            7 => page.background.rotation = Some(fields.read_u32("background rotation")?),
             5 => {
                 let argb = fields.read_u32("background color")?;
                 page.background_color = Some(Color {
@@ -274,5 +276,5 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 }
 
 fn is_builtin_template_id(id: u32) -> bool {
-    id != 0 && id <= 0xFFFF
+    id != 0
 }

@@ -151,3 +151,57 @@ five shapes, one line, and five retained geometry-property warnings. All three
 locked corpus pairs pass structural and reference page-count checks. The deleted
 01 PDF in the working dataset was left untouched; that check used its local LFS
 object in a temporary corpus directory.
+
+## APK-backed dot renderer
+
+The Java `SpenWPage` constants identify narrow/medium/wide dots as 7/8/9.
+The arm64 `libSPenComposer.so` drawing path establishes:
+
+| Symbol/address | Rule |
+| --- | --- |
+| `DotTemplateDrawing::getLineHeightSize`, `0x3f2494`, table `0x20d10c` | Native sizes 12, 17, 28. |
+| `TemplateDrawingBase::GetLineHeight`, `0x3f3d44` | Vertical pitch = size × 1.35 × document density. |
+| `DotTemplateDrawing::Draw`, `0x3f2244` | One-row bitmap with height `ceil(pitch)`; round zero-length dashes, horizontal pitch = bitmap height + 1.5 × density. |
+| `0x3f232c–0x3f2358` | Light color `#010102`, dark color `#fafafa`, alpha 0.2. |
+| `0x3f23ac–0x3f2418` | Diameter 2 × density, minimum one native pixel at unit scale; first center at x=0, y=diameter/2. |
+| `TemplateDrawing::onDraw`, `0x3f1f18` | Repeat bitmap, scale Y by pitch / bitmap height; add constant 65 to the top before scaling. |
+| `libSPenContent.so`, constant table `0x7e00`, `CalculatePixels` `0x1331c` | Constant 65 is 10 document-density units, with no integer rounding. |
+
+`page_background.rs` derives this geometry from native default dimensions and
+orientation. The renderer emits one dashed SVG path after the solid background and before
+all ink/objects, with one horizontal subpath per row and round zero-length
+dashes. A fractional Y scale preserves the native bitmap's vertical adjustment.
+It does not reproduce Samsung's bitmap antialiasing or zoom-dependent
+minimum-pixel widening. SVG size scales with rows, not dots or zoom; configurations
+above 10,000 rows are rejected with a diagnostic to bound rendering work. CLI SVG,
+PNG/PDF export, WASM viewing and replay backgrounds share this implementation.
+No separate web template renderer or cache is added.
+
+At density `1848 / 360`, the native formula gives pitches 91.7 × 83.160004,
+agreeing with the reference measurements above within rasterization rounding.
+The supported IDs are only the three variants confirmed by the same native
+class. Other templates, custom URI/image/PDF backgrounds, rotated dots, or
+missing native dimensions/orientation retain metadata and produce
+`UnsupportedPageTemplate`; they keep the solid background. Raw background image
+ID, mode, width, rotation and template URI are now exposed rather than discarded.
+Mode/width belong to background-image handling and do not determine built-in dot
+spacing. Unknown template IDs retain the full `u32` value.
+
+`TemplatePDFWriter::writeDot` (`0x38425c`) uses different vector-export color,
+radius and spacing rules. The 02 PDF contains a JPEG background, so this change
+follows the native drawing/capture path; it does not conflate the two exporters.
+
+
+Raster validation caught an exporter detail: resvg 0.47 rounds SVG pattern-tile
+sizes to integer pixels (`render_pattern_pixmap` in its `src/path.rs`). A
+91.7 × 83.16 repeating tile became 92 × 83, causing cumulative drift. Explicit
+row subpaths preserve fractional coordinates in browser, PNG and PDF rendering
+without adding a second renderer. The 02 visual comparison at 1848 × 2613 now
+reports 0.85% changed pixels, 1.25% missing ink and 0.72% extra ink (one-pixel
+matching tolerance). Remaining differences include bitmap antialiasing and the
+existing pressure-width model; calibration stroke widths were not changed.
+
+The Samsung PDF MediaBox is 600 × 848 points while its captured background is
+848.3766 points tall. The comparison runner allows one raster pixel or half a
+PDF point of page-size rounding; a larger mismatch still fails. Content is not
+translated or aligned to reduce the error.

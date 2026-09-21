@@ -29,6 +29,7 @@ mod note_metadata;
 mod object;
 mod object_flexible;
 mod page;
+mod page_background;
 #[cfg(feature = "pdf")]
 pub mod pdf;
 #[cfg(feature = "render")]
