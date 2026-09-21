@@ -606,6 +606,19 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
         Some((1848, 2613))
     );
     let page = &document.pages[0];
+    let shapes: Vec<_> = page
+        .elements
+        .iter()
+        .filter_map(|element| {
+            if let sdocx::PageElement::Shape(shape) = element {
+                Some(shape)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(shapes.len(), 5);
+    assert!(shapes.iter().all(|shape| shape.text_editable));
     assert_eq!(page.template.unwrap().id, 7);
     assert_eq!(page.background.image_mode, Some(2));
     assert_eq!(page.background.width, Some(1848));
@@ -617,6 +630,17 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     let rendered = sdocx::render_document_svg(&document, &Default::default());
     assert_eq!(rendered.len(), 1);
     assert_eq!(rendered[0].source_page_index, 0);
+    let mut read_only = document.clone();
+    for element in &mut read_only.pages[0].elements {
+        if let sdocx::PageElement::Shape(shape) = element {
+            shape.text_editable = false;
+        }
+    }
+    assert_eq!(
+        sdocx::render_document_svg(&read_only, &Default::default())[0].svg,
+        rendered[0].svg,
+        "text editability must not change saved geometry rendering"
+    );
     assert_eq!(rendered[0].svg.matches("data-page-template=").count(), 1);
     let layout = sdocx::layout_document(&document);
     assert_eq!(

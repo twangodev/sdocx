@@ -145,6 +145,36 @@ fn assert_format(kind: u8, payload: &[u8]) {
 }
 
 #[test]
+fn shape_text_editability_is_metadata_and_unknown_properties_still_warn() {
+    #[cfg(feature = "render")]
+    let mut baseline = None;
+    for mask in [0, 0x04, 0x40, 0x44] {
+        let mut payload = base(0.0);
+        payload.extend(outline());
+        let mut geometry = frame(7, 32, &shape_fixed(4, 30.0), &shape_fields());
+        geometry[11] = mask;
+        payload.extend(geometry);
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+        assert_eq!(
+            as_shape(&parsed.document.pages[0].elements[0]).text_editable,
+            mask & 4 != 0
+        );
+        assert_eq!(has_shape_warning(&parsed), mask & 0x40 != 0);
+        #[cfg(feature = "render")]
+        {
+            let svg = sdocx::render_document_svg(&parsed.document, &Default::default())[0]
+                .svg
+                .clone();
+            if let Some(expected) = &baseline {
+                assert_eq!(&svg, expected);
+            } else {
+                baseline = Some(svg);
+            }
+        }
+    }
+}
+
+#[test]
 fn decodes_shape_geometry_rotation_and_independent_outline_and_fill() {
     let parsed = sdocx::parse_bytes_detailed(&single(7, &shape(4))).unwrap();
     assert!(!has_shape_warning(&parsed));

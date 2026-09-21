@@ -147,7 +147,8 @@ landscape, then divides by 360. This supplies native template scaling without
 inferring a scale from the exported PDF.
 
 The manifest now locks the 02 hashes, two stored/one visible page, 77 strokes,
-five shapes, one line, and five retained geometry-property warnings. All three
+five shapes, one line, and no diagnostics. The formerly unknown `0x04`
+property is [text editability](shape-line-findings.md#shape-text-editability-property-0x04). All three
 locked corpus pairs pass structural and reference page-count checks. The deleted
 01 PDF in the working dataset was left untouched; that check used its local LFS
 object in a temporary corpus directory.

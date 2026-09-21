@@ -150,5 +150,19 @@ Additional arm64 evidence from the same APK:
 Synthetic regressions cover adjusted paths, rotations, fill/outline alpha,
 quadratic/cubic segments, unknown template IDs with explicit geometry,
 truncation, non-finite coordinates, unknown verbs and trailing path bytes.
-The existing geometry-property warning remains: fixture 02 sets bit 2 of the
-shape property mask, whose full rendering contract has not been established.
+
+## Shape text-editability property (`0x04`)
+
+The arm64 `libSPenModel.so` identifies type-7 property bit 2 as text
+editability. `GetShapeBinary_PropertyFlag` (`0x3a7f84`) reads byte 21 of
+`ObjectShapeText` (the shape pointer at offset 56) and writes bit 2.
+`ApplyShapeBinary_Format28Data` (`0x3a8674`) extracts bit 2 at `0x3a86e4`
+and calls `ObjectShapeText::SetTextEditable(bool)` at `0x3a86e8`.
+That setter (`0x3b3108`) reads the same member at `0x3b3138`.
+
+The decoder exposes this as `NativeShape::text_editable`. It controls editing
+permission; saved geometry rendering does not depend on it. Fixture 02 sets
+this bit on all five shapes, so these properties no longer cause unsupported
+geometry warnings. Other unknown property bits and trailing geometry bytes
+still produce separate diagnostics. Synthetic tests cover both editability
+values, unknown bits alone and combined with `0x04`, and unchanged SVG output.

@@ -65,6 +65,9 @@ impl Default for ShapeStyle {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct NativeShape {
+    /// Whether Samsung Notes permits editing the shape text (type-7 property bit 2).
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub text_editable: bool,
     pub text_area_type: Option<TextAreaType>,
     /// Stored type-0 metadata. Normal shape writers put drawn bounds here.
     pub metadata: ObjectMetadata,
@@ -153,8 +156,12 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     };
     let control_points = read_points(&mut fixed)?;
     let drawn_bbox = read_bbox(&mut fixed)?;
-    if fixed.remaining() != 0 || frame.properties.has_other_bits(0) {
-        unsupported.push("shape geometry extensions or properties");
+    let text_editable = frame.properties.contains(2);
+    if fixed.remaining() != 0 {
+        unsupported.push("shape geometry extensions");
+    }
+    if frame.properties.has_other_bits(0x04) {
+        unsupported.push("unknown shape geometry properties");
     }
     if !supported_path && !control_points.is_empty() {
         unsupported.push("custom paths or template control points");
@@ -228,6 +235,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     read_extensions(&mut reader, &mut unsupported)?;
     Ok(Decoded {
         value: NativeShape {
+            text_editable,
             text_area_type,
             metadata,
             shape_type,
