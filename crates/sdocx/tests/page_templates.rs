@@ -50,7 +50,7 @@ fn background_fields_and_unknown_template_identifiers_are_preserved() {
 
 #[test]
 fn templates_without_native_scaling_are_reported_instead_of_guessed() {
-    for id in [7, 8, 9, 10, 65536, u32::MAX] {
+    for id in [1, 2, 3, 7, 8, 9, 10, 65536, u32::MAX] {
         let parsed = template_note(id);
         assert!(
             parsed
@@ -70,7 +70,7 @@ fn templates_without_native_scaling_are_reported_instead_of_guessed() {
 }
 
 #[cfg(feature = "render")]
-fn dotted_document(id: u32, width: u32, height: u32, orientation: i32) -> sdocx::Document {
+fn template_document(id: u32, width: u32, height: u32, orientation: i32) -> sdocx::Document {
     let mut document = template_note(id).document;
     document.pages[0].width = width;
     document.pages[0].height = height;
@@ -83,7 +83,7 @@ fn dotted_document(id: u32, width: u32, height: u32, orientation: i32) -> sdocx:
 #[test]
 fn native_grid_is_vector_scales_by_document_axis_and_clears_the_top_margin() {
     use sdocx::{RenderColorMode, RenderOptions, render_document_svg};
-    let document = dotted_document(7, 1848, 2613, 0);
+    let document = template_document(7, 1848, 2613, 0);
     let svg = &render_document_svg(&document, &Default::default())[0].svg;
     // APK-derived geometry, independently checked against the Samsung PDF:
     // measured source-space pitches are 91.6983 and 83.1642 (JPEG rounding).
@@ -111,11 +111,11 @@ fn native_grid_is_vector_scales_by_document_axis_and_clears_the_top_margin() {
             .svg
             .contains("stroke=\"#fafafa\" stroke-opacity=\"0.2\"")
     );
-    let landscape = dotted_document(7, 2613, 1848, 1);
+    let landscape = template_document(7, 2613, 1848, 1);
     let svg_landscape = &render_document_svg(&landscape, &Default::default())[0].svg;
     assert!(svg_landscape.contains("stroke-dasharray=\"0 91.700000\""));
     for (id, y) in [(7, "53.500000"), (8, "73.500000"), (9, "118.500000")] {
-        let smaller = dotted_document(id, 1080, 1527, 0);
+        let smaller = template_document(id, 1080, 1527, 0);
         let svg = &render_document_svg(&smaller, &Default::default())[0].svg;
         assert!(
             svg.contains(&format!("stroke-dasharray=\"0 {y}\"")),
@@ -127,7 +127,7 @@ fn native_grid_is_vector_scales_by_document_axis_and_clears_the_top_margin() {
 #[cfg(feature = "render")]
 #[test]
 fn unknown_or_ambiguous_templates_keep_the_solid_background() {
-    let mut document = dotted_document(7, 1848, 2613, 0);
+    let mut document = template_document(7, 1848, 2613, 0);
     document.pages[0].background_color = Some(sdocx::Color {
         r: 18,
         g: 52,
@@ -140,7 +140,7 @@ fn unknown_or_ambiguous_templates_keep_the_solid_background() {
         assert!(svg.contains("fill=\"#123456\""));
     }
     document.metadata.orientation = Some(0);
-    for id in [1, 10, 65536] {
+    for id in [4, 10, 65536] {
         document.pages[0].template.as_mut().unwrap().id = id;
         assert!(
             !sdocx::render_document_svg(&document, &Default::default())[0]
@@ -160,8 +160,41 @@ fn unknown_or_ambiguous_templates_keep_the_solid_background() {
 #[cfg(feature = "render")]
 #[test]
 fn extreme_template_geometry_has_bounded_render_work() {
-    let document = dotted_document(7, 1, u32::MAX, 0);
+    let document = template_document(7, 1, u32::MAX, 0);
     let svg = &sdocx::render_document_svg(&document, &Default::default())[0].svg;
     assert!(!svg.contains("data-page-template="));
     assert!(svg.len() < 1024);
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn ruled_templates_share_native_spacing_and_use_theme_specific_alpha() {
+    use sdocx::{RenderColorMode, RenderOptions, render_document_svg};
+    for (id, pitch) in [(1, 83.16), (2, 117.81), (3, 194.04)] {
+        let doc = template_document(id, 1848, 2613, 0);
+        let svg = &render_document_svg(&doc, &Default::default())[0].svg;
+        assert!(svg.contains("data-page-template=\"lines\""));
+        let ys: Vec<f64> = svg
+            .split("M 0 ")
+            .skip(1)
+            .map(|row| row.split(' ').next().unwrap().parse().unwrap())
+            .collect();
+        assert!((ys[1] - ys[0] - pitch).abs() < 0.001);
+        assert!((ys[0] - 52.0).abs() < 1.0);
+        assert!(svg.contains("stroke=\"#010102\" stroke-opacity=\"0.2\""));
+        assert!(!svg.contains("stroke-dasharray"));
+        let mut dark = RenderOptions::default();
+        dark.color_mode = RenderColorMode::Dark;
+        assert!(
+            render_document_svg(&doc, &dark)[0]
+                .svg
+                .contains("stroke=\"#fafafa\" stroke-opacity=\"0.3\"")
+        );
+        let landscape = template_document(id, 2613, 1848, 1);
+        assert!(
+            render_document_svg(&landscape, &Default::default())[0]
+                .svg
+                .contains(&format!("M 0 {:.6}", ys[0]))
+        );
+    }
 }

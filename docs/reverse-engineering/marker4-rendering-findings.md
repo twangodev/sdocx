@@ -41,7 +41,8 @@ channel exceeds 35. Colored-mask intersection over union improved from
 Mean absolute channel error within the shared colored mask fell from 35.18
 to 4.73. These measurements cover this fixture, not general native parity.
 
-Remaining differences include native mask filtering, ruled paper (template 1),
+Narrow ruled paper (template 1) is now supported by the shared background
+renderer. Remaining differences include native mask filtering,
 typed-text placement/size, and the debugger's existing lack of a separate
 Darken highlighter batch. Other Marker4 versions, rainbow effects and live
 prediction remain unsupported by this geometry path.

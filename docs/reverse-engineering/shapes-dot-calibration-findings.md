@@ -232,3 +232,27 @@ renders correctly, and the second stored page stays inspectable without a
 second visible preview. WebKit could not launch on this host because its system
 libraries are missing. Workspace all-feature tests, parser-only checks, Clippy,
 formatting, web type checks, 39 web unit tests and the production build pass.
+
+## Ruled templates: narrow, medium and wide
+
+The shared background model also supports built-in IDs 1/2/3. Composer's
+`TemplateDrawingFactory::CreateTemplateDrawing` (`0x3f3e7c`, jump table
+`0x20d231`) selects `LineTemplateDrawing` and variants 0/1/2.
+`getLineHeightSize` (`0x3f2ad4`, table `0x20d18c`) returns 12/17/28,
+using the same density, 1.35 multiplier, bitmap-height correction and
+10-density-unit top inset as dots.
+
+`LineTemplateDrawing::Draw` (`0x3f2898`) draws a continuous horizontal line
+at half its width inside the repeating tile. At unit zoom, width is
+`max(0.5 * density, 1)`, then scaled vertically with the tile. Light ink
+is `#010102` at alpha 0.2; dark ink is `#fafafa` at alpha 0.3
+(constants `0x1f9134` and `0x1f9184`). Explicit SVG rows preserve the
+fractional spacing through the existing export and replay-background paths.
+Native zoom-dependent minimum-pixel widening and bitmap filtering remain
+approximations.
+
+Fixture 04 uses narrow rules: 31 rows, with native pitch 83.160004 in
+1848-wide document coordinates. Both stored pages now pass template
+validation without `UnsupportedPageTemplate`. Medium/wide spacing and dark
+colors are covered by the existing template test suite; only narrow has
+been compared with this Samsung PDF.

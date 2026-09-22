@@ -215,7 +215,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
         metadata.background_color = page.background_color;
     }
     for (page, stored) in pages.iter().zip(&stored_pages) {
-        if let Err(reason) = crate::page_background::dot_pattern(page, &metadata) {
+        if let Err(reason) = crate::page_background::template_pattern(page, &metadata) {
             report.warning(
                 DiagnosticCode::UnsupportedPageTemplate,
                 Some(stored.archive_entry.clone()),

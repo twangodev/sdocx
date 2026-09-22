@@ -166,8 +166,15 @@ fn render_page_contents_svg(
     )
     .unwrap();
 
-    if let Ok(Some(dots)) = crate::page_background::dot_pattern(page, metadata) {
-        render_dot_background(&mut svg, page, dots, dark_mode);
+    if let Ok(Some(pattern)) = crate::page_background::template_pattern(page, metadata) {
+        match pattern {
+            crate::page_background::TemplatePattern::Dots(dots) => {
+                render_dot_background(&mut svg, page, dots, dark_mode)
+            }
+            crate::page_background::TemplatePattern::Lines(lines) => {
+                render_line_background(&mut svg, page, lines, dark_mode)
+            }
+        }
     }
 
     let default_ink = if dark_mode {
@@ -209,6 +216,28 @@ fn render_page_contents_svg(
 
     svg.push_str("</svg>\n");
     svg
+}
+
+fn render_line_background(
+    svg: &mut String,
+    page: &Page,
+    lines: crate::page_background::LinePattern,
+    dark_mode: bool,
+) {
+    let color = if dark_mode { "#fafafa" } else { "#010102" };
+    let opacity = if dark_mode { 0.3 } else { 0.2 };
+    // Explicit rows preserve fractional spacing in browser and PDF/PNG output.
+    write!(svg, "  <path data-page-template=\"lines\" d=\"").unwrap();
+    for row in 0..lines.rows {
+        let y = lines.first_y + f64::from(row) * lines.pitch_y;
+        write!(svg, "M 0 {y:.6} H {} ", page.width).unwrap();
+    }
+    writeln!(
+        svg,
+        "\" fill=\"none\" stroke=\"{color}\" stroke-opacity=\"{opacity}\" stroke-width=\"{:.6}\"/>",
+        lines.width
+    )
+    .unwrap();
 }
 
 fn render_dot_background(
