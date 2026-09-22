@@ -89,8 +89,10 @@ A saved `Marker2` stroke whose settings are absent or whose first settings
 token is a nonnegative integer uses the same stamp path with one radius for
 the whole stroke. Pressure does not change that radius. The saved ARGB alpha
 is one `fill-opacity` on the path. V1 and V2 share this geometry; the V2
-thin-edge shader is not ported. `Marker`, `Marker3`, `Marker4`, and the
-straight-line aliases stay approximate. Strokes with `top_layer_pen` are
+thin-edge shader is not ported. `Marker` and `Marker3` stay on the pressure fallback. Marker4 settings `8;`
+now use a shared rounded rectangular stamp approximation; see
+[Marker4 findings](marker4-rendering-findings.md). Other Marker4 settings and
+straight-line aliases stay on the fallback. Strokes with `top_layer_pen` are
 drawn after the page's other objects, in stored order, inside one
 `mix-blend-mode:darken` group. Debugger canvas replay applies the same per-stroke opacity to the stamp
 union, but does not apply that batch blend.

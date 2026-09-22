@@ -1608,6 +1608,26 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
     let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
     let color = &paint.color;
     let base_width = paint.width;
+    if let Some(stamp) = paint.rect_stamp {
+        let (sin, cos) = stamp.angle.sin_cos();
+        let (w, h) = (stamp.width, stamp.height);
+        let (rx, ry) = (w * 25. / 99., h * 25. / 99.);
+        write!(
+            svg,
+            "  <path fill=\"{color}\" fill-opacity=\"{:.6}\" transform=\"rotate({})\" d=\"",
+            paint.opacity,
+            stamp.angle.to_degrees()
+        )
+        .unwrap();
+        for p in paint.points.iter() {
+            let x = p.x * cos + p.y * sin - w / 2.;
+            let y = -p.x * sin + p.y * cos - h / 2.;
+            write!(svg, "M{:.4},{:.4}h{:.4}a{rx:.4},{ry:.4} 0 0 1 {rx:.4},{ry:.4}v{:.4}a{rx:.4},{ry:.4} 0 0 1 {:.4},{ry:.4}h{:.4}a{rx:.4},{ry:.4} 0 0 1 {:.4},{:.4}v{:.4}a{rx:.4},{ry:.4} 0 0 1 {rx:.4},{:.4}Z",
+                x+rx,y,w-2.*rx,h-2.*ry,-rx,2.*rx-w,-rx,-ry,2.*ry-h,-ry).unwrap();
+        }
+        writeln!(svg, "\"/>").unwrap();
+        return;
+    }
     if let Some(radii) = &paint.dot_radii {
         let opacity = (paint.opacity - 1.0).abs() > 1e-4;
         if opacity {
@@ -2115,5 +2135,51 @@ mod tests {
         };
         assert_eq!(pixel(0, 0), (255, 255, 255), "bare paper");
         assert_eq!(pixel(16, 16), (0, 0, 0), "cyan over red darkens to black");
+    }
+    #[test]
+    fn marker4_keeps_full_width_and_applies_alpha_once_across_overlapping_stamps() {
+        let mut stroke = marker(true, 30.);
+        stroke.pen_width = 36.2;
+        stroke.points = vec![
+            Point { x: 30., y: 30. },
+            Point { x: 50., y: 30. },
+            Point { x: 70., y: 30. },
+        ];
+        stroke.pressures = vec![0.1, 0.9, 0.1];
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker4".into());
+        rendering.advanced_settings = Some("8;".into());
+        let ink = crate::prepare_stroke(&stroke, false);
+        let stamp = ink.rect_stamp.unwrap();
+        assert!((stamp.height - 35.64).abs() < 1e-6);
+        assert!(ink.segment_widths.is_none());
+        assert_eq!(
+            ink.sample_ends.as_ref().unwrap().last(),
+            Some(&ink.points.len())
+        );
+        let mut page = page_with_uncolored_stroke();
+        page.width = 100;
+        page.height = 60;
+        page.background_color = Some(Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        });
+        page.strokes = vec![stroke];
+        page.elements.clear();
+        let svg = &render_document_svg(&document(page), &RenderOptions::default())[0].svg;
+        let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(100, 60).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        // Native ARGB 0x80ffee00 over white, even where many stamps overlap.
+        for (x, y) in [(40, 30), (50, 20), (60, 40)] {
+            let p = pixmap.pixel(x, y).unwrap();
+            assert_eq!((p.red(), p.green(), p.blue()), (255, 246, 127));
+        }
+        assert_eq!(pixmap.pixel(50, 5).unwrap().blue(), 255);
     }
 }

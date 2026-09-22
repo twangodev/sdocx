@@ -89,7 +89,7 @@ impl Quad {
         }
     }
 
-    pub(super) fn at(&self, d: f32) -> P {
+    fn parameter(&self, d: f32) -> f32 {
         let i = self
             .segments
             .partition_point(|&(end, _)| end < d)
@@ -103,7 +103,17 @@ impl Quad {
         let scale = f32::from_bits(0x3800_00fd);
         let t0 = t0 as f32 * scale;
         let t1 = t1 as f32 * scale;
-        let t = t0 + (d - start) * (t1 - t0) / (end - start);
+        t0 + (d - start) * (t1 - t0) / (end - start)
+    }
+
+    pub(super) fn tangent(&self, d: f32) -> P {
+        self.p[1]
+            .sub(self.p[0])
+            .lerp(self.p[2].sub(self.p[1]), self.parameter(d))
+    }
+
+    pub(super) fn at(&self, d: f32) -> P {
+        let t = self.parameter(d);
         self.p[0]
             .lerp(self.p[1], t)
             .lerp(self.p[1].lerp(self.p[2], t), t)

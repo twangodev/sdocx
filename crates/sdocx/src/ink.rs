@@ -3,6 +3,7 @@ use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
 mod fountain;
 mod marker2;
+mod marker4;
 mod path;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
@@ -86,6 +87,15 @@ pub enum InkSupport {
     Reconstructed,
 }
 
+/// Rounded rectangular stamp shared by SVG and Canvas. Angle is in radians.
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct RectStamp {
+    pub width: f64,
+    pub height: f64,
+    pub angle: f64,
+}
+
 /// Geometry and paint shared by SVG and Canvas adapters. The compatibility
 /// profile references original samples; it never changes the stored channels.
 #[derive(Debug, Clone)]
@@ -101,6 +111,8 @@ pub struct PreparedStroke<'a> {
     /// Native circular stamps; one radius per prepared point.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_radii: Option<Vec<f64>>,
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub rect_stamp: Option<RectStamp>,
     pub segment_widths: Option<Vec<f64>>,
     pub width: f64,
     pub bounds: Option<BoundingBox>,
@@ -126,10 +138,20 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
             marker2::prepare(stroke)
                 .map(|ink| (ink.points, ink.sample_ends, ink.radii, ink.opacity))
         });
+    let rect = marker4::prepare(stroke);
+    let rect_stamp = rect.as_ref().map(|ink| ink.stamp);
     let (points, sample_ends, dot_radii, opacity) =
         if let Some((points, ends, radii, opacity)) = native {
             paint.segment_widths = None;
             (Cow::Owned(points), Some(ends), Some(radii), opacity)
+        } else if let Some(ink) = rect {
+            paint.segment_widths = None;
+            (
+                Cow::Owned(ink.points),
+                Some(ink.sample_ends),
+                None,
+                ink.opacity,
+            )
         } else {
             (Cow::Borrowed(stroke.points.as_slice()), None, None, 1.)
         };
@@ -161,11 +183,18 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         if !point.x.is_finite() || !point.y.is_finite() {
             continue;
         }
+        let (rx, ry) = rect_stamp.map_or((radius, radius), |s| {
+            let (sin, cos) = s.angle.sin_cos();
+            (
+                (cos.abs() * s.width + sin.abs() * s.height) / 2.,
+                (sin.abs() * s.width + cos.abs() * s.height) / 2.,
+            )
+        });
         let next = BoundingBox {
-            x_min: point.x - radius,
-            y_min: point.y - radius,
-            x_max: point.x + radius,
-            y_max: point.y + radius,
+            x_min: point.x - rx,
+            y_min: point.y - ry,
+            x_max: point.x + rx,
+            y_max: point.y + ry,
         };
         if let Some(old) = &mut bounds {
             old.x_min = old.x_min.min(next.x_min);
@@ -185,6 +214,7 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         points,
         sample_ends,
         dot_radii,
+        rect_stamp,
         segment_widths: paint.segment_widths,
         width: paint.width,
         bounds,

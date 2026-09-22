@@ -107,6 +107,23 @@ export class ReplayRaster {
 			(geometry.sample_ends?.[last] ?? Math.min(last + 1, points.length)) - 1;
 		if (last < 0) return;
 		ctx.strokeStyle = stroke.color ? geometry.color : this.defaultInk;
+		if (geometry.rect_stamp) {
+			const { width, height, angle } = geometry.rect_stamp;
+			const cos = Math.cos(angle), sin = Math.sin(angle);
+			ctx.save();
+			ctx.rotate(angle);
+			ctx.fillStyle = ctx.strokeStyle;
+			ctx.globalAlpha *= geometry.opacity;
+			ctx.beginPath();
+			for (let j = 0; j <= last; j++) {
+				const p = points[j];
+				ctx.roundRect(p.x*cos + p.y*sin - width/2, -p.x*sin + p.y*cos - height/2,
+					width, height, { x: width*25/99, y: height*25/99 });
+			}
+			ctx.fill();
+			ctx.restore();
+			return;
+		}
 		if (geometry.dot_radii) {
 			ctx.fillStyle = ctx.strokeStyle;
 			ctx.beginPath();

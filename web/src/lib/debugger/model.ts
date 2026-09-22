@@ -40,6 +40,7 @@ export interface ReplayStroke {
 		sample_ends?: number[];
 		width: number;
 		dot_radii?: number[];
+		rect_stamp?: { width: number; height: number; angle: number };
 		segment_widths: number[] | null;
 		bounds: Box | null;
 		color: string;
