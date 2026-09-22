@@ -183,16 +183,20 @@ operations or higher-level object-alpha composition.
 
 ## SDK implications and validation
 
-The shared Marker2 model can retain one color alpha and one stamp size per
-stroke, with maximum coverage within its mask and a separate final batch
-blend. Renderer version remains necessary for edge smoothing. Coordinate
-smoothing, size conversion and mask composition need to be evaluated
-together before changing the SDK's visible stroke output.
+`ink/marker2.rs` now reconstructs that saved model for V1 and V2: one stamp
+radius, one path opacity, and midpoint sampling. Overlapping stamps in one
+stroke are a single filled path, so coverage is a union rather than stacked
+transparency. Top-layer strokes, whichever pen produced them, are painted
+after the rest of the page in one Darken group. The V2 thin-stroke edge ramp
+is still not ported, and `Marker`, `Marker3`, and `Marker4` stay on the
+pressure approximation.
 
 Shader strings were compared byte for byte, enum assignments and uniform
 bindings were checked against instructions/relocations, and paired V1/V2
 routines were compared across the above paths. Extracted library bytes and
-the APK digest were rechecked. No SDK rendering code changed in this step.
+the APK digest were rechecked. The geometry port is checked against the
+synthetic chord in the sampling note and against a Darken raster of cyan over
+red. It is not a Samsung PDF comparison.
 
 Useful new comparisons include thin Marker2 strokes around drawing size 3,
 fractional sizes, one self-crossing stroke, two overlapping strokes and

@@ -207,18 +207,18 @@ two-input example. Neither example includes a forced stamp at X = 4.
 
 ## SDK implications and validation
 
-A Marker2 renderer needs to preserve accepted-input filtering, midpoint
-construction, this distance approximation and spacing carry together.
-Replacing them with exact arclength sampling or adding an unconditional
-endpoint changes the recovered native point sequence. Mask coverage, size
-conversion, projection and final composition remain separate parts of the
-visible result.
+`ink/marker2.rs` preserves accepted-input filtering, midpoint construction,
+this distance approximation, and spacing carry. The two-point chord above is
+a Rust regression. Replacing it with exact arclength sampling or adding an
+unconditional endpoint would change the recovered point sequence. Mask
+coverage, size conversion, and the Darken batch are implemented as one union
+fill, a truncated radius, and a top-layer group. Projection and the V2 edge
+ramp remain separate.
 
 The APK digest and all three extracted libraries were rechecked. V1/V2 end
 instructions were compared, the parameter constant was decoded directly,
 and the synthetic example's single-precision arithmetic was checked with
-assertions. No SDK code changed and no visual parity claim follows from
-these static checks.
+assertions. That check does not establish visual parity with a Samsung PDF.
 
 [Touch-recording findings](stroke-recording-findings.md) now explain repeated
 tap coordinates, Marker2's null replacement provider and replay source reset.

@@ -1,13 +1,16 @@
 # FountainPen live tip investigation
 
-> Historical research: the intermediate APK experiments described below were
-> retired during test cleanup. Their commands and script paths refer to Git
-> revision `40de721`, not the current checkout. Recover them in a separate
-> checkout of that revision. The saved V14/V16 geometry oracles remain; see
+> The reproduction commands in this note refer to experiment scripts and
+> fixtures removed during test cleanup, including `conformance/fountain-live.json`
+> and `conformance/fountain-smoother.json`. Recover them from Git revision
+> `40de721` in a separate checkout. Saved V16 geometry in the SDK, plus
+> `conformance/fountain_native.py` and `conformance/fountain_v14_native.py`,
+> are current. Live tip rendering is not implemented. See
 > [current validation](../../conformance/README.md#native-geometry-checks).
 
-Saved-stroke redraw and live-event rendering are separate paths. The verified
-V14/V16 saved models do not reproduce PointTipManager's live state machine.
+Saved-stroke redraw and live-event rendering are separate paths. The V16
+geometry in `ink/fountain.rs`, and the archived V14 reconstruction, do not
+reproduce PointTipManager's live state machine.
 This document records the verified configuration layer and the remaining
 event-processing work, from Samsung Notes 4.4.45.37's hash-pinned libraries.
 
@@ -78,7 +81,7 @@ The independent scalar model matches every output channel exactly over 50
 sequences / 1,845 updates. Cases cover all four units, lengths 0/50/100,
 several event rates, long-distance motion, batched versus individual events,
 prediction replacement/removal, and seeded mixed sequences with duplicate
-timestamps and varying pressure/tilt. The checked-in `fountain-live.json`
+timestamps and varying pressure/tilt. `fountain-live.json` at revision `40de721`
 contains inputs, observable tip counts, and SHA-256 digests of each complete
 native snapshot. The full optional output contains those snapshots for
 inspection. Both native and scalar tools verify the same references; the
@@ -184,7 +187,7 @@ execution-based reconstruction; the getter name alone is not evidence for it.
 `conformance/fountain_smoother_native.py` now executes the concrete
 `CSAPSPenStrokeSmoother::Transform` (`0x70788`) through its complete native
 `csaps::UnivariateCubicSmoothingSpline` construction, sparse solve and evaluation.
-The 42 checked-in cases in `conformance/fountain-smoother.json` cover lengths
+The 42 cases in `conformance/fountain-smoother.json` at revision `40de721` cover lengths
 0/1/4/5/10/30, strengths 0/25/50/75/100, time offsets and intervals, duplicate
 and backward timestamps, and all-identical timestamps. Run:
 

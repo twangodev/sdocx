@@ -1,8 +1,16 @@
 # Shapes and dot calibration fixture
 
 Investigated `hf/02-shapes-and-dot-calibration.{sdocx,pdf}` on 2026-09-21,
-against parent revision `b0b33d5`. This is an investigation of the existing parser
-and renderer, not a renderer fix.
+against parent revision `b0b33d5`. The sections through
+[follow-up boundaries](#follow-up-implementation-boundaries) record that
+snapshot. Later sections record the renderer changes that followed.
+
+Since that snapshot, built-in dot templates 7/8/9 are drawn, saved native
+shape paths (including pentagon 11 and hexagon 6) are rendered, and the
+corpus manifest locks zero diagnostics for this fixture. Its 77 handwriting
+strokes are FountainPen `18;0;100;` and now use reconstructed V16 stamps.
+The ink comparison after that geometry port is in
+[stroke rendering findings](stroke-rendering-findings.md#fountainpen-v16-saved-geometry-implementation).
 
 ## Fixture and reproduction
 
@@ -25,7 +33,7 @@ cargo run --offline -p sdocx-cli -- hf/02-shapes-and-dot-calibration.sdocx \
 PDF measurements below use PyMuPDF to inspect image placements and rasterize
 both reference and generated SVG at matching source-coordinate scale.
 
-## Dotted background: recognized metadata, missing rendering
+## Dotted background at `b0b33d5`
 
 Both stored pages decode to `PageTemplate { id: 7, source: BuiltIn }` with
 background RGB `(252, 252, 252)`. For this fixture, built-in template 7 is the
@@ -47,12 +55,15 @@ current property decoder stops at bit 9. The empty second page has mask `0x270`,
 the same four known values, and no trailing property bytes. This means bit 10 is
 not required to identify template 7 in this file.
 
-`parse_page_properties` retains the template ID. `render_page_contents_svg`
-paints the background color but never uses `page.template` to draw a pattern.
-The archive has no embedded PNG/JPEG/PDF background asset: its media consists of
-`mediaInfo.dat` and a page SPI stream. Consequently the pattern cannot be restored
-by exposing an overlooked image entry. There is also no template-specific
-unsupported-rendering diagnostic in the current report.
+`parse_page_properties` retained the template ID. At that revision,
+`render_page_contents_svg` painted the background color and never used
+`page.template` to draw a pattern. The archive has no embedded PNG/JPEG/PDF
+background asset: its media consists of `mediaInfo.dat` and a page SPI stream.
+The pattern cannot be restored by exposing an overlooked image entry. That
+revision also had no template-specific unsupported-rendering diagnostic.
+The [dot renderer](#apk-backed-dot-renderer) below draws templates 7/8/9.
+Other templates now keep the solid background and report
+`UnsupportedPageTemplate`.
 
 The PDF contains a separate 1800 × 2545 JPEG for the dotted background, placed at
 `(0, 0, 600, 848.3766)` points. Measuring the gray-dot rows/columns in that image
@@ -84,39 +95,43 @@ intersection gives horizontal residuals from -2.285 to +2.768 and vertical
 residuals from -2.104 to +3.024 source units. This supports consistent placement
 between decoded strokes and the reference background.
 
-All 12 are visible in the current SVG. The rendered marks are somewhat thinner
-than Samsung's export. At a common source-coordinate raster scale, thresholding
-each isolated dot's RGB channels below 128 yields reference bounds of roughly
-10–13 × 9–16 pixels, versus 9–13 × 8–15 pixels in our output. Several differ by
-1–2 pixels. Rasterization, antialiasing, and the current approximate pressure
-width model affect that comparison; it does not by itself prove a coordinate
-or pressure-decoding error. The calibration mark width difference should be
-studied separately from the missing background.
+All 12 were visible in that revision's SVG. The rendered marks were somewhat
+thinner than Samsung's export. At a common source-coordinate raster scale,
+thresholding each isolated dot's RGB channels below 128 yielded reference
+bounds of roughly 10–13 × 9–16 pixels, versus 9–13 × 8–15 pixels in our
+output. Several differed by 1–2 pixels. Rasterization, antialiasing, and the
+approximate pressure-width model used at that revision affect the comparison;
+it does not by itself prove a coordinate or pressure-decoding error. Those
+marks are now V16 stamps, so this width gap is not a measurement of the
+current renderer.
 
 ## Other gaps exposed by this fixture
 
 The five native shape types are rectangle (4), ellipse (1), triangle (2),
-pentagon (11), and hexagon (6). The renderer handles the first three but returns
-without drawing types 11 and 6. Their handwritten labels still render because
-they are separate strokes. The diagonal native line also renders.
+pentagon (11), and hexagon (6). At `b0b33d5` the renderer handled the first
+three and returned without drawing types 11 and 6. Their handwritten labels
+rendered because they are separate strokes. The diagonal native line also
+rendered. Saved paths for all five shapes are now drawn; see
+[saved shape paths](shape-line-findings.md#saved-shape-paths-fixture-02).
 
-The current parser emits five `UnsupportedShapeFeature` warnings, one for each
-shape. The pentagon and hexagon warnings include `shape template`; the first
-three also carry geometry-extension/path warnings despite their visible fallback
-geometry. All five have retained path data, including 90 bytes for the pentagon
-and 107 for the hexagon, which provide a concrete starting point for additional
-shape support.
+That revision emitted five `UnsupportedShapeFeature` warnings, one for each
+shape. The pentagon and hexagon warnings included `shape template`; the first
+three also carried geometry-extension/path warnings despite their visible
+fallback geometry. All five have retained path data, including 90 bytes for
+the pentagon and 107 for the hexagon. The corpus manifest now locks zero
+diagnostics for this fixture.
 
 ## Follow-up implementation boundaries
 
-1. Establish and render the template-7 background through the shared SVG page
-   renderer, so normal viewing, replay backgrounds, and exports agree. Avoid
-   treating these measured spacings as universal without further evidence.
-2. Add supported native shape paths/templates for the pentagon and hexagon with
-   fixture-level visual coverage.
-3. Use the twelve marks to evaluate pressure/width fidelity independently. Do
-   not change decoded coordinates merely to compensate for a missing pattern
-   or a stroke-paint approximation.
+1. Done for templates 7/8/9 in the [dot renderer](#apk-backed-dot-renderer).
+   The measured spacings remain measurements of this export.
+2. Done for this fixture's saved paths, including the pentagon and hexagon.
+   See [saved shape paths](shape-line-findings.md#saved-shape-paths-fixture-02).
+   Path-less copies of those templates are still not invented from the type id.
+3. The twelve marks now render as V16 stamps. Do not change decoded
+   coordinates to compensate for a remaining raster difference. The later
+   comparison is in
+   [stroke rendering findings](stroke-rendering-findings.md#fountainpen-v16-saved-geometry-implementation).
 
 ## APK-backed implementation: page layout and native dimensions
 
@@ -197,10 +212,11 @@ Raster validation caught an exporter detail: resvg 0.47 rounds SVG pattern-tile
 sizes to integer pixels (`render_pattern_pixmap` in its `src/path.rs`). A
 91.7 × 83.16 repeating tile became 92 × 83, causing cumulative drift. Explicit
 row subpaths preserve fractional coordinates in browser, PNG and PDF rendering
-without adding a second renderer. The 02 visual comparison at 1848 × 2613 now
-reports 0.85% changed pixels, 1.25% missing ink and 0.72% extra ink (one-pixel
-matching tolerance). Remaining differences include bitmap antialiasing and the
-existing pressure-width model; calibration stroke widths were not changed.
+without adding a second renderer. At this dot-renderer revision, before V16
+stamps, the 02 visual comparison at 1848 × 2613 reported 0.85% changed pixels,
+1.25% missing ink and 0.72% extra ink (one-pixel matching tolerance). Remaining
+differences in that measurement included bitmap antialiasing and the
+pressure-width approximation. Calibration stroke coordinates were not changed.
 
 The Samsung PDF MediaBox is 600 × 848 points while its captured background is
 848.3766 points tall. The comparison runner allows one raster pixel or half a

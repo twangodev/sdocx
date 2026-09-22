@@ -13,8 +13,19 @@ Notes APK, native serializers, or real compatibility fixtures.
   decompiled Java and native libraries.
 - [`fixture-validation.md`](fixture-validation.md) — historical measurements
   from three retired fixtures, preserving the evidence behind the format map.
-- [`stroke-rendering-findings.md`](stroke-rendering-findings.md) — root cause of
-  the stray top-right strokes and the exact packed-point layout.
+- [`stroke-rendering-findings.md`](stroke-rendering-findings.md) — stray
+  top-right stroke cause, packed-point layout, and the current FountainPen V16
+  stamp geometry versus the approximate renderer.
+- [`fountain-v14.md`](fountain-v14.md) — saved V14 redraw differences. The
+  native oracle remains; the Rust renderer does not implement V14.
+- [`fountain-rainbow.md`](fountain-rainbow.md) — archived rainbow and V17
+  research. Rainbow rendering is not implemented.
+- [`fountain-rasterization.md`](fountain-rasterization.md) — stamp coverage
+  and compositing research. Those shaders are not in the SDK.
+- [`fountain-live-tip.md`](fountain-live-tip.md) — live tip state machine,
+  separate from saved-stroke geometry.
+- [`shapes-dot-calibration-findings.md`](shapes-dot-calibration-findings.md) —
+  fixture 02 investigation, then the dot background and saved shape paths.
 - [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
   bounded rich-text decoding, diagnostics, regressions and rendering limits.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
@@ -54,7 +65,8 @@ Notes APK, native serializers, or real compatibility fixtures.
 - [`pen-selection-findings.md`](pen-selection-findings.md) — corrected stroke
   string IDs, native pen registry, fallback lookup and Marker2 version selection.
 - [`marker2-rendering-findings.md`](marker2-rendering-findings.md) — V1/V2
-  coverage comparison, size conversion, thin-stroke smoothing and alpha-call audit.
+  coverage comparison, size conversion, thin-stroke smoothing, and the saved
+  Marker2 geometry now used by the renderer.
 - [`marker2-sampling-findings.md`](marker2-sampling-findings.md) — quadratic
   distance approximation, stored-point replay and ordinary stroke completion.
 - [`stroke-recording-findings.md`](stroke-recording-findings.md) — event-sample

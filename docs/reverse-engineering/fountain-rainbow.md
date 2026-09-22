@@ -1,15 +1,17 @@
 # Fountain pen rainbow colors
 
-> Historical research: the intermediate APK experiments described below were
-> retired during test cleanup. Their commands and script paths refer to Git
-> revision `40de721`, not the current checkout. Recover them in a separate
-> checkout of that revision. The saved V14/V16 geometry oracles remain; see
+> The reproduction commands in this note refer to experiment scripts removed
+> during test cleanup, including `conformance/fountain_rainbow_model.py` and
+> `conformance/fountain_rainbow_native.py`. Recover them from Git revision
+> `40de721` in a separate checkout. Saved V16 geometry and
+> `conformance/fountain_native.py` remain in this checkout. Rainbow rendering
+> is not implemented. See
 > [current validation](../../conformance/README.md#native-geometry-checks).
 
 This describes the hash-pinned Samsung Notes 4.4.45.37 ARM64 FountainPen
-library used by `conformance/fountain_native.py`. The independent model is
-`conformance/fountain_rainbow_model.py`; executable native comparisons are
-in `conformance/fountain_rainbow_native.py`. No APK code is distributed.
+library. `conformance/fountain_native.py` in this checkout covers saved V16
+geometry only. The rainbow model and native comparisons named below are at
+`40de721`. No APK code is distributed.
 
 ## Palette interpolation
 
@@ -150,7 +152,8 @@ or retained color. Stamp opacity at this interface is 1; it is distinct
 from the pen-alpha uniform used during compositing.
 
 Distance verification reuses the independently modeled quadratic path
-subdivision/length calculation from `fountain_v14_model.py`. Observed
+subdivision/length calculation from `fountain_v14_model.py` at `40de721`.
+Observed
 native moveTo/quadTo/lineTo arguments construct the model path; 1,464
 native length results match it exactly. The test then tracks the current
 offset independently and verifies native phase inputs and results, each

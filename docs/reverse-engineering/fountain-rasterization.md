@@ -1,9 +1,10 @@
 # FountainPen stamp rasterization
 
-> Historical research: the intermediate APK experiments described below were
-> retired during test cleanup. Their commands and script paths refer to Git
-> revision `40de721`, not the current checkout. Recover them in a separate
-> checkout of that revision. The saved V14/V16 geometry oracles remain; see
+> The reproduction commands in this note refer to experiment scripts removed
+> during test cleanup, including `conformance/fountain_raster.py` and
+> `conformance/fountain_gpu.mjs`. Recover them from Git revision `40de721` in
+> a separate checkout. Saved V16 stamp positions are implemented; these
+> shaders are not. See
 > [current validation](../../conformance/README.md#native-geometry-checks).
 
 This extends the saved-geometry findings with the rendering backend from the

@@ -1,16 +1,17 @@
 # FountainPen V14 saved redraw
 
-> Historical research: the intermediate APK experiments described below were
-> retired during test cleanup. Their commands and script paths refer to Git
-> revision `40de721`, not the current checkout. Recover them in a separate
-> checkout of that revision. The saved V14/V16 geometry oracles remain; see
+> `conformance/fountain_v14_native.py` and `conformance/fountain-v14.json` are
+> in this checkout. The independent reconstruction
+> `conformance/fountain_v14_model.py` was removed during test cleanup; recover
+> it from Git revision `40de721` in a separate checkout. The Rust renderer does
+> not implement V14. Saved V16 validation is in
 > [current validation](../../conformance/README.md#native-geometry-checks).
 
 The existing Samsung Notes 4.4.45.37 APK includes GLV14, selected by saved
 settings `14;`. No additional APK is needed for this version. This is a
 different drawing implementation from GLV16 (`18;0;100;`), not a settings alias.
 
-`conformance/fountain_v14_native.py` now executes the complete native
+`conformance/fountain_v14_native.py` executes the complete native
 `redraw(ObjectStroke, RectF, bool)` at `0x72c20`. The native loop calls its own
 drawLine, endPen, drawPoint and SmPath implementations. Host stubs supply
 ObjectStroke channel pointers and endpoint MotionEvent access; a collector
@@ -58,18 +59,23 @@ port is complete.
 
 ## Independent reconstruction
 
-`conformance/fountain_v14_model.py` reconstructs the saved variable-width
-stylus algorithm without loading the APK or executing native functions. It
-uses float32 arithmetic, midpoint quadratics, adaptive SmPath subdivision,
-distance-to-parameter interpolation, analytic normalized tangents, distance
-filtering, alternating short-event filtering, the direction ratio ring, the
-pressure/tilt width law, width limiting, residual stamp spacing, and endpoint
-handling. Python 3.13 or newer is required for `math.fma`.
+`conformance/fountain_v14_model.py` at Git revision `40de721` reconstructs the
+saved variable-width stylus algorithm without loading the APK or executing
+native functions. It uses float32 arithmetic, midpoint quadratics, adaptive
+SmPath subdivision, distance-to-parameter interpolation, analytic normalized
+tangents, distance filtering, alternating short-event filtering, the direction
+ratio ring, the pressure/tilt width law, width limiting, residual stamp
+spacing, and endpoint handling. Python 3.13 or newer is required for
+`math.fma`. The script is not in this checkout. Check out `40de721` separately
+and run it from that tree:
 
 ```sh
 python3 conformance/fountain_v14_model.py
 python3 conformance/fountain_v14_model.py --prepared /tmp/handwriting-ink.json --native /tmp/fountain-v14-native.json
 ```
+
+The measurements below were recorded from that script. The current Rust
+renderer does not reproduce them.
 
 The 26 synthetic cases reproduce all 1,936 stamps and original-sample
 boundaries. Maximum coordinate error is 0.00001526; maximum tangent-component
@@ -86,7 +92,8 @@ from residual-overrun rejection: the former retains the newly computed
 midpoint, while the latter restores the previous midpoint. The independent
 model follows that distinction.
 
-This model is a research/conformance implementation. It does not activate
-V14 in production, and does not reconstruct fixed-width, non-stylus or live
-input paths. Its purpose is to establish a checked algorithm for the shared
-SDK geometry port, including the directions needed by the V14 shader.
+That model was a research implementation. It was never wired into production,
+and it does not reconstruct fixed-width, non-stylus, or live input paths. It
+records a checked algorithm for a future V14 geometry port, including the
+tangents the V14 shader needs. Production strokes with settings `14;` stay on
+the approximate renderer.
