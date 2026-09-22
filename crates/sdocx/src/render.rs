@@ -175,8 +175,17 @@ fn render_page_contents_svg(
     } else {
         DEFAULT_INK_LIGHT_MODE
     };
+    let mut highlighter = Vec::new();
     for stroke in &page.strokes {
-        render_stroke(&mut svg, stroke, default_ink);
+        if stroke
+            .rendering
+            .as_ref()
+            .is_some_and(|rendering| rendering.properties.top_layer_pen)
+        {
+            highlighter.push(stroke);
+        } else {
+            render_stroke(&mut svg, stroke, default_ink);
+        }
     }
     for element in &page.elements {
         render_element(
@@ -187,6 +196,15 @@ fn render_page_contents_svg(
             flow_page_padding,
             dark_mode,
         );
+    }
+    if !highlighter.is_empty() {
+        // Standard PDF composites the top-layer stroke batch with Darken after
+        // ordinary page content. One group keeps that batch order.
+        writeln!(svg, r#"  <g style="mix-blend-mode:darken">"#).unwrap();
+        for stroke in highlighter {
+            render_stroke(&mut svg, stroke, default_ink);
+        }
+        writeln!(svg, "  </g>").unwrap();
     }
 
     svg.push_str("</svg>\n");
@@ -1591,7 +1609,17 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
     let color = &paint.color;
     let base_width = paint.width;
     if let Some(radii) = &paint.dot_radii {
-        write!(svg, "  <path fill=\"{color}\" d=\"").unwrap();
+        let opacity = (paint.opacity - 1.0).abs() > 1e-4;
+        if opacity {
+            write!(
+                svg,
+                "  <path fill=\"{color}\" fill-opacity=\"{:.4}\" d=\"",
+                paint.opacity
+            )
+            .unwrap();
+        } else {
+            write!(svg, "  <path fill=\"{color}\" d=\"").unwrap();
+        }
         for (p, r) in paint.points.iter().zip(radii) {
             write!(
                 svg,
@@ -1706,7 +1734,8 @@ mod tests {
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
-        RichTextSpan, RichTextSpanType, Stroke, layout_document,
+        RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
+        layout_document,
     };
 
     fn page_with_uncolored_stroke() -> Page {
@@ -1959,5 +1988,132 @@ mod tests {
             sanitize_hyperlink_target("  https://example.com/note  ".to_string()).as_deref(),
             Some("https://example.com/note")
         );
+    }
+
+    fn marker(top_layer: bool, x: f64) -> Stroke {
+        Stroke {
+            rendering: Some(StrokeRendering {
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Marker2".into()),
+                advanced_settings: Some("2;".into()),
+                tool_type_raw: 2,
+                properties: StrokeProperties {
+                    compressed: false,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: top_layer,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(0x80ff_ee00),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: vec![Point { x, y: 20. }],
+            pressures: vec![0.4],
+            timestamps: vec![],
+            tilts: vec![],
+            orientations: vec![],
+            color: Some(Color {
+                r: 255,
+                g: 238,
+                b: 0,
+            }),
+            pen_width: 8.,
+        }
+    }
+
+    #[test]
+    fn top_layer_marker_is_one_darken_batch_after_text() {
+        let mut page = page_with_uncolored_stroke();
+        page.strokes = vec![marker(false, 10.), marker(true, 40.)];
+        page.elements.push(PageElement::TextBox(RichTextBox {
+            text_area_type: None,
+            bbox: BoundingBox {
+                x_min: 4.,
+                y_min: 4.,
+                x_max: 80.,
+                y_max: 40.,
+            },
+            rotation_degrees: None,
+            text: "under the highlighter".into(),
+            color: Some(Color { r: 0, g: 0, b: 0 }),
+            highlight_color: None,
+            underline: false,
+            font_size: Some(12.),
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }));
+        let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
+            .svg
+            .clone();
+        let text_at = svg.find("under the highlighter").unwrap();
+        let group_at = svg.find(r#"<g style="mix-blend-mode:darken">"#).unwrap();
+        assert!(text_at < group_at);
+        assert_eq!(svg.matches(r#"mix-blend-mode:darken"#).count(), 1);
+        let body = &svg[..group_at];
+        let batch = &svg[group_at..];
+        assert_eq!(body.matches("fill-opacity=\"0.5020\"").count(), 1);
+        assert_eq!(batch.matches("fill-opacity=\"0.5020\"").count(), 1);
+        assert!(body.contains("M6.0000,20.0000"));
+        assert!(batch.contains("M36.0000,20.0000"));
+        assert!(!batch.contains("M6.0000,20.0000"));
+    }
+
+    #[test]
+    fn top_layer_marker_darkens_covered_ink_and_leaves_bare_paper() {
+        let mut page = page_with_uncolored_stroke();
+        page.width = 32;
+        page.height = 32;
+        page.background_color = Some(Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        });
+        let mut red = marker(false, 16.);
+        red.rendering.as_mut().unwrap().pen_name = None;
+        red.rendering.as_mut().unwrap().advanced_settings = None;
+        red.points = vec![Point { x: 16., y: 16. }, Point { x: 17., y: 16. }];
+        red.color = Some(Color { r: 255, g: 0, b: 0 });
+        red.pen_width = 30.;
+        red.pressures.clear();
+        let mut cyan = marker(true, 16.);
+        cyan.points = vec![Point { x: 16., y: 16. }];
+        cyan.rendering.as_mut().unwrap().style.color_argb = Some(0xff00_ffff);
+        cyan.color = Some(Color {
+            r: 0,
+            g: 255,
+            b: 255,
+        });
+        page.strokes = vec![red, cyan];
+        page.elements.clear();
+        let svg = &render_document_svg(&document(page), &RenderOptions::default())[0].svg;
+        let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+        let mut pixmap = resvg::tiny_skia::Pixmap::new(32, 32).unwrap();
+        resvg::render(
+            &tree,
+            resvg::tiny_skia::Transform::identity(),
+            &mut pixmap.as_mut(),
+        );
+        let pixel = |x, y| {
+            let p = pixmap.pixel(x, y).unwrap();
+            (p.red(), p.green(), p.blue())
+        };
+        assert_eq!(pixel(0, 0), (255, 255, 255), "bare paper");
+        assert_eq!(pixel(16, 16), (0, 0, 0), "cyan over red darkens to black");
     }
 }

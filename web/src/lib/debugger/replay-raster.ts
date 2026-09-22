@@ -115,7 +115,11 @@ export class ReplayRaster {
 				ctx.moveTo(p.x + r, p.y);
 				ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
 			}
+			// Apply alpha once to the union of stamps, not to each overlapping dot.
+			const alpha = ctx.globalAlpha;
+			ctx.globalAlpha = alpha * geometry.opacity;
 			ctx.fill();
+			ctx.globalAlpha = alpha;
 			return;
 		}
 		if (points.length === 1) {

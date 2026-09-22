@@ -850,6 +850,7 @@ dependencies = [
  "krilla-svg",
  "lopdf",
  "png",
+ "resvg",
  "serde",
  "serde_json",
  "sha2",

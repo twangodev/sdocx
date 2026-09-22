@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { ReplayRaster } from './replay-raster';
 import type { ReplayStroke } from './model';
 
-it('replays native dots at original sample boundaries, including skipped samples and reverse seeks', () => {
+it('replays native dots at original sample boundaries, preserving opacity across skipped samples and reverse seeks', () => {
 	const item: ReplayStroke = {
 		offset: 1,
 		milliseconds: true,
@@ -15,18 +15,23 @@ it('replays native dots at original sample boundaries, including skipped samples
 		geometry: {
 			points: [{ x: 100, y: 100 }, { x: 105, y: 103 }, { x: 130, y: 130 }],
 			sample_ends: [0, 2, 2, 3], dot_radii: [1, 2, 3],
-			width: 9, segment_widths: null, bounds: null, color: '#111111', opacity: 1,
+			width: 9, segment_widths: null, bounds: null, color: '#111111', opacity: 0.5,
 			profile: 'FountainPen', support: 'reconstructed'
 		}
 	};
 	const raster = new ReplayRaster({ entry: 0, width: 200, height: 200, strokes: [item], objects: [] }, '#111111');
-	const context = { beginPath: vi.fn(), moveTo: vi.fn(), arc: vi.fn(), fill: vi.fn() };
+	const context = {
+		globalAlpha: 0.8,
+		beginPath: vi.fn(), moveTo: vi.fn(), arc: vi.fn(),
+		fill: vi.fn(() => expect(context.globalAlpha).toBe(0.4))
+	};
 	const ctx = context as unknown as CanvasRenderingContext2D;
 	for (const [sample, count] of [[0, 0], [1, 2], [2, 2], [3, 3], [1, 2]]) {
 		vi.clearAllMocks();
 		raster.drawStroke(ctx, 0, sample);
 		expect(context.arc).toHaveBeenCalledTimes(count);
 		expect(context.fill).toHaveBeenCalledTimes(count ? 1 : 0);
+		expect(context.globalAlpha).toBe(0.8);
 		if (count) expect(context.arc).toHaveBeenNthCalledWith(2, 105, 103, 2, 0, Math.PI * 2);
 	}
 	expect(item.stroke.points).toHaveLength(4);

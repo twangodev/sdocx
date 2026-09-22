@@ -2,6 +2,8 @@
 use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
 mod fountain;
+mod marker2;
+mod path;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,17 +120,19 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
     let mut paint = stroke_paint(stroke, dark_mode);
-    let native = fountain::prepare(stroke);
-    let (points, sample_ends, dot_radii) = if let Some(ink) = native {
-        paint.segment_widths = None;
-        (
-            Cow::Owned(ink.points),
-            Some(ink.sample_ends),
-            Some(ink.radii),
-        )
-    } else {
-        (Cow::Borrowed(stroke.points.as_slice()), None, None)
-    };
+    let native = fountain::prepare(stroke)
+        .map(|ink| (ink.points, ink.sample_ends, ink.radii, 1.))
+        .or_else(|| {
+            marker2::prepare(stroke)
+                .map(|ink| (ink.points, ink.sample_ends, ink.radii, ink.opacity))
+        });
+    let (points, sample_ends, dot_radii, opacity) =
+        if let Some((points, ends, radii, opacity)) = native {
+            paint.segment_widths = None;
+            (Cow::Owned(points), Some(ends), Some(radii), opacity)
+        } else {
+            (Cow::Borrowed(stroke.points.as_slice()), None, None, 1.)
+        };
     let profile = stroke
         .rendering
         .as_ref()
@@ -185,7 +189,7 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         width: paint.width,
         bounds,
         color: paint.color,
-        opacity: 1.0,
+        opacity,
         profile: profile.map(|p| p.name),
     }
 }
