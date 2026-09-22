@@ -1,5 +1,11 @@
 # Stroke rendering findings
 
+> Historical research: the intermediate APK experiments described below were
+> retired during test cleanup. Their commands and script paths refer to Git
+> revision `40de721`, not the current checkout. Recover them in a separate
+> checkout of that revision. The saved V14/V16 geometry oracles remain; see
+> [current validation](../../conformance/README.md#native-geometry-checks).
+
 ## Root cause of top-right artifacts
 
 The former visible-stroke parser bypassed the structural page/layer/object
@@ -201,7 +207,7 @@ clamps to 75 degrees and maps the portion above 15 degrees to 0–3
 and the render-thread coverage shader must be matched before enabling V16.
 
 The pure V16 width-limiter helper at `0x79298`–`0x792f4` now has a bounded
-native oracle in [`conformance/native_ink.py`](../../conformance/native_ink.py).
+native oracle in `conformance/native_ink.py` at revision `40de721`.
 It checks the library SHA-256, executes only that helper in ARM64 emulation,
 and compares a float32 reconstruction over 4,128 deterministic cases. All
 cases match bit-for-bit, exercising all 23 helper instructions. The helper

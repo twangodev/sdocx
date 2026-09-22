@@ -27,9 +27,13 @@ from unicorn import Uc, UC_ARCH_ARM64, UC_MODE_ARM, UC_HOOK_CODE
 from unicorn import arm64_const as R
 
 HASHES = {
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Engine": "79a8024586ce58ceeca613ddfce159e92274c597c5a863dd0aaf3e8e32e1b505",
     "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
     "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
     "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
 }
 
 def f32(value):
@@ -38,7 +42,7 @@ def f32(value):
 
 class NativeFountain:
 
-    def __init__(self, library_dir, objdump):
+    def __init__(self, library_dir, objdump, additional_libraries=()):
         self.u = Uc(UC_ARCH_ARM64, UC_MODE_ARM)
         self.syms = {}
         self.plt = {}
@@ -51,7 +55,9 @@ class NativeFountain:
         runtime = Path('scratch/apk-analysis-runtime/binutils-aarch64/usr/lib/x86_64-linux-gnu')
         if runtime.is_dir():
             env['LD_LIBRARY_PATH'] = str(runtime.resolve())
-        for name, base in [('FountainPen', 0), ('PenCommon', 0x1000000), ('Base', 0x2000000)]:
+        names = ('FountainPen', 'PenCommon', 'Base', *additional_libraries)
+        for index, name in enumerate(names):
+            base = index * 0x1000000
             path = library_dir / ('libSPen' + name + '.so')
             b = path.read_bytes()
             if hashlib.sha256(b).hexdigest() != HASHES[name]:
@@ -65,7 +71,7 @@ class NativeFountain:
                     self.u.mem_write(base + va, b[fo:fo + fs])
             for line in subprocess.check_output(['nm', '-D', '-C', path], text=True).splitlines():
                 parts = line.strip().split(' ', 2)
-                if len(parts) == 3 and parts[1] == 'T':
+                if len(parts) == 3 and parts[1] in ('T', 'W'):
                     self.syms[parts[2]] = base + int(parts[0], 16)
             dis = subprocess.check_output([str(objdump), '-d', '-C', '-j', '.plt', path], env=env, text=True)
             for a, s in re.findall('^([0-9a-f]+) <(.+)@plt>:', dis, re.M):

@@ -53,6 +53,32 @@ The dataset commit must be published before the SDK commit that references it.
 See [manifest expectations](manifest-format.md) for optional text checks, exact
 page-object counts and diagnostic counts.
 
+## Native geometry checks
+
+The V16 geometry fixture (`fountain-v16.json`) is checked against the Rust
+implementation in ordinary CI. Two optional, hash-pinned APK oracles remain
+for saved V16 and legacy V14 geometry:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_native.py
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_v14_native.py
+```
+
+These require locally extracted libraries and Unicorn. They validate stroke
+geometry, not complete native pixel parity. Keep routine validation focused on
+production regressions and the real-file visual comparison below.
+
+The intermediate live drawing, GPU, cache, and lifecycle experiments were
+retired. Their findings remain in `docs/reverse-engineering/`; their scripts
+are available in Git at `40de721`. To recover an individual experiment:
+
+```sh
+git show 40de721:conformance/fountain_v17_managed_render.py > /tmp/fountain_v17_managed_render.py
+```
+
+Experiments import other scripts from that revision; use a separate checkout
+of `40de721` to rerun them together.
+
 ## Visual comparison
 
 The local runner validates both file hashes and visible page counts, converts
