@@ -308,6 +308,8 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.getByRole('button', { name: 'Download', exact: true }).click();
 	const download = await downloadStarted;
 	expect(download.suggestedFilename()).toBe('01-basic-formatting-page-001.svg');
+	await expect(page.getByRole('dialog').getByRole('link', { name: 'Star on GitHub' })).toBeVisible();
+	await page.getByRole('button', { name: 'Done', exact: true }).click();
 	const oldPreview = await preview.elementHandle();
 	const oldSource = await pageStack.locator('img').first().getAttribute('src');
 	await colorModes[2].click();

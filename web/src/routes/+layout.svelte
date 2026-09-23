@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 	import { setContext } from 'svelte';
-	import { Star, Bug } from '@lucide/svelte';
+	import { Github, Bug } from '@lucide/svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { WORKSPACE, type WorkspaceState } from '$lib/workspace';
 	import './layout.css';
@@ -50,13 +50,13 @@
 				</IconButton>
 			{/if}
 			<a
-				class="inline-flex h-[1.85rem] items-center gap-1.5 rounded border border-subtle px-2 text-[11px] text-muted no-underline transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-surface hover:text-text"
+				class="grid size-[1.85rem] place-items-center rounded text-muted no-underline transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-surface hover:text-text"
 				href="https://github.com/twangodev/sdocx"
 				target="_blank"
 				rel="noreferrer"
-				title="Star on GitHub"
-				aria-label="Star on GitHub"
-				><Star size={13} strokeWidth={1.5} aria-hidden="true" />Star</a
+				title="Source on GitHub"
+				aria-label="Source on GitHub"
+				><Github size={15} strokeWidth={1.5} aria-hidden="true" /></a
 			>
 			<ThemeToggle />
 		</nav>

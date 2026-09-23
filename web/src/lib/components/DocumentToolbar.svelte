@@ -42,10 +42,10 @@
 		onFitPage: () => void;
 		onColorMode: (mode: ColorMode) => void;
 		onScale: (scale: Scale) => void;
-		onCurrentSvg: () => void;
-		onCurrentPng: () => void;
-		onArchive: (kind: ArchiveKind) => void;
-		onJson: () => void;
+		onCurrentSvg: () => Promise<string>;
+		onCurrentPng: () => Promise<string>;
+		onArchive: (kind: ArchiveKind) => Promise<string>;
+		onJson: () => Promise<string>;
 		onCancel: () => void;
 		onReplace: () => void;
 		onClose: () => void;

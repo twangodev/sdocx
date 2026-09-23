@@ -78,6 +78,11 @@
 		}
 	}
 
+	async function exportResult(task: Promise<void>): Promise<string> {
+		await task;
+		return session.error;
+	}
+
 	function onFileInput(event: Event): void {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
@@ -154,10 +159,10 @@
 				onFitPage: fitPreviewPage,
 				onColorMode: (nextMode) => void session.setColorMode(nextMode),
 				onScale: (nextScale) => session.setPngScale(nextScale),
-				onCurrentSvg: () => void session.downloadCurrentSvg(pageIndex),
-				onCurrentPng: () => void session.downloadCurrentPng(pageIndex),
-				onArchive: (kind) => void session.downloadArchive(kind),
-				onJson: () => void session.downloadJson(),
+				onCurrentSvg: () => exportResult(session.downloadCurrentSvg(pageIndex)),
+				onCurrentPng: () => exportResult(session.downloadCurrentPng(pageIndex)),
+				onArchive: (kind) => exportResult(session.downloadArchive(kind)),
+				onJson: () => exportResult(session.downloadJson()),
 				onCancel: () => session.cancel(),
 				onReplace: () => picker?.click(),
 				onClose: () => void session.close()
