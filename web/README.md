@@ -6,8 +6,13 @@ browser.
 
 ## PDF export
 
-Choose **Export document → PDF** to download the current page or all pages in
-one PDF. The worker calls the same Rust `sdocx` / Krilla PDF engine as the CLI:
+Open **Export document** to download a PDF of all pages by default. Choose
+Current page or a custom range such as `1–3, 5` for a subset. Selections are
+validated by the shared Rust parser and exported in document order. Multiple
+SVG/PNG pages download as a ZIP with original page numbers; JSON and the
+SVG + PNG + JSON bundle always include the whole document. PNG resolution
+applies only to PNG and the bundle. Downloads keep the dialog open for another
+export; closing it during export does not cancel the task. The worker calls the same Rust `sdocx` / Krilla PDF engine as the CLI:
 
 ```sh
 sdocx-cli note.sdocx -o note.pdf
@@ -24,7 +29,8 @@ and licenses are in `static/pdf-fonts/`.
 The WASM API exposes `DocumentSession.add_pdf_font(bytes)` and
 `DocumentSession.render_pdf(pageIndex, colorMode)`. Pass `undefined` for all
 visible pages, or a zero-based index for one page; the result is a `Uint8Array`.
-Supply TTF/OTF fonts before exporting typed text. WASM cannot load system fonts.
+For subsets, call `resolve_pages(selection)` and pass the returned indices to
+`render_pdf_pages(indices, colorMode)`. Supply TTF/OTF fonts before exporting typed text. WASM cannot load system fonts.
 
 ## Development
 

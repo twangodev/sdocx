@@ -5,6 +5,8 @@ interface WasmDocumentSession {
 	page_count: number | (() => number);
 	inspection: unknown | (() => unknown);
 	debug?: (request: string) => string;
+	resolve_pages(selection: string): Uint32Array;
+	render_pdf_pages(pageIndices: Uint32Array, colorMode: ColorMode): Uint8Array<ArrayBuffer>;
 	add_pdf_font(bytes: Uint8Array): void;
 	render_pdf(pageIndex: number | undefined, colorMode: ColorMode): Uint8Array<ArrayBuffer>;
 	render_svg(pageIndex: number, colorMode: ColorMode): unknown;
@@ -106,7 +108,12 @@ export class BrowserDocumentSession {
 		return normalizeSvg(this.inner.render_svg(pageIndex, colorMode));
 	}
 
-	async exportPdf(pageIndex: number | undefined, colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>> {
+	resolvePages(selection: string): number[] {
+		this.assertActive();
+		return Array.from(this.inner.resolve_pages(selection));
+	}
+
+	async exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>> {
 		this.assertActive();
 		if (!this.fontsLoaded) {
 			const fonts = await loadPdfFonts();
@@ -116,7 +123,7 @@ export class BrowserDocumentSession {
 				this.fontsLoaded = true;
 			}
 		}
-		return this.inner.render_pdf(pageIndex, colorMode);
+		return this.inner.render_pdf_pages(new Uint32Array(pageIndices), colorMode);
 	}
 
 	debug(request: DebugRequest): unknown {

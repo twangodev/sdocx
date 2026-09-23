@@ -94,18 +94,40 @@ impl DocumentSession {
         page_index: Option<usize>,
         color_mode: &str,
     ) -> Result<Vec<u8>, JsError> {
+        let indices = match page_index {
+            Some(index) => vec![
+                u32::try_from(index).map_err(|_| JsError::new("page index is out of bounds"))?,
+            ],
+            None => (0..self.page_count as u32).collect(),
+        };
+        self.render_pdf_pages(&indices, color_mode)
+    }
+
+    /// Resolve a one-based range expression into sorted, unique zero-based indices.
+    pub fn resolve_pages(&self, selection: &str) -> Result<Vec<u32>, JsError> {
+        self.parsed()?;
+        sdocx::parse_page_selection(selection, self.page_count)
+            .map(|indices| indices.into_iter().map(|index| index as u32).collect())
+            .map_err(|error| JsError::new(&error.to_string()))
+    }
+
+    /// Export explicit zero-based visible pages in the supplied order.
+    pub fn render_pdf_pages(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+    ) -> Result<Vec<u8>, JsError> {
         let parsed = self.parsed()?;
         let layout = self.layout()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
-        let pages = if let Some(index) = page_index {
-            vec![
-                sdocx::render_layout_page_svg(&parsed.document, layout, index, &options)
-                    .ok_or_else(|| JsError::new("page index is out of bounds"))?,
-            ]
-        } else {
-            sdocx::render_document_svg(&parsed.document, &options)
-        };
+        let pages = page_indices
+            .iter()
+            .map(|&index| {
+                sdocx::render_layout_page_svg(&parsed.document, layout, index as usize, &options)
+                    .ok_or_else(|| JsError::new("page index is out of bounds"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
         let pdf_options = sdocx::PdfOptions::new(std::sync::Arc::new(self.pdf_fonts.clone()));
         sdocx::render_svg_pages_pdf(&pages, &pdf_options)
             .map_err(|error| JsError::new(&error.to_string()))

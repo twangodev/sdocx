@@ -35,16 +35,17 @@ function text(index: number) {
 }
 
 function page(index: number, width: number, height: number) {
-	const header = join(zero(8), Buffer.from([1, 0, 5]), zero(5), ...[0, width, height, 0, 0].map(u32), u16(4), Buffer.from(index === 0 ? 'one1' : 'two2', 'utf16le'), zero(8), u32(5500), u32(4000));
+	const header = join(zero(8), Buffer.from([1, 0, 5]), zero(5), ...[0, width, height, 0, 0].map(u32), u16(4), Buffer.from(['one1', 'two2', 'zzz3'][index], 'utf16le'), zero(8), u32(5500), u32(4000));
 	header.writeUInt32LE(header.length, 0);
 	header.writeUInt32LE(header.length, 4);
 	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(2), stroke(index), text(index), zero(32));
 	return join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK'));
 }
 
-export function pdfNote(oversized = false): Buffer {
+export function pdfNote(oversized = false, threePages = false): Buffer {
 	return Buffer.from(zipSync({
 		'one1.page': page(0, oversized ? 20000 : 400, 800),
-		'two2.page': page(1, 800, 400)
+		'two2.page': page(1, 800, 400),
+		...(threePages ? { 'zzz3.page': page(2, 600, 600) } : {})
 	}));
 }

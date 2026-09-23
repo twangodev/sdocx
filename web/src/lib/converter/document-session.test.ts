@@ -27,6 +27,7 @@ function clientWith(load: ConverterClientPort['load']): ConverterClientPort {
 		renderPage: vi.fn(),
 		exportJson: vi.fn(),
 		exportPdf: vi.fn(),
+		resolvePages: vi.fn(),
 		dispose: vi.fn(),
 		cancel: vi.fn(),
 		destroy: vi.fn()
@@ -99,9 +100,9 @@ describe('DocumentSession PDF exports', () => {
 		await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
 		const download = vi.spyOn(files, 'downloadBlob').mockImplementation(() => {});
 		session.colorMode = 'dark';
-		await session.downloadPdf();
-		await session.downloadPdf(1);
-		expect(vi.mocked(client.exportPdf).mock.calls).toEqual([[undefined, 'dark'], [1, 'dark']]);
+		await session.downloadExport({ format: 'pdf', pageIndices: [0, 1], pngScale: 1 });
+		await session.downloadExport({ format: 'pdf', pageIndices: [1], pngScale: 1 });
+		expect(vi.mocked(client.exportPdf).mock.calls).toEqual([[[0, 1], 'dark'], [[1], 'dark']]);
 		expect(download).toHaveBeenNthCalledWith(1, expect.any(Blob), 'note.pdf');
 		expect(download).toHaveBeenNthCalledWith(2, expect.any(Blob), 'note-page-002.pdf');
 		expect(download.mock.calls[0][0].type).toBe('application/pdf');
@@ -122,7 +123,7 @@ describe('DocumentSession PDF exports', () => {
 			started.resolve();
 			return converted.promise;
 		});
-		const exporting = session.downloadPdf(0);
+		const exporting = session.downloadExport({ format: 'pdf', pageIndices: [0], pngScale: 1 });
 		await started.promise;
 		session.cancel();
 		converted.resolve(new Uint8Array([37, 80, 68, 70]));
@@ -131,4 +132,33 @@ describe('DocumentSession PDF exports', () => {
 		expect(session.exporting).toBe(false);
 		session.destroy();
 	});
+});
+
+it('snapshots archive pages and colors while settings change', async () => {
+	const client = clientWith(vi.fn(async () => ({ pageCount: 3, inspection: {} })));
+	client.renderPage = vi.fn(async () => '<svg/>');
+	const session = new DocumentSession({ createClient: () => client });
+	session.start();
+	await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
+	const download = vi.spyOn(files, 'downloadBlob').mockImplementation(() => {});
+	const rendered = deferred<string>();
+	const started = deferred<void>();
+	vi.mocked(client.renderPage).mockClear().mockImplementationOnce(async () => {
+		started.resolve();
+		return rendered.promise;
+	});
+	session.colorMode = 'dark';
+	const indices = [0, 2];
+	const exporting = session.downloadExport({ format: 'svg', pageIndices: indices, pngScale: 1 });
+	await started.promise;
+	indices.splice(0, 2, 1);
+	session.colorMode = 'light';
+	rendered.resolve('<svg/>');
+	await exporting;
+	expect(vi.mocked(client.renderPage).mock.calls).toEqual([[0, 'dark'], [2, 'dark']]);
+	expect(download).toHaveBeenCalledWith(expect.any(Blob), 'note-selected-svg.zip');
+	const { unzipSync } = await import('fflate');
+	const entries = unzipSync(new Uint8Array(await download.mock.calls[0][0].arrayBuffer()));
+	expect(Object.keys(entries)).toEqual(['note-page-001.svg', 'note-page-003.svg']);
+	session.destroy();
 });

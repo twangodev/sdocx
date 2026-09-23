@@ -20,10 +20,9 @@ import {
 	type DocumentSummary,
 	type WorkerPhase
 } from './protocol';
+import { exportDetails, type ExportRequest } from './export-options';
 import { toInspectionView, type InspectionView } from './view-model';
 
-export type PngScale = 1 | 2;
-export type ArchiveKind = 'svg' | 'png' | 'everything';
 
 interface DocumentSessionOptions {
 	onResetView?: () => void;
@@ -35,7 +34,6 @@ export class DocumentSession {
 	summary = $state<DocumentSummary | null>(null);
 	details = $state<InspectionView | null>(null);
 	colorMode = $state<ColorMode>('auto');
-	pngScale = $state<PngScale>(1);
 	previewUrls = $state<string[]>([]);
 	phase = $state<WorkerPhase | null>(null);
 	status = $state('Waiting for a document');
@@ -164,67 +162,75 @@ export class DocumentSession {
 		await this.renderPreviews();
 	}
 
-	setPngScale(scale: PngScale): void {
-		this.pngScale = scale;
+
+	async resolvePages(selection: string): Promise<number[]> {
+		const generation = this.loadGeneration;
+		const indices = await this.requireClient().resolvePages(selection);
+		if (generation !== this.loadGeneration) throw new Error('Document replaced.');
+		return indices;
 	}
 
-	async downloadCurrentSvg(pageIndex: number): Promise<void> {
-		await this.withExport(async () => {
-			const svg = await this.requireClient().renderPage(pageIndex, this.colorMode);
-			downloadBlob(
-				new Blob([svg], { type: 'image/svg+xml' }),
-				pageFilename(this.stem, pageIndex, 'svg')
-			);
-		});
-	}
-
-	async downloadCurrentPng(pageIndex: number): Promise<void> {
-		await this.withExport(async () => {
-			const svg = await this.requireClient().renderPage(pageIndex, this.colorMode);
-			const png = await svgToPng(svg, this.pngScale);
-			downloadBlob(png, pageFilename(this.stem, pageIndex, 'png'));
-		});
-	}
-
-	async downloadPdf(pageIndex?: number): Promise<void> {
-		if (!this.summary || !this.activeFile) return;
+	async downloadExport(request: ExportRequest): Promise<void> {
+		if (!this.summary || !this.activeFile || this.exporting) return;
 		const generation = this.loadGeneration;
 		const stem = this.stem;
+		const sourceName = this.activeFile.name;
+		const pageCount = this.summary.pageCount;
+		const colorMode = this.colorMode;
+		const client = this.requireClient();
+		const { format, pngScale } = request;
+		const indices = format === 'json' || format === 'everything'
+			? Array.from({ length: pageCount }, (_, index) => index)
+			: [...request.pageIndices];
+		const { filename } = exportDetails({ format, pageIndices: indices, pngScale }, pageCount, stem);
+		const assertCurrent = () => {
+			if (generation !== this.loadGeneration) throw new Error('Export cancelled.');
+		};
 		await this.withExport(async () => {
-			this.exportProgress = 'Generating PDF';
-			const bytes = await this.requireClient().exportPdf(pageIndex, this.colorMode);
-			if (generation !== this.loadGeneration) throw new Error('PDF export cancelled.');
-			downloadBlob(
-				new Blob([bytes], { type: 'application/pdf' }),
-				pageIndex === undefined ? `${stem}.pdf` : pageFilename(stem, pageIndex, 'pdf')
-			);
-		});
-	}
-
-	async downloadJson(): Promise<void> {
-		await this.withExport(async () => {
-			const json = await this.requireClient().exportJson();
-			downloadBlob(new Blob([json], { type: 'application/json' }), `${this.stem}.json`);
-		});
-	}
-
-	async downloadArchive(kind: ArchiveKind): Promise<void> {
-		if (!this.summary || !this.activeFile) return;
-		await this.withExport(async () => {
-			const pageCount = this.summary!.pageCount;
-			const sourceName = this.activeFile!.name;
-			const client = this.requireClient();
-			const inspectionJson = kind === 'everything' ? await client.exportJson() : '';
-			const manifest = createExportManifest(
-				sourceName,
-				pageCount,
-				this.colorMode,
-				this.pngScale
-			);
-
-			const entries = this.archiveEntries(kind, pageCount, inspectionJson, manifest);
-			const archive = await createZip(entries);
-			downloadBlob(archive, `${this.stem}-${kind}.zip`);
+			if (!indices.length || indices.some((index) => !Number.isInteger(index) || index < 0 || index >= pageCount)) {
+				throw new Error('Select valid pages to export.');
+			}
+			let blob: Blob;
+			if (format === 'pdf') {
+				this.exportProgress = 'Generating PDF';
+				const bytes = await client.exportPdf(indices, colorMode);
+				blob = new Blob([bytes], { type: 'application/pdf' });
+			} else if (format === 'json') {
+				blob = new Blob([await client.exportJson()], { type: 'application/json' });
+			} else if (format !== 'everything' && indices.length === 1) {
+				const svg = await client.renderPage(indices[0], colorMode);
+				assertCurrent();
+				blob = format === 'png' ? await svgToPng(svg, pngScale) : new Blob([svg], { type: 'image/svg+xml' });
+			} else {
+				const session = this;
+				async function* entries() {
+					if (format === 'everything') {
+						const json = await client.exportJson();
+						assertCurrent();
+						yield { name: 'document.json', bytes: textBytes(json) };
+						const manifest = createExportManifest(sourceName, pageCount, colorMode, pngScale);
+						yield { name: 'manifest.json', bytes: textBytes(JSON.stringify(manifest, null, 2)) };
+					}
+					for (const [position, index] of indices.entries()) {
+						assertCurrent();
+						session.exportProgress = `Rendering page ${position + 1} of ${indices.length}`;
+						const svg = await client.renderPage(index, colorMode);
+						assertCurrent();
+						if (format === 'svg' || format === 'everything') {
+							yield { name: pageFilename(stem, index, 'svg'), bytes: textBytes(svg) };
+						}
+						if (format === 'png' || format === 'everything') {
+							session.exportProgress = `Rasterizing page ${position + 1} of ${indices.length}`;
+							const png = await svgToPng(svg, pngScale);
+							assertCurrent();
+							yield { name: pageFilename(stem, index, 'png'), bytes: new Uint8Array(await png.arrayBuffer()) };
+						}
+					}
+				}
+				blob = await createZip(entries());
+			}
+			assertCurrent();
+			downloadBlob(blob, filename);
 		});
 	}
 
@@ -253,35 +259,9 @@ export class DocumentSession {
 		}
 	}
 
-	private async *archiveEntries(
-		kind: ArchiveKind,
-		pageCount: number,
-		inspectionJson: string,
-		manifest: ReturnType<typeof createExportManifest>
-	): AsyncGenerator<{ name: string; bytes: Uint8Array }> {
-		if (kind === 'everything') {
-			yield { name: 'document.json', bytes: textBytes(inspectionJson) };
-			yield { name: 'manifest.json', bytes: textBytes(JSON.stringify(manifest, null, 2)) };
-		}
-
-		for (let index = 0; index < pageCount; index += 1) {
-			this.exportProgress = `Rendering page ${index + 1} of ${pageCount}`;
-			const svg = await this.requireClient().renderPage(index, this.colorMode);
-			if (kind === 'svg' || kind === 'everything') {
-				yield { name: pageFilename(this.stem, index, 'svg'), bytes: textBytes(svg) };
-			}
-			if (kind === 'png' || kind === 'everything') {
-				this.exportProgress = `Rasterizing page ${index + 1} of ${pageCount}`;
-				const png = await svgToPng(svg, this.pngScale);
-				yield {
-					name: pageFilename(this.stem, index, 'png'),
-					bytes: new Uint8Array(await png.arrayBuffer())
-				};
-			}
-		}
-	}
-
 	private clearDocument(): void {
+		this.exporting = false;
+		this.exportProgress = '';
 		this.renderGeneration += 1;
 		this.releasePreviews();
 		this.activeFile = null;
@@ -298,17 +278,20 @@ export class DocumentSession {
 	}
 
 	private async withExport(task: () => Promise<void>): Promise<void> {
+		const generation = this.loadGeneration;
 		this.exporting = true;
 		this.error = '';
 		this.exportProgress = 'Preparing download';
 		try {
 			await task();
-			this.status = 'Download ready';
+			if (generation === this.loadGeneration) this.status = 'Download started';
 		} catch (cause) {
-			this.error = messageFrom(cause);
+			if (generation === this.loadGeneration) this.error = messageFrom(cause);
 		} finally {
-			this.exporting = false;
-			this.exportProgress = '';
+			if (generation === this.loadGeneration) {
+				this.exporting = false;
+				this.exportProgress = '';
+			}
 		}
 	}
 

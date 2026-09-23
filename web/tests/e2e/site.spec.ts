@@ -303,13 +303,14 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await page.getByLabel('Format', { exact: true }).selectOption('png');
 	await page.getByLabel('PNG resolution').selectOption('2');
 	await page.getByLabel('Format', { exact: true }).selectOption('svg');
+	await page.getByRole('radio', { name: 'Current page · 1' }).check();
 
 	const downloadStarted = page.waitForEvent('download');
-	await page.getByRole('button', { name: 'Download', exact: true }).click();
+	await page.getByRole('button', { name: 'Download SVG', exact: true }).click();
 	const download = await downloadStarted;
 	expect(download.suggestedFilename()).toBe('01-basic-formatting-page-001.svg');
 	await expect(page.getByRole('dialog').getByRole('link', { name: 'Star on GitHub' })).toBeVisible();
-	await page.getByRole('button', { name: 'Done', exact: true }).click();
+	await page.getByRole('button', { name: 'Close', exact: true }).click();
 	const oldPreview = await preview.elementHandle();
 	const oldSource = await pageStack.locator('img').first().getAttribute('src');
 	await colorModes[2].click();

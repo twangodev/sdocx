@@ -10,7 +10,8 @@ import { BrowserDocumentSession } from './wasm-adapter';
 interface ActiveDocumentSession {
 	summary(): DocumentSummary;
 	inspection(): unknown;
-	exportPdf(pageIndex: number | undefined, colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>>;
+	resolvePages(selection: string): number[];
+	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>>;
 	debug?(request: DebugRequest): unknown;
 	renderPage(pageIndex: number, colorMode: ColorMode): string;
 	dispose(): void;
@@ -50,10 +51,12 @@ export class ConverterWorkerSession {
 				this.progress(request.generation, 'rendering', `Rendering page ${request.pageIndex + 1}`);
 				return this.requireSession().renderPage(request.pageIndex, request.colorMode);
 			case 'exportPdf': {
-				const bytes = await this.requireSession().exportPdf(request.pageIndex, request.colorMode);
+				const bytes = await this.requireSession().exportPdf(request.pageIndices, request.colorMode);
 				this.assertCurrent(request.generation);
 				return bytes;
 			}
+			case 'resolvePages':
+				return this.requireSession().resolvePages(request.selection);
 			case 'exportJson':
 				return JSON.stringify(this.requireSession().inspection(), null, 2);
 		}

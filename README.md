@@ -138,6 +138,12 @@ is supplied. SVG and PNG use separate files for multiple pages; PDF uses one
 file. `--pdf-dpi 144` sets the physical scale to 144 SVG units per inch; the
 default is 96. This option applies only to PDF and does not rasterize vectors.
 
+Use `--pages "1-3, 5"` with PDF, PNG or SVG to select pages. Omit it for all
+pages. Ranges are one-based and inclusive; selections are sorted into document
+order and duplicates are removed. Invalid ranges fail before writing output.
+Multiple SVG/PNG files retain their original zero-based `_pageN` suffixes.
+The Rust `parse_page_selection(input, page_count)` API returns zero-based indices.
+
 With Docker:
 
 ```sh
@@ -209,7 +215,9 @@ provided fonts, some SVG filters rasterize, and PDF link annotations and
 semantic document tags are not exported. The browser/WASM bindings enable this same `pdf` feature.
 `DocumentSession.add_pdf_font(bytes)` supplies TTF/OTF fonts, and
 `DocumentSession.render_pdf(pageIndex, colorMode)` returns PDF bytes. Omit the
-page index to export the whole document. The website loads bundled Roboto fonts
+page index to export the whole document. For subsets, use
+`DocumentSession.resolve_pages("1-3, 5")` followed by
+`DocumentSession.render_pdf_pages(indices, colorMode)`. The website loads bundled Roboto fonts
 on demand; the CLI also supports system fonts and explicit `--font` files.
 
 ## JavaScript Usage
