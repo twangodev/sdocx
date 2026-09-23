@@ -45,6 +45,7 @@ export interface ReplayStroke {
 		bounds: Box | null;
 		color: string;
 		opacity: number;
+		top_layer?: boolean;
 		profile: string | null;
 		support: 'approximate' | 'reconstructed';
 	};

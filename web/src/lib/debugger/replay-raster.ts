@@ -34,8 +34,7 @@ function include(a: Bounds, b: Bounds) {
 }
 
 /** Timeline composition and spatial ink tiles; independent of the viewer camera and DOM. */
-export class ReplayRaster {
-	private tiles = new CanvasCache<string, Tile>(48 * 1024 * 1024);
+class InkLayerRaster {
 	private bounds: Bounds[] = [];
 	private batches: Bounds[] = [];
 	private base: HTMLCanvasElement | undefined;
@@ -44,7 +43,9 @@ export class ReplayRaster {
 
 	constructor(
 		private replay: Replay,
-		private defaultInk: string
+		private defaultInk: string,
+		private tiles: CanvasCache<string, Tile>,
+		private prefix: string
 	) {
 		for (let i = 0; i < replay.strokes.length; i++) {
 			const box = replay.strokes[i].geometry.bounds;
@@ -68,7 +69,8 @@ export class ReplayRaster {
 		ctx: CanvasRenderingContext2D,
 		region: PageRegion,
 		complete: number,
-		sample: number
+		sample: number,
+		deadline: number
 	): boolean {
 		this.base ??= document.createElement('canvas');
 		const key = `${region.scale}:${region.x}:${region.y}:${region.width}:${region.height}`;
@@ -87,7 +89,7 @@ export class ReplayRaster {
 				region,
 				this.completed + 1,
 				complete + 1,
-				performance.now() + 6
+				deadline
 			) - 1;
 		if (this.completed < complete) return false;
 		ctx.resetTransform();
@@ -248,7 +250,7 @@ export class ReplayRaster {
 		tileY: number,
 		scale: number
 	): Tile {
-		const key = `${scale}:${tileX}:${tileY}:${start}`;
+		const key = `${this.prefix}:${scale}:${tileX}:${tileY}:${start}`;
 		const hit = this.tiles.get(key);
 		if (hit) return hit;
 		const bounds = this.batches[start / BATCH_SIZE];
@@ -286,8 +288,69 @@ export class ReplayRaster {
 	}
 
 	dispose() {
-		this.tiles.clear();
 		if (this.base) this.base.width = this.base.height = 0;
 		this.base = undefined;
+	}
+}
+
+/** Cache each ink layer separately; blend the complete highlighter batch once. */
+export class ReplayRaster {
+	private tiles = new CanvasCache<string, Tile>(48 * 1024 * 1024);
+	private layers: { indices: number[]; raster: InkLayerRaster; canvas?: HTMLCanvasElement }[];
+
+	constructor(private replay: Replay, defaultInk: string) {
+		this.layers = [false, true].map((top) => {
+			const indices = replay.strokes.flatMap((s, i) => !!s.geometry.top_layer === top ? [i] : []);
+			return {
+				indices,
+				raster: new InkLayerRaster({ ...replay, strokes: indices.map(i => replay.strokes[i]) }, defaultInk, this.tiles, String(top))
+			};
+		});
+	}
+
+	paint(ctx: CanvasRenderingContext2D, region: PageRegion, complete: number, sample: number, background?: CanvasImageSource): boolean {
+		const deadline = performance.now() + 6;
+		for (const layer of this.layers) {
+			layer.canvas ??= document.createElement('canvas');
+			if (layer.canvas.width !== region.width) layer.canvas.width = region.width;
+			if (layer.canvas.height !== region.height) layer.canvas.height = region.height;
+			let lo = 0, hi = layer.indices.length;
+			while (lo < hi) {
+				const mid = (lo + hi) >>> 1;
+				if (layer.indices[mid] <= complete) lo = mid + 1;
+				else hi = mid;
+			}
+			const partial = layer.indices[lo] === complete + 1 ? sample : -1;
+			if (!layer.raster.paint(layer.canvas.getContext('2d')!, region, lo - 1, partial, deadline)) return false;
+		}
+		ctx.save();
+		ctx.resetTransform();
+		ctx.globalAlpha = 1;
+		ctx.globalCompositeOperation = 'source-over';
+		ctx.clearRect(0, 0, region.width, region.height);
+		if (background) {
+			ctx.setTransform(region.scale, 0, 0, region.scale, -region.x, -region.y);
+			ctx.drawImage(background, 0, 0, this.replay.width, this.replay.height);
+			ctx.resetTransform();
+		}
+		ctx.drawImage(this.layers[0].canvas!, 0, 0);
+		ctx.globalCompositeOperation = 'darken';
+		ctx.drawImage(this.layers[1].canvas!, 0, 0);
+		ctx.restore();
+		return true;
+	}
+
+	drawStroke(ctx: CanvasRenderingContext2D, index: number, last: number) {
+		const layer = this.layers[this.replay.strokes[index].geometry.top_layer ? 1 : 0];
+		layer.raster.drawStroke(ctx, layer.indices.indexOf(index), last);
+	}
+
+	dispose() {
+		this.tiles.clear();
+		for (const layer of this.layers) {
+			layer.raster.dispose();
+			if (layer.canvas) layer.canvas.width = layer.canvas.height = 0;
+			layer.canvas = undefined;
+		}
 	}
 }

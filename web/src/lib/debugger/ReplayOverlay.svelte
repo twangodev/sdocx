@@ -29,6 +29,7 @@
 		camera: DocumentZoomCamera;
 	} = $props();
 	let background = $state('');
+	let backgroundImage = $state<HTMLImageElement>();
 	let requested = $state(false);
 	$effect(() => {
 		if (partial) requested = true;
@@ -51,18 +52,24 @@
 				colorMode: session.colorMode
 			};
 			background = '';
+			backgroundImage = undefined;
 			backgroundError = '';
 			if (!key) return;
 			let cancelled = false,
 				url = '';
 			void session
 				.debug(request)
-				.then((value) => {
+				.then(async (value) => {
 					if (cancelled) return;
 					const result = value as { svg: string; defaultInk: string };
 					url = URL.createObjectURL(
 						new Blob([result.svg], { type: 'image/svg+xml' })
 					);
+					const image = new Image();
+					image.src = url;
+					await image.decode();
+					if (cancelled) return;
+					backgroundImage = image;
 					background = url;
 					defaultInk = result.defaultInk;
 				})
@@ -90,7 +97,7 @@
 			active < tracks.length && tracks[active].start <= position
 				? sampleAt(tracks[active].times, position - tracks[active].start)
 				: -1;
-		if (!raster.paint(ctx, region, complete, sample)) return false;
+		if (!raster.paint(ctx, region, complete, sample, backgroundImage)) return false;
 		const { scale, pixelRatio } = region;
 		ctx.setTransform(scale, 0, 0, scale, -region.x, -region.y);
 		if (selectedBox) {

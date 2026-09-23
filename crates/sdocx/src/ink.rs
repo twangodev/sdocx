@@ -118,6 +118,8 @@ pub struct PreparedStroke<'a> {
     pub bounds: Option<BoundingBox>,
     pub color: String,
     pub opacity: f64,
+    /// Composite this stroke in the highlighter batch after ordinary ink.
+    pub top_layer: bool,
     pub profile: Option<&'static str>,
     pub support: InkSupport,
 }
@@ -220,6 +222,10 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         bounds,
         color: paint.color,
         opacity,
+        top_layer: stroke
+            .rendering
+            .as_ref()
+            .is_some_and(|r| r.properties.top_layer_pen),
         profile: profile.map(|p| p.name),
     }
 }
