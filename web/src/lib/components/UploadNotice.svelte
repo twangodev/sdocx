@@ -1,13 +1,21 @@
 <script lang="ts">
-	import { CircleCheck, TriangleAlert, ExternalLink, X } from '@lucide/svelte';
+	import { onMount } from 'svelte';
+	import { CircleCheck, TriangleAlert, X } from '@lucide/svelte';
 	import IconButton from './ui/IconButton.svelte';
 
-	let { codes, failed = false, onDismiss, onDetails }: {
+	let { codes, failed = false, onDismiss }: {
 		codes: string[];
 		failed?: boolean;
 		onDismiss: () => void;
-		onDetails: () => void;
 	} = $props();
+	let leaving = $state(false);
+	onMount(() => {
+		let timer = window.setTimeout(() => {
+			leaving = true;
+			timer = window.setTimeout(onDismiss, 180);
+		}, 6000);
+		return () => window.clearTimeout(timer);
+	});
 	const hasIssues = $derived(failed || codes.length > 0);
 	const issueUrl = $derived('https://github.com/twangodev/sdocx/issues/new?' + new URLSearchParams({
 		title: failed ? 'Document could not be opened' : 'Document rendering issue',
@@ -15,20 +23,32 @@
 	}));
 </script>
 
-<aside aria-label="Document upload notification" class="motion-surface-in fixed right-4 bottom-4 z-50 w-[min(23rem,calc(100%-2rem))] rounded-xl border border-subtle bg-raised p-3.5 text-text shadow-lg">
-	<div class="flex items-start gap-2.5">
+<div class="pointer-events-none fixed top-12 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2">
+	<aside aria-label="Document upload notification" class="toast pointer-events-auto flex items-start gap-2 rounded-lg border border-subtle bg-raised px-3 py-2 text-text shadow-lg" class:leaving>
 		<div class="mt-0.5 shrink-0" class:text-muted={hasIssues} class:text-success={!hasIssues}>
-			{#if hasIssues}<TriangleAlert size={17} />{:else}<CircleCheck size={17} />{/if}
+			{#if hasIssues}<TriangleAlert size={14} />{:else}<CircleCheck size={14} />{/if}
 		</div>
-		<div class="min-w-0 flex-1">
-			<p role="status" class="text-xs font-semibold">{failed ? 'Could not open document' : codes.length ? `Opened with ${codes.length} parser ${codes.length === 1 ? 'warning' : 'warnings'}` : 'Document opened · no parser warnings'}</p>
-			<p class="mt-1 text-xs leading-relaxed text-muted">{hasIssues ? 'Some features may not be supported yet.' : 'Something look off?'} This open-source project is reverse-engineering Samsung Notes. An issue helps us improve support.</p>
-			<div class="mt-2.5 flex flex-wrap items-center gap-3 text-xs">
-				<a href={issueUrl} target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-accent hover:underline">Report an issue <ExternalLink size={12} /></a>
-				{#if codes.length}<button class="text-muted hover:text-text" onclick={onDetails}>View warnings</button>{/if}
+		<div class="min-w-0">
+			<p role="status" class="text-xs font-medium">{failed ? 'Import failed' : codes.length ? `Imported with ${codes.length} ${codes.length === 1 ? 'warning' : 'warnings'}` : 'Successfully imported'}</p>
+			<div class="mt-0.5 flex flex-wrap items-center gap-x-1 text-[11px] text-muted">
+				<a href={issueUrl} target="_blank" rel="noreferrer" class="hover:text-accent hover:underline">Report an issue</a>
+				<span>or</span>
+				<a href="https://github.com/twangodev/sdocx/issues/new?title=Feature%20request" target="_blank" rel="noreferrer" class="hover:text-accent hover:underline">request a feature</a>
 			</div>
-			<p class="mt-2 text-[10px] text-muted">Your document stays local. Nothing is attached automatically.</p>
 		</div>
-		<IconButton label="Dismiss notification" onclick={onDismiss}><X size={13} /></IconButton>
-	</div>
-</aside>
+		<IconButton label="Dismiss notification" onclick={onDismiss}><X size={12} /></IconButton>
+	</aside>
+</div>
+
+<style>
+	.toast { animation: toast-in 180ms var(--ease-out) both; }
+	.toast.leaving { animation: toast-out 180ms var(--ease-standard) both; }
+	@keyframes toast-in {
+		from { opacity: 0; transform: translateY(-12px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+	@keyframes toast-out {
+		from { opacity: 1; transform: translateY(0); }
+		to { opacity: 0; transform: translateY(-12px); }
+	}
+</style>

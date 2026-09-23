@@ -211,6 +211,5 @@
 	<UploadNotice
 		{...uploadNotice}
 		onDismiss={() => (uploadNotice = null)}
-		onDetails={() => { detailsOpen = true; uploadNotice = null; }}
 	/>
 {/if}

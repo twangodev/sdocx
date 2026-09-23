@@ -199,7 +199,7 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(viewerBody).toHaveClass(/details-open/);
 	await expect.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
 	await expect(page.getByText('No parser warnings', { exact: true })).toBeVisible();
-	await expect(page.getByRole('complementary', { name: 'Document upload notification' })).toContainText('Document opened');
+	await expect(page.getByRole('complementary', { name: 'Document upload notification' })).toContainText('Successfully imported');
 	await page.getByRole('button', { name: 'Dismiss notification' }).click();
 	await page.getByRole('button', { name: 'Document information' }).click();
 	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
