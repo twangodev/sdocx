@@ -87,6 +87,25 @@
         "path": "03-image-placement.pdf",
         "sha256": "9d304575876ada6a32da5c4d8a5ffa6bc6c8f64aa4df1a4372d16daa2d60d854"
       }
+    },
+    {
+      "id": "04-marker4-highlighter",
+      "sdocx": {
+        "path": "04-marker4-highlighter.sdocx",
+        "sha256": "8299abbf763e8e3e5af746815d13dfdf45443da27b0eb79192c328571905cdd2"
+      },
+      "reference_pdf": {
+        "path": "04-marker4-highlighter.pdf",
+        "sha256": "b951e506c2d5ebd0ae100ac5cf7179e2575e6fcc8dcdea59be822de4341f8a9a"
+      },
+      "expected": {
+        "stored_pages": 2,
+        "visible_pages": 1,
+        "page_objects": {
+          "strokes": 41
+        },
+        "diagnostics": {}
+      }
     }
   ]
 }

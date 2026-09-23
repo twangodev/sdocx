@@ -33,6 +33,10 @@ calibration marks. Its two stored pages map to one visible page. The detailed
 [APK and reference findings](../docs/reverse-engineering/shapes-dot-calibration-findings.md)
 record the supported rendering rules and remaining property warnings.
 
+Fixture `04-marker4-highlighter` covers twelve Marker4 strokes, 29 fountain
+pen strokes, highlight overlaps and built-in narrow ruled paper. Its two stored
+pages map to one visible page and parse without diagnostics.
+
 Run the external corpus locally with:
 
 ```sh
