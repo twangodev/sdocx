@@ -12,8 +12,10 @@ filename extension. PDF writes one document even when the note has many pages.
 The implementation uses [krilla 0.8.2](https://docs.rs/krilla/0.8.2/krilla/)
 and [krilla-svg 0.8.1](https://docs.rs/krilla-svg/0.8.1/krilla_svg/), with
 usvg/resvg 0.47.0 shared with PNG export. All workspace packages now declare
-Rust 1.92. PDF dependencies remain optional for library consumers; the WASM
-bindings continue to use only the `render` and `serde` features.
+Rust 1.92. PDF dependencies remain optional for library consumers. The WASM bindings
+enable `pdf` and `serde`, exposing the same renderer through
+`DocumentSession.render_pdf`. Browser fonts are supplied as bytes through
+`add_pdf_font`; the website loads its bundled Roboto/Roboto Mono fonts on demand.
 
 The supplied font database is shared across all pages. CLI font precedence
 matches PNG: explicit faces are loaded before system faces. Available fonts

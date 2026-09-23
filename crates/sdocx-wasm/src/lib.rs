@@ -22,6 +22,7 @@ pub struct DocumentSession {
     parsed: Option<sdocx::ParsedDocument>,
     layout: Option<sdocx::LayoutDocument>,
     page_count: usize,
+    pdf_fonts: sdocx::pdf::fontdb::Database,
     debugger: Option<debugger::Source>,
 }
 
@@ -44,6 +45,7 @@ impl DocumentSession {
             parsed: Some(parsed),
             layout: Some(layout),
             page_count,
+            pdf_fonts: sdocx::pdf::fontdb::Database::new(),
         })
     }
 
@@ -69,6 +71,68 @@ impl DocumentSession {
             .ok_or_else(|| JsError::new("page index is out of bounds"))
     }
 
+    /// Add a TTF/OTF font for PDF text. Browsers cannot discover system fonts.
+    /// Load the required fonts before calling `render_pdf`.
+    pub fn add_pdf_font(&mut self, bytes: &[u8]) -> Result<(), JsError> {
+        self.parsed()?;
+        let before = self.pdf_fonts.faces().count();
+        self.pdf_fonts.load_font_data(bytes.to_vec());
+        if self.pdf_fonts.faces().count() == before {
+            return Err(JsError::new(
+                "no usable PDF font faces in the supplied data",
+            ));
+        }
+        self.pdf_fonts.set_sans_serif_family("Roboto");
+        self.pdf_fonts.set_monospace_family("Roboto Mono");
+        Ok(())
+    }
+
+    /// Export all visible pages, or one zero-based page, using the CLI's PDF engine.
+    /// Returns PDF bytes; fonts are supplied separately with `add_pdf_font`.
+    pub fn render_pdf(
+        &self,
+        page_index: Option<usize>,
+        color_mode: &str,
+    ) -> Result<Vec<u8>, JsError> {
+        let indices = match page_index {
+            Some(index) => vec![
+                u32::try_from(index).map_err(|_| JsError::new("page index is out of bounds"))?,
+            ],
+            None => (0..self.page_count as u32).collect(),
+        };
+        self.render_pdf_pages(&indices, color_mode)
+    }
+
+    /// Resolve a one-based range expression into sorted, unique zero-based indices.
+    pub fn resolve_pages(&self, selection: &str) -> Result<Vec<u32>, JsError> {
+        self.parsed()?;
+        sdocx::parse_page_selection(selection, self.page_count)
+            .map(|indices| indices.into_iter().map(|index| index as u32).collect())
+            .map_err(|error| JsError::new(&error.to_string()))
+    }
+
+    /// Export explicit zero-based visible pages in the supplied order.
+    pub fn render_pdf_pages(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+    ) -> Result<Vec<u8>, JsError> {
+        let parsed = self.parsed()?;
+        let layout = self.layout()?;
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = parse_render_color_mode(color_mode)?;
+        let pages = page_indices
+            .iter()
+            .map(|&index| {
+                sdocx::render_layout_page_svg(&parsed.document, layout, index as usize, &options)
+                    .ok_or_else(|| JsError::new("page index is out of bounds"))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let pdf_options = sdocx::PdfOptions::new(std::sync::Arc::new(self.pdf_fonts.clone()));
+        sdocx::render_svg_pages_pdf(&pages, &pdf_options)
+            .map_err(|error| JsError::new(&error.to_string()))
+    }
+
     /// Lazy debugger request. Large integers are returned as decimal strings.
     pub fn debug(&mut self, request: &str) -> Result<String, JsError> {
         let parsed = self
@@ -88,6 +152,7 @@ impl DocumentSession {
 
     /// Release the parsed document before the JavaScript wrapper is collected.
     pub fn dispose(&mut self) {
+        self.pdf_fonts = sdocx::pdf::fontdb::Database::new();
         self.debugger = None;
         self.parsed = None;
         self.layout = None;

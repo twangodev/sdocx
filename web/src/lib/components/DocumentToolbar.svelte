@@ -7,8 +7,7 @@
 	import IconButton from './ui/IconButton.svelte';
 	import ViewerToolbarShell from './viewer/ViewerToolbarShell.svelte';
 
-	type Scale = 1 | 2;
-	type ArchiveKind = 'svg' | 'png' | 'everything';
+	import type { ExportRequest } from '$converter/export-options';
 
 	interface DocumentToolbarModel {
 		document: {
@@ -27,7 +26,6 @@
 		activity: {
 			exporting: boolean;
 			rendering: boolean;
-			pngScale: Scale;
 			exportProgress: string;
 		};
 	}
@@ -41,11 +39,8 @@
 		onFitWidth: () => void;
 		onFitPage: () => void;
 		onColorMode: (mode: ColorMode) => void;
-		onScale: (scale: Scale) => void;
-		onCurrentSvg: () => Promise<string>;
-		onCurrentPng: () => Promise<string>;
-		onArchive: (kind: ArchiveKind) => Promise<string>;
-		onJson: () => Promise<string>;
+		onExport: (request: ExportRequest) => Promise<string>;
+		onResolvePages: (selection: string) => Promise<number[]>;
 		onCancel: () => void;
 		onReplace: () => void;
 		onClose: () => void;
@@ -117,14 +112,15 @@
 				model={{
 					exporting: model.activity.exporting,
 					rendering: model.activity.rendering,
-					pngScale: model.activity.pngScale
+					title: model.document.title,
+					filename: model.document.filename,
+					pageCount: model.document.pageCount,
+					pageIndex: model.viewer.pageIndex,
+					exportProgress: model.activity.exportProgress
 				}}
 				actions={{
-					onScale: actions.onScale,
-					onCurrentSvg: actions.onCurrentSvg,
-					onCurrentPng: actions.onCurrentPng,
-					onArchive: actions.onArchive,
-					onJson: actions.onJson,
+					onExport: actions.onExport,
+					onResolvePages: actions.onResolvePages,
 					onCancel: actions.onCancel
 				}}
 			/>

@@ -119,6 +119,13 @@ struct Cli {
 
     #[arg(long, value_parser = parse_pdf_dpi, help = "SVG units per inch for PDF physical page size (default: 96)")]
     pdf_dpi: Option<f32>,
+
+    #[arg(
+        long,
+        value_name = "RANGE",
+        help = "Visible pages to export, e.g. 1-3,5 (default: all pages)"
+    )]
+    pages: Option<String>,
 }
 
 fn print_info(doc: &Document, layout: &LayoutDocument) {
@@ -286,7 +293,21 @@ fn main() {
     let output_base = cli
         .output
         .unwrap_or_else(|| cli.path.with_extension(format.ext()));
-    let rendered_pages = sdocx::render_document_svg(&doc, &RenderOptions::default());
+    let page_indices = match cli.pages.as_deref() {
+        Some(selection) => sdocx::parse_page_selection(selection, layout.pages.len())
+            .unwrap_or_else(|error| {
+                eprintln!("Error: {error}");
+                std::process::exit(1);
+            }),
+        None => (0..layout.pages.len()).collect(),
+    };
+    let rendered_pages: Vec<_> = page_indices
+        .iter()
+        .map(|&index| {
+            sdocx::render_layout_page_svg(&doc, &layout, index, &RenderOptions::default())
+                .expect("validated visible page index")
+        })
+        .collect();
 
     if format == Format::Pdf {
         let mut options = sdocx::PdfOptions::new(svg_options.as_ref().unwrap().fontdb.clone());
@@ -313,7 +334,7 @@ fn main() {
     if rendered_pages.len() == 1 {
         write_page(&output_base, &rendered_pages[0].svg, svg_options.as_ref());
     } else {
-        for (i, rendered_page) in rendered_pages.iter().enumerate() {
+        for (i, rendered_page) in page_indices.iter().zip(&rendered_pages) {
             let stem = output_base
                 .file_stem()
                 .unwrap_or_default()

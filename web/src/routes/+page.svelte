@@ -145,7 +145,6 @@
 				activity: {
 					exporting: session.exporting,
 					rendering: session.rendering,
-					pngScale: session.pngScale,
 					exportProgress: session.exportProgress
 				}
 			}}
@@ -158,11 +157,8 @@
 				onFitWidth: zoom.fitWidth,
 				onFitPage: fitPreviewPage,
 				onColorMode: (nextMode) => void session.setColorMode(nextMode),
-				onScale: (nextScale) => session.setPngScale(nextScale),
-				onCurrentSvg: () => exportResult(session.downloadCurrentSvg(pageIndex)),
-				onCurrentPng: () => exportResult(session.downloadCurrentPng(pageIndex)),
-				onArchive: (kind) => exportResult(session.downloadArchive(kind)),
-				onJson: () => exportResult(session.downloadJson()),
+				onExport: (request) => exportResult(session.downloadExport(request)),
+				onResolvePages: (selection) => session.resolvePages(selection),
 				onCancel: () => session.cancel(),
 				onReplace: () => picker?.click(),
 				onClose: () => void session.close()

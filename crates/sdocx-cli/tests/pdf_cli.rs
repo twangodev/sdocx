@@ -10,6 +10,10 @@ struct Fixture(PathBuf);
 
 impl Fixture {
     fn new() -> Self {
+        Self::with_ids(&["one1", "two2"])
+    }
+
+    fn with_ids(ids: &[&str]) -> Self {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
         let directory = std::env::temp_dir().join(format!(
@@ -20,7 +24,7 @@ impl Fixture {
         std::fs::create_dir(&directory).unwrap();
         let file = std::fs::File::create(directory.join("note.sdocx")).unwrap();
         let mut zip = zip::ZipWriter::new(file);
-        for id in ["one1", "two2"] {
+        for id in ids {
             let mut bytes = support::page(&[vec![]], 0, &[]);
             let original: Vec<_> = "page".encode_utf16().flat_map(u16::to_le_bytes).collect();
             let offset = bytes
@@ -153,5 +157,52 @@ fn invalid_font_or_scale_does_not_overwrite_output() {
         assert!(!result.status.success());
         assert!(String::from_utf8_lossy(&result.stderr).contains("--pdf-dpi applies to PDF"));
         assert!(!fixture.0.join(format!("note.{format}")).exists());
+    }
+}
+
+#[test]
+fn page_ranges_select_pdf_pages_and_keep_image_page_numbers() {
+    let fixture = Fixture::with_ids(&["one1", "two2", "tri3"]);
+    let result = fixture.run(&["--pages", "3, 1-1, 3", "-o", "selected.pdf"]);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert_pdf(&fixture.0.join("selected.pdf"), [810.0, 1145.25]);
+    for format in ["svg", "png"] {
+        let result = fixture.run(&["--pages", "3,1", "-f", format]);
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert!(fixture.0.join(format!("note_page0.{format}")).exists());
+        assert!(fixture.0.join(format!("note_page2.{format}")).exists());
+        assert!(!fixture.0.join(format!("note_page1.{format}")).exists());
+    }
+    let result = fixture.run(&["--pages", "2", "-o", "single.pdf"]);
+    assert!(result.status.success());
+    assert_eq!(
+        lopdf::Document::load(fixture.0.join("single.pdf"))
+            .unwrap()
+            .get_pages()
+            .len(),
+        1
+    );
+    let result = fixture.run(&["--pages", "2", "-o", "single.svg"]);
+    assert!(result.status.success());
+    assert!(fixture.0.join("single.svg").exists());
+}
+
+#[test]
+fn invalid_ranges_do_not_overwrite_output() {
+    let fixture = Fixture::new();
+    let output = fixture.0.join("existing.pdf");
+    std::fs::write(&output, b"existing").unwrap();
+    for selection in ["", "0", "3", "2-1", "1,", "1-999999999999999999999999"] {
+        let result = fixture.run(&["--pages", selection, "-o", "existing.pdf"]);
+        assert!(!result.status.success(), "{selection:?}");
+        assert_eq!(std::fs::read(&output).unwrap(), b"existing");
     }
 }

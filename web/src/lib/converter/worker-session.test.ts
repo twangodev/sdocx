@@ -13,6 +13,8 @@ function fakeSession(label: string) {
 	return {
 		summary: () => ({ pageCount: 1, inspection: { label } }),
 		inspection: () => ({ label }),
+		resolvePages: vi.fn(() => [0]),
+		exportPdf: vi.fn(async () => new Uint8Array([37, 80, 68, 70])),
 		renderPage: () => `<svg>${label}</svg>`,
 		dispose: vi.fn()
 	};
@@ -81,4 +83,26 @@ it('routes debugger requests only to the current session', async () => {
  expect(session.debug).toHaveBeenCalledTimes(1);
  await worker.handle({ id: 4, generation: 3, type: 'dispose' });
  await expect(worker.handle({ id: 5, generation: 3, type: 'debug', request })).rejects.toThrow(/Load a document/);
+});
+
+it('routes PDF requests through the active session and rejects superseded exports', async () => {
+	const converted = deferred<Uint8Array<ArrayBuffer>>();
+	const session = fakeSession('pdf');
+	session.exportPdf.mockReturnValueOnce(converted.promise);
+	const worker = new ConverterWorkerSession(vi.fn(), async () => session);
+	await worker.handle({ id: 1, generation: 1, type: 'load', bytes: new ArrayBuffer(1) });
+	const exporting = worker.handle({ id: 2, generation: 1, type: 'exportPdf', pageIndices: [0], colorMode: 'dark' });
+	expect(session.exportPdf).toHaveBeenCalledWith([0], 'dark');
+	await worker.handle({ id: 3, generation: 2, type: 'dispose' });
+	converted.resolve(new Uint8Array([37, 80, 68, 70]));
+	await expect(exporting).rejects.toThrow(/superseded/);
+});
+
+it('uses shared WASM validation for page ranges', async () => {
+	const session = fakeSession('range');
+	const worker = new ConverterWorkerSession(vi.fn(), async () => session);
+	await worker.handle({ id: 1, generation: 1, type: 'load', bytes: new ArrayBuffer(1) });
+	await expect(worker.handle({ id: 2, generation: 1, type: 'resolvePages', selection: '1' })).resolves.toEqual([0]);
+	expect(session.resolvePages).toHaveBeenCalledWith('1');
+	await expect(worker.handle({ id: 3, generation: 0, type: 'resolvePages', selection: '1' })).rejects.toThrow(/superseded/);
 });
