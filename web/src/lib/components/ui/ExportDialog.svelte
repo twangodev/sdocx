@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Download, LoaderCircle, Star, X } from '@lucide/svelte';
+	import { ArrowLeft, Download, LoaderCircle, Star, X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 	import IconButton from './IconButton.svelte';
 	import type { ArchiveKind, PngScale as Scale } from '$converter/document-session.svelte';
@@ -30,6 +30,7 @@
 	let step = $state<'configure' | 'exporting' | 'complete'>('configure');
 	let error = $state('');
 	let starLink = $state<HTMLAnchorElement>();
+	let formatSelect = $state<HTMLSelectElement>();
 	let scope = $state('current');
 	let scale = $state<Scale>(1);
 	const documentExport = $derived(format === 'json' || format === 'everything');
@@ -40,6 +41,12 @@
 		step = 'configure';
 		error = '';
 		dialog.showModal();
+	}
+
+	async function backToExport(): Promise<void> {
+		step = 'configure';
+		await tick();
+		formatSelect?.focus();
 	}
 
 	async function download(): Promise<void> {
@@ -81,6 +88,7 @@
 	{#if step === 'complete'}
 		<p id="export-description" class="mt-3 text-sm">Your download is ready.</p>
 		<p class="mt-2 text-xs leading-relaxed text-muted">If sdocx helped you, give the project a star on GitHub. It helps others discover this open-source Samsung Notes converter.</p>
+		<button type="button" class="mt-4 inline-flex items-center gap-1.5 text-xs text-muted hover:text-text" onclick={backToExport}><ArrowLeft size={13} />Back to export</button>
 		<div class="mt-5 flex items-center justify-end gap-2">
 			<button type="button" class="rounded-md px-3 py-2 text-xs hover:bg-surface" onclick={() => dialog.close()}>Done</button>
 			<a bind:this={starLink} href="https://github.com/twangodev/sdocx" target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-xs font-medium text-white"><Star size={14} />Star on GitHub</a>
@@ -90,7 +98,7 @@
 	<form onsubmit={(event) => { event.preventDefault(); void download(); }} class="grid gap-4">
 		<fieldset disabled={step === 'exporting'} class="grid gap-4">
 		<label class="grid gap-1.5 text-xs font-medium">Format
-			<select aria-label="Format" bind:value={format} class="rounded-md border border-subtle bg-bg p-2 text-text">
+			<select bind:this={formatSelect} aria-label="Format" bind:value={format} class="rounded-md border border-subtle bg-bg p-2 text-text">
 				<option value="svg">SVG · scalable vector image</option>
 				<option value="png">PNG · image</option>
 				<option value="json">JSON · document structure</option>
