@@ -198,7 +198,9 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 	await expect(page.getByRole('complementary', { name: 'Document information' })).toBeVisible();
 	await expect(viewerBody).toHaveClass(/details-open/);
 	await expect.poll(() => detailsShell.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
-	await expect(page.getByText('No parser warnings')).toBeVisible();
+	await expect(page.getByText('No parser warnings', { exact: true })).toBeVisible();
+	await expect(page.getByRole('complementary', { name: 'Document upload notification' })).toContainText('Document opened');
+	await page.getByRole('button', { name: 'Dismiss notification' }).click();
 	await page.getByRole('button', { name: 'Document information' }).click();
 	await expect(page.getByRole('complementary', { name: 'Document information' })).toHaveCount(0);
 	await expect
@@ -297,11 +299,13 @@ test('real fixture parses, renders, and exports without an upload', async ({ pag
 
 	const exportMenu = page.getByRole('button', { name: 'Export document' });
 	await exportMenu.click();
-	await page.getByRole('menuitem', { name: 'PNG scale: 2×' }).click();
+	await expect(page.getByRole('dialog', { name: 'Export document' })).toBeVisible();
+	await page.getByLabel('Format', { exact: true }).selectOption('png');
+	await page.getByLabel('PNG resolution').selectOption('2');
+	await page.getByLabel('Format', { exact: true }).selectOption('svg');
 
 	const downloadStarted = page.waitForEvent('download');
-	await exportMenu.click();
-	await page.getByRole('menuitem', { name: 'Current page as SVG' }).click();
+	await page.getByRole('button', { name: 'Download', exact: true }).click();
 	const download = await downloadStarted;
 	expect(download.suggestedFilename()).toBe('01-basic-formatting-page-001.svg');
 	const oldPreview = await preview.elementHandle();

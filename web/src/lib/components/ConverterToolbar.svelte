@@ -77,7 +77,7 @@
 	}
 
 	function handleKeyboardShortcut(event: KeyboardEvent): void {
-		if (model.disabled || event.defaultPrevented || event.isComposing || isTextEntry(event.target)) return;
+		if (document.querySelector('dialog[open]') || model.disabled || event.defaultPrevented || event.isComposing || isTextEntry(event.target)) return;
 
 		const command = viewerCommandForKey(event);
 		if (!command) return;

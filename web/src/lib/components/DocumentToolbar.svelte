@@ -3,7 +3,7 @@
 	import type { ColorMode } from '$converter/protocol';
 	import ConverterToolbar from './ConverterToolbar.svelte';
 	import ColorModeSwitch from './ui/ColorModeSwitch.svelte';
-	import ExportMenu from './ui/ExportMenu.svelte';
+	import ExportDialog from './ui/ExportDialog.svelte';
 	import IconButton from './ui/IconButton.svelte';
 	import ViewerToolbarShell from './viewer/ViewerToolbarShell.svelte';
 
@@ -113,7 +113,7 @@
 			{/if}
 			<ColorModeSwitch value={model.viewer.colorMode} disabled={model.activity.rendering} onChange={actions.onColorMode} />
 			<span class="mx-0.5 h-4 w-px bg-subtle" aria-hidden="true"></span>
-			<ExportMenu
+			<ExportDialog
 				model={{
 					exporting: model.activity.exporting,
 					rendering: model.activity.rendering,

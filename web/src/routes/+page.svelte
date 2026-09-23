@@ -7,10 +7,13 @@
 	import DocumentToolbar from '$lib/components/DocumentToolbar.svelte';
 	import DropOverlay from '$lib/components/DropOverlay.svelte';
 	import ErrorNotice from '$lib/components/ErrorNotice.svelte';
+	import UploadNotice from '$lib/components/UploadNotice.svelte';
 	import UploadSurface from '$lib/components/UploadSurface.svelte';
 	import { DocumentSession } from '$converter/document-session.svelte';
 	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
 
+	let uploadNotice = $state<{ codes: string[]; failed: boolean } | null>(null);
+	let uploadGeneration = 0;
 	let picker = $state<HTMLInputElement>();
 	let pageIndex = $state(0);
 	let detailsOpen = $state(true);
@@ -24,6 +27,7 @@
 	const zoom = new DocumentZoomCamera(() => pageIndex);
 	const session = new DocumentSession({
 		onResetView: () => {
+			uploadNotice = null;
 			workspace.debuggerOpen = false;
 			debugPreview = null;
 			zoom.reset();
@@ -61,10 +65,23 @@
 		zoom.fitSelectedPage();
 	}
 
+	async function loadDocument(file: File): Promise<void> {
+		const generation = ++uploadGeneration;
+		uploadNotice = null;
+		await session.load(file);
+		if (generation !== uploadGeneration) return;
+		if (session.error || (session.activeFile === file && session.summary)) {
+			uploadNotice = {
+				codes: session.activeFile === file ? session.details?.diagnostics.map(({ code }) => code) ?? [] : [],
+				failed: Boolean(session.error)
+			};
+		}
+	}
+
 	function onFileInput(event: Event): void {
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
-		if (file) void session.load(file);
+		if (file) void loadDocument(file);
 		input.value = '';
 	}
 </script>
@@ -79,7 +96,7 @@
 
 <DropOverlay
 	hasDocument={session.hasDocument}
-	onFile={(file) => void session.load(file)}
+	onFile={(file) => void loadDocument(file)}
 />
 
 <input
@@ -188,4 +205,12 @@
 		</div>
 		{#if session.error}<ErrorNotice message={session.error} />{/if}
 	</section>
+{/if}
+
+{#if uploadNotice}
+	<UploadNotice
+		{...uploadNotice}
+		onDismiss={() => (uploadNotice = null)}
+		onDetails={() => { detailsOpen = true; uploadNotice = null; }}
+	/>
 {/if}
