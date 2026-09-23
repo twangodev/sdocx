@@ -6,6 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun run build:wasm && vite dev",
+		"dev:host": "bun run dev --host 0.0.0.0",
 		"build:wasm": "wasm-pack build ../crates/sdocx-wasm --target web --out-dir ../../web/static/wasm --out-name sdocx_wasm --no-typescript --no-pack",
 		"build": "bun run build:wasm && bun run build:app",
 		"build:app": "vite build",
