@@ -15,6 +15,7 @@ export type ConverterRequest =
 	| { id: number; generation: number; type: 'inspect' }
 	| { id: number; generation: number; type: 'debug'; request: DebugRequest }
 	| { id: number; generation: number; type: 'renderPage'; pageIndex: number; colorMode: ColorMode }
+	| { id: number; generation: number; type: 'exportPdf'; pageIndex?: number; colorMode: ColorMode }
 	| { id: number; generation: number; type: 'exportJson' }
 	| { id: number; generation: number; type: 'dispose' };
 

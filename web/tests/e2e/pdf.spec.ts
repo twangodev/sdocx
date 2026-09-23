@@ -2,43 +2,27 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { inflateSync } from 'node:zlib';
+import { PDFDocument, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
+import { pdfNote } from '../fixtures/pdf-note';
 
-// Replace only the parser boundary: exercise the production worker, export UI,
-// SVG conversion, and downloaded PDF without requiring the external corpus.
 async function openDocument(page: Page, oversized = false) {
 	await page.route('https://rybbit.twango.dev/api/script.js', (route) => route.fulfill({ body: '' }));
-	await page.route('**/wasm/sdocx_wasm.js', (route) => route.fulfill({
-		contentType: 'application/javascript',
-		body: `export default async function() {}
-			export class DocumentSession {
-				page_count = 2;
-				inspection = {};
-				render_svg(index, mode) {
-					const width = ${oversized} ? 20000 : (index === 0 ? 400 : 800);
-					const height = index === 0 ? 800 : 400;
-					const ink = mode === 'dark' ? '#ffffff' : '#000000';
-					return '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '"><rect width="100%" height="100%" fill="' + (mode === 'dark' ? '#000000' : '#ffffff') + '"/><path d="M 10 20 L 100 120 L 200 20 Z" fill="' + ink + '"/><path d="M 30 60 Q 80 10 120 60" fill="none" stroke="#ff0000" stroke-width="4" stroke-opacity="0.4"/><text x="20" y="200" font-family="Arial" font-size="20">Page ' + (index + 1) + '</text></svg>';
-				}
-				dispose() {}
-			}`
-	}));
 	await page.goto('/');
-	await page.locator('input[type=file]').setInputFiles({ name: 'vector-note.sdocx', mimeType: 'application/zip', buffer: Buffer.from('fixture') });
+	await page.locator('input[type=file]').setInputFiles({ name: 'vector-note.sdocx', mimeType: 'application/zip', buffer: pdfNote(oversized) });
 	await expect(page.getByAltText('Rendered preview of page 2')).toBeAttached();
 	await expect(page.getByRole('button', { name: 'Export document', exact: true })).toBeEnabled();
 }
 
-function contentStreams(pdf: Buffer): string {
-	const text = pdf.toString('latin1');
-	return [...text.matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)].map((match) =>
-		inflateSync(Buffer.from(match[1], 'latin1')).toString('latin1')
-	).join('\n');
+async function inspectPdf(bytes: Buffer) {
+	const pdf = await PDFDocument.load(bytes);
+	const objects = pdf.context.enumerateIndirectObjects().map(([, value]) => value);
+	const contents = objects.filter((value): value is PDFRawStream => value instanceof PDFRawStream)
+		.map((stream) => Buffer.from(decodePDFRawStream(stream).decode()).toString('latin1')).join('\n');
+	return { pdf, contents, dictionaries: objects.map((value) => value instanceof PDFRawStream ? value.dict.toString() : value.toString()).join('\n') };
 }
 
 for (const scope of ['current', 'all'] as const) {
-	test(`PDF exports ${scope} pages with vector paths and original dimensions`, async ({ page }, testInfo) => {
-		test.skip(testInfo.project.name !== 'chromium', 'Worker request interception requires Chromium.');
+	test(`PDF exports ${scope} pages with vector paths and original dimensions`, async ({ page }) => {
 		const remote: string[] = [];
 		page.on('request', (request) => {
 			if (request.url().startsWith('http') && !request.url().startsWith('http://127.0.0.1:4173') && !request.url().includes('rybbit.twango.dev')) remote.push(request.url());
@@ -55,32 +39,33 @@ for (const scope of ['current', 'all'] as const) {
 		await page.getByRole('button', { name: 'Download', exact: true }).click();
 		const download = await started;
 		expect(download.suggestedFilename()).toBe(scope === 'all' ? 'vector-note.pdf' : 'vector-note-page-002.pdf');
-		const pdf = await readFile((await download.path())!);
-		const source = pdf.toString('latin1');
-		expect(source).toMatch(/^%PDF-/);
-		expect(source.match(/\/Type \/Page\b/g)).toHaveLength(scope === 'all' ? 2 : 1);
-		expect(source).toContain('/MediaBox [0 0 600. 300.]');
-		if (scope === 'all') expect(source).toContain('/MediaBox [0 0 300. 600.]');
-		expect(source).not.toContain('/Subtype /Image');
-		const contents = contentStreams(pdf);
-		expect(contents).toMatch(/10\.? 20\.? m/);
-		expect(contents).toMatch(/100\.? 120\.? l/);
-		expect(contents).toContain('(Page 2)');
-		expect(contents).toMatch(/1\.?(?:0*) g/); // White ink from document dark mode.
-		expect(contents.includes('(Page 1)')).toBe(scope === 'all');
-		if (scope === 'all') expect(contents.indexOf('(Page 1)')).toBeLessThan(contents.indexOf('(Page 2)'));
+		const bytes = await readFile((await download.path())!);
+		expect(bytes.toString('latin1')).toMatch(/^%PDF-/);
+		const { pdf, contents, dictionaries } = await inspectPdf(bytes);
+		expect(pdf.getPageCount()).toBe(scope === 'all' ? 2 : 1);
+		expect(pdf.getPages().map((page) => page.getSize())).toEqual(scope === 'all'
+			? [{ width: 300, height: 600 }, { width: 600, height: 300 }]
+			: [{ width: 600, height: 300 }]);
+		expect(dictionaries).not.toContain('/Subtype /Image');
+		expect(dictionaries).toContain('/FontFile2');
+		expect(dictionaries).toContain('/ToUnicode');
+		expect(contents).toContain('30 40 m 150 80 l');
+		expect(contents.includes('10 20 m 100 120 l')).toBe(scope === 'all');
+		expect(contents).toContain('<03A9>'); // Unicode mapping for Ω.
+		expect(contents).toContain('<00E9>'); // Unicode mapping for é.
+		expect(contents).toMatch(/\b1 G\b/); // White stroke from document dark mode.
+
 		await expect(page.getByText('Your download is ready.')).toBeVisible();
 		expect(remote).toEqual([]);
 	});
 }
 
-test('PDF reports unsupported page dimensions without claiming a download', async ({ page }, testInfo) => {
-	test.skip(testInfo.project.name !== 'chromium', 'Worker request interception requires Chromium.');
+test('PDF reports unsupported page dimensions without claiming a download', async ({ page }) => {
 	await openDocument(page, true);
 	await page.getByRole('button', { name: 'Export document', exact: true }).click();
 	await page.getByLabel('Format', { exact: true }).selectOption('pdf');
 	await page.getByRole('button', { name: 'Download', exact: true }).click();
-	await expect(page.getByRole('dialog').getByRole('alert')).toContainText('page dimensions');
+	await expect(page.getByRole('dialog').getByRole('alert')).toContainText('PDF dimensions');
 	await expect(page.getByText('Your download is ready.')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Download', exact: true })).toBeEnabled();
 });
@@ -99,7 +84,31 @@ test('real WASM document exports all pages as a PDF', async ({ page }) => {
 	await page.getByRole('button', { name: 'Download', exact: true }).click();
 	const download = await started;
 	expect(download.suggestedFilename()).toBe('01-basic-formatting.pdf');
-	const pdf = (await readFile((await download.path())!)).toString('latin1');
-	expect(pdf).toMatch(/^%PDF-/);
-	expect(pdf.match(/\/Type \/Page\b/g)).toHaveLength(5);
+	const bytes = await readFile((await download.path())!);
+	const { pdf } = await inspectPdf(bytes);
+	expect(pdf.getPageCount()).toBe(5);
+});
+
+test('WASM PDF API validates page, color, fonts and disposed sessions', async ({ page }) => {
+	await page.route('https://rybbit.twango.dev/api/script.js', (route) => route.fulfill({ body: '' }));
+	await page.goto('/');
+	const errors = await page.evaluate(async (bytes) => {
+		const module = await import(`${location.origin}/wasm/sdocx_wasm.js`);
+		await module.default();
+		const session = new module.DocumentSession(new Uint8Array(bytes));
+		const message = (task: () => unknown) => {
+			try { task(); return ''; } catch (error) { return (error as Error).message; }
+		};
+		try {
+			const invalidPage = message(() => session.render_pdf(2, 'auto'));
+			const invalidMode = message(() => session.render_pdf(undefined, 'invalid'));
+			const invalidFont = message(() => session.add_pdf_font(new Uint8Array([1, 2, 3])));
+			session.dispose();
+			return { invalidPage, invalidMode, invalidFont, disposed: message(() => session.render_pdf(undefined, 'auto')) };
+		} finally { session.free(); }
+	}, [...pdfNote()]);
+	expect(errors.invalidPage).toContain('out of bounds');
+	expect(errors.invalidMode).toContain('color mode');
+	expect(errors.invalidFont).toContain('no usable PDF font');
+	expect(errors.disposed).toContain('disposed');
 });

@@ -14,7 +14,11 @@ const session = new ConverterWorkerSession((generation, phase, message) => {
 self.onmessage = async (event: MessageEvent<ConverterRequest>) => {
 	const request = event.data;
 	try {
-		emit({ id: request.id, type: 'result', value: await session.handle(request) });
+		const value = await session.handle(request);
+		self.postMessage(
+			{ id: request.id, type: 'result', value } satisfies ConverterEvent,
+			value instanceof Uint8Array ? [value.buffer] : []
+		);
 	} catch (error) {
 		emit({
 			id: request.id,

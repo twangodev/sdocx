@@ -189,30 +189,15 @@ export class DocumentSession {
 	async downloadPdf(pageIndex?: number): Promise<void> {
 		if (!this.summary || !this.activeFile) return;
 		const generation = this.loadGeneration;
-		const pageCount = this.summary.pageCount;
-		const colorMode = this.colorMode;
 		const stem = this.stem;
-		const client = this.requireClient();
-		const assertCurrent = () => {
-			if (generation !== this.loadGeneration) throw new Error('PDF export cancelled.');
-		};
-		const pages = async function* (session: DocumentSession) {
-			const start = pageIndex ?? 0;
-			const end = pageIndex === undefined ? pageCount : pageIndex + 1;
-			for (let index = start; index < end; index += 1) {
-				assertCurrent();
-				session.exportProgress = `Exporting PDF page ${index - start + 1} of ${end - start}`;
-				const svg = await client.renderPage(index, colorMode);
-				assertCurrent();
-				yield svg;
-			}
-		};
 		await this.withExport(async () => {
-			const { createPdf } = await import('./pdf');
-			assertCurrent();
-			const pdf = await createPdf(pages(this));
-			assertCurrent();
-			downloadBlob(pdf, pageIndex === undefined ? `${stem}.pdf` : pageFilename(stem, pageIndex, 'pdf'));
+			this.exportProgress = 'Generating PDF';
+			const bytes = await this.requireClient().exportPdf(pageIndex, this.colorMode);
+			if (generation !== this.loadGeneration) throw new Error('PDF export cancelled.');
+			downloadBlob(
+				new Blob([bytes], { type: 'application/pdf' }),
+				pageIndex === undefined ? `${stem}.pdf` : pageFilename(stem, pageIndex, 'pdf')
+			);
 		});
 	}
 

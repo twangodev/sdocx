@@ -206,8 +206,11 @@ export scale, not a decoded Samsung print setting. PDF pages are limited to
 
 PDF inherits the SVG renderer's fidelity limits. Font fallback depends on the
 provided fonts, some SVG filters rasterize, and PDF link annotations and
-semantic document tags are not exported. The `pdf` feature is independent of
-the browser/WASM bindings.
+semantic document tags are not exported. The browser/WASM bindings enable this same `pdf` feature.
+`DocumentSession.add_pdf_font(bytes)` supplies TTF/OTF fonts, and
+`DocumentSession.render_pdf(pageIndex, colorMode)` returns PDF bytes. Omit the
+page index to export the whole document. The website loads bundled Roboto fonts
+on demand; the CLI also supports system fonts and explicit `--font` files.
 
 ## JavaScript Usage
 

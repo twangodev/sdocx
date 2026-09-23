@@ -24,6 +24,7 @@ export interface ConverterClientPort {
 	inspect(): Promise<unknown>;
 	debug?(request: DebugRequest): Promise<unknown>;
 	renderPage(pageIndex: number, colorMode: ColorMode): Promise<string>;
+	exportPdf(pageIndex: number | undefined, colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>>;
 	exportJson(): Promise<string>;
 	dispose(generation: number): Promise<void>;
 	cancel(): void;
@@ -60,6 +61,10 @@ export class ConverterClient implements ConverterClientPort {
 			pageIndex,
 			colorMode
 		})) as string;
+	}
+
+	async exportPdf(pageIndex: number | undefined, colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>> {
+		return (await this.request({ type: 'exportPdf', generation: this.generation, pageIndex, colorMode })) as Uint8Array<ArrayBuffer>;
 	}
 
 	async exportJson(): Promise<string> {

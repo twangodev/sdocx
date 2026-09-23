@@ -5,6 +5,8 @@ interface WasmDocumentSession {
 	page_count: number | (() => number);
 	inspection: unknown | (() => unknown);
 	debug?: (request: string) => string;
+	add_pdf_font(bytes: Uint8Array): void;
+	render_pdf(pageIndex: number | undefined, colorMode: ColorMode): Uint8Array<ArrayBuffer>;
 	render_svg(pageIndex: number, colorMode: ColorMode): unknown;
 	dispose?: () => void;
 	free?: () => void;
@@ -15,6 +17,24 @@ interface WasmModule {
 		moduleOrPath?: { module_or_path: string | URL | Request } | string | URL | Request
 	) => Promise<unknown>;
 	DocumentSession?: new (bytes: Uint8Array) => WasmDocumentSession;
+}
+
+const pdfFontFiles = [
+	'Roboto-Regular.ttf', 'Roboto-Bold.ttf', 'Roboto-Italic.ttf', 'Roboto-BoldItalic.ttf',
+	'RobotoMono-Regular.ttf', 'RobotoMono-Bold.ttf', 'RobotoMono-Italic.ttf', 'RobotoMono-BoldItalic.ttf'
+];
+let pdfFonts: Promise<Uint8Array[]> | undefined;
+
+function loadPdfFonts(): Promise<Uint8Array[]> {
+	pdfFonts ??= Promise.all(pdfFontFiles.map(async (filename) => {
+		const response = await fetch(`${self.location.origin}/pdf-fonts/${filename}`);
+		if (!response.ok) throw new Error('Could not load PDF fonts. Please try again.');
+		return new Uint8Array(await response.arrayBuffer());
+	})).catch((error) => {
+		pdfFonts = undefined;
+		throw error;
+	});
+	return pdfFonts;
 }
 
 let modulePromise: Promise<WasmModule> | undefined;
@@ -56,6 +76,7 @@ function normalizeSvg(value: unknown): string {
 
 export class BrowserDocumentSession {
 	private disposed = false;
+	private fontsLoaded = false;
 
 	private constructor(private readonly inner: WasmDocumentSession) {}
 
@@ -83,6 +104,19 @@ export class BrowserDocumentSession {
 	renderPage(pageIndex: number, colorMode: ColorMode): string {
 		this.assertActive();
 		return normalizeSvg(this.inner.render_svg(pageIndex, colorMode));
+	}
+
+	async exportPdf(pageIndex: number | undefined, colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>> {
+		this.assertActive();
+		if (!this.fontsLoaded) {
+			const fonts = await loadPdfFonts();
+			this.assertActive();
+			if (!this.fontsLoaded) {
+				for (const bytes of fonts) this.inner.add_pdf_font(bytes);
+				this.fontsLoaded = true;
+			}
+		}
+		return this.inner.render_pdf(pageIndex, colorMode);
 	}
 
 	debug(request: DebugRequest): unknown {
