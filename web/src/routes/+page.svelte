@@ -192,7 +192,13 @@
 				debugPreview={debuggerOpen ? debugPreview : null}
 				{session}
 				onPageChange={(nextPage) => (pageIndex = nextPage)}
-			/>
+			>
+				{#snippet notification()}
+					{#if uploadNotice}
+						<UploadNotice {...uploadNotice} anchored onDismiss={() => (uploadNotice = null)} />
+					{/if}
+				{/snippet}
+			</DocumentViewer>
 			{#if debuggerOpen}
 				{#key session.activeFile}
 					<Debugger
@@ -212,7 +218,7 @@
 	</section>
 {/if}
 
-{#if uploadNotice}
+{#if uploadNotice && !session.hasDocument}
 	<UploadNotice
 		{...uploadNotice}
 		onDismiss={() => (uploadNotice = null)}

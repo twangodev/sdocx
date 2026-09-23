@@ -3,9 +3,10 @@
 	import { CircleCheck, TriangleAlert, X } from '@lucide/svelte';
 	import IconButton from './ui/IconButton.svelte';
 
-	let { codes, failed = false, onDismiss }: {
+	let { codes, failed = false, anchored = false, onDismiss }: {
 		codes: string[];
 		failed?: boolean;
+		anchored?: boolean;
 		onDismiss: () => void;
 	} = $props();
 	let leaving = $state(false);
@@ -23,7 +24,7 @@
 	}));
 </script>
 
-<div class="pointer-events-none fixed top-12 left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2">
+<div class="pointer-events-none {anchored ? 'absolute top-4' : 'fixed top-12'} left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2">
 	<aside aria-label="Document upload notification" class="toast pointer-events-auto flex items-start gap-2 rounded-lg border border-subtle bg-raised px-3 py-2 text-text shadow-lg" class:leaving>
 		<div class="mt-0.5 shrink-0" class:text-muted={hasIssues} class:text-success={!hasIssues}>
 			{#if hasIssues}<TriangleAlert size={14} />{:else}<CircleCheck size={14} />{/if}

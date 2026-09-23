@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import ReplayOverlay from '$lib/debugger/ReplayOverlay.svelte';
 	import type { DebugPreview } from '$lib/debugger/model';
 	import type { DocumentSession } from '$converter/document-session.svelte';
@@ -35,6 +36,7 @@
 		onPageChange: (pageIndex: number) => void;
 		debugPreview?: DebugPreview | null;
 		session: DocumentSession;
+		notification?: Snippet;
 	}
 
 	let {
@@ -42,7 +44,8 @@
 		zoom,
 		onPageChange,
 		debugPreview = null,
-		session
+		session,
+		notification
 	}: Props = $props();
 </script>
 
@@ -70,8 +73,9 @@
 	</div>
 
 	<div
-		class="preview-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas"
+		class="preview-panel relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas"
 	>
+		{@render notification?.()}
 		<DocumentCanvas
 			pages={model.document.previewUrls}
 			pageIndex={model.view.pageIndex}
