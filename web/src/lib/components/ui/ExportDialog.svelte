@@ -13,6 +13,7 @@
 		onScale: (scale: Scale) => void;
 		onCurrentSvg: () => Promise<string>;
 		onCurrentPng: () => Promise<string>;
+		onPdf: (allPages: boolean) => Promise<string>;
 		onArchive: (kind: ArchiveKind) => Promise<string>;
 		onJson: () => Promise<string>;
 		onCancel: () => void;
@@ -26,7 +27,7 @@
 	let { model, actions }: Props = $props();
 
 	let dialog: HTMLDialogElement;
-	let format = $state<'svg' | 'png' | 'json' | 'everything'>('svg');
+	let format = $state<'svg' | 'png' | 'pdf' | 'json' | 'everything'>('svg');
 	let step = $state<'configure' | 'exporting' | 'complete'>('configure');
 	let error = $state('');
 	let starLink = $state<HTMLAnchorElement>();
@@ -57,6 +58,7 @@
 		try {
 			if (format === 'json') error = await actions.onJson();
 			else if (format === 'everything') error = await actions.onArchive('everything');
+			else if (format === 'pdf') error = await actions.onPdf(scope === 'all');
 			else if (scope === 'all') error = await actions.onArchive(format);
 			else if (format === 'png') error = await actions.onCurrentPng();
 			else error = await actions.onCurrentSvg();
@@ -101,6 +103,7 @@
 			<select bind:this={formatSelect} aria-label="Format" bind:value={format} class="rounded-md border border-subtle bg-bg p-2 text-text">
 				<option value="svg">SVG · scalable vector image</option>
 				<option value="png">PNG · image</option>
+				<option value="pdf">PDF · vector document</option>
 				<option value="json">JSON · document structure</option>
 				<option value="everything">Everything · SVG, PNG & JSON (.zip)</option>
 			</select>
@@ -109,7 +112,7 @@
 			<label class="grid gap-1.5 text-xs font-medium">Pages
 				<select aria-label="Pages" bind:value={scope} class="rounded-md border border-subtle bg-bg p-2 text-text">
 					<option value="current">Current page</option>
-					<option value="all">All pages (.zip)</option>
+					<option value="all">All pages{format === 'pdf' ? ' (.pdf)' : ' (.zip)'}</option>
 				</select>
 			</label>
 		{:else}

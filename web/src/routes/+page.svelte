@@ -161,6 +161,7 @@
 				onScale: (nextScale) => session.setPngScale(nextScale),
 				onCurrentSvg: () => exportResult(session.downloadCurrentSvg(pageIndex)),
 				onCurrentPng: () => exportResult(session.downloadCurrentPng(pageIndex)),
+				onPdf: (allPages) => exportResult(session.downloadPdf(allPages ? undefined : pageIndex)),
 				onArchive: (kind) => exportResult(session.downloadArchive(kind)),
 				onJson: () => exportResult(session.downloadJson()),
 				onCancel: () => session.cancel(),

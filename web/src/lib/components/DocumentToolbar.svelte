@@ -44,6 +44,7 @@
 		onScale: (scale: Scale) => void;
 		onCurrentSvg: () => Promise<string>;
 		onCurrentPng: () => Promise<string>;
+		onPdf: (allPages: boolean) => Promise<string>;
 		onArchive: (kind: ArchiveKind) => Promise<string>;
 		onJson: () => Promise<string>;
 		onCancel: () => void;
@@ -123,6 +124,7 @@
 					onScale: actions.onScale,
 					onCurrentSvg: actions.onCurrentSvg,
 					onCurrentPng: actions.onCurrentPng,
+					onPdf: actions.onPdf,
 					onArchive: actions.onArchive,
 					onJson: actions.onJson,
 					onCancel: actions.onCancel
