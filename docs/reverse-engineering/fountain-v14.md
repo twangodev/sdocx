@@ -3,8 +3,9 @@
 > `conformance/fountain_v14_native.py` and `conformance/fountain-v14.json` are
 > in this checkout. The independent reconstruction
 > `conformance/fountain_v14_model.py` was removed during test cleanup; recover
-> it from Git revision `40de721` in a separate checkout. The Rust renderer does
-> not implement V14. Saved V16 validation is in
+> it from Git revision `40de721` in a separate checkout. The Rust renderer now ports saved stylus V14 positions, radii and sample
+> boundaries through the shared SmPath and prepared-dot pipeline. Directional
+> shader coverage remains approximate. Validation is in
 > [current validation](../../conformance/README.md#native-geometry-checks).
 
 The existing Samsung Notes 4.4.45.37 APK includes GLV14, selected by saved
@@ -74,8 +75,12 @@ python3 conformance/fountain_v14_model.py
 python3 conformance/fountain_v14_model.py --prepared /tmp/handwriting-ink.json --native /tmp/fountain-v14-native.json
 ```
 
-The measurements below were recorded from that script. The current Rust
-renderer does not reproduce them.
+The measurements below were recorded from that script. The Rust port checks
+all 26 synthetic cases for positions, radii and sample boundaries in ordinary
+CI, with a 0.0001 page-unit tolerance. It does not yet consume shader tangents.
+A real-document check of the Rust port reproduced all 56,713 stamps across
+2,769 handwriting strokes with identical positions, radii and sample boundaries.
+This includes small negative pressures from legacy saved-channel quantization.
 
 The 26 synthetic cases reproduce all 1,936 stamps and original-sample
 boundaries. Maximum coordinate error is 0.00001526; maximum tangent-component
@@ -92,8 +97,8 @@ from residual-overrun rejection: the former retains the newly computed
 midpoint, while the latter restores the previous midpoint. The independent
 model follows that distinction.
 
-That model was a research implementation. It was never wired into production,
-and it does not reconstruct fixed-width, non-stylus, or live input paths. It
-records a checked algorithm for a future V14 geometry port, including the
-tangents the V14 shader needs. Production strokes with settings `14;` stay on
-the approximate renderer.
+The archived model remains a research reference. Production now uses its
+saved variable-width stylus geometry for settings `14;`, sharing validation
+guards, SmPath and prepared-dot rendering with V16. Fixed-width, non-stylus
+and live input paths retain their fallback. Circular coverage still approximates
+the native direction-dependent shader; this is geometry parity, not pixel parity.

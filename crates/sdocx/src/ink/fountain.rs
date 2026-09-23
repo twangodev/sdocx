@@ -1,4 +1,4 @@
-//! Saved FountainPen V16 geometry, traced from Samsung Notes 4.4.45.37.
+//! Saved FountainPen V14/V16 geometry, traced from Samsung Notes 4.4.45.37.
 //! Arithmetic stays float32 where the native implementation uses float32.
 use super::path::{P, Quad};
 use crate::{Point, Stroke};
@@ -232,10 +232,17 @@ impl Pass<'_> {
 
 pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
+    // Legacy saved pressure quantization can produce small negative values.
+    // V14 handles these through its native width and stamp-radius floors.
+    let minimum_pressure = if r.advanced_settings.as_deref() == Some("14;") {
+        -1.
+    } else {
+        0.
+    };
     // Only the verified saved-stylus profile. Other versions/settings retain
     // their explicit approximation instead of silently borrowing this model.
     if r.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
-        || r.advanced_settings.as_deref() != Some("18;0;100;")
+        || !matches!(r.advanced_settings.as_deref(), Some("14;" | "18;0;100;"))
         || r.tool_type_raw != 2
         || r.properties.fixed_width
         || r.properties.eraser
@@ -257,7 +264,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
             .any(|p| !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e7 || p.y.abs() > 1e7)
         || s.pressures
             .iter()
-            .any(|&v| v < 0. || !(v as f32).is_finite())
+            .any(|&v| v < minimum_pressure || !(v as f32).is_finite())
         || s.tilts.iter().any(|&v| !(v as f32).is_finite())
     {
         return None;
@@ -275,6 +282,9 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
         .sum();
     if distance > 400_000. || s.points.len() > 100_000 {
         return None;
+    }
+    if r.advanced_settings.as_deref() == Some("14;") {
+        return Some(super::fountain_v14::prepare(s, tolerance));
     }
     let first = P::from(s.points[0]);
     let mut history = History::default();
@@ -342,7 +352,7 @@ mod tests {
         size: f32,
         tolerance: f32,
         samples: Vec<(f64, f64, f64, f64, i64)>,
-        dots: Vec<[f64; 3]>,
+        dots: Vec<Vec<f64>>,
         sample_ends: Vec<usize>,
     }
     fn reference() -> Reference {
@@ -350,37 +360,42 @@ mod tests {
     }
     #[test]
     fn generated_geometry_matches_native_saved_stroke_helpers() {
-        let reference = reference();
-        for case in reference.cases {
-            let mut stroke = reference.stroke.clone();
-            stroke.pen_width = case.size;
-            stroke.rendering.as_mut().unwrap().style.initial_tolerance = Some(case.tolerance);
-            for (x, y, pressure, tilt, time) in case.samples {
-                stroke.points.push(Point { x, y });
-                stroke.pressures.push(pressure);
-                stroke.tilts.push(tilt);
-                stroke.timestamps.push(time);
-            }
-            let actual = prepare(&stroke).unwrap();
-            assert_eq!(
-                actual.sample_ends, case.sample_ends,
-                "{} mapping",
-                case.name
-            );
-            assert_eq!(actual.points.len(), case.dots.len(), "{} count", case.name);
-            for (index, ((point, radius), expected)) in actual
-                .points
-                .iter()
-                .zip(actual.radii)
-                .zip(case.dots)
-                .enumerate()
-            {
-                for (a, b) in [point.x, point.y, radius].into_iter().zip(expected) {
-                    assert!(
-                        (a - b).abs() < 0.0001,
-                        "{} dot {index}: {a} vs {b}",
-                        case.name
-                    );
+        for reference in [
+            reference(),
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap(),
+        ] {
+            for case in reference.cases {
+                let mut stroke = reference.stroke.clone();
+                stroke.pen_width = case.size;
+                stroke.rendering.as_mut().unwrap().style.initial_tolerance = Some(case.tolerance);
+                for (x, y, pressure, tilt, time) in case.samples {
+                    stroke.points.push(Point { x, y });
+                    stroke.pressures.push(pressure);
+                    stroke.tilts.push(tilt);
+                    stroke.timestamps.push(time);
+                }
+                let actual = prepare(&stroke).unwrap();
+                assert_eq!(
+                    actual.sample_ends, case.sample_ends,
+                    "{} mapping",
+                    case.name
+                );
+                assert_eq!(actual.points.len(), case.dots.len(), "{} count", case.name);
+                for (index, ((point, radius), expected)) in actual
+                    .points
+                    .iter()
+                    .zip(actual.radii)
+                    .zip(case.dots)
+                    .enumerate()
+                {
+                    for (a, b) in [point.x, point.y, radius].into_iter().zip(expected) {
+                        assert!(
+                            (a - b).abs() < 0.0001,
+                            "{} dot {index}: {a} vs {b}",
+                            case.name
+                        );
+                    }
                 }
             }
         }

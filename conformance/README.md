@@ -59,8 +59,8 @@ page-object counts and diagnostic counts.
 
 ## Native geometry checks
 
-The V16 geometry fixture (`fountain-v16.json`) is checked against the Rust
-implementation in ordinary CI. Two optional, hash-pinned APK oracles remain
+The V14 and V16 geometry fixtures (`fountain-v14.json`, `fountain-v16.json`)
+check Rust stamp positions, radii and sample boundaries in ordinary CI. Two optional, hash-pinned APK oracles remain
 for saved V16 and legacy V14 geometry:
 
 ```sh

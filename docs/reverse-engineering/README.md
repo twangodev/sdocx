@@ -17,7 +17,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   top-right stroke cause, packed-point layout, and the current FountainPen V16
   stamp geometry versus the approximate renderer.
 - [`fountain-v14.md`](fountain-v14.md) — saved V14 redraw differences. The
-  native oracle remains; the Rust renderer does not implement V14.
+  native oracle and Rust geometry port cover saved stylus input; directional
+  shader coverage remains approximate.
 - [`fountain-rainbow.md`](fountain-rainbow.md) — archived rainbow and V17
   research. Rainbow rendering is not implemented.
 - [`fountain-rasterization.md`](fountain-rasterization.md) — stamp coverage
