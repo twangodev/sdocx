@@ -88,8 +88,8 @@
 	{#if step === 'complete'}
 		<p id="export-description" class="mt-3 text-sm">Your download is ready.</p>
 		<p class="mt-2 text-xs leading-relaxed text-muted">If sdocx helped you, give the project a star on GitHub. It helps others discover this open-source Samsung Notes converter.</p>
-		<button type="button" class="mt-4 inline-flex items-center gap-1.5 text-xs text-muted hover:text-text" onclick={backToExport}><ArrowLeft size={13} />Back to export</button>
-		<div class="mt-5 flex items-center justify-end gap-2">
+		<div class="mt-5 flex items-center gap-2">
+			<button type="button" class="mr-auto inline-flex items-center gap-1.5 py-2 text-xs text-muted hover:text-text" onclick={backToExport}><ArrowLeft size={13} class="shrink-0" />Back to export</button>
 			<button type="button" class="rounded-md px-3 py-2 text-xs hover:bg-surface" onclick={() => dialog.close()}>Done</button>
 			<a bind:this={starLink} href="https://github.com/twangodev/sdocx" target="_blank" rel="noreferrer" class="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-xs font-medium text-white"><Star size={14} />Star on GitHub</a>
 		</div>
