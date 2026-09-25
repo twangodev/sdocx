@@ -10,6 +10,8 @@ use base64::Engine as _;
 use std::fmt::Write as _;
 use std::ops::Range;
 
+mod fountain;
+
 /// Color treatment to use while rendering a document.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -1637,6 +1639,9 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
     let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
     let color = &paint.color;
     let base_width = paint.width;
+    if fountain::render(svg, &paint) {
+        return;
+    }
     if let Some(stamp) = paint.rect_stamp {
         let (sin, cos) = stamp.angle.sin_cos();
         let (w, h) = (stamp.width, stamp.height);

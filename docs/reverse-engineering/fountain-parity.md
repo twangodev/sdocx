@@ -1,53 +1,61 @@
 # Fountain pen vector parity
 
-The target is Rust-generated vector SVG/PDF output matching Samsung Notes
-4.4.45.37 fountain ink. This work is incomplete.
+The supported saved V14 fountain profile now uses Rust-generated vector
+shading in SVG previews and PDF exports. V14/V16 positions and widths retain
+the native reconstruction; no global width adjustment is applied.
 
-## Current implementation
+## Geometry and appearance
 
-The saved V14 reconstruction retains SmPath's direction vectors, including
-its small-vector normalization threshold, zero-vector substitution, and the
-final stamp's retained direction. Native fixture tests compare positions,
-radii, directions and original-sample boundaries.
+V14 retains SmPath's direction vectors, including its small-vector
+normalization threshold, zero-vector substitution, and final stamp's retained
+direction. Native fixtures compare positions, radii, directions and
+original-sample boundaries. Pressure, tilt and movement continue through the
+existing native saved-stroke reconstruction.
 
-SVG/PDF output uses vector paths. Fountain shading is still approximated with
-opaque circle coverage; retaining native directions does not yet fix that
-appearance. The regression test
-`fountain_svg_keeps_reconstructed_ink_as_vector_paths` verifies that a supported
-native profile emits paths without embedded images.
+Previously every V14 stamp was filled opaquely. The native directional gradient
+is flat over the central half and falls linearly to 0.07 at its tangent-aligned
+ends. `render/fountain.rs` expresses that function as an SVG linear gradient,
+transformed with each stamp's native radius and direction.
 
-The added Rust software rasterizer, WASM pixel API, fountain replay adapter,
-and shader-comparison tooling have been removed. Existing replay returns to
-its previous canvas path drawing. It is not a separate native shading solution.
+Opaque grayscale stamps blend with Lighten over black in a luminance mask.
+This implements maximum coverage in the vector interior instead of accumulating
+opacity where stamps overlap. Stroke color and opacity are applied once to the
+result. PDF export preserves the masks as vector forms, the gradients as PDF
+shadings, and the Lighten blend mode. There are no image or filter elements in
+the generated fountain SVG, and no bitmap API or custom rasterizer.
 
-## Verified geometry and representation
+These are scale-independent vector shapes. The SVG/PDF consumer owns edge
+antialiasing. The APK's device-pixel expansion and subpixel compensation are
+not baked into document geometry, so this is not a claim of byte-identical
+screen output at every zoom level.
 
-On 2026-09-25, the available `handwritten.sdocx` contained 2,769 V14 strokes and
-56,713 stamps. The native saved-redraw oracle and Rust reconstruction agreed
-exactly on x, y, radius, direction x/y and original-sample boundaries.
+## Validation on 2026-09-25
 
-Its SVG contained 2,769 paths and zero images. Its PDF contained 2,770 vector
-drawing objects, including the background, and zero images. These checks
-establish geometry and representation, not complete visual parity.
-
-Run the native geometry fixtures and vector regression from the repository root:
+- The available `handwritten.sdocx` contains 2,769 V14 strokes and 56,713 stamps.
+  The native saved-redraw oracle and Rust geometry agreed exactly on x, y,
+  radius, direction x/y and original-sample boundaries.
+- New regressions check gradient orientation and interior maximum blending with
+  repeated stamps, including stroke opacity. PDF object checks require native
+  shadings and Lighten and reject image XObjects.
+- The real SVG is 10,739,219 bytes. The PDF is 42,045,542 bytes and contains zero
+  image XObjects across all PDF objects, including mask resources.
+- A local Chromium decode-and-draw probe measured about 1.11 seconds for the
+  shaded SVG versus 0.16 seconds for the previous opaque-path SVG. This is one
+  cold probe, not an interaction benchmark. Vector shading increases document
+  complexity and PDF size; it is not flattened to reduce either.
 
 ```sh
 cargo test --offline -p sdocx --all-features --lib fountain
+cargo test --offline -p sdocx --all-features --test pdf_export
 ```
 
 The optional hash-pinned native geometry oracles are documented in the
 [conformance guide](../../conformance/README.md#native-geometry-checks).
 
-## Remaining vector work
+## Scope limits
 
-- Reproduce fountain appearance in scalable SVG/PDF using Rust-generated vector
-  geometry and, where necessary, vector shading. Investigate the strokes that
-  appear too wide without applying a global width adjustment.
-- Validate stroke joins, endpoints, directional shading, pressure, tilt and
-  movement against the decompiled behavior and Samsung reference exports.
-- Check colored/translucent ink and page compositing while preserving vectors.
-- Characterize saved profiles that still use approximations, including fixed
-  width, non-stylus input, historical versions and effects.
-
-Saved redraw evidence does not establish live prediction or temporary-tip parity.
+The existing debugger's partial-stroke canvas replay still uses its previous
+circle paths; the completed page and exports use the vector shading above.
+Unsupported saved settings remain explicitly approximate, including fixed
+width, non-stylus input, other historical profiles and effects. Saved redraw
+validation does not establish live prediction or temporary-tip parity.
