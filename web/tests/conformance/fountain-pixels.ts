@@ -1,9 +1,28 @@
 // Compare production canvas coverage with the hash-verified APK shaders.
-// node conformance/fountain_pixels.mjs SHADERS.json [vite-url] [ink_geometry.json] [software-masks.json]
-import { chromium } from '../web/node_modules/@playwright/test/index.mjs';
+// From web/: bun run conformance:fountain SHADERS.json [vite-url] [ink_geometry.json] [software-masks.json]
+import { chromium } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import type { ReplayStroke } from '../../src/lib/debugger/model';
+import type { FountainRaster } from '../../src/lib/debugger/fountain-raster';
 
-const usage = 'Usage: node conformance/fountain_pixels.mjs SHADERS.json [vite-url] [ink_geometry.json] [software-masks.json]';
+type Version = 4 | 5;
+type Shaders = Record<Version, { alpha_vertex: string; alpha_fragment: string }>;
+interface SoftwareMask {
+    viewport: { scale_x: number; scale_y: number; offset_x: number; offset_y: number };
+    mask: { x: number; y: number; width: number; height: number; alpha: string } | null;
+}
+interface PixelCase {
+    name: (string | number)[];
+    row: ReplayStroke;
+    sx: number;
+    sy: number;
+    tx: number;
+    ty: number;
+    mask?: SoftwareMask['mask'];
+}
+
+
+const usage = 'Usage: bun run conformance:fountain SHADERS.json [vite-url] [ink_geometry.json] [software-masks.json]';
 if (process.argv.includes('--help')) {
     console.log(usage);
     process.exit(0);
@@ -14,47 +33,55 @@ if (process.argv.length < 3 || process.argv.length > 6) {
 }
 // Allow one coverage level for float32 interpolation/UNORM rounding differences.
 const tolerance = 1;
-const shaders = JSON.parse(await readFile(process.argv[2], 'utf8'));
-const rows = process.argv[4] ? JSON.parse(await readFile(process.argv[4], 'utf8')) : [];
-const masks = process.argv[5] ? JSON.parse(await readFile(process.argv[5], 'utf8')) : [];
+const shaders: Shaders = JSON.parse(await readFile(process.argv[2], 'utf8'));
+const rows: ReplayStroke[] = process.argv[4] ? JSON.parse(await readFile(process.argv[4], 'utf8')) : [];
+const masks: SoftwareMask[] = process.argv[5] ? JSON.parse(await readFile(process.argv[5], 'utf8')) : [];
 if (masks.length && masks.length !== rows.length) throw Error('Software mask count differs');
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 try {
     const page = await browser.newPage();
     await page.goto(process.argv[3] ?? 'http://127.0.0.1:5194');
     const result = await page.evaluate(async ({ shaders, rows, masks, tolerance }) => {
-        const { loadFountainRaster } = await import('/src/lib/debugger/fountain-raster.ts');
+        // Resolved by the Vite server inside Chromium, not by Bun.
+        const moduleUrl = '/src/lib/debugger/fountain-raster.ts';
+        const { loadFountainRaster }: { loadFountainRaster: () => Promise<() => FountainRaster> } =
+            await import(moduleUrl);
         const renderer = (await loadFountainRaster())();
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = 128;
         const ctx = canvas.getContext('2d');
+        if (!ctx) throw Error('Canvas2D unavailable');
         const reference = document.createElement('canvas');
         reference.width = reference.height = 128;
-        const gl = reference.getContext('webgl2', {
+        const context = reference.getContext('webgl2', {
             antialias: false, premultipliedAlpha: true, preserveDrawingBuffer: true
         });
-        if (!gl) throw Error('WebGL2 unavailable');
-        function shader(type, source) {
+        if (!context) throw Error('WebGL2 unavailable');
+        const gl = context;
+        function shader(type: number, source: string) {
             const shader = gl.createShader(type);
+            if (!shader) throw Error('Could not allocate reference shader');
             gl.shaderSource(shader, source);
             gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(shader));
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(shader) ?? 'Shader compilation failed');
             return shader;
         }
-        function attribute(location, size, data) {
+        function attribute(location: number, size: number, data: number[]) {
             gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
             gl.enableVertexAttribArray(location);
             gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
         }
-        const programs = {};
-        for (const version of [4, 5]) {
+        const programs = new Map<Version, { program: WebGLProgram; vao: WebGLVertexArrayObject }>();
+        for (const version of [4, 5] as const) {
             const program = gl.createProgram();
+            if (!program) throw Error('Could not allocate reference program');
             gl.attachShader(program, shader(gl.VERTEX_SHADER, shaders[version].alpha_vertex));
             gl.attachShader(program, shader(gl.FRAGMENT_SHADER, shaders[version].alpha_fragment));
             gl.linkProgram(program);
-            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(program));
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(program) ?? 'Program linking failed');
             const vao = gl.createVertexArray();
+            if (!vao) throw Error('Could not allocate reference vertex array');
             gl.bindVertexArray(vao);
             if (version === 4) {
                 attribute(0, 2, [0, 1, 0, 0, 1, 1, 1, 0]);
@@ -62,12 +89,12 @@ try {
             } else {
                 attribute(0, 4, [-1, -1, 0, 1, -1, 1, 0, 0, 1, -1, 1, 1, 1, 1, 1, 0]);
             }
-            programs[version] = { program, vao };
+            programs.set(version, { program, vao });
         }
         const scales = [.1, .25, .7, 1, 1.25, Math.PI, 4].map(s => [s, s]);
         scales.push([.7, 1.3], [1, 4], [4, 1]);
-        function* cases() {
-            for (const version of [4, 5]) {
+        function* cases(): Generator<PixelCase> {
+            for (const version of [4, 5] as const) {
                 for (const radius of [.1, .49, .5, 1, 2, 5]) {
                     for (const [sx, sy] of scales) {
                         for (const angle of [0, .4, 1.57, 2.1]) {
@@ -79,8 +106,15 @@ try {
                                 yield {
                                     name: [version, radius, sx, sy, angle, count], sx, sy, tx: 0, ty: 0,
                                     row: {
-                                        stroke: { points },
+                                        offset: 0, milliseconds: false,
+                                        stroke: {
+                                            points, pressures: [], timestamps: [], tilts: [], orientations: [],
+                                            pen_width: radius * 2, color: null,
+                                            bbox: { x_min: 0, y_min: 0, x_max: 128, y_max: 128 }
+                                        },
                                         geometry: {
+                                            width: radius * 2, segment_widths: null, bounds: null,
+                                            color: '#ffffff', profile: null, support: 'reconstructed',
                                             points, dot_radii: points.map(() => radius),
                                             dot_directions: version === 4 ? points.map(() => direction) : undefined,
                                             fountain_shader: version, opacity: 1
@@ -101,6 +135,7 @@ try {
                     continue;
                 }
                 const b = row.geometry.bounds;
+                if (!b) throw Error(`Stroke ${index} is missing prepared bounds`);
                 const scale = Math.min(4, 112 / Math.max(b.x_max - b.x_min, b.y_max - b.y_min));
                 yield { name: ['stroke', index], row, sx: scale, sy: scale,
                     tx: 64 - (b.x_min + b.x_max) * scale / 2,
@@ -108,12 +143,16 @@ try {
             }
         }
         let maximum = 0, count = 0, differingPixels = 0;
-        const failed = [];
+        const failed: { name: PixelCase['name']; error: number; worst: number[] | undefined }[] = [];
         for (const test of cases()) {
             const { row, sx, sy, tx, ty } = test;
             const { geometry } = row;
             const points = geometry.points ?? row.stroke.points;
             const version = geometry.fountain_shader;
+            if ((version !== 4 && version !== 5) || geometry.dot_radii?.length !== points.length ||
+                (version === 4 && geometry.dot_directions?.length !== points.length)) {
+                throw Error(`Invalid prepared fountain geometry: ${test.name.join(', ')}`);
+            }
             ctx.resetTransform();
             ctx.clearRect(0, 0, 128, 128);
             ctx.setTransform(sx, 0, 0, sy, tx, ty);
@@ -141,7 +180,7 @@ try {
             gl.blendEquation(gl.MAX);
             gl.blendFunc(gl.ONE, gl.ONE);
             gl.viewport(0, 0, 128, 128);
-            const { program, vao } = programs[version];
+            const { program, vao } = programs.get(version)!;
             gl.useProgram(program);
             gl.bindVertexArray(vao);
             gl.uniformMatrix4fv(gl.getUniformLocation(program, 'ProjectionMatrix'), false,
@@ -156,7 +195,7 @@ try {
                 gl.vertexAttrib4f(version === 4 ? 2 : 1,
                     pt.x * transform.a + transform.e, pt.y * transform.d + transform.f, ex, ey);
                 if (version === 4) {
-                    const d = geometry.dot_directions[i];
+                    const d = geometry.dot_directions![i];
                     gl.vertexAttrib2f(3, d.x, d.y);
                     gl.vertexAttrib1f(4, 1);
                     gl.vertexAttrib2f(5, inner, f(1 / factor));

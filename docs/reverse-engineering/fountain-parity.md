@@ -70,20 +70,21 @@ bun run vite --host 127.0.0.1 --port 5194
 
 In another terminal at the repository root, run the checks below. The shader
 extractor needs Python 3, `nm`, and the locally extracted, hash-pinned native
-library (override its location with `--library`). The pixel runner uses Node.js
-and the Playwright dependency installed in `web/`; it reports its tolerance,
+library (override its location with `--library`). The typed pixel runner uses Bun
+and the Playwright dependency installed in `web/`; `bun run check` checks its
+types alongside the application. It reports its tolerance,
 maximum byte error, differing pixels, and up to ten failures, and exits nonzero
 if any case exceeds the tolerance. `--help` prints its argument order.
 
 ```sh
 cargo test --offline -p sdocx --all-features --lib fountain
 python3 conformance/fountain_shaders.py --output /tmp/fountain-shaders.json
-node conformance/fountain_pixels.mjs /tmp/fountain-shaders.json
+(cd web && bun run conformance:fountain /tmp/fountain-shaders.json)
 # Optionally include real strokes, after comparing their geometry to the oracle:
 cargo run --offline -q -p sdocx --features render,serde --example ink_geometry -- \
   tmp/stroke-conformance/handwritten.sdocx > /tmp/fountain-prepared.json
-node conformance/fountain_pixels.mjs /tmp/fountain-shaders.json \
-  http://127.0.0.1:5194 /tmp/fountain-prepared.json
+(cd web && bun run conformance:fountain /tmp/fountain-shaders.json \
+  http://127.0.0.1:5194 /tmp/fountain-prepared.json)
 ```
 
 The extractor verifies the native library hash and reads the exported shader
