@@ -130,6 +130,7 @@
 {#if removal}
 	<LibraryDialog
 		title={removal.kind === 'notes' ? 'Delete notes from library?' : 'Delete collection?'}
+		destructive
 		description={removal.kind === 'notes'
 			? `Delete ${removal.ids.length} saved ${removal.ids.length === 1 ? 'note' : 'notes'} and their collection memberships from this browser? Files on your device are unaffected.`
 			: `Delete “${removal.collection.name}”? Its notes will remain in All notes.`}

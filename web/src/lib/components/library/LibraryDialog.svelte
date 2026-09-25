@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { Dialog } from 'bits-ui';
+	import Button from '../ui/Button.svelte';
 	import type { Snippet } from 'svelte';
 	import { errorMessage } from '$lib/library/model';
 	let {
 		title,
 		description,
 		confirmLabel,
+		destructive = false,
 		onConfirm,
 		onClose,
 		children
@@ -13,6 +15,7 @@
 		title: string;
 		description: string;
 		confirmLabel: string;
+		destructive?: boolean;
 		onConfirm: () => Promise<void>;
 		onClose: () => void;
 		children?: Snippet;
@@ -60,17 +63,8 @@
 				{#if children}<div class="mt-4">{@render children()}</div>{/if}
 				{#if error}<p role="alert" class="mt-3 text-xs text-danger">{error}</p>{/if}
 				<div class="mt-5 flex justify-end gap-2 text-xs">
-					<button
-						type="button"
-						class="rounded border border-subtle px-3 py-2"
-						disabled={busy}
-						onclick={onClose}>Cancel</button
-					>
-					<button
-						type="submit"
-						class="rounded border border-subtle bg-surface px-3 py-2"
-						disabled={busy}>{busy ? 'Working…' : confirmLabel}</button
-					>
+					<Button tone="ghost" disabled={busy} onclick={onClose}>Cancel</Button>
+					<Button type="submit" tone={destructive ? 'danger' : 'primary'} disabled={busy}>{busy ? 'Working…' : confirmLabel}</Button>
 				</div>
 			</form>
 		</Dialog.Content>
