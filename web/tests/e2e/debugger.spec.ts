@@ -165,7 +165,7 @@ test('dense replay measures frame cadence and releases browser resources', async
 	});
 	await page.screenshot({ path: testInfo.outputPath('debugger.png') });
 	await page
-		.getByRole('button', { name: 'Close document', exact: true })
+		.getByRole('button', { name: 'Back to library', exact: true })
 		.click();
 	await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
 	await expect

@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { hasDocument, onFile }: { hasDocument: boolean; onFile: (file: File) => void } = $props();
+	let { hasDocument, onFiles }: { hasDocument: boolean; onFiles: (files: File[]) => void } = $props();
 	let dragging = $state(false);
 	let dragDepth = 0;
 
@@ -34,8 +34,8 @@
 		dragDepth = 0;
 		dragging = false;
 
-		const file = event.dataTransfer?.files[0];
-		if (fileDrop && file) onFile(file);
+		const files = Array.from(event.dataTransfer?.files ?? []);
+		if (fileDrop && files.length) onFiles(files);
 	}
 </script>
 
@@ -65,7 +65,7 @@
 			: 'translate-y-1.5 scale-[0.985] opacity-0'}"
 	>
 		<strong class="text-base font-[550] tracking-[-0.015em]">
-			{hasDocument ? 'drop to replace document' : 'drop .sdocx to open'}
+			{hasDocument ? 'drop to import notes and return to library' : 'drop .sdocx files to import'}
 		</strong>
 		<span class="font-mono text-[0.65rem] text-muted">release anywhere · processed locally</span>
 	</div>

@@ -106,16 +106,16 @@ async function expectSmoothRecenter(canvas: Locator, surface: Locator): Promise<
 	await expect.poll(() => surfaceCenterOffset(canvas)).toBeLessThan(1);
 }
 
-test('converter presents a local-only upload surface', async ({ page }) => {
+test('library presents local-only imports', async ({ page }) => {
 	const remoteRequests = collectUnexpectedRemoteRequests(page);
 
 	await page.goto('/');
 
 	await expect(page).toHaveTitle(/local Samsung Notes converter/i);
-	await expect(page.getByRole('heading', { name: /Open a Samsung note/i })).toBeVisible();
+	await expect(page.getByRole('heading', { name: /Your notes, in one place/i })).toBeVisible();
 	await expect(page.locator('.lede')).toContainText('Files stay in this browser.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
-	await expect(page.locator('select')).toHaveCount(0);
+	await expect(page.getByRole('combobox', { name: 'Sort notes' })).toBeVisible();
 	const analyticsScript = page.locator(`head script[src="${analyticsScriptUrl}"]`);
 	await expect(analyticsScript).toHaveAttribute('data-site-id', '84f39267b7e1');
 	await expect(analyticsScript).toHaveAttribute('defer', '');
@@ -136,7 +136,7 @@ test('dragging a file expands the drop target across the viewport', async ({ pag
 	const overlay = page.locator('.drop-overlay');
 	await expect(overlay).toBeVisible();
 	await expect.poll(() => overlay.evaluate((element) => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
-	await expect(overlay).toContainText('drop .sdocx to open');
+	await expect(overlay).toContainText('drop .sdocx files to import');
 	const bounds = await overlay.boundingBox();
 	expect(bounds).not.toBeNull();
 	expect(bounds?.x).toBe(0);
@@ -164,7 +164,7 @@ test('interface motion follows the reduced-motion preference', async ({ page }) 
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await page.goto('/');
 
-	const timings = await page.locator('.intro').evaluate((element) => {
+	const timings = await page.locator('.library').evaluate((element) => {
 		const introStyles = getComputedStyle(element);
 		const overlayStyles = getComputedStyle(document.querySelector('.drop-overlay')!);
 		return {

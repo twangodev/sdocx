@@ -8,11 +8,14 @@
 	import DropOverlay from '$lib/components/DropOverlay.svelte';
 	import ErrorNotice from '$lib/components/ErrorNotice.svelte';
 	import UploadNotice from '$lib/components/UploadNotice.svelte';
-	import UploadSurface from '$lib/components/UploadSurface.svelte';
+	import LibraryWorkspace from '$lib/components/library/LibraryWorkspace.svelte';
+	import { LibraryWorkspace as LibraryState } from '$lib/library/workspace.svelte';
 	import { DocumentSession } from '$converter/document-session.svelte';
 	import { DocumentZoomCamera } from '$lib/viewer/document-zoom-camera.svelte';
 
 	let uploadNotice = $state<{ codes: string[]; failed: boolean } | null>(null);
+	const library = new LibraryState();
+	let temporary = $state(false);
 	let uploadGeneration = 0;
 	let picker = $state<HTMLInputElement>();
 	let pageIndex = $state(0);
@@ -38,7 +41,9 @@
 
 	onMount(() => {
 		const stop = session.start();
+		const stopLibrary = library.start();
 		return () => {
+			stopLibrary();
 			stop();
 			workspace.hasDocument = false;
 			workspace.debuggerOpen = false;
@@ -83,12 +88,36 @@
 		return session.error;
 	}
 
+	async function openSaved(id: string): Promise<void> {
+		await library.perform(async () => {
+			const file = await library.service.openDocument(id);
+			temporary = false;
+			await loadDocument(file);
+		});
+	}
+
+	async function importFiles(files: File[]): Promise<void> {
+		if (library.importing || session.exporting) return;
+		await session.close();
+		const results = await library.importFiles(files);
+		if (files.length === 1 && !library.cancelled) {
+			const result = results[0];
+			if (result?.status === 'imported' || result?.status === 'duplicate') await openSaved(result.document.id);
+		}
+	}
+
+	function openTemporary(file: File): void {
+		temporary = true;
+		void loadDocument(file);
+	}
+
 	function onFileInput(event: Event): void {
 		const input = event.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		if (file) void loadDocument(file);
+		const files = Array.from(input.files ?? []);
+		if (files.length) void importFiles(files);
 		input.value = '';
 	}
+
 </script>
 
 <svelte:head>
@@ -101,25 +130,22 @@
 
 <DropOverlay
 	hasDocument={session.hasDocument}
-	onFile={(file) => void loadDocument(file)}
+	onFiles={(files) => void importFiles(files)}
 />
 
 <input
 	bind:this={picker}
 	class="sr-only"
 	type="file"
+	multiple
 	accept=".sdocx,application/zip"
 	onchange={onFileInput}
 />
 
 {#if !session.hasDocument}
-	<UploadSurface
-		parsing={session.parsing}
-		status={session.status}
-		error={session.error}
-		onOpen={() => picker?.click()}
-		onCancel={() => session.cancel()}
-	/>
+	<LibraryWorkspace {library} onImport={() => picker?.click()} onOpen={(id) => void openSaved(id)} onTemporary={openTemporary} />
+	{#if session.parsing}<div role="status" class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded border border-subtle bg-bg px-4 py-2 text-xs">{session.status}<button class="ml-4 underline" onclick={() => session.cancel()}>Cancel</button></div>{/if}
+	{#if session.error}<div class="fixed bottom-4 left-4 z-50"><ErrorNotice message={session.error} /></div>{/if}
 {:else if session.summary && session.activeFile}
 	<section
 		class="motion-surface-in flex h-[calc(100svh-2.5rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden max-[720px]:h-auto max-[720px]:min-h-[calc(100svh-2.5rem)] max-[720px]:overflow-visible"
@@ -127,6 +153,7 @@
 		style:height={debuggerOpen ? 'calc(100svh - 2.5rem)' : undefined}
 		style:overflow={debuggerOpen ? 'hidden' : undefined}
 	>
+		{#if temporary}<p role="status" class="border-b border-subtle bg-surface px-3 py-2 text-xs">Temporary note · not saved to your library</p>{/if}
 		<DocumentToolbar
 			model={{
 				document: {

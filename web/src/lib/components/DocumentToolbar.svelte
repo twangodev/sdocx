@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Info, RefreshCw, X } from '@lucide/svelte';
+	import { Info, RefreshCw, ArrowLeft } from '@lucide/svelte';
 	import type { ColorMode } from '$converter/protocol';
 	import ConverterToolbar from './ConverterToolbar.svelte';
 	import ColorModeSwitch from './ui/ColorModeSwitch.svelte';
@@ -124,11 +124,11 @@
 					onCancel: actions.onCancel
 				}}
 			/>
-			<IconButton label="Replace document" tooltip onclick={actions.onReplace}>
+			<IconButton label="Import notes" tooltip onclick={actions.onReplace}>
 				<RefreshCw size={12} strokeWidth={1.4} />
 			</IconButton>
-			<IconButton label="Close document" tooltip onclick={actions.onClose}>
-				<X size={13} strokeWidth={1.4} />
+			<IconButton label="Back to library" tooltip onclick={actions.onClose}>
+				<ArrowLeft size={13} strokeWidth={1.4} />
 			</IconButton>
 		</div>
 	{/snippet}
