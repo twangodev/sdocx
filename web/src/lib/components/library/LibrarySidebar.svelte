@@ -54,6 +54,7 @@
 		{#each library.snapshot.collections as collection (collection.id)}
 			<button
 				class="source"
+				title={collection.name}
 				class:active={library.collectionId === collection.id}
 				aria-current={library.collectionId === collection.id ? 'page' : undefined}
 				onclick={() => onNavigate({ collectionId: collection.id })}

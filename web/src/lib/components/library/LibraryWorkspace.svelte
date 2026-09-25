@@ -33,6 +33,11 @@
 	let removingNotes = $state<string[] | null>(null);
 	let storageOpen = $state(false);
 	let scroller: HTMLDivElement;
+	let searchInput = $state<HTMLInputElement>();
+	function clearSearch() {
+		library.search = '';
+		searchInput?.focus();
+	}
 	const hasNotes = $derived(library.snapshot.documents.length > 0);
 	const allSelected = $derived(
 		library.visible.length > 0 &&
@@ -139,11 +144,18 @@
 					<label class="search-field">
 						<Search size={13} strokeWidth={1.5} aria-hidden="true" />
 						<input
+							bind:this={searchInput}
 							aria-label="Search notes"
+							onkeydown={(event) => {
+								if (event.key === 'Escape') clearSearch();
+							}}
 							placeholder="Search notes"
 							type="search"
 							bind:value={library.search}
 						/>
+						{#if library.search}<IconButton label="Clear search" onclick={clearSearch}
+								><X size={12} /></IconButton
+							>{/if}
 					</label>
 					<CompactSelectMenu
 						label="Sort notes"
@@ -191,12 +203,29 @@
 						>
 							<FilePlus2 size={18} strokeWidth={1.25} />
 						</div>{/if}
-					<h2>{hasNotes ? 'No matching notes' : 'Your notes, in one place'}</h2>
+					<h2>
+						{!hasNotes
+							? 'Your notes, in one place'
+							: library.search
+								? 'No matching notes'
+								: library.source === 'favorites'
+									? 'No favorites yet'
+									: library.collectionId
+										? 'This collection is empty'
+										: 'No notes yet'}
+					</h2>
 					<p class="lede">
 						{hasNotes
-							? 'Try another search or collection.'
+							? library.search
+								? 'Try a different search.'
+								: library.source === 'favorites'
+									? 'Favorite a note from its menu to find it here.'
+									: library.collectionId
+										? 'Select notes in your library, then choose Add to.'
+										: 'Imported notes will appear here.'
 							: 'Import Samsung Notes files to start your library. Files stay in this browser.'}
 					</p>
+					{#if library.search}<Button class="mt-4" onclick={clearSearch}>Clear search</Button>{/if}
 					{#if !hasNotes}<Button
 							class="mt-4"
 							tone="primary"
@@ -288,6 +317,9 @@
 	}
 	.search-field:focus-within {
 		border-color: var(--color-accent);
+	}
+	.search-field input::-webkit-search-cancel-button {
+		display: none;
 	}
 	.search-field input {
 		width: 100%;

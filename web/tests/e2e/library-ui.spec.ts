@@ -153,3 +153,41 @@ test.describe('touch controls', () => {
 		).toBeVisible();
 	});
 });
+
+test('logo returns from a document to all notes without reloading', async ({ page }) => {
+	await page.locator('input[type=file]').setInputFiles(notes);
+	await page.getByRole('button', { name: 'Open Algebra.sdocx', exact: true }).click();
+	await expect(page.getByRole('region', { name: 'Document converter' })).toBeVisible();
+	await page.evaluate(() => {
+		(window as Window & { homeMarker?: boolean }).homeMarker = true;
+	});
+	await page.getByRole('link', { name: 'sdocx home' }).focus();
+	await page.keyboard.press('Enter');
+	await expect(page.getByRole('region', { name: 'Notes library' })).toBeVisible();
+	await expect(page.locator('article.note')).toHaveCount(2);
+	expect(await page.evaluate(() => (window as Window & { homeMarker?: boolean }).homeMarker)).toBe(
+		true
+	);
+	await page.getByRole('button', { name: 'Open Algebra.sdocx', exact: true }).click();
+	await expect(page.getByRole('region', { name: 'Document converter' })).toBeVisible();
+});
+
+test('home clears filters and empty searches have a recovery action', async ({ page }) => {
+	await page.locator('input[type=file]').setInputFiles(notes);
+	const search = page.getByRole('searchbox', { name: 'Search notes' });
+	await search.fill('missing');
+	await expect(page.getByRole('heading', { name: 'No matching notes' })).toBeVisible();
+	await page.getByRole('button', { name: 'Clear search', exact: true }).first().click();
+	await expect(search).toBeFocused();
+	await expect(page.locator('article.note')).toHaveCount(2);
+	await search.fill('missing');
+	await search.press('Escape');
+	await expect(search).toHaveValue('');
+	await page.getByRole('button', { name: 'Favorites 0', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'No favorites yet' })).toBeVisible();
+	await search.fill('Algebra');
+	await page.getByRole('link', { name: 'sdocx home' }).click();
+	await expect(search).toHaveValue('');
+	await expect(page.getByRole('heading', { name: 'All notes', exact: true })).toBeVisible();
+	await expect(page.locator('article.note')).toHaveCount(2);
+});

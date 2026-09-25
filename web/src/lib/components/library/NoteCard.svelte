@@ -52,7 +52,14 @@
 		onclick={() => onAction('open')}
 	>
 		<div class="preview"><NoteThumbnail name={document.thumbnail} {assets} /></div>
-		<span class="note-title">{title}</span>
+		<span class="note-title"
+			>{#if view === 'list' && document.favorite}<Star
+					size={11}
+					fill="currentColor"
+					class="mr-1 inline text-muted"
+					aria-label="Favorite"
+				/>{/if}{title}</span
+		>
 	</button>
 	{#if view === 'grid'}
 		<div class="note-footer">
