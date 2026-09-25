@@ -33,7 +33,3 @@ serde_json = "1.0.149"
 [[example]]
 name = "ink_geometry"
 required-features = ["render", "serde"]
-
-[[example]]
-name = "fountain_raster"
-required-features = ["render", "serde"]

@@ -1894,9 +1894,10 @@ mod tests {
         stroke.pressures = vec![0.2, 0.7, 0.4];
         stroke.timestamps = vec![0, 10, 20];
         stroke.tilts = vec![0.4, 0.6, 0.5];
-        assert_eq!(
-            crate::prepare_stroke(&stroke, false).fountain_shader,
-            Some(4)
+        assert!(
+            crate::prepare_stroke(&stroke, false)
+                .dot_directions
+                .is_some()
         );
         let mut page = page_with_uncolored_stroke();
         page.strokes = vec![stroke];

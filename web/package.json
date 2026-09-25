@@ -15,7 +15,6 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
 		"test:e2e": "playwright test",
-		"conformance:fountain": "bun tests/conformance/fountain-pixels.ts",
 		"icons": "bun scripts/generate-icons.ts",
 		"deploy": "wrangler deploy"
 	},

@@ -41,7 +41,6 @@ export interface ReplayStroke {
 		width: number;
 		dot_radii?: number[];
 		dot_directions?: Stroke['points'];
-		fountain_shader?: 4 | 5;
 		rect_stamp?: { width: number; height: number; angle: number };
 		segment_widths: number[] | null;
 		bounds: Box | null;

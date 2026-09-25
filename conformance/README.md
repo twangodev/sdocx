@@ -72,12 +72,8 @@ These require locally extracted libraries and Unicorn. They validate stroke
 geometry, not complete native pixel parity. Keep routine validation focused on
 production regressions and the real-file visual comparison below.
 
-The current fountain canvas renderer also has an optional differential pixel
-check against the APK's original shaders. Its typed Bun runner lives in
-[`web/tests/conformance/fountain-pixels.ts`](../web/tests/conformance/fountain-pixels.ts)
-and runs with `bun run conformance:fountain` from `web/`. See
-[fountain parity](../docs/reverse-engineering/fountain-parity.md) for commands,
-measured coverage, and remaining implementation work.
+See [fountain vector parity](../docs/reverse-engineering/fountain-parity.md)
+for the verified native geometry and remaining vector-output work.
 
 The intermediate live drawing, GPU, cache, and lifecycle experiments were
 retired. Their findings remain in `docs/reverse-engineering/`; their scripts

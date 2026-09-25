@@ -1,9 +1,9 @@
 # FountainPen stamp rasterization
 
 Current implementation work is tracked in [fountain parity](fountain-parity.md).
-Canvas replay coverage lives in Rust; vector export shading remains unfinished.
-The GPU shaders are used only as a conformance reference. Historical
-statements below describe earlier implementation stages, not current coverage.
+The implementation target is vector SVG/PDF output. The added software
+rasterizer and shader-comparison tooling were removed. This document preserves
+historical APK research; it does not describe a current SDK raster backend.
 
 > The reproduction commands in this note refer to experiment scripts removed
 > during test cleanup, including `conformance/fountain_raster.py` and
