@@ -64,7 +64,9 @@
 				{#if error}<p role="alert" class="mt-3 text-xs text-danger">{error}</p>{/if}
 				<div class="mt-5 flex justify-end gap-2 text-xs">
 					<Button tone="ghost" disabled={busy} onclick={onClose}>Cancel</Button>
-					<Button type="submit" tone={destructive ? 'danger' : 'primary'} disabled={busy}>{busy ? 'Working…' : confirmLabel}</Button>
+					<Button type="submit" tone={destructive ? 'danger' : 'primary'} disabled={busy}
+						>{busy ? 'Working…' : confirmLabel}</Button
+					>
 				</div>
 			</form>
 		</Dialog.Content>

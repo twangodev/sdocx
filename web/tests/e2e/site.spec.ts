@@ -115,7 +115,8 @@ test('library presents local-only imports', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: /Your notes, in one place/i })).toBeVisible();
 	await expect(page.locator('.lede')).toContainText('Files stay in this browser.');
 	await expect(page.locator('input[type=file]')).toHaveAttribute('accept', /\.sdocx/);
-	await expect(page.getByRole('combobox', { name: 'Sort notes' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Sort notes' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Import notes', exact: true })).toHaveCount(1);
 	const analyticsScript = page.locator(`head script[src="${analyticsScriptUrl}"]`);
 	await expect(analyticsScript).toHaveAttribute('data-site-id', '84f39267b7e1');
 	await expect(analyticsScript).toHaveAttribute('defer', '');

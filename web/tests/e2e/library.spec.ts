@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { pdfNote } from '../fixtures/pdf-note';
 
 const note = (name = 'library-note.sdocx', threePages = false) => ({
@@ -11,6 +11,15 @@ test.beforeEach(async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByRole('button', { name: 'Import notes', exact: true })).toBeEnabled();
 });
+
+async function selectionAction(page: Page, name: string) {
+	await page.getByRole('button', { name: 'Selection actions', exact: true }).click();
+	await page.getByRole('menuitem', { name, exact: true }).click();
+}
+async function collectionAction(page: Page, name: string) {
+	await page.getByRole('button', { name: 'Collection actions', exact: true }).click();
+	await page.getByRole('menuitem', { name, exact: true }).click();
+}
 
 test('persists original notes across reloads and reopens them for export', async ({ page }) => {
 	await page.locator('input[type=file]').setInputFiles(note());
@@ -47,7 +56,7 @@ test('batch import keeps successes, identifies duplicates, and reports invalid f
 	await expect(page.locator('article.note')).toHaveCount(2);
 	await page.getByRole('searchbox', { name: 'Search notes' }).fill('second');
 	await expect(page.locator('article.note')).toHaveCount(1);
-	await page.getByRole('button', { name: 'List view' }).click();
+	await page.getByRole('radio', { name: 'List view' }).click();
 	await expect(page.locator('.notes')).toHaveClass(/list/);
 });
 
@@ -99,28 +108,29 @@ test('organizes notes without copying originals and distinguishes collection rem
 	await expect(page.locator('article.note')).toHaveCount(2);
 	await expect(page.getByRole('button', { name: 'Cancel import' })).toHaveCount(0);
 	await page.getByRole('checkbox', { name: 'Select all visible notes' }).check();
-	await page.getByRole('button', { name: 'Favorite', exact: true }).click();
-	await expect(page.locator('article.note button[aria-pressed=true]')).toHaveCount(2);
-	await page.getByRole('button', { name: 'Remove from collection', exact: true }).click();
+	await expect(page.locator('article.note.selected')).toHaveCount(2);
+	await selectionAction(page, 'Favorite');
+	await expect(page.locator('article.note [aria-label=Favorite]')).toHaveCount(2);
+	await selectionAction(page, 'Remove from collection');
 	await expect(page.locator('article.note')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Clear selection' }).click();
-	await page.getByRole('button', { name: 'Rename collection' }).click();
+	await collectionAction(page, 'Rename collection');
 	await page.getByRole('textbox', { name: 'Collection name' }).fill('Renamed course');
 	await page.getByRole('button', { name: 'Save collection' }).click();
 	await expect(page.getByRole('heading', { name: 'Renamed course' })).toBeVisible();
-	await page.getByRole('button', { name: 'Delete collection', exact: true }).click();
+	await collectionAction(page, 'Delete collection');
 	await page
 		.getByRole('dialog')
 		.getByRole('button', { name: 'Delete collection', exact: true })
 		.click();
 	await expect(page.getByRole('heading', { name: 'All notes', exact: true })).toBeVisible();
 	await expect(page.locator('article.note')).toHaveCount(2);
-	await page.locator('article.note input[type=checkbox]').first().check();
+	await page.locator('article.note [role=checkbox]').first().check();
 	const download = page.waitForEvent('download');
-	await page.getByRole('button', { name: 'Download original' }).click();
+	await selectionAction(page, 'Download original');
 	expect((await download).suggestedFilename()).toMatch(/\.sdocx$/);
 	await page.getByRole('checkbox', { name: 'Select all visible notes' }).check();
-	await page.getByRole('button', { name: 'Delete from library', exact: true }).click();
+	await selectionAction(page, 'Delete from library');
 	await page.getByRole('button', { name: 'Delete notes', exact: true }).click();
 	await expect(page.locator('article.note')).toHaveCount(0);
 	await page.reload();
@@ -212,7 +222,7 @@ test('library controls support keyboard use in both themes and mobile layouts', 
 	await expect(page.locator('article.note')).toHaveCount(2);
 	await expect(page.getByRole('button', { name: 'Cancel import' })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Dismiss import results' }).click();
-	const firstSelection = page.locator('article.note input[type=checkbox]').first();
+	const firstSelection = page.locator('article.note [role=checkbox]').first();
 	await firstSelection.focus();
 	await page.keyboard.press('Space');
 	await expect(firstSelection).toBeChecked();

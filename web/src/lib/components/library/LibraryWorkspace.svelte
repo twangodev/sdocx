@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { FilePlus2, Folder, FolderPlus, Grid2X2, List, Menu, Star, X } from '@lucide/svelte';
+	import { Dialog } from 'bits-ui';
+	import { FilePlus2, Grid2X2, List, Menu, Search, X } from '@lucide/svelte';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
-	import type { LibrarySource } from '$lib/library/model';
-	import { visibleDocuments } from '$lib/library/view';
-	import NoteThumbnail from './NoteThumbnail.svelte';
+	import type { LibraryDocument, LibrarySort, LibrarySource } from '$lib/library/model';
+	import type { NoteAction } from '$lib/library/note-menu';
+	import type { MenuLeaf } from '$lib/menu';
+	import Button from '../ui/Button.svelte';
+	import IconButton from '../ui/IconButton.svelte';
+	import CompactSelectMenu from '../ui/CompactSelectMenu.svelte';
+	import SegmentedControl from '../ui/SegmentedControl.svelte';
+	import SelectionCheckbox from '../ui/SelectionCheckbox.svelte';
+	import NoteCard from './NoteCard.svelte';
+	import LibrarySidebar from './LibrarySidebar.svelte';
 	import ImportStatus from './ImportStatus.svelte';
 	import LibraryActions from './LibraryActions.svelte';
 	import StorageDialog from './StorageDialog.svelte';
+
 	let {
 		library,
 		onImport,
@@ -21,196 +30,202 @@
 	} = $props();
 	let sidebarOpen = $state(false);
 	let creatingCollection = $state(false);
+	let removingNotes = $state<string[] | null>(null);
 	let storageOpen = $state(false);
 	let scroller: HTMLDivElement;
-	const sources = [
-		{ id: 'all', label: 'All notes' },
-		{ id: 'recent', label: 'Recent' },
-		{ id: 'favorites', label: 'Favorites' }
-	] as const;
+	const hasNotes = $derived(library.snapshot.documents.length > 0);
+	const allSelected = $derived(
+		library.visible.length > 0 &&
+			library.visible.every((document) => library.selected.includes(document.id))
+	);
+	const someSelected = $derived(
+		library.visible.some((document) => library.selected.includes(document.id))
+	);
+	const sorts: MenuLeaf<LibrarySort>[] = [
+		{ kind: 'action', label: 'Newest imports', action: 'newest' },
+		{ kind: 'action', label: 'Title', action: 'title' }
+	];
+
 	function navigate(source: LibrarySource) {
 		library.selectSource(source);
 		sidebarOpen = false;
 		if (scroller) scroller.scrollTop = 0;
 	}
+	function createCollection() {
+		sidebarOpen = false;
+		creatingCollection = true;
+	}
+	function openStorage() {
+		sidebarOpen = false;
+		storageOpen = true;
+	}
+	function noteAction(document: LibraryDocument, action: NoteAction) {
+		if (action === 'open') onOpen(document.id);
+		else if (action === 'favorite')
+			void library.perform(() => library.service.setFavorite([document.id], !document.favorite));
+		else if (action === 'download') void library.downloadOriginal(document.id);
+		else removingNotes = [document.id];
+	}
 	onMount(() => {
 		scroller.scrollTop = library.scrollTop;
+		const desktop = matchMedia('(min-width: 721px)');
+		const closeDrawer = () => {
+			if (desktop.matches) sidebarOpen = false;
+		};
+		desktop.addEventListener('change', closeDrawer);
+		return () => desktop.removeEventListener('change', closeDrawer);
 	});
 </script>
 
+{#snippet sidebar()}
+	<LibrarySidebar
+		{library}
+		onNavigate={navigate}
+		onCreate={createCollection}
+		onStorage={openStorage}
+	/>
+{/snippet}
+
 <section class="library" aria-label="Notes library">
-	{#if sidebarOpen}<button
-			class="backdrop"
-			aria-label="Close library navigation"
-			onclick={() => (sidebarOpen = false)}
-		></button>{/if}
-	<aside class:expanded={sidebarOpen} aria-label="Library sidebar">
-		<div class="sidebar-heading">
-			library <button
-				class="mobile"
-				aria-label="Close navigation"
-				onclick={() => (sidebarOpen = false)}><X size={16} /></button
-			>
-		</div>
-		<nav aria-label="Library">
-			{#each sources as source}
-				<button class:active={library.source === source.id} onclick={() => navigate(source.id)}>
-					<span>{source.label}</span><span class="count"
-						>{visibleDocuments(library.snapshot, source.id, '', 'newest').length}</span
-					>
-				</button>
-			{/each}
-		</nav>
-		<div class="sidebar-heading collections-heading">
-			collections<button
-				aria-label="Create collection"
-				disabled={!library.available}
-				onclick={() => {
-					creatingCollection = true;
-					sidebarOpen = false;
-				}}><FolderPlus size={15} /></button
-			>
-		</div>
-		<nav aria-label="Collections">
-			{#each library.snapshot.collections as collection (collection.id)}
-				<button
-					class:active={library.collectionId === collection.id}
-					onclick={() => navigate({ collectionId: collection.id })}
-					><Folder size={14} /><span class="collection-name">{collection.name}</span><span
-						class="count"
-						>{library.snapshot.memberships.filter(
-							(membership) => membership.collectionId === collection.id
-						).length}</span
-					></button
-				>
-			{/each}
-			{#if !library.snapshot.collections.length}<p class="empty-collections">
-					No collections yet.
-				</p>{/if}
-		</nav>
-		<div class="storage-caption">
-			<button
-				class="control"
-				onclick={() => {
-					storageOpen = true;
-					sidebarOpen = false;
-				}}>Browser storage</button
-			>
-			<p class="mt-2">Saved in this browser</p>
-		</div>
-	</aside>
+	<aside class="desktop-sidebar" aria-label="Library sidebar">{@render sidebar()}</aside>
 	<div class="main">
-		<header>
-			<button
-				class="mobile control"
-				aria-label="Library navigation"
-				onclick={() => (sidebarOpen = true)}><Menu size={16} /></button
-			>
-			<h1>{library.title}</h1>
-			<button
-				class="control import"
-				disabled={library.loading || library.importing}
-				onclick={onImport}><FilePlus2 size={15} />Import notes</button
-			>
-		</header>
-		<div class="tools">
-			<input
-				aria-label="Search notes"
-				placeholder="Search notes…"
-				type="search"
-				bind:value={library.search}
-			/>
-			<select aria-label="Sort notes" bind:value={library.sort}
-				><option value="newest">Newest imports</option><option value="title">Title</option></select
-			>
-			<div class="view-buttons">
-				<button
-					class="control"
-					aria-label="Grid view"
-					aria-pressed={library.view === 'grid'}
-					onclick={() => (library.view = 'grid')}><Grid2X2 size={15} /></button
-				><button
-					class="control"
-					aria-label="List view"
-					aria-pressed={library.view === 'list'}
-					onclick={() => (library.view = 'list')}><List size={15} /></button
+		<header class="library-toolbar" class:has-selection={library.selected.length > 0}>
+			<Dialog.Root bind:open={sidebarOpen}>
+				<div class="mobile-trigger">
+					<Dialog.Trigger>
+						{#snippet child({ props })}<IconButton {...props} label="Library navigation" size={8}
+								><Menu size={16} /></IconButton
+							>{/snippet}
+					</Dialog.Trigger>
+				</div>
+				<Dialog.Portal>
+					<Dialog.Overlay class="fixed inset-0 z-60 bg-black/45" />
+					<Dialog.Content
+						class="fixed inset-y-0 left-0 z-70 flex w-64 max-w-[85vw] flex-col border-r border-subtle bg-bg"
+					>
+						<div
+							class="flex h-12 shrink-0 items-center justify-between border-b border-subtle px-3"
+						>
+							<Dialog.Title class="text-sm font-medium">Your library</Dialog.Title>
+							<Dialog.Close
+								>{#snippet child({ props })}<IconButton
+										{...props}
+										label="Close library navigation"
+										size={8}><X size={16} /></IconButton
+									>{/snippet}</Dialog.Close
+							>
+						</div>
+						<Dialog.Description class="sr-only"
+							>Browse notes and collections or manage browser storage.</Dialog.Description
+						>
+						<div class="min-h-0 flex-1">{@render sidebar()}</div>
+					</Dialog.Content>
+				</Dialog.Portal>
+			</Dialog.Root>
+			{#if hasNotes}
+				<SelectionCheckbox
+					label="Select all visible notes"
+					checked={allSelected}
+					indeterminate={someSelected && !allSelected}
+					disabled={!library.visible.length}
+					onCheckedChange={() =>
+						(library.selected = allSelected ? [] : library.visible.map((document) => document.id))}
+				/>
+			{/if}
+			<h1 class:sr-only={library.selected.length > 0}>{library.title}</h1>
+			<LibraryActions {library} bind:creating={creatingCollection} bind:removing={removingNotes} />
+			{#if hasNotes && !library.selected.length}
+				<div class="browse-controls">
+					<label class="search-field">
+						<Search size={13} strokeWidth={1.5} aria-hidden="true" />
+						<input
+							aria-label="Search notes"
+							placeholder="Search notes"
+							type="search"
+							bind:value={library.search}
+						/>
+					</label>
+					<CompactSelectMenu
+						label="Sort notes"
+						value={library.sort === 'newest' ? 'Newest' : 'Title'}
+						items={sorts.map((item) =>
+							item.kind === 'action' ? { ...item, checked: item.action === library.sort } : item
+						)}
+						onAction={(sort) => (library.sort = sort)}
+					/>
+					<SegmentedControl
+						options={['grid', 'list'] as const}
+						bind:value={library.view}
+						label="Library view"
+						itemLabel={(view) => (view === 'grid' ? 'Grid view' : 'List view')}
+						class="w-14"
+					>
+						{#snippet item(view)}{#if view === 'grid'}<Grid2X2 size={12} />{:else}<List
+									size={12}
+								/>{/if}{/snippet}
+					</SegmentedControl>
+				</div>
+				<Button
+					size={7}
+					tone="primary"
+					class="import-button"
+					disabled={library.loading || library.importing}
+					onclick={onImport}><FilePlus2 size={13} strokeWidth={1.5} />Import notes</Button
 				>
-			</div>
-		</div>
-		<LibraryActions {library} bind:creating={creatingCollection} />
+			{/if}
+		</header>
 		<ImportStatus {library} {onTemporary} />
-		{#if library.error}<p role="alert" class="error">{library.error}</p>{/if}
+		{#if library.error}<p role="alert" class="border-b border-subtle px-4 py-3 text-xs">
+				{library.error}
+			</p>{/if}
 		<div
 			class="notes-scroll"
 			bind:this={scroller}
 			onscroll={() => (library.scrollTop = scroller.scrollTop)}
 		>
-			{#if library.loading}<p class="empty">Loading library…</p>
+			{#if library.loading}<p class="empty text-muted">Loading library…</p>
 			{:else if !library.visible.length}
 				<div class="empty">
-					<h2>
-						{library.snapshot.documents.length ? 'No matching notes' : 'Your notes, in one place'}
-					</h2>
+					{#if !hasNotes}<div
+							class="mb-4 grid size-10 place-items-center rounded border border-subtle bg-bg text-muted"
+						>
+							<FilePlus2 size={18} strokeWidth={1.25} />
+						</div>{/if}
+					<h2>{hasNotes ? 'No matching notes' : 'Your notes, in one place'}</h2>
 					<p class="lede">
-						{library.snapshot.documents.length
+						{hasNotes
 							? 'Try another search or collection.'
 							: 'Import Samsung Notes files to start your library. Files stay in this browser.'}
 					</p>
-					{#if !library.snapshot.documents.length}<button
-							class="control"
+					{#if !hasNotes}<Button
+							class="mt-4"
+							tone="primary"
 							disabled={library.importing}
-							onclick={onImport}>Import .sdocx files</button
+							onclick={onImport}>Import notes</Button
 						>{/if}
 				</div>
 			{:else}
 				<div class="notes" class:list={library.view === 'list'}>
+					{#if library.view === 'list'}<div class="list-heading" aria-hidden="true">
+							<span></span><span>Name</span><span class="text-right">Pages</span><span
+								class="list-size text-right">Size</span
+							><span></span>
+						</div>{/if}
 					{#each library.visible as document (document.id)}
-						<article
-							class="note"
-							class:selected={library.selected.includes(document.id)}
-							aria-label={document.title}
-						>
-							<div class="note-controls">
-								<input
-									type="checkbox"
-									aria-label={`Select ${document.title}`}
-									checked={library.selected.includes(document.id)}
-									onchange={() => library.toggleSelection(document.id)}
-								/><button
-									aria-label={`${document.favorite ? 'Unfavorite' : 'Favorite'} ${document.title}`}
-									aria-pressed={document.favorite}
-									onclick={() =>
-										void library.perform(() =>
-											library.service.setFavorite([document.id], !document.favorite)
-										)}><Star size={14} fill={document.favorite ? 'currentColor' : 'none'} /></button
-								>
-							</div>
-							<button
-								class="preview"
-								aria-label={`Open ${document.title}`}
-								onclick={() => onOpen(document.id)}
-								><NoteThumbnail name={document.thumbnail} assets={library.service.assets} /></button
-							>
-							<div class="note-info">
-								<button class="note-title" onclick={() => onOpen(document.id)}
-									>{document.title}</button
-								>
-								<p title={document.filename}>{document.filename}</p>
-								<p>
-									{document.pageCount}
-									{document.pageCount === 1 ? 'page' : 'pages'} · {(document.size / 1024).toFixed(
-										0
-									)} KiB
-								</p>
-							</div>
-						</article>
+						<NoteCard
+							{document}
+							assets={library.service.assets}
+							view={library.view}
+							selected={library.selected.includes(document.id)}
+							onSelect={() => library.toggleSelection(document.id)}
+							onAction={(action) => noteAction(document, action)}
+						/>
 					{/each}
 				</div>
 			{/if}
 		</div>
 	</div>
 </section>
-
 {#if storageOpen}<StorageDialog {library} onClose={() => (storageOpen = false)} />{/if}
 
 <style>
@@ -219,66 +234,12 @@
 		width: 100%;
 		height: calc(100svh - 2.5rem);
 		min-height: 0;
-		font-size: 12px;
+		--note-columns: 28px minmax(0, 1fr) 5rem 5rem 28px;
 	}
-	aside {
-		width: 208px;
+	.desktop-sidebar {
+		width: 192px;
 		flex-shrink: 0;
 		border-right: 1px solid var(--site-border);
-		padding: 20px 10px;
-		display: flex;
-		flex-direction: column;
-		overflow-y: auto;
-	}
-	.sidebar-heading {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0 10px 10px;
-		color: var(--site-muted);
-		font-size: 11px;
-		letter-spacing: 0.04em;
-	}
-	.collections-heading {
-		margin-top: 22px;
-		border-top: 1px solid var(--site-border);
-		padding-top: 18px;
-	}
-	nav button {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		width: 100%;
-		text-align: left;
-		padding: 8px 10px;
-		border-radius: 4px;
-	}
-	nav button:hover,
-	nav button.active,
-	.control:hover,
-	.control[aria-pressed='true'] {
-		background: var(--site-surface);
-	}
-	.count {
-		margin-left: auto;
-		color: var(--site-muted);
-		font-size: 10px;
-	}
-	.collection-name {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.empty-collections {
-		color: var(--site-muted);
-		padding: 4px 10px;
-		font-size: 11px;
-	}
-	.storage-caption {
-		margin-top: auto;
-		padding: 24px 10px 0;
-		color: var(--site-muted);
-		font-size: 10px;
 	}
 	.main {
 		flex: 1;
@@ -286,224 +247,160 @@
 		display: flex;
 		flex-direction: column;
 	}
-	header {
+	.library-toolbar {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		padding: 20px 24px 14px;
+		gap: 8px;
+		min-height: 48px;
+		flex-shrink: 0;
+		padding: 8px 12px;
+		border-bottom: 1px solid var(--site-border);
+		background: var(--site-bg);
 	}
 	h1 {
-		font-size: 18px;
+		min-width: 0;
+		max-width: 200px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 13px;
 		font-weight: 550;
 	}
-	.control {
-		display: inline-flex;
+	.browse-controls {
+		display: flex;
 		align-items: center;
-		justify-content: center;
-		gap: 7px;
-		border: 1px solid var(--site-border);
-		border-radius: 4px;
-		padding: 7px 10px;
-	}
-	button {
-		cursor: pointer;
-	}
-	button:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-	button:focus-visible,
-	input:focus-visible,
-	select:focus-visible {
-		outline: 2px solid var(--color-accent);
-		outline-offset: 2px;
-	}
-	.import {
+		gap: 8px;
 		margin-left: auto;
+		min-width: 0;
 	}
-	.tools {
+	.search-field {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: 10px;
-		padding: 0 24px 16px;
-		border-bottom: 1px solid var(--site-border);
-	}
-	.tools input,
-	.tools select {
+		gap: 6px;
+		height: 28px;
+		min-width: 96px;
+		width: 220px;
+		padding: 0 8px;
+		color: var(--site-muted);
+		background: var(--site-surface);
 		border: 1px solid var(--site-border);
-		background: var(--site-bg);
-		color: inherit;
 		border-radius: 4px;
-		padding: 7px 10px;
 	}
-	.tools input {
-		flex: 1;
-		min-width: 120px;
+	.search-field:focus-within {
+		border-color: var(--color-accent);
 	}
-	.view-buttons {
-		display: flex;
-		gap: 4px;
+	.search-field input {
+		width: 100%;
+		min-width: 0;
+		outline: none;
+		background: transparent;
+		font-size: 11px;
+		color: var(--site-text);
 	}
 	.notes-scroll {
-		overflow-y: auto;
 		min-height: 0;
 		flex: 1;
-		padding: 24px;
+		overflow-y: auto;
+		padding: 16px;
+		background: var(--site-canvas);
 	}
 	.notes {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-		gap: 20px;
-	}
-	.note {
-		position: relative;
-		border: 1px solid var(--site-border);
-		border-radius: 5px;
-		overflow: hidden;
-		min-width: 0;
-	}
-	.note.selected {
-		border-color: var(--color-accent);
-	}
-	.note-controls {
-		position: absolute;
-		top: 8px;
-		left: 8px;
-		right: 8px;
-		display: flex;
-		justify-content: space-between;
-		z-index: 1;
-		pointer-events: none;
-	}
-	.note-controls input,
-	.note-controls button {
-		pointer-events: auto;
-		accent-color: var(--color-accent);
-	}
-	.note-controls input {
-		width: 14px;
-		height: 14px;
-		margin: 5px;
-	}
-	.note-controls button {
-		display: grid;
-		place-items: center;
-		width: 24px;
-		height: 24px;
-		border-radius: 4px;
-		background: var(--site-bg);
-	}
-	.list .note-controls {
-		position: static;
-		padding: 0 12px;
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 		gap: 12px;
 	}
-	.preview {
+	.notes.list {
 		display: block;
-		width: 100%;
-		height: 200px;
-		padding: 12px;
-		background: var(--site-surface);
-	}
-	.note-info {
-		padding: 12px;
-		min-width: 0;
-	}
-	.note-title {
-		display: block;
-		max-width: 100%;
-		font-weight: 550;
-		text-align: left;
 		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		border: 1px solid var(--site-border);
+		border-radius: 5px;
+		background: var(--site-bg);
 	}
-	.note-info p {
+	.list-heading {
+		display: grid;
+		grid-template-columns: var(--note-columns);
+		gap: 12px;
+		padding: 8px;
+		border-bottom: 1px solid var(--site-border);
 		color: var(--site-muted);
-		font-size: 10px;
-		margin-top: 4px;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.list {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-	.list .note {
-		display: flex;
-		align-items: center;
-	}
-	.list .preview {
-		width: 64px;
-		height: 80px;
-		flex-shrink: 0;
-		padding: 6px;
+		font-size: 11px;
 	}
 	.empty {
 		display: flex;
+		min-height: 100%;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 14px;
-		min-height: 300px;
 		text-align: center;
-		color: var(--site-muted);
 	}
 	.empty h2 {
-		font-size: 20px;
-		color: var(--site-text);
+		font-size: 14px;
+		font-weight: 500;
 	}
 	.lede {
-		max-width: 340px;
-		line-height: 1.7;
+		margin-top: 6px;
+		max-width: 290px;
+		font-size: 12px;
+		line-height: 1.6;
+		color: var(--site-muted);
 	}
-	.error {
-		padding: 12px 24px;
-		color: var(--site-text);
-		border-bottom: 1px solid var(--site-border);
-	}
-	.mobile {
+	.mobile-trigger {
 		display: none;
 	}
-	.backdrop {
-		position: fixed;
-		inset: 40px 0 0;
-		z-index: 59;
-		background: #0006;
+	@media (max-width: 1000px) {
+		.search-field {
+			width: 150px;
+		}
+	}
+	@media (max-width: 850px) {
+		.library-toolbar {
+			flex-wrap: wrap;
+		}
+		.browse-controls {
+			width: 100%;
+			order: 1;
+			margin: 0;
+			padding-top: 2px;
+		}
+		.search-field {
+			flex: 1;
+			width: auto;
+		}
+		.library-toolbar :global(.import-button) {
+			margin-left: auto;
+		}
 	}
 	@media (max-width: 720px) {
-		aside {
+		.library {
+			--note-columns: 28px minmax(0, 1fr) 4rem 28px;
+		}
+		.desktop-sidebar {
 			display: none;
 		}
-		aside.expanded {
-			display: flex;
-			position: fixed;
-			inset: 40px auto 0 0;
-			z-index: 60;
-			background: var(--site-bg);
-			width: 240px;
+		.mobile-trigger {
+			display: block;
 		}
-		.mobile {
-			display: inline-flex;
+		.library-toolbar {
+			padding: 8px;
+			gap: 4px;
 		}
-		header {
-			padding: 16px;
+		.library-toolbar.has-selection {
+			flex-wrap: nowrap;
 		}
-		.tools {
-			padding: 0 16px 12px;
+		h1 {
+			max-width: 140px;
 		}
 		.notes-scroll {
-			padding: 16px;
+			padding: 12px;
 		}
 		.notes {
 			grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-			gap: 12px;
 		}
-		.preview {
-			height: 170px;
+		.list-heading {
+			gap: 6px;
+		}
+		.list-size {
+			display: none;
 		}
 	}
 </style>

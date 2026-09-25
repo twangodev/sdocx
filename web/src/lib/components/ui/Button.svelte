@@ -7,7 +7,14 @@
 		size?: 7 | 8 | 9;
 		children: Snippet;
 	}
-	let { tone = 'default', size = 8, children, class: className = '', type = 'button', ...rest }: Props = $props();
+	let {
+		tone = 'default',
+		size = 8,
+		children,
+		class: className = '',
+		type = 'button',
+		...rest
+	}: Props = $props();
 	const heights = { 7: 'h-7', 8: 'h-8', 9: 'h-9' } as const;
 	const tones = {
 		default: 'border-subtle bg-bg text-text hover:bg-surface',
@@ -17,6 +24,12 @@
 	} as const;
 </script>
 
-<button {...rest} {type} class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded border px-2.5 text-xs font-medium transition-colors disabled:cursor-default disabled:opacity-40 {heights[size]} {tones[tone]} {className}">
+<button
+	{...rest}
+	{type}
+	class="inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded border px-2.5 text-xs font-medium transition-colors disabled:cursor-default disabled:opacity-40 {heights[
+		size
+	]} {tones[tone]} {className}"
+>
 	{@render children()}
 </button>

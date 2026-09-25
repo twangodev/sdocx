@@ -1,22 +1,33 @@
 <script lang="ts">
-	import { downloadBlob } from '$converter/files';
+	import { Ellipsis, X } from '@lucide/svelte';
+	import { separator, type MenuLeaf } from '$lib/menu';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	import type { Collection } from '$lib/library/model';
+	import CompactSelectMenu from '../ui/CompactSelectMenu.svelte';
+	import DropdownMenu from '../ui/DropdownMenu.svelte';
+	import IconButton from '../ui/IconButton.svelte';
 	import LibraryDialog from './LibraryDialog.svelte';
-	let { library, creating = $bindable(false) }: { library: LibraryWorkspace; creating?: boolean } =
-		$props();
+	let {
+		library,
+		creating = $bindable(false),
+		removing = $bindable<string[] | null>(null)
+	}: {
+		library: LibraryWorkspace;
+		creating?: boolean;
+		removing?: string[] | null;
+	} = $props();
 	let editing = $state<Collection | null>(null);
 	let collectionName = $state('');
-	let removal = $state<
-		{ kind: 'notes'; ids: string[] } | { kind: 'collection'; collection: Collection } | null
-	>(null);
-	let targetCollection = $state('');
+	let removingCollection = $state<Collection | null>(null);
+	const removal = $derived(
+		removing
+			? { kind: 'notes' as const, ids: removing }
+			: removingCollection
+				? { kind: 'collection' as const, collection: removingCollection }
+				: null
+	);
 	const activeCollection = $derived(
 		library.snapshot.collections.find((collection) => collection.id === library.collectionId)
-	);
-	const allSelected = $derived(
-		library.visible.length > 0 &&
-			library.visible.every((document) => library.selected.includes(document.id))
 	);
 	const selection = $derived(
 		library.snapshot.documents.filter((document) => library.selected.includes(document.id))
@@ -24,14 +35,40 @@
 	const allFavorites = $derived(
 		selection.length > 0 && selection.every((document) => document.favorite)
 	);
-
+	type Action = 'favorite' | 'download' | 'remove-membership' | 'delete';
+	const actions = $derived.by(() => {
+		const items: MenuLeaf<Action>[] = [
+			{ kind: 'action', label: allFavorites ? 'Unfavorite' : 'Favorite', action: 'favorite' }
+		];
+		if (selection.length === 1)
+			items.push({ kind: 'action', label: 'Download original', action: 'download' });
+		if (activeCollection)
+			items.push({ kind: 'action', label: 'Remove from collection', action: 'remove-membership' });
+		items.push(separator(), { kind: 'action', label: 'Delete from library', action: 'delete' });
+		return items;
+	});
+	const collectionItems = $derived<MenuLeaf<string>[]>([
+		...library.snapshot.collections.map((collection) => ({
+			kind: 'action' as const,
+			label: collection.name,
+			action: collection.id
+		})),
+		separator(),
+		{ kind: 'action', label: 'New collection…', action: 'create' }
+	]);
 	function closeEditor() {
 		creating = false;
 		editing = null;
 		collectionName = '';
 	}
+	function closeRemoval() {
+		removing = null;
+		removingCollection = null;
+	}
 	async function saveCollection() {
-		await library.service.saveCollection(collectionName, editing?.id);
+		const collection = await library.service.saveCollection(collectionName, editing?.id);
+		if (!editing && library.selected.length)
+			await library.service.setMembership([...library.selected], collection.id, true);
 		await library.refresh();
 	}
 	async function confirmRemoval() {
@@ -40,74 +77,64 @@
 		else await library.service.deleteCollection(removal.collection.id);
 		await library.refresh();
 	}
-	async function downloadOriginal() {
-		const document = selection[0];
-		if (!document) return;
-		await library.perform(async () =>
-			downloadBlob(await library.service.openDocument(document.id), document.filename)
-		);
+	function runAction(action: Action) {
+		const ids = [...library.selected];
+		if (action === 'delete') removing = ids;
+		else if (action === 'download' && ids[0]) void library.downloadOriginal(ids[0]);
+		else if (action === 'favorite')
+			void library.perform(() => library.service.setFavorite(ids, !allFavorites));
+		else if (action === 'remove-membership' && activeCollection) {
+			const collectionId = activeCollection.id;
+			void library.perform(() => library.service.setMembership(ids, collectionId, false));
+		}
 	}
 </script>
 
-<div class="actions" aria-label="Library actions">
-	<label class="selection"
-		><input
-			type="checkbox"
-			aria-label="Select all visible notes"
-			checked={allSelected}
-			disabled={!library.visible.length}
-			onchange={() =>
-				(library.selected = allSelected ? [] : library.visible.map((document) => document.id))}
-		/>{library.selected.length ? `${library.selected.length} selected` : 'Select notes'}</label
-	>
-	{#if library.selected.length}
-		<button
-			onclick={() =>
-				void library.perform(() =>
-					library.service.setFavorite([...library.selected], !allFavorites)
-				)}>{allFavorites ? 'Unfavorite' : 'Favorite'}</button
+{#if library.selected.length}
+	<div class="flex min-w-0 flex-1 items-center gap-1" aria-label="Library actions">
+		<span class="mr-auto whitespace-nowrap text-xs font-medium"
+			>{library.selected.length} selected</span
 		>
-		<select
-			aria-label="Add selected notes to collection"
-			bind:value={targetCollection}
-			onchange={() => {
-				if (targetCollection)
+		<CompactSelectMenu
+			label="Add selected notes to collection"
+			value="Collection"
+			items={collectionItems}
+			onAction={(id) => {
+				if (id === 'create') creating = true;
+				else
 					void library.perform(() =>
-						library.service.setMembership([...library.selected], targetCollection, true)
+						library.service.setMembership([...library.selected], id, true)
 					);
-				targetCollection = '';
 			}}
+		/>
+		<CompactSelectMenu
+			label="Selection actions"
+			value="Actions"
+			items={actions}
+			onAction={runAction}
+		/>
+		<IconButton label="Clear selection" tooltip size={7} onclick={() => (library.selected = [])}
+			><X size={14} /></IconButton
 		>
-			<option value="">Add to collection…</option>
-			{#each library.snapshot.collections as collection}<option value={collection.id}
-					>{collection.name}</option
-				>{/each}
-		</select>
-		{#if activeCollection}<button
-				onclick={() =>
-					void library.perform(() =>
-						library.service.setMembership([...library.selected], activeCollection!.id, false)
-					)}>Remove from collection</button
-			>{/if}
-		{#if library.selected.length === 1}<button onclick={() => void downloadOriginal()}
-				>Download original</button
-			>{/if}
-		<button onclick={() => (removal = { kind: 'notes', ids: [...library.selected] })}
-			>Delete from library</button
-		>
-		<button onclick={() => (library.selected = [])}>Clear selection</button>
-	{:else if activeCollection}
-		<button
-			onclick={() => {
-				editing = activeCollection;
-				collectionName = activeCollection.name;
-			}}>Rename collection</button
-		>
-		<button onclick={() => (removal = { kind: 'collection', collection: activeCollection })}
-			>Delete collection</button
-		>
-	{/if}
-</div>
+	</div>
+{:else if activeCollection}
+	<DropdownMenu
+		items={[
+			{ kind: 'action', label: 'Rename collection', action: 'rename' },
+			{ kind: 'action', label: 'Delete collection', action: 'delete' }
+		]}
+		onAction={(action) => {
+			if (action === 'rename') {
+				editing = activeCollection!;
+				collectionName = activeCollection!.name;
+			} else removingCollection = activeCollection!;
+		}}
+	>
+		{#snippet children({ props })}<IconButton {...props} label="Collection actions" size={7}
+				><Ellipsis size={15} /></IconButton
+			>{/snippet}
+	</DropdownMenu>
+{/if}
 
 {#if creating || editing}
 	<LibraryDialog
@@ -136,45 +163,6 @@
 			: `Delete “${removal.collection.name}”? Its notes will remain in All notes.`}
 		confirmLabel={removal.kind === 'notes' ? 'Delete notes' : 'Delete collection'}
 		onConfirm={confirmRemoval}
-		onClose={() => (removal = null)}
+		onClose={closeRemoval}
 	/>
 {/if}
-
-<style>
-	.actions {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 8px;
-		padding: 10px 24px;
-		border-bottom: 1px solid var(--site-border);
-		font-size: 11px;
-	}
-	.selection {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		margin-right: 6px;
-		color: var(--site-muted);
-	}
-	button,
-	select {
-		border: 1px solid var(--site-border);
-		border-radius: 4px;
-		padding: 5px 8px;
-		background: var(--site-bg);
-		color: var(--site-text);
-		cursor: pointer;
-	}
-	button:hover {
-		background: var(--site-surface);
-	}
-	input {
-		accent-color: var(--color-accent);
-	}
-	@media (max-width: 720px) {
-		.actions {
-			padding: 10px 16px;
-		}
-	}
-</style>

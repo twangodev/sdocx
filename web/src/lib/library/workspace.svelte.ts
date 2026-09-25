@@ -5,6 +5,7 @@ import { OpfsAssetStore } from './asset-store';
 import { LibraryService } from './service';
 import { visibleDocuments } from './view';
 import { createThumbnail } from './thumbnail';
+import { downloadBlob } from '$converter/files';
 
 export class LibraryWorkspace {
 	snapshot = $state.raw<LibrarySnapshot>({ documents: [], collections: [], memberships: [] });
@@ -168,6 +169,13 @@ export class LibraryWorkspace {
 				});
 		}
 		return this.results;
+	}
+
+	async downloadOriginal(id: string): Promise<void> {
+		await this.perform(async () => {
+			const file = await this.service.openDocument(id);
+			downloadBlob(file, file.name);
+		});
 	}
 
 	async restoreThumbnail(id: string, svg: string): Promise<void> {
