@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.7.0...sdocx-v0.8.0) (2026-09-25)
+
+
+### Features
+
+* **ink:** add shared Rust fountain rasterization ([3dd2fca](https://github.com/twangodev/sdocx/commit/3dd2fca15854858bbe4d857f4832cce8aeb6645b))
+
+
+### Bug Fixes
+
+* **ink:** preserve native fountain stamp directions ([434df20](https://github.com/twangodev/sdocx/commit/434df20ac2e3f6c5e58a4119419eb7f9656f5426))
+* **render:** shade V14 fountain strokes with vector gradients ([fae17ca](https://github.com/twangodev/sdocx/commit/fae17ca5f55ea8fa239871525cd14ee31ff2f5bb))
+
 ## [0.7.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.6.0...sdocx-v0.7.0) (2026-09-25)
 
 

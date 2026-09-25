@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.5.0...sdocx-wasm-v0.6.0) (2026-09-25)
+
+
+### Features
+
+* **ink:** add shared Rust fountain rasterization ([3dd2fca](https://github.com/twangodev/sdocx/commit/3dd2fca15854858bbe4d857f4832cce8aeb6645b))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.7.0 to 0.8.0
+
 ## [0.5.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.4.0...sdocx-wasm-v0.5.0) (2026-09-25)
 
 
