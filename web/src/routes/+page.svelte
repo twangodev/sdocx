@@ -46,9 +46,11 @@
 	});
 
 	onMount(() => {
+		workspace.goHome = goHome;
 		const stop = session.start();
 		const stopLibrary = library.start();
 		return () => {
+			workspace.goHome = undefined;
 			stopLibrary();
 			stop();
 			workspace.hasDocument = false;
@@ -57,6 +59,15 @@
 		};
 	});
 
+	function goHome(): void {
+		uploadGeneration += 1;
+		activeLibraryDocument = null;
+		temporary = false;
+		session.cancel();
+		library.search = '';
+		library.selectSource('all');
+	}
+
 	function selectPage(nextPage: number): void {
 		zoom.scrollToPage(nextPage);
 		pageIndex = nextPage;
@@ -64,12 +75,7 @@
 
 	function stepPage(direction: -1 | 1): void {
 		if (!session.summary) return;
-		selectPage(
-			Math.min(
-				session.summary.pageCount - 1,
-				Math.max(0, pageIndex + direction)
-			)
-		);
+		selectPage(Math.min(session.summary.pageCount - 1, Math.max(0, pageIndex + direction)));
 	}
 
 	function fitPreviewPage(): void {
@@ -83,7 +89,10 @@
 		if (generation !== uploadGeneration) return;
 		if (session.error || (session.activeFile === file && session.summary)) {
 			uploadNotice = {
-				codes: session.activeFile === file ? session.details?.diagnostics.map(({ code }) => code) ?? [] : [],
+				codes:
+					session.activeFile === file
+						? (session.details?.diagnostics.map(({ code }) => code) ?? [])
+						: [],
 				failed: Boolean(session.error)
 			};
 		}
@@ -109,7 +118,8 @@
 		const results = await library.importFiles(files);
 		if (files.length === 1 && !library.cancelled) {
 			const result = results[0];
-			if (result?.status === 'imported' || result?.status === 'duplicate') await openSaved(result.document.id);
+			if (result?.status === 'imported' || result?.status === 'duplicate')
+				await openSaved(result.document.id);
 		}
 	}
 
@@ -125,7 +135,6 @@
 		if (files.length) void importFiles(files);
 		input.value = '';
 	}
-
 </script>
 
 <svelte:head>
@@ -136,10 +145,7 @@
 	/>
 </svelte:head>
 
-<DropOverlay
-	hasDocument={session.hasDocument}
-	onFiles={(files) => void importFiles(files)}
-/>
+<DropOverlay hasDocument={session.hasDocument} onFiles={(files) => void importFiles(files)} />
 
 <input
 	bind:this={picker}
@@ -151,9 +157,22 @@
 />
 
 {#if !session.hasDocument}
-	<LibraryWorkspace {library} onImport={() => picker?.click()} onOpen={(id) => void openSaved(id)} onTemporary={openTemporary} />
-	{#if session.parsing}<div role="status" class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded border border-subtle bg-bg px-4 py-2 text-xs">{session.status}<button class="ml-4 underline" onclick={() => session.cancel()}>Cancel</button></div>{/if}
-	{#if session.error}<div class="fixed bottom-4 left-4 z-50"><ErrorNotice message={session.error} /></div>{/if}
+	<LibraryWorkspace
+		{library}
+		onImport={() => picker?.click()}
+		onOpen={(id) => void openSaved(id)}
+		onTemporary={openTemporary}
+	/>
+	{#if session.parsing}<div
+			role="status"
+			class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded border border-subtle bg-bg px-4 py-2 text-xs"
+		>
+			{session.status}<button class="ml-4 underline" onclick={() => session.cancel()}>Cancel</button
+			>
+		</div>{/if}
+	{#if session.error}<div class="fixed bottom-4 left-4 z-50">
+			<ErrorNotice message={session.error} />
+		</div>{/if}
 {:else if session.summary && session.activeFile}
 	<section
 		class="motion-surface-in flex h-[calc(100svh-2.5rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden max-[720px]:h-auto max-[720px]:min-h-[calc(100svh-2.5rem)] max-[720px]:overflow-visible"
@@ -161,7 +180,9 @@
 		style:height={debuggerOpen ? 'calc(100svh - 2.5rem)' : undefined}
 		style:overflow={debuggerOpen ? 'hidden' : undefined}
 	>
-		{#if temporary}<p role="status" class="border-b border-subtle bg-surface px-3 py-2 text-xs">Temporary note · not saved to your library</p>{/if}
+		{#if temporary}<p role="status" class="border-b border-subtle bg-surface px-3 py-2 text-xs">
+				Temporary note · not saved to your library
+			</p>{/if}
 		<DocumentToolbar
 			model={{
 				document: {
@@ -250,8 +271,5 @@
 {/if}
 
 {#if uploadNotice && !session.hasDocument}
-	<UploadNotice
-		{...uploadNotice}
-		onDismiss={() => (uploadNotice = null)}
-	/>
+	<UploadNotice {...uploadNotice} onDismiss={() => (uploadNotice = null)} />
 {/if}

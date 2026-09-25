@@ -27,12 +27,23 @@
 </svelte:head>
 
 <div class="flex min-h-svh w-full flex-col">
-	<header
-		class="flex min-h-10 items-center justify-between gap-2.5 border-b border-subtle px-2.5"
-	>
+	<header class="flex min-h-10 items-center justify-between gap-2.5 border-b border-subtle px-2.5">
 		<a
 			class="inline-flex items-center gap-1.5 text-[0.9rem] font-[550] tracking-[0.01em] text-text no-underline transition-[color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:text-accent"
 			href="/"
+			onclick={(event) => {
+				if (
+					event.button !== 0 ||
+					event.metaKey ||
+					event.ctrlKey ||
+					event.shiftKey ||
+					event.altKey ||
+					!workspace.goHome
+				)
+					return;
+				event.preventDefault();
+				workspace.goHome();
+			}}
 			aria-label="sdocx home"><Logo size={15} />sdocx</a
 		>
 
@@ -55,8 +66,7 @@
 				target="_blank"
 				rel="noreferrer"
 				title="Source on GitHub"
-				aria-label="Source on GitHub"
-				><Github size={15} strokeWidth={1.5} aria-hidden="true" /></a
+				aria-label="Source on GitHub"><Github size={15} strokeWidth={1.5} aria-hidden="true" /></a
 			>
 			<ThemeToggle />
 		</nav>

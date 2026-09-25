@@ -2,5 +2,6 @@
 export interface WorkspaceState {
 	hasDocument: boolean;
 	debuggerOpen: boolean;
+	goHome?: () => void;
 }
 export const WORKSPACE = Symbol('document workspace');
