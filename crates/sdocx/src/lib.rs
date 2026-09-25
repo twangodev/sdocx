@@ -54,7 +54,10 @@ pub use formula::{
     FormulaMetadata, FormulaStroke,
 };
 #[cfg(feature = "render")]
-pub use ink::{InkSupport, PEN_PROFILES, PenProfile, PreparedStroke, RectStamp, prepare_stroke};
+pub use ink::{
+    InkMask, InkRasterError, InkSupport, InkViewport, PEN_PROFILES, PenProfile, PreparedStroke,
+    RectStamp, prepare_stroke, rasterize_fountain, rasterize_fountain_geometry,
+};
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{LayoutDocument, LayoutPage, layout_document};

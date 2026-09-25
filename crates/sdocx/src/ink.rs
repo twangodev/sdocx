@@ -6,6 +6,10 @@ mod fountain_v14;
 mod marker2;
 mod marker4;
 mod path;
+mod raster;
+pub use raster::{
+    InkMask, InkRasterError, InkViewport, rasterize_fountain, rasterize_fountain_geometry,
+};
 
 /// A profile describes evidence, not just whether a pen name is recognized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

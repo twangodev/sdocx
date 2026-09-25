@@ -7,6 +7,58 @@ const MAX_BROWSER_INPUT_SIZE: usize = 250 * 1024 * 1024;
 const MAX_BROWSER_ENTRY_SIZE: u64 = 256 * 1024 * 1024;
 const MAX_BROWSER_TOTAL_UNCOMPRESSED_SIZE: u64 = 1024 * 1024 * 1024;
 
+#[derive(serde::Deserialize)]
+struct FountainRasterInput {
+    points: Vec<sdocx::Point>,
+    dot_radii: Vec<f64>,
+    dot_directions: Option<Vec<sdocx::Point>>,
+    fountain_shader: u8,
+    viewport: sdocx::InkViewport,
+    color: String,
+    opacity: f32,
+}
+
+/// Render prepared fountain ink using the SDK's shared software renderer.
+/// Output is four little-endian u32s (x, y, width, height), followed by RGBA8.
+#[wasm_bindgen]
+pub fn rasterize_fountain_ink(input: &str) -> Result<Vec<u8>, JsError> {
+    let input: FountainRasterInput =
+        serde_json::from_str(input).map_err(|e| JsError::new(&e.to_string()))?;
+    if !input.opacity.is_finite() || !(0. ..=1.).contains(&input.opacity) {
+        return Err(JsError::new("invalid ink opacity"));
+    }
+    let hex = input
+        .color
+        .strip_prefix('#')
+        .filter(|s| s.len() == 6)
+        .ok_or_else(|| JsError::new("expected RGB ink color"))?;
+    let color = u32::from_str_radix(hex, 16).map_err(|_| JsError::new("invalid ink color"))?;
+    let mask = sdocx::rasterize_fountain_geometry(
+        &input.points,
+        &input.dot_radii,
+        input.dot_directions.as_deref(),
+        input.fountain_shader,
+        input.viewport,
+    )
+    .map_err(|e| JsError::new(&e.to_string()))?;
+    let Some(mask) = mask else {
+        return Ok(vec![]);
+    };
+    let mut output = Vec::with_capacity(16 + mask.alpha.len() * 4);
+    for n in [mask.x, mask.y, mask.width, mask.height] {
+        output.extend_from_slice(&n.to_le_bytes());
+    }
+    for alpha in mask.alpha {
+        output.extend_from_slice(&[
+            (color >> 16) as u8,
+            (color >> 8) as u8,
+            color as u8,
+            (alpha as f32 * input.opacity).round_ties_even() as u8,
+        ]);
+    }
+    Ok(output)
+}
+
 /// Parse a `.sdocx` file from bytes.
 ///
 /// Accepts a `Uint8Array` and returns a `Document` object.

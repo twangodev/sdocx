@@ -1,4 +1,5 @@
 import type { Replay } from './model';
+import { FountainRaster } from './fountain-raster';
 import { CanvasCache } from '$lib/viewer/canvas-cache';
 import type { PageRegion } from '$lib/viewer/page-region';
 
@@ -40,12 +41,14 @@ class InkLayerRaster {
 	private base: HTMLCanvasElement | undefined;
 	private regionKey = '';
 	private completed = -1;
+	private fountain: FountainRaster | undefined;
 
 	constructor(
 		private replay: Replay,
 		private defaultInk: string,
 		private tiles: CanvasCache<string, Tile>,
-		private prefix: string
+		private prefix: string,
+		private fountainFactory?: () => FountainRaster
 	) {
 		for (let i = 0; i < replay.strokes.length; i++) {
 			const box = replay.strokes[i].geometry.bounds;
@@ -109,6 +112,12 @@ class InkLayerRaster {
 			(geometry.sample_ends?.[last] ?? Math.min(last + 1, points.length)) - 1;
 		if (last < 0) return;
 		ctx.strokeStyle = stroke.color ? geometry.color : this.defaultInk;
+		if (geometry.fountain_shader) {
+			if (!this.fountainFactory) throw new Error('Rust ink renderer is not initialized');
+			this.fountain ??= this.fountainFactory();
+			this.fountain.draw(ctx, this.replay.strokes[index], last);
+			return;
+		}
 		if (geometry.rect_stamp) {
 			const { width, height, angle } = geometry.rect_stamp;
 			const cos = Math.cos(angle), sin = Math.sin(angle);
@@ -288,6 +297,8 @@ class InkLayerRaster {
 	}
 
 	dispose() {
+		this.fountain?.dispose();
+		this.fountain = undefined;
 		if (this.base) this.base.width = this.base.height = 0;
 		this.base = undefined;
 	}
@@ -298,12 +309,12 @@ export class ReplayRaster {
 	private tiles = new CanvasCache<string, Tile>(48 * 1024 * 1024);
 	private layers: { indices: number[]; raster: InkLayerRaster; canvas?: HTMLCanvasElement }[];
 
-	constructor(private replay: Replay, defaultInk: string) {
+	constructor(private replay: Replay, defaultInk: string, fountainFactory?: () => FountainRaster) {
 		this.layers = [false, true].map((top) => {
 			const indices = replay.strokes.flatMap((s, i) => !!s.geometry.top_layer === top ? [i] : []);
 			return {
 				indices,
-				raster: new InkLayerRaster({ ...replay, strokes: indices.map(i => replay.strokes[i]) }, defaultInk, this.tiles, String(top))
+				raster: new InkLayerRaster({ ...replay, strokes: indices.map(i => replay.strokes[i]) }, defaultInk, this.tiles, String(top), fountainFactory)
 			};
 		});
 	}

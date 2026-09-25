@@ -7,6 +7,7 @@
 	import type { Replay, Track } from './model';
 	import { sampleAt } from './model';
 	import { ReplayRaster } from './replay-raster';
+	import { loadFountainRaster, type FountainRaster } from './fountain-raster';
 	let {
 		replay,
 		tracks,
@@ -39,7 +40,18 @@
 	const partial = $derived(position < (tracks.at(-1)?.end ?? 0));
 	let defaultInk = $state('#1a1a1a');
 	let backgroundError = $state('');
+	let inkError = $state('');
 	let lastInk = '';
+	let fountainFactory = $state<(() => FountainRaster)>();
+	onMount(() => {
+		let cancelled = false;
+		void loadFountainRaster().then(factory => {
+			if (!cancelled) fountainFactory = factory;
+		}).catch(error => {
+			if (!cancelled) inkError = String(error);
+		});
+		return () => { cancelled = true; };
+	});
 	const backgroundKey = $derived(
 		requested ? `${sourcePage}:${session.colorMode}` : ''
 	);
@@ -85,7 +97,7 @@
 	function paint(ctx: CanvasRenderingContext2D, region: PageRegion): boolean {
 		if (!raster || lastReplay !== replay || lastInk !== defaultInk) {
 			raster?.dispose();
-			raster = new ReplayRaster(replay, defaultInk);
+			raster = new ReplayRaster(replay, defaultInk, fountainFactory);
 			lastReplay = replay;
 			lastInk = defaultInk;
 		}
@@ -97,7 +109,15 @@
 			active < tracks.length && tracks[active].start <= position
 				? sampleAt(tracks[active].times, position - tracks[active].start)
 				: -1;
-		if (!raster.paint(ctx, region, complete, sample, backgroundImage)) return false;
+		try {
+			if (!raster.paint(ctx, region, complete, sample, backgroundImage)) return false;
+			inkError = '';
+		} catch (error) {
+			inkError = String(error);
+			raster.dispose();
+			raster = undefined;
+			return true;
+		}
 		const { scale, pixelRatio } = region;
 		ctx.setTransform(scale, 0, 0, scale, -region.x, -region.y);
 		if (selectedBox) {
@@ -173,7 +193,7 @@
 	}}
 	aria-label="Inspect page objects. Select from the tree or click the preview."
 >
-	{#if partial && background}
+	{#if partial && background && fountainFactory}
 		<img src={background} alt="Replay page background" />
 		<PageCanvas
 			{camera}
@@ -184,6 +204,7 @@
 		/>
 	{/if}
 	{#if backgroundError}<p role="alert">{backgroundError}</p>{/if}
+	{#if inkError}<p role="alert">{inkError}</p>{/if}
 	{#if !partial}
 		<svg viewBox={`0 0 ${replay.width} ${replay.height}`} aria-hidden="true">
 			{#if selectedBox}<rect

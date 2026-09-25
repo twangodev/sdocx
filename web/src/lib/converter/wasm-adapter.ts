@@ -15,6 +15,7 @@ interface WasmDocumentSession {
 }
 
 interface WasmModule {
+	rasterize_fountain_ink?: (input: string) => Uint8Array;
 	default?: (
 		moduleOrPath?: { module_or_path: string | URL | Request } | string | URL | Request
 	) => Promise<unknown>;
@@ -40,6 +41,12 @@ function loadPdfFonts(): Promise<Uint8Array[]> {
 }
 
 let modulePromise: Promise<WasmModule> | undefined;
+
+export async function loadFountainInkRenderer(): Promise<(input: string) => Uint8Array> {
+	const module = await loadModule();
+	if (!module.rasterize_fountain_ink) throw new Error('Rebuild WASM to enable native ink rendering.');
+	return module.rasterize_fountain_ink;
+}
 
 async function loadModule(): Promise<WasmModule> {
 	modulePromise ??= (async () => {
