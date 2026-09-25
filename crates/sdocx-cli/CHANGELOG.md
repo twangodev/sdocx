@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.6.0...sdocx-cli-v0.7.0) (2026-09-25)
+
+
+### Features
+
+* **ink:** preserve and resolve saved pen rendering inputs ([119705d](https://github.com/twangodev/sdocx/commit/119705d834c6aa257d6981e84c2fac89d3326d9e))
+* **render:** draw APK-backed dot backgrounds through shared SVG geometry ([125e7e6](https://github.com/twangodev/sdocx/commit/125e7e63b2221f57be8fc02ee6226a485ffc61b9))
+* **web:** add vector PDF export ([#20](https://github.com/twangodev/sdocx/issues/20)) ([b7efb68](https://github.com/twangodev/sdocx/commit/b7efb6823f7f7f493bf412198e257c1101a8eac2))
+
+
+### Bug Fixes
+
+* include README in published crates ([eda7bdf](https://github.com/twangodev/sdocx/commit/eda7bdfeecf1e2b74ebf53157b831463a8b87557))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.6.0 to 0.7.0
+
 ## [0.6.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.5.0...sdocx-cli-v0.6.0) (2026-09-14)
 
 

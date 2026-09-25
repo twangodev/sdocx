@@ -1,6 +1,6 @@
 [package]
 name = "sdocx-cli"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.92"
 description = "Reverse-engineered tooling and SDK for converting Samsung Notes (.sdocx) files"
@@ -9,7 +9,7 @@ repository = "https://github.com/twangodev/sdocx"
 readme = "../../README.md"
 
 [dependencies]
-sdocx = { version = "0.6.0", path = "../sdocx", features = ["pdf"] }
+sdocx = { version = "0.7.0", path = "../sdocx", features = ["pdf"] }
 clap = { version = "4.5.60", features = ["derive"] }
 resvg = "0.47.0"
 
