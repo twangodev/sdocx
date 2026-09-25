@@ -1,5 +1,5 @@
 {
-  "crates/sdocx": "0.7.0",
-  "crates/sdocx-cli": "0.7.0",
-  "crates/sdocx-wasm": "0.5.0"
+  "crates/sdocx": "0.8.0",
+  "crates/sdocx-cli": "0.7.1",
+  "crates/sdocx-wasm": "0.6.0"
 }
