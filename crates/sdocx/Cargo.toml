@@ -6,6 +6,7 @@ rust-version = "1.92"
 description = "Reverse-engineered tooling and SDK for converting Samsung Notes (.sdocx) files"
 license = "GPL-3.0"
 repository = "https://github.com/twangodev/sdocx"
+readme = "../../README.md"
 
 [features]
 render = ["dep:base64"]
