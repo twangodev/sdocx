@@ -21,7 +21,7 @@
 	"devDependencies": {
 		"@icons-pack/svelte-simple-icons": "^7.2.0",
 		"@lucide/svelte": "^0.575.0",
-		"@playwright/test": "^1.62.1",
+		"@playwright/test": "^1.63.0",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
