@@ -189,9 +189,7 @@ test('quota failure offers unsaved viewing without publishing a library entry', 
 		};
 	});
 	await page.locator('input[type=file]').setInputFiles(note());
-	await expect(page.locator('.import-status')).toContainText(
-		'0 imported · 0 duplicates · 1 failed'
-	);
+	await expect(page.locator('.import-status')).toContainText('0 imported · 1 failed');
 	await expect(page.locator('article.note')).toHaveCount(0);
 	await page.getByRole('button', { name: 'Open temporarily' }).click();
 	await expect(page.getByRole('region', { name: 'Document converter' })).toContainText(

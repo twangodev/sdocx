@@ -1,5 +1,6 @@
 export interface MenuAction<A> {
 	kind: 'action';
+	tone?: 'danger';
 	label: string;
 	action: A;
 	shortcut?: string;

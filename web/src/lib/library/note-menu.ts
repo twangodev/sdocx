@@ -9,7 +9,7 @@ export function noteMenu(document: LibraryDocument): MenuLeaf<NoteAction>[] {
 		{ kind: 'action', label: document.favorite ? 'Unfavorite' : 'Favorite', action: 'favorite' },
 		{ kind: 'action', label: 'Download original', action: 'download' },
 		separator(),
-		{ kind: 'action', label: 'Delete from library', action: 'delete' }
+		{ kind: 'action', label: 'Delete from library', action: 'delete', tone: 'danger' }
 	];
 }
 

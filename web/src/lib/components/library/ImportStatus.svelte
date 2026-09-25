@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { X } from '@lucide/svelte';
+	import Button from '../ui/Button.svelte';
+	import IconButton from '../ui/IconButton.svelte';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	let { library, onTemporary }: { library: LibraryWorkspace; onTemporary: (file: File) => void } =
 		$props();
@@ -11,39 +14,48 @@
 </script>
 
 {#if library.importing || library.results.length || library.cancelled}
-	<div class="import-status border-b border-subtle bg-surface px-4 py-3 text-xs">
-		{#if library.importing}
-			<div role="status">
-				Importing {library.progress?.filename} · {library.progress?.completed ?? 0} / {library
-					.progress?.total ?? 0}
-			</div>
-			<button class="mt-2 underline" onclick={() => library.cancelImport()}>Cancel import</button>
-		{:else}
-			<div class="flex items-center justify-between gap-3">
-				<p role="status">
-					{library.cancelled ? 'Import cancelled · ' : ''}{counts.imported} imported · {counts.duplicates}
-					duplicates · {counts.failed} failed{counts.skipped ? ` · ${counts.skipped} skipped` : ''}
+	<div class="import-status shrink-0 border-b border-subtle bg-bg px-3 text-[11px] text-muted">
+		<div class="flex min-h-9 items-center justify-between gap-3">
+			{#if library.importing}
+				<p role="status" class="min-w-0 truncate">
+					Importing {library.progress?.filename} · {library.progress?.completed ?? 0} / {library
+						.progress?.total ?? 0}
 				</p>
-				<button
-					aria-label="Dismiss import results"
+				<Button size={7} tone="ghost" onclick={() => library.cancelImport()}>Cancel import</Button>
+			{:else}
+				<p role="status">
+					{library.cancelled ? 'Import cancelled · ' : ''}{counts.imported} imported{counts.duplicates
+						? ` · ${counts.duplicates} duplicates`
+						: ''}{counts.failed ? ` · ${counts.failed} failed` : ''}{counts.skipped
+						? ` · ${counts.skipped} skipped`
+						: ''}
+				</p>
+				<IconButton
+					label="Dismiss import results"
+					size={7}
 					onclick={() => {
 						library.results = [];
 						library.cancelled = false;
-					}}>Dismiss</button
+					}}><X size={13} /></IconButton
 				>
+			{/if}
+		</div>
+		{#if counts.failed}
+			<div class="max-h-36 overflow-y-auto pb-2">
+				{#each library.results as result, index (index)}
+					{#if result.status === 'failed'}
+						<div class="flex flex-wrap items-center gap-x-2 py-1">
+							<p class="min-w-0 break-words">{result.filename}: {result.error}</p>
+							{#if result.unsavedFile}<Button
+									size={7}
+									tone="ghost"
+									onclick={() => result.unsavedFile && onTemporary(result.unsavedFile)}
+									>Open temporarily</Button
+								>{/if}
+						</div>
+					{/if}
+				{/each}
 			</div>
 		{/if}
-		{#each library.results as result, index (index)}
-			{#if result.status === 'failed'}
-				<p class="mt-2 text-muted">
-					{result.filename}: {result.error}
-					{#if result.unsavedFile}<button
-							class="ml-2 text-text underline"
-							onclick={() => result.unsavedFile && onTemporary(result.unsavedFile)}
-							>Open temporarily</button
-						>{/if}
-				</p>
-			{/if}
-		{/each}
 	</div>
 {/if}

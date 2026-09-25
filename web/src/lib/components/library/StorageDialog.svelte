@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Dialog } from 'bits-ui';
+	import { X } from '@lucide/svelte';
+	import Button from '../ui/Button.svelte';
+	import IconButton from '../ui/IconButton.svelte';
 	import {
 		storageStatus,
 		requestPersistence,
@@ -11,6 +14,7 @@
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	let { library, onClose }: { library: LibraryWorkspace; onClose: () => void } = $props();
 	let status = $state<StorageStatus | null>(null);
+	let loading = $state(true);
 	let busy = $state(false);
 	let error = $state('');
 	let notice = $state('');
@@ -18,14 +22,22 @@
 	const originalBytes = $derived(
 		library.snapshot.documents.reduce((sum, document) => sum + document.size, 0)
 	);
+	const usagePercent = $derived(
+		status?.quota && status.usage !== null
+			? Math.min(100, (status.usage / status.quota) * 100)
+			: null
+	);
 	onMount(() => {
 		void refresh();
 	});
 	async function refresh() {
+		loading = true;
 		try {
 			status = await storageStatus();
 		} catch (cause) {
 			error = errorMessage(cause);
+		} finally {
+			loading = false;
 		}
 	}
 	async function run(action: () => Promise<void>) {
@@ -62,79 +74,94 @@
 				if (busy) event.preventDefault();
 			}}
 		>
-			<Dialog.Title class="text-base font-medium">Browser storage</Dialog.Title>
+			<div class="flex items-center justify-between gap-3">
+				<Dialog.Title class="text-sm font-medium">Browser storage</Dialog.Title>
+				<IconButton label="Close" size={7} disabled={busy} onclick={onClose}
+					><X size={14} /></IconButton
+				>
+			</div>
 			<Dialog.Description class="mt-2 text-xs leading-relaxed text-muted"
-				>Notes are saved on this device, in this browser. Clearing site data removes the library.
-				Download originals to keep a separate copy.</Dialog.Description
+				>Saved on this device. Clearing site data removes your library.</Dialog.Description
 			>
-			<dl class="my-5 space-y-3 text-xs">
-				<div class="flex justify-between">
-					<dt>Saved notes</dt>
-					<dd>
-						{library.snapshot.documents.length} · {formatStorageBytes(originalBytes)} originals
-					</dd>
+			<div class="mt-5 rounded border border-subtle bg-surface p-3">
+				<div class="flex items-baseline justify-between gap-3 text-xs">
+					<span class="font-medium"
+						>{library.snapshot.documents.length}
+						{library.snapshot.documents.length === 1 ? 'note' : 'notes'}</span
+					><span class="text-muted">{formatStorageBytes(originalBytes)} originals</span>
 				</div>
-				<div class="flex justify-between">
-					<dt>Estimated site usage</dt>
-					<dd>{formatStorageBytes(status?.usage ?? null)}</dd>
+				{#if usagePercent !== null}<div
+						class="mt-3 h-1 overflow-hidden rounded bg-border"
+						aria-hidden="true"
+					>
+						<div class="h-full bg-muted" style:width={`${Math.max(1, usagePercent)}%`}></div>
+					</div>{/if}
+				<dl class="mt-3 space-y-2 text-[11px] text-muted" aria-busy={loading}>
+					<div class="flex justify-between gap-3">
+						<dt>Estimated site usage</dt>
+						<dd>{loading ? 'Loading…' : formatStorageBytes(status?.usage ?? null)}</dd>
+					</div>
+					<div class="flex justify-between gap-3">
+						<dt>Browser quota</dt>
+						<dd>{loading ? 'Loading…' : formatStorageBytes(status?.quota ?? null)}</dd>
+					</div>
+				</dl>
+			</div>
+			<div class="py-4">
+				<div class="flex justify-between gap-3 text-xs">
+					<span class="font-medium">Persistence</span><span class="text-muted"
+						>{loading
+							? 'Loading…'
+							: status?.persisted === true
+								? 'Granted'
+								: status?.persisted === false
+									? 'Best effort'
+									: 'Unavailable'}</span
+					>
 				</div>
-				<div class="flex justify-between">
-					<dt>Browser quota</dt>
-					<dd>{formatStorageBytes(status?.quota ?? null)}</dd>
-				</div>
-				<div class="flex justify-between">
-					<dt>Persistence</dt>
-					<dd>
-						{status?.persisted === true
-							? 'Granted'
-							: status?.persisted === false
-								? 'Best effort'
-								: 'Unavailable'}
-					</dd>
-				</div>
-			</dl>
-			<p class="text-xs leading-relaxed text-muted">
-				Persistent storage reduces automatic eviction; it does not prevent you from clearing site
-				data.
-			</p>
-			<div class="mt-4 flex flex-col gap-2 text-xs">
-				<button
-					class="storage-action"
-					disabled={busy || !status?.canRequestPersistence || status.persisted === true}
+				<p class="mt-1 text-[11px] leading-relaxed text-muted">
+					Helps protect notes from automatic browser cleanup.
+				</p>
+				<Button
+					class="mt-3"
+					size={7}
+					disabled={busy || loading || !status?.canRequestPersistence || status.persisted === true}
 					onclick={() =>
 						void run(async () => {
 							const granted = await requestPersistence();
 							notice = granted
 								? 'Persistent storage granted.'
 								: 'Persistence was not granted. Notes remain saved with best-effort storage.';
-						})}>Request persistent storage</button
+						})}>Request persistent storage</Button
 				>
-				<button
-					class="storage-action"
+			</div>
+			<div class="flex flex-wrap items-center justify-between gap-3 border-t border-subtle py-4">
+				<div>
+					<p class="text-xs font-medium">Thumbnails</p>
+					<p class="mt-1 text-[11px] text-muted">Rebuild as you open notes.</p>
+				</div>
+				<Button
+					size={7}
 					disabled={busy || !library.available || library.importing}
 					onclick={() =>
 						void run(async () => {
 							await library.service.clearThumbnails();
 							notice = 'Thumbnails cleared. They will rebuild as you open notes.';
-						})}>Clear thumbnail cache</button
+						})}>Clear thumbnail cache</Button
 				>
-				{#if !confirming}<button
-						class="storage-action"
-						disabled={busy || !library.available || library.importing}
-						onclick={() => (confirming = true)}>Delete library…</button
-					>{/if}
 			</div>
-			{#if confirming}
-				<div class="mt-4 rounded border border-subtle p-3 text-xs">
-					<p>
-						Delete all saved notes, collections, and thumbnails from this browser? This cannot be
-						undone.
+			<div class="border-t border-subtle pt-4">
+				{#if confirming}
+					<p class="text-xs leading-relaxed">
+						Delete all saved notes, collections, and thumbnails? This cannot be undone.
 					</p>
-					<div class="mt-3 flex gap-2">
-						<button class="storage-action" disabled={busy} onclick={() => (confirming = false)}
-							>Keep library</button
-						><button
-							class="storage-action"
+					<div class="mt-3 flex flex-wrap justify-end gap-2">
+						<Button tone="ghost" size={7} disabled={busy} onclick={() => (confirming = false)}
+							>Keep library</Button
+						>
+						<Button
+							tone="danger"
+							size={7}
 							disabled={busy || library.importing}
 							onclick={() =>
 								void run(async () => {
@@ -144,33 +171,23 @@
 									library.selectSource('all');
 									confirming = false;
 									notice = 'Library deleted.';
-								})}>Delete entire library</button
+								})}>Delete entire library</Button
 						>
 					</div>
-				</div>
-			{/if}
+				{:else}
+					<div class="flex flex-wrap items-center justify-between gap-3">
+						<p class="text-[11px] text-muted">Download originals to keep a separate copy.</p>
+						<Button
+							tone="danger"
+							size={7}
+							disabled={busy || !library.available || library.importing}
+							onclick={() => (confirming = true)}>Delete library…</Button
+						>
+					</div>
+				{/if}
+			</div>
 			{#if error}<p role="alert" class="mt-3 text-xs text-danger">{error}</p>{/if}
 			{#if notice}<p role="status" class="mt-3 text-xs">{notice}</p>{/if}
-			<div class="mt-5 flex justify-end">
-				<button class="storage-action text-xs" disabled={busy} onclick={onClose}>Close</button>
-			</div>
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>
-
-<style>
-	.storage-action {
-		border: 1px solid var(--site-border);
-		border-radius: 4px;
-		padding: 8px 12px;
-		text-align: left;
-		cursor: pointer;
-	}
-	.storage-action:hover {
-		background: var(--site-surface);
-	}
-	.storage-action:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-</style>

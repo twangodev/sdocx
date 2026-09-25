@@ -47,7 +47,7 @@
 	<Dialog.Portal>
 		<Dialog.Overlay class="fixed inset-0 z-70 bg-black/50" />
 		<Dialog.Content
-			class="fixed top-1/2 left-1/2 z-80 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-md border border-subtle bg-bg p-5 shadow-2xl"
+			class="fixed top-1/2 left-1/2 z-80 max-h-[90svh] overflow-y-auto w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-md border border-subtle bg-bg p-5 shadow-2xl"
 			onEscapeKeydown={(event) => {
 				if (busy) event.preventDefault();
 			}}

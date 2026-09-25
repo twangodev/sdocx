@@ -43,7 +43,9 @@
 				{:else}
 					<DropdownMenu.Item
 						disabled={entry.disabled ?? false}
-						class="{itemClass} motion-menu-item"
+						class="{itemClass} motion-menu-item {entry.tone === 'danger'
+							? 'text-danger data-[highlighted]:bg-danger/10 data-[highlighted]:text-danger'
+							: ''}"
 						style={`--motion-index: ${index}`}
 						onSelect={() => select(entry)}
 					>

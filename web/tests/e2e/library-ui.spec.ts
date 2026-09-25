@@ -38,11 +38,11 @@ test('selection stays compact, has an indeterminate state, and restores browsing
 	expect(
 		await page.locator('.library-toolbar').evaluate((el) => el.getBoundingClientRect().height)
 	).toBeLessThanOrEqual(56);
-	await page.setViewportSize({ width: 390, height: 844 });
+	await page.setViewportSize({ width: 320, height: 844 });
 	expect(
 		await page.locator('.library-toolbar').evaluate((el) => el.getBoundingClientRect().height)
 	).toBeLessThanOrEqual(56);
-	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 	await page.getByRole('button', { name: 'Clear selection' }).click();
 	await expect(page.getByRole('searchbox', { name: 'Search notes' })).toBeVisible();
 });
@@ -103,4 +103,53 @@ test('sort menu and list rows remain usable at narrow widths', async ({ page }) 
 	await page.setViewportSize({ width: 390, height: 844 });
 	await expect(page.getByRole('button', { name: 'Actions for Algebra.sdocx' })).toBeVisible();
 	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test('storage waits for its estimate instead of reporting unavailable while loading', async ({
+	page
+}) => {
+	await page.evaluate(() => {
+		Object.defineProperty(navigator.storage, 'estimate', {
+			value: () =>
+				new Promise<StorageEstimate>((resolve) => {
+					Object.assign(window, {
+						resolveStorageEstimate: () => resolve({ usage: 1048576, quota: 104857600 })
+					});
+				})
+		});
+	});
+	await page.getByRole('button', { name: 'Browser storage', exact: true }).click();
+	const dialog = page.getByRole('dialog', { name: 'Browser storage', exact: true });
+	await expect(dialog.locator('dl')).toHaveAttribute('aria-busy', 'true');
+	await expect(dialog).not.toContainText('Unavailable');
+	await expect(dialog.getByRole('button', { name: 'Request persistent storage' })).toBeDisabled();
+	await page.evaluate(() =>
+		(window as unknown as { resolveStorageEstimate: () => void }).resolveStorageEstimate()
+	);
+	await expect(dialog.locator('dl')).toHaveAttribute('aria-busy', 'false');
+	await expect(dialog).toContainText('1.0 MiB');
+	await expect(dialog).toContainText('100.0 MiB');
+	await page.keyboard.press('Escape');
+	await expect(dialog).toHaveCount(0);
+});
+
+test.describe('touch controls', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+	test('note menus are visible without hover and support touch selection', async ({ page }) => {
+		await page.locator('input[type=file]').setInputFiles(notes);
+		const note = page.getByRole('article', { name: 'Algebra.sdocx' });
+		const menu = note.getByRole('button', { name: 'Actions for Algebra.sdocx' });
+		await expect(menu).toBeVisible();
+		expect(
+			await menu.evaluate((element) => getComputedStyle(element.closest('.secondary')!).opacity)
+		).toBe('1');
+		await menu.tap();
+		await page.getByRole('menuitem', { name: 'Favorite', exact: true }).tap();
+		await expect(note.locator('[aria-label=Favorite]')).toBeVisible();
+		await note.getByRole('checkbox').tap();
+		await expect(note.getByRole('checkbox')).toBeChecked();
+		await expect(
+			page.getByRole('button', { name: 'Selection actions', exact: true })
+		).toBeVisible();
+	});
 });

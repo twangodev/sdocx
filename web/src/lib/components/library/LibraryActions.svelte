@@ -44,7 +44,12 @@
 			items.push({ kind: 'action', label: 'Download original', action: 'download' });
 		if (activeCollection)
 			items.push({ kind: 'action', label: 'Remove from collection', action: 'remove-membership' });
-		items.push(separator(), { kind: 'action', label: 'Delete from library', action: 'delete' });
+		items.push(separator(), {
+			kind: 'action',
+			label: 'Delete from library',
+			action: 'delete',
+			tone: 'danger'
+		});
 		return items;
 	});
 	const collectionItems = $derived<MenuLeaf<string>[]>([
@@ -97,7 +102,7 @@
 		>
 		<CompactSelectMenu
 			label="Add selected notes to collection"
-			value="Collection"
+			value="Add to"
 			items={collectionItems}
 			onAction={(id) => {
 				if (id === 'create') creating = true;
@@ -121,7 +126,7 @@
 	<DropdownMenu
 		items={[
 			{ kind: 'action', label: 'Rename collection', action: 'rename' },
-			{ kind: 'action', label: 'Delete collection', action: 'delete' }
+			{ kind: 'action', label: 'Delete collection', action: 'delete', tone: 'danger' }
 		]}
 		onAction={(action) => {
 			if (action === 'rename') {
