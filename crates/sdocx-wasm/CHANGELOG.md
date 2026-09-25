@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.5.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.4.0...sdocx-wasm-v0.5.0) (2026-09-25)
+
+
+### Features
+
+* **ink:** preserve and resolve saved pen rendering inputs ([119705d](https://github.com/twangodev/sdocx/commit/119705d834c6aa257d6981e84c2fac89d3326d9e))
+* **ink:** reconstruct native FountainPen V16 stroke geometry ([c661033](https://github.com/twangodev/sdocx/commit/c661033bdd943a0ce3a0f814863e340fdffe528c))
+* **render:** draw APK-backed dot backgrounds through shared SVG geometry ([125e7e6](https://github.com/twangodev/sdocx/commit/125e7e63b2221f57be8fc02ee6226a485ffc61b9))
+* **wasm:** expose lazy document debugging and stroke replay data ([428e951](https://github.com/twangodev/sdocx/commit/428e951aac21602a3a88ba1b1710679a41a794b7))
+* **web:** add vector PDF export ([#20](https://github.com/twangodev/sdocx/issues/20)) ([b7efb68](https://github.com/twangodev/sdocx/commit/b7efb6823f7f7f493bf412198e257c1101a8eac2))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.6.0 to 0.7.0
+
 ## [0.4.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.3.3...sdocx-wasm-v0.4.0) (2026-09-14)
 
 

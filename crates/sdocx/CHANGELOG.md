@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.7.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.6.0...sdocx-v0.7.0) (2026-09-25)
+
+
+### Features
+
+* **ink:** preserve and resolve saved pen rendering inputs ([119705d](https://github.com/twangodev/sdocx/commit/119705d834c6aa257d6981e84c2fac89d3326d9e))
+* **ink:** reconstruct native FountainPen V16 stroke geometry ([c661033](https://github.com/twangodev/sdocx/commit/c661033bdd943a0ce3a0f814863e340fdffe528c))
+* **ink:** reconstruct saved FountainPen V14 geometry ([f4c5ee5](https://github.com/twangodev/sdocx/commit/f4c5ee5e5639eb4697b2b1a80a006fea43e38662))
+* **ink:** render saved Marker2 stamps with shared curve geometry ([7799784](https://github.com/twangodev/sdocx/commit/7799784623ce20ff2f8c939c87a50e59a7963f83))
+* **render:** draw APK-backed dot backgrounds through shared SVG geometry ([125e7e6](https://github.com/twangodev/sdocx/commit/125e7e63b2221f57be8fc02ee6226a485ffc61b9))
+* **render:** support native narrow medium and wide ruled templates ([e703a08](https://github.com/twangodev/sdocx/commit/e703a080d84c3307bc8093088ad076d0d1fae056))
+* **wasm:** expose lazy document debugging and stroke replay data ([428e951](https://github.com/twangodev/sdocx/commit/428e951aac21602a3a88ba1b1710679a41a794b7))
+* **web:** add vector PDF export ([#20](https://github.com/twangodev/sdocx/issues/20)) ([b7efb68](https://github.com/twangodev/sdocx/commit/b7efb6823f7f7f493bf412198e257c1101a8eac2))
+
+
+### Bug Fixes
+
+* include README in published crates ([eda7bdf](https://github.com/twangodev/sdocx/commit/eda7bdfeecf1e2b74ebf53157b831463a8b87557))
+* **ink:** preserve Marker4 width opacity and rectangular tips ([8cd54ee](https://github.com/twangodev/sdocx/commit/8cd54ee9ea3c6c6953cdc6f2489ab0a31e3b8511))
+* **layout:** recognize list-mode compatibility pages without body text ([3ea505e](https://github.com/twangodev/sdocx/commit/3ea505ef0be1e772edd584d7a7e5a0c70a2411f3))
+* **parser:** decode native shape text editability ([f6c0be7](https://github.com/twangodev/sdocx/commit/f6c0be7603e18208af10954da0909d94444e77b4))
+* **render:** reuse saved native paths for shape geometry ([5db7a09](https://github.com/twangodev/sdocx/commit/5db7a09da45867089746f1365bd950b3cf810d05))
+* **web:** composite replay highlights over page and ink ([28d7dbb](https://github.com/twangodev/sdocx/commit/28d7dbb4063a97ea68b3c558ce749dc9a90615c0))
+
 ## [0.6.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.5.0...sdocx-v0.6.0) (2026-09-14)
 
 
