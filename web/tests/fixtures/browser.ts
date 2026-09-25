@@ -22,8 +22,7 @@ export const test = base.extend({
 			headless,
 			launchOptions
 		},
-		use,
-		testInfo
+		use
 	) => {
 		if (browserName !== 'webkit') {
 			await use(context);
@@ -44,15 +43,8 @@ export const test = base.extend({
 				headless
 			});
 			try {
-				if (testInfo.retry === 1)
-					await persistent.tracing.start({ screenshots: true, snapshots: true, sources: true });
 				await use(persistent);
 			} finally {
-				if (testInfo.retry === 1) {
-					const path = testInfo.outputPath('persistent-context-trace.zip');
-					await persistent.tracing.stop({ path });
-					await testInfo.attach('trace', { path, contentType: 'application/zip' });
-				}
 				await persistent.close();
 			}
 		} finally {

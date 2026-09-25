@@ -202,7 +202,7 @@ test('quota failure offers unsaved viewing without publishing a library entry', 
 
 test('unsupported storage retains the temporary converter workflow', async ({ page }) => {
 	await page.addInitScript(() => {
-		Object.defineProperty(navigator.storage, 'getDirectory', { value: undefined });
+		Object.defineProperty(StorageManager.prototype, 'getDirectory', { value: undefined });
 	});
 	await page.reload();
 	await expect(page.getByRole('alert')).toContainText('Local storage is unavailable');

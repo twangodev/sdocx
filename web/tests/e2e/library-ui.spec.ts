@@ -109,7 +109,7 @@ test('storage waits for its estimate instead of reporting unavailable while load
 	page
 }) => {
 	await page.evaluate(() => {
-		Object.defineProperty(navigator.storage, 'estimate', {
+		Object.defineProperty(StorageManager.prototype, 'estimate', {
 			value: () =>
 				new Promise<StorageEstimate>((resolve) => {
 					Object.assign(window, {
@@ -118,6 +118,7 @@ test('storage waits for its estimate instead of reporting unavailable while load
 				})
 		});
 	});
+	await page.requestGC();
 	await page.getByRole('button', { name: 'Browser storage', exact: true }).click();
 	const dialog = page.getByRole('dialog', { name: 'Browser storage', exact: true });
 	await expect(dialog.locator('dl')).toHaveAttribute('aria-busy', 'true');
