@@ -616,12 +616,13 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 		canvas.width = image.naturalWidth;
 		canvas.height = image.naturalHeight;
 		const context = canvas.getContext('2d')!;
-		context.drawImage(image, 0, 0);
+		context.drawImage(image, 0, 0, canvas.width, canvas.height);
 		return {
 			dot: Array.from(context.getImageData(917, 1054, 1, 1).data),
 			margin: Array.from(context.getImageData(917, 20, 1, 1).data)
 		};
 	});
+	expect(pixels.dot[3]).toBe(255);
 	expect(pixels.dot[0]).toBeLessThan(225);
 	expect(pixels.margin).toEqual([252, 252, 252, 255]);
 	await page.getByRole('button', { name: 'Next stroke' }).click();
