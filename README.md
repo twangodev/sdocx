@@ -6,253 +6,71 @@
 [![docs.rs](https://img.shields.io/docsrs/sdocx)](https://docs.rs/sdocx)
 [![License](https://img.shields.io/crates/l/sdocx)](https://github.com/twangodev/sdocx/blob/main/LICENSE)
 
-Reverse-engineered tooling and SDK for converting Samsung Notes (`.sdocx`) files.
+Convert Samsung Notes (`.sdocx`) files to SVG, PNG, or PDF with a Rust SDK, CLI, and WebAssembly bindings.
 
-## Browser application
-
-The static application in [`web/`](web/) provides a local converter and a
-continuous document preview. Parsing, rendering, and export happen in the
-browser; user-selected documents are not uploaded. The generated site is
-configured for Workers Static Assets at `sdocx.twango.dev`.
-
-Choose **Debugger** to browse stored records and raw bytes, inspect stroke
-samples, and replay handwriting on the selected page. See the
-[web debugger guide](docs/web-debugger.md) for timing semantics and limits.
-
-## Parser accuracy
-
-`sdocx` is a reverse-engineered parser, not a drop-in implementation of
-Samsung's S Pen SDK. Archive structure, format versions, page ordering, and
-supported packed stroke channels follow observed SDK contracts. Standalone text
-boxes use bounded native frames and preserve Unicode, placement and rich-text
-records. Image objects also use native frames and resolve their displayed asset
-through media-manifest bind IDs. Shapes and lines decode native geometry,
-outline/fill styles and embedded shape text; saved drawing paths preserve adjusted
-shapes, polygons and supported curves. Narrow/medium/wide dot backgrounds use
-APK-derived dimensions and spacing through the shared SVG renderer used by
-viewing, replay and exports. See the [02 fixture findings](docs/reverse-engineering/shapes-dot-calibration-findings.md). Text layout, image crop/border effects,
-advanced shape styles and other page objects remain best-effort.
-
-A successful parse may omit unsupported objects or properties; it does not
-guarantee a lossless decode. Preserve original documents and validate output
-against Samsung Notes when fidelity matters. Protected documents must be
-unlocked or exported before parsing.
-
-Use `parse_detailed` or `parse_bytes_detailed` to inspect `ParseReport`, including
-detected unsupported text/image/shape/template features and unresolved media. The CLI prints
-these findings during conversion, and WASM exposes them through document
-inspection. An empty report does not guarantee complete rendering fidelity.
-
-For stored-hash checks, enable `ParseOptions.verify_integrity` with a detailed
-parse API. `ParsedDocument.integrity` reports matched, mismatched and unavailable
-checks for notes, objects, layers, pages and manifest links. These checks follow
-Samsung's hash formulas; object hashes exclude geometry and content. See the
-[integrity findings](docs/reverse-engineering/integrity-findings.md) for coverage.
-
-For optional document metadata, call `StoredNote::metadata` with the complete
-uncompressed `note.note` bytes. It exposes application/author information, pen
-settings, voice and attachment references, and fixed text/background properties.
-See [note metadata findings](docs/reverse-engineering/note-metadata-findings.md)
-for bounded decoding and unknown-field handling.
-
-Stored math, plot and formula objects have explicit inspection APIs for
-expressions, styles, embedded strokes and label graphs. They still produce
-unsupported-object diagnostics during page conversion because math rendering
-is not implemented. See [formula findings](docs/reverse-engineering/formula-findings.md)
-for the APIs and remaining gaps.
-
-Native image objects are exposed as `PageElement::PlacedImage`, including their
-media ID, optional resolved asset index, bounds and rotation. Existing
-caller-created `PageElement::Image` values remain renderable. See the
-[image findings](docs/reverse-engineering/image-findings.md) for the supported
-fields and resolution rules.
-
-Native shapes and lines are exposed as `PageElement::Shape` and
-`PageElement::Line`, with explicit geometry, styles and pen-resource references.
-See the [shape/line findings](docs/reverse-engineering/shape-line-findings.md)
-for supported templates, paths and remaining rendering limits.
+Try the [browser app](https://sdocx.twango.dev) to preview, convert, and debug documents locally. Files are processed in your browser and are not uploaded.
 
 ## Installation
 
-### CLI
-
 ```sh
-cargo install sdocx-cli
+cargo install sdocx-cli      # CLI
+cargo add sdocx              # Rust library
+npm install @twango/sdocx    # JavaScript / WASM
 ```
 
-### Library
+## CLI
 
 ```sh
-cargo add sdocx
-```
-
-### npm (WASM)
-
-```sh
-npm install @twango/sdocx
-```
-
-### Docker
-
-```sh
-docker pull ghcr.io/twangodev/sdocx
-```
-
-## CLI Usage
-
-```sh
-sdocx-cli note.sdocx
-```
-
-To include stored-hash diagnostics and coverage counts during conversion:
-
-```sh
-sdocx-cli note.sdocx --verify-integrity
-```
-
-Hash mismatches and unavailable checks are reported on stderr and do not stop
-conversion or change its exit status. A successful conversion with this flag
-does not establish that every integrity check passed.
-
-For PNG or PDF export, supply font files when the document's fonts are unavailable
-locally. Repeat `--font` for additional faces; explicit faces take precedence
-over matching system fonts:
-
-```sh
-sdocx-cli note.sdocx -o note.png --font /path/to/Roboto-Regular.ttf --font /path/to/Roboto-Italic.ttf
-```
-
-Fonts are loaded once per document. Missing or invalid explicit font files
-produce an error. SVG output references font families and does not embed fonts;
-`--font` applies to PNG and PDF export.
-
-PDF export writes all visible pages into one file:
-
-```sh
+sdocx-cli note.sdocx                          # SVG (default)
+sdocx-cli note.sdocx -o note.png
+sdocx-cli note.sdocx -o note.pdf --pages "1-3, 5"
 sdocx-cli note.sdocx -o note.pdf --font /path/to/Roboto-Regular.ttf
-sdocx-cli note.sdocx --format pdf
 ```
 
-`--format` overrides the output extension. SVG remains the default when neither
-is supplied. SVG and PNG use separate files for multiple pages; PDF uses one
-file. `--pdf-dpi 144` sets the physical scale to 144 SVG units per inch; the
-default is 96. This option applies only to PDF and does not rasterize vectors.
+PDF combines selected pages into one file; SVG and PNG produce separate files per page. Use `--help` for all options.
 
-Use `--pages "1-3, 5"` with PDF, PNG or SVG to select pages. Omit it for all
-pages. Ranges are one-based and inclusive; selections are sorted into document
-order and duplicates are removed. Invalid ranges fail before writing output.
-Multiple SVG/PNG files retain their original zero-based `_pageN` suffixes.
-The Rust `parse_page_selection(input, page_count)` API returns zero-based indices.
-
-With Docker:
+Or run with Docker:
 
 ```sh
 docker run --rm -v "$(pwd)":/data ghcr.io/twangodev/sdocx /data/note.sdocx
 ```
 
-## Library Usage
+## Rust
 
 ```rust
 use sdocx::{layout_document, parse};
 
 fn main() -> sdocx::Result<()> {
-    let doc = parse("notes.sdocx")?;
+    let doc = parse("note.sdocx")?;
     let layout = layout_document(&doc);
-
-    println!(
-        "{} visible page(s), {} stored page record(s)",
-        layout.pages.len(),
-        doc.pages.len()
-    );
-
-    for visible_page in &layout.pages {
-        for stroke in &visible_page.page.strokes {
-            println!(
-                "Stroke: {} points, color {:?}, width {}",
-                stroke.points.len(),
-                stroke.color,
-                stroke.pen_width
-            );
-            for point in &stroke.points {
-                println!("  ({}, {})", point.x, point.y);
-            }
-        }
-    }
-
+    println!("{} visible page(s)", layout.pages.len());
     Ok(())
 }
 ```
 
-### PDF export
+For PDF export, enable the `pdf` feature (Rust 1.92+) and use `render_document_pdf`. See the [API docs](https://docs.rs/sdocx).
 
-Rust 1.92 or newer is required. Enable the optional `pdf` feature (`cargo add sdocx --features pdf`):
-
-```rust
-use sdocx::{PdfOptions, RenderOptions, parse, render_document_pdf};
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let document = parse("notes.sdocx")?;
-    let pdf_options = PdfOptions::default();
-    let bytes = render_document_pdf(&document, &RenderOptions::default(), &pdf_options)?;
-    std::fs::write("notes.pdf", bytes)?;
-    Ok(())
-}
-```
-
-`render_document_pdf` exports all visible pages into one PDF through the shared
-SVG renderer. `render_svg_pages_pdf` accepts an existing `Vec<RenderedPage>`.
-Vectors remain vectors and available fonts are embedded with selectable text.
-For controlled fonts, populate `sdocx::pdf::fontdb::Database` and pass it in an
-`Arc` to `PdfOptions::new`; that constructor does not discover system fonts.
-
-Page dimensions use 96 SVG units per inch by default (one unit = 0.75 PDF
-points). Set `PdfOptions::dpi` to change physical size. This is an explicit
-export scale, not a decoded Samsung print setting. PDF pages are limited to
-14,400 points per side. PNG images must decode within a 64 MiB buffer limit.
-
-PDF inherits the SVG renderer's fidelity limits. Font fallback depends on the
-provided fonts, some SVG filters rasterize, and PDF link annotations and
-semantic document tags are not exported. The browser/WASM bindings enable this same `pdf` feature.
-`DocumentSession.add_pdf_font(bytes)` supplies TTF/OTF fonts, and
-`DocumentSession.render_pdf(pageIndex, colorMode)` returns PDF bytes. Omit the
-page index to export the whole document. For subsets, use
-`DocumentSession.resolve_pages("1-3, 5")` followed by
-`DocumentSession.render_pdf_pages(indices, colorMode)`. The website loads bundled Roboto fonts
-on demand; the CLI also supports system fonts and explicit `--font` files.
-
-## JavaScript Usage
+## JavaScript
 
 ```js
 import init, { parse } from "@twango/sdocx";
 
 await init();
-
-const bytes = new Uint8Array(await file.arrayBuffer());
-const doc = parse(bytes);
-
-for (const page of doc.pages) {
-  for (const stroke of page.strokes) {
-    console.log(`${stroke.points.length} points, color:`, stroke.color);
-  }
-}
+const doc = parse(new Uint8Array(await file.arrayBuffer()));
+console.log(doc.pages);
 ```
 
-## Compatibility corpus
+## Limitations
 
-Large test documents and Samsung reference PDFs are kept in the
-[`twangodev/sdocx-compatibility`](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
-dataset, tracked at `hf/` as a Git submodule. Each SDK revision pins the dataset
-commit used by its conformance checks. See
-[`conformance/README.md`](conformance/README.md) for Git LFS setup, the locked
-manifest and the local runner.
+The format is reverse-engineered, and conversion is best-effort. Unsupported objects or styles may be omitted even when parsing succeeds. Keep original files and check output against Samsung Notes when fidelity matters. Protected documents must be unlocked or exported first.
 
-## Format Documentation
+Use the detailed Rust parse APIs or CLI diagnostics to inspect unsupported features. `--verify-integrity` adds stored-hash checks; it does not guarantee complete fidelity or fail conversion on mismatches.
 
-The maintained [reverse-engineering documentation](docs/reverse-engineering/README.md)
-describes the archive format, native serializers, parser behavior and remaining
-fidelity gaps. Start with the [file-format map](docs/reverse-engineering/file-format.md)
-for record layouts and the [source map](docs/reverse-engineering/source-map.md)
-for supporting APK/native evidence.
+## Documentation
+
+- [Format and reverse-engineering notes](docs/reverse-engineering/README.md)
+- [Web app](web/README.md) and [debugger guide](docs/web-debugger.md)
+- [Conformance testing](conformance/README.md) and [compatibility dataset](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
 
 ## License
 
