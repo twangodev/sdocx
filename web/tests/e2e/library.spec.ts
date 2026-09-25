@@ -65,3 +65,47 @@ test('mobile navigation and themes remain usable', async ({ page }) => {
 	await page.getByRole('button', { name: 'Use dark theme' }).click();
 	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
+
+test('organizes notes without copying originals and distinguishes collection removal from deletion', async ({ page }) => {
+	await page.getByRole('button', { name: 'Create collection', exact: true }).click();
+	await page.getByRole('textbox', { name: 'Collection name' }).fill('Course');
+	await page.getByRole('button', { name: 'Save collection' }).click();
+	await page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('button', { name: /Course/ }).click();
+	await page.locator('input[type=file]').setInputFiles([note(), note('second.sdocx', true)]);
+	await expect(page.locator('article.note')).toHaveCount(2);
+	await expect(page.getByRole('button', { name: 'Cancel import' })).toHaveCount(0);
+	await page.getByRole('checkbox', { name: 'Select all visible notes' }).check();
+	await page.getByRole('button', { name: 'Favorite', exact: true }).click();
+	await expect(page.locator('article.note button[aria-pressed=true]')).toHaveCount(2);
+	await page.getByRole('button', { name: 'Remove from collection', exact: true }).click();
+	await expect(page.locator('article.note')).toHaveCount(0);
+	await page.getByRole('button', { name: 'Clear selection' }).click();
+	await page.getByRole('button', { name: 'Rename collection' }).click();
+	await page.getByRole('textbox', { name: 'Collection name' }).fill('Renamed course');
+	await page.getByRole('button', { name: 'Save collection' }).click();
+	await expect(page.getByRole('heading', { name: 'Renamed course' })).toBeVisible();
+	await page.getByRole('button', { name: 'Delete collection', exact: true }).click();
+	await page.getByRole('dialog').getByRole('button', { name: 'Delete collection', exact: true }).click();
+	await expect(page.getByRole('heading', { name: 'All notes', exact: true })).toBeVisible();
+	await expect(page.locator('article.note')).toHaveCount(2);
+	await page.locator('article.note input[type=checkbox]').first().check();
+	const download = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Download original' }).click();
+	expect((await download).suggestedFilename()).toMatch(/\.sdocx$/);
+	await page.getByRole('checkbox', { name: 'Select all visible notes' }).check();
+	await page.getByRole('button', { name: 'Delete from library', exact: true }).click();
+	await page.getByRole('button', { name: 'Delete notes', exact: true }).click();
+	await expect(page.locator('article.note')).toHaveCount(0);
+	await page.reload();
+	await expect(page.getByRole('heading', { name: 'Your notes, in one place' })).toBeVisible();
+	const assets = await page.evaluate(async () => {
+		const root = await (await navigator.storage.getDirectory()).getDirectoryHandle('sdocx');
+		const names = [];
+		for (const kind of ['originals', 'thumbnails']) {
+			const directory = await root.getDirectoryHandle(kind);
+			for await (const name of (directory as FileSystemDirectoryHandle & { keys(): AsyncIterable<string> }).keys()) names.push(name);
+		}
+		return names;
+	});
+	expect(assets).toEqual([]);
+});

@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { FilePlus2, Folder, Grid2X2, List, Menu, X } from '@lucide/svelte';
+	import { FilePlus2, Folder, FolderPlus, Grid2X2, List, Menu, Star, X } from '@lucide/svelte';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	import type { LibrarySource } from '$lib/library/model';
 	import { visibleDocuments } from '$lib/library/view';
 	import NoteThumbnail from './NoteThumbnail.svelte';
 	import ImportStatus from './ImportStatus.svelte';
+	import LibraryActions from './LibraryActions.svelte';
 	let { library, onImport, onOpen, onTemporary }: {
 		library: LibraryWorkspace; onImport: () => void; onOpen: (id: string) => void; onTemporary: (file: File) => void;
 	} = $props();
 	let sidebarOpen = $state(false);
+	let creatingCollection = $state(false);
 	let scroller: HTMLDivElement;
 	const sources = [{ id: 'all', label: 'All notes' }, { id: 'recent', label: 'Recent' }, { id: 'favorites', label: 'Favorites' }] as const;
 	function navigate(source: LibrarySource) { library.selectSource(source); sidebarOpen = false; if (scroller) scroller.scrollTop = 0; }
@@ -27,7 +29,7 @@
 				</button>
 			{/each}
 		</nav>
-		<div class="sidebar-heading collections-heading">collections</div>
+		<div class="sidebar-heading collections-heading">collections<button aria-label="Create collection" disabled={!library.available} onclick={() => { creatingCollection = true; sidebarOpen = false; }}><FolderPlus size={15} /></button></div>
 		<nav aria-label="Collections">
 			{#each library.snapshot.collections as collection (collection.id)}
 				<button class:active={library.collectionId === collection.id} onclick={() => navigate({ collectionId: collection.id })}><Folder size={14} /><span class="collection-name">{collection.name}</span><span class="count">{library.snapshot.memberships.filter((membership) => membership.collectionId === collection.id).length}</span></button>
@@ -47,6 +49,7 @@
 			<select aria-label="Sort notes" bind:value={library.sort}><option value="newest">Newest imports</option><option value="title">Title</option></select>
 			<div class="view-buttons"><button class="control" aria-label="Grid view" aria-pressed={library.view === 'grid'} onclick={() => library.view = 'grid'}><Grid2X2 size={15} /></button><button class="control" aria-label="List view" aria-pressed={library.view === 'list'} onclick={() => library.view = 'list'}><List size={15} /></button></div>
 		</div>
+		<LibraryActions {library} bind:creating={creatingCollection} />
 		<ImportStatus {library} {onTemporary} />
 		{#if library.error}<p role="alert" class="error">{library.error}</p>{/if}
 		<div class="notes-scroll" bind:this={scroller} onscroll={() => library.scrollTop = scroller.scrollTop}>
@@ -60,7 +63,8 @@
 			{:else}
 				<div class="notes" class:list={library.view === 'list'}>
 					{#each library.visible as document (document.id)}
-						<article class="note" aria-label={document.title}>
+						<article class="note" class:selected={library.selected.includes(document.id)} aria-label={document.title}>
+							<div class="note-controls"><input type="checkbox" aria-label={`Select ${document.title}`} checked={library.selected.includes(document.id)} onchange={() => library.toggleSelection(document.id)} /><button aria-label={`${document.favorite ? 'Unfavorite' : 'Favorite'} ${document.title}`} aria-pressed={document.favorite} onclick={() => void library.perform(() => library.service.setFavorite([document.id], !document.favorite))}><Star size={14} fill={document.favorite ? 'currentColor' : 'none'} /></button></div>
 							<button class="preview" aria-label={`Open ${document.title}`} onclick={() => onOpen(document.id)}><NoteThumbnail name={document.thumbnail} assets={library.service.assets} /></button>
 							<div class="note-info"><button class="note-title" onclick={() => onOpen(document.id)}>{document.title}</button><p title={document.filename}>{document.filename}</p><p>{document.pageCount} {document.pageCount === 1 ? 'page' : 'pages'} · {(document.size / 1024).toFixed(0)} KiB</p></div>
 						</article>
@@ -94,7 +98,10 @@
 	input { flex: 1; min-width: 120px; } .view-buttons { display: flex; gap: 4px; }
 	.notes-scroll { overflow-y: auto; min-height: 0; flex: 1; padding: 24px; }
 	.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 20px; }
-	.note { border: 1px solid var(--site-border); border-radius: 5px; overflow: hidden; min-width: 0; }
+	.note { position: relative; border: 1px solid var(--site-border); border-radius: 5px; overflow: hidden; min-width: 0; }
+	.note.selected { border-color: var(--color-accent); }
+	.note-controls { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; z-index: 1; pointer-events: none; } .note-controls input, .note-controls button { pointer-events: auto; accent-color: var(--color-accent); } .note-controls button { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 4px; background: var(--site-bg); }
+	.list .note-controls { position: static; padding: 0 12px; gap: 12px; }
 	.preview { display: block; width: 100%; height: 200px; padding: 12px; background: var(--site-surface); }
 	.note-info { padding: 12px; min-width: 0; } .note-title { display: block; max-width: 100%; font-weight: 550; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.note-info p { color: var(--site-muted); font-size: 10px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

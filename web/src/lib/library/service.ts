@@ -66,7 +66,7 @@ export class LibraryService {
 		});
 	}
 
-	async saveCollection(name: string, id = crypto.randomUUID()): Promise<Collection> {
+	async saveCollection(name: string, id: string = crypto.randomUUID()): Promise<Collection> {
 		const collection = { id, name: name.trim() };
 		if (!collection.name) throw new Error('Enter a collection name.');
 		return this.mutate(async () => {
