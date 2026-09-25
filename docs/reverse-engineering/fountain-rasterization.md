@@ -1,5 +1,10 @@
 # FountainPen stamp rasterization
 
+Current implementation work is tracked in [fountain parity](fountain-parity.md).
+Canvas replay coverage lives in Rust; vector export shading remains unfinished.
+The GPU shaders are used only as a conformance reference. Historical
+statements below describe earlier implementation stages, not current coverage.
+
 > The reproduction commands in this note refer to experiment scripts removed
 > during test cleanup, including `conformance/fountain_raster.py` and
 > `conformance/fountain_gpu.mjs`. Recover them from Git revision `40de721` in
@@ -65,8 +70,10 @@ V4 pointAlpha = transparency * directionalGradient * alphaByWidth * edge
 ```
 
 The V4 gradient is flat over the central half of the quad, then decreases
-toward its two transverse edges. It follows the stroke direction through the
-rotated quad. V4's direct color shader multiplies `(RGB, 1)` by pointAlpha;
+toward its texture-y edges. The native vertex/UV arrays map texture y along
+the supplied tangent, not along its perpendicular. The production-versus-native
+pixel comparison added on 2026-09-25 verifies that mapping. V4's direct color
+shader multiplies `(RGB, 1)` by pointAlpha;
 its alpha-only shader writes pointAlpha, and its composite shader applies the
 stroke color alpha afterward. The draw-time choice and blend state are traced
 below; the SDK does not yet implement these paths.

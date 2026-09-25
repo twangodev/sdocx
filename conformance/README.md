@@ -60,7 +60,7 @@ page-object counts and diagnostic counts.
 ## Native geometry checks
 
 The V14 and V16 geometry fixtures (`fountain-v14.json`, `fountain-v16.json`)
-check Rust stamp positions, radii and sample boundaries in ordinary CI. Two optional, hash-pinned APK oracles remain
+check Rust stamp positions, radii, V14 directions and sample boundaries in ordinary CI. Two optional, hash-pinned APK oracles remain
 for saved V16 and legacy V14 geometry:
 
 ```sh
@@ -71,6 +71,11 @@ PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_v14_
 These require locally extracted libraries and Unicorn. They validate stroke
 geometry, not complete native pixel parity. Keep routine validation focused on
 production regressions and the real-file visual comparison below.
+
+The current fountain canvas renderer also has an optional differential pixel
+check against the APK's original shaders. See
+[fountain parity](../docs/reverse-engineering/fountain-parity.md) for commands,
+measured coverage, and remaining implementation work.
 
 The intermediate live drawing, GPU, cache, and lifecycle experiments were
 retired. Their findings remain in `docs/reverse-engineering/`; their scripts

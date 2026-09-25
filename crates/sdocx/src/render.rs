@@ -1882,6 +1882,31 @@ mod tests {
     }
 
     #[test]
+    fn fountain_svg_keeps_reconstructed_ink_as_vector_paths() {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../conformance/fountain-v14.json")).unwrap();
+        let mut stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        stroke.points = vec![
+            crate::Point { x: 10., y: 10. },
+            crate::Point { x: 30., y: 20. },
+            crate::Point { x: 40., y: 40. },
+        ];
+        stroke.pressures = vec![0.2, 0.7, 0.4];
+        stroke.timestamps = vec![0, 10, 20];
+        stroke.tilts = vec![0.4, 0.6, 0.5];
+        assert_eq!(
+            crate::prepare_stroke(&stroke, false).fountain_shader,
+            Some(4)
+        );
+        let mut page = page_with_uncolored_stroke();
+        page.strokes = vec![stroke];
+        let rendered = render_document_svg(&document(page), &RenderOptions::default());
+        assert!(rendered[0].svg.contains("<path fill="));
+        assert!(!rendered[0].svg.contains("<image"));
+        assert!(!rendered[0].svg.contains("data:image/png"));
+    }
+
+    #[test]
     fn explicit_color_modes_select_matching_ink_and_canvas() {
         let doc = document(page_with_uncolored_stroke());
         let light = render_document_svg(
