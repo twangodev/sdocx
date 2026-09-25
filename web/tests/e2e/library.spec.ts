@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../fixtures/browser';
 import { pdfNote } from '../fixtures/pdf-note';
 
 const note = (name = 'library-note.sdocx', threePages = false) => ({
