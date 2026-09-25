@@ -16,6 +16,7 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
     let mut ratios = [0.; 3];
     let mut ratio_count = 0;
     let mut dots = Dots {
+        directions: Some(vec![]),
         points: vec![],
         radii: vec![],
         sample_ends: vec![0; s.points.len()],
@@ -59,7 +60,7 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
                     let mut w = width;
                     while d <= q.length {
                         w += increment;
-                        emit(&mut dots, q.at(d), w * 0.5);
+                        emit(&mut dots, q.at(d), w * 0.5, Some(q.normalized_tangent(d)));
                         d += REPEAT;
                     }
                     residual = d - q.length;
@@ -75,22 +76,43 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
     }
     let last = s.points.len() - 1;
     if dots.points.is_empty() {
-        emit(&mut dots, previous, size * 0.25);
+        emit(&mut dots, previous, size * 0.25, None);
     } else {
         let p = P::from(s.points[last]);
         let q = Quad::new(midpoint, previous, p);
         let mut d = residual;
         while q.length > 0. && d <= q.length {
-            emit(&mut dots, q.at(d), width * 0.5);
+            emit(
+                &mut dots,
+                q.at(d),
+                width * 0.5,
+                Some(q.normalized_tangent(d)),
+            );
             d += REPEAT;
         }
-        emit(&mut dots, p, width * 0.5);
+        emit(&mut dots, p, width * 0.5, None);
     }
     dots.sample_ends[last] = dots.points.len();
     dots
 }
 
-fn emit(dots: &mut Dots, p: P, radius: f32) {
+fn emit(dots: &mut Dots, p: P, radius: f32, tangent: Option<P>) {
+    let directions = dots.directions.as_mut().unwrap();
+    let fallback = Point { x: 0., y: 1. };
+    let direction = tangent.map_or_else(
+        || directions.last().copied().unwrap_or(fallback),
+        |v| {
+            if v.x == 0. && v.y == 0. {
+                fallback
+            } else {
+                Point {
+                    x: v.x as f64,
+                    y: v.y as f64,
+                }
+            }
+        },
+    );
+    directions.push(direction);
     dots.points.push(Point {
         x: p.x as f64,
         y: p.y as f64,

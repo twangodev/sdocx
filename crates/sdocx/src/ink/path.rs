@@ -112,6 +112,25 @@ impl Quad {
             .lerp(self.p[2].sub(self.p[1]), self.parameter(d))
     }
 
+    /// SmPath getPosTan's derivative and normalization, including its small
+    /// vector threshold. Keep its float32 evaluation order for native parity.
+    pub(super) fn normalized_tangent(&self, d: f32) -> P {
+        let t = self.parameter(d);
+        let component =
+            |a: f32, b: f32, c: f32| 2. * ((-2.0_f32).mul_add(b, c) + a).mul_add(t, b - a);
+        let mut v = P {
+            x: component(self.p[0].x, self.p[1].x, self.p[2].x),
+            y: component(self.p[0].y, self.p[1].y, self.p[2].y),
+        };
+        let squared = v.dot(v);
+        if squared > 2.0_f32.powi(-24) {
+            let inverse = 1. / squared.sqrt();
+            v.x *= inverse;
+            v.y *= inverse;
+        }
+        v
+    }
+
     pub(super) fn at(&self, d: f32) -> P {
         let t = self.parameter(d);
         self.p[0]

@@ -118,6 +118,7 @@ pub(super) struct Dots {
     pub points: Vec<Point>,
     pub radii: Vec<f64>,
     pub sample_ends: Vec<usize>,
+    pub directions: Option<Vec<Point>>,
 }
 struct Pass<'a> {
     size: f32,
@@ -309,6 +310,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
             ratio_count: &mut ratio_count,
             history: &mut history,
             dots: Dots {
+                directions: None,
                 points: vec![],
                 radii: vec![],
                 sample_ends: vec![0; s.points.len()],
@@ -389,7 +391,12 @@ mod tests {
                     .zip(case.dots)
                     .enumerate()
                 {
-                    for (a, b) in [point.x, point.y, radius].into_iter().zip(expected) {
+                    let mut values = vec![point.x, point.y, radius];
+                    if let Some(directions) = &actual.directions {
+                        values.extend([directions[index].x, directions[index].y]);
+                    }
+                    assert_eq!(values.len(), expected.len(), "{} attributes", case.name);
+                    for (a, b) in values.into_iter().zip(expected) {
                         assert!(
                             (a - b).abs() < 0.0001,
                             "{} dot {index}: {a} vs {b}",

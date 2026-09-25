@@ -112,6 +112,12 @@ pub struct PreparedStroke<'a> {
     /// Native circular stamps; one radius per prepared point.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_radii: Option<Vec<f64>>,
+    /// Native V14 stamp directions, including SmPath's small-vector behavior.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub dot_directions: Option<Vec<crate::Point>>,
+    /// Fountain stamp coverage backend: RTV4 is directional, RTV5 circular.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub fountain_shader: Option<u8>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub rect_stamp: Option<RectStamp>,
     pub segment_widths: Option<Vec<f64>>,
@@ -135,7 +141,12 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
     let mut paint = stroke_paint(stroke, dark_mode);
-    let native = fountain::prepare(stroke)
+    let mut fountain = fountain::prepare(stroke);
+    let fountain_shader = fountain
+        .as_ref()
+        .map(|ink| if ink.directions.is_some() { 4 } else { 5 });
+    let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
+    let native = fountain
         .map(|ink| (ink.points, ink.sample_ends, ink.radii, 1.))
         .or_else(|| {
             marker2::prepare(stroke)
@@ -217,6 +228,8 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         points,
         sample_ends,
         dot_radii,
+        dot_directions,
+        fountain_shader,
         rect_stamp,
         segment_widths: paint.segment_widths,
         width: paint.width,
