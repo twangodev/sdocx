@@ -18,10 +18,14 @@ export class LibraryCatalog extends Dexie {
 	}
 
 	async snapshot(): Promise<LibrarySnapshot> {
-		return this.transaction('r', [this.documents, this.collections, this.memberships], async () => ({
-			documents: await this.documents.toArray(),
-			collections: await this.collections.toArray(),
-			memberships: await this.memberships.toArray()
-		}));
+		return this.transaction(
+			'r',
+			[this.documents, this.collections, this.memberships],
+			async () => ({
+				documents: await this.documents.toArray(),
+				collections: await this.collections.toArray(),
+				memberships: await this.memberships.toArray()
+			})
+		);
 	}
 }

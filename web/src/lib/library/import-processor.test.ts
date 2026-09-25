@@ -6,8 +6,14 @@ import type { LibraryDocument } from './model';
 function setup() {
 	const client: ConverterClientPort = {
 		load: vi.fn().mockResolvedValue({ pageCount: 4, inspection: {} }),
-		inspect: vi.fn(), renderPage: vi.fn().mockResolvedValue('<svg/>'), exportPdf: vi.fn(),
-		resolvePages: vi.fn(), exportJson: vi.fn(), dispose: vi.fn(), cancel: vi.fn(), destroy: vi.fn()
+		inspect: vi.fn(),
+		renderPage: vi.fn().mockResolvedValue('<svg/>'),
+		exportPdf: vi.fn(),
+		resolvePages: vi.fn(),
+		exportJson: vi.fn(),
+		dispose: vi.fn(),
+		cancel: vi.fn(),
+		destroy: vi.fn()
 	};
 	const document = { id: 'saved' } as LibraryDocument;
 	const save = vi.fn().mockResolvedValue({ document, duplicate: false });
@@ -38,7 +44,9 @@ it('offers a temporary file only after successful parsing and failed persistence
 
 it('cancellation preserves completed imports and prevents subsequent saves', async () => {
 	const { processor, save } = setup();
-	const results = await processor.run([file(), file('next.sdocx')], { onResult: () => processor.cancel() });
+	const results = await processor.run([file(), file('next.sdocx')], {
+		onResult: () => processor.cancel()
+	});
 	expect(results).toHaveLength(1);
 	expect(save).toHaveBeenCalledOnce();
 });

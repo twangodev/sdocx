@@ -22,7 +22,10 @@ interface ImportOptions {
 	approveLargeFile?: (file: File) => boolean;
 }
 
-type SaveDocument = (document: PreparedDocument, collectionId?: string) => Promise<{ document: LibraryDocument; duplicate: boolean }>;
+type SaveDocument = (
+	document: PreparedDocument,
+	collectionId?: string
+) => Promise<{ document: LibraryDocument; duplicate: boolean }>;
 
 export class ImportProcessor {
 	private client: ConverterClientPort | null = null;
@@ -50,7 +53,11 @@ export class ImportProcessor {
 			this.client = this.createClient();
 			for (const file of files) {
 				if (this.cancelled) break;
-				options.onProgress?.({ completed: results.length, total: files.length, filename: file.name });
+				options.onProgress?.({
+					completed: results.length,
+					total: files.length,
+					filename: file.name
+				});
 				let prepared: PreparedDocument | undefined;
 				let result: ImportOutcome;
 				try {
@@ -60,26 +67,51 @@ export class ImportProcessor {
 					} else {
 						const bytes = await file.arrayBuffer();
 						const digest = await crypto.subtle.digest('SHA-256', bytes);
-						const contentHash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+						const contentHash = Array.from(new Uint8Array(digest), (byte) =>
+							byte.toString(16).padStart(2, '0')
+						).join('');
 						if (this.cancelled) break;
 						const summary = await this.client.load(bytes, ++this.generation);
 						if (this.cancelled) break;
 						let thumbnail: Blob | null = null;
 						if (summary.pageCount > 0) {
-							try { thumbnail = await this.thumbnail(await this.client.renderPage(0, 'light')); } catch { /* Thumbnails are optional derived assets. */ }
+							try {
+								thumbnail = await this.thumbnail(await this.client.renderPage(0, 'light'));
+							} catch {
+								/* Thumbnails are optional derived assets. */
+							}
 						}
 						if (this.cancelled) break;
-						prepared = { file, contentHash, pageCount: summary.pageCount, title: toInspectionView(summary.inspection).title || file.name, thumbnail };
+						prepared = {
+							file,
+							contentHash,
+							pageCount: summary.pageCount,
+							title: toInspectionView(summary.inspection).title || file.name,
+							thumbnail
+						};
 						const saved = await this.save(prepared, options.collectionId);
-						result = { filename: file.name, status: saved.duplicate ? 'duplicate' : 'imported', document: saved.document };
+						result = {
+							filename: file.name,
+							status: saved.duplicate ? 'duplicate' : 'imported',
+							document: saved.document
+						};
 					}
 				} catch (error) {
 					if (this.cancelled) break;
-					result = { filename: file.name, status: 'failed', error: errorMessage(error), unsavedFile: prepared?.file };
+					result = {
+						filename: file.name,
+						status: 'failed',
+						error: errorMessage(error),
+						unsavedFile: prepared?.file
+					};
 				}
 				results.push(result);
 				options.onResult?.(result);
-				options.onProgress?.({ completed: results.length, total: files.length, filename: file.name });
+				options.onProgress?.({
+					completed: results.length,
+					total: files.length,
+					filename: file.name
+				});
 				await this.client.dispose(++this.generation);
 			}
 			return results;

@@ -4,6 +4,7 @@ import { LibraryCatalog } from './catalog';
 import { OpfsAssetStore } from './asset-store';
 import { LibraryService } from './service';
 import { visibleDocuments } from './view';
+import { createThumbnail } from './thumbnail';
 
 export class LibraryWorkspace {
 	snapshot = $state.raw<LibrarySnapshot>({ documents: [], collections: [], memberships: [] });
@@ -24,19 +25,30 @@ export class LibraryWorkspace {
 	private refreshGeneration = 0;
 	private stopped = false;
 	private ready: Promise<void> = Promise.resolve();
-	readonly service = new LibraryService(new LibraryCatalog(), new OpfsAssetStore(), undefined, () => {
-		this.channel?.postMessage('changed');
-	});
+	readonly service = new LibraryService(
+		new LibraryCatalog(),
+		new OpfsAssetStore(),
+		undefined,
+		() => {
+			this.channel?.postMessage('changed');
+		}
+	);
 	private readonly importer = new ImportProcessor((document, collectionId) => {
-		if (!this.available) throw new Error('Local storage is unavailable. You can open this note temporarily.');
+		if (!this.available)
+			throw new Error('Local storage is unavailable. You can open this note temporarily.');
 		return this.service.importDocument(document, collectionId);
 	});
 
-	get visible() { return visibleDocuments(this.snapshot, this.source, this.search, this.sort); }
-	get collectionId() { return typeof this.source === 'object' ? this.source.collectionId : undefined; }
+	get visible() {
+		return visibleDocuments(this.snapshot, this.source, this.search, this.sort);
+	}
+	get collectionId() {
+		return typeof this.source === 'object' ? this.source.collectionId : undefined;
+	}
 	get title() {
 		return typeof this.source === 'object'
-			? this.snapshot.collections.find((collection) => collection.id === this.collectionId)?.name ?? 'Collection'
+			? (this.snapshot.collections.find((collection) => collection.id === this.collectionId)
+					?.name ?? 'Collection')
 			: { all: 'All notes', recent: 'Recent', favorites: 'Favorites' }[this.source];
 	}
 
@@ -44,9 +56,18 @@ export class LibraryWorkspace {
 		this.stopped = false;
 		if (typeof BroadcastChannel !== 'undefined') {
 			this.channel = new BroadcastChannel('sdocx-library');
-			this.channel.onmessage = () => { void this.refresh().catch((error) => { this.error = errorMessage(error); }); };
+			this.channel.onmessage = () => {
+				void this.refresh().catch((error) => {
+					this.error = errorMessage(error);
+				});
+			};
 		}
-		const refresh = () => { if (this.available) void this.refresh().catch((error) => { this.error = errorMessage(error); }); };
+		const refresh = () => {
+			if (this.available)
+				void this.refresh().catch((error) => {
+					this.error = errorMessage(error);
+				});
+		};
 		window.addEventListener('focus', refresh);
 		this.ready = this.initialize();
 		return () => {
@@ -61,7 +82,8 @@ export class LibraryWorkspace {
 
 	private async initialize(): Promise<void> {
 		try {
-			if (!navigator.storage?.getDirectory || !navigator.locks || !globalThis.indexedDB) throw new Error('Local storage is unavailable. Imported notes can be opened temporarily.');
+			if (!navigator.storage?.getDirectory || !navigator.locks || !globalThis.indexedDB)
+				throw new Error('Local storage is unavailable. Imported notes can be opened temporarily.');
 			await this.service.catalog.open();
 			await this.service.recover();
 			if (this.stopped) return;
@@ -79,8 +101,14 @@ export class LibraryWorkspace {
 		const snapshot = await this.service.catalog.snapshot();
 		if (this.stopped || generation !== this.refreshGeneration) return;
 		this.snapshot = snapshot;
-		this.selected = this.selected.filter((id) => snapshot.documents.some((document) => document.id === id));
-		if (this.collectionId && !snapshot.collections.some((collection) => collection.id === this.collectionId)) this.source = 'all';
+		this.selected = this.selected.filter((id) =>
+			snapshot.documents.some((document) => document.id === id)
+		);
+		if (
+			this.collectionId &&
+			!snapshot.collections.some((collection) => collection.id === this.collectionId)
+		)
+			this.source = 'all';
 	}
 
 	selectSource(source: LibrarySource): void {
@@ -90,14 +118,23 @@ export class LibraryWorkspace {
 	}
 
 	toggleSelection(id: string): void {
-		this.selected = this.selected.includes(id) ? this.selected.filter((selected) => selected !== id) : [...this.selected, id];
+		this.selected = this.selected.includes(id)
+			? this.selected.filter((selected) => selected !== id)
+			: [...this.selected, id];
 	}
 
 	async perform(action: () => Promise<unknown>): Promise<void> {
 		this.error = '';
-		try { await action(); }
-		catch (error) { this.error = errorMessage(error); }
-		finally { if (this.available) await this.refresh().catch((error) => { this.error = errorMessage(error); }); }
+		try {
+			await action();
+		} catch (error) {
+			this.error = errorMessage(error);
+		} finally {
+			if (this.available)
+				await this.refresh().catch((error) => {
+					this.error = errorMessage(error);
+				});
+		}
 	}
 
 	async importFiles(files: File[]): Promise<ImportOutcome[]> {
@@ -110,17 +147,37 @@ export class LibraryWorkspace {
 		try {
 			await this.importer.run(files, {
 				collectionId: this.collectionId,
-				onProgress: (progress) => { this.progress = progress; },
-				onResult: (result) => { this.results = [...this.results, result]; },
-				approveLargeFile: (file) => window.confirm(`${file.name} is over 100 MiB. Parsing may use substantial memory. Import locally?`)
+				onProgress: (progress) => {
+					this.progress = progress;
+				},
+				onResult: (result) => {
+					this.results = [...this.results, result];
+				},
+				approveLargeFile: (file) =>
+					window.confirm(
+						`${file.name} is over 100 MiB. Parsing may use substantial memory. Import locally?`
+					)
 			});
 		} catch (error) {
 			this.error = errorMessage(error);
 		} finally {
 			this.importing = false;
-			if (this.available) await this.refresh().catch((error) => { this.error = errorMessage(error); });
+			if (this.available)
+				await this.refresh().catch((error) => {
+					this.error = errorMessage(error);
+				});
 		}
 		return this.results;
+	}
+
+	async restoreThumbnail(id: string, svg: string): Promise<void> {
+		if (this.snapshot.documents.find((document) => document.id === id)?.thumbnail) return;
+		try {
+			await this.service.cacheThumbnail(id, await createThumbnail(svg));
+			await this.refresh();
+		} catch {
+			return;
+		}
 	}
 
 	cancelImport(): void {

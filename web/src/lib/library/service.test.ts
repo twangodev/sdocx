@@ -7,10 +7,20 @@ import type { PreparedDocument } from './model';
 
 class MemoryAssets implements AssetStore {
 	files = new Map<string, File>();
-	async read(name: string) { const file = this.files.get(name); if (!file) throw new Error('Missing asset'); return file; }
-	async write(name: string, blob: Blob) { this.files.set(name, new File([blob], name)); }
-	async remove(name: string) { this.files.delete(name); }
-	async list() { return [...this.files.keys()]; }
+	async read(name: string) {
+		const file = this.files.get(name);
+		if (!file) throw new Error('Missing asset');
+		return file;
+	}
+	async write(name: string, blob: Blob) {
+		this.files.set(name, new File([blob], name));
+	}
+	async remove(name: string) {
+		this.files.delete(name);
+	}
+	async list() {
+		return [...this.files.keys()];
+	}
 }
 
 const catalogs: LibraryCatalog[] = [];
@@ -22,9 +32,17 @@ function setup() {
 	return { catalog, assets, service };
 }
 function note(contentHash = 'hash', filename = 'note.sdocx'): PreparedDocument {
-	return { file: new File(['note'], filename), contentHash, title: 'Note', pageCount: 2, thumbnail: new Blob(['png']) };
+	return {
+		file: new File(['note'], filename),
+		contentHash,
+		title: 'Note',
+		pageCount: 2,
+		thumbnail: new Blob(['png'])
+	};
 }
-afterEach(async () => { for (const catalog of catalogs.splice(0)) await catalog.delete(); });
+afterEach(async () => {
+	for (const catalog of catalogs.splice(0)) await catalog.delete();
+});
 
 describe('library persistence', () => {
 	it('deduplicates content and adds existing notes to collections', async () => {
@@ -33,7 +51,9 @@ describe('library persistence', () => {
 		const collection = await service.saveCollection('Course');
 		const duplicate = await service.importDocument(note('hash', 'renamed.sdocx'), collection.id);
 		expect(duplicate).toEqual({ document: first.document, duplicate: true });
-		expect(await catalog.memberships.toArray()).toEqual([{ collectionId: collection.id, documentId: first.document.id }]);
+		expect(await catalog.memberships.toArray()).toEqual([
+			{ collectionId: collection.id, documentId: first.document.id }
+		]);
 		expect(assets.files.size).toBe(2);
 		await service.importDocument(note('changed'));
 		expect(await catalog.documents.count()).toBe(2);
@@ -96,4 +116,27 @@ describe('library persistence', () => {
 		expect(document.thumbnail).toBeNull();
 		expect(assets.files.size).toBe(1);
 	});
+});
+
+it('clears thumbnails without losing originals and safely regenerates after interrupted cleanup', async () => {
+	const { service, catalog, assets } = setup();
+	const { document } = await service.importDocument(note());
+	vi.spyOn(assets, 'remove').mockRejectedValueOnce(new Error('Busy'));
+	await expect(service.clearThumbnails()).rejects.toThrow('Busy');
+	expect((await catalog.documents.get(document.id))?.thumbnail).toBeNull();
+	await service.cacheThumbnail(document.id, new Blob(['rebuilt']));
+	await service.recover();
+	expect(assets.files.size).toBe(2);
+	expect((await catalog.documents.get(document.id))?.thumbnail).not.toBeNull();
+	expect((await service.openDocument(document.id)).name).toBe('note.sdocx');
+});
+
+it('deletes the entire library including orphan assets and memberships', async () => {
+	const { service, catalog, assets } = setup();
+	const collection = await service.saveCollection('Course');
+	await service.importDocument(note(), collection.id);
+	await assets.write('originals/abandoned.sdocx', new Blob(['partial']));
+	await service.clearLibrary();
+	expect(await catalog.snapshot()).toEqual({ documents: [], collections: [], memberships: [] });
+	expect(assets.files.size).toBe(0);
 });

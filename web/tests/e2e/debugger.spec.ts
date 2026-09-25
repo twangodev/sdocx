@@ -168,15 +168,14 @@ test('dense replay measures frame cadence and releases browser resources', async
 		.getByRole('button', { name: 'Back to library', exact: true })
 		.click();
 	await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
-	await expect
-		.poll(() =>
-			page.evaluate(
-				() =>
-					(window as unknown as { debuggerLiveUrls: Set<string> })
-						.debuggerLiveUrls.size
-			)
-		)
-		.toBe(0);
+	await expect(page.locator('article.note img')).toHaveCount(1);
+	await expect.poll(() => page.evaluate(() => {
+		const live = (window as unknown as { debuggerLiveUrls: Set<string> }).debuggerLiveUrls;
+		const thumbnails = new Set(Array.from(document.querySelectorAll<HTMLImageElement>('article.note img'), (image) => image.src));
+		return [...live].filter((url) => !thumbnails.has(url));
+	})).toEqual([]);
+	await page.getByRole('searchbox', { name: 'Search notes' }).fill('no matching note');
+	await expect.poll(() => page.evaluate(() => (window as unknown as { debuggerLiveUrls: Set<string> }).debuggerLiveUrls.size)).toBe(0);
 });
 
 test('sidebar preserves the viewer images, camera and gesture cache', async ({

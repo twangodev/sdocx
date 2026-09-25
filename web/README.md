@@ -4,6 +4,26 @@ Browser-only `.sdocx` viewer and converter for
 [`sdocx.twango.dev`](https://sdocx.twango.dev). Documents never leave the
 browser.
 
+## Local library
+
+Import one or more `.sdocx` files to save them in this browser. Browse thumbnails,
+search titles and filenames, mark favorites, and organize notes into collections.
+Identical files share one saved original; collections do not copy files. Removing
+a collection preserves its notes. Select a note to download its original or delete
+it from the library.
+
+Originals and thumbnails live in OPFS; Dexie/IndexedDB stores the catalog. The
+asset store and catalog sit behind the library service, while the import processor
+uses a separate converter worker. Workspace state coordinates the UI. Imports run
+sequentially, and a shared Web Lock protects mutations across tabs. Startup cleanup
+recovers interrupted writes and pending deletions.
+
+**Browser storage** shows usage and persistence status, requests persistent storage,
+clears thumbnails, or deletes the library after confirmation. Thumbnails rebuild
+when notes are opened. Clearing site data removes saved notes; persistence is not
+backup or sync. Storage failures offer temporary viewing without claiming the
+note was saved.
+
 ## PDF export
 
 Open **Export document** to download a PDF of all pages by default. Choose

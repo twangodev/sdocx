@@ -15,7 +15,10 @@ export async function createThumbnail(svg: string): Promise<Blob> {
 		if (!context) throw new Error('Thumbnail rendering is unavailable.');
 		context.drawImage(image, 0, 0, canvas.width, canvas.height);
 		return await new Promise<Blob>((resolve, reject) => {
-			canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Unable to encode thumbnail.')), 'image/png');
+			canvas.toBlob(
+				(blob) => (blob ? resolve(blob) : reject(new Error('Unable to encode thumbnail.'))),
+				'image/png'
+			);
 		});
 	} finally {
 		URL.revokeObjectURL(url);

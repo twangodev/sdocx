@@ -24,7 +24,14 @@ import { exportDetails, type ExportRequest } from './export-options';
 import { toInspectionView, type InspectionView } from './view-model';
 
 
+export interface RenderedPage {
+	file: File;
+	pageIndex: number;
+	svg: string;
+}
+
 interface DocumentSessionOptions {
+	onPageRendered?: (page: RenderedPage) => void;
 	onResetView?: () => void;
 	createClient?: (onProgress: ProgressListener) => ConverterClientPort;
 }
@@ -47,10 +54,12 @@ export class DocumentSession {
 	private loadGeneration = 0;
 	private renderGeneration = 0;
 	private readonly onResetView?: () => void;
+	private readonly onPageRendered?: (page: RenderedPage) => void;
 	private readonly createClient: (onProgress: ProgressListener) => ConverterClientPort;
 
 	constructor(options: DocumentSessionOptions = {}) {
 		this.onResetView = options.onResetView;
+		this.onPageRendered = options.onPageRendered;
 		this.createClient = options.createClient ?? ((onProgress) => new ConverterClient(onProgress));
 	}
 
@@ -247,6 +256,7 @@ export class DocumentSession {
 				this.status = `Rendering page ${index + 1} of ${pageCount}`;
 				const svg = await this.requireClient().renderPage(index, this.colorMode);
 				if (generation !== this.renderGeneration) return;
+				if (this.activeFile) this.onPageRendered?.({ file: this.activeFile, pageIndex: index, svg });
 				const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
 				this.previewUrls[index] = url;
 				this.previewUrls = [...this.previewUrls];

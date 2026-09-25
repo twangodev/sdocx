@@ -162,3 +162,20 @@ it('snapshots archive pages and colors while settings change', async () => {
 	expect(Object.keys(entries)).toEqual(['note-page-001.svg', 'note-page-003.svg']);
 	session.destroy();
 });
+
+it('publishes a rendered first page before later pages finish and ignores cancelled renders', async () => {
+	const laterPage = deferred<string>();
+	const client = clientWith(vi.fn(async () => ({ pageCount: 2, inspection: {} })));
+	vi.mocked(client.renderPage).mockResolvedValueOnce('<svg/>').mockReturnValueOnce(laterPage.promise);
+	const onPageRendered = vi.fn();
+	const session = new DocumentSession({ createClient: () => client, onPageRendered });
+	const stop = session.start();
+	const input = file('note.sdocx', Promise.resolve(new ArrayBuffer(1)));
+	const loading = session.load(input);
+	await vi.waitFor(() => expect(onPageRendered).toHaveBeenCalledWith({ file: input, pageIndex: 0, svg: '<svg/>' }));
+	await session.close();
+	laterPage.resolve('<svg/>');
+	await loading;
+	expect(onPageRendered).toHaveBeenCalledOnce();
+	stop();
+});

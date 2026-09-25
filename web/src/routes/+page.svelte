@@ -15,6 +15,7 @@
 
 	let uploadNotice = $state<{ codes: string[]; failed: boolean } | null>(null);
 	const library = new LibraryState();
+	let activeLibraryDocument: { id: string; file: File } | null = null;
 	let temporary = $state(false);
 	let uploadGeneration = 0;
 	let picker = $state<HTMLInputElement>();
@@ -29,6 +30,11 @@
 
 	const zoom = new DocumentZoomCamera(() => pageIndex);
 	const session = new DocumentSession({
+		onPageRendered: ({ file, pageIndex, svg }) => {
+			if (pageIndex === 0 && activeLibraryDocument?.file === file) {
+				void library.restoreThumbnail(activeLibraryDocument.id, svg);
+			}
+		},
 		onResetView: () => {
 			uploadNotice = null;
 			workspace.debuggerOpen = false;
@@ -92,6 +98,7 @@
 		await library.perform(async () => {
 			const file = await library.service.openDocument(id);
 			temporary = false;
+			activeLibraryDocument = { id, file };
 			await loadDocument(file);
 		});
 	}
@@ -107,6 +114,7 @@
 	}
 
 	function openTemporary(file: File): void {
+		activeLibraryDocument = null;
 		temporary = true;
 		void loadDocument(file);
 	}
