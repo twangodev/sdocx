@@ -54,7 +54,7 @@ pub fn render_document_svg(document: &Document, options: &RenderOptions) -> Vec<
     layout
         .pages
         .iter()
-        .map(|layout_page| render_layout_page(document, layout_page, options))
+        .map(|layout_page| render_layout_page(document, layout_page, options, false))
         .collect()
 }
 
@@ -78,13 +78,29 @@ pub fn render_layout_page_svg(
     layout
         .pages
         .get(page_index)
-        .map(|layout_page| render_layout_page(document, layout_page, options))
+        .map(|layout_page| render_layout_page(document, layout_page, options, false))
+}
+
+/// Render the same page with stroke and path boundaries for sample-addressable replay.
+/// `data-replay-stroke` indexes the page's strokes; part numbers and path lengths
+/// index prepared points. Use `PreparedStroke::sample_ends` to resolve saved samples.
+pub fn render_layout_page_replay_svg(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_index: usize,
+    options: &RenderOptions,
+) -> Option<RenderedPage> {
+    layout
+        .pages
+        .get(page_index)
+        .map(|page| render_layout_page(document, page, options, true))
 }
 
 fn render_layout_page(
     document: &Document,
     layout_page: &crate::LayoutPage,
     options: &RenderOptions,
+    replay: bool,
 ) -> RenderedPage {
     let dark_mode = match options.color_mode {
         RenderColorMode::Auto => layout_page
@@ -102,6 +118,7 @@ fn render_layout_page(
         &document.metadata.media_assets,
         document.metadata.flow_page_padding,
         dark_mode,
+        replay,
     );
     RenderedPage {
         source_page_index: layout_page.source_page_index,
@@ -130,6 +147,7 @@ fn render_page_contents_svg(
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     dark_mode: bool,
+    replay: bool,
 ) -> String {
     let fallback_bg_color = metadata.background_color.as_ref();
     // Dark-mode notes have light ink, so prefer the document's dark background
@@ -185,15 +203,15 @@ fn render_page_contents_svg(
         DEFAULT_INK_LIGHT_MODE
     };
     let mut highlighter = Vec::new();
-    for stroke in &page.strokes {
+    for (index, stroke) in page.strokes.iter().enumerate() {
         if stroke
             .rendering
             .as_ref()
             .is_some_and(|rendering| rendering.properties.top_layer_pen)
         {
-            highlighter.push(stroke);
+            highlighter.push((index, stroke));
         } else {
-            render_stroke(&mut svg, stroke, default_ink);
+            render_stroke(&mut svg, stroke, default_ink, replay.then_some(index));
         }
     }
     for element in &page.elements {
@@ -210,8 +228,8 @@ fn render_page_contents_svg(
         // Standard PDF composites the top-layer stroke batch with Darken after
         // ordinary page content. One group keeps that batch order.
         writeln!(svg, r#"  <g style="mix-blend-mode:darken">"#).unwrap();
-        for stroke in highlighter {
-            render_stroke(&mut svg, stroke, default_ink);
+        for (index, stroke) in highlighter {
+            render_stroke(&mut svg, stroke, default_ink, replay.then_some(index));
         }
         writeln!(svg, "  </g>").unwrap();
     }
@@ -1635,11 +1653,39 @@ fn escape_xml(input: &str) -> String {
         .replace('"', "&quot;")
 }
 
-fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
+fn render_stroke(
+    svg: &mut String,
+    stroke: &Stroke,
+    default_ink: &str,
+    replay_index: Option<usize>,
+) {
     let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
+    if let Some(index) = replay_index {
+        write!(svg, "<g data-replay-stroke=\"{index}\">").unwrap();
+    }
+    render_prepared_stroke(svg, &paint, replay_index.is_some());
+    if replay_index.is_some() {
+        svg.push_str("</g>");
+    }
+}
+
+fn write_replay_lengths_attribute(svg: &mut String, lengths: &[usize]) {
+    if !lengths.is_empty() {
+        svg.push_str(" data-replay-lengths=\"");
+        for (i, length) in lengths.iter().enumerate() {
+            if i > 0 {
+                svg.push(',');
+            }
+            write!(svg, "{length}").unwrap();
+        }
+        svg.push('"');
+    }
+}
+
+fn render_prepared_stroke(svg: &mut String, paint: &crate::PreparedStroke<'_>, replay: bool) {
     let color = &paint.color;
     let base_width = paint.width;
-    if fountain::render(svg, &paint) {
+    if fountain::render(svg, paint, replay) {
         return;
     }
     if let Some(stamp) = paint.rect_stamp {
@@ -1653,13 +1699,20 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
             stamp.angle.to_degrees()
         )
         .unwrap();
+        let path_start = svg.len();
+        let mut lengths = Vec::new();
         for p in paint.points.iter() {
             let x = p.x * cos + p.y * sin - w / 2.;
             let y = -p.x * sin + p.y * cos - h / 2.;
             write!(svg, "M{:.4},{:.4}h{:.4}a{rx:.4},{ry:.4} 0 0 1 {rx:.4},{ry:.4}v{:.4}a{rx:.4},{ry:.4} 0 0 1 {:.4},{ry:.4}h{:.4}a{rx:.4},{ry:.4} 0 0 1 {:.4},{:.4}v{:.4}a{rx:.4},{ry:.4} 0 0 1 {rx:.4},{:.4}Z",
                 x+rx,y,w-2.*rx,h-2.*ry,-rx,2.*rx-w,-rx,-ry,2.*ry-h,-ry).unwrap();
+            if replay {
+                lengths.push(svg.len() - path_start);
+            }
         }
-        writeln!(svg, "\"/>").unwrap();
+        svg.push('"');
+        write_replay_lengths_attribute(svg, &lengths);
+        writeln!(svg, "/>").unwrap();
         return;
     }
     if let Some(radii) = &paint.dot_radii {
@@ -1674,6 +1727,8 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
         } else {
             write!(svg, "  <path fill=\"{color}\" d=\"").unwrap();
         }
+        let path_start = svg.len();
+        let mut lengths = Vec::new();
         for (p, r) in paint.points.iter().zip(radii) {
             write!(
                 svg,
@@ -1684,15 +1739,25 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
                 -r * 2.
             )
             .unwrap();
+            if replay {
+                lengths.push(svg.len() - path_start);
+            }
         }
-        writeln!(svg, "\"/>").unwrap();
+        svg.push('"');
+        write_replay_lengths_attribute(svg, &lengths);
+        writeln!(svg, "/>").unwrap();
         return;
     }
 
     if let [point] = paint.points.as_ref() {
+        let part = if replay {
+            " data-replay-part=\"1\""
+        } else {
+            ""
+        };
         writeln!(
             svg,
-            r#"  <circle cx="{}" cy="{}" r="{}" fill="{color}"/>"#,
+            r#"  <circle{part} cx="{}" cy="{}" r="{}" fill="{color}"/>"#,
             point.x,
             point.y,
             base_width / 2.0
@@ -1709,25 +1774,34 @@ fn render_stroke(svg: &mut String, stroke: &Stroke, default_ink: &str) {
 
             let p1 = &paint.points[j - 1];
             let p2 = &paint.points[j];
+            let part = if replay {
+                format!(" data-replay-part=\"{}\"", j + 1)
+            } else {
+                String::new()
+            };
             writeln!(
                 svg,
-                r#"  <line x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{color}" stroke-width="{sw:.2}" stroke-linecap="round"/>"#,
+                r#"  <line{part} x1="{:.2}" y1="{:.2}" x2="{:.2}" y2="{:.2}" stroke="{color}" stroke-width="{sw:.2}" stroke-linecap="round"/>"#,
                 p1.x, p1.y, p2.x, p2.y,
             )
             .unwrap();
         }
     } else {
-        let pts_str: String = paint
-            .points
-            .iter()
-            .map(|p| format!("{:.2},{:.2}", p.x, p.y))
-            .collect::<Vec<_>>()
-            .join(" ");
-        writeln!(
-            svg,
-            r#"  <polyline points="{pts_str}" fill="none" stroke="{color}" stroke-width="{base_width:.2}" stroke-linecap="round" stroke-linejoin="round"/>"#,
-        )
-        .unwrap();
+        svg.push_str("  <polyline points=\"");
+        let path_start = svg.len();
+        let mut lengths = Vec::new();
+        for (i, p) in paint.points.iter().enumerate() {
+            if i > 0 {
+                svg.push(' ');
+            }
+            write!(svg, "{:.2},{:.2}", p.x, p.y).unwrap();
+            if replay {
+                lengths.push(svg.len() - path_start);
+            }
+        }
+        svg.push('"');
+        write_replay_lengths_attribute(svg, &lengths);
+        writeln!(svg, r#" fill="none" stroke="{color}" stroke-width="{base_width:.2}" stroke-linecap="round" stroke-linejoin="round"/>"#).unwrap();
     }
 }
 
@@ -1899,17 +1973,65 @@ mod tests {
         stroke.pressures = vec![0.2, 0.7, 0.4];
         stroke.timestamps = vec![0, 10, 20];
         stroke.tilts = vec![0.4, 0.6, 0.5];
-        assert!(
-            crate::prepare_stroke(&stroke, false)
-                .dot_directions
-                .is_some()
-        );
+        for (tool, fixed_width) in [1, 2, 3]
+            .into_iter()
+            .flat_map(|tool| [false, true].map(|fixed| (tool, fixed)))
+        {
+            stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+            stroke.rendering.as_mut().unwrap().properties.fixed_width = fixed_width;
+            assert!(
+                crate::prepare_stroke(&stroke, false)
+                    .dot_directions
+                    .is_some()
+            );
+            let mut page = page_with_uncolored_stroke();
+            page.strokes = vec![stroke.clone()];
+            let rendered = render_document_svg(&document(page), &RenderOptions::default());
+            assert!(rendered[0].svg.contains("<linearGradient"));
+            assert!(rendered[0].svg.contains("<path fill="));
+            assert!(!rendered[0].svg.contains("<image"));
+            assert!(!rendered[0].svg.contains("<filter"));
+        }
+    }
+
+    #[test]
+    fn replay_annotations_preserve_fountain_and_highlighter_composition() {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../conformance/fountain-v14.json")).unwrap();
+        let mut fountain: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        fountain.points = vec![
+            crate::Point { x: 10., y: 10. },
+            crate::Point { x: 60., y: 40. },
+        ];
+        fountain.pressures = vec![0.2, 0.8];
+        fountain.timestamps = vec![0, 10];
         let mut page = page_with_uncolored_stroke();
-        page.strokes = vec![stroke];
-        let rendered = render_document_svg(&document(page), &RenderOptions::default());
-        assert!(rendered[0].svg.contains("<path fill="));
-        assert!(!rendered[0].svg.contains("<image"));
-        assert!(!rendered[0].svg.contains("data:image/png"));
+        page.strokes.push(fountain);
+        page.strokes.push(marker(true, 20.));
+        let doc = document(page);
+        let layout = crate::layout_document(&doc);
+        for color_mode in [RenderColorMode::Light, RenderColorMode::Dark] {
+            let options = RenderOptions { color_mode };
+            let normal = super::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
+            let replay = super::render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+            let preview = |svg: &str| {
+                let tree =
+                    resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+                let mut image = resvg::tiny_skia::Pixmap::new(normal.width, normal.height).unwrap();
+                resvg::render(
+                    &tree,
+                    resvg::tiny_skia::Transform::identity(),
+                    &mut image.as_mut(),
+                );
+                image
+            };
+            assert_eq!(preview(&normal.svg).data(), preview(&replay.svg).data());
+            assert_eq!(replay.svg.matches("data-replay-stroke=").count(), 3);
+            assert!(replay.svg.contains("data-replay-part="));
+            assert!(replay.svg.contains("data-replay-lengths="));
+            assert!(!replay.svg.contains("<image"));
+            assert!(!replay.svg.contains("<filter"));
+        }
     }
 
     #[test]

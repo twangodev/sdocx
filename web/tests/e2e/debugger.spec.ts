@@ -10,6 +10,94 @@ test.beforeEach(async ({ page }) => {
 		r.fulfill({ body: '' })
 	);
 });
+test('SVG fountain masks preserve maximum coverage at overlaps', async ({ page, browserName }, testInfo) => {
+	const stamp = (x: number) => `<g style="mix-blend-mode:lighten"><circle r="1" fill="url(#gradient)" transform="matrix(20,0,0,20,${x},32)"/></g>`;
+	const bounds = 'M0,0h64v64h-64Z';
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
+		<defs>
+			<linearGradient id="gradient" gradientUnits="userSpaceOnUse" x1="-1" x2="1">
+				<stop offset="0" stop-color="rgb(7%,7%,7%)"/><stop offset=".25" stop-color="white"/>
+				<stop offset=".75" stop-color="white"/><stop offset="1" stop-color="rgb(7%,7%,7%)"/>
+			</linearGradient>
+			<mask id="mask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+				<g style="isolation:isolate"><path fill="black" d="${bounds}"/>${stamp(32)}${stamp(40)}</g>
+			</mask>
+		</defs>
+		<path fill="black" mask="url(#mask)" d="${bounds}"/>
+	</svg>`;
+	const alpha = await page.evaluate(async (svg) => {
+		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+		try {
+			const image = new Image();
+			image.src = url;
+			await image.decode();
+			const canvas = document.createElement('canvas');
+			canvas.width = canvas.height = 64;
+			const context = canvas.getContext('2d')!;
+			context.drawImage(image, 0, 0);
+			return context.getImageData(24, 32, 1, 1).data[3];
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	}, svg);
+	await testInfo.attach('fountain-overlap.svg', { body: svg, contentType: 'image/svg+xml' });
+	test.fail(browserName === 'firefox', 'Lighten in SVG masks overwrites an opaque stamp with the next shaded stamp');
+	expect(alpha, 'The first stamp is fully opaque at this interior overlap pixel').toBe(255);
+});
+test('V14 fountain SVG retains visible ink when loaded as an image', async ({
+	page,
+	browserName
+}, testInfo) => {
+	test.skip(!existsSync(handwriting), 'Local handwriting fixture is absent');
+	await page.goto('/');
+	await page.locator('input[type=file]').setInputFiles(handwriting);
+	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
+	await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 60000 });
+	await page.getByRole('button', { name: 'Restart replay' }).click();
+	const vector = page.locator('[data-replay-overlay] .vector-page > svg');
+	await expect(vector).toHaveAttribute('data-render-version', /.+/);
+	const result = await vector.evaluate(async (element) => {
+		const parsed = new DOMParser().parseFromString(element.outerHTML, 'image/svg+xml');
+		const mask = parsed.querySelector('mask');
+		if (!mask) throw new Error('Fixture must contain shaded V14 fountain ink');
+		const fill = parsed.querySelector(`[mask="url(#${mask.id})"]`);
+		if (!fill) throw new Error('Fountain mask has no painted stroke');
+		const svg = parsed.documentElement.cloneNode(false) as SVGSVGElement;
+		svg.setAttribute('width', '128');
+		svg.setAttribute('height', '128');
+		const right = Number(mask.getAttribute('x')) + Number(mask.getAttribute('width'));
+		const bottom = Number(mask.getAttribute('y')) + Number(mask.getAttribute('height'));
+		svg.setAttribute('viewBox', `0 0 ${right + 1} ${bottom + 1}`);
+		svg.append(mask.closest('defs')!.cloneNode(true), fill.cloneNode(true));
+		svg.removeAttribute('style');
+		for (const node of svg.querySelectorAll<SVGElement>('[style]')) {
+			node.style.removeProperty('display');
+		}
+		const isolated = new XMLSerializer().serializeToString(svg);
+		const url = URL.createObjectURL(new Blob([isolated], { type: 'image/svg+xml' }));
+		try {
+			const image = new Image();
+			image.src = url;
+			await image.decode();
+			const canvas = document.createElement('canvas');
+			canvas.width = canvas.height = 128;
+			const context = canvas.getContext('2d')!;
+			context.drawImage(image, 0, 0);
+			const pixels = context.getImageData(0, 0, 128, 128).data;
+			let coverage = 0;
+			for (let i = 3; i < pixels.length; i += 4) coverage += pixels[i];
+			return { coverage, isolated };
+		} finally {
+			URL.revokeObjectURL(url);
+		}
+	});
+	await testInfo.attach('isolated-fountain.svg', {
+		body: result.isolated,
+		contentType: 'image/svg+xml'
+	});
+	test.fail(browserName === 'firefox', 'Lighten groups in the luminance mask produce blank SVG images');
+	expect(result.coverage, 'An isolated fountain stroke must paint nontransparent pixels').toBeGreaterThan(0);
+});
 test('debugger exposes physical pages, metadata and original source bytes', async ({
 	page
 }) => {
@@ -147,17 +235,15 @@ test('dense replay measures frame cadence and releases browser resources', async
 		return values.slice(5).sort((a, b) => a - b);
 	});
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
-	const surface = await page
-		.locator('[data-replay-overlay] canvas')
-		.evaluate((canvas: HTMLCanvasElement) => ({
-			width: canvas.width,
-			height: canvas.height
-		}));
+	const vector = page.locator('[data-replay-overlay] .vector-page > svg');
+	await expect(vector).toHaveAttribute('data-render-version', /.+/);
 	const metrics = {
 		medianFrameMs: frames[Math.floor(frames.length * 0.5)],
 		p95FrameMs: frames[Math.floor(frames.length * 0.95)],
-		canvasBytes: surface.width * surface.height * 4 * 2
+		vectorNodes: await vector.locator('*').count(),
+		canvasCount: await page.locator('[data-replay-overlay] canvas').count()
 	};
+	expect(metrics.canvasCount).toBe(0);
 	console.log('Debugger dense replay', JSON.stringify(metrics));
 	await testInfo.attach('replay-metrics', {
 		body: JSON.stringify(metrics, null, 2),
@@ -243,7 +329,7 @@ test('sidebar preserves the viewer images, camera and gesture cache', async ({
 	await page
 		.getByRole('button', { name: 'Restart replay', exact: true })
 		.click();
-	await expect(page.locator('[data-replay-overlay] img')).toBeVisible();
+	await expect(page.locator('[data-replay-overlay] .vector-page > svg')).toBeVisible();
 	await expect(image).toHaveCSS('visibility', 'hidden');
 	await page.locator('.canvas-wrap').evaluate((element) => {
 		element.dispatchEvent(
@@ -304,238 +390,115 @@ test('sidebar and existing page navigation stay synchronized', async ({
 	);
 });
 
-test('dense scrubbing measures reverse seeks and preserves pixels', async ({
-	page,
-	browserName
-}, testInfo) => {
-	test.skip(
-		browserName !== 'chromium' || !existsSync(handwriting),
-		'Chromium with dense fixture required'
-	);
+test('dense vector scrubbing preserves state across reverse seeks', async ({ page }, testInfo) => {
+	test.skip(!existsSync(handwriting), 'Local dense fixture required');
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles(handwriting);
 	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
-	await expect(
-		page.getByRole('button', { name: 'Play', exact: true })
-	).toBeEnabled({ timeout: 60000 });
-	await page.evaluate(() => {
-		const surfaces: HTMLCanvasElement[] = [];
-		const original = document.createElement.bind(document);
-		document.createElement = ((
-			tag: string,
-			options?: ElementCreationOptions
-		) => {
-			const element = original(tag, options);
-			if (tag === 'canvas') surfaces.push(element as HTMLCanvasElement);
-			return element;
-		}) as typeof document.createElement;
-		Object.assign(window, { replaySurfaces: surfaces });
-	});
+	await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 60000 });
 	await page.getByRole('button', { name: 'Restart replay' }).click();
-	await expect(page.locator('[data-replay-overlay] canvas')).toBeVisible();
+	const vector = page.locator('[data-replay-overlay] .vector-page > svg');
+	await expect(vector).toHaveAttribute('data-render-version', /.+/);
 	const metrics = await page.evaluate(async () => {
-		const slider = document.querySelector<HTMLInputElement>(
-			'[aria-label="Replay position"]'
-		)!;
-		let strokes = 0;
-		let fills = 0;
-		const originalFill = CanvasRenderingContext2D.prototype.fill;
-		CanvasRenderingContext2D.prototype.fill = function (...args: unknown[]) {
-			fills++;
-			return Reflect.apply(originalFill, this, args);
-		};
-		const original = CanvasRenderingContext2D.prototype.stroke;
-		CanvasRenderingContext2D.prototype.stroke = function (path?: Path2D) {
-			strokes++;
-			return Reflect.apply(original, this, path ? [path] : []);
-		};
+		const slider = document.querySelector<HTMLInputElement>('[aria-label="Replay position"]')!;
+		const root = document.querySelector<SVGSVGElement>('[data-replay-overlay] .vector-page > svg')!;
 		const seek = async (fraction: number) => {
 			const start = performance.now();
 			slider.value = String(Math.floor(Number(slider.max) * fraction));
 			slider.dispatchEvent(new Event('input', { bubbles: true }));
-			for (let i = 0; i < 600; i++) {
+			for (let i = 0; i < 120; i++) {
 				await new Promise(requestAnimationFrame);
-				const canvas = document.querySelector<HTMLCanvasElement>(
-					'[data-replay-overlay] canvas'
-				);
-				if (canvas?.dataset.renderVersion?.split(':')[0] === slider.value) {
+				if (root.dataset.renderVersion === slider.value) {
 					await new Promise(requestAnimationFrame);
 					return performance.now() - start;
 				}
 			}
-			throw new Error('Seek did not render its latest position');
+			throw new Error(JSON.stringify({ wanted: slider.value, previous: root.dataset.renderVersion, connected: root.isConnected, current: document.querySelector<SVGSVGElement>('[data-replay-overlay] .vector-page > svg')?.dataset.renderVersion }));
 		};
-		const hash = () => {
-			const canvas = document.querySelector<HTMLCanvasElement>(
-				'[data-replay-overlay] canvas'
-			)!;
-			const bytes = canvas
-				.getContext('2d')!
-				.getImageData(0, 0, canvas.width, canvas.height).data;
-			let value = 2166136261;
-			for (const byte of bytes) value = Math.imul(value ^ byte, 16777619);
-			return value >>> 0;
-		};
-		try {
-			const background = document.querySelector<HTMLImageElement>(
-				'[data-replay-overlay] img'
-			)!.src;
-			const coldSeekMs = await seek(0.95);
-			await seek(0.5);
-
-			const startStrokes = strokes;
-			const startFills = fills;
-			const values = [];
-			for (let i = 0; i < 24; i++) values.push(await seek(0.9 - i * 0.015));
-			const warmStrokes = strokes - startStrokes;
-			const warmFills = fills - startFills;
-			// Rapidly changing targets must settle on the latest request.
-			for (let i = 0; i < 12; i++) {
-				slider.value = String(
-					Math.floor(Number(slider.max) * (i % 2 ? 0.8 : 0.1))
-				);
-				slider.dispatchEvent(new Event('input', { bubbles: true }));
-				await new Promise(requestAnimationFrame);
+		await seek(0.5);
+		const state = () => {
+			const copy = root.cloneNode(true) as SVGSVGElement;
+			for (const node of copy.querySelectorAll<SVGElement>('[style]')) {
+				if (node.style.cssText) node.setAttribute('style', node.style.cssText);
+				else node.removeAttribute('style');
 			}
-			await seek(0.5);
-			const expected = hash();
-			// Visiting the full-page view must not throw away the replay caches.
-			slider.value = slider.max;
-			slider.dispatchEvent(new Event('input', { bubbles: true }));
-			await new Promise(requestAnimationFrame);
-			await new Promise(requestAnimationFrame);
-			const beforeReturn = strokes;
-			const fillsBeforeReturn = fills;
-			await seek(0.2);
-			await seek(0.5);
-			return {
-				coldSeekMs,
-				medianSeekMs: values.sort((a, b) => a - b)[12],
-				p95SeekMs: values[22],
-				warmStrokes,
-				warmFills,
-				returnFills: fills - fillsBeforeReturn,
-				returnStrokes: strokes - beforeReturn,
-				stableBackground:
-					background ===
-					document.querySelector<HTMLImageElement>('[data-replay-overlay] img')!
-						.src,
-				cacheBytes: (
-					window as unknown as { replaySurfaces: HTMLCanvasElement[] }
-				).replaySurfaces.reduce(
-					(bytes, canvas) => bytes + canvas.width * canvas.height * 4,
-					0
-				),
-				samePixels: expected === hash()
-			};
-		} finally {
-			CanvasRenderingContext2D.prototype.stroke = original;
-			CanvasRenderingContext2D.prototype.fill = originalFill;
+			return copy.outerHTML;
+		};
+		const expected = state();
+		const times = [];
+		for (const fraction of [0.95, 0.2, 0.8, 0.1, 0.9, 0.4, 0.7, 0.3, 1]) {
+			times.push(await seek(fraction));
 		}
+		const copy = root.cloneNode(true) as SVGSVGElement;
+		copy.removeAttribute('style');
+		const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)], { type: 'image/svg+xml' }));
+		let sameCompletedPixels: boolean;
+		try {
+			const image = new Image(); image.src = url; await image.decode();
+			const viewer = document.querySelector<HTMLImageElement>('img[data-page-zoom-target]')!;
+			const canvas = document.createElement('canvas');
+			canvas.width = 462; canvas.height = Math.round(462 * image.naturalHeight / image.naturalWidth);
+			const ctx = canvas.getContext('2d')!;
+			ctx.drawImage(viewer, 0, 0, canvas.width, canvas.height);
+			const expected = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+			const actual = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+			sameCompletedPixels = actual.every((value, i) => value === expected[i]);
+		} finally { URL.revokeObjectURL(url); }
+		await seek(0.5);
+		return {
+			sameCompletedPixels,
+			sameVectors: state() === expected,
+			sameRoot: root === document.querySelector('[data-replay-overlay] .vector-page > svg'),
+			medianSeekMs: times.sort((a, b) => a - b)[5],
+			maxSeekMs: Math.max(...times),
+			gradients: root.querySelectorAll('linearGradient').length,
+			images: root.querySelectorAll('image').length,
+			filters: root.querySelectorAll('filter').length
+		};
 	});
-	console.log('Debugger dense scrubbing', JSON.stringify(metrics));
-	await testInfo.attach('scrubbing-metrics', {
-		body: JSON.stringify(metrics),
-		contentType: 'application/json'
-	});
-	expect(metrics.samePixels).toBe(true);
-	// The fixture previously issued nearly five million segment draws here.
-	expect(metrics.warmStrokes + metrics.warmFills).toBeLessThan(150000);
-	expect(metrics.returnStrokes + metrics.returnFills).toBeLessThan(15000);
-	expect(metrics.stableBackground).toBe(true);
-	expect(metrics.cacheBytes).toBeLessThanOrEqual(112 * 1024 * 1024);
-	await page
-		.getByRole('button', { name: 'Close debugger', exact: true })
-		.click();
-	expect(
-		await page.evaluate(() =>
-			(
-				window as unknown as { replaySurfaces: HTMLCanvasElement[] }
-			).replaySurfaces.every(
-				(canvas) => canvas.width === 0 && canvas.height === 0
-			)
-		)
-	).toBe(true);
+	expect(metrics.sameCompletedPixels).toBe(true);
+	expect(metrics.sameVectors).toBe(true);
+	expect(metrics.sameRoot).toBe(true);
+	expect(metrics.gradients).toBeGreaterThan(0);
+	expect(metrics.images).toBe(0);
+	expect(metrics.filters).toBe(0);
+	await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
+	console.log('Vector scrubbing', JSON.stringify(metrics));
+	await testInfo.attach('vector-scrubbing-metrics', { body: JSON.stringify(metrics), contentType: 'application/json' });
+	await page.getByRole('button', { name: 'Close debugger', exact: true }).click();
+	await expect(vector).toHaveCount(0);
 });
 
-test.describe('replay at high screen density', () => {
+test.describe('vector replay at high screen density', () => {
 	test.use({ deviceScaleFactor: 2 });
-	test('rerenders visible ink at zoom resolution and follows scrolling', async ({
-		page
-	}, testInfo) => {
+	test('retains vector geometry through zoom and scrolling', async ({ page }, testInfo) => {
 		test.skip(!existsSync(handwriting), 'Local dense fixture required');
 		const errors: string[] = [];
-		page.on('pageerror', (error) => errors.push(error.message));
+		page.on('pageerror', error => errors.push(error.message));
 		await page.goto('/');
 		await page.locator('input[type=file]').setInputFiles(handwriting);
 		await page.getByRole('button', { name: 'Debugger', exact: true }).click();
-		await expect(
-			page.getByRole('button', { name: 'Play', exact: true })
-		).toBeEnabled({ timeout: 60000 });
-		await page
-			.getByLabel('Replay position')
-			.evaluate((input: HTMLInputElement) => {
-				input.value = String(Math.floor(Number(input.max) * 0.9));
-				input.dispatchEvent(new Event('input', { bubbles: true }));
-			});
-		const canvas = page.locator('[data-replay-overlay] canvas');
-		await expect(canvas).toHaveAttribute('data-raster-scale', /.+/);
-		const initialScale = Number(await canvas.getAttribute('data-raster-scale'));
-		await page
-			.getByRole('button', { name: 'Zoom and page fit', exact: true })
-			.click();
+		await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeEnabled({ timeout: 60000 });
+		await page.getByLabel('Replay position').evaluate((input: HTMLInputElement) => {
+			input.value = String(Math.floor(Number(input.max) * 0.9));
+			input.dispatchEvent(new Event('input', { bubbles: true }));
+		});
+		const vector = page.locator('[data-replay-overlay] .vector-page > svg');
+		await expect(vector).toHaveAttribute('data-render-version', /.+/);
+		const geometry = await vector.innerHTML();
+		const initial = (await vector.boundingBox())!;
+		await page.getByRole('button', { name: 'Zoom and page fit', exact: true }).click();
 		await page.getByRole('menuitem', { name: '400%', exact: true }).click();
-		await expect
-			.poll(async () => Number(await canvas.getAttribute('data-raster-scale')))
-			.toBeGreaterThan(initialScale * 4);
-		await page.locator('.canvas-wrap').evaluate((element) => {
-			element.scrollTop = 0;
-			element.scrollLeft = 0;
-		});
-		await expect
-			.poll(async () => Number(await canvas.getAttribute('data-source-y')))
-			.toBeLessThan(1);
-		const density = await canvas.evaluate((element: HTMLCanvasElement) => {
-			const rect = element.getBoundingClientRect();
-			return {
-				x: element.width / rect.width,
-				y: element.height / rect.height,
-				dpr: devicePixelRatio,
-				pixels: element.width * element.height,
-				pageHeight: element
-					.closest('[data-replay-overlay]')!
-					.getBoundingClientRect().height,
-				visibleHeight: rect.height
-			};
-		});
-		expect(density.x).toBeGreaterThanOrEqual(density.dpr * 0.99);
-		expect(density.y).toBeGreaterThanOrEqual(density.dpr * 0.99);
-		expect(density.pixels).toBeLessThanOrEqual(8 * 1024 * 1024);
-		expect(density.pageHeight).toBeGreaterThan(density.visibleHeight * 4);
-		const before = Number(await canvas.getAttribute('data-source-y'));
-		await page.locator('.canvas-wrap').evaluate((element) => {
-			element.scrollTop += 450;
-		});
-		await expect
-			.poll(async () => Number(await canvas.getAttribute('data-source-y')))
-			.toBeGreaterThan(before);
-		await page.screenshot({ path: testInfo.outputPath('zoomed-replay.png') });
-		console.log('Zoomed replay density', JSON.stringify(density));
-		expect(
-			await canvas.evaluate((element: HTMLCanvasElement) =>
-				element
-					.getContext('2d')!
-					.getImageData(0, 0, element.width, element.height)
-					.data.some((value, i) => i % 4 === 3 && value > 0)
-			)
-		).toBe(true);
-		await page
-			.getByLabel('Replay position')
-			.evaluate((input: HTMLInputElement) => {
-				input.value = input.max;
-				input.dispatchEvent(new Event('input', { bubbles: true }));
-			});
-		await page.screenshot({ path: testInfo.outputPath('zoomed-original.png') });
+		await expect.poll(async () => (await vector.boundingBox())!.width).toBeGreaterThan(initial.width * 4);
+		await page.locator('.canvas-wrap').evaluate(element => { element.scrollTop = 0; element.scrollLeft = 0; });
+		const before = (await vector.boundingBox())!.y;
+		await page.locator('.canvas-wrap').evaluate(element => { element.scrollTop += 450; });
+		await expect.poll(async () => (await vector.boundingBox())!.y).toBeLessThan(before - 400);
+		expect(await vector.innerHTML()).toBe(geometry);
+		await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
+		await page.screenshot({ path: testInfo.outputPath('zoomed-vector-replay.png') });
 		expect(errors).toEqual([]);
 	});
 });
@@ -591,36 +554,29 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 		page.getByRole('button', { name: 'Play', exact: true })
 	).toBeEnabled();
 	await page.getByRole('button', { name: 'Restart replay' }).click();
-	const background = page.locator('[data-replay-overlay] img');
-	await expect(background).toBeVisible();
-	await expect
-		.poll(() =>
-			background.evaluate(
-				(image: HTMLImageElement) => image.complete && image.naturalWidth > 0
-			)
-		)
-		.toBe(true);
-	const replaySvg = await background.evaluate((image: HTMLImageElement) =>
-		(
-			window as unknown as { templateTestBlobs: Map<string, Blob> }
-		).templateTestBlobs
-			.get(image.src)!
-			.text()
-	);
+	const background = page.locator('[data-replay-overlay] .vector-page > svg');
+	await expect(background).toHaveAttribute('data-render-version', /.+/);
+	const replaySvg = await background.evaluate(element => new XMLSerializer().serializeToString(element));
 	const templatePath = (value: string) =>
 		value.match(/<path data-page-template="dots"[^>]*\/>/)?.[0];
 	expect(templatePath(replaySvg)).toBe(templatePath(svg));
 	expect(replaySvg.match(/<path d=/g)).toHaveLength(6);
-	const pixels = await background.evaluate((image: HTMLImageElement) => {
-		const canvas = document.createElement('canvas');
-		canvas.width = image.naturalWidth;
-		canvas.height = image.naturalHeight;
-		const context = canvas.getContext('2d')!;
-		context.drawImage(image, 0, 0, canvas.width, canvas.height);
-		return {
-			dot: Array.from(context.getImageData(917, 1054, 1, 1).data),
-			margin: Array.from(context.getImageData(917, 20, 1, 1).data)
-		};
+	const pixels = await background.evaluate(async element => {
+		const copy = element.cloneNode(true) as SVGSVGElement;
+		copy.removeAttribute('style');
+		const svg = new XMLSerializer().serializeToString(copy);
+		const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+		try {
+			const image = new Image(); image.src = url; await image.decode();
+			const canvas = document.createElement('canvas');
+			canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+			const context = canvas.getContext('2d')!;
+			context.drawImage(image, 0, 0);
+			return {
+				dot: Array.from(context.getImageData(917, 1054, 1, 1).data),
+				margin: Array.from(context.getImageData(917, 20, 1, 1).data)
+			};
+		} finally { URL.revokeObjectURL(url); }
 	});
 	expect(pixels.dot[3]).toBe(255);
 	expect(pixels.dot[0]).toBeLessThan(225);

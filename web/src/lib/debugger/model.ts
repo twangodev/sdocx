@@ -3,7 +3,7 @@ export type DebugRequest =
 	| { kind: 'entry'; entry: number }
 	| { kind: 'bytes'; entry: number | null; offset: number; length: number }
 	| { kind: 'page' | 'replay'; page: number }
-	| { kind: 'background'; page: number; colorMode: 'auto' | 'light' | 'dark' }
+	| { kind: 'background' | 'replay-svg'; page: number; colorMode: 'auto' | 'light' | 'dark' }
 	| { kind: 'layer'; page: number; layer: number }
 	| { kind: 'object'; page: number; offset: number };
 export type DebugQuery = <T>(request: DebugRequest) => Promise<T>;

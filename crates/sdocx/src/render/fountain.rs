@@ -2,7 +2,7 @@
 use crate::PreparedStroke;
 use std::fmt::Write;
 
-pub(super) fn render(svg: &mut String, paint: &PreparedStroke<'_>) -> bool {
+pub(super) fn render(svg: &mut String, paint: &PreparedStroke<'_>, replay: bool) -> bool {
     let (Some(directions), Some(radii), Some(bounds)) =
         (&paint.dot_directions, &paint.dot_radii, paint.bounds)
     else {
@@ -22,10 +22,17 @@ pub(super) fn render(svg: &mut String, paint: &PreparedStroke<'_>) -> bool {
     // maximum coverage. Ordinary alpha-over would darken overlapping stamps.
     // krilla-svg preserves these groups and gradients as PDF forms/shadings;
     // no SVG filter (which would trigger its bitmap fallback) is used.
-    for ((point, radius), direction) in paint.points.iter().zip(radii).zip(directions) {
+    for (index, ((point, radius), direction)) in
+        paint.points.iter().zip(radii).zip(directions).enumerate()
+    {
         let dx = direction.x * radius;
         let dy = direction.y * radius;
-        writeln!(svg, r#"<g style="mix-blend-mode:lighten"><circle r="1" fill="url(#fg{id})" transform="matrix({dx:.7},{dy:.7},{:.7},{dx:.7},{:.4},{:.4})"/></g>"#, -dy, point.x, point.y).unwrap();
+        let part = if replay {
+            format!(" data-replay-part=\"{}\"", index + 1)
+        } else {
+            String::new()
+        };
+        writeln!(svg, r#"<g{part} style="mix-blend-mode:lighten"><circle r="1" fill="url(#fg{id})" transform="matrix({dx:.7},{dy:.7},{:.7},{dx:.7},{:.4},{:.4})"/></g>"#, -dy, point.x, point.y).unwrap();
     }
     writeln!(svg, r#"</g></mask></defs><path fill="{}" fill-opacity="{:.6}" mask="url(#fm{id})" d="M{x:.4},{y:.4}h{width:.4}v{height:.4}h-{width:.4}Z"/>"#, paint.color, paint.opacity).unwrap();
     true
@@ -56,7 +63,7 @@ mod tests {
         paint.opacity = 0.6;
         let mut svg =
             String::from(r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">"#);
-        assert!(render(&mut svg, &paint));
+        assert!(render(&mut svg, &paint, false));
         svg.push_str("</svg>");
         svg
     }

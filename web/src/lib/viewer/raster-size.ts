@@ -1,5 +1,4 @@
 // Backing-store limits for whole-page gesture previews.
-// Zoom-aware Canvas layers use the visible-region limits in page-region.ts.
 export function rasterSize(width: number, height: number) {
 	const scale = Math.min(
 		1,

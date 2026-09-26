@@ -207,7 +207,7 @@ impl Source {
                     }
                 }
             }
-            "page" | "layer" | "object" | "replay" | "background" => {
+            "page" | "layer" | "object" | "replay" | "background" | "replay-svg" => {
                 let page_index = number(&r, "page")?;
                 let stored = parsed
                     .stored_pages
@@ -272,7 +272,7 @@ impl Source {
                         json!({"entry":entry,"offset":offset,"size":o.payload_size,"declaredSize":o.declared_size,"type":o.object_type,
                             "integrity":o.integrity_trailer,"base":decoded(base),"flexible":flexible,"metadata":metadata,"stroke":stroke,"objects":nodes(&o.children)})
                     }
-                    "background" => {
+                    "background" | "replay-svg" => {
                         let mut preview = layout
                             .pages
                             .iter()
@@ -282,7 +282,10 @@ impl Source {
                                 source_page_index: page_index,
                                 page: parsed.document.pages[page_index].clone(),
                             });
-                        preview.page.strokes.clear();
+                        let replay = r["kind"] == "replay-svg";
+                        if !replay {
+                            preview.page.strokes.clear();
+                        }
                         let preview_layout = LayoutDocument {
                             pages: vec![preview],
                             stored_page_count: layout.stored_page_count,
@@ -308,14 +311,14 @@ impl Source {
                                         < 128_000
                                 }),
                         };
-                        let background = sdocx::render_layout_page_svg(
-                            &parsed.document,
-                            &preview_layout,
-                            0,
-                            &options,
-                        )
-                        .ok_or("cannot render page")?
-                        .svg;
+                        let render = if replay {
+                            sdocx::render_layout_page_replay_svg
+                        } else {
+                            sdocx::render_layout_page_svg
+                        };
+                        let background = render(&parsed.document, &preview_layout, 0, &options)
+                            .ok_or("cannot render page")?
+                            .svg;
                         json!({"svg": background,"defaultInk":if dark {"#ffffff"} else {"#1a1a1a"}})
                     }
                     _ => {

@@ -79,7 +79,7 @@ pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
 #[cfg(feature = "render")]
 pub use render::{
     RenderColorMode, RenderOptions, RenderedPage, StrokePaint, render_document_svg,
-    render_layout_page_svg, render_page_svg, stroke_paint,
+    render_layout_page_replay_svg, render_layout_page_svg, render_page_svg, stroke_paint,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use shape::{NativeLine, NativeShape, ShapePaint, ShapeStyle};

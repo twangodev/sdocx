@@ -111,7 +111,6 @@
 						/>
 						{#if overlay}
 							<ReplayOverlay
-								camera={zoom}
 								replay={overlay.replay}
 								tracks={overlay.tracks}
 								position={overlay.position}
