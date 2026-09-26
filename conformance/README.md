@@ -72,6 +72,27 @@ These require locally extracted libraries and Unicorn. They validate stroke
 geometry, not complete native pixel parity. Keep routine validation focused on
 production regressions and the real-file visual comparison below.
 
+The oracle leaves the null page unmapped. The first library is loaded at base
+zero for symbol addressing, but its ELF header must not make null data reads
+look valid. Missing required channels still fail validation; absent optional
+tilt is passed to native redraw as a null pointer.
+
+The optional real-document WASM check verifies that the debugger retains the
+same resolved pen inputs and prepared geometry as export for all 77 fountain
+strokes in the calibration document:
+
+```sh
+SDOCX_CORPUS_DIR="$PWD/hf" cargo test -p sdocx-wasm --lib \
+  debugger::source_tests::replay_and_exports_share_resolved_pen_inputs_and_prepared_geometry \
+  -- --ignored --exact
+```
+
+Both oracles also accept `--prepared geometry.json` from the `ink_geometry`
+example. They select reconstructed fountain strokes of their own profile and
+compare Rust's positions, radii and sample boundaries against native redraw;
+V14 also compares tangent directions. A mismatch fails the command. Other
+pens in a mixed document are excluded, and an empty selection fails.
+
 See [fountain vector parity](../docs/reverse-engineering/fountain-parity.md)
 for the verified native geometry and remaining vector-output work.
 
