@@ -133,4 +133,48 @@ mod tests {
             "maximum coverage must retain its vector blend mode"
         );
     }
+
+    #[test]
+    fn saved_fountain_alpha_applies_once_to_overlapping_stamps() {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let mut stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        stroke.points = vec![
+            Point { x: 20., y: 20. },
+            Point { x: 35., y: 20. },
+            Point { x: 50., y: 20. },
+        ];
+        stroke.pressures = vec![0.7; 3];
+        stroke.timestamps = vec![0, 10, 20];
+        let render_stroke = |stroke: &Stroke| {
+            let mut svg =
+                String::from(r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">"#);
+            crate::render::render_stroke(&mut svg, stroke, "#000000", None);
+            svg.push_str("</svg>");
+            assert!(!svg.contains("<image"));
+            assert!(!svg.contains("<filter"));
+            preview(&svg)
+        };
+        for settings in ["14;", "18;0;100;"] {
+            stroke.rendering.as_mut().unwrap().advanced_settings = Some(settings.into());
+            stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff000000);
+            let opaque = render_stroke(&stroke);
+            assert!(opaque.pixels().iter().any(|p| p.alpha() == 255));
+            for alpha in [0, 1, 64, 128, 254, 255] {
+                stroke.rendering.as_mut().unwrap().style.color_argb = Some(alpha << 24);
+                let paint = crate::prepare_stroke(&stroke, false);
+                assert!(paint.dot_radii.is_some());
+                assert_eq!(paint.opacity, (alpha as f32 / 255.) as f64);
+                let image = render_stroke(&stroke);
+                for (actual, full) in image.pixels().iter().zip(opaque.pixels()) {
+                    let expected = full.alpha() as f64 * paint.opacity;
+                    assert!(
+                        (actual.alpha() as f64 - expected).abs() <= 2.,
+                        "{settings}, alpha {alpha}"
+                    );
+                }
+            }
+        }
+    }
 }

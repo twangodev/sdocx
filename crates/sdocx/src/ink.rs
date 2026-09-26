@@ -141,7 +141,14 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
     let mut fountain = fountain::prepare(stroke);
     let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
     let native = fountain
-        .map(|ink| (ink.points, ink.sample_ends, ink.radii, 1.))
+        .map(|ink| {
+            let opacity = stroke
+                .rendering
+                .as_ref()
+                .and_then(|r| r.style.color_argb)
+                .map_or(1., |argb| ((argb >> 24) as f32 / 255.) as f64);
+            (ink.points, ink.sample_ends, ink.radii, opacity)
+        })
         .or_else(|| {
             marker2::prepare(stroke)
                 .map(|ink| (ink.points, ink.sample_ends, ink.radii, ink.opacity))

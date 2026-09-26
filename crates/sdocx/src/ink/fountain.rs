@@ -95,16 +95,18 @@ impl History {
         let b = self.widths[i];
         a.value + (b.value - a.value) * (time - a.time) as f32 / (b.time - a.time) as f32
     }
-    fn smooth(&mut self) {
+    fn smooth(&mut self, stylus: bool) {
+        let window = if stylus { 3 } else { 1 };
+        let smoothing_start = if stylus { 9 } else { 3 };
         for i in 1..self.widths.len() {
-            let end = (i + i.min(3)).min(self.widths.len());
+            let end = (i + i.min(window)).min(self.widths.len());
             let mut sum = 0.;
             for w in &self.widths[i..end] {
                 sum += w.raw;
             }
             let mut w = sum / (end - i) as f32;
             w = (w + w) * 0.5;
-            if i > 9 {
+            if i > smoothing_start {
                 let previous = self.widths[i - 1].value;
                 w = (w - previous).mul_add(0.15, previous);
             }
@@ -122,6 +124,7 @@ pub(super) struct Dots {
 }
 struct Pass<'a> {
     size: f32,
+    short_move_threshold: f32,
     previous: P,
     midpoint: P,
     width: f32,
@@ -153,7 +156,7 @@ impl Pass<'_> {
         }
         let delta = p.sub(self.previous);
         let distance = delta.len();
-        if distance < 5. {
+        if distance < self.short_move_threshold {
             self.alternate = !self.alternate;
             if !self.alternate {
                 self.tolerance.drop(p);
@@ -161,10 +164,6 @@ impl Pass<'_> {
             }
         } else {
             self.alternate = true;
-        }
-        if distance == 0. {
-            self.tolerance.drop(p);
-            return;
         }
         let mid = self.previous.mid(p);
         let q = Quad::new(self.midpoint, self.previous, mid);
@@ -233,23 +232,22 @@ impl Pass<'_> {
 
 pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
+    let v14 = r.advanced_settings.as_deref() == Some("14;");
+    let input_supported = matches!(r.tool_type_raw, 1..=3);
+    let fixed_width_supported = !r.properties.fixed_width
+        || r.style
+            .fixed_width
+            .is_some_and(|w| (0. ..=1024.).contains(&w));
     // Legacy saved pressure quantization can produce small negative values.
-    // V14 handles these through its native width and stamp-radius floors.
-    let minimum_pressure = if r.advanced_settings.as_deref() == Some("14;") {
-        -1.
-    } else {
-        0.
-    };
-    // Only the verified saved-stylus profile. Other versions/settings retain
-    // their explicit approximation instead of silently borrowing this model.
+    // Both profiles handle these through native width and stamp-radius floors.
+    let minimum_pressure = -1.;
     if r.pen_name.as_deref() != Some("com.samsung.android.sdk.pen.pen.preload.FountainPen")
         || !matches!(r.advanced_settings.as_deref(), Some("14;" | "18;0;100;"))
-        || r.tool_type_raw != 2
-        || r.properties.fixed_width
+        || !input_supported
+        || !fixed_width_supported
         || r.properties.eraser
         || r.properties.straighten
         || r.properties.rainbow_effect
-        || r.style.color_argb.is_some_and(|argb| argb >> 24 != 255)
         || s.points.is_empty()
         || s.pressures.len() != s.points.len()
         || s.timestamps.len() != s.points.len()
@@ -284,9 +282,11 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     if distance > 400_000. || s.points.len() > 100_000 {
         return None;
     }
-    if r.advanced_settings.as_deref() == Some("14;") {
+    if v14 {
         return Some(super::fountain_v14::prepare(s, tolerance));
     }
+    let stylus = r.tool_type_raw == 2;
+    let pressure_at = |i| if stylus { s.pressures[i] as f32 } else { 0.5 };
     let first = P::from(s.points[0]);
     let mut history = History::default();
     let mut ratios = [0.; 3];
@@ -295,10 +295,11 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     for _ in 0..2 {
         let width = history.width(
             s.timestamps[0],
-            (s.pen_width * 0.5) * (s.pressures[0] as f32).min(1.),
+            (s.pen_width * 0.5) * pressure_at(0).min(1.),
         );
         let mut pass = Pass {
             size: s.pen_width,
+            short_move_threshold: if r.tool_type_raw == 1 { 50. } else { 5. },
             previous: first,
             midpoint: first,
             width,
@@ -317,15 +318,14 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
             },
         };
         for i in 1..s.points.len().saturating_sub(1) {
-            let tilt = s.tilts.get(i).copied().unwrap_or(0.) as f32;
+            let tilt = if stylus {
+                s.tilts.get(i).copied().unwrap_or(0.) as f32
+            } else {
+                0.8
+            };
             let degrees = ((tilt * 180.) as f64 / std::f64::consts::PI) as f32;
             let tilt = (degrees.min(75.) - 15.).max(0.) / 60. * 3.;
-            pass.line(
-                s.points[i].into(),
-                s.pressures[i] as f32,
-                tilt,
-                s.timestamps[i],
-            );
+            pass.line(s.points[i].into(), pressure_at(i), tilt, s.timestamps[i]);
             pass.dots.sample_ends[i] = pass.dots.points.len();
         }
         let last = s.points.len() - 1;
@@ -333,10 +333,15 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
         pass.dots.sample_ends[last] = pass.dots.points.len();
         output = Some(pass.dots);
         if !history.replay {
-            history.smooth();
+            history.smooth(stylus);
         }
     }
-    output
+    let mut output = output?;
+    if r.properties.fixed_width {
+        let radius = (r.style.fixed_width.unwrap() * 0.5).max(0.1);
+        output.radii.fill(radius as f64);
+    }
+    Some(output)
 }
 
 #[cfg(all(test, feature = "serde"))]
@@ -353,6 +358,10 @@ mod tests {
         name: String,
         size: f32,
         tolerance: f32,
+        #[serde(default)]
+        fixed_width: Option<f32>,
+        #[serde(default)]
+        tool_type_raw: Option<u16>,
         samples: Vec<(f64, f64, f64, f64, i64)>,
         dots: Vec<Vec<f64>>,
         sample_ends: Vec<usize>,
@@ -371,13 +380,22 @@ mod tests {
                 let mut stroke = reference.stroke.clone();
                 stroke.pen_width = case.size;
                 stroke.rendering.as_mut().unwrap().style.initial_tolerance = Some(case.tolerance);
+                if let Some(tool) = case.tool_type_raw {
+                    stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
+                }
+                if let Some(width) = case.fixed_width {
+                    let rendering = stroke.rendering.as_mut().unwrap();
+                    rendering.properties.fixed_width = true;
+                    rendering.style.fixed_width = Some(width);
+                }
                 for (x, y, pressure, tilt, time) in case.samples {
                     stroke.points.push(Point { x, y });
                     stroke.pressures.push(pressure);
                     stroke.tilts.push(tilt);
                     stroke.timestamps.push(time);
                 }
-                let actual = prepare(&stroke).unwrap();
+                let actual = prepare(&stroke)
+                    .unwrap_or_else(|| panic!("{} unexpectedly used fallback geometry", case.name));
                 assert_eq!(
                     actual.sample_ends, case.sample_ends,
                     "{} mapping",
@@ -414,6 +432,11 @@ mod tests {
         s.pressures = vec![0.5; 2];
         s.timestamps = vec![0, 8];
         assert!(prepare(&s).is_some());
+        for tool in [0, 4] {
+            s.rendering.as_mut().unwrap().tool_type_raw = tool;
+            assert!(prepare(&s).is_none());
+        }
+        s.rendering.as_mut().unwrap().tool_type_raw = 2;
         s.rendering.as_mut().unwrap().advanced_settings = Some("17;0;100;".into());
         assert!(prepare(&s).is_none());
         s.rendering.as_mut().unwrap().advanced_settings = Some("18;0;100;".into());
@@ -422,7 +445,34 @@ mod tests {
         s.points[1].x = f64::NAN;
         assert!(prepare(&s).is_none());
         s.points[1].x = 10.;
+        s.pressures[0] = -1.01;
+        assert!(prepare(&s).is_none());
+        s.pressures[0] = 0.5;
         s.timestamps.clear();
         assert!(prepare(&s).is_none());
+    }
+
+    #[test]
+    fn fixed_width_requires_a_verified_profile_and_saved_width() {
+        let mut s = reference().stroke;
+        s.points = vec![Point { x: 20., y: 30. }];
+        s.pressures = vec![0.5];
+        s.timestamps = vec![0];
+        let r = s.rendering.as_mut().unwrap();
+        r.properties.fixed_width = true;
+        r.style.fixed_width = Some(3.);
+        assert_eq!(prepare(&s).unwrap().radii, vec![1.5]);
+        s.rendering.as_mut().unwrap().advanced_settings = Some("14;".into());
+        assert_eq!(prepare(&s).unwrap().radii, vec![1.5]);
+        for width in [
+            None,
+            Some(-1.),
+            Some(f32::NAN),
+            Some(f32::INFINITY),
+            Some(1025.),
+        ] {
+            s.rendering.as_mut().unwrap().style.fixed_width = width;
+            assert!(prepare(&s).is_none(), "{width:?}");
+        }
     }
 }

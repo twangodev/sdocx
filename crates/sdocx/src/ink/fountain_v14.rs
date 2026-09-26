@@ -1,4 +1,4 @@
-//! Saved GLV14 stylus geometry. Shares SmPath and prepared dots with V16;
+//! Saved GLV14 geometry. Shares SmPath and prepared dots with V16;
 //! V14 filters samples by distance and has no width-history smoothing pass.
 use super::{
     fountain::Dots,
@@ -7,10 +7,24 @@ use super::{
 use crate::{Point, Stroke};
 
 pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
+    let rendering = s.rendering.as_ref().unwrap();
+    let stylus = rendering.tool_type_raw == 2;
+    let pressure_at = |i| {
+        if stylus {
+            (s.pressures[i] as f32).min(1.)
+        } else {
+            0.5
+        }
+    };
+    let short_move_threshold = if rendering.tool_type_raw == 1 {
+        50.
+    } else {
+        5.
+    };
     let size = s.pen_width;
     let mut previous = P::from(s.points[0]);
     let mut midpoint = previous;
-    let mut width = (size * 0.5) * (s.pressures[0] as f32).min(1.);
+    let mut width = (size * 0.5) * pressure_at(0);
     let mut residual = 0.;
     let mut alternate = false;
     let mut ratios = [0.; 3];
@@ -27,7 +41,11 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
         let delta = p.sub(previous);
         let distance = delta.len();
         if distance >= tolerance {
-            alternate = if distance < 5. { !alternate } else { true };
+            alternate = if distance < short_move_threshold {
+                !alternate
+            } else {
+                true
+            };
             if alternate {
                 // At zero tolerance native admits zero distance. NaN ratios
                 // resolve through the pressure/size floor below.
@@ -38,8 +56,12 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
                 }
                 ratio_count += 1;
                 let ratio = ((ratios[0] + ratios[1]) + ratios[2]) / 3.;
-                let pressure = (s.pressures[i] as f32).min(1.);
-                let tilt = s.tilts.get(i).copied().unwrap_or(0.) as f32;
+                let pressure = pressure_at(i);
+                let tilt = if stylus {
+                    s.tilts.get(i).copied().unwrap_or(0.) as f32
+                } else {
+                    0.8
+                };
                 let degrees = ((tilt * 180.) as f64 / std::f64::consts::PI) as f32;
                 let tilt = (degrees.min(75.) - 15.).max(0.) / 60. * 3.;
                 let raw = size / 3. + (tilt.mul_add(0.5, (pressure + pressure) * 0.5) * size) * 0.5;
@@ -93,6 +115,10 @@ pub(super) fn prepare(s: &Stroke, tolerance: f32) -> Dots {
         emit(&mut dots, p, width * 0.5, None);
     }
     dots.sample_ends[last] = dots.points.len();
+    if rendering.properties.fixed_width {
+        let fixed_radius = (rendering.style.fixed_width.unwrap() * 0.5).max(0.1);
+        dots.radii.fill(fixed_radius as f64);
+    }
     dots
 }
 

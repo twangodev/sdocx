@@ -4,11 +4,11 @@ Requires Unicorn, nm, ARM64 objdump and the three hash-pinned APK libraries.
 No APK code is distributed. Execute from the repository root, for example:
   PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_native.py
 
-The oracle runs the native tolerance, SmPath, width-history, drawLine and endPen
-implementations. The object initialization and two-pass redraw orchestration
-are reconstructed from the native saved ObjectStroke path. GPU calls are
-replaced by a collector of drawPoint positions/radii. MotionEvent endpoint
-getters and bounded host allocation/memory operations are the only other stubs.
+The oracle runs native saved redraw, tolerance, SmPath, width history, drawLine,
+endPen and drawPoint. Object initialization and the two-pass wrapper are
+reconstructed from the saved ObjectStroke path. The host supplies ObjectStroke
+channels, endpoint MotionEvent access and bounded allocation/memory operations.
+Final GPU submission is replaced by a collector of positions and radii.
 This validates geometry at unit inverse scale, not GPU shader rasterization.
 """
 import argparse
@@ -36,13 +36,10 @@ HASHES = {
     "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
 }
 
-def f32(value):
-    return struct.unpack("<f", struct.pack("<f", value))[0]
-
-
 class NativeFountain:
 
     def __init__(self, library_dir, objdump, additional_libraries=()):
+        self.v16_recording = False
         self.u = Uc(UC_ARCH_ARM64, UC_MODE_ARM)
         self.syms = {}
         self.plt = {}
@@ -76,8 +73,11 @@ class NativeFountain:
             dis = subprocess.check_output([str(objdump), '-d', '-C', '-j', '.plt', path], env=env, text=True)
             for a, s in re.findall('^([0-9a-f]+) <(.+)@plt>:', dis, re.M):
                 self.plt[base + int(a, 16)] = s
+        self.u.mem_unmap(0, 0x1000)
         self.u.hook_add(UC_HOOK_CODE, self.hook)
-        self.callbacks['SPen::FountainPenStrokeDrawableGLV16::drawPoint(SPen::SmPoint const*, float, SPen::RectF*, bool)'] = self.dot
+        self.callbacks['SPen::FountainPenStrokeDrawableRTV5::AddPoint(SPen::Vector3<float>, float)'] = self.dot
+        self.callbacks['SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)'] = lambda: None
+        self.callbacks['SPen::MotionEvent::~MotionEvent()'] = lambda: None
         for name in ['operator new(unsigned long)', 'operator new[](unsigned long)']:
             self.callbacks[name] = lambda: self.x(0, self.alloc(self.x(0)))
         for name in ['operator delete(void*)', 'operator delete[](void*)']:
@@ -125,6 +125,12 @@ class NativeFountain:
         self.u.mem_write(self.x(0), bytes(self.u.mem_read(self.x(1), self.x(2))))
 
     def hook(self, u, a, size, _):
+        if self.v16_recording:
+            if a == self.syms['SPen::FountainPenStrokeDrawableGLV16::drawLine(float, float, float, float, long long, int, SPen::RectF*, bool)']:
+                self.ends[self.sample] = len(self.dots)
+                self.sample += 1
+            elif a == self.syms['SPen::FountainPenStrokeDrawableGLV16::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)']:
+                self.ends[self.sample] = len(self.dots)
         if a not in self.plt:
             return
         name = self.plt[a]
@@ -148,13 +154,20 @@ class NativeFountain:
             raise RuntimeError('instruction limit')
 
     def dot(self):
-        obj, p = (self.x(0), self.x(1))
-        self.put(obj + 88, 'B', 0)
-        # V16 drawPoint floor; bypass only the GPU/bounds bookkeeping.
-        radius = max(self.f(0), struct.unpack("<f", struct.pack("<f", 0.1))[0])
-        self.dots.append([*self.get(p, 'ff'), radius])
+        self.dots.append([self.f(i) for i in range(3)])
+
+    def channel(self, name, fmt, values):
+        pointer = self.alloc(8 * len(values)) if values else 0
+        if values:
+            self.put(pointer, fmt * len(values), *values)
+        self.callbacks['SPen::ObjectStroke::' + name + '() const'] = lambda: self.x(0, pointer)
 
     def render(self, s):
+        count = len(s['points'])
+        if not count or any(len(s[k]) != count for k in ('pressures', 'timestamps')):
+            raise ValueError('incomplete input channels')
+        if any(s[k] and len(s[k]) != count for k in ('tilts', 'orientations')):
+            raise ValueError('incomplete optional channels')
         self.heap = 0x10000000
         obj = self.alloc(512)
         data = self.alloc(512)
@@ -162,57 +175,54 @@ class NativeFountain:
         tol = self.alloc(64)
         wm = self.alloc(64)
         rect = self.alloc(32)
-        point = self.alloc(8)
+        source = self.alloc(16)
+        self.put(obj + 16, 'Q', self.alloc(512))
         self.put(obj + 72, 'Q', data)
         self.put(data, 'Q', settings)
         self.put(data + 24, 'QQ', wm, tol)
         self.put(data + 56, 'BB', 1, 0)
         self.put(settings, 'f', s['pen_width'])
         self.put(obj + 96, 'f', 0.82)
-        self.put(obj + 272, 'B', 1)
-        self.put(obj + 276, 'f', 5.0)
         self.put(wm + 40, 'f', 0.15)
         self.call('SPen::SmPath::SmPath()', [obj + 136])
         rendering = s['rendering']
-        if rendering['tool_type_raw'] != 2 or rendering['properties']['fixed_width']:
-            raise ValueError('oracle requires a variable-width stylus stroke')
+        if rendering['tool_type_raw'] not in (1, 2, 3):
+            raise ValueError('oracle requires saved tool type 1, 2 or 3')
+        fixed_width = rendering['style']['fixed_width']
+        if rendering['properties']['fixed_width']:
+            if fixed_width is None:
+                raise ValueError('fixed-width redraw requires the saved width')
+            self.put(data + 57, 'B', 1)
+            self.put(data + 60, 'f', fixed_width)
         points = s['points']
-        press = [min(f32(v), 1.0) for v in s['pressures']]
-        initial_width = f32(f32(f32(s['pen_width']) * 0.5) * press[0])
-        times = s['timestamps']
-        tilts = s['tilts']
-        self.dots = []
-        self.call('SPen::WidthSmoothManager::resetSmoothing(SPen::MotionEvent::Tooltype)', [wm, 2])
-        # Saved ObjectStroke redraw: fill widths, finish smoothing, then replay.
-        # The native direction ratio ring intentionally survives between passes.
+        tool = rendering['tool_type_raw']
+        self.channel('GetPoint', 'f', [v for p in points for v in (p['x'], p['y'])])
+        self.channel('GetPressure', 'f', s['pressures'])
+        self.channel('GetTimeStamp', 'i', s['timestamps'])
+        self.channel('GetTilt', 'f', s['tilts'])
+        self.channel('GetOrientation', 'f', s['orientations'])
+        self.callbacks['SPen::ObjectStroke::GetPointCount() const'] = lambda: self.x(0, count)
+        self.callbacks['SPen::ObjectStroke::GetToolType() const'] = lambda: self.x(0, tool)
+        self.callbacks['SPen::ObjectStroke::IsShape() const'] = lambda: self.x(0, 0)
+        self.end = {**points[-1], 'pressure': s['pressures'][-1],
+                    'tilt': s['tilts'][-1] if s['tilts'] else 0.,
+                    'time': s['timestamps'][-1], 'tool': tool, 'source': 0}
+        self.call('SPen::WidthSmoothManager::resetSmoothing(SPen::MotionEvent::Tooltype)', [wm, tool])
         for mode in (1, 2):
-            self.dots = []
-            ends = []
+            self.dots, self.ends, self.sample = [], [0] * count, 0
             self.call('SPen::WidthSmoothManager::setMode(SPen::WidthSmoothManager::WIDTH_MODE)', [wm, mode])
             self.call('SPen::PenTolerance::SetTolerance(float, float)', [tol], [rendering['style']['initial_tolerance'] or 0.0, 0.0])
-            first = points[0]
-            p0 = [first['x'], first['y']]
-            self.put(point, 'ff', *p0)
-            self.call('SPen::PenTolerance::Reset(SPen::PointF const&)', [tol, point])
-            self.put(obj + 88, 'BB', 1, 0)
-            self.put(obj + 100, 'fff', 0.0, initial_width, press[0])
-            self.put(obj + 112, 'ffffff', *p0, *p0, *p0)
-            self.call('SPen::WidthSmoothManager::getSmoothedWidthFromList(float, float, long long, float, SPen::WidthSmoothManager::CALL_FROM_TYPE)', [wm, times[0], 0], [p0[0], p0[0], initial_width])
-            self.put(obj + 104, 'f', self.f(0))
-            ends.append(0)
-            for i in range(1, len(points) - 1):
-                degrees = f32(f32(f32(tilts[i] if tilts else 0) * 180) / math.pi)
-                tilt = f32(f32(max(0., f32(min(75., degrees) - 15)) / 60) * 3)
-                self.call('SPen::FountainPenStrokeDrawableGLV16::drawLine(float, float, float, float, long long, int, SPen::RectF*, bool)', [obj, times[i], 2, rect, 1], [points[i]['x'], points[i]['y'], press[i], tilt])
-                ends.append(len(self.dots))
-            last = points[-1]
-            self.end = {**last, 'pressure': press[-1], 'tilt': tilts[-1] if tilts else 0.0, 'time': times[-1], 'tool': 2, 'source': 0}
-            self.call('SPen::FountainPenStrokeDrawableGLV16::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)', [obj, point, rect, 1])
-            ends.append(len(self.dots))
-            ends = ends[-len(points):]
+            self.v16_recording = True
+            try:
+                self.call('SPen::FountainPenStrokeDrawableGLV16::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)', [obj, source, rect, 1])
+            finally:
+                self.v16_recording = False
+            if self.x(0) != 1 or self.sample != max(0, count - 2):
+                raise AssertionError('native redraw did not complete all samples')
+            self.ends[-1] = len(self.dots)
             if mode == 1:
                 self.call('SPen::WidthSmoothManager::completeSmoothingArray()', [wm])
-        return {'dots': self.dots, 'sample_ends': ends}
+        return {'dots': self.dots, 'sample_ends': self.ends}
 
 def check(actual, expected, label):
     if actual['sample_ends'] != expected['sample_ends']:
@@ -221,6 +231,10 @@ def check(actual, expected, label):
         raise AssertionError(f'{label}: generated dot count differs')
     maximum = 0.0
     for a, b in zip(actual['dots'], expected['dots']):
+        if len(a) != len(b):
+            raise AssertionError(f'{label}: stamp attribute count differs')
+        if not all(math.isfinite(v) for v in (*a, *b)):
+            raise AssertionError(f'{label}: non-finite stamp attribute')
         maximum = max(maximum, *(abs(x - y) for x, y in zip(a, b)))
     if maximum > 0.0001:
         raise AssertionError(f'{label}: geometry differs by {maximum}')
@@ -230,7 +244,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--library-dir', type=Path, default=Path('scratch/apk-analysis-native/arm64-v8a'))
     parser.add_argument('--objdump', type=Path, default=Path(shutil.which('aarch64-linux-gnu-objdump') or 'scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump'))
-    parser.add_argument('--prepared', type=Path, help='JSON from the ink_geometry Rust example; compare every reconstructed stroke')
+    parser.add_argument('--prepared', type=Path, help='JSON from ink_geometry; compare reconstructed V16 fountain strokes')
     parser.add_argument('--reference', type=Path, default=Path('conformance/fountain-v16.json'))
     args = parser.parse_args()
     native = NativeFountain(args.library_dir, args.objdump)
@@ -238,8 +252,13 @@ def main():
     if args.prepared:
         for i, row in enumerate(json.loads(args.prepared.read_text())):
             g = row['geometry']
-            if g['support'] != 'reconstructed':
+            rendering = row['stroke']['rendering']
+            if (g['support'] != 'reconstructed' or not rendering
+                    or rendering['pen_name'] != 'com.samsung.android.sdk.pen.pen.preload.FountainPen'
+                    or rendering['advanced_settings'] != '18;0;100;'):
                 continue
+            if len(g['points']) != len(g['dot_radii']):
+                raise ValueError(f'{i}: incomplete prepared stamp attributes')
             inputs.append((str(i), row['stroke'], {'sample_ends': g['sample_ends'], 'dots': [[p['x'], p['y'], r] for p, r in zip(g['points'], g['dot_radii'])]}))
     else:
         reference = json.loads(args.reference.read_text())
@@ -247,6 +266,11 @@ def main():
             stroke = copy.deepcopy(reference['stroke'])
             stroke['pen_width'] = case['size']
             stroke['rendering']['style']['initial_tolerance'] = case['tolerance']
+            if 'tool_type_raw' in case:
+                stroke['rendering']['tool_type_raw'] = case['tool_type_raw']
+            if 'fixed_width' in case:
+                stroke['rendering']['properties']['fixed_width'] = True
+                stroke['rendering']['style']['fixed_width'] = case['fixed_width']
             stroke['points'] = [dict(x=s[0], y=s[1]) for s in case['samples']]
             stroke['pressures'] = [s[2] for s in case['samples']]
             stroke['tilts'] = [s[3] for s in case['samples']]
