@@ -4,6 +4,7 @@
 [![crates.io (sdocx)](https://img.shields.io/crates/v/sdocx)](https://crates.io/crates/sdocx)
 [![npm](https://img.shields.io/npm/v/@twango/sdocx)](https://www.npmjs.com/package/@twango/sdocx)
 [![docs.rs](https://img.shields.io/docsrs/sdocx)](https://docs.rs/sdocx)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/twangodev/sdocx)
 [![License](https://img.shields.io/crates/l/sdocx)](https://github.com/twangodev/sdocx/blob/main/LICENSE)
 
 Convert Samsung Notes (`.sdocx`) files to SVG, PNG, or PDF with a Rust SDK, CLI, and WebAssembly bindings.
