@@ -66,6 +66,13 @@ binaries. Native LightColorTheme is also checked to preserve its input.
 
 ## Remaining work
 
-Highlighter compositing, canonical thumbnail generation, and end-to-end export
-validation remain part of the active theme work. Native per-object color-theme
-selection and exact dark paper color remain explicitly unverified above.
+Top-layer highlighters use one vector Darken batch on light paper and Lighten
+on dark paper. The dark-paper rule preserves light ink and keeps colored marks
+visible on black. Rust pixel tests cover normal/replay equality, and PDF tests
+verify a Lighten blend state without image objects. Dark-paper Lighten is an
+export policy; a Samsung dark-paper highlighter export is still needed to prove
+its native compositing mode.
+
+Canonical thumbnail generation and end-to-end export validation remain part of
+the active theme work. Native per-object color-theme selection and exact dark
+paper color remain explicitly unverified above.

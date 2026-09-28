@@ -200,9 +200,12 @@ fn render_page_contents_svg(
         );
     }
     if !highlighter.is_empty() {
-        // Standard PDF composites the top-layer stroke batch with Darken after
-        // ordinary page content. One group keeps that batch order.
-        svg.scope(Group::new().blend(Blend::Darken), |svg| {
+        let blend = if theme.is_dark() {
+            Blend::Lighten
+        } else {
+            Blend::Darken
+        };
+        svg.scope(Group::new().blend(blend), |svg| {
             for (index, stroke) in highlighter {
                 render_stroke(svg, stroke, theme, replay.then_some(index));
             }
@@ -2518,6 +2521,66 @@ mod tests {
         assert_eq!(pixel(0, 0), (255, 255, 255), "bare paper");
         assert_eq!(pixel(16, 16), (0, 0, 0), "cyan over red darkens to black");
     }
+    #[test]
+    fn dark_paper_highlighter_is_visible_and_preserves_white_ink() {
+        let mut page = page_with_uncolored_stroke();
+        page.background_color = Some(Color { r: 0, g: 0, b: 0 });
+        page.width = 40;
+        page.height = 40;
+        page.strokes[0].points = vec![Point { x: 24., y: 18. }, Point { x: 24., y: 22. }];
+        page.strokes[0].color = Some(Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        });
+        page.strokes[0].pen_width = 10.;
+        page.strokes.extend([marker(true, 12.), marker(true, 24.)]);
+        let doc = document(page);
+        let layout = layout_document(&doc);
+        let options = RenderOptions::default();
+        let normal = render_document_svg(&doc, &options).remove(0);
+        let replay = super::render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+        let mut pixels = Vec::new();
+        for rendered in [&normal, &replay] {
+            assert!(!rendered.svg.contains("<image"));
+            assert!(!rendered.svg.contains("<filter"));
+            let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(40, 40).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            let yellow = pixmap.pixel(12, 20).unwrap();
+            assert!(yellow.red() > 100 && yellow.green() > 100 && yellow.blue() == 0);
+            let white = pixmap.pixel(24, 20).unwrap();
+            assert_eq!((white.red(), white.green(), white.blue()), (255, 255, 255));
+            pixels.push(pixmap.data().to_vec());
+        }
+        assert_eq!(pixels[0], pixels[1]);
+        #[cfg(feature = "pdf")]
+        {
+            let bytes =
+                crate::render_svg_pages_pdf(&[normal], &crate::PdfOptions::default()).unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let mut lighten = false;
+            for object in pdf.objects.values() {
+                let dict = match object {
+                    lopdf::Object::Dictionary(dict) => dict,
+                    lopdf::Object::Stream(stream) => &stream.dict,
+                    _ => continue,
+                };
+                assert_ne!(
+                    dict.get(b"Subtype").and_then(lopdf::Object::as_name).ok(),
+                    Some(b"Image".as_slice())
+                );
+                lighten |= dict.get(b"BM").and_then(lopdf::Object::as_name).ok()
+                    == Some(b"Lighten".as_slice());
+            }
+            assert!(lighten);
+        }
+    }
+
     #[test]
     fn marker4_keeps_full_width_and_applies_alpha_once_across_overlapping_stamps() {
         for (settings, height) in [("7;", 36.828), ("8;", 35.64)] {
