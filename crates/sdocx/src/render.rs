@@ -1,4 +1,4 @@
-//! Presentation-oriented SVG rendering for parsed Samsung Notes documents.
+//! Presentation-oriented Svg rendering for parsed Samsung Notes documents.
 
 use crate::{
     BoundingBox, BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType,
@@ -6,13 +6,13 @@ use crate::{
     PlacedImage, PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
     RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke, layout_document,
 };
-use base64::Engine as _;
 use std::ops::Range;
-use svg::node::element::{
-    Anchor, Circle, ClipPath, Definitions, Ellipse, Group, Image, Line, Path, Polygon, Rectangle,
-    SVG, TSpan, Text,
+use vector::{
+    Anchor, Blend, Circle, Clip, ClipPath, Data, Definitions, Ellipse, FontFamily, Group, Image,
+    Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path, Polygon, Rectangle, ReplayPart,
+    ReplayPath, Scene, StrokeIndex, Styled, Svg, TSpan, Text, TextAnchor, TextDecoration,
+    Transform, ViewBox, color_hex, coordinate, decimal,
 };
-use vector::{Blend, Clip, Data, Paint, ReplayPath, Scene, Styled, blend, coordinate, decimal};
 
 mod fountain;
 mod vector;
@@ -30,7 +30,7 @@ pub enum RenderColorMode {
     Dark,
 }
 
-/// Options controlling SVG rendering.
+/// Options controlling Svg rendering.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -39,7 +39,7 @@ pub struct RenderOptions {
     pub color_mode: RenderColorMode,
 }
 
-/// One visible page rendered as a standalone SVG document.
+/// One visible page rendered as a standalone Svg document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RenderedPage {
@@ -49,7 +49,7 @@ pub struct RenderedPage {
     pub width: u32,
     /// Page height in Samsung Notes coordinates.
     pub height: u32,
-    /// Standalone SVG markup.
+    /// Standalone Svg markup.
     pub svg: String,
 }
 
@@ -142,10 +142,6 @@ const FALLBACK_BG_LIGHT_MODE: &str = "#fcfcfc";
 // Pressure channel on v4.4.x files can be present but all-zero; treat as absent.
 const PRESSURE_PRESENT_EPSILON: f64 = 0.01;
 
-fn color_hex(c: &Color) -> String {
-    format!("#{:02x}{:02x}{:02x}", c.r, c.g, c.b)
-}
-
 fn render_page_contents_svg(
     page: &Page,
     metadata: &crate::DocumentMetadata,
@@ -178,21 +174,18 @@ fn render_page_contents_svg(
     let svg_h = page.height;
 
     let mut svg = Scene::new(
-        SVG::new()
-            .set(
-                "viewBox",
-                format!("{vb_x:.1} {vb_y:.1} {vb_w:.1} {vb_h:.1}"),
-            )
-            .set("width", svg_w)
-            .set("height", svg_h),
+        Svg::new()
+            .view_box(ViewBox::new(vb_x, vb_y, vb_w, vb_h, 1))
+            .width(svg_w)
+            .height(svg_h),
     );
     svg.push(
         Rectangle::new()
-            .set("x", vb_x)
-            .set("y", vb_y)
-            .set("width", vb_w)
-            .set("height", vb_h)
-            .fill(Paint::Color(&bg)),
+            .x(vb_x)
+            .y(vb_y)
+            .width(vb_w)
+            .height(vb_h)
+            .fill(Paint::from_hex(&bg)),
     );
 
     if let Ok(Some(pattern)) = crate::page_background::template_pattern(page, metadata) {
@@ -236,7 +229,7 @@ fn render_page_contents_svg(
     if !highlighter.is_empty() {
         // Standard PDF composites the top-layer stroke batch with Darken after
         // ordinary page content. One group keeps that batch order.
-        svg.scope(blend(Blend::Darken), |svg| {
+        svg.scope(Group::new().blend(Blend::Darken), |svg| {
             for (index, stroke) in highlighter {
                 render_stroke(svg, stroke, default_ink, replay.then_some(index));
             }
@@ -262,12 +255,12 @@ fn render_line_background(
     }
     svg.push(
         Path::new()
-            .set("data-page-template", "lines")
-            .set("d", data)
+            .template(PageTemplate::Lines)
+            .data(data)
             .fill(Paint::None)
-            .set("stroke", color)
-            .set("stroke-opacity", opacity)
-            .set("stroke-width", decimal(lines.width, 6)),
+            .stroke(Paint::from_hex(color))
+            .stroke_opacity(opacity)
+            .stroke_width(decimal(lines.width, 6)),
     );
 }
 
@@ -288,8 +281,8 @@ fn render_dot_background(
     let color = if dark_mode { "#fafafa" } else { "#010102" };
     let scale_y = radius_y / radius_x;
     // Samsung draws round, zero-length dashes. Explicit row subpaths avoid
-    // fractional SVG pattern-tile rounding in raster exporters. Dash phase
-    // restarts at x=0 for every row; the outer SVG clips the page boundaries.
+    // fractional Svg pattern-tile rounding in raster exporters. Dash phase
+    // restarts at x=0 for every row; the outer Svg clips the page boundaries.
     let mut data = Data::new();
     for row in 0..rows {
         let y = (top + radius_y + f64::from(row) * pitch_y) / scale_y;
@@ -299,15 +292,15 @@ fn render_dot_background(
     }
     svg.push(
         Path::new()
-            .set("data-page-template", "dots")
-            .set("d", data)
+            .template(PageTemplate::Dots)
+            .data(data)
             .fill(Paint::None)
-            .set("stroke", color)
-            .set("stroke-opacity", 0.2)
-            .set("stroke-width", decimal(2.0 * radius_x, 6))
-            .set("stroke-linecap", "round")
-            .set("stroke-dasharray", format!("0 {pitch_x:.6}"))
-            .set("transform", format!("scale(1 {scale_y:.9})")),
+            .stroke(Paint::from_hex(color))
+            .stroke_opacity(0.2)
+            .stroke_width(decimal(2.0 * radius_x, 6))
+            .line_cap(LineCap::Round)
+            .dotted(decimal(pitch_x, 6))
+            .transformed(Transform::scale(1., scale_y, 9)),
     );
 }
 
@@ -373,11 +366,11 @@ fn native_svg_path(bytes: &[u8]) -> Option<Data> {
 fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, dark_mode: bool) {
     let (fill, opacity) = shape_paint(&shape.fill, dark_mode);
     let mut style = shape_outline(&shape.style, dark_mode)
-        .fill(Paint::Color(&fill))
-        .set("fill-opacity", decimal(opacity, 4));
+        .fill(Paint::from_hex(&fill))
+        .fill_opacity(decimal(opacity, 4));
     if !shape.path_data.is_empty() {
         if let Some(path) = native_svg_path(&shape.path_data) {
-            svg.push(style.add(Path::new().set("d", path)));
+            svg.push(style.add(Path::new().data(path)));
         }
         return;
     }
@@ -395,19 +388,16 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, dark_mode: bool) {
     }
     let cx = bbox.x_min + width / 2.0;
     let cy = bbox.y_min + height / 2.0;
-    style = style.set(
-        "transform",
-        format!("rotate({:.2} {cx:.2} {cy:.2})", shape.rotation_degrees),
-    );
+    style = style.transformed(Transform::rotate(shape.rotation_degrees.into(), cx, cy, 2));
     let points = match shape.shape_type {
         1 => {
             svg.push(
                 style.add(
                     Ellipse::new()
-                        .set("cx", decimal(cx, 2))
-                        .set("cy", decimal(cy, 2))
-                        .set("rx", decimal(width / 2.0, 2))
-                        .set("ry", decimal(height / 2.0, 2)),
+                        .cx(decimal(cx, 2))
+                        .cy(decimal(cy, 2))
+                        .rx(decimal(width / 2.0, 2))
+                        .ry(decimal(height / 2.0, 2)),
                 ),
             );
             return;
@@ -434,7 +424,7 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, dark_mode: bool) {
         ],
         _ => return,
     };
-    svg.push(style.add(Polygon::new().set("points", point_list(&points, 2))));
+    svg.push(style.add(Polygon::new().points(&points, 2)));
 }
 
 fn render_line(svg: &mut Scene, line: &crate::NativeLine, dark_mode: bool) {
@@ -445,16 +435,16 @@ fn render_line(svg: &mut Scene, line: &crate::NativeLine, dark_mode: bool) {
     let style = shape_outline(&line.style, dark_mode).fill(Paint::None);
     if !line.path_data.is_empty() {
         if let Some(path) = native_svg_path(&line.path_data) {
-            svg.push(style.add(Path::new().set("d", path)));
+            svg.push(style.add(Path::new().data(path)));
         }
     } else if line.line_type == 0 {
         svg.push(
             style.add(
                 Line::new()
-                    .set("x1", decimal(line.begin[0], 2))
-                    .set("y1", decimal(line.begin[1], 2))
-                    .set("x2", decimal(line.end[0], 2))
-                    .set("y2", decimal(line.end[1], 2)),
+                    .x1(decimal(line.begin[0], 2))
+                    .y1(decimal(line.begin[1], 2))
+                    .x2(decimal(line.end[0], 2))
+                    .y2(decimal(line.end[1], 2)),
             ),
         );
     }
@@ -462,18 +452,10 @@ fn render_line(svg: &mut Scene, line: &crate::NativeLine, dark_mode: bool) {
 
 fn rectangle(bbox: BoundingBox, offset_y: f64, precision: usize) -> Rectangle {
     Rectangle::new()
-        .set("x", decimal(bbox.x_min, precision))
-        .set("y", decimal(bbox.y_min + offset_y, precision))
-        .set("width", decimal(bbox.x_max - bbox.x_min, precision))
-        .set("height", decimal(bbox.y_max - bbox.y_min, precision))
-}
-
-fn point_list(points: &[(f64, f64)], precision: usize) -> svg::node::Value {
-    points
-        .iter()
-        .map(|(x, y)| (decimal(*x, precision), decimal(*y, precision)))
-        .collect::<Vec<_>>()
-        .into()
+        .x(decimal(bbox.x_min, precision))
+        .y(decimal(bbox.y_min + offset_y, precision))
+        .width(decimal(bbox.x_max - bbox.x_min, precision))
+        .height(decimal(bbox.y_max - bbox.y_min, precision))
 }
 
 fn shape_paint(paint: &crate::ShapePaint, dark_mode: bool) -> (String, f64) {
@@ -498,14 +480,14 @@ fn shape_paint(paint: &crate::ShapePaint, dark_mode: bool) -> (String, f64) {
 fn shape_outline(style: &crate::ShapeStyle, dark_mode: bool) -> Group {
     let (paint, opacity) = shape_paint(&style.paint, dark_mode);
     let cap = match style.cap {
-        1 => "round",
-        2 => "square",
-        _ => "butt",
+        1 => LineCap::Round,
+        2 => LineCap::Square,
+        _ => LineCap::Butt,
     };
     let join = match style.join {
-        1 => "round",
-        2 => "bevel",
-        _ => "miter",
+        1 => LineJoin::Round,
+        2 => LineJoin::Bevel,
+        _ => LineJoin::Miter,
     };
     let width = if style.width.is_finite() {
         style.width.max(0.0)
@@ -513,11 +495,11 @@ fn shape_outline(style: &crate::ShapeStyle, dark_mode: bool) -> Group {
         0.0
     };
     Group::new()
-        .set("stroke", paint)
-        .set("stroke-opacity", decimal(opacity, 4))
-        .set("stroke-width", decimal(width.into(), 2))
-        .set("stroke-linecap", cap)
-        .set("stroke-linejoin", join)
+        .stroke(Paint::from_hex(&paint))
+        .stroke_opacity(decimal(opacity, 4))
+        .stroke_width(decimal(width.into(), 2))
+        .line_cap(cap)
+        .line_join(join)
 }
 
 fn render_image(
@@ -535,23 +517,19 @@ fn render_image(
     if !width.is_finite() || !height.is_finite() || width <= 0.0 || height <= 0.0 {
         return;
     }
-    let encoded = base64::engine::general_purpose::STANDARD.encode(&asset.data);
-    let mut image = Image::new()
-        .set("x", decimal(bbox.x_min, 2))
-        .set("y", decimal(bbox.y_min, 2))
-        .set("width", decimal(width, 2))
-        .set("height", decimal(height, 2))
-        .set("href", format!("data:{};base64,{encoded}", asset.mime_type))
-        .set("preserveAspectRatio", "none");
+    let mut image = Image::embedded(&asset.data, &asset.mime_type)
+        .x(decimal(bbox.x_min, 2))
+        .y(decimal(bbox.y_min, 2))
+        .width(decimal(width, 2))
+        .height(decimal(height, 2))
+        .stretched();
     if let Some(angle) = rotation.filter(|angle| angle.is_finite()) {
-        image = image.set(
-            "transform",
-            format!(
-                "rotate({angle:.2} {:.2} {:.2})",
-                bbox.x_min + width / 2.,
-                bbox.y_min + height / 2.
-            ),
-        );
+        image = image.transformed(Transform::rotate(
+            angle,
+            bbox.x_min + width / 2.,
+            bbox.y_min + height / 2.,
+            2,
+        ));
     }
     svg.push(image);
 }
@@ -585,19 +563,16 @@ fn render_placed_image(svg: &mut Scene, image: &PlacedImage, media_assets: &[Med
         let cx = (bbox.x_min + bbox.x_max) / 2.0;
         let cy = (bbox.y_min + bbox.y_max) / 2.0;
         svg.scope(
-            Group::new().set("transform", format!("rotate({angle:.4} {cx:.4} {cy:.4})")),
+            Group::new().transformed(Transform::rotate(angle, cx, cy, 4)),
             |svg| {
                 svg.scope(
-                    SVG::new()
-                        .set("x", decimal(bbox.x_min, 4))
-                        .set("y", decimal(bbox.y_min, 4))
-                        .set("width", decimal(width, 4))
-                        .set("height", decimal(height, 4))
-                        .set(
-                            "viewBox",
-                            format!("{:.4} {:.4} {width:.4} {height:.4}", bbox.x_min, bbox.y_min),
-                        )
-                        .set("overflow", "hidden"),
+                    Svg::new()
+                        .x(decimal(bbox.x_min, 4))
+                        .y(decimal(bbox.y_min, 4))
+                        .width(decimal(width, 4))
+                        .height(decimal(height, 4))
+                        .view_box(ViewBox::new(bbox.x_min, bbox.y_min, width, height, 4))
+                        .clipped_viewport(),
                     |svg| {
                         render_image(svg, original, image.media_index, None, media_assets);
                     },
@@ -666,14 +641,11 @@ fn render_text_box(
     if let Some(rotation) = text_box.rotation_degrees {
         let cx = x + width / 2.0;
         let cy = y + height / 2.0;
-        group = group.set(
-            "transform",
-            format!("rotate({rotation:.2} {cx:.2} {cy:.2})"),
-        );
+        group = group.transformed(Transform::rotate(rotation, cx, cy, 2));
     }
     svg.scope(group, |svg| {
         if let Some(highlight) = text_box.highlight_color.as_ref() {
-            svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::Color(&color_hex(highlight))));
+            svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
         for (line_idx, line) in text.lines().enumerate() {
             if line.is_empty() {
@@ -687,24 +659,24 @@ fn render_text_box(
                 .sum::<usize>();
             let spans = styled_line_spans(line, line_start, &text_box.runs);
             let mut node = Text::new("")
-                .set("x", decimal(x, 2))
-                .set("y", decimal(text_y, 2))
-                .fill(Paint::Color(&color))
-                .set("font-family", "Arial, sans-serif")
-                .set("font-size", decimal(font_size, 2));
+                .x(decimal(x, 2))
+                .y(decimal(text_y, 2))
+                .fill(Paint::from_hex(&color))
+                .family(FontFamily::Arial)
+                .font_size(decimal(font_size, 2));
             if text_box.underline {
-                node = node.set("text-decoration", "underline");
+                node = node.decoration(TextDecoration::Underline);
             }
             svg.scope(node, |svg| {
                 for span in spans {
                     let mut node = TSpan::new(span.text);
                     if span.bold {
-                        node = node.set("font-weight", "bold");
+                        node = node.bold();
                     }
                     if span.italic {
-                        node = node.set("font-style", "italic");
+                        node = node.italic();
                     }
-                    svg.push(vector::Inline(node.into()));
+                    svg.push(node);
                 }
             });
         }
@@ -769,7 +741,7 @@ fn render_flow_text_box(
     let mut cursor_y = content_top;
 
     let paragraphs = text_box.text.split_inclusive('\n').collect::<Vec<_>>();
-    svg.scope(Group::new().set("data-sdocx-flow", "true"), |svg| {
+    svg.scope(Group::new().flow(), |svg| {
         for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
             let content = paragraph.trim_end_matches(['\n', '\r']);
             let content_length = content.chars().count();
@@ -859,16 +831,16 @@ fn render_flow_text_box(
                 {
                     svg.scope(
                         Text::new("")
-                            .set("x", decimal(base_x + marker_offset, 2))
-                            .set(
-                                "y",
-                                decimal(baseline - if *marker_size < 40.0 { 8.0 } else { 0.0 }, 2),
-                            )
-                            .fill(Paint::Color(&base_style.color))
-                            .set("font-family", "Roboto, Arial, sans-serif")
-                            .set("font-size", decimal(*marker_size, 2)),
+                            .x(decimal(base_x + marker_offset, 2))
+                            .y(decimal(
+                                baseline - if *marker_size < 40.0 { 8.0 } else { 0.0 },
+                                2,
+                            ))
+                            .fill(Paint::from_hex(&base_style.color))
+                            .family(FontFamily::Roboto)
+                            .font_size(decimal(*marker_size, 2)),
                         |svg| {
-                            svg.push(svg::node::Text::new(marker.as_str()));
+                            svg.push(TSpan::new(marker));
                         },
                     );
                 }
@@ -1146,9 +1118,9 @@ fn render_flow_line(
         return;
     }
     let (x, anchor) = match alignment {
-        Some(ParagraphAlignment::Center) => ((left + right) / 2.0, "middle"),
-        Some(ParagraphAlignment::Right) => (right, "end"),
-        _ => (left, "start"),
+        Some(ParagraphAlignment::Center) => ((left + right) / 2.0, TextAnchor::Middle),
+        Some(ParagraphAlignment::Right) => (right, TextAnchor::End),
+        _ => (left, TextAnchor::Start),
     };
     let mut boundaries = vec![range.start, range.end];
     for span in &text_box.spans {
@@ -1170,11 +1142,11 @@ fn render_flow_line(
 
     svg.scope(
         Text::new("")
-            .set("x", decimal(x, 2))
-            .set("y", decimal(baseline, 2))
-            .set("text-anchor", anchor)
-            .set("font-family", "Roboto, Arial, sans-serif")
-            .set("xml:space", "preserve"),
+            .x(decimal(x, 2))
+            .y(decimal(baseline, 2))
+            .anchor(anchor)
+            .family(FontFamily::Roboto)
+            .preserve_space(),
         |svg| {
             for segment in boundaries.windows(2) {
                 let start = segment[0];
@@ -1328,31 +1300,28 @@ fn sanitize_hyperlink_target(target: String) -> Option<String> {
 
 fn write_styled_tspan(svg: &mut Scene, text: &str, style: &SvgTextStyle) {
     let mut span = TSpan::new(text)
-        .fill(Paint::Color(&style.color))
-        .set("font-size", decimal(style.font_size, 2));
+        .fill(Paint::from_hex(&style.color))
+        .font_size(decimal(style.font_size, 2));
     let decoration = match (style.underline, style.strikethrough) {
-        (true, true) => Some("underline line-through"),
-        (true, false) => Some("underline"),
-        (false, true) => Some("line-through"),
+        (true, true) => Some(TextDecoration::Both),
+        (true, false) => Some(TextDecoration::Underline),
+        (false, true) => Some(TextDecoration::StrikeThrough),
         (false, false) => None,
     };
     if let Some(decoration) = decoration {
-        span = span.set("text-decoration", decoration);
+        span = span.decoration(decoration);
     }
     if style.bold {
         span = span
-            .set("stroke", style.color.as_str())
-            .set("stroke-width", 0.45)
-            .set("paint-order", "stroke fill");
+            .stroke(Paint::from_hex(style.color.as_str()))
+            .stroke_width(0.45)
+            .stroke_under_fill();
     }
     if style.italic {
-        span = span.set("font-style", "italic");
+        span = span.italic();
     }
-    let span = vector::Inline(span.into());
     if let Some(target) = &style.link_target {
-        svg.scope(Anchor::new().set("href", target.as_str()), |svg| {
-            svg.push(span)
-        });
+        svg.scope(Anchor::new(target), |svg| svg.push(span));
     } else {
         svg.push(span);
     }
@@ -1379,8 +1348,8 @@ fn render_embedded_object(
             let offset_y = object_flow_offset(drawn.y_min, cursor_y, 0.0);
             svg.scope(
                 Group::new()
-                    .set("data-sdocx-object", "image")
-                    .set("transform", format!("translate(0 {offset_y:.4})")),
+                    .object(ObjectKind::Image)
+                    .transformed(Transform::translate(0., offset_y, 4)),
                 |svg| {
                     render_placed_image(svg, image, media_assets);
                 },
@@ -1390,43 +1359,40 @@ fn render_embedded_object(
         Some(RichTextObjectContent::Table(table)) => {
             let offset_y =
                 object_flow_offset(table.bbox.y_min, cursor_y, object_top_margin(object));
-            svg.scope(Group::new().set("data-sdocx-object", "table"), |svg| {
+            svg.scope(Group::new().object(ObjectKind::Table), |svg| {
                 let stroke = if dark_mode { "#777777" } else { "#b8b0a3" };
                 let clip = svg.definition::<Clip>();
                 svg.push(
-                    Definitions::new().add(
-                        ClipPath::new()
-                            .set("id", clip.id())
-                            .add(rectangle(table.bbox, offset_y, 2).set("rx", 24)),
-                    ),
+                    Definitions::new()
+                        .add(ClipPath::new(&clip).add(rectangle(table.bbox, offset_y, 2).rx(24))),
                 );
                 svg.scope(Group::new().clipped(&clip), |svg| {
                     for row in &table.rows {
                         for cell in &row.cells {
                             svg.push(
                                 rectangle(cell.bbox, offset_y, 2)
-                                    .fill(Paint::Color(&table_cell_fill(cell, dark_mode))),
+                                    .fill(Paint::from_hex(&table_cell_fill(cell, dark_mode))),
                             );
                             if cell.bbox.x_min > table.bbox.x_min + 1.0 {
                                 svg.push(
                                     Line::new()
-                                        .set("x1", decimal(cell.bbox.x_min, 2))
-                                        .set("y1", decimal(cell.bbox.y_min + offset_y, 2))
-                                        .set("x2", decimal(cell.bbox.x_min, 2))
-                                        .set("y2", decimal(cell.bbox.y_max + offset_y, 2))
-                                        .set("stroke", stroke)
-                                        .set("stroke-width", 1),
+                                        .x1(decimal(cell.bbox.x_min, 2))
+                                        .y1(decimal(cell.bbox.y_min + offset_y, 2))
+                                        .x2(decimal(cell.bbox.x_min, 2))
+                                        .y2(decimal(cell.bbox.y_max + offset_y, 2))
+                                        .stroke(Paint::from_hex(stroke))
+                                        .stroke_width(1),
                                 );
                             }
                             if cell.bbox.y_min > table.bbox.y_min + 1.0 {
                                 svg.push(
                                     Line::new()
-                                        .set("x1", decimal(cell.bbox.x_min, 2))
-                                        .set("y1", decimal(cell.bbox.y_min + offset_y, 2))
-                                        .set("x2", decimal(cell.bbox.x_max, 2))
-                                        .set("y2", decimal(cell.bbox.y_min + offset_y, 2))
-                                        .set("stroke", stroke)
-                                        .set("stroke-width", 1),
+                                        .x1(decimal(cell.bbox.x_min, 2))
+                                        .y1(decimal(cell.bbox.y_min + offset_y, 2))
+                                        .x2(decimal(cell.bbox.x_max, 2))
+                                        .y2(decimal(cell.bbox.y_min + offset_y, 2))
+                                        .stroke(Paint::from_hex(stroke))
+                                        .stroke_width(1),
                                 );
                             }
                             if let Some(line) = cell.content.text.lines().next() {
@@ -1434,10 +1400,10 @@ fn render_embedded_object(
                                 style.bold = false;
                                 svg.scope(
                                     Text::new("")
-                                        .set("x", decimal(cell.bbox.x_min + 23., 2))
-                                        .set("y", decimal(cell.bbox.y_min + offset_y + 81., 2))
-                                        .set("font-family", "Roboto, Arial, sans-serif")
-                                        .set("xml:space", "preserve"),
+                                        .x(decimal(cell.bbox.x_min + 23., 2))
+                                        .y(decimal(cell.bbox.y_min + offset_y + 81., 2))
+                                        .family(FontFamily::Roboto)
+                                        .preserve_space(),
                                     |svg| {
                                         write_styled_tspan(svg, line, &style);
                                     },
@@ -1448,10 +1414,10 @@ fn render_embedded_object(
                 });
                 svg.push(
                     rectangle(table.bbox, offset_y, 2)
-                        .set("rx", 24)
+                        .rx(24)
                         .fill(Paint::None)
-                        .set("stroke", stroke)
-                        .set("stroke-width", 1),
+                        .stroke(Paint::from_hex(stroke))
+                        .stroke_width(1),
                 );
             });
             Some(table.bbox.y_max + offset_y)
@@ -1460,13 +1426,13 @@ fn render_embedded_object(
             let offset_y = object_flow_offset(code.bbox.y_min, cursor_y, object_top_margin(object));
             let fill = if dark_mode { "#333333" } else { "#efefef" };
             let stroke = if dark_mode { "#5f5f5f" } else { "#dddddd" };
-            svg.scope(Group::new().set("data-sdocx-object", "code-block"), |svg| {
+            svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
                 svg.push(
                     rectangle(code.bbox, offset_y, 2)
-                        .set("rx", 36)
-                        .fill(Paint::Color(fill))
-                        .set("stroke", stroke)
-                        .set("stroke-width", 1),
+                        .rx(36)
+                        .fill(Paint::from_hex(fill))
+                        .stroke(Paint::from_hex(stroke))
+                        .stroke_width(1),
                 );
                 let object_top = code.bbox.y_min + offset_y;
                 let text_x = code.bbox.x_min + 81.75;
@@ -1478,7 +1444,7 @@ fn render_embedded_object(
                         0,
                         text_x,
                         object_top + 81.6,
-                        "Roboto, Arial, sans-serif",
+                        FontFamily::Roboto,
                         dark_mode,
                     );
                 }
@@ -1489,24 +1455,24 @@ fn render_embedded_object(
                         coordinate(object_top + 61., 2),
                     ))
                     .vertical_line_by(-4)
-                    .quadratic_curve_by((0, -8, 8, -8))
+                    .quadratic_curve_by((0., -8., 8., -8.))
                     .horizontal_line_by(17)
-                    .quadratic_curve_by((8, 0, 8, 8))
+                    .quadratic_curve_by((8., 0., 8., 8.))
                     .vertical_line_by(29);
                 svg.push(
                     Group::new()
                         .fill(Paint::None)
-                        .set("stroke", icon_stroke)
-                        .set("stroke-width", 6)
-                        .set("stroke-linejoin", "round")
-                        .add(Path::new().set("d", icon))
+                        .stroke(Paint::from_hex(icon_stroke))
+                        .stroke_width(6)
+                        .line_join(LineJoin::Round)
+                        .add(Path::new().data(icon))
                         .add(
                             Rectangle::new()
-                                .set("x", decimal(code.bbox.x_min + 879., 2))
-                                .set("y", decimal(object_top + 59., 2))
-                                .set("width", 31)
-                                .set("height", 38)
-                                .set("rx", 5),
+                                .x(decimal(code.bbox.x_min + 879., 2))
+                                .y(decimal(object_top + 59., 2))
+                                .width(31)
+                                .height(38)
+                                .rx(5),
                         ),
                 );
                 if let Some(body) = &code.body {
@@ -1520,7 +1486,7 @@ fn render_embedded_object(
                             character_start,
                             text_x,
                             baseline,
-                            "Roboto, Arial, sans-serif",
+                            FontFamily::Roboto,
                             dark_mode,
                         );
                         character_start += line.chars().count() + 1;
@@ -1542,7 +1508,7 @@ fn render_embedded_line(
     character_start: usize,
     x: f64,
     baseline: f64,
-    font_family: &str,
+    font_family: FontFamily,
     dark_mode: bool,
 ) {
     let utf16_index = text_box
@@ -1554,10 +1520,10 @@ fn render_embedded_line(
     let style = text_style_at(text_box, utf16_index, dark_mode, None);
     svg.scope(
         Text::new("")
-            .set("x", decimal(x, 2))
-            .set("y", decimal(baseline, 2))
-            .set("font-family", font_family)
-            .set("xml:space", "preserve"),
+            .x(decimal(x, 2))
+            .y(decimal(baseline, 2))
+            .family(font_family)
+            .preserve_space(),
         |svg| {
             write_styled_tspan(svg, line, &style);
         },
@@ -1579,7 +1545,11 @@ fn table_cell_fill(cell: &crate::RichTextTableCell, dark_mode: bool) -> String {
     if cell.background_color == 0 {
         return if dark_mode { "#45413d" } else { "#eeebe7" }.to_string();
     }
-    format!("#{:06x}", cell.background_color & 0x00ff_ffff)
+    color_hex(&Color {
+        r: (cell.background_color >> 16) as u8,
+        g: (cell.background_color >> 8) as u8,
+        b: cell.background_color as u8,
+    })
 }
 
 fn object_top_margin(object: &RichTextObjectSpan) -> f64 {
@@ -1720,7 +1690,7 @@ fn samsung_font_to_svg(size: f32) -> f64 {
 fn render_stroke(svg: &mut Scene, stroke: &Stroke, default_ink: &str, replay_index: Option<usize>) {
     let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
     if let Some(index) = replay_index {
-        svg.scope(Group::new().set("data-replay-stroke", index), |svg| {
+        svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
             render_prepared_stroke(svg, &paint, true);
         });
     } else {
@@ -1747,22 +1717,22 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
                 Data::new()
                     .move_to((coordinate(x + rx, 4), coordinate(y, 4)))
                     .horizontal_line_by(coordinate(w - 2. * rx, 4))
-                    .elliptical_arc_by((r.0, r.1, 0, 0, 1, r.0, r.1))
+                    .elliptical_arc_by((r.0, r.1, 0., false, true, r.0, r.1))
                     .vertical_line_by(coordinate(h - 2. * ry, 4))
-                    .elliptical_arc_by((r.0, r.1, 0, 0, 1, -r.0, r.1))
+                    .elliptical_arc_by((r.0, r.1, 0., false, true, -r.0, r.1))
                     .horizontal_line_by(coordinate(2. * rx - w, 4))
-                    .elliptical_arc_by((r.0, r.1, 0, 0, 1, -r.0, -r.1))
+                    .elliptical_arc_by((r.0, r.1, 0., false, true, -r.0, -r.1))
                     .vertical_line_by(coordinate(2. * ry - h, 4))
-                    .elliptical_arc_by((r.0, r.1, 0, 0, 1, r.0, -r.1))
+                    .elliptical_arc_by((r.0, r.1, 0., false, true, r.0, -r.1))
                     .close(),
                 replay,
             );
         }
         svg.push(
             path.finish()
-                .fill(Paint::Color(color))
-                .set("fill-opacity", decimal(paint.opacity, 6))
-                .set("transform", format!("rotate({})", stamp.angle.to_degrees())),
+                .fill(Paint::from_hex(color))
+                .fill_opacity(decimal(paint.opacity, 6))
+                .transformed(Transform::rotate_origin(stamp.angle.to_degrees())),
         );
         return;
     }
@@ -1773,15 +1743,23 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
             path.push(
                 Data::new()
                     .move_to((coordinate(p.x - r, 4), coordinate(p.y, 4)))
-                    .elliptical_arc_by((radius, radius, 0, 1, 0, coordinate(r * 2., 4), 0))
-                    .elliptical_arc_by((radius, radius, 0, 1, 0, coordinate(-r * 2., 4), 0))
+                    .elliptical_arc_by((radius, radius, 0., true, false, coordinate(r * 2., 4), 0.))
+                    .elliptical_arc_by((
+                        radius,
+                        radius,
+                        0.,
+                        true,
+                        false,
+                        coordinate(-r * 2., 4),
+                        0.,
+                    ))
                     .close(),
                 replay,
             );
         }
-        let mut node = path.finish().fill(Paint::Color(color));
+        let mut node = path.finish().fill(Paint::from_hex(color));
         if (paint.opacity - 1.0).abs() > 1e-4 {
-            node = node.set("fill-opacity", decimal(paint.opacity, 4));
+            node = node.fill_opacity(decimal(paint.opacity, 4));
         }
         svg.push(node);
         return;
@@ -1789,11 +1767,11 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
     if let [point] = paint.points.as_ref() {
         svg.push(
             Circle::new()
-                .replay_part(replay.then_some(1))
-                .set("cx", point.x)
-                .set("cy", point.y)
-                .set("r", base_width / 2.)
-                .fill(Paint::Color(color)),
+                .replay_part(replay.then_some(ReplayPart(1)))
+                .cx(point.x)
+                .cy(point.y)
+                .r(base_width / 2.)
+                .fill(Paint::from_hex(color)),
         );
         return;
     }
@@ -1806,29 +1784,29 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
             let p2 = &paint.points[j];
             svg.push(
                 Line::new()
-                    .replay_part(replay.then_some(j + 1))
-                    .set("x1", decimal(p1.x, 2))
-                    .set("y1", decimal(p1.y, 2))
-                    .set("x2", decimal(p2.x, 2))
-                    .set("y2", decimal(p2.y, 2))
-                    .set("stroke", color.as_str())
-                    .set("stroke-width", decimal(widths[j - 1], 2))
-                    .set("stroke-linecap", "round"),
+                    .replay_part(replay.then_some(ReplayPart(j + 1)))
+                    .x1(decimal(p1.x, 2))
+                    .y1(decimal(p1.y, 2))
+                    .x2(decimal(p2.x, 2))
+                    .y2(decimal(p2.y, 2))
+                    .stroke(Paint::from_hex(color.as_str()))
+                    .stroke_width(decimal(widths[j - 1], 2))
+                    .line_cap(LineCap::Round),
             );
         }
     } else {
         svg.push(
             vector::polyline(&paint.points, replay)
                 .fill(Paint::None)
-                .set("stroke", color.as_str())
-                .set("stroke-width", decimal(base_width, 2))
-                .set("stroke-linecap", "round")
-                .set("stroke-linejoin", "round"),
+                .stroke(Paint::from_hex(color.as_str()))
+                .stroke_width(decimal(base_width, 2))
+                .line_cap(LineCap::Round)
+                .line_join(LineJoin::Round),
         );
     }
 }
 
-/// Shared paint values for SVG output and interactive stroke inspection.
+/// Shared paint values for Svg output and interactive stroke inspection.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 pub struct StrokePaint {
@@ -1838,7 +1816,7 @@ pub struct StrokePaint {
     pub segment_widths: Option<Vec<f64>>,
 }
 
-/// Resolve exactly the same colors and pressure widths as the SVG renderer.
+/// Resolve exactly the same colors and pressure widths as the Svg renderer.
 pub fn stroke_paint(stroke: &Stroke, dark_mode: bool) -> StrokePaint {
     let width = normalized_stroke_width(stroke.pen_width);
     let pressure = stroke.pressures.len() >= stroke.points.len().saturating_sub(1)

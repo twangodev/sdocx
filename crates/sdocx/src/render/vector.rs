@@ -1,70 +1,186 @@
-use std::fmt;
-use svg::Node;
-pub(super) use svg::node::element::path::Data;
-use svg::node::element::{Element, Group, Path, Polyline};
+use base64::Engine as _;
+use std::{fmt, marker::PhantomData};
+use svg::{
+    Node as SvgNode,
+    node::{Value, element as svg_element},
+};
 
-pub(super) struct Scene {
-    elements: Vec<Element>,
-    next_id: usize,
+mod path;
+mod values;
+pub(super) use path::{Data, ReplayPath, coordinate, polyline};
+pub(super) use values::*;
+
+pub(super) struct Node {
+    element: svg_element::Element,
+    valid: bool,
+}
+impl Node {
+    fn new(element: impl Into<svg_element::Element>) -> Self {
+        Self {
+            element: element.into(),
+            valid: true,
+        }
+    }
+    fn attr(&mut self, name: &str, value: impl Into<Value>) {
+        self.element.assign(name, value);
+    }
+    fn optional(&mut self, name: &str, value: Option<String>) {
+        if let Some(value) = value {
+            self.attr(name, value);
+        } else {
+            self.valid = false;
+        }
+    }
+    fn number(
+        &mut self,
+        name: &str,
+        value: impl Into<Numeric>,
+        range: std::ops::RangeInclusive<f64>,
+    ) {
+        let value = value
+            .into()
+            .0
+            .filter(|value| range.contains(&value.value()))
+            .map(Number::text);
+        self.optional(name, value);
+    }
+    fn append(&mut self, child: Node) {
+        if child.valid {
+            self.element.append(Inline(child.element));
+        }
+    }
 }
 
+pub(super) trait NodeAccess {
+    fn node(&mut self) -> &mut Node;
+}
+pub(super) trait Container: Into<Node> {}
+macro_rules! elements {
+    ($($name:ident),*) => { $(
+        pub(super) struct $name(Node);
+        impl From<$name> for Node { fn from(value: $name) -> Self { value.0 } }
+        impl NodeAccess for $name { fn node(&mut self) -> &mut Node { &mut self.0 } }
+    )* };
+}
+elements!(
+    Svg,
+    Group,
+    Definitions,
+    ClipPath,
+    LinearGradient,
+    SvgMask,
+    Stop,
+    Path,
+    Circle,
+    Ellipse,
+    Rectangle,
+    Line,
+    Polygon,
+    Polyline,
+    Image,
+    Text,
+    TSpan,
+    Anchor
+);
+macro_rules! constructors {
+    ($($name:ident),*) => { $(impl $name { pub fn new() -> Self { Self(Node::new(svg_element::$name::new())) } })* };
+}
+constructors!(
+    Group,
+    Definitions,
+    Path,
+    Circle,
+    Ellipse,
+    Rectangle,
+    Line,
+    Polygon,
+    Polyline
+);
+macro_rules! containers { ($($name:ident),*) => { $(impl Container for $name {})* }; }
+containers!(
+    Svg,
+    Group,
+    Definitions,
+    ClipPath,
+    LinearGradient,
+    SvgMask,
+    Text,
+    Anchor
+);
+macro_rules! children {
+    ($($name:ident),*) => { $(impl $name {
+        pub fn add(mut self, child: impl Into<Node>) -> Self { self.0.append(child.into()); self }
+    })* };
+}
+children!(Group, Definitions, ClipPath, LinearGradient);
+
+pub(super) struct Scene {
+    elements: Vec<Node>,
+    next_id: usize,
+}
 impl Scene {
-    pub fn new(root: impl Into<Element>) -> Self {
+    pub fn new(root: Svg) -> Self {
         Self {
             elements: vec![root.into()],
             next_id: 0,
         }
     }
-
-    pub fn push(&mut self, node: impl Node) {
+    pub fn push(&mut self, node: impl Into<Node>) {
+        let node = node.into();
+        if !node.valid {
+            return;
+        }
         if self.elements.len() == 1 {
-            // Only library-serialized nodes enter Blob; never unescaped source text.
-            // Release completed subtrees instead of retaining a page-sized DOM.
-            self.elements[0].append(svg::node::Blob::new(node.to_string()));
+            // Only serialized nodes enter Blob; release completed subtrees without retaining a page DOM.
+            self.elements[0]
+                .element
+                .append(svg::node::Blob::new(node.element.to_string()));
         } else {
             self.elements.last_mut().unwrap().append(node);
         }
     }
-
-    pub fn scope(&mut self, element: impl Into<Element>, draw: impl FnOnce(&mut Self)) {
-        self.elements.push(element.into());
+    pub fn scope(&mut self, element: impl Container, draw: impl FnOnce(&mut Self)) {
+        let element = element.into();
+        if !element.valid {
+            return;
+        }
+        self.elements.push(element);
         draw(self);
         let element = self.elements.pop().unwrap();
-        self.push(Inline(element));
+        self.push(element);
     }
-
     pub fn definition<K>(&mut self) -> Definition<K> {
         let id = self.next_id;
         self.next_id += 1;
         Definition {
             id,
-            kind: std::marker::PhantomData,
+            kind: PhantomData,
         }
     }
-
     pub fn finish(self) -> String {
         assert_eq!(self.elements.len(), 1);
-        self.elements[0].to_string()
+        if self.elements[0].valid {
+            self.elements[0].element.to_string()
+        } else {
+            svg_element::SVG::new().to_string()
+        }
     }
 }
 
-// Keep library-added formatting whitespace out of text with xml:space="preserve".
+// Svg formatting whitespace must not enter preserved rich text and links.
 #[derive(Clone, Debug)]
-pub(super) struct Inline(pub Element);
-
+struct Inline(svg_element::Element);
 impl fmt::Display for Inline {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
-
 impl svg::node::NodeDefaultHash for Inline {
     fn default_hash(&self, state: &mut std::collections::hash_map::DefaultHasher) {
         self.0.default_hash(state);
     }
 }
-
-impl Node for Inline {
+impl SvgNode for Inline {
     fn get_name(&self) -> &str {
         self.0.get_name()
     }
@@ -73,17 +189,19 @@ impl Node for Inline {
     }
 }
 
+#[derive(Clone, Copy)]
 pub(super) enum Gradient {}
+#[derive(Clone, Copy)]
 pub(super) enum Mask {}
+#[derive(Clone, Copy)]
 pub(super) enum Clip {}
-
+#[derive(Clone, Copy)]
 pub(super) struct Definition<K> {
     id: usize,
-    kind: std::marker::PhantomData<K>,
+    kind: PhantomData<K>,
 }
-
 impl<K> Definition<K> {
-    pub fn id(&self) -> String {
+    fn id(&self) -> String {
         format!("sdocx-def-{}", self.id)
     }
     fn url(&self) -> String {
@@ -91,236 +209,238 @@ impl<K> Definition<K> {
     }
 }
 
-pub(super) enum Paint<'a> {
-    None,
-    Color(&'a str),
-    Gradient(&'a Definition<Gradient>),
-}
-
-pub(super) enum Blend {
-    Darken,
-    Lighten,
-}
-
-pub(super) trait Styled: Node + Sized {
-    fn fill(mut self, paint: Paint<'_>) -> Self {
-        self.assign(
-            "fill",
-            match paint {
-                Paint::None => "none".to_owned(),
-                Paint::Color(color) => color.to_owned(),
-                Paint::Gradient(id) => id.url(),
-            },
-        );
+pub(super) trait Styled: NodeAccess + Sized {
+    fn fill(mut self, paint: impl Into<Option<Paint>>) -> Self {
+        self.node().optional("fill", paint.into().map(Paint::text));
         self
     }
-
+    fn stroke(mut self, paint: impl Into<Option<Paint>>) -> Self {
+        self.node()
+            .optional("stroke", paint.into().map(Paint::text));
+        self
+    }
+    fn fill_opacity(mut self, value: impl Into<Numeric>) -> Self {
+        self.node().number("fill-opacity", value, 0.0..=1.0);
+        self
+    }
+    fn stroke_opacity(mut self, value: impl Into<Numeric>) -> Self {
+        self.node().number("stroke-opacity", value, 0.0..=1.0);
+        self
+    }
+    fn stroke_width(mut self, value: impl Into<Numeric>) -> Self {
+        self.node().number("stroke-width", value, 0.0..=f64::MAX);
+        self
+    }
+    fn line_cap(mut self, cap: LineCap) -> Self {
+        self.node().attr("stroke-linecap", cap.text());
+        self
+    }
+    fn line_join(mut self, join: LineJoin) -> Self {
+        self.node().attr("stroke-linejoin", join.text());
+        self
+    }
+    fn transformed(mut self, transform: Transform) -> Self {
+        self.node().optional("transform", transform.text());
+        self
+    }
     fn masked(mut self, id: &Definition<Mask>) -> Self {
-        self.assign("mask", id.url());
+        self.node().attr("mask", id.url());
         self
     }
-
     fn clipped(mut self, id: &Definition<Clip>) -> Self {
-        self.assign("clip-path", id.url());
+        self.node().attr("clip-path", id.url());
         self
     }
-
-    fn replay_part(mut self, part: Option<usize>) -> Self {
-        if let Some(part) = part {
-            self.assign("data-replay-part", part);
+    fn replay_part(mut self, part: Option<ReplayPart>) -> Self {
+        if let Some(ReplayPart(part)) = part {
+            self.node().valid &= part > 0;
+            self.node().attr("data-replay-part", part);
         }
         self
     }
 }
-impl<T: Node> Styled for T {}
+macro_rules! styles { ($($name:ident),*) => { $(impl Styled for $name {})* }; }
+styles!(
+    Svg, Group, Path, Circle, Ellipse, Rectangle, Line, Polygon, Polyline, Image, Text, TSpan,
+    Anchor
+);
 
-pub(super) fn blend(mode: Blend) -> Group {
-    Group::new().set(
-        "style",
-        match mode {
-            Blend::Darken => "mix-blend-mode:darken",
-            Blend::Lighten => "mix-blend-mode:lighten",
-        },
-    )
-}
-
-#[derive(Default)]
-pub(super) struct ReplayPath {
-    data: String,
-    lengths: Vec<usize>,
-}
-
-impl ReplayPath {
-    pub fn push(&mut self, part: Data, replay: bool) {
-        self.data.push_str(&svg::node::Value::from(part));
-        if replay {
-            self.lengths.push(self.data.len());
+macro_rules! numeric_attributes {
+    ($($ty:ident { $($method:ident => ($name:literal, $min:expr)),* $(,)? })*) => { $(impl $ty { $(
+        pub fn $method(mut self, value: impl Into<Numeric>) -> Self {
+            self.0.number($name, value, $min..=f64::MAX); self
         }
+    )* })* };
+}
+numeric_attributes! {
+    Svg { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
+    Rectangle { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.), rx => ("rx", 0.) }
+    Circle { cx => ("cx", -f64::MAX), cy => ("cy", -f64::MAX), r => ("r", 0.) }
+    Ellipse { cx => ("cx", -f64::MAX), cy => ("cy", -f64::MAX), rx => ("rx", 0.), ry => ("ry", 0.) }
+    Line { x1 => ("x1", -f64::MAX), y1 => ("y1", -f64::MAX), x2 => ("x2", -f64::MAX), y2 => ("y2", -f64::MAX) }
+    Image { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
+    Text { x => ("x", -f64::MAX), y => ("y", -f64::MAX), font_size => ("font-size", 0.) }
+    TSpan { font_size => ("font-size", 0.) }
+    SvgMask { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
+    LinearGradient { x1 => ("x1", -f64::MAX), y1 => ("y1", -f64::MAX), x2 => ("x2", -f64::MAX), y2 => ("y2", -f64::MAX) }
+}
+impl Svg {
+    pub fn new() -> Self {
+        Self(Node::new(svg_element::SVG::new()))
     }
-
-    pub fn finish(self) -> Path {
-        let mut path = Path::new().set("d", self.data);
-        if !self.lengths.is_empty() {
-            path.assign("data-replay-lengths", lengths(&self.lengths));
-        }
-        path
+    pub fn view_box(mut self, bounds: ViewBox) -> Self {
+        self.0.optional("viewBox", bounds.text());
+        self
+    }
+    pub fn clipped_viewport(mut self) -> Self {
+        self.0.attr("overflow", "hidden");
+        self
     }
 }
-
-pub(super) fn polyline(points: &[crate::Point], replay: bool) -> Polyline {
-    let mut value = String::new();
-    let mut offsets = Vec::new();
-    for point in points {
-        if !value.is_empty() {
-            value.push(' ');
-        }
-        value.push_str(&svg::node::Value::from((
-            decimal(point.x, 2),
-            decimal(point.y, 2),
-        )));
-        if replay {
-            offsets.push(value.len());
-        }
+impl Group {
+    pub fn blend(mut self, mode: Blend) -> Self {
+        self.0.attr("style", mode.text());
+        self
     }
-    let mut node = Polyline::new().set("points", value);
-    if replay && !offsets.is_empty() {
-        node.assign("data-replay-lengths", lengths(&offsets));
+    pub fn isolated(mut self) -> Self {
+        self.0.attr("style", "isolation:isolate");
+        self
     }
-    node
+    pub fn flow(mut self) -> Self {
+        self.0.attr("data-sdocx-flow", "true");
+        self
+    }
+    pub fn object(mut self, kind: ObjectKind) -> Self {
+        self.0.attr("data-sdocx-object", kind.text());
+        self
+    }
+    pub fn replay_stroke(mut self, index: StrokeIndex) -> Self {
+        self.0.attr("data-replay-stroke", index.0);
+        self
+    }
 }
-
-pub(super) fn lengths(values: &[usize]) -> String {
-    values
-        .iter()
-        .map(usize::to_string)
-        .collect::<Vec<_>>()
-        .join(",")
+impl Path {
+    pub fn template(mut self, kind: PageTemplate) -> Self {
+        self.0.attr("data-page-template", kind.text());
+        self
+    }
+    pub fn dotted(mut self, pitch: impl Into<Numeric>) -> Self {
+        let pitch = pitch
+            .into()
+            .0
+            .filter(|n| n.value() > 0.)
+            .map(|n| svg::node::Value::from((0, n.text())).to_string());
+        self.0.optional("stroke-dasharray", pitch);
+        self
+    }
 }
-
-pub(super) fn decimal(value: f64, places: usize) -> String {
-    format!("{value:.places$}")
+impl Polygon {
+    pub fn points(mut self, points: &[(f64, f64)], places: usize) -> Self {
+        let pairs = points
+            .iter()
+            .map(|(x, y)| Some((decimal(*x, places)?.text(), decimal(*y, places)?.text())))
+            .collect::<Option<Vec<_>>>();
+        self.0
+            .optional("points", pairs.map(|pairs| Value::from(pairs).to_string()));
+        self
+    }
 }
-
-pub(super) fn coordinate(value: f64, places: usize) -> f32 {
-    // Preserve the existing export's decimal rounding before the library's f32 boundary.
-    decimal(value, places).parse().unwrap()
+impl Image {
+    pub fn embedded(data: &[u8], mime: &str) -> Self {
+        let mut node = Node::new(svg_element::Image::new());
+        node.attr(
+            "href",
+            format!(
+                "data:{mime};base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(data)
+            ),
+        );
+        Self(node)
+    }
+    pub fn stretched(mut self) -> Self {
+        self.0.attr("preserveAspectRatio", "none");
+        self
+    }
+}
+impl Text {
+    pub fn new(content: &str) -> Self {
+        Self(Node::new(svg_element::Text::new(content)))
+    }
+    pub fn family(mut self, family: FontFamily) -> Self {
+        self.0.attr("font-family", family.text());
+        self
+    }
+    pub fn anchor(mut self, anchor: TextAnchor) -> Self {
+        self.0.attr("text-anchor", anchor.text());
+        self
+    }
+    pub fn preserve_space(mut self) -> Self {
+        self.0.attr("xml:space", "preserve");
+        self
+    }
+    pub fn decoration(mut self, decoration: TextDecoration) -> Self {
+        self.0.attr("text-decoration", decoration.text());
+        self
+    }
+}
+impl TSpan {
+    pub fn new(content: &str) -> Self {
+        Self(Node::new(svg_element::TSpan::new(content)))
+    }
+    pub fn bold(mut self) -> Self {
+        self.0.attr("font-weight", "bold");
+        self
+    }
+    pub fn italic(mut self) -> Self {
+        self.0.attr("font-style", "italic");
+        self
+    }
+    pub fn decoration(mut self, decoration: TextDecoration) -> Self {
+        self.0.attr("text-decoration", decoration.text());
+        self
+    }
+    pub fn stroke_under_fill(mut self) -> Self {
+        self.0.attr("paint-order", "stroke fill");
+        self
+    }
+}
+impl Anchor {
+    pub fn new(target: &str) -> Self {
+        Self(Node::new(svg_element::Anchor::new().set("href", target)))
+    }
+}
+impl ClipPath {
+    pub fn new(id: &Definition<Clip>) -> Self {
+        Self(Node::new(svg_element::ClipPath::new().set("id", id.id())))
+    }
+}
+impl LinearGradient {
+    pub fn new(id: &Definition<Gradient>) -> Self {
+        Self(Node::new(
+            svg_element::LinearGradient::new()
+                .set("id", id.id())
+                .set("gradientUnits", "userSpaceOnUse"),
+        ))
+    }
+}
+impl SvgMask {
+    pub fn luminance(id: &Definition<Mask>) -> Self {
+        Self(Node::new(
+            svg_element::Mask::new()
+                .set("id", id.id())
+                .set("maskUnits", "userSpaceOnUse")
+                .set("style", "mask-type:luminance"),
+        ))
+    }
+}
+impl Stop {
+    pub fn new(offset: impl Into<Numeric>, color: impl Into<Option<ColorValue>>) -> Self {
+        let mut node = Node::new(svg_element::Stop::new());
+        node.number("offset", offset, 0.0..=1.0);
+        node.optional("stop-color", color.into().map(ColorValue::text));
+        Self(node)
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use svg::node::element::{Anchor, SVG, TSpan, Text};
-
-    #[test]
-    fn rich_text_preserves_whitespace_and_escapes_content_and_links() {
-        let mut scene = Scene::new(SVG::new());
-        let label = "  A&B <text> \"quoted\"\n🙂 ";
-        let target = "https://example.test/?a=1&b=\"two\"";
-        scene.scope(Text::new("").set("xml:space", "preserve"), |scene| {
-            scene.push(Inline(TSpan::new(label).into()));
-            scene.scope(Anchor::new().set("href", target), |scene| {
-                scene.push(Inline(TSpan::new("linked text").into()));
-            });
-        });
-        let output = scene.finish();
-        let xml = roxmltree::Document::parse(&output).unwrap();
-        let text = xml.descendants().find(|n| n.has_tag_name("text")).unwrap();
-        let content: String = text
-            .descendants()
-            .filter(|n| n.is_text())
-            .filter_map(|n| n.text())
-            .collect();
-        assert_eq!(content, format!("{label}linked text"));
-        let link = xml.descendants().find(|n| n.has_tag_name("a")).unwrap();
-        assert_eq!(link.attribute("href"), Some(target));
-        assert_eq!(
-            xml.descendants().filter(|n| n.has_tag_name("text")).count(),
-            1
-        );
-    }
-
-    #[test]
-    fn replay_offsets_end_at_complete_serialized_subpaths() {
-        let mut path = ReplayPath::default();
-        for x in [0., 0.1234, 1000.1234] {
-            path.push(
-                Data::new()
-                    .move_to((x, 2.))
-                    .elliptical_arc_by((3, 3, 0, 1, 0, 6, 0))
-                    .elliptical_arc_by((3, 3, 0, 1, 0, -6, 0))
-                    .close(),
-                true,
-            );
-        }
-        let output = SVG::new().add(path.finish()).to_string();
-        let xml = roxmltree::Document::parse(&output).unwrap();
-        let path = xml.descendants().find(|n| n.has_tag_name("path")).unwrap();
-        let data = path.attribute("d").unwrap();
-        let lengths = path
-            .attribute("data-replay-lengths")
-            .unwrap()
-            .split(',')
-            .map(|s| s.parse::<usize>().unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(lengths.last(), Some(&data.len()));
-        for (index, end) in lengths.into_iter().enumerate() {
-            let commands = svgtypes::PathParser::from(&data[..end])
-                .collect::<Result<Vec<_>, _>>()
-                .unwrap();
-            assert_eq!(commands.len(), (index + 1) * 4);
-            assert!(matches!(
-                commands.last(),
-                Some(svgtypes::PathSegment::ClosePath { .. })
-            ));
-        }
-    }
-
-    #[test]
-    fn definitions_share_one_page_counter_across_nested_scopes() {
-        let mut scene = Scene::new(SVG::new());
-        let gradient = scene.definition::<Gradient>();
-        scene.scope(Group::new(), |scene| {
-            let mask = scene.definition::<Mask>();
-            assert_ne!(gradient.id(), mask.id());
-        });
-        let clip = scene.definition::<Clip>();
-        assert_eq!(clip.id(), "sdocx-def-2");
-        assert_eq!(
-            Scene::new(SVG::new()).definition::<Mask>().id(),
-            "sdocx-def-0"
-        );
-    }
-
-    #[test]
-    fn polyline_replay_offsets_preserve_complete_coordinate_pairs() {
-        let points = [
-            crate::Point {
-                x: -12.345,
-                y: 67.89,
-            },
-            crate::Point { x: 1000., y: 0. },
-        ];
-        let output = SVG::new().add(polyline(&points, true)).to_string();
-        let xml = roxmltree::Document::parse(&output).unwrap();
-        let line = xml
-            .descendants()
-            .find(|n| n.has_tag_name("polyline"))
-            .unwrap();
-        let value = line.attribute("points").unwrap();
-        let offsets = line
-            .attribute("data-replay-lengths")
-            .unwrap()
-            .split(',')
-            .map(|s| s.parse::<usize>().unwrap())
-            .collect::<Vec<_>>();
-        assert_eq!(offsets.last(), Some(&value.len()));
-        for (index, end) in offsets.into_iter().enumerate() {
-            let actual = svgtypes::PointsParser::from(&value[..end]).collect::<Vec<_>>();
-            assert_eq!(actual.len(), index + 1);
-            for ((x, y), expected) in actual.iter().zip(&points) {
-                assert_eq!(*x, decimal(expected.x, 2).parse::<f64>().unwrap());
-                assert_eq!(*y, decimal(expected.y, 2).parse::<f64>().unwrap());
-            }
-        }
-    }
-}
+mod tests;

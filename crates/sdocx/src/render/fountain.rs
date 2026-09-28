@@ -1,9 +1,9 @@
-//! Scale-independent V14 fountain shading using only SVG vector primitives.
+//! Scale-independent V14 fountain shading using only Svg vector primitives.
 use super::vector::{
-    Blend, Data, Gradient, Mask, Paint, Scene, Styled, blend, coordinate, decimal,
+    Blend, Circle, ColorValue, Data, Definitions, Gradient, Group, LinearGradient, Mask, Paint,
+    Path, ReplayPart, Scene, Stop, Styled, SvgMask, Transform, coordinate, decimal,
 };
 use crate::PreparedStroke;
-use svg::node::element::{Circle, Definitions, Group, LinearGradient, Mask as SvgMask, Path, Stop};
 
 pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) -> bool {
     let (Some(directions), Some(radii), Some(bounds)) =
@@ -23,42 +23,25 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
         .vertical_line_by(coordinate(height, 4))
         .horizontal_line_by(-coordinate(width, 4))
         .close();
-    let ramp = LinearGradient::new()
-        .set("id", gradient.id())
-        .set("gradientUnits", "userSpaceOnUse")
-        .set("x1", -1)
-        .set("x2", 1)
-        .set("y1", 0)
-        .set("y2", 0)
-        .add(
-            Stop::new()
-                .set("offset", 0)
-                .set("stop-color", "rgb(7%,7%,7%)"),
-        )
-        .add(Stop::new().set("offset", 0.25).set("stop-color", "white"))
-        .add(Stop::new().set("offset", 0.75).set("stop-color", "white"))
-        .add(
-            Stop::new()
-                .set("offset", 1)
-                .set("stop-color", "rgb(7%,7%,7%)"),
-        );
+    let ramp = LinearGradient::new(&gradient)
+        .x1(-1)
+        .x2(1)
+        .y1(0)
+        .y2(0)
+        .add(Stop::new(0, ColorValue::gray(0.07)))
+        .add(Stop::new(0.25, ColorValue::WHITE))
+        .add(Stop::new(0.75, ColorValue::WHITE))
+        .add(Stop::new(1, ColorValue::gray(0.07)));
     svg.scope(Definitions::new().add(ramp), |svg| {
         svg.scope(
-            SvgMask::new()
-                .set("id", mask.id())
-                .set("maskUnits", "userSpaceOnUse")
-                .set("x", decimal(x, 4))
-                .set("y", decimal(y, 4))
-                .set("width", decimal(width, 4))
-                .set("height", decimal(height, 4))
-                .set("style", "mask-type:luminance"),
+            SvgMask::luminance(&mask)
+                .x(decimal(x, 4))
+                .y(decimal(y, 4))
+                .width(decimal(width, 4))
+                .height(decimal(height, 4)),
             |svg| {
-                svg.scope(Group::new().set("style", "isolation:isolate"), |svg| {
-                    svg.push(
-                        Path::new()
-                            .fill(Paint::Color("black"))
-                            .set("d", rectangle.clone()),
-                    );
+                svg.scope(Group::new().isolated(), |svg| {
+                    svg.push(Path::new().fill(Paint::BLACK).data(rectangle.clone()));
                     // Opaque Lighten stamps implement maximum coverage without alpha accumulation.
                     for (index, ((point, radius), direction)) in
                         paint.points.iter().zip(radii).zip(directions).enumerate()
@@ -66,19 +49,18 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
                         let dx = direction.x * radius;
                         let dy = direction.y * radius;
                         svg.push(
-                            blend(Blend::Lighten)
-                                .replay_part(replay.then_some(index + 1))
+                            Group::new()
+                                .blend(Blend::Lighten)
+                                .replay_part(replay.then_some(ReplayPart(index + 1)))
                                 .add(
                                     Circle::new()
-                                        .set("r", 1)
-                                        .fill(Paint::Gradient(&gradient))
-                                        .set(
-                                            "transform",
-                                            format!(
-                                                "matrix({dx:.7},{dy:.7},{:.7},{dx:.7},{:.4},{:.4})",
-                                                -dy, point.x, point.y
-                                            ),
-                                        ),
+                                        .r(1)
+                                        .fill(Paint::Gradient(gradient))
+                                        .transformed(Transform::matrix(
+                                            [dx, dy, -dy, dx, point.x, point.y],
+                                            7,
+                                            4,
+                                        )),
                                 ),
                         );
                     }
@@ -88,16 +70,17 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
     });
     svg.push(
         Path::new()
-            .fill(Paint::Color(&paint.color))
-            .set("fill-opacity", decimal(paint.opacity, 6))
+            .fill(Paint::from_hex(&paint.color))
+            .fill_opacity(decimal(paint.opacity, 6))
             .masked(&mask)
-            .set("d", rectangle),
+            .data(rectangle),
     );
     true
 }
 
 #[cfg(test)]
 mod tests {
+    use super::super::vector::Svg;
     use super::*;
     use crate::{BoundingBox, Point, Stroke};
     use std::borrow::Cow;
@@ -119,11 +102,7 @@ mod tests {
         });
         paint.color = "#000000".into();
         paint.opacity = 0.6;
-        let mut svg = Scene::new(
-            svg::node::element::SVG::new()
-                .set("width", 64)
-                .set("height", 64),
-        );
+        let mut svg = Scene::new(Svg::new().width(64).height(64));
         assert!(render(&mut svg, &paint, false));
         svg.finish()
     }
@@ -148,7 +127,7 @@ mod tests {
         assert!((image.pixel(48, 32).unwrap().alpha() as f64 - expected).abs() < 2.);
         assert!((image.pixel(32, 48).unwrap().alpha() as i32 - 153).abs() <= 1);
         let repeated = preview(&shaded_stamp(Point { x: 1., y: 0. }, 2));
-        // Check the filled interior; edge antialiasing belongs to the SVG
+        // Check the filled interior; edge antialiasing belongs to the Svg
         // consumer and can differ when coincident boundaries are drawn twice.
         for y in 14..50 {
             for x in 14..50 {
@@ -215,11 +194,7 @@ mod tests {
         stroke.pressures = vec![0.7; 3];
         stroke.timestamps = vec![0, 10, 20];
         let render_stroke = |stroke: &Stroke| {
-            let mut svg = Scene::new(
-                svg::node::element::SVG::new()
-                    .set("width", 64)
-                    .set("height", 64),
-            );
+            let mut svg = Scene::new(Svg::new().width(64).height(64));
             crate::render::render_stroke(&mut svg, stroke, "#000000", None);
             let svg = svg.finish();
             assert!(!svg.contains("<image"));
