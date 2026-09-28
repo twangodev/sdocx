@@ -24,6 +24,26 @@ impl Node {
     fn attr(&mut self, name: &str, value: impl Into<Value>) {
         self.element.assign(name, value);
     }
+    fn style(&mut self, name: &str, value: &str) {
+        let mut declarations = self
+            .element
+            .get_attributes()
+            .get("style")
+            .map(|style| {
+                style
+                    .split(';')
+                    .filter(|declaration| {
+                        declaration
+                            .split_once(':')
+                            .is_some_and(|(property, _)| property != name)
+                    })
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        declarations.push(format!("{name}:{value}"));
+        self.attr("style", declarations.join(";"));
+    }
     fn optional(&mut self, name: &str, value: Option<String>) {
         if let Some(value) = value {
             self.attr(name, value);
@@ -299,11 +319,11 @@ impl Svg {
 }
 impl Group {
     pub fn blend(mut self, mode: Blend) -> Self {
-        self.0.attr("style", mode.text());
+        self.0.style("mix-blend-mode", mode.text());
         self
     }
     pub fn isolated(mut self) -> Self {
-        self.0.attr("style", "isolation:isolate");
+        self.0.style("isolation", "isolate");
         self
     }
     pub fn flow(mut self) -> Self {

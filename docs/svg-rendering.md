@@ -1,29 +1,54 @@
-# SVG generation
+# Typed SVG generation
 
-`render.rs` converts native objects into the `svg` crate's elements and path
-commands. `ink` owns Samsung stroke reconstruction; serialization does not change
-its pressure, tilt, movement, or sampling algorithms. Preview, replay, and PDF
-conversion consume the same SVG renderer.
+Native converters in `render.rs` and `render/fountain.rs` use the private Rust API
+in `render/vector`. Only that adapter imports `svg`, names SVG attributes, or
+formats their values. It covers the elements and attributes we currently emit;
+it does not expose a generic attribute setter or raw XML constructor.
 
-`render/vector.rs` provides shared composition and replay helpers:
+`ink` owns Samsung stroke reconstruction. Preview, replay, and PDF conversion
+share the resulting SVG renderer.
 
-- `Scene::scope` owns nested elements and serializes completed top-level subtrees
-  so a dense page does not retain a full element tree.
-- Typed gradient, mask, and clip references use one page-local ID allocator.
-- `ReplayPath` and `polyline` derive sample offsets from serialized attribute
-  values. Never compute replay offsets from XML length or unformatted numbers.
-- `Inline` prevents formatting whitespace from entering rich text and links.
-  User text and attributes pass through library escaping. The internal `Blob`
-  holds only output already serialized by library nodes.
+## Adding a native converter
 
-For a new native object, construct library elements in its render function and
-compose them through `Scene`. Keep geometry reconstruction separate. Add shared
-helpers only for recurring semantics; do not build XML snippets or a second SVG
-object model.
+Construct typed elements and compose them through `Scene::push` and
+`Scene::scope`. Geometry, stroke styles, transforms, text settings, and replay
+metadata have named methods and types. For example:
+
+```rust
+scene.push(
+    Line::new()
+        .x1(start.x).y1(start.y)
+        .x2(end.x).y2(end.y)
+        .stroke(Paint::Solid(ColorValue::Rgb(color)))
+        .stroke_width(decimal(width, 2))
+        .line_cap(LineCap::Round),
+);
+```
+
+- `vector.rs` owns element constructors, applicable attributes, containers, and
+  distinct gradient/mask/clip reference types. IDs come from one page counter.
+- `vector/values.rs` owns finite numbers, precision, paints, transforms, and
+  enums for styles and metadata. Gradient stops accept colors, not paint-server
+  references. Text, URLs, and embedded media remain content values.
+- `vector/path.rs` owns path commands with fixed arities and boolean arc flags.
+  It also derives replay offsets from the serialized path or point-list values.
+
+## Validation and serialization
+
+Non-finite numbers, negative dimensions/radii/stroke widths, out-of-range
+opacity or stop offsets, and invalid colors omit the affected element. Invalid
+containers skip their children. Invalid paths are omitted completely, including
+replay paths; a valid prefix is never emitted as a partial drawing.
 
 Path commands use the library's `f32` coordinates. Existing export precision is
-rounded before that conversion; transforms and other attributes can retain
-`f64` values. Native shape paths outside the finite `f32` range are omitted as a
-whole. Tests compare parsed attributes and path commands, not attribute order or
-trailing zeroes. Replay, text whitespace, vector PDF shading, and Chromium
-appearance have separate regression coverage.
+rounded before conversion; transforms and other attributes retain `f64` values.
+Native shape paths outside the finite `f32` range are omitted as a whole.
+
+Completed top-level subtrees are serialized promptly to limit element-tree
+memory. The internal `Blob` holds only output already serialized by library
+nodes. Inline composition prevents formatting whitespace from entering rich
+text and hyperlinks. Library escaping handles text and attribute content;
+existing hyperlink scheme validation remains in the native text converter.
+
+Tests compare parsed SVG semantics, preserved text, complete replay boundaries,
+invalid-input handling, vector PDF shading, and Chromium appearance.

@@ -138,7 +138,7 @@ keywords! {
     TextDecoration { Underline => "underline", StrikeThrough => "line-through", Both => "underline line-through" }
     PageTemplate { Lines => "lines", Dots => "dots" }
     ObjectKind { Image => "image", Table => "table", CodeBlock => "code-block" }
-    Blend { Darken => "mix-blend-mode:darken", Lighten => "mix-blend-mode:lighten" }
+    Blend { Darken => "darken", Lighten => "lighten" }
 }
 
 #[derive(Clone, Copy)]
