@@ -195,7 +195,12 @@ mod tests {
         stroke.timestamps = vec![0, 10, 20];
         let render_stroke = |stroke: &Stroke| {
             let mut svg = Scene::new(Svg::new().width(64).height(64));
-            crate::render::render_stroke(&mut svg, stroke, "#000000", None);
+            crate::render::render_stroke(
+                &mut svg,
+                stroke,
+                crate::RenderTheme::for_canvas(false),
+                None,
+            );
             let svg = svg.finish();
             assert!(!svg.contains("<image"));
             assert!(!svg.contains("<filter"));

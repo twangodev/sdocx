@@ -30,10 +30,42 @@ Local APK sources are under `scratch/apk-analysis-decompiled/sources/`:
   interval and preserves alpha.
 - `scratch/native-dark-theme-color.txt`: `libSPenBase.so` native
   `DarkColorTheme::GetColor` and `getColorByLightControl` corroborate that
-  algorithm; the two floating-point constants still need direct verification.
+  algorithm. The native constants at offsets `0x41734` and `0x41724` are
+  exactly the f32 representations of 0.4 and 0.6.
 
-The shared paper resolver fixes contradictory page/document precedence and
-foreground defaults. Native foreground conversion, local text backgrounds,
-highlighter compositing, canonical thumbnail generation, and end-to-end export
-validation remain part of the active theme work. The old near-black foreground
-heuristic is not native color parity.
+## Foreground adaptation
+
+Handwriting, text, foreground spans, links, shape fills and outlines share the
+same native lightness-reversal primitive. It preserves hue/chroma and the
+caller's alpha. The former RGB-sum threshold has been removed.
+
+The renderer applies that candidate only when compatibility permits adaptation
+and it improves contrast against the resolved surface. Existing bright ink on
+dark paper is therefore preserved. Explicit Light mode can adapt white content
+when moving a canonical dark page onto light paper. Auto and Light on an
+already-light page preserve stored foreground colors. This contrast guard is
+an explicit export policy; native per-object selection of color themes is not
+yet proven to use this guard. The conversion itself matches 785 independently
+executed native cases, including threshold boundaries and alpha values.
+
+Text in a highlighted box, filled shape, table cell, or code block receives its
+local surface. Table cells without an owned background inherit the actual paper
+color, including custom paper. Compatibility-disabled documents preserve
+explicit foreground colors; missing colors still receive readable defaults.
+
+Run the optional APK oracle from the repository root:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/theme_native.py
+```
+
+The oracle reuses the existing hash-pinned ARM64 loader. Native `GetColor`,
+`ColorToHSL`, and `HSLToColor` execute unchanged; only libc remainders are host
+supplied. `conformance/theme-colors.json` runs in ordinary Rust CI without APK
+binaries. Native LightColorTheme is also checked to preserve its input.
+
+## Remaining work
+
+Highlighter compositing, canonical thumbnail generation, and end-to-end export
+validation remain part of the active theme work. Native per-object color-theme
+selection and exact dark paper color remain explicitly unverified above.

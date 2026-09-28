@@ -143,7 +143,6 @@ fn render_page_contents_svg(
     theme: RenderTheme,
     replay: bool,
 ) -> String {
-    let dark_mode = theme.is_dark();
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
     let vb_y = 0.0;
@@ -170,19 +169,14 @@ fn render_page_contents_svg(
     if let Ok(Some(pattern)) = crate::page_background::template_pattern(page, metadata) {
         match pattern {
             crate::page_background::TemplatePattern::Dots(dots) => {
-                render_dot_background(&mut svg, page, dots, dark_mode)
+                render_dot_background(&mut svg, page, dots, theme)
             }
             crate::page_background::TemplatePattern::Lines(lines) => {
-                render_line_background(&mut svg, page, lines, dark_mode)
+                render_line_background(&mut svg, page, lines, theme)
             }
         }
     }
 
-    let default_ink = if dark_mode {
-        DEFAULT_INK_DARK_MODE
-    } else {
-        DEFAULT_INK_LIGHT_MODE
-    };
     let mut highlighter = Vec::new();
     for (index, stroke) in page.strokes.iter().enumerate() {
         if stroke
@@ -192,7 +186,7 @@ fn render_page_contents_svg(
         {
             highlighter.push((index, stroke));
         } else {
-            render_stroke(&mut svg, stroke, default_ink, replay.then_some(index));
+            render_stroke(&mut svg, stroke, theme, replay.then_some(index));
         }
     }
     for element in &page.elements {
@@ -202,7 +196,7 @@ fn render_page_contents_svg(
             page,
             media_assets,
             flow_page_padding,
-            dark_mode,
+            theme,
         );
     }
     if !highlighter.is_empty() {
@@ -210,7 +204,7 @@ fn render_page_contents_svg(
         // ordinary page content. One group keeps that batch order.
         svg.scope(Group::new().blend(Blend::Darken), |svg| {
             for (index, stroke) in highlighter {
-                render_stroke(svg, stroke, default_ink, replay.then_some(index));
+                render_stroke(svg, stroke, theme, replay.then_some(index));
             }
         });
     }
@@ -221,10 +215,14 @@ fn render_line_background(
     svg: &mut Scene,
     page: &Page,
     lines: crate::page_background::LinePattern,
-    dark_mode: bool,
+    theme: RenderTheme,
 ) {
-    let color = if dark_mode { "#fafafa" } else { "#010102" };
-    let opacity = if dark_mode { 0.3 } else { 0.2 };
+    let color = if theme.is_dark() {
+        "#fafafa"
+    } else {
+        "#010102"
+    };
+    let opacity = if theme.is_dark() { 0.3 } else { 0.2 };
     let mut data = Data::new();
     for row in 0..lines.rows {
         let y = lines.first_y + f64::from(row) * lines.pitch_y;
@@ -247,7 +245,7 @@ fn render_dot_background(
     svg: &mut Scene,
     page: &Page,
     dots: crate::page_background::DotPattern,
-    dark_mode: bool,
+    theme: RenderTheme,
 ) {
     let crate::page_background::DotPattern {
         pitch_x,
@@ -257,7 +255,11 @@ fn render_dot_background(
         radius_y,
         rows,
     } = dots;
-    let color = if dark_mode { "#fafafa" } else { "#010102" };
+    let color = if theme.is_dark() {
+        "#fafafa"
+    } else {
+        "#010102"
+    };
     let scale_y = radius_y / radius_x;
     // Samsung draws round, zero-length dashes. Explicit row subpaths avoid
     // fractional Svg pattern-tile rounding in raster exporters. Dash phase
@@ -289,28 +291,30 @@ fn render_element(
     page: &Page,
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
-    dark_mode: bool,
+    theme: RenderTheme,
 ) {
     match element {
         PageElement::Image { bbox, media_index } => {
             render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
         PageElement::PlacedImage(image) => render_placed_image(svg, image, media_assets),
-        PageElement::TextBox(text_box) => render_text_box(
-            svg,
-            text_box,
-            page,
-            media_assets,
-            flow_page_padding,
-            dark_mode,
-        ),
+        PageElement::TextBox(text_box) => {
+            render_text_box(svg, text_box, page, media_assets, flow_page_padding, theme)
+        }
         PageElement::Shape(shape) => {
-            render_shape(svg, shape, dark_mode);
+            render_shape(svg, shape, theme);
             if let Some(text) = &shape.text {
-                render_text_box(svg, text, page, media_assets, flow_page_padding, dark_mode);
+                let theme = match shape.fill {
+                    crate::ShapePaint::Solid(argb) => theme.on_surface(
+                        theme.foreground_color(argb_color(argb)),
+                        f64::from((argb >> 24) as u8) / 255.0,
+                    ),
+                    _ => theme,
+                };
+                render_text_box(svg, text, page, media_assets, flow_page_padding, theme);
             }
         }
-        PageElement::Line(line) => render_line(svg, line, dark_mode),
+        PageElement::Line(line) => render_line(svg, line, theme),
     }
 }
 
@@ -342,9 +346,9 @@ fn native_svg_path(bytes: &[u8]) -> Option<Data> {
     Some(data)
 }
 
-fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, dark_mode: bool) {
-    let (fill, opacity) = shape_paint(&shape.fill, dark_mode);
-    let mut style = shape_outline(&shape.style, dark_mode)
+fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, theme: RenderTheme) {
+    let (fill, opacity) = shape_paint(&shape.fill, theme);
+    let mut style = shape_outline(&shape.style, theme)
         .fill(Paint::from_hex(&fill))
         .fill_opacity(decimal(opacity, 4));
     if !shape.path_data.is_empty() {
@@ -406,12 +410,12 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, dark_mode: bool) {
     svg.push(style.add(Polygon::new().points(&points, 2)));
 }
 
-fn render_line(svg: &mut Scene, line: &crate::NativeLine, dark_mode: bool) {
+fn render_line(svg: &mut Scene, line: &crate::NativeLine, theme: RenderTheme) {
     // Serialized endpoints already include the native rotation.
     if line.line_type > 2 || line.begin.iter().chain(&line.end).any(|v| !v.is_finite()) {
         return;
     }
-    let style = shape_outline(&line.style, dark_mode).fill(Paint::None);
+    let style = shape_outline(&line.style, theme).fill(Paint::None);
     if !line.path_data.is_empty() {
         if let Some(path) = native_svg_path(&line.path_data) {
             svg.push(style.add(Path::new().data(path)));
@@ -437,7 +441,7 @@ fn rectangle(bbox: BoundingBox, offset_y: f64, precision: usize) -> Rectangle {
         .height(decimal(bbox.y_max - bbox.y_min, precision))
 }
 
-fn shape_paint(paint: &crate::ShapePaint, dark_mode: bool) -> (String, f64) {
+fn shape_paint(paint: &crate::ShapePaint, theme: RenderTheme) -> (String, f64) {
     match paint {
         crate::ShapePaint::Solid(argb) => {
             let color = Color {
@@ -445,19 +449,15 @@ fn shape_paint(paint: &crate::ShapePaint, dark_mode: bool) -> (String, f64) {
                 g: (argb >> 8) as u8,
                 b: *argb as u8,
             };
-            let color = if dark_mode && is_dark_compatibility_color(color) {
-                DEFAULT_INK_DARK_MODE.to_owned()
-            } else {
-                color_hex(&color)
-            };
+            let color = theme.foreground(Some(color));
             (color, f64::from((argb >> 24) as u8) / 255.0)
         }
         _ => ("none".into(), 0.0),
     }
 }
 
-fn shape_outline(style: &crate::ShapeStyle, dark_mode: bool) -> Group {
-    let (paint, opacity) = shape_paint(&style.paint, dark_mode);
+fn shape_outline(style: &crate::ShapeStyle, theme: RenderTheme) -> Group {
+    let (paint, opacity) = shape_paint(&style.paint, theme);
     let cap = match style.cap {
         1 => LineCap::Round,
         2 => LineCap::Square,
@@ -575,7 +575,7 @@ fn render_text_box(
     page: &Page,
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
-    dark_mode: bool,
+    theme: RenderTheme,
 ) {
     let text = text_box.text.trim_end_matches('\n');
     if text.trim().is_empty() {
@@ -585,14 +585,7 @@ fn render_text_box(
     let is_note_body =
         text_box.bbox.x_max <= text_box.bbox.x_min || text_box.bbox.y_max <= text_box.bbox.y_min;
     if is_note_body {
-        render_flow_text_box(
-            svg,
-            text_box,
-            page,
-            media_assets,
-            flow_page_padding,
-            dark_mode,
-        );
+        render_flow_text_box(svg, text_box, page, media_assets, flow_page_padding, theme);
         return;
     }
     let (x, y, width, height) = (
@@ -601,19 +594,10 @@ fn render_text_box(
         text_box.bbox.x_max - text_box.bbox.x_min,
         text_box.bbox.y_max - text_box.bbox.y_min,
     );
-    let color = text_box
-        .color
-        .filter(|color| !dark_mode || !is_dark_compatibility_color(*color))
-        .as_ref()
-        .map(color_hex)
-        .unwrap_or_else(|| {
-            if dark_mode {
-                DEFAULT_INK_DARK_MODE
-            } else {
-                DEFAULT_INK_LIGHT_MODE
-            }
-            .into()
-        });
+    let theme = text_box
+        .highlight_color
+        .map_or(theme, |color| theme.on_background(color));
+    let color = theme.foreground(text_box.color);
     let font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(37.0);
     let line_height = font_size * 1.35;
     let mut group = Group::new();
@@ -671,7 +655,6 @@ const SAMSUNG_TEXT_SCALE: f64 = 3.0;
 const IMAGE_FLOW_LINE_HEIGHT_RATIO: f64 = 1.35;
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
 const FLOW_INDENT: f64 = 48.0;
-const SAMSUNG_LINK_COLOR: &str = "#0054ff";
 
 #[derive(Clone)]
 struct SvgTextStyle {
@@ -701,7 +684,7 @@ fn render_flow_text_box(
     page: &Page,
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
-    dark_mode: bool,
+    theme: RenderTheme,
 ) {
     let (horizontal_padding, vertical_padding) = flow_page_padding
         .map(|(horizontal, vertical)| (f64::from(horizontal), f64::from(vertical)))
@@ -746,7 +729,7 @@ fn render_flow_text_box(
             let base_style = text_style_at(
                 text_box,
                 paragraph_start_utf16,
-                dark_mode,
+                theme,
                 layout.predefined_style,
             );
             let embedded = text_box
@@ -761,7 +744,7 @@ fn render_flow_text_box(
             if !embedded.is_empty() {
                 for object in embedded {
                     if let Some(bottom) =
-                        render_embedded_object(svg, object, cursor_y, media_assets, dark_mode)
+                        render_embedded_object(svg, object, cursor_y, media_assets, theme)
                     {
                         let bottom_margin =
                             if matches!(object.content, Some(RichTextObjectContent::Image(_))) {
@@ -793,7 +776,7 @@ fn render_flow_text_box(
                     &utf16_offsets,
                     paragraph_start..paragraph_end,
                     available_width,
-                    dark_mode,
+                    theme,
                     layout.predefined_style,
                 )
             };
@@ -833,7 +816,7 @@ fn render_flow_text_box(
                     content_right,
                     baseline,
                     layout.alignment,
-                    dark_mode,
+                    theme,
                     layout.predefined_style,
                 );
                 cursor_y += line_height;
@@ -985,7 +968,7 @@ fn wrap_paragraph(
     utf16_offsets: &[u32],
     range: Range<usize>,
     max_width: f64,
-    dark_mode: bool,
+    theme: RenderTheme,
     predefined_style: Option<PredefinedTextStyle>,
 ) -> Vec<Range<usize>> {
     let mut lines = Vec::new();
@@ -996,7 +979,7 @@ fn wrap_paragraph(
         let mut last_break = None;
         while index < range.end {
             let character = characters[index];
-            let style = text_style_at(text_box, utf16_offsets[index], dark_mode, predefined_style);
+            let style = text_style_at(text_box, utf16_offsets[index], theme, predefined_style);
             let next_width = width + estimated_character_width(character, &style);
             if next_width > max_width && index > start {
                 break;
@@ -1090,7 +1073,7 @@ fn render_flow_line(
     right: f64,
     baseline: f64,
     alignment: Option<ParagraphAlignment>,
-    dark_mode: bool,
+    theme: RenderTheme,
     predefined_style: Option<PredefinedTextStyle>,
 ) {
     if range.is_empty() {
@@ -1130,8 +1113,7 @@ fn render_flow_line(
             for segment in boundaries.windows(2) {
                 let start = segment[0];
                 let end = segment[1];
-                let style =
-                    text_style_at(text_box, utf16_offsets[start], dark_mode, predefined_style);
+                let style = text_style_at(text_box, utf16_offsets[start], theme, predefined_style);
                 write_styled_tspan(
                     svg,
                     &text_box.text[byte_offsets[start]..byte_offsets[end]],
@@ -1145,7 +1127,7 @@ fn render_flow_line(
 fn text_style_at(
     text_box: &RichTextBox,
     utf16_index: u32,
-    dark_mode: bool,
+    theme: RenderTheme,
     predefined_style: Option<PredefinedTextStyle>,
 ) -> SvgTextStyle {
     let mut font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(45.0);
@@ -1157,15 +1139,9 @@ fn text_style_at(
             PredefinedTextStyle::Body1 | PredefinedTextStyle::Other(_) => font_size,
         };
     }
-    let mut color = text_box
-        .color
-        .filter(|color| !dark_mode || !is_dark_compatibility_color(*color));
     let mut style = SvgTextStyle {
         font_size,
-        color: color
-            .as_ref()
-            .map(color_hex)
-            .unwrap_or_else(|| default_text_color(dark_mode).to_string()),
+        color: theme.foreground(text_box.color),
         bold: false,
         italic: false,
         underline: false,
@@ -1180,13 +1156,7 @@ fn text_style_at(
     {
         match span.kind {
             RichTextSpanType::ForegroundColor => {
-                color = span
-                    .color_value()
-                    .filter(|color| !dark_mode || !is_dark_compatibility_color(*color));
-                style.color = color
-                    .as_ref()
-                    .map(color_hex)
-                    .unwrap_or_else(|| default_text_color(dark_mode).to_string());
+                style.color = theme.foreground(span.color_value());
             }
             RichTextSpanType::FontSize => {
                 if let Some(size) = span.font_size_value() {
@@ -1207,7 +1177,11 @@ fn text_style_at(
         }
     }
     if is_hyperlink {
-        style.color = SAMSUNG_LINK_COLOR.to_string();
+        style.color = theme.foreground(Some(Color {
+            r: 0,
+            g: 84,
+            b: 255,
+        }));
         style.underline = true;
     }
     if matches!(
@@ -1311,7 +1285,7 @@ fn render_embedded_object(
     object: &RichTextObjectSpan,
     cursor_y: f64,
     media_assets: &[MediaAsset],
-    dark_mode: bool,
+    theme: RenderTheme,
 ) -> Option<f64> {
     match object.content.as_ref() {
         Some(RichTextObjectContent::Image(image)) => {
@@ -1339,7 +1313,11 @@ fn render_embedded_object(
             let offset_y =
                 object_flow_offset(table.bbox.y_min, cursor_y, object_top_margin(object));
             svg.scope(Group::new().object(ObjectKind::Table), |svg| {
-                let stroke = if dark_mode { "#777777" } else { "#b8b0a3" };
+                let stroke = if theme.is_dark() {
+                    "#777777"
+                } else {
+                    "#b8b0a3"
+                };
                 let clip = svg.definition::<Clip>();
                 svg.push(
                     Definitions::new()
@@ -1348,9 +1326,11 @@ fn render_embedded_object(
                 svg.scope(Group::new().clipped(&clip), |svg| {
                     for row in &table.rows {
                         for cell in &row.cells {
+                            let cell_background = table_cell_background(cell, theme);
+                            let cell_theme = theme.on_background(cell_background);
                             svg.push(
                                 rectangle(cell.bbox, offset_y, 2)
-                                    .fill(Paint::from_hex(&table_cell_fill(cell, dark_mode))),
+                                    .fill(Paint::from_hex(&color_hex(&cell_background))),
                             );
                             if cell.bbox.x_min > table.bbox.x_min + 1.0 {
                                 svg.push(
@@ -1375,7 +1355,7 @@ fn render_embedded_object(
                                 );
                             }
                             if let Some(line) = cell.content.text.lines().next() {
-                                let mut style = text_style_at(&cell.content, 0, dark_mode, None);
+                                let mut style = text_style_at(&cell.content, 0, cell_theme, None);
                                 style.bold = false;
                                 svg.scope(
                                     Text::new("")
@@ -1403,13 +1383,19 @@ fn render_embedded_object(
         }
         Some(RichTextObjectContent::CodeBlock(code)) => {
             let offset_y = object_flow_offset(code.bbox.y_min, cursor_y, object_top_margin(object));
-            let fill = if dark_mode { "#333333" } else { "#efefef" };
-            let stroke = if dark_mode { "#5f5f5f" } else { "#dddddd" };
+            let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
+            let theme = theme.on_background(background);
+            let fill = color_hex(&background);
+            let stroke = if theme.is_dark() {
+                "#5f5f5f"
+            } else {
+                "#dddddd"
+            };
             svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
                 svg.push(
                     rectangle(code.bbox, offset_y, 2)
                         .rx(36)
-                        .fill(Paint::from_hex(fill))
+                        .fill(Paint::from_hex(&fill))
                         .stroke(Paint::from_hex(stroke))
                         .stroke_width(1),
                 );
@@ -1424,10 +1410,14 @@ fn render_embedded_object(
                         text_x,
                         object_top + 81.6,
                         FontFamily::Roboto,
-                        dark_mode,
+                        theme,
                     );
                 }
-                let icon_stroke = if dark_mode { "#b7b7b7" } else { "#8b8b8b" };
+                let icon_stroke = if theme.is_dark() {
+                    "#b7b7b7"
+                } else {
+                    "#8b8b8b"
+                };
                 let icon = Data::new()
                     .move_to((
                         coordinate(code.bbox.x_min + 895., 2),
@@ -1466,7 +1456,7 @@ fn render_embedded_object(
                             text_x,
                             baseline,
                             FontFamily::Roboto,
-                            dark_mode,
+                            theme,
                         );
                         character_start += line.chars().count() + 1;
                         baseline += if line_index == 0 { 98.25 } else { 60.75 };
@@ -1488,7 +1478,7 @@ fn render_embedded_line(
     x: f64,
     baseline: f64,
     font_family: FontFamily,
-    dark_mode: bool,
+    theme: RenderTheme,
 ) {
     let utf16_index = text_box
         .text
@@ -1496,7 +1486,7 @@ fn render_embedded_line(
         .take(character_start)
         .map(|character| character.len_utf16() as u32)
         .sum();
-    let style = text_style_at(text_box, utf16_index, dark_mode, None);
+    let style = text_style_at(text_box, utf16_index, theme, None);
     svg.scope(
         Text::new("")
             .x(decimal(x, 2))
@@ -1517,18 +1507,22 @@ fn object_flow_offset(stored_top: f64, cursor_y: f64, top_margin: f64) -> f64 {
     }
 }
 
-fn table_cell_fill(cell: &crate::RichTextTableCell, dark_mode: bool) -> String {
+fn argb_color(argb: u32) -> Color {
+    Color {
+        r: (argb >> 16) as u8,
+        g: (argb >> 8) as u8,
+        b: argb as u8,
+    }
+}
+
+fn table_cell_background(cell: &crate::RichTextTableCell, theme: RenderTheme) -> Color {
     if !cell.has_own_background_color {
-        return if dark_mode { "#252525" } else { "#fcfcfc" }.to_string();
+        return theme.background();
     }
     if cell.background_color == 0 {
-        return if dark_mode { "#45413d" } else { "#eeebe7" }.to_string();
+        return argb_color(if theme.is_dark() { 0x45413d } else { 0xeeebe7 });
     }
-    color_hex(&Color {
-        r: (cell.background_color >> 16) as u8,
-        g: (cell.background_color >> 8) as u8,
-        b: cell.background_color as u8,
-    })
+    argb_color(cell.background_color)
 }
 
 fn object_top_margin(object: &RichTextObjectSpan) -> f64 {
@@ -1549,14 +1543,6 @@ fn object_bottom_margin(object: &RichTextObjectSpan) -> f64 {
         crate::ObjectSpanLayoutOption::BlockWithSmallMargin => 12.0,
         crate::ObjectSpanLayoutOption::BlockWithMediumMargin => 24.0,
         _ => 0.0,
-    }
-}
-
-fn default_text_color(dark_mode: bool) -> &'static str {
-    if dark_mode {
-        DEFAULT_INK_DARK_MODE
-    } else {
-        DEFAULT_INK_LIGHT_MODE
     }
 }
 
@@ -1584,13 +1570,6 @@ fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
         }
     }
     (utf16_offset == target).then_some(text.chars().count())
-}
-
-fn is_dark_compatibility_color(color: Color) -> bool {
-    // Samsung stores theme-adaptive body text as a dark RGB color even when
-    // dark-mode compatibility is enabled. Treat only near-black colors as
-    // adaptive so intentional accent colors remain unchanged.
-    u16::from(color.r) + u16::from(color.g) + u16::from(color.b) <= 192
 }
 
 struct StyledSpan<'a> {
@@ -1659,8 +1638,14 @@ fn samsung_font_to_svg(size: f32) -> f64 {
     }
 }
 
-fn render_stroke(svg: &mut Scene, stroke: &Stroke, default_ink: &str, replay_index: Option<usize>) {
-    let paint = crate::prepare_stroke(stroke, default_ink == DEFAULT_INK_DARK_MODE);
+fn render_stroke(
+    svg: &mut Scene,
+    stroke: &Stroke,
+    theme: RenderTheme,
+    replay_index: Option<usize>,
+) {
+    let mut paint = crate::prepare_stroke(stroke, false);
+    paint.color = theme.foreground(stroke.color);
     if let Some(index) = replay_index {
         svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
             render_prepared_stroke(svg, &paint, true);
@@ -1788,7 +1773,7 @@ pub struct StrokePaint {
     pub segment_widths: Option<Vec<f64>>,
 }
 
-/// Resolve exactly the same colors and pressure widths as the Svg renderer.
+/// Resolve paint for a default light or dark canvas, without document metadata.
 pub fn stroke_paint(stroke: &Stroke, dark_mode: bool) -> StrokePaint {
     let width = normalized_stroke_width(stroke.pen_width);
     let pressure = stroke.pressures.len() >= stroke.points.len().saturating_sub(1)
@@ -1797,14 +1782,7 @@ pub fn stroke_paint(stroke: &Stroke, dark_mode: bool) -> StrokePaint {
             .iter()
             .any(|&p| p > PRESSURE_PRESENT_EPSILON);
     StrokePaint {
-        color: stroke.color.as_ref().map(color_hex).unwrap_or_else(|| {
-            if dark_mode {
-                DEFAULT_INK_DARK_MODE
-            } else {
-                DEFAULT_INK_LIGHT_MODE
-            }
-            .into()
-        }),
+        color: RenderTheme::for_canvas(dark_mode).foreground(stroke.color),
         width,
         segment_widths: pressure.then(|| {
             stroke
@@ -2142,6 +2120,139 @@ mod tests {
         }
     }
 
+    fn theme_test_text() -> RichTextBox {
+        RichTextBox {
+            text_area_type: None,
+            bbox: BoundingBox {
+                x_min: 10.,
+                y_min: 20.,
+                x_max: 95.,
+                y_max: 90.,
+            },
+            rotation_degrees: None,
+            text: "visible".into(),
+            color: Some(Color { r: 0, g: 0, b: 0 }),
+            highlight_color: None,
+            underline: false,
+            font_size: Some(12.),
+            runs: vec![],
+            spans: vec![],
+            paragraphs: vec![],
+            object_spans: vec![],
+            text_sections: vec![],
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    #[test]
+    fn explicit_ink_and_text_adapt_together_and_honor_compatibility() {
+        for (compatible, background, foreground) in
+            [(true, "#252525", "#ffffff"), (false, "#fcfcfc", "#000000")]
+        {
+            let mut page = page_with_uncolored_stroke();
+            page.background_color = Some(Color {
+                r: 252,
+                g: 252,
+                b: 252,
+            });
+            page.strokes[0].color = Some(Color { r: 0, g: 0, b: 0 });
+            page.elements.push(PageElement::TextBox(theme_test_text()));
+            let mut doc = document(page);
+            doc.metadata.dark_mode_compatibility = Some(compatible);
+            let options = RenderOptions {
+                color_mode: RenderColorMode::Dark,
+            };
+            let svg = render_document_svg(&doc, &options).remove(0).svg;
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            assert!(
+                xml.descendants()
+                    .any(|n| n.has_tag_name("rect") && n.attribute("fill") == Some(background))
+            );
+            assert!(
+                xml.descendants()
+                    .any(|n| n.attribute("stroke") == Some(foreground))
+            );
+            assert!(
+                xml.descendants()
+                    .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some(foreground))
+            );
+            let theme =
+                super::RenderTheme::resolve(&doc.pages[0], &doc.metadata, options.color_mode);
+            assert_eq!(
+                super::shape_paint(&crate::ShapePaint::Solid(0x80000000), theme),
+                (foreground.into(), 128. / 255.)
+            );
+        }
+    }
+
+    #[test]
+    fn dark_mode_keeps_black_text_on_a_white_highlight() {
+        let mut page = page_with_uncolored_stroke();
+        let mut text = theme_test_text();
+        text.highlight_color = Some(Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        });
+        page.elements.push(PageElement::TextBox(text));
+        let svg = render_document_svg(
+            &document(page),
+            &RenderOptions {
+                color_mode: RenderColorMode::Dark,
+            },
+        )
+        .remove(0)
+        .svg;
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert!(
+            xml.descendants()
+                .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some("#000000"))
+        );
+        assert!(
+            xml.descendants()
+                .any(|n| n.has_tag_name("rect") && n.attribute("fill") == Some("#ffffff"))
+        );
+    }
+
+    #[test]
+    fn cell_text_uses_its_own_surface_and_inherited_paper_stays_custom() {
+        let mut page = page_with_uncolored_stroke();
+        page.background_color = Some(Color {
+            r: 20,
+            g: 30,
+            b: 40,
+        });
+        let theme =
+            super::RenderTheme::resolve(&page, &DocumentMetadata::default(), RenderColorMode::Auto);
+        let mut cell = crate::RichTextTableCell {
+            border: None,
+            metadata: Default::default(),
+            column_index: 0,
+            row_span: 1,
+            column_span: 1,
+            background_color: 0xffffffff,
+            has_own_background_color: true,
+            bbox: BoundingBox::default(),
+            vertical_alignment: 0,
+            content: theme_test_text(),
+        };
+        let surface = super::table_cell_background(&cell, theme);
+        assert_eq!(
+            super::text_style_at(&cell.content, 0, theme.on_background(surface), None).color,
+            "#000000"
+        );
+        cell.has_own_background_color = false;
+        assert_eq!(
+            super::table_cell_background(&cell, theme),
+            page.background_color.unwrap()
+        );
+        assert_eq!(
+            super::text_style_at(&cell.content, 0, theme, None).color,
+            "#ffffff"
+        );
+    }
+
     #[test]
     fn clamps_pressure_while_rendering_strokes() {
         let mut page = page_with_uncolored_stroke();
@@ -2188,7 +2299,7 @@ mod tests {
         assert!(xml.descendants().any(|node| node.has_tag_name("text")
             && node.attribute("x") == Some("48.00")
             && node.attribute("y") == Some("45.00")));
-        assert!(pages[0].svg.contains(r##"<tspan fill="#ffffff""##));
+        assert!(pages[0].svg.contains(r##"<tspan fill="#dadada""##));
         assert!(!pages[0].svg.contains(r##"<tspan fill="#252525""##));
     }
 

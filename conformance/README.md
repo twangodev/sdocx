@@ -269,3 +269,16 @@ Native evidence and current limits are recorded in
 [`shape-line-findings.md`](../docs/reverse-engineering/shape-line-findings.md).
 Real Samsung shapes/lines with matching reference PDFs are still needed for
 visual compatibility coverage.
+
+## Native color checks
+
+`theme-colors.json` contains 785 native lightness-reversal samples checked by
+Rust tests. The optional hash-pinned oracle also checks that the native light
+theme preserves stored colors:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/theme_native.py
+```
+
+See [rendering theme policy](../docs/render-themes.md) for the distinction between
+the verified color conversion and export-specific theme selection.
