@@ -29,7 +29,7 @@ it('imports sequentially, renders only first pages, and continues after invalid 
 	expect(save).toHaveBeenCalledTimes(2);
 	expect(save.mock.calls[0][0].contentHash).toMatch(/^[a-f0-9]{64}$/);
 	expect(client.renderPage).toHaveBeenCalledTimes(2);
-	expect(client.renderPage).toHaveBeenCalledWith(0, 'light');
+	expect(client.renderPage).toHaveBeenCalledWith(0, 'auto');
 	expect(client.destroy).toHaveBeenCalledOnce();
 });
 

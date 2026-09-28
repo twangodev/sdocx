@@ -73,6 +73,11 @@ verify a Lighten blend state without image objects. Dark-paper Lighten is an
 export policy; a Samsung dark-paper highlighter export is still needed to prove
 its native compositing mode.
 
-Canonical thumbnail generation and end-to-end export validation remain part of
-the active theme work. Native per-object color-theme selection and exact dark
+Library import and regeneration both render the first page in Auto mode,
+independent of the viewer selection. Catalog version 2 invalidates old thumbnail
+references; existing recovery removes the orphaned derived assets, preserving
+original notes, collections and memberships. Thumbnails regenerate when notes
+are opened. Stale results from a replaced document are rejected.
+
+End-to-end export validation remains part of the active theme work. Native per-object color-theme selection and exact dark
 paper color remain explicitly unverified above.

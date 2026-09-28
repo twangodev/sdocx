@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import Dexie from 'dexie';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LibraryCatalog } from './catalog';
 import { LibraryService } from './service';
@@ -139,4 +140,37 @@ it('deletes the entire library including orphan assets and memberships', async (
 	await service.clearLibrary();
 	expect(await catalog.snapshot()).toEqual({ documents: [], collections: [], memberships: [] });
 	expect(assets.files.size).toBe(0);
+});
+
+
+it('invalidates old theme-dependent thumbnails while preserving notes and collections', async () => {
+	const name = `theme-upgrade-${crypto.randomUUID()}`;
+	const old = new Dexie(name);
+	old.version(1).stores({
+		documents: '&id, &contentHash, importedAt', collections: '&id',
+		memberships: '[collectionId+documentId], collectionId, documentId', pendingDeletes: '&name'
+	});
+	const document = {
+		id: 'note', contentHash: 'hash', filename: 'note.sdocx', title: 'Note', size: 4,
+		pageCount: 1, importedAt: 1, favorite: true, original: 'originals/note.sdocx',
+		thumbnail: 'thumbnails/note.png'
+	};
+	await old.table('documents').put(document);
+	await old.table('collections').put({ id: 'course', name: 'Course' });
+	await old.table('memberships').put({ collectionId: 'course', documentId: 'note' });
+	old.close();
+	const catalog = new LibraryCatalog(name);
+	catalogs.push(catalog);
+	const assets = new MemoryAssets();
+	await assets.write(document.original, new Blob(['note']));
+	await assets.write(document.thumbnail, new Blob(['old thumbnail']));
+	const service = new LibraryService(catalog, assets, (action) => action());
+	await catalog.open();
+	await service.recover();
+	expect(await catalog.documents.get('note')).toEqual({ ...document, thumbnail: null });
+	expect(await catalog.collections.count()).toBe(1);
+	expect(await catalog.memberships.count()).toBe(1);
+	expect([...assets.files.keys()]).toEqual([document.original]);
+	await service.cacheThumbnail('note', new Blob(['auto thumbnail']));
+	expect((await catalog.documents.get('note'))?.thumbnail).toBe(document.thumbnail);
 });

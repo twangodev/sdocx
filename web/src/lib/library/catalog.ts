@@ -15,6 +15,9 @@ export class LibraryCatalog extends Dexie {
 			memberships: '[collectionId+documentId], collectionId, documentId',
 			pendingDeletes: '&name'
 		});
+		this.version(2).stores({}).upgrade((transaction) =>
+			transaction.table('documents').toCollection().modify({ thumbnail: null })
+		);
 	}
 
 	async snapshot(): Promise<LibrarySnapshot> {

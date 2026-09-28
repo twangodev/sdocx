@@ -172,6 +172,15 @@ export class DocumentSession {
 	}
 
 
+	async renderThumbnailSvg(file: File): Promise<string> {
+		if (this.activeFile !== file) throw new Error('Document replaced.');
+		const generation = this.loadGeneration;
+		const svg = await this.requireClient().renderPage(0, 'auto');
+		if (generation !== this.loadGeneration) throw new Error('Document replaced.');
+		return svg;
+	}
+
+
 	async resolvePages(selection: string): Promise<number[]> {
 		const generation = this.loadGeneration;
 		const indices = await this.requireClient().resolvePages(selection);

@@ -30,9 +30,9 @@
 
 	const zoom = new DocumentZoomCamera(() => pageIndex);
 	const session = new DocumentSession({
-		onPageRendered: ({ file, pageIndex, svg }) => {
+		onPageRendered: ({ file, pageIndex }) => {
 			if (pageIndex === 0 && activeLibraryDocument?.file === file) {
-				void library.restoreThumbnail(activeLibraryDocument.id, svg);
+				void library.restoreThumbnail(activeLibraryDocument.id, () => session.renderThumbnailSvg(file));
 			}
 		},
 		onResetView: () => {

@@ -179,3 +179,37 @@ it('publishes a rendered first page before later pages finish and ignores cancel
 	expect(onPageRendered).toHaveBeenCalledOnce();
 	stop();
 });
+
+
+describe('canonical thumbnail rendering', () => {
+	it('uses Auto regardless of the active viewer mode', async () => {
+		const client = clientWith(vi.fn(async () => emptySummary));
+		client.renderPage = vi.fn(async () => '<svg/>');
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		const source = file('note.sdocx', Promise.resolve(new ArrayBuffer(1)));
+		await session.load(source);
+		for (const mode of ['dark', 'light', 'auto'] as const) {
+			session.colorMode = mode;
+			expect(await session.renderThumbnailSvg(source)).toBe('<svg/>');
+			expect(client.renderPage).toHaveBeenLastCalledWith(0, 'auto');
+		}
+		session.destroy();
+	});
+
+	it('rejects thumbnail results after the document is replaced', async () => {
+		const rendered = deferred<string>();
+		const client = clientWith(vi.fn(async () => emptySummary));
+		client.renderPage = vi.fn(() => rendered.promise);
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		const source = file('old.sdocx', Promise.resolve(new ArrayBuffer(1)));
+		await session.load(source);
+		const pending = expect(session.renderThumbnailSvg(source)).rejects.toThrow('Document replaced');
+		await session.load(file('new.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		rendered.resolve('<svg/>');
+		await pending;
+		await expect(session.renderThumbnailSvg(source)).rejects.toThrow('Document replaced');
+		session.destroy();
+	});
+});

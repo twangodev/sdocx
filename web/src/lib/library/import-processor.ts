@@ -76,7 +76,7 @@ export class ImportProcessor {
 						let thumbnail: Blob | null = null;
 						if (summary.pageCount > 0) {
 							try {
-								thumbnail = await this.thumbnail(await this.client.renderPage(0, 'light'));
+								thumbnail = await this.thumbnail(await this.client.renderPage(0, 'auto'));
 							} catch {
 								/* Thumbnails are optional derived assets. */
 							}

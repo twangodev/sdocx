@@ -24,6 +24,7 @@ export class LibraryWorkspace {
 	available = $state(false);
 	private channel: BroadcastChannel | null = null;
 	private refreshGeneration = 0;
+	private readonly restoringThumbnails = new Set<string>();
 	private stopped = false;
 	private ready: Promise<void> = Promise.resolve();
 	readonly service = new LibraryService(
@@ -178,13 +179,16 @@ export class LibraryWorkspace {
 		});
 	}
 
-	async restoreThumbnail(id: string, svg: string): Promise<void> {
-		if (this.snapshot.documents.find((document) => document.id === id)?.thumbnail) return;
+	async restoreThumbnail(id: string, render: () => Promise<string>): Promise<void> {
+		if (this.restoringThumbnails.has(id) || this.snapshot.documents.find((document) => document.id === id)?.thumbnail) return;
+		this.restoringThumbnails.add(id);
 		try {
-			await this.service.cacheThumbnail(id, await createThumbnail(svg));
+			await this.service.cacheThumbnail(id, await createThumbnail(await render()));
 			await this.refresh();
 		} catch {
 			return;
+		} finally {
+			this.restoringThumbnails.delete(id);
 		}
 	}
 
