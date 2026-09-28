@@ -6,6 +6,9 @@ Notes APK, native serializers, or real compatibility fixtures.
 
 ## Documents
 
+- [`marker4-v7.md`](marker4-v7.md) — fractional-width V7 highlighter vectors,
+  native saved-redraw fixtures and isolated native-layer appearance comparison.
+
 - [`file-format.md`](file-format.md) — authoritative archive and binary-format
   map: `note.note`, pages, layers, objects, frames, strokes, media, hashes and
   end tags.

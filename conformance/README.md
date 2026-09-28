@@ -72,6 +72,22 @@ These require locally extracted libraries and Unicorn. They validate stroke
 geometry, not complete native pixel parity. Keep routine validation focused on
 production regressions and the real-file visual comparison below.
 
+Marker4 V7 stylus captures in `marker4-v7.json` also run in ordinary Rust CI.
+They cover 36 cases, including fractional widths, the minimum radius, short
+moves, reversals, taps and stationary input. Its optional native oracle uses
+the same hash-checked loader and supports real `ink_geometry` output:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/marker4_native.py
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/marker4_native.py --prepared geometry.json
+```
+
+`ink_visual.py` accepts `--profile`, `--settings`, `--region LEFT TOP RIGHT BOTTOM`
+and `--chroma-threshold` to compare selected pen regions. It reports exact ink
+overlap, one-pixel-tolerant missing/extra coverage, and mean RGB error in shared
+ink. Region selection does not remove other overlapping objects; use matching
+isolated layers where available. See the [V7 comparison](../docs/reverse-engineering/marker4-v7.md).
+
 The oracle leaves the null page unmapped. The first library is loaded at base
 zero for symbol addressing, but its ELF header must not make null data reads
 look valid. Missing required channels still fail validation; absent optional

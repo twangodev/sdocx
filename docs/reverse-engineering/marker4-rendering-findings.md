@@ -7,7 +7,7 @@ round-ended segments. Its 36.21-unit, 50%-alpha highlights became thin opaque
 lines.
 
 The shared `ink/marker4.rs` path now preserves that alpha and reconstructs
-midpoint sampling at canonical inverse scale 1. SVG and Canvas consume the
+midpoint sampling at canonical inverse scale 1. SVG, PDF and replay consume the
 same centers, original-sample boundaries and rounded rectangular tip.
 The profile remains `Approximate`: the vector outline does not reproduce
 native texture filtering or zoom-dependent GPU coverage.
@@ -43,6 +43,6 @@ to 4.73. These measurements cover this fixture, not general native parity.
 
 Narrow ruled paper (template 1) is now supported by the shared background
 renderer. Remaining differences include native mask filtering,
-typed-text placement/size, and the debugger's existing lack of a separate
-Darken highlighter batch. Other Marker4 versions, rainbow effects and live
-prediction remain unsupported by this geometry path.
+typed-text placement/size. Replay now shares the renderer's Darken highlighter
+batch. [V7 stylus support](marker4-v7.md) has since been added; other Marker4
+versions, rainbow effects and live prediction remain unsupported by this path.
