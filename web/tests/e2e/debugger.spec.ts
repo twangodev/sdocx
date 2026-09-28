@@ -541,11 +541,20 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 			.get(image.src)!
 			.text()
 	);
-	expect(svg).toContain('data-page-template="dots"');
-	expect(svg).toContain('M 466.05 403.90');
-	expect(svg).toContain('M 678.82 398.50');
-	// Each of the 77 FountainPen strokes uses one native circular-stamp path.
-	expect(svg.match(/<path fill="[^"]+" d="M[^"]+a/g)).toHaveLength(77);
+	const exported = await page.evaluate(svg => {
+		const document = new DOMParser().parseFromString(svg, 'image/svg+xml');
+		const paths = [...document.querySelectorAll<SVGPathElement>('path:not([data-page-template])')];
+		const template = document.querySelector('[data-page-template="dots"]')!;
+		return {
+			template: Object.fromEntries([...template.attributes].map(attribute => [attribute.name, attribute.value])),
+			starts: paths.map(path => { const point = path.getPointAtLength(0); return [point.x, point.y]; }),
+			stamps: paths.filter(path => path.getAttribute('d')?.includes('a')).length
+		};
+	}, svg);
+	for (const [x, y] of [[466.05, 403.90], [678.82, 398.50]]) {
+		expect(exported.starts.some(([actualX, actualY]) => Math.abs(actualX - x) < 0.001 && Math.abs(actualY - y) < 0.001)).toBe(true);
+	}
+	expect(exported.stamps).toBe(77);
 	await page.getByRole('button', { name: 'Debugger', exact: true }).click();
 	await expect(page.getByLabel('Debugger page').locator('option')).toHaveCount(
 		2
@@ -556,11 +565,15 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 	await page.getByRole('button', { name: 'Restart replay' }).click();
 	const background = page.locator('[data-replay-overlay] .vector-page > svg');
 	await expect(background).toHaveAttribute('data-render-version', /.+/);
-	const replaySvg = await background.evaluate(element => new XMLSerializer().serializeToString(element));
-	const templatePath = (value: string) =>
-		value.match(/<path data-page-template="dots"[^>]*\/>/)?.[0];
-	expect(templatePath(replaySvg)).toBe(templatePath(svg));
-	expect(replaySvg.match(/<path d=/g)).toHaveLength(6);
+	const replayBackground = await background.evaluate(element => {
+		const template = element.querySelector('[data-page-template="dots"]')!;
+		return {
+			template: Object.fromEntries([...template.attributes].map(attribute => [attribute.name, attribute.value])),
+			paths: [...element.querySelectorAll('path:not([data-page-template])')].filter(path => !path.closest('[data-replay-stroke]')).length
+		};
+	});
+	expect(replayBackground.template).toEqual(exported.template);
+	expect(replayBackground.paths).toBe(6);
 	const pixels = await background.evaluate(async element => {
 		const copy = element.cloneNode(true) as SVGSVGElement;
 		copy.removeAttribute('style');

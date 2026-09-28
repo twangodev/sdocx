@@ -661,13 +661,19 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     let mut background = document.clone();
     background.pages[0].strokes.clear();
     let svg = &sdocx::render_document_svg(&background, &Default::default())[0].svg;
-    assert_eq!(
-        svg.matches("<path d=").count(),
-        6,
-        "five native shapes and one line"
-    );
-    assert!(svg.contains("M 466.05 403.90"), "pentagon path");
-    assert!(svg.contains("M 678.82 398.50"), "hexagon path");
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    let paths: Vec<_> = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("path") && node.attribute("data-page-template").is_none())
+        .collect();
+    assert_eq!(paths.len(), 6, "five native shapes and one line");
+    for (expected_x, expected_y) in [(466.05, 403.90), (678.82, 398.50)] {
+        assert!(paths.iter().any(
+            |node| matches!(svgtypes::PathParser::from(node.attribute("d").unwrap()).next(),
+            Some(Ok(svgtypes::PathSegment::MoveTo { abs: true, x, y }))
+                if (x - expected_x).abs() < 0.0001 && (y - expected_y).abs() < 0.0001)
+        ));
+    }
     assert!(svg.contains("data-page-template="));
     #[cfg(feature = "pdf")]
     {

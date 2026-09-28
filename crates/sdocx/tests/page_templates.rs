@@ -1,3 +1,7 @@
+#[cfg(feature = "render")]
+#[path = "support/svg.rs"]
+mod svg_support;
+
 #[allow(dead_code)]
 mod support;
 use sdocx::{DiagnosticCode, PageTemplateSource};
@@ -89,27 +93,23 @@ fn native_grid_is_vector_scales_by_document_axis_and_clears_the_top_margin() {
     // measured source-space pitches are 91.6983 and 83.1642 (JPEG rounding).
     assert!(svg.contains("stroke-dasharray=\"0 91.700000\""));
 
-    assert!(svg.contains("stroke=\"#010102\" stroke-opacity=\"0.2\""));
+    svg_support::assert_svg_element(
+        svg,
+        "path",
+        &[("stroke", "#010102"), ("stroke-opacity", "0.2")],
+    );
     assert_eq!(svg.matches("data-page-template=\"dots\"").count(), 1);
-    assert_eq!(svg.matches(" H 1848").count(), 31);
+    assert_eq!(svg_support::svg_path_commands(svg, "data-page-template", "dots").iter().filter(|command| matches!(command, svgtypes::PathSegment::HorizontalLineTo { abs: true, x } if *x == 1848.)).count(), 31);
     assert!(!svg.contains("<image "));
     // First center is below the clear native top margin.
-    let first_y = svg
-        .split("d=\"M 0 ")
-        .nth(1)
-        .unwrap()
-        .split(' ')
-        .next()
-        .unwrap()
-        .parse::<f64>()
-        .unwrap();
+    let first_y = template_ys(svg, "dots")[0];
     assert!((56.0..57.0).contains(&first_y));
     let mut options = RenderOptions::default();
     options.color_mode = RenderColorMode::Dark;
-    assert!(
-        render_document_svg(&document, &options)[0]
-            .svg
-            .contains("stroke=\"#fafafa\" stroke-opacity=\"0.2\"")
+    svg_support::assert_svg_element(
+        &render_document_svg(&document, &options)[0].svg,
+        "path",
+        &[("stroke", "#fafafa"), ("stroke-opacity", "0.2")],
     );
     let landscape = template_document(7, 2613, 1848, 1);
     let svg_landscape = &render_document_svg(&landscape, &Default::default())[0].svg;
@@ -174,27 +174,39 @@ fn ruled_templates_share_native_spacing_and_use_theme_specific_alpha() {
         let doc = template_document(id, 1848, 2613, 0);
         let svg = &render_document_svg(&doc, &Default::default())[0].svg;
         assert!(svg.contains("data-page-template=\"lines\""));
-        let ys: Vec<f64> = svg
-            .split("M 0 ")
-            .skip(1)
-            .map(|row| row.split(' ').next().unwrap().parse().unwrap())
-            .collect();
+        let ys = template_ys(svg, "lines");
         assert!((ys[1] - ys[0] - pitch).abs() < 0.001);
         assert!((ys[0] - 52.0).abs() < 1.0);
-        assert!(svg.contains("stroke=\"#010102\" stroke-opacity=\"0.2\""));
+        svg_support::assert_svg_element(
+            svg,
+            "path",
+            &[("stroke", "#010102"), ("stroke-opacity", "0.2")],
+        );
         assert!(!svg.contains("stroke-dasharray"));
         let mut dark = RenderOptions::default();
         dark.color_mode = RenderColorMode::Dark;
-        assert!(
-            render_document_svg(&doc, &dark)[0]
-                .svg
-                .contains("stroke=\"#fafafa\" stroke-opacity=\"0.3\"")
+        svg_support::assert_svg_element(
+            &render_document_svg(&doc, &dark)[0].svg,
+            "path",
+            &[("stroke", "#fafafa"), ("stroke-opacity", "0.3")],
         );
         let landscape = template_document(id, 2613, 1848, 1);
-        assert!(
-            render_document_svg(&landscape, &Default::default())[0]
-                .svg
-                .contains(&format!("M 0 {:.6}", ys[0]))
-        );
+        let landscape_svg = &render_document_svg(&landscape, &Default::default())[0].svg;
+        assert_eq!(template_ys(landscape_svg, "lines")[0], ys[0]);
     }
+}
+
+#[cfg(feature = "render")]
+fn template_ys(svg: &str, kind: &str) -> Vec<f64> {
+    svg_support::svg_path_commands(svg, "data-page-template", kind)
+        .into_iter()
+        .filter_map(|command| match command {
+            svgtypes::PathSegment::MoveTo {
+                abs: true,
+                x: 0.,
+                y,
+            } => Some(y),
+            _ => None,
+        })
+        .collect()
 }

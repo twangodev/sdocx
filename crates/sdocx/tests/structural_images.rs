@@ -1,3 +1,7 @@
+#[cfg(feature = "render")]
+#[path = "support/svg.rs"]
+mod svg_support;
+
 mod support;
 
 use sdocx::{DiagnosticCode, Error, PageElement, PlacedImage};
@@ -552,7 +556,16 @@ fn cropped_embedded_images_keep_original_placement_and_clip_the_render() {
         assert!(svg.contains("overflow=\"hidden\""));
         assert!(svg.contains("viewBox=\"-10.0000 20.0000 100.0000 80.0000\""));
         assert!(svg.contains("rotate(30.0000"));
-        assert!(svg.contains("<image x=\"-20.00\" y=\"0.00\" width=\"200.00\" height=\"160.00\""));
+        svg_support::assert_svg_element(
+            svg,
+            "image",
+            &[
+                ("x", "-20.00"),
+                ("y", "0.00"),
+                ("width", "200.00"),
+                ("height", "160.00"),
+            ],
+        );
     }
 }
 
@@ -733,7 +746,16 @@ fn manifest_ids_override_filename_prefixes_archive_order_and_encounter_order() {
             assert_eq!(svg.matches("data:image/png;base64,Ymx1ZQ==").count(), 2);
             assert!(svg.contains("data:image/png;base64,cmVk"));
             assert!(svg.contains("rotate(30.00 40.00 60.00)"));
-            assert!(svg.contains("x=\"-10.00\" y=\"20.00\" width=\"100.00\" height=\"80.00\""));
+            svg_support::assert_svg_element(
+                &svg,
+                "image",
+                &[
+                    ("x", "-10.00"),
+                    ("y", "20.00"),
+                    ("width", "100.00"),
+                    ("height", "80.00"),
+                ],
+            );
             assert!(!svg.contains("dW51c2Vk"));
         }
     }

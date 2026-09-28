@@ -1,40 +1,98 @@
 //! Scale-independent V14 fountain shading using only SVG vector primitives.
+use super::vector::{
+    Blend, Data, Gradient, Mask, Paint, Scene, Styled, blend, coordinate, decimal,
+};
 use crate::PreparedStroke;
-use std::fmt::Write;
+use svg::node::element::{Circle, Definitions, Group, LinearGradient, Mask as SvgMask, Path, Stop};
 
-pub(super) fn render(svg: &mut String, paint: &PreparedStroke<'_>, replay: bool) -> bool {
+pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) -> bool {
     let (Some(directions), Some(radii), Some(bounds)) =
         (&paint.dot_directions, &paint.dot_radii, paint.bounds)
     else {
         return false;
     };
-    let id = svg.len();
+    let gradient = svg.definition::<Gradient>();
+    let mask = svg.definition::<Mask>();
     let x = bounds.x_min - 1.;
     let y = bounds.y_min - 1.;
     let width = bounds.x_max - bounds.x_min + 2.;
     let height = bounds.y_max - bounds.y_min + 2.;
-    // Native texture y follows the tangent. Its middle half is opaque and
-    // the two ends fall linearly to 1 - 0.93. Work in a unit circle so the
-    // gradient and geometry scale together, independently of screen pixels.
-    writeln!(svg, r#"<defs><linearGradient id="fg{id}" gradientUnits="userSpaceOnUse" x1="-1" x2="1" y1="0" y2="0"><stop offset="0" stop-color="rgb(7%,7%,7%)"/><stop offset=".25" stop-color="white"/><stop offset=".75" stop-color="white"/><stop offset="1" stop-color="rgb(7%,7%,7%)"/></linearGradient>"#).unwrap();
-    writeln!(svg, r#"<mask id="fm{id}" maskUnits="userSpaceOnUse" x="{x:.4}" y="{y:.4}" width="{width:.4}" height="{height:.4}" style="mask-type:luminance"><g style="isolation:isolate"><path fill="black" d="M{x:.4},{y:.4}h{width:.4}v{height:.4}h-{width:.4}Z"/>"#).unwrap();
-    // Opaque grayscale stamps over black, combined with Lighten, implement
-    // maximum coverage. Ordinary alpha-over would darken overlapping stamps.
-    // krilla-svg preserves these groups and gradients as PDF forms/shadings;
-    // no SVG filter (which would trigger its bitmap fallback) is used.
-    for (index, ((point, radius), direction)) in
-        paint.points.iter().zip(radii).zip(directions).enumerate()
-    {
-        let dx = direction.x * radius;
-        let dy = direction.y * radius;
-        let part = if replay {
-            format!(" data-replay-part=\"{}\"", index + 1)
-        } else {
-            String::new()
-        };
-        writeln!(svg, r#"<g{part} style="mix-blend-mode:lighten"><circle r="1" fill="url(#fg{id})" transform="matrix({dx:.7},{dy:.7},{:.7},{dx:.7},{:.4},{:.4})"/></g>"#, -dy, point.x, point.y).unwrap();
-    }
-    writeln!(svg, r#"</g></mask></defs><path fill="{}" fill-opacity="{:.6}" mask="url(#fm{id})" d="M{x:.4},{y:.4}h{width:.4}v{height:.4}h-{width:.4}Z"/>"#, paint.color, paint.opacity).unwrap();
+    let rectangle = Data::new()
+        .move_to((coordinate(x, 4), coordinate(y, 4)))
+        .horizontal_line_by(coordinate(width, 4))
+        .vertical_line_by(coordinate(height, 4))
+        .horizontal_line_by(-coordinate(width, 4))
+        .close();
+    let ramp = LinearGradient::new()
+        .set("id", gradient.id())
+        .set("gradientUnits", "userSpaceOnUse")
+        .set("x1", -1)
+        .set("x2", 1)
+        .set("y1", 0)
+        .set("y2", 0)
+        .add(
+            Stop::new()
+                .set("offset", 0)
+                .set("stop-color", "rgb(7%,7%,7%)"),
+        )
+        .add(Stop::new().set("offset", 0.25).set("stop-color", "white"))
+        .add(Stop::new().set("offset", 0.75).set("stop-color", "white"))
+        .add(
+            Stop::new()
+                .set("offset", 1)
+                .set("stop-color", "rgb(7%,7%,7%)"),
+        );
+    svg.scope(Definitions::new().add(ramp), |svg| {
+        svg.scope(
+            SvgMask::new()
+                .set("id", mask.id())
+                .set("maskUnits", "userSpaceOnUse")
+                .set("x", decimal(x, 4))
+                .set("y", decimal(y, 4))
+                .set("width", decimal(width, 4))
+                .set("height", decimal(height, 4))
+                .set("style", "mask-type:luminance"),
+            |svg| {
+                svg.scope(Group::new().set("style", "isolation:isolate"), |svg| {
+                    svg.push(
+                        Path::new()
+                            .fill(Paint::Color("black"))
+                            .set("d", rectangle.clone()),
+                    );
+                    // Opaque Lighten stamps implement maximum coverage without alpha accumulation.
+                    for (index, ((point, radius), direction)) in
+                        paint.points.iter().zip(radii).zip(directions).enumerate()
+                    {
+                        let dx = direction.x * radius;
+                        let dy = direction.y * radius;
+                        svg.push(
+                            blend(Blend::Lighten)
+                                .replay_part(replay.then_some(index + 1))
+                                .add(
+                                    Circle::new()
+                                        .set("r", 1)
+                                        .fill(Paint::Gradient(&gradient))
+                                        .set(
+                                            "transform",
+                                            format!(
+                                                "matrix({dx:.7},{dy:.7},{:.7},{dx:.7},{:.4},{:.4})",
+                                                -dy, point.x, point.y
+                                            ),
+                                        ),
+                                ),
+                        );
+                    }
+                });
+            },
+        );
+    });
+    svg.push(
+        Path::new()
+            .fill(Paint::Color(&paint.color))
+            .set("fill-opacity", decimal(paint.opacity, 6))
+            .masked(&mask)
+            .set("d", rectangle),
+    );
     true
 }
 
@@ -61,11 +119,13 @@ mod tests {
         });
         paint.color = "#000000".into();
         paint.opacity = 0.6;
-        let mut svg =
-            String::from(r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">"#);
+        let mut svg = Scene::new(
+            svg::node::element::SVG::new()
+                .set("width", 64)
+                .set("height", 64),
+        );
         assert!(render(&mut svg, &paint, false));
-        svg.push_str("</svg>");
-        svg
+        svg.finish()
     }
 
     fn preview(svg: &str) -> resvg::tiny_skia::Pixmap {
@@ -155,10 +215,13 @@ mod tests {
         stroke.pressures = vec![0.7; 3];
         stroke.timestamps = vec![0, 10, 20];
         let render_stroke = |stroke: &Stroke| {
-            let mut svg =
-                String::from(r#"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">"#);
+            let mut svg = Scene::new(
+                svg::node::element::SVG::new()
+                    .set("width", 64)
+                    .set("height", 64),
+            );
             crate::render::render_stroke(&mut svg, stroke, "#000000", None);
-            svg.push_str("</svg>");
+            let svg = svg.finish();
             assert!(!svg.contains("<image"));
             assert!(!svg.contains("<filter"));
             preview(&svg)

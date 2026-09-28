@@ -851,9 +851,12 @@ dependencies = [
  "lopdf",
  "png",
  "resvg",
+ "roxmltree 0.21.1",
  "serde",
  "serde_json",
  "sha2",
+ "svg",
+ "svgtypes",
  "thiserror",
  "usvg",
  "zip",
@@ -1037,6 +1040,12 @@ dependencies = [
  "skrifa",
  "write-fonts",
 ]
+
+[[package]]
+name = "svg"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94afda9cd163c04f6bee8b4bf2501c91548deae308373c436f36aeff3cf3c4a3"
 
 [[package]]
 name = "svgtypes"

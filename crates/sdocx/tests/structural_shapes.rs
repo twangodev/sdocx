@@ -1,3 +1,7 @@
+#[cfg(feature = "render")]
+#[path = "support/svg.rs"]
+mod svg_support;
+
 mod support;
 
 use sdocx::{
@@ -194,14 +198,28 @@ fn decodes_shape_geometry_rotation_and_independent_outline_and_fill() {
     #[cfg(feature = "render")]
     {
         let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-        assert!(svg.contains("<rect x=\"-10.00\" y=\"0.00\" width=\"100.00\" height=\"60.00\""));
-        assert!(svg.contains(
-            "fill=\"#ff0000\" fill-opacity=\"0.2510\" stroke=\"#0000ff\" stroke-opacity=\"0.5020\""
-        ));
-        assert!(
-            svg.contains(
-                "stroke-width=\"3.50\" stroke-linecap=\"round\" stroke-linejoin=\"bevel\""
-            )
+        svg_support::assert_svg_element(
+            svg,
+            "rect",
+            &[
+                ("x", "-10.00"),
+                ("y", "0.00"),
+                ("width", "100.00"),
+                ("height", "60.00"),
+            ],
+        );
+        svg_support::assert_svg_element(
+            svg,
+            "g",
+            &[
+                ("fill", "#ff0000"),
+                ("fill-opacity", "0.2510"),
+                ("stroke", "#0000ff"),
+                ("stroke-opacity", "0.5020"),
+                ("stroke-width", "3.50"),
+                ("stroke-linecap", "round"),
+                ("stroke-linejoin", "bevel"),
+            ],
         );
         assert!(svg.contains("rotate(30.00 40.00 30.00)"));
     }
@@ -218,7 +236,16 @@ fn preserves_reversed_horizontal_line_without_rotating_it_twice() {
     #[cfg(feature = "render")]
     {
         let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-        assert!(svg.contains("<line x1=\"90.00\" y1=\"45.00\" x2=\"-10.00\" y2=\"45.00\""));
+        svg_support::assert_svg_element(
+            svg,
+            "line",
+            &[
+                ("x1", "90.00"),
+                ("y1", "45.00"),
+                ("x2", "-10.00"),
+                ("y2", "45.00"),
+            ],
+        );
         assert!(!svg.contains("rotate("));
         assert!(!svg.contains("/ >"));
     }
@@ -357,7 +384,10 @@ fn line_paths_preserve_curves_and_stop_before_future_fields() {
     #[cfg(feature = "render")]
     {
         let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-        assert!(svg.contains("M 10.00 20.00 L 30.00 40.00 Q 50.00 60.00 70.00 80.00 C 90.00 10.00 110.00 30.00 120.00 40.00 Z"));
+        assert_svg_path(
+            svg,
+            "M 10.00 20.00 L 30.00 40.00 Q 50.00 60.00 70.00 80.00 C 90.00 10.00 110.00 30.00 120.00 40.00 Z",
+        );
         assert!(!svg.contains("<line "));
         assert!(!svg.contains("rotate("));
     }
@@ -532,7 +562,7 @@ fn line_pen_settings_and_name_ids_precede_the_path_in_native_order() {
     #[cfg(feature = "render")]
     {
         let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-        assert!(svg.contains("d=\"M 90.00 45.00 L -10.00 45.00\""));
+        assert_svg_path(svg, "M 90 45 L -10 45");
         assert!(svg.contains("stroke=\"#0000ff\""));
     }
 }
@@ -709,7 +739,10 @@ fn native_shape_paths_override_templates_and_already_include_rotation() {
         #[cfg(feature = "render")]
         {
             let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-            assert!(svg.contains("M 10.00 20.00 L 90.00 25.00 Q 110.00 30.00 80.00 70.00 C 60.00 90.00 20.00 60.00 10.00 20.00 Z"));
+            assert_svg_path(
+                svg,
+                "M 10.00 20.00 L 90.00 25.00 Q 110.00 30.00 80.00 70.00 C 60.00 90.00 20.00 60.00 10.00 20.00 Z",
+            );
             assert!(svg.contains("fill=\"#ff0000\" fill-opacity=\"0.2510\""));
             assert!(!svg.contains("rotate("));
             assert!(!svg.contains("<ellipse "));
@@ -748,5 +781,27 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
     assert_format(
         7,
         &shape_with_path(6, &native_path(&[(1, &[f64::NAN, 0.0])])),
+    );
+}
+
+#[cfg(feature = "render")]
+fn assert_svg_path(svg: &str, expected: &str) {
+    let document = roxmltree::Document::parse(svg).unwrap();
+    let commands = |data: &str| {
+        svgtypes::PathParser::from(data)
+            .map(|command| match command.unwrap() {
+                svgtypes::PathSegment::ClosePath { .. } => {
+                    svgtypes::PathSegment::ClosePath { abs: false }
+                }
+                command => command,
+            })
+            .collect::<Vec<_>>()
+    };
+    let expected = commands(expected);
+    assert!(
+        document
+            .descendants()
+            .filter_map(|node| node.attribute("d"))
+            .any(|data| commands(data) == expected)
     );
 }
