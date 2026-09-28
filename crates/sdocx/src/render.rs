@@ -2320,48 +2320,53 @@ mod tests {
     }
     #[test]
     fn marker4_keeps_full_width_and_applies_alpha_once_across_overlapping_stamps() {
-        let mut stroke = marker(true, 30.);
-        stroke.pen_width = 36.2;
-        stroke.points = vec![
-            Point { x: 30., y: 30. },
-            Point { x: 50., y: 30. },
-            Point { x: 70., y: 30. },
-        ];
-        stroke.pressures = vec![0.1, 0.9, 0.1];
-        let rendering = stroke.rendering.as_mut().unwrap();
-        rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker4".into());
-        rendering.advanced_settings = Some("8;".into());
-        let ink = crate::prepare_stroke(&stroke, false);
-        let stamp = ink.rect_stamp.unwrap();
-        assert!((stamp.height - 35.64).abs() < 1e-6);
-        assert!(ink.segment_widths.is_none());
-        assert_eq!(
-            ink.sample_ends.as_ref().unwrap().last(),
-            Some(&ink.points.len())
-        );
-        let mut page = page_with_uncolored_stroke();
-        page.width = 100;
-        page.height = 60;
-        page.background_color = Some(Color {
-            r: 255,
-            g: 255,
-            b: 255,
-        });
-        page.strokes = vec![stroke];
-        page.elements.clear();
-        let svg = &render_document_svg(&document(page), &RenderOptions::default())[0].svg;
-        let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
-        let mut pixmap = resvg::tiny_skia::Pixmap::new(100, 60).unwrap();
-        resvg::render(
-            &tree,
-            resvg::tiny_skia::Transform::identity(),
-            &mut pixmap.as_mut(),
-        );
-        // Native ARGB 0x80ffee00 over white, even where many stamps overlap.
-        for (x, y) in [(40, 30), (50, 20), (60, 40)] {
-            let p = pixmap.pixel(x, y).unwrap();
-            assert_eq!((p.red(), p.green(), p.blue()), (255, 246, 127));
+        for (settings, height) in [("7;", 36.828), ("8;", 35.64)] {
+            let mut stroke = marker(true, 30.);
+            stroke.pen_width = 36.2;
+            stroke.points = vec![
+                Point { x: 30., y: 30. },
+                Point { x: 50., y: 30. },
+                Point { x: 70., y: 30. },
+            ];
+            stroke.pressures = vec![0.1, 0.9, 0.1];
+            stroke.timestamps = vec![0, 8, 16];
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.pen_name = Some("com.samsung.android.sdk.pen.pen.preload.Marker4".into());
+            rendering.advanced_settings = Some(settings.into());
+            let ink = crate::prepare_stroke(&stroke, false);
+            let stamp = ink.rect_stamp.unwrap();
+            assert!((stamp.height - height).abs() < 1e-4);
+            assert!(ink.segment_widths.is_none());
+            assert_eq!(
+                ink.sample_ends.as_ref().unwrap().last(),
+                Some(&ink.points.len())
+            );
+            let mut page = page_with_uncolored_stroke();
+            page.width = 100;
+            page.height = 60;
+            page.background_color = Some(Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            });
+            page.strokes = vec![stroke];
+            page.elements.clear();
+            let svg = &render_document_svg(&document(page), &RenderOptions::default())[0].svg;
+            assert!(!svg.contains("<image"));
+            assert!(!svg.contains("<filter"));
+            let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(100, 60).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            // Native ARGB 0x80ffee00 over white, even where many stamps overlap.
+            for (x, y) in [(40, 30), (50, 20), (60, 40)] {
+                let p = pixmap.pixel(x, y).unwrap();
+                assert_eq!((p.red(), p.green(), p.blue()), (255, 246, 127));
+            }
+            assert_eq!(pixmap.pixel(50, 5).unwrap().blue(), 255);
         }
-        assert_eq!(pixmap.pixel(50, 5).unwrap().blue(), 255);
     }
 }

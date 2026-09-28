@@ -27,6 +27,7 @@ from unicorn import Uc, UC_ARCH_ARM64, UC_MODE_ARM, UC_HOOK_CODE
 from unicorn import arm64_const as R
 
 HASHES = {
+    "Marker4": "23b29d7baa2a766909d942dffb50ce4191790d5ed3537648fc0120cdb75fddff",
     "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
     "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
     "Engine": "79a8024586ce58ceeca613ddfce159e92274c597c5a863dd0aaf3e8e32e1b505",
@@ -142,14 +143,14 @@ class NativeFountain:
         else:
             raise RuntimeError('unhandled native import ' + name)
 
-    def call(self, name, x=(), f=()):
+    def call(self, name, x=(), f=(), instruction_limit=2000000):
         for i, v in enumerate(x):
             self.x(i, v)
         for i, v in enumerate(f):
             self.f(i, v)
         self.u.reg_write(R.UC_ARM64_REG_SP, 0x200f0000)
         self.u.reg_write(R.UC_ARM64_REG_LR, 0x200f1000)
-        self.u.emu_start(self.syms[name], 0x200f1000, count=2000000)
+        self.u.emu_start(self.syms[name], 0x200f1000, count=instruction_limit)
         if self.u.reg_read(R.UC_ARM64_REG_PC) != 0x200f1000:
             raise RuntimeError('instruction limit')
 
