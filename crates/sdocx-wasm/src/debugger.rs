@@ -297,20 +297,11 @@ impl Source {
                             Some("light") => sdocx::RenderColorMode::Light,
                             _ => sdocx::RenderColorMode::Auto,
                         };
-                        let dark = match options.color_mode {
-                            sdocx::RenderColorMode::Dark => true,
-                            sdocx::RenderColorMode::Light => false,
-                            _ => preview_layout.pages[0]
-                                .page
-                                .background_color
-                                .or(parsed.document.metadata.background_color)
-                                .is_some_and(|c| {
-                                    299 * u32::from(c.r)
-                                        + 587 * u32::from(c.g)
-                                        + 114 * u32::from(c.b)
-                                        < 128_000
-                                }),
-                        };
+                        let theme = sdocx::RenderTheme::resolve(
+                            &preview_layout.pages[0].page,
+                            &parsed.document.metadata,
+                            options.color_mode,
+                        );
                         let render = if replay {
                             sdocx::render_layout_page_replay_svg
                         } else {
@@ -319,7 +310,7 @@ impl Source {
                         let background = render(&parsed.document, &preview_layout, 0, &options)
                             .ok_or("cannot render page")?
                             .svg;
-                        json!({"svg": background,"defaultInk":if dark {"#ffffff"} else {"#1a1a1a"}})
+                        json!({"svg": background,"defaultInk":theme.default_ink()})
                     }
                     _ => {
                         let mut strokes = Vec::new();

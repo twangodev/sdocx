@@ -15,6 +15,10 @@ use vector::{
 };
 
 mod fountain;
+mod theme;
+pub use theme::RenderTheme;
+#[cfg(test)]
+use theme::is_dark_background;
 mod vector;
 
 /// Color treatment to use while rendering a document.
@@ -107,22 +111,14 @@ fn render_layout_page(
     options: &RenderOptions,
     replay: bool,
 ) -> RenderedPage {
-    let dark_mode = match options.color_mode {
-        RenderColorMode::Auto => layout_page
-            .page
-            .background_color
-            .or(document.metadata.background_color)
-            .is_some_and(is_dark_background),
-        RenderColorMode::Light => false,
-        RenderColorMode::Dark => true,
-    };
     let page = &layout_page.page;
+    let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
     let svg = render_page_contents_svg(
         page,
         &document.metadata,
         &document.metadata.media_assets,
         document.metadata.flow_page_padding,
-        dark_mode,
+        theme,
         replay,
     );
     RenderedPage {
@@ -136,9 +132,6 @@ fn render_layout_page(
 // Default ink for uncolored strokes, by canvas: light on dark, dark on light.
 const DEFAULT_INK_DARK_MODE: &str = "#ffffff";
 const DEFAULT_INK_LIGHT_MODE: &str = "#1a1a1a";
-// Fallback canvas when a note carries no background color, matched to the ink.
-const FALLBACK_BG_DARK_MODE: &str = "#252525";
-const FALLBACK_BG_LIGHT_MODE: &str = "#fcfcfc";
 // Pressure channel on v4.4.x files can be present but all-zero; treat as absent.
 const PRESSURE_PRESENT_EPSILON: f64 = 0.01;
 
@@ -147,25 +140,11 @@ fn render_page_contents_svg(
     metadata: &crate::DocumentMetadata,
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
-    dark_mode: bool,
+    theme: RenderTheme,
     replay: bool,
 ) -> String {
-    let fallback_bg_color = metadata.background_color.as_ref();
-    // Dark-mode notes have light ink, so prefer the document's dark background
-    // over the light page template; otherwise keep the template background.
-    let bg_color = if dark_mode {
-        fallback_bg_color.or(page.background_color.as_ref())
-    } else {
-        page.background_color.as_ref().or(fallback_bg_color)
-    };
-    let bg = bg_color.map(color_hex).unwrap_or_else(|| {
-        if dark_mode {
-            FALLBACK_BG_DARK_MODE
-        } else {
-            FALLBACK_BG_LIGHT_MODE
-        }
-        .into()
-    });
+    let dark_mode = theme.is_dark();
+    let bg = color_hex(&theme.background());
     let vb_x = 0.0;
     let vb_y = 0.0;
     let vb_w = page.width as f64;
@@ -1614,13 +1593,6 @@ fn is_dark_compatibility_color(color: Color) -> bool {
     u16::from(color.r) + u16::from(color.g) + u16::from(color.b) <= 192
 }
 
-fn is_dark_background(color: Color) -> bool {
-    // Integer form of the standard luma approximation. Compatibility tells
-    // Samsung that text may adapt to dark mode; the canvas color tells us
-    // whether the exported page is actually dark.
-    299 * u32::from(color.r) + 587 * u32::from(color.g) + 114 * u32::from(color.b) < 128_000
-}
-
 struct StyledSpan<'a> {
     text: &'a str,
     bold: bool,
@@ -2066,6 +2038,108 @@ mod tests {
         assert!(light[0].svg.contains(r##"stroke="#1a1a1a""##));
         assert!(dark[0].svg.contains(r##"fill="#252525""##));
         assert!(dark[0].svg.contains(r##"stroke="#ffffff""##));
+    }
+
+    #[test]
+    fn stored_backgrounds_and_foregrounds_resolve_together() {
+        let gray = |v| Color { r: v, g: v, b: v };
+        for (
+            page_background,
+            document_background,
+            compatibility,
+            mode,
+            expected_bg,
+            expected_ink,
+        ) in [
+            (
+                Some(gray(252)),
+                Some(gray(252)),
+                Some(true),
+                RenderColorMode::Dark,
+                "#252525",
+                "#ffffff",
+            ),
+            (
+                Some(gray(37)),
+                Some(gray(37)),
+                Some(true),
+                RenderColorMode::Light,
+                "#fcfcfc",
+                "#1a1a1a",
+            ),
+            (
+                Some(gray(0)),
+                Some(gray(255)),
+                Some(true),
+                RenderColorMode::Auto,
+                "#000000",
+                "#ffffff",
+            ),
+            (
+                Some(gray(255)),
+                Some(gray(0)),
+                Some(true),
+                RenderColorMode::Auto,
+                "#ffffff",
+                "#1a1a1a",
+            ),
+            (
+                None,
+                Some(gray(37)),
+                None,
+                RenderColorMode::Auto,
+                "#252525",
+                "#ffffff",
+            ),
+            (
+                Some(gray(252)),
+                None,
+                Some(false),
+                RenderColorMode::Dark,
+                "#fcfcfc",
+                "#1a1a1a",
+            ),
+            (
+                Some(gray(37)),
+                None,
+                Some(false),
+                RenderColorMode::Light,
+                "#252525",
+                "#ffffff",
+            ),
+            (
+                Some(Color {
+                    r: 203,
+                    g: 218,
+                    b: 221,
+                }),
+                None,
+                Some(true),
+                RenderColorMode::Dark,
+                "#cbdadd",
+                "#1a1a1a",
+            ),
+        ] {
+            let mut page = page_with_uncolored_stroke();
+            page.background_color = page_background;
+            let mut doc = document(page);
+            doc.metadata.background_color = document_background;
+            doc.metadata.dark_mode_compatibility = compatibility;
+            let svg = render_document_svg(&doc, &RenderOptions { color_mode: mode })
+                .remove(0)
+                .svg;
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            let background = xml
+                .root_element()
+                .children()
+                .find(|n| n.has_tag_name("rect"))
+                .unwrap();
+            assert_eq!(background.attribute("fill"), Some(expected_bg));
+            assert!(
+                xml.descendants()
+                    .any(|n| n.attribute("stroke") == Some(expected_ink))
+            );
+        }
     }
 
     #[test]
