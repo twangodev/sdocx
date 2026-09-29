@@ -114,7 +114,7 @@ fn hidden_shapes_and_lines_are_retained_outside_the_visible_page() {
         payload[11] &= !(1 << 3);
         let raw = page(&[vec![object(kind, &payload, &[])]], 0, &[]);
         let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
-        assert!(parsed.document.pages[0].elements.is_empty());
+        assert!(parsed.document.pages[0].elements().next().is_none());
         let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
         assert_eq!(stored.payload(&raw).unwrap(), payload);
         assert!(!stored.base_metadata(&raw).unwrap().visible);
@@ -160,7 +160,7 @@ fn shape_text_editability_is_metadata_and_unknown_properties_still_warn() {
         payload.extend(geometry);
         let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
         assert_eq!(
-            as_shape(&parsed.document.pages[0].elements[0]).text_editable,
+            as_shape(parsed.document.pages[0].elements().next().unwrap()).text_editable,
             mask & 4 != 0
         );
         assert_eq!(has_shape_warning(&parsed), mask & 0x40 != 0);
@@ -182,7 +182,7 @@ fn shape_text_editability_is_metadata_and_unknown_properties_still_warn() {
 fn decodes_shape_geometry_rotation_and_independent_outline_and_fill() {
     let parsed = sdocx::parse_bytes_detailed(&single(7, &shape(4))).unwrap();
     assert!(!has_shape_warning(&parsed));
-    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(shape.metadata.uuid, "sh");
     assert_eq!(shape.shape_type, 4);
     assert_eq!(shape.geometry_bbox.x_min, -10.0);
@@ -229,7 +229,7 @@ fn decodes_shape_geometry_rotation_and_independent_outline_and_fill() {
 fn preserves_reversed_horizontal_line_without_rotating_it_twice() {
     let parsed = sdocx::parse_bytes_detailed(&single(8, &line(0, 0, &[]))).unwrap();
     assert!(!has_shape_warning(&parsed));
-    let line = as_line(&parsed.document.pages[0].elements[0]);
+    let line = as_line(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(line.begin, [90.0, 45.0]);
     assert_eq!(line.end, [-10.0, 45.0]);
     assert_eq!(line.metadata.rotation_degrees, Some(90.0));
@@ -258,7 +258,7 @@ fn missing_effects_use_native_defaults_and_unknown_templates_remain_shapes() {
         payload.extend(frame(6, 0, &base_fixed(), &[]));
         payload.extend(frame(7, 0, &shape_fixed(kind, 0.0), &[]));
         let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
-        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
         assert_eq!(shape.shape_type, kind);
         assert_eq!(shape.style.width, 2.0);
         assert!(matches!(shape.style.paint, ShapePaint::Solid(0xff000000)));
@@ -324,14 +324,14 @@ fn current_layer_shapes_keep_child_order_without_phantom_text() {
             &[],
         ));
         let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
-        let elements = &parsed.document.pages[0].elements;
+        let elements: Vec<_> = parsed.document.pages[0].elements().collect();
         if current_layer_index == 0 {
             assert_eq!(elements.len(), 2);
-            assert_eq!(as_shape(&elements[0]).shape_type, 1);
-            assert_eq!(as_line(&elements[1]).line_type, 0);
+            assert_eq!(as_shape(elements[0]).shape_type, 1);
+            assert_eq!(as_line(elements[1]).line_type, 0);
         } else {
             assert_eq!(elements.len(), 1);
-            assert_eq!(as_shape(&elements[0]).shape_type, 8);
+            assert_eq!(as_shape(elements[0]).shape_type, 8);
         }
         assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
         let limits = ParseLimits {
@@ -377,7 +377,7 @@ fn line_paths_preserve_curves_and_stop_before_future_fields() {
     fields.extend(b"future");
     let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 24, &fields))).unwrap();
     assert_eq!(
-        as_line(&parsed.document.pages[0].elements[0]).path_data,
+        as_line(parsed.document.pages[0].elements().next().unwrap()).path_data,
         path
     );
     assert!(has_shape_warning(&parsed));
@@ -415,7 +415,7 @@ fn unknown_line_types_or_path_verbs_do_not_become_straight_lines() {
     ] {
         let parsed = sdocx::parse_bytes_detailed(&single(8, &payload)).unwrap();
         assert!(has_shape_warning(&parsed));
-        assert_eq!(parsed.document.pages[0].elements.len(), 1);
+        assert_eq!(parsed.document.pages[0].elements().count(), 1);
         #[cfg(feature = "render")]
         {
             let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
@@ -436,7 +436,7 @@ fn native_shapes_and_lines_survive_document_parsing() {
         &[],
     ));
     let document = sdocx::parse_bytes(&bytes).unwrap();
-    assert_eq!(document.pages[0].elements.len(), 2);
+    assert_eq!(document.pages[0].elements().count(), 2);
 }
 
 fn text_common(text: &str) -> Vec<u8> {
@@ -466,7 +466,7 @@ fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
     payload.extend(outline());
     payload.extend(frame(7, 0x37, &shape_fixed(4, 30.0), &fields));
     let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
-    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
     let text = shape.text.as_ref().unwrap();
     assert_eq!(shape.text_area_type, Some(TextAreaType::Free));
     assert_eq!(text.text_area_type, shape.text_area_type);
@@ -527,7 +527,7 @@ fn text_area_modes_without_text_keep_shape_fill_aligned() {
         payload.extend(outline());
         payload.extend(frame(7, 0x22, &shape_fixed(4, 30.0), &fields));
         let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
-        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
         let expected = match raw {
             0 => TextAreaType::Margin,
             1 => TextAreaType::Free,
@@ -540,7 +540,10 @@ fn text_area_modes_without_text_keep_shape_fill_aligned() {
         assert!(matches!(shape.fill, ShapePaint::Solid(0x40ff0000)));
     }
     let parsed = sdocx::parse_bytes(&single(7, &shape(1))).unwrap();
-    assert_eq!(as_shape(&parsed.pages[0].elements[0]).text_area_type, None);
+    assert_eq!(
+        as_shape(parsed.pages[0].elements().next().unwrap()).text_area_type,
+        None
+    );
 }
 
 #[test]
@@ -550,7 +553,7 @@ fn line_pen_settings_and_name_ids_precede_the_path_in_native_order() {
     fields.extend(123456_i32.to_le_bytes()); // pen name, bit 2
     fields.extend(&path);
     let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 14, &fields))).unwrap();
-    let decoded = as_line(&parsed.document.pages[0].elements[0]);
+    let decoded = as_line(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(decoded.pen_settings_id, Some(-9));
     assert_eq!(decoded.pen_name_id, Some(123456));
     assert_eq!(decoded.path_data, path);
@@ -604,14 +607,14 @@ fn unknown_preceding_fields_prevent_guessing_later_effects() {
     fields.extend(shape_fields());
     payload.extend(frame(7, 4 | 8 | 32, &shape_fixed(4, 0.0), &fields));
     let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
-    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(shape.pen_name_id, Some(77));
     assert!(matches!(shape.fill, ShapePaint::None));
     assert!(has_shape_warning(&parsed));
     let path = native_path(&[(1, &[0.0, 0.0]), (2, &[10.0, 20.0])]);
     let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 1 | 8, &path))).unwrap();
     assert!(
-        as_line(&parsed.document.pages[0].elements[0])
+        as_line(parsed.document.pages[0].elements().next().unwrap())
             .path_data
             .is_empty()
     );
@@ -629,7 +632,7 @@ fn future_frames_masks_and_outline_settings_are_retained_or_reported() {
     payload.extend(shape_frame);
     payload.extend(frame(66, 0, b"future", &[]));
     let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
-    let shape = as_shape(&parsed.document.pages[0].elements[0]);
+    let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(shape.style.compound, 1);
     assert_eq!(shape.style.dash, 3);
     assert_eq!(shape.style.begin_arrow, [2, 1]);
@@ -646,7 +649,7 @@ fn no_outline_and_unsupported_gradient_are_distinct_from_solid_black() {
         payload.extend(frame(6, 4, &base_fixed(), &sized(&effect)));
         payload.extend(frame(7, 32, &shape_fixed(4, 0.0), &shape_fields()));
         let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
-        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
         if kind == 2 {
             assert!(matches!(shape.style.paint, ShapePaint::None));
         } else {
@@ -696,7 +699,7 @@ fn unsupported_arc_oval_and_missing_move_paths_remain_bounded() {
     ] {
         let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 8, &path))).unwrap();
         assert_eq!(
-            as_line(&parsed.document.pages[0].elements[0]).path_data,
+            as_line(parsed.document.pages[0].elements().next().unwrap()).path_data,
             path
         );
         assert!(has_shape_warning(&parsed));
@@ -732,7 +735,7 @@ fn native_shape_paths_override_templates_and_already_include_rotation() {
         let parsed =
             sdocx::parse_bytes_detailed(&single(7, &shape_with_path(kind, &path))).unwrap();
         assert!(!has_shape_warning(&parsed));
-        let shape = as_shape(&parsed.document.pages[0].elements[0]);
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
         assert_eq!(shape.path_data, path);
         assert_eq!(shape.control_points, [[75.0, 42.0]]);
         assert_eq!(shape.shape_type, kind);
@@ -764,7 +767,7 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
         let parsed = sdocx::parse_bytes_detailed(&single(7, &shape_with_path(4, &path))).unwrap();
         assert!(has_shape_warning(&parsed));
         assert_eq!(
-            as_shape(&parsed.document.pages[0].elements[0]).path_data,
+            as_shape(parsed.document.pages[0].elements().next().unwrap()).path_data,
             path
         );
         #[cfg(feature = "render")]

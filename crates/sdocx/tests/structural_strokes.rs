@@ -2,7 +2,7 @@ mod support;
 
 use support::{archive, object, page, page_with_current_layer};
 
-use sdocx::{Color, Error, ParseLimits, ParseOptions, Point};
+use sdocx::{Color, Error, PageObjectContent, ParseLimits, ParseOptions, Point};
 
 // Small synthetic WDoc records built from the native serializer contract.
 // These intentionally contain short strokes, unusual masks, children and
@@ -84,7 +84,7 @@ fn hidden_strokes_and_containers_keep_their_records_without_visible_content() {
     );
     let bytes = archive(&raw);
     let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
-    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    assert_eq!(parsed.document.pages[0].strokes().count(), 1);
     let objects = &parsed.stored_pages[0].page.layers.layers[0].objects;
     assert_eq!(objects.len(), 3);
     assert_eq!(objects[0].payload(&raw).unwrap(), hidden);
@@ -92,6 +92,18 @@ fn hidden_strokes_and_containers_keep_their_records_without_visible_content() {
     assert_eq!(objects[1].children.len(), 1);
     assert_eq!(objects[1].children[0].payload(&raw).unwrap(), visible);
     assert_eq!(objects[2].children.len(), 2);
+    let semantic = &parsed.document.pages[0].objects;
+    assert_eq!(semantic.len(), 1);
+    assert_eq!(semantic[0].source_offset, Some(objects[2].payload_offset));
+    let PageObjectContent::Container(children) = &semantic[0].content else {
+        panic!("visible container boundary was lost");
+    };
+    assert_eq!(children.len(), 1);
+    assert_eq!(
+        children[0].source_offset,
+        Some(objects[2].children[1].payload_offset)
+    );
+    assert!(matches!(children[0].content, PageObjectContent::Stroke(_)));
     assert_eq!(
         parsed
             .report
@@ -99,7 +111,7 @@ fn hidden_strokes_and_containers_keep_their_records_without_visible_content() {
             .iter()
             .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnsupportedObjectType)
             .count(),
-        1
+        0
     );
     let options = ParseOptions {
         limits: ParseLimits {
@@ -125,7 +137,7 @@ fn unknown_objects_do_not_infer_child_visibility_from_a_common_looking_payload()
     hidden[11] = 0;
     let raw = page(&[vec![object(250, &hidden, &[child])]], 0, &[]);
     let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
-    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    assert_eq!(parsed.document.pages[0].strokes().count(), 1);
     assert!(
         parsed
             .report
@@ -150,7 +162,7 @@ fn short_strokes_use_the_declared_count_and_property_selected_channels() {
     for properties in [0x25, 0x05, 0x65, 0x425] {
         let data = single(&stroke(properties, 3, &compressed(true), 0, &[]));
         let doc = sdocx::parse_bytes(&data).unwrap();
-        let stroke = &doc.pages[0].strokes[0];
+        let stroke = doc.pages[0].strokes().next().unwrap();
         assert_eq!(
             stroke.points,
             [
@@ -176,9 +188,24 @@ fn retains_every_layer_and_decodes_current_layer_children_without_scanning_unkno
     let bytes = archive(&page(&[vec![unknown, tree], vec![child]], 0, &[]));
     let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
     assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
-    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
-    assert_eq!(parsed.document.pages[0].strokes[0].points.len(), 3);
-    assert!(parsed.document.pages[0].strokes[0].tilts.is_empty());
+    assert_eq!(parsed.document.pages[0].strokes().count(), 1);
+    assert_eq!(
+        parsed.document.pages[0]
+            .strokes()
+            .next()
+            .unwrap()
+            .points
+            .len(),
+        3
+    );
+    assert!(
+        parsed.document.pages[0]
+            .strokes()
+            .next()
+            .unwrap()
+            .tilts
+            .is_empty()
+    );
     assert!(
         parsed
             .report
@@ -214,7 +241,7 @@ fn current_layer_index_selects_strokes_independently_of_layer_numbers() {
         for (layer, payload) in stored.layers.iter().zip(&payloads) {
             assert_eq!(layer.objects[0].payload(&raw).unwrap(), payload);
         }
-        let strokes = &parsed.document.pages[0].strokes;
+        let strokes: Vec<_> = parsed.document.pages[0].strokes().collect();
         assert_eq!(strokes.len(), 1);
         let expected = [Color { r: 255, g: 0, b: 0 }, Color { r: 0, g: 0, b: 255 }];
         assert_eq!(
@@ -231,8 +258,8 @@ fn an_empty_current_layer_does_not_fall_back_to_another_layer() {
         let current_layer_index = u16::from(!layers[0].is_empty());
         let raw = page_with_current_layer(&layers, current_layer_index, 0, &[]);
         let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
-        assert!(parsed.document.pages[0].strokes.is_empty());
-        assert!(parsed.document.pages[0].elements.is_empty());
+        assert!(parsed.document.pages[0].strokes().next().is_none());
+        assert!(parsed.document.pages[0].elements().next().is_none());
         assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
     }
 }
@@ -246,7 +273,7 @@ fn inactive_layer_payloads_are_retained_without_semantic_decoding() {
     ];
     let raw = page_with_current_layer(&layers, 0, 0, &[]);
     let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
-    assert_eq!(parsed.document.pages[0].strokes.len(), 1);
+    assert_eq!(parsed.document.pages[0].strokes().count(), 1);
     assert!(
         parsed
             .report
@@ -267,7 +294,7 @@ fn inactive_layer_payloads_are_retained_without_semantic_decoding() {
 }
 
 #[test]
-fn known_unsupported_objects_report_their_location_and_keep_decoded_children() {
+fn supported_containers_and_unsupported_objects_keep_decoded_children() {
     let kinds = [
         0, 4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 100,
     ];
@@ -286,17 +313,23 @@ fn known_unsupported_objects_report_their_location_and_keep_decoded_children() {
         &[],
     );
     let parsed = sdocx::parse_bytes_detailed(&archive(&page_bytes)).unwrap();
-    assert_eq!(parsed.document.pages[0].strokes.len(), kinds.len());
-    assert!(parsed.document.pages[0].elements.is_empty());
+    assert_eq!(parsed.document.pages[0].strokes().count(), kinds.len());
+    assert!(parsed.document.pages[0].elements().next().is_none());
     let warnings = parsed
         .report
         .diagnostics
         .iter()
         .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnsupportedObjectType)
         .collect::<Vec<_>>();
-    assert_eq!(warnings.len(), kinds.len());
+    let unsupported_count = kinds.iter().filter(|&&kind| kind != 4).count();
+    assert_eq!(warnings.len(), unsupported_count);
     let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
-    for ((kind, object), warning) in kinds.iter().zip(stored).zip(warnings) {
+    for ((kind, object), warning) in kinds
+        .iter()
+        .zip(stored)
+        .filter(|(kind, _)| **kind != 4)
+        .zip(warnings)
+    {
         assert_eq!(object.object_type.raw(), u32::from(*kind));
         assert_eq!(object.payload(&page_bytes).unwrap(), payload);
         assert_eq!(warning.archive_entry.as_deref(), Some("page.page"));
@@ -338,7 +371,7 @@ fn uncompressed_strokes_store_complete_arrays_in_channel_order() {
         }
         let bytes = single(&stroke(if stylus { 4 } else { 0 }, 2, &channels, 0, &[]));
         let doc = sdocx::parse_bytes(&bytes).unwrap();
-        let stroke = &doc.pages[0].strokes[0];
+        let stroke = doc.pages[0].strokes().next().unwrap();
         assert_eq!(
             stroke.points,
             [Point { x: 1.25, y: 5.5 }, Point { x: 12.75, y: 9.0 }]
@@ -363,7 +396,7 @@ fn style_masks_control_color_and_width_without_marker_searches() {
     style.extend_from_slice(&99.0_f32.to_le_bytes());
     let bytes = single(&stroke(1, 3, &compressed(false), (1 << 31) | 14, &style));
     let doc = sdocx::parse_bytes(&bytes).unwrap();
-    let stroke = &doc.pages[0].strokes[0];
+    let stroke = doc.pages[0].strokes().next().unwrap();
     assert_eq!(
         stroke.color,
         Some(Color {
@@ -447,8 +480,8 @@ fn applies_limits_to_declared_points_and_strokes_across_layers_and_children() {
 fn zero_point_strokes_have_no_channel_seed_values() {
     for properties in [0, 1, 4, 5] {
         let doc = sdocx::parse_bytes(&single(&stroke(properties, 0, &[], 0, &[]))).unwrap();
-        assert!(doc.pages[0].strokes[0].points.is_empty());
-        assert!(doc.pages[0].strokes[0].pressures.is_empty());
+        assert!(doc.pages[0].strokes().next().unwrap().points.is_empty());
+        assert!(doc.pages[0].strokes().next().unwrap().pressures.is_empty());
     }
 }
 
@@ -462,7 +495,10 @@ fn stored_objects_expose_shared_identity_and_placement_metadata() {
     assert_eq!(metadata.uuid, "00000000-0000-0000-0000-000000000001");
     assert_eq!(metadata.modified_time_raw, 1234);
     assert_eq!(metadata.format_version, 5500);
-    assert_eq!(metadata.bbox, parsed.document.pages[0].strokes[0].bbox);
+    assert_eq!(
+        metadata.bbox,
+        parsed.document.pages[0].strokes().next().unwrap().bbox
+    );
     assert_eq!(metadata.rotation_degrees, None);
     assert!(stored.base_metadata(&raw[..stored.payload_offset]).is_err());
 }
@@ -532,7 +568,7 @@ fn unknown_late_style_fields_do_not_invent_color_width_or_stylus_channels() {
     let style = [3, 0, 1, 0, 0, 0, 0xff, 0, 0, 0xff, 0, 0, 0x40, 0x40];
     let bytes = single(&stroke(1, 3, &compressed(false), 1 << 31, &style));
     let doc = sdocx::parse_bytes(&bytes).unwrap();
-    let stroke = &doc.pages[0].strokes[0];
+    let stroke = doc.pages[0].strokes().next().unwrap();
     assert_eq!(stroke.color, None);
     assert_eq!(stroke.pen_width, 0.8);
     assert!(stroke.tilts.is_empty());
@@ -594,7 +630,11 @@ fn source_stroke_inspection_keeps_hidden_and_nested_identities() {
     assert_eq!(hidden_stroke.points.len(), 3);
     assert_eq!(
         child.decode_stroke(&raw, &limits).unwrap().timestamps,
-        parsed.document.pages[0].strokes[0].timestamps
+        parsed.document.pages[0]
+            .strokes()
+            .next()
+            .unwrap()
+            .timestamps
     );
     assert!(
         child

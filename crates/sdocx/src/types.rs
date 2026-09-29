@@ -100,10 +100,8 @@ pub struct Page {
     #[cfg_attr(feature = "serde", serde(default))]
     pub background: PageBackground,
 
-    /// The strokes drawn on this page.
-    pub strokes: Vec<Stroke>,
-    /// Non-stroke page objects parsed from the page stream.
-    pub elements: Vec<PageElement>,
+    /// Page objects in stored order, retaining container boundaries.
+    pub objects: Vec<crate::PageObject>,
 }
 
 /// An embedded media asset.

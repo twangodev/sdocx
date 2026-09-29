@@ -167,8 +167,7 @@ fn document_export_uses_visible_layout_and_color_options() {
         background_color: None,
         template: None,
         background: Default::default(),
-        strokes: vec![],
-        elements: vec![],
+        objects: vec![],
     };
     let document = sdocx::Document {
         pages: vec![page.clone(), page],

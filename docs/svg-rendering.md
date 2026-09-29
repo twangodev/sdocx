@@ -8,6 +8,12 @@ it does not expose a generic attribute setter or raw XML constructor.
 `ink` owns Samsung stroke reconstruction. Preview, replay, and PDF conversion
 share the resulting SVG renderer.
 
+Pages own one `objects: Vec<PageObject>` tree, retaining stored order, container
+boundaries, source offsets and render-layer selection inputs. `strokes()` and
+`elements()` expose borrowed recursive views; their mutable counterparts edit
+the same content. Rust callers and serialized page consumers must migrate from
+the former owned `strokes`/`elements` fields to this object tree.
+
 ## Adding a native converter
 
 Construct typed elements and compose them through `Scene::push` and

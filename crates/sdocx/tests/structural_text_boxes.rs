@@ -47,7 +47,7 @@ fn hidden_text_is_retained_without_entering_svg_exports() {
         &[],
     );
     let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
-    assert_eq!(parsed.document.pages[0].elements.len(), 1);
+    assert_eq!(parsed.document.pages[0].elements().count(), 1);
     let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
     assert_eq!(stored.len(), 2);
     assert_eq!(stored[0].payload(&raw).unwrap(), hidden);
@@ -124,8 +124,8 @@ fn text_area_modes_preserve_unknown_values_and_do_not_control_visibility() {
             payload.extend(frame(7, &[2 | u8::from(with_text)], &[], &fields));
             payload.extend(frame(2, &[], &[], &[]));
             let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
-            assert_eq!(parsed.document.pages[0].elements.len(), 1);
-            let text = text_box(&parsed.document.pages[0].elements[0]);
+            assert_eq!(parsed.document.pages[0].elements().count(), 1);
+            let text = text_box(parsed.document.pages[0].elements().next().unwrap());
             let expected = match raw {
                 0 => TextAreaType::Margin,
                 1 => TextAreaType::Free,
@@ -150,7 +150,10 @@ fn text_area_modes_preserve_unknown_values_and_do_not_control_visibility() {
         }
     }
     let parsed = sdocx::parse_bytes(&single(&simple("absent mode"))).unwrap();
-    assert_eq!(text_box(&parsed.pages[0].elements[0]).text_area_type, None);
+    assert_eq!(
+        text_box(parsed.pages[0].elements().next().unwrap()).text_area_type,
+        None
+    );
 }
 
 #[test]
@@ -181,8 +184,8 @@ fn preserves_short_unicode_empty_and_whitespace_text_without_scanning() {
     for text in ["", "a", "中", "こんにちは", "😀", "a😀中\nβ", " \n "] {
         let parsed = sdocx::parse_bytes_detailed(&single(&simple(text))).unwrap();
         let page = &parsed.document.pages[0];
-        assert_eq!(page.elements.len(), 1);
-        let decoded = text_box(&page.elements[0]);
+        assert_eq!(page.elements().count(), 1);
+        let decoded = text_box(page.elements().next().unwrap());
         assert_eq!(decoded.text, text);
         assert_eq!(decoded.bbox.x_min, 0.0);
         assert_eq!(decoded.bbox.x_max, 1.0);
@@ -213,7 +216,7 @@ fn uses_declared_bounds_rotation_and_utf16_style_ranges() {
     );
     let raw = page(&[vec![object(2, &payload, &[])]], 0, &[]);
     let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
-    let decoded = text_box(&parsed.document.pages[0].elements[0]);
+    let decoded = text_box(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(decoded.text, "a😀中");
     assert_eq!(decoded.rotation_degrees, Some(30.0));
     assert_eq!(decoded.bbox.x_min, -20.0);
@@ -280,9 +283,12 @@ fn reads_and_renders_text_and_strokes_from_the_current_layer() {
         let raw = page_with_current_layer(&layers, current_layer_index, 0, &[]);
         let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
         let page = &parsed.document.pages[0];
-        assert_eq!(page.strokes.len(), usize::from(current_layer_index == 0));
-        assert_eq!(page.elements.len(), 1);
-        assert_eq!(text_box(&page.elements[0]).text, visible);
+        assert_eq!(
+            page.strokes().count(),
+            usize::from(current_layer_index == 0)
+        );
+        assert_eq!(page.elements().count(), 1);
+        assert_eq!(text_box(page.elements().next().unwrap()).text, visible);
         assert_eq!(parsed.stored_pages[0].page.layers.layers.len(), 2);
         #[cfg(feature = "render")]
         {
@@ -355,7 +361,7 @@ fn reports_borders_and_unknown_styles_while_retaining_readable_text() {
         &frame(2, &[14, 0], &[], &border),
     );
     let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
-    let decoded = text_box(&parsed.document.pages[0].elements[0]);
+    let decoded = text_box(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(decoded.text, "中");
     assert_eq!(decoded.spans[0].kind, RichTextSpanType::Other(999));
     assert_eq!(decoded.spans[0].payload, [0xde, 0xad]);
@@ -436,7 +442,7 @@ fn preserves_unsupported_inline_objects_and_reports_the_omission() {
         &frame(2, &[], &[], &[]),
     );
     let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
-    let decoded = text_box(&parsed.document.pages[0].elements[0]);
+    let decoded = text_box(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(decoded.text, "\u{fffc}");
     assert_eq!(decoded.object_spans[0].object_data, b"unknown object bytes");
     assert_eq!(
@@ -490,7 +496,7 @@ fn bounds_recursion_through_embedded_code_block_text() {
         ..Default::default()
     };
     let parsed = sdocx::parse_bytes_with_options(&bytes, &options).unwrap();
-    let mut decoded = text_box(&parsed.pages[0].elements[0]);
+    let mut decoded = text_box(parsed.pages[0].elements().next().unwrap());
     for _ in 0..2 {
         let Some(sdocx::RichTextObjectContent::CodeBlock(code)) = &decoded.object_spans[0].content
         else {
@@ -528,7 +534,7 @@ fn preserves_paragraphs_and_sections_without_treating_payloads_as_text() {
     data.splice(section_offset + 2..section_offset + 2, section);
     let payload = text_payload(&data, [0.0; 4], 0.0, &frame(2, &[], &[], &[]));
     let doc = sdocx::parse_bytes(&single(&payload)).unwrap();
-    let decoded = text_box(&doc.pages[0].elements[0]);
+    let decoded = text_box(doc.pages[0].elements().next().unwrap());
     assert_eq!(decoded.text, "one\ntwo");
     assert_eq!(
         decoded.paragraphs[0].alignment(),
@@ -563,7 +569,10 @@ fn future_fields_and_frames_are_bounded_and_reported() {
         let mut payload = text_payload(&data, [0.0; 4], 0.0, &tail);
         payload.extend(frame(123, &[], &[], &[]));
         let parsed = sdocx::parse_bytes_detailed(&single(&payload)).unwrap();
-        assert_eq!(text_box(&parsed.document.pages[0].elements[0]).text, "kept");
+        assert_eq!(
+            text_box(parsed.document.pages[0].elements().next().unwrap()).text,
+            "kept"
+        );
         let finding = parsed
             .report
             .diagnostics
@@ -582,7 +591,11 @@ fn empty_text_without_a_common_field_is_a_valid_object() {
     payload.extend(frame(7, &[], &[], &[]));
     payload.extend(frame(2, &[], &[], &[]));
     let doc = sdocx::parse_bytes(&single(&payload)).unwrap();
-    assert!(text_box(&doc.pages[0].elements[0]).text.is_empty());
+    assert!(
+        text_box(doc.pages[0].elements().next().unwrap())
+            .text
+            .is_empty()
+    );
 }
 
 #[test]

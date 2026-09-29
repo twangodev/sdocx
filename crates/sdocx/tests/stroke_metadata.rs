@@ -427,7 +427,7 @@ fn metadata_and_visible_strokes_share_channel_boundaries_and_style_prefix() {
         let metadata = inspect(&bytes, &ParseLimits::default()).unwrap();
         let raw = page(&[vec![object(1, &bytes, &[])]], 0, &[]);
         let parsed = sdocx::parse_bytes(&archive(&raw)).unwrap();
-        let stroke = &parsed.pages[0].strokes[0];
+        let stroke = parsed.pages[0].strokes().next().unwrap();
         assert_eq!(usize::from(metadata.point_count), stroke.points.len());
         assert_eq!(metadata.tool_type_raw, 3);
         assert_eq!(stroke.pen_width, metadata.style.pen_size.unwrap());

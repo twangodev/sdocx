@@ -106,7 +106,7 @@ fn math_envelopes_preserve_formulas_and_decode_margins_angles_and_plot_reference
     assert!(value.fixed_trailing_data.is_empty());
     assert!(value.flexible_trailing_data.is_empty());
     assert!(value.trailing_data.is_empty());
-    assert!(parsed.document.pages[0].elements.is_empty());
+    assert!(parsed.document.pages[0].elements().next().is_none());
     assert!(
         parsed
             .report
@@ -320,7 +320,7 @@ fn plot_records_expose_graph_expressions_and_styles_without_implying_render_supp
     assert!(!value.graphs[1].is_visible());
     assert_eq!(value.field_mask, [63, 0]);
     assert!(value.flexible_trailing_data.is_empty());
-    assert!(parsed.document.pages[0].elements.is_empty());
+    assert!(parsed.document.pages[0].elements().next().is_none());
     assert!(parsed.report.diagnostics.iter().any(|diagnostic| {
         diagnostic.code == DiagnosticCode::UnsupportedObjectType
             && diagnostic.message.contains("type 20")

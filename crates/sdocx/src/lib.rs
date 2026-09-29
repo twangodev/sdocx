@@ -32,6 +32,7 @@ mod object;
 mod object_flexible;
 mod page;
 mod page_background;
+mod page_objects;
 mod page_selection;
 #[cfg(feature = "pdf")]
 pub mod pdf;
@@ -73,6 +74,7 @@ pub use object_flexible::{
     ObjectBundle, ObjectBundleEntry, ObjectBundleValue, ObjectFlexibleMetadata, ObjectLayoutType,
     ObjectPageSize, ObjectRenderLayer, ObjectSize, ObjectSpanSnapshot,
 };
+pub use page_objects::{PageObject, PageObjectContent};
 pub use page_selection::{PageSelectionError, parse_page_selection};
 #[cfg(feature = "pdf")]
 pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};

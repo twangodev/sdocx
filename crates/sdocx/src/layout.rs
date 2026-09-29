@@ -110,7 +110,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                         &text_ranges,
                         &page_heights,
                     );
-                    page.elements.push(PageElement::TextBox(slice));
+                    page.objects.push(PageElement::TextBox(slice).into());
                 }
             }
             LayoutPage {
@@ -230,7 +230,7 @@ fn has_list_compatibility_page(document: &Document) -> bool {
 }
 
 fn is_blank_storage_page(page: &Page) -> bool {
-    page.strokes.is_empty() && page.elements.is_empty()
+    page.strokes().next().is_none() && page.elements().next().is_none()
 }
 
 fn balanced_line_ranges(text: &str, page_count: usize) -> Vec<Range<usize>> {
@@ -429,8 +429,7 @@ mod tests {
             background_color: None,
             template: None,
             background: Default::default(),
-            strokes: Vec::new(),
-            elements: Vec::new(),
+            objects: Vec::new(),
         }
     }
 
@@ -485,10 +484,13 @@ mod tests {
                 ..Default::default()
             },
         };
-        document.pages[1].elements.push(PageElement::Image {
-            bbox: BoundingBox::default(),
-            media_index: 0,
-        });
+        document.pages[1].objects.push(
+            PageElement::Image {
+                bbox: BoundingBox::default(),
+                media_index: 0,
+            }
+            .into(),
+        );
         assert_eq!(layout_document(&document).pages.len(), 2);
     }
 
@@ -539,7 +541,7 @@ mod tests {
         let reconstructed = layout
             .pages
             .iter()
-            .filter_map(|page| page.page.elements.last())
+            .filter_map(|page| page.page.elements().last())
             .map(|element| match element {
                 PageElement::TextBox(text) => text.text.as_str(),
                 _ => "",
@@ -604,7 +606,7 @@ mod tests {
         let page_text = layout
             .pages
             .iter()
-            .map(|page| match &page.page.elements[0] {
+            .map(|page| match page.page.elements().next().unwrap() {
                 PageElement::TextBox(text) => text.text.as_str(),
                 _ => unreachable!(),
             })
@@ -660,10 +662,10 @@ mod tests {
         };
 
         let layout = layout_document(&document);
-        let PageElement::TextBox(first) = &layout.pages[0].page.elements[0] else {
+        let PageElement::TextBox(first) = layout.pages[0].page.elements().next().unwrap() else {
             panic!("first page text")
         };
-        let PageElement::TextBox(second) = &layout.pages[1].page.elements[0] else {
+        let PageElement::TextBox(second) = layout.pages[1].page.elements().next().unwrap() else {
             panic!("second page text")
         };
 

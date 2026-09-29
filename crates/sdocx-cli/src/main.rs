@@ -164,13 +164,9 @@ fn print_info(doc: &Document, layout: &LayoutDocument) {
     );
     for (i, layout_page) in layout.pages.iter().enumerate() {
         let page = &layout_page.page;
-        let total_points: usize = page.strokes.iter().map(|s| s.points.len()).sum();
-        let colors: std::collections::HashSet<_> = page.strokes.iter().map(|s| s.color).collect();
-        let with_pressure = page
-            .strokes
-            .iter()
-            .filter(|s| !s.pressures.is_empty())
-            .count();
+        let total_points: usize = page.strokes().map(|s| s.points.len()).sum();
+        let colors: std::collections::HashSet<_> = page.strokes().map(|s| s.color).collect();
+        let with_pressure = page.strokes().filter(|s| !s.pressures.is_empty()).count();
         eprintln!(
             "  Page {}: {} x {}, background {}, template {}, {} strokes, {} points, {} colors, {} with pressure",
             i,
@@ -182,7 +178,7 @@ fn print_info(doc: &Document, layout: &LayoutDocument) {
             page.template
                 .map(format_template)
                 .unwrap_or_else(|| "none".to_string()),
-            page.strokes.len(),
+            page.strokes().count(),
             total_points,
             colors.len(),
             with_pressure,
@@ -561,21 +557,23 @@ mod tests {
                 background_color: None,
                 template: None,
                 background: Default::default(),
-                strokes: vec![sdocx::Stroke {
-                    rendering: None,
-                    bbox: sdocx::BoundingBox::default(),
-                    points: vec![
-                        sdocx::Point { x: 1.0, y: 1.0 },
-                        sdocx::Point { x: 9.0, y: 9.0 },
-                    ],
-                    pressures: Vec::new(),
-                    timestamps: Vec::new(),
-                    tilts: Vec::new(),
-                    orientations: Vec::new(),
-                    color: None,
-                    pen_width: 2.0,
-                }],
-                elements: Vec::new(),
+                objects: vec![
+                    sdocx::Stroke {
+                        rendering: None,
+                        bbox: sdocx::BoundingBox::default(),
+                        points: vec![
+                            sdocx::Point { x: 1.0, y: 1.0 },
+                            sdocx::Point { x: 9.0, y: 9.0 },
+                        ],
+                        pressures: Vec::new(),
+                        timestamps: Vec::new(),
+                        tilts: Vec::new(),
+                        orientations: Vec::new(),
+                        color: None,
+                        pen_width: 2.0,
+                    }
+                    .into(),
+                ],
             }],
             metadata: sdocx::DocumentMetadata::default(),
         };
@@ -587,7 +585,7 @@ mod tests {
 
         document.pages[0].width = 1080;
         document.pages[0].height = 1527;
-        document.pages[0].strokes.clear();
+        document.pages[0].clear_strokes();
         document.pages[0].template = Some(sdocx::PageTemplate {
             id: 7,
             source: sdocx::PageTemplateSource::BuiltIn,

@@ -217,7 +217,7 @@ impl Source {
                 let bytes = self.entry(entry)?;
                 match r["kind"].as_str().unwrap() {
                     "page" => {
-                        json!({"entry":entry,"header":stored.page.header,"integrityOffset":stored.page.integrity_offset,"semanticElements":parsed.document.pages[page_index].elements,"template":parsed.document.pages[page_index].template,"backgroundColor":parsed.document.pages[page_index].background_color,"background":parsed.document.pages[page_index].background,"contentBounds":parsed.document.pages[page_index].content_bbox,"currentLayer":stored.page.layers.current_layer_index,
+                        json!({"entry":entry,"header":stored.page.header,"integrityOffset":stored.page.integrity_offset,"semanticObjects":parsed.document.pages[page_index].objects,"template":parsed.document.pages[page_index].template,"backgroundColor":parsed.document.pages[page_index].background_color,"background":parsed.document.pages[page_index].background,"contentBounds":parsed.document.pages[page_index].content_bbox,"currentLayer":stored.page.layers.current_layer_index,
                         "layers":stored.page.layers.layers.iter().enumerate().map(|(i,l)| json!({"index":i,"number":l.number,"objects":l.objects.len(),"offset":l.header_offset})).collect::<Vec<_>>() })
                     }
                     "layer" => {
@@ -284,7 +284,7 @@ impl Source {
                             });
                         let replay = r["kind"] == "replay-svg";
                         if !replay {
-                            preview.page.strokes.clear();
+                            preview.page.clear_strokes();
                         }
                         let preview_layout = LayoutDocument {
                             pages: vec![preview],
@@ -412,7 +412,7 @@ mod source_tests {
         .unwrap();
         let items = replay["strokes"].as_array().unwrap();
         assert_eq!(items.len(), 77);
-        for (item, stroke) in items.iter().zip(&parsed.document.pages[0].strokes) {
+        for (item, stroke) in items.iter().zip(parsed.document.pages[0].strokes()) {
             // Use the same Value-to-wire roundtrip as the debugger, including
             // float32 promotion and JSON number parsing.
             let expected: Value = serde_json::from_str(

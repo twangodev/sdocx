@@ -178,7 +178,7 @@ fn render_page_contents_svg(
     }
 
     let mut highlighter = Vec::new();
-    for (index, stroke) in page.strokes.iter().enumerate() {
+    for (index, stroke) in page.strokes().enumerate() {
         if stroke
             .rendering
             .as_ref()
@@ -189,7 +189,7 @@ fn render_page_contents_svg(
             render_stroke(&mut svg, stroke, theme, replay.then_some(index));
         }
     }
-    for element in &page.elements {
+    for element in page.elements() {
         render_element(
             &mut svg,
             element,
@@ -1840,18 +1840,20 @@ mod tests {
             background_color: None,
             template: None,
             background: Default::default(),
-            strokes: vec![Stroke {
-                rendering: None,
-                bbox: BoundingBox::default(),
-                points: vec![Point { x: 1.0, y: 1.0 }, Point { x: 9.0, y: 9.0 }],
-                pressures: Vec::new(),
-                timestamps: Vec::new(),
-                tilts: Vec::new(),
-                orientations: Vec::new(),
-                color: None,
-                pen_width: 2.0,
-            }],
-            elements: Vec::new(),
+            objects: vec![
+                Stroke {
+                    rendering: None,
+                    bbox: BoundingBox::default(),
+                    points: vec![Point { x: 1.0, y: 1.0 }, Point { x: 9.0, y: 9.0 }],
+                    pressures: Vec::new(),
+                    timestamps: Vec::new(),
+                    tilts: Vec::new(),
+                    orientations: Vec::new(),
+                    color: None,
+                    pen_width: 2.0,
+                }
+                .into(),
+            ],
         }
     }
 
@@ -1950,7 +1952,7 @@ mod tests {
                     .is_some()
             );
             let mut page = page_with_uncolored_stroke();
-            page.strokes = vec![stroke.clone()];
+            page.objects = vec![stroke.clone().into()];
             let rendered = render_document_svg(&document(page), &RenderOptions::default());
             assert!(rendered[0].svg.contains("<linearGradient"));
             assert!(rendered[0].svg.contains("<path "));
@@ -1971,8 +1973,8 @@ mod tests {
         fountain.pressures = vec![0.2, 0.8];
         fountain.timestamps = vec![0, 10];
         let mut page = page_with_uncolored_stroke();
-        page.strokes.push(fountain);
-        page.strokes.push(marker(true, 20.));
+        page.objects.push(fountain.into());
+        page.objects.push(marker(true, 20.).into());
         let doc = document(page);
         let layout = crate::layout_document(&doc);
         for color_mode in [RenderColorMode::Light, RenderColorMode::Dark] {
@@ -2159,8 +2161,9 @@ mod tests {
                 g: 252,
                 b: 252,
             });
-            page.strokes[0].color = Some(Color { r: 0, g: 0, b: 0 });
-            page.elements.push(PageElement::TextBox(theme_test_text()));
+            page.strokes_mut().next().unwrap().color = Some(Color { r: 0, g: 0, b: 0 });
+            page.objects
+                .push(PageElement::TextBox(theme_test_text()).into());
             let mut doc = document(page);
             doc.metadata.dark_mode_compatibility = Some(compatible);
             let options = RenderOptions {
@@ -2198,7 +2201,7 @@ mod tests {
             g: 255,
             b: 255,
         });
-        page.elements.push(PageElement::TextBox(text));
+        page.objects.push(PageElement::TextBox(text).into());
         let svg = render_document_svg(
             &document(page),
             &RenderOptions {
@@ -2226,14 +2229,14 @@ mod tests {
             g: 37,
             b: 37,
         });
-        page.strokes[0].color = Some(Color {
+        page.strokes_mut().next().unwrap().color = Some(Color {
             r: 255,
             g: 255,
             b: 255,
         });
         let mut text = theme_test_text();
-        text.color = page.strokes[0].color;
-        page.elements.push(PageElement::TextBox(text));
+        text.color = page.strokes().next().unwrap().color;
+        page.objects.push(PageElement::TextBox(text).into());
         let doc = document(page);
         for (mode, ink) in [
             (RenderColorMode::Auto, "#ffffff"),
@@ -2259,7 +2262,7 @@ mod tests {
         let mut page = page_with_uncolored_stroke();
         let mut text = theme_test_text();
         text.highlight_color = Some(Color { r: 0, g: 0, b: 0 });
-        page.elements.push(PageElement::TextBox(text));
+        page.objects.push(PageElement::TextBox(text).into());
         let svg = render_document_svg(&document(page), &RenderOptions::default())
             .remove(0)
             .svg;
@@ -2311,7 +2314,7 @@ mod tests {
     #[test]
     fn clamps_pressure_while_rendering_strokes() {
         let mut page = page_with_uncolored_stroke();
-        page.strokes[0].pressures = vec![f64::MAX, f64::MAX];
+        page.strokes_mut().next().unwrap().pressures = vec![f64::MAX, f64::MAX];
         let pages = render_document_svg(&document(page), &RenderOptions::default());
 
         assert!(pages[0].svg.contains(r#"stroke-width="0.80""#));
@@ -2321,28 +2324,31 @@ mod tests {
     #[test]
     fn dark_mode_makes_compatibility_text_visible() {
         let mut page = page_with_uncolored_stroke();
-        page.strokes.clear();
-        page.elements.push(PageElement::TextBox(RichTextBox {
-            text_area_type: None,
-            bbox: BoundingBox::default(),
-            rotation_degrees: None,
-            text: "visible body text".into(),
-            color: Some(Color {
-                r: 0x25,
-                g: 0x25,
-                b: 0x25,
-            }),
-            highlight_color: None,
-            underline: false,
-            font_size: None,
-            runs: Vec::new(),
-            spans: Vec::new(),
-            paragraphs: Vec::new(),
-            object_spans: Vec::new(),
-            text_sections: Vec::new(),
-            margins: None,
-            gravity: None,
-        }));
+        page.clear_strokes();
+        page.objects.push(
+            PageElement::TextBox(RichTextBox {
+                text_area_type: None,
+                bbox: BoundingBox::default(),
+                rotation_degrees: None,
+                text: "visible body text".into(),
+                color: Some(Color {
+                    r: 0x25,
+                    g: 0x25,
+                    b: 0x25,
+                }),
+                highlight_color: None,
+                underline: false,
+                font_size: None,
+                runs: Vec::new(),
+                spans: Vec::new(),
+                paragraphs: Vec::new(),
+                object_spans: Vec::new(),
+                text_sections: Vec::new(),
+                margins: None,
+                gravity: None,
+            })
+            .into(),
+        );
         let pages = render_document_svg(
             &document(page),
             &RenderOptions {
@@ -2368,30 +2374,33 @@ mod tests {
         payload.extend(target.encode_utf16().flat_map(u16::to_le_bytes));
         let mut page = page_with_uncolored_stroke();
         page.width = 1080;
-        page.strokes.clear();
-        page.elements.push(PageElement::TextBox(RichTextBox {
-            text_area_type: None,
-            bbox: BoundingBox::default(),
-            rotation_degrees: None,
-            text: "Example link".into(),
-            color: None,
-            highlight_color: None,
-            underline: false,
-            font_size: Some(15.0),
-            runs: Vec::new(),
-            spans: vec![RichTextSpan {
-                kind: RichTextSpanType::Hyperlink,
-                start_utf16: 0,
-                end_utf16: 12,
-                expand: false,
-                payload,
-            }],
-            paragraphs: Vec::new(),
-            object_spans: Vec::new(),
-            text_sections: Vec::new(),
-            margins: None,
-            gravity: None,
-        }));
+        page.clear_strokes();
+        page.objects.push(
+            PageElement::TextBox(RichTextBox {
+                text_area_type: None,
+                bbox: BoundingBox::default(),
+                rotation_degrees: None,
+                text: "Example link".into(),
+                color: None,
+                highlight_color: None,
+                underline: false,
+                font_size: Some(15.0),
+                runs: Vec::new(),
+                spans: vec![RichTextSpan {
+                    kind: RichTextSpanType::Hyperlink,
+                    start_utf16: 0,
+                    end_utf16: 12,
+                    expand: false,
+                    payload,
+                }],
+                paragraphs: Vec::new(),
+                object_spans: Vec::new(),
+                text_sections: Vec::new(),
+                margins: None,
+                gravity: None,
+            })
+            .into(),
+        );
         let pages = render_document_svg(&document(page), &RenderOptions::default());
 
         assert!(
@@ -2492,29 +2501,32 @@ mod tests {
     #[test]
     fn top_layer_marker_is_one_darken_batch_after_text() {
         let mut page = page_with_uncolored_stroke();
-        page.strokes = vec![marker(false, 10.), marker(true, 40.)];
-        page.elements.push(PageElement::TextBox(RichTextBox {
-            text_area_type: None,
-            bbox: BoundingBox {
-                x_min: 4.,
-                y_min: 4.,
-                x_max: 80.,
-                y_max: 40.,
-            },
-            rotation_degrees: None,
-            text: "under the highlighter".into(),
-            color: Some(Color { r: 0, g: 0, b: 0 }),
-            highlight_color: None,
-            underline: false,
-            font_size: Some(12.),
-            runs: Vec::new(),
-            spans: Vec::new(),
-            paragraphs: Vec::new(),
-            object_spans: Vec::new(),
-            text_sections: Vec::new(),
-            margins: None,
-            gravity: None,
-        }));
+        page.objects = vec![marker(false, 10.).into(), marker(true, 40.).into()];
+        page.objects.push(
+            PageElement::TextBox(RichTextBox {
+                text_area_type: None,
+                bbox: BoundingBox {
+                    x_min: 4.,
+                    y_min: 4.,
+                    x_max: 80.,
+                    y_max: 40.,
+                },
+                rotation_degrees: None,
+                text: "under the highlighter".into(),
+                color: Some(Color { r: 0, g: 0, b: 0 }),
+                highlight_color: None,
+                underline: false,
+                font_size: Some(12.),
+                runs: Vec::new(),
+                spans: Vec::new(),
+                paragraphs: Vec::new(),
+                object_spans: Vec::new(),
+                text_sections: Vec::new(),
+                margins: None,
+                gravity: None,
+            })
+            .into(),
+        );
         let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
             .svg
             .clone();
@@ -2556,8 +2568,8 @@ mod tests {
             g: 255,
             b: 255,
         });
-        page.strokes = vec![red, cyan];
-        page.elements.clear();
+        page.objects = vec![red.into(), cyan.into()];
+        page.clear_elements();
         let svg = &render_document_svg(&document(page), &RenderOptions::default())[0].svg;
         let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).unwrap();
         let mut pixmap = resvg::tiny_skia::Pixmap::new(32, 32).unwrap();
@@ -2579,14 +2591,16 @@ mod tests {
         page.background_color = Some(Color { r: 0, g: 0, b: 0 });
         page.width = 40;
         page.height = 40;
-        page.strokes[0].points = vec![Point { x: 24., y: 18. }, Point { x: 24., y: 22. }];
-        page.strokes[0].color = Some(Color {
+        page.strokes_mut().next().unwrap().points =
+            vec![Point { x: 24., y: 18. }, Point { x: 24., y: 22. }];
+        page.strokes_mut().next().unwrap().color = Some(Color {
             r: 255,
             g: 255,
             b: 255,
         });
-        page.strokes[0].pen_width = 10.;
-        page.strokes.extend([marker(true, 12.), marker(true, 24.)]);
+        page.strokes_mut().next().unwrap().pen_width = 10.;
+        page.objects
+            .extend([marker(true, 12.).into(), marker(true, 24.).into()]);
         let doc = document(page);
         let layout = layout_document(&doc);
         let options = RenderOptions::default();
@@ -2664,8 +2678,8 @@ mod tests {
                 g: 255,
                 b: 255,
             });
-            page.strokes = vec![stroke];
-            page.elements.clear();
+            page.objects = vec![stroke.into()];
+            page.clear_elements();
             let svg = &render_document_svg(&document(page), &RenderOptions::default())[0].svg;
             assert!(!svg.contains("<image"));
             assert!(!svg.contains("<filter"));

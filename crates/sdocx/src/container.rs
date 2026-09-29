@@ -172,7 +172,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
             &media,
         )?;
 
-        for stroke in &mut page.strokes {
+        for stroke in page.strokes_mut() {
             stroke_resources.resolve(stroke);
         }
 
@@ -586,8 +586,7 @@ mod tests {
             background_color: None,
             template: None,
             background: Default::default(),
-            strokes: Vec::new(),
-            elements: Vec::new(),
+            objects: Vec::new(),
         }
     }
 

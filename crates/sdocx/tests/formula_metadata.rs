@@ -192,7 +192,7 @@ fn formula_inspection_decodes_native_field_order_strokes_and_label_graphs() {
     assert!(value.fixed_trailing_data.is_empty());
     assert!(value.flexible_trailing_data.is_empty());
     assert!(value.trailing_data.is_empty());
-    assert!(parsed.document.pages[0].elements.is_empty());
+    assert!(parsed.document.pages[0].elements().next().is_none());
     assert!(
         parsed
             .report

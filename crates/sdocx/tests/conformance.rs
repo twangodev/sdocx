@@ -328,7 +328,7 @@ fn check_page_objects(
     let mut shapes = 0;
     let mut lines = 0;
     for page in &document.pages {
-        for element in &page.elements {
+        for element in page.elements() {
             match element {
                 sdocx::PageElement::Image { .. } | sdocx::PageElement::PlacedImage(_) => {
                     images += 1
@@ -342,7 +342,11 @@ fn check_page_objects(
     }
     check_count(
         "page strokes",
-        document.pages.iter().map(|page| page.strokes.len()).sum(),
+        document
+            .pages
+            .iter()
+            .map(|page| page.strokes().count())
+            .sum(),
         expected.strokes,
     )?;
     check_count("page images", images, expected.images)?;
@@ -383,12 +387,13 @@ fn drawing_notes_do_not_require_a_title_or_flow_text() {
 #[test]
 fn missing_or_unexpected_page_objects_fail_exact_counts() {
     let (mut parsed, mut expected) = drawing_fixture();
-    parsed.document.pages[0]
-        .elements
-        .push(sdocx::PageElement::Image {
+    parsed.document.pages[0].objects.push(
+        sdocx::PageElement::Image {
             bbox: Default::default(),
             media_index: 0,
-        });
+        }
+        .into(),
+    );
     assert!(
         check_document(&parsed, &expected)
             .unwrap_err()
@@ -396,7 +401,7 @@ fn missing_or_unexpected_page_objects_fail_exact_counts() {
     );
     expected.page_objects.as_mut().unwrap().images = Some(1);
     check_document(&parsed, &expected).unwrap();
-    parsed.document.pages[0].elements.clear();
+    parsed.document.pages[0].clear_elements();
     assert!(
         check_document(&parsed, &expected)
             .unwrap_err()
@@ -607,8 +612,7 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     );
     let page = &document.pages[0];
     let shapes: Vec<_> = page
-        .elements
-        .iter()
+        .elements()
         .filter_map(|element| {
             if let sdocx::PageElement::Shape(shape) = element {
                 Some(shape)
@@ -622,7 +626,7 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     assert_eq!(page.template.unwrap().id, 7);
     assert_eq!(page.background.image_mode, Some(2));
     assert_eq!(page.background.width, Some(1848));
-    for stroke in &page.strokes {
+    for stroke in page.strokes() {
         let rendering = stroke.rendering.as_ref().unwrap();
         assert_eq!(
             rendering.pen_name.as_deref(),
@@ -630,7 +634,7 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
         );
         assert_eq!(rendering.advanced_settings.as_deref(), Some("18;0;100;"));
     }
-    for stroke in &page.strokes[47..59] {
+    for stroke in page.strokes().skip(47).take(12) {
         assert!((297..=462).contains(&stroke.points.len()));
         assert_eq!(stroke.pressures.len(), stroke.points.len());
         assert_eq!(stroke.timestamps.len(), stroke.points.len());
@@ -639,7 +643,7 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     assert_eq!(rendered.len(), 1);
     assert_eq!(rendered[0].source_page_index, 0);
     let mut read_only = document.clone();
-    for element in &mut read_only.pages[0].elements {
+    for element in read_only.pages[0].elements_mut() {
         if let sdocx::PageElement::Shape(shape) = element {
             shape.text_editable = false;
         }
@@ -659,7 +663,7 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
     );
     // A debugger background removes ink, but shares template and native objects.
     let mut background = document.clone();
-    background.pages[0].strokes.clear();
+    background.pages[0].clear_strokes();
     let svg = &sdocx::render_document_svg(&background, &Default::default())[0].svg;
     let xml = roxmltree::Document::parse(svg).unwrap();
     let paths: Vec<_> = xml

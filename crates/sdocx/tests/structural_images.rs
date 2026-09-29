@@ -172,7 +172,7 @@ fn standard_rectangular_images_accept_inactive_outline_and_nine_patch_settings()
                 parsed.report.diagnostics
             );
             assert_eq!(
-                placed(&parsed.document.pages[0].elements[0]).media_index,
+                placed(parsed.document.pages[0].elements().next().unwrap()).media_index,
                 Some(0)
             );
             let span = &parsed.note.as_ref().unwrap().body.object_spans[0];
@@ -600,7 +600,7 @@ fn image_flow_sections_render_each_anchor_once_and_preserve_page_margins() {
     let layout = sdocx::layout_document(&document);
     assert_eq!(layout.pages.len(), 2);
     for page in &layout.pages {
-        let PageElement::TextBox(text) = &page.page.elements[0] else {
+        let PageElement::TextBox(text) = page.page.elements().next().unwrap() else {
             panic!("text flow")
         };
         assert_eq!(text.object_spans.len(), 1);
@@ -619,7 +619,7 @@ fn hidden_images_keep_media_references_without_resolving_or_drawing_them() {
     payload[11] &= !(1 << 3);
     let raw = page(&[vec![object(3, &payload, &[])]], 0, &[]);
     let parsed = sdocx::parse_bytes_detailed(&support::archive(&raw)).unwrap();
-    assert!(parsed.document.pages[0].elements.is_empty());
+    assert!(parsed.document.pages[0].elements().next().is_none());
     let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
     assert_eq!(stored.payload(&raw).unwrap(), payload);
     assert!(!stored.base_metadata(&raw).unwrap().visible);
@@ -719,18 +719,18 @@ fn manifest_ids_override_filename_prefixes_archive_order_and_encounter_order() {
         let parsed =
             sdocx::parse_bytes_detailed(&archive(&pages, Some(&bindings), &files)).unwrap();
         let doc = &parsed.document;
-        let elements = &doc.pages[0].elements;
+        let elements: Vec<_> = doc.pages[0].elements().collect();
         assert_eq!(elements.len(), 3);
-        assert_eq!(asset_bytes(doc, &elements[0]), b"blue");
-        assert_eq!(asset_bytes(doc, &elements[1]), b"red");
-        assert_eq!(asset_bytes(doc, &elements[2]), b"blue");
-        assert_eq!(placed(&elements[0]).media_id, Some(42));
+        assert_eq!(asset_bytes(doc, elements[0]), b"blue");
+        assert_eq!(asset_bytes(doc, elements[1]), b"red");
+        assert_eq!(asset_bytes(doc, elements[2]), b"blue");
+        assert_eq!(placed(elements[0]).media_id, Some(42));
         assert_eq!(
-            placed(&elements[0]).media_index,
-            placed(&elements[2]).media_index
+            placed(elements[0]).media_index,
+            placed(elements[2]).media_index
         );
-        assert_eq!(placed(&elements[0]).rotation_degrees, Some(30.0));
-        assert_eq!(placed(&elements[0]).bbox.x_min, -10.0);
+        assert_eq!(placed(elements[0]).rotation_degrees, Some(30.0));
+        assert_eq!(placed(elements[0]).bbox.x_min, -10.0);
         assert!(!parsed.report.diagnostics.iter().any(|d| matches!(
             d.code,
             DiagnosticCode::UnresolvedImageMedia
@@ -781,9 +781,9 @@ fn missing_unsupported_and_ambiguous_bindings_never_select_a_different_asset() {
     for (bindings, message) in cases {
         let parsed =
             sdocx::parse_bytes_detailed(&archive(&pages, Some(bindings), &assets)).unwrap();
-        assert_eq!(parsed.document.pages[0].elements.len(), 1);
+        assert_eq!(parsed.document.pages[0].elements().count(), 1);
         assert_eq!(
-            placed(&parsed.document.pages[0].elements[0]).media_index,
+            placed(parsed.document.pages[0].elements().next().unwrap()).media_index,
             None
         );
         let finding = parsed
@@ -814,7 +814,10 @@ fn absent_manifest_allows_only_an_unambiguous_numeric_id_with_a_warning() {
     ];
     let parsed = sdocx::parse_bytes_detailed(&archive(&pages, None, &assets)).unwrap();
     assert_eq!(
-        asset_bytes(&parsed.document, &parsed.document.pages[0].elements[0]),
+        asset_bytes(
+            &parsed.document,
+            parsed.document.pages[0].elements().next().unwrap()
+        ),
         b"actual"
     );
     assert!(
@@ -829,7 +832,7 @@ fn absent_manifest_allows_only_an_unambiguous_numeric_id_with_a_warning() {
         duplicate.push((name, b"different"));
         let parsed = sdocx::parse_bytes_detailed(&archive(&pages, None, &duplicate)).unwrap();
         assert!(
-            placed(&parsed.document.pages[0].elements[0])
+            placed(parsed.document.pages[0].elements().next().unwrap())
                 .media_index
                 .is_none()
         );
@@ -867,13 +870,19 @@ fn image_references_are_global_across_pages_layers_and_children() {
     ))
     .unwrap();
     assert_eq!(parsed.document.pages.len(), 2);
-    assert_eq!(parsed.document.pages[0].elements.len(), 1);
+    assert_eq!(parsed.document.pages[0].elements().count(), 1);
     assert_eq!(
-        asset_bytes(&parsed.document, &parsed.document.pages[0].elements[0]),
+        asset_bytes(
+            &parsed.document,
+            parsed.document.pages[0].elements().next().unwrap()
+        ),
         b"blue"
     );
     assert_eq!(
-        asset_bytes(&parsed.document, &parsed.document.pages[1].elements[0]),
+        asset_bytes(
+            &parsed.document,
+            parsed.document.pages[1].elements().next().unwrap()
+        ),
         b"red"
     );
 }
@@ -908,13 +917,16 @@ fn optional_fields_and_border_original_ids_cannot_replace_the_displayed_image() 
         ],
     ))
     .unwrap();
-    let img = placed(&parsed.document.pages[0].elements[0]);
+    let img = placed(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(img.media_id, Some(7));
     assert_eq!(img.crop_rect, Some([1, 2, 30, 40]));
     assert_eq!(img.border_media_id, Some(8));
     assert_eq!(img.original_media_id, Some(9));
     assert_eq!(
-        asset_bytes(&parsed.document, &parsed.document.pages[0].elements[0]),
+        asset_bytes(
+            &parsed.document,
+            parsed.document.pages[0].elements().next().unwrap()
+        ),
         b"main"
     );
     assert!(
@@ -984,7 +996,7 @@ fn unknown_fills_and_negative_ids_do_not_invent_bindings() {
             &[("main.png", b"main")],
         ))
         .unwrap();
-        let img = placed(&parsed.document.pages[0].elements[0]);
+        let img = placed(parsed.document.pages[0].elements().next().unwrap());
         assert_eq!(img.media_id, None);
         assert_eq!(img.media_index, None);
         assert!(
@@ -1024,13 +1036,16 @@ fn zero_id_tiny_bounds_and_wider_masks_preserve_the_reference() {
         &[("zero.png", b"zero")],
     ))
     .unwrap();
-    let image = placed(&parsed.document.pages[0].elements[0]);
+    let image = placed(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(image.media_id, Some(0));
     assert_eq!(image.bbox.x_min, 0.0);
     assert_eq!(image.bbox.x_max, 0.5);
     assert_eq!(image.bbox.y_max, 0.25);
     assert_eq!(
-        asset_bytes(&parsed.document, &parsed.document.pages[0].elements[0]),
+        asset_bytes(
+            &parsed.document,
+            parsed.document.pages[0].elements().next().unwrap()
+        ),
         b"zero"
     );
     let warning = parsed
@@ -1064,7 +1079,7 @@ fn images_obey_object_limits_and_do_not_scan_non_image_payloads() {
         &[("main.png", b"main")],
     );
     let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
-    assert!(parsed.document.pages[0].elements.is_empty());
+    assert!(parsed.document.pages[0].elements().next().is_none());
     assert!(
         parsed
             .report
@@ -1086,7 +1101,7 @@ fn no_fill_means_no_main_image_even_when_an_original_asset_exists() {
         &[("original.png", b"original")],
     ))
     .unwrap();
-    let image = placed(&parsed.document.pages[0].elements[0]);
+    let image = placed(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(image.media_id, None);
     assert_eq!(image.original_media_id, Some(7));
     assert_eq!(image.media_index, None);
@@ -1101,11 +1116,14 @@ fn legacy_image_values_still_render_with_their_explicit_asset_index() {
         &[("main.png", b"main")],
     );
     let mut document = sdocx::parse_bytes(&bytes).unwrap();
-    let image = placed(&document.pages[0].elements[0]);
-    document.pages[0].elements = vec![PageElement::Image {
-        bbox: image.bbox,
-        media_index: image.media_index.unwrap(),
-    }];
+    let image = placed(document.pages[0].elements().next().unwrap());
+    document.pages[0].objects = vec![
+        PageElement::Image {
+            bbox: image.bbox,
+            media_index: image.media_index.unwrap(),
+        }
+        .into(),
+    ];
     let svg = sdocx::render_page_svg(&document, 0, &sdocx::RenderOptions::default())
         .unwrap()
         .svg;
@@ -1125,7 +1143,7 @@ fn matching_shape_rotation_is_not_mistaken_for_a_corner_radius() {
     ))
     .unwrap();
     assert_eq!(
-        placed(&parsed.document.pages[0].elements[0]).rotation_degrees,
+        placed(parsed.document.pages[0].elements().next().unwrap()).rotation_degrees,
         Some(30.0)
     );
     assert!(
