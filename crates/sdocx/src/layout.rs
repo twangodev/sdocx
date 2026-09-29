@@ -110,7 +110,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                         &text_ranges,
                         &page_heights,
                     );
-                    page.objects.push(PageElement::TextBox(slice).into());
+                    page.objects.insert(0, PageElement::TextBox(slice).into());
                 }
             }
             LayoutPage {

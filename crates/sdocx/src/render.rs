@@ -6,6 +6,7 @@ use crate::{
     PlacedImage, PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
     RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke, layout_document,
 };
+use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
 use vector::{
     Anchor, Blend, Circle, Clip, ClipPath, Data, Definitions, Ellipse, FontFamily, Group, Image,
@@ -177,41 +178,83 @@ fn render_page_contents_svg(
         }
     }
 
-    let mut highlighter = Vec::new();
-    for (index, stroke) in page.strokes().enumerate() {
-        if stroke
-            .rendering
-            .as_ref()
-            .is_some_and(|rendering| rendering.properties.top_layer_pen)
-        {
-            highlighter.push((index, stroke));
-        } else {
-            render_stroke(&mut svg, stroke, theme, replay.then_some(index));
-        }
-    }
-    for element in page.elements() {
-        render_element(
-            &mut svg,
-            element,
-            page,
-            media_assets,
-            flow_page_padding,
-            theme,
-        );
-    }
-    if !highlighter.is_empty() {
+    let composition = CompositionContext {
+        page,
+        media_assets,
+        flow_page_padding,
+        theme,
+        replay,
+    };
+    render_pass(&mut svg, &composition, RenderPass::Base);
+    if page
+        .objects
+        .iter()
+        .any(|object| object.render_pass() == Some(RenderPass::Top))
+    {
         let blend = if theme.is_dark() {
             Blend::Lighten
         } else {
             Blend::Darken
         };
         svg.scope(Group::new().blend(blend), |svg| {
-            for (index, stroke) in highlighter {
-                render_stroke(svg, stroke, theme, replay.then_some(index));
-            }
+            render_pass(svg, &composition, RenderPass::Top);
         });
     }
+    render_pass(&mut svg, &composition, RenderPass::Masking);
     svg.finish()
+}
+
+struct CompositionContext<'a> {
+    page: &'a Page,
+    media_assets: &'a [MediaAsset],
+    flow_page_padding: Option<(u32, u32)>,
+    theme: RenderTheme,
+    replay: bool,
+}
+
+fn render_pass(svg: &mut Scene, context: &CompositionContext<'_>, pass: RenderPass) {
+    let mut stroke_index = 0;
+    for object in &context.page.objects {
+        if let Some(selected) = object.render_pass() {
+            if selected == pass {
+                render_object(svg, context, object, &mut stroke_index);
+            } else {
+                stroke_index += object.stroke_count();
+            }
+        }
+    }
+}
+
+fn render_object(
+    svg: &mut Scene,
+    context: &CompositionContext<'_>,
+    object: &PageObject,
+    stroke_index: &mut usize,
+) {
+    match &object.content {
+        PageObjectContent::Stroke(stroke) => {
+            render_stroke(
+                svg,
+                stroke,
+                context.theme,
+                context.replay.then_some(*stroke_index),
+            );
+            *stroke_index += 1;
+        }
+        PageObjectContent::Element(element) => render_element(
+            svg,
+            element,
+            context.page,
+            context.media_assets,
+            context.flow_page_padding,
+            context.theme,
+        ),
+        PageObjectContent::Container(children) => {
+            for child in children {
+                render_object(svg, context, child, stroke_index);
+            }
+        }
+    }
 }
 
 fn render_line_background(

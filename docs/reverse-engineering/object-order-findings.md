@@ -119,6 +119,12 @@ bit 1. A query with filter 7 retains the caller's complete type mask.
 set, regardless of its common render-layer ID. Other objects, including
 non-top-layer strokes, use the bit selected by `GetRenderLayerId`.
 
+An absent serialized render-layer field uses the constructed Base default.
+`ObjectBase::Construct(type, bool)`, `0x2c93a8`, allocates base data and calls
+its constructor helper at `0x2c967c`. The store at `0x2c9724` initializes
+base-data offset 212 to zero; `GetRenderLayerId`, `0x2d1660`, reads that same
+member. The metadata accessor still preserves field absence as `None`.
+
 For an intersecting object with a known ID and an original type mask that
 includes it, the combined query therefore has this truth table:
 
@@ -167,16 +173,16 @@ renderer can still apply its own pixel behavior to that child.
 
 ## Consequences for the SDK
 
-The high-level SDK page currently separates strokes from other elements and
-flattens supported descendants. SVG draws the entire stroke collection before
-the element collection. This loses native interleaving and the root/container
-boundaries needed to apply the confirmed render selection.
+The high-level SDK page now retains one ordered `PageObject` tree with typed
+containers, source offsets and render-layer metadata. Root selection precedes
+child traversal; selected children draw in place without independent pass
+classification. Hidden recognized objects suppress their subtrees during
+decoding. Borrowed stroke and element views refer to the same content.
 
-An ordered scene representation needs to retain root order, child order,
-container boundaries, visibility and each root's render-selection inputs.
-Pass selection must happen before child traversal. Sorting a flattened list
-by timestamps, object type or each descendant's render ID cannot reproduce
-this pipeline. Group-ID strings also cannot reconstruct container membership.
+Rust archive regressions cover mixed strokes/text, nested containers, visibility,
+Base/Top/Masking order, top-pen overrides, rejected root IDs and dense replay
+indices. Native root intersection filtering and container editing transforms
+remain open. Group-ID strings are not used to reconstruct container membership.
 
 The existing [Standard PDF trace](standard-pdf-composition-findings.md#ordinary-objects-retain-interleaving-and-flush-the-tail)
 establishes image/text flush boundaries and the explicit final bitmap flush.

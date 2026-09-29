@@ -80,6 +80,30 @@ impl Page {
     }
 }
 
+#[cfg(feature = "render")]
+impl Page {
+    /// Strokes accepted by root composition, in stored traversal order.
+    pub fn composed_strokes(&self) -> impl Iterator<Item = (&PageObject, &Stroke)> {
+        self.objects
+            .iter()
+            .filter(|root| root.render_pass().is_some())
+            .flat_map(|root| ObjectIter::new(std::slice::from_ref(root)))
+            .filter_map(|object| match &object.content {
+                PageObjectContent::Stroke(stroke) => Some((object, stroke)),
+                _ => None,
+            })
+    }
+}
+
+#[cfg(feature = "render")]
+impl PageObject {
+    pub(crate) fn stroke_count(&self) -> usize {
+        ObjectIter::new(std::slice::from_ref(self))
+            .filter(|object| matches!(object.content, PageObjectContent::Stroke(_)))
+            .count()
+    }
+}
+
 fn retain_content(
     objects: &mut Vec<PageObject>,
     retain: impl Copy + Fn(&PageObjectContent) -> bool,

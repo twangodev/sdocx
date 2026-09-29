@@ -14,6 +14,20 @@ boundaries, source offsets and render-layer selection inputs. `strokes()` and
 the same content. Rust callers and serialized page consumers must migrate from
 the former owned `strokes`/`elements` fields to this object tree.
 
+Composition selects root objects into Base, Top and Masking passes, preserving
+stored order within each pass. A selected container draws its children in place;
+child render IDs and highlighter flags do not select new page passes. Document
+body text precedes page-local objects. Replay borrows the parsed strokes accepted
+by that same root selection and uses dense stroke indices in stored traversal
+order, independently of the order in which the passes draw them.
+
+Native root-bound intersection filtering and container editing transforms are
+not implemented. Existing leaf placement transforms remain in their converters.
+Unknown root render IDs are omitted rather than interpreted as known layers.
+The shared SVG top batch uses Darken on light paper and Lighten on dark paper;
+this follows page capture, while Samsung's Standard list PDF path uses Darken.
+The SDK keeps one SVG composition policy for preview and vector PDF output.
+
 ## Adding a native converter
 
 Construct typed elements and compose them through `Scene::push` and

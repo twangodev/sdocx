@@ -12,6 +12,8 @@
 
 mod archive_tail;
 mod binary;
+#[cfg(feature = "render")]
+mod composition;
 mod container;
 mod decode;
 mod end_tag;

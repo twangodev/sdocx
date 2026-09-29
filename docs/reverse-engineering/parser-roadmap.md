@@ -65,8 +65,8 @@ hash verification.
 
 Common object metadata exposes confirmed visibility/editing flags, replay and
 resize values, full masks and bounded frame extensions. Object and layer
-visibility have different bit encodings. Applying visibility during rendering
-remains; see
+visibility have different bit encodings. Semantic decoding excludes hidden
+recognized objects and their subtrees; see
 [common object findings](object-base-findings.md).
 Explicit common flexible metadata decodes both SOR/extra-data bundles and all
 17 mapped fields after rotation, with aggregate limits, retained duplicate

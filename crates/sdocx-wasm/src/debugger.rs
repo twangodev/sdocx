@@ -313,16 +313,18 @@ impl Source {
                         json!({"svg": background,"defaultInk":theme.default_ink()})
                     }
                     _ => {
-                        let mut strokes = Vec::new();
+                        let strokes = parsed.document.pages[page_index]
+                            .composed_strokes()
+                            .map(|(object, stroke)| json!({
+                                "offset": object.source_offset,
+                                "geometry": sdocx::prepare_stroke(stroke, false),
+                                "stroke": stroke,
+                                "milliseconds": stroke.rendering.as_ref().is_some_and(|rendering|
+                                    rendering.properties.millisecond_timestamps)
+                            }))
+                            .collect::<Vec<_>>();
                         let mut objects = Vec::new();
-                        fn walk(
-                            items: &[StoredObject],
-                            bytes: &[u8],
-                            limits: &sdocx::ParseLimits,
-                            resources: &sdocx::StrokeResources,
-                            strokes: &mut Vec<Value>,
-                            objects: &mut Vec<Value>,
-                        ) {
+                        fn walk(items: &[StoredObject], bytes: &[u8], objects: &mut Vec<Value>) {
                             for o in items {
                                 let base = o.base_metadata(bytes).ok();
                                 if base.as_ref().is_some_and(|b| !b.visible) {
@@ -331,26 +333,12 @@ impl Source {
                                 if let Some(base) = &base {
                                     objects.push(json!({"offset":o.payload_offset,"bbox":base.bbox,"type":o.object_type}));
                                 }
-                                if o.object_type == ObjectType::Stroke {
-                                    match o.decode_stroke(bytes,limits) {
-                                        Ok(mut stroke) => { resources.resolve(&mut stroke); strokes.push(json!({"offset":o.payload_offset,"geometry":sdocx::prepare_stroke(&stroke,false),"stroke":stroke,
-                                            "milliseconds":o.stroke_metadata_with_limits(bytes,limits).is_ok_and(|m| m.properties.millisecond_timestamps)})); },
-                                        Err(e) => objects.push(json!({"offset":o.payload_offset,"error":e.to_string()}))
-                                    }
-                                }
-                                walk(&o.children, bytes, limits, resources, strokes, objects);
+                                walk(&o.children, bytes, objects);
                             }
                         }
                         let layer = &stored.page.layers.layers
                             [usize::from(stored.page.layers.current_layer_index)];
-                        walk(
-                            &layer.objects,
-                            bytes,
-                            &limits,
-                            &resources,
-                            &mut strokes,
-                            &mut objects,
-                        );
+                        walk(&layer.objects, bytes, &mut objects);
                         json!({"entry":entry,"width":stored.page.header.width,"height":stored.page.header.height,"strokes":strokes,"objects":objects})
                     }
                 }
@@ -455,6 +443,55 @@ mod source_tests {
         ask(json!({"kind":"bytes","entry":0,"offset":0,"length":1})).unwrap();
         assert_eq!(source.cache.as_ref().unwrap().0, 0);
     }
+    #[test]
+    fn replay_borrows_semantic_strokes_instead_of_decoding_the_source_again() {
+        let bytes = fixture();
+        let mut parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+        let offset = parsed.stored_pages[0].page.layers.layers[0].objects[0].payload_offset;
+        let mut object = sdocx::PageObject::from(sdocx::Stroke {
+            rendering: None,
+            bbox: sdocx::BoundingBox::default(),
+            points: vec![
+                sdocx::Point { x: 10., y: 10. },
+                sdocx::Point { x: 20., y: 20. },
+            ],
+            pressures: Vec::new(),
+            timestamps: vec![10, 20],
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: Some(sdocx::Color { r: 255, g: 0, b: 0 }),
+            pen_width: 2.,
+        });
+        object.source_offset = Some(offset);
+        parsed.document.pages[0].objects.push(object);
+        let layout = sdocx::layout_document(&parsed.document);
+        let mut source = Source::new(&bytes).unwrap();
+        let replay: Value = serde_json::from_str(
+            &source
+                .request(&parsed, &layout, r#"{"kind":"replay","page":0}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        let strokes = replay["strokes"].as_array().unwrap();
+        assert_eq!(strokes.len(), 1);
+        assert_eq!(strokes[0]["offset"], offset);
+        assert_eq!(strokes[0]["stroke"]["color"], json!({"r":255,"g":0,"b":0}));
+        assert_eq!(strokes[0]["stroke"]["timestamps"], json!([10, 20]));
+        let svg: Value = serde_json::from_str(
+            &source
+                .request(&parsed, &layout, r#"{"kind":"replay-svg","page":0}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(
+            svg["svg"]
+                .as_str()
+                .unwrap()
+                .contains("data-replay-stroke=\"0\"")
+        );
+        assert!(svg["svg"].as_str().unwrap().contains("#ff0000"));
+    }
+
     #[test]
     fn replay_reuses_layout_identity_and_renders_background_only_on_request() {
         let bytes = fixture();
