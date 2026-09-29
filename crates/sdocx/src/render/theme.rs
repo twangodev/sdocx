@@ -7,6 +7,7 @@ use super::{DEFAULT_INK_DARK_MODE, DEFAULT_INK_LIGHT_MODE, RenderColorMode};
 pub struct RenderTheme {
     background: Color,
     adapt_colors: bool,
+    compatible: bool,
 }
 
 impl RenderTheme {
@@ -19,6 +20,7 @@ impl RenderTheme {
                 b: value,
             },
             adapt_colors: dark,
+            compatible: true,
         }
     }
 
@@ -67,6 +69,7 @@ impl RenderTheme {
         );
         Self {
             background,
+            compatible: metadata.dark_mode_compatibility != Some(false),
             adapt_colors: metadata.dark_mode_compatibility != Some(false)
                 && (is_dark_background(background)
                     || (mode == RenderColorMode::Light && stored.is_some_and(is_dark_background))),
@@ -74,7 +77,11 @@ impl RenderTheme {
     }
 
     pub(super) fn on_background(self, background: Color) -> Self {
-        Self { background, ..self }
+        Self {
+            background,
+            adapt_colors: self.compatible,
+            ..self
+        }
     }
 
     pub(super) fn foreground_color(self, color: Color) -> Color {

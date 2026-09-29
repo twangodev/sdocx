@@ -64,7 +64,7 @@ The oracle reuses the existing hash-pinned ARM64 loader. Native `GetColor`,
 supplied. `conformance/theme-colors.json` runs in ordinary Rust CI without APK
 binaries. Native LightColorTheme is also checked to preserve its input.
 
-## Remaining work
+## Highlighters and thumbnails
 
 Top-layer highlighters use one vector Darken batch on light paper and Lighten
 on dark paper. The dark-paper rule preserves light ink and keeps colored marks
@@ -79,5 +79,37 @@ references; existing recovery removes the orphaned derived assets, preserving
 original notes, collections and memberships. Thumbnails regenerate when notes
 are opened. Stale results from a replaced document are rejected.
 
-End-to-end export validation remains part of the active theme work. Native per-object color-theme selection and exact dark
-paper color remain explicitly unverified above.
+## Validation and parity limits
+
+`web/tests/e2e/themes.spec.ts` renders every visible page of the four compatibility
+fixtures in Auto, Light, and Dark: ten pages and thirty mode/page combinations.
+It compares normal and replay pixels in Chromium, unchanged path geometry and
+embedded image references, selected PDF paper colors, and vector blend states.
+Image-free source pages remain image-free PDFs; source images remain embedded.
+The formatting fixture includes tables and code blocks on later pages.
+
+Rust regressions separately cover contradictory stored backgrounds, compatibility
+opt-out, explicit black and white handwriting/text, alpha-preserving shape paint,
+white highlights on dark pages, dark highlights on light pages, custom inherited
+table paper, highlighter visibility, and vector PDF/replay preservation.
+Thumbnail tests cover canonical mode, stale results, and catalog migration without
+losing originals or collection membership.
+
+The unresolved native-parity questions are deliberately narrower than these fixes:
+
+- Exact page-surface dark color: the APK composer resource is `#010101`, while the
+  existing export default is `#252525`. Composer chrome does not establish page
+  surface output; a native dark-page export is needed before changing that value.
+- Per-object selection: the native conversion primitive is verified, but the
+  renderer's contrast guard and canonical paper aliases are explicit export
+  policies rather than verified Samsung selection rules.
+- Dark-paper highlighter blending: Lighten fixes visibility and preserves light
+  ink in vector outputs, but native dark-paper reference output is still needed.
+- Hyperlink palette: native `DarkColorTheme::GetColor(0xff0054ff)` returns the same
+  blue (included in the checked fixture). That color is therefore preserved and
+  can remain low contrast on dark paper. A separate native link/palette rule has
+  not been established; it is not claimed to be fixed by lightness reversal.
+
+The interface theme remains independent of document mode. Auto follows stored
+paper, not the browser color scheme. Firefox fountain-mask appearance parity is
+outside this Chromium/vector-export work.

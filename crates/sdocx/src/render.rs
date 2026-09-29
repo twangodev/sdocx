@@ -2219,6 +2219,58 @@ mod tests {
     }
 
     #[test]
+    fn light_mode_adapts_white_ink_when_dark_paper_changes_to_light() {
+        let mut page = page_with_uncolored_stroke();
+        page.background_color = Some(Color {
+            r: 37,
+            g: 37,
+            b: 37,
+        });
+        page.strokes[0].color = Some(Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        });
+        let mut text = theme_test_text();
+        text.color = page.strokes[0].color;
+        page.elements.push(PageElement::TextBox(text));
+        let doc = document(page);
+        for (mode, ink) in [
+            (RenderColorMode::Auto, "#ffffff"),
+            (RenderColorMode::Light, "#000000"),
+        ] {
+            let svg = render_document_svg(&doc, &RenderOptions { color_mode: mode })
+                .remove(0)
+                .svg;
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            assert!(
+                xml.descendants()
+                    .any(|n| n.attribute("stroke") == Some(ink))
+            );
+            assert!(
+                xml.descendants()
+                    .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some(ink))
+            );
+        }
+    }
+
+    #[test]
+    fn light_page_text_adapts_to_a_dark_local_highlight() {
+        let mut page = page_with_uncolored_stroke();
+        let mut text = theme_test_text();
+        text.highlight_color = Some(Color { r: 0, g: 0, b: 0 });
+        page.elements.push(PageElement::TextBox(text));
+        let svg = render_document_svg(&document(page), &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert!(
+            xml.descendants()
+                .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some("#ffffff"))
+        );
+    }
+
+    #[test]
     fn cell_text_uses_its_own_surface_and_inherited_paper_stays_custom() {
         let mut page = page_with_uncolored_stroke();
         page.background_color = Some(Color {
