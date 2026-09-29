@@ -41,6 +41,7 @@
 		onColorMode: (mode: ColorMode) => void;
 		onExport: (request: ExportRequest) => Promise<string>;
 		onResolvePages: (selection: string) => Promise<number[]>;
+		onPreview: (page: number, colorMode: ColorMode) => Promise<string>;
 		onCancel: () => void;
 		onReplace: () => void;
 		onClose: () => void;
@@ -116,11 +117,13 @@
 					filename: model.document.filename,
 					pageCount: model.document.pageCount,
 					pageIndex: model.viewer.pageIndex,
+					colorMode: model.viewer.colorMode,
 					exportProgress: model.activity.exportProgress
 				}}
 				actions={{
 					onExport: actions.onExport,
 					onResolvePages: actions.onResolvePages,
+					onPreview: actions.onPreview,
 					onCancel: actions.onCancel
 				}}
 			/>

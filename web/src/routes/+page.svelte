@@ -215,6 +215,7 @@
 				onColorMode: (nextMode) => void session.setColorMode(nextMode),
 				onExport: (request) => exportResult(session.downloadExport(request)),
 				onResolvePages: (selection) => session.resolvePages(selection),
+				onPreview: (page, mode) => session.renderExportPreview(page, mode),
 				onCancel: () => session.cancel(),
 				onReplace: () => picker?.click(),
 				onClose: () => void session.close()
