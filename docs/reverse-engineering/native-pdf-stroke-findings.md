@@ -153,8 +153,9 @@ PDF writer, as recorded in the linked composition findings.
 
 The SDK can continue to preserve SVG paths where supported; matching the
 native choice to rasterize strokes is not itself a fidelity requirement.
-Accurate output still needs ordered content, pen settings, coverage and
-opacity behavior. PDF reference inspection must distinguish native stroke
+The Rust object tree now preserves ordered content. Remaining fidelity work
+includes pen settings, coverage and opacity behavior. PDF reference inspection
+must distinguish native stroke
 bitmaps from vector paths before attributing image differences to SDK
 geometry alone.
 

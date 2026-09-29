@@ -155,8 +155,8 @@ method from this sorted all-layer collection. The
 [saved-layer trace](page-layer-selection-findings.md) establishes the loader
 and Standard list-page export setup. The
 [object-order trace](object-order-findings.md) confirms file-order insertion,
-child order and the top-only type restriction. A complete paint-order
-implementation now interleaves strokes and other elements while retaining
+child order and the top-only type restriction. The Rust paint-order
+implementation interleaves strokes and other elements while retaining
 container boundaries. Replay and picking borrow the same semantic content;
 timeline traversal and paint order are distinct views. The replay comparator
 is not used to sort the paint sequence.

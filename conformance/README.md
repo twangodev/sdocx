@@ -208,6 +208,22 @@ The initial five-page measurements and font findings are recorded in
 Use the [capture checklist](fixture-capture.md) to prepare the missing native
 shape/line, image-placement and standalone-text reference pairs.
 
+## Document composition regressions
+
+Rust tests cover stored object order, root render-pass selection, visibility,
+nested containers, saved child transforms and replay indices. Export tests
+check mixed stroke/image/shape overlaps against literal pixel expectations
+and verify PDF paint order, selectable text and vector-only content:
+
+```sh
+cargo test -p sdocx --all-features --test composition --test composition_exports
+```
+
+These tests use the production Rust parser and renderer. They do not establish
+complete Samsung visual parity. Native intersection selection and new captured
+mixed-container references remain separate work, described in
+[object selection findings](../docs/reverse-engineering/object-selection-findings.md).
+
 ## Stroke regressions
 
 Small synthetic tests in `structural_strokes.rs` run in ordinary CI without
