@@ -86,9 +86,11 @@ fields, row-height constraints and sized borders are decoded, with complete
 masks and trailing bytes retained. Applying those styles to rendering and
 standalone support remain; see
 [table/code-block findings](table-code-findings.md).
-Known outer object types without semantic decoders now produce
-`UnsupportedObjectType` diagnostics, including container/group payloads whose
-children are still traversed. Unknown future IDs retain their distinct warning.
+Known outer object types without semantic decoders produce
+`UnsupportedObjectType` diagnostics. Type-4 containers retain their ordered
+children and root selection in the semantic model; unreadable common container
+metadata produces `UnsupportedContainerFeature`. Unknown future IDs retain
+their distinct warning.
 Math objects have explicit envelope inspection for sized formula binaries,
 margins, angle mode and connected plot references; see [math findings](math-findings.md).
 Formula metadata exposes LaTeX inputs/results/substitutions, answer text,

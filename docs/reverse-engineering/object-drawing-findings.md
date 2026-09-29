@@ -147,7 +147,7 @@ argument is true, or zeros it at `0x34ca2c` otherwise. `SaveNextReplayOrder`,
 helpers do not independently establish the field's location or use in modern
 WDoc page headers; their caller and format dispatch must be checked first.
 
-The SDK still stores strokes and other page elements in separate collections.
+The SDK stores supported page content in one ordered typed object tree.
 The native page-capture path has separate base, top and masking passes,
 described in [capture composition findings](capture-composition-findings.md).
 Its object selection queries the current physical layer through a different
@@ -156,9 +156,10 @@ method from this sorted all-layer collection. The
 and Standard list-page export setup. The
 [object-order trace](object-order-findings.md) confirms file-order insertion,
 child order and the top-only type restriction. A complete paint-order
-implementation needs an ordered SDK representation that interleaves strokes
-and other elements while retaining container boundaries. The replay comparator
-is not a replacement for that representation.
+implementation now interleaves strokes and other elements while retaining
+container boundaries. Replay and picking borrow the same semantic content;
+timeline traversal and paint order are distinct views. The replay comparator
+is not used to sort the paint sequence.
 
 ## SDK behavior and validation
 

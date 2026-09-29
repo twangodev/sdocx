@@ -181,8 +181,11 @@ decoding. Borrowed stroke and element views refer to the same content.
 
 Rust archive regressions cover mixed strokes/text, nested containers, visibility,
 Base/Top/Masking order, top-pen overrides, rejected root IDs and dense replay
-indices. Native root intersection filtering and container editing transforms
-remain open. Group-ID strings are not used to reconstruct container membership.
+indices. [Native intersection selection](object-selection-findings.md) remains
+unimplemented; its per-object bounds and content checks cannot be replaced by
+stored-bbox overlap. Saved container rotations already update child geometry
+and angles, so rendering does not add an inherited parent rotation.
+Group-ID strings are not used to reconstruct container membership.
 
 The existing [Standard PDF trace](standard-pdf-composition-findings.md#ordinary-objects-retain-interleaving-and-flush-the-tail)
 establishes image/text flush boundaries and the explicit final bitmap flush.

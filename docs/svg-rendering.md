@@ -20,13 +20,32 @@ child render IDs and highlighter flags do not select new page passes. Document
 body text precedes page-local objects. Replay borrows the parsed strokes accepted
 by that same root selection and uses dense stroke indices in stored traversal
 order, independently of the order in which the passes draw them.
+Debugger hit targets use `composed_objects()` in paint order, so picking and
+replay share the Rust root selection. Source records supply annotation bounds
+and types without selecting or ordering the objects again.
 
-Native root-bound intersection filtering and container editing transforms are
-not implemented. Existing leaf placement transforms remain in their converters.
+Native root intersection filtering is not implemented. It requires per-object
+selection bounds and partial-content tests, rather than a stored-bbox overlap.
+Saved container rotation has already changed each child's placement and angle;
+the native drawing branch applies no inherited parent transform. Existing leaf
+placement transforms remain in their converters. See
+[native selection findings](reverse-engineering/object-selection-findings.md).
 Unknown root render IDs are omitted rather than interpreted as known layers.
+Declared render IDs blocked by preceding unsupported fields remain `Unresolved`
+and produce a diagnostic; they do not become Base objects. A top-layer stroke
+still overrides that common selection value. Opaque container metadata is
+reported while retaining its child sequence.
 The shared SVG top batch uses Darken on light paper and Lighten on dark paper;
 this follows page capture, while Samsung's Standard list PDF path uses Darken.
 The SDK keeps one SVG composition policy for preview and vector PDF output.
+
+Rust tests cover mixed-object archives, hidden subtrees, root pass selection,
+source offsets and dense replay indices. Independent overlap-color expectations
+check image/stroke and shape/stroke order, including identical normal/replay SVG
+pixels. PDF regressions inspect paint order through form objects, selectable
+text and the absence of image objects for vector-only scenes. These establish
+the supported composition contracts; new Samsung captures are still needed for
+full mixed-container pixel parity.
 
 ## Adding a native converter
 

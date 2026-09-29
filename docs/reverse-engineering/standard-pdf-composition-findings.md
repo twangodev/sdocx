@@ -203,10 +203,12 @@ from the `PdfImageAdapter` used by `NotePDFExporterVectorList`.
 
 Standard PDF evidence supports explicit base, top and masking passes,
 interleaving within the ordinary pass, and a Darken-composited top batch.
-The SDK still needs an ordered representation with container boundaries and
-native pen behavior before it can reproduce this pipeline. Moving every stroke ahead of text and images,
-sorting by replay timestamp, or applying a single per-stroke opacity would
-not reproduce the confirmed sequence.
+The SDK now has an ordered typed representation with container boundaries and
+root pass selection, shared by SVG, vector PDF and replay. Rust regressions
+cover image/stroke and shape/stroke interleaving, vector PDF paint order and
+selectable text. The shared SVG top batch uses page-capture Lighten on dark
+paper rather than Standard PDF's unconditional Darken; that remains an explicit
+export policy. Native intersection selection and wider pen parity remain open.
 
 The native exporter name is also insufficient metadata for new fixtures.
 Record the actual UI choice, page mode and background kind for each pair.
