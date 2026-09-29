@@ -82,6 +82,19 @@ impl Page {
 
 #[cfg(feature = "render")]
 impl Page {
+    /// Accepted objects in paint order, including selected container parents.
+    pub fn composed_objects(&self) -> impl Iterator<Item = &PageObject> {
+        use crate::composition::RenderPass;
+        [RenderPass::Base, RenderPass::Top, RenderPass::Masking]
+            .into_iter()
+            .flat_map(move |pass| {
+                self.objects
+                    .iter()
+                    .filter(move |root| root.render_pass() == Some(pass))
+                    .flat_map(|root| ObjectIter::new(std::slice::from_ref(root)))
+            })
+    }
+
     /// Strokes accepted by root composition, in stored traversal order.
     pub fn composed_strokes(&self) -> impl Iterator<Item = (&PageObject, &Stroke)> {
         self.objects

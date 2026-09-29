@@ -1,6 +1,7 @@
 use sdocx::{LayoutDocument, ObjectType, ParsedDocument, StoredObject};
 use serde::Serialize;
 use serde_json::{Value, json};
+use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use wasm_bindgen::JsError;
 
@@ -58,6 +59,12 @@ fn find(objects: &[StoredObject], offset: usize) -> Option<&StoredObject> {
         }
     }
     None
+}
+fn index_objects<'a>(objects: &'a [StoredObject], index: &mut HashMap<usize, &'a StoredObject>) {
+    for object in objects {
+        index.insert(object.payload_offset, object);
+        index_objects(&object.children, index);
+    }
 }
 fn nodes(objects: &[StoredObject]) -> Value {
     value(
@@ -124,7 +131,7 @@ impl Source {
     ) -> Result<String, String> {
         let r: Value = serde_json::from_str(request).map_err(|e| e.to_string())?;
         let limits = super::browser_parse_options().limits;
-        let resources = if matches!(r["kind"].as_str(), Some("replay" | "object")) {
+        let resources = if r["kind"].as_str() == Some("object") {
             if self.stroke_resources.is_none() {
                 let resources = if let Some(note) = &parsed.note {
                     self.entry_index("note.note")
@@ -323,22 +330,19 @@ impl Source {
                                     rendering.properties.millisecond_timestamps)
                             }))
                             .collect::<Vec<_>>();
-                        let mut objects = Vec::new();
-                        fn walk(items: &[StoredObject], bytes: &[u8], objects: &mut Vec<Value>) {
-                            for o in items {
-                                let base = o.base_metadata(bytes).ok();
-                                if base.as_ref().is_some_and(|b| !b.visible) {
-                                    continue;
-                                }
-                                if let Some(base) = &base {
-                                    objects.push(json!({"offset":o.payload_offset,"bbox":base.bbox,"type":o.object_type}));
-                                }
-                                walk(&o.children, bytes, objects);
-                            }
-                        }
                         let layer = &stored.page.layers.layers
                             [usize::from(stored.page.layers.current_layer_index)];
-                        walk(&layer.objects, bytes, &mut objects);
+                        let mut source_objects = HashMap::new();
+                        index_objects(&layer.objects, &mut source_objects);
+                        let objects = parsed.document.pages[page_index]
+                            .composed_objects()
+                            .filter_map(|object| {
+                                let offset = object.source_offset?;
+                                let stored = source_objects.get(&offset)?;
+                                let bbox = stored.base_metadata(bytes).ok().map(|base| base.bbox);
+                                Some(json!({"offset":offset,"bbox":bbox,"type":stored.object_type}))
+                            })
+                            .collect::<Vec<_>>();
                         json!({"entry":entry,"width":stored.page.header.width,"height":stored.page.header.height,"strokes":strokes,"objects":objects})
                     }
                 }
@@ -490,6 +494,121 @@ mod source_tests {
                 .contains("data-replay-stroke=\"0\"")
         );
         assert!(svg["svg"].as_str().unwrap().contains("#ff0000"));
+    }
+
+    #[test]
+    fn replay_hit_targets_follow_semantic_selection_and_paint_order() {
+        fn base(visible: bool) -> Vec<u8> {
+            let fixed = [
+                5500_u32.to_le_bytes().to_vec(),
+                3_u16.to_le_bytes().to_vec(),
+                b"hit".to_vec(),
+                0_i64.to_le_bytes().to_vec(),
+                [8.0_f64, 8.0, 32.0, 32.0]
+                    .into_iter()
+                    .flat_map(f64::to_le_bytes)
+                    .collect(),
+                0_i32.to_le_bytes().to_vec(),
+                vec![0],
+            ]
+            .concat();
+            let size = (18 + fixed.len()) as u32;
+            [
+                size.to_le_bytes().to_vec(),
+                0_i16.to_le_bytes().to_vec(),
+                size.to_le_bytes().to_vec(),
+                vec![2],
+                (u16::from(visible) << 3).to_le_bytes().to_vec(),
+                vec![4],
+                0_u32.to_le_bytes().to_vec(),
+                fixed,
+            ]
+            .concat()
+        }
+        let bytes = support::archive(&support::page(
+            &[vec![
+                support::object(99, &base(false), &[support::object(99, &base(true), &[])]),
+                support::object(99, &base(true), &[]),
+                support::object(99, &base(true), &[]),
+            ]],
+            0,
+            &[],
+        ));
+        let mut parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
+        let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
+        let offsets = [
+            stored[0].payload_offset,
+            stored[0].children[0].payload_offset,
+            stored[1].payload_offset,
+            stored[2].payload_offset,
+        ];
+        let stroke = sdocx::Stroke {
+            rendering: None,
+            bbox: sdocx::BoundingBox {
+                x_min: 8.,
+                y_min: 8.,
+                x_max: 32.,
+                y_max: 32.,
+            },
+            points: vec![
+                sdocx::Point { x: 10., y: 10. },
+                sdocx::Point { x: 20., y: 20. },
+            ],
+            pressures: Vec::new(),
+            timestamps: vec![10, 20],
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: None,
+            pen_width: 2.,
+        };
+        let mut top = sdocx::PageObject::from(stroke.clone());
+        top.render_layer = sdocx::ObjectRenderLayer::Top;
+        top.source_offset = Some(offsets[2]);
+        let mut child = sdocx::PageObject::from(stroke.clone());
+        child.source_offset = Some(offsets[1]);
+        let mut container = sdocx::PageObject::from(stroke.clone());
+        container.source_offset = Some(offsets[0]);
+        container.content = sdocx::PageObjectContent::Container(vec![child]);
+        let mut rejected = sdocx::PageObject::from(stroke);
+        rejected.render_layer = sdocx::ObjectRenderLayer::Other(-1);
+        rejected.source_offset = Some(offsets[3]);
+        parsed.document.pages[0].objects = vec![top, container, rejected];
+        let layout = sdocx::layout_document(&parsed.document);
+        let mut source = Source::new(&bytes).unwrap();
+        let replay: Value = serde_json::from_str(
+            &source
+                .request(&parsed, &layout, r#"{"kind":"replay","page":0}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        let targets = replay["objects"].as_array().unwrap();
+        assert_eq!(
+            targets
+                .iter()
+                .map(|target| target["offset"].as_u64().unwrap())
+                .collect::<Vec<_>>(),
+            [offsets[0] as u64, offsets[1] as u64, offsets[2] as u64]
+        );
+        assert!(
+            targets
+                .iter()
+                .all(|target| target["bbox"]
+                    == json!({"x_min":8.,"y_min":8.,"x_max":32.,"y_max":32.}))
+        );
+        assert!(
+            targets
+                .iter()
+                .all(|target| target["type"] == json!({"Other":99}))
+        );
+        let strokes = replay["strokes"].as_array().unwrap();
+        assert_eq!(
+            strokes
+                .iter()
+                .map(|stroke| stroke["offset"].as_u64().unwrap())
+                .collect::<Vec<_>>(),
+            [offsets[2] as u64, offsets[1] as u64]
+        );
+        assert!(source.stroke_resources.is_none());
     }
 
     #[test]
