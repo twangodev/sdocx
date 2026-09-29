@@ -1,6 +1,8 @@
 use crate::binary::Reader;
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Point, Result};
 
+const RENDER_LAYER_FIELD: usize = 21;
+
 #[derive(Debug, Clone, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -104,6 +106,8 @@ pub enum ObjectRenderLayer {
     Top,
     Masking,
     Other(i32),
+    /// The field is declared, but preceding unsupported data prevents decoding it.
+    Unresolved,
 }
 
 impl From<i32> for ObjectRenderLayer {
@@ -145,6 +149,11 @@ pub enum ObjectBundleValue {
 }
 
 impl ObjectMetadata {
+    pub(crate) fn declares_render_layer(&self) -> bool {
+        self.field_mask
+            .get(RENDER_LAYER_FIELD / 8)
+            .is_some_and(|mask| mask & (1 << (RENDER_LAYER_FIELD % 8)) != 0)
+    }
     pub fn flexible_metadata(&self) -> Result<ObjectFlexibleMetadata> {
         self.flexible_metadata_with_limits(&ParseLimits::default())
     }
@@ -254,7 +263,9 @@ impl ObjectFlexibleDecoder<'_> {
                 }
                 19 => metadata.group_id = Some(self.string(&mut reader, "group ID")?),
                 20 => metadata.page_index = Some(reader.read_i32("page index")?),
-                21 => metadata.render_layer_id = Some(reader.read_i32("render layer ID")?),
+                RENDER_LAYER_FIELD => {
+                    metadata.render_layer_id = Some(reader.read_i32("render layer ID")?)
+                }
                 _ => {
                     metadata.first_unparsed_field = Some(bit);
                     break;

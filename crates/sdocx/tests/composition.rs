@@ -472,3 +472,119 @@ fn nested_masking_containers_keep_top_and_unknown_children_inline() {
         );
     }
 }
+
+#[test]
+fn declared_but_unread_render_layers_do_not_become_base_objects() {
+    let unresolved = |record| {
+        let mut record = render_layer(record, 2);
+        record[21..25].copy_from_slice(&((1_u32 << 11) | (1 << 21)).to_le_bytes());
+        record
+    };
+    let mut absent_layer = render_layer(stroke(0xffff00ff, false, true, 500), 2);
+    absent_layer[21..25].copy_from_slice(&(1_u32 << 11).to_le_bytes());
+    let raw = page(
+        &[vec![
+            unresolved(stroke(0xffff0000, false, true, 3000)),
+            unresolved(stroke(0xffffff00, true, true, 2000)),
+            stroke(0xff0000ff, false, true, 1000),
+            absent_layer,
+        ]],
+        0,
+        &[],
+    );
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    assert_eq!(
+        parsed
+            .report
+            .diagnostics
+            .iter()
+            .filter(
+                |diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnresolvedObjectRenderLayer
+            )
+            .count(),
+        2,
+    );
+    for object in &parsed.document.pages[0].objects[..2] {
+        assert_eq!(object.render_layer, sdocx::ObjectRenderLayer::Unresolved);
+    }
+    for svg in rendered_modes(&parsed.document) {
+        assert_eq!(draw_order(&svg), ["#0000ff", "#ff00ff", "#ffff00"]);
+    }
+    assert_eq!(parsed.document.pages[0].composed_strokes().count(), 3);
+}
+
+#[test]
+fn opaque_container_metadata_is_reported_while_child_order_is_retained() {
+    let raw = page(
+        &[vec![object(
+            4,
+            &[0, 1, 2],
+            &[
+                stroke(0xffff0000, false, true, 2000),
+                text("opaque parent", true, 1000),
+            ],
+        )]],
+        0,
+        &[],
+    );
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    assert!(parsed.report.diagnostics.iter().any(|diagnostic|
+        diagnostic.code == sdocx::DiagnosticCode::UnsupportedContainerFeature
+    ));
+    for svg in rendered_modes(&parsed.document) {
+        assert_eq!(draw_order(&svg), ["#ff0000", "opaque parent"]);
+    }
+}
+
+#[test]
+fn saved_container_rotation_does_not_transform_children_again() {
+    let children = [
+        stroke(0xffff0000, false, true, 2000),
+        text("saved child coordinates", true, 1000),
+    ];
+    let mut rotated = object(4, &base(true, 3000), &children);
+    let original = rotated.clone();
+    let base_size = u32::from_le_bytes(rotated[7..11].try_into().unwrap());
+    let payload_size = u32::from_le_bytes(rotated[3..7].try_into().unwrap());
+    rotated[7..11].copy_from_slice(&(base_size + 4).to_le_bytes());
+    rotated[3..7].copy_from_slice(&(payload_size + 4).to_le_bytes());
+    rotated[21..25].copy_from_slice(&1_u32.to_le_bytes());
+    rotated.splice(
+        7 + base_size as usize..7 + base_size as usize,
+        45_f32.to_le_bytes(),
+    );
+    let raw = page(&[vec![rotated]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
+    let parent = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
+    assert_eq!(
+        parent.base_metadata(&raw).unwrap().rotation_degrees,
+        Some(45.)
+    );
+    let stroke = parsed.document.pages[0].strokes().next().unwrap();
+    assert_eq!(stroke.points[0].x, 10.);
+    assert_eq!(stroke.points[0].y, 20.);
+    assert_eq!(
+        rendered_modes(&parsed.document),
+        rendered_modes(&document(vec![original]))
+    );
+}
+
+#[test]
+fn document_body_text_precedes_page_local_content() {
+    let mut document = document(vec![
+        stroke(0xffff0000, false, true, 2000),
+        text("page-local text", true, 1000),
+    ]);
+    let sdocx::PageElement::TextBox(body) = document.pages[0].elements().next().unwrap() else {
+        panic!("text fixture");
+    };
+    let mut body = body.clone();
+    body.text = "document body".into();
+    document.metadata.note_text = Some(body);
+    for svg in rendered_modes(&document) {
+        assert_eq!(
+            draw_order(&svg),
+            ["document body", "#ff0000", "page-local text"]
+        );
+    }
+}

@@ -174,6 +174,13 @@ fn decode_objects(
             }
             content = Some(PageObjectContent::Element(element));
         } else if object.object_type == ObjectType::Container {
+            if base.is_none() {
+                report.warning(
+                    DiagnosticCode::UnsupportedContainerFeature,
+                    Some(archive_entry.to_owned()),
+                    format!("page {page_uuid}: container at 0x{:x}: unreadable common metadata; retaining child order without verified parent visibility or render-layer selection", object.payload_offset),
+                );
+            }
             content = Some(PageObjectContent::Container(Vec::new()));
         } else if !matches!(object.object_type, ObjectType::Other(_)) {
             report.warning(
@@ -201,12 +208,21 @@ fn decode_objects(
             if let PageObjectContent::Container(container) = &mut content {
                 *container = std::mem::take(&mut children);
             }
-            let render_layer = base
-                .as_ref()
-                .map(|base| base.flexible_metadata_with_limits(limits))
-                .transpose()?
-                .and_then(|metadata| metadata.render_layer())
-                .unwrap_or(ObjectRenderLayer::Base);
+            let render_layer = if let Some(base) = base.as_ref()
+                && base.declares_render_layer()
+            {
+                let metadata = base.flexible_metadata_with_limits(limits)?;
+                metadata.render_layer().unwrap_or_else(|| {
+                    report.warning(
+                        DiagnosticCode::UnresolvedObjectRenderLayer,
+                        Some(archive_entry.to_owned()),
+                        format!("page {page_uuid}: object at 0x{:x}: declared render-layer field could not be decoded after unsupported common field {:?}", object.payload_offset, metadata.first_unparsed_field),
+                    );
+                    ObjectRenderLayer::Unresolved
+                })
+            } else {
+                ObjectRenderLayer::Base
+            };
             decoded_objects.push(PageObject {
                 render_layer,
                 source_offset: Some(object.payload_offset),

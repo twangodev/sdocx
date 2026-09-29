@@ -25,7 +25,9 @@ impl PageObject {
             ObjectRenderLayer::Base => Some(RenderPass::Base),
             ObjectRenderLayer::Top if stroke.is_some() => Some(RenderPass::Top),
             ObjectRenderLayer::Masking => Some(RenderPass::Masking),
-            ObjectRenderLayer::Top | ObjectRenderLayer::Other(_) => None,
+            ObjectRenderLayer::Top
+            | ObjectRenderLayer::Other(_)
+            | ObjectRenderLayer::Unresolved => None,
         }
     }
 }
@@ -97,6 +99,7 @@ mod tests {
                 (ObjectRenderLayer::Other(-1), None),
                 (ObjectRenderLayer::Other(3), None),
                 (ObjectRenderLayer::Other(32), None),
+                (ObjectRenderLayer::Unresolved, None),
             ] {
                 assert_eq!(object(layer, content.clone()).render_pass(), expected);
             }
@@ -111,6 +114,7 @@ mod tests {
             ObjectRenderLayer::Masking,
             ObjectRenderLayer::Other(-1),
             ObjectRenderLayer::Other(3),
+            ObjectRenderLayer::Unresolved,
         ] {
             assert_eq!(
                 object(layer, stroke(true)).render_pass(),
