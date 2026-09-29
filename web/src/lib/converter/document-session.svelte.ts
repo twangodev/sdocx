@@ -181,6 +181,18 @@ export class DocumentSession {
 	}
 
 
+	async renderExportPreview(pageIndex: number, colorMode: ColorMode): Promise<string> {
+		if (!this.summary || !this.activeFile) throw new Error('No document loaded.');
+		if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= this.summary.pageCount) {
+			throw new Error('Select a valid preview page.');
+		}
+		const generation = this.loadGeneration;
+		const svg = await this.requireClient().renderPage(pageIndex, colorMode);
+		if (generation !== this.loadGeneration) throw new Error('Document replaced.');
+		return svg;
+	}
+
+
 	async resolvePages(selection: string): Promise<number[]> {
 		const generation = this.loadGeneration;
 		const indices = await this.requireClient().resolvePages(selection);
@@ -194,7 +206,7 @@ export class DocumentSession {
 		const stem = this.stem;
 		const sourceName = this.activeFile.name;
 		const pageCount = this.summary.pageCount;
-		const colorMode = this.colorMode;
+		const colorMode = request.colorMode ?? this.colorMode;
 		const client = this.requireClient();
 		const { format, pngScale } = request;
 		const indices = format === 'json' || format === 'everything'

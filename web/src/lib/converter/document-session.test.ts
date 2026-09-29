@@ -213,3 +213,41 @@ describe('canonical thumbnail rendering', () => {
 		session.destroy();
 	});
 });
+
+
+describe('export preview colors', () => {
+	it('previews and exports in an independent color mode', async () => {
+		const client = clientWith(vi.fn(async () => ({ pageCount: 2, inspection: {} })));
+		client.renderPage = vi.fn(async () => '<svg/>');
+		client.exportPdf = vi.fn(async () => new Uint8Array([37, 80, 68, 70]));
+		vi.spyOn(files, 'downloadBlob').mockImplementation(() => {});
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		session.colorMode = 'light';
+		expect(await session.renderExportPreview(1, 'dark')).toBe('<svg/>');
+		expect(client.renderPage).toHaveBeenLastCalledWith(1, 'dark');
+		await session.downloadExport({ format: 'pdf', pageIndices: [1], pngScale: 1, colorMode: 'dark' });
+		expect(client.exportPdf).toHaveBeenLastCalledWith([1], 'dark');
+		await session.downloadExport({ format: 'svg', pageIndices: [1], pngScale: 1, colorMode: 'dark' });
+		expect(client.renderPage).toHaveBeenLastCalledWith(1, 'dark');
+		expect(session.colorMode).toBe('light');
+		session.destroy();
+	});
+
+	it('rejects invalid pages and previews completed after document replacement', async () => {
+		const client = clientWith(vi.fn(async () => ({ pageCount: 1, inspection: {} })));
+		client.renderPage = vi.fn(async () => '<svg/>');
+		const session = new DocumentSession({ createClient: () => client });
+		session.start();
+		await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
+		await expect(session.renderExportPreview(1, 'auto')).rejects.toThrow('valid preview page');
+		const result = deferred<string>();
+		client.renderPage = vi.fn(() => result.promise);
+		const pending = expect(session.renderExportPreview(0, 'dark')).rejects.toThrow('Document replaced');
+		session.cancel();
+		result.resolve('<svg/>');
+		await pending;
+		session.destroy();
+	});
+});

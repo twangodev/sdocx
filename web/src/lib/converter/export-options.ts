@@ -1,3 +1,4 @@
+import type { ColorMode } from './protocol';
 import { pageFilename } from './files';
 
 export type ExportFormat = 'pdf' | 'png' | 'svg' | 'json' | 'everything';
@@ -5,6 +6,7 @@ export interface ExportRequest {
 	format: ExportFormat;
 	pageIndices: number[];
 	pngScale: 1 | 2;
+	colorMode?: ColorMode;
 }
 
 export function exportDetails(request: ExportRequest, pageCount: number, stem: string) {
