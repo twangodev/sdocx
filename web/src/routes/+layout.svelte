@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 	import { setContext } from 'svelte';
-	import { Github, Bug } from '@lucide/svelte';
+	import { Bug } from '@lucide/svelte';
+	import { SiGithub } from '@icons-pack/svelte-simple-icons';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { WORKSPACE, type WorkspaceState } from '$lib/workspace';
 	import './layout.css';
@@ -66,7 +67,7 @@
 				target="_blank"
 				rel="noreferrer"
 				title="Source on GitHub"
-				aria-label="Source on GitHub"><Github size={15} strokeWidth={1.5} aria-hidden="true" /></a
+				aria-label="Source on GitHub"><SiGithub size={15} aria-hidden="true" /></a
 			>
 			<ThemeToggle />
 		</nav>
