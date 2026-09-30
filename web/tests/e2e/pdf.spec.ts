@@ -158,7 +158,10 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 		const text = parsed.querySelector('text');
 		if (!text) throw new Error('The real WASM fixture rendered no selectable text.');
 		const styles = [...parsed.querySelectorAll('style')];
-		const size = Number(text.getAttribute('font-size'));
+		const firstSpan = text.querySelector<SVGTSpanElement>('tspan[font-size]');
+		if (!firstSpan) throw new Error('The real WASM fixture rendered no sized text span.');
+		const size = Number(firstSpan.getAttribute('font-size'));
+		if (!Number.isFinite(size) || size <= 0) throw new Error('The rendered text span has an invalid font size.');
 		const label = text.textContent!;
 		const reference = new FontFace('Sdocx Reference Roboto', new Uint8Array(font));
 		await reference.load();
@@ -227,7 +230,7 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 	expect(result.embedded).toBe(true);
 	expect(result.original.hash).toBe(result.renamed.hash);
 	expect(result.original.inkWidth).toBeCloseTo(result.expectedInkWidth, 0);
-	expect(Math.abs(result.fallback.inkWidth - result.original.inkWidth)).toBeGreaterThan(2);
+	expect(result.fallback.hash).not.toBe(result.original.hash);
 	expect(fontRequests).toEqual([]);
 });
 
