@@ -187,7 +187,7 @@ fn render_layout_page(
             layout_page.source_page_index,
             settings,
         ));
-    let body_capture = PreparedBodyCapture::new(document, layout_page, theme, &text_renderer);
+    let body_text = PreparedBodyText::new(document, layout_page, theme, &text_renderer);
     let svg = render_page_contents_svg(
         page,
         &document.metadata,
@@ -195,7 +195,7 @@ fn render_layout_page(
         theme,
         replay,
         &text_renderer,
-        body_capture.as_ref(),
+        body_text.as_ref(),
     );
     RenderedPage {
         source_page_index: layout_page.source_page_index,
@@ -207,7 +207,7 @@ fn render_layout_page(
     }
 }
 
-struct PreparedBodyCapture {
+struct PreparedBodyText {
     text: RichTextBox,
     layout: text::TextLayout,
     text_issues: Vec<text::SourceTextDiagnostic>,
@@ -218,19 +218,36 @@ struct PreparedBodyCapture {
     viewport: Viewport,
 }
 
-impl PreparedBodyCapture {
+impl PreparedBodyText {
     fn new(
         document: &Document,
         page: &crate::LayoutPage,
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
     ) -> Option<Self> {
-        let text = page.body_text_capture(document)?;
         let body = page.body_text_slice()?;
-        let window = body.capture_window.as_ref()?;
+        let (text, first_page_index, last_page_index) =
+            if let Some(window) = body.capture_window.as_ref() {
+                (
+                    page.body_text_capture(document)?,
+                    window.first_page_index,
+                    window.requested_page_index,
+                )
+            } else {
+                (
+                    page.body_text_reflow(document)?,
+                    body.reflow.as_ref()?.first_page_index,
+                    document.pages.len().checked_sub(1)?,
+                )
+            };
+        let frame_width = document.pages[first_page_index..=last_page_index]
+            .iter()
+            .map(|page| page.width)
+            .max()
+            .map(f64::from)?;
         let exclusions = text::PageExclusions::for_range(
             document,
-            window.first_page_index..=window.requested_page_index,
+            first_page_index..=last_page_index,
             renderer.settings,
         );
         let planner = TextRenderer::new(renderer.settings, renderer.fonts)
@@ -252,7 +269,7 @@ impl PreparedBodyCapture {
                 bbox: BoundingBox {
                     x_min: padding,
                     y_min: 0.0,
-                    x_max: f64::from(page.page.width) - padding,
+                    x_max: frame_width - padding,
                     y_max: 0.0,
                 },
                 gravity: None,
@@ -261,7 +278,7 @@ impl PreparedBodyCapture {
             theme,
             &planner,
         );
-        let page_top = document.pages[window.first_page_index..window.requested_page_index]
+        let page_top = document.pages[first_page_index..page.source_page_index]
             .iter()
             .map(|page| f64::from(page.height))
             .sum::<f64>();
@@ -420,7 +437,7 @@ fn render_page_contents_svg(
     theme: RenderTheme,
     replay: bool,
     text_renderer: &TextRenderer<'_>,
-    body_capture: Option<&PreparedBodyCapture>,
+    body_text: Option<&PreparedBodyText>,
 ) -> String {
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
@@ -463,7 +480,7 @@ fn render_page_contents_svg(
         text_renderer,
         theme,
         replay,
-        body_capture,
+        body_text,
     };
     render_pass(&mut svg, &composition, RenderPass::Base);
     if page
@@ -492,7 +509,7 @@ struct CompositionContext<'a> {
     text_renderer: &'a TextRenderer<'a>,
     theme: RenderTheme,
     replay: bool,
-    body_capture: Option<&'a PreparedBodyCapture>,
+    body_text: Option<&'a PreparedBodyText>,
 }
 
 fn render_pass(svg: &mut Scene, context: &CompositionContext<'_>, pass: RenderPass) {
@@ -500,7 +517,7 @@ fn render_pass(svg: &mut Scene, context: &CompositionContext<'_>, pass: RenderPa
     for (object_index, object) in context.page.objects.iter().enumerate() {
         if let Some(selected) = object.render_pass() {
             if selected == pass {
-                if let Some(body) = context.body_capture
+                if let Some(body) = context.body_text
                     && body.object_index == object_index
                 {
                     body.paint(svg, context);

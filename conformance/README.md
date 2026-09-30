@@ -220,6 +220,12 @@ windows now measure the required earlier page group from authoritative source
 text and project its requested physical viewport. Text, markers and child
 objects are filtered before painting, preserving selectable vector exports
 without off-page text or font embedding.
+When saved sections are missing or malformed, validated layout pages instead
+measure the complete original body against every physical page boundary through
+the same Rust engine. Balanced inspection slices do not determine pagination.
+Empty inspection pages retain source identity, and edited or stale layouts
+cannot restore removed content. Serialized reflow layouts must be rebuilt with
+`layout_document` before canonical full-source rendering.
 `text-metrics.json` also stores independently decoded, hash-locked Samsung PDF
 observations. Its retained logical canvas height is 848.333333 PDF points;
 the reference's actual viewport is 848 points. At scale 1.8, convert a stored

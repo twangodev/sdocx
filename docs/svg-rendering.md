@@ -154,3 +154,14 @@ unmerged grids with empty split lists. Ordinary model-cell drawing and paged
 table layout remain separate native paths; warm splitting is still unfinished.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.
+
+Missing or malformed saved sections use validated full-source body reflow through
+the same engine and all physical page boundaries. Balanced slices remain useful
+for inspection; empty slices can still display measured source text on their
+physical page. Removing or editing an inspection object invalidates this source
+context. The runtime source snapshot is shared across pages and omitted from
+serialization; rebuild deserialized layouts with `layout_document` to enable
+canonical full-source reflow.
+Body text uses the widest physical page in its selected measurement group,
+matching the native body document's width producer. Each requested viewport
+retains its own physical width and height.
