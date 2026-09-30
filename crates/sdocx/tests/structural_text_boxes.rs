@@ -367,11 +367,37 @@ fn uses_declared_bounds_rotation_and_utf16_style_ranges() {
         let svg = sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default())
             .unwrap()
             .svg;
-        assert!(svg.contains("rotate(30.00 80.00 90.00)"));
-        assert!(svg.contains("x=\"-18.00\""));
-        assert!(svg.contains("fill=\"#123456\""));
-        assert!(svg.contains("font-weight=\"bold\">😀"));
-        assert!(svg.contains("font-style=\"italic\">中"));
+        let svg = roxmltree::Document::parse(&svg).unwrap();
+        assert!(
+            svg.descendants()
+                .any(|node| node.attribute("transform") == Some("rotate(30.00 80.00 90.00)"))
+        );
+        assert!(
+            svg.descendants()
+                .any(|node| node.attribute("x") == Some("-18.00"))
+        );
+        let spans: Vec<_> = svg
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .collect();
+        assert_eq!(
+            spans
+                .iter()
+                .filter_map(|node| node.text())
+                .collect::<String>(),
+            "a😀中"
+        );
+        assert!(
+            spans
+                .iter()
+                .all(|node| node.attribute("fill") == Some("#123456"))
+        );
+        let emoji = spans.iter().find(|node| node.text() == Some("😀")).unwrap();
+        assert_eq!(emoji.attribute("font-weight"), Some("bold"));
+        assert_eq!(emoji.attribute("font-style"), None);
+        let cjk = spans.iter().find(|node| node.text() == Some("中")).unwrap();
+        assert_eq!(cjk.attribute("font-style"), Some("italic"));
+        assert_eq!(cjk.attribute("font-weight"), None);
     }
 }
 

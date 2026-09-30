@@ -150,6 +150,56 @@ impl FontBook {
         Err(requested_error)
     }
 
+    /// Select a covering face for an indivisible text cluster from this database.
+    /// If none covers it, retain the preferred face for missing-glyph diagnostics.
+    pub fn resolve_for_text(
+        &self,
+        preferred: &ResolvedFace,
+        text: &str,
+        bold: bool,
+        italic: bool,
+    ) -> Result<ResolvedFace, FontError> {
+        if preferred.covers(text)? {
+            return Ok(preferred.clone());
+        }
+        let families = self
+            .database
+            .faces()
+            .flat_map(|face| face.families.iter().map(|(name, _)| name.as_str()))
+            .collect::<BTreeSet<_>>();
+        let mut candidates = self.database.as_ref().clone();
+        for family in
+            std::iter::once(Family::SansSerif).chain(families.into_iter().map(Family::Name))
+        {
+            let query = Query {
+                families: &[family],
+                weight: if bold { Weight::BOLD } else { Weight::NORMAL },
+                style: if italic { Style::Italic } else { Style::Normal },
+                ..Query::default()
+            };
+            while let Some(id) = candidates.query(&query) {
+                candidates.remove_face(id);
+                let name = self.database.family_name(&family);
+                if let Ok(face) = self.resolve_id(id, name)
+                    && self.can_select_face(&face)
+                    && face.covers(text).unwrap_or(false)
+                {
+                    return Ok(face);
+                }
+            }
+        }
+        Ok(preferred.clone())
+    }
+
+    fn can_select_face(&self, face: &ResolvedFace) -> bool {
+        self.database.query(&Query {
+            families: &[Family::Name(&face.family)],
+            weight: face.weight,
+            style: face.style,
+            ..Query::default()
+        }) == Some(face.id)
+    }
+
     pub fn resolve(
         &self,
         family: &str,
@@ -176,11 +226,20 @@ impl FontBook {
                 ..Query::default()
             })
             .ok_or_else(missing)?;
+        self.resolve_id(id, family)
+    }
+
+    fn resolve_id(&self, id: ID, family: &str) -> Result<ResolvedFace, FontError> {
         let mut faces = self.faces.lock().expect("font cache lock");
         if let Some(face) = faces.get(&id) {
             return Ok(face.clone());
         }
-        let info = self.database.face(id).ok_or_else(missing)?;
+        let info = self
+            .database
+            .face(id)
+            .ok_or_else(|| FontError::UnavailableData {
+                family: family.to_owned(),
+            })?;
         let (source, index) =
             self.database
                 .face_source(id)
@@ -257,6 +316,27 @@ impl Default for FontBook {
 impl ResolvedFace {
     pub fn bytes(&self) -> &[u8] {
         self.data.as_ref().as_ref()
+    }
+
+    /// Test glyph coverage while preserving shaping normalization and default ignorables.
+    pub fn covers(&self, text: &str) -> Result<bool, FontError> {
+        let face = rustybuzz::Face::from_slice(self.bytes(), self.index).ok_or_else(|| {
+            FontError::InvalidData {
+                family: self.family.clone(),
+            }
+        })?;
+        if text.chars().all(|character| {
+            face.as_ref()
+                .glyph_index(character)
+                .is_some_and(|glyph| glyph.0 != 0)
+        }) {
+            return Ok(true);
+        }
+        let mut buffer = UnicodeBuffer::new();
+        buffer.push_str(text);
+        buffer.guess_segment_properties();
+        let shaped = rustybuzz::shape(&face, &[], buffer);
+        Ok(shaped.glyph_infos().iter().all(|glyph| glyph.glyph_id != 0))
     }
 
     pub(crate) fn glyph_ink_bounds(
@@ -591,5 +671,219 @@ mod tests {
                 italic: true
             } if family == "Original request"
         ));
+    }
+
+    #[test]
+    fn cluster_coverage_keeps_the_requested_face_and_matches_fallback_style() {
+        let book = FontBook::default();
+        for (bold, italic) in [(false, false), (true, false), (false, true), (true, true)] {
+            let preferred = book.resolve("Roboto", bold, italic).unwrap();
+            assert!(preferred.covers("AB").unwrap());
+            assert!(!preferred.covers("∕").unwrap());
+            assert_eq!(
+                book.resolve_for_text(&preferred, "AB", bold, italic)
+                    .unwrap()
+                    .id,
+                preferred.id
+            );
+            let fallback = book
+                .resolve_for_text(&preferred, "∕", bold, italic)
+                .unwrap();
+            assert_eq!(
+                fallback.id,
+                book.resolve("Roboto Mono", bold, italic).unwrap().id
+            );
+            assert!(fallback.covers("∕").unwrap());
+            assert!(
+                !fallback
+                    .shape(buffer("∕"), &[])
+                    .unwrap()
+                    .has_missing_glyphs()
+            );
+        }
+    }
+
+    #[test]
+    fn shaping_coverage_preserves_combining_text_and_default_ignorables() {
+        let book = FontBook::default();
+        let preferred = book.resolve("Roboto", false, false).unwrap();
+        for text in [
+            "e\u{301}",
+            "A\u{200d}",
+            "A\u{fe0e}",
+            "A\u{fe0f}",
+            "\u{2066}A\u{2069}",
+            "",
+        ] {
+            assert!(preferred.covers(text).unwrap(), "{text:?}");
+            assert_eq!(
+                book.resolve_for_text(&preferred, text, false, false)
+                    .unwrap()
+                    .id,
+                preferred.id,
+                "{text:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn uncovered_clusters_retain_missing_glyphs_without_hidden_fonts_or_partial_coverage() {
+        let bundled = FontBook::default();
+        let mut database = Database::new();
+        database.load_font_data(
+            bundled
+                .resolve("Roboto", false, false)
+                .unwrap()
+                .bytes()
+                .to_vec(),
+        );
+        let custom = FontBook::new(Arc::new(database));
+        let preferred = custom.resolve("Roboto", false, false).unwrap();
+        let selected = custom
+            .resolve_for_text(&preferred, "∕", false, false)
+            .unwrap();
+        assert_eq!(selected.id, preferred.id);
+        assert!(
+            selected
+                .shape(buffer("∕"), &[])
+                .unwrap()
+                .has_missing_glyphs()
+        );
+
+        let preferred = bundled.resolve("Roboto", false, false).unwrap();
+        for text in ["\u{10ffff}", "∕\u{10ffff}"] {
+            let selected = bundled
+                .resolve_for_text(&preferred, text, false, false)
+                .unwrap();
+            assert_eq!(selected.id, preferred.id);
+            assert!(
+                selected
+                    .shape(buffer(text), &[])
+                    .unwrap()
+                    .has_missing_glyphs()
+            );
+        }
+    }
+
+    #[test]
+    fn caller_database_controls_coverage_order_and_available_style() {
+        let bundled = FontBook::default();
+        let roboto = bundled.resolve("Roboto", false, false).unwrap();
+        let mono = bundled.resolve("Roboto Mono", true, true).unwrap();
+        for reversed in [false, true] {
+            let mut database = Database::new();
+            database.set_sans_serif_family("Z Configured");
+            database.load_font_data(roboto.bytes().to_vec());
+            let mono_info = bundled.database.face(mono.id).unwrap();
+            let names = if reversed {
+                ["Z Configured", "A Alternative"]
+            } else {
+                ["A Alternative", "Z Configured"]
+            };
+            for name in names {
+                let mut info = mono_info.clone();
+                info.families[0].0 = name.into();
+                database.push_face_info(info);
+            }
+            let custom = FontBook::new(Arc::new(database));
+            let preferred = custom.resolve("Roboto", false, false).unwrap();
+            let selected = custom
+                .resolve_for_text(&preferred, "∕", false, false)
+                .unwrap();
+            assert_eq!(selected.family, "Z Configured");
+            assert_eq!(selected.weight, Weight::BOLD);
+            assert_eq!(selected.style, Style::Italic);
+
+            let mut database = custom.database.as_ref().clone();
+            database.set_sans_serif_family("Unavailable default");
+            let custom = FontBook::new(Arc::new(database));
+            let selected = custom
+                .resolve_for_text(&preferred, "∕", false, false)
+                .unwrap();
+            assert_eq!(selected.family, "A Alternative");
+        }
+    }
+
+    #[test]
+    fn coverage_can_select_a_less_matching_style_when_the_closest_face_has_no_glyph() {
+        let bundled = FontBook::default();
+        let mut database = Database::new();
+        database.set_sans_serif_family("Variant");
+        for family in ["Roboto", "Roboto Mono"] {
+            let face = bundled
+                .resolve(family, family == "Roboto Mono", false)
+                .unwrap();
+            let mut info = bundled.database.face(face.id).unwrap().clone();
+            info.families[0].0 = "Variant".into();
+            database.push_face_info(info);
+        }
+        let custom = FontBook::new(Arc::new(database));
+        let preferred = custom.resolve("Variant", false, false).unwrap();
+        assert_eq!(preferred.weight, Weight::NORMAL);
+        let selected = custom
+            .resolve_for_text(&preferred, "∕", false, false)
+            .unwrap();
+        assert_eq!(selected.family, "Variant");
+        assert_eq!(selected.weight, Weight::BOLD);
+        assert!(selected.covers("∕").unwrap());
+    }
+
+    #[test]
+    fn malformed_requested_data_fails_while_unselected_bad_candidates_are_skipped() {
+        let bundled = FontBook::default();
+        let preferred = bundled.resolve("Roboto", false, false).unwrap();
+        let mut invalid = preferred.clone();
+        invalid.data = Arc::new(vec![0_u8; 16]);
+        assert!(matches!(
+            bundled.resolve_for_text(&invalid, "A", false, false),
+            Err(FontError::InvalidData { .. })
+        ));
+
+        let mut database = bundled.database.as_ref().clone();
+        let mut info = database.face(preferred.id).unwrap().clone();
+        info.families[0].0 = "A Broken".into();
+        info.source = fontdb::Source::Binary(Arc::new(vec![0_u8; 16]));
+        database.push_face_info(info);
+        database.set_sans_serif_family("A Broken");
+        let custom = FontBook::new(Arc::new(database));
+        assert!(matches!(
+            custom.resolve_with_fallback("A Broken", false, false),
+            Err(FontError::InvalidData { .. })
+        ));
+        let preferred = custom.resolve("Roboto", false, false).unwrap();
+        let selected = custom
+            .resolve_for_text(&preferred, "∕", false, false)
+            .unwrap();
+        assert_eq!(selected.family, "Roboto Mono");
+    }
+
+    #[test]
+    fn coverage_skips_duplicate_faces_that_svg_cannot_select_by_family_and_style() {
+        let bundled = FontBook::default();
+        let mut database = Database::new();
+        let roboto = bundled.resolve("Roboto", false, false).unwrap();
+        let mono = bundled.resolve("Roboto Mono", false, false).unwrap();
+        database.load_font_data(roboto.bytes().to_vec());
+        database.set_sans_serif_family("Ambiguous");
+        for face in [&roboto, &mono] {
+            let mut info = bundled.database.face(face.id).unwrap().clone();
+            info.families[0].0 = "Ambiguous".into();
+            database.push_face_info(info);
+        }
+        let custom = FontBook::new(Arc::new(database));
+        let preferred = custom.resolve("Roboto", false, false).unwrap();
+        let selected = custom
+            .resolve_for_text(&preferred, "∕", false, false)
+            .unwrap();
+        assert_eq!(selected.id, preferred.id);
+
+        let mut database = custom.database.as_ref().clone();
+        database.load_font_data(mono.bytes().to_vec());
+        let custom = FontBook::new(Arc::new(database));
+        let selected = custom
+            .resolve_for_text(&preferred, "∕", false, false)
+            .unwrap();
+        assert_eq!(selected.family, "Roboto Mono");
+        assert!(selected.covers("∕").unwrap());
     }
 }

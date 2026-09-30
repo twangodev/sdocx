@@ -175,11 +175,47 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 			const width = Math.ceil(metrics.width + size * 2);
 			const height = Math.ceil(size * 3);
 			const scale = 4;
+			const viewLeft = x - size;
+			const viewTop = y - size * 2;
 			const isolated = parsed.documentElement;
 			isolated.replaceChildren(...styles.map(style => style.cloneNode(true)), text.cloneNode(true));
-			isolated.setAttribute('viewBox', `${x - size} ${y - size * 2} ${width} ${height}`);
+			isolated.setAttribute('viewBox', `${viewLeft} ${viewTop} ${width} ${height}`);
 			isolated.setAttribute('width', String(width * scale));
 			isolated.setAttribute('height', String(height * scale));
+			const scanCanvas = (canvas: HTMLCanvasElement) => {
+				const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+				let left = canvas.width;
+				let right = -1;
+				let hash = 2166136261;
+				for (let offset = 0; offset < pixels.length; offset++) {
+					hash = Math.imul(hash ^ pixels[offset], 16777619) >>> 0;
+					if (offset % 4 === 3 && pixels[offset] > 0) {
+						const column = Math.floor(offset / 4) % canvas.width;
+						left = Math.min(left, column);
+						right = Math.max(right, column);
+					}
+				}
+				return { inkWidth: (right - left + 1) / scale, hash };
+			};
+			const referenceCanvas = document.createElement('canvas');
+			referenceCanvas.width = width * scale;
+			referenceCanvas.height = height * scale;
+			const referencePaint = referenceCanvas.getContext('2d')!;
+			for (const span of isolated.querySelectorAll<SVGTSpanElement>('tspan')) {
+				const positions = span.getAttribute('x')!.trim().split(/\s+/).map(Number);
+				const baseline = Number(span.getAttribute('y'));
+				const spanSize = Number(span.getAttribute('font-size'));
+				referencePaint.font = `${spanSize * scale}px "Sdocx Reference Roboto"`;
+				referencePaint.fillStyle = span.getAttribute('fill')!;
+				const characters = [...span.textContent!];
+				if (positions.length === 1) {
+					referencePaint.fillText(span.textContent!, (positions[0] - viewLeft) * scale, (baseline - viewTop) * scale);
+				} else {
+					if (positions.length !== characters.length) throw new Error('The fixture text positions do not cover its characters.');
+					characters.forEach((character, index) => referencePaint.fillText(character, (positions[index] - viewLeft) * scale, (baseline - viewTop) * scale));
+				}
+			}
+			const expected = scanCanvas(referenceCanvas);
 			const raster = async (svg: Element) => {
 				const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }));
 				try {
@@ -191,19 +227,7 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 					canvas.height = image.naturalHeight;
 					const context = canvas.getContext('2d')!;
 					context.drawImage(image, 0, 0);
-					const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
-					let left = canvas.width;
-					let right = -1;
-					let hash = 2166136261;
-					for (let offset = 0; offset < pixels.length; offset++) {
-						hash = Math.imul(hash ^ pixels[offset], 16777619) >>> 0;
-						if (offset % 4 === 3 && pixels[offset] > 0) {
-							const column = Math.floor(offset / 4) % canvas.width;
-							left = Math.min(left, column);
-							right = Math.max(right, column);
-						}
-					}
-					return { inkWidth: (right - left + 1) / scale, hash };
+					return scanCanvas(canvas);
 				} finally { URL.revokeObjectURL(url); }
 			};
 			const original = await raster(isolated);
@@ -221,7 +245,7 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 			return {
 				faceCount: styles.length,
 				embedded: styles.every(style => style.textContent!.includes('data:font/ttf;base64,')),
-				expectedInkWidth: metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight,
+				expectedInkWidth: expected.inkWidth,
 				original, renamed, fallback
 			};
 		} finally { document.fonts.delete(reference); }

@@ -166,3 +166,12 @@ canonical full-source reflow.
 Body text uses the widest physical page in its selected measurement group,
 matching the native body document's width producer. Each requested viewport
 retains its own physical width and height.
+
+Glyph coverage is resolved before measuring. Covered Latin clusters retain their
+Rust positions when a neighboring cluster needs font or positioning fallback.
+Tabs preserve their source character and four-space measured advance. Explicit
+bidirectional overrides stay grouped for fallback painting. The selected fallback
+face's actual weight and style reach typed SVG attributes and the PDF shaper;
+ambiguous duplicate faces that cannot be selected by those properties are skipped.
+Only painted faces are embedded. Fallback family order is a deterministic SDK
+policy over the supplied font database; Samsung device order remains unverified.

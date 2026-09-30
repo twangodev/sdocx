@@ -1,5 +1,8 @@
 use std::ops::Range;
 
+use crate::fonts::fontdb;
+use unicode_bidi::{BidiClass, bidi_class};
+
 use crate::render::vector::{
     FontFamily, Paint, Rectangle, Scene, Styled, Text, TextAnchor, decimal,
 };
@@ -13,6 +16,8 @@ struct PositionedSpan {
     positions: Vec<f64>,
     offset_y: f64,
     style: TextStyle,
+    font_face: Option<(fontdb::Weight, fontdb::Style)>,
+    positioned: bool,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -79,22 +84,30 @@ pub(in crate::render) fn render_measured_line(
         |svg| {
             for span in &spans {
                 let mut style = span.style.clone();
-                style.underline = false;
-                style.strikethrough = false;
-                let node = styled_tspan(
+                if span.positioned {
+                    style.underline = false;
+                    style.strikethrough = false;
+                }
+                let mut node = styled_tspan(
                     styled.index.slice(span.source.clone()).unwrap(),
                     &style,
                     styled.context(),
                 )
-                .x_positions(&span.positions, 5)
                 .y(decimal(baseline + span.offset_y, 5));
+                if !span.positions.is_empty() {
+                    node = node.x_positions(&span.positions, 5);
+                }
+                if let Some((weight, style)) = span.font_face {
+                    node = node.font_face(weight, style);
+                }
                 push_text_span(svg, node, &style);
             }
         },
     );
-    for segment in text_ranges(line)
-        .into_iter()
-        .flat_map(|range| styled.segments(range))
+    for segment in spans
+        .iter()
+        .filter(|span| span.positioned)
+        .flat_map(|span| styled.segments(span.source.clone()))
     {
         let style = styled.style_at(segment.start, theme, predefined);
         if !style.underline && !style.strikethrough {
@@ -208,11 +221,27 @@ fn positioned_spans(
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
 ) -> Option<Vec<PositionedSpan>> {
+    let contexts = bidi_contexts(styled.index.slice(line.source.clone())?, line.source.start);
+    let mut context_index = 0;
+    let mut cluster_contexts = Vec::with_capacity(line.placements.len());
     let mut offsets = Vec::with_capacity(line.placements.len());
-    let mut supported = x.is_finite() && baseline.is_finite();
+    if !x.is_finite() || !baseline.is_finite() {
+        return None;
+    }
     for placement in &line.placements {
         let cluster = &placement.cluster;
         let text = styled.index.slice(cluster.source.clone())?;
+        while contexts
+            .get(context_index)
+            .is_some_and(|range| range.end <= cluster.source.start)
+        {
+            context_index += 1;
+        }
+        let context = contexts
+            .get(context_index)
+            .filter(|range| range.start < cluster.source.end)
+            .map(|_| context_index);
+        cluster_contexts.push(context);
         if cluster.run.glyphs[cluster.glyphs.clone()]
             .iter()
             .any(|glyph| glyph.raw.id == 0)
@@ -220,23 +249,23 @@ fn positioned_spans(
             renderer
                 .for_source(cluster.source.clone())
                 .missing_glyphs(&cluster.run.face.family, text);
-            supported = false;
             offsets.push(None);
             continue;
         }
-        let offset = cluster.paint_offset(text).ok().flatten();
+        let offset = context
+            .is_none()
+            .then(|| cluster.paint_offset(text).ok().flatten())
+            .flatten();
         if offset.is_none_or(|offset| {
             !(x + placement.x + offset.x).is_finite() || !(baseline + offset.y).is_finite()
         }) {
             renderer
                 .for_source(cluster.source.clone())
                 .glyph_positioning_unsupported(&cluster.run.face.family, text);
-            supported = false;
+            offsets.push(None);
+        } else {
+            offsets.push(offset);
         }
-        offsets.push(offset);
-    }
-    if !supported {
-        return None;
     }
     let mut result = Vec::new();
     let mut index = 0;
@@ -246,20 +275,61 @@ fn positioned_spans(
             && line.placements[index].cluster.source.start < segment.end
         {
             let first = &line.placements[index];
-            if first.cluster.source.start < segment.start || first.cluster.source.end > segment.end
-            {
-                renderer
-                    .for_source(first.cluster.source.clone())
-                    .glyph_positioning_unsupported(
-                        &first.cluster.run.face.family,
-                        styled.index.slice(first.cluster.source.clone())?,
-                    );
-                return None;
+            let crosses_style = first.cluster.source.start < segment.start
+                || first.cluster.source.end > segment.end;
+            if crosses_style || offsets[index].is_none() {
+                if crosses_style {
+                    renderer
+                        .for_source(first.cluster.source.clone())
+                        .glyph_positioning_unsupported(
+                            &first.cluster.run.face.family,
+                            styled.index.slice(first.cluster.source.clone())?,
+                        );
+                }
+                let mut source = first.cluster.source.clone();
+                let origin = x + first.x;
+                let run = &first.cluster.run;
+                let context = cluster_contexts[index];
+                index += 1;
+                while let Some(next) = line.placements.get(index)
+                    && offsets[index].is_none()
+                    && next.cluster.source.start == source.end
+                    && next.cluster.run.face.id == run.face.id
+                    && (next.cluster.run.direction == run.direction
+                        || context.is_some() && cluster_contexts[index] == context)
+                    && next.cluster.run.style.font_size == run.style.font_size
+                    && next.cluster.run.coverage_fallback == run.coverage_fallback
+                {
+                    source.end = next.cluster.source.end;
+                    index += 1;
+                }
+                for (part, source) in styled.segments(source).enumerate() {
+                    let style = styled.style_at(source.start, theme, predefined);
+                    renderer
+                        .for_source(source.clone())
+                        .report_resolution(&style, styled.context());
+                    result.push(PositionedSpan {
+                        source,
+                        positions: if part == 0 { vec![origin] } else { Vec::new() },
+                        offset_y: 0.0,
+                        style: renderer.output_style_with_face(&style, &run.face),
+                        font_face: run
+                            .coverage_fallback
+                            .then_some((run.face.weight, run.face.style)),
+                        positioned: false,
+                    });
+                }
+                continue;
             }
             let offset_y = offsets[index]?.y;
             let mut source = first.cluster.source.clone();
             let mut positions = vec![x + first.x + offsets[index]?.x];
             let face = &first.cluster.run.face;
+            let font_face = first
+                .cluster
+                .run
+                .coverage_fallback
+                .then_some((face.weight, face.style));
             index += 1;
             if source.len() == 1 {
                 while let Some(next) = line.placements.get(index)
@@ -267,6 +337,7 @@ fn positioned_spans(
                     && next.cluster.source.end <= segment.end
                     && next.cluster.source.len() == 1
                     && next.cluster.run.face.id == face.id
+                    && offsets[index].is_some()
                     && offsets[index]?.y == offset_y
                 {
                     source.end = next.cluster.source.end;
@@ -282,8 +353,66 @@ fn positioned_spans(
                 positions,
                 offset_y,
                 style: renderer.output_style_with_face(&style, face),
+                font_face,
+                positioned: true,
             });
         }
     }
     Some(result)
+}
+
+fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
+    #[derive(PartialEq)]
+    enum Context {
+        Embedding,
+        Isolate,
+    }
+    let mut contexts = Vec::new();
+    let mut stack = Vec::new();
+    let mut isolate_depth = 0;
+    let mut start = source_start;
+    let mut end = source_start;
+    for (index, scalar) in text.chars().enumerate() {
+        let index = source_start + index;
+        end = index + 1;
+        let class = bidi_class(scalar);
+        match class {
+            BidiClass::LRE
+            | BidiClass::RLE
+            | BidiClass::LRO
+            | BidiClass::RLO
+            | BidiClass::LRI
+            | BidiClass::RLI
+            | BidiClass::FSI => {
+                if stack.is_empty() {
+                    start = index;
+                }
+                let kind = if matches!(class, BidiClass::LRI | BidiClass::RLI | BidiClass::FSI) {
+                    isolate_depth += 1;
+                    Context::Isolate
+                } else {
+                    Context::Embedding
+                };
+                stack.push(kind);
+            }
+            BidiClass::PDF if stack.last() == Some(&Context::Embedding) => {
+                stack.pop();
+                if stack.is_empty() {
+                    contexts.push(start..end);
+                }
+            }
+            BidiClass::PDI if isolate_depth > 0 => {
+                while stack.pop() != Some(Context::Isolate) {}
+                isolate_depth -= 1;
+                if stack.is_empty() {
+                    contexts.push(start..end);
+                }
+            }
+            _ => {}
+        }
+    }
+    if !stack.is_empty() {
+        contexts.push(start..end);
+    }
+    contexts
 }

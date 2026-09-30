@@ -195,6 +195,53 @@ fn tspan<'a>(xml: &'a roxmltree::Document<'a>, value: &str) -> roxmltree::Node<'
         .unwrap_or_else(|| panic!("missing text span {value:?}"))
 }
 
+fn assert_decoration(
+    xml: &roxmltree::Document<'_>,
+    node: roxmltree::Node<'_, '_>,
+    expected: Option<&str>,
+) {
+    if node.attribute("text-decoration") == expected {
+        return;
+    }
+    assert_eq!(node.attribute("text-decoration"), None);
+    let offset = match expected.unwrap() {
+        "underline" => f64::from(1.0_f32 / 9.0),
+        "line-through" => f64::from(-2.0_f32 / 7.0),
+        other => panic!("unexpected decoration {other}"),
+    };
+    let size: f64 = node.attribute("font-size").unwrap().parse().unwrap();
+    let x: f64 = node
+        .attribute("x")
+        .unwrap()
+        .split_whitespace()
+        .next()
+        .unwrap()
+        .parse()
+        .unwrap();
+    let baseline: f64 = node.attribute("y").unwrap().parse().unwrap();
+    assert!(
+        xml.descendants().any(|rectangle| {
+            if !rectangle.has_tag_name("rect")
+                || rectangle.attribute("fill") != node.attribute("fill")
+            {
+                return false;
+            }
+            let number = |name| {
+                rectangle
+                    .attribute(name)
+                    .and_then(|value| value.parse::<f64>().ok())
+            };
+            number("x").is_some_and(|value| (value - x).abs() < 0.0001)
+                && number("y")
+                    .is_some_and(|value| (value - baseline - size * offset).abs() < 0.0001)
+                && number("height").is_some_and(|value| (value - size / 18.0).abs() < 0.0001)
+                && number("width").is_some_and(|value| value > 0.0)
+        }),
+        "missing {expected:?} on {:?}",
+        node.text()
+    );
+}
+
 fn font_css(svg: &str) -> Vec<String> {
     let xml = roxmltree::Document::parse(svg).unwrap();
     xml.descendants()
@@ -381,11 +428,7 @@ fn all_text_contexts_preserve_mixed_unicode_styles_and_hyperlinks() {
                 Some(size),
                 "{context:?} {value}"
             );
-            assert_eq!(
-                node.attribute("text-decoration"),
-                decoration,
-                "{context:?} {value}"
-            );
+            assert_decoration(&xml, node, decoration);
         }
         let anchor = tspan(&xml, "C").parent().unwrap();
         assert!(anchor.has_tag_name("a"));
@@ -1014,10 +1057,7 @@ fn crlf_offsets_preserve_second_line_unicode_styles() {
         assert_eq!(tspan(&xml, "😀").attribute("fill"), Some("#ff0000"));
         assert_eq!(tspan(&xml, "😀").attribute("font-size"), Some("60.00"));
         assert_eq!(tspan(&xml, "b").attribute("fill"), Some("#000000"));
-        assert_eq!(
-            tspan(&xml, "b").attribute("text-decoration"),
-            Some("underline")
-        );
+        assert_decoration(&xml, tspan(&xml, "b"), Some("underline"));
     }
 }
 
@@ -1034,10 +1074,22 @@ fn spans_with_half_surrogate_boundaries_are_ignored_entirely() {
     for &context in CONTEXTS {
         let svg = render(context, content.clone());
         let xml = roxmltree::Document::parse(&svg).unwrap();
-        let node = tspan(&xml, "a😀b");
-        assert_eq!(node.attribute("fill"), Some("#000000"), "{context:?}");
-        assert_eq!(node.attribute("font-size"), Some("30.00"), "{context:?}");
-        assert_eq!(node.attribute("text-decoration"), None, "{context:?}");
+        let spans: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .collect();
+        assert_eq!(
+            spans
+                .iter()
+                .filter_map(|node| node.text())
+                .collect::<String>(),
+            "a😀b"
+        );
+        for node in spans {
+            assert_eq!(node.attribute("fill"), Some("#000000"), "{context:?}");
+            assert_eq!(node.attribute("font-size"), Some("30.00"), "{context:?}");
+            assert_eq!(node.attribute("text-decoration"), None, "{context:?}");
+        }
         assert!(
             !xml.descendants().any(|node| node.has_tag_name("a")),
             "{context:?}"

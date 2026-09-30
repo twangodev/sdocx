@@ -433,6 +433,18 @@ impl TSpan {
         self.0.attr("font-style", "italic");
         self
     }
+    pub fn font_face(mut self, weight: fontdb::Weight, style: fontdb::Style) -> Self {
+        self.0.attr("font-weight", weight.0);
+        self.0.attr(
+            "font-style",
+            match style {
+                fontdb::Style::Normal => "normal",
+                fontdb::Style::Italic => "italic",
+                fontdb::Style::Oblique => "oblique",
+            },
+        );
+        self
+    }
     pub fn decoration(mut self, decoration: TextDecoration) -> Self {
         self.0.attr("text-decoration", decoration.text());
         self

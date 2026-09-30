@@ -511,11 +511,16 @@ fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
         assert_format(7, &broken);
     }
     #[cfg(feature = "render")]
-    assert!(
-        sdocx::render_document_svg(&parsed.document, &Default::default())[0]
-            .svg
-            .contains("A日本語😀")
-    );
+    {
+        let pages = sdocx::render_document_svg(&parsed.document, &Default::default());
+        let svg = roxmltree::Document::parse(&pages[0].svg).unwrap();
+        let source: String = svg
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .filter_map(|node| node.text())
+            .collect();
+        assert_eq!(source, "A日本語😀");
+    }
 }
 
 #[test]

@@ -160,6 +160,24 @@ lookup finds no entry (`0x807b4`, `0x807d8`–`0x807ec`). Preserve an unknown
 stored name while resolving a fallback for measurement. This proves the
 fallback rule, not the concrete default family or fallback order on a device.
 
+Rust now resolves glyph coverage before measurement and retains the selected face
+through vector painting. Coverage preserves shaping normalization and default
+ignorables. Static LTR Latin runs split only at whole graphemes when coverage
+requires another face, then join adjacent selections of the same face. Other
+scripts retain their contextual run while trying a covering face. Selection uses
+only the caller's database, trying configured sans and deterministic family/style
+candidates. Native Minikin fallback registration supports fallback as a layout
+input; the concrete device family ordering is still unavailable.
+
+Selected fallback weight/style are explicit typed SVG attributes. A candidate
+must also be selectable by those exact properties in the original database;
+hidden duplicate face IDs cannot be represented reliably through SVG family
+selection. Unsupported positioning remains local, preserving neighboring Latin
+glyphs and native advances. Bidirectional formatting controls keep their bounded
+fallback group intact. Tabs retain their source while positioning following text
+using the native four-space advance. Public regressions pin glyph IDs, selected
+face IDs, positions, decorations and selectable vector PDF source.
+
 ## Document scale and font-size delta
 
 The rendered scale is `document_pixel * local_text_scale`. Widget

@@ -437,10 +437,25 @@ fn unsupported_rtl_clusters_keep_logical_source_and_report_the_fallback() {
             page.text_diagnostics
         );
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
-        assert!(
-            xml.descendants()
-                .filter(|node| node.has_tag_name("tspan"))
-                .all(|node| node.attribute("x").is_none())
+        let spans: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .collect();
+        assert_eq!(
+            spans
+                .iter()
+                .map(|node| node.text().unwrap())
+                .collect::<Vec<_>>(),
+            ["A", "\u{202e}AV\u{202c}", "Z"]
+        );
+        assert!(spans.iter().all(|node| node.attribute("x").is_some()));
+        assert_eq!(
+            glyphs(&page)
+                .iter()
+                .filter(|glyph| matches!(glyph.text.as_str(), "A" | "V" | "Z"))
+                .map(|glyph| glyph.id)
+                .collect::<Vec<_>>(),
+            [38, 59, 38, 63]
         );
     }
 }
@@ -464,11 +479,14 @@ fn missing_arabic_glyphs_explain_the_fallback_without_duplicate_diagnostics() {
                     == sdocx::TextDiagnosticKind::UnsupportedGlyphPositioning)
         );
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
-        assert!(
-            xml.descendants()
-                .filter(|node| node.has_tag_name("tspan"))
-                .all(|node| node.attribute("x").is_none())
-        );
+        let spans: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .collect();
+        assert_eq!(spans.first().unwrap().text(), Some("A"));
+        assert_eq!(spans.last().unwrap().text(), Some("Z"));
+        assert!(spans.first().unwrap().attribute("x").is_some());
+        assert!(spans.last().unwrap().attribute("x").is_some());
     }
 }
 

@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use unicode_bidi::BidiInfo;
 use unicode_script::{Script, ScriptExtension, UnicodeScript};
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::PredefinedTextStyle;
 use crate::fonts::{Direction, Feature, FontError, ResolvedFace, ShapedGlyph, UnicodeBuffer};
@@ -20,6 +21,11 @@ pub(in crate::render) struct MeasuredText {
 struct MeasuredSegment {
     advance: f64,
     clusters: Vec<MeasuredCluster>,
+}
+
+struct RunFace {
+    face: ResolvedFace,
+    coverage_fallback: bool,
 }
 
 #[derive(Clone)]
@@ -39,6 +45,8 @@ pub(in crate::render) struct MeasuredRun {
     pub script: Script,
     pub glyphs: Vec<MeasuredGlyph>,
     pub variable: bool,
+    pub tab: bool,
+    pub coverage_fallback: bool,
     standalone: Mutex<HashMap<String, Arc<Vec<ShapedGlyph>>>>,
 }
 
@@ -78,6 +86,11 @@ impl MeasuredCluster {
         {
             return Ok(None);
         }
+        let text = if self.run.tab && text == "\t" {
+            " "
+        } else {
+            text
+        };
         let standalone = self.run.standalone(text)?;
         let original = &self.run.glyphs[self.glyphs.clone()];
         if original.len() != standalone.len() || original.is_empty() {
@@ -289,6 +302,115 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                     style.family.as_deref().unwrap_or("Roboto").to_owned(),
                 )
             })?;
+        let text = if tab {
+            " "
+        } else {
+            self.styled
+                .index
+                .slice(source.clone())
+                .ok_or(MeasurementError::InvalidRange)?
+        };
+        if face.covers(text)? {
+            return self.shape_face(
+                range,
+                style,
+                direction,
+                script,
+                tab,
+                RunFace {
+                    face,
+                    coverage_fallback: false,
+                },
+            );
+        }
+        let bold = style.bold && matches!(self.styled.context(), super::TextContext::Placed);
+        if tab
+            || direction != Direction::LeftToRight
+            || !matches!(script, Script::Latin | Script::Common | Script::Inherited)
+        {
+            let selected = self
+                .renderer
+                .fonts
+                .resolve_for_text(&face, text, bold, style.italic)?;
+            let coverage_fallback = selected.id != face.id;
+            return self.shape_face(
+                range,
+                style,
+                direction,
+                script,
+                tab,
+                RunFace {
+                    face: selected,
+                    coverage_fallback,
+                },
+            );
+        }
+        let start_byte = self
+            .styled
+            .index
+            .char_to_byte(source.start)
+            .ok_or(MeasurementError::InvalidRange)?;
+        let mut segments = Vec::<(Range<usize>, ResolvedFace)>::new();
+        for (byte, grapheme) in text.grapheme_indices(true) {
+            let selected =
+                self.renderer
+                    .fonts
+                    .resolve_for_text(&face, grapheme, bold, style.italic)?;
+            let start = self
+                .styled
+                .index
+                .byte_to_char(start_byte + byte)
+                .ok_or(MeasurementError::InvalidRange)?
+                - self.range.start;
+            let end = self
+                .styled
+                .index
+                .byte_to_char(start_byte + byte + grapheme.len())
+                .ok_or(MeasurementError::InvalidRange)?
+                - self.range.start;
+            if let Some((previous, previous_face)) = segments.last_mut()
+                && previous.end == start
+                && previous_face.id == selected.id
+            {
+                previous.end = end;
+            } else {
+                segments.push((start..end, selected));
+            }
+        }
+        let mut measured = MeasuredSegment {
+            advance: 0.0,
+            clusters: Vec::new(),
+        };
+        for (range, selected) in segments {
+            let coverage_fallback = selected.id != face.id;
+            let part = self.shape_face(
+                range,
+                style,
+                direction,
+                script,
+                tab,
+                RunFace {
+                    face: selected,
+                    coverage_fallback,
+                },
+            )?;
+            measured.advance += part.advance;
+            measured.clusters.extend(part.clusters);
+        }
+        Ok(measured)
+    }
+
+    fn shape_face(
+        &self,
+        range: Range<usize>,
+        style: &TextStyle,
+        direction: Direction,
+        script: Script,
+        tab: bool,
+        selected: RunFace,
+    ) -> Result<MeasuredSegment, MeasurementError> {
+        let face = selected.face;
+        let source = self.range.start + range.start..self.range.start + range.end;
         let start_byte = self
             .styled
             .index
@@ -384,6 +506,8 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             script,
             glyphs,
             variable,
+            tab,
+            coverage_fallback: selected.coverage_fallback,
             standalone: Mutex::new(HashMap::new()),
         });
         let mut clusters = Vec::new();
@@ -843,6 +967,28 @@ mod tests {
         let space = measure(&text_box(" "), TextContext::Placed);
         assert_eq!(tab.advance, space.advance * 4.0);
         assert_eq!(tab.clusters[0].source, 0..1);
+        assert!(tab.clusters[0].run.tab);
+        assert!(tab.clusters[0].paint_offset("\t").unwrap().is_some());
+    }
+
+    #[test]
+    fn coverage_segments_keep_adjacent_latin_kerning_and_cluster_sources() {
+        let measured = measure(&text_box("AV∕AV"), TextContext::Placed);
+        assert_eq!(measured.advance, (2552.0 * 2.0 + 1229.0) / 2048.0 * 45.0);
+        assert_eq!(measured.clusters.len(), 5);
+        assert!(Arc::ptr_eq(
+            &measured.clusters[0].run,
+            &measured.clusters[1].run
+        ));
+        assert!(Arc::ptr_eq(
+            &measured.clusters[3].run,
+            &measured.clusters[4].run
+        ));
+        assert_eq!(measured.clusters[2].source, 2..3);
+        assert_eq!(measured.clusters[2].run.face.family, "Roboto Mono");
+        assert!(measured.clusters[2].run.coverage_fallback);
+        assert!(!measured.clusters[0].run.coverage_fallback);
+        assert!(!measured.clusters[3].run.coverage_fallback);
     }
 
     #[test]
