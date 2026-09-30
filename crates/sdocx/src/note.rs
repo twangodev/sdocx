@@ -362,25 +362,25 @@ impl TextCommon {
             }
         }
 
-        let color = self
-            .spans
-            .iter()
-            .find(|span| span.kind == RichTextSpanType::ForegroundColor)
-            .and_then(RichTextSpan::color_value);
-        let highlight_color = self
-            .spans
-            .iter()
-            .find(|span| span.kind == RichTextSpanType::BackgroundColor)
-            .and_then(RichTextSpan::color_value);
-        let font_size = self
-            .spans
-            .iter()
-            .find(|span| span.kind == RichTextSpanType::FontSize)
+        let text_length_utf16 = self.text.encode_utf16().count();
+        let whole_text_span = |kind| {
+            self.spans.iter().rev().find(|span| {
+                span.kind == kind
+                    && text_length_utf16 > 0
+                    && span.start_utf16 == 0
+                    && usize::try_from(span.end_utf16) == Ok(text_length_utf16)
+            })
+        };
+        let color =
+            whole_text_span(RichTextSpanType::ForegroundColor).and_then(RichTextSpan::color_value);
+        let highlight_color =
+            whole_text_span(RichTextSpanType::BackgroundColor).and_then(RichTextSpan::color_value);
+        let font_size = whole_text_span(RichTextSpanType::FontSize)
             .and_then(RichTextSpan::font_size_value)
             .filter(|size| size.is_finite() && *size > 0.0);
-        let underline = self.spans.iter().any(|span| {
-            span.kind == RichTextSpanType::Underline && span.boolean_value() == Some(true)
-        });
+        let underline = whole_text_span(RichTextSpanType::Underline)
+            .and_then(RichTextSpan::boolean_value)
+            == Some(true);
 
         RichTextBox {
             text_area_type: None,

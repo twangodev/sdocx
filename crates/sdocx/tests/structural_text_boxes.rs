@@ -200,6 +200,113 @@ fn preserves_short_unicode_empty_and_whitespace_text_without_scanning() {
     }
 }
 
+fn styled_text_box(text: &str, spans: &[Vec<u8>]) -> RichTextBox {
+    let payload = text_payload(
+        &common(text, spans),
+        [0.0, 0.0, 200.0, 100.0],
+        0.0,
+        &frame(2, &[], &[], &[]),
+    );
+    let document = sdocx::parse_bytes(&single(&payload)).unwrap();
+    text_box(document.pages[0].elements().next().unwrap()).clone()
+}
+
+fn assert_no_summary_style(text: &RichTextBox) {
+    assert_eq!(text.color, None);
+    assert_eq!(text.highlight_color, None);
+    assert_eq!(text.font_size, None);
+    assert!(!text.underline);
+}
+
+#[test]
+fn partial_unicode_styles_remain_local_instead_of_becoming_box_defaults() {
+    let decoded = styled_text_box(
+        "a😀中",
+        &[
+            span(1, 1, 3, &[0, 0, 255, 255]),
+            span(17, 3, 4, &[0, 255, 255, 255]),
+            span(3, 0, 1, &24.0_f32.to_le_bytes()),
+            span(7, 1, 3, &[1, 0]),
+        ],
+    );
+    assert_eq!(decoded.text, "a😀中");
+    assert_no_summary_style(&decoded);
+    assert_eq!(
+        decoded
+            .spans
+            .iter()
+            .map(|span| (span.kind, span.start_utf16, span.end_utf16))
+            .collect::<Vec<_>>(),
+        [
+            (RichTextSpanType::ForegroundColor, 1, 3),
+            (RichTextSpanType::BackgroundColor, 3, 4),
+            (RichTextSpanType::FontSize, 0, 1),
+            (RichTextSpanType::Underline, 1, 3),
+        ]
+    );
+}
+
+#[test]
+fn full_utf16_coverage_uses_the_last_box_default_and_respects_explicit_false() {
+    let decoded = styled_text_box(
+        "a😀中",
+        &[
+            span(1, 0, 4, &[0, 0, 255, 255]),
+            span(1, 0, 4, &[255, 0, 0, 255]),
+            span(17, 0, 4, &[0, 255, 255, 255]),
+            span(17, 0, 4, &[0, 255, 0, 255]),
+            span(3, 0, 4, &12.0_f32.to_le_bytes()),
+            span(3, 0, 4, &18.0_f32.to_le_bytes()),
+            span(7, 0, 4, &[1, 0]),
+            span(7, 0, 4, &[0, 0]),
+            span(1, 1, 3, &[0, 255, 0, 255]),
+            span(3, 1, 3, &36.0_f32.to_le_bytes()),
+            span(7, 1, 3, &[1, 0]),
+        ],
+    );
+    assert_eq!(decoded.color, Some(sdocx::Color { r: 0, g: 0, b: 255 }));
+    assert_eq!(
+        decoded.highlight_color,
+        Some(sdocx::Color { r: 0, g: 255, b: 0 })
+    );
+    assert_eq!(decoded.font_size, Some(18.0));
+    assert!(!decoded.underline);
+    assert_eq!(decoded.spans.len(), 11);
+}
+
+#[test]
+fn half_surrogate_style_ranges_do_not_promote_summary_defaults() {
+    for (start, end) in [(0, 1), (1, 2)] {
+        let decoded = styled_text_box(
+            "😀",
+            &[
+                span(1, start, end, &[0, 0, 255, 255]),
+                span(17, start, end, &[0, 255, 255, 255]),
+                span(3, start, end, &24.0_f32.to_le_bytes()),
+                span(7, start, end, &[1, 0]),
+            ],
+        );
+        assert_no_summary_style(&decoded);
+        assert_eq!(decoded.text, "😀");
+        assert_eq!(decoded.spans.len(), 4);
+    }
+}
+
+#[test]
+fn empty_text_has_no_summary_style_from_zero_length_spans() {
+    let decoded = styled_text_box(
+        "",
+        &[
+            span(1, 0, 0, &[0, 0, 255, 255]),
+            span(17, 0, 0, &[0, 255, 255, 255]),
+            span(3, 0, 0, &24.0_f32.to_le_bytes()),
+            span(7, 0, 0, &[1, 0]),
+        ],
+    );
+    assert_no_summary_style(&decoded);
+    assert_eq!(decoded.spans.len(), 4);
+}
+
 #[test]
 fn uses_declared_bounds_rotation_and_utf16_style_ranges() {
     let spans = [

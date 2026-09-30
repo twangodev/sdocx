@@ -355,13 +355,13 @@ pub struct RichTextBox {
     pub rotation_degrees: Option<f64>,
     /// Full text content.
     pub text: String,
-    /// Text foreground color.
+    /// Whole-text foreground color; partial colors remain in `spans`.
     pub color: Option<Color>,
-    /// Text highlight/fill color.
+    /// Whole-text highlight/fill color; partial highlights remain in `spans`.
     pub highlight_color: Option<Color>,
-    /// Whether underline styling is present.
+    /// Whole-text underline default, overridden by range-specific `spans`.
     pub underline: bool,
-    /// Font size in Samsung Notes logical units, when present.
+    /// Whole-text font size in Samsung Notes logical units, when present.
     pub font_size: Option<f32>,
     /// Style runs using character indexes into `text`.
     pub runs: Vec<RichTextRun>,
