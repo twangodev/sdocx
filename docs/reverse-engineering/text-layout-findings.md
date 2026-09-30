@@ -1294,9 +1294,13 @@ the native branches, not captured fixture measurements, for a flagged band
 
 `SetLayout` adds the adjusted margin at `0x6b4f0`–`0x6b510`; the
 margin-bearing object baseline uses base object height (`0x6cb90`–`0x6cb9c`)
-before the object epsilon. The flagged obstacle-margin exception is not yet
-implemented in Rust. Ordinary constraint-0 child feedback was not established
-by this trace.
+before the object epsilon. Rust now retains the raw candidate separately from
+its adjusted margin, applies this padding exception to every wrapped line,
+and recomputes the margin after moving the raw candidate to an obstacle's
+bottom. Independent regressions cover the literal cases above, native f32
+probe rounding, and suppression of a preceding object's bottom margin on an
+ordinary text line. Ordinary constraint-0 child feedback was not established
+by this trace; child callback origins still require their own producer proof.
 
 Drawing `CodeBlockLayout::Measure`, `0x732fc`, converts those bands to body
 coordinates by subtracting body-frame top (`0x73484`–`0x7349c`). Its

@@ -104,7 +104,12 @@ pub(in crate::render) struct TextFrame<'a> {
 }
 
 impl TextFrame<'_> {
-    fn line_top(&self, line: &WrappedLine, mut top: f64, advance: f64) -> f64 {
+    fn overlapping_band(
+        &self,
+        line: &WrappedLine,
+        top: f64,
+        advance: f64,
+    ) -> Option<&VerticalExclusion> {
         let minimum_first_page_height = line
             .objects
             .iter()
@@ -117,7 +122,7 @@ impl TextFrame<'_> {
                     .minimum_first_page_height()
             })
             .reduce(f64::max);
-        while let Some(band) = self.exclusions.iter().find(|band| {
+        self.exclusions.iter().find(|band| {
             band.top.is_finite()
                 && band.bottom.is_finite()
                 && band.top < band.bottom
@@ -127,10 +132,45 @@ impl TextFrame<'_> {
                     && minimum_first_page_height.is_some_and(|minimum| {
                         minimum <= f64::from(f32::EPSILON) || minimum.ceil() <= band.top - top
                     }))
-        }) {
-            top = band.bottom;
+        })
+    }
+
+    fn adjusted_top_margin(&self, top: f64, before: f64, current: f64, previous: f64) -> f64 {
+        if current == 0.0 && previous == 0.0 && before == 0.0 {
+            return 0.0;
         }
-        top
+        let probe_bottom = top as f32 - before as f32;
+        let probe_top = probe_bottom - 1.0;
+        let band = self.exclusions.iter().find(|band| {
+            let top = band.top as f32;
+            let bottom = band.bottom as f32;
+            top.is_finite()
+                && bottom.is_finite()
+                && top < bottom
+                && probe_bottom - top > 0.0001_f32
+                && bottom - probe_top > 0.0001_f32
+        });
+        if let Some(band) = band
+            && band.kind == ExclusionKind::PagePadding
+        {
+            let half_height = (band.bottom as f32 - band.top as f32) * 0.5;
+            if half_height != 0.0 {
+                return f64::from((current as f32 - half_height).max(0.0));
+            }
+        }
+        current.max(previous)
+    }
+}
+
+#[derive(Clone, Copy)]
+struct LineCandidate {
+    raw_top: f64,
+    margin_top: f64,
+}
+
+impl LineCandidate {
+    fn top(self) -> f64 {
+        self.raw_top + self.margin_top
     }
 }
 
@@ -189,6 +229,7 @@ impl LineMetrics {
 pub(in crate::render) struct TextCursor {
     position: f64,
     pending_bottom: f64,
+    enabled_before: f64,
 }
 
 impl TextCursor {
@@ -196,11 +237,17 @@ impl TextCursor {
         Self {
             position,
             pending_bottom: 0.0,
+            enabled_before: 0.0,
         }
     }
 
     pub fn add_spacing(&mut self, spacing: f64) {
         self.position += spacing;
+    }
+
+    fn begin_paragraph(&mut self, before: f64) {
+        self.enabled_before = before;
+        self.add_spacing(before);
     }
 
     pub fn position(&self) -> f64 {
@@ -220,8 +267,16 @@ impl TextCursor {
         }
     }
 
-    pub fn candidate_top(&self, line: &WrappedLine, frame: &TextFrame<'_>) -> f64 {
-        frame.bbox.y_min + self.position + self.pending_bottom.max(line.object_margins()[0])
+    fn candidate(&self, line: &WrappedLine, frame: &TextFrame<'_>, raw_top: f64) -> LineCandidate {
+        LineCandidate {
+            raw_top,
+            margin_top: frame.adjusted_top_margin(
+                raw_top,
+                self.enabled_before,
+                line.object_margins()[0],
+                self.pending_bottom,
+            ),
+        }
     }
 
     #[cfg(test)]
@@ -232,29 +287,15 @@ impl TextCursor {
         frame: &TextFrame<'_>,
         settings: super::TextSettings,
     ) -> LinePlacement {
-        self.place_at(
-            line,
-            spacing,
-            frame,
-            settings,
-            self.candidate_top(line, frame),
-        )
-    }
-
-    fn prospective_top(
-        &self,
-        line: &WrappedLine,
-        spacing: Option<ParagraphLineSpacing>,
-        frame: &TextFrame<'_>,
-        settings: super::TextSettings,
-        minimum_top: f64,
-    ) -> f64 {
         let metrics = LineMetrics::for_line(line, spacing, settings);
-        frame.line_top(
-            line,
-            minimum_top.max(self.candidate_top(line, frame)),
-            metrics.advance,
-        )
+        let mut candidate = self.candidate(line, frame, frame.bbox.y_min + self.position);
+        for _ in 0..frame.exclusions.len() {
+            let Some(band) = frame.overlapping_band(line, candidate.top(), metrics.advance) else {
+                break;
+            };
+            candidate = self.candidate(line, frame, band.bottom);
+        }
+        self.place_at(line, spacing, frame, settings, candidate)
     }
 
     fn prepare_line(
@@ -265,17 +306,17 @@ impl TextCursor {
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
         spacing: Option<ParagraphLineSpacing>,
-    ) -> f64 {
-        let mut candidate_top = self.candidate_top(line, frame);
+    ) -> LineCandidate {
+        let mut candidate = self.candidate(line, frame, frame.bbox.y_min + self.position);
         for _ in 0..=frame.exclusions.len() {
-            prepare_line_objects(line, styled, candidate_top, theme, renderer);
-            let top = self.prospective_top(line, spacing, frame, renderer.settings, candidate_top);
-            if top <= candidate_top {
-                return candidate_top;
-            }
-            candidate_top = top;
+            prepare_line_objects(line, styled, candidate.top(), theme, renderer);
+            let metrics = LineMetrics::for_line(line, spacing, renderer.settings);
+            let Some(band) = frame.overlapping_band(line, candidate.top(), metrics.advance) else {
+                return candidate;
+            };
+            candidate = self.candidate(line, frame, band.bottom);
         }
-        candidate_top
+        candidate
     }
 
     fn place_at(
@@ -284,16 +325,14 @@ impl TextCursor {
         spacing: Option<ParagraphLineSpacing>,
         frame: &TextFrame<'_>,
         settings: super::TextSettings,
-        minimum_top: f64,
+        candidate: LineCandidate,
     ) -> LinePlacement {
-        let background_top = frame.bbox.y_min + self.position;
         let metrics = LineMetrics::for_line(line, spacing, settings);
-        let candidate_top = self.candidate_top(line, frame);
-        let top = self.prospective_top(line, spacing, frame, settings, minimum_top);
+        let top = candidate.top();
         self.position = top - frame.bbox.y_min + metrics.advance + metrics.epsilon;
         self.pending_bottom = line.object_margins()[1];
         LinePlacement {
-            top: background_top + top - candidate_top,
+            top: candidate.raw_top,
             baseline: top + metrics.baseline_offset,
             bottom: frame.bbox.y_min + self.position,
             post_cursor: frame.bbox.y_min + self.position,
@@ -662,19 +701,31 @@ fn layout_text_with_context(
             .get(paragraph_number + 1)
             .and_then(|layout| layout.bullet);
         let spacing = ParagraphSpacing::for_lines(&paragraph_lines, previous, layout.bullet, next);
-        if spacing.before {
-            if layout.spacing_before_invalid {
-                let style =
-                    styled.style_at(paragraph.content.start, theme, layout.predefined_style);
-                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-            }
-            cursor.add_spacing(layout.spacing_before);
+        if spacing.before && layout.spacing_before_invalid {
+            let style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+            renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
         }
+        cursor.begin_paragraph(if spacing.before {
+            layout.spacing_before
+        } else {
+            0.0
+        });
         for (line_number, mut line) in paragraph_lines.into_iter().enumerate() {
             let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
             let settled_top = if let Some(top) = continuation_top {
                 prepare_line_objects(&mut line, styled, top, theme, renderer);
-                cursor.candidate_top(&line, &frame)
+                let metrics = LineMetrics::for_line(&line, layout.line_spacing, settings);
+                let mut candidate =
+                    cursor.candidate(&line, &frame, frame.bbox.y_min + cursor.position);
+                for _ in 0..frame.exclusions.len() {
+                    let Some(band) =
+                        frame.overlapping_band(&line, candidate.top(), metrics.advance)
+                    else {
+                        break;
+                    };
+                    candidate = cursor.candidate(&line, &frame, band.bottom);
+                }
+                candidate
             } else {
                 cursor.prepare_line(
                     &mut line,
@@ -1544,6 +1595,106 @@ mod tests {
         close(place_object(&mut cursor, &line), 130.001);
         close(place_object(&mut cursor, &line), 260.002);
         close(cursor.height(), 290.002);
+    }
+
+    #[test]
+    fn page_edge_margin_probe_uses_raw_y_and_enabled_paragraph_before() {
+        let bands = [VerticalExclusion::page_padding(1497.0, 1557.0)];
+        let frame = TextFrame {
+            bbox: BoundingBox::default(),
+            gravity: None,
+            exclusions: &bands,
+        };
+        for (top, before, current, previous, expected) in [
+            (1557.0, 0.0, 60.0, 80.0, 30.0),
+            (1558.0, 0.0, 60.0, 80.0, 80.0),
+            (1497.0, 0.0, 60.0, 80.0, 80.0),
+            (1569.0, 12.0, 60.0, 80.0, 30.0),
+            (1569.0, 0.0, 60.0, 80.0, 80.0),
+            (1557.0, 0.0, 0.0, 80.0, 0.0),
+        ] {
+            close(
+                frame.adjusted_top_margin(top, before, current, previous),
+                expected,
+            );
+        }
+        let bands = [VerticalExclusion::obstacle(1497.0, 1557.0)];
+        let frame = TextFrame {
+            exclusions: &bands,
+            ..frame
+        };
+        close(frame.adjusted_top_margin(1557.0, 0.0, 60.0, 80.0), 80.0);
+    }
+
+    #[test]
+    fn page_edge_probe_rounds_each_subtraction_in_native_f32() {
+        let bands = [VerticalExclusion::page_padding(1497.0, 1557.0)];
+        let frame = TextFrame {
+            bbox: BoundingBox::default(),
+            gravity: None,
+            exclusions: &bands,
+        };
+        close(
+            frame.adjusted_top_margin(1558.0 - 0.00004, 0.0, 60.0, 80.0),
+            80.0,
+        );
+        close(
+            frame.adjusted_top_margin(1558.0 - 0.00013, 0.0, 60.0, 80.0),
+            30.0,
+        );
+    }
+
+    #[test]
+    fn collision_recomputes_margin_at_the_new_raw_cursor() {
+        let bands = [VerticalExclusion::page_padding(1497.0, 1557.0)];
+        let frame = TextFrame {
+            bbox: BoundingBox::default(),
+            gravity: None,
+            exclusions: &bands,
+        };
+        let mut cursor = TextCursor::new(1480.0);
+        let line = object_line(20.0, false, [60.0; 2]);
+        let placement = cursor.place(&line, None, &frame, TextSettings::default());
+        close(placement.top, 1557.0);
+        close(placement.baseline, 1687.001);
+        close(placement.post_cursor, 1687.001);
+        close(cursor.height(), 1747.001);
+    }
+
+    #[test]
+    fn enabled_before_remains_available_on_subsequent_wrapped_lines() {
+        let bands = [VerticalExclusion::page_padding(1539.0, 1599.0)];
+        let frame = TextFrame {
+            bbox: BoundingBox::default(),
+            gravity: None,
+            exclusions: &bands,
+        };
+        let mut cursor = TextCursor::new(1407.0);
+        cursor.begin_paragraph(150.0);
+        let line = object_line(20.0, false, [60.0; 2]);
+        let first = cursor.place(&line, None, &frame, TextSettings::default());
+        close(first.top, 1557.0);
+        close(first.baseline, 1717.001);
+        let second = cursor.place(&line, None, &frame, TextSettings::default());
+        close(second.top, 1717.001);
+        close(second.baseline, 1847.002);
+    }
+
+    #[test]
+    fn page_padding_can_suppress_a_previous_object_bottom_on_an_ordinary_line() {
+        let bands = [VerticalExclusion::page_padding(1497.0, 1557.0)];
+        let frame = TextFrame {
+            bbox: BoundingBox::default(),
+            gravity: None,
+            exclusions: &bands,
+        };
+        let mut cursor = TextCursor::new(1557.0);
+        cursor.pending_bottom = 80.0;
+        let line = WrappedLine::unmeasured(0..1, 20.0);
+        let placement = cursor.place(&line, None, &frame, TextSettings::default());
+        close(placement.top, 1557.0);
+        close(placement.baseline, 1577.0);
+        close(cursor.height(), 1584.0);
     }
 
     #[test]
