@@ -151,7 +151,18 @@ Synthetic regressions cover adjusted paths, rotations, fill/outline alpha,
 quadratic/cubic segments, unknown template IDs with explicit geometry,
 truncation, non-finite coordinates, unknown verbs and trailing path bytes.
 
-## Shape text-editability property (`0x04`)
+## Shape orientation and text-editability properties (`0x01`, `0x02`, `0x04`)
+
+Type-7 property bits 0/1 retain the actual horizontal/vertical orientation as
+`NativeShape::horizontal_flip` and `NativeShape::vertical_flip`. These differ
+from type-0 `metadata.flip_enabled`, which records permission to flip rather
+than the current orientation. Model writer `GetShapeBinary_PropertyFlag`
+(`0x3a7f84`) calls horizontal getter `0x20d8c4` and ORs `0x01` at `0x3a7fb0`;
+vertical getter `0x20d928` supplies `0x02` at `0x3a7fc8`. The saved-shape loader
+passes those decoded flags at `0x3a95ac`/`0x3a95b8` into common loader
+`0x20bad0`, which stores orientation at bytes 16/17. Rendering the saved path
+does not require another flip; template text-frame/control replay uses these
+actual flags independently of capability.
 
 The arm64 `libSPenModel.so` identifies type-7 property bit 2 as text
 editability. `GetShapeBinary_PropertyFlag` (`0x3a7f84`) reads byte 21 of

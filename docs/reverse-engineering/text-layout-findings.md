@@ -128,17 +128,46 @@ geometry center for rotation. Shape text bypasses the outward `ExtendRect`
 rounding used by type-2 PDF text boxes (`0x380684`). Drawing follows the same
 inset policy at `0x80b28`–`0x80b68`.
 
-Model's saved-shape reader converts rectangle endpoints to `f32`
-(`0x3a93f4`–`0x3a9400`), constructs the template, restores its path, and
-applies saved control points. Prepared template margins are separate from
-density-scaled component text margins. Rect-only formulas verified through
-the template factory and margin setters are:
+Model's saved-shape reader converts rectangle endpoints from `f64` to `f32`
+(`0x3a93f4`–`0x3a9400`). It restores the saved path at `0x3a95a0`, through
+the common path loader `0x20bad0` and inverse rotation `0x20c278`, before
+replaying saved control points at `0x3a9614`. Rotation uses SPenBase's mixed
+precision helper `0xb0f10`: narrow stored coordinates, subtract the original
+center in `f32`, use `f64` angles/trigonometry, then narrow the result before
+the `f32` center addition. Path and control replay order matters.
 
-| Template | Horizontal inset per side | Vertical inset per side | Native producer |
-| --- | --- | --- | --- |
-| Ellipse, ID 1 | `(width * 3) / 20` | `(height * 3) / 20` | `0x213b5c` |
-| Rectangle, ID 4 | 0 | 0 | `0x2152e8` |
-| Diamond, ID 8 | `width * f32::from_bits(0x3e851eb8)` | Corresponding height product | `0x218e14`, load path `0x2190f0` |
+Rust shares a typed `NativePathCommand` decoder between shape inspection,
+SVG path building and template text frames. Actual horizontal/vertical flips
+are retained from type-7 property bits 0/1; type-0 `metadata.flip_enabled`
+is a capability flag, not the current orientation. Model's property writer
+`0x3a7f84` reads horizontal getter `0x20d8c4` and ORs bit 0 at `0x3a7fb0`;
+vertical getter `0x20d928` produces bit 1 at `0x3a7fc8`. Loader
+`0x3a95ac`/`0x3a95b8` passes that decoded state to common loader `0x20bad0`,
+which stores bytes 16/17. The placed adapter's
+`native`, `triangle`, `rounded` and `polygon` modules restore world paths
+about the original geometry center and replay the applicable controls before
+deriving insets. Canonical template paths use a bounded ten-command stack
+buffer; path-dependent templates do not invent geometry for an empty path.
+Prepared template margins remain separate from density-scaled component
+text margins. The covered producers are:
+
+| Template | Retained inset contract | Native producer |
+| --- | --- | --- |
+| Ellipse, ID 1 | `(width * 3) / 20` horizontally; corresponding height formula vertically | `0x213b5c` |
+| Triangle, ID 2 | Saved apex ratio gives asymmetric half-width margins; vertical flip selects the half-height side | Margin `0x2148e8`, control `0x2144ec` |
+| Right triangle, ID 3 | Retained vertex direction selects horizontal weights 35/165 and vertical weights 235/35, multiplied before division by 400 | Margin `0x215084`, direction `0x211670`, branches `0x214d3c`/`0x214dec` |
+| Rectangle, ID 4 | Zero template insets | `0x2152e8` |
+| Rounded rectangle, ID 5 | Saved/replayed radius `R` gives `R + ((R * f32::from_bits(0xbfb504f3)) * 0.5)` on all sides | Margin `0x2165f4`, control `0x2157f0` |
+| Hexagon, ID 6 | Retained shoulder distance determines symmetric horizontal/vertical margins; controls reconstruct flipped vertices | Margin `0x2174f0`, control `0x2169b8` |
+| Diamond, ID 8 | `width * f32::from_bits(0x3e851eb8)` horizontally; corresponding height product vertically | `0x218e14`, load path `0x2190f0` |
+| Pentagon, ID 11 | Saved vertex ordering selects the horizontal inset and the quarter-height side | `0x21b6d0` |
+
+For hexagon shoulder distance `D`, native computes
+`(((K * 80) / 200) * D) / halfW`, then adds `(K * 35) / 200`, where `K`
+is `halfW` horizontally and `halfH` vertically. Rust retains the separate
+`f32` operations without algebraic simplification. Triangle, rounded-rectangle
+and hexagon control setters ignore the control index and replay saved points
+in order; right-triangle and pentagon setters retain the base no-op behavior.
 
 Rust's typed placed-text frame adapter preserves this operation order and
 supplies the inset frame to the shared layout engine without cloning or
@@ -155,16 +184,36 @@ and [FPToFixed pseudocode](https://www.scs.stanford.edu/~zyedidia/arm64/shared_p
 Rotation uses the original endpoint sums multiplied by `0.5` in `f32`
 (`RectF::CenterX/Y`, `0xb1820`, `0xb1838`), independent of the inset frame.
 
-Triangle/right-triangle orientation, rounded-rectangle radius, and other
-path-dependent templates still require their saved geometry. Unsupported
-nonempty shape text retains its saved frame with `UnsupportedTextFrame`;
+Right-triangle replay retains the direction/flip-dependent extra inverse
+rotation branch, rather than replacing it with a default margin table.
+Arbitrary noncanonical paths and unsupported templates remain diagnosed.
+Horizontal control projection preserves native comparison behavior (`0x210df8`):
+positive/negative infinity selects an endpoint, while unordered projection
+retains the input X. These intermediates do not make a finite result invalid.
+Triangle controls separately skip a zero length, including squared-length
+underflow (`0x2145bc`); common rounded/hexagon projection uses divisor 1.
+Polygon margin getters retain finite signed insets (`0x21b740`–`0x21b774`,
+`0x217564`–`0x2175e0`); Rust validates the resulting frame instead of clamping
+those margins to zero.
+Model's subsequent `Refresh` and saved-bounds/nonunit-scale path
+(`0x3a96b8` to `0x3a9af0`/`0x3a9c40`, virtual slot 24, and
+`0x3a96c8`–`0x3a96f0`) is not fully implemented or proven for these adapters.
+The covered contracts do not establish unrestricted template parity.
+Unsupported nonempty shape text retains its saved frame with `UnsupportedTextFrame`;
 invalid known geometry reports `InvalidGeometry` and stays in placed context.
 Native background spans use retained layout ranges as described below;
 author-supplied legacy highlight summaries retain their whole-box behavior.
 Free/Path editing and autofit semantics remain unverified. The hash-checked
-corpus has five empty shape text boxes
-and no native shape glyph operators, so these regressions establish source
+HF02 corpus has five empty shape text boxes and no native shape glyph
+operators, so these regressions establish source
 contracts and synthetic vector behavior, not captured shape typography parity.
+
+[`shape_template_paths.rs`](../../crates/sdocx/tests/shape_template_paths.rs)
+checks literal native origins, ordered controls, flips, rotation, ceiled
+wrapping/alignment/gravity, original background clips, replay and selectable
+Unicode PDF output. Non-cardinal source-instruction literals in
+[`placed/native.rs`](../../crates/sdocx/src/render/placed/native.rs) pin the
+center arithmetic and narrowing stages; these are not Android runtime captures.
 
 ## Native text backgrounds and current vector limits
 
