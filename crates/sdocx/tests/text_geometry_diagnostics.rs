@@ -88,7 +88,7 @@ fn malformed(metric: Metric, value: f32) -> RichTextBox {
             kind: RichTextSpanType::FontSize,
             start_utf16: 2,
             end_utf16: 3,
-            expand: true,
+            interval_type: sdocx::SpanIntervalType::from(1),
             payload: value.to_le_bytes().to_vec(),
         }),
         Metric::PixelSpacing | Metric::PercentSpacing => {
@@ -355,14 +355,14 @@ fn overwritten_and_unused_invalid_font_values_do_not_report_geometry_failure() {
                     kind: RichTextSpanType::FontSize,
                     start_utf16: 0,
                     end_utf16: 3,
-                    expand: true,
+                    interval_type: sdocx::SpanIntervalType::from(1),
                     payload: value.to_le_bytes().to_vec(),
                 },
                 RichTextSpan {
                     kind: RichTextSpanType::FontSize,
                     start_utf16: 0,
                     end_utf16: 3,
-                    expand: true,
+                    interval_type: sdocx::SpanIntervalType::from(1),
                     payload: 10.0_f32.to_le_bytes().to_vec(),
                 },
             ];
@@ -371,7 +371,7 @@ fn overwritten_and_unused_invalid_font_values_do_not_report_geometry_failure() {
                 kind: RichTextSpanType::FontSize,
                 start_utf16: 9,
                 end_utf16: 10,
-                expand: true,
+                interval_type: sdocx::SpanIntervalType::from(1),
                 payload: value.to_le_bytes().to_vec(),
             });
             let mut overridden_summary = text();
@@ -380,7 +380,7 @@ fn overwritten_and_unused_invalid_font_values_do_not_report_geometry_failure() {
                 kind: RichTextSpanType::FontSize,
                 start_utf16: 0,
                 end_utf16: 3,
-                expand: true,
+                interval_type: sdocx::SpanIntervalType::from(1),
                 payload: 10.0_f32.to_le_bytes().to_vec(),
             });
             for (content, expected_size) in [

@@ -176,7 +176,7 @@ fn family_span(family: &str) -> RichTextSpan {
         kind: RichTextSpanType::FontName,
         start_utf16: 0,
         end_utf16: 3,
-        expand: false,
+        interval_type: sdocx::SpanIntervalType::from(0),
         payload: [
             vec![0; 8],
             (family.len() as u16 + 1).to_le_bytes().to_vec(),

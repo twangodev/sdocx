@@ -2711,7 +2711,7 @@ mod tests {
                     kind: RichTextSpanType::Hyperlink,
                     start_utf16: 0,
                     end_utf16: 12,
-                    expand: false,
+                    interval_type: crate::SpanIntervalType::from(0),
                     payload,
                 }],
                 paragraphs: Vec::new(),

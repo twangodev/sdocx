@@ -368,7 +368,7 @@ mod tests {
                 kind: sdocx::RichTextSpanType::FontName,
                 start_utf16: 0,
                 end_utf16: text.encode_utf16().count() as u32,
-                expand: false,
+                interval_type: sdocx::SpanIntervalType::from(0),
                 payload,
             }],
             paragraphs: Vec::new(),

@@ -296,7 +296,7 @@ fn font_delta_and_first_content_font_control_checkbox_size_independently_of_line
             kind: RichTextSpanType::FontSize,
             start_utf16: start,
             end_utf16: end,
-            expand: true,
+            interval_type: sdocx::SpanIntervalType::from(1),
             payload: size.to_le_bytes().to_vec(),
         });
     }

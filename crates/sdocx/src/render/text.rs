@@ -645,7 +645,7 @@ mod tests {
             kind: RichTextSpanType::FontSize,
             start_utf16: start,
             end_utf16: end,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: size.to_le_bytes().to_vec(),
         }
     }
@@ -672,7 +672,7 @@ mod tests {
             kind: RichTextSpanType::BackgroundColor,
             start_utf16: start,
             end_utf16: end,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: argb.to_le_bytes().to_vec(),
         }
     }
@@ -990,7 +990,7 @@ mod tests {
                 kind: RichTextSpanType::ForegroundColor,
                 start_utf16: 4,
                 end_utf16: 6,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: vec![0, 0, 255, 255],
             }],
             paragraphs: Vec::new(),

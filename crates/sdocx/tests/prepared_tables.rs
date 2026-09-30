@@ -317,7 +317,7 @@ fn font_family(start: u32, end: u32, family: &str) -> RichTextSpan {
         kind: RichTextSpanType::FontName,
         start_utf16: start,
         end_utf16: end,
-        expand: true,
+        interval_type: sdocx::SpanIntervalType::from(1),
         payload: [
             vec![0; 8],
             u16::try_from(family.len() + 1)

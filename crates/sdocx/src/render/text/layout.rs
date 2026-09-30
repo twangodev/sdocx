@@ -1219,7 +1219,7 @@ mod tests {
                 kind: crate::RichTextSpanType::FontSize,
                 start_utf16: start,
                 end_utf16: end,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: size.to_le_bytes().to_vec(),
             })
             .collect();
@@ -1774,7 +1774,7 @@ mod tests {
                 kind: crate::RichTextSpanType::FontSize,
                 start_utf16: 0,
                 end_utf16: 1,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: (object_font as f32).to_le_bytes().to_vec(),
             });
             content.paragraphs.push(RichTextParagraph {

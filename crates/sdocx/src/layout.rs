@@ -1336,7 +1336,7 @@ mod tests {
                 kind: RichTextSpanType::Bold,
                 start_utf16: 4,
                 end_utf16: 10,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: 1_u16.to_le_bytes().to_vec(),
             }],
             paragraphs: Vec::new(),
@@ -1411,7 +1411,7 @@ mod tests {
             kind: RichTextSpanType::Bold,
             start_utf16: first_end as u32,
             end_utf16: second_end as u32,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: 1_u16.to_le_bytes().to_vec(),
         });
         let document = Document {
@@ -1555,14 +1555,14 @@ mod tests {
                     kind: RichTextSpanType::Bold,
                     start_utf16: 5,
                     end_utf16: 10,
-                    expand: false,
+                    interval_type: crate::SpanIntervalType::from(0),
                     payload: 1_u16.to_le_bytes().to_vec(),
                 },
                 RichTextSpan {
                     kind: RichTextSpanType::Italic,
                     start_utf16: 9,
                     end_utf16: 13,
-                    expand: false,
+                    interval_type: crate::SpanIntervalType::from(0),
                     payload: 1_u16.to_le_bytes().to_vec(),
                 },
             ],
@@ -1606,7 +1606,7 @@ mod tests {
             kind: RichTextSpanType::FontSize,
             start_utf16: 6,
             end_utf16: 14,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: 72_f32.to_le_bytes().to_vec(),
         });
         let emoji = body.slice_chars(5..9).unwrap();

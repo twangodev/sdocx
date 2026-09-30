@@ -63,7 +63,7 @@ fn span(kind: RichTextSpanType, start: u32, end: u32, payload: Vec<u8>) -> RichT
         kind,
         start_utf16: start,
         end_utf16: end,
-        expand: true,
+        interval_type: sdocx::SpanIntervalType::from(1),
         payload,
     }
 }

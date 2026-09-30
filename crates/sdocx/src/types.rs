@@ -566,23 +566,111 @@ pub struct RichTextRun {
     pub italic: bool,
 }
 
+/// Native endpoint policy for caret lookup in a rich-text span.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SpanIntervalType {
+    /// Includes the start and excludes the end; an empty interval includes its start.
+    #[default]
+    ClosedOpen,
+    /// Includes both endpoints.
+    ClosedClosed,
+    /// Excludes both endpoints.
+    OpenOpen,
+    /// Excludes the start and includes the end; an empty interval includes its end.
+    OpenClosed,
+    /// Unrecognized native value, using the native open/closed fallback policy.
+    Other(u32),
+}
+
+impl SpanIntervalType {
+    /// Return the unchanged native interval value.
+    pub const fn raw(self) -> u32 {
+        match self {
+            Self::ClosedOpen => 0,
+            Self::ClosedClosed => 1,
+            Self::OpenOpen => 2,
+            Self::OpenClosed => 3,
+            Self::Other(raw) => raw,
+        }
+    }
+
+    /// Apply native caret lookup semantics to UTF-16 offsets.
+    pub const fn contains_caret(self, start: u32, end: u32, index: u32) -> bool {
+        match self {
+            Self::ClosedOpen => index == start || start < index && index < end,
+            Self::ClosedClosed => start <= index && index <= end,
+            Self::OpenOpen => start < index && index < end,
+            Self::OpenClosed | Self::Other(_) => {
+                index == end || start < index && index < end
+            }
+        }
+    }
+}
+
+impl From<u32> for SpanIntervalType {
+    fn from(raw: u32) -> Self {
+        match raw {
+            0 => Self::ClosedOpen,
+            1 => Self::ClosedClosed,
+            2 => Self::OpenOpen,
+            3 => Self::OpenClosed,
+            raw => Self::Other(raw),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for SpanIntervalType {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
+        serializer.serialize_u32(self.raw())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for SpanIntervalType {
+    fn deserialize<D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> std::result::Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        #[serde(untagged)]
+        enum Value {
+            Raw(u32),
+            Legacy(bool),
+        }
+        Ok(Self::from(match Value::deserialize(deserializer)? {
+            Value::Raw(raw) => raw,
+            Value::Legacy(expand) => u32::from(expand),
+        }))
+    }
+}
+
 /// A style span from Samsung's rich-text model.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextSpan {
     /// Span attribute kind.
     pub kind: RichTextSpanType,
-    /// Start offset in UTF-16 code units, inclusive.
+    /// Start offset in UTF-16 code units.
     pub start_utf16: u32,
-    /// End offset in UTF-16 code units, exclusive.
+    /// End offset in UTF-16 code units.
     pub end_utf16: u32,
-    /// Raw span expansion flag.
-    pub expand: bool,
+    /// Native endpoint policy, retaining unknown values.
+    #[cfg_attr(feature = "serde", serde(alias = "expand"))]
+    pub interval_type: SpanIntervalType,
     /// Type-specific payload retained for forward compatibility.
     pub payload: Vec<u8>,
 }
 
 impl RichTextSpan {
+    /// Whether native caret lookup includes this UTF-16 position.
+    pub const fn contains_caret(&self, index_utf16: u32) -> bool {
+        self.interval_type
+            .contains_caret(self.start_utf16, self.end_utf16, index_utf16)
+    }
+
     /// Decode the on/off value used by boolean style spans.
     pub fn boolean_value(&self) -> Option<bool> {
         self.payload
@@ -1240,7 +1328,7 @@ mod tests {
             kind: RichTextSpanType::BackgroundColor,
             start_utf16: 0,
             end_utf16: 1,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: Vec::new(),
         };
         for argb in [0x00345678_u32, 0x80345678, 0xff345678] {
@@ -1332,7 +1420,7 @@ mod tests {
             kind: RichTextSpanType::FontName,
             start_utf16: 0,
             end_utf16: 1,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: payload.to_vec(),
         }
     }
@@ -1397,7 +1485,7 @@ mod tests {
             kind: RichTextSpanType::Hyperlink,
             start_utf16: 0,
             end_utf16: 12,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload,
         };
 

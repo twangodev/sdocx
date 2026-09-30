@@ -637,7 +637,7 @@ mod tests {
             kind: RichTextSpanType::FontName,
             start_utf16: 3,
             end_utf16: 7,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload,
         });
         let settings = TextSettings::default();
@@ -782,7 +782,7 @@ mod tests {
                 kind: RichTextSpanType::Hyperlink,
                 start_utf16: start,
                 end_utf16: start + 1,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload,
             });
         }
@@ -790,7 +790,7 @@ mod tests {
             kind: RichTextSpanType::Strikethrough,
             start_utf16: 0,
             end_utf16: 1,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: vec![1, 0],
         });
         let measured = measure(&content, TextContext::Placed);
@@ -874,7 +874,7 @@ mod tests {
             kind: RichTextSpanType::ForegroundColor,
             start_utf16: 1,
             end_utf16: 2,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: vec![0, 0, 255, 255],
         });
         let changed = measure(&same, TextContext::Placed);
@@ -892,7 +892,7 @@ mod tests {
                 kind,
                 start_utf16: 0,
                 end_utf16: 1,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: vec![1, 0],
             });
             let measured = measure(&decorated, TextContext::Placed);
@@ -904,7 +904,7 @@ mod tests {
                 kind,
                 start_utf16: 0,
                 end_utf16: 1,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: vec![1, 0],
             });
             let measured = measure(&changed, TextContext::Placed);

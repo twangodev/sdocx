@@ -272,7 +272,7 @@ fn path_dependent_shape_background_clips_to_original_geometry() {
         kind: RichTextSpanType::BackgroundColor,
         start_utf16: 0,
         end_utf16: 1,
-        expand: true,
+        interval_type: sdocx::SpanIntervalType::from(1),
         payload: 0xffff0011_u32.to_le_bytes().to_vec(),
     });
     let doc = document(shape, 1);

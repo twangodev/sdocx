@@ -38,7 +38,7 @@ fn document(
             kind: RichTextSpanType::FontSize,
             start_utf16: anchor as u32,
             end_utf16: anchor as u32 + 1,
-            expand: false,
+            interval_type: sdocx::SpanIntervalType::from(0),
             payload: anchor_font.to_le_bytes().to_vec(),
         }],
         paragraphs: spacing.map_or_else(Vec::new, |(kind, value)| {

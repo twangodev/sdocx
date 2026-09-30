@@ -128,7 +128,7 @@ fn mixed_object_document(pixel_spacing: f32, alternate_family: bool) -> Document
             kind: sdocx::RichTextSpanType::FontName,
             start_utf16: 0,
             end_utf16: 3,
-            expand: true,
+            interval_type: sdocx::SpanIntervalType::from(1),
             payload: [
                 vec![0; 8],
                 12_u16.to_le_bytes().to_vec(),

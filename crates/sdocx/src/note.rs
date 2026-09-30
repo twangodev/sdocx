@@ -6,7 +6,7 @@ use crate::types::{
     BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType, RichTextBox,
     RichTextCodeBlock, RichTextObjectContent, RichTextObjectSpan, RichTextParagraph,
     RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
-    RichTextTable, RichTextTableCell, RichTextTableRow,
+    RichTextTable, RichTextTableCell, RichTextTableRow, SpanIntervalType,
 };
 use crate::{ObjectMetadata, ParseLimits, TableStyle, TextAreaType};
 
@@ -431,7 +431,7 @@ fn parse_text_common(
         let kind = RichTextSpanType::from(record.read_u32("style span type")?);
         let start_utf16 = record.read_u32("style span start")?;
         let end_utf16 = record.read_u32("style span end")?;
-        let expand = record.read_u32("style span expansion flag")? != 0;
+        let interval_type = SpanIntervalType::from(record.read_u32("style span interval type")?);
         let payload = record
             .read_bytes(record.remaining(), "style span payload")?
             .to_vec();
@@ -439,7 +439,7 @@ fn parse_text_common(
             kind,
             start_utf16,
             end_utf16,
-            expand,
+            interval_type,
             payload,
         });
     }

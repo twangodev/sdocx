@@ -382,7 +382,7 @@ mod tests {
                 kind,
                 start_utf16: 1,
                 end_utf16: 2,
-                expand: false,
+                interval_type: crate::SpanIntervalType::from(0),
                 payload: vec![1, 0],
             });
             let line = measured(&content);

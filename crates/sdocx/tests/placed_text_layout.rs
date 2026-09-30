@@ -242,7 +242,7 @@ fn wrapped_lines_use_their_own_local_font_size_maximum() {
         kind: RichTextSpanType::FontSize,
         start_utf16: 2,
         end_utf16: 3,
-        expand: true,
+        interval_type: sdocx::SpanIntervalType::from(1),
         payload: 20.0_f32.to_le_bytes().to_vec(),
     });
     assert_eq!(

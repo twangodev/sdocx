@@ -501,7 +501,7 @@ mod tests {
             kind,
             start_utf16: start,
             end_utf16: end,
-            expand: false,
+            interval_type: crate::SpanIntervalType::from(0),
             payload: payload.into(),
         }
     }
