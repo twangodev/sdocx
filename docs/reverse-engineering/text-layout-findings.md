@@ -371,6 +371,18 @@ stores are `0xd9004` / `0x92f90`. The first path's 1.3 multiplier must not
 be asserted as the default of every editor/body/export route without tracing
 the selected caller. Neither path proves a native fallback of `font_size * 1.6`.
 
+Stored before spacing is not generally excluded from the first paragraph.
+Drawing writes its scaled value to `EditTextParagraph` member 116 at
+`0x92e60`–`0x92e6c`; Widget `BulletManager::updateRichTextParagraph` copies
+before/after to `RichTextParagraph` members 80/84 at `0xa5b84`–`0xa5b88`.
+Fresh Text `RichTextLayout::DoLayout` explicitly enables the first paragraph's
+before-spacing byte at `0x71660`–`0x71670`. The ordinary nonbullet branch
+retains or enables it at `0x71864`–`0x718c4`. The subsequent suppression at
+`0x718e8`–`0x71958` requires a measured object entry with positive top and
+bottom margins; it does not establish suppression for ordinary table-cell
+text. Removing the captured cell's 12-unit before spacing merely to fit a
+baseline would contradict the inspected ordinary producer.
+
 Text `TextUtil::GetLineSpacing`, `0x8e180`, computes `pixels` when nonzero,
 otherwise `(multiplier - 1) * metric`. `GetLineHeightWithSpacing`, `0x8e100`,
 adds that amount to a base height. Thus a pixel value is extra spacing in
@@ -442,6 +454,46 @@ gravity offset (`0x66d0c`–`0x66d14`, `0x672b8`–`0x672c4`).
 `UpdateGravityOffsetY` stores zero for gravity 0 (`0x648c4`–`0x648d0`,
 `0x6495c`). This proves offset forwarding in this path, not which layout
 context and cursor origin produced the captured export.
+
+## List marker geometry
+
+Widget `ObjectTextLayout::initBulletPoint` reads constants 123/124 at
+`0xd9620`–`0xd9650`: button width 20 and trailing margin 6, multiplied by
+document density and local layout scale. Content records are `0x8370` /
+`0x8388`, both unit kind 3 and rounding kind 3. Widget point types 4/5/6/7
+receive the same values (`0xd96dc`–`0xd9780`), and `measurePointBullet`
+adds the two widths at `0xd1c6c` / `0xd1c88`–`0xd1c8c`. The export local
+scale is 1, so circles and squares reserve 26/52/78 units at densities
+1/2/3, independently of the text font or marker artwork.
+
+The Rust flow adapter now uses that shared point-marker reservation.
+The captured paragraph 53, UTF-16 1317, starts its ordinary text at X126;
+the previous solid-circle reservation placed it at X96. The nested circle
+starts at X174 and retains that position. Independent preview/replay tests
+cover both circles, both squares, three densities and odd/even indent levels.
+Marker artwork and its font/vertical placement are still approximations.
+Raw Arrow/Diamond values also map to native point type 4 at
+`0xd92c4`; their legacy Rust glyph adapter still needs the same density
+handling. Native default nesting is SolidCircle, WhiteCircle, BlackSquare,
+WhiteSquare (`0x63830`, `0xdc634`–`0xdc664`), while explicit type lists
+override it (`0xd9020`–`0xd9124`). The SDK's odd/even circle substitution
+is not a complete implementation of those lists; depth overflow is unverified.
+
+Numbered markers use a separately measured nested text layout. Native
+`updateTextLayout` supplies multiplier 1.3 (`0xd1e98`–`0xd1eb0`, constant
+`0x637c8`); number initialization reads font constant 116=15 and trailing
+gap constants 117=9 / 118=6 at `0xd9810`–`0xd9864`. Its container width
+is measured glyph width plus the selected gap (`0xd19c8`,
+`0xd1a7c`–`0xd1aac`), rather than the SDK's current fixed 64 units.
+The directly measured numeric branch selects gap 9 for marker values below
+10 and 6 otherwise; cached layout branches and font overrides need their
+own handling.
+The captured numeric marker baseline is 559.725 versus body baseline
+560.850, a relative offset of -1.125 at font size 45. Native bullet
+centering uses the default 1.35 body metric and the marker's 1.3 metric
+(`0x6be9c`–`0x6becc`); it does not establish a universal fixed offset.
+Number-font overrides, gap selection, measured width and baseline integration
+remain to be implemented.
 
 ## Measurement, body flow and embedded objects
 
@@ -739,6 +791,28 @@ Raw saved image rectangle dimensions therefore do not establish measurement
 parity for rotated images or drawing effects; crop-specific bounds still
 require an image-path trace.
 
+Tables also distinguish raw and drawn bounds. Model `ObjectTable::GetDrawnRect`,
+`0x3d48c4`, delegates to `ObjectTableImpl::GetDrawnRect`, `0x3c6cac`.
+When an outer border exists, the implementation expands raw left/top/right/bottom
+by the corresponding drawn-border half-widths (`0x3c6cf4`–`0x3c6d30`). The
+captured table's raw 984×216 rectangle and unit borders therefore yield a
+985×217 measurement input; the current SDK object index still uses raw 984×216.
+
+Drawing regenerates cell frames from column widths and row heights rather
+than reusing saved cell rectangles. `TableLayout::getHalfBorderWidth`,
+`0xb325c`, finds the maximum positive drawable border-path width and halves it
+at `0xb32d0`–`0xb32d8`. `init` stores that result at `0xaa714`–`0xaa71c`,
+starts the first row/column at it, and accumulates prior frame endpoints
+(`0xaaa6c`–`0xaaa84`, `0xaaac8`–`0xaaae4`). The captured 492-unit columns
+and 108-unit rows consequently give first local frame
+`[0.5,0.5,492.5,108.5]`. `updateMeasuredRect` unions frame bounds, expands
+individual outer edges by their border half-widths and normalizes measured
+bounds (`0xab23c`–`0xab2c0`), giving `[0,0,985,217]` here. Over-pages table
+text selects these frames at `0xa6b04`–`0xa6b24`, then offsets by the supplied
+draw rectangle minus measured origin at `0xa6b38`–`0xa6b50`. These rules
+support prepared geometry, not an arbitrary -0.5 shift of table glyphs;
+the composed draw-rectangle origin remains a separate input.
+
 Native geometry reaches measurement as `f32`: Model `ObjectBase::GetRect`
 loads four endpoint registers (`0x2caa6c`–`0x2caa70`), Widget span conversion
 stores the drawn endpoints (`0xd54e0`, `0xd54ec`) and width/height
@@ -829,7 +903,10 @@ breaks and obstacle/inline-object behavior still require reference cases.
 ## Captured embedded text and page-padding inputs
 
 The `hf/01-basic-formatting.sdocx` / Samsung PDF pair independently exposes
-table/code text as vector PDF spans. PDF Form 89 is physical page 3;
+table/code text as vector PDF spans. PDF Form 89 is page index 3, the
+fourth physical PDF page; Form 111 is index 4, the fifth page. These match
+the SDK visible/source page indices and CLI `_page3.svg` / `_page4.svg`
+suffixes; CLI page selection uses one-based `--pages 4` / `--pages 5`.
 coordinates below use SVG units, with `x = 1.8 * PDF_x` and
 `baseline = 1.8 * (848.3333333333334 - PDF_y)`.
 This preserves the source's 1527-unit native canvas reference. The PDF's
@@ -855,6 +932,17 @@ retain Regular-font advances. Form 111 repeats code text shifted by exactly
 one physical page height, 1527 units. Direct CMap decoding is necessary for
 this PDF: its overlapping `bfchar`/`bfrange` entries make the inspected
 generic `lopdf` font-encoding helper shift some ASCII characters.
+
+The table border/background is a separate flattened image (Form 89 XObject
+103, 987×220 pixels, alpha mask 97); the cell text above remains vector.
+Its image matrix places the top at native-reference Y 1019.60007, with
+one SVG unit per pixel. Straight horizontal border strips occupy rows
+1, 109 and 217, so their centers are **1021.10007**, **1129.10007** and
+**1237.10007**. Header/body baselines are approximately 79.74993 units below
+the respective row-top border centers. This independently constrains the
+painted table origin; deriving a cell origin solely from a desired text
+baseline cannot prove that first-paragraph before spacing should be removed.
+Pixel border centers do not themselves establish the cell draw-frame origin.
 
 The code-panel clip starts at Y 1298.351994 under the native-canvas
 convention above, whereas its saved object box starts at 1297.751953.
@@ -884,6 +972,46 @@ constraint 2, `OverPages`, preserves the full band.
 `onUpdateObjectSize`, `0xb0b9c`, passes this choice at `0xb0dd8` and supplies
 the resulting vector to object-layout virtual slot 16 at `0xb0de4`.
 
+The split-band origin is a live parent-layout candidate, not the object's
+stored top. Text `GetBlockInfo` calls `m_CheckObjectChanged` only for entries
+whose `IsObjectOverPages` flag is set (`0x6ae10`–`0x6ae7c`); Widget conversion
+sets that flag only for constraints 1/2. `DoLayTextOut` forms the candidate
+from the vertical cursor plus enabled paragraph-before spacing
+(`0x6a6c0`–`0x6a770`, `0x6a7e8`–`0x6a808`); `m_CheckObjectChanged` adds the
+adjusted object top margin at `0x6c344`–`0x6c374`. This path supplies no
+stored object Y input.
+
+Widget constructs the callback at `0xd3254`–`0xd326c` (vptr `0xf5578`);
+dispatcher `0xd9d88` forwards through callback member 288 to Bodytext
+`onUpdateObjectSize`, bound at `0xb01bc`–`0xb0220`. Bodytext updates child
+split offsets at `0xb0dd8`–`0xb0dec`, measures the child, and reads measured
+height through virtual slot 72 at `0xb0e30`–`0xb0e50`. The code child clears
+measurement through slot 64 and measures through slot 56; the table child
+uses layout slot 48 (`Drawing` vtable `0xc4b60` → `TableLayout::Layout`,
+`0xaa3d4`). Text replaces entry height and visual top when the result differs
+by more than `0.001f` (`0x6c42c`–`0x6c45c`). Child size therefore feeds back
+into the same parent line calculation.
+
+Constraint 1 produces `[band.center_y - candidate_top,
+band.center_y - candidate_top + 1]` (`0xb35d8`–`0xb35e8`); constraint 2
+offsets the full band by `-candidate_top` (`0xb35f0`–`0xb35fc`). Code then
+subtracts its local body-frame top (`0x73480`–`0x7349c`). Although code
+`GetMeasuredRect` retains its saved rectangle origin (`0x737dc`–`0x737e8`),
+the height subtraction cancels that origin. This does not authorize using
+saved Y to choose the bands.
+
+`GetAdjustedBlockTopMargin`, `0x6c8a0`, normally returns
+`max(current_top_margin, previous_bottom_margin)`. Its obstacle probe covers
+`[candidate_top - enabled_before - 1, candidate_top - enabled_before]`
+(`0x6c930`–`0x6c968`). For an intersecting flagged band of nonzero height,
+`max(0, current_top_margin - band_height / 2)` replaces the normal collapse
+(`0x6c970`–`0x6c99c`); this calculation has no font-size operand. `SetLayout`
+adds the adjusted margin at `0x6b4f0`–`0x6b510`; the margin-bearing object
+baseline branch uses base object height (`0x6cb90`–`0x6cb9c`) before the
+object epsilon. Prepared child sizes and this candidate-dependent feedback
+remain composition inputs to implement; ordinary constraint-0 child feedback
+was not established by this trace.
+
 Drawing `CodeBlockLayout::Measure`, `0x732fc`, converts those bands to body
 coordinates by subtracting body-frame top (`0x73484`–`0x7349c`). Its
 `measuredObject`, `0x73694`, calls `ScrollEditTextView::SetPaddingRectList`
@@ -901,6 +1029,9 @@ The mechanism is a candidate-line move past a one-unit boundary marker;
 The shared code frame's height consequently has a native-backed explanation.
 The body-composition phase still needs to supply the correct object origin;
 matching this local height does not establish complete composed-page parity.
+The saved-top arithmetic above reconciles this captured copy's numbers;
+the verified general producer instead uses the live candidate and child-size
+feedback described above.
 
 Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
 before/after spacing 4. Saved first-cell X is 49, while captured text X 72
@@ -931,12 +1062,12 @@ units below the reported native-canvas reference; table baselines are
 **12.651** units below it, and table text X differs by **+0.5**.
 Converting the native reference to the actual PDF viewport subtracts 0.6
 from native Y, leaving approximately +11.000 and +13.251 units respectively.
-This viewport convention does not resolve the page-3 composition origins.
+This viewport convention does not resolve composition origins on page index 3.
 
-The saved-overlap code copy on page 4 has current title/body baselines
+The saved-overlap code copy on page index 4 has current title/body baselines
 -148.24805, -52.24805, 46.00000 and 106.75000. They are approximately 0.6
 above the native-canvas reference and agree with the actual PDF viewport
-convention. The page-3 mixed-stream composition and page-4 saved copy therefore
+convention. The mixed-stream composition at index 3 and saved copy at index 4 therefore
 need separate origin verification. Table frame X, prepared object sizing and
 complete body-composition origins remain unresolved; matching local metrics
 does not establish complete composed-page parity within ±0.25.
@@ -985,14 +1116,32 @@ pagination still need captured cases and implementation. The current body
 baseline follows the capture above; it is not a universal native baseline
 formula.
 
-Malformed style inputs still need a shared validation policy. A public-API
-probe with source `A\nB` and density 3 found that a finite `f32::MAX`
-font size, pixel line spacing, paragraph spacing or top margin can overflow
-the current f32 scaling arithmetic before conversion to f64. Depending on
-the input, SVG text is missing entirely or loses the second paragraph.
-The object-bounds guard does not cover these style values. They require
-explicit diagnostics and finite fallback values at the style-resolution
-boundary; silently accepting nonfinite paint coordinates is insufficient.
+Shared style resolution now checks native scaling before using its result.
+A public-API probe with source `A\nB` and density 3 previously lost text
+when finite `f32::MAX` font sizes, pixel spacing or margins overflowed the
+f32 multiplication. Invalid summary sizes now use the configured default;
+invalid local font overrides retain the preceding usable size. Invalid
+scaled margins and paragraph gaps resolve to zero. Unusable explicit line
+spacing uses the finite default line advance, with the finite font height
+as a final fallback. Accepted scaling and line-height precision are unchanged,
+and parsed values are preserved.
+
+These SDK robustness fallbacks report typed `InvalidGeometry` diagnostics;
+they do not claim Samsung rejects or recovers malformed inputs this way.
+Only active font overrides are diagnosed; paragraph gaps are reported when
+consumed, and explicit spacing is checked against actual wrapped line metrics.
+Margin blocks skip the spacing they do not use. Regressions cover 336
+malformed preview/replay cases and 18 selectable, vector PDF exports across
+flow, placed, shape, table and both code text contexts. Arbitrary malformed
+frame rectangles and oversized aggregate page geometry still need their own
+validation policy.
+
+Code painting now consumes a `PreparedCode` with concrete title/copy/panel
+rectangles and an owned measured body layout. It does not remeasure the body
+while painting. This establishes a reusable preparation boundary; parent
+span-height feedback and live candidate-relative exclusions described above
+remain to be integrated. The extraction preserves the current comparison
+coordinates and is not itself a composition-origin correction.
 
 The measured paint path now supplies retained X positions and Y offsets
 for clusters that can be expressed by the current typed SVG text adapter,
