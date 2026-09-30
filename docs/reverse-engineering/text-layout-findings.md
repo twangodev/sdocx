@@ -50,6 +50,75 @@ all ordinary spans, separate font-size spans, paragraphs, gravity and ellipsis
 settings to a `TextLayout`. A shared Rust input adapter should preserve these
 inputs instead of choosing the first style of each kind for the entire box.
 
+## Placed text adapter and rectangle inputs
+
+Drawing `ObjectDrawing::drawTextContent`, `0x80818`, constructs an
+`ObjectTextDrawing` at `0x80ac8`, positions its `ScrollEditTextView` at
+`0x80bd8`, then calls `Update`, `Measure` and `DrawObject` at
+`0x80c78`–`0x80c8c`. This is the ordinary placed-object route. The direct
+Drawing caller of `TextLayoutUtil::SetFromObject` is instead
+`ObjectImageDrawing::drawHintText`, `0x86120`, with scale 1 and delta 0;
+its helper's paragraph defaults do not establish ordinary placed defaults.
+
+The ordinary route reads the object's virtual slot 168 at `0x80af8`.
+Model's shape/text-box vtables identify this as `ObjectShapeBase::GetRect`,
+`0x37aa94`, forwarding to `ObjectBase::GetRect`, `0x2caa60`. The latter
+returns four saved rectangle floats directly at `0x2caa68`–`0x2caa70`;
+it does not compute the rotated `GetBounds` rectangle. For object type 7,
+the Drawing caller separately adds template left/top margins and subtracts
+template right/bottom margins (`0x80b28`–`0x80b68`). It preserves the original
+rectangle's center as the rotation pivot relative to that inset rectangle
+(`0x80b7c`–`0x80bc0`). Ordinary type-2 text boxes do not take that template
+inset branch. Saved object rotation is supplied separately at `0x80c00`–
+`0x80c44`; do not wrap against the rotated bounding box.
+
+`ScrollEditTextView::SetPosition`, `0xbc218`, rounds `View::GetWidth`
+upward to an integer at `0xbc234` and stores it as measurement width
+(member 1272). `MeasureText` passes that width directly to
+`TextLayout::Measure` at `0xbc890`. The view's layout then supplies that
+width and an upward-rounded `View::GetBounds().Height()` at
+`0xbc998`–`0xbca04`. These are outer view dimensions, with margins supplied
+separately; avoid rounding an already inset width in place of this adapter
+input. `Layout` keeps the fixed measured view width unless it is nonpositive
+or word wrapping is disabled (`0xbca40`–`0xbca60`). This does not prove an
+object-resizing or auto-fit policy.
+
+Inside Text layout, `sm_ApplyIndentLevel`, `0x7395c`, starts paragraph
+left/right margins from RichText members 128/136 (`0x73964`–`0x73978`,
+`0x739b0`–`0x739c0`). `ParagraphLayout::m_CopyLayoutData`, `0x6aa00`, reads
+those resolved paragraph margins at members 120/124 and sets its wrap bounds
+to `left_margin` and `outer_width - right_margin` (`0x6aa80`–`0x6aaa4`).
+The outer integer width is converted to float in `CalculateParagraphLayout`
+at `0x73cf0` and transferred into this layout data at `0x73d44`.
+
+Drawing `ObjectTextDrawing::UpdateTextBound`, `0x8cdc8`, multiplies all four
+component text margins by its manager's document pixel value at
+`0x8ce6c`–`0x8ce78` and calls `ScrollEditTextView::SetMargin` at `0x8ce84`.
+It does not multiply margins by local text scale here. Widget
+`ObjectTextLayout::updateBound`, `0xd713c`, does multiply by both document
+pixel and local text scale (`0xd71f8`–`0xd7220`). Drawing forwards gravity
+at `0x8ce90`–`0x8ce9c` and ellipsis at `0x8cea8`–`0x8ceb8`; Widget forwards
+them at `0xd7230`–`0xd7258`. Keep these context adapters distinct while
+sharing the paragraph measurement engine.
+
+Fresh `RichText::Construct` stores `0x00010000` at member 112
+(`0x61db0`–`0x61db8`): single-line member 113 is false and word-wrap member
+114 is true, confirmed by their setters `0x628c0` and `0x628f4`. The inspected
+ordinary Drawing construction/update route does not override those values.
+`ObjectTextDrawing::DrawTextContent` forwards the rectangle and point to
+`TextLayout::DrawRect` with its boolean argument true (`0x92870`–`0x92884`).
+This boolean alone is not evidence for shape-path clipping: the low-level
+drawing also selects visible lines from the rectangle (`0x64c48`–`0x64c68`).
+
+No `GetTextAreaType` or `GetTextAutoFitOption` read was found in the inspected
+ordinary Drawing/Widget adapter route. The saved Margin/Free/Path values are
+verified in [text-box-findings.md](text-box-findings.md), but mapping Free to
+no-wrap, Path to a shape clip, or auto-fit to dynamic font resizing remains
+unverified. Upstream editing/resizing and export clipping need captured
+standalone cases and their callers before adding those semantics. The body
+baseline caveat below also remains unresolved for placed exports; a shared
+low-level helper is insufficient to establish their layout origin.
+
 ## Font-name payload and measured fallback
 
 For the modern WDoc record, `FontNameSpan` (kind 4) has this payload **after**
@@ -194,6 +263,43 @@ Decompiled `SpenAlignmentParagraph.java:8-11` defines left/right/center/both
 as 0/1/2/3. `SpenIndentLevelParagraph.java:7-10` defines none/LTR/RTL as
 0/1/2; these differ from deprecated text-box direction constants. Paragraph
 records select paragraph ordinals, whereas style spans select UTF-16 offsets.
+
+Indent direction is a separate input from text layout direction. Widget
+`convertTextParagraphImpl` maps stored RTL value 2 to internal boolean 0,
+and none/LTR to 1 (`0xd8fc0`–`0xd8fcc`); Drawing repeats this at
+`0x92f4c`–`0x92f58`. By contrast, the fresh Widget layout reads display
+virtual slot 112 and forwards that value to `TextLayout::SetLayoutDirection`
+(`0xd31d8`–`0xd3200`); the placed `ScrollEditTextView` constructor does the
+same at `0xbb6e8`–`0xbb710`. The Text setter stores it as RichText member 184
+(`0x62c70`–`0x62c78`), used by the ICU paragraph-direction fallback described
+in the measurement section below.
+An indent record is not evidence for forcing its paragraph's bidi base level.
+The deprecated text-box direction JNI setter `0x41df58` validates the handle
+and returns success without storing the supplied direction; its getter
+`0x41dfec` returns 0. Do not use that getter as saved bidi metadata.
+
+The indent increment is also document-specific. Content's constant table
+entry 137 at `0x84c0` contains scale kind 3, rounding kind 3, default float
+16 and zero alternate values. `Constant::GetPixels`, `0x13504`, supplies
+the constructor's density to `CalculatePixels`, `0x1331c`. Kind 3 multiplies
+16 by nonzero density, otherwise by document width / 360
+(`0x13380`–`0x13398`); rounding kind 3 leaves the float unchanged
+(`0x1339c`–`0x133cc`). Drawing supplies manager document pixel to the
+constant constructor (`0x8c4e8`–`0x8c510`), separately from local text scale.
+Its converter treats the stored level as signed 32-bit, multiplies it by
+that increment, then truncates to a signed integer (`scvtf`/`fcvtzs`,
+`0x92f34`–`0x92f40`); Widget does the same at
+`0xd8fa8`–`0xd8fb8`. Thus an increment of 48 is the density-3 case, not a
+universal physical width or `16 * density * local_text_scale` rule.
+
+Indent application depends on alignment in the inspected Text helper.
+`sm_ApplyIndentLevel` adds indent width (paragraph member 68) to the left
+margin for internal direction 1 and alignment 0/2/4 (mask `0x15`,
+`0x7397c`–`0x739a8`), or to the right margin for direction 2 and alignment
+1/2/4 (mask `0x16`, `0x739bc`–`0x739ec`). Alignment 3 does not add it in
+this helper. These internal paragraph direction values and margins remain
+separate from RichText's global layout direction member 184; an adapter
+that always applies indent on one side cannot claim this alignment parity.
 
 Widget `TextLayoutUtil::GetParagraphCount`, `0xda9c0`, walks `String::GetChar`
 and recognizes CR and LF at `0xdaaec`–`0xdaaf8`. Each is processed separately;
@@ -398,6 +504,28 @@ sets bit 8 (`0x90f70`, `0x90f7c`). Consequently the native joinability mask
 `0xc3` includes bold/italic and excludes underline/strikethrough. Decoration
 changes alone need not split a measurement run; drawing still retains them.
 
+## Ordinary underline and strikethrough
+
+Text `RichTextDrawing::drawTextDecorations`, `0x666d4`, draws filled
+rectangles after the glyph batch (`0x65f94`–`0x65fb4`,
+`0x66518`–`0x66534`). It reads retained entry X/Y and the ending entry's
+advance (`0x66758`, `0x66788`–`0x6678c`), forming horizontal endpoints from
+the supplied draw offset plus those positions (`0x667c0`–`0x667f4`). Its
+ordinary thickness is resolved span size / 18; underline top is baseline
++ size / 9 (`0x66814`–`0x66824`), and strikethrough top is baseline
+- 2 * size / 7 (`0x66944`–`0x66958`). The native f32 constants are at
+`0x2666c`, `0x26670` and `0x2667c`. These use resolved span size, not a
+face's underline metric. Canvas rectangle dispatch reaches SkCanvas's
+filled-rectangle call at `0x6a028`–`0x6a07c`.
+
+Suggestion/spell-correction flags take another thickness branch
+(`0x668ac`–`0x668e4`), and hypertext has separately gated forced underline
+and color in `setTextPaint` (`0x63c88`–`0x63ccc`). The ordinary constants
+do not establish those cases or RTL endpoint ordering. Drawing also joins
+only fully equal spans with matching font IDs, direction and adjacency
+(`inSameDraw`, `0x65998`); measurement's narrower join mask does not imply
+that decoration changes can be discarded during paint.
+
 ## Final wrapping, alignment and object runs
 
 Text `RichTextLayout::DoParagraphLayout`, `0x7278c`, opens an ICU iterator
@@ -567,7 +695,7 @@ breaks and obstacle/inline-object behavior still require reference cases.
 
 ## Current Rust implementation and remaining gaps
 
-The shared Rust body-flow pipeline now measures shaped runs with actual
+The shared Rust body-flow and placed-text pipeline now measures shaped runs with actual
 font faces and wraps using Unicode line-break opportunities. The
 `render/text/{measurement,breaks,wrapping}.rs` modules replace estimated
 ASCII/script widths and the URL-punctuation heuristic. Measurement accounts
@@ -575,17 +703,37 @@ for bidi levels and script/extensions, uses native span-joining inputs
 (size, source color, family, bold and italic), and disables `liga`/`clig`
 for the inspected Latin policy. Paragraph runs are measured once and line
 widths use their retained advances; graphemes, spaces and source ranges
-are retained. Missing usable flow metrics report `MeasurementFailure`
+are retained. Missing usable metrics report `MeasurementFailure`
 instead of estimating widths.
 
-Measurement and SVG/PDF paint features are not yet unified: usvg does not
-honor that `liga=0` policy. Variable-font optical size, bidi L1 resets,
+For covered static-font LTR Latin clusters, explicit typed SVG positions
+now carry the retained glyph geometry through Chromium and usvg/PDF. This
+also reproduces the native Latin ligature policy without relying on usvg
+support for SVG font-feature properties. Multi-scalar combining clusters
+stay together, and independently reproduced glyph IDs/offsets are checked
+before positioning. Variable-font optical size, bidi L1 resets,
 paired script punctuation, native emergency breaking and the reference
-device's ICU version/locale remain unverified. Positioned text, table/code
-layout, embedded-object composition and recomputed pagination still need
+device's ICU version/locale remain unverified. Placed and shape text now use
+the shared measured wrapper, scaled margins, paragraph spacing, integer
+outer-width ceiling, native indent conversion and measured alignment.
+Placed vertical gravity, clipping, table/code layout, embedded-object
+composition and recomputed pagination still need
 the shared measured layout engine and captured cases. The current body
 baseline follows the capture above; it is not a universal native baseline
 formula.
+
+The measured paint path now supplies retained X positions and Y offsets
+for clusters that can be expressed by the current typed SVG text adapter,
+and uses filled rectangles for ordinary underline/strikethrough. Unsupported
+glyph positioning, clusters crossing a paint-style boundary, or nonfinite
+positions produce `UnsupportedGlyphPositioning` diagnostics and preserve
+the text through the existing SVG text fallback. Those fallback bounds and
+complex cluster placement are not native glyph-geometry parity; the diagnostic
+must remain visible until measurement and paint share a complete glyph path.
+Missing glyph coverage already reports `MissingGlyphs`; it does not also
+emit the positioning diagnostic. The default placed baseline is preserved
+pending a captured standalone reference; explicit spacing currently changes
+line advance, not that baseline adapter.
 
 The public-API release probe used a 640-unit page, 17-unit text, density 1
 and 544 units of usable width. Repeated Latin, long URLs and spaced prose
@@ -595,6 +743,10 @@ case from 14.9 seconds to 81 ms and the URL case from 15.0 seconds to
 94 ms on the same machine. These are observed timings, not portable limits.
 Retaining paragraph kerning intentionally changes a separate `AV` boundary
 case; its independent pinned-font regression records that behavior.
+With retained glyph geometry and typed paint positions enabled, the same
+release probe measured 50k-character Latin at 62.5 ms, URLs at 61.8 ms and
+prose at 43.3 ms. Source preservation and empty diagnostics passed in all
+nine cases; these timings are observations from this machine.
 
 The retained scaling probe checks complete source text, contiguous emitted
 lines and diagnostics without asserting wall-clock thresholds:
