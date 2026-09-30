@@ -7,9 +7,32 @@ use super::{
     StyledText, TextRenderer, WrappedLine, paragraph_layout, paragraph_line_height, wrap_paragraph,
 };
 
-pub(in crate::render) struct TextFrame {
+#[derive(Clone, Copy)]
+pub(in crate::render) struct VerticalExclusion {
+    /// Absolute vertical coordinates in the same space as the frame's bounding box.
+    pub top: f64,
+    pub bottom: f64,
+}
+
+pub(in crate::render) struct TextFrame<'a> {
     pub bbox: BoundingBox,
     pub gravity: Option<u8>,
+    pub exclusions: &'a [VerticalExclusion],
+}
+
+impl TextFrame<'_> {
+    fn line_top(&self, mut top: f64, advance: f64) -> f64 {
+        while let Some(band) = self.exclusions.iter().find(|band| {
+            band.top.is_finite()
+                && band.bottom.is_finite()
+                && band.top < band.bottom
+                && top < band.bottom - 0.0001
+                && top + advance > band.top + 0.0001
+        }) {
+            top = band.bottom;
+        }
+        top
+    }
 }
 
 pub(in crate::render) struct TextLine {
@@ -80,6 +103,7 @@ pub(in crate::render) fn layout_placed_text(
         TextFrame {
             bbox: styled.text_box.bbox,
             gravity: styled.text_box.gravity,
+            exclusions: &[],
         },
         theme,
         renderer,
@@ -88,7 +112,7 @@ pub(in crate::render) fn layout_placed_text(
 
 pub(in crate::render) fn layout_text(
     styled: &StyledText<'_>,
-    frame: TextFrame,
+    frame: TextFrame<'_>,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> TextLayout {
@@ -122,8 +146,11 @@ pub(in crate::render) fn layout_text(
             layout.predefined_style,
             renderer,
         ) {
-            let baseline = frame.bbox.y_min + cursor + line.font_size;
-            cursor += paragraph_line_height(line.font_size, layout.line_spacing, settings);
+            let advance = paragraph_line_height(line.font_size, layout.line_spacing, settings);
+            let candidate_top = frame.bbox.y_min + cursor;
+            let top = frame.line_top(candidate_top, advance);
+            let baseline = top + line.font_size;
+            cursor += top - candidate_top + advance;
             lines.push(TextLine {
                 line,
                 x,
@@ -148,4 +175,174 @@ pub(in crate::render) fn layout_text(
     };
     layout.apply_gravity(frame.gravity, outer_height);
     layout
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::{TextContext, TextSettings};
+    use super::*;
+    use crate::fonts::FontBook;
+    use crate::{RichTextBox, RichTextParagraph, RichTextParagraphType};
+
+    fn text(value: &str) -> RichTextBox {
+        RichTextBox {
+            text_area_type: None,
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: value.into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: Some(10.0),
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    fn measure(text: &RichTextBox, exclusions: &[VerticalExclusion]) -> TextLayout {
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(text, TextContext::Placed, settings);
+        layout_text(
+            &styled,
+            TextFrame {
+                bbox: BoundingBox {
+                    x_min: 10.0,
+                    y_min: 100.0,
+                    x_max: 1010.0,
+                    y_max: 200.0,
+                },
+                gravity: text.gravity,
+                exclusions,
+            },
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+    }
+
+    #[test]
+    fn touching_edges_and_sub_tolerance_overlap_do_not_move_lines() {
+        for bands in [
+            Vec::new(),
+            vec![VerticalExclusion {
+                top: 80.0,
+                bottom: 100.0,
+            }],
+            vec![VerticalExclusion {
+                top: 113.5,
+                bottom: 130.0,
+            }],
+            vec![VerticalExclusion {
+                top: 113.49995,
+                bottom: 130.0,
+            }],
+        ] {
+            let plan = measure(&text("ABC"), &bands);
+            assert_eq!(plan.lines.len(), 1);
+            assert_eq!(plan.lines[0].baseline, 110.0);
+            assert_eq!(plan.height(), 13.5);
+        }
+    }
+
+    #[test]
+    fn full_line_advance_crossing_a_band_retries_at_its_bottom() {
+        for top in [112.0, 113.499] {
+            let plan = measure(&text("ABC"), &[VerticalExclusion { top, bottom: 130.0 }]);
+            assert_eq!(plan.lines[0].baseline, 140.0);
+            assert_eq!(plan.height(), 43.5);
+        }
+    }
+
+    #[test]
+    fn unsorted_bands_are_rechecked_after_each_retry() {
+        let plan = measure(
+            &text("ABC\nDEF"),
+            &[
+                VerticalExclusion {
+                    top: 130.0,
+                    bottom: 145.0,
+                },
+                VerticalExclusion {
+                    top: 105.0,
+                    bottom: 125.0,
+                },
+            ],
+        );
+        assert_eq!(
+            plan.lines
+                .iter()
+                .map(|line| line.baseline)
+                .collect::<Vec<_>>(),
+            [155.0, 168.5]
+        );
+        assert_eq!(plan.height(), 72.0);
+        assert_eq!(plan.lines[0].line.source, 0..3);
+        assert_eq!(plan.lines[1].line.source, 4..7);
+    }
+
+    #[test]
+    fn starting_inside_a_band_skips_only_the_remaining_height() {
+        let plan = measure(
+            &text("ABC"),
+            &[VerticalExclusion {
+                top: 90.0,
+                bottom: 120.0,
+            }],
+        );
+        assert_eq!(plan.lines[0].baseline, 130.0);
+        assert_eq!(plan.height(), 33.5);
+    }
+
+    #[test]
+    fn spacing_before_is_applied_once_and_skipped_height_counts_toward_layout() {
+        let mut content = text("ABC");
+        content.margins = Some([0.0, 2.0, 0.0, 3.0]);
+        content.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::SpacingBefore,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: 4.0_f32.to_le_bytes().to_vec(),
+        });
+        let clear = measure(&content, &[]);
+        assert_eq!(clear.lines[0].baseline, 116.0);
+        assert_eq!(clear.height(), 22.5);
+        let blocked = measure(
+            &content,
+            &[VerticalExclusion {
+                top: 110.0,
+                bottom: 130.0,
+            }],
+        );
+        assert_eq!(blocked.lines[0].baseline, 140.0);
+        assert_eq!(blocked.height(), 46.5);
+    }
+
+    #[test]
+    fn exclusions_preserve_empty_height_and_measured_gravity() {
+        let bands = [VerticalExclusion {
+            top: 105.0,
+            bottom: 120.0,
+        }];
+        let mut empty = text("");
+        empty.margins = Some([0.0, 2.0, 0.0, 3.0]);
+        empty.gravity = Some(1);
+        let plan = measure(&empty, &bands);
+        assert!(plan.lines.is_empty());
+        assert_eq!(plan.height(), 15.0);
+
+        let mut centered = text("ABC");
+        centered.gravity = Some(1);
+        let plan = measure(&centered, &bands);
+        assert_eq!(plan.height(), 33.5);
+        assert_eq!(plan.lines[0].baseline, 163.25);
+    }
 }

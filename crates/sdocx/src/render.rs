@@ -768,7 +768,7 @@ fn paint_text_layout(
 fn render_text_frame(
     svg: &mut Scene,
     text_box: &RichTextBox,
-    frame: text::TextFrame,
+    frame: text::TextFrame<'_>,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> f64 {
@@ -1174,6 +1174,7 @@ fn render_embedded_object(
                                     ..cell.bbox
                                 },
                                 gravity: Some(0),
+                                exclusions: &[],
                             };
                             render_text_frame(svg, &cell.content, frame, cell_theme, renderer);
                         }
@@ -1234,6 +1235,7 @@ fn render_embedded_object(
                     text::TextFrame {
                         bbox: body_bbox,
                         gravity: body.gravity,
+                        exclusions: &[],
                     },
                     theme,
                     renderer,
@@ -1263,6 +1265,7 @@ fn render_embedded_object(
                         text::TextFrame {
                             bbox: title_bbox,
                             gravity: title.gravity,
+                            exclusions: &[],
                         },
                         theme,
                         renderer,
