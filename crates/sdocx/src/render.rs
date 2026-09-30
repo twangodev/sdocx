@@ -652,7 +652,6 @@ fn render_text_box(
     let default_style = styled.style_at(styled.index.len(), theme, None);
     let color = default_style.color;
     let font_size = default_style.font_size;
-    let line_height = font_size * 1.35;
     let mut group = Group::new();
     if let Some(rotation) = text_box.rotation_degrees {
         let cx = x + width / 2.0;
@@ -663,11 +662,14 @@ fn render_text_box(
         if let Some(highlight) = text_box.highlight_color.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        for (line_idx, paragraph) in styled.index.paragraphs().enumerate() {
+        let mut cursor_y = y;
+        for paragraph in styled.index.paragraphs() {
+            let line_font_size = styled.line_font_size(paragraph.content.clone(), theme, None);
+            let text_y = cursor_y + line_font_size;
+            cursor_y += line_font_size * 1.35;
             if paragraph.content.is_empty() {
                 continue;
             }
-            let text_y = y + font_size + line_idx as f64 * line_height;
             let node = Text::new("")
                 .x(decimal(x, 2))
                 .y(decimal(text_y, 2))
@@ -808,14 +810,11 @@ fn render_flow_text_box(
                     layout.predefined_style,
                 )
             };
-            let line_height = if image_flow && layout.line_spacing.is_none() {
-                base_style.font_size * IMAGE_FLOW_LINE_HEIGHT_RATIO
-            } else {
-                paragraph_line_height(base_style.font_size, layout.line_spacing)
-            };
-
             for (line_index, line_range) in lines.iter().enumerate() {
-                let baseline = cursor_y + base_style.font_size;
+                let line_font_size =
+                    styled.line_font_size(line_range.clone(), theme, layout.predefined_style);
+                let line_height = paragraph_line_height(line_font_size, layout.line_spacing);
+                let baseline = cursor_y + line_font_size;
                 if line_index == 0
                     && let Some((marker, _, marker_size, marker_offset)) = marker.as_ref()
                 {
@@ -904,9 +903,9 @@ fn paragraph_line_height(font_size: f64, spacing: Option<ParagraphLineSpacing>) 
                 && spacing.value > 0.0
                 && spacing.kind == LineSpacingType::Pixels =>
         {
-            f64::from(spacing.value) * SAMSUNG_TEXT_SCALE
+            font_size + f64::from(spacing.value) * SAMSUNG_TEXT_SCALE
         }
-        _ => font_size * 1.6,
+        _ => font_size * 1.35,
     }
 }
 
@@ -1136,6 +1135,9 @@ fn write_styled_tspan(svg: &mut Scene, text: &str, style: &TextStyle, context: T
     let mut span = TSpan::new(text)
         .fill(Paint::from_hex(&style.color))
         .font_size(decimal(style.font_size, 2));
+    if let Some(family) = style.family.as_deref() {
+        span = span.family(FontFamily::Named(family));
+    }
     let decoration = match (style.underline, style.strikethrough) {
         (true, true) => Some(TextDecoration::Both),
         (true, false) => Some(TextDecoration::Underline),

@@ -17,6 +17,7 @@ const DEFAULT_FONT_COLOR: Color = Color {
 #[derive(Clone)]
 pub(super) struct TextStyle {
     pub font_size: f64,
+    pub family: Option<String>,
     pub color: String,
     pub bold: bool,
     pub italic: bool,
@@ -91,6 +92,7 @@ impl<'a> StyledText<'a> {
         }
         let mut style = TextStyle {
             font_size,
+            family: None,
             color: theme.foreground(Some(text_box.color.unwrap_or(DEFAULT_FONT_COLOR))),
             bold: false,
             italic: false,
@@ -118,6 +120,11 @@ impl<'a> StyledText<'a> {
                 RichTextSpanType::FontSize => {
                     if let Some(size) = span.font_size_value().filter(|size| size.is_finite()) {
                         style.font_size = samsung_font_to_svg(size);
+                    }
+                }
+                RichTextSpanType::FontName => {
+                    if let Some(name) = span.font_name_value() {
+                        style.family = (!name.is_empty()).then(|| name.to_owned());
                     }
                 }
                 RichTextSpanType::Bold => {
@@ -174,6 +181,18 @@ impl<'a> StyledText<'a> {
             let end = pair[1].min(range.end);
             (start < end).then_some(start..end)
         })
+    }
+
+    pub fn line_font_size(
+        &self,
+        range: Range<usize>,
+        theme: RenderTheme,
+        predefined: Option<PredefinedTextStyle>,
+    ) -> f64 {
+        self.segments(range.clone())
+            .map(|segment| self.style_at(segment.start, theme, predefined).font_size)
+            .reduce(f64::max)
+            .unwrap_or_else(|| self.style_at(range.start, theme, predefined).font_size)
     }
 }
 

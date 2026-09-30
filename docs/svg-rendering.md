@@ -100,6 +100,10 @@ UTF-16 and byte boundaries to parsing, slicing and rendering. Native paragraph
 ordinals count CR and LF separately, including empty trailing paragraphs; visual
 line handling currently coalesces CRLF. Spans that split a surrogate pair are omitted
 from rendered styling. Explicit boolean spans can disable an earlier style.
+Font-name spans retain their native UTF-8 names. The typed family value uses
+`cssparser` string serialization before SVG-library attribute escaping, so a
+stored comma or quote cannot introduce additional font families or XML nodes.
+Unknown names remain in the SVG and can use the declared generic fallback.
 
 Text remains selectable SVG text. Font measurement, wrapping, paragraph layout
 and embedded-object placement are still being consolidated; shared style
@@ -108,5 +112,10 @@ resolution alone does not establish native typography parity.
 Missing text styles use Samsung's `#262626` base color and logical font size 17,
 then apply the current theme and coordinate conversion. Font-size conversion
 uses the native minimum of one logical unit and preserves larger stored sizes.
+Ordinary placed and flow lines use their largest local font size, with a default
+1.35 spacing multiplier. Pixel line spacing adds scaled pixels to that size;
+percentage spacing multiplies it. Table/code line positions still follow the
+captured fixtures. Flow's initial baseline remains calibrated independently;
+the complete native cursor and page-height-limit rules are not yet implemented.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.

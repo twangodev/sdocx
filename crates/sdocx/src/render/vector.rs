@@ -386,7 +386,7 @@ impl Text {
     pub fn new(content: &str) -> Self {
         Self(Node::new(svg_element::Text::new(content)))
     }
-    pub fn family(mut self, family: FontFamily) -> Self {
+    pub fn family(mut self, family: FontFamily<'_>) -> Self {
         self.0.attr("font-family", family.text());
         self
     }
@@ -402,6 +402,10 @@ impl Text {
 impl TSpan {
     pub fn new(content: &str) -> Self {
         Self(Node::new(svg_element::TSpan::new(content)))
+    }
+    pub fn family(mut self, family: FontFamily<'_>) -> Self {
+        self.0.attr("font-family", family.text());
+        self
     }
     pub fn bold(mut self) -> Self {
         self.0.attr("font-weight", "bold");

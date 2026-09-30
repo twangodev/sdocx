@@ -134,11 +134,32 @@ keywords! {
     LineCap { Butt => "butt", Round => "round", Square => "square" }
     LineJoin { Miter => "miter", Round => "round", Bevel => "bevel" }
     TextAnchor { Start => "start", Middle => "middle", End => "end" }
-    FontFamily { Arial => "Arial, sans-serif", Roboto => "Roboto, Arial, sans-serif" }
     TextDecoration { Underline => "underline", StrikeThrough => "line-through", Both => "underline line-through" }
     PageTemplate { Lines => "lines", Dots => "dots" }
     ObjectKind { Image => "image", Table => "table", CodeBlock => "code-block" }
     Blend { Darken => "darken", Lighten => "lighten" }
+}
+
+#[derive(Clone, Copy)]
+pub enum FontFamily<'a> {
+    Arial,
+    Roboto,
+    Named(&'a str),
+}
+
+impl FontFamily<'_> {
+    pub(super) fn text(self) -> String {
+        match self {
+            Self::Arial => "Arial, sans-serif".into(),
+            Self::Roboto => "Roboto, Arial, sans-serif".into(),
+            Self::Named(name) => {
+                let mut text = String::new();
+                cssparser::serialize_string(name, &mut text).expect("writing a CSS string");
+                text.push_str(", sans-serif");
+                text
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy)]

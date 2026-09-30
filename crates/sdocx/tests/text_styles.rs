@@ -62,6 +62,20 @@ fn span(kind: RichTextSpanType, start: u32, end: u32, payload: &[u8]) -> RichTex
     }
 }
 
+fn font_name(start: u32, end: u32, family: &str) -> RichTextSpan {
+    let payload = [
+        vec![0; 8],
+        u16::try_from(family.len() + 1)
+            .unwrap()
+            .to_le_bytes()
+            .to_vec(),
+        family.as_bytes().to_vec(),
+        vec![0],
+    ]
+    .concat();
+    span(RichTextSpanType::FontName, start, end, &payload)
+}
+
 fn hyperlink(start: u32, end: u32) -> RichTextSpan {
     let target = "https://example.com/styled";
     let payload = [
@@ -357,6 +371,166 @@ fn repeated_spaces_are_preserved_in_each_text_context() {
             );
         }
     }
+}
+
+#[test]
+fn font_name_spans_apply_locally_in_each_text_context() {
+    let mut content = text("A😀B C");
+    content.spans = vec![
+        font_name(1, 3, "Roboto Mono"),
+        font_name(3, 4, "sans-serif"),
+    ];
+    for &context in CONTEXTS {
+        let svg = render(context, content.clone());
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        for (value, family) in [("😀", "Roboto Mono"), ("B", "sans-serif")] {
+            let attribute = tspan(&xml, value)
+                .attribute("font-family")
+                .unwrap_or_else(|| panic!("{context:?}: missing family on {value:?}"));
+            assert_eq!(
+                svgtypes::parse_font_families(attribute).unwrap(),
+                [
+                    svgtypes::FontFamily::Named(family.into()),
+                    svgtypes::FontFamily::SansSerif,
+                ],
+                "{context:?} {value}"
+            );
+        }
+        assert_eq!(tspan(&xml, "A").attribute("font-family"), None);
+        assert_eq!(tspan(&xml, " C").attribute("font-family"), None);
+    }
+}
+
+#[test]
+fn font_names_are_one_css_family_and_preserve_raw_source() {
+    let family = r#"ACME "Ink", Serif\ <svg onload="boom"> & 'quoted'"#;
+    let mut content = text("safe");
+    content.spans = vec![font_name(0, 4, family)];
+    let original = content.spans[0].payload.clone();
+    assert_eq!(content.spans[0].font_name_value(), Some(family));
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let svg = sdocx::render_page_svg(&document, 0, &Default::default())
+            .unwrap()
+            .svg;
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let attribute = tspan(&xml, "safe").attribute("font-family").unwrap();
+        let expected = r#""ACME \"Ink\", Serif\\ <svg onload=\"boom\"> & 'quoted'", sans-serif"#;
+        assert_eq!(attribute, expected, "{context:?}");
+        let families = svgtypes::parse_font_families(attribute).unwrap();
+        assert!(
+            matches!(
+                families.as_slice(),
+                [
+                    svgtypes::FontFamily::Named(_),
+                    svgtypes::FontFamily::SansSerif
+                ]
+            ),
+            "{context:?}: {families:?}"
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("svg"))
+                .count(),
+            1,
+            "{context:?}"
+        );
+        assert!(
+            !xml.descendants()
+                .any(|node| node.attribute("onload").is_some()),
+            "{context:?}"
+        );
+        assert_eq!(content.spans[0].payload, original, "{context:?}");
+        assert_eq!(&original[10..original.len() - 1], family.as_bytes());
+    }
+}
+
+#[test]
+fn mixed_font_sizes_position_each_placed_line_using_its_own_maximum() {
+    let mut content = text("aB\nc");
+    content.spans = vec![span(
+        RichTextSpanType::FontSize,
+        1,
+        2,
+        &20.0_f32.to_le_bytes(),
+    )];
+    let svg = render(Context::Standalone, content);
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    for (value, baseline, size) in [
+        ("a", "80.00", "30.00"),
+        ("B", "80.00", "60.00"),
+        ("c", "131.00", "30.00"),
+    ] {
+        let node = tspan(&xml, value);
+        assert_eq!(node.parent().unwrap().attribute("y"), Some(baseline));
+        assert_eq!(node.attribute("font-size"), Some(size));
+    }
+}
+
+#[test]
+fn flow_line_spacing_uses_the_largest_local_size_and_native_spacing_units() {
+    for (spacing, next_baseline) in [
+        (None, "111.00"),
+        (Some((0_u32, 4.0_f32)), "102.00"),
+        (Some((1_u32, 1.5_f32)), "120.00"),
+    ] {
+        let mut content = text("aB\nc");
+        content.spans = vec![span(
+            RichTextSpanType::FontSize,
+            1,
+            2,
+            &20.0_f32.to_le_bytes(),
+        )];
+        if let Some((kind, value)) = spacing {
+            content.paragraphs.push(sdocx::RichTextParagraph {
+                kind: sdocx::RichTextParagraphType::LineSpacing,
+                start_paragraph: 0,
+                end_paragraph: 2,
+                payload: [kind.to_le_bytes(), value.to_le_bytes()].concat(),
+            });
+        }
+        let svg = render(Context::Flow, content);
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        for value in ["a", "B"] {
+            assert_eq!(
+                tspan(&xml, value).parent().unwrap().attribute("y"),
+                Some("60.00"),
+                "{spacing:?}: {value}"
+            );
+        }
+        assert_eq!(
+            tspan(&xml, "c").parent().unwrap().attribute("y"),
+            Some(next_baseline),
+            "{spacing:?}"
+        );
+        assert_eq!(tspan(&xml, "c").attribute("font-size"), Some("30.00"));
+    }
+}
+
+#[test]
+fn wrapped_flow_lines_do_not_inherit_a_previous_lines_largest_font_size() {
+    let mut content = text("aB c");
+    content.spans = vec![span(
+        RichTextSpanType::FontSize,
+        1,
+        2,
+        &20.0_f32.to_le_bytes(),
+    )];
+    let mut document = document(Context::Flow, content);
+    document.pages[0].width = 160;
+    let svg = sdocx::render_page_svg(&document, 0, &Default::default())
+        .unwrap()
+        .svg;
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    assert_eq!(
+        tspan(&xml, "B").parent().unwrap().attribute("y"),
+        Some("60.00")
+    );
+    assert_eq!(
+        tspan(&xml, "c").parent().unwrap().attribute("y"),
+        Some("111.00")
+    );
+    assert_eq!(tspan(&xml, "c").attribute("font-size"), Some("30.00"));
 }
 
 #[test]

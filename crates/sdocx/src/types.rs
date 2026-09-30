@@ -587,6 +587,21 @@ impl RichTextSpan {
         Some(f32::from_le_bytes(bytes))
     }
 
+    /// Decode a font-name span's length-prefixed, NUL-terminated UTF-8 name.
+    pub fn font_name_value(&self) -> Option<&str> {
+        if self.kind != RichTextSpanType::FontName {
+            return None;
+        }
+        let length = usize::from(u16::from_le_bytes(
+            self.payload.get(8..10)?.try_into().ok()?,
+        ));
+        let name = self.payload.get(10..10 + length)?.strip_suffix(&[0])?;
+        if name.contains(&0) {
+            return None;
+        }
+        std::str::from_utf8(name).ok()
+    }
+
     /// Decode the type and optional target stored by a hyperlink span.
     pub fn hyperlink_value(&self) -> Option<RichTextHyperlink> {
         if self.kind != RichTextSpanType::Hyperlink {
@@ -1212,6 +1227,64 @@ mod tests {
         assert!(!ObjectType::Table.is_supported_by(FormatVersion(5399)));
         assert!(ObjectType::Table.is_supported_by(FormatVersion::TABLE_AND_CODE_BLOCK_OBJECTS));
         assert!(ObjectType::Stroke.is_supported_by(FormatVersion::INITIAL));
+    }
+
+    fn font_name_span(payload: &[u8]) -> RichTextSpan {
+        RichTextSpan {
+            kind: RichTextSpanType::FontName,
+            start_utf16: 0,
+            end_utf16: 1,
+            expand: false,
+            payload: payload.to_vec(),
+        }
+    }
+
+    #[test]
+    fn font_names_use_native_byte_count_and_preserve_names_and_payloads() {
+        let regular = font_name_span(&[
+            0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78, 7, 0, b'R', b'o', b'b', b'o', b't',
+            b'o', 0,
+        ]);
+        assert_eq!(regular.font_name_value(), Some("Roboto"));
+
+        let quoted_unicode = font_name_span(&[
+            0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78, 8, 0, b' ', b'"', 0xe7, 0xad, 0x86,
+            b'"', b' ', 0,
+        ]);
+        let original = quoted_unicode.payload.clone();
+        assert_eq!(quoted_unicode.font_name_value(), Some(" \"筆\" "));
+        assert_eq!(quoted_unicode.payload, original);
+        let name = quoted_unicode.font_name_value().unwrap();
+        assert_eq!(name.as_ptr(), quoted_unicode.payload[10..].as_ptr());
+
+        let empty = font_name_span(&[0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78, 1, 0, 0]);
+        assert_eq!(empty.font_name_value(), Some(""));
+    }
+
+    #[test]
+    fn font_names_reject_truncated_and_malformed_native_payloads() {
+        let valid = [
+            0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78, 7, 0, b'R', b'o', b'b', b'o', b't',
+            b'o', 0,
+        ];
+        for end in 0..valid.len() {
+            assert_eq!(font_name_span(&valid[..end]).font_name_value(), None);
+        }
+        let mut wrong_kind = font_name_span(&valid);
+        wrong_kind.kind = RichTextSpanType::ForegroundColor;
+        assert_eq!(wrong_kind.font_name_value(), None);
+
+        let malformed: &[&[u8]] = &[
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0xff, 0],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 2, 0, b'A', b'B'],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 3, 0, b'A', 0, 0],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0xe7, 0xad, 0],
+        ];
+        for payload in malformed {
+            assert_eq!(font_name_span(payload).font_name_value(), None);
+        }
     }
 
     #[test]
