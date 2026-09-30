@@ -53,7 +53,7 @@ impl Viewport {
         let rejected = line
             .objects
             .iter()
-            .any(|object| matches!(object.prepared_code, Some(Err(_))));
+            .any(|object| matches!(object.prepared, Some(Err(_))));
         if rejected && (line.font_size <= 0.0 || self.unmeasured_visible(line.font_size, baseline))
         {
             return true;
@@ -417,7 +417,7 @@ mod tests {
         let mut line = measured(&object);
         assert_eq!(line.line.font_size, 0.0);
         assert!(!viewport(0.0, 100.0).body_visible(&line.line, line.baseline));
-        line.line.objects[0].prepared_code = Some(Err(ObjectDiagnosticKind::InvalidBounds));
+        line.line.objects[0].prepared = Some(Err(ObjectDiagnosticKind::InvalidBounds));
         assert!(viewport(0.0, 100.0).body_visible(&line.line, line.baseline));
     }
 }

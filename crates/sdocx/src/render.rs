@@ -15,6 +15,7 @@ use vector::{
 };
 
 mod code;
+mod embedded;
 pub mod fonts;
 mod fountain;
 mod marker;
@@ -1043,7 +1044,7 @@ fn paint_line_objects(
         let Some(span) = styled.object_span(object.span_index) else {
             continue;
         };
-        if matches!(placement.prepared_code, Some(Err(_))) {
+        if matches!(placement.prepared, Some(Err(_))) {
             continue;
         }
         let height = object.height;
@@ -1059,8 +1060,10 @@ fn paint_line_objects(
         svg.scope(
             Group::new().transformed(Transform::translate(offset.0, 0.0, 5)),
             |svg| {
-                if let (Some(Ok(prepared)), Some(RichTextObjectContent::CodeBlock(code))) =
-                    (&placement.prepared_code, &span.content)
+                if let (
+                    Some(Ok(embedded::PreparedObject::Code(prepared))),
+                    Some(RichTextObjectContent::CodeBlock(code)),
+                ) = (&placement.prepared, &span.content)
                 {
                     let shift = baseline - height - prepared.panel_bbox.y_min;
                     svg.scope(
@@ -1074,6 +1077,29 @@ fn paint_line_objects(
                                 theme,
                                 renderer,
                                 viewport.map(|viewport| viewport.translated(-offset.0, -shift)),
+                            );
+                        },
+                    );
+                } else if let (
+                    Some(Ok(embedded::PreparedObject::Table(prepared))),
+                    Some(RichTextObjectContent::Table(table)),
+                ) = (&placement.prepared, &span.content)
+                {
+                    let shift = (object.bounds.x_min, baseline - height);
+                    svg.scope(
+                        Group::new().transformed(Transform::translate(shift.0, shift.1, 5)),
+                        |svg| {
+                            render_table(
+                                svg,
+                                table,
+                                Some(prepared),
+                                0.0,
+                                media_assets,
+                                theme,
+                                renderer,
+                                viewport.map(|viewport| {
+                                    viewport.translated(-offset.0 - shift.0, -shift.1)
+                                }),
                             );
                         },
                     );
@@ -1121,11 +1147,16 @@ fn aligned_line_left(
 }
 
 fn object_paint_bounds(object: &text::PositionedObject, left: f64, baseline: f64) -> BoundingBox {
-    let (x_min, width, height) = match &object.prepared_code {
-        Some(Ok(prepared)) => (
+    let (x_min, width, height) = match &object.prepared {
+        Some(Ok(embedded::PreparedObject::Code(prepared))) => (
             left + object.x + prepared.panel_bbox.x_min - object.object.bounds.x_min,
             prepared.panel_bbox.x_max - prepared.panel_bbox.x_min,
             prepared.panel_bbox.y_max - prepared.panel_bbox.y_min,
+        ),
+        Some(Ok(embedded::PreparedObject::Table(prepared))) => (
+            left + object.x,
+            prepared.measured_bbox.x_max - prepared.measured_bbox.x_min,
+            prepared.measured_bbox.y_max - prepared.measured_bbox.y_min,
         ),
         _ => (
             left + object.x,
@@ -1384,86 +1415,16 @@ fn render_embedded_object(
             Some(drawn.y_max + offset_y)
         }
         Some(RichTextObjectContent::Table(table)) => {
-            svg.scope(Group::new().object(ObjectKind::Table), |svg| {
-                let stroke = if theme.is_dark() {
-                    "#777777"
-                } else {
-                    "#b8b0a3"
-                };
-                let clip = svg.definition::<Clip>();
-                svg.push(
-                    Definitions::new()
-                        .add(ClipPath::new(&clip).add(rectangle(table.bbox, offset_y, 2).rx(24))),
-                );
-                svg.scope(Group::new().clipped(&clip), |svg| {
-                    for row in &table.rows {
-                        for cell in &row.cells {
-                            if viewport.is_some_and(|viewport| {
-                                !viewport.intersects(BoundingBox {
-                                    y_min: cell.bbox.y_min + offset_y,
-                                    y_max: cell.bbox.y_max + offset_y,
-                                    ..cell.bbox
-                                })
-                            }) {
-                                continue;
-                            }
-                            let cell_background = table_cell_background(cell, theme);
-                            let cell_theme = theme.on_background(cell_background);
-                            svg.push(
-                                rectangle(cell.bbox, offset_y, 2)
-                                    .fill(Paint::from_hex(&color_hex(&cell_background))),
-                            );
-                            if cell.bbox.x_min > table.bbox.x_min + 1.0 {
-                                svg.push(
-                                    Line::new()
-                                        .x1(decimal(cell.bbox.x_min, 2))
-                                        .y1(decimal(cell.bbox.y_min + offset_y, 2))
-                                        .x2(decimal(cell.bbox.x_min, 2))
-                                        .y2(decimal(cell.bbox.y_max + offset_y, 2))
-                                        .stroke(Paint::from_hex(stroke))
-                                        .stroke_width(1),
-                                );
-                            }
-                            if cell.bbox.y_min > table.bbox.y_min + 1.0 {
-                                svg.push(
-                                    Line::new()
-                                        .x1(decimal(cell.bbox.x_min, 2))
-                                        .y1(decimal(cell.bbox.y_min + offset_y, 2))
-                                        .x2(decimal(cell.bbox.x_max, 2))
-                                        .y2(decimal(cell.bbox.y_min + offset_y, 2))
-                                        .stroke(Paint::from_hex(stroke))
-                                        .stroke_width(1),
-                                );
-                            }
-                            let frame = text::TextFrame {
-                                bbox: BoundingBox {
-                                    y_min: cell.bbox.y_min + offset_y,
-                                    y_max: cell.bbox.y_max + offset_y,
-                                    ..cell.bbox
-                                },
-                                gravity: Some(0),
-                                exclusions: &[],
-                            };
-                            render_text_frame(
-                                svg,
-                                &cell.content,
-                                frame,
-                                media_assets,
-                                cell_theme,
-                                renderer,
-                                viewport,
-                            );
-                        }
-                    }
-                });
-                svg.push(
-                    rectangle(table.bbox, offset_y, 2)
-                        .rx(24)
-                        .fill(Paint::None)
-                        .stroke(Paint::from_hex(stroke))
-                        .stroke_width(1),
-                );
-            });
+            render_table(
+                svg,
+                table,
+                None,
+                offset_y,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
             Some(table.bbox.y_max + offset_y)
         }
         Some(RichTextObjectContent::CodeBlock(code)) => {
@@ -1496,6 +1457,132 @@ fn render_embedded_object(
         }
         None => None,
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_table(
+    svg: &mut Scene,
+    table: &crate::RichTextTable,
+    prepared: Option<&table::PreparedTable>,
+    offset_y: f64,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
+) {
+    let table_bbox = prepared.map_or(table.bbox, |table| table.measured_bbox);
+    svg.scope(Group::new().object(ObjectKind::Table), |svg| {
+        let stroke = if theme.is_dark() {
+            "#777777"
+        } else {
+            "#b8b0a3"
+        };
+        let clip = svg.definition::<Clip>();
+        svg.push(
+            Definitions::new()
+                .add(ClipPath::new(&clip).add(rectangle(table_bbox, offset_y, 2).rx(24))),
+        );
+        svg.scope(Group::new().clipped(&clip), |svg| {
+            let mut paint_cell =
+                |cell: &crate::RichTextTableCell,
+                 cell_bbox: BoundingBox,
+                 layout: Option<&text::TextLayout>| {
+                    if viewport.is_some_and(|viewport| {
+                        !viewport.intersects(BoundingBox {
+                            y_min: cell_bbox.y_min + offset_y,
+                            y_max: cell_bbox.y_max + offset_y,
+                            ..cell_bbox
+                        })
+                    }) {
+                        return;
+                    }
+                    let cell_background = table_cell_background(cell, theme);
+                    let cell_theme = theme.on_background(cell_background);
+                    svg.push(
+                        rectangle(cell_bbox, offset_y, 2)
+                            .fill(Paint::from_hex(&color_hex(&cell_background))),
+                    );
+                    if cell_bbox.x_min > table_bbox.x_min + 1.0 {
+                        svg.push(
+                            Line::new()
+                                .x1(decimal(cell_bbox.x_min, 2))
+                                .y1(decimal(cell_bbox.y_min + offset_y, 2))
+                                .x2(decimal(cell_bbox.x_min, 2))
+                                .y2(decimal(cell_bbox.y_max + offset_y, 2))
+                                .stroke(Paint::from_hex(stroke))
+                                .stroke_width(1),
+                        );
+                    }
+                    if cell_bbox.y_min > table_bbox.y_min + 1.0 {
+                        svg.push(
+                            Line::new()
+                                .x1(decimal(cell_bbox.x_min, 2))
+                                .y1(decimal(cell_bbox.y_min + offset_y, 2))
+                                .x2(decimal(cell_bbox.x_max, 2))
+                                .y2(decimal(cell_bbox.y_min + offset_y, 2))
+                                .stroke(Paint::from_hex(stroke))
+                                .stroke_width(1),
+                        );
+                    }
+                    if let Some(layout) = layout {
+                        let styled =
+                            StyledText::new(&cell.content, TextContext::Flow, renderer.settings);
+                        paint_text_layout_in_viewport(
+                            svg,
+                            &styled,
+                            layout,
+                            media_assets,
+                            cell_theme,
+                            renderer,
+                            viewport,
+                        );
+                    } else {
+                        let frame = text::TextFrame {
+                            bbox: BoundingBox {
+                                y_min: cell_bbox.y_min + offset_y,
+                                y_max: cell_bbox.y_max + offset_y,
+                                ..cell_bbox
+                            },
+                            gravity: Some(0),
+                            exclusions: &[],
+                        };
+                        render_text_frame(
+                            svg,
+                            &cell.content,
+                            frame,
+                            media_assets,
+                            cell_theme,
+                            renderer,
+                            viewport,
+                        );
+                    }
+                };
+            if let Some(prepared) = prepared {
+                for row in &prepared.rows {
+                    for cell in &row.cells {
+                        paint_cell(
+                            &table.rows[row.row_index].cells[cell.column_index],
+                            cell.frame,
+                            Some(&cell.layout),
+                        );
+                    }
+                }
+            } else {
+                for row in &table.rows {
+                    for cell in &row.cells {
+                        paint_cell(cell, cell.bbox, None);
+                    }
+                }
+            }
+        });
+        svg.push(
+            rectangle(table_bbox, offset_y, 2)
+                .rx(24)
+                .fill(Paint::None)
+                .stroke(Paint::from_hex(stroke))
+                .stroke_width(1),
+        );
+    });
 }
 
 fn render_prepared_code(

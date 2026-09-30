@@ -110,7 +110,7 @@ impl TextFrame<'_> {
             .iter()
             .filter_map(|placement| {
                 placement
-                    .prepared_code
+                    .prepared
                     .as_ref()?
                     .as_ref()
                     .ok()?
@@ -309,23 +309,45 @@ pub(in crate::render) fn prepare_line_objects(
     renderer: &TextRenderer<'_>,
 ) {
     for placement in &mut line.objects {
+        if matches!(
+            placement.prepared,
+            Some(Ok(crate::render::embedded::PreparedObject::Table(_)))
+        ) {
+            continue;
+        }
         let Some(span) = styled.object_span(placement.object.span_index) else {
             continue;
         };
-        let Some(crate::RichTextObjectContent::CodeBlock(code)) = span.content.as_ref() else {
-            continue;
-        };
         let object_renderer = renderer.for_object_source(placement.object.source.clone());
-        let prepared = crate::render::code::prepare_code(
-            code,
-            span.layout_constraint,
-            candidate_top,
-            theme,
-            &object_renderer,
-        );
+        let prepared = match span.content.as_ref() {
+            Some(crate::RichTextObjectContent::CodeBlock(code)) => {
+                crate::render::code::prepare_code(
+                    code,
+                    span.layout_constraint,
+                    candidate_top,
+                    theme,
+                    &object_renderer,
+                )
+                .map(|code| crate::render::embedded::PreparedObject::Code(Box::new(code)))
+            }
+            Some(crate::RichTextObjectContent::Table(table)) => {
+                let Some(prepared) = crate::render::table::prepare_table(
+                    table,
+                    span.layout_constraint,
+                    candidate_top,
+                    theme,
+                    &object_renderer,
+                ) else {
+                    continue;
+                };
+                prepared
+                    .map(|table| crate::render::embedded::PreparedObject::Table(Box::new(table)))
+            }
+            _ => continue,
+        };
         match &prepared {
             Ok(prepared) => {
-                let height = prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+                let height = prepared.height();
                 if matches!(
                     span.layout_constraint,
                     crate::ObjectSpanLayoutConstraint::OverPages
@@ -340,7 +362,7 @@ pub(in crate::render) fn prepare_line_objects(
                 kind: *kind,
             }]),
         }
-        placement.prepared_code = Some(prepared.map(Box::new));
+        placement.prepared = Some(prepared);
     }
 }
 
@@ -902,7 +924,7 @@ mod tests {
                 bottom_margin: margins[1],
             },
             x: 0.0,
-            prepared_code: None,
+            prepared: None,
         });
         line
     }
@@ -1395,11 +1417,14 @@ mod tests {
         );
         let line = &plan.lines[0];
         let prepared = line.line.objects[0]
-            .prepared_code
+            .prepared
             .as_ref()
             .unwrap()
             .as_ref()
             .unwrap();
+        let crate::render::embedded::PreparedObject::Code(prepared) = prepared else {
+            panic!("expected a prepared code block");
+        };
         close(line.top, 530.0);
         close(prepared.panel_bbox.y_min, 530.0);
         close(prepared.panel_bbox.y_max, 1150.75);
@@ -1449,7 +1474,9 @@ mod tests {
             assert_eq!(prepared.min_first_page_height, 181.5);
             let mut line = object_line(0.0, false, [0.0; 2]);
             line.objects[0].object.height = prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
-            line.objects[0].prepared_code = Some(Ok(Box::new(prepared)));
+            line.objects[0].prepared = Some(Ok(crate::render::embedded::PreparedObject::Code(
+                Box::new(prepared),
+            )));
             let bands = [if obstacle {
                 VerticalExclusion::obstacle(200.0, 260.0)
             } else {

@@ -679,7 +679,7 @@ mod tests {
         let mut line = WrappedLine::unmeasured(0..1, 45.0);
         line.objects.push(super::super::wrapping::PositionedObject {
             x: 0.0,
-            prepared_code: None,
+            prepared: None,
             object: super::super::objects::MeasuredObject {
                 source: 0..1,
                 span_index: 0,

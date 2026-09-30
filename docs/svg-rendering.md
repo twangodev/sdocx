@@ -147,7 +147,10 @@ Rust engine, then project the requested page. Retained line, glyph, marker and
 object bounds filter painting; code and table child text receives its translated
 viewport. Measurement registries are separate from painted fonts. Table-cell
 placement, numeric text advance, post-code height and complete pagination still
-have measured gaps. Prepared table first-row minima and spanning frames remain
+have measured gaps. Prepared table pagination and spanning frames remain
 unfinished.
+The cold prepared table path now retains shared cell layouts for complete
+unmerged grids with empty split lists. Ordinary model-cell drawing and paged
+table layout remain separate native paths; warm splitting is still unfinished.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.

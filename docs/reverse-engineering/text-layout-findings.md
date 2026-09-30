@@ -951,8 +951,8 @@ These drawn-width getters do not gate on color or alpha. The captured
 table's raw 984×216 rectangle and unit borders therefore yield a 985×217
 measurement input. Rust now uses these drawn bounds when reserving an object.
 
-Drawing regenerates cell frames from column widths and row heights rather
-than reusing saved cell rectangles. `TableLayout::getHalfBorderWidth`,
+Over-pages drawing regenerates cell frames from column widths and row heights
+rather than reusing saved cell rectangles. `TableLayout::getHalfBorderWidth`,
 `0xb325c`, finds the maximum positive drawable border-path width and halves it
 at `0xb32d0`–`0xb32d8`. `init` stores that result at `0xaa714`–`0xaa71c`,
 starts the first row/column at it, and accumulates prior frame endpoints
@@ -966,6 +966,16 @@ draw rectangle minus measured origin at `0xa6b38`–`0xa6b50`. These rules
 support prepared geometry, not an arbitrary -0.5 shift of table glyphs;
 the composed draw-rectangle origin remains a separate input.
 
+The ordinary, non-spannable drawing branch instead reads each model cell's
+rectangle, subtracts the model table origin, and adds the supplied draw origin
+(`0xa68bc`–`0xa6b50`). It must retain that distinct coordinate producer. Rust now
+prepares complete unmerged grids for constraints 1/2 only when the actual child
+split list is empty. Each cell retains its shared Rust text layout for painting;
+rows grow during cold measurement and the first-row minimum is retained.
+Normal tables, active page splits, fractional column widths, merged/sparse grids,
+nested objects and unsupported size constraints retain the saved-frame path.
+This establishes the cold prepared path, not warm pagination parity.
+
 Native prepared table frames are stateful. Bodytext caches the child layout
 (`0xb0cac`–`0xb0d64`); construction sets its dirty byte (`0xa9e78`), while
 later table callbacks call `Layout` without clearing measurement
@@ -976,6 +986,12 @@ move past a split using actual first-line height plus top margin
 (`0xb294c`, `0xb28ec`). Fresh measurement at every candidate is therefore
 not established as equivalent. These producers bound a future unmerged-grid
 implementation; merged-cell frame union and rowspan growth remain unverified.
+
+Warm row movement also retains page displacement. Positive preceding-row growth
+consumes that displacement before moving later frames; negative growth first
+removes the retained gap (`0xade70`–`0xadfb4`). Split-list comparison checks count
+and only the first rectangle at tolerance 0.001; distinct empty lists cause
+relayout (`0xb2e18`–`0xb2ea4`). These state transitions remain unfinished in Rust.
 
 Native geometry reaches measurement as `f32`: Model `ObjectBase::GetRect`
 loads four endpoint registers (`0x2caa6c`–`0x2caa70`), Widget span conversion
@@ -1028,7 +1044,7 @@ maximum falls back to the first cached frame's height, then adds
 `contentRect.top - measuredRect.top`. Cold unmerged frames begin at the global
 drawing half-border offset. Bodytext lays out the child before reading its
 minimum (`0xb0e28`, `0xb0f20`–`0xb0f30`), so a missing Rust plan cannot stand
-in for native zero. Prepared table minima and spanning frames remain
+in for native zero. Prepared minima for paged tables and their spanning frames remain
 unfinished; whole-table padding avoidance can misplace a long table.
 
 Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs

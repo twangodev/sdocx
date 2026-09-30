@@ -59,7 +59,7 @@ pub(in crate::render) fn render_measured_line(
         || line
             .objects
             .iter()
-            .any(|object| matches!(object.prepared_code, Some(Err(_))))
+            .any(|object| matches!(object.prepared, Some(Err(_))))
     {
         render_text_fragments(svg, styled, line, x, baseline, theme, predefined, renderer);
         return;
@@ -135,7 +135,7 @@ pub(in crate::render) fn text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
     let mut ranges = Vec::with_capacity(line.objects.len() + 1);
     let mut start = line.source.start;
     for object in &line.objects {
-        if matches!(object.prepared_code, Some(Err(_))) {
+        if matches!(object.prepared, Some(Err(_))) {
             continue;
         }
         if start < object.object.source.start {

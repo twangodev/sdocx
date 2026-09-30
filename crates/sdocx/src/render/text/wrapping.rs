@@ -24,8 +24,8 @@ pub(in crate::render) struct PositionedCluster {
 pub(in crate::render) struct PositionedObject {
     pub object: MeasuredObject,
     pub x: f64,
-    pub prepared_code:
-        Option<Result<Box<crate::render::code::PreparedCode>, super::ObjectDiagnosticKind>>,
+    pub prepared:
+        Option<Result<crate::render::embedded::PreparedObject, super::ObjectDiagnosticKind>>,
 }
 
 enum MeasuredItem {
@@ -205,7 +205,7 @@ pub(in crate::render) fn unmeasured_paragraph(
         line.objects.push(PositionedObject {
             object: measured,
             x: 0.0,
-            prepared_code: None,
+            prepared: None,
         });
         lines.push(line);
         renderer.object_layout_unsupported(object.span.text_index_utf16);
@@ -340,7 +340,7 @@ pub(in crate::render) fn wrap_paragraph(
                 MeasuredItem::Object(object) => objects.push(PositionedObject {
                     object: object.clone(),
                     x,
-                    prepared_code: None,
+                    prepared: None,
                 }),
             }
             x = finite_advance(x + item.advance())?;
