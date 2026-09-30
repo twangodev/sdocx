@@ -1352,8 +1352,46 @@ that clipping and preserves the parent's 411-unit reservation. Fresh SVG
 comparisons against the hash-checked native PDF differ by less than 0.00012
 units for the title, all code lines, and following whitespace heading; the
 earlier 0.75-unit following-text residual is resolved. The four wholly
-clipped code lines remain absent. Table composition still has separate
-unresolved differences.
+clipped code lines remain absent.
+
+The table PDF writer also creates a fresh layout at the final drawing
+origin. Composer allocates `TableLayout`, supplies drawing split rectangles,
+then invokes cold `Measure()` followed by warm `Layout()`
+(`0x37e448`–`0x37e4a0`). The warm pass can shrink rows independently of the
+parent's retained callback height. Cold initialization reads raw row heights
+and column widths; `content_bbox`, minimum/maximum column-width arrays and
+`max_width` do not constrain this selected cold/warm path.
+The preceding clone placement uses `ObjectShape::SetRect` through vtable
+slot 40 (`0x376464`–`0x376474`, relocation `0x495200`), whose detached-clone
+branch stores the rectangle through `SetRectDataOnly`
+(`0x397ad8`, `0x399954`, `0x3a6a60`, `0x37d104`). It does not invoke the
+separate editing-time table fitting setter. Auto-fit metadata consequently
+does not resize rows or columns in this export path. Normal body entries
+keep the empty drawing split vector initialized at `0x8de40`; capture fills
+it only for over-page constraints 1/2 (`0xcac1c`–`0xcac7c`).
+
+The writer offsets normalized measured bounds by the source drawn origin
+in native `f32` arithmetic, then floors left/top and ceils right/bottom
+(`0x37e4dc`–`0x37e4f4`). Each ordinary text cell offsets its cached frame by
+that rounded table origin and receives the same rounding
+(`0x37ee14`–`0x37ee94`). `ExtendRect()` directly uses `FRINTM`/`FRINTP`
+(`0xb16cc`); negative coordinates are not truncated toward zero.
+The writer translates retained child drawing data into the rounded cell
+frame without wrapping again (`0x37ef00`–`0x37ef80`), and
+`TableLayout::UpdateTextDrawingPosition` is empty (`0xacc88`). The separate
+expanded image clip does not change glyph origins.
+Child text origins also use native `f32` addition (`0x37f670`–`0x37f684`):
+at world X 16,777,216 a local text inset of 3 yields X 16,777,220. Retaining
+the addition in `f64` would instead produce 16,777,219.
+
+Rust regenerates complete, unmerged, unrotated grids with this same engine
+and keeps the final world geometry in a distinct drawing plan. It preserves
+the callback reservation and translates retained cell text once. The captured
+table's former saved-frame fallback placed text 1 unit right and about
+1.751 units low. Fresh hash-checked comparisons now include all four native
+cell glyph origins, alongside the existing body and code references.
+Merged/sparse grids, nested objects, active height limits and full table
+border styling remain outside this supported drawing path.
 
 Rust also applies the native paragraph indentation masks: saved RTL indent
 adds only a right inset for right/center/default alignment; other indent
