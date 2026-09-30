@@ -475,10 +475,11 @@ source separator metric rather than become a source-first paragraph.
 Fresh comparison of the locked five-page fixture places matched ordinary
 body and heading baselines on the first four pages within 0.0001 SVG units
 of the actual PDF viewport. Code origins and measured heights differ only
-by float roundoff. Remaining observed differences are table-cell X +1 and
-baseline Y about +1.751, numbered-marker Y +1.125, numbered-item text
-X about -0.15575, and ordinary text after the continued code block Y about
--15.001. These are exclusions from the
+by float roundoff. Prepared numbered markers match the two locked marker
+baselines within 0.000045 units. Remaining observed differences are table-cell
+X +1 and baseline Y about +1.751, numbered-item text X about -0.04393, and
+ordinary text after the continued code block Y about -15.001. These are
+exclusions from the
 passing reference subset, not evidence of complete flow or pagination parity.
 
 ## List marker geometry
@@ -547,8 +548,15 @@ RTL (`0xd1adc`–`0xd1b04`). Native supplies multiplier 1.3 to the nested
 layout (`0xd1e98`–`0xd1eb0`), while ordinary zero-pixel-spacing centering
 uses 1.35. This explains the captured -1.125 baseline difference at size
 45 only when marker size and line base height agree; it is not a universal
-offset. The SDK's fixed widths 64/78, sizes 45/32 and alternate X=12 do not
-implement these measurement rules.
+offset. Rust now prepares an owned marker source and shared `TextLayout` from
+the first content span's resolved size. It measures glyph width, constrains the
+child to its upward-rounded width, and reserves its fractional advance plus
+the scaled 9/6 gap using the fresh-layout policy. The marker uses the default
+sans face without inheriting paragraph family, bold or italic. The former
+fixed width 64 and +1.125 baseline error are corrected. Bundled Roboto's
+`1.` advance is 37.1118164 versus 37.1250028 in the native PDF; ordered-item
+body X still differs by about -0.04393. Native advance quantization and
+device-default font selection remain unresolved.
 
 Raw Digit and CircledDigit both map to native decimal type 3
 (`0xd9318`–`0xd9328`); this route does not draw a circle. Native decimal,
@@ -563,18 +571,37 @@ these defaults (`0xd9020`–`0xd9118`). Selection uses indent level modulo
 the type-list length (`0xd6fcc`–`0xd7004`), not the SDK's two-level point
 alternation.
 
+Rust applies wrapping 32-bit `number + initial_number - 1` before formatting,
+including the native period-only result for nonpositive alphabetic/Roman
+values. Roman strings have a 4096-byte ASCII resource limit with a measurement
+diagnostic; this is an SDK allocation policy, not a native number clamp.
+
 Checkboxes use resource IDs 42/43, `spen_ic_text_check_off/on`, with
 24-unit VectorDrawable assets (`0xd95d4`–`0xd95dc`, `SpenResources.java`). The
 rounded box runs from 4.5 to 19.5 with stroke width 1.5; the checked asset
-adds a separate check path. `GetCheckboxImageSize` clamps 0.68 times the
-paragraph font between target-specific 5.5/5.5/4 and maximum 20, scaled by
+adds a check subpath to the same compound path. `GetCheckboxImageSize` clamps
+the f32 calculation `font_size * 68 / 100` between target-specific
+5.5/5.5/4 and maximum 20, scaled by
 document density (`0xcfa80`–`0xcfab0`). `setCheckboxView` expands this to
 the asset viewport with `ceil(size * 24 / 15)` and even-rounds its bounds
 (`0xb2c10`–`0xb2c88`), tints it with paragraph color and applies alpha 0.4
-when checked, 1 otherwise (`0xb2c90`–`0xb2cb4`). The SDK's checkbox font
-symbols do not reproduce these assets. Exact checkbox container transforms,
-RTL number substitution and device-specific default-face agreement still
-need separate verification; this audit does not claim their implementation.
+when checked, 1 otherwise (`0xb2c90`–`0xb2cb4`). Rust emits one typed compound
+SVG path, applies checked opacity once, preserves that f32 operation order,
+and reserves the 20-unit button plus 6-unit gap scaled by density. Its asset
+center is one native physical unit above the shared marker container center.
+It uses neither a checkbox font glyph nor an image. RTL number substitution
+and device-specific default-face agreement remain unverified.
+
+Point, numbered and checkbox markers share preparation and positioning in
+`layout_text`: reservation precedes wrapping, the first line retains its owned
+marker and absolute center, and gravity moves text and marker together. Scoped
+renderers share fonts and diagnostic registries; painting registers retained
+faces so prepared layouts can still embed their fonts. `FontSizeUnits`
+distinguishes logical and resolved sizes, preventing repeated minimum, delta
+or density conversion, including already-resolved sizes below 1. Body flow
+uses the same marker helpers but still has its own cursor loop and page-slice
+plan. A canonical full-source plan, complete point-type cycles and tiny-font
+serialization precision remain unfinished.
 
 ## Measurement, body flow and embedded objects
 

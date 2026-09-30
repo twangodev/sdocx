@@ -118,6 +118,9 @@ native kerning, fallback, justification, or recomputed pagination parity.
 Missing text styles use Samsung's `#262626` base color and logical font size 17,
 then apply the current theme and coordinate conversion. Font-size conversion
 uses the native minimum of one logical unit and preserves larger stored sizes.
+Typed logical/resolved size units keep prepared child text from applying that
+minimum, delta or density conversion again; resolved sizes below one remain
+valid. Tiny-font SVG number serialization has not been audited for parity.
 The document's native default dimensions and orientation supply density:
 portrait width or landscape height divided by 360. Missing/nonpositive density
 uses one. The stored body font-size delta applies before the logical minimum and
@@ -131,9 +134,14 @@ pixels to that size; percentage spacing multiplies it. The shared native
 baseline is line advance minus 0.35 times that font size. The body starts at
 its scaled component margin and applies enabled paragraph spacing, without
 adding flow-page padding. Embedded objects have separate height/margin rules.
-Point list markers use typed vector artwork and an explicit mobile/tablet/UWP
-display target shared by preview and export. Table-cell placement, numeric
-markers, continued-object context and complete pagination still have measured
-gaps; the native evidence and remaining differences are recorded below.
+Point and checkbox markers use typed vector artwork and an explicit
+mobile/tablet/UWP display target shared by preview and export. Numbered markers
+own a nested shared text layout using the first content span's resolved size
+and the default sans face. Their measured reservation precedes wrapping; the
+first line retains marker placement, including gravity. Fonts and diagnostics
+share scoped registries, and painting registers retained marker faces for
+embedding. Body flow uses these same helpers but still retains a separate
+cursor loop and page-slice plan. Table-cell placement, numeric text advance,
+continued-object context and complete pagination still have measured gaps.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.

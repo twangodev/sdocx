@@ -211,7 +211,11 @@ shape/line, image-placement and standalone-text reference pairs.
 ## Document composition regressions
 
 The shared Rust text engine has synthetic coverage for paragraph spacing,
-ordinary baselines, embedded-object measurement and vector point markers.
+ordinary baselines, embedded-object measurement, nested numbered-marker
+measurement, and typed vector point/checkbox artwork. Marker widths are
+prepared before wrapping; placement, gravity, resolved-size conversion and
+retained-font embedding use the shared text pipeline. Body flow still has a
+separate cursor loop and page-slice plan.
 `text-metrics.json` also stores independently decoded, hash-locked Samsung PDF
 observations. Its retained logical canvas height is 848.333333 PDF points;
 the reference's actual viewport is 848 points. At scale 1.8, convert a stored
@@ -220,11 +224,15 @@ explains the coordinate convention; it does not align content to improve a score
 
 The current five-page comparison puts matched ordinary baseline Y on the first
 four pages within 0.0001 units of the actual viewport. The tests retain their
-0.25-unit tolerance. Table-cell placement, numeric marker widths/baselines and
-ordinary text after the continued code block remain outside the passing native
-subset. See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
+0.25-unit tolerance. Two locked numbered-marker references now match baseline
+Y within 0.000045 units. Numbered-item body X retains an approximately
+-0.04393-unit font/advance difference. Table-cell placement and ordinary text
+after the continued code block remain outside the passing native subset.
+See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
 for the producers and measured residuals. Recomputed pagination and full
-document composition parity remain incomplete.
+document composition parity remain incomplete. Samsung device-default fonts,
+complete point-type cycles and tiny-font serialization precision are also
+outside the established coverage.
 
 Rust tests cover stored object order, root render-pass selection, visibility,
 nested containers, saved child transforms and replay indices. Export tests

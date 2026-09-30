@@ -4,7 +4,7 @@
     "font_tables": "Direct head, hhea, OS/2, cmap and hmtx inspection with ttf-parser 0.25.1; no production FontBook calls.",
     "shaping": "Direct rustybuzz 0.20.1 shaping of the pinned font bytes, default features, UnicodeBuffer::guess_segment_properties. Cluster offsets are UTF-8 byte offsets.",
     "native_pdf": "Samsung reference PDF Form XObject 5: Tm, Tf, Tj and descendant-font W inspected with lopdf 0.42.0. Line strings independently checked with PyMuPDF 1.28.2 gettext blocks.",
-    "native_additional_pages": "Hash-locked Samsung PDF Forms 19, 26, 89 and 111 independently decoded with Rust lopdf 0.42.0: Tm, Tf, Tj/TJ, descendant-font W and ToUnicode. Coordinates retain the logical native canvas height and pdf_to_svg_scale below. Covers ordinary body/heading origins on physical page indices 1-3 and code on indices 3-4; excludes table cells, numeric markers, incomplete CJK/emoji extraction and ordinary text after saved code.",
+    "native_additional_pages": "Hash-locked Samsung PDF Forms 19, 26, 89 and 111 independently decoded with Rust lopdf 0.42.0: Tm, Tf, Tj/TJ, descendant-font W and ToUnicode. Coordinates retain the logical native canvas height and pdf_to_svg_scale below. Covers ordinary body/heading origins on physical page indices 1-3, numeric marker origins/font sizes on index 3 and code on indices 3-4; excludes table cells, incomplete CJK/emoji extraction and ordinary text after saved code. Numeric widths are independently observed PDF advances, recorded as evidence rather than a bundled-font width parity assertion.",
     "scope": "Font samples establish pinned-font measurements. Native PDF expectations separately establish observed Samsung layout; shaped font advances are not native parity claims."
   },
   "common_font_metrics": {
@@ -140,7 +140,9 @@
           { "text": "Blockquote marker", "x": 96.00000457763672, "baseline": 302.8500366210938 },
           { "text": "Unordered list item ", "x": 126, "baseline": 416.85 },
           { "text": "Nested unordered list item", "x": 174.00000915527343, "baseline": 488.85 },
+          { "text": "1.", "x": 48.00000228881836, "baseline": 559.725, "font_size": 45.00000343322754, "width": 37.12500283241272 },
           { "text": "Ordered list item", "x": 112.1557502746582, "baseline": 560.85 },
+          { "text": "2.", "x": 48.00000228881836, "baseline": 631.7250549316407, "font_size": 45.00000343322754, "width": 37.12500283241272 },
           { "text": "Second ordered list item", "x": 112.1557502746582, "baseline": 632.8500549316407 },
           { "text": "Example link", "x": 96.00000457763672, "baseline": 704.8500549316407 },
           { "text": "───", "x": 48.00000228881836, "baseline": 872.850018310547 },
