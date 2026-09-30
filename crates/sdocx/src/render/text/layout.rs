@@ -211,6 +211,7 @@ impl LineCandidate {
 
 pub(in crate::render) struct LinePlacement {
     pub top: f64,
+    pub background_top: f64,
     pub baseline: f64,
     pub bottom: f64,
     pub post_cursor: f64,
@@ -219,6 +220,7 @@ pub(in crate::render) struct LinePlacement {
 impl LinePlacement {
     fn translate(&mut self, offset: f64) {
         self.top += offset;
+        self.background_top += offset;
         self.baseline += offset;
         self.bottom += offset;
         self.post_cursor += offset;
@@ -381,6 +383,7 @@ impl TextCursor {
         self.pending_bottom = line.object_margins()[1];
         LinePlacement {
             top: candidate.raw_top,
+            background_top: top,
             baseline: top + metrics.baseline_offset,
             bottom: frame.bbox.y_min + self.position,
             post_cursor: frame.bbox.y_min + self.position,
@@ -474,6 +477,7 @@ pub(in crate::render) struct TextLine {
     pub width: f64,
     pub baseline: f64,
     pub top: f64,
+    pub background_top: f64,
     pub bottom: f64,
     pub post_cursor: f64,
     pub alignment: Option<ParagraphAlignment>,
@@ -546,6 +550,7 @@ impl TextLayout {
             line.x += dx;
             line.baseline += dy;
             line.top += dy;
+            line.background_top += dy;
             line.bottom += dy;
             line.post_cursor += dy;
             if let Some(marker) = &mut line.marker {
@@ -821,6 +826,7 @@ fn layout_text_with_context(
                 width,
                 baseline: placement.baseline,
                 top: placement.top,
+                background_top: placement.background_top,
                 bottom: placement.bottom,
                 post_cursor: placement.post_cursor,
                 alignment: layout.alignment,
@@ -1973,6 +1979,31 @@ mod tests {
         close(cursor.height(), 187.001);
         close(place_object(&mut cursor, &text), 207.001);
         close(cursor.height(), 214.001);
+    }
+
+    #[test]
+    fn backgrounds_exclude_object_margins_and_translate_with_the_line() {
+        let frame = TextFrame {
+            bbox: BoundingBox::default(),
+            gravity: None,
+            exclusions: &[],
+        };
+        let mut cursor = TextCursor::new(0.0);
+        let object = object_line(20.0, false, [30.0; 2]);
+        let placement = cursor.place(&object, None, &frame, TextSettings::default());
+        close(placement.top, 0.0);
+        close(placement.background_top, 30.0);
+        close(placement.bottom, 130.001);
+
+        let text = WrappedLine::unmeasured(1..2, 20.0);
+        let mut placement = cursor.place(&text, None, &frame, TextSettings::default());
+        close(placement.top, 130.001);
+        close(placement.background_top, 160.001);
+        close(placement.bottom, 187.001);
+        placement.translate(5.0);
+        close(placement.top, 135.001);
+        close(placement.background_top, 165.001);
+        close(placement.bottom, 192.001);
     }
 
     #[test]

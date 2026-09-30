@@ -8,6 +8,7 @@ pub struct RenderTheme {
     background: Color,
     adapt_colors: bool,
     compatible: bool,
+    dark_span_colors: bool,
 }
 
 impl RenderTheme {
@@ -21,6 +22,7 @@ impl RenderTheme {
             },
             adapt_colors: dark,
             compatible: true,
+            dark_span_colors: dark,
         }
     }
 
@@ -70,6 +72,8 @@ impl RenderTheme {
         Self {
             background,
             compatible: metadata.dark_mode_compatibility != Some(false),
+            dark_span_colors: metadata.dark_mode_compatibility != Some(false)
+                && is_dark_background(background),
             adapt_colors: metadata.dark_mode_compatibility != Some(false)
                 && (is_dark_background(background)
                     || (mode == RenderColorMode::Light && stored.is_some_and(is_dark_background))),
@@ -90,6 +94,14 @@ impl RenderTheme {
             && contrast(reversed, self.background) > contrast(color, self.background)
         {
             reversed
+        } else {
+            color
+        }
+    }
+
+    pub(super) fn span_background_color(self, color: Color) -> Color {
+        if self.dark_span_colors {
+            reverse_color(color)
         } else {
             color
         }
@@ -170,6 +182,114 @@ pub(super) fn reverse_color(color: Color) -> Color {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn page_resolution_selects_background_span_reversal_with_compatibility() {
+        let page = Page {
+            uuid: String::new(),
+            width: 100,
+            height: 100,
+            content_bbox: Default::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: Vec::new(),
+        };
+        let color = Color {
+            r: 244,
+            g: 244,
+            b: 244,
+        };
+        for (mode, compatible, reversed) in [
+            (RenderColorMode::Light, true, false),
+            (RenderColorMode::Dark, true, true),
+            (RenderColorMode::Dark, false, false),
+        ] {
+            let metadata = DocumentMetadata {
+                dark_mode_compatibility: Some(compatible),
+                ..Default::default()
+            };
+            let theme = RenderTheme::resolve(&page, &metadata, mode);
+            assert_eq!(
+                theme.span_background_color(color),
+                if reversed {
+                    reverse_color(color)
+                } else {
+                    color
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn background_spans_keep_the_selected_page_theme_across_local_surfaces() {
+        let dark = RenderTheme::for_canvas(true);
+        let incompatible = RenderTheme {
+            compatible: false,
+            dark_span_colors: false,
+            ..dark
+        };
+        let light = RenderTheme {
+            adapt_colors: true,
+            ..RenderTheme::for_canvas(false)
+        };
+        for color in [
+            Color {
+                r: 244,
+                g: 244,
+                b: 244,
+            },
+            Color {
+                r: 18,
+                g: 52,
+                b: 86,
+            },
+            Color { r: 255, g: 0, b: 0 },
+        ] {
+            assert_eq!(dark.span_background_color(color), reverse_color(color));
+            assert_eq!(light.span_background_color(color), color);
+            assert_eq!(incompatible.span_background_color(color), color);
+            assert_eq!(
+                dark.on_background(Color {
+                    r: 255,
+                    g: 255,
+                    b: 255
+                })
+                .span_background_color(color),
+                reverse_color(color)
+            );
+            assert_eq!(
+                light
+                    .on_background(Color { r: 0, g: 0, b: 0 })
+                    .span_background_color(color),
+                color
+            );
+            assert_eq!(
+                dark.on_surface(
+                    Color {
+                        r: 255,
+                        g: 255,
+                        b: 255
+                    },
+                    1.0
+                )
+                .span_background_color(color),
+                reverse_color(color)
+            );
+            assert_eq!(
+                light
+                    .on_surface(Color { r: 0, g: 0, b: 0 }, 1.0)
+                    .span_background_color(color),
+                color
+            );
+            assert_eq!(
+                incompatible
+                    .on_background(Color { r: 0, g: 0, b: 0 })
+                    .span_background_color(color),
+                color
+            );
+        }
+    }
 
     #[test]
     fn colors_match_native_dark_theme() {

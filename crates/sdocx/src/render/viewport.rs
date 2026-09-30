@@ -35,6 +35,10 @@ impl Viewport {
         self.overlaps_height(line.top, line.bottom)
     }
 
+    pub fn background_visible(self, line: &TextLine) -> bool {
+        self.overlaps_height(line.background_top, line.bottom)
+    }
+
     pub fn text_visible(
         self,
         styled: &StyledText<'_>,

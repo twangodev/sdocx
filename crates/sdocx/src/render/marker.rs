@@ -563,6 +563,7 @@ mod tests {
             font_size: 20.0,
             family: Some("Roboto Mono".into()),
             color: "#262626".into(),
+            background: None,
             source_color: crate::Color {
                 r: 38,
                 g: 38,

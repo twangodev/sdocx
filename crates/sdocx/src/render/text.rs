@@ -8,6 +8,7 @@ use crate::{
 
 use super::RenderTheme;
 
+mod background;
 mod breaks;
 mod layout;
 mod measurement;
@@ -16,6 +17,7 @@ mod pagination;
 mod paint;
 mod resources;
 mod wrapping;
+pub(super) use background::render_line_backgrounds;
 #[cfg(test)]
 use layout::measure_paragraph;
 pub(super) use layout::{
@@ -44,11 +46,18 @@ pub(super) struct TextStyle {
     pub family: Option<String>,
     pub color: String,
     pub source_color: Color,
+    pub background: Option<TextBackground>,
     pub bold: bool,
     pub italic: bool,
     pub underline: bool,
     pub strikethrough: bool,
     pub link_target: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct TextBackground {
+    pub color: Color,
+    pub alpha: u8,
 }
 
 #[derive(Clone, Copy)]
@@ -264,6 +273,7 @@ pub(super) struct StyledText<'a> {
     context: TextContext,
     settings: TextSettings,
     boundaries: Vec<usize>,
+    foreground_boundaries: Vec<usize>,
     spans: Vec<(Range<usize>, &'a RichTextSpan)>,
     geometry_issues: Vec<TextDiagnostic>,
 }
@@ -290,16 +300,23 @@ impl<'a> StyledText<'a> {
             .filter_map(|span| Some((span_range(&index, span)?, span)))
             .collect::<Vec<_>>();
         let mut boundaries = vec![0, index.len()];
-        for (range, _) in &spans {
+        let mut foreground_boundaries = boundaries.clone();
+        for (range, span) in &spans {
             boundaries.extend([range.start, range.end]);
+            if span.kind != RichTextSpanType::BackgroundColor {
+                foreground_boundaries.extend([range.start, range.end]);
+            }
         }
         for run in &text_box.runs {
             if run.start < run.end && run.end <= index.len() {
                 boundaries.extend([run.start, run.end]);
+                foreground_boundaries.extend([run.start, run.end]);
             }
         }
         boundaries.sort_unstable();
         boundaries.dedup();
+        foreground_boundaries.sort_unstable();
+        foreground_boundaries.dedup();
         let mut styled = Self {
             index,
             text_box,
@@ -307,6 +324,7 @@ impl<'a> StyledText<'a> {
             context,
             settings,
             boundaries,
+            foreground_boundaries,
             spans,
             geometry_issues: Vec::new(),
         };
@@ -356,6 +374,7 @@ impl<'a> StyledText<'a> {
             family: None,
             color: theme.foreground(Some(text_box.color.unwrap_or(DEFAULT_FONT_COLOR))),
             source_color: text_box.color.unwrap_or(DEFAULT_FONT_COLOR),
+            background: None,
             bold: false,
             italic: false,
             underline: text_box.underline,
@@ -378,6 +397,18 @@ impl<'a> StyledText<'a> {
                     if let Some(color) = span.color_value() {
                         style.source_color = color;
                         style.color = theme.foreground(Some(color));
+                    }
+                }
+                RichTextSpanType::BackgroundColor => {
+                    if let Some(argb) = span.argb_value() {
+                        style.background = Some(TextBackground {
+                            color: theme.span_background_color(Color {
+                                r: (argb >> 16) as u8,
+                                g: (argb >> 8) as u8,
+                                b: argb as u8,
+                            }),
+                            alpha: (argb >> 24) as u8,
+                        });
                     }
                 }
                 RichTextSpanType::FontSize => {}
@@ -436,16 +467,28 @@ impl<'a> StyledText<'a> {
     }
 
     pub fn segments(&self, range: Range<usize>) -> impl Iterator<Item = Range<usize>> + '_ {
-        let first = self
-            .boundaries
+        Self::segments_at(&self.boundaries, range)
+    }
+
+    pub fn foreground_segments(
+        &self,
+        range: Range<usize>,
+    ) -> impl Iterator<Item = Range<usize>> + '_ {
+        Self::segments_at(&self.foreground_boundaries, range)
+    }
+
+    fn segments_at(
+        boundaries: &[usize],
+        range: Range<usize>,
+    ) -> impl Iterator<Item = Range<usize>> + '_ {
+        let first = boundaries
             .partition_point(|boundary| *boundary <= range.start)
             .saturating_sub(1);
-        let last = self
-            .boundaries
+        let last = boundaries
             .partition_point(|boundary| *boundary < range.end)
             .saturating_add(1)
-            .min(self.boundaries.len());
-        self.boundaries[first.min(last)..last]
+            .min(boundaries.len());
+        boundaries[first.min(last)..last]
             .windows(2)
             .filter_map(move |pair| {
                 let start = pair[0].max(range.start);
@@ -622,6 +665,95 @@ mod tests {
             font_size_delta: 0.0,
             ..Default::default()
         }
+    }
+
+    fn background_span(argb: u32, start: u32, end: u32) -> RichTextSpan {
+        RichTextSpan {
+            kind: RichTextSpanType::BackgroundColor,
+            start_utf16: start,
+            end_utf16: end,
+            expand: false,
+            payload: argb.to_le_bytes().to_vec(),
+        }
+    }
+
+    #[test]
+    fn ordered_background_spans_preserve_transparent_overrides_and_utf16_ranges() {
+        let mut text = text_box();
+        text.text = "A😀B".into();
+        text.highlight_color = Some(Color {
+            r: 255,
+            g: 255,
+            b: 0,
+        });
+        let mut malformed = background_span(0xffffffff, 1, 3);
+        malformed.payload.truncate(3);
+        text.spans = vec![
+            background_span(0x80ffeedd, 1, 3),
+            background_span(0x00123456, 1, 3),
+            malformed,
+            background_span(0xffffffff, 0, 8),
+        ];
+        let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
+        let light = RenderTheme::for_canvas(false);
+        assert_eq!(styled.style_at(0, light, None).background, None);
+        assert_eq!(styled.style_at(2, light, None).background, None);
+        assert_eq!(
+            styled.style_at(1, light, None).background,
+            Some(TextBackground {
+                color: Color {
+                    r: 0x12,
+                    g: 0x34,
+                    b: 0x56
+                },
+                alpha: 0,
+            })
+        );
+        assert_eq!(
+            styled.style_at(0, light, None).color,
+            styled.style_at(1, light, None).color
+        );
+
+        text.spans[1] = background_span(0xa0f4f4f4, 1, 3);
+        let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
+        for (dark, value) in [(false, 244), (true, 11)] {
+            assert_eq!(
+                styled
+                    .style_at(1, RenderTheme::for_canvas(dark), None)
+                    .background,
+                Some(TextBackground {
+                    color: Color {
+                        r: value,
+                        g: value,
+                        b: value
+                    },
+                    alpha: 160,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn background_boundaries_do_not_split_shared_shaping_runs() {
+        let mut text = text_box();
+        text.text = "AV".into();
+        let settings = TextSettings::default();
+        let theme = RenderTheme::for_canvas(false);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let measure = |text: &RichTextBox| {
+            let styled = StyledText::new(text, TextContext::Placed, settings);
+            measure_paragraph(&styled, 0..2, 1000.0, theme, None, &renderer)
+        };
+        let plain = measure(&text);
+        text.spans.push(background_span(0x80ffeedd, 1, 2));
+        let highlighted = measure(&text);
+        assert_eq!(highlighted[0].advance, plain[0].advance);
+        assert_eq!(highlighted[0].placements.len(), 2);
+        assert!(std::sync::Arc::ptr_eq(
+            &highlighted[0].placements[0].cluster.run,
+            &highlighted[0].placements[1].cluster.run,
+        ));
     }
 
     #[test]

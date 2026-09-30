@@ -590,13 +590,18 @@ impl RichTextSpan {
             .map(|bytes| u16::from_le_bytes([bytes[0], bytes[1]]) == 1)
     }
 
-    /// Decode a color span's BGRA payload.
+    /// Decode a color span's BGRA payload while retaining alpha.
+    pub fn argb_value(&self) -> Option<u32> {
+        Some(u32::from_le_bytes(self.payload.get(..4)?.try_into().ok()?))
+    }
+
+    /// Decode a color span's RGB channels.
     pub fn color_value(&self) -> Option<Color> {
-        let bytes = self.payload.get(..4)?;
+        let argb = self.argb_value()?;
         Some(Color {
-            r: bytes[2],
-            g: bytes[1],
-            b: bytes[0],
+            r: (argb >> 16) as u8,
+            g: (argb >> 8) as u8,
+            b: argb as u8,
         })
     }
 
@@ -1226,6 +1231,36 @@ mod tests {
                 .iter()
                 .flat_map(|value| value.to_le_bytes())
                 .collect(),
+        }
+    }
+
+    #[test]
+    fn color_span_argb_retains_alpha_and_rejects_truncated_payloads() {
+        let mut span = RichTextSpan {
+            kind: RichTextSpanType::BackgroundColor,
+            start_utf16: 0,
+            end_utf16: 1,
+            expand: false,
+            payload: Vec::new(),
+        };
+        for argb in [0x00345678_u32, 0x80345678, 0xff345678] {
+            span.payload = argb.to_le_bytes().to_vec();
+            assert_eq!(span.argb_value(), Some(argb));
+            assert_eq!(
+                span.color_value(),
+                Some(super::Color {
+                    r: 0x34,
+                    g: 0x56,
+                    b: 0x78
+                })
+            );
+            span.payload.push(0xff);
+            assert_eq!(span.argb_value(), Some(argb));
+        }
+        for length in 0..4 {
+            span.payload = vec![0; length];
+            assert_eq!(span.argb_value(), None);
+            assert_eq!(span.color_value(), None);
         }
     }
 

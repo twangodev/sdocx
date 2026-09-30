@@ -24,6 +24,8 @@ pub enum TextDiagnosticKind {
     UnsupportedTextFrame,
     /// Measured glyph positions cannot be reproduced by independently positioned SVG text.
     UnsupportedGlyphPositioning,
+    /// Retained text measurements do not provide the highlighted range's boundaries.
+    UnsupportedBackgroundPositioning,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -464,6 +466,7 @@ mod tests {
             font_size: 19.0,
             family: Some(family.into()),
             color: "#262626".into(),
+            background: None,
             source_color: Color {
                 r: 38,
                 g: 38,
@@ -644,6 +647,7 @@ mod tests {
             font_size: 19.0,
             family: Some("Unavailable".into()),
             color: "#123456".into(),
+            background: None,
             source_color: Color {
                 r: 18,
                 g: 52,

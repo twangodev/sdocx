@@ -9,6 +9,7 @@ pub(super) struct TextRotation {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct PlacedTextFrame {
     pub bounds: BoundingBox,
+    pub background_bounds: BoundingBox,
     pub rotation: Option<TextRotation>,
     measured_size: Option<[i32; 2]>,
 }
@@ -24,6 +25,7 @@ impl PlacedTextFrame {
         let bounds = text.bbox;
         Self {
             bounds,
+            background_bounds: bounds,
             measured_size: None,
             rotation: text.rotation_degrees.map(|degrees| TextRotation {
                 degrees,
@@ -63,6 +65,12 @@ impl PlacedTextFrame {
         ];
         let width = right - left;
         let height = bottom - top;
+        let background_bounds = BoundingBox {
+            x_min: f64::from(left),
+            y_min: f64::from(top),
+            x_max: f64::from(right),
+            y_max: f64::from(bottom),
+        };
         let center = [(left + right) * 0.5, (top + bottom) * 0.5];
         if ![
             left,
@@ -115,6 +123,7 @@ impl PlacedTextFrame {
         };
         Ok(Self {
             bounds,
+            background_bounds,
             measured_size: Some([width.ceil() as i32, height.ceil() as i32]),
             rotation: Some(TextRotation {
                 degrees: f64::from(rotation_degrees),

@@ -981,9 +981,12 @@ fn render_placed_text(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) {
-    let theme = text_box
-        .highlight_color
-        .map_or(theme, |color| theme.on_background(color));
+    let has_background_spans = text_box
+        .spans
+        .iter()
+        .any(|span| span.kind == crate::RichTextSpanType::BackgroundColor);
+    let legacy_highlight = text_box.highlight_color.filter(|_| !has_background_spans);
+    let theme = legacy_highlight.map_or(theme, |color| theme.on_background(color));
     let styled = StyledText::new(text_box, TextContext::Placed, renderer.settings);
     let text_frame = text::TextFrame {
         bbox: frame.bounds,
@@ -1004,10 +1007,30 @@ fn render_placed_text(
         ));
     }
     svg.scope(group, |svg| {
-        if let Some(highlight) = text_box.highlight_color.as_ref() {
+        if let Some(highlight) = legacy_highlight.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        paint_text_layout(svg, &styled, &layout, media_assets, theme, renderer);
+        if has_background_spans {
+            let clip = svg.definition::<Clip>();
+            svg.push(Definitions::new().add(ClipPath::new(&clip).add(rectangle(
+                frame.background_bounds,
+                0.0,
+                5,
+            ))));
+            svg.scope(Group::new().clipped(&clip), |svg| {
+                paint_text_backgrounds(
+                    svg,
+                    &styled,
+                    &layout,
+                    theme,
+                    renderer,
+                    Some(Viewport::new(frame.background_bounds)),
+                );
+            });
+            paint_text_foreground(svg, &styled, &layout, media_assets, theme, renderer, None);
+        } else {
+            paint_text_layout(svg, &styled, &layout, media_assets, theme, renderer);
+        }
     });
 }
 
@@ -1023,6 +1046,40 @@ fn paint_text_layout(
 }
 
 fn paint_text_layout_in_viewport(
+    svg: &mut Scene,
+    styled: &StyledText<'_>,
+    layout: &text::TextLayout,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
+) {
+    paint_text_backgrounds(svg, styled, layout, theme, renderer, viewport);
+    paint_text_foreground(svg, styled, layout, media_assets, theme, renderer, viewport);
+}
+
+fn paint_text_backgrounds(
+    svg: &mut Scene,
+    styled: &StyledText<'_>,
+    layout: &text::TextLayout,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
+) {
+    for line in &layout.lines {
+        for issue in text::render_line_backgrounds(svg, styled, line, theme, viewport) {
+            renderer
+                .for_source(issue.source)
+                .report_geometry_issues(&[TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedBackgroundPositioning,
+                    family: String::new(),
+                    codepoints: Vec::new(),
+                }]);
+        }
+    }
+}
+
+fn paint_text_foreground(
     svg: &mut Scene,
     styled: &StyledText<'_>,
     layout: &text::TextLayout,
@@ -1434,7 +1491,7 @@ fn render_flow_line(
             .family(FontFamily::Roboto)
             .preserve_space(),
         |svg| {
-            for segment in styled.segments(range.clone()) {
+            for segment in styled.foreground_segments(range.clone()) {
                 let style = styled.style_at(segment.start, theme, predefined_style);
                 write_styled_tspan(
                     svg,

@@ -165,6 +165,7 @@ fn translate_cell_drawing(
         line.x = native_add(line.x, origin[0])?;
         line.baseline = native_add(line.baseline, origin[1])?;
         line.top = native_add(line.top, origin[1])?;
+        line.background_top = native_add(line.background_top, origin[1])?;
         line.bottom = native_add(line.bottom, origin[1])?;
         line.post_cursor = native_add(line.post_cursor, origin[1])?;
         if let Some(marker) = &mut line.marker {
@@ -290,6 +291,7 @@ fn valid_cell_layout(layout: &TextLayout) -> bool {
                 line.width,
                 line.baseline,
                 line.top,
+                line.background_top,
                 line.bottom,
                 line.post_cursor,
                 line.line.font_size,
@@ -957,6 +959,7 @@ mod tests {
         assert_eq!(line.x, 16_777_220.0);
         assert_eq!(line.baseline, 16_777_228.0);
         assert_eq!(line.top, 16_777_220.0);
+        assert_eq!(line.background_top, 16_777_220.0);
         assert_eq!(line.bottom, 16_777_232.0);
         assert_eq!(line.post_cursor, 16_777_232.0);
         assert_eq!(line.width, callback.rows[0].cells[0].layout.lines[0].width);
@@ -999,6 +1002,19 @@ mod tests {
                 Some(alignment)
             );
         }
+    }
+
+    #[test]
+    fn drawing_translates_background_top_independently_with_native_precision() {
+        let mut table = grid(&[100.0], &[200.0]);
+        table.rows[0].cells[0].content.text = "A".into();
+        let mut local = prepared(&table);
+        let layout = &mut local.rows[0].cells[0].layout;
+        layout.lines[0].top = 0.5;
+        layout.lines[0].background_top = 1.5;
+        translate_cell_drawing(layout, [0.0, 16_777_216.0]).unwrap();
+        assert_eq!(layout.lines[0].top, 16_777_216.0);
+        assert_eq!(layout.lines[0].background_top, 16_777_218.0);
     }
 
     #[test]

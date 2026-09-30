@@ -101,7 +101,7 @@ pub(in crate::render) fn render_measured_line(
     for segment in spans
         .iter()
         .filter(|span| span.positioned)
-        .flat_map(|span| styled.segments(span.source.clone()))
+        .flat_map(|span| styled.foreground_segments(span.source.clone()))
     {
         let style = styled.style_at(segment.start, theme, predefined);
         if !style.underline && !style.strikethrough {
@@ -266,7 +266,7 @@ fn positioned_spans(
     }
     let mut result = Vec::new();
     let mut index = 0;
-    for segment in styled.segments(line.source.clone()) {
+    for segment in styled.foreground_segments(line.source.clone()) {
         let style = styled.style_at(segment.start, theme, predefined);
         while index < line.placements.len()
             && line.placements[index].cluster.source.start < segment.end
@@ -301,7 +301,7 @@ fn positioned_spans(
                     source.end = next.cluster.source.end;
                     index += 1;
                 }
-                for (part, source) in styled.segments(source).enumerate() {
+                for (part, source) in styled.foreground_segments(source).enumerate() {
                     let style = styled.style_at(source.start, theme, predefined);
                     renderer
                         .for_source(source.clone())
@@ -359,7 +359,7 @@ fn positioned_spans(
     Some(result)
 }
 
-fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
+pub(in crate::render) fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
     #[derive(PartialEq)]
     enum Context {
         Embedding,
