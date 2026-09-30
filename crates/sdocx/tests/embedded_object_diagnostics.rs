@@ -171,24 +171,18 @@ fn unsupported_content_and_invalid_geometry_preserve_source() {
 }
 
 #[test]
-fn mixed_valid_objects_report_limits_without_discarding_neighbor_text() {
+fn mixed_valid_objects_paint_without_discarding_neighbor_text() {
     let source = "A😀\u{fffc}e\u{301}\u{fffc}B";
     for page in modes(&document(source, vec![code(6), code(3)])) {
+        assert!(page.object_diagnostics.is_empty());
         assert_eq!(
-            page.object_diagnostics,
-            vec![
-                ObjectDiagnostic {
-                    anchor_utf16: 3,
-                    kind: ObjectDiagnosticKind::MixedParagraphLayout
-                },
-                ObjectDiagnostic {
-                    anchor_utf16: 6,
-                    kind: ObjectDiagnosticKind::MixedParagraphLayout
-                },
-            ]
+            selectable_text(&page.svg),
+            "A😀e\u{301}BOBJECT CONTENTOBJECT CONTENT"
         );
-        assert_eq!(selectable_text(&page.svg), source);
-        assert_no_object_paint(&page.svg);
+        assert_eq!(
+            page.svg.matches("data-sdocx-object=\"code-block\"").count(),
+            2
+        );
     }
 }
 

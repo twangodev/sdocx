@@ -1,10 +1,11 @@
 use std::ops::Range;
 
 use crate::render::RenderTheme;
-use crate::{BoundingBox, ParagraphAlignment, PredefinedTextStyle};
+use crate::{BoundingBox, ParagraphAlignment, ParagraphLineSpacing, PredefinedTextStyle};
 
 use super::{
-    StyledText, TextRenderer, WrappedLine, paragraph_layout, paragraph_line_height, wrap_paragraph,
+    StyledText, TextRenderer, WrappedLine, paragraph_layout, paragraph_line_height,
+    unmeasured_paragraph, wrap_paragraph,
 };
 
 #[derive(Clone, Copy)]
@@ -51,6 +52,78 @@ impl TextFrame<'_> {
     }
 }
 
+pub(in crate::render) struct TextCursor {
+    position: f64,
+    pending_bottom: f64,
+}
+
+impl TextCursor {
+    pub fn new(position: f64) -> Self {
+        Self {
+            position,
+            pending_bottom: 0.0,
+        }
+    }
+
+    pub fn add_spacing(&mut self, spacing: f64) {
+        self.position += spacing;
+    }
+
+    pub fn position(&self) -> f64 {
+        self.position
+    }
+
+    pub fn height(&self) -> f64 {
+        self.position() + self.pending_bottom
+    }
+
+    pub fn height_with_bottom(&self, bottom: f64) -> f64 {
+        let bottom = bottom.max(0.0);
+        if bottom <= self.pending_bottom {
+            self.height()
+        } else {
+            self.position() + bottom
+        }
+    }
+
+    pub fn place(
+        &mut self,
+        line: &WrappedLine,
+        spacing: Option<ParagraphLineSpacing>,
+        frame: &TextFrame<'_>,
+        settings: super::TextSettings,
+    ) -> f64 {
+        let [top_margin, bottom_margin] = line.object_margins();
+        self.position += self.pending_bottom.max(top_margin);
+        self.pending_bottom = bottom_margin;
+        let has_objects = !line.objects.is_empty();
+        let block = line.placements.is_empty()
+            && line.objects.iter().any(|object| !object.object.inline)
+            && top_margin > 0.0
+            && bottom_margin > 0.0;
+        let base_height = line.font_size.max(line.object_height());
+        let advance = if block {
+            base_height
+        } else if has_objects {
+            base_height + paragraph_line_height(line.font_size, spacing, settings) - line.font_size
+        } else {
+            paragraph_line_height(line.font_size, spacing, settings)
+        };
+        let candidate_top = frame.bbox.y_min + self.position;
+        let top = frame.line_top(candidate_top, advance);
+        let offset = if block {
+            base_height + 0.001
+        } else if has_objects {
+            advance - 0.35 * line.font_size + 0.001
+        } else {
+            frame.baseline.offset(line.font_size, advance)
+        };
+        let epsilon = if has_objects { 0.001 } else { 0.0 };
+        self.position += top - candidate_top + advance + epsilon;
+        top + offset
+    }
+}
+
 pub(in crate::render) struct TextLine {
     pub line: WrappedLine,
     pub x: f64,
@@ -91,6 +164,7 @@ pub(in crate::render) fn measure_paragraph(
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
 ) -> Vec<WrappedLine> {
+    renderer.report_object_issues(styled.objects.issues());
     if source.is_empty() {
         return vec![WrappedLine::unmeasured(
             source.clone(),
@@ -101,10 +175,7 @@ pub(in crate::render) fn measure_paragraph(
         |_| {
             let style = styled.style_at(source.start, theme, predefined);
             renderer.measurement_failed(style.family.as_deref().unwrap_or("Roboto"));
-            vec![WrappedLine::unmeasured(
-                source.clone(),
-                styled.line_font_size(source, theme, predefined),
-            )]
+            unmeasured_paragraph(styled, source, theme, predefined, renderer)
         },
     )
 }
@@ -145,7 +216,7 @@ pub(in crate::render) fn layout_text(
     let content_right = frame.bbox.x_min + outer_width - margins[2];
     let paragraphs = styled.index.paragraphs().collect::<Vec<_>>();
     let mut lines = Vec::new();
-    let mut cursor = margins[1];
+    let mut cursor = TextCursor::new(margins[1]);
     for (paragraph_number, paragraph) in paragraphs.iter().enumerate() {
         let ordinal = styled
             .index
@@ -154,7 +225,7 @@ pub(in crate::render) fn layout_text(
         let layout = paragraph_layout(text_box, ordinal, settings);
         let x = content_left + layout.left_indent(settings);
         let width = (content_right - x).max(0.0);
-        cursor += layout.spacing_before;
+        cursor.add_spacing(layout.spacing_before);
         for line in measure_paragraph(
             styled,
             paragraph.content.clone(),
@@ -163,11 +234,7 @@ pub(in crate::render) fn layout_text(
             layout.predefined_style,
             renderer,
         ) {
-            let advance = paragraph_line_height(line.font_size, layout.line_spacing, settings);
-            let candidate_top = frame.bbox.y_min + cursor;
-            let top = frame.line_top(candidate_top, advance);
-            let baseline = top + frame.baseline.offset(line.font_size, advance);
-            cursor += top - candidate_top + advance;
+            let baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
             lines.push(TextLine {
                 line,
                 x,
@@ -178,13 +245,13 @@ pub(in crate::render) fn layout_text(
             });
         }
         if paragraph_number + 1 < paragraphs.len() {
-            cursor += layout.spacing_after;
+            cursor.add_spacing(layout.spacing_after);
         }
     }
     let content_height = if styled.index.is_empty() {
         styled.style_at(0, theme, None).font_size + margins[1] + margins[3]
     } else {
-        cursor + margins[3].max(0.0)
+        cursor.height_with_bottom(margins[3])
     };
     let mut layout = TextLayout {
         lines,
@@ -196,6 +263,8 @@ pub(in crate::render) fn layout_text(
 
 #[cfg(test)]
 mod tests {
+    use super::super::objects::MeasuredObject;
+    use super::super::wrapping::PositionedObject;
     use super::super::{TextContext, TextSettings};
     use super::*;
     use crate::fonts::FontBook;
@@ -364,6 +433,8 @@ mod tests {
         let plan = measure(&empty, &bands);
         assert!(plan.lines.is_empty());
         assert_eq!(plan.height(), 15.0);
+        empty.margins = Some([0.0, 2.0, 0.0, -3.0]);
+        assert_eq!(measure(&empty, &bands).height(), 9.0);
 
         let mut centered = text("ABC");
         centered.gravity = Some(1);
@@ -402,5 +473,111 @@ mod tests {
         assert_eq!(native.lines[0].baseline, 149.25);
         assert_eq!(native.height(), 65.0);
         assert_eq!(measure(&content, &[]).lines[0].baseline, 145.0);
+    }
+
+    fn object_line(font_size: f64, inline: bool, margins: [f64; 2]) -> WrappedLine {
+        let mut line = WrappedLine::unmeasured(0..1, font_size);
+        line.objects.push(PositionedObject {
+            object: MeasuredObject {
+                source: 0..1,
+                span_index: 0,
+                bounds: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 50.0,
+                    y_max: 100.0,
+                },
+                inline,
+                top_margin: margins[0],
+                bottom_margin: margins[1],
+            },
+            x: 0.0,
+        });
+        line
+    }
+
+    fn place_object(cursor: &mut TextCursor, line: &WrappedLine) -> f64 {
+        cursor.place(
+            line,
+            None,
+            &TextFrame {
+                bbox: BoundingBox::default(),
+                gravity: None,
+                baseline: TextBaseline::FontSize,
+                exclusions: &[],
+            },
+            TextSettings {
+                scale: 1.0,
+                font_size_delta: 0.0,
+            },
+        )
+    }
+
+    fn close(actual: f64, expected: f64) {
+        assert!(
+            (actual - expected).abs() < 0.0000001,
+            "{actual} != {expected}"
+        );
+    }
+
+    #[test]
+    fn inline_object_height_keeps_text_leading_and_native_epsilon() {
+        let mut cursor = TextCursor::new(0.0);
+        close(
+            place_object(&mut cursor, &object_line(20.0, true, [0.0; 2])),
+            100.001,
+        );
+        close(cursor.position(), 107.001);
+        close(cursor.height(), 107.001);
+    }
+
+    #[test]
+    fn block_object_margins_defer_the_bottom_and_omit_extra_leading() {
+        let mut cursor = TextCursor::new(0.0);
+        close(
+            place_object(&mut cursor, &object_line(20.0, false, [30.0; 2])),
+            130.001,
+        );
+        close(cursor.position(), 130.001);
+        close(cursor.height(), 160.001);
+    }
+
+    #[test]
+    fn adjacent_block_margins_collapse_instead_of_accumulating() {
+        let mut cursor = TextCursor::new(0.0);
+        let line = object_line(20.0, false, [30.0; 2]);
+        close(place_object(&mut cursor, &line), 130.001);
+        close(place_object(&mut cursor, &line), 260.002);
+        close(cursor.height(), 290.002);
+    }
+
+    #[test]
+    fn final_text_box_bottom_collapses_with_the_pending_object_margin() {
+        let mut cursor = TextCursor::new(0.0);
+        place_object(&mut cursor, &object_line(20.0, false, [30.0; 2]));
+        close(cursor.height_with_bottom(10.0), 160.001);
+        close(cursor.height_with_bottom(40.0), 170.001);
+        close(cursor.height_with_bottom(-10.0), 160.001);
+    }
+
+    #[test]
+    fn following_text_consumes_the_pending_object_margin_once() {
+        let mut cursor = TextCursor::new(0.0);
+        place_object(&mut cursor, &object_line(20.0, false, [30.0; 2]));
+        let text = WrappedLine::unmeasured(1..2, 20.0);
+        close(place_object(&mut cursor, &text), 180.001);
+        close(cursor.height(), 187.001);
+        close(place_object(&mut cursor, &text), 207.001);
+        close(cursor.height(), 214.001);
+    }
+
+    #[test]
+    fn zero_text_font_metric_does_not_add_leading_to_object_height() {
+        let mut cursor = TextCursor::new(0.0);
+        close(
+            place_object(&mut cursor, &object_line(0.0, true, [0.0; 2])),
+            100.001,
+        );
+        close(cursor.height(), 100.001);
     }
 }

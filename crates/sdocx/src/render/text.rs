@@ -17,16 +17,15 @@ mod paint;
 mod resources;
 mod wrapping;
 pub(super) use layout::{
-    TextBaseline, TextFrame, TextLayout, VerticalExclusion, layout_placed_text, layout_text,
-    measure_paragraph,
+    TextBaseline, TextCursor, TextFrame, TextLayout, VerticalExclusion, layout_placed_text,
+    layout_text, measure_paragraph,
 };
-pub(super) use objects::TextObjectIndex;
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;
 pub(super) use paint::render_measured_line;
 pub(super) use resources::TextRenderer;
 pub use resources::{TextDiagnostic, TextDiagnosticKind};
-pub(super) use wrapping::{WrappedLine, wrap_paragraph};
+pub(super) use wrapping::{WrappedLine, unmeasured_paragraph, wrap_paragraph};
 
 pub(super) const DEFAULT_FONT_SIZE: f32 = 17.0;
 const DEFAULT_FONT_COLOR: Color = Color {
@@ -179,6 +178,7 @@ pub(in crate::render) fn paragraph_line_height(
 pub(super) struct StyledText<'a> {
     pub index: TextIndex<'a>,
     text_box: &'a RichTextBox,
+    objects: objects::TextObjectIndex<'a>,
     context: TextContext,
     settings: TextSettings,
     boundaries: Vec<usize>,
@@ -189,8 +189,12 @@ impl<'a> StyledText<'a> {
     pub fn context(&self) -> TextContext {
         self.context
     }
+    pub fn object_span(&self, index: usize) -> Option<&crate::RichTextObjectSpan> {
+        self.text_box.object_spans.get(index)
+    }
     pub fn new(text_box: &'a RichTextBox, context: TextContext, settings: TextSettings) -> Self {
         let index = TextIndex::new(&text_box.text);
+        let objects = objects::TextObjectIndex::new(text_box, &index);
         let spans = text_box
             .spans
             .iter()
@@ -210,6 +214,7 @@ impl<'a> StyledText<'a> {
         Self {
             index,
             text_box,
+            objects,
             context,
             settings,
             boundaries,

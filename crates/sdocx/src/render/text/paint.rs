@@ -31,7 +31,7 @@ pub(in crate::render) fn render_measured_line(
     if line.source.is_empty() {
         return;
     }
-    if line.placements.is_empty() {
+    if line.placements.is_empty() && line.objects.is_empty() {
         render_flow_line(
             svg,
             styled,
@@ -53,20 +53,13 @@ pub(in crate::render) fn render_measured_line(
             Some(ParagraphAlignment::Right) => remaining,
             _ => 0.0,
         };
+    if line.placements.is_empty() {
+        render_text_fragments(svg, styled, line, x, baseline, theme, predefined, renderer);
+        return;
+    }
     let spans = positioned_spans(styled, line, x, baseline, theme, predefined, renderer);
     let Some(spans) = spans else {
-        render_flow_line(
-            svg,
-            styled,
-            line.source.clone(),
-            x,
-            x + available_width,
-            baseline,
-            None,
-            theme,
-            predefined,
-            renderer,
-        );
+        render_text_fragments(svg, styled, line, x, baseline, theme, predefined, renderer);
         return;
     };
     svg.scope(
@@ -92,7 +85,10 @@ pub(in crate::render) fn render_measured_line(
             }
         },
     );
-    for segment in styled.segments(line.source.clone()) {
+    for segment in text_ranges(line)
+        .into_iter()
+        .flat_map(|range| styled.segments(range))
+    {
         let style = styled.style_at(segment.start, theme, predefined);
         if !style.underline && !style.strikethrough {
             continue;
@@ -103,6 +99,9 @@ pub(in crate::render) fn render_measured_line(
         let last = line
             .placements
             .partition_point(|placement| placement.cluster.source.start < segment.end);
+        if first == last {
+            continue;
+        }
         let start = x + line.placements[first].x;
         let end = x + line.placements[last - 1].x + line.placements[last - 1].cluster.advance;
         let thickness = style.font_size * f64::from(1.0_f32 / 18.0);
@@ -122,6 +121,71 @@ pub(in crate::render) fn render_measured_line(
                     .fill(Paint::from_hex(&style.color)),
             );
         }
+    }
+}
+
+fn text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
+    let mut ranges = Vec::with_capacity(line.objects.len() + 1);
+    let mut start = line.source.start;
+    for object in &line.objects {
+        if start < object.object.source.start {
+            ranges.push(start..object.object.source.start);
+        }
+        start = object.object.source.end;
+    }
+    if start < line.source.end {
+        ranges.push(start..line.source.end);
+    }
+    ranges
+}
+
+#[allow(clippy::too_many_arguments)]
+fn render_text_fragments(
+    svg: &mut Scene,
+    styled: &StyledText<'_>,
+    line: &WrappedLine,
+    x: f64,
+    baseline: f64,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+    renderer: &TextRenderer<'_>,
+) {
+    for range in text_ranges(line) {
+        let first = line
+            .placements
+            .partition_point(|placement| placement.cluster.source.end <= range.start);
+        let last = line
+            .placements
+            .partition_point(|placement| placement.cluster.source.start < range.end);
+        let placements = &line.placements[first..last];
+        let offset = placements.first().map_or_else(
+            || {
+                line.objects
+                    .iter()
+                    .rev()
+                    .find(|object| object.object.source.end <= range.start)
+                    .map_or(0.0, |object| {
+                        object.x + (object.object.bounds.x_max - object.object.bounds.x_min)
+                    })
+            },
+            |placement| placement.x,
+        );
+        let advance = placements
+            .iter()
+            .map(|placement| placement.cluster.advance)
+            .sum::<f64>();
+        render_flow_line(
+            svg,
+            styled,
+            range,
+            x + offset,
+            x + offset + advance,
+            baseline,
+            None,
+            theme,
+            predefined,
+            renderer,
+        );
     }
 }
 
@@ -183,6 +247,7 @@ fn positioned_spans(
             index += 1;
             if source.len() == 1 {
                 while let Some(next) = line.placements.get(index)
+                    && next.cluster.source.start == source.end
                     && next.cluster.source.end <= segment.end
                     && next.cluster.source.len() == 1
                     && next.cluster.run.face.id == face.id

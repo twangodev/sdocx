@@ -208,7 +208,13 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             return Err(MeasurementError::InvalidRange);
         }
         let mut runs = Vec::new();
-        for (segment, style) in &self.styles {
+        let first = self
+            .styles
+            .partition_point(|(segment, _)| segment.end <= range.start);
+        for (segment, style) in self.styles[first..]
+            .iter()
+            .take_while(|(segment, _)| segment.start < range.end)
+        {
             let start = segment.start.max(range.start);
             let end = segment.end.min(range.end);
             if start >= end {

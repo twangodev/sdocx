@@ -1,8 +1,11 @@
 use std::collections::BTreeMap;
 use std::ops::Range;
 
+use super::TextSettings;
 use crate::text_index::TextIndex;
-use crate::{BoundingBox, RichTextBox, RichTextObjectContent, RichTextObjectSpan};
+use crate::{
+    BoundingBox, ObjectSpanLayoutOption, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
+};
 
 pub(in crate::render) struct TextObjectIndex<'a> {
     objects: Vec<TextObject<'a>>,
@@ -11,7 +14,37 @@ pub(in crate::render) struct TextObjectIndex<'a> {
 
 pub(in crate::render) struct TextObject<'a> {
     pub source: Range<usize>,
+    pub span_index: usize,
     pub span: &'a RichTextObjectSpan,
+    pub bounds: BoundingBox,
+}
+
+#[derive(Debug, Clone)]
+pub(in crate::render) struct MeasuredObject {
+    pub source: Range<usize>,
+    pub span_index: usize,
+    pub bounds: BoundingBox,
+    pub inline: bool,
+    pub top_margin: f64,
+    pub bottom_margin: f64,
+}
+
+impl TextObject<'_> {
+    pub fn measured(&self, settings: TextSettings) -> MeasuredObject {
+        let margin = match self.span.layout_option {
+            ObjectSpanLayoutOption::BlockWithSmallMargin => settings.pixels(10.0),
+            ObjectSpanLayoutOption::BlockWithMediumMargin => settings.pixels(20.0),
+            _ => 0.0,
+        };
+        MeasuredObject {
+            source: self.source.clone(),
+            span_index: self.span_index,
+            bounds: self.bounds,
+            inline: self.span.layout_option == ObjectSpanLayoutOption::Inline,
+            top_margin: margin,
+            bottom_margin: margin,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,7 +68,7 @@ impl<'a> TextObjectIndex<'a> {
     pub fn new(text: &'a RichTextBox, index: &TextIndex<'_>) -> Self {
         let mut selected = BTreeMap::new();
         let mut issues = Vec::new();
-        for span in &text.object_spans {
+        for (span_index, span) in text.object_spans.iter().enumerate() {
             let source = u32::try_from(span.text_index_utf16)
                 .ok()
                 .and_then(|anchor| index.utf16_to_char(anchor))
@@ -57,12 +90,14 @@ impl<'a> TextObjectIndex<'a> {
             let validated = object_bounds(span)
                 .and_then(|bounds| {
                     valid_bounds(bounds)
-                        .then_some(())
+                        .then_some(bounds)
                         .ok_or(ObjectDiagnosticKind::InvalidBounds)
                 })
-                .map(|()| TextObject {
+                .map(|bounds| TextObject {
                     source: source..source + 1,
+                    span_index,
                     span,
+                    bounds,
                 });
             let object = match validated {
                 Ok(object) => Some(object),
@@ -99,7 +134,12 @@ impl<'a> TextObjectIndex<'a> {
 
 fn object_bounds(span: &RichTextObjectSpan) -> Result<BoundingBox, ObjectDiagnosticKind> {
     match span.content.as_ref() {
-        Some(RichTextObjectContent::Image(image)) => Ok(image.bbox),
+        Some(RichTextObjectContent::Image(image)) => {
+            if !valid_bounds(image.bbox) {
+                return Err(ObjectDiagnosticKind::InvalidBounds);
+            }
+            Ok(crate::render::image_drawn_bbox(image))
+        }
         Some(RichTextObjectContent::Table(table)) => Ok(table.bbox),
         Some(RichTextObjectContent::CodeBlock(code)) => Ok(code.bbox),
         None => Err(ObjectDiagnosticKind::UnsupportedContent),
@@ -234,8 +274,102 @@ mod tests {
         );
         assert!(std::ptr::eq(objects[0].span, &text.object_spans[1]));
         assert!(std::ptr::eq(objects[1].span, &text.object_spans[2]));
+        assert_eq!(objects[0].span_index, 1);
+        assert_eq!(objects[1].span_index, 2);
+        assert_eq!(objects[1].bounds, object_bounds(objects[1].span).unwrap());
         let bounds = object_bounds(objects[1].span).unwrap();
         assert_eq!(bounds.x_max - bounds.x_min, 50.0);
+    }
+
+    #[test]
+    fn measured_objects_keep_source_identity_and_only_explicit_inline_flag() {
+        for (option, inline) in [
+            (ObjectSpanLayoutOption::Inline, true),
+            (ObjectSpanLayoutOption::Block, false),
+            (ObjectSpanLayoutOption::BlockWithSmallMargin, false),
+            (ObjectSpanLayoutOption::BlockWithMediumMargin, false),
+            (ObjectSpanLayoutOption::Other(99), false),
+        ] {
+            let mut span = image(3, 30.0);
+            span.layout_option = option;
+            let text = text("A😀\u{fffc}B", vec![span]);
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            let object = &index.in_range(0..4)[0];
+            let measured = object.measured(TextSettings {
+                scale: 1.0,
+                font_size_delta: 0.0,
+            });
+            assert_eq!(measured.source, 2..3);
+            assert_eq!(measured.span_index, 0);
+            assert_eq!(measured.bounds, object.bounds);
+            assert_eq!(measured.inline, inline);
+        }
+    }
+
+    #[test]
+    fn object_margins_use_document_density_without_font_delta_or_rescaling_bounds() {
+        for (option, expected) in [
+            (ObjectSpanLayoutOption::Block, 0.0),
+            (ObjectSpanLayoutOption::Inline, 0.0),
+            (ObjectSpanLayoutOption::BlockWithSmallMargin, 30.0),
+            (ObjectSpanLayoutOption::BlockWithMediumMargin, 60.0),
+            (ObjectSpanLayoutOption::Other(99), 0.0),
+        ] {
+            let mut span = image(0, 30.0);
+            span.layout_option = option;
+            let text = text("\u{fffc}", vec![span]);
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            let object = &index.in_range(0..1)[0];
+            for font_size_delta in [-100.0, 0.0, 500.0] {
+                let measured = object.measured(TextSettings {
+                    scale: 3.0,
+                    font_size_delta,
+                });
+                assert_eq!(measured.top_margin, expected);
+                assert_eq!(measured.bottom_margin, expected);
+                assert_eq!(measured.bounds, object.bounds);
+                assert_eq!(measured.bounds.x_max - measured.bounds.x_min, 30.0);
+                assert_eq!(measured.bounds.y_max - measured.bounds.y_min, 60.0);
+            }
+        }
+    }
+
+    #[test]
+    fn rotated_image_measurement_uses_drawn_bounds_around_the_stored_center() {
+        let mut span = image(0, 20.0);
+        if let Some(RichTextObjectContent::Image(image)) = span.content.as_mut() {
+            image.rotation_degrees = Some(90.0);
+        }
+        let text = text("\u{fffc}", vec![span]);
+        let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+        let measured = index.in_range(0..1)[0].measured(TextSettings {
+            scale: 3.0,
+            font_size_delta: 0.0,
+        });
+        assert!((measured.bounds.x_max - measured.bounds.x_min - 60.0).abs() < 1e-10);
+        assert!((measured.bounds.y_max - measured.bounds.y_min - 20.0).abs() < 1e-10);
+        assert!(((measured.bounds.x_min + measured.bounds.x_max) / 2.0).abs() < 1e-10);
+        assert!(((measured.bounds.y_min + measured.bounds.y_max) / 2.0 - 10.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn image_rotation_cannot_promote_invalid_stored_bounds_or_angles() {
+        for (width, angle) in [
+            (-20.0, 90.0),
+            (0.0, 45.0),
+            (20.0, f64::NAN),
+            (20.0, f64::INFINITY),
+            (20.0, f64::NEG_INFINITY),
+        ] {
+            let mut span = image(0, width);
+            if let Some(RichTextObjectContent::Image(image)) = span.content.as_mut() {
+                image.rotation_degrees = Some(angle);
+            }
+            let text = text("\u{fffc}", vec![span]);
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            assert!(index.in_range(0..1).is_empty());
+            assert_eq!(index.issues()[0].kind, ObjectDiagnosticKind::InvalidBounds);
+        }
     }
 
     #[test]

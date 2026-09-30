@@ -3,8 +3,9 @@ use std::ops::Range;
 use crate::PredefinedTextStyle;
 use crate::render::RenderTheme;
 
-use super::breaks::{BreakKind, break_candidates};
+use super::breaks::{BreakCandidate, BreakKind, ParagraphBreaks, break_candidates};
 use super::measurement::{MeasuredCluster, MeasurementError, ParagraphMeasurer};
+use super::objects::MeasuredObject;
 use super::{StyledText, TextRenderer};
 
 pub(in crate::render) struct WrappedLine {
@@ -12,11 +13,44 @@ pub(in crate::render) struct WrappedLine {
     pub font_size: f64,
     pub advance: f64,
     pub placements: Vec<PositionedCluster>,
+    pub objects: Vec<PositionedObject>,
 }
 
 pub(in crate::render) struct PositionedCluster {
     pub cluster: MeasuredCluster,
     pub x: f64,
+}
+
+pub(in crate::render) struct PositionedObject {
+    pub object: MeasuredObject,
+    pub x: f64,
+}
+
+enum MeasuredItem {
+    TextCluster(MeasuredCluster),
+    Object(MeasuredObject),
+}
+
+struct ParagraphItems {
+    items: Vec<MeasuredItem>,
+    font_size: f64,
+    advance: f64,
+}
+
+impl MeasuredItem {
+    fn source(&self) -> &Range<usize> {
+        match self {
+            Self::TextCluster(cluster) => &cluster.source,
+            Self::Object(object) => &object.source,
+        }
+    }
+
+    fn advance(&self) -> f64 {
+        match self {
+            Self::TextCluster(cluster) => cluster.advance,
+            Self::Object(object) => object.bounds.x_max - object.bounds.x_min,
+        }
+    }
 }
 
 impl WrappedLine {
@@ -26,8 +60,151 @@ impl WrappedLine {
             font_size,
             advance: 0.0,
             placements: Vec::new(),
+            objects: Vec::new(),
         }
     }
+
+    pub fn object_height(&self) -> f64 {
+        self.objects.iter().fold(0.0_f64, |height, positioned| {
+            height.max(positioned.object.bounds.y_max - positioned.object.bounds.y_min)
+        })
+    }
+
+    pub fn object_margins(&self) -> [f64; 2] {
+        self.objects
+            .iter()
+            .fold([0.0_f64; 2], |margins, positioned| {
+                [
+                    margins[0].max(positioned.object.top_margin),
+                    margins[1].max(positioned.object.bottom_margin),
+                ]
+            })
+    }
+}
+
+fn measured_items(
+    styled: &StyledText<'_>,
+    range: Range<usize>,
+    measurer: &ParagraphMeasurer<'_, '_, '_>,
+    renderer: &TextRenderer<'_>,
+    breaks: &mut ParagraphBreaks,
+) -> Result<ParagraphItems, MeasurementError> {
+    let paragraph_objects = styled.objects.in_range(range.clone());
+    let mut items = Vec::new();
+    let mut start = range.start;
+    let mut font_size = 0.0_f64;
+    let mut advance = 0.0;
+    for object in paragraph_objects {
+        if start < object.source.start {
+            let measured = measurer.measure_line(start..object.source.start)?;
+            font_size = font_size.max(measured.font_size);
+            advance += measured.advance;
+            items.extend(measured.clusters.into_iter().map(MeasuredItem::TextCluster));
+        }
+        let object = object.measured(renderer.settings);
+        let kind = if object.inline {
+            BreakKind::Allowed
+        } else {
+            BreakKind::Mandatory
+        };
+        for end in [object.source.start, object.source.end] {
+            let end = end - range.start;
+            if end != 0 {
+                breaks.candidates.push(BreakCandidate { end, kind });
+                breaks.emergency.push(end);
+            }
+        }
+        start = object.source.end;
+        advance += object.bounds.x_max - object.bounds.x_min;
+        items.push(MeasuredItem::Object(object));
+    }
+    if start < range.end {
+        let measured = measurer.measure_line(start..range.end)?;
+        font_size = font_size.max(measured.font_size);
+        advance += measured.advance;
+        items.extend(measured.clusters.into_iter().map(MeasuredItem::TextCluster));
+    }
+    if !paragraph_objects.is_empty() {
+        breaks.candidates.sort_unstable_by_key(|candidate| {
+            (candidate.end, candidate.kind != BreakKind::Mandatory)
+        });
+        breaks.candidates.dedup_by_key(|candidate| candidate.end);
+        breaks.emergency.sort_unstable();
+        breaks.emergency.dedup();
+    }
+    Ok(ParagraphItems {
+        items,
+        font_size,
+        advance,
+    })
+}
+
+fn paragraph_prefix_font_size(
+    styled: &StyledText<'_>,
+    source: &Range<usize>,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+) -> f64 {
+    if source.start > 0
+        && matches!(
+            styled.index.slice(source.start - 1..source.start),
+            Some("\r" | "\n")
+        )
+    {
+        styled.style_at(source.start, theme, predefined).font_size
+    } else {
+        0.0
+    }
+}
+
+pub(in crate::render) fn unmeasured_paragraph(
+    styled: &StyledText<'_>,
+    source: Range<usize>,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+    renderer: &TextRenderer<'_>,
+) -> Vec<WrappedLine> {
+    let objects = styled.objects.in_range(source.clone());
+    if objects.is_empty() {
+        return vec![WrappedLine::unmeasured(
+            source.clone(),
+            styled.line_font_size(source, theme, predefined),
+        )];
+    }
+    let mut lines = Vec::with_capacity(2 * objects.len() + 1);
+    let mut start = source.start;
+    for object in objects {
+        if start < object.source.start {
+            let text = start..object.source.start;
+            lines.push(WrappedLine::unmeasured(
+                text.clone(),
+                styled.line_font_size(text, theme, predefined),
+            ));
+        }
+        let measured = object.measured(renderer.settings);
+        let mut line = WrappedLine::unmeasured(measured.source.clone(), 0.0);
+        line.advance = measured.bounds.x_max - measured.bounds.x_min;
+        line.objects.push(PositionedObject {
+            object: measured,
+            x: 0.0,
+        });
+        lines.push(line);
+        renderer.object_layout_unsupported(object.span.text_index_utf16);
+        start = object.source.end;
+    }
+    if start < source.end {
+        let text = start..source.end;
+        lines.push(WrappedLine::unmeasured(
+            text.clone(),
+            styled.line_font_size(text, theme, predefined),
+        ));
+    }
+    if let Some(line) = lines.first_mut() {
+        line.font_size = line.font_size.max(paragraph_prefix_font_size(
+            styled, &source, theme, predefined,
+        ));
+    }
+    lines
 }
 
 pub(in crate::render) fn wrap_paragraph(
@@ -44,24 +221,24 @@ pub(in crate::render) fn wrap_paragraph(
         .ok_or(MeasurementError::InvalidRange)?;
     let mut breaks = break_candidates(text);
     let measurer = ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?;
-    let measured = measurer.measure_line(range.clone())?;
+    let measured = measured_items(styled, range.clone(), &measurer, renderer, &mut breaks)?;
+    let first_font_size = paragraph_prefix_font_size(styled, &range, theme, predefined);
+    let items = measured.items;
     let mut advances = vec![0.0; range.len() + 1];
     let mut cluster_ends = vec![false; range.len() + 1];
     cluster_ends[0] = true;
     let mut source_end = range.start;
     let mut advance = 0.0;
-    for cluster in &measured.clusters {
-        if cluster.source.start != source_end
-            || cluster.source.end <= source_end
-            || cluster.source.end > range.end
-        {
+    for item in &items {
+        let source = item.source();
+        if source.start != source_end || source.end <= source_end || source.end > range.end {
             return Err(MeasurementError::InvalidCluster);
         }
-        advance += cluster.advance;
-        let end = cluster.source.end - range.start;
+        advance += item.advance();
+        let end = source.end - range.start;
         advances[end] = advance;
         cluster_ends[end] = true;
-        source_end = cluster.source.end;
+        source_end = source.end;
     }
     if source_end != range.end {
         return Err(MeasurementError::InvalidCluster);
@@ -86,7 +263,7 @@ pub(in crate::render) fn wrap_paragraph(
     let mut lines = Vec::new();
     let mut start = 0;
     let mut candidate_index = 0;
-    let mut cluster_index = 0;
+    let mut item_index = 0;
     while start < range.len() {
         let mut selected = None;
         let mut overflow_end = None;
@@ -125,28 +302,41 @@ pub(in crate::render) fn wrap_paragraph(
         }
         let end = selected.ok_or(MeasurementError::InvalidRange)?;
         let source = range.start + start..range.start + end;
-        let font_size = if source == range {
-            measured.font_size
-        } else {
-            measurer.font_size(source.clone())?
-        };
         let mut placements = Vec::new();
+        let mut objects = Vec::new();
+        let mut font_size = 0.0_f64;
         let mut x = 0.0;
-        while let Some(cluster) = measured.clusters.get(cluster_index)
-            && cluster.source.end <= source.end
+        while let Some(item) = items.get(item_index)
+            && item.source().end <= source.end
         {
-            placements.push(PositionedCluster {
-                cluster: cluster.clone(),
-                x,
-            });
-            x += cluster.advance;
-            cluster_index += 1;
+            match item {
+                MeasuredItem::TextCluster(cluster) => {
+                    font_size = font_size.max(cluster.run.style.font_size);
+                    placements.push(PositionedCluster {
+                        cluster: cluster.clone(),
+                        x,
+                    });
+                }
+                MeasuredItem::Object(object) => objects.push(PositionedObject {
+                    object: object.clone(),
+                    x,
+                }),
+            }
+            x += item.advance();
+            item_index += 1;
+        }
+        if source == range {
+            font_size = measured.font_size;
+        }
+        if lines.is_empty() {
+            font_size = font_size.max(first_font_size);
         }
         lines.push(WrappedLine {
             source,
             font_size,
             advance: advances[end] - advances[start],
             placements,
+            objects,
         });
         start = end;
     }
@@ -157,7 +347,10 @@ mod tests {
     use super::super::{TextContext, TextSettings};
     use super::*;
     use crate::fonts::{FontBook, fontdb};
-    use crate::{BoundingBox, RichTextBox, RichTextSpan, RichTextSpanType};
+    use crate::{
+        BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType, PlacedImage,
+        RichTextBox, RichTextObjectContent, RichTextObjectSpan, RichTextSpan, RichTextSpanType,
+    };
     use std::sync::Arc;
 
     fn text(value: &str) -> RichTextBox {
@@ -187,6 +380,31 @@ mod tests {
             end_utf16: end,
             expand: false,
             payload: payload.into(),
+        }
+    }
+
+    fn image(anchor: i32, width: f64, option: ObjectSpanLayoutOption) -> RichTextObjectSpan {
+        RichTextObjectSpan {
+            object_type: ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
+                bbox: BoundingBox {
+                    x_min: -10.0,
+                    y_min: -20.0,
+                    x_max: -10.0 + width,
+                    y_max: 40.0,
+                },
+                rotation_degrees: None,
+                media_id: None,
+                media_index: None,
+                crop_rect: None,
+                original_bbox: None,
+                border_media_id: None,
+                original_media_id: None,
+            }))),
+            text_index_utf16: anchor,
+            layout_option: option,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
         }
     }
 
@@ -229,6 +447,201 @@ mod tests {
     fn assert_single_line(lines: &[WrappedLine], expected: Range<usize>) {
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].source, expected);
+    }
+
+    #[test]
+    fn inline_object_uses_actual_width_and_positions_surrounding_text() {
+        let mut content = text("A\u{fffc}A");
+        content.object_spans = vec![image(1, 40.0, ObjectSpanLayoutOption::Inline)];
+        content.spans = vec![span(
+            RichTextSpanType::FontSize,
+            1,
+            2,
+            &200.0_f32.to_le_bytes(),
+        )];
+        let letter_width = wrap(&text("A"), 1000.0)[0].advance;
+        let lines = wrap(&content, 2.0 * letter_width + 40.0);
+        assert_single_line(&lines, 0..3);
+        let line = &lines[0];
+        assert_eq!(line.advance, 2.0 * letter_width + 40.0);
+        assert_eq!(line.font_size, 45.0);
+        assert_eq!(line.object_height(), 60.0);
+        assert_eq!(line.object_margins(), [0.0, 0.0]);
+        assert_eq!(line.placements.len(), 2);
+        assert_eq!(line.placements[0].cluster.source, 0..1);
+        assert_eq!(line.placements[1].cluster.source, 2..3);
+        assert_eq!(line.placements[1].x, letter_width + 40.0);
+        assert_eq!(line.objects.len(), 1);
+        assert_eq!(line.objects[0].object.source, 1..2);
+        assert_eq!(line.objects[0].object.span_index, 0);
+        assert_eq!(line.objects[0].x, letter_width);
+        assert_eq!(
+            ranges(&wrap(&content, line.advance - 0.000001)),
+            [0..2, 2..3]
+        );
+    }
+
+    #[test]
+    fn block_objects_force_own_lines_with_actual_alignment_width() {
+        for (option, margin) in [
+            (ObjectSpanLayoutOption::Block, 0.0),
+            (ObjectSpanLayoutOption::BlockWithSmallMargin, 10.0),
+            (ObjectSpanLayoutOption::BlockWithMediumMargin, 20.0),
+            (ObjectSpanLayoutOption::Other(9), 0.0),
+        ] {
+            let mut content = text("A\u{fffc}B");
+            content.object_spans = vec![image(1, 20.0, option)];
+            let lines = wrap(&content, 1000.0);
+            assert_eq!(ranges(&lines), [0..1, 1..2, 2..3]);
+            assert!(lines[0].objects.is_empty());
+            assert!(lines[2].objects.is_empty());
+            assert_eq!(lines[1].advance, 20.0);
+            assert_eq!(lines[1].font_size, 0.0);
+            assert!(lines[1].placements.is_empty());
+            assert_eq!(lines[1].objects[0].x, 0.0);
+            assert_eq!(lines[1].object_margins(), [margin, margin]);
+        }
+    }
+
+    #[test]
+    fn object_only_paragraph_needs_no_font_and_has_zero_text_size() {
+        let mut content = text("\u{fffc}");
+        content.font_size = Some(500.0);
+        content.object_spans = vec![image(0, 200.0, ObjectSpanLayoutOption::Inline)];
+        let fonts = FontBook::new(Arc::new(fontdb::Database::new()));
+        let lines = wrap_with_fonts(&content, 0..1, 0.0, &fonts).unwrap();
+        assert_single_line(&lines, 0..1);
+        assert_eq!(lines[0].font_size, 0.0);
+        assert_eq!(lines[0].advance, 200.0);
+        assert_eq!(lines[0].object_height(), 60.0);
+        assert!(lines[0].placements.is_empty());
+    }
+
+    #[test]
+    fn preceding_native_separator_seeds_only_the_first_object_line_font_size() {
+        for separator in ["\r", "\n"] {
+            let mut content = text(&format!("A{separator}\u{fffc}\u{fffc}"));
+            content.object_spans = vec![
+                image(2, 200.0, ObjectSpanLayoutOption::Inline),
+                image(3, 300.0, ObjectSpanLayoutOption::Inline),
+            ];
+            content.spans = vec![span(
+                RichTextSpanType::FontSize,
+                2,
+                3,
+                &90.0_f32.to_le_bytes(),
+            )];
+            let fonts = FontBook::new(Arc::new(fontdb::Database::new()));
+            let lines = wrap_with_fonts(&content, 2..4, 0.0, &fonts).unwrap();
+            assert_eq!(ranges(&lines), [2..3, 3..4]);
+            assert_eq!(lines[0].font_size, 90.0);
+            assert_eq!(lines[1].font_size, 0.0);
+            assert!(lines.iter().all(|line| line.placements.is_empty()));
+        }
+        let mut content = text("A\u{fffc}");
+        content.object_spans = vec![image(1, 200.0, ObjectSpanLayoutOption::Inline)];
+        let lines = wrap_with_fonts(&content, 1..2, 0.0, &FontBook::default()).unwrap();
+        assert_eq!(lines[0].font_size, 0.0);
+    }
+
+    #[test]
+    fn oversized_inline_objects_progress_without_losing_neighboring_source() {
+        let mut content = text("A\u{fffc}\u{fffc}B");
+        content.object_spans = vec![
+            image(1, 200.0, ObjectSpanLayoutOption::Inline),
+            image(2, 300.0, ObjectSpanLayoutOption::Inline),
+        ];
+        let lines = wrap(&content, 0.0);
+        assert_eq!(ranges(&lines), [0..1, 1..2, 2..3, 3..4]);
+        assert_eq!(lines[1].objects[0].object.span_index, 0);
+        assert_eq!(lines[2].objects[0].object.span_index, 1);
+        assert_eq!(lines[1].advance, 200.0);
+        assert_eq!(lines[2].advance, 300.0);
+    }
+
+    #[test]
+    fn objects_preserve_full_paragraph_direction_and_script_context() {
+        let mut content = text("ب\u{fffc}.");
+        content.object_spans = vec![image(1, 20.0, ObjectSpanLayoutOption::Inline)];
+        let lines = wrap(&content, f64::INFINITY);
+        assert_single_line(&lines, 0..3);
+        assert_eq!(lines[0].placements.len(), 2);
+        let punctuation = &lines[0].placements[1].cluster;
+        assert_eq!(punctuation.source, 2..3);
+        assert_eq!(
+            punctuation.run.direction,
+            crate::fonts::Direction::RightToLeft
+        );
+        assert_eq!(punctuation.run.script, unicode_script::Script::Arabic);
+    }
+
+    #[test]
+    fn mixed_source_uses_utf16_anchors_and_grapheme_emergency_boundaries() {
+        let mut content = text("😀\u{fffc}e\u{301}");
+        content.object_spans = vec![image(2, 200.0, ObjectSpanLayoutOption::Inline)];
+        let lines = wrap(&content, 0.0);
+        assert_eq!(ranges(&lines), [0..1, 1..2, 2..4]);
+        assert_eq!(lines[1].objects[0].object.source, 1..2);
+        assert_eq!(lines[2].placements[0].cluster.source, 2..4);
+    }
+
+    #[test]
+    fn text_on_each_side_of_objects_retains_cached_cross_line_kerning() {
+        let mut content = text("AVA\u{fffc}AVA");
+        content.object_spans = vec![image(3, 20.0, ObjectSpanLayoutOption::Block)];
+        let lines = wrap(&content, 55.0);
+        assert_eq!(ranges(&lines), [0..2, 2..3, 3..4, 4..6, 6..7]);
+        for (first, second) in [(&lines[0], &lines[1]), (&lines[3], &lines[4])] {
+            assert_eq!(first.advance, 54.42626953125);
+            assert_eq!(second.advance, 29.35546875);
+            assert!(Arc::ptr_eq(
+                &first.placements[0].cluster.run,
+                &second.placements[0].cluster.run,
+            ));
+        }
+    }
+
+    #[test]
+    fn unavailable_font_fallback_retains_objects_and_source_without_width_estimates() {
+        let mut content = text("A\u{fffc}V\u{fffc}B");
+        content.object_spans = vec![
+            image(1, 40.0, ObjectSpanLayoutOption::Inline),
+            image(3, 50.0, ObjectSpanLayoutOption::BlockWithSmallMargin),
+        ];
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+        };
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let fonts = FontBook::new(Arc::new(fontdb::Database::new()));
+        let renderer = TextRenderer::new(settings, &fonts);
+        let lines = unmeasured_paragraph(
+            &styled,
+            0..5,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        );
+        assert_eq!(ranges(&lines), [0..1, 1..2, 2..3, 3..4, 4..5]);
+        assert_eq!(lines[1].advance, 40.0);
+        assert_eq!(lines[3].advance, 50.0);
+        assert_eq!(lines[3].object_margins(), [10.0, 10.0]);
+        assert!(lines.iter().all(|line| line.placements.is_empty()));
+        for line in [&lines[0], &lines[2], &lines[4]] {
+            assert_eq!(line.advance, 0.0);
+            assert_eq!(line.font_size, 45.0);
+            assert!(line.objects.is_empty());
+        }
+        assert_eq!(lines[1].objects[0].object.source, 1..2);
+        assert_eq!(lines[3].objects[0].object.source, 3..4);
+        assert!(renderer.diagnostics().is_empty());
+        let issues = renderer.object_diagnostics();
+        assert_eq!(issues.len(), 2);
+        assert_eq!(issues[0].anchor_utf16, 1);
+        assert_eq!(issues[1].anchor_utf16, 3);
+        assert!(issues.iter().all(|issue| {
+            issue.kind == super::super::objects::ObjectDiagnosticKind::MixedParagraphLayout
+        }));
     }
 
     #[test]
