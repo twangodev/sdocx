@@ -373,17 +373,10 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
 }
 
 fn omits_trailing_blank_page(document: &Document) -> bool {
-    let has_flowing_text = document
-        .metadata
-        .note_text
-        .as_ref()
-        .is_some_and(|text| !text.text.trim().is_empty());
     // Native list-mode export excludes its final compatibility record, even
     // when the body text is empty. Require a complete flow canvas and matching
     // background so incomplete/ambiguous documents retain their final page.
-    let list_compatibility_page = has_list_compatibility_page(document);
-    let legacy_text_compatibility = document.metadata.page_mode.is_none() && has_flowing_text;
-    (list_compatibility_page || legacy_text_compatibility)
+    has_list_compatibility_page(document)
         && document.pages.len() > 1
         && document.pages.last().is_some_and(is_blank_storage_page)
 }
@@ -1080,6 +1073,27 @@ mod tests {
     }
 
     #[test]
+    fn unknown_mode_keeps_blank_physical_pages_for_unsectioned_reflow() {
+        let mut document = capture_document(&"a".repeat(300), &[]);
+        document.metadata.page_mode = None;
+        document.pages = (0..2).map(blank_page).collect();
+        let layout = layout_document(&document);
+        assert_eq!(layout.pages.len(), 2);
+        assert!(!layout.omitted_trailing_blank_page);
+        assert_eq!(layout.pages[1].source_page_index, 1);
+        assert!(
+            layout.pages[1]
+                .body_text_slice()
+                .unwrap()
+                .source_range
+                .is_empty()
+        );
+        for page in &layout.pages {
+            assert_eq!(page.body_text_reflow(&document).unwrap().text.len(), 300);
+        }
+    }
+
+    #[test]
     fn reflow_rejects_removed_reordered_and_edited_empty_inspection_nodes() {
         let document = reflow_document();
         let page = layout_document(&document).pages.remove(1);
@@ -1301,7 +1315,7 @@ mod tests {
     }
 
     #[test]
-    fn separates_visible_flow_pages_from_trailing_storage_page() {
+    fn keeps_ambiguous_storage_pages_with_unsectioned_flow() {
         let text = "one\ntwo 😀\nthree\nfour\nfive\n";
         let body = RichTextBox {
             text_area_type: None,
@@ -1342,8 +1356,8 @@ mod tests {
         let layout = layout_document(&document);
 
         assert_eq!(layout.stored_page_count, 6);
-        assert!(layout.omitted_trailing_blank_page);
-        assert_eq!(layout.pages.len(), 5);
+        assert!(!layout.omitted_trailing_blank_page);
+        assert_eq!(layout.pages.len(), 6);
         let reconstructed = layout
             .pages
             .iter()
@@ -1404,6 +1418,9 @@ mod tests {
             pages: (0..4).map(blank_page).collect(),
             metadata: DocumentMetadata {
                 note_text: Some(body),
+                page_mode: Some(0),
+                flow_dimensions: Some((1080, 4 * 1527)),
+                flow_page_padding: Some((0, 0)),
                 ..DocumentMetadata::default()
             },
         };
@@ -1463,6 +1480,9 @@ mod tests {
             pages: (0..3).map(blank_page).collect(),
             metadata: DocumentMetadata {
                 note_text: Some(body),
+                page_mode: Some(0),
+                flow_dimensions: Some((1080, 3 * 1527)),
+                flow_page_padding: Some((0, 0)),
                 ..DocumentMetadata::default()
             },
         };
