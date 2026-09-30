@@ -78,7 +78,7 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
     true
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "serde"))]
 mod tests {
     use super::super::vector::Svg;
     use super::*;

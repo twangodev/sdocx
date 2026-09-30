@@ -905,42 +905,44 @@ fn mixed_font_sizes_position_each_placed_line_using_its_own_maximum() {
 }
 
 #[test]
-fn flow_line_spacing_uses_the_largest_local_size_and_native_spacing_units() {
+fn ordinary_line_spacing_uses_the_largest_local_size_and_native_spacing_units() {
     for (spacing, first_baseline, next_baseline) in [
-        (None, "60.00", "111.00"),
-        (Some((0_u32, 4.0_f32)), "60.00", "102.00"),
-        (Some((1_u32, 1.5_f32)), "60.00", "120.00"),
+        (None, 60.0, 111.0),
+        (Some((0_u32, 4.0_f32)), 51.0, 103.5),
+        (Some((1_u32, 1.5_f32)), 69.0, 124.5),
     ] {
-        let mut content = text("aB\nc");
-        content.spans = vec![span(
-            RichTextSpanType::FontSize,
-            1,
-            2,
-            &20.0_f32.to_le_bytes(),
-        )];
-        if let Some((kind, value)) = spacing {
-            content.paragraphs.push(sdocx::RichTextParagraph {
-                kind: sdocx::RichTextParagraphType::LineSpacing,
-                start_paragraph: 0,
-                end_paragraph: 2,
-                payload: [kind.to_le_bytes(), value.to_le_bytes()].concat(),
-            });
-        }
-        let svg = render(Context::Flow, content);
-        let xml = roxmltree::Document::parse(&svg).unwrap();
-        for value in ["a", "B"] {
+        for (context, top) in [(Context::Standalone, 20.0), (Context::Flow, 0.0)] {
+            let mut content = text("aB\nc");
+            content.spans = vec![span(
+                RichTextSpanType::FontSize,
+                1,
+                2,
+                &20.0_f32.to_le_bytes(),
+            )];
+            if let Some((kind, value)) = spacing {
+                content.paragraphs.push(sdocx::RichTextParagraph {
+                    kind: sdocx::RichTextParagraphType::LineSpacing,
+                    start_paragraph: 0,
+                    end_paragraph: 2,
+                    payload: [kind.to_le_bytes(), value.to_le_bytes()].concat(),
+                });
+            }
+            let svg = render(context, content);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            for value in ["a", "B"] {
+                assert_eq!(
+                    tspan(&xml, value).parent().unwrap().attribute("y"),
+                    Some(format!("{:.2}", top + first_baseline).as_str()),
+                    "{context:?}, {spacing:?}: {value}"
+                );
+            }
             assert_eq!(
-                tspan(&xml, value).parent().unwrap().attribute("y"),
-                Some(first_baseline),
-                "{spacing:?}: {value}"
+                tspan(&xml, "c").parent().unwrap().attribute("y"),
+                Some(format!("{:.2}", top + next_baseline).as_str()),
+                "{context:?}, {spacing:?}"
             );
+            assert_eq!(tspan(&xml, "c").attribute("font-size"), Some("30.00"));
         }
-        assert_eq!(
-            tspan(&xml, "c").parent().unwrap().attribute("y"),
-            Some(next_baseline),
-            "{spacing:?}"
-        );
-        assert_eq!(tspan(&xml, "c").attribute("font-size"), Some("30.00"));
     }
 }
 

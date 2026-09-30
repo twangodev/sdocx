@@ -103,15 +103,6 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                 if let Some(mut slice) = note_text.slice_indexed(index, range.clone())
                     && !slice.text.is_empty()
                 {
-                    // Samsung collapses the normal 4-unit paragraph lead into
-                    // the top margin on continuation pages. The PDF exporter
-                    // therefore starts them 12 document pixels higher.
-                    if source_page_index > 0
-                        && !slice.is_image_flow()
-                        && let Some(margins) = &mut slice.margins
-                    {
-                        margins[1] = (margins[1] - 4.0).max(0.0);
-                    }
                     translate_continuing_objects(
                         &mut slice,
                         index,
@@ -283,18 +274,6 @@ fn balanced_line_ranges(text: &str, page_count: usize) -> Vec<Range<usize>> {
 }
 
 impl RichTextBox {
-    pub(crate) fn is_image_flow(&self) -> bool {
-        !self.object_spans.is_empty()
-            && self
-                .object_spans
-                .iter()
-                .all(|span| span.object_type == crate::ObjectType::Image)
-            && self
-                .text
-                .chars()
-                .all(|character| character.is_whitespace() || character == '\u{fffc}')
-    }
-
     /// Return a character-indexed slice with intersecting style records rebased.
     pub fn slice_chars(&self, range: Range<usize>) -> Option<Self> {
         self.slice_indexed(&TextIndex::new(&self.text), range)
@@ -607,7 +586,7 @@ mod tests {
     }
 
     #[test]
-    fn normalizes_the_sdk_continuation_section_origin() {
+    fn continuation_sections_preserve_native_text_margins() {
         let text = "first\n\nsecond\n";
         let first_end = "first\n".encode_utf16().count() as i32;
         let overlapping_start = first_end - 1;
@@ -656,7 +635,7 @@ mod tests {
         assert_eq!(first.text, "first\n");
         assert_eq!(second.text, "\nsecond\n");
         assert_eq!(first.margins.unwrap()[1], 10.0);
-        assert_eq!(second.margins.unwrap()[1], 6.0);
+        assert_eq!(second.margins, first.margins);
     }
 
     #[test]

@@ -1,7 +1,10 @@
 use std::ops::Range;
 
 use crate::render::RenderTheme;
-use crate::{BoundingBox, ParagraphAlignment, ParagraphLineSpacing, PredefinedTextStyle};
+use crate::{
+    BoundingBox, BulletType, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
+    PredefinedTextStyle,
+};
 
 use super::{
     StyledText, TextRenderer, WrappedLine, paragraph_layout, paragraph_line_height,
@@ -15,25 +18,62 @@ pub(in crate::render) struct VerticalExclusion {
     pub bottom: f64,
 }
 
-#[derive(Clone, Copy)]
-pub(in crate::render) enum TextBaseline {
-    FontSize,
-    LineAdvance,
+pub(in crate::render) struct ParagraphSpacing {
+    pub before: bool,
+    pub after: bool,
 }
 
-impl TextBaseline {
-    fn offset(self, font_size: f64, advance: f64) -> f64 {
-        match self {
-            Self::FontSize => font_size,
-            Self::LineAdvance => advance - 0.35 * font_size,
+impl ParagraphSpacing {
+    pub fn for_lines(
+        lines: &[WrappedLine],
+        previous: Option<ParagraphBullet>,
+        current: Option<ParagraphBullet>,
+        next: Option<ParagraphBullet>,
+    ) -> Self {
+        let first_margin_object = lines.first().is_some_and(|line| {
+            line.objects.iter().any(|placement| {
+                placement.object.source.start == line.source.start
+                    && placement.object.top_margin > 0.0
+                    && placement.object.bottom_margin > 0.0
+            })
+        });
+        let last_margin_object = lines.last().is_some_and(|line| {
+            line.objects.iter().any(|placement| {
+                placement.object.source.end == line.source.end
+                    && placement.object.top_margin > 0.0
+                    && placement.object.bottom_margin > 0.0
+            })
+        });
+        Self {
+            before: !(spacing_bullet(previous) && spacing_bullet(current)) && !first_margin_object,
+            after: !(spacing_bullet(current) && spacing_bullet(next)) && !last_margin_object,
         }
     }
+}
+
+fn spacing_bullet(bullet: Option<ParagraphBullet>) -> bool {
+    matches!(
+        bullet.map(|bullet| bullet.kind),
+        Some(
+            BulletType::Arrow
+                | BulletType::Checker
+                | BulletType::Diamond
+                | BulletType::Digit
+                | BulletType::CircledDigit
+                | BulletType::Alphabet
+                | BulletType::RomanNumeral
+                | BulletType::SolidCircle
+                | BulletType::WhiteCircle
+                | BulletType::UppercaseAlphabet
+                | BulletType::BlackSquare
+                | BulletType::WhiteSquare
+        )
+    )
 }
 
 pub(in crate::render) struct TextFrame<'a> {
     pub bbox: BoundingBox,
     pub gravity: Option<u8>,
-    pub baseline: TextBaseline,
     pub exclusions: &'a [VerticalExclusion],
 }
 
@@ -117,7 +157,7 @@ impl TextCursor {
         } else if has_objects {
             advance - 0.35 * line.font_size + 0.001
         } else {
-            frame.baseline.offset(line.font_size, advance)
+            advance - 0.35 * line.font_size
         };
         let epsilon = if has_objects { 0.001 } else { 0.0 };
         self.position += top - candidate_top + advance + epsilon;
@@ -233,7 +273,6 @@ pub(in crate::render) fn layout_placed_text(
         TextFrame {
             bbox: styled.text_box.bbox,
             gravity: styled.text_box.gravity,
-            baseline: TextBaseline::FontSize,
             exclusions: &[],
         },
         theme,
@@ -259,29 +298,48 @@ pub(in crate::render) fn layout_text(
     let content_left = frame.bbox.x_min + margins[0];
     let content_right = frame.bbox.x_min + outer_width - margins[2];
     let paragraphs = styled.index.paragraphs().collect::<Vec<_>>();
+    let paragraph_layouts = paragraphs
+        .iter()
+        .map(|paragraph| {
+            let ordinal = styled
+                .index
+                .paragraph_index(paragraph.content.start)
+                .unwrap();
+            paragraph_layout(text_box, ordinal, settings)
+        })
+        .collect::<Vec<_>>();
     let mut lines = Vec::new();
     let mut cursor = TextCursor::new(margins[1]);
-    for (paragraph_number, paragraph) in paragraphs.iter().enumerate() {
-        let ordinal = styled
-            .index
-            .paragraph_index(paragraph.content.start)
-            .unwrap();
-        let layout = paragraph_layout(text_box, ordinal, settings);
+    for (paragraph_number, (paragraph, layout)) in
+        paragraphs.iter().zip(&paragraph_layouts).enumerate()
+    {
         let x = content_left + layout.left_indent(settings);
         let width = (content_right - x).max(0.0);
-        if layout.spacing_before_invalid {
-            let style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
-            renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-        }
-        cursor.add_spacing(layout.spacing_before);
-        for mut line in measure_paragraph(
+        let paragraph_lines = measure_paragraph(
             styled,
             paragraph.content.clone(),
             width,
             theme,
             layout.predefined_style,
             renderer,
-        ) {
+        );
+        let previous = paragraph_number
+            .checked_sub(1)
+            .and_then(|previous| paragraph_layouts.get(previous))
+            .and_then(|layout| layout.bullet);
+        let next = paragraph_layouts
+            .get(paragraph_number + 1)
+            .and_then(|layout| layout.bullet);
+        let spacing = ParagraphSpacing::for_lines(&paragraph_lines, previous, layout.bullet, next);
+        if spacing.before {
+            if layout.spacing_before_invalid {
+                let style =
+                    styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+            }
+            cursor.add_spacing(layout.spacing_before);
+        }
+        for mut line in paragraph_lines {
             let candidate_top = cursor.candidate_top(&line, &frame);
             prepare_line_objects(&mut line, styled, candidate_top, theme, renderer);
             renderer.report_line_geometry(&line, layout.line_spacing);
@@ -295,7 +353,7 @@ pub(in crate::render) fn layout_text(
                 predefined: layout.predefined_style,
             });
         }
-        if paragraph_number + 1 < paragraphs.len() {
+        if spacing.after && paragraph_number + 1 < paragraphs.len() {
             if layout.spacing_after_invalid {
                 let style =
                     styled.style_at(paragraph.content.start, theme, layout.predefined_style);
@@ -347,14 +405,6 @@ mod tests {
     }
 
     fn measure(text: &RichTextBox, exclusions: &[VerticalExclusion]) -> TextLayout {
-        measure_with_baseline(text, exclusions, TextBaseline::FontSize)
-    }
-
-    fn measure_with_baseline(
-        text: &RichTextBox,
-        exclusions: &[VerticalExclusion],
-        baseline: TextBaseline,
-    ) -> TextLayout {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
@@ -372,7 +422,6 @@ mod tests {
                     y_max: 200.0,
                 },
                 gravity: text.gravity,
-                baseline,
                 exclusions,
             },
             RenderTheme::for_canvas(false),
@@ -509,10 +558,9 @@ mod tests {
             end_paragraph: 1,
             payload: [1_u32.to_le_bytes(), 1.6_f32.to_le_bytes()].concat(),
         });
-        let native = measure_with_baseline(&content, &[], TextBaseline::LineAdvance);
+        let native = measure(&content, &[]);
         assert!((native.lines[0].baseline - 156.25).abs() < 0.00001);
         assert!((native.height() - 72.0).abs() < 0.00001);
-        assert_eq!(measure(&content, &[]).lines[0].baseline, 145.0);
     }
 
     #[test]
@@ -525,10 +573,9 @@ mod tests {
             end_paragraph: 1,
             payload: [0_u32.to_le_bytes(), 20.0_f32.to_le_bytes()].concat(),
         });
-        let native = measure_with_baseline(&content, &[], TextBaseline::LineAdvance);
+        let native = measure(&content, &[]);
         assert_eq!(native.lines[0].baseline, 149.25);
         assert_eq!(native.height(), 65.0);
-        assert_eq!(measure(&content, &[]).lines[0].baseline, 145.0);
     }
 
     fn object_line(font_size: f64, inline: bool, margins: [f64; 2]) -> WrappedLine {
@@ -561,7 +608,6 @@ mod tests {
             &TextFrame {
                 bbox: BoundingBox::default(),
                 gravity: None,
-                baseline: TextBaseline::FontSize,
                 exclusions: &[],
             },
             TextSettings {
@@ -576,6 +622,121 @@ mod tests {
             (actual - expected).abs() < 0.0000001,
             "{actual} != {expected}"
         );
+    }
+
+    fn bullet(kind: BulletType) -> ParagraphBullet {
+        ParagraphBullet {
+            kind,
+            number: 1,
+            checked: false,
+            initial_number: 1,
+        }
+    }
+
+    #[test]
+    fn paragraph_spacing_follows_the_native_rich_bullet_conversion() {
+        let native_types = [
+            (0, 0),
+            (1, 5),
+            (2, 1),
+            (3, 5),
+            (4, 2),
+            (5, 2),
+            (6, 3),
+            (7, 4),
+            (8, 5),
+            (9, 6),
+            (10, 7),
+            (11, 8),
+            (12, 9),
+            (13, 0),
+            (u32::MAX, 0),
+        ];
+        for (raw, native) in native_types {
+            for (neighbor_raw, neighbor_native) in native_types {
+                let current = Some(bullet(BulletType::from(raw)));
+                let neighbor = Some(bullet(BulletType::from(neighbor_raw)));
+                let spacing = ParagraphSpacing::for_lines(&[], neighbor, current, neighbor);
+                let enabled = native == 0 || neighbor_native == 0;
+                assert_eq!(
+                    (spacing.before, spacing.after),
+                    (enabled, enabled),
+                    "raw bullets {raw}, {neighbor_raw}"
+                );
+            }
+        }
+        let spacing =
+            ParagraphSpacing::for_lines(&[], None, Some(bullet(BulletType::RomanNumeral)), None);
+        assert!(spacing.before && spacing.after);
+    }
+
+    #[test]
+    fn paragraph_object_spacing_checks_each_content_edge_independently() {
+        let mut line = object_line(20.0, false, [30.0; 2]);
+        line.source = 0..3;
+        for (source, expected) in [
+            (0..1, (false, true)),
+            (1..2, (true, true)),
+            (2..3, (true, false)),
+        ] {
+            line.objects[0].object.source = source;
+            let spacing =
+                ParagraphSpacing::for_lines(std::slice::from_ref(&line), None, None, None);
+            assert_eq!((spacing.before, spacing.after), expected);
+        }
+        line.objects[0].object.bottom_margin = 0.0;
+        let spacing = ParagraphSpacing::for_lines(std::slice::from_ref(&line), None, None, None);
+        assert!(spacing.before && spacing.after);
+        let mut middle = object_line(20.0, false, [30.0; 2]);
+        middle.source = 1..2;
+        middle.objects[0].object.source = 1..2;
+        let lines = [
+            WrappedLine::unmeasured(0..1, 10.0),
+            middle,
+            WrappedLine::unmeasured(2..3, 10.0),
+        ];
+        let spacing = ParagraphSpacing::for_lines(&lines, None, None, None);
+        assert!(spacing.before && spacing.after);
+    }
+
+    #[test]
+    fn paragraph_spacing_suppression_changes_only_the_adjacent_gaps() {
+        for (raw, second_baseline) in [
+            (7_u32, 127.5),
+            (10, 127.5),
+            (11, 127.5),
+            (12, 127.5),
+            (0, 136.5),
+            (13, 136.5),
+        ] {
+            let mut content = text("A\nB");
+            content.paragraphs = vec![
+                RichTextParagraph {
+                    kind: RichTextParagraphType::Bullet,
+                    start_paragraph: 0,
+                    end_paragraph: 2,
+                    payload: [raw, 1, 0, 1]
+                        .into_iter()
+                        .flat_map(u32::to_le_bytes)
+                        .collect(),
+                },
+                RichTextParagraph {
+                    kind: RichTextParagraphType::SpacingBefore,
+                    start_paragraph: 0,
+                    end_paragraph: 2,
+                    payload: 4.0_f32.to_le_bytes().to_vec(),
+                },
+                RichTextParagraph {
+                    kind: RichTextParagraphType::SpacingAfter,
+                    start_paragraph: 0,
+                    end_paragraph: 2,
+                    payload: 5.0_f32.to_le_bytes().to_vec(),
+                },
+            ];
+            let plan = measure(&content, &[]);
+            assert_eq!(plan.lines[0].baseline, 114.0);
+            assert_eq!(plan.lines[1].baseline, second_baseline, "raw bullet {raw}");
+        }
     }
 
     #[test]

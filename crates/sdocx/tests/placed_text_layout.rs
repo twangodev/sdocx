@@ -267,32 +267,48 @@ fn rotation_remains_centered_on_the_stored_box_after_insets() {
 #[cfg(feature = "serde")]
 #[test]
 fn embedded_shape_text_uses_the_same_measured_placed_layout() {
-    let mut content = text("ABCABC");
-    content.bbox.x_max = 106.66015625;
-    content.margins = None;
-    let shape: sdocx::NativeShape = serde_json::from_value(serde_json::json!({
-        "text_editable": true, "text_area_type": null, "shape_type": 0,
-        "metadata": {
-            "format_version": 1, "uuid": "shape", "modified_time_raw": 0,
-            "bbox": content.bbox, "replay_timestamp_raw": 0, "resize_mode_raw": 0,
-            "rotatable": true, "selectable": true, "movable": true, "visible": true,
-            "replayable": true, "out_of_canvas_enabled": false, "template": false,
-            "flip_enabled": false, "float_drawn_rect": false, "locked": false,
-            "removable": true, "rotation_degrees": null, "property_mask": [],
-            "field_mask": [], "fixed_trailing_data": [], "flexible_trailing_data": []
-        },
-        "geometry_bbox": content.bbox, "drawn_bbox": content.bbox, "rotation_degrees": 0.0,
-        "control_points": [], "path_data": [], "style": sdocx::ShapeStyle::default(),
-        "fill": "None", "pen_name_id": null, "pen_settings_id": null, "text": content,
-    }))
-    .unwrap();
-    let svg = sdocx::render_page_svg(&document(PageElement::Shape(shape)), 0, &Default::default())
-        .unwrap()
-        .svg;
-    assert_eq!(
-        lines(&svg),
-        vec![("ABC".into(), 20.0, 65.0), ("ABC".into(), 20.0, 125.75)]
-    );
+    for (spacing, first, second) in [
+        (None, 65.0, 125.75),
+        (Some((0_u32, 4.0_f32)), 61.25, 118.25),
+        (Some((1_u32, 1.5_f32)), 71.75, 139.25),
+    ] {
+        let mut content = text("ABCABC");
+        content.bbox.x_max = 106.66015625;
+        content.margins = None;
+        if let Some((kind, value)) = spacing {
+            content.paragraphs.push(paragraph(
+                RichTextParagraphType::LineSpacing,
+                0,
+                1,
+                [kind.to_le_bytes(), value.to_le_bytes()].concat(),
+            ));
+        }
+        let shape: sdocx::NativeShape = serde_json::from_value(serde_json::json!({
+            "text_editable": true, "text_area_type": null, "shape_type": 0,
+            "metadata": {
+                "format_version": 1, "uuid": "shape", "modified_time_raw": 0,
+                "bbox": content.bbox, "replay_timestamp_raw": 0, "resize_mode_raw": 0,
+                "rotatable": true, "selectable": true, "movable": true, "visible": true,
+                "replayable": true, "out_of_canvas_enabled": false, "template": false,
+                "flip_enabled": false, "float_drawn_rect": false, "locked": false,
+                "removable": true, "rotation_degrees": null, "property_mask": [],
+                "field_mask": [], "fixed_trailing_data": [], "flexible_trailing_data": []
+            },
+            "geometry_bbox": content.bbox, "drawn_bbox": content.bbox, "rotation_degrees": 0.0,
+            "control_points": [], "path_data": [], "style": sdocx::ShapeStyle::default(),
+            "fill": "None", "pen_name_id": null, "pen_settings_id": null, "text": content,
+        }))
+        .unwrap();
+        let svg =
+            sdocx::render_page_svg(&document(PageElement::Shape(shape)), 0, &Default::default())
+                .unwrap()
+                .svg;
+        assert_eq!(
+            lines(&svg),
+            vec![("ABC".into(), 20.0, first), ("ABC".into(), 20.0, second)],
+            "{spacing:?}"
+        );
+    }
 }
 
 #[test]
@@ -313,6 +329,35 @@ fn vertical_gravity_uses_measured_line_height_and_scaled_margins() {
         assert_eq!(
             lines(&render(content)),
             vec![("ABC".into(), 26.0, first), ("ABC".into(), 26.0, second),]
+        );
+    }
+}
+
+#[test]
+fn explicit_spacing_positions_baselines_before_gravity_translation() {
+    for (kind, spacing, gravity, first, second) in [
+        (0_u32, 4.0_f32, 0, 70.25, 127.25),
+        (0, 4.0, 1, 101.25, 158.25),
+        (0, 4.0, 2, 132.25, 189.25),
+        (1, 1.5, 0, 80.75, 148.25),
+        (1, 1.5, 1, 101.25, 168.75),
+        (1, 1.5, 2, 121.75, 189.25),
+        (1, 0.5, 0, 35.75, 58.25),
+        (1, 0.5, 1, 101.25, 123.75),
+        (1, 0.5, 2, 166.75, 189.25),
+    ] {
+        let mut content = text("ABC\nABC");
+        content.gravity = Some(gravity);
+        content.paragraphs.push(paragraph(
+            RichTextParagraphType::LineSpacing,
+            0,
+            2,
+            [kind.to_le_bytes(), spacing.to_le_bytes()].concat(),
+        ));
+        assert_eq!(
+            lines(&render(content)),
+            vec![("ABC".into(), 26.0, first), ("ABC".into(), 26.0, second)],
+            "kind={kind}, spacing={spacing}, gravity={gravity}"
         );
     }
 }

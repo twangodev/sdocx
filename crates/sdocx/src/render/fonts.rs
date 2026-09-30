@@ -54,6 +54,17 @@ pub struct FontMetrics {
     pub ascent: i16,
     pub descent: i16,
     pub line_gap: i16,
+    pub cap_height: Option<i16>,
+}
+
+impl FontMetrics {
+    pub fn cap_height_ratio(self) -> Option<f64> {
+        let height = self.cap_height?;
+        if height <= 0 || self.units_per_em == 0 {
+            return None;
+        }
+        Some(f64::from(height) / f64::from(self.units_per_em))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -205,6 +216,7 @@ impl FontBook {
                 ascent: face.ascender(),
                 descent: face.descender(),
                 line_gap: face.line_gap(),
+                cap_height: face.as_ref().capital_height(),
             },
             data,
             index,
@@ -348,6 +360,7 @@ mod tests {
                 ascent: 2146,
                 descent: -555,
                 line_gap: 0,
+                cap_height: Some(1456),
             }
         );
         let run = face.shape(buffer("AV"), &[]).unwrap();
@@ -363,6 +376,32 @@ mod tests {
         );
         assert!(run.glyphs[1].unsafe_to_break);
         assert!(!run.has_missing_glyphs());
+    }
+
+    #[test]
+    fn default_face_cap_height_retains_actual_font_metrics_without_estimating_missing_values() {
+        let face = FontBook::default()
+            .resolve("sans-serif", false, false)
+            .unwrap();
+        assert_eq!(face.metrics.cap_height_ratio(), Some(0.7109375));
+        for cap_height in [None, Some(0), Some(-1)] {
+            assert_eq!(
+                FontMetrics {
+                    cap_height,
+                    ..face.metrics
+                }
+                .cap_height_ratio(),
+                None
+            );
+        }
+        assert_eq!(
+            FontMetrics {
+                units_per_em: 0,
+                ..face.metrics
+            }
+            .cap_height_ratio(),
+            None
+        );
     }
 
     #[test]

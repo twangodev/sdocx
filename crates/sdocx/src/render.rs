@@ -1,9 +1,9 @@
 //! Presentation-oriented Svg rendering for parsed Samsung Notes documents.
 
 use crate::{
-    BoundingBox, BulletType, Color, Document, LayoutDocument, MediaAsset, Page, PageElement,
-    ParagraphAlignment, ParagraphBullet, PlacedImage, PredefinedTextStyle, RichTextBox,
-    RichTextObjectContent, RichTextObjectSpan, Stroke, layout_document,
+    BoundingBox, BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page,
+    PageElement, ParagraphAlignment, ParagraphBullet, PlacedImage, PredefinedTextStyle,
+    RichTextBox, RichTextObjectContent, RichTextObjectSpan, Stroke, layout_document,
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
@@ -17,6 +17,8 @@ use vector::{
 mod code;
 pub mod fonts;
 mod fountain;
+mod marker;
+pub use marker::PointMarkerTarget;
 mod table;
 mod text;
 mod theme;
@@ -52,6 +54,9 @@ pub enum RenderColorMode {
 pub struct RenderOptions {
     /// Color treatment for page backgrounds, ink, and compatibility text.
     pub color_mode: RenderColorMode,
+    /// Native display profile used to size point-list artwork.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub point_marker_target: PointMarkerTarget,
 }
 
 /// One visible page rendered as a standalone Svg document.
@@ -175,9 +180,13 @@ fn render_layout_page(
     let page = &layout_page.page;
     let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
     let settings = TextSettings::from_document(&document.metadata);
-    let text_renderer = TextRenderer::new(settings, fonts).with_page_exclusions(
-        text::PageExclusions::for_page(document, layout_page.source_page_index, settings),
-    );
+    let text_renderer = TextRenderer::new(settings, fonts)
+        .with_point_marker_target(options.point_marker_target)
+        .with_page_exclusions(text::PageExclusions::for_page(
+            document,
+            layout_page.source_page_index,
+            settings,
+        ));
     let svg = render_page_contents_svg(
         page,
         &document.metadata,
@@ -880,13 +889,12 @@ fn render_flow_text_box(
     renderer: &TextRenderer<'_>,
 ) {
     let settings = renderer.settings;
-    let (horizontal_padding, vertical_padding) = flow_page_padding
-        .map(|(horizontal, vertical)| (f64::from(horizontal), f64::from(vertical)))
-        .unwrap_or((FLOW_HORIZONTAL_PADDING, 0.0));
+    let horizontal_padding = flow_page_padding
+        .map(|(horizontal, _)| f64::from(horizontal))
+        .unwrap_or(FLOW_HORIZONTAL_PADDING);
     let margins = text_box.margins.unwrap_or([0.0; 4]);
     let content_left = horizontal_padding + settings.pixels(margins[0]);
-    let image_flow = text_box.is_image_flow();
-    let content_top = settings.pixels(margins[1]) + if image_flow { 0.0 } else { vertical_padding };
+    let content_top = settings.pixels(margins[1]);
     let content_right = f64::from(page.width) - horizontal_padding - settings.pixels(margins[2]);
     let characters = text_box.text.chars().collect::<Vec<_>>();
     let styled = StyledText::new(text_box, TextContext::Flow, settings);
@@ -897,7 +905,6 @@ fn render_flow_text_box(
     let frame = text::TextFrame {
         bbox: BoundingBox::default(),
         gravity: None,
-        baseline: text::TextBaseline::FontSize,
         exclusions: &[],
     };
 
@@ -909,38 +916,31 @@ fn render_flow_text_box(
             let content_length = content.chars().count();
             let paragraph_end = paragraph_start + content_length;
             let layout = paragraph_layout(text_box, paragraph_index, settings);
-            let previous_is_list_item = paragraph_index > 0
-                && paragraph_layout(text_box, paragraph_index - 1, settings)
-                    .bullet
-                    .and_then(|bullet| bullet_marker(bullet, settings))
-                    .is_some();
-            let current_is_list_item = layout
-                .bullet
-                .and_then(|bullet| bullet_marker(bullet, settings))
-                .is_some();
+            let previous_bullet = (paragraph_index > 0)
+                .then(|| paragraph_layout(text_box, paragraph_index - 1, settings).bullet)
+                .flatten();
             let next_start = paragraph_start + paragraph.chars().count();
-            let next_is_list_item = next_start < characters.len()
-                && paragraph_layout(
-                    text_box,
-                    styled.index.paragraph_index(next_start).unwrap(),
-                    settings,
-                )
-                .bullet
-                .and_then(|bullet| bullet_marker(bullet, settings))
-                .is_some();
-            if paragraph_start != 0 && !(previous_is_list_item && current_is_list_item) {
-                if layout.spacing_before_invalid {
-                    let style = styled.style_at(paragraph_start, theme, layout.predefined_style);
-                    renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-                }
-                cursor.add_spacing(layout.spacing_before);
-            }
+            let next_bullet = (next_start < characters.len())
+                .then(|| {
+                    paragraph_layout(
+                        text_box,
+                        styled.index.paragraph_index(next_start).unwrap(),
+                        settings,
+                    )
+                    .bullet
+                })
+                .flatten();
 
             let base_style = styled.style_at(paragraph_start, theme, layout.predefined_style);
-            let marker = layout
-                .bullet
-                .and_then(|bullet| bullet_marker_for_indent(bullet, layout.indent_level, settings));
-            let marker_width = marker.as_ref().map_or(0.0, |(_, width, _, _)| *width);
+            let marker = layout.bullet.and_then(|bullet| {
+                bullet_marker_for_indent(
+                    bullet,
+                    layout.indent_level,
+                    base_style.font_size,
+                    renderer,
+                )
+            });
+            let marker_width = marker.as_ref().map_or(0.0, BulletMarker::reserved_width);
             let base_x = content_left + layout.left_indent(settings);
             let text_x = base_x + marker_width;
             let available_width = (content_right - text_x).max(0.0);
@@ -952,6 +952,18 @@ fn render_flow_text_box(
                 layout.predefined_style,
                 renderer,
             );
+            let spacing = text::ParagraphSpacing::for_lines(
+                &lines,
+                previous_bullet,
+                layout.bullet,
+                next_bullet,
+            );
+            if spacing.before {
+                if layout.spacing_before_invalid {
+                    renderer.invalid_geometry(base_style.family.as_deref().unwrap_or("Roboto"));
+                }
+                cursor.add_spacing(layout.spacing_before);
+            }
             for (line_index, line) in lines.iter_mut().enumerate() {
                 let continuation_top = if paragraph_start == 0
                     && line_index == 0
@@ -976,22 +988,60 @@ fn render_flow_text_box(
                     baseline += correction;
                 }
                 if line_index == 0
-                    && let Some((marker, _, marker_size, marker_offset)) = marker.as_ref()
+                    && let Some(marker) = marker.as_ref()
                 {
-                    svg.scope(
-                        Text::new("")
-                            .x(decimal(base_x + marker_offset, 2))
-                            .y(decimal(
-                                baseline - if *marker_size < 40.0 { 8.0 } else { 0.0 },
-                                2,
-                            ))
-                            .fill(Paint::from_hex(&base_style.color))
-                            .family(FontFamily::Roboto)
-                            .font_size(decimal(*marker_size, 2)),
-                        |svg| {
-                            svg.push(TSpan::new(marker));
-                        },
-                    );
+                    match marker {
+                        BulletMarker::Point { artwork, metrics } => {
+                            let left = base_x + metrics.button_width / 2.0 - metrics.radius;
+                            let pixel_spacing = layout
+                                .line_spacing
+                                .filter(|spacing| spacing.kind == LineSpacingType::Pixels)
+                                .and_then(|spacing| {
+                                    text::explicit_line_height(line.font_size, spacing, settings)
+                                        .map(|_| settings.pixels(spacing.value))
+                                })
+                                .unwrap_or(0.0);
+                            let cap_ratio = (pixel_spacing != 0.0)
+                                .then(|| renderer.default_cap_height_ratio())
+                                .flatten();
+                            if let Some(center_y) = marker::marker_center_y(
+                                baseline,
+                                cursor.position(),
+                                line.font_size.max(line.object_height()),
+                                pixel_spacing,
+                                cap_ratio,
+                            ) {
+                                let top = center_y - metrics.radius;
+                                if artwork
+                                    .paint(svg, *metrics, left, top, &base_style.color)
+                                    .is_none()
+                                {
+                                    renderer.invalid_geometry("sans-serif");
+                                }
+                            } else {
+                                renderer.measurement_failed("sans-serif");
+                            }
+                        }
+                        BulletMarker::Text {
+                            value,
+                            font_size,
+                            offset,
+                            ..
+                        } => svg.scope(
+                            Text::new("")
+                                .x(decimal(base_x + offset, 2))
+                                .y(decimal(
+                                    baseline - if *font_size < 40.0 { 8.0 } else { 0.0 },
+                                    2,
+                                ))
+                                .fill(Paint::from_hex(&base_style.color))
+                                .family(FontFamily::Roboto)
+                                .font_size(decimal(*font_size, 2)),
+                            |svg| {
+                                svg.push(TSpan::new(value));
+                            },
+                        ),
+                    }
                 }
                 render_measured_line(
                     svg,
@@ -1019,7 +1069,7 @@ fn render_flow_text_box(
                     renderer,
                 );
             }
-            if next_start < characters.len() && !(current_is_list_item && next_is_list_item) {
+            if next_start < characters.len() && spacing.after {
                 if layout.spacing_after_invalid {
                     let style = styled.style_at(paragraph_start, theme, layout.predefined_style);
                     renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
@@ -1031,14 +1081,44 @@ fn render_flow_text_box(
     });
 }
 
+enum BulletMarker {
+    Point {
+        artwork: marker::PointMarker,
+        metrics: marker::PointMarkerMetrics,
+    },
+    Text {
+        value: String,
+        reserved_width: f64,
+        font_size: f64,
+        offset: f64,
+    },
+}
+
+impl BulletMarker {
+    fn reserved_width(&self) -> f64 {
+        match self {
+            Self::Point { metrics, .. } => metrics.reserved_width,
+            Self::Text { reserved_width, .. } => *reserved_width,
+        }
+    }
+}
+
 fn bullet_marker(
     bullet: ParagraphBullet,
-    settings: TextSettings,
-) -> Option<(String, f64, f64, f64)> {
+    font_size: f64,
+    renderer: &TextRenderer<'_>,
+) -> Option<BulletMarker> {
     let marker_kind = bullet.kind;
+    if let Some(artwork) = marker::PointMarker::from_bullet(marker_kind) {
+        return marker::PointMarkerMetrics::measure(
+            font_size,
+            renderer.settings,
+            renderer.point_marker_target,
+        )
+        .map(|metrics| BulletMarker::Point { artwork, metrics });
+    }
     let marker = match marker_kind {
         BulletType::None => return None,
-        BulletType::Arrow => "➤".to_string(),
         BulletType::Checker => {
             if bullet.checked {
                 "☑".to_string()
@@ -1046,38 +1126,35 @@ fn bullet_marker(
                 "☐".to_string()
             }
         }
-        BulletType::Diamond => "◆".to_string(),
         BulletType::Digit => format!("{}.", bullet.number),
         BulletType::CircledDigit => format!("{}", bullet.number),
         BulletType::Alphabet => alphabetic_marker(bullet.number, false),
         BulletType::RomanNumeral => roman_marker(bullet.number),
-        BulletType::SolidCircle => "●".to_string(),
-        BulletType::WhiteCircle => "○".to_string(),
         BulletType::UppercaseAlphabet => alphabetic_marker(bullet.number, true),
-        BulletType::BlackSquare => "■".to_string(),
-        BulletType::WhiteSquare => "□".to_string(),
         _ => "•".to_string(),
     };
-    let point_width = settings.pixels(20.0) + settings.pixels(6.0);
     let (width, font_size, offset) = match marker_kind {
         BulletType::Digit => (64.0, 45.0, 0.0),
-        BulletType::SolidCircle => (point_width, 24.0, 20.0),
-        BulletType::WhiteCircle => (point_width, 27.0, 20.0),
-        BulletType::BlackSquare | BulletType::WhiteSquare => (point_width, 32.0, 12.0),
         _ => (78.0, 32.0, 12.0),
     };
-    Some((marker, width, font_size, offset))
+    Some(BulletMarker::Text {
+        value: marker,
+        reserved_width: width,
+        font_size,
+        offset,
+    })
 }
 
 fn bullet_marker_for_indent(
     mut bullet: ParagraphBullet,
     indent_level: u32,
-    settings: TextSettings,
-) -> Option<(String, f64, f64, f64)> {
+    font_size: f64,
+    renderer: &TextRenderer<'_>,
+) -> Option<BulletMarker> {
     if bullet.kind == BulletType::SolidCircle && indent_level % 2 == 1 {
         bullet.kind = BulletType::WhiteCircle;
     }
-    bullet_marker(bullet, settings)
+    bullet_marker(bullet, font_size, renderer)
 }
 
 fn alphabetic_marker(number: u32, uppercase: bool) -> String {
@@ -1288,7 +1365,6 @@ fn render_embedded_object(
                                     ..cell.bbox
                                 },
                                 gravity: Some(0),
-                                baseline: text::TextBaseline::LineAdvance,
                                 exclusions: &[],
                             };
                             render_text_frame(
@@ -1715,6 +1791,7 @@ mod tests {
         assert!(render_layout_page_svg(&document, &layout, 1, &RenderOptions::default()).is_none());
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn fountain_svg_keeps_reconstructed_ink_as_vector_paths() {
         let reference: serde_json::Value =
@@ -1749,6 +1826,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn replay_annotations_preserve_fountain_and_highlighter_composition() {
         let reference: serde_json::Value =
@@ -1766,7 +1844,10 @@ mod tests {
         let doc = document(page);
         let layout = crate::layout_document(&doc);
         for color_mode in [RenderColorMode::Light, RenderColorMode::Dark] {
-            let options = RenderOptions { color_mode };
+            let options = RenderOptions {
+                color_mode,
+                ..Default::default()
+            };
             let normal = super::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
             let replay = super::render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
             let preview = |svg: &str| {
@@ -1796,12 +1877,14 @@ mod tests {
             &doc,
             &RenderOptions {
                 color_mode: RenderColorMode::Light,
+                ..Default::default()
             },
         );
         let dark = render_document_svg(
             &doc,
             &RenderOptions {
                 color_mode: RenderColorMode::Dark,
+                ..Default::default()
             },
         );
 
@@ -1896,9 +1979,15 @@ mod tests {
             let mut doc = document(page);
             doc.metadata.background_color = document_background;
             doc.metadata.dark_mode_compatibility = compatibility;
-            let svg = render_document_svg(&doc, &RenderOptions { color_mode: mode })
-                .remove(0)
-                .svg;
+            let svg = render_document_svg(
+                &doc,
+                &RenderOptions {
+                    color_mode: mode,
+                    ..Default::default()
+                },
+            )
+            .remove(0)
+            .svg;
             let xml = roxmltree::Document::parse(&svg).unwrap();
             let background = xml
                 .root_element()
@@ -1956,6 +2045,7 @@ mod tests {
             doc.metadata.dark_mode_compatibility = Some(compatible);
             let options = RenderOptions {
                 color_mode: RenderColorMode::Dark,
+                ..Default::default()
             };
             let svg = render_document_svg(&doc, &options).remove(0).svg;
             let xml = roxmltree::Document::parse(&svg).unwrap();
@@ -1994,6 +2084,7 @@ mod tests {
             &document(page),
             &RenderOptions {
                 color_mode: RenderColorMode::Dark,
+                ..Default::default()
             },
         )
         .remove(0)
@@ -2030,9 +2121,15 @@ mod tests {
             (RenderColorMode::Auto, "#ffffff"),
             (RenderColorMode::Light, "#000000"),
         ] {
-            let svg = render_document_svg(&doc, &RenderOptions { color_mode: mode })
-                .remove(0)
-                .svg;
+            let svg = render_document_svg(
+                &doc,
+                &RenderOptions {
+                    color_mode: mode,
+                    ..Default::default()
+                },
+            )
+            .remove(0)
+            .svg;
             let xml = roxmltree::Document::parse(&svg).unwrap();
             assert!(
                 xml.descendants()
@@ -2153,6 +2250,7 @@ mod tests {
             &document(page),
             &RenderOptions {
                 color_mode: RenderColorMode::Dark,
+                ..Default::default()
             },
         );
 

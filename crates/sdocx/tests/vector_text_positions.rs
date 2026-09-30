@@ -204,6 +204,41 @@ fn positioned_latin_glyphs_keep_paragraph_kerning() {
 }
 
 #[test]
+fn explicit_spacing_reaches_positioned_glyphs_in_placed_and_flow_text() {
+    for &context in CONTEXTS {
+        for (kind, spacing, first, second) in [
+            (0_u32, 4.0_f32, 33.25, 82.25),
+            (1, 1.5, 51.75, 119.25),
+            (1, 0.5, 6.75, 29.25),
+        ] {
+            let mut content = text("AV\nAV");
+            content.paragraphs.push(RichTextParagraph {
+                kind: RichTextParagraphType::LineSpacing,
+                start_paragraph: 0,
+                end_paragraph: 2,
+                payload: [kind.to_le_bytes(), spacing.to_le_bytes()].concat(),
+            });
+            let page = render(context, content, 500);
+            assert!(page.text_diagnostics.is_empty());
+            let actual = glyphs(&page);
+            assert_eq!(actual.len(), 4);
+            let (left, _) = origin(context);
+            let top = match context {
+                Context::Placed => 20.0,
+                Context::Flow => 0.0,
+            };
+            for (line, baseline) in actual.as_chunks::<2>().0.iter().zip([first, second]) {
+                close(line[0].x, left);
+                close(line[1].x, left + 1249.0 / UNITS * SIZE);
+                close(line[0].y, top + baseline);
+                close(line[1].y, top + baseline);
+            }
+            assert_eq!(svg_text(&page.svg), "AVAV");
+        }
+    }
+}
+
+#[test]
 fn narrow_boxes_wrap_oversized_clusters_without_inflating_available_width() {
     for &context in CONTEXTS {
         for alignment in [0_u32, 1, 2] {

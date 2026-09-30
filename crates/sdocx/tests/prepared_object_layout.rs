@@ -151,7 +151,10 @@ fn document(
     candidate_top: u32,
 ) -> Document {
     let element = match context {
-        Context::Flow => PageElement::TextBox(content),
+        Context::Flow => {
+            content.margins = Some([0.0, candidate_top as f32, 0.0, 0.0]);
+            PageElement::TextBox(content)
+        }
         Context::Placed => {
             content.bbox = bounds(10.0, 0.0, 340.0, 700.0);
             PageElement::TextBox(content)

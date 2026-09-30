@@ -32,6 +32,7 @@ pub struct TextDiagnostic {
 
 pub(in crate::render) struct TextRenderer<'a> {
     pub settings: TextSettings,
+    pub point_marker_target: crate::render::PointMarkerTarget,
     pub fonts: &'a FontBook,
     faces: RefCell<Vec<ResolvedFace>>,
     diagnostics: RefCell<Vec<TextDiagnostic>>,
@@ -43,6 +44,7 @@ impl<'a> TextRenderer<'a> {
     pub fn new(settings: TextSettings, fonts: &'a FontBook) -> Self {
         Self {
             settings,
+            point_marker_target: Default::default(),
             fonts,
             faces: RefCell::new(Vec::new()),
             diagnostics: RefCell::new(Vec::new()),
@@ -54,6 +56,19 @@ impl<'a> TextRenderer<'a> {
     pub fn with_page_exclusions(mut self, exclusions: Option<PageExclusions>) -> Self {
         self.page_exclusions = exclusions;
         self
+    }
+
+    pub fn with_point_marker_target(mut self, target: crate::render::PointMarkerTarget) -> Self {
+        self.point_marker_target = target;
+        self
+    }
+
+    pub fn default_cap_height_ratio(&self) -> Option<f64> {
+        self.fonts
+            .resolve("sans-serif", false, false)
+            .ok()?
+            .metrics
+            .cap_height_ratio()
     }
 
     pub fn object_exclusions(

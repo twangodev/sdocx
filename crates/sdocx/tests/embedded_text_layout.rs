@@ -188,7 +188,7 @@ fn table_cells_render_all_lines_with_margins_and_force_top_gravity() {
         .svg;
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.5, 74.501), ("DEF".into(), 26.5, 150.251)]
+        vec![("ABC".into(), 26.5, 54.501), ("DEF".into(), 26.5, 130.251)]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let styled = xml
@@ -219,7 +219,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
         payload: 2_u32.to_le_bytes().to_vec(),
     });
     let svg = render(table(content.clone(), 200.0));
-    assert_eq!(lines(&svg), vec![("ABC".into(), 74.17, 74.501)]);
+    assert_eq!(lines(&svg), vec![("ABC".into(), 74.17, 54.501)]);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let positioned = xml
         .descendants()
@@ -232,13 +232,14 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
     content.paragraphs.clear();
     assert_eq!(
         lines(&render(table(content, 104.0))),
-        vec![("AB".into(), 26.5, 74.501), ("C".into(), 26.5, 135.251),]
+        vec![("AB".into(), 26.5, 54.501), ("C".into(), 26.5, 115.251),]
     );
 }
 
 #[test]
 fn code_title_and_body_render_every_paragraph_inside_native_frames() {
     // Native density3: padding48/36/48/36, copy72, title gap36, body gap24.
+    // Body origin0 plus title/body margins9 and font45 gives90/186.
     let title = text("ABC\nDEF");
     let mut body = text("GHI\r\nJKL");
     body.spans = vec![
@@ -249,10 +250,10 @@ fn code_title_and_body_render_every_paragraph_inside_native_frames() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("ABC".into(), 74.0, 110.001),
-            ("DEF".into(), 74.0, 170.751),
-            ("GHI".into(), 74.0, 206.001),
-            ("JKL".into(), 74.0, 281.751),
+            ("ABC".into(), 74.0, 90.001),
+            ("DEF".into(), 74.0, 150.751),
+            ("GHI".into(), 74.0, 186.001),
+            ("JKL".into(), 74.0, 261.751),
         ]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
@@ -270,10 +271,10 @@ fn code_title_and_body_wrap_using_their_separate_native_frame_widths() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("ABCABC".into(), 74.0, 110.001),
-            ("ABC".into(), 74.0, 170.751),
-            ("ABCABCABC".into(), 74.0, 206.001),
-            ("ABC".into(), 74.0, 266.751),
+            ("ABCABC".into(), 74.0, 90.001),
+            ("ABC".into(), 74.0, 150.751),
+            ("ABCABCABC".into(), 74.0, 186.001),
+            ("ABC".into(), 74.0, 246.751),
         ]
     );
 }
@@ -293,7 +294,7 @@ fn code_text_preserves_spaces_combining_source_and_positioned_glyphs() {
             .collect::<String>(),
         source
     );
-    assert_eq!(output[1].2, 197.001);
+    assert_eq!(output[1].2, 177.001);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let combined = xml
         .descendants()
@@ -372,19 +373,20 @@ fn code_panel_height(svg: &str) -> f64 {
 #[test]
 fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap() {
     // Page boundary300; density3 padding bands270..330. Font45 advances60.75.
+    // Body origin141 yields candidates141..201.75,201.75..262.5,262.5..323.25.
     for (constraint, second, third, panel_height) in [
-        (ObjectSpanLayoutConstraint::Normal, 266.751, 327.501, 398.25),
+        (ObjectSpanLayoutConstraint::Normal, 246.751, 307.501, 398.25),
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            266.751,
+            246.751,
             346.001,
-            416.75,
+            436.75,
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
+            246.751,
             375.001,
-            435.751,
-            506.5,
+            465.75,
         ),
     ] {
         let doc = code_page_document(Some(0), constraint);
@@ -394,13 +396,51 @@ fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap()
         assert_eq!(
             lines(&svg),
             vec![
-                ("Title".into(), 74.0, 110.001),
-                ("A".into(), 74.0, 206.001),
+                ("Title".into(), 74.0, 90.001),
+                ("A".into(), 74.0, 186.001),
                 ("B".into(), 74.0, second),
                 ("C".into(), 74.0, third),
             ]
         );
         assert_eq!(code_panel_height(&svg), panel_height);
+    }
+}
+
+#[test]
+fn vertical_page_padding_does_not_replace_native_body_text_margins() {
+    for vertical_padding in [0, 20, 100] {
+        let mut doc = document(code(text("Title"), text("A\nB")));
+        doc.pages[0].objects = vec![PageElement::TextBox(text("A\nB")).into()];
+        doc.metadata.flow_page_padding = Some((20, vertical_padding));
+        let layout = sdocx::layout_document(&doc);
+        for page in [
+            sdocx::render_layout_page_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+            sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+        ] {
+            // Scaled top margin9 plus native60.75 line advance minus.35*45.
+            assert_eq!(
+                lines(&page.svg),
+                [("A".into(), 26.0, 54.0), ("B".into(), 26.0, 114.75)]
+            );
+        }
+        let mut code = code_page_document(Some(0), ObjectSpanLayoutConstraint::OverPages);
+        code.metadata.flow_page_padding = Some((20, vertical_padding));
+        let layout = sdocx::layout_document(&code);
+        for page in [
+            sdocx::render_layout_page_svg(&code, &layout, 0, &Default::default()).unwrap(),
+            sdocx::render_layout_page_replay_svg(&code, &layout, 0, &Default::default()).unwrap(),
+        ] {
+            assert_eq!(
+                lines(&page.svg),
+                [
+                    ("Title".into(), 74.0, 90.001),
+                    ("A".into(), 74.0, 186.001),
+                    ("B".into(), 74.0, 246.751),
+                    ("C".into(), 74.0, 375.001),
+                ]
+            );
+            assert_eq!(code_panel_height(&page.svg), 465.75);
+        }
     }
 }
 
@@ -418,10 +458,10 @@ fn continuous_and_unknown_page_modes_do_not_invent_exclusion_bands() {
             assert_eq!(
                 lines(&svg),
                 vec![
-                    ("Title".into(), 74.0, 110.001),
-                    ("A".into(), 74.0, 206.001),
-                    ("B".into(), 74.0, 266.751),
-                    ("C".into(), 74.0, 327.501),
+                    ("Title".into(), 74.0, 90.001),
+                    ("A".into(), 74.0, 186.001),
+                    ("B".into(), 74.0, 246.751),
+                    ("C".into(), 74.0, 307.501),
                 ]
             );
             assert_eq!(code_panel_height(&svg), 398.25);
@@ -483,15 +523,15 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
     let svg = sdocx::render_page_svg(&doc, 0, &Default::default())
         .unwrap()
         .svg;
-    // The live candidate is20, so these lines do not meet the page1527 band.
+    // The live candidate is0, so these lines do not meet the page1527 band.
     // The saved positive top must not invent the captured37.498046875 gap.
     assert_eq!(
         lines(&svg),
         vec![
-            ("Title".into(), 68.0, 101.001),
-            ("A".into(), 68.0, 197.001),
-            ("B".into(), 68.0, 257.751),
-            ("C".into(), 68.0, 318.501),
+            ("Title".into(), 68.0, 81.001),
+            ("A".into(), 68.0, 177.001),
+            ("B".into(), 68.0, 237.751),
+            ("C".into(), 68.0, 298.501),
         ]
     );
     assert_eq!(code_panel_height(&svg), 374.25);
@@ -504,7 +544,7 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
         .children()
         .find(|node| node.has_tag_name("rect"))
         .unwrap();
-    assert_eq!(panel.attribute("y"), Some("20.00"));
+    assert_eq!(panel.attribute("y"), Some("0.00"));
 }
 
 #[test]
@@ -569,6 +609,6 @@ fn table_explicit_percentage_spacing_uses_the_native_ordinary_baseline() {
     let svg = render(table(content, 200.0));
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.5, 85.751), ("DEF".into(), 26.5, 157.751),]
+        vec![("ABC".into(), 26.5, 65.751), ("DEF".into(), 26.5, 137.751),]
     );
 }

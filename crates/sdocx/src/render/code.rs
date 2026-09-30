@@ -2,8 +2,8 @@ use crate::{BoundingBox, ObjectSpanLayoutConstraint, RichTextBox, RichTextCodeBl
 
 use super::RenderTheme;
 use super::text::{
-    ObjectDiagnosticKind, StyledText, TextBaseline, TextContext, TextFrame, TextLayout,
-    TextRenderer, VerticalExclusion, finite_native_geometry,
+    ObjectDiagnosticKind, StyledText, TextContext, TextFrame, TextLayout, TextRenderer,
+    VerticalExclusion, finite_native_geometry,
 };
 
 pub(super) struct PreparedCode {
@@ -55,7 +55,6 @@ fn layout_code_text(
         TextFrame {
             bbox,
             gravity: content.gravity,
-            baseline: TextBaseline::LineAdvance,
             exclusions,
         },
         theme,
