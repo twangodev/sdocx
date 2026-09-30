@@ -1,6 +1,6 @@
 #![cfg(feature = "render")]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use sdocx::fonts::{FontBook, FontError, UnicodeBuffer, fontdb};
@@ -13,6 +13,7 @@ struct Fixture {
     common_font_metrics: Metrics,
     fonts: Vec<Font>,
     font_samples: Vec<Sample>,
+    native_reference: NativeReference,
 }
 
 #[derive(Deserialize)]
@@ -48,6 +49,24 @@ struct Sample {
     clusters_utf8: Vec<u32>,
 }
 
+#[derive(Deserialize)]
+struct NativeReference {
+    fixture: String,
+    sdocx_sha256: String,
+    pdf_sha256: String,
+    page_index: usize,
+    coordinate_tolerance: f64,
+    font_size: f64,
+    lines: Vec<NativeLine>,
+}
+
+#[derive(Deserialize)]
+struct NativeLine {
+    text: String,
+    x: f64,
+    baseline: f64,
+}
+
 fn fixture() -> Fixture {
     let fixture: Fixture =
         serde_json::from_str(include_str!("../../../conformance/text-metrics.json")).unwrap();
@@ -65,6 +84,60 @@ fn buffer(text: &str) -> UnicodeBuffer {
 
 fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+#[test]
+#[ignore = "requires the external Hugging Face compatibility corpus"]
+fn native_first_page_text_matches_independent_pdf_layout() {
+    let reference = fixture().native_reference;
+    let root = std::env::var_os("SDOCX_CORPUS_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../hf"))
+        .canonicalize()
+        .expect("corpus directory; see conformance/README.md");
+    let source = std::fs::read(root.join(format!("{}.sdocx", reference.fixture))).unwrap();
+    let pdf = std::fs::read(root.join(format!("{}.pdf", reference.fixture))).unwrap();
+    assert_eq!(sha256(&source), reference.sdocx_sha256, "source archive");
+    assert_eq!(sha256(&pdf), reference.pdf_sha256, "native reference PDF");
+
+    let document = sdocx::parse_bytes(&source).unwrap();
+    let svg = sdocx::render_page_svg(&document, reference.page_index, &Default::default())
+        .unwrap()
+        .svg;
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let lines = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("text"))
+        .take(reference.lines.len())
+        .collect::<Vec<_>>();
+    assert_eq!(lines.len(), reference.lines.len());
+    for (index, (actual, expected)) in lines.iter().zip(&reference.lines).enumerate() {
+        let text = actual
+            .descendants()
+            .filter(|node| node.is_text())
+            .filter_map(|node| node.text())
+            .collect::<String>();
+        assert_eq!(text, expected.text, "line {index}");
+        for (attribute, expected) in [("x", expected.x), ("y", expected.baseline)] {
+            let actual = actual.attribute(attribute).unwrap().parse::<f64>().unwrap();
+            assert!(
+                (actual - expected).abs() <= reference.coordinate_tolerance,
+                "line {index} {attribute}: {actual} vs native {expected}"
+            );
+        }
+        let spans = actual
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .collect::<Vec<_>>();
+        assert!(!spans.is_empty(), "line {index}");
+        for span in spans {
+            assert_eq!(
+                span.attribute("font-size").unwrap().parse::<f64>().unwrap(),
+                reference.font_size,
+                "line {index} font size"
+            );
+        }
+    }
 }
 
 #[test]

@@ -605,6 +605,27 @@ fn wrapped_flow_lines_do_not_inherit_a_previous_lines_largest_font_size() {
 }
 
 #[test]
+fn wrapping_keeps_spaces_in_selectable_text() {
+    let source = "a  b    c  d";
+    let mut document = document(Context::Flow, text(source));
+    document.pages[0].width = 160;
+    let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+    let xml = roxmltree::Document::parse(&page.svg).unwrap();
+    assert!(
+        xml.descendants()
+            .filter(|node| node.has_tag_name("text"))
+            .count()
+            > 1
+    );
+    let rendered = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("tspan"))
+        .filter_map(|node| node.text())
+        .collect::<String>();
+    assert_eq!(rendered, source);
+}
+
+#[test]
 fn crlf_offsets_preserve_second_line_unicode_styles() {
     let mut content = text("a\r\n😀b");
     content.spans = vec![

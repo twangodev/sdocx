@@ -1041,7 +1041,7 @@ fn wrap_paragraph(
             width = next_width;
             index += 1;
             if character.is_whitespace() {
-                last_break = Some((index - 1, index));
+                last_break = Some((index, index));
             } else if matches!(character, '/' | '?' | '&' | '#' | '-' | '.')
                 && styled.text_box().spans.iter().any(|span| {
                     span.kind == RichTextSpanType::Hyperlink
@@ -1067,9 +1067,6 @@ fn wrap_paragraph(
             .unwrap_or((index, index));
         lines.push(start..end);
         start = next;
-        while start < range.end && characters[start].is_whitespace() {
-            start += 1;
-        }
     }
     lines
 }

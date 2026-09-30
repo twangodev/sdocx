@@ -108,6 +108,10 @@ Unknown names remain in the SVG and can use the declared generic fallback.
 Text remains selectable SVG text. Font measurement, wrapping, paragraph layout
 and embedded-object placement are still being consolidated; shared style
 resolution alone does not establish native typography parity.
+Wrapping retains spaces in selectable text. The hash-locked first-page text
+fixture checks six exact line strings, their font sizes, and x/baseline positions
+within 0.25 SVG units of the Samsung PDF. These observations do not establish
+native kerning, fallback, justification, or recomputed pagination parity.
 
 Missing text styles use Samsung's `#262626` base color and logical font size 17,
 then apply the current theme and coordinate conversion. Font-size conversion
