@@ -4,6 +4,7 @@
     "font_tables": "Direct head, hhea, OS/2, cmap and hmtx inspection with ttf-parser 0.25.1; no production FontBook calls.",
     "shaping": "Direct rustybuzz 0.20.1 shaping of the pinned font bytes, default features, UnicodeBuffer::guess_segment_properties. Cluster offsets are UTF-8 byte offsets.",
     "native_pdf": "Samsung reference PDF Form XObject 5: Tm, Tf, Tj and descendant-font W inspected with lopdf 0.42.0. Line strings independently checked with PyMuPDF 1.28.2 gettext blocks.",
+    "native_additional_pages": "Hash-locked Samsung PDF Forms 19, 26, 89 and 111 independently decoded with Rust lopdf 0.42.0: Tm, Tf, Tj/TJ, descendant-font W and ToUnicode. Coordinates retain the logical native canvas height and pdf_to_svg_scale below. Covers ordinary body/heading origins on physical page indices 1-3 and code on indices 3-4; excludes table cells, numeric markers, incomplete CJK/emoji extraction and ordinary text after saved code.",
     "scope": "Font samples establish pinned-font measurements. Native PDF expectations separately establish observed Samsung layout; shaped font advances are not native parity claims."
   },
   "common_font_metrics": {
@@ -88,6 +89,77 @@
       { "text": "Samsung Notes document. The text should ", "x": 48, "baseline": 398.85 },
       { "text": "remain readable, selectable, and in the same ", "x": 48, "baseline": 470.85 },
       { "text": "order after parsing and rendering.", "x": 48, "baseline": 542.85 }
+    ],
+    "additional_pages": [
+      {
+        "page_index": 1,
+        "form_object_id": 19,
+        "lines": [
+          { "text": "Phone: +1 (415) 555-0142", "x": 48.00000228881836, "baseline": 86.85003662109375 },
+          { "text": "Numbers and dates", "x": 48.00000228881836, "baseline": 230.85003662109375 },
+          { "text": "Date: 2026-08-25", "x": 48.00000228881836, "baseline": 374.8500366210938 },
+          { "text": "Time: 14:30:45", "x": 48.00000228881836, "baseline": 446.8500366210938 },
+          { "text": "Integer: 1,234,567", "x": 48.00000228881836, "baseline": 518.8500366210938 },
+          { "text": "Decimal: 98.765", "x": 48.00000228881836, "baseline": 590.8500366210938 },
+          { "text": "Currency: $`42.50 / EUR 39.95 / GBP 33.20", "x": 48.00000228881836, "baseline": 662.8500366210938 },
+          { "text": "Percentage: 87.5%", "x": 48.00000228881836, "baseline": 734.8500366210938 },
+          { "text": "Punctuation and symbols", "x": 48.00000228881836, "baseline": 878.8500366210938 },
+          { "text": "ASCII: ! \" # $ % & ' ( ) * + , - . / : ; &lt; = &gt; ? @ [ ] ^ ", "x": 48.00000228881836, "baseline": 1022.8500366210936 },
+          { "text": "_ { | } ~", "x": 48.00000228881836, "baseline": 1094.8500366210938 },
+          { "text": "Typography: en-dash – em-dash — ellipsis … ", "x": 48.00000228881836, "baseline": 1166.8500366210938 },
+          { "text": "curly quotes “hello” and ‘world’", "x": 48.00000228881836, "baseline": 1238.8500366210938 },
+          { "text": "Math: + - × ÷ = ≠ ≤ ≥ ± ∞ √ π", "x": 48.00000228881836, "baseline": 1310.8500366210938 },
+          { "text": "Legal: © 2026 Example Company® — ", "x": 48.00000228881836, "baseline": 1382.8500366210938 },
+          { "text": "Compatibility Test™", "x": 48.00000228881836, "baseline": 1454.8500366210938 }
+        ]
+      },
+      {
+        "page_index": 2,
+        "form_object_id": 26,
+        "lines": [
+          { "text": "Unicode samples", "x": 48.00000228881836, "baseline": 158.85003662109375 },
+          { "text": "Accented Latin: café, naïve, résumé, jalapeño, ", "x": 48.00000228881836, "baseline": 302.8500366210938 },
+          { "text": "Ångström, Straße", "x": 48.00000228881836, "baseline": 374.8500366210938 },
+          { "text": "Greek: Αθήνα, Ελληνικά", "x": 48.00000228881836, "baseline": 446.8500366210938 },
+          { "text": "Cyrillic: Москва, русский", "x": 48.00000228881836, "baseline": 518.8500366210938 },
+          { "text": "Markdown syntax samples", "x": 48.00000228881836, "baseline": 806.8500366210938 },
+          { "text": "Markdown heading level 1", "x": 48.00000228881836, "baseline": 1032.7499267578125, "font_size": 63 },
+          { "text": "Markdown heading level 2", "x": 48.00000228881836, "baseline": 1189.5001098632813, "font_size": 57.00000228881836 },
+          { "text": "Bold with asterisks", "x": 48.00000228881836, "baseline": 1283.7000732421875 },
+          { "text": "Bold with underscores", "x": 48.00000228881836, "baseline": 1355.7000732421875 },
+          { "text": "Italic with asterisks", "x": 48.00000228881836, "baseline": 1427.7000732421875 }
+        ]
+      },
+      {
+        "page_index": 3,
+        "form_object_id": 89,
+        "lines": [
+          { "text": "Italic with underscores", "x": 48.00000228881836, "baseline": 86.85003662109375 },
+          { "text": "Strikethrough with tildes", "x": 48.00000228881836, "baseline": 158.85003662109375 },
+          { "text": "inline code", "x": 48.00000228881836, "baseline": 230.85003662109375 },
+          { "text": "Blockquote marker", "x": 96.00000457763672, "baseline": 302.8500366210938 },
+          { "text": "Unordered list item ", "x": 126, "baseline": 416.85 },
+          { "text": "Nested unordered list item", "x": 174.00000915527343, "baseline": 488.85 },
+          { "text": "Ordered list item", "x": 112.1557502746582, "baseline": 560.85 },
+          { "text": "Second ordered list item", "x": 112.1557502746582, "baseline": 632.8500549316407 },
+          { "text": "Example link", "x": 96.00000457763672, "baseline": 704.8500549316407 },
+          { "text": "───", "x": 48.00000228881836, "baseline": 872.850018310547 },
+          { "text": "text", "x": 129.75000457763673, "baseline": 1379.3519897460938 },
+          { "text": "fn main() {", "x": 129.75000457763673, "baseline": 1475.3520629882812 },
+          { "text": "    println!(\"Markdown code fence\");", "x": 129.75000457763673, "baseline": 1573.600048828125 },
+          { "text": "}", "x": 129.75000457763673, "baseline": 1634.350048828125 }
+        ]
+      },
+      {
+        "page_index": 4,
+        "form_object_id": 111,
+        "lines": [
+          { "text": "text", "x": 129.75000457763673, "baseline": -147.64808349609376 },
+          { "text": "fn main() {", "x": 129.75000457763673, "baseline": -51.64801025390625 },
+          { "text": "    println!(\"Markdown code fence\");", "x": 129.75000457763673, "baseline": 46.5999755859375 },
+          { "text": "}", "x": 129.75000457763673, "baseline": 107.3499755859375 }
+        ]
+      }
     ]
   }
 }

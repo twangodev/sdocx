@@ -108,9 +108,11 @@ Unknown names remain in the SVG and can use the declared generic fallback.
 Text remains selectable SVG text. Font measurement, wrapping, paragraph layout
 and embedded-object placement are still being consolidated; shared style
 resolution alone does not establish native typography parity.
-Wrapping retains spaces in selectable text. The hash-locked first-page text
-fixture checks six exact line strings, their font sizes, and x/baseline positions
-within 0.25 SVG units of the Samsung PDF. These observations do not establish
+Wrapping retains spaces in selectable text. Hash-locked native text expectations
+cover ordinary body and heading origins on the first four visible pages and
+code lines on the last two pages. Tests retain a 0.25 SVG-unit tolerance;
+fresh ordinary baseline comparisons are within 0.0001 units after converting
+the PDF's actual viewport. These observations do not establish
 native kerning, fallback, justification, or recomputed pagination parity.
 
 Missing text styles use Samsung's `#262626` base color and logical font size 17,
@@ -123,10 +125,15 @@ density conversion, including within local spans and headings. The device-defaul
 `i32::MIN` sentinel is retained but currently resolves to zero delta; Samsung's
 device configuration is unavailable. Margins and paragraph pixel spacing use
 that same document density. Stored object coordinates remain unchanged.
-Ordinary placed and flow lines use their largest local font size, with a default
-1.35 spacing multiplier. Pixel line spacing adds scaled pixels to that size;
-percentage spacing multiplies it. Table/code line positions still follow the
-captured fixtures. Flow's initial baseline remains calibrated independently;
-the complete native cursor and page-height-limit rules are not yet implemented.
+Ordinary placed, shape, flow, table and code lines use their largest local font
+size, with a default 1.35 spacing multiplier. Pixel line spacing adds scaled
+pixels to that size; percentage spacing multiplies it. The shared native
+baseline is line advance minus 0.35 times that font size. The body starts at
+its scaled component margin and applies enabled paragraph spacing, without
+adding flow-page padding. Embedded objects have separate height/margin rules.
+Point list markers use typed vector artwork and an explicit mobile/tablet/UWP
+display target shared by preview and export. Table-cell placement, numeric
+markers, continued-object context and complete pagination still have measured
+gaps; the native evidence and remaining differences are recorded below.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.

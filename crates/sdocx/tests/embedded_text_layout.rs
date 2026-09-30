@@ -3,9 +3,10 @@
 use sdocx::{
     BoundingBox, Color, Document, DocumentMetadata, ObjectSpanLayoutConstraint,
     ObjectSpanLayoutOption, ObjectType, Page, PageElement, RichTextBox, RichTextCodeBlock,
-    RichTextObjectContent, RichTextObjectSpan, RichTextParagraph, RichTextParagraphType,
-    RichTextSpan, RichTextSpanType,
+    RichTextObjectContent, RichTextObjectSpan, RichTextSpan, RichTextSpanType,
 };
+#[cfg(feature = "serde")]
+use sdocx::{RichTextParagraph, RichTextParagraphType};
 
 fn bounds() -> BoundingBox {
     BoundingBox {

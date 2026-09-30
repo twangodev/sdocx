@@ -115,9 +115,9 @@ ordinary Drawing/Widget adapter route. The saved Margin/Free/Path values are
 verified in [text-box-findings.md](text-box-findings.md), but mapping Free to
 no-wrap, Path to a shape clip, or auto-fit to dynamic font resizing remains
 unverified. Upstream editing/resizing and export clipping need captured
-standalone cases and their callers before adding those semantics. The body
-baseline caveat below also remains unresolved for placed exports; a shared
-low-level helper is insufficient to establish their layout origin.
+standalone cases and their callers before adding those semantics. The ordinary
+baseline helper is shared with placed text as traced below; standalone visual
+parity still needs a captured reference.
 
 ## Font-name payload and measured fallback
 
@@ -286,8 +286,8 @@ paragraph spacing or the nonempty bottom-margin clamp. Empty paragraphs
 inside nonempty text still use layout. Native spacing-enable flags, list
 state, object margins and obstacle adjustments are additional inputs; this
 bounded height formula does not prove all their SDK behavior. Wrapping and
-measurement must precede gravity positioning. The placed baseline caller
-remains unverified as discussed below.
+measurement must precede gravity positioning. The ordinary placed caller uses
+the shared baseline path traced below.
 
 ## Paragraphs and line spacing
 
@@ -442,29 +442,44 @@ add an extra offset at `0x6cc0c`; do not apply the ordinary text formula to
 embedded objects. Paragraph-edge, bullet, empty-line and page-limit effects
 still need captured cases before claiming complete first/last-line parity.
 
-The captured body-text export currently contradicts applying this helper
-formula directly to the SDK's body composition cursor. In
-`hf/01-basic-formatting.sdocx`, the first heading has stored size 15,
-document density 3 and paragraph multiplier 1.6. The body top margin 10
-and page top padding 24 place the SDK cursor at 54. The helper formula
-would place its baseline at `54 + 1.6 * 45 - 0.35 * 45 = 110.25`, while
-the hash-locked Samsung PDF baseline in `conformance/text-metrics.json`
-is 98.85. The current body renderer's `cursor + max_font_size` gives 99,
-within the captured 0.25 tolerance; its line advance remains 72. The
-helper's limit-overflow fallback gives 83.25, so that branch alone does
-not explain the capture. Keep the captured baseline contract unchanged
-until the export caller, layout-top adjustments and selected context are
-resolved. The helper arithmetic and its producer remain verified; their
-application to this captured body route is unverified.
+The ordinary placed route uses this same helper: Drawing `0x80c80` calls
+`ScrollEditTextView::Measure`; Widget `0xbc7f0` calls its layout, which forwards
+to `TextLayout::Layout` at `0xbca04`. Text forwards through
+`RichTextDrawing::layout` (`0x8ac88`), `RichTextLayout::DoLayout` (`0x64774`),
+paragraph layout (`0x71aec`, `0x72e50`, `0x73ee0`) and `SetLayout` to
+`GetBaseline` (`0x6b510`). Its ordinary branch has no placed/body switch.
+Rust consequently uses line advance minus `0.35 * max_font_size` across
+ordinary placed, shape, body, table and code text; object-margin lines retain
+their separate native branch.
 
-The inspected Text drawing path does not establish that missing adjustment.
+The body origin is the scaled component top margin, without adding the stored
+flow-page padding: Widget `updateBound`, `0xd71b0`–`0xd7220`, supplies these
+margins directly, and Text starts its cursor from the top margin at
+`0x71628`–`0x71630`. The captured first heading has top margin 30, enabled
+before spacing 12, font size 45 and multiplier 1.6. Its baseline is therefore
+`30 + 12 + 72 - 15.75 = 98.25`. The reference PDF's actual 848-point viewport
+gives that value; the retained logical 848.333333-point canvas convention in
+`conformance/text-metrics.json` gives 98.85. Their 0.6-unit difference is the
+page-height conversion, not a layout offset. The SDK no longer adds 24 units
+of page padding or subtracts 4 logical units from continuation top margins.
+
 `RichTextDrawing::getDrawnTextRun` reads `MeasureData` members 8/12 as
 the run point (`0x66df0`) and adds the supplied export offset and stored
 gravity offset (`0x66d0c`–`0x66d14`, `0x672b8`–`0x672c4`).
 `appendTextBlock` stores that point unchanged at `0x680e8`.
 `UpdateGravityOffsetY` stores zero for gravity 0 (`0x648c4`–`0x648d0`,
-`0x6495c`). This proves offset forwarding in this path, not which layout
-context and cursor origin produced the captured export.
+`0x6495c`). Composer measures the full body before indexing its pages
+(`0x3a2654`, `0x3a2680`); a continued object paragraph must preserve its
+source separator metric rather than become a source-first paragraph.
+
+Fresh comparison of the locked five-page fixture places matched ordinary
+body and heading baselines on the first four pages within 0.0001 SVG units
+of the actual PDF viewport. Code origins and measured heights differ only
+by float roundoff. Remaining observed differences are table-cell X +1 and
+baseline Y about +1.751, numbered-marker Y +1.125, numbered-item text
+X about -0.15575, and ordinary text after the continued code block Y about
+-15.001. These are exclusions from the
+passing reference subset, not evidence of complete flow or pagination parity.
 
 ## List marker geometry
 
@@ -482,29 +497,84 @@ The captured paragraph 53, UTF-16 1317, starts its ordinary text at X126;
 the previous solid-circle reservation placed it at X96. The nested circle
 starts at X174 and retains that position. Independent preview/replay tests
 cover both circles, both squares, three densities and odd/even indent levels.
-Marker artwork and its font/vertical placement are still approximations.
 Raw Arrow/Diamond values also map to native point type 4 at
-`0xd92c4`; their legacy Rust glyph adapter still needs the same density
-handling. Native default nesting is SolidCircle, WhiteCircle, BlackSquare,
-WhiteSquare (`0x63830`, `0xdc634`–`0xdc664`), while explicit type lists
+`0xd92c4` and use the same solid-circle vector in Rust. Native default nesting
+is SolidCircle, WhiteCircle, BlackSquare, WhiteSquare (`0x63830`,
+`0xdc634`–`0xdc664`), while explicit type lists
 override it (`0xd9020`–`0xd9124`). The SDK's odd/even circle substitution
-is not a complete implementation of those lists; depth overflow is unverified.
+is not a complete implementation of those lists; malformed signed indentation
+remains unverified.
 
-Numbered markers use a separately measured nested text layout. Native
-`updateTextLayout` supplies multiplier 1.3 (`0xd1e98`–`0xd1eb0`, constant
-`0x637c8`); number initialization reads font constant 116=15 and trailing
-gap constants 117=9 / 118=6 at `0xd9810`–`0xd9864`. Its container width
-is measured glyph width plus the selected gap (`0xd19c8`,
-`0xd1a7c`–`0xd1aac`), rather than the SDK's current fixed 64 units.
-The directly measured numeric branch selects gap 9 for marker values below
-10 and 6 otherwise; cached layout branches and font overrides need their
-own handling.
-The captured numeric marker baseline is 559.725 versus body baseline
-560.850, a relative offset of -1.125 at font size 45. Native bullet
-centering uses the default 1.35 body metric and the marker's 1.3 metric
-(`0x6be9c`–`0x6becc`); it does not establish a universal fixed offset.
-Number-font overrides, gap selection, measured width and baseline integration
-remain to be implemented.
+Point artwork is vector geometry. Native resource IDs 38–41 select the
+4 × 4 circle/square XML paths (`0xd96fc`–`0xd9798`); Rust emits typed SVG
+circles and rectangles with the same open-marker border proportions. Image
+size uses constants 119–122 and descending font thresholds
+(`0xd98fc`, `0xd9984`, `0xd2354`), then centers bounds using
+`ceil(image_size / 2)` (`0xb310c`–`0xb3138`). The rendering display selects
+mobile/tablet/UWP via `IsTablet` and `IsUWP` (`0xd9878`); this is device
+context, not document page mode. Rust exposes `PointMarkerTarget`, defaulting
+to mobile, and shares it across preview and export.
+
+With zero explicit pixel spacing, point center Y is the post-line cursor
+minus `1.35 * line_base_height / 2` (`0x6be9c`–`0x6becc`). Nonzero pixel
+spacing instead uses baseline minus the global default face's cap-height
+ratio times line base height / 2. `RichTextDrawing::layout` obtains that ratio
+at `0x6474c`–`0x64770`; `TextUtil::GetCapHeightRatioFromBaseLine`, `0x8e198`,
+selects the default typeface and divides cap height by text size. This is
+independent of the paragraph's font family. The system-font flag is RichText
+member 115 (`0x62934`); with it disabled, `FontListParser::GetDefaultFontFamily`
+prefers `sec` on SDK 31+ and falls back to `sans-serif` (`0x7d5dc`–`0x7d720`).
+With it enabled, the family is empty for system default selection (`0x84fec`).
+Rust's caller font database supplies its sans default, so explicit-pixel
+point placement is not claimed to match every
+Samsung device font configuration.
+
+Numbered markers use a separately measured nested text layout. The prepared
+font size comes from `updateParagraphNumberSize` (`0xd852c`): normally the
+paragraph's first content span, skipping its retained line-feed prefix;
+empty and short paragraphs can use `GetFontSize(start + length)`. The size
+is stored at paragraph offset 68 and supplied to `updateTextLayout`
+(`0xd1998`–`0xd19a4`). Its fresh rich spans inherit no paragraph family,
+bold or italic; the nested layout uses default-face selection and the
+system-font flag (`0xd1dc4`–`0xd1e4c`). Initialization's font constant 116=15
+is therefore not a universal marker size. Gap constants 117=9 / 118=6
+scale with document density and local text scale (`0xd9810`–`0xd9864`).
+The fresh-layout branch uses gap 9 for displayed values below 10 and 6
+otherwise (`0xd19c8`); the retained-layout branch uses gap 9 (`0xd17d8`).
+Reservation is fractional measured line width plus left/right margins and
+the gap (`0xd19ec`–`0xd1aac`). The child starts at X=0 in LTR and X=gap in
+RTL (`0xd1adc`–`0xd1b04`). Native supplies multiplier 1.3 to the nested
+layout (`0xd1e98`–`0xd1eb0`), while ordinary zero-pixel-spacing centering
+uses 1.35. This explains the captured -1.125 baseline difference at size
+45 only when marker size and line base height agree; it is not a universal
+offset. The SDK's fixed widths 64/78, sizes 45/32 and alternate X=12 do not
+implement these measurement rules.
+
+Raw Digit and CircledDigit both map to native decimal type 3
+(`0xd9318`–`0xd9328`); this route does not draw a circle. Native decimal,
+upper/lower alphabetic and lowercase Roman strings all receive a trailing
+period (`0xd18d8`–`0xd1900`). `ConvertNumberToBulletString` (`0xdbc08`)
+uses spreadsheet-style alphabetic numbering and greedy Roman subtraction;
+nonpositive values produce an empty string before the period is appended.
+Default ordered types are decimal/uppercase/lowercase/Roman (`0xdc5f0`–
+`0xdc628`); default point types are solid circle/white circle/black square/
+white square (`0xdc634`–`0xdc664`). Explicit stored type lists override
+these defaults (`0xd9020`–`0xd9118`). Selection uses indent level modulo
+the type-list length (`0xd6fcc`–`0xd7004`), not the SDK's two-level point
+alternation.
+
+Checkboxes use resource IDs 42/43, `spen_ic_text_check_off/on`, with
+24-unit VectorDrawable assets (`0xd95d4`–`0xd95dc`, `SpenResources.java`). The
+rounded box runs from 4.5 to 19.5 with stroke width 1.5; the checked asset
+adds a separate check path. `GetCheckboxImageSize` clamps 0.68 times the
+paragraph font between target-specific 5.5/5.5/4 and maximum 20, scaled by
+document density (`0xcfa80`–`0xcfab0`). `setCheckboxView` expands this to
+the asset viewport with `ceil(size * 24 / 15)` and even-rounds its bounds
+(`0xb2c10`–`0xb2c88`), tints it with paragraph color and applies alpha 0.4
+when checked, 1 otherwise (`0xb2c90`–`0xb2cb4`). The SDK's checkbox font
+symbols do not reproduce these assets. Exact checkbox container transforms,
+RTL number substitution and device-specific default-face agreement still
+need separate verification; this audit does not claim their implementation.
 
 ## Measurement, body flow and embedded objects
 
@@ -829,6 +899,17 @@ text selects these frames at `0xa6b04`–`0xa6b24`, then offsets by the supplied
 draw rectangle minus measured origin at `0xa6b38`–`0xa6b50`. These rules
 support prepared geometry, not an arbitrary -0.5 shift of table glyphs;
 the composed draw-rectangle origin remains a separate input.
+
+Native prepared table frames are stateful. Bodytext caches the child layout
+(`0xb0cac`–`0xb0d64`); construction sets its dirty byte (`0xa9e78`), while
+later table callbacks call `Layout` without clearing measurement
+(`0xb0dec`–`0xb0e2c`). Cold measurement grows rows to their measured cell
+heights; warm layout can grow or shrink them (`0xaecf4`). Later rows can
+move past a split using actual first-line height plus top margin
+(`0xac9f0`, `0xb2360`), and trailing empty space can compress a row
+(`0xb294c`, `0xb28ec`). Fresh measurement at every candidate is therefore
+not established as equivalent. These producers bound a future unmerged-grid
+implementation; merged-cell frame union and rowspan growth remain unverified.
 
 Native geometry reaches measurement as `f32`: Model `ObjectBase::GetRect`
 loads four endpoint registers (`0x2caa6c`–`0x2caa70`), Widget span conversion
@@ -1166,11 +1247,12 @@ anchors preserve neighboring text, and invalid or unsupported objects retain
 typed diagnostics. This has synthetic coverage but no captured mixed-inline
 reference. Code height feedback and table drawn bounds are implemented;
 regenerated table frames, full-source context across saved page slices and
-composed-page origins remain incomplete. Terminal-newline
-display paragraphs, list-spacing enable flags, clipping and recomputed
-pagination still need captured cases and implementation. The current body
-baseline follows the capture above; it is not a universal native baseline
-formula.
+complex object composition remain incomplete. Paragraph-gap enable flags now
+follow the native bullet conversion and source-edge object rules, with
+synthetic regressions. Terminal-newline display paragraphs, clipping and
+recomputed pagination still need captured cases and implementation. Ordinary
+baselines share the native line-advance formula; object-margin lines retain
+their separate branch.
 
 Shared style resolution now checks native scaling before using its result.
 A public-API probe with source `A\nB` and density 3 previously lost text

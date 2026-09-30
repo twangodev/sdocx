@@ -48,7 +48,7 @@ Unicode cmap tables in that embedded font were empty. PDF CID mappings can
 still render it inside the original document. The family name alone is not
 enough to establish that an extracted font can render Unicode SVG text.
 
-## Measurements
+## Historical raster measurements
 
 Tools: Python 3.14.3, PyMuPDF 1.28.2, Pillow 12.1.1, NumPy 2.4.2 and the
 CLI's resvg 0.47.0. Both runs used the same system font inventory. The only
@@ -81,6 +81,18 @@ titles and lines remain in the continuation SVG at negative coordinates and
 are correctly clipped. They are not duplicated on the visible page.
 
 ## Validation and next work
+
+The raster scores above describe the initial font experiment, not the current
+text engine. Fresh Rust PDF-coordinate comparisons now place matched ordinary
+body/heading baseline Y on the first four pages within 0.0001 SVG units of
+the reference's actual viewport. The retained logical-canvas measurements in
+`conformance/text-metrics.json` are 0.6 units higher: 848.333333 versus 848 PDF
+points, multiplied by 1.8. Code origins and heights have float roundoff only.
+Remaining measured SDK-minus-reference differences are table cells X +1 and
+Y about +1.751, numeric marker Y +1.125, numeric-item text X about -0.15575,
+and post-code ordinary text Y about -15.001. These findings do not establish
+complete pagination, font fallback or whole-document visual parity. See
+[native text layout inputs](text-layout-findings.md) for source addresses.
 
 - Twelve small Python tests cover blank-output detection, alpha compositing,
   pixel arithmetic, tolerance, rotated PDF dimensions, file hashes, path

@@ -6,6 +6,7 @@ use std::sync::Arc;
 use sdocx::fonts::{FontBook, FontError, UnicodeBuffer, fontdb};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+use svgtypes::Transform;
 
 #[derive(Deserialize)]
 struct Fixture {
@@ -55,8 +56,17 @@ struct NativeReference {
     sdocx_sha256: String,
     pdf_sha256: String,
     page_index: usize,
+    pdf_to_svg_scale: f64,
+    logical_pdf_page_height: f64,
     coordinate_tolerance: f64,
     font_size: f64,
+    lines: Vec<NativeLine>,
+    additional_pages: Vec<NativePage>,
+}
+
+#[derive(Deserialize)]
+struct NativePage {
+    page_index: usize,
     lines: Vec<NativeLine>,
 }
 
@@ -65,6 +75,7 @@ struct NativeLine {
     text: String,
     x: f64,
     baseline: f64,
+    font_size: Option<f64>,
 }
 
 fn fixture() -> Fixture {
@@ -88,7 +99,7 @@ fn sha256(bytes: &[u8]) -> String {
 
 #[test]
 #[ignore = "requires the external Hugging Face compatibility corpus"]
-fn native_first_page_text_matches_independent_pdf_layout() {
+fn native_first_four_page_body_and_saved_code_match_independent_pdf_layout() {
     let reference = fixture().native_reference;
     let root = std::env::var_os("SDOCX_CORPUS_DIR")
         .map(PathBuf::from)
@@ -100,41 +111,132 @@ fn native_first_page_text_matches_independent_pdf_layout() {
     assert_eq!(sha256(&source), reference.sdocx_sha256, "source archive");
     assert_eq!(sha256(&pdf), reference.pdf_sha256, "native reference PDF");
 
+    let native_pdf = lopdf::Document::load_mem(&pdf).unwrap();
+    let pages = native_pdf.get_pages();
     let document = sdocx::parse_bytes(&source).unwrap();
-    let svg = sdocx::render_page_svg(&document, reference.page_index, &Default::default())
+    assert_eq!(
+        reference
+            .additional_pages
+            .iter()
+            .map(|page| page.page_index)
+            .collect::<Vec<_>>(),
+        [1, 2, 3, 4]
+    );
+    for (page_index, lines) in std::iter::once((reference.page_index, &reference.lines)).chain(
+        reference
+            .additional_pages
+            .iter()
+            .map(|page| (page.page_index, &page.lines)),
+    ) {
+        let page_id = *pages.values().nth(page_index).unwrap();
+        let media_box = native_pdf
+            .get_dictionary(page_id)
+            .unwrap()
+            .get(b"MediaBox")
+            .unwrap()
+            .as_array()
+            .unwrap();
+        assert_eq!(media_box[1].as_float().unwrap(), 0.0);
+        let native_viewport_height = f64::from(media_box[3].as_float().unwrap());
+        let viewport_offset = (reference.logical_pdf_page_height - native_viewport_height)
+            * reference.pdf_to_svg_scale;
+        let svg = sdocx::render_page_svg(&document, page_index, &Default::default())
+            .unwrap()
+            .svg;
+        assert_native_lines(&svg, page_index, lines, &reference, viewport_offset);
+    }
+}
+
+fn compose_transform(left: Transform, right: Transform) -> Transform {
+    Transform::new(
+        left.a * right.a + left.c * right.b,
+        left.b * right.a + left.d * right.b,
+        left.a * right.c + left.c * right.d,
+        left.b * right.c + left.d * right.d,
+        left.a * right.e + left.c * right.f + left.e,
+        left.b * right.e + left.d * right.f + left.f,
+    )
+}
+
+fn inherited_number(node: roxmltree::Node<'_, '_>, attribute: &str) -> f64 {
+    node.ancestors()
+        .find_map(|ancestor| ancestor.attribute(attribute))
         .unwrap()
-        .svg;
-    let xml = roxmltree::Document::parse(&svg).unwrap();
+        .split([' ', ','])
+        .next()
+        .unwrap()
+        .parse()
+        .unwrap()
+}
+
+fn assert_native_lines(
+    svg: &str,
+    page_index: usize,
+    expected_lines: &[NativeLine],
+    reference: &NativeReference,
+    viewport_offset: f64,
+) {
+    let xml = roxmltree::Document::parse(svg).unwrap();
     let lines = xml
         .descendants()
         .filter(|node| node.has_tag_name("text"))
-        .take(reference.lines.len())
+        .map(|node| {
+            let text = node
+                .descendants()
+                .filter(|child| child.is_text())
+                .filter_map(|child| child.text())
+                .collect::<String>();
+            (node, text)
+        })
         .collect::<Vec<_>>();
-    assert_eq!(lines.len(), reference.lines.len());
-    for (index, (actual, expected)) in lines.iter().zip(&reference.lines).enumerate() {
-        let text = actual
+    for expected in expected_lines {
+        let matches = lines
+            .iter()
+            .filter(|(_, text)| *text == expected.text)
+            .collect::<Vec<_>>();
+        assert_eq!(matches.len(), 1, "page {page_index} {:?}", expected.text);
+        let actual = matches[0].0;
+        let positioned = actual
             .descendants()
-            .filter(|node| node.is_text())
-            .filter_map(|node| node.text())
-            .collect::<String>();
-        assert_eq!(text, expected.text, "line {index}");
-        for (attribute, expected) in [("x", expected.x), ("y", expected.baseline)] {
-            let actual = actual.attribute(attribute).unwrap().parse::<f64>().unwrap();
+            .find(|node| node.has_tag_name("tspan"))
+            .unwrap_or(actual);
+        let mut ancestors = positioned
+            .ancestors()
+            .filter(|node| node.is_element())
+            .collect::<Vec<_>>();
+        ancestors.reverse();
+        let transform = ancestors
+            .iter()
+            .filter_map(|node| node.attribute("transform"))
+            .fold(Transform::default(), |all, value| {
+                compose_transform(all, value.parse().unwrap())
+            });
+        let local_x = inherited_number(positioned, "x");
+        let local_y = inherited_number(positioned, "y");
+        let x = transform.a * local_x + transform.c * local_y + transform.e;
+        let y = transform.b * local_x + transform.d * local_y + transform.f;
+        for (attribute, actual, native) in [
+            ("x", x, expected.x),
+            ("y", y, expected.baseline - viewport_offset),
+        ] {
             assert!(
-                (actual - expected).abs() <= reference.coordinate_tolerance,
-                "line {index} {attribute}: {actual} vs native {expected}"
+                (actual - native).abs() <= reference.coordinate_tolerance,
+                "page {page_index} {:?} {attribute}: {actual} vs native viewport {native}",
+                expected.text
             );
         }
         let spans = actual
             .descendants()
             .filter(|node| node.has_tag_name("tspan"))
             .collect::<Vec<_>>();
-        assert!(!spans.is_empty(), "line {index}");
+        assert!(!spans.is_empty(), "page {page_index} {:?}", expected.text);
+        let native_font_size = expected.font_size.unwrap_or(reference.font_size);
         for span in spans {
-            assert_eq!(
-                span.attribute("font-size").unwrap().parse::<f64>().unwrap(),
-                reference.font_size,
-                "line {index} font size"
+            let actual_font_size = inherited_number(span, "font-size");
+            assert!(
+                (actual_font_size - native_font_size).abs() < 0.0001,
+                "page {page_index} {:?} font size: {actual_font_size} vs {native_font_size}",
+                expected.text
             );
         }
     }

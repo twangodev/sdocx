@@ -210,6 +210,22 @@ shape/line, image-placement and standalone-text reference pairs.
 
 ## Document composition regressions
 
+The shared Rust text engine has synthetic coverage for paragraph spacing,
+ordinary baselines, embedded-object measurement and vector point markers.
+`text-metrics.json` also stores independently decoded, hash-locked Samsung PDF
+observations. Its retained logical canvas height is 848.333333 PDF points;
+the reference's actual viewport is 848 points. At scale 1.8, convert a stored
+baseline to the actual viewport by subtracting 0.6 SVG units. This conversion
+explains the coordinate convention; it does not align content to improve a score.
+
+The current five-page comparison puts matched ordinary baseline Y on the first
+four pages within 0.0001 units of the actual viewport. The tests retain their
+0.25-unit tolerance. Table-cell placement, numeric marker widths/baselines and
+ordinary text after the continued code block remain outside the passing native
+subset. See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
+for the producers and measured residuals. Recomputed pagination and full
+document composition parity remain incomplete.
+
 Rust tests cover stored object order, root render-pass selection, visibility,
 nested containers, saved child transforms and replay indices. Export tests
 check mixed stroke/image/shape overlaps against literal pixel expectations
