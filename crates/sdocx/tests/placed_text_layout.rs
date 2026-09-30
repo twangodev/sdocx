@@ -266,7 +266,7 @@ fn rotation_remains_centered_on_the_stored_box_after_insets() {
 
 #[cfg(feature = "serde")]
 #[test]
-fn embedded_shape_text_uses_the_same_measured_placed_layout() {
+fn unsupported_shape_text_retains_the_measured_saved_frame() {
     for (spacing, first, second) in [
         (None, 65.0, 125.75),
         (Some((0_u32, 4.0_f32)), 61.25, 118.25),
@@ -299,12 +299,16 @@ fn embedded_shape_text_uses_the_same_measured_placed_layout() {
             "fill": "None", "pen_name_id": null, "pen_settings_id": null, "text": content,
         }))
         .unwrap();
-        let svg =
+        let page =
             sdocx::render_page_svg(&document(PageElement::Shape(shape)), 0, &Default::default())
-                .unwrap()
-                .svg;
+                .unwrap();
+        assert_eq!(page.text_diagnostics.len(), 1);
         assert_eq!(
-            lines(&svg),
+            page.text_diagnostics[0].kind,
+            sdocx::TextDiagnosticKind::UnsupportedTextFrame
+        );
+        assert_eq!(
+            lines(&page.svg),
             vec![("ABC".into(), 20.0, first), ("ABC".into(), 20.0, second)],
             "{spacing:?}"
         );

@@ -20,6 +20,8 @@ pub enum TextDiagnosticKind {
     MissingGlyphs,
     MeasurementFailure,
     InvalidGeometry,
+    /// The saved text frame is retained because its native template geometry is unsupported.
+    UnsupportedTextFrame,
     /// Measured glyph positions cannot be reproduced by independently positioned SVG text.
     UnsupportedGlyphPositioning,
 }

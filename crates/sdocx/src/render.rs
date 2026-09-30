@@ -20,6 +20,7 @@ pub mod fonts;
 mod fountain;
 mod marker;
 pub use marker::PointMarkerTarget;
+mod placed;
 mod table;
 mod text;
 mod theme;
@@ -663,15 +664,25 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
                     ),
                     _ => theme,
                 };
-                render_text_box(
-                    svg,
-                    text,
-                    page,
-                    media_assets,
-                    flow_page_padding,
-                    theme,
-                    text_renderer,
-                );
+                let frame = placed::PlacedTextFrame::for_shape(shape).unwrap_or_else(|issue| {
+                    if !text.text.is_empty() {
+                        let kind = match issue {
+                            placed::ShapeTextFrameIssue::UnsupportedTemplate => {
+                                TextDiagnosticKind::UnsupportedTextFrame
+                            }
+                            placed::ShapeTextFrameIssue::InvalidGeometry => {
+                                TextDiagnosticKind::InvalidGeometry
+                            }
+                        };
+                        text_renderer.report_geometry_issues(&[TextDiagnostic {
+                            kind,
+                            family: String::new(),
+                            codepoints: Vec::new(),
+                        }]);
+                    }
+                    placed::PlacedTextFrame::from_text_box(text)
+                });
+                render_placed_text(svg, text, frame, media_assets, theme, text_renderer);
             }
         }
         PageElement::Line(line) => render_line(svg, line, theme),
@@ -952,22 +963,45 @@ fn render_text_box(
         );
         return;
     }
-    let (x, y, width, height) = (
-        text_box.bbox.x_min,
-        text_box.bbox.y_min,
-        text_box.bbox.x_max - text_box.bbox.x_min,
-        text_box.bbox.y_max - text_box.bbox.y_min,
+    render_placed_text(
+        svg,
+        text_box,
+        placed::PlacedTextFrame::from_text_box(text_box),
+        media_assets,
+        theme,
+        renderer,
     );
+}
+
+fn render_placed_text(
+    svg: &mut Scene,
+    text_box: &RichTextBox,
+    frame: placed::PlacedTextFrame,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) {
     let theme = text_box
         .highlight_color
         .map_or(theme, |color| theme.on_background(color));
     let styled = StyledText::new(text_box, TextContext::Placed, renderer.settings);
-    let layout = text::layout_placed_text(&styled, theme, renderer);
+    let text_frame = text::TextFrame {
+        bbox: frame.bounds,
+        gravity: text_box.gravity,
+        exclusions: &[],
+    };
+    let layout = match frame.measurement_size() {
+        Some(size) => text::layout_text_with_size(&styled, text_frame, size, theme, renderer),
+        None => text::layout_text(&styled, text_frame, theme, renderer),
+    };
     let mut group = Group::new();
-    if let Some(rotation) = text_box.rotation_degrees {
-        let cx = x + width / 2.0;
-        let cy = y + height / 2.0;
-        group = group.transformed(Transform::rotate(rotation, cx, cy, 2));
+    if let Some(rotation) = frame.rotation {
+        group = group.transformed(Transform::rotate(
+            rotation.degrees,
+            rotation.center[0],
+            rotation.center[1],
+            2,
+        ));
     }
     svg.scope(group, |svg| {
         if let Some(highlight) = text_box.highlight_color.as_ref() {

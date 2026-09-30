@@ -590,30 +590,30 @@ pub(in crate::render) fn measure_paragraph(
     )
 }
 
-pub(in crate::render) fn layout_placed_text(
-    styled: &StyledText<'_>,
-    theme: RenderTheme,
-    renderer: &TextRenderer<'_>,
-) -> TextLayout {
-    layout_text(
-        styled,
-        TextFrame {
-            bbox: styled.text_box.bbox,
-            gravity: styled.text_box.gravity,
-            exclusions: &[],
-        },
-        theme,
-        renderer,
-    )
-}
-
 pub(in crate::render) fn layout_text(
     styled: &StyledText<'_>,
     frame: TextFrame<'_>,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> TextLayout {
-    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Frame)
+    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Frame, None)
+}
+
+pub(in crate::render) fn layout_text_with_size(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    measurement_size: [i32; 2],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> TextLayout {
+    layout_text_with_context(
+        styled,
+        frame,
+        theme,
+        renderer,
+        LayoutContext::Frame,
+        Some(measurement_size),
+    )
 }
 
 pub(in crate::render) fn layout_flow_text(
@@ -622,7 +622,7 @@ pub(in crate::render) fn layout_flow_text(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> TextLayout {
-    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Flow)
+    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Flow, None)
 }
 
 pub(in crate::render) fn layout_capture_text(
@@ -631,7 +631,7 @@ pub(in crate::render) fn layout_capture_text(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> TextLayout {
-    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Capture)
+    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Capture, None)
 }
 
 #[derive(Clone, Copy)]
@@ -668,6 +668,7 @@ fn layout_text_with_context(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
     context: LayoutContext,
+    measurement_size: Option<[i32; 2]>,
 ) -> TextLayout {
     let text_box = styled.text_box;
     let settings = renderer.settings;
@@ -677,10 +678,17 @@ fn layout_text_with_context(
         .margins
         .unwrap_or([0.0; 4])
         .map(|margin| settings.pixels(margin));
-    let outer_width = (frame.bbox.x_max - frame.bbox.x_min).ceil();
-    let outer_height = (frame.bbox.y_max - frame.bbox.y_min).ceil();
+    let [outer_width, outer_height] = measurement_size.map_or_else(
+        || {
+            [
+                (frame.bbox.x_max - frame.bbox.x_min).ceil(),
+                (frame.bbox.y_max - frame.bbox.y_min).ceil(),
+            ]
+        },
+        |size| size.map(f64::from),
+    );
     let content_left = frame.bbox.x_min + margins[0];
-    let content_right = frame.bbox.x_min + outer_width - margins[2];
+    let content_width = outer_width - margins[0] - margins[2];
     let paragraphs = styled
         .index
         .paragraphs()
@@ -727,7 +735,7 @@ fn layout_text_with_context(
         });
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
         let x = marker_x + marker_width;
-        let width = (content_right - right_indent - x).max(0.0);
+        let width = (content_width - left_indent - right_indent - marker_width).max(0.0);
         let paragraph_lines = measure_paragraph(
             styled,
             paragraph.content.clone(),
@@ -905,7 +913,68 @@ mod tests {
             RenderTheme::for_canvas(false),
             &renderer,
             context,
+            None,
         )
+    }
+
+    #[test]
+    fn native_measurement_width_is_independent_of_a_large_world_origin() {
+        let content = text("ABCD");
+        let settings = TextSettings::default();
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let origin = 1e30;
+        let width = i32::MAX;
+        let collapsed_endpoint = origin + f64::from(width);
+        assert_eq!(collapsed_endpoint, origin);
+        let frame = |right| TextFrame {
+            bbox: BoundingBox {
+                x_min: origin,
+                y_min: 0.0,
+                x_max: right,
+                y_max: 200.0,
+            },
+            gravity: None,
+            exclusions: &[],
+        };
+        let theme = RenderTheme::for_canvas(false);
+        let collapsed = layout_text(&styled, frame(collapsed_endpoint), theme, &renderer);
+        assert_eq!(collapsed.lines.len(), 4);
+        let native =
+            layout_text_with_size(&styled, frame(2.0 * origin), [width, 200], theme, &renderer);
+        assert_eq!(native.lines.len(), 1);
+        assert_eq!(native.lines[0].line.source, 0..4);
+        assert_eq!(native.lines[0].width, f64::from(width));
+        assert_eq!(native.lines[0].x, origin);
+    }
+
+    #[test]
+    fn native_measurement_height_controls_gravity_without_reconstructing_bounds() {
+        let content = text("A");
+        let settings = TextSettings::default();
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let native = layout_text_with_size(
+            &styled,
+            TextFrame {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 100.0,
+                    y_max: 1e30,
+                },
+                gravity: Some(2),
+                exclusions: &[],
+            },
+            [100, 200],
+            RenderTheme::for_canvas(false),
+            &renderer,
+        );
+        assert_eq!(native.height(), 13.5);
+        assert_eq!(native.lines[0].baseline, 196.5);
+        assert_eq!(native.lines[0].bottom, 200.0);
     }
 
     #[test]

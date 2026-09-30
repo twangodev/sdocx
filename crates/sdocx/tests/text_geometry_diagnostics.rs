@@ -139,7 +139,7 @@ fn shape(mut content: RichTextBox) -> PageElement {
     content.bbox = bounds();
     PageElement::Shape(
         serde_json::from_value(serde_json::json!({
-            "text_editable": true, "text_area_type": null, "shape_type": 0,
+            "text_editable": true, "text_area_type": null, "shape_type": 4,
             "metadata": {
                 "format_version": 1, "uuid": "geometry-shape", "modified_time_raw": 0,
                 "bbox": bounds(), "replay_timestamp_raw": 0, "resize_mode_raw": 0,

@@ -20,7 +20,7 @@ mod wrapping;
 use layout::measure_paragraph;
 pub(super) use layout::{
     PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
-    layout_flow_text, layout_placed_text, layout_text,
+    layout_flow_text, layout_text, layout_text_with_size,
 };
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;
