@@ -261,6 +261,16 @@ For uniform ordinary text with default 1.35 spacing and no limit overflow,
 the advance is `1.35 * resolved_size` and the baseline offset from the line
 start is `resolved_size`. This does not define glyph ink bounds.
 
+Explicit spacing changes the baseline too, not just the next line's cursor.
+Writing `F` for the maximum resolved font size of an ordinary text line,
+its base height is `F`. With no limit overflow, pixel spacing `P != 0`
+therefore yields advance `F + P` and baseline offset `0.65 * F + P`;
+percentage multiplier `M` with zero pixel spacing yields advance `M * F`
+and offset `(M - 0.35) * F`. For example, `F=20, P=6` places the baseline
+at 19 and advances 26; `F=20, M=1.5` places it at 23 and advances 30.
+The helper's overflow fallback returns the original base height before
+both calculations (`0x8e128`–`0x8e170`), producing offset `0.65 * F`.
+
 `SetLayout` adds the line's aggregated top margin (member 32) before this
 baseline call (`0x6b4f0`–`0x6b510`). Completed intermediate lines call it
 at `0x6b388`; the final line calls it at `0x6a9bc`. Thus the inspected
@@ -271,6 +281,198 @@ embedded objects. Paragraph-edge, bullet, empty-line and page-limit effects
 still need captured cases before claiming complete first/last-line parity.
 
 ## Measurement, body flow and embedded objects
+
+### Run shaping and feature policy
+
+Ordinary text is measured as runs, not by summing independent character
+`SkPaint::measureText` calls. Text `ParagraphMeasureImplMinikin::Measure`,
+`0x76e28`, joins adjacent spans with `RichTextSpan::JoinableForMeasureTo`
+at `0x76fac`, then invokes `SpanRunFunctor` at `0x76fe0` / `0x77030`.
+The joining predicate, `0x8dc28`, compares resolved font size, foreground
+color, style bits under mask `0xc3`, and font-name string equality; either
+object span prevents joining. A color-only transition can therefore change
+the native shaping boundary.
+
+`SpanRunFunctor` creates the Minikin paint through `0x76ad4` and obtains
+a shaped layout through `0x97b34` at `0x77304`. The style-run virtual
+method resolves to `0x96cc8` (vtable entry `0xf57b8`), which reaches the
+layout-piece producer `0x9b150` through `0x970fc`. That producer calls
+the bundled HarfBuzz shape entry `0xecdcc` at `0x9c5d4` / `0x9c754`.
+It retains glyph positions, UTF-16 cluster indexes and character advances;
+`SpanRunFunctor` copies the shaped per-UTF-16 advances divided by 100
+at `0x77640`–`0x77668`. Paint size was multiplied by 100 at
+`0x76b30`–`0x76b44`. Keep source indexes separate from glyph indexes
+and shaped clusters in the Rust layout result.
+
+SPen initializes the Minikin feature string empty at `0x76c34`. For a
+Latin script run with ordinary zero letter spacing, the layout-piece producer
+explicitly supplies `liga=0` and `clig=0` before shaping
+(`0x9c548`–`0x9c754`). The 16-byte feature records at `0x267a0` and
+`0x26750` contain the tags, value 0, start 0 and end `0xffffffff`.
+Its nonzero-letter-spacing branch also adds these features
+(`0x9b34c`–`0x9b3d8`). This proves disabling those two optional ligature
+features for the inspected Latin path; it does not disable required script
+shaping or establish the policy for every other script.
+
+No `kern=0` override was established in this producer/caller trace. The
+captured heading matching an unkerned bundled-font width is useful fixture
+evidence, but does not prove a universal native kerning setting. Font choice,
+style-run boundaries and native advance quantization still need comparison.
+The native horizontal-advance callback, `0x9d728`, converts a font advance
+to a 256-scaled integer with `trunc(advance * 256 + 0.5)`; its vector
+counterpart at `0x9d858` truncates each 256-scaled advance. Those inputs
+use the 100-scaled paint above. Do not infer pixel-grid rounding from this.
+The argument 3 at `0x76b28` selects glyph text encoding through
+`TextPaintImplSkia::setTextEncoding`, not a kerning/paint flag.
+
+### Direction, break boundaries and tabs
+
+`RichTextMeasure::measureParagraph`, `0x78a0c`, calls ICU
+`ubidi_getBaseDirection` at `0x78b48`. It supplies base level `0xff`
+to `ubidi_setPara` for RTL text, or neutral text with stored layout direction
+1; otherwise it supplies `0xfe` (`0x78b4c`–`0x78c24`). These are ICU's
+default RTL/LTR paragraph levels, rather than forcing every character into
+one direction. Function-table binding is explicit: `0xee160` stores
+`ubidi_getBaseDirection` at member 72; `0xee0f4` stores `ubidi_setPara`
+at member 48, using the symbol strings at `0x2436a` and `0x2592d`.
+
+The measure caller groups consecutive characters by resolved ICU bidi-level
+parity and sends that parity to `AddStyleRun` (`0x78cc4`–`0x78d48`;
+`ubidi_getLevelAt` binds to member 104 at `0xee1f0`). The Minikin style
+run then selects direction value 4/5 at `0x96e28`–`0x96e74`; its bidi
+iterator bypasses further paragraph analysis when that bit is present
+(`0x9abdc`, `0x9ad8c`). Paragraph base direction and shaped-run direction
+are separate inputs. Mixed RTL/LTR output still needs a captured reference.
+
+Text `WordBreakerImplMinikin::Next`, `0x7b2f8`, delegates to `0x9e9b4`.
+The ordinary branch filters ICU break candidates in `0x9ea00`–`0x9ec08`,
+including surrogate decoding, soft hyphen, Myanmar virama, ZWJ and emoji
+property checks. The URI/email branch recognizes an ASCII token containing
+`@` or `://` (`0x9ec64`–`0x9ed14`) and uses different punctuation breaks
+through `0x9ed2c`, rather than ordinary whitespace splitting.
+`RichTextMeasure::adjustMeasureParams` uses this breaker to expand an
+incremental measurement range (`0x79868`–`0x799ac`). That caller proves
+the boundary policy for remeasurement; it does not by itself prove the same
+URI policy controls every final line-wrap decision. The final layout uses
+the separate ICU line-break path described below. Unsafe-cluster avoidance
+in its emergency overflow branch remains unverified; Unicode scalar,
+grapheme and shaped-cluster boundaries must not be treated as interchangeable.
+
+`SpanRunFunctor` labels U+0020 as space and U+0009 as tab at
+`0x77688`–`0x776c0`. For a tab, it can measure a single U+0020 with
+SkPaint (`0x77774`), divide by 100 (`0x77794`), and initialize the tab
+advance to four times that width (`0x7735c`, `0x777a0` / `0x777b4`).
+This is a tab-specific probe within the shaped pipeline. The trace does
+not establish position-dependent tab stops in the later line layout.
+
+The Drawing converter proves the style bits used by measurement. In
+`ObjectTextDrawing::convertTextSpanImpl`, `BoldSpan::IsBoldStyleEnabled`
+(`0x90f88`) sets bit 1 (`0x90f94`); the italic getter (`0x90f08`) sets bit 2
+(`0x90f14`). Underline sets bit 4 (`0x90f58`, `0x91088`) and strikethrough
+sets bit 8 (`0x90f70`, `0x90f7c`). Consequently the native joinability mask
+`0xc3` includes bold/italic and excludes underline/strikethrough. Decoration
+changes alone need not split a measurement run; drawing still retains them.
+
+## Final wrapping, alignment and object runs
+
+Text `RichTextLayout::DoParagraphLayout`, `0x7278c`, opens an ICU iterator
+with type 2 (`UBRK_LINE`) over the paragraph's UTF-16 slice at
+`0x7297c`–`0x729a0`. The call's locale pointer is the native string at
+`0x23e7a`; no explicit language-specific locale override is established.
+The dynamic ICU table binds `ubrk_open` at `0xee49c` (name `0x2508f`) and
+`ubrk_following` at `0xee52c` (name `0x23681`). The paragraph loop calls
+`following` when it reaches the preceding break end, then stores the new
+end in each 80-byte `MeasureData` entry at member 56
+(`0x72d44`–`0x72d90`). Type 3 entries bypass that call. There is no traced
+Minikin URI/email breaker call in this final paragraph loop.
+
+`ParagraphLayout::GetBlockInfo`, `0x6ab9c`, accumulates measured advances
+and tests candidate width against the current available rectangle with a
+strict `>` comparison (`0x6ae80`–`0x6ae84`): an exactly fitting candidate
+fits. A committed break is tracked when the current paragraph-relative
+index equals the stored break end minus one (`0x6af18`–`0x6af38`). Spaces
+and tabs also commit a break; their space counts increase by 1 and 4
+respectively (`0x6af4c`–`0x6af98`). On overflow it uses the last committed
+break when its index is at least 1 (`0x6b014`–`0x6b028`), otherwise the
+preceding index (`0x6b03c`–`0x6b06c`). This is measured greedy wrapping,
+not a character-count estimate.
+
+An oversized first ordinary entry can still be included. The helper
+`isCharacterOverflowWidth`, `0x6c5b0`, requires the candidate to be the
+block start, or start plus one when the start is type 4, and compares its
+advance plus the partial width with the whole layout interval
+(`0x6c5fc`–`0x6c610`). Object types 1/2 are excluded from that helper and
+have separate handling. The caller includes the overflowing entry at
+`0x6b0dc`–`0x6b0ec`. This establishes progress for oversized entries; it
+does not prove a grapheme-safe emergency break rule.
+
+Horizontal alignment uses the available **block** width, which can differ
+from the complete text-box width when obstacles or indents are present.
+`GetBlockOffSetXByAlign`, `0x6c61c`, computes available width minus measured
+block width and returns 0 when the remainder is nonpositive. Align 1 uses
+the remainder; align 2 uses half; other values use 0. `SetLayout` applies
+that offset at `0x6b5d8`–`0x6b5ec`. `GetLineAlign`, `0x6aac0`, resolves
+internal align 4 through layout direction member 212; `m_CopyLayoutData`
+stores the supplied direction boolean there at `0x6aa8c`. Its caller
+compares stored `RichTextImpl` direction with 1 at `0x73eb0`–`0x73ec4`.
+Internal align 4 is not another public saved alignment enum.
+
+Justification (align 3) calls `m_GetExtraSpaceWidth`, `0x6cc64`, from
+`SetLayout` at `0x6b628`–`0x6b650`. Its numerator is available block width
+minus measured block width, divided by the counted spaces. Layout-option
+bit 0 can suppress the paragraph's final line; bit 1 trims eligible leading
+and trailing entries from the distribution range (`0x6cc84`–`0x6cd84`).
+The option producers/defaults are not verified here. Distribution adds one
+share to a space and four shares to a tab (`0x6b838`–`0x6b89c`). A generic
+SVG `text-anchor` or spacing every glyph does not express this algorithm.
+
+Objects participate in the same measured paragraph stream. Text
+`SpanRunFunctor::measureObjectSpan`, `0x779d0`, writes an entry at the
+supplied UTF-16 index, sets entry type 5 (`0x77ac4`–`0x77acc`) and object
+type 1/2 (`0x77a68`, `0x77aa4`, `0x77ac0`). The ordinary branch builds
+`[0, -height, width, 0]` from stored object width/height, span members
+48/52 (`0x77a80`–`0x77a90`). The margin-enabled branch expands the rectangle
+and dimensions using `RichTextMeasure` object margins at members 40–52
+(`0x77a40`–`0x77a78`). Stored object top/bottom margins, span members
+56/60, are copied to entry members 72/76 (`0x77ac8`–`0x77ad0`).
+`GetBlockInfo` scans text and object entries together and checks object
+height/changes (`0x6ad34`–`0x6ada0`, `0x6ae34`–`0x6ae7c`); a text-bearing
+paragraph is not replaced by an independent stack of embedded objects.
+The exact replacement-character producer and table-cell padding adapter
+remain unverified in this trace.
+
+## Body-flow pagination boundaries
+
+Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs
+`IBodyTextDocument::Page` records with cumulative integer Y at member 0,
+a local rectangle at member 4, and the original `WPage` pointer at member
+24. It obtains the actual page width/height and stores `[0,0,width,height]`
+at `0xa94bc`–`0xa94f4`, then adds that rectangle's height to the next Y
+at `0xa9598`–`0xa95a4`. These are actual page sizes, not font density or
+the default-page size used to resolve density.
+
+`isDownLine`, `0xb7d90`, uses `TextLayout::GetLineBgBound` and returns true
+when `line_top >= page_y`, or when `line_top < page_y` and
+`line_bottom > page_y` (`0xb7e54`–`0xb7e74`). A line ending exactly at the
+page start is excluded. `isUpLine`, `0xb7e88`, uses `GetLineTop` (vtable
+slot 248) and returns `line_top < page_y + page_height`
+(`0xb7f60`–`0xb7f78`); equality with the page end is excluded.
+These tests admit a line crossing a page boundary to both page ranges.
+For line zero with nonpositive top, both helpers use
+`GetFirstLineRectInEmpty(GetLayoutWidth())` instead; empty text uses
+`TextCursorUtil::GetDefaultCursorRect` (`0xb7e14`–`0xb7e48`,
+`0xb7f1c`–`0xb7f58`). This special case must remain separate from ordinary
+line geometry.
+
+`UpdateTextRangeOnEachPage`, `0xb77a4`, scans until these boundary predicates
+fail and stores `[first_line, line_count]` at `0xb7978`. Its text range starts
+at `GetLineStartIndex(first_line)` (`0xb7980`–`0xb7990`) and counts through
+`GetLineEndIndex(last_line)` inclusively (`0xb79b8`–`0xb79dc`). It can seed
+the next page scan with the preceding page's last line
+(`0xb7868`–`0xb7878`, `0xb79e8`–`0xb7a34`), preserving overlap instead of
+forcing disjoint string chunks. This proves page indexing of an already
+measured layout; moving/resizing objects or repaginating the document is
+a separate operation and still needs captured reference cases.
 
 Text `TextPaintImplSkia::getFontMetrics`, `0x7c16c`, calls
 `SkPaint::getFontMetrics` at `0x7c1ac`; `getFontSpacing`, `0x7c290`, delegates

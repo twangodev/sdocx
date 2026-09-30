@@ -892,7 +892,7 @@ fn render_flow_text_box(
                     styled.line_font_size(line_range.clone(), theme, layout.predefined_style);
                 let line_height =
                     paragraph_line_height(line_font_size, layout.line_spacing, settings);
-                let baseline = cursor_y + line_font_size;
+                let baseline = cursor_y + line_height - 0.35 * line_font_size;
                 if line_index == 0
                     && let Some((marker, _, marker_size, marker_offset)) = marker.as_ref()
                 {

@@ -864,10 +864,10 @@ fn mixed_font_sizes_position_each_placed_line_using_its_own_maximum() {
 
 #[test]
 fn flow_line_spacing_uses_the_largest_local_size_and_native_spacing_units() {
-    for (spacing, next_baseline) in [
-        (None, "111.00"),
-        (Some((0_u32, 4.0_f32)), "102.00"),
-        (Some((1_u32, 1.5_f32)), "120.00"),
+    for (spacing, first_baseline, next_baseline) in [
+        (None, "60.00", "111.00"),
+        (Some((0_u32, 4.0_f32)), "51.00", "103.50"),
+        (Some((1_u32, 1.5_f32)), "69.00", "124.50"),
     ] {
         let mut content = text("aB\nc");
         content.spans = vec![span(
@@ -889,7 +889,7 @@ fn flow_line_spacing_uses_the_largest_local_size_and_native_spacing_units() {
         for value in ["a", "B"] {
             assert_eq!(
                 tspan(&xml, value).parent().unwrap().attribute("y"),
-                Some("60.00"),
+                Some(first_baseline),
                 "{spacing:?}: {value}"
             );
         }
