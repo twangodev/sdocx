@@ -45,6 +45,16 @@ impl<'a> TextIndex<'a> {
         self.len() == 0
     }
 
+    #[cfg(any(feature = "render", test))]
+    pub fn char_to_byte(&self, character_index: usize) -> Option<usize> {
+        self.byte_offsets.get(character_index).copied()
+    }
+
+    #[cfg(any(feature = "render", test))]
+    pub fn byte_to_char(&self, byte_index: usize) -> Option<usize> {
+        self.byte_offsets.binary_search(&byte_index).ok()
+    }
+
     pub fn char_to_utf16(&self, character_index: usize) -> Option<u32> {
         u32::try_from(*self.utf16_offsets.get(character_index)?).ok()
     }
@@ -106,6 +116,25 @@ impl<'a> TextIndex<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scalar_and_utf8_boundaries_round_trip_without_accepting_multibyte_interiors() {
+        let index = TextIndex::new("A😀e\u{301}中");
+        for (character, byte) in [(0, 0), (1, 1), (2, 5), (3, 6), (4, 8), (5, 11)] {
+            assert_eq!(index.char_to_byte(character), Some(byte));
+            assert_eq!(index.byte_to_char(byte), Some(character));
+        }
+        for byte in [2, 3, 4, 7, 9, 10, 12, usize::MAX] {
+            assert_eq!(index.byte_to_char(byte), None);
+        }
+        assert_eq!(index.char_to_byte(6), None);
+        assert_eq!(index.char_to_byte(usize::MAX), None);
+        let empty = TextIndex::new("");
+        assert_eq!(empty.char_to_byte(0), Some(0));
+        assert_eq!(empty.byte_to_char(0), Some(0));
+        assert_eq!(empty.char_to_byte(1), None);
+        assert_eq!(empty.byte_to_char(1), None);
+    }
 
     #[test]
     fn unicode_boundaries_preserve_supplementary_and_combining_characters() {
