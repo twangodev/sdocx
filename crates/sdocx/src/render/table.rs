@@ -82,8 +82,8 @@ fn supports_cold_grid(table: &RichTextTable, constraint: ObjectSpanLayoutConstra
         && table.style.min_column_widths.is_none()
         && table.style.max_column_widths.is_none()
         && table.style.max_width.is_none()
-        && table.style.vertical_cell_padding.is_none()
-        && table.style.horizontal_cell_padding.is_none()
+        && table.style.min_column_width.is_none()
+        && table.style.min_row_height.is_none()
         && table.style.content_bbox.is_none()
         && table.rows.iter().enumerate().all(|(row_index, row)| {
             row.index as usize == row_index
@@ -616,7 +616,7 @@ mod tests {
         fractional.column_widths[0] = 200.5;
         assert!(prepare(&fractional, ObjectSpanLayoutConstraint::OverPages).is_none());
         let mut overridden = original.clone();
-        overridden.style.vertical_cell_padding = Some(0.0);
+        overridden.style.min_column_width = Some(0.0);
         assert!(prepare(&overridden, ObjectSpanLayoutConstraint::OverPages).is_none());
         let mut invalid_width = original.clone();
         invalid_width.column_widths[0] = f32::NAN;
@@ -724,8 +724,8 @@ mod tests {
                 heading_column_enabled: false,
                 heading_row_enabled: false,
                 max_height_enabled: false,
-                vertical_cell_padding: None,
-                horizontal_cell_padding: None,
+                min_column_width: None,
+                min_row_height: None,
                 content_bbox: None,
                 border: None,
                 auto_fit: None,

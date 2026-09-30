@@ -659,15 +659,15 @@ fn parse_table_object(
     let frame = open_next_object_frame(&mut reader, 22, "table")?;
     let mut flexible = Reader::new(frame.flexible, context);
 
-    let vertical_cell_padding = frame
+    let min_column_width = frame
         .fields
         .contains(0)
-        .then(|| flexible.read_f32("table vertical cell padding"))
+        .then(|| flexible.read_f32("table minimum column width"))
         .transpose()?;
-    let horizontal_cell_padding = frame
+    let min_row_height = frame
         .fields
         .contains(1)
-        .then(|| flexible.read_f32("table horizontal cell padding"))
+        .then(|| flexible.read_f32("table minimum row height"))
         .transpose()?;
 
     let column_widths = if frame.fields.contains(2) {
@@ -702,8 +702,8 @@ fn parse_table_object(
         heading_column_enabled: frame.properties.contains(0),
         heading_row_enabled: frame.properties.contains(1),
         max_height_enabled: !frame.properties.contains(2),
-        vertical_cell_padding,
-        horizontal_cell_padding,
+        min_column_width,
+        min_row_height,
         content_bbox: frame
             .fields
             .contains(4)
@@ -1148,8 +1148,8 @@ mod tests {
         assert!(style.heading_column_enabled);
         assert!(style.heading_row_enabled);
         assert!(!style.max_height_enabled);
-        assert_eq!(style.vertical_cell_padding, Some(11.0));
-        assert_eq!(style.horizontal_cell_padding, Some(12.0));
+        assert_eq!(style.min_column_width, Some(11.0));
+        assert_eq!(style.min_row_height, Some(12.0));
         assert_eq!(table.column_widths, [100.0, 200.0]);
         assert_eq!(style.min_column_widths.unwrap(), [50.0, 60.0]);
         assert_eq!(style.max_column_widths.unwrap(), [500.0, 600.0]);
@@ -1177,6 +1177,31 @@ mod tests {
         assert!(row.cells[0].metadata.flexible_trailing_data.is_empty());
         assert_eq!(style.metadata.fixed_trailing_data, [0xa1, 0xa2]);
         assert!(style.metadata.flexible_trailing_data.is_empty());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn table_minimum_sizes_publish_native_names_and_accept_previous_json_keys() {
+        let values = [11.0_f32.to_le_bytes(), 12.0_f32.to_le_bytes()].concat();
+        let bytes = table_object_with_style(&[], &[3], &values);
+        let style = parse_table_object(&bytes, &ParseLimits::default(), "test table", 0)
+            .unwrap()
+            .style;
+        let canonical = serde_json::to_value(&style).unwrap();
+        assert_eq!(canonical["min_column_width"], 11.0);
+        assert_eq!(canonical["min_row_height"], 12.0);
+        assert!(canonical.get("vertical_cell_padding").is_none());
+        assert!(canonical.get("horizontal_cell_padding").is_none());
+
+        let mut previous = canonical.clone();
+        let fields = previous.as_object_mut().unwrap();
+        let column = fields.remove("min_column_width").unwrap();
+        let row = fields.remove("min_row_height").unwrap();
+        fields.insert("vertical_cell_padding".into(), column);
+        fields.insert("horizontal_cell_padding".into(), row);
+        let restored: crate::TableStyle = serde_json::from_value(previous).unwrap();
+        assert_eq!(restored, style);
+        assert_eq!(serde_json::to_value(restored).unwrap(), canonical);
     }
 
     #[test]
@@ -1208,6 +1233,8 @@ mod tests {
             assert_eq!(style.max_height_enabled, flags & 4 == 0);
             assert!(style.auto_fit.is_none());
             assert!(style.max_height.is_none());
+            assert!(style.min_column_width.is_none());
+            assert!(style.min_row_height.is_none());
         }
         for (raw, expected) in [
             (0, crate::TableAutoFit::None),

@@ -861,8 +861,10 @@ and dimensions using `RichTextMeasure` object margins at members 40–52
 `GetBlockInfo` scans text and object entries together and checks object
 height/changes (`0x6ad34`–`0x6ada0`, `0x6ae34`–`0x6ae7c`); a text-bearing
 paragraph is not replaced by an independent stack of embedded objects.
-The exact replacement-character producer and table-cell padding adapter
-remain unverified in this trace.
+The exact replacement-character producer remains unverified in this trace.
+Table text uses its content margins; absent margins retain zero constructor
+defaults. The table's flexible fields 0/1 are global minimum column/row sizes,
+not a cell-padding adapter (`0x3d4364`, `0x3d36bc`).
 
 Widget `ObjectTextLayout::convertObjectSpan`, `0xd53e4`, iterates stored
 spans and writes object geometry to the single entry at the supplied

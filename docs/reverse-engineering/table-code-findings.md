@@ -15,7 +15,7 @@ uses native serializers/readers and synthetic records without new SDOCX files.
 | `ObjectTable::NewGetBinary` | `0x3d9f0c` | Serializes `ObjectShape`, then table data |
 | `ObjectShape::NewGetBinary` | `0x399b40` | Shape-base chain, followed by the type-7 shape frame |
 | `ObjectTableImpl::GetOwnBinary` | `0x3cf1ec` | Typed frame 22 |
-| `ObjectTableImpl::GetBinary_FlexibleData` | `0x3cf310` | Padding, column widths, rows and additional table styles |
+| `ObjectTableImpl::GetBinary_FlexibleData` | `0x3cf310` | Size limits, column widths, rows and additional table styles |
 | `TableRow::NewGetBinary` | `0x3c515c` | Untyped row record with a relative flexible offset and two masks |
 | `TableRow::GetBinary_FixedData` | `0x3c5230` | Height, index and individually sized cells |
 | `TableRow::GetBinary_FlexibleData` | `0x3c53cc` | Maximum height under bit 9, then minimum height under bit 1 |
@@ -53,8 +53,8 @@ are serialized in ascending bit order:
 
 | Bit | Encoding | Meaning | Getter or implementation member |
 | ---: | --- | --- | --- |
-| 0 | `f32` | Vertical cell padding | Member offset 12; default 10 |
-| 1 | `f32` | Horizontal cell padding | Member offset 8; default 10 |
+| 0 | `f32` | Global minimum column width | `ObjectTable::GetMinColumnWidth`, `0x3d4364`; member 12; default 10 |
+| 1 | `f32` | Global minimum row height | `ObjectTable::GetMinRowHeight`, `0x3d36bc`; member 8; default 10 |
 | 2 | `u32` count, then `f32[]` | Actual column widths | Vector at offset 32 |
 | 3 | `u32` count, then sized row records | Rows | Each size excludes its own prefix |
 | 4 | Four `f64` coordinates | Content bounds | `GetContentRect`, `0x3c6f6c`; rectangle at offset 16 |
@@ -73,6 +73,22 @@ The constants in `SpenObjectTable.java` identify auto-fit values 0 as none,
 value 3. The SDK represents absent optional fields as `None` and preserves
 unrecognized mode bytes as `TableAutoFit::Other`; it does not materialize
 native defaults into fields that were absent from the file.
+
+Bits 0/1 were previously mislabeled as cell padding. The reader stores them
+at members 12/8 (`0x3cfb38`–`0x3cfbd4`); the public getters establish their
+size-limit meanings independently. Rust fields and serialized inspection keys
+are now `min_column_width` and `min_row_height`; deserialization also accepts
+the old JSON keys. Rust field access and emitted inspection keys change, while
+the raw optional values and rendering behavior are unchanged. Cell text margins
+are separate: absent
+margins default to zero in `TextCommonImpl` (`0x3e747c`–`0x3e7484`), and the
+table-cell constructor does not replace them.
+
+Cold Drawing measurement reads saved row heights and column widths directly
+(`0xaaa60`, `0xaaab8`) and does not consult auto-fit mode. Model auto-fit acts
+through `fitTableRect` and `SetAutoFitOption` (`0x3c6b94`, `0x3cbaa0`), outside
+that cold measurement path. An absent mode still means native default 3;
+accepting its existing geometry does not interpret absence as mode 0.
 
 `RichTextTable.style` now exposes these properties alongside existing actual
 column widths, rows and cells. `TableRecordMetadata` retains complete masks

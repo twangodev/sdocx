@@ -283,7 +283,7 @@ tables contain column widths, sized row/cell records and rich-text cell
 objects; type 23 code blocks contain optional sized rich-text title/body
 objects.
 
-Current table decoding also exposes optional padding, content bounds,
+Current table decoding also exposes optional minimum sizes, content bounds,
 auto-fit mode, size limits, heading/default colors and per-edge border styles.
 Row-height constraints use a nonnumerical field order: bit 9 precedes bit 1.
 See [native table and code-block records](table-code-findings.md) for the

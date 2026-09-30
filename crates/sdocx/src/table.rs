@@ -19,8 +19,12 @@ pub struct TableStyle {
     pub heading_column_enabled: bool,
     pub heading_row_enabled: bool,
     pub max_height_enabled: bool,
-    pub vertical_cell_padding: Option<f32>,
-    pub horizontal_cell_padding: Option<f32>,
+    /// Table-wide minimum column width; absent fields retain native default selection.
+    #[cfg_attr(feature = "serde", serde(alias = "vertical_cell_padding"))]
+    pub min_column_width: Option<f32>,
+    /// Table-wide minimum row height; distinct from each row's minimum height.
+    #[cfg_attr(feature = "serde", serde(alias = "horizontal_cell_padding"))]
+    pub min_row_height: Option<f32>,
     pub content_bbox: Option<BoundingBox>,
     pub border: Option<TableBorder>,
     pub auto_fit: Option<TableAutoFit>,
