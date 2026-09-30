@@ -340,8 +340,55 @@ pub(in crate::render) fn layout_text(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> TextLayout {
+    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Frame)
+}
+
+pub(in crate::render) fn layout_flow_text(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> TextLayout {
+    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Flow)
+}
+
+#[derive(Clone, Copy)]
+enum LayoutContext {
+    Frame,
+    Flow,
+}
+
+impl LayoutContext {
+    fn continuation_top(
+        self,
+        paragraph_number: usize,
+        line_number: usize,
+        line: &WrappedLine,
+    ) -> Option<f64> {
+        if matches!(self, Self::Flow)
+            && paragraph_number == 0
+            && line_number == 0
+            && let [object] = line.objects.as_slice()
+            && !object.object.inline
+            && object.object.bounds.y_min < 0.0
+        {
+            Some(object.object.bounds.y_min)
+        } else {
+            None
+        }
+    }
+}
+
+fn layout_text_with_context(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    context: LayoutContext,
+) -> TextLayout {
     let text_box = styled.text_box;
     let settings = renderer.settings;
+    renderer.report_object_issues(styled.object_issues());
     renderer.report_geometry_issues(styled.geometry_issues());
     let margins = text_box
         .margins
@@ -351,7 +398,18 @@ pub(in crate::render) fn layout_text(
     let outer_height = (frame.bbox.y_max - frame.bbox.y_min).ceil();
     let content_left = frame.bbox.x_min + margins[0];
     let content_right = frame.bbox.x_min + outer_width - margins[2];
-    let paragraphs = styled.index.paragraphs().collect::<Vec<_>>();
+    let paragraphs = styled
+        .index
+        .paragraphs()
+        .map(|mut paragraph| {
+            if matches!(context, LayoutContext::Flow) {
+                let content = styled.index.slice(paragraph.content.clone()).unwrap();
+                paragraph.content.end =
+                    paragraph.content.start + content.trim_end_matches('\r').chars().count();
+            }
+            paragraph
+        })
+        .collect::<Vec<_>>();
     let paragraph_layouts = paragraphs
         .iter()
         .map(|paragraph| {
@@ -383,10 +441,17 @@ pub(in crate::render) fn layout_text(
             layout.predefined_style,
             renderer,
         );
-        let previous = paragraph_number
-            .checked_sub(1)
-            .and_then(|previous| paragraph_layouts.get(previous))
-            .and_then(|layout| layout.bullet);
+        let previous = match context {
+            LayoutContext::Flow => styled
+                .index
+                .paragraph_index(paragraph.content.start)
+                .and_then(|ordinal| ordinal.checked_sub(1))
+                .and_then(|ordinal| paragraph_layout(text_box, ordinal, settings).bullet),
+            LayoutContext::Frame => paragraph_number
+                .checked_sub(1)
+                .and_then(|previous| paragraph_layouts.get(previous))
+                .and_then(|layout| layout.bullet),
+        };
         let next = paragraph_layouts
             .get(paragraph_number + 1)
             .and_then(|layout| layout.bullet);
@@ -399,11 +464,20 @@ pub(in crate::render) fn layout_text(
             }
             cursor.add_spacing(layout.spacing_before);
         }
-        for mut line in paragraph_lines {
-            let candidate_top = cursor.candidate_top(&line, &frame);
+        for (line_number, mut line) in paragraph_lines.into_iter().enumerate() {
+            let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
+            let candidate_top =
+                continuation_top.unwrap_or_else(|| cursor.candidate_top(&line, &frame));
             prepare_line_objects(&mut line, styled, candidate_top, theme, renderer);
             renderer.report_line_geometry(&line, layout.line_spacing);
-            let baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
+            let mut baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
+            if let Some(top) = continuation_top
+                && let [object] = line.objects.as_slice()
+            {
+                let correction = top + object.object.height - baseline;
+                cursor.add_spacing(correction);
+                baseline += correction;
+            }
             let positioned_marker = marker.take().and_then(|marker| {
                 PositionedMarker::for_line(
                     marker,
@@ -455,7 +529,9 @@ mod tests {
     use super::super::{TextContext, TextSettings};
     use super::*;
     use crate::fonts::FontBook;
-    use crate::{RichTextBox, RichTextParagraph, RichTextParagraphType};
+    use crate::{
+        ObjectSpanLayoutConstraint, RichTextBox, RichTextParagraph, RichTextParagraphType,
+    };
 
     fn text(value: &str) -> RichTextBox {
         RichTextBox {
@@ -478,6 +554,14 @@ mod tests {
     }
 
     fn measure(text: &RichTextBox, exclusions: &[VerticalExclusion]) -> TextLayout {
+        measure_with_context(text, exclusions, LayoutContext::Frame)
+    }
+
+    fn measure_with_context(
+        text: &RichTextBox,
+        exclusions: &[VerticalExclusion],
+        context: LayoutContext,
+    ) -> TextLayout {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
@@ -486,7 +570,7 @@ mod tests {
         let fonts = FontBook::default();
         let renderer = TextRenderer::new(settings, &fonts);
         let styled = StyledText::new(text, TextContext::Placed, settings);
-        layout_text(
+        layout_text_with_context(
             &styled,
             TextFrame {
                 bbox: BoundingBox {
@@ -500,6 +584,7 @@ mod tests {
             },
             RenderTheme::for_canvas(false),
             &renderer,
+            context,
         )
     }
 
@@ -909,6 +994,164 @@ mod tests {
             let plan = measure(&content, &[]);
             assert_eq!(plan.lines[0].baseline, 114.0);
             assert_eq!(plan.lines[1].baseline, second_baseline, "raw bullet {raw}");
+        }
+    }
+
+    #[test]
+    fn flow_trims_terminal_carriage_returns_without_changing_placed_source_ranges() {
+        for (source, placed_end) in [("A\r", 2), ("A\r\r\n", 2)] {
+            let content = text(source);
+            let placed = measure(&content, &[]);
+            let flow = measure_with_context(&content, &[], LayoutContext::Flow);
+            assert_eq!(placed.lines[0].line.source, 0..placed_end);
+            assert_eq!(flow.lines[0].line.source, 0..1);
+            assert_eq!(placed.lines[0].baseline, flow.lines[0].baseline);
+        }
+    }
+
+    #[test]
+    fn flow_spacing_retains_the_immediate_native_crlf_predecessor() {
+        let mut content = text("A\r\nB");
+        for ordinal in [0, 2] {
+            content.paragraphs.push(RichTextParagraph {
+                kind: RichTextParagraphType::Bullet,
+                start_paragraph: ordinal,
+                end_paragraph: ordinal + 1,
+                payload: [8_u32, 1, 0, 1]
+                    .into_iter()
+                    .flat_map(u32::to_le_bytes)
+                    .collect(),
+            });
+        }
+        content.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::SpacingBefore,
+            start_paragraph: 2,
+            end_paragraph: 3,
+            payload: 5.0_f32.to_le_bytes().to_vec(),
+        });
+        let placed = measure(&content, &[]);
+        let flow = measure_with_context(&content, &[], LayoutContext::Flow);
+        close(placed.lines[0].baseline, 110.0);
+        close(flow.lines[0].baseline, 110.0);
+        close(placed.lines[1].baseline, 123.5);
+        close(flow.lines[1].baseline, 128.5);
+    }
+
+    #[test]
+    fn only_a_first_flow_block_object_uses_its_saved_negative_origin() {
+        for (source, anchor, option, continues) in [
+            ("\u{fffc}\nB", 0, crate::ObjectSpanLayoutOption::Block, true),
+            (
+                "\u{fffc}\nB",
+                0,
+                crate::ObjectSpanLayoutOption::Inline,
+                false,
+            ),
+            (
+                "A\n\u{fffc}\nB",
+                2,
+                crate::ObjectSpanLayoutOption::Block,
+                false,
+            ),
+        ] {
+            let mut content = text(source);
+            content.object_spans.push(crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::Image,
+                object_data: Vec::new(),
+                content: Some(crate::RichTextObjectContent::Image(Box::new(
+                    crate::PlacedImage {
+                        bbox: BoundingBox {
+                            x_min: 0.0,
+                            y_min: -20.0,
+                            x_max: 50.0,
+                            y_max: 80.0,
+                        },
+                        rotation_degrees: None,
+                        media_id: None,
+                        media_index: None,
+                        crop_rect: None,
+                        original_bbox: None,
+                        border_media_id: None,
+                        original_media_id: None,
+                    },
+                ))),
+                text_index_utf16: anchor,
+                layout_option: option,
+                layout_constraint: ObjectSpanLayoutConstraint::Normal,
+            });
+            let settings = TextSettings::default();
+            let fonts = FontBook::default();
+            let renderer = TextRenderer::new(settings, &fonts);
+            let styled = StyledText::new(&content, TextContext::Placed, settings);
+            let frame = || TextFrame {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 1000.0,
+                    y_max: 1000.0,
+                },
+                gravity: None,
+                exclusions: &[],
+            };
+            let theme = RenderTheme::for_canvas(false);
+            let placed = layout_text(&styled, frame(), theme, &renderer);
+            let flow = layout_flow_text(&styled, frame(), theme, &renderer);
+            assert_eq!(placed.lines.len(), flow.lines.len());
+            if continues {
+                close(placed.lines[0].baseline, 100.001);
+                close(flow.lines[0].baseline, 80.0);
+                close(placed.lines[1].baseline, 110.001);
+                close(flow.lines[1].baseline, 90.0);
+                close(flow.height(), 93.5);
+            } else {
+                for (placed, flow) in placed.lines.iter().zip(&flow.lines) {
+                    assert_eq!(placed.baseline, flow.baseline);
+                }
+                assert_eq!(placed.height(), flow.height());
+            }
+        }
+    }
+
+    #[test]
+    fn full_source_object_layout_preserves_inherited_separator_font_metrics() {
+        for (source, anchor, object_line_index, expected_font, next_baseline) in [
+            ("A\n\u{fffc}\nB", 2, 1, 45.0, 321.501),
+            ("\u{fffc}\nB", 0, 0, 0.0, 245.001),
+        ] {
+            let mut content = text(source);
+            content.font_size = Some(45.0);
+            content.object_spans.push(crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::Image,
+                object_data: Vec::new(),
+                content: Some(crate::RichTextObjectContent::Image(Box::new(
+                    crate::PlacedImage {
+                        bbox: BoundingBox {
+                            x_min: 0.0,
+                            y_min: 0.0,
+                            x_max: 50.0,
+                            y_max: 100.0,
+                        },
+                        rotation_degrees: None,
+                        media_id: None,
+                        media_index: None,
+                        crop_rect: None,
+                        original_bbox: None,
+                        border_media_id: None,
+                        original_media_id: None,
+                    },
+                ))),
+                text_index_utf16: anchor,
+                layout_option: crate::ObjectSpanLayoutOption::Block,
+                layout_constraint: ObjectSpanLayoutConstraint::OverPages,
+            });
+            let plan = measure(&content, &[]);
+            let object_line = &plan.lines[object_line_index];
+            assert_eq!(object_line.line.font_size, expected_font);
+            assert_eq!(
+                object_line.line.source,
+                anchor as usize..anchor as usize + 1
+            );
+            close(plan.lines.last().unwrap().baseline, next_baseline);
         }
     }
 

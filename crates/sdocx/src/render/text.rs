@@ -16,9 +16,11 @@ mod pagination;
 mod paint;
 mod resources;
 mod wrapping;
+#[cfg(test)]
+use layout::measure_paragraph;
 pub(super) use layout::{
-    ParagraphSpacing, PositionedMarker, TextCursor, TextFrame, TextLayout, VerticalExclusion,
-    layout_placed_text, layout_text, measure_paragraph, prepare_line_objects,
+    PositionedMarker, TextFrame, TextLayout, VerticalExclusion, layout_flow_text,
+    layout_placed_text, layout_text,
 };
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;

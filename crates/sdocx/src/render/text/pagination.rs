@@ -8,12 +8,8 @@ pub(in crate::render) struct PageExclusions {
 }
 
 impl PageExclusions {
-    pub fn for_page(
-        document: &Document,
-        source_page_index: usize,
-        settings: TextSettings,
-    ) -> Option<Self> {
-        if document.metadata.page_mode != Some(0) || source_page_index >= document.pages.len() {
+    pub fn for_document(document: &Document, settings: TextSettings) -> Option<Self> {
+        if document.metadata.page_mode != Some(0) || document.pages.is_empty() {
             return None;
         }
         let (width, height) = document.metadata.default_page_dimensions?;
@@ -27,22 +23,39 @@ impl PageExclusions {
         }
         let mut boundaries = Vec::with_capacity(document.pages.len() + 1);
         let mut height = 0.0;
-        let mut page_top = 0.0;
-        for (index, page) in document.pages.iter().enumerate() {
-            if index == source_page_index {
-                page_top = height;
-            }
+        for page in &document.pages {
             boundaries.push(height);
             height += f64::from(page.height);
         }
         boundaries.push(height);
-        for boundary in &mut boundaries {
-            *boundary -= page_top;
-        }
         Some(Self {
             boundaries,
             padding: settings.pixels(10.0),
         })
+    }
+
+    pub fn for_page(
+        document: &Document,
+        source_page_index: usize,
+        settings: TextSettings,
+    ) -> Option<Self> {
+        document.pages.get(source_page_index)?;
+        let mut exclusions = Self::for_document(document, settings)?;
+        let page_top = exclusions.boundaries[source_page_index];
+        for boundary in &mut exclusions.boundaries {
+            *boundary -= page_top;
+        }
+        Some(exclusions)
+    }
+
+    pub fn line_bands(&self) -> Vec<VerticalExclusion> {
+        self.boundaries
+            .iter()
+            .map(|boundary| VerticalExclusion {
+                top: boundary - self.padding,
+                bottom: boundary + self.padding,
+            })
+            .collect()
     }
 
     pub fn for_object(
@@ -53,26 +66,25 @@ impl PageExclusions {
         if !stored_top.is_finite() {
             return Vec::new();
         }
-        self.boundaries
-            .iter()
-            .filter_map(|&boundary| {
-                if boundary + self.padding < stored_top {
-                    return None;
-                }
-                let band = match constraint {
-                    ObjectSpanLayoutConstraint::OverPagesOverlapPadding => VerticalExclusion {
+        match constraint {
+            ObjectSpanLayoutConstraint::OverPages => self
+                .line_bands()
+                .into_iter()
+                .filter(|band| band.bottom > stored_top)
+                .collect(),
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding => self
+                .boundaries
+                .iter()
+                .filter_map(|&boundary| {
+                    let band = VerticalExclusion {
                         top: boundary,
                         bottom: boundary + 1.0,
-                    },
-                    ObjectSpanLayoutConstraint::OverPages => VerticalExclusion {
-                        top: boundary - self.padding,
-                        bottom: boundary + self.padding,
-                    },
-                    _ => return None,
-                };
-                (band.bottom > stored_top).then_some(band)
-            })
-            .collect()
+                    };
+                    (band.bottom > stored_top).then_some(band)
+                })
+                .collect(),
+            _ => Vec::new(),
+        }
     }
 }
 
@@ -120,6 +132,28 @@ mod tests {
             .into_iter()
             .map(|band| (band.top, band.bottom))
             .collect()
+    }
+
+    #[test]
+    fn global_line_bands_and_page_views_share_physical_boundaries() {
+        let document = document(&[100, 200, 300], Some(0));
+        let settings = TextSettings::from_document(&document.metadata);
+        let global = PageExclusions::for_document(&document, settings).unwrap();
+        assert_eq!(global.boundaries, [0.0, 100.0, 300.0, 600.0]);
+        assert_eq!(
+            bounds(global.line_bands()),
+            [(-30.0, 30.0), (70.0, 130.0), (270.0, 330.0), (570.0, 630.0)]
+        );
+        let page = PageExclusions::for_page(&document, 2, settings).unwrap();
+        let translated = bounds(page.line_bands())
+            .into_iter()
+            .map(|(top, bottom)| (top + 300.0, bottom + 300.0))
+            .collect::<Vec<_>>();
+        assert_eq!(bounds(global.line_bands()), translated);
+        assert_eq!(
+            bounds(global.for_object(ObjectSpanLayoutConstraint::OverPagesOverlapPadding, 150.0)),
+            [(300.0, 301.0), (600.0, 601.0)]
+        );
     }
 
     #[test]

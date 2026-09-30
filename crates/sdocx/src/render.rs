@@ -25,10 +25,7 @@ mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
 pub use text::{ObjectDiagnostic, ObjectDiagnosticKind, TextDiagnostic, TextDiagnosticKind};
-use text::{
-    StyledText, TextContext, TextRenderer, TextSettings, TextStyle, measure_paragraph,
-    paragraph_layout, render_measured_line,
-};
+use text::{StyledText, TextContext, TextRenderer, TextSettings, TextStyle, render_measured_line};
 pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
@@ -892,158 +889,27 @@ fn render_flow_text_box(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) {
-    let settings = renderer.settings;
     let horizontal_padding = flow_page_padding
         .map(|(horizontal, _)| f64::from(horizontal))
         .unwrap_or(FLOW_HORIZONTAL_PADDING);
-    let margins = text_box.margins.unwrap_or([0.0; 4]);
-    let content_left = horizontal_padding + settings.pixels(margins[0]);
-    let content_top = settings.pixels(margins[1]);
-    let content_right = f64::from(page.width) - horizontal_padding - settings.pixels(margins[2]);
-    let characters = text_box.text.chars().collect::<Vec<_>>();
-    let styled = StyledText::new(text_box, TextContext::Flow, settings);
-    renderer.report_object_issues(styled.object_issues());
-    renderer.report_geometry_issues(styled.geometry_issues());
-    let mut paragraph_start = 0_usize;
-    let mut cursor = text::TextCursor::new(content_top);
-    let frame = text::TextFrame {
-        bbox: BoundingBox::default(),
-        gravity: None,
-        exclusions: &[],
-    };
-
-    let paragraphs = text_box.text.split_inclusive('\n').collect::<Vec<_>>();
+    let styled = StyledText::new(text_box, TextContext::Flow, renderer.settings);
+    let layout = text::layout_flow_text(
+        &styled,
+        text::TextFrame {
+            bbox: BoundingBox {
+                x_min: horizontal_padding,
+                y_min: 0.0,
+                x_max: f64::from(page.width) - horizontal_padding,
+                y_max: 0.0,
+            },
+            gravity: None,
+            exclusions: &[],
+        },
+        theme,
+        renderer,
+    );
     svg.scope(Group::new().flow(), |svg| {
-        for paragraph in &paragraphs {
-            let paragraph_index = styled.index.paragraph_index(paragraph_start).unwrap();
-            let content = paragraph.trim_end_matches(['\n', '\r']);
-            let content_length = content.chars().count();
-            let paragraph_end = paragraph_start + content_length;
-            let layout = paragraph_layout(text_box, paragraph_index, settings);
-            let previous_bullet = (paragraph_index > 0)
-                .then(|| paragraph_layout(text_box, paragraph_index - 1, settings).bullet)
-                .flatten();
-            let next_start = paragraph_start + paragraph.chars().count();
-            let next_bullet = (next_start < characters.len())
-                .then(|| {
-                    paragraph_layout(
-                        text_box,
-                        styled.index.paragraph_index(next_start).unwrap(),
-                        settings,
-                    )
-                    .bullet
-                })
-                .flatten();
-
-            let base_style = styled.style_at(paragraph_start, theme, layout.predefined_style);
-            let mut marker = layout.bullet.and_then(|bullet| {
-                marker::PreparedMarker::prepare(
-                    bullet,
-                    layout.indent_level,
-                    &base_style,
-                    theme,
-                    renderer,
-                )
-            });
-            let marker_width = marker
-                .as_ref()
-                .map_or(0.0, marker::PreparedMarker::reserved_width);
-            let base_x = content_left + layout.left_indent(settings);
-            let text_x = base_x + marker_width;
-            let available_width = (content_right - text_x).max(0.0);
-            let mut lines = measure_paragraph(
-                &styled,
-                paragraph_start..paragraph_end,
-                available_width,
-                theme,
-                layout.predefined_style,
-                renderer,
-            );
-            let spacing = text::ParagraphSpacing::for_lines(
-                &lines,
-                previous_bullet,
-                layout.bullet,
-                next_bullet,
-            );
-            if spacing.before {
-                if layout.spacing_before_invalid {
-                    renderer.invalid_geometry(base_style.family.as_deref().unwrap_or("Roboto"));
-                }
-                cursor.add_spacing(layout.spacing_before);
-            }
-            for (line_index, line) in lines.iter_mut().enumerate() {
-                let continuation_top = if paragraph_start == 0
-                    && line_index == 0
-                    && let [object] = line.objects.as_slice()
-                    && !object.object.inline
-                    && object.object.bounds.y_min < 0.0
-                {
-                    Some(object.object.bounds.y_min)
-                } else {
-                    None
-                };
-                let candidate_top =
-                    continuation_top.unwrap_or_else(|| cursor.candidate_top(line, &frame));
-                text::prepare_line_objects(line, &styled, candidate_top, theme, renderer);
-                renderer.report_line_geometry(line, layout.line_spacing);
-                let mut baseline = cursor.place(line, layout.line_spacing, &frame, settings);
-                if let Some(top) = continuation_top
-                    && let [object] = line.objects.as_slice()
-                {
-                    let correction = top + object.object.height - baseline;
-                    cursor.add_spacing(correction);
-                    baseline += correction;
-                }
-                if line_index == 0
-                    && let Some(marker) = marker.take()
-                    && let Some(marker) = text::PositionedMarker::for_line(
-                        marker,
-                        paragraph_start,
-                        base_x,
-                        line,
-                        layout.line_spacing,
-                        baseline,
-                        cursor.position(),
-                        renderer,
-                    )
-                {
-                    paint_positioned_marker(svg, &marker, &base_style, theme, renderer);
-                }
-                render_measured_line(
-                    svg,
-                    &styled,
-                    line,
-                    text_x,
-                    available_width,
-                    baseline,
-                    layout.alignment,
-                    theme,
-                    layout.predefined_style,
-                    renderer,
-                );
-                paint_line_objects(
-                    svg,
-                    &styled,
-                    line,
-                    text_x,
-                    available_width,
-                    baseline,
-                    layout.alignment,
-                    layout.predefined_style,
-                    media_assets,
-                    theme,
-                    renderer,
-                );
-            }
-            if next_start < characters.len() && spacing.after {
-                if layout.spacing_after_invalid {
-                    let style = styled.style_at(paragraph_start, theme, layout.predefined_style);
-                    renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
-                }
-                cursor.add_spacing(layout.spacing_after);
-            }
-            paragraph_start += paragraph.chars().count();
-        }
+        paint_text_layout(svg, &styled, &layout, media_assets, theme, renderer);
     });
 }
 
