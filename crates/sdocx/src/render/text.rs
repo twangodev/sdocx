@@ -7,6 +7,13 @@ use crate::{
 
 use super::{RenderTheme, samsung_font_to_svg};
 
+pub(super) const DEFAULT_FONT_SIZE: f32 = 17.0;
+const DEFAULT_FONT_COLOR: Color = Color {
+    r: 38,
+    g: 38,
+    b: 38,
+};
+
 #[derive(Clone)]
 pub(super) struct TextStyle {
     pub font_size: f64,
@@ -73,14 +80,7 @@ impl<'a> StyledText<'a> {
         predefined: Option<PredefinedTextStyle>,
     ) -> TextStyle {
         let text_box = self.text_box;
-        let mut font_size =
-            text_box
-                .font_size
-                .map(samsung_font_to_svg)
-                .unwrap_or(match self.context {
-                    TextContext::Flow => 45.0,
-                    TextContext::Placed => 37.0,
-                });
+        let mut font_size = samsung_font_to_svg(text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE));
         if let Some(style) = predefined {
             font_size = match style {
                 PredefinedTextStyle::Heading1 => 63.0,
@@ -91,7 +91,7 @@ impl<'a> StyledText<'a> {
         }
         let mut style = TextStyle {
             font_size,
-            color: theme.foreground(text_box.color),
+            color: theme.foreground(Some(text_box.color.unwrap_or(DEFAULT_FONT_COLOR))),
             bold: false,
             italic: false,
             underline: text_box.underline,
@@ -116,10 +116,7 @@ impl<'a> StyledText<'a> {
                     }
                 }
                 RichTextSpanType::FontSize => {
-                    if let Some(size) = span
-                        .font_size_value()
-                        .filter(|size| size.is_finite() && *size > 0.0)
-                    {
+                    if let Some(size) = span.font_size_value().filter(|size| size.is_finite()) {
                         style.font_size = samsung_font_to_svg(size);
                     }
                 }

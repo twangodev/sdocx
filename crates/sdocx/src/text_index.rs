@@ -4,6 +4,7 @@ pub(crate) struct TextIndex<'a> {
     text: &'a str,
     byte_offsets: Vec<usize>,
     utf16_offsets: Vec<usize>,
+    native_paragraph_starts: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -16,11 +17,15 @@ impl<'a> TextIndex<'a> {
     pub fn new(text: &'a str) -> Self {
         let mut byte_offsets = Vec::new();
         let mut utf16_offsets = Vec::new();
+        let mut native_paragraph_starts = vec![0];
         let mut utf16_offset = 0;
-        for (byte_offset, character) in text.char_indices() {
+        for (character_index, (byte_offset, character)) in text.char_indices().enumerate() {
             byte_offsets.push(byte_offset);
             utf16_offsets.push(utf16_offset);
             utf16_offset += character.len_utf16();
+            if matches!(character, '\r' | '\n') {
+                native_paragraph_starts.push(character_index + 1);
+            }
         }
         byte_offsets.push(text.len());
         utf16_offsets.push(utf16_offset);
@@ -28,6 +33,7 @@ impl<'a> TextIndex<'a> {
             text,
             byte_offsets,
             utf16_offsets,
+            native_paragraph_starts,
         }
     }
 
@@ -71,6 +77,28 @@ impl<'a> TextIndex<'a> {
             *start = physical_end;
             Some(paragraph)
         })
+    }
+
+    pub fn paragraph_index(&self, character_index: usize) -> Option<u32> {
+        self.byte_offsets.get(character_index)?;
+        let ordinal = self
+            .native_paragraph_starts
+            .partition_point(|start| *start <= character_index)
+            - 1;
+        u32::try_from(ordinal).ok()
+    }
+
+    pub fn native_paragraphs(&self) -> impl Iterator<Item = Paragraph> + '_ {
+        self.native_paragraph_starts
+            .iter()
+            .enumerate()
+            .map(|(ordinal, &start)| {
+                let next = self.native_paragraph_starts.get(ordinal + 1);
+                Paragraph {
+                    physical: start..next.copied().unwrap_or(self.len()),
+                    content: start..next.map_or(self.len(), |end| end - 1),
+                }
+            })
     }
 }
 
@@ -161,6 +189,72 @@ mod tests {
                 Paragraph {
                     physical: 1..2,
                     content: 1..1
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn native_paragraph_ordinals_count_cr_and_lf_separately() {
+        let index = TextIndex::new("😀\r\nb\n");
+        assert_eq!(
+            index.native_paragraphs().collect::<Vec<_>>(),
+            [
+                Paragraph {
+                    physical: 0..2,
+                    content: 0..1
+                },
+                Paragraph {
+                    physical: 2..3,
+                    content: 2..2
+                },
+                Paragraph {
+                    physical: 3..5,
+                    content: 3..4
+                },
+                Paragraph {
+                    physical: 5..5,
+                    content: 5..5
+                },
+            ]
+        );
+        for (character, ordinal) in [(0, 0), (1, 0), (2, 1), (3, 2), (4, 2), (5, 3)] {
+            assert_eq!(index.paragraph_index(character), Some(ordinal));
+        }
+        assert_eq!(index.paragraph_index(6), None);
+        assert_eq!(index.char_to_utf16(3), Some(4));
+        let visual = index.paragraphs().nth(1).unwrap();
+        assert_eq!(index.slice(visual.content.clone()), Some("b"));
+        assert_eq!(index.paragraph_index(visual.content.start), Some(2));
+    }
+
+    #[test]
+    fn native_empty_leading_and_trailing_paragraphs_are_retained() {
+        let empty = TextIndex::new("");
+        assert_eq!(empty.paragraph_index(0), Some(0));
+        assert_eq!(
+            empty.native_paragraphs().collect::<Vec<_>>(),
+            [Paragraph {
+                physical: 0..0,
+                content: 0..0
+            }]
+        );
+        assert_eq!(
+            TextIndex::new("\r\n")
+                .native_paragraphs()
+                .collect::<Vec<_>>(),
+            [
+                Paragraph {
+                    physical: 0..1,
+                    content: 0..0
+                },
+                Paragraph {
+                    physical: 1..2,
+                    content: 1..1
+                },
+                Paragraph {
+                    physical: 2..2,
+                    content: 2..2
                 },
             ]
         );

@@ -378,7 +378,7 @@ impl TextCommon {
             whole_text_span(RichTextSpanType::BackgroundColor).and_then(RichTextSpan::color_value);
         let font_size = whole_text_span(RichTextSpanType::FontSize)
             .and_then(RichTextSpan::font_size_value)
-            .filter(|size| size.is_finite() && *size > 0.0);
+            .filter(|size| size.is_finite());
         let underline = whole_text_span(RichTextSpanType::Underline)
             .and_then(RichTextSpan::boolean_value)
             == Some(true);

@@ -96,10 +96,17 @@ invalid-input handling, vector PDF shading, and Chromium appearance.
 
 Standalone boxes, document flow, shape text, table cells and code lines use
 `render/text` to resolve local styles. `TextIndex` supplies checked character,
-UTF-16 and byte boundaries to parsing, slicing and rendering. CRLF terminators
-retain their original length, and spans that split a surrogate pair are omitted
+UTF-16 and byte boundaries to parsing, slicing and rendering. Native paragraph
+ordinals count CR and LF separately, including empty trailing paragraphs; visual
+line handling currently coalesces CRLF. Spans that split a surrogate pair are omitted
 from rendered styling. Explicit boolean spans can disable an earlier style.
 
 Text remains selectable SVG text. Font measurement, wrapping, paragraph layout
 and embedded-object placement are still being consolidated; shared style
 resolution alone does not establish native typography parity.
+
+Missing text styles use Samsung's `#262626` base color and logical font size 17,
+then apply the current theme and coordinate conversion. Font-size conversion
+uses the native minimum of one logical unit and preserves larger stored sizes.
+See [native text layout inputs](reverse-engineering/text-layout-findings.md)
+for context-dependent scale, spacing, margins and gravity contracts.

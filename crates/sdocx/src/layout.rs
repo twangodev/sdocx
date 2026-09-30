@@ -383,17 +383,13 @@ impl RichTextBox {
 }
 
 fn paragraph_range_for_chars(index: &TextIndex<'_>, range: Range<usize>) -> Option<Range<u32>> {
-    if range.is_empty() {
-        return Some(0..0);
-    }
-    let mut selected = index.paragraphs().enumerate().filter(|(_, paragraph)| {
-        paragraph.physical.start < range.end && paragraph.physical.end > range.start
-    });
-    let Some((first, _)) = selected.next() else {
-        return Some(0..0);
-    };
-    let last = selected.last().map_or(first, |(ordinal, _)| ordinal);
-    Some(u32::try_from(first).ok()?..u32::try_from(last.checked_add(1)?).ok()?)
+    let first = index.paragraph_index(range.start)?;
+    let count = index
+        .native_paragraphs()
+        .skip(usize::try_from(first).ok()?)
+        .take_while(|paragraph| paragraph.physical.start <= range.end)
+        .count();
+    Some(first..first.checked_add(u32::try_from(count).ok()?)?)
 }
 
 #[cfg(test)]
@@ -689,7 +685,7 @@ mod tests {
 
         assert_eq!(slice.text, "beta\n");
         assert_eq!(slice.paragraphs[0].start_paragraph, 0);
-        assert_eq!(slice.paragraphs[0].end_paragraph, 1);
+        assert_eq!(slice.paragraphs[0].end_paragraph, 2);
         assert_eq!(slice.text_sections[0].start_utf16, 0);
         assert_eq!(slice.text_sections[0].length_utf16, 5);
     }
@@ -725,12 +721,26 @@ mod tests {
                     payload: 1_u16.to_le_bytes().to_vec(),
                 },
             ],
-            paragraphs: vec![RichTextParagraph {
-                kind: RichTextParagraphType::Alignment,
-                start_paragraph: 1,
-                end_paragraph: 3,
-                payload: 2_u32.to_le_bytes().to_vec(),
-            }],
+            paragraphs: vec![
+                RichTextParagraph {
+                    kind: RichTextParagraphType::Alignment,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: 0_u32.to_le_bytes().to_vec(),
+                },
+                RichTextParagraph {
+                    kind: RichTextParagraphType::Alignment,
+                    start_paragraph: 1,
+                    end_paragraph: 2,
+                    payload: 1_u32.to_le_bytes().to_vec(),
+                },
+                RichTextParagraph {
+                    kind: RichTextParagraphType::Alignment,
+                    start_paragraph: 2,
+                    end_paragraph: 5,
+                    payload: 2_u32.to_le_bytes().to_vec(),
+                },
+            ],
             object_spans: Vec::new(),
             text_sections: Vec::new(),
             margins: None,
@@ -748,6 +758,17 @@ mod tests {
             expand: false,
             payload: 72_f32.to_le_bytes().to_vec(),
         });
+        let emoji = body.slice_chars(5..9).unwrap();
+        assert_eq!(emoji.text, "😀two");
+        assert_eq!(emoji.paragraphs.len(), 1);
+        assert_eq!(emoji.paragraphs[0].payload, 2_u32.to_le_bytes());
+        assert_eq!(
+            (
+                emoji.paragraphs[0].start_paragraph,
+                emoji.paragraphs[0].end_paragraph
+            ),
+            (0, 1)
+        );
         let slice = body.slice_chars(7..11).unwrap();
         assert_eq!(body.spans.len(), 3);
         assert_eq!(slice.text, "wo\r\n");
@@ -767,7 +788,7 @@ mod tests {
                 slice.paragraphs[0].start_paragraph,
                 slice.paragraphs[0].end_paragraph
             ),
-            (0, 1)
+            (0, 3)
         );
         assert_eq!(slice.paragraphs[0].payload, 2_u32.to_le_bytes());
         assert_eq!(slice.text_sections[0].start_utf16, 0);
@@ -797,17 +818,24 @@ mod tests {
         );
         assert_eq!(
             (
-                full.paragraphs[0].start_paragraph,
-                full.paragraphs[0].end_paragraph
+                full.paragraphs[2].start_paragraph,
+                full.paragraphs[2].end_paragraph
             ),
-            (1, 3)
+            (2, 5)
         );
         for range in [0..0, 7..7, 15..15] {
             let empty = body.slice_chars(range).unwrap();
             assert_eq!(empty.text, "");
             assert!(empty.spans.is_empty());
             assert!(empty.runs.is_empty());
-            assert!(empty.paragraphs.is_empty());
+            assert_eq!(empty.paragraphs.len(), 1);
+            assert_eq!(
+                (
+                    empty.paragraphs[0].start_paragraph,
+                    empty.paragraphs[0].end_paragraph
+                ),
+                (0, 1)
+            );
             assert_eq!(empty.text_sections[0].length_utf16, 0);
         }
         assert!(
@@ -876,6 +904,34 @@ mod tests {
             ),
         ] {
             assert_eq!(section_char_range(&index, section), expected);
+        }
+    }
+    #[test]
+    fn empty_slices_keep_the_containing_native_paragraph_style() {
+        let mut body = crlf_body();
+        body.text = "ab\r\ncd\n".into();
+        body.spans.clear();
+        body.runs.clear();
+        body.paragraphs = (0..4)
+            .map(|ordinal| RichTextParagraph {
+                kind: RichTextParagraphType::Alignment,
+                start_paragraph: ordinal,
+                end_paragraph: ordinal + 1,
+                payload: ordinal.to_le_bytes().to_vec(),
+            })
+            .collect();
+        for (offset, ordinal) in [(0, 0_u32), (1, 0), (3, 1), (5, 2), (7, 3)] {
+            let slice = body.slice_chars(offset..offset).unwrap();
+            assert_eq!(slice.text, "");
+            assert_eq!(slice.paragraphs.len(), 1);
+            assert_eq!(slice.paragraphs[0].payload, ordinal.to_le_bytes());
+            assert_eq!(
+                (
+                    slice.paragraphs[0].start_paragraph,
+                    slice.paragraphs[0].end_paragraph
+                ),
+                (0, 1)
+            );
         }
     }
 }

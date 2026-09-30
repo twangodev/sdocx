@@ -647,8 +647,10 @@ fn render_text_box(
     let theme = text_box
         .highlight_color
         .map_or(theme, |color| theme.on_background(color));
-    let color = theme.foreground(text_box.color);
-    let font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(37.0);
+    let styled = StyledText::new(text_box, TextContext::Placed);
+    let default_style = styled.style_at(styled.index.len(), theme, None);
+    let color = default_style.color;
+    let font_size = default_style.font_size;
     let line_height = font_size * 1.35;
     let mut group = Group::new();
     if let Some(rotation) = text_box.rotation_degrees {
@@ -660,7 +662,6 @@ fn render_text_box(
         if let Some(highlight) = text_box.highlight_color.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        let styled = StyledText::new(text_box, TextContext::Placed);
         for (line_idx, paragraph) in styled.index.paragraphs().enumerate() {
             if paragraph.content.is_empty() {
                 continue;
@@ -734,19 +735,21 @@ fn render_flow_text_box(
 
     let paragraphs = text_box.text.split_inclusive('\n').collect::<Vec<_>>();
     svg.scope(Group::new().flow(), |svg| {
-        for (paragraph_index, paragraph) in paragraphs.iter().enumerate() {
+        for paragraph in &paragraphs {
+            let paragraph_index = styled.index.paragraph_index(paragraph_start).unwrap();
             let content = paragraph.trim_end_matches(['\n', '\r']);
             let content_length = content.chars().count();
             let paragraph_end = paragraph_start + content_length;
-            let layout = paragraph_layout(text_box, paragraph_index as u32);
+            let layout = paragraph_layout(text_box, paragraph_index);
             let previous_is_list_item = paragraph_index > 0
-                && paragraph_layout(text_box, paragraph_index as u32 - 1)
+                && paragraph_layout(text_box, paragraph_index - 1)
                     .bullet
                     .and_then(bullet_marker)
                     .is_some();
             let current_is_list_item = layout.bullet.and_then(bullet_marker).is_some();
-            let next_is_list_item = paragraph_index + 1 < paragraphs.len()
-                && paragraph_layout(text_box, paragraph_index as u32 + 1)
+            let next_start = paragraph_start + paragraph.chars().count();
+            let next_is_list_item = next_start < characters.len()
+                && paragraph_layout(text_box, styled.index.paragraph_index(next_start).unwrap())
                     .bullet
                     .and_then(bullet_marker)
                     .is_some();
@@ -1437,11 +1440,10 @@ fn object_bottom_margin(object: &RichTextObjectSpan) -> f64 {
 }
 
 fn samsung_font_to_svg(size: f32) -> f64 {
-    let size = size as f64;
-    if size.is_finite() && size > 0.0 {
-        (size * SAMSUNG_TEXT_SCALE).clamp(8.0, 144.0)
+    if size.is_finite() {
+        f64::from(size.max(1.0)) * SAMSUNG_TEXT_SCALE
     } else {
-        37.0
+        f64::from(text::DEFAULT_FONT_SIZE) * SAMSUNG_TEXT_SCALE
     }
 }
 
@@ -2167,7 +2169,7 @@ mod tests {
         let xml = roxmltree::Document::parse(&pages[0].svg).unwrap();
         assert!(xml.descendants().any(|node| node.has_tag_name("text")
             && node.attribute("x") == Some("48.00")
-            && node.attribute("y") == Some("45.00")));
+            && node.attribute("y") == Some("51.00")));
         assert!(pages[0].svg.contains(r##"<tspan fill="#dadada""##));
         assert!(!pages[0].svg.contains(r##"<tspan fill="#252525""##));
     }

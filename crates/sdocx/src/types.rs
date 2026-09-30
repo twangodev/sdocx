@@ -375,7 +375,7 @@ pub struct RichTextBox {
     pub text_sections: Vec<RichTextSection>,
     /// Text margins in left, top, right, bottom order.
     pub margins: Option<[f32; 4]>,
-    /// Raw Android text-gravity flags.
+    /// Raw vertical text gravity: 0 top, 1 center, 2 bottom.
     pub gravity: Option<u8>,
 }
 

@@ -173,6 +173,71 @@ fn tspan<'a>(xml: &'a roxmltree::Document<'a>, value: &str) -> roxmltree::Node<'
 }
 
 #[test]
+fn unstyled_text_uses_native_defaults_in_each_context() {
+    for &context in CONTEXTS {
+        let mut content = text("default");
+        content.color = None;
+        content.font_size = None;
+        let svg = render(context, content);
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let node = tspan(&xml, "default");
+        assert_eq!(node.attribute("fill"), Some("#262626"), "{context:?}");
+        assert_eq!(node.attribute("font-size"), Some("51.00"), "{context:?}");
+    }
+}
+
+#[test]
+fn font_size_conversion_preserves_native_minimum_and_large_sizes() {
+    for (size, expected) in [
+        (0.5_f32, "3.00"),
+        (0.0, "3.00"),
+        (-2.0, "3.00"),
+        (80.0, "240.00"),
+    ] {
+        for &context in CONTEXTS {
+            let mut content = text("size");
+            content.font_size = Some(size);
+            let svg = render(context, content);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            assert_eq!(
+                tspan(&xml, "size").attribute("font-size"),
+                Some(expected),
+                "{context:?}"
+            );
+            let mut local = text("size");
+            local.spans = vec![span(RichTextSpanType::FontSize, 0, 4, &size.to_le_bytes())];
+            let svg = render(context, local);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            assert_eq!(
+                tspan(&xml, "size").attribute("font-size"),
+                Some(expected),
+                "{context:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn flow_alignment_uses_native_paragraph_ordinals_after_crlf() {
+    let mut content = text("a\r\nb");
+    content.paragraphs = vec![sdocx::RichTextParagraph {
+        kind: sdocx::RichTextParagraphType::Alignment,
+        start_paragraph: 2,
+        end_paragraph: 3,
+        payload: 1_u32.to_le_bytes().to_vec(),
+    }];
+    let svg = render(Context::Flow, content);
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let node = tspan(&xml, "b").parent().unwrap();
+    assert_eq!(node.attribute("text-anchor"), Some("end"));
+    assert_eq!(node.attribute("x"), Some("1752.00"));
+    assert_eq!(
+        tspan(&xml, "a").parent().unwrap().attribute("text-anchor"),
+        Some("start")
+    );
+}
+
+#[test]
 fn all_text_contexts_preserve_mixed_unicode_styles_and_hyperlinks() {
     let mut content = text("A😀B  C");
     content.spans = vec![
