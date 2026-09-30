@@ -919,12 +919,20 @@ copying do not clear the object's font.
 vertical cursor (`0x6cc0c`–`0x6cc28`). With zero measurement margins,
 `F=20`, `H=100`, default multiplier 1.35 and initial cursor 0 yield cursor
 107.001 and baseline 100.001, including an object-only initial paragraph.
-Rust's object-only line metric still needs this producer correction.
+Rust now retains the font maximum separately from ordinary text height and
+the object's current measured height. An object font 900 with height 100 and
+neighboring text font 20 therefore yields base height 100, baseline 100.001,
+and cursor 415.001 under default spacing; its font does not enlarge its
+measured height. Object-only font 20/height 100 yields baseline/cursor
+105.001/112.001 with multiplier 1.6, or 113.001/120.001 with pixel spacing 20.
 `RichTextMeasure::measureParagraph`
 gives a leading separator/type-4 entry the following span's font size in
 both height and text metric (`0x78a64`–`0x78acc`). `GetBlockInfo` retains
 that metric maximum (`0x6aef8`–`0x6af00`, `0x6b008`), including when its
 second-entry special branch replaces the height/margins (`0x6aea0`–`0x6aeb0`).
+That branch applies to any second content entry after a leading type-4
+separator. Rust preserves its font input without retaining the replaced
+separator height; separator-only empty paragraphs keep the ordinary height.
 With a separator font 45 and object height 100, the zero-margin object
 line advances 115.751 and has baseline 100.001. A paragraph adapter that
 removes separators must preserve this first-line metric input explicitly.
@@ -1328,11 +1336,24 @@ units. This reproduces the independently extracted extra baseline gap,
 The mechanism is a candidate-line move past a one-unit boundary marker;
 37.498 is neither a constant paragraph gap nor the padding-band height.
 The shared code frame's height consequently has a native-backed explanation.
-The body-composition phase still needs to supply the correct object origin;
-matching this local height does not establish complete composed-page parity.
-The saved-top arithmetic above reconciles this captured copy's numbers;
-the verified general producer instead uses the live candidate and child-size
-feedback described above.
+The final drawing origin is distinct from the callback origin.
+`BodyTextCapture::updateSplitOffset` reads the placed text bound and recomputes
+bands (`0xcac30`–`0xcac7c`). Composer copies the object and assigns its final
+drawing rectangle (`0x3763dc`–`0x376474`), then passes its drawing split vector
+to a fresh `CodeBlockLayout` (`0x3764a8`–`0x3764d8`, `0x378804`–`0x37884c`).
+That drawing measurement does not update parent height feedback.
+
+Rust uses the same `prepare_code` function for these two native contexts.
+The captured code measures at callback Y 1237.75 with height 411, while
+previous-bottom-margin collapse places drawing at Y 1297.751 with height
+411.75. Reusing the callback's line plan after translating it by 60 loses
+the 37.498 page-boundary move. Repreparing at the final drawing origin fixes
+that clipping and preserves the parent's 411-unit reservation. Fresh SVG
+comparisons against the hash-checked native PDF differ by less than 0.00012
+units for the title, all code lines, and following whitespace heading; the
+earlier 0.75-unit following-text residual is resolved. The four wholly
+clipped code lines remain absent. Table composition still has separate
+unresolved differences.
 
 Rust also applies the native paragraph indentation masks: saved RTL indent
 adds only a right inset for right/center/default alignment; other indent
@@ -1355,6 +1376,8 @@ ranges remain unchanged. Complex-script positioning still reports the
 existing unsupported-positioning diagnostic rather than establishing RTL
 justification parity.
 
+The following table and discussion record an earlier debugging snapshot,
+before the callback/drawing separation above; their SDK values are historical.
 Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
 before/after spacing 4. Saved first-cell X is 49, while captured text X 72
 and scaled left margin 24 imply a regenerated frame X 48. The current CLI

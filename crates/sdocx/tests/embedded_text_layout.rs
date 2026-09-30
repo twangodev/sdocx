@@ -380,13 +380,13 @@ fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap()
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             246.751,
-            346.001,
+            346.0,
             436.75,
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             246.751,
-            375.001,
+            375.0,
             465.75,
         ),
     ] {
@@ -437,7 +437,7 @@ fn vertical_page_padding_does_not_replace_native_body_text_margins() {
                     ("Title".into(), 74.0, 90.001),
                     ("A".into(), 74.0, 186.001),
                     ("B".into(), 74.0, 246.751),
-                    ("C".into(), 74.0, 375.001),
+                    ("C".into(), 74.0, 375.0),
                 ]
             );
             assert_eq!(code_panel_height(&page.svg), 465.75);
@@ -545,7 +545,7 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
         .children()
         .find(|node| node.has_tag_name("rect"))
         .unwrap();
-    assert_eq!(panel.attribute("y"), Some("0.00"));
+    assert_eq!(panel.attribute("y").unwrap().parse::<f64>().unwrap(), 0.001);
 }
 
 #[test]
@@ -585,7 +585,7 @@ fn placed_live_code_candidate_reproduces_the_captured_page_gap() {
         );
         for ((_, x, y), expected_y) in output
             .into_iter()
-            .zip([1378.75295, 1474.75295, 1573.001, 1633.751])
+            .zip([1378.75295, 1474.75295, 1573.0, 1633.75])
         {
             assert_eq!(x, 68.0);
             assert!(

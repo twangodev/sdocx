@@ -239,13 +239,11 @@ impl LineMetrics {
     ) -> Self {
         let has_objects = !line.objects.is_empty();
         let block = line.has_block_margins();
-        let base_height = line.font_size.max(line.object_height());
+        let base_height = line.base_height();
         let advance = if block {
             base_height
-        } else if has_objects {
-            base_height + paragraph_line_height(line.font_size, spacing, settings) - line.font_size
         } else {
-            paragraph_line_height(line.font_size, spacing, settings)
+            base_height + paragraph_line_height(line.font_size, spacing, settings) - line.font_size
         };
         let epsilon = if has_objects { 0.001 } else { 0.0 };
         let baseline_offset = if block {
@@ -516,7 +514,7 @@ impl PositionedMarker {
         let Some(center_y) = marker_center_y(
             baseline,
             post_line_cursor,
-            line.font_size.max(line.object_height()),
+            line.base_height(),
             pixels,
             cap_ratio,
         ) else {
@@ -1404,11 +1402,11 @@ mod tests {
                 close(placed.lines[0].baseline, 100.001);
                 close(flow.lines[0].baseline, 80.0);
                 close(flow.lines[0].top, -20.001);
-                close(flow.lines[0].bottom, 80.0);
-                close(flow.lines[0].post_cursor, 80.0);
-                close(placed.lines[1].baseline, 110.001);
-                close(flow.lines[1].baseline, 90.0);
-                close(flow.height(), 93.5);
+                close(flow.lines[0].bottom, 83.5);
+                close(flow.lines[0].post_cursor, 83.5);
+                close(placed.lines[1].baseline, 113.501);
+                close(flow.lines[1].baseline, 93.5);
+                close(flow.height(), 97.0);
             } else {
                 for (placed, flow) in placed.lines.iter().zip(&flow.lines) {
                     assert_eq!(placed.baseline, flow.baseline);
@@ -1422,7 +1420,7 @@ mod tests {
     fn full_source_object_layout_preserves_inherited_separator_font_metrics() {
         for (source, anchor, object_line_index, expected_font, next_baseline) in [
             ("A\n\u{fffc}\nB", 2, 1, 45.0, 321.501),
-            ("\u{fffc}\nB", 0, 0, 0.0, 245.001),
+            ("\u{fffc}\nB", 0, 0, 45.0, 260.751),
         ] {
             let mut content = text(source);
             content.font_size = Some(45.0);
@@ -1557,7 +1555,7 @@ mod tests {
         let body = prepared.body_layout.as_ref().unwrap();
         close(body.lines[0].baseline, 707.0);
         close(body.lines[5].baseline, 1075.0);
-        close(plan.lines[1].baseline, 1195.751);
+        close(plan.lines[1].baseline, 1211.501);
     }
 
     #[test]

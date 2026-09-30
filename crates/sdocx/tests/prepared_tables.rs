@@ -623,7 +623,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 ("D", 0.5, 61.001),
                 ("E", 0.5, 74.501),
             ],
-            vec![("F", 0.5, 11.001), ("End", 0.0, 25.001)],
+            vec![("F", 0.5, 11.001), ("End", 0.0, 28.501)],
         ),
         ObjectSpanLayoutConstraint::OverPages => (
             107.5,
@@ -633,7 +633,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 ("C", 0.5, 47.501),
                 ("D", 0.5, 61.001),
             ],
-            vec![("E", 0.5, 20.001), ("F", 0.5, 33.501), ("End", 0.0, 47.501)],
+            vec![("E", 0.5, 20.001), ("F", 0.5, 33.501), ("End", 0.0, 51.001)],
         ),
         _ => panic!(),
     };

@@ -288,13 +288,13 @@ fn assert_baselines(actual: [f64; 3], expected: [f64; 3]) {
 fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() {
     // Density1 native chrome44+20 and two ordinary27px lines give height118.
     for (context, expected) in [
-        (Context::Flow, [64.001, 91.001, 138.001]),
-        (Context::Placed, [64.001, 91.001, 138.001]),
-        (Context::CodeBody, [108.002, 135.002, 182.002]),
+        (Context::Flow, [64.001, 91.001, 145.001]),
+        (Context::Placed, [64.001, 91.001, 145.001]),
+        (Context::CodeBody, [108.002, 135.002, 189.002]),
         #[cfg(feature = "serde")]
-        (Context::Shape, [64.001, 91.001, 138.001]),
+        (Context::Shape, [64.001, 91.001, 145.001]),
         #[cfg(feature = "serde")]
-        (Context::Table, [64.502, 91.502, 138.502]),
+        (Context::Table, [64.502, 91.502, 145.502]),
     ] {
         for constraint in [
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
@@ -320,11 +320,10 @@ fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() 
 
 #[test]
 fn placed_gravity_translates_the_retained_child_plan_with_its_parent_line() {
-    // The child118px plus the following27px text line and object epsilon
-    // consume145.001px of the700px parent frame.
+    // Child118 + own-font leading7 + following27 + epsilon =152.001px.
     for (gravity, panel_top, expected) in [
-        (1, 277.5005, [341.5005, 368.5005, 415.5005]),
-        (2, 555.0, [619.0, 646.0, 693.0]),
+        (1, 274.0005, [338.0005, 365.0005, 419.0005]),
+        (2, 548.0, [612.0, 639.0, 693.0]),
     ] {
         for constraint in [
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
@@ -352,25 +351,25 @@ fn child_page_exclusions_use_the_actual_candidate_top_instead_of_saved_y() {
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             0,
             128.0,
-            [64.001, 101.001, 148.001],
+            [64.001, 101.0, 155.001],
         ),
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             30,
             125.0,
-            [101.001, 128.001, 175.001],
+            [101.0, 128.0, 182.001],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             0,
             164.0,
-            [110.001, 137.001, 184.001],
+            [110.0, 137.0, 191.001],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             30,
             134.0,
-            [110.001, 137.001, 184.001],
+            [110.0, 137.0, 191.001],
         ),
     ] {
         let mut previous = None;
@@ -398,7 +397,7 @@ fn child_page_exclusions_use_the_actual_candidate_top_instead_of_saved_y() {
 
 #[test]
 fn normal_constraint_retains_saved_reservation_while_painting_measured_code() {
-    for (saved_height, following_baseline) in [(50.0, 70.001), (300.0, 320.001)] {
+    for (saved_height, following_baseline) in [(50.0, 77.001), (300.0, 327.001)] {
         let doc = document(
             Context::Flow,
             code_text(0.0, saved_height, ObjectSpanLayoutConstraint::Normal),
@@ -462,8 +461,7 @@ fn invalid_derived_panels_preserve_the_anchor_and_neighbors_in_every_constraint(
 
 #[test]
 fn nested_child_height_feedback_reaches_the_following_outer_text() {
-    // Inner chrome64 +54px text =118. Its containing body adds27px and
-    // .001 object epsilon; outer chrome64 then gives209.001px.
+    // Inner118 + own-font leading7 + following27 + epsilon + outer64 =216.001.
     for constraint in [
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
         ObjectSpanLayoutConstraint::OverPages,
@@ -495,7 +493,7 @@ fn nested_child_height_feedback_reaches_the_following_outer_text() {
                         "ABCD"
                     );
                     for (span, expected) in
-                        spans.into_iter().zip([108.002, 135.002, 182.002, 229.002])
+                        spans.into_iter().zip([108.002, 135.002, 189.002, 243.002])
                     {
                         assert!((point(span).1 - expected).abs() < 1e-8);
                     }
@@ -510,7 +508,7 @@ fn nested_child_height_feedback_reaches_the_following_outer_text() {
                                 .unwrap()
                         })
                         .collect();
-                    assert_eq!(heights, ["209.00", "118.00"]);
+                    assert_eq!(heights, ["216.00", "118.00"]);
                     assert!(page.object_diagnostics.is_empty());
                 }
             }
@@ -571,7 +569,7 @@ fn remeasured_code_and_following_text_stay_selectable_in_vector_pdf() {
     ] {
         let doc = document(Context::Flow, code_text(200.0, 50.0, constraint), 800, 0);
         let page = modes(&doc).into_iter().next().unwrap();
-        assert_eq!(geometry(&page.svg).baselines, [64.001, 91.001, 138.001]);
+        assert_eq!(geometry(&page.svg).baselines, [64.001, 91.001, 145.001]);
         let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
         let pdf = lopdf::Document::load_mem(&bytes).unwrap();
         assert_eq!(

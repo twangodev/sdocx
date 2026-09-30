@@ -415,9 +415,11 @@ mod tests {
         let mut object = content("\u{fffc}");
         object.object_spans.push(image(0));
         let mut line = measured(&object);
-        assert_eq!(line.line.font_size, 0.0);
+        assert_eq!(line.line.font_size, 45.0);
+        assert_eq!(line.line.text_height, 0.0);
         assert!(!viewport(0.0, 100.0).body_visible(&line.line, line.baseline));
         line.line.objects[0].prepared = Some(Err(ObjectDiagnosticKind::InvalidBounds));
-        assert!(viewport(0.0, 100.0).body_visible(&line.line, line.baseline));
+        assert!(!viewport(0.0, 100.0).body_visible(&line.line, line.baseline));
+        assert!(viewport(0.0, 100.0).body_visible(&line.line, 40.0));
     }
 }

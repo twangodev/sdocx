@@ -11,6 +11,7 @@ use super::{StyledText, TextRenderer};
 pub(in crate::render) struct WrappedLine {
     pub source: Range<usize>,
     pub font_size: f64,
+    pub text_height: f64,
     pub advance: f64,
     pub placements: Vec<PositionedCluster>,
     pub objects: Vec<PositionedObject>,
@@ -31,7 +32,10 @@ pub(in crate::render) struct PositionedObject {
 
 enum MeasuredItem {
     TextCluster(MeasuredCluster),
-    Object(MeasuredObject),
+    Object {
+        object: MeasuredObject,
+        font_size: f64,
+    },
 }
 
 struct ParagraphItems {
@@ -44,14 +48,14 @@ impl MeasuredItem {
     fn source(&self) -> &Range<usize> {
         match self {
             Self::TextCluster(cluster) => &cluster.source,
-            Self::Object(object) => &object.source,
+            Self::Object { object, .. } => &object.source,
         }
     }
 
     fn advance(&self) -> f64 {
         match self {
             Self::TextCluster(cluster) => cluster.advance,
-            Self::Object(object) => object.bounds.x_max - object.bounds.x_min,
+            Self::Object { object, .. } => object.bounds.x_max - object.bounds.x_min,
         }
     }
 }
@@ -61,6 +65,7 @@ impl WrappedLine {
         Self {
             source,
             font_size,
+            text_height: font_size,
             advance: 0.0,
             placements: Vec::new(),
             objects: Vec::new(),
@@ -71,6 +76,10 @@ impl WrappedLine {
         self.objects.iter().fold(0.0_f64, |height, positioned| {
             height.max(positioned.object.height)
         })
+    }
+
+    pub fn base_height(&self) -> f64 {
+        self.text_height.max(self.object_height())
     }
 
     pub fn justify(&mut self, styled: &StyledText<'_>, width: f64) -> Result<(), MeasurementError> {
@@ -188,6 +197,8 @@ fn measured_items(
             items.extend(measured.clusters.into_iter().map(MeasuredItem::TextCluster));
         }
         let object = object.measured(renderer.settings);
+        let object_font_size = measurer.font_size(object.source.clone())?;
+        font_size = font_size.max(object_font_size);
         let kind = if object.inline {
             BreakKind::Allowed
         } else {
@@ -202,7 +213,10 @@ fn measured_items(
         }
         start = object.source.end;
         advance += object.bounds.x_max - object.bounds.x_min;
-        items.push(MeasuredItem::Object(object));
+        items.push(MeasuredItem::Object {
+            object,
+            font_size: object_font_size,
+        });
     }
     if start < range.end {
         let measured = measurer.measure_line(start..range.end)?;
@@ -277,6 +291,9 @@ pub(in crate::render) fn unmeasured_paragraph(
         }
         let measured = object.measured(renderer.settings);
         let mut line = WrappedLine::unmeasured(measured.source.clone(), 0.0);
+        line.font_size = styled
+            .style_at(measured.source.start, theme, predefined)
+            .font_size;
         line.advance = measured.bounds.x_max - measured.bounds.x_min;
         line.objects.push(PositionedObject {
             object: measured,
@@ -295,9 +312,8 @@ pub(in crate::render) fn unmeasured_paragraph(
         ));
     }
     if let Some(line) = lines.first_mut() {
-        line.font_size = line.font_size.max(paragraph_prefix_font_size(
-            styled, &source, theme, predefined,
-        ));
+        let prefix_font_size = paragraph_prefix_font_size(styled, &source, theme, predefined);
+        line.font_size = line.font_size.max(prefix_font_size);
     }
     lines
 }
@@ -401,6 +417,7 @@ pub(in crate::render) fn wrap_paragraph(
         let mut placements = Vec::new();
         let mut objects = Vec::new();
         let mut font_size = 0.0_f64;
+        let mut text_height = 0.0_f64;
         let mut x = 0.0;
         while let Some(item) = items.get(item_index)
             && item.source().end <= source.end
@@ -408,17 +425,24 @@ pub(in crate::render) fn wrap_paragraph(
             match item {
                 MeasuredItem::TextCluster(cluster) => {
                     font_size = font_size.max(cluster.run.style.font_size);
+                    text_height = text_height.max(cluster.run.style.font_size);
                     placements.push(PositionedCluster {
                         cluster: cluster.clone(),
                         x,
                         extra_advance: 0.0,
                     });
                 }
-                MeasuredItem::Object(object) => objects.push(PositionedObject {
-                    object: object.clone(),
-                    x,
-                    prepared: None,
-                }),
+                MeasuredItem::Object {
+                    object,
+                    font_size: object_font_size,
+                } => {
+                    font_size = font_size.max(*object_font_size);
+                    objects.push(PositionedObject {
+                        object: object.clone(),
+                        x,
+                        prepared: None,
+                    });
+                }
             }
             x = finite_advance(x + item.advance())?;
             item_index += 1;
@@ -432,6 +456,7 @@ pub(in crate::render) fn wrap_paragraph(
         lines.push(WrappedLine {
             source,
             font_size,
+            text_height,
             advance: line_advance,
             placements,
             objects,
@@ -632,7 +657,9 @@ mod tests {
         assert_single_line(&lines, 0..3);
         let line = &lines[0];
         assert_eq!(line.advance, 2.0 * letter_width + 40.0);
-        assert_eq!(line.font_size, 45.0);
+        assert_eq!(line.font_size, 200.0);
+        assert_eq!(line.text_height, 45.0);
+        assert_eq!(line.base_height(), 60.0);
         assert_eq!(line.object_height(), 60.0);
         assert_eq!(line.object_margins(), [0.0, 0.0]);
         assert_eq!(line.placements.len(), 2);
@@ -664,7 +691,8 @@ mod tests {
             assert!(lines[0].objects.is_empty());
             assert!(lines[2].objects.is_empty());
             assert_eq!(lines[1].advance, 20.0);
-            assert_eq!(lines[1].font_size, 0.0);
+            assert_eq!(lines[1].font_size, 45.0);
+            assert_eq!(lines[1].text_height, 0.0);
             assert!(lines[1].placements.is_empty());
             assert_eq!(lines[1].objects[0].x, 0.0);
             assert_eq!(lines[1].object_margins(), [margin, margin]);
@@ -672,14 +700,16 @@ mod tests {
     }
 
     #[test]
-    fn object_only_paragraph_needs_no_font_and_has_zero_text_size() {
+    fn object_only_paragraph_uses_source_font_metric_without_resolving_a_face() {
         let mut content = text("\u{fffc}");
         content.font_size = Some(500.0);
         content.object_spans = vec![image(0, 200.0, ObjectSpanLayoutOption::Inline)];
         let fonts = FontBook::new(Arc::new(fontdb::Database::new()));
         let lines = wrap_with_fonts(&content, 0..1, 0.0, &fonts).unwrap();
         assert_single_line(&lines, 0..1);
-        assert_eq!(lines[0].font_size, 0.0);
+        assert_eq!(lines[0].font_size, 500.0);
+        assert_eq!(lines[0].text_height, 0.0);
+        assert_eq!(lines[0].base_height(), 60.0);
         assert_eq!(lines[0].advance, 200.0);
         assert_eq!(lines[0].object_height(), 60.0);
         assert!(lines[0].placements.is_empty());
@@ -703,13 +733,36 @@ mod tests {
             let lines = wrap_with_fonts(&content, 2..4, 0.0, &fonts).unwrap();
             assert_eq!(ranges(&lines), [2..3, 3..4]);
             assert_eq!(lines[0].font_size, 90.0);
-            assert_eq!(lines[1].font_size, 0.0);
+            assert_eq!(lines[1].font_size, 45.0);
+            assert!(lines.iter().all(|line| line.text_height == 0.0));
+            assert!(lines.iter().all(|line| line.base_height() == 60.0));
             assert!(lines.iter().all(|line| line.placements.is_empty()));
         }
         let mut content = text("A\u{fffc}");
         content.object_spans = vec![image(1, 200.0, ObjectSpanLayoutOption::Inline)];
         let lines = wrap_with_fonts(&content, 1..2, 0.0, &FontBook::default()).unwrap();
-        assert_eq!(lines[0].font_size, 0.0);
+        assert_eq!(lines[0].font_size, 45.0);
+    }
+
+    #[test]
+    fn a_leading_separator_retains_font_metric_but_its_height_is_replaced_by_content() {
+        let mut content = text("\n\u{fffc}");
+        let mut object = image(1, 20.0, ObjectSpanLayoutOption::Inline);
+        let Some(RichTextObjectContent::Image(image)) = &mut object.content else {
+            unreachable!()
+        };
+        image.bbox.y_max = image.bbox.y_min + 20.0;
+        content.object_spans.push(object);
+        content.spans.push(span(
+            RichTextSpanType::FontSize,
+            1,
+            2,
+            &900.0_f32.to_le_bytes(),
+        ));
+        let lines = wrap_with_fonts(&content, 1..2, 100.0, &FontBook::default()).unwrap();
+        assert_eq!(lines[0].font_size, 900.0);
+        assert_eq!(lines[0].text_height, 0.0);
+        assert_eq!(lines[0].base_height(), 20.0);
     }
 
     #[test]

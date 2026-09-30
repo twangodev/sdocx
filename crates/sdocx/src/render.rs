@@ -1065,10 +1065,43 @@ fn paint_line_objects(
             continue;
         }
         let height = object.height;
-        if viewport.is_some_and(|viewport| {
-            !viewport.intersects(object_paint_bounds(placement, left, baseline))
-        }) {
+        let drawing_renderer = renderer
+            .for_object_source(object.source.clone())
+            .planning_scope();
+        let drawing_code = match (&placement.prepared, &span.content) {
+            (
+                Some(Ok(embedded::PreparedObject::Code(_))),
+                Some(RichTextObjectContent::CodeBlock(code)),
+            ) => Some(code::prepare_code(
+                code,
+                span.layout_constraint,
+                baseline - height,
+                theme,
+                &drawing_renderer,
+            )),
+            _ => None,
+        };
+        let mut paint_bounds = object_paint_bounds(placement, left, baseline);
+        if let Some(Ok(prepared)) = &drawing_code {
+            paint_bounds.y_max =
+                paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+        }
+        if viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds)) {
             continue;
+        }
+        renderer.report_text_issues(
+            &drawing_renderer
+                .scoped_diagnostics()
+                .into_iter()
+                .filter(|issue| is_layout_issue(&issue.diagnostic))
+                .collect::<Vec<_>>(),
+        );
+        renderer.report_owned_object_issues(&drawing_renderer.scoped_object_diagnostics());
+        if let Some(Err(kind)) = &drawing_code {
+            renderer.report_object_issues(&[ObjectDiagnostic {
+                anchor_utf16: span.text_index_utf16,
+                kind: *kind,
+            }]);
         }
         let offset = (
             left + placement.x - object.bounds.x_min,
@@ -1082,6 +1115,10 @@ fn paint_line_objects(
                     Some(RichTextObjectContent::CodeBlock(code)),
                 ) = (&placement.prepared, &span.content)
                 {
+                    let prepared = drawing_code
+                        .as_ref()
+                        .and_then(|result| result.as_ref().ok())
+                        .unwrap_or(prepared);
                     let shift = baseline - height - prepared.panel_bbox.y_min;
                     svg.scope(
                         Group::new().transformed(Transform::translate(0.0, shift, 5)),
@@ -1622,6 +1659,7 @@ fn render_prepared_code(
     svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
         svg.push(
             rectangle(panel_bbox, 0.0, 2)
+                .y(decimal(panel_bbox.y_min, 5))
                 .rx(decimal(radius, 2))
                 .fill(Paint::from_hex(&fill))
                 .stroke(Paint::from_hex(stroke))
