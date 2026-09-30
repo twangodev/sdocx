@@ -192,6 +192,9 @@ impl<'a> StyledText<'a> {
     pub fn object_span(&self, index: usize) -> Option<&crate::RichTextObjectSpan> {
         self.text_box.object_spans.get(index)
     }
+    pub fn object_issues(&self) -> &[ObjectDiagnostic] {
+        self.objects.issues()
+    }
     pub fn new(text_box: &'a RichTextBox, context: TextContext, settings: TextSettings) -> Self {
         let index = TextIndex::new(&text_box.text);
         let objects = objects::TextObjectIndex::new(text_box, &index);

@@ -157,6 +157,14 @@ fn paragraph_prefix_font_size(
     }
 }
 
+fn finite_advance(advance: f64) -> Result<f64, MeasurementError> {
+    if advance.is_finite() {
+        Ok(advance)
+    } else {
+        Err(MeasurementError::InvalidCluster)
+    }
+}
+
 pub(in crate::render) fn unmeasured_paragraph(
     styled: &StyledText<'_>,
     source: Range<usize>,
@@ -234,7 +242,7 @@ pub(in crate::render) fn wrap_paragraph(
         if source.start != source_end || source.end <= source_end || source.end > range.end {
             return Err(MeasurementError::InvalidCluster);
         }
-        advance += item.advance();
+        advance = finite_advance(advance + item.advance())?;
         let end = source.end - range.start;
         advances[end] = advance;
         cluster_ends[end] = true;
@@ -243,7 +251,7 @@ pub(in crate::render) fn wrap_paragraph(
     if source_end != range.end {
         return Err(MeasurementError::InvalidCluster);
     }
-    advances[range.len()] = measured.advance;
+    advances[range.len()] = finite_advance(measured.advance)?;
     if breaks
         .candidates
         .iter()
@@ -276,7 +284,7 @@ pub(in crate::render) fn wrap_paragraph(
         }
         let mut probe = candidate_index;
         for candidate in &breaks.candidates[candidate_index..] {
-            if advances[candidate.end] - advances[start] > width {
+            if finite_advance(advances[candidate.end] - advances[start])? > width {
                 overflow_end = Some(candidate.end);
                 break;
             }
@@ -293,7 +301,7 @@ pub(in crate::render) fn wrap_paragraph(
             let last = breaks.emergency.partition_point(|&end| end <= overflow_end);
             let ends = &breaks.emergency[first..last];
             for &end in ends {
-                if advances[end] - advances[start] > width {
+                if finite_advance(advances[end] - advances[start])? > width {
                     break;
                 }
                 selected = Some(end);
@@ -301,6 +309,7 @@ pub(in crate::render) fn wrap_paragraph(
             selected = selected.or_else(|| ends.first().copied());
         }
         let end = selected.ok_or(MeasurementError::InvalidRange)?;
+        let line_advance = finite_advance(advances[end] - advances[start])?;
         let source = range.start + start..range.start + end;
         let mut placements = Vec::new();
         let mut objects = Vec::new();
@@ -322,7 +331,7 @@ pub(in crate::render) fn wrap_paragraph(
                     x,
                 }),
             }
-            x += item.advance();
+            x = finite_advance(x + item.advance())?;
             item_index += 1;
         }
         if source == range {
@@ -334,7 +343,7 @@ pub(in crate::render) fn wrap_paragraph(
         lines.push(WrappedLine {
             source,
             font_size,
-            advance: advances[end] - advances[start],
+            advance: line_advance,
             placements,
             objects,
         });
@@ -642,6 +651,22 @@ mod tests {
         assert!(issues.iter().all(|issue| {
             issue.kind == super::super::objects::ObjectDiagnosticKind::MixedParagraphLayout
         }));
+    }
+
+    #[test]
+    fn advance_arithmetic_overflow_returns_error_without_clamping_finite_values() {
+        let maximum = f64::MAX;
+        let summed = maximum + maximum;
+        let difference = maximum - -maximum;
+        for overflow in [summed, difference, summed - difference] {
+            assert!(matches!(
+                finite_advance(overflow),
+                Err(MeasurementError::InvalidCluster)
+            ));
+        }
+        for advance in [-maximum, -45.0, 0.0, 45.0, maximum] {
+            assert_eq!(finite_advance(advance).unwrap(), advance);
+        }
     }
 
     #[test]

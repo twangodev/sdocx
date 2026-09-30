@@ -851,6 +851,7 @@ fn render_flow_text_box(
     let content_right = f64::from(page.width) - horizontal_padding - settings.pixels(margins[2]);
     let characters = text_box.text.chars().collect::<Vec<_>>();
     let styled = StyledText::new(text_box, TextContext::Flow, settings);
+    renderer.report_object_issues(styled.object_issues());
     let mut paragraph_start = 0_usize;
     let mut cursor = text::TextCursor::new(content_top);
     let frame = text::TextFrame {

@@ -147,13 +147,20 @@ fn object_bounds(span: &RichTextObjectSpan) -> Result<BoundingBox, ObjectDiagnos
 }
 
 fn valid_bounds(bounds: BoundingBox) -> bool {
-    [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max]
-        .into_iter()
-        .all(f64::is_finite)
-        && (bounds.x_max - bounds.x_min).is_finite()
-        && (bounds.y_max - bounds.y_min).is_finite()
-        && bounds.x_max > bounds.x_min
-        && bounds.y_max > bounds.y_min
+    let width = bounds.x_max - bounds.x_min;
+    let height = bounds.y_max - bounds.y_min;
+    [
+        bounds.x_min,
+        bounds.y_min,
+        bounds.x_max,
+        bounds.y_max,
+        width,
+        height,
+    ]
+    .into_iter()
+    .all(|value| (value as f32).is_finite())
+        && width > 0.0
+        && height > 0.0
 }
 
 #[cfg(test)]
@@ -370,6 +377,120 @@ mod tests {
             assert!(index.in_range(0..1).is_empty());
             assert_eq!(index.issues()[0].kind, ObjectDiagnosticKind::InvalidBounds);
         }
+    }
+
+    #[test]
+    fn native_float_overflow_rejects_finite_coordinates_and_extents() {
+        let maximum = f64::from(f32::MAX);
+        for bounds in [
+            BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 1e308,
+                y_max: 60.0,
+            },
+            BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 30.0,
+                y_max: 1e308,
+            },
+            BoundingBox {
+                x_min: 1e100,
+                y_min: 0.0,
+                x_max: 2e100,
+                y_max: 60.0,
+            },
+            BoundingBox {
+                x_min: -maximum,
+                y_min: 0.0,
+                x_max: maximum,
+                y_max: 60.0,
+            },
+            BoundingBox {
+                x_min: 0.0,
+                y_min: -maximum,
+                x_max: 30.0,
+                y_max: maximum,
+            },
+        ] {
+            assert!(
+                [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max]
+                    .into_iter()
+                    .all(f64::is_finite)
+            );
+            let mut span = image(0, 30.0);
+            if let Some(RichTextObjectContent::Image(image)) = span.content.as_mut() {
+                image.bbox = bounds;
+            }
+            let text = text(
+                "A\u{fffc}B",
+                vec![RichTextObjectSpan {
+                    text_index_utf16: 1,
+                    ..span
+                }],
+            );
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            assert!(index.in_range(0..3).is_empty());
+            assert_eq!(
+                index.issues(),
+                &[ObjectDiagnostic {
+                    anchor_utf16: 1,
+                    kind: ObjectDiagnosticKind::InvalidBounds,
+                }]
+            );
+            assert_eq!(text.text, "A\u{fffc}B");
+        }
+    }
+
+    #[test]
+    fn rotated_float_overflow_is_rejected_after_validating_the_original_box() {
+        let maximum = f64::from(f32::MAX);
+        let mut span = image(0, 30.0);
+        if let Some(RichTextObjectContent::Image(image)) = span.content.as_mut() {
+            image.bbox = BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: maximum,
+                y_max: maximum,
+            };
+            assert!(valid_bounds(image.bbox));
+            image.rotation_degrees = Some(45.0);
+        }
+        let text = text("\u{fffc}", vec![span]);
+        let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+        assert!(index.in_range(0..1).is_empty());
+        assert_eq!(index.issues()[0].kind, ObjectDiagnosticKind::InvalidBounds);
+    }
+
+    #[test]
+    fn float_representability_validation_preserves_original_double_precision() {
+        let bounds = BoundingBox {
+            x_min: 0.1234567890123456,
+            y_min: 0.9876543210987654,
+            x_max: 100.98765432109876,
+            y_max: 60.123456789012344,
+        };
+        let mut code = image(0, 30.0);
+        code.object_type = ObjectType::CodeBlock;
+        code.content = Some(RichTextObjectContent::CodeBlock(Box::new(
+            crate::RichTextCodeBlock {
+                bbox: bounds,
+                rotation_degrees: None,
+                title: None,
+                body: None,
+            },
+        )));
+        let text = text("\u{fffc}", vec![code]);
+        let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+        let measured = index.in_range(0..1)[0].measured(TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+        });
+        assert_eq!(measured.bounds, bounds);
+        assert_ne!(measured.bounds.x_min, f64::from(bounds.x_min as f32));
+        assert_ne!(measured.bounds.y_max, f64::from(bounds.y_max as f32));
+        assert!(index.issues().is_empty());
     }
 
     #[test]

@@ -124,6 +124,21 @@ fn valid_solitary_object_is_painted_and_neighboring_paragraph_text_survives() {
 }
 
 #[test]
+fn empty_flow_text_still_reports_invalid_object_anchors() {
+    for page in modes(&document("", vec![code(0)])) {
+        assert_eq!(
+            page.object_diagnostics,
+            vec![ObjectDiagnostic {
+                anchor_utf16: 0,
+                kind: ObjectDiagnosticKind::InvalidAnchor,
+            }]
+        );
+        assert_eq!(selectable_text(&page.svg), "");
+        assert_no_object_paint(&page.svg);
+    }
+}
+
+#[test]
 fn malformed_and_nonreplacement_anchors_preserve_adjacent_unicode() {
     let source = "A😀\u{fffc}e\u{301} B";
     for (anchor, kind) in [
@@ -165,6 +180,48 @@ fn unsupported_content_and_invalid_geometry_preserve_source() {
                 }]
             );
             assert_eq!(selectable_text(&page.svg), source);
+            assert_no_object_paint(&page.svg);
+        }
+    }
+}
+
+#[test]
+fn oversized_native_geometry_does_not_discard_following_text() {
+    for (source, count, option, oversized_width) in [
+        (
+            "\u{fffc}\u{fffc}\u{fffc}\u{fffc}B",
+            4,
+            ObjectSpanLayoutOption::Inline,
+            true,
+        ),
+        ("\u{fffc}\u{fffc}B", 2, ObjectSpanLayoutOption::Block, false),
+    ] {
+        let spans = (0..count)
+            .map(|anchor| {
+                let mut span = code(anchor);
+                span.layout_option = option;
+                let Some(RichTextObjectContent::CodeBlock(code)) = &mut span.content else {
+                    panic!()
+                };
+                if oversized_width {
+                    code.bbox.x_max = 1.0e308;
+                } else {
+                    code.bbox.y_max = 1.0e308;
+                }
+                span
+            })
+            .collect();
+        for page in modes(&document(source, spans)) {
+            assert_eq!(selectable_text(&page.svg), source);
+            assert_eq!(
+                page.object_diagnostics,
+                (0..count)
+                    .map(|anchor_utf16| ObjectDiagnostic {
+                        anchor_utf16,
+                        kind: ObjectDiagnosticKind::InvalidBounds,
+                    })
+                    .collect::<Vec<_>>()
+            );
             assert_no_object_paint(&page.svg);
         }
     }
