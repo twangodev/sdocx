@@ -141,9 +141,13 @@ and the default sans face. Their measured reservation precedes wrapping; the
 first line retains marker placement, including gravity. Fonts and diagnostics
 share scoped registries, and painting registers retained marker faces for
 embedding. Body flow uses the same layout loop with an explicit saved-slice
-continuation policy. Typed capture windows preserve native paragraph and
-overlap context for the next measurement adapter. Table-cell placement, numeric
-text advance,
-continued-object context and complete pagination still have measured gaps.
+continuation policy when native capture context is unavailable. Validated
+capture windows measure native paragraph and overlap context through that same
+Rust engine, then project the requested page. Retained line, glyph, marker and
+object bounds filter painting; code and table child text receives its translated
+viewport. Measurement registries are separate from painted fonts. Table-cell
+placement, numeric text advance, post-code height and complete pagination still
+have measured gaps. Prepared table first-row minima and spanning frames remain
+unfinished.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.

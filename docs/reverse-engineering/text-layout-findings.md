@@ -509,7 +509,12 @@ of the actual PDF viewport. Code origins and measured heights differ only
 by float roundoff. Prepared numbered markers match the two locked marker
 baselines within 0.000045 units. Remaining observed differences are table-cell
 X +1 and baseline Y about +1.751, numbered-item text X about -0.04393, and
-ordinary text after the continued code block Y about -15.001. These are
+ordinary text after the continued code block Y about +0.75007, improved from
+the former -15.001-unit slice error. Visible continued code matches within
+0.0011 units. Four raw code lines are fully outside the native viewport,
+independently verified from page/Form bounds, per-line clips and embedded
+glyph outlines; their original coordinates remain recorded, while the test
+requires no corresponding SVG text. These are
 exclusions from the
 passing reference subset, not evidence of complete flow or pagination parity.
 
@@ -631,9 +636,11 @@ faces so prepared layouts can still embed their fonts. `FontSizeUnits`
 distinguishes logical and resolved sizes, preventing repeated minimum, delta
 or density conversion, including already-resolved sizes below 1. Body flow
 uses the same layout loop, including marker preparation, spacing and object
-feedback. Its saved-slice continuation policy remains explicit. Rendering
-native capture windows, complete point-type cycles and tiny-font serialization
-precision remain unfinished.
+feedback. Validated capture windows preserve source context across overlapping
+saved sections and paint only their requested physical viewport. The legacy
+saved-slice continuation policy remains for unavailable or edited capture
+contexts. Complete point-type cycles and tiny-font serialization precision
+remain unfinished.
 
 ## Measurement, body flow and embedded objects
 
@@ -1005,10 +1012,24 @@ over-page flag and minimum first-page height to the obstacle tree. For padding
 obstacles, the tree skips a band only when that minimum is effectively zero
 or `band.top - candidate.top >= ceil(minimum_height)` (`0x6e7fc`–`0x6e820`).
 Otherwise the parent can move past the obstacle (`0x6a830`–`0x6a894`).
-Code's minimum includes title padding, title height, title/body gap and first
-body-line height (`0x738f4`–`0x73948`, Drawing). A blanket skip for any
-over-page object is therefore unsupported; a future prepared-child policy
-must retain that minimum alongside its measured height.
+Code's minimum includes title padding, measured title height, title/body gap
+and first body-line height (`0x738f4`–`0x73948`, Drawing). The pinned code
+minimum is `36 + 60.75 + 24 + 60.75 = 181.5`, although the copy-button frame
+makes its actual body top 132. Rust now retains that minimum beside measured
+height and settles parent movement before remeasuring child splits at the
+final candidate. Ordinary obstacles always apply. An absent title contributes
+zero to the SDK minimum; native construction always creates a title drawing,
+so that synthetic absent-title policy is not established native parity.
+
+Table `GetMinHeightInFirstPage` (`0xac9d4`, Drawing) instead measures its first
+cached row (`0xac9f0`–`0xacb48`). Nonempty cells contribute first-line background
+height plus text top margin; empty cells contribute measured height. A zero
+maximum falls back to the first cached frame's height, then adds
+`contentRect.top - measuredRect.top`. Cold unmerged frames begin at the global
+drawing half-border offset. Bodytext lays out the child before reading its
+minimum (`0xb0e28`, `0xb0f20`–`0xb0f30`), so a missing Rust plan cannot stand
+in for native zero. Prepared table minima and spanning frames remain
+unfinished; whole-table padding avoidance can misplace a long table.
 
 Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs
 `IBodyTextDocument::Page` records with cumulative integer Y at member 0,
@@ -1350,9 +1371,18 @@ rectangles. Parent lines prepare these plans before placement; constraints
 than 0.001. Other constraints retain their saved reservation. Split bands
 are selected using the live parent candidate, and painting translates the
 retained plan without measuring it again, including under parent gravity.
-The saved negative-top continuation adapter remains necessary until native
-capture windows replace individual page-slice reconstruction. This is not a
-complete composition-origin correction.
+Validated native capture windows now replace individual page-slice painting.
+They retain native source separators, prepare object feedback in group-local
+physical coordinates and project the selected viewport once. Typed glyph,
+marker and prepared-panel bounds filter painting independently; code child
+viewports receive both translations, while table cell frames already include
+their vertical offset. Decorations use actual styled segments rather than the
+first style in a shared shaping run. Fresh paint registries embed only painted
+faces and report visible font resolution; planner issues retain source or
+outer-object ownership. Structural and geometry diagnostics can still cover a
+whole visible object. The negative-top adapter remains only for fallback
+inspection slices. Full composition-origin and table preparation parity are
+not established.
 
 Rejected derived code geometry retains the original replacement marker and
 neighboring text, reports `InvalidBounds`, and never falls back into measuring

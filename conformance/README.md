@@ -216,8 +216,10 @@ measurement, and typed vector point/checkbox artwork. Marker widths are
 prepared before wrapping; placement, gravity, resolved-size conversion and
 retained-font embedding use the shared text pipeline. Body flow now uses the
 same layout loop, retaining its saved-slice continuation policy. Native capture
-window metadata distinguishes the display slice from the earlier page group
-needed for contextual measurement; rendering those windows remains unfinished.
+windows now measure the required earlier page group from authoritative source
+text and project its requested physical viewport. Text, markers and child
+objects are filtered before painting, preserving selectable vector exports
+without off-page text or font embedding.
 `text-metrics.json` also stores independently decoded, hash-locked Samsung PDF
 observations. Its retained logical canvas height is 848.333333 PDF points;
 the reference's actual viewport is 848 points. At scale 1.8, convert a stored
@@ -228,8 +230,13 @@ The current five-page comparison puts matched ordinary baseline Y on the first
 four pages within 0.0001 units of the actual viewport. The tests retain their
 0.25-unit tolerance. Two locked numbered-marker references now match baseline
 Y within 0.000045 units. Numbered-item body X retains an approximately
--0.04393-unit font/advance difference. Table-cell placement and ordinary text
-after the continued code block remain outside the passing native subset.
+-0.04393-unit font/advance difference. Visible continued code matches within
+0.0011 units; four raw PDF lines are independently proven fully clipped and
+must not emit SVG text. Their original coordinates remain in the fixture.
+The post-code ordinary-text error improved from about -15 units to +0.75.
+Table-cell placement and post-code ordinary text remain outside the passing
+native subset. Prepared table first-row minima and spanning frames are also
+unfinished; current whole-table padding avoidance can misplace long tables.
 See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
 for the producers and measured residuals. Recomputed pagination and full
 document composition parity remain incomplete. Samsung device-default fonts,
