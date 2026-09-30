@@ -22,6 +22,11 @@ pub(super) struct PreparedTable {
     half_border: f64,
 }
 
+pub(super) struct PreparedTableDrawing {
+    pub measured_bbox: BoundingBox,
+    pub rows: Vec<PreparedTableRow>,
+}
+
 impl PreparedTable {
     pub fn minimum_first_page_height(&self) -> Option<f64> {
         matches!(
@@ -72,7 +77,11 @@ pub(super) fn prepare_table(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Option<Result<PreparedTable, ObjectDiagnosticKind>> {
-    if !supports_cold_grid(table, constraint) {
+    if !matches!(
+        constraint,
+        ObjectSpanLayoutConstraint::OverPages | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+    ) || !supports_grid(table)
+    {
         return None;
     }
     if !valid_grid_geometry(table, candidate_top) {
@@ -94,20 +103,101 @@ pub(super) fn prepare_table(
     ))
 }
 
-fn supports_cold_grid(table: &RichTextTable, constraint: ObjectSpanLayoutConstraint) -> bool {
-    matches!(
+pub(super) fn prepare_table_drawing(
+    table: &RichTextTable,
+    constraint: ObjectSpanLayoutConstraint,
+    drawing_origin: [f64; 2],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
+    if !matches!(
         constraint,
-        ObjectSpanLayoutConstraint::OverPages | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
-    ) && table
+        ObjectSpanLayoutConstraint::Normal
+            | ObjectSpanLayoutConstraint::OverPages
+            | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+    ) || !supports_grid(table)
+        || table
+            .column_widths
+            .iter()
+            .any(|width| f64::from(*width) > f64::from(i32::MAX))
+    {
+        return None;
+    }
+    if !valid_grid_geometry(table, drawing_origin[1])
+        || finite_native_geometry(drawing_origin[0]).is_none()
+    {
+        return Some(Err(ObjectDiagnosticKind::InvalidBounds));
+    }
+    Some((|| {
+        let mut prepared =
+            prepare_cold_grid(table, constraint, drawing_origin[1], theme, renderer)?;
+        prepared.relayout(table, drawing_origin[1], theme, renderer)?;
+        let measured_bbox = offset_rounded_rect(prepared.measured_bbox, drawing_origin)?;
+        let origin = [measured_bbox.x_min, measured_bbox.y_min];
+        for row in &mut prepared.rows {
+            for cell in &mut row.cells {
+                let frame = offset_rounded_rect(cell.frame, origin)?;
+                cell.layout.translate(-cell.frame.x_min, -cell.frame.y_min);
+                translate_cell_drawing(&mut cell.layout, [frame.x_min, frame.y_min])?;
+                if !valid_cell_layout(&cell.layout) {
+                    return Err(ObjectDiagnosticKind::InvalidBounds);
+                }
+                cell.frame = frame;
+            }
+        }
+        Ok(PreparedTableDrawing {
+            measured_bbox,
+            rows: prepared.rows,
+        })
+    })())
+}
+
+fn translate_cell_drawing(
+    layout: &mut TextLayout,
+    origin: [f64; 2],
+) -> Result<(), ObjectDiagnosticKind> {
+    for line in &mut layout.lines {
+        if !line.line.placements.is_empty() {
+            line.x +=
+                super::text::line_alignment_offset(line.line.advance, line.width, line.alignment);
+            line.alignment = None;
+        }
+        line.x = native_add(line.x, origin[0])?;
+        line.baseline = native_add(line.baseline, origin[1])?;
+        line.top = native_add(line.top, origin[1])?;
+        line.bottom = native_add(line.bottom, origin[1])?;
+        line.post_cursor = native_add(line.post_cursor, origin[1])?;
+        if let Some(marker) = &mut line.marker {
+            marker.x = native_add(marker.x, origin[0])?;
+            marker.center_y = native_add(marker.center_y, origin[1])?;
+        }
+    }
+    Ok(())
+}
+
+fn offset_rounded_rect(
+    rect: BoundingBox,
+    origin: [f64; 2],
+) -> Result<BoundingBox, ObjectDiagnosticKind> {
+    let result = BoundingBox {
+        x_min: native_add(rect.x_min, origin[0])?.floor(),
+        y_min: native_add(rect.y_min, origin[1])?.floor(),
+        x_max: native_add(rect.x_max, origin[0])?.ceil(),
+        y_max: native_add(rect.y_max, origin[1])?.ceil(),
+    };
+    if result.x_max <= result.x_min || result.y_max <= result.y_min {
+        return Err(ObjectDiagnosticKind::InvalidBounds);
+    }
+    Ok(result)
+}
+
+fn supports_grid(table: &RichTextTable) -> bool {
+    table
         .rotation_degrees
         .is_none_or(|rotation| rotation == 0.0)
         && !table.column_widths.is_empty()
         && !table.rows.is_empty()
         && !table.style.max_height_enabled
-        && table.style.min_column_widths.is_none()
-        && table.style.max_column_widths.is_none()
-        && table.style.max_width.is_none()
-        && table.style.content_bbox.is_none()
         && table.rows.iter().enumerate().all(|(row_index, row)| {
             row.index as usize == row_index
                 && row.max_height.is_none_or(|height| height == f32::MAX)
@@ -643,6 +733,295 @@ mod tests {
     }
 
     #[test]
+    fn captured_passive_table_metadata_uses_stored_grid_for_both_phases() {
+        let mut table = grid(&[108.0; 2], &[492.0; 2]);
+        table.style.content_bbox = Some(table.bbox);
+        table.style.min_column_widths = Some(vec![98.4; 2]);
+        table.style.max_column_widths = Some(vec![984.0; 2]);
+        table.style.max_width = Some(984.0);
+        table.style.auto_fit = Some(crate::TableAutoFit::None);
+        for row in &mut table.rows {
+            for cell in &mut row.cells {
+                cell.content.text = "A".into();
+                cell.content.font_size = Some(15.0);
+                cell.content.margins = Some([8.0, 4.0, 8.0, 4.0]);
+                cell.content.paragraphs = [
+                    (crate::RichTextParagraphType::LineSpacing, 1.6_f32),
+                    (crate::RichTextParagraphType::SpacingBefore, 4.0),
+                    (crate::RichTextParagraphType::SpacingAfter, 4.0),
+                ]
+                .into_iter()
+                .map(|(kind, value)| crate::RichTextParagraph {
+                    kind,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: if kind == crate::RichTextParagraphType::LineSpacing {
+                        [1_u32.to_le_bytes(), value.to_le_bytes()].concat()
+                    } else {
+                        value.to_le_bytes().to_vec()
+                    },
+                })
+                .collect();
+            }
+        }
+        let callback = prepared(&table);
+        assert_eq!(callback.measured_bbox.x_max, 985.0);
+        assert_eq!(callback.measured_bbox.y_max, 217.0);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            super::super::text::TextSettings {
+                scale: 3.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let drawing = prepare_table_drawing(
+            &table,
+            ObjectSpanLayoutConstraint::OverPages,
+            [48.0, 948.7509765625],
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            drawing.measured_bbox,
+            BoundingBox {
+                x_min: 48.0,
+                y_min: 948.0,
+                x_max: 1033.0,
+                y_max: 1166.0
+            }
+        );
+        assert_eq!(
+            drawing.rows[0].cells[0].frame,
+            BoundingBox {
+                x_min: 48.0,
+                y_min: 948.0,
+                x_max: 541.0,
+                y_max: 1057.0
+            }
+        );
+        close(drawing.rows[0].cells[0].layout.lines[0].baseline, 1028.25);
+        close(drawing.rows[0].cells[0].layout.lines[0].x, 72.0);
+        assert_eq!(callback.rows[0].cells[0].frame.y_min, 0.5);
+    }
+
+    #[test]
+    fn fresh_drawing_warms_without_changing_callback_height() {
+        let mut table = grid(&[100.0], &[200.0]);
+        table.rows[0].cells[0].content.text = "A".into();
+        table.rows[0].cells[0].content.font_size = Some(10.0);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let callback = prepare_table(
+            &table,
+            ObjectSpanLayoutConstraint::OverPages,
+            0.0,
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(callback.measured_bbox.y_max, 101.0);
+        for constraint in [
+            ObjectSpanLayoutConstraint::Normal,
+            ObjectSpanLayoutConstraint::OverPages,
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ] {
+            let drawing = prepare_table_drawing(&table, constraint, [0.0, 0.0], theme, &renderer)
+                .unwrap()
+                .unwrap();
+            assert_eq!(drawing.measured_bbox.y_max, 15.0);
+            assert_eq!(drawing.rows[0].cells[0].frame.y_max, 14.0);
+            assert_eq!(drawing.rows[0].cells[0].layout.lines[0].line.source, 0..1);
+            close(drawing.rows[0].cells[0].layout.lines[0].baseline, 10.0);
+        }
+        assert_eq!(callback.measured_bbox.y_max, 101.0);
+    }
+
+    #[test]
+    fn drawing_offsets_f32_rectangles_before_rounding_cells_and_glyph_origins() {
+        let mut table = grid(&[100.0], &[200.0]);
+        table.rows[0].cells[0].content.text = "A".into();
+        table.rows[0].cells[0].content.font_size = Some(10.0);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        for (origin, bbox, frame, baseline) in [
+            (
+                [10.25, -7.75],
+                BoundingBox {
+                    x_min: 10.0,
+                    y_min: -8.0,
+                    x_max: 212.0,
+                    y_max: 7.0,
+                },
+                BoundingBox {
+                    x_min: 10.0,
+                    y_min: -8.0,
+                    x_max: 211.0,
+                    y_max: 6.0,
+                },
+                2.0,
+            ),
+            (
+                [-10.25, -20.75],
+                BoundingBox {
+                    x_min: -11.0,
+                    y_min: -21.0,
+                    x_max: 191.0,
+                    y_max: -6.0,
+                },
+                BoundingBox {
+                    x_min: -11.0,
+                    y_min: -21.0,
+                    x_max: 190.0,
+                    y_max: -7.0,
+                },
+                -11.0,
+            ),
+            (
+                [16_777_216.5, 0.0],
+                BoundingBox {
+                    x_min: 16_777_216.0,
+                    y_min: 0.0,
+                    x_max: 16_777_416.0,
+                    y_max: 15.0,
+                },
+                BoundingBox {
+                    x_min: 16_777_216.0,
+                    y_min: 0.0,
+                    x_max: 16_777_416.0,
+                    y_max: 14.0,
+                },
+                10.0,
+            ),
+        ] {
+            let drawing = prepare_table_drawing(
+                &table,
+                ObjectSpanLayoutConstraint::Normal,
+                origin,
+                theme,
+                &renderer,
+            )
+            .unwrap()
+            .unwrap();
+            assert_eq!(drawing.measured_bbox, bbox);
+            assert_eq!(drawing.rows[0].cells[0].frame, frame);
+            close(drawing.rows[0].cells[0].layout.lines[0].baseline, baseline);
+            assert_eq!(drawing.rows[0].cells[0].layout.lines[0].x, frame.x_min);
+        }
+        assert!(matches!(
+            prepare_table_drawing(
+                &table,
+                ObjectSpanLayoutConstraint::Normal,
+                [f64::from(f32::MAX), 0.0],
+                theme,
+                &renderer
+            ),
+            Some(Err(ObjectDiagnosticKind::InvalidBounds))
+        ));
+    }
+
+    #[test]
+    fn drawing_adds_local_text_positions_to_world_origin_with_native_f32_precision() {
+        let mut table = grid(&[100.0], &[200.0]);
+        let content = &mut table.rows[0].cells[0].content;
+        content.text = "A".into();
+        content.font_size = Some(10.0);
+        content.margins = Some([3.0, 3.0, 0.0, 0.0]);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let callback = prepare_table(
+            &table,
+            ObjectSpanLayoutConstraint::OverPages,
+            0.0,
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        let drawing = prepare_table_drawing(
+            &table,
+            ObjectSpanLayoutConstraint::Normal,
+            [16_777_216.0; 2],
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        let line = &drawing.rows[0].cells[0].layout.lines[0];
+        assert_eq!(line.x, 16_777_220.0);
+        assert_eq!(line.baseline, 16_777_228.0);
+        assert_eq!(line.top, 16_777_220.0);
+        assert_eq!(line.bottom, 16_777_232.0);
+        assert_eq!(line.post_cursor, 16_777_232.0);
+        assert_eq!(line.width, callback.rows[0].cells[0].layout.lines[0].width);
+        assert_eq!(line.line.source, 0..1);
+        assert_eq!(callback.rows[0].cells[0].layout.lines[0].x, 3.5);
+    }
+
+    #[test]
+    fn drawing_resolves_measured_alignment_before_native_world_addition() {
+        for (alignment, raw, advance, expected_x) in [
+            (crate::ParagraphAlignment::Center, 2_u32, 18.0, 16_777_308.0),
+            (crate::ParagraphAlignment::Right, 1_u32, 17.0, 16_777_400.0),
+        ] {
+            let mut table = grid(&[100.0], &[200.0]);
+            let content = &mut table.rows[0].cells[0].content;
+            content.text = "A".into();
+            content.font_size = Some(10.0);
+            content.paragraphs.push(crate::RichTextParagraph {
+                kind: crate::RichTextParagraphType::Alignment,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: raw.to_le_bytes().to_vec(),
+            });
+            let callback = prepared(&table);
+            let mut local = prepared(&table);
+            let layout = &mut local.rows[0].cells[0].layout;
+            let line = &mut layout.lines[0];
+            assert!(!line.line.placements.is_empty());
+            line.x = 0.0;
+            line.width = 200.0;
+            line.line.advance = advance;
+            translate_cell_drawing(layout, [16_777_216.0, 0.0]).unwrap();
+            let line = &layout.lines[0];
+            assert_eq!(line.x, expected_x);
+            assert_eq!(line.alignment, None);
+            assert_eq!(line.width, 200.0);
+            assert_eq!(line.line.advance, advance);
+            assert_eq!(
+                callback.rows[0].cells[0].layout.lines[0].alignment,
+                Some(alignment)
+            );
+        }
+    }
+
+    #[test]
+    fn drawing_preserves_alignment_when_no_retained_glyph_positions_exist() {
+        let mut table = grid(&[100.0], &[200.0]);
+        table.rows[0].cells[0].content.text = "A".into();
+        let mut local = prepared(&table);
+        let layout = &mut local.rows[0].cells[0].layout;
+        let line = &mut layout.lines[0];
+        line.line.placements.clear();
+        line.x = 3.0;
+        line.width = 200.0;
+        line.line.advance = 18.0;
+        line.alignment = Some(crate::ParagraphAlignment::Center);
+        translate_cell_drawing(layout, [16_777_216.0, 0.0]).unwrap();
+        assert_eq!(layout.lines[0].x, 16_777_220.0);
+        assert_eq!(
+            layout.lines[0].alignment,
+            Some(crate::ParagraphAlignment::Center)
+        );
+    }
+
+    #[test]
     fn cold_rows_grow_to_measured_children_and_never_shrink_stored_rows() {
         let mut table = grid(&[100.0; 2], &[200.0; 2]);
         for (row, fonts) in table
@@ -839,7 +1218,7 @@ mod tests {
             .unwrap();
         assert_eq!(fractional.rows[0].cells[0].frame.x_max, 201.0);
         let mut overridden = original.clone();
-        overridden.style.content_bbox = Some(BoundingBox::default());
+        overridden.style.max_height_enabled = true;
         assert!(prepare(&overridden, ObjectSpanLayoutConstraint::OverPages).is_none());
         let mut invalid_width = original.clone();
         invalid_width.column_widths[0] = f32::NAN;

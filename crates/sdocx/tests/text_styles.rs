@@ -682,6 +682,15 @@ fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
+        let layout = sdocx::layout_document(&document);
+        let replay = sdocx::render_layout_page_replay_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
         let expected = vec![
             sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::UnavailableFamily,
@@ -695,6 +704,10 @@ fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
             },
         ];
         assert_eq!(page.text_diagnostics, expected, "{context:?}");
+        assert_eq!(
+            page.text_diagnostics, replay.text_diagnostics,
+            "{context:?}"
+        );
         assert!(font_css(&page.svg).is_empty(), "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(tspan(&xml, "empty").text(), Some("empty"));
@@ -721,6 +734,15 @@ fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
+        let layout = sdocx::layout_document(&document);
+        let replay = sdocx::render_layout_page_replay_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
         let expected = vec![
             sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::UnusableFontData,
@@ -734,6 +756,10 @@ fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
             },
         ];
         assert_eq!(page.text_diagnostics, expected, "{context:?}");
+        assert_eq!(
+            page.text_diagnostics, replay.text_diagnostics,
+            "{context:?}"
+        );
         assert!(font_css(&page.svg).is_empty(), "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(tspan(&xml, "damaged").text(), Some("damaged"));

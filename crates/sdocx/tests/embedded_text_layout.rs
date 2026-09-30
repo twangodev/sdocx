@@ -189,7 +189,7 @@ fn table_cells_render_all_lines_with_margins_and_force_top_gravity() {
         .svg;
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.5, 54.501), ("DEF".into(), 26.5, 130.251)]
+        vec![("ABC".into(), 26.0, 54.0), ("DEF".into(), 26.0, 129.75)]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let styled = xml
@@ -220,7 +220,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
         payload: 2_u32.to_le_bytes().to_vec(),
     });
     let svg = render(table(content.clone(), 200.0));
-    assert_eq!(lines(&svg), vec![("ABC".into(), 74.17, 54.501)]);
+    assert_eq!(lines(&svg), vec![("ABC".into(), 73.67, 54.0)]);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let positioned = xml
         .descendants()
@@ -233,7 +233,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
     content.paragraphs.clear();
     assert_eq!(
         lines(&render(table(content, 104.0))),
-        vec![("AB".into(), 26.5, 54.501), ("C".into(), 26.5, 115.251),]
+        vec![("AB".into(), 26.0, 54.0), ("C".into(), 26.0, 114.75),]
     );
 }
 
@@ -610,6 +610,6 @@ fn table_explicit_percentage_spacing_uses_the_native_ordinary_baseline() {
     let svg = render(table(content, 200.0));
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.5, 65.751), ("DEF".into(), 26.5, 137.751),]
+        vec![("ABC".into(), 26.0, 65.25), ("DEF".into(), 26.0, 137.25),]
     );
 }

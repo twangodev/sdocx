@@ -1081,23 +1081,55 @@ fn paint_line_objects(
             )),
             _ => None,
         };
+        let drawing_table = match &span.content {
+            Some(RichTextObjectContent::Table(table)) => table::prepare_table_drawing(
+                table,
+                span.layout_constraint,
+                [left + placement.x, baseline - height],
+                theme,
+                &drawing_renderer,
+            ),
+            _ => None,
+        };
         let mut paint_bounds = object_paint_bounds(placement, left, baseline);
         if let Some(Ok(prepared)) = &drawing_code {
             paint_bounds.y_max =
                 paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
         }
+        if let Some(Ok(prepared)) = &drawing_table {
+            paint_bounds = prepared.measured_bbox;
+        }
         if viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds)) {
             continue;
         }
-        renderer.report_text_issues(
-            &drawing_renderer
-                .scoped_diagnostics()
-                .into_iter()
-                .filter(|issue| is_layout_issue(&issue.diagnostic))
-                .collect::<Vec<_>>(),
-        );
-        renderer.report_owned_object_issues(&drawing_renderer.scoped_object_diagnostics());
-        if let Some(Err(kind)) = &drawing_code {
+        if let (Some(Ok(prepared)), Some(RichTextObjectContent::Table(table))) =
+            (&drawing_table, &span.content)
+        {
+            render_table(
+                svg,
+                table,
+                Some(prepared.into()),
+                0.0,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
+            report_drawing_layout_issues(renderer, &drawing_renderer);
+            continue;
+        }
+        report_drawing_layout_issues(renderer, &drawing_renderer);
+        for kind in [
+            drawing_code
+                .as_ref()
+                .and_then(|result| result.as_ref().err()),
+            drawing_table
+                .as_ref()
+                .and_then(|result| result.as_ref().err()),
+        ]
+        .into_iter()
+        .flatten()
+        {
             renderer.report_object_issues(&[ObjectDiagnostic {
                 anchor_utf16: span.text_index_utf16,
                 kind: *kind,
@@ -1146,7 +1178,7 @@ fn paint_line_objects(
                             render_table(
                                 svg,
                                 table,
-                                Some(prepared),
+                                Some(prepared.as_ref().into()),
                                 0.0,
                                 media_assets,
                                 theme,
@@ -1508,18 +1540,54 @@ fn render_embedded_object(
     }
 }
 
+fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRenderer<'_>) {
+    renderer.report_text_issues(
+        &drawing
+            .scoped_diagnostics()
+            .into_iter()
+            .filter(|issue| is_layout_issue(&issue.diagnostic))
+            .collect::<Vec<_>>(),
+    );
+    renderer.report_owned_object_issues(&drawing.scoped_object_diagnostics());
+}
+
+struct TablePaint<'a> {
+    measured_bbox: BoundingBox,
+    rows: &'a [table::PreparedTableRow],
+}
+
+impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
+    fn from(table: &'a table::PreparedTable) -> Self {
+        Self {
+            measured_bbox: table.measured_bbox,
+            rows: &table.rows,
+        }
+    }
+}
+
+impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
+    fn from(table: &'a table::PreparedTableDrawing) -> Self {
+        Self {
+            measured_bbox: table.measured_bbox,
+            rows: &table.rows,
+        }
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn render_table(
     svg: &mut Scene,
     table: &crate::RichTextTable,
-    prepared: Option<&table::PreparedTable>,
+    prepared: Option<TablePaint<'_>>,
     offset_y: f64,
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
     viewport: Option<Viewport>,
 ) {
-    let table_bbox = prepared.map_or(table.bbox, |table| table.measured_bbox);
+    let table_bbox = prepared
+        .as_ref()
+        .map_or(table.bbox, |table| table.measured_bbox);
     svg.scope(Group::new().object(ObjectKind::Table), |svg| {
         let stroke = if theme.is_dark() {
             "#777777"
@@ -1607,7 +1675,7 @@ fn render_table(
                     }
                 };
             if let Some(prepared) = prepared {
-                for row in &prepared.rows {
+                for row in prepared.rows {
                     for cell in &row.cells {
                         paint_cell(
                             &table.rows[row.row_index].cells[cell.column_index],

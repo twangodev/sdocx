@@ -199,12 +199,9 @@ fn assert_lines(page: &sdocx::RenderedPage, expected: &[(&str, f64, f64)]) {
 }
 
 #[test]
-fn over_pages_grid_regenerates_cell_frames_and_forces_top_gravity() {
-    // TableLayout::init starts frames at half the unit border. At density 3,
-    // margins 12, before 12, lineheight 72 and baseline offset 15.75 yield 80.75.
-    // Object placement contributes the independent .001 baseline epsilon.
-    // The over-pages branch selects cached frames at 0xa6b04–0xa6b24.
-    // Normal drawing uses model cell rectangles; page-band state is separate.
+fn fresh_over_pages_drawing_rounds_cell_frames_and_forces_top_gravity() {
+    // Native drawing rounds table world endpoints, then cell endpoints. Cell
+    // origins .5/492.5 become 0/492; margins12+before12+line72−baseline15.75=80.25.
     for constraint in [
         ObjectSpanLayoutConstraint::OverPages,
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
@@ -214,10 +211,10 @@ fn over_pages_grid_regenerates_cell_frames_and_forces_top_gravity() {
             assert_lines(
                 &render(&doc, replay),
                 &[
-                    ("A", 12.5, 80.751),
-                    ("B", 504.5, 80.751),
-                    ("C", 12.5, 188.751),
-                    ("D", 504.5, 188.751),
+                    ("A", 12.0, 80.25),
+                    ("B", 504.0, 80.25),
+                    ("C", 12.0, 188.25),
+                    ("D", 504.0, 188.25),
                 ],
             );
         }
@@ -225,7 +222,7 @@ fn over_pages_grid_regenerates_cell_frames_and_forces_top_gravity() {
 }
 
 #[test]
-fn cold_measurement_grows_a_row_and_moves_later_cell_frames() {
+fn fresh_cold_measurement_grows_a_row_before_warm_drawing_positions_later_cells() {
     // Two native 72px lines grow the first row from 108 to 180; the next origin
     // must follow the grown endpoint, independently of either saved cell box.
     for constraint in [
@@ -236,11 +233,7 @@ fn cold_measurement_grows_a_row_and_moves_later_cell_frames() {
         for replay in [false, true] {
             assert_lines(
                 &render(&doc, replay),
-                &[
-                    ("A", 12.5, 80.751),
-                    ("B", 12.5, 152.751),
-                    ("C", 12.5, 260.751),
-                ],
+                &[("A", 12.0, 80.25), ("B", 12.0, 152.25), ("C", 12.0, 260.25)],
             );
         }
     }
@@ -296,10 +289,10 @@ fn regenerated_table_text_stays_selectable_and_vector_in_pdf() {
         assert_lines(
             &page,
             &[
-                ("A", 12.5, 80.751),
-                ("B", 504.5, 80.751),
-                ("C", 12.5, 188.751),
-                ("D", 504.5, 188.751),
+                ("A", 12.0, 80.25),
+                ("B", 504.0, 80.25),
+                ("C", 12.0, 188.25),
+                ("D", 504.0, 188.25),
             ],
         );
         let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
@@ -421,23 +414,23 @@ fn paginated_first_row_uses_child_bands_when_its_first_line_fits() {
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             vec![
-                ("A", 0.5, 20.501),
-                ("B", 0.5, 34.001),
-                ("C", 0.5, 47.501),
-                ("D", 0.5, 61.001),
-                ("E", 0.5, 74.501),
+                ("A", 0.0, 20.0),
+                ("B", 0.0, 33.5),
+                ("C", 0.0, 47.0),
+                ("D", 0.0, 60.5),
+                ("E", 0.0, 74.0),
             ],
-            vec![("F", 0.5, 11.001)],
+            vec![("F", 0.0, 10.499)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             vec![
-                ("A", 0.5, 20.501),
-                ("B", 0.5, 34.001),
-                ("C", 0.5, 47.501),
-                ("D", 0.5, 61.001),
+                ("A", 0.0, 20.0),
+                ("B", 0.0, 33.5),
+                ("C", 0.0, 47.0),
+                ("D", 0.0, 60.5),
             ],
-            vec![("E", 0.5, 20.001), ("F", 0.5, 33.501)],
+            vec![("E", 0.0, 19.499), ("F", 0.0, 32.999)],
         ),
     ] {
         let doc = paginated_document(constraint, false);
@@ -542,18 +535,10 @@ fn paginated_table_paints_only_visible_cell_fonts_and_diagnostics() {
 }
 
 #[test]
-fn cold_paginated_rows_keep_saved_heights_without_warm_compression() {
-    for (constraint, first, second) in [
-        (
-            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            vec![("A", 0.5, 20.501), ("B", 0.5, 74.501)],
-            Vec::new(),
-        ),
-        (
-            ObjectSpanLayoutConstraint::OverPages,
-            vec![("A", 0.5, 20.501)],
-            vec![("B", 0.5, 20.001)],
-        ),
+fn fresh_warm_drawing_compresses_rows_while_the_cold_callback_reservation_is_retained() {
+    for constraint in [
+        ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ObjectSpanLayoutConstraint::OverPages,
     ] {
         let mut grid = table(&[&["A"], &["B"]]);
         grid.bbox = bounds(0.0, 0.0, 300.0, 108.0);
@@ -566,19 +551,25 @@ fn cold_paginated_rows_keep_saved_heights_without_warm_compression() {
             content.margins = None;
         }
         let mut doc = paginated_grid_document(grid, constraint);
-        // The incoming candidate is already 10: no parent retry turns this
-        // cold pass into a warm pass that could shrink the saved 54px rows.
-        doc.metadata.note_text.as_mut().unwrap().margins = Some([0.0, 10.0, 0.0, 0.0]);
+        let body = doc.metadata.note_text.as_mut().unwrap();
+        body.margins = Some([0.0, 10.0, 0.0, 0.0]);
+        body.text = "\u{fffc}\nEnd".into();
+        for section in &mut body.text_sections {
+            section.length_utf16 = 5;
+        }
+        // Callback rows retain54 each, reserving109 including border. Fresh
+        // drawing warms both to13.5, so cell origins floor10.5→10 and24→24.
+        // End retains callback cursor10+109+3.5+.001, then adds its F10 baseline.
         let layout = sdocx::layout_document(&doc);
         let fonts = sdocx::fonts::FontBook::default();
         for replay in [false, true] {
             assert_lines(
                 &render_capture_page(&doc, &layout, 1, replay, &fonts),
-                &second,
+                &[("End", 0.0, 52.501)],
             );
             assert_lines(
                 &render_capture_page(&doc, &layout, 0, replay, &fonts),
-                &first,
+                &[("A", 0.0, 20.0), ("B", 0.0, 34.0)],
             );
         }
     }
@@ -613,27 +604,31 @@ fn warm_full_band_retry_shrinks_to_direct_native_placement() {
 }
 
 fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
-    let (drawn_height, middle, last) = match constraint {
+    let (rounded_panel_height, middle, last) = match constraint {
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding => (
             85.0,
             vec![
-                ("A", 0.5, 20.501),
-                ("B", 0.5, 34.001),
-                ("C", 0.5, 47.501),
-                ("D", 0.5, 61.001),
-                ("E", 0.5, 74.501),
+                ("A", 0.0, 20.0),
+                ("B", 0.0, 33.5),
+                ("C", 0.0, 47.0),
+                ("D", 0.0, 60.5),
+                ("E", 0.0, 74.0),
             ],
-            vec![("F", 0.5, 11.001), ("End", 0.0, 28.501)],
+            vec![("F", 0.0, 10.49899), ("End", 0.0, 28.501)],
         ),
         ObjectSpanLayoutConstraint::OverPages => (
-            107.5,
+            108.0,
             vec![
-                ("A", 0.5, 20.501),
-                ("B", 0.5, 34.001),
-                ("C", 0.5, 47.501),
-                ("D", 0.5, 61.001),
+                ("A", 0.0, 20.0),
+                ("B", 0.0, 33.5),
+                ("C", 0.0, 47.0),
+                ("D", 0.0, 60.5),
             ],
-            vec![("E", 0.5, 20.001), ("F", 0.5, 33.501), ("End", 0.0, 51.001)],
+            vec![
+                ("E", 0.0, 19.49899),
+                ("F", 0.0, 32.99899),
+                ("End", 0.0, 51.001),
+            ],
         ),
         _ => panic!(),
     };
@@ -644,8 +639,10 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
     let fonts = sdocx::fonts::FontBook::default();
     // At 70 the raw1/raw2 cold row grows to 104/113; the parent minimum
     // moves it to 90. Warm layout shrinks to 84/106.5 plus unit outer border.
-    // MeasureParagraph 0x78a64 skips ordinal-zero prefix metrics; the first
-    // object-only paragraph keeps F0. Inline advances H+.001, then End adds 10.
+    // Fresh bands subtract90.001: row heights83.999/106.499 plus border1
+    // cancel that epsilon at world bottoms175/197.5, rounded to175/198.
+    // Its cell source is reused after frame rounding; callback reservation
+    // remains85/107.5 plus anchor-font leading3.5+.001, then End adds10.
     for replay in [false, true] {
         let mut pages = Vec::new();
         for index in [2, 0, 1, 2] {
@@ -664,6 +661,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 let xml = roxmltree::Document::parse(&page.svg).unwrap();
                 assert!(xml.descendants().any(|node| {
                     node.has_tag_name("rect")
+                        && node.attribute("stroke") == Some("#b8b0a3")
                         && node
                             .attribute("width")
                             .and_then(|value| value.parse::<f64>().ok())
@@ -671,7 +669,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                         && node
                             .attribute("height")
                             .and_then(|value| value.parse::<f64>().ok())
-                            == Some(drawn_height)
+                            == Some(rounded_panel_height)
                 }));
             }
             if pages.len() < 3 {
@@ -710,11 +708,15 @@ fn preceding_lf_seeds_the_native_inline_object_text_metric() {
     for (constraint, expected) in [
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            vec![("F", 0.5, 11.001), ("End", 0.0, 28.501)],
+            vec![("F", 0.0, 10.49899), ("End", 0.0, 28.501)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
-            vec![("E", 0.5, 20.001), ("F", 0.5, 33.501), ("End", 0.0, 51.001)],
+            vec![
+                ("E", 0.0, 19.49899),
+                ("F", 0.0, 32.99899),
+                ("End", 0.0, 51.001),
+            ],
         ),
     ] {
         let mut doc = retry_document(constraint, 56.5);
