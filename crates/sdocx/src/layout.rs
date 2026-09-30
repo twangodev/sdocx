@@ -310,6 +310,9 @@ impl RichTextBox {
             .runs
             .iter()
             .filter_map(|run| {
+                if run.start >= run.end || run.end > index.len() {
+                    return None;
+                }
                 let start = run.start.max(range.start);
                 let end = run.end.min(range.end);
                 (start < end).then(|| crate::types::RichTextRun {
@@ -751,6 +754,12 @@ mod tests {
     #[test]
     fn slices_inside_crlf_paragraphs_rebase_unicode_styles_once() {
         let mut body = crlf_body();
+        body.runs.push(RichTextRun {
+            start: 0,
+            end: 16,
+            bold: false,
+            italic: true,
+        });
         body.spans.push(RichTextSpan {
             kind: RichTextSpanType::FontSize,
             start_utf16: 6,
@@ -760,6 +769,11 @@ mod tests {
         });
         let emoji = body.slice_chars(5..9).unwrap();
         assert_eq!(emoji.text, "😀two");
+        assert_eq!(body.runs.len(), 2);
+        assert_eq!(body.runs[1].end, 16);
+        assert_eq!(emoji.runs.len(), 1);
+        assert!(emoji.runs[0].bold);
+        assert!(!emoji.runs[0].italic);
         assert_eq!(emoji.paragraphs.len(), 1);
         assert_eq!(emoji.paragraphs[0].payload, 2_u32.to_le_bytes());
         assert_eq!(
