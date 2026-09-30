@@ -204,6 +204,49 @@ fn positioned_latin_glyphs_keep_paragraph_kerning() {
 }
 
 #[test]
+fn narrow_boxes_wrap_oversized_clusters_without_inflating_available_width() {
+    for &context in CONTEXTS {
+        for alignment in [0_u32, 1, 2] {
+            let mut content = text("ii");
+            content.paragraphs.push(RichTextParagraph {
+                kind: RichTextParagraphType::Alignment,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: alignment.to_le_bytes().to_vec(),
+            });
+            let page = render(context, content, 1);
+            let actual = glyphs(&page);
+            assert_eq!(actual.len(), 2);
+            let (left, baseline) = origin(context);
+            for (index, glyph) in actual.iter().enumerate() {
+                close(glyph.x, left);
+                close(glyph.y, baseline + index as f64 * SIZE * 1.35);
+            }
+            assert_eq!(svg_text(&page.svg), "ii");
+        }
+    }
+}
+
+#[test]
+fn combining_mark_keeps_native_glyph_offsets_inside_its_cluster() {
+    for &context in CONTEXTS {
+        let page = render(context, text("x\u{301}z"), 500);
+        assert!(page.text_diagnostics.is_empty());
+        let actual = glyphs(&page);
+        assert_eq!(
+            actual.iter().map(|glyph| glyph.id).collect::<Vec<_>>(),
+            [93, 434, 95]
+        );
+        let (left, baseline) = origin(context);
+        close(actual[0].x, left);
+        close(actual[1].x, left + 1072.0 / UNITS * SIZE);
+        close(actual[1].y, baseline + 10.0 / UNITS * SIZE);
+        close(actual[2].x, left + 1015.0 / UNITS * SIZE);
+        assert_eq!(svg_text(&page.svg), "x\u{301}z");
+    }
+}
+
+#[test]
 fn combining_cluster_keeps_its_composed_glyph_and_original_unicode() {
     for &context in CONTEXTS {
         let page = render(context, text("e\u{301}x"), 500);

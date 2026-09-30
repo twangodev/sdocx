@@ -86,12 +86,8 @@ pub(in crate::render) fn render_measured_line(
                     &style,
                     styled.context(),
                 )
-                .x_positions(&span.positions, 5);
-                let node = if span.offset_y != 0.0 {
-                    node.y(decimal(baseline + span.offset_y, 5))
-                } else {
-                    node.y(decimal(baseline, 2))
-                };
+                .x_positions(&span.positions, 5)
+                .y(decimal(baseline + span.offset_y, 5));
                 push_text_span(svg, node, &style);
             }
         },

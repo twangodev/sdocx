@@ -9,10 +9,12 @@ use crate::{
 use super::RenderTheme;
 
 mod breaks;
+mod layout;
 mod measurement;
 mod paint;
 mod resources;
 mod wrapping;
+pub(super) use layout::{layout_placed_text, measure_paragraph};
 pub(super) use paint::render_measured_line;
 pub(super) use resources::TextRenderer;
 pub use resources::{TextDiagnostic, TextDiagnosticKind};

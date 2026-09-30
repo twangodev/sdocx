@@ -77,7 +77,13 @@ fn lines(svg: &str) -> Vec<(String, f64, f64)> {
             (
                 value,
                 node.attribute("x").unwrap().parse().unwrap(),
-                node.attribute("y").unwrap().parse().unwrap(),
+                node.descendants()
+                    .find(|child| child.has_tag_name("tspan") && child.attribute("y").is_some())
+                    .and_then(|child| child.attribute("y"))
+                    .or_else(|| node.attribute("y"))
+                    .unwrap()
+                    .parse()
+                    .unwrap(),
             )
         })
         .collect()
@@ -287,4 +293,140 @@ fn embedded_shape_text_uses_the_same_measured_placed_layout() {
         lines(&svg),
         vec![("ABC".into(), 20.0, 65.0), ("ABC".into(), 20.0, 125.75)]
     );
+}
+
+#[test]
+fn vertical_gravity_uses_measured_line_height_and_scaled_margins() {
+    // Native ordinary drawing height: top9 + line60.75 + bottom15 = 84.75.
+    for (gravity, baseline) in [(0, 74.0), (1, 131.625), (2, 189.25), (99, 74.0)] {
+        let mut content = text("ABC");
+        content.gravity = Some(gravity);
+        assert_eq!(
+            lines(&render(content)),
+            vec![("ABC".into(), 26.0, baseline)]
+        );
+    }
+    // Two lines measure 145.5; the same outer height leaves 54.5 unused.
+    for (gravity, first, second) in [(1, 101.25, 162.0), (2, 128.5, 189.25)] {
+        let mut content = text("ABC\nABC");
+        content.gravity = Some(gravity);
+        assert_eq!(
+            lines(&render(content)),
+            vec![("ABC".into(), 26.0, first), ("ABC".into(), 26.0, second),]
+        );
+    }
+}
+
+#[test]
+fn gravity_clamps_oversized_content_without_moving_it_upward() {
+    for gravity in [1, 2] {
+        let mut content = text("ABC\nABC");
+        content.gravity = Some(gravity);
+        content.bbox.y_max = 100.0;
+        assert_eq!(
+            lines(&render(content)),
+            vec![("ABC".into(), 26.0, 74.0), ("ABC".into(), 26.0, 134.75),]
+        );
+    }
+}
+
+#[test]
+fn gravity_rounds_outer_height_up_and_preserves_the_original_rotation_pivot() {
+    let mut content = text("ABC");
+    content.bbox.y_max = 220.2;
+    content.gravity = Some(1);
+    content.rotation_degrees = Some(30.0);
+    let doc = document(PageElement::TextBox(content));
+    let svg = sdocx::render_page_svg(&doc, 0, &Default::default())
+        .unwrap()
+        .svg;
+    assert_eq!(lines(&svg), vec![("ABC".into(), 26.0, 132.125)]);
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    assert!(
+        xml.descendants()
+            .any(|node| node.attribute("transform") == Some("rotate(30.00 120.00 120.10)"))
+    );
+    let PageElement::TextBox(original) = doc.pages[0].elements().next().unwrap() else {
+        panic!()
+    };
+    assert_eq!(original.bbox.y_max, 220.2);
+    assert_eq!(original.gravity, Some(1));
+    assert_eq!(doc.metadata.document_density(), 3.0);
+}
+
+#[test]
+fn gravity_excludes_final_paragraph_after_spacing_but_keeps_between_paragraphs() {
+    let mut single = text("ABC");
+    single.gravity = Some(1);
+    single.paragraphs.push(paragraph(
+        RichTextParagraphType::SpacingAfter,
+        0,
+        1,
+        20.0_f32.to_le_bytes().to_vec(),
+    ));
+    assert_eq!(lines(&render(single)), vec![("ABC".into(), 26.0, 131.625)]);
+
+    let mut multiple = text("ABC\nABC");
+    multiple.gravity = Some(1);
+    multiple.paragraphs = vec![
+        paragraph(
+            RichTextParagraphType::SpacingAfter,
+            0,
+            1,
+            4.0_f32.to_le_bytes().to_vec(),
+        ),
+        paragraph(
+            RichTextParagraphType::SpacingAfter,
+            1,
+            2,
+            20.0_f32.to_le_bytes().to_vec(),
+        ),
+    ];
+    assert_eq!(
+        lines(&render(multiple)),
+        vec![("ABC".into(), 26.0, 95.25), ("ABC".into(), 26.0, 168.0),]
+    );
+}
+
+#[test]
+fn whitespace_only_placed_text_retains_source_and_receives_gravity() {
+    let mut content = text("  ");
+    content.gravity = Some(2);
+    let svg = render(content);
+    assert_eq!(lines(&svg), vec![("  ".into(), 26.0, 189.25)]);
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    assert_eq!(
+        xml.descendants()
+            .find(|node| node.has_tag_name("text"))
+            .unwrap()
+            .attribute(("http://www.w3.org/XML/1998/namespace", "space")),
+        Some("preserve")
+    );
+}
+
+#[test]
+fn empty_placed_text_keeps_its_highlight_without_an_empty_text_node() {
+    let mut content = text("");
+    content.margins = Some([0.0; 4]);
+    content.gravity = Some(1);
+    content.highlight_color = Some(Color {
+        r: 255,
+        g: 255,
+        b: 0,
+    });
+    let svg = render(content);
+    assert!(lines(&svg).is_empty());
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let highlight = xml
+        .descendants()
+        .find(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#ffff00"))
+        .unwrap();
+    for (attribute, expected) in [
+        ("x", "20.00"),
+        ("y", "20.00"),
+        ("width", "200.00"),
+        ("height", "200.00"),
+    ] {
+        assert_eq!(highlight.attribute(attribute), Some(expected));
+    }
 }

@@ -252,10 +252,42 @@ Text `RichTextDrawing::UpdateGravityOffsetY`, `0x6489c`, reads that enum at
 | 1 | `max(0, (available_height - content_height) / 2)` |
 | 2 | `max(0, available_height - content_height)` |
 
-The calculation and stores are at `0x6493c`–`0x64958`. Nonempty content uses
-the drawing's measured height. Empty content uses `RichText::GetTextSize(0)`
-plus top/bottom margins, `0x6490c`–`0x64930`; it is not treated as zero-height
-content. Wrapping and measurement must precede gravity positioning.
+The calculation and stores are at `0x6493c`–`0x64958`. The ordinary placed
+view supplies `ceil(outer_height)`, not an inset or ceiled content height:
+Widget `ScrollEditTextView::Layout` rounds `View::GetBounds().Height()` at
+`0xbc9b8`, calls `TextLayout::Layout` at `0xbca04`, and Text forwards this
+integer unchanged to gravity at `0x8ac94`–`0x8ac98`. Nonempty content uses
+the raw measured float at Drawing member 308 (`0x648f4`).
+
+The height producer is `RichTextLayout::DoLayout`. It initializes its cursor
+from the top margin (`0x71628`–`0x71630`), then accumulates paragraph top
+plus measured height (`0x71b14`–`0x71b28`). A paragraph's enabled before
+spacing is included at `0x6a6c8`–`0x6a6e4` / `0x6a740`; enabled after spacing
+is deferred until the following paragraph (`0x71a98`–`0x71abc`). Thus the
+final paragraph's after spacing does not extend the final measured height.
+The final line also advances the full cursor: `SetLayout` returns it at
+`0x6badc`, and `DoLayTextOut` calls it at `0x6a9bc`, then subtracts the
+paragraph's original top at `0x6a9c0`. Ordinary default text consequently
+includes the final `1.35 * max_font_size` advance, rather than ending at the
+last baseline or a font's ink descent.
+
+The final height adds `max(bottom_margin, final_line_bottom_margin)` at
+`0x72118`–`0x72148`. Ordinary text has zero line bottom margin: the measure
+initializer zeroes members 72/76 (`0x791a4`–`0x791a8` -> `0x65944`), the
+ordinary producer retains them, and their maxima become the line margin
+at `0x6d7f0`–`0x6d7fc` / `0x6b55c`–`0x6b564`. For ordinary text without
+objects, bullets or obstacles, height therefore consists of top margin,
+enabled paragraph before/after spacing except final after, every full line
+advance, and `max(bottom_margin, 0)`. Negative top margins remain inputs.
+
+Entirely empty text takes a separate gravity branch: `RichText::GetTextSize(0)`
+plus raw top/bottom margins (`0x6490c`–`0x64934`), without the 1.35 multiplier,
+paragraph spacing or the nonempty bottom-margin clamp. Empty paragraphs
+inside nonempty text still use layout. Native spacing-enable flags, list
+state, object margins and obstacle adjustments are additional inputs; this
+bounded height formula does not prove all their SDK behavior. Wrapping and
+measurement must precede gravity positioning. The placed baseline caller
+remains unverified as discussed below.
 
 ## Paragraphs and line spacing
 
@@ -697,7 +729,7 @@ breaks and obstacle/inline-object behavior still require reference cases.
 
 The shared Rust body-flow and placed-text pipeline now measures shaped runs with actual
 font faces and wraps using Unicode line-break opportunities. The
-`render/text/{measurement,breaks,wrapping}.rs` modules replace estimated
+`render/text/{layout,measurement,breaks,wrapping,paint}.rs` modules replace estimated
 ASCII/script widths and the URL-punctuation heuristic. Measurement accounts
 for bidi levels and script/extensions, uses native span-joining inputs
 (size, source color, family, bold and italic), and disables `liga`/`clig`
@@ -716,8 +748,14 @@ paired script punctuation, native emergency breaking and the reference
 device's ICU version/locale remain unverified. Placed and shape text now use
 the shared measured wrapper, scaled margins, paragraph spacing, integer
 outer-width ceiling, native indent conversion and measured alignment.
-Placed vertical gravity, clipping, table/code layout, embedded-object
-composition and recomputed pagination still need
+Placed text now measures a complete plan before painting and applies
+top/center/bottom gravity to ordinary text using the native height contract
+above. Whitespace remains selectable, and empty boxes retain their highlight.
+Final paragraph after-spacing is excluded from gravity height; between-paragraph
+after-spacing remains. Glyph Y positions retain five decimal places, including
+gravity midpoints; the parent text coordinate keeps its older display precision.
+Terminal-newline display paragraphs, list-spacing enable flags, clipping,
+table/code layout, embedded-object composition and recomputed pagination still need
 the shared measured layout engine and captured cases. The current body
 baseline follows the capture above; it is not a universal native baseline
 formula.

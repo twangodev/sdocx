@@ -21,8 +21,8 @@ mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
 use text::{
-    StyledText, TextContext, TextRenderer, TextSettings, TextStyle, WrappedLine, paragraph_layout,
-    paragraph_line_height, render_measured_line, wrap_paragraph,
+    StyledText, TextContext, TextRenderer, TextSettings, TextStyle, measure_paragraph,
+    paragraph_layout, paragraph_line_height, render_measured_line,
 };
 pub use text::{TextDiagnostic, TextDiagnosticKind};
 pub use theme::RenderTheme;
@@ -694,12 +694,6 @@ fn render_text_box(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) {
-    let settings = renderer.settings;
-    let text = text_box.text.trim_end_matches('\n');
-    if text.trim().is_empty() {
-        return;
-    }
-
     let is_note_body =
         text_box.bbox.x_max <= text_box.bbox.x_min || text_box.bbox.y_max <= text_box.bbox.y_min;
     if is_note_body {
@@ -720,17 +714,11 @@ fn render_text_box(
         text_box.bbox.x_max - text_box.bbox.x_min,
         text_box.bbox.y_max - text_box.bbox.y_min,
     );
-    let margins = text_box.margins.unwrap_or([0.0; 4]);
-    let content_box = BoundingBox {
-        x_min: x + settings.pixels(margins[0]),
-        y_min: y + settings.pixels(margins[1]),
-        x_max: x + width.ceil() - settings.pixels(margins[2]),
-        y_max: y + height - settings.pixels(margins[3]),
-    };
     let theme = text_box
         .highlight_color
         .map_or(theme, |color| theme.on_background(color));
-    let styled = StyledText::new(text_box, TextContext::Placed, settings);
+    let styled = StyledText::new(text_box, TextContext::Placed, renderer.settings);
+    let layout = text::layout_placed_text(&styled, theme, renderer);
     let mut group = Group::new();
     if let Some(rotation) = text_box.rotation_degrees {
         let cx = x + width / 2.0;
@@ -741,63 +729,19 @@ fn render_text_box(
         if let Some(highlight) = text_box.highlight_color.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        let mut cursor_y = content_box.y_min;
-        for paragraph in styled.index.paragraphs() {
-            let paragraph_index = styled
-                .index
-                .paragraph_index(paragraph.content.start)
-                .unwrap();
-            let layout = text::paragraph_layout(text_box, paragraph_index, settings);
-            let indent = layout.left_indent(settings);
-            let text_x = content_box.x_min + indent;
-            let available_width = (content_box.x_max - text_x).max(0.0);
-            let base_style =
-                styled.style_at(paragraph.content.start, theme, layout.predefined_style);
-            let lines = if paragraph.content.is_empty() {
-                vec![WrappedLine::unmeasured(
-                    paragraph.content.clone(),
-                    base_style.font_size,
-                )]
-            } else {
-                wrap_paragraph(
-                    &styled,
-                    paragraph.content.clone(),
-                    available_width,
-                    theme,
-                    layout.predefined_style,
-                    renderer,
-                )
-                .unwrap_or_else(|_| {
-                    renderer.measurement_failed(base_style.family.as_deref().unwrap_or("Roboto"));
-                    vec![WrappedLine::unmeasured(
-                        paragraph.content.clone(),
-                        styled.line_font_size(
-                            paragraph.content.clone(),
-                            theme,
-                            layout.predefined_style,
-                        ),
-                    )]
-                })
-            };
-            cursor_y += layout.spacing_before;
-            for line in lines {
-                let baseline = cursor_y + line.font_size;
-                render_measured_line(
-                    svg,
-                    &styled,
-                    &line,
-                    text_x,
-                    available_width,
-                    baseline,
-                    layout.alignment,
-                    theme,
-                    layout.predefined_style,
-                    renderer,
-                );
-                cursor_y +=
-                    text::paragraph_line_height(line.font_size, layout.line_spacing, settings);
-            }
-            cursor_y += layout.spacing_after;
+        for line in &layout.lines {
+            render_measured_line(
+                svg,
+                &styled,
+                &line.line,
+                line.x,
+                line.width,
+                line.baseline,
+                line.alignment,
+                theme,
+                line.predefined,
+                renderer,
+            );
         }
         for span in &text_box.object_spans {
             if let Some(RichTextObjectContent::Image(image)) = &span.content {
@@ -898,33 +842,15 @@ fn render_flow_text_box(
             let marker_width = marker.as_ref().map_or(0.0, |(_, width, _, _)| *width);
             let base_x = content_left + layout.left_indent(settings);
             let text_x = base_x + marker_width;
-            let available_width = (content_right - text_x).max(base_style.font_size);
-            let lines = if content.is_empty() {
-                vec![WrappedLine::unmeasured(
-                    paragraph_start..paragraph_start,
-                    base_style.font_size,
-                )]
-            } else {
-                wrap_paragraph(
-                    &styled,
-                    paragraph_start..paragraph_end,
-                    available_width,
-                    theme,
-                    layout.predefined_style,
-                    renderer,
-                )
-                .unwrap_or_else(|_| {
-                    renderer.measurement_failed(base_style.family.as_deref().unwrap_or("Roboto"));
-                    vec![WrappedLine::unmeasured(
-                        paragraph_start..paragraph_end,
-                        styled.line_font_size(
-                            paragraph_start..paragraph_end,
-                            theme,
-                            layout.predefined_style,
-                        ),
-                    )]
-                })
-            };
+            let available_width = (content_right - text_x).max(0.0);
+            let lines = measure_paragraph(
+                &styled,
+                paragraph_start..paragraph_end,
+                available_width,
+                theme,
+                layout.predefined_style,
+                renderer,
+            );
             for (line_index, line) in lines.iter().enumerate() {
                 let line_font_size = line.font_size;
                 let line_height =
