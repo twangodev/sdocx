@@ -159,11 +159,88 @@ Triangle/right-triangle orientation, rounded-rectangle radius, and other
 path-dependent templates still require their saved geometry. Unsupported
 nonempty shape text retains its saved frame with `UnsupportedTextFrame`;
 invalid known geometry reports `InvalidGeometry` and stays in placed context.
-Whole-box highlights remain the existing SDK approximation: native background
-spans instead paint layout ranges. Free/Path editing and autofit semantics
-remain unverified. The hash-checked corpus has five empty shape text boxes
+Native background spans use retained layout ranges as described below;
+author-supplied legacy highlight summaries retain their whole-box behavior.
+Free/Path editing and autofit semantics remain unverified. The hash-checked
+corpus has five empty shape text boxes
 and no native shape glyph operators, so these regressions establish source
 contracts and synthetic vector behavior, not captured shape typography parity.
+
+## Native text backgrounds and current vector limits
+
+`BackgroundColorSpan`, kind 17 (Model constructor `0x414670`), applies to a
+half-open UTF-16 source range. `SetColor`, `0x41479c`, retains ARGB; Drawing
+dispatch `0x90e18` calls converter `0x91058`, which requests theme color kind 3
+and enables background painting at byte 135. The raw BGRA payload preserves
+that ARGB color, including alpha. Composer skips alpha-zero backgrounds at
+`0x380ba0`–`0x380bbc` and applies object opacity at `0x380cc4`–`0x380cd8`.
+The RGB-only `highlight_color` summary is retained for compatibility.
+Parsed spans, including a whole-text span,
+no longer cause that summary to paint the object's bounding box. Legacy
+author-supplied summaries without kind-17 spans retain their existing behavior.
+
+Ordinary background geometry follows line placement rather than glyph ink.
+At Text `SetLayout`, `0x6b508`, the upper edge is the candidate cursor after
+the adjusted object top margin. `GetBaseline`, `0x6b510`, advances that cursor;
+`0x6b598` reads the lower edge after the complete line advance. Ordinary
+entries receive `[x, top, x + retained_advance, bottom]`; characters sharing
+an object line include its full advance and the object epsilon
+(`0x6cc18`–`0x6cc28`), rather than a font-specific rectangle height.
+Space/tab backgrounds retain their advances. The background right edge adds
+the justification extra at `0x6b858`–`0x6b860`; tabs add four extras through
+the FMA at `0x6b888`–`0x6b890`. Measurement join `0x8dc28` does not compare
+the background fields at offsets 8/12; full paint-style equality
+`0x8db7c`–`0x8db98` does. Background changes therefore do not split shaping.
+
+Native advances are associated with UTF-16 measurement entries and shaped
+cluster indexes (`0x77390`, `0x77640`–`0x77668`). Ordinary export skips entries
+without glyph data. Dividing a cluster's width equally among source characters
+has no native proof. Rust's shared `render_line_backgrounds` instead uses
+retained cluster positions and advances, including justification, with
+`background_top` preserved independently from the pre-margin line top.
+The SDK excludes object anchors, applies frame/gravity/table translations, and
+paints typed vector rectangles before glyphs with span alpha divided by 255.
+Background and glyph visibility are evaluated independently. A background
+change inside a retained cluster or unavailable measured positions reports
+`UnsupportedBackgroundPositioning`; highlighted bidi, complex-script and
+variable-font lines also retain that diagnostic until their visual mapping is
+verified. Selectable text remains available. Widget's native converter skips
+ordinary backgrounds on object spans (`0xd7e20`–`0xd7e50`); Drawing's converter
+does not share that exclusion, so the SDK rule is not a universal PDF parity
+claim.
+
+Composer clips backgrounds at `0x380bf0`–`0x380c0c` through object virtual slot
+168, resolved to `GetRect`, `0x37aa94`: the original geometry. The inset text
+frame instead lives at stack offset 48 (`0x3805bc`–`0x380608`). Rust clips
+placed backgrounds independently of glyphs. Shape clipping uses its original
+geometry, rather than its inset text frame or a stale saved child frame.
+`PlacedTextFrame.background_bounds`
+retains this boundary through rotation and translation; glyph clipping is
+unchanged.
+
+Native theme context `0x6c39c` calls virtual slot 80 on its current theme
+object at offset 8. Light (`0xe54f8`) and high-contrast (`0xe54b4`) themes
+retain source ARGB. Dark (`0xe51a4`) preserves alpha, converts RGB to HSL at
+`0xe51d0`, and reverses lightness only outside the inclusive `[0.4,0.6]`
+interval (constants at `0x41734`/`0x41724`). Rust uses that primitive and selects
+its dark-background flag once from the resolved page, preserving it through
+local table/code/shape surfaces. The exact native caller policy for selecting
+the theme remains unproven.
+
+The hash-checked HF corpus contains one kind-17 span: `04-marker4-highlighter`
+body range `[2,6)`, selecting `Text`, with an eight-byte all-zero payload.
+Independent Rust lopdf inspection of the paired native PDF Form 5 confirms
+selectable `Text` at actual-viewport `(47.999998855590825,218.70000000000002)`,
+with no background rectangle operators. The PDF's colored stroke images are
+separate pen content. This is evidence for transparent-span suppression,
+not opaque background geometry or color parity. No captured nonzero-alpha
+background span exists in these four fixtures.
+
+Terminal LF/control behavior, complex-script character-to-cluster background
+mapping, cross-context object-span painting, and captured opaque/semitransparent
+backgrounds remain unverified. Native object opacity is also separate from
+the span alpha currently represented by the SDK. These limits must not be
+closed by inferred per-character subdivisions or fitted rectangles.
 
 ## Font-name payload and measured fallback
 
@@ -1563,7 +1640,8 @@ the shared measured wrapper, scaled margins, paragraph spacing, integer
 outer-width ceiling, native indent conversion and measured alignment.
 Placed text now measures a complete plan before painting and applies
 top/center/bottom gravity to ordinary text using the native height contract
-above. Whitespace remains selectable, and empty boxes retain their highlight.
+above. Whitespace remains selectable, and empty boxes retain legacy
+author-supplied highlight summaries.
 Final paragraph after-spacing is excluded from gravity height; between-paragraph
 after-spacing remains. Glyph Y positions retain five decimal places, including
 gravity midpoints; the parent text coordinate keeps its older display precision.
