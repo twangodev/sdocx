@@ -61,7 +61,9 @@ pub use formula::{
 pub use ink::{InkSupport, PEN_PROFILES, PenProfile, PreparedStroke, RectStamp, prepare_stroke};
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
-pub use layout::{LayoutDocument, LayoutPage, layout_document};
+pub use layout::{
+    BodyTextCaptureWindow, BodyTextSlice, LayoutDocument, LayoutPage, layout_document,
+};
 pub use math::{MathAngleType, MathMargins, MathMetadata, PlotGraph, PlotMetadata};
 pub use media::{
     MediaManifest, MediaManifestEntry, parse_media_manifest_bytes,

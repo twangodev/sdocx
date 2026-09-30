@@ -214,8 +214,10 @@ The shared Rust text engine has synthetic coverage for paragraph spacing,
 ordinary baselines, embedded-object measurement, nested numbered-marker
 measurement, and typed vector point/checkbox artwork. Marker widths are
 prepared before wrapping; placement, gravity, resolved-size conversion and
-retained-font embedding use the shared text pipeline. Body flow still has a
-separate cursor loop and page-slice plan.
+retained-font embedding use the shared text pipeline. Body flow now uses the
+same layout loop, retaining its saved-slice continuation policy. Native capture
+window metadata distinguishes the display slice from the earlier page group
+needed for contextual measurement; rendering those windows remains unfinished.
 `text-metrics.json` also stores independently decoded, hash-locked Samsung PDF
 observations. Its retained logical canvas height is 848.333333 PDF points;
 the reference's actual viewport is 848 points. At scale 1.8, convert a stored

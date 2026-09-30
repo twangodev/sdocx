@@ -140,8 +140,10 @@ own a nested shared text layout using the first content span's resolved size
 and the default sans face. Their measured reservation precedes wrapping; the
 first line retains marker placement, including gravity. Fonts and diagnostics
 share scoped registries, and painting registers retained marker faces for
-embedding. Body flow uses these same helpers but still retains a separate
-cursor loop and page-slice plan. Table-cell placement, numeric text advance,
+embedding. Body flow uses the same layout loop with an explicit saved-slice
+continuation policy. Typed capture windows preserve native paragraph and
+overlap context for the next measurement adapter. Table-cell placement, numeric
+text advance,
 continued-object context and complete pagination still have measured gaps.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
 for context-dependent scale, spacing, margins and gravity contracts.

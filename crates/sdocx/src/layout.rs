@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use crate::PageObjectContent;
 use crate::text_index::TextIndex;
 use crate::types::{Document, Page, PageElement, RichTextBox, RichTextObjectContent};
 
@@ -27,6 +28,136 @@ pub struct LayoutPage {
     pub source_page_index: usize,
     /// Composite page with page-local content and its slice of flowing text.
     pub page: Page,
+    /// The inspection slice inserted from document-level body text.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub body_text: Option<BodyTextSlice>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct BodyTextSlice {
+    /// Character range in `DocumentMetadata::note_text`.
+    pub source_range: Range<usize>,
+    /// Position of the synthetic TextBox in `LayoutPage::page.objects`.
+    pub object_index: usize,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub capture_window: Option<BodyTextCaptureWindow>,
+}
+
+/// Source context measured together for a native page capture.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct BodyTextCaptureWindow {
+    /// Saved section extent before native partial-text copying.
+    pub saved_source_range: Range<usize>,
+    /// Character range measured after native leading-LF removal.
+    pub source_range: Range<usize>,
+    /// Native output mapping offset, which may skip a leading LF after measurement.
+    pub reported_source_start: usize,
+    /// First physical page included in the measurement.
+    pub first_page_index: usize,
+    /// Physical page requested for painting.
+    pub requested_page_index: usize,
+}
+
+fn native_capture_window(
+    document: &Document,
+    index: &TextIndex<'_>,
+    requested_page_index: usize,
+) -> Option<BodyTextCaptureWindow> {
+    if document.metadata.page_mode != Some(0) {
+        return None;
+    }
+    let body = document.metadata.note_text.as_ref()?;
+    let ranges = body
+        .text_sections
+        .get(..=requested_page_index)?
+        .iter()
+        .map(|section| section_char_range(index, *section))
+        .collect::<Option<Vec<_>>>()?;
+    if ranges.windows(2).any(|pair| pair[0].start > pair[1].start) {
+        return None;
+    }
+    let mut first_page_index = requested_page_index;
+    let requested_start = ranges[requested_page_index].start;
+    if requested_page_index > 0
+        && requested_start > 0
+        && index.slice(requested_start..requested_start.checked_add(1)?)? != "\n"
+    {
+        let paragraph_index = index.paragraph_index(requested_start)?;
+        if body.paragraphs.iter().any(|paragraph| {
+            paragraph.kind == crate::RichTextParagraphType::Bullet
+                && paragraph.start_paragraph <= paragraph_index
+                && paragraph.end_paragraph > paragraph_index
+        }) {
+            let paragraph_start = index
+                .native_paragraphs()
+                .nth(usize::try_from(paragraph_index).ok()?)?
+                .physical
+                .start;
+            while first_page_index > 0 && ranges[first_page_index].start > paragraph_start {
+                first_page_index -= 1;
+            }
+        }
+    }
+    while first_page_index > 0 && ranges[first_page_index - 1].end > ranges[first_page_index].start
+    {
+        first_page_index -= 1;
+    }
+    let first_nonempty =
+        (first_page_index..=requested_page_index).find(|&page| !ranges[page].is_empty())?;
+    let last_nonempty = (first_nonempty..=requested_page_index)
+        .rev()
+        .find(|&page| !ranges[page].is_empty())?;
+    let saved_source_range = ranges[first_nonempty].start..ranges[last_nonempty].end;
+    index.slice(saved_source_range.clone())?;
+    let mut source_range = saved_source_range.clone();
+    let keep_initial_lf =
+        source_range.start == 0 && ranges[..first_nonempty].iter().all(Range::is_empty);
+    if !keep_initial_lf
+        && index.slice(source_range.start..source_range.start.checked_add(1)?) == Some("\n")
+    {
+        source_range.start += 1;
+    }
+    let mut reported_source_start = if requested_page_index == 0 {
+        0
+    } else {
+        ranges[first_page_index].start
+    };
+    let reported_utf16 = index.char_to_utf16(reported_source_start)?;
+    let full_utf16 = index.char_to_utf16(index.len())?;
+    if reported_utf16 >= 1
+        && reported_utf16.checked_add(1)? < full_utf16
+        && index.slice(reported_source_start..reported_source_start.checked_add(1)?) == Some("\n")
+    {
+        reported_source_start += 1;
+    }
+    Some(BodyTextCaptureWindow {
+        saved_source_range,
+        source_range,
+        reported_source_start,
+        first_page_index,
+        requested_page_index,
+    })
+}
+
+impl LayoutPage {
+    /// Body metadata is active only while its inspection TextBox remains present.
+    /// Callers editing object positions must update `body_text.object_index`.
+    pub fn body_text_slice(&self) -> Option<&BodyTextSlice> {
+        let slice = self.body_text.as_ref()?;
+        matches!(
+            self.page.objects.get(slice.object_index)?.content,
+            PageObjectContent::Element(PageElement::TextBox(_))
+        )
+        .then_some(slice)
+    }
 }
 
 /// Build a visible-page view without changing the parsed storage model.
@@ -86,6 +217,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .cloned()
         .enumerate()
         .map(|(source_page_index, mut page)| {
+            let mut body_text = None;
             if let (Some(note_text), Some(index), Some(stored_range)) = (
                 document.metadata.note_text.as_ref(),
                 text_index.as_ref(),
@@ -112,11 +244,17 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                         &page_heights,
                     );
                     page.objects.insert(0, PageElement::TextBox(slice).into());
+                    body_text = Some(BodyTextSlice {
+                        source_range: range,
+                        object_index: 0,
+                        capture_window: native_capture_window(document, index, source_page_index),
+                    });
                 }
             }
             LayoutPage {
                 source_page_index,
                 page,
+                body_text,
             }
         })
         .collect();
@@ -376,7 +514,7 @@ fn paragraph_range_for_chars(index: &TextIndex<'_>, range: Range<usize>) -> Opti
 
 #[cfg(test)]
 mod tests {
-    use super::{layout_document, section_char_range};
+    use super::{layout_document, native_capture_window, section_char_range};
     use crate::text_index::TextIndex;
     use crate::{
         BoundingBox, Document, DocumentMetadata, Page, PageElement, RichTextBox, RichTextParagraph,
@@ -394,6 +532,184 @@ mod tests {
             background: Default::default(),
             objects: Vec::new(),
         }
+    }
+
+    fn capture_document(text: &str, sections: &[(i32, i32)]) -> Document {
+        Document {
+            pages: (0..sections.len().max(1)).map(blank_page).collect(),
+            metadata: DocumentMetadata {
+                page_mode: Some(0),
+                note_text: Some(RichTextBox {
+                    text_area_type: None,
+                    bbox: BoundingBox::default(),
+                    rotation_degrees: None,
+                    text: text.into(),
+                    color: None,
+                    highlight_color: None,
+                    underline: false,
+                    font_size: None,
+                    runs: Vec::new(),
+                    spans: Vec::new(),
+                    paragraphs: Vec::new(),
+                    object_spans: Vec::new(),
+                    text_sections: sections
+                        .iter()
+                        .map(|&(start_utf16, length_utf16)| RichTextSection {
+                            start_utf16,
+                            length_utf16,
+                        })
+                        .collect(),
+                    margins: None,
+                    gravity: None,
+                }),
+                ..Default::default()
+            },
+        }
+    }
+
+    fn capture(document: &Document, page: usize) -> Option<super::BodyTextCaptureWindow> {
+        let index = TextIndex::new(&document.metadata.note_text.as_ref()?.text);
+        native_capture_window(document, &index, page)
+    }
+
+    #[test]
+    fn capture_groups_strict_overlaps_without_joining_equal_boundaries() {
+        let overlap = capture_document("abcdefghij", &[(0, 5), (4, 4), (7, 3)]);
+        let window = capture(&overlap, 2).unwrap();
+        assert_eq!(window.first_page_index, 0);
+        assert_eq!(window.requested_page_index, 2);
+        assert_eq!(window.source_range, 0..10);
+
+        let touching = capture_document("abcdefghij", &[(0, 4), (4, 3), (7, 3)]);
+        let window = capture(&touching, 2).unwrap();
+        assert_eq!(window.first_page_index, 2);
+        assert_eq!(window.source_range, 7..10);
+    }
+
+    #[test]
+    fn capture_uses_requested_end_not_the_largest_overlapping_end() {
+        let document = capture_document("abcdefghij", &[(0, 10), (4, 2)]);
+        let window = capture(&document, 1).unwrap();
+        assert_eq!(window.first_page_index, 0);
+        assert_eq!(window.source_range, 0..6);
+        let unsorted = capture_document("abcdefghij", &[(4, 4), (2, 4)]);
+        assert!(capture(&unsorted, 1).is_none());
+    }
+
+    #[test]
+    fn capture_maps_utf16_boundaries_and_rejects_surrogate_interiors() {
+        let document = capture_document("A😀BC\nD", &[(0, 4), (3, 4)]);
+        let window = capture(&document, 1).unwrap();
+        assert_eq!(window.source_range, 0..6);
+        let layout = layout_document(&document);
+        assert_eq!(
+            layout.pages[1].body_text_slice().unwrap().source_range,
+            2..6
+        );
+
+        for sections in [[(0, 4), (2, 5)], [(0, 2), (3, 4)], [(0, 4), (3, 5)]] {
+            assert!(capture(&capture_document("A😀BC\nD", &sections), 1).is_none());
+        }
+    }
+
+    #[test]
+    fn capture_keeps_measurement_lf_removal_separate_from_output_mapping() {
+        let document = capture_document("a\nbc", &[(0, 1), (1, 3)]);
+        let window = capture(&document, 1).unwrap();
+        assert_eq!(window.saved_source_range, 1..4);
+        assert_eq!(window.source_range, 2..4);
+        assert_eq!(window.reported_source_start, 2);
+
+        let final_lf = capture_document("a\n", &[(0, 1), (1, 1)]);
+        let window = capture(&final_lf, 1).unwrap();
+        assert_eq!(window.saved_source_range, 1..2);
+        assert_eq!(window.source_range, 2..2);
+        assert_eq!(window.reported_source_start, 1);
+
+        let grouped = capture_document("a\nb\nc", &[(0, 3), (2, 3)]);
+        assert_eq!(capture(&grouped, 1).unwrap().source_range, 0..5);
+
+        let leading_lf = capture_document("\naB", &[(0, 0), (0, 3)]);
+        let window = capture(&leading_lf, 1).unwrap();
+        assert_eq!(window.source_range, 0..3);
+        assert_eq!(window.reported_source_start, 0);
+        let previous_nonempty = capture_document("\naB", &[(0, 1), (0, 0), (0, 3)]);
+        let window = capture(&previous_nonempty, 2).unwrap();
+        assert_eq!(window.source_range, 1..3);
+        assert_eq!(window.saved_source_range, 0..3);
+    }
+
+    #[test]
+    fn capture_backs_up_bullet_paragraphs_without_requiring_a_bullet_payload() {
+        let mut document = capture_document("abcde\nfghij", &[(0, 2), (2, 3), (5, 6)]);
+        assert_eq!(capture(&document, 1).unwrap().first_page_index, 1);
+        document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .paragraphs
+            .push(RichTextParagraph {
+                kind: RichTextParagraphType::Bullet,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: Vec::new(),
+            });
+        let window = capture(&document, 1).unwrap();
+        assert_eq!(window.first_page_index, 0);
+        assert_eq!(window.source_range, 0..5);
+        assert_eq!(capture(&document, 2).unwrap().first_page_index, 2);
+    }
+
+    #[test]
+    fn body_metadata_requires_its_inspection_object_and_keeps_native_objects() {
+        let mut document = capture_document("body", &[(0, 4)]);
+        document.pages[0].objects.push(
+            PageElement::Image {
+                bbox: BoundingBox::default(),
+                media_index: 9,
+            }
+            .into(),
+        );
+        let mut layout = layout_document(&document);
+        let page = &mut layout.pages[0];
+        assert_eq!(page.body_text_slice().unwrap().object_index, 0);
+        assert!(matches!(
+            page.page.objects[1].content,
+            crate::PageObjectContent::Element(PageElement::Image { media_index: 9, .. })
+        ));
+        page.page.clear_strokes();
+        assert!(page.body_text_slice().is_some());
+        page.page.objects.clear();
+        assert!(page.body_text_slice().is_none());
+    }
+
+    #[test]
+    fn capture_does_not_promote_balanced_inspection_ranges_to_native_sections() {
+        let document = capture_document("body", &[]);
+        let layout = layout_document(&document);
+        let body = layout.pages[0].body_text_slice().unwrap();
+        assert_eq!(body.source_range, 0..4);
+        assert!(body.capture_window.is_none());
+        for mode in [None, Some(1), Some(99)] {
+            let mut document = capture_document("body", &[(0, 4)]);
+            document.metadata.page_mode = mode;
+            assert!(capture(&document, 0).is_none());
+        }
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn layout_pages_deserialize_without_new_body_metadata() {
+        let document = capture_document("body", &[(0, 4)]);
+        let mut serialized = serde_json::to_value(layout_document(&document)).unwrap();
+        serialized["pages"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("body_text");
+        let layout: super::LayoutDocument = serde_json::from_value(serialized).unwrap();
+        assert!(layout.pages[0].body_text_slice().is_none());
+        assert_eq!(layout.pages[0].page.elements().count(), 1);
     }
 
     #[test]

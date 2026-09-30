@@ -298,6 +298,7 @@ impl Source {
                             .cloned()
                             .unwrap_or_else(|| sdocx::LayoutPage {
                                 source_page_index: page_index,
+                                body_text: None,
                                 page: parsed.document.pages[page_index].clone(),
                             });
                         let replay = r["kind"] == "replay-svg";

@@ -472,6 +472,37 @@ gravity offset (`0x66d0c`–`0x66d14`, `0x672b8`–`0x672c4`).
 (`0x3a2654`, `0x3a2680`); a continued object paragraph must preserve its
 source separator metric rather than become a source-first paragraph.
 
+Capture has a separate producer. `BodyTextCapture::getStartMeasureIndex`
+(`0xca9f0`–`0xcaadc`, Bodytext) starts from the requested page. For later
+list-mode pages, a non-LF start inside a paragraph with any native type-5
+record backs up to the saved section containing that paragraph's start.
+`GetStartPageGroup` (`0xcef14`–`0xcef80`) then backs up while the preceding
+section's end strictly exceeds the current start; touching ranges do not
+join. `GetDrawnTextData` constructs that inclusive page range before measuring
+a fresh body layout (`0xca17c`–`0xca2d0`). It selects the requested member's
+viewport afterward (`0xca244`–`0xca478`). Full-body indexing therefore does
+not establish unconditional full-body reflow as the native export contract.
+
+`GetTextSectionByPageRange` (`0xcda18`–`0xcdb48`) ignores empty leading and
+trailing sections and uses the last nonempty section's end, rather than the
+maximum end across the group. Copying the resulting text separately removes
+a leading LF at a positive source start (`TextViewUtil::CopyText`, Widget,
+`0xdf48c`–`0xdf4bc`). Capture's reported source offset has a stricter guard:
+it skips LF only when `start >= 1 && start + 1 < full UTF-16 length`
+(`0xca198`–`0xca1d8`). Layout metadata retains the raw saved range, copied
+measurement range and reported offset separately, validating all UTF-16
+boundaries. A source-zero LF is retained when no earlier nonempty section
+exists; otherwise the native copy flag removes it (`0xce29c`–`0xce2e4`).
+
+The locked fixture's page-index-4 section `[1428,1670)` overlaps page index
+3's `[1236,1430)`, so its native capture window covers pages 3–4. Measuring
+starts at 1237 after copying removes the group's leading LF. Measuring only
+the display slice loses the LF before the code paragraph and its inherited
+45-unit font metric. Restoring that metric predicts 15.751 units of cursor
+advance; it does not justify fitting the remaining approximately 0.75-unit
+saved-versus-recomputed-height difference. Native code feedback still clears
+and remeasures its float rectangle (`0xb0e14`–`0xb0e50`).
+
 Fresh comparison of the locked five-page fixture places matched ordinary
 body and heading baselines on the first four pages within 0.0001 SVG units
 of the actual PDF viewport. Code origins and measured heights differ only
@@ -599,9 +630,10 @@ renderers share fonts and diagnostic registries; painting registers retained
 faces so prepared layouts can still embed their fonts. `FontSizeUnits`
 distinguishes logical and resolved sizes, preventing repeated minimum, delta
 or density conversion, including already-resolved sizes below 1. Body flow
-uses the same marker helpers but still has its own cursor loop and page-slice
-plan. A canonical full-source plan, complete point-type cycles and tiny-font
-serialization precision remain unfinished.
+uses the same layout loop, including marker preparation, spacing and object
+feedback. Its saved-slice continuation policy remains explicit. Rendering
+native capture windows, complete point-type cycles and tiny-font serialization
+precision remain unfinished.
 
 ## Measurement, body flow and embedded objects
 
@@ -967,6 +999,17 @@ and full-source page-slice context remain incomplete.
 
 ## Body-flow pagination boundaries
 
+Over-page objects still participate in parent obstacle checks.
+`IsOverlappedWithObstacle` (`0x6c6bc`–`0x6c6e0`, Text) passes the object's
+over-page flag and minimum first-page height to the obstacle tree. For padding
+obstacles, the tree skips a band only when that minimum is effectively zero
+or `band.top - candidate.top >= ceil(minimum_height)` (`0x6e7fc`–`0x6e820`).
+Otherwise the parent can move past the obstacle (`0x6a830`–`0x6a894`).
+Code's minimum includes title padding, title height, title/body gap and first
+body-line height (`0x738f4`–`0x73948`, Drawing). A blanket skip for any
+over-page object is therefore unsupported; a future prepared-child policy
+must retain that minimum alongside its measured height.
+
 Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs
 `IBodyTextDocument::Page` records with cumulative integer Y at member 0,
 a local rectangle at member 4, and the original `WPage` pointer at member
@@ -1307,9 +1350,9 @@ rectangles. Parent lines prepare these plans before placement; constraints
 than 0.001. Other constraints retain their saved reservation. Split bands
 are selected using the live parent candidate, and painting translates the
 retained plan without measuring it again, including under parent gravity.
-The saved negative-top continuation adapter remains necessary until full
-source layout replaces page-slice reconstruction. This is not a complete
-composition-origin correction.
+The saved negative-top continuation adapter remains necessary until native
+capture windows replace individual page-slice reconstruction. This is not a
+complete composition-origin correction.
 
 Rejected derived code geometry retains the original replacement marker and
 neighboring text, reports `InvalidBounds`, and never falls back into measuring
