@@ -138,11 +138,28 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         }
         Ok(MeasuredText {
             advance: runs.iter().map(|run| run.advance).sum(),
-            font_size: self
-                .styled
-                .line_font_size(range, self.theme, self.predefined),
+            font_size: self.font_size(range)?,
             clusters: runs.into_iter().flat_map(|run| run.clusters).collect(),
         })
+    }
+
+    pub fn font_size(&self, range: Range<usize>) -> Result<f64, MeasurementError> {
+        if range.start > range.end || range.start < self.range.start || range.end > self.range.end {
+            return Err(MeasurementError::InvalidRange);
+        }
+        let first = self
+            .styles
+            .partition_point(|(segment, _)| segment.end <= range.start);
+        Ok(self.styles[first..]
+            .iter()
+            .take_while(|(segment, _)| segment.start < range.end)
+            .map(|(_, style)| style.font_size)
+            .reduce(f64::max)
+            .unwrap_or_else(|| {
+                self.styled
+                    .style_at(range.start, self.theme, self.predefined)
+                    .font_size
+            }))
     }
 
     fn character(&self, character: usize) -> Option<char> {

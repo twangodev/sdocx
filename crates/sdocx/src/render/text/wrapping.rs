@@ -24,8 +24,42 @@ pub(in crate::render) fn wrap_paragraph(
         .index
         .slice(range.clone())
         .ok_or(MeasurementError::InvalidRange)?;
-    let breaks = break_candidates(text);
+    let mut breaks = break_candidates(text);
     let measurer = ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?;
+    let measured = measurer.measure_line(range.clone())?;
+    let mut advances = vec![0.0; range.len() + 1];
+    let mut cluster_ends = vec![false; range.len() + 1];
+    cluster_ends[0] = true;
+    let mut source_end = range.start;
+    let mut advance = 0.0;
+    for cluster in &measured.clusters {
+        if cluster.source.start != source_end
+            || cluster.source.end <= source_end
+            || cluster.source.end > range.end
+        {
+            return Err(MeasurementError::InvalidCluster);
+        }
+        advance += cluster.advance;
+        let end = cluster.source.end - range.start;
+        advances[end] = advance;
+        cluster_ends[end] = true;
+        source_end = cluster.source.end;
+    }
+    if source_end != range.end {
+        return Err(MeasurementError::InvalidCluster);
+    }
+    advances[range.len()] = measured.advance;
+    if breaks
+        .candidates
+        .iter()
+        .any(|candidate| candidate.kind == BreakKind::Mandatory && !cluster_ends[candidate.end])
+    {
+        return Err(MeasurementError::InvalidCluster);
+    }
+    breaks
+        .candidates
+        .retain(|candidate| cluster_ends[candidate.end]);
+    breaks.emergency.retain(|&end| cluster_ends[end]);
     let width = if max_width.is_nan() {
         0.0
     } else {
@@ -33,65 +67,51 @@ pub(in crate::render) fn wrap_paragraph(
     };
     let mut lines = Vec::new();
     let mut start = 0;
+    let mut candidate_index = 0;
     while start < range.len() {
         let mut selected = None;
-        let mut overflow = None;
-        for candidate in breaks
+        let mut overflow_end = None;
+        while breaks
             .candidates
-            .iter()
-            .filter(|candidate| candidate.end > start)
+            .get(candidate_index)
+            .is_some_and(|candidate| candidate.end <= start)
         {
-            let measured =
-                measurer.measure_line(range.start + start..range.start + candidate.end)?;
-            if measured.advance > width {
-                overflow = Some((candidate.end, measured));
+            candidate_index += 1;
+        }
+        let mut probe = candidate_index;
+        for candidate in &breaks.candidates[candidate_index..] {
+            if advances[candidate.end] - advances[start] > width {
+                overflow_end = Some(candidate.end);
                 break;
             }
-            selected = Some((candidate.end, measured.font_size));
+            selected = Some(candidate.end);
+            probe += 1;
             if candidate.kind == BreakKind::Mandatory {
                 break;
             }
         }
+        candidate_index = probe;
         if selected.is_none() {
-            let (overflow_end, overflowing) = overflow.ok_or(MeasurementError::InvalidRange)?;
-            let ends = breaks
-                .emergency
-                .iter()
-                .copied()
-                .filter(|&end| end > start && end <= overflow_end)
-                .collect::<Vec<_>>();
-            let mut hint = start;
-            let mut advance = 0.0;
-            for cluster in &overflowing.clusters {
-                advance += cluster.advance;
-                if advance > width {
+            let overflow_end = overflow_end.ok_or(MeasurementError::InvalidRange)?;
+            let first = breaks.emergency.partition_point(|&end| end <= start);
+            let last = breaks.emergency.partition_point(|&end| end <= overflow_end);
+            let ends = &breaks.emergency[first..last];
+            for &end in ends {
+                if advances[end] - advances[start] > width {
                     break;
                 }
-                hint = cluster.source.end - range.start;
+                selected = Some(end);
             }
-            let mut probe = ends.partition_point(|&end| end <= hint).saturating_sub(1);
-            let end = *ends.get(probe).ok_or(MeasurementError::InvalidRange)?;
-            let mut measured = measurer.measure_line(range.start + start..range.start + end)?;
-            while measured.advance > width && probe > 0 {
-                probe -= 1;
-                measured = measurer.measure_line(range.start + start..range.start + ends[probe])?;
-            }
-            selected = Some((ends[probe], measured.font_size));
-            if measured.advance <= width {
-                for &end in &ends[probe + 1..] {
-                    let measured = measurer.measure_line(range.start + start..range.start + end)?;
-                    if measured.advance > width {
-                        break;
-                    }
-                    selected = Some((end, measured.font_size));
-                }
-            }
+            selected = selected.or_else(|| ends.first().copied());
         }
-        let (end, font_size) = selected.ok_or(MeasurementError::InvalidRange)?;
-        lines.push(WrappedLine {
-            source: range.start + start..range.start + end,
-            font_size,
-        });
+        let end = selected.ok_or(MeasurementError::InvalidRange)?;
+        let source = range.start + start..range.start + end;
+        let font_size = if source == range {
+            measured.font_size
+        } else {
+            measurer.font_size(source.clone())?
+        };
+        lines.push(WrappedLine { source, font_size });
         start = end;
     }
     Ok(lines)
@@ -185,6 +205,74 @@ mod tests {
             ranges(&wrap(&content, 86.66015625 - 0.00000001)),
             [0..2, 2..3]
         );
+    }
+
+    #[test]
+    fn paragraph_kerning_is_retained_across_emergency_line_breaks() {
+        let face = rustybuzz::Face::from_slice(
+            include_bytes!("../../../assets/fonts/Roboto-Regular.ttf"),
+            0,
+        )
+        .unwrap();
+        let upstream_advances = |value: &str| {
+            let mut buffer = rustybuzz::UnicodeBuffer::new();
+            buffer.push_str(value);
+            buffer.guess_segment_properties();
+            rustybuzz::shape(&face, &[], buffer)
+                .glyph_positions()
+                .iter()
+                .map(|position| position.x_advance)
+                .collect::<Vec<_>>()
+        };
+        let paragraph_advances = upstream_advances("AVA");
+        let isolated_advances = upstream_advances("AV");
+        assert_eq!(paragraph_advances, [1249, 1228, 1336]);
+        assert_eq!(isolated_advances, [1249, 1303]);
+        assert_eq!(
+            f64::from(paragraph_advances[..2].iter().sum::<i32>()) / 2048.0 * 45.0,
+            54.42626953125
+        );
+        assert_eq!(
+            f64::from(isolated_advances.iter().sum::<i32>()) / 2048.0 * 45.0,
+            56.07421875
+        );
+        assert_eq!(ranges(&wrap(&text("AVA"), 55.0)), [0..2, 2..3]);
+        assert_eq!(ranges(&wrap(&text("AVAV"), 56.0)), [0..2, 2..3, 3..4]);
+    }
+
+    #[test]
+    fn line_maximum_font_size_excludes_neighboring_style_ranges() {
+        let mut content = text("AAA");
+        content.spans = vec![span(
+            RichTextSpanType::FontSize,
+            1,
+            2,
+            &90.0_f32.to_le_bytes(),
+        )];
+        let lines = wrap(&content, 60.0);
+        assert_eq!(ranges(&lines), [0..1, 1..2, 2..3]);
+        assert_eq!(
+            lines.iter().map(|line| line.font_size).collect::<Vec<_>>(),
+            [45.0, 90.0, 45.0]
+        );
+    }
+
+    #[test]
+    fn arabic_combining_graphemes_preserve_contiguous_logical_source_ranges() {
+        let content = text("Aب\u{64e}ت\u{64e}Z");
+        let lines = wrap(&content, 0.0);
+        assert_eq!(ranges(&lines), [0..1, 1..3, 3..5, 5..6]);
+    }
+
+    #[test]
+    fn long_unbroken_token_retains_every_scalar_in_expected_line_ranges() {
+        let content = text(&"A".repeat(4096));
+        let lines = wrap(&content, 60.0);
+        assert_eq!(lines.len(), 2048);
+        for (index, line) in lines.iter().enumerate() {
+            assert_eq!(line.source, index * 2..index * 2 + 2);
+            assert_eq!(line.font_size, 45.0);
+        }
     }
 
     #[test]

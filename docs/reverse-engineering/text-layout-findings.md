@@ -261,7 +261,8 @@ For uniform ordinary text with default 1.35 spacing and no limit overflow,
 the advance is `1.35 * resolved_size` and the baseline offset from the line
 start is `resolved_size`. This does not define glyph ink bounds.
 
-Explicit spacing changes the baseline too, not just the next line's cursor.
+In this inspected helper, explicit spacing changes the baseline too, not just
+the next line's cursor.
 Writing `F` for the maximum resolved font size of an ordinary text line,
 its base height is `F`. With no limit overflow, pixel spacing `P != 0`
 therefore yields advance `F + P` and baseline offset `0.65 * F + P`;
@@ -279,6 +280,30 @@ objects with margins take a separate baseline branch at `0x6cb90` and can
 add an extra offset at `0x6cc0c`; do not apply the ordinary text formula to
 embedded objects. Paragraph-edge, bullet, empty-line and page-limit effects
 still need captured cases before claiming complete first/last-line parity.
+
+The captured body-text export currently contradicts applying this helper
+formula directly to the SDK's body composition cursor. In
+`hf/01-basic-formatting.sdocx`, the first heading has stored size 15,
+document density 3 and paragraph multiplier 1.6. The body top margin 10
+and page top padding 24 place the SDK cursor at 54. The helper formula
+would place its baseline at `54 + 1.6 * 45 - 0.35 * 45 = 110.25`, while
+the hash-locked Samsung PDF baseline in `conformance/text-metrics.json`
+is 98.85. The current body renderer's `cursor + max_font_size` gives 99,
+within the captured 0.25 tolerance; its line advance remains 72. The
+helper's limit-overflow fallback gives 83.25, so that branch alone does
+not explain the capture. Keep the captured baseline contract unchanged
+until the export caller, layout-top adjustments and selected context are
+resolved. The helper arithmetic and its producer remain verified; their
+application to this captured body route is unverified.
+
+The inspected Text drawing path does not establish that missing adjustment.
+`RichTextDrawing::getDrawnTextRun` reads `MeasureData` members 8/12 as
+the run point (`0x66df0`) and adds the supplied export offset and stored
+gravity offset (`0x66d0c`–`0x66d14`, `0x672b8`–`0x672c4`).
+`appendTextBlock` stores that point unchanged at `0x680e8`.
+`UpdateGravityOffsetY` stores zero for gravity 0 (`0x648c4`–`0x648d0`,
+`0x6495c`). This proves offset forwarding in this path, not which layout
+context and cursor origin produced the captured export.
 
 ## Measurement, body flow and embedded objects
 
@@ -385,6 +410,45 @@ The dynamic ICU table binds `ubrk_open` at `0xee49c` (name `0x2508f`) and
 end in each 80-byte `MeasureData` entry at member 56
 (`0x72d44`–`0x72d90`). Type 3 entries bypass that call. There is no traced
 Minikin URI/email breaker call in this final paragraph loop.
+
+The inspected Text layout path wraps already shaped paragraph data.
+`RichTextDrawing::Measure` calls `RichTextMeasure::Measure` at `0x6460c`
+before its `layout` call at `0x64650`; that layout calls
+`RichTextLayout::DoLayout` at `0x64774`. The measurement loop dispatches
+`measureParagraph` at `0x78804`, and the Minikin producer above shapes
+the paragraph's joined spans. `RichTextLayout::SetMeasureData` retains the
+existing vector pointer at `0x707ec`.
+
+`DoParagraphLayout` reads each stored float advance from member 0 of an
+80-byte `MeasureData` entry (`0x72cf4`–`0x72d00`), annotates bidi/break
+fields, and passes the same paragraph entries into
+`CalculateParagraphLayout` (`0x72e14`–`0x72e50`). The latter calls
+`ParagraphLayout::DoLayTextOut` at `0x73ee0`. `GetBlockInfo` adds stored
+advances when testing/committing candidates (`0x6ada4`, `0x6ae04`–
+`0x6ae18`, `0x6af08`–`0x6af0c`); `SetLayout` places ordinary entries by
+advancing X with member 0 (`0x6b6e8`, `0x6b73c`). These inspected line
+selection and placement functions do not call the Minikin measurement
+producer again when a line boundary is chosen.
+
+The corresponding Rust contract is to shape the paragraph's joined runs
+once, retain source/cluster mappings and advances, then select and position
+lines from those advances. A prefix-sum implementation can avoid repeatedly
+shaping progressively shorter portions of a long unbroken word. Native
+width comparisons here use float additions and a strict `>` test; no
+additional per-line width rounding or special kerning correction is proved.
+Native emergency splitting is still not proven grapheme/cluster-safe;
+keeping graphemes intact is an SDK policy until captured boundary cases
+establish native behavior. The retained advances also do not prove that
+independently reshaping each exported SVG line reproduces the same glyph
+positions; measurement and paint must eventually consume the same layout.
+The native ordinary drawing path obtains cached `GlyphInfo` at `0x65e04`
+and builds each glyph point by adding its retained X/Y offset to the
+`MeasureData` run point and supplied draw offset (`0x660c4`–`0x660e8`).
+`drawGlyphs` forwards those positions to the canvas at `0x66a94`–`0x66ac8`.
+That is stronger than matching line advance alone: faithful Rust placement
+must eventually retain and paint selected glyphs, face choices and cluster
+positions from the same measurement result, including clusters spanning
+several UTF-16 entries.
 
 `ParagraphLayout::GetBlockInfo`, `0x6ab9c`, accumulates measured advances
 and tests candidate width against the current available rectangle with a
@@ -500,6 +564,44 @@ Pagination depends on measured line positions and document geometry, not
 just splitting the string into equal chunks. The SDK can retain saved page
 text sections while developing one Rust layout engine, but recomputed page
 breaks and obstacle/inline-object behavior still require reference cases.
+
+## Current Rust implementation and remaining gaps
+
+The shared Rust body-flow pipeline now measures shaped runs with actual
+font faces and wraps using Unicode line-break opportunities. The
+`render/text/{measurement,breaks,wrapping}.rs` modules replace estimated
+ASCII/script widths and the URL-punctuation heuristic. Measurement accounts
+for bidi levels and script/extensions, uses native span-joining inputs
+(size, source color, family, bold and italic), and disables `liga`/`clig`
+for the inspected Latin policy. Paragraph runs are measured once and line
+widths use their retained advances; graphemes, spaces and source ranges
+are retained. Missing usable flow metrics report `MeasurementFailure`
+instead of estimating widths.
+
+Measurement and SVG/PDF paint features are not yet unified: usvg does not
+honor that `liga=0` policy. Variable-font optical size, bidi L1 resets,
+paired script punctuation, native emergency breaking and the reference
+device's ICU version/locale remain unverified. Positioned text, table/code
+layout, embedded-object composition and recomputed pagination still need
+the shared measured layout engine and captured cases. The current body
+baseline follows the capture above; it is not a universal native baseline
+formula.
+
+The public-API release probe used a 640-unit page, 17-unit text, density 1
+and 544 units of usable width. Repeated Latin, long URLs and spaced prose
+at 5k, 20k and 50k characters retained every line range from the preceding
+wrapper. At 50k characters, paragraph measurement reuse reduced the Latin
+case from 14.9 seconds to 81 ms and the URL case from 15.0 seconds to
+94 ms on the same machine. These are observed timings, not portable limits.
+Retaining paragraph kerning intentionally changes a separate `AV` boundary
+case; its independent pinned-font regression records that behavior.
+
+The retained scaling probe checks complete source text, contiguous emitted
+lines and diagnostics without asserting wall-clock thresholds:
+
+```sh
+cargo test -p sdocx --all-features --test text_layout_scaling --release --offline -- --ignored --nocapture
+```
 
 ## Evidence required before claiming visual parity
 
