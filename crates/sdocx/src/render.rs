@@ -17,6 +17,7 @@ use vector::{
 mod code;
 pub mod fonts;
 mod fountain;
+mod table;
 mod text;
 mod theme;
 #[cfg(test)]
@@ -770,6 +771,7 @@ fn paint_text_layout(
             line.width,
             line.baseline,
             line.alignment,
+            line.predefined,
             media_assets,
             theme,
             renderer,
@@ -786,6 +788,7 @@ fn paint_line_objects(
     available_width: f64,
     baseline: f64,
     alignment: Option<ParagraphAlignment>,
+    predefined: Option<PredefinedTextStyle>,
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
@@ -802,7 +805,10 @@ fn paint_line_objects(
         let Some(span) = styled.object_span(object.span_index) else {
             continue;
         };
-        let height = object.bounds.y_max - object.bounds.y_min;
+        if matches!(placement.prepared_code, Some(Err(_))) {
+            continue;
+        }
+        let height = object.height;
         let offset = (
             left + placement.x - object.bounds.x_min,
             baseline - height - object.bounds.y_min,
@@ -810,7 +816,39 @@ fn paint_line_objects(
         svg.scope(
             Group::new().transformed(Transform::translate(offset.0, 0.0, 5)),
             |svg| {
-                let _ = render_embedded_object(svg, span, offset.1, media_assets, theme, renderer);
+                if let (Some(Ok(prepared)), Some(RichTextObjectContent::CodeBlock(code))) =
+                    (&placement.prepared_code, &span.content)
+                {
+                    let shift = baseline - height - prepared.panel_bbox.y_min;
+                    svg.scope(
+                        Group::new().transformed(Transform::translate(0.0, shift, 5)),
+                        |svg| {
+                            render_prepared_code(
+                                svg,
+                                code,
+                                prepared,
+                                media_assets,
+                                theme,
+                                renderer,
+                            );
+                        },
+                    );
+                } else if render_embedded_object(svg, span, offset.1, media_assets, theme, renderer)
+                    .is_none()
+                {
+                    render_flow_line(
+                        svg,
+                        styled,
+                        object.source.clone(),
+                        object.bounds.x_min,
+                        object.bounds.x_min,
+                        baseline,
+                        None,
+                        theme,
+                        predefined,
+                        renderer,
+                    );
+                }
             },
         );
     }
@@ -906,7 +944,7 @@ fn render_flow_text_box(
             let base_x = content_left + layout.left_indent(settings);
             let text_x = base_x + marker_width;
             let available_width = (content_right - text_x).max(0.0);
-            let lines = measure_paragraph(
+            let mut lines = measure_paragraph(
                 &styled,
                 paragraph_start..paragraph_end,
                 available_width,
@@ -914,16 +952,26 @@ fn render_flow_text_box(
                 layout.predefined_style,
                 renderer,
             );
-            for (line_index, line) in lines.iter().enumerate() {
-                renderer.report_line_geometry(line, layout.line_spacing);
-                let mut baseline = cursor.place(line, layout.line_spacing, &frame, settings);
-                if paragraph_start == 0
+            for (line_index, line) in lines.iter_mut().enumerate() {
+                let continuation_top = if paragraph_start == 0
                     && line_index == 0
                     && let [object] = line.objects.as_slice()
                     && !object.object.inline
                     && object.object.bounds.y_min < 0.0
                 {
-                    let correction = object.object.bounds.y_max - baseline;
+                    Some(object.object.bounds.y_min)
+                } else {
+                    None
+                };
+                let candidate_top =
+                    continuation_top.unwrap_or_else(|| cursor.candidate_top(line, &frame));
+                text::prepare_line_objects(line, &styled, candidate_top, theme, renderer);
+                renderer.report_line_geometry(line, layout.line_spacing);
+                let mut baseline = cursor.place(line, layout.line_spacing, &frame, settings);
+                if let Some(top) = continuation_top
+                    && let [object] = line.objects.as_slice()
+                {
+                    let correction = top + object.object.height - baseline;
                     cursor.add_spacing(correction);
                     baseline += correction;
                 }
@@ -965,6 +1013,7 @@ fn render_flow_text_box(
                     available_width,
                     baseline,
                     layout.alignment,
+                    layout.predefined_style,
                     media_assets,
                     theme,
                     renderer,
@@ -1168,7 +1217,6 @@ fn render_embedded_object(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Option<f64> {
-    let settings = renderer.settings;
     match object.content.as_ref() {
         Some(RichTextObjectContent::Image(image)) => {
             let drawn = image_drawn_bbox(image);
@@ -1265,79 +1313,94 @@ fn render_embedded_object(
             Some(table.bbox.y_max + offset_y)
         }
         Some(RichTextObjectContent::CodeBlock(code)) => {
-            let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
-            let theme = theme.on_background(background);
-            let fill = color_hex(&background);
-            let stroke = if theme.is_dark() {
-                "#5f5f5f"
-            } else {
-                "#dddddd"
+            let prepared = match code::prepare_code(
+                code,
+                object.layout_constraint,
+                code.bbox.y_min + offset_y,
+                theme,
+                renderer,
+            ) {
+                Ok(prepared) => prepared,
+                Err(kind) => {
+                    renderer.report_object_issues(&[text::ObjectDiagnostic {
+                        anchor_utf16: object.text_index_utf16,
+                        kind,
+                    }]);
+                    return None;
+                }
             };
-            let copy_size = settings.pixels(24.0);
-            let radius = settings.pixels(12.0);
-            let prepared =
-                code::prepare_code(code, object.layout_constraint, offset_y, theme, renderer);
-            let copy = prepared.copy;
-            let panel_bbox = prepared.panel_bbox;
-            svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
-                svg.push(
-                    rectangle(panel_bbox, 0.0, 2)
-                        .rx(decimal(radius, 2))
-                        .fill(Paint::from_hex(&fill))
-                        .stroke(Paint::from_hex(stroke))
-                        .stroke_width(1),
-                );
-                if let Some(title) = &code.title {
-                    render_text_frame(
-                        svg,
-                        title,
-                        text::TextFrame {
-                            bbox: prepared.title_bbox,
-                            gravity: title.gravity,
-                            baseline: text::TextBaseline::LineAdvance,
-                            exclusions: &[],
-                        },
-                        media_assets,
-                        theme,
-                        renderer,
-                    );
-                }
-                let icon_stroke = if theme.is_dark() {
-                    "#b7b7b7"
-                } else {
-                    "#8b8b8b"
-                };
-                let icon = Data::new()
-                    .move_to((31, 25))
-                    .vertical_line_by(-4)
-                    .quadratic_curve_by((0., -8., 8., -8.))
-                    .horizontal_line_by(17)
-                    .quadratic_curve_by((8., 0., 8., 8.))
-                    .vertical_line_by(29);
-                let icon_scale = copy_size / 72.0;
-                svg.push(
-                    Group::new()
-                        .transformed(Transform::matrix(
-                            [icon_scale, 0.0, 0.0, icon_scale, copy.x_min, copy.y_min],
-                            6,
-                            2,
-                        ))
-                        .fill(Paint::None)
-                        .stroke(Paint::from_hex(icon_stroke))
-                        .stroke_width(6)
-                        .line_join(LineJoin::Round)
-                        .add(Path::new().data(icon))
-                        .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
-                );
-                if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
-                    let styled = StyledText::new(body, TextContext::Flow, settings);
-                    paint_text_layout(svg, &styled, layout, media_assets, theme, renderer);
-                }
-            });
-            Some(panel_bbox.y_max)
+            render_prepared_code(svg, code, &prepared, media_assets, theme, renderer);
+            Some(prepared.panel_bbox.y_max)
         }
         None => None,
     }
+}
+
+fn render_prepared_code(
+    svg: &mut Scene,
+    code: &crate::RichTextCodeBlock,
+    prepared: &code::PreparedCode,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) {
+    let settings = renderer.settings;
+    let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
+    let theme = theme.on_background(background);
+    let fill = color_hex(&background);
+    let stroke = if theme.is_dark() {
+        "#5f5f5f"
+    } else {
+        "#dddddd"
+    };
+    let copy_size = settings.pixels(24.0);
+    let radius = settings.pixels(12.0);
+    let copy = prepared.copy;
+    let panel_bbox = prepared.panel_bbox;
+    svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
+        svg.push(
+            rectangle(panel_bbox, 0.0, 2)
+                .rx(decimal(radius, 2))
+                .fill(Paint::from_hex(&fill))
+                .stroke(Paint::from_hex(stroke))
+                .stroke_width(1),
+        );
+        if let (Some(title), Some(layout)) = (&code.title, &prepared.title_layout) {
+            let styled = StyledText::new(title, TextContext::Flow, settings);
+            paint_text_layout(svg, &styled, layout, media_assets, theme, renderer);
+        }
+        let icon_stroke = if theme.is_dark() {
+            "#b7b7b7"
+        } else {
+            "#8b8b8b"
+        };
+        let icon = Data::new()
+            .move_to((31, 25))
+            .vertical_line_by(-4)
+            .quadratic_curve_by((0., -8., 8., -8.))
+            .horizontal_line_by(17)
+            .quadratic_curve_by((8., 0., 8., 8.))
+            .vertical_line_by(29);
+        let icon_scale = copy_size / 72.0;
+        svg.push(
+            Group::new()
+                .transformed(Transform::matrix(
+                    [icon_scale, 0.0, 0.0, icon_scale, copy.x_min, copy.y_min],
+                    6,
+                    2,
+                ))
+                .fill(Paint::None)
+                .stroke(Paint::from_hex(icon_stroke))
+                .stroke_width(6)
+                .line_join(LineJoin::Round)
+                .add(Path::new().data(icon))
+                .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
+        );
+        if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
+            let styled = StyledText::new(body, TextContext::Flow, settings);
+            paint_text_layout(svg, &styled, layout, media_assets, theme, renderer);
+        }
+    });
 }
 
 fn argb_color(argb: u32) -> Color {

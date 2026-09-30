@@ -18,7 +18,7 @@ mod resources;
 mod wrapping;
 pub(super) use layout::{
     TextBaseline, TextCursor, TextFrame, TextLayout, VerticalExclusion, layout_placed_text,
-    layout_text, measure_paragraph,
+    layout_text, measure_paragraph, prepare_line_objects,
 };
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;
@@ -180,7 +180,7 @@ pub(in crate::render) fn paragraph_line_height(
         .unwrap_or(font_size)
 }
 
-fn finite_native_geometry(value: f64) -> Option<f64> {
+pub(super) fn finite_native_geometry(value: f64) -> Option<f64> {
     (value.is_finite() && (value as f32).is_finite()).then_some(value)
 }
 

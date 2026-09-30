@@ -188,7 +188,7 @@ fn table_cells_render_all_lines_with_margins_and_force_top_gravity() {
         .svg;
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.0, 74.001), ("DEF".into(), 26.0, 149.751)]
+        vec![("ABC".into(), 26.5, 74.501), ("DEF".into(), 26.5, 150.251)]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let styled = xml
@@ -219,7 +219,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
         payload: 2_u32.to_le_bytes().to_vec(),
     });
     let svg = render(table(content.clone(), 200.0));
-    assert_eq!(lines(&svg), vec![("ABC".into(), 73.67, 74.001)]);
+    assert_eq!(lines(&svg), vec![("ABC".into(), 74.17, 74.501)]);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let positioned = xml
         .descendants()
@@ -232,7 +232,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
     content.paragraphs.clear();
     assert_eq!(
         lines(&render(table(content, 104.0))),
-        vec![("AB".into(), 26.0, 74.001), ("C".into(), 26.0, 134.751),]
+        vec![("AB".into(), 26.5, 74.501), ("C".into(), 26.5, 135.251),]
     );
 }
 
@@ -293,13 +293,14 @@ fn code_text_preserves_spaces_combining_source_and_positioned_glyphs() {
             .collect::<String>(),
         source
     );
+    assert_eq!(output[1].2, 197.001);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let combined = xml
         .descendants()
         .find(|node| node.has_tag_name("tspan") && node.text() == Some("e\u{301}"))
         .unwrap();
     assert!(combined.attribute("x").is_some());
-    assert_eq!(combined.attribute("y"), Some("197.00100"));
+    assert!(combined.attribute("y").is_some());
     let office = xml
         .descendants()
         .find(|node| {
@@ -460,7 +461,7 @@ fn continuation_code_uses_page_local_exclusions_with_its_negative_stored_top() {
 }
 
 #[test]
-fn saved_code_frame_translates_page_exclusions_and_reproduces_the_captured_gap() {
+fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
     let mut title = text("Title");
     title.margins = None;
     let mut body = text("A\nB\nC");
@@ -482,18 +483,18 @@ fn saved_code_frame_translates_page_exclusions_and_reproduces_the_captured_gap()
     let svg = sdocx::render_page_svg(&doc, 0, &Default::default())
         .unwrap()
         .svg;
-    // Native stored frame / page1527 imply a 37.498046875 gap after line1.
-    // Glyph positions retain5 decimals; panel bounds serialize2 decimals.
+    // The live candidate is20, so these lines do not meet the page1527 band.
+    // The saved positive top must not invent the captured37.498046875 gap.
     assert_eq!(
         lines(&svg),
         vec![
             ("Title".into(), 68.0, 101.001),
             ("A".into(), 68.0, 197.001),
-            ("B".into(), 68.0, 295.24905),
-            ("C".into(), 68.0, 355.99905),
+            ("B".into(), 68.0, 257.751),
+            ("C".into(), 68.0, 318.501),
         ]
     );
-    assert_eq!(code_panel_height(&svg), 411.75);
+    assert_eq!(code_panel_height(&svg), 374.25);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let group = xml
         .descendants()
@@ -504,6 +505,55 @@ fn saved_code_frame_translates_page_exclusions_and_reproduces_the_captured_gap()
         .find(|node| node.has_tag_name("rect"))
         .unwrap();
     assert_eq!(panel.attribute("y"), Some("20.00"));
+}
+
+#[test]
+fn placed_live_code_candidate_reproduces_the_captured_page_gap() {
+    let mut title = text("Title");
+    title.margins = None;
+    let mut body = text("A\nB\nC");
+    body.margins = None;
+    let mut doc = document(code(title, body));
+    doc.metadata.page_mode = Some(0);
+    let sdocx::PageObjectContent::Element(PageElement::TextBox(parent)) =
+        &mut doc.pages[0].objects[0].content
+    else {
+        panic!()
+    };
+    parent.bbox = BoundingBox {
+        x_min: 20.0,
+        y_min: 1297.751953125,
+        x_max: 420.0,
+        y_max: 1997.751953125,
+    };
+    parent.object_spans[0].layout_constraint = ObjectSpanLayoutConstraint::OverPagesOverlapPadding;
+    let layout = sdocx::layout_document(&doc);
+    for page in [
+        sdocx::render_layout_page_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+        sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+    ] {
+        // Captured native top/page1527 produces a37.498046875px skip
+        // after the first body line when this is the live candidate.
+        let output = lines(&page.svg);
+        assert_eq!(
+            output
+                .iter()
+                .map(|line| line.0.as_str())
+                .collect::<Vec<_>>(),
+            ["Title", "A", "B", "C"]
+        );
+        for ((_, x, y), expected_y) in output
+            .into_iter()
+            .zip([1378.75295, 1474.75295, 1573.001, 1633.751])
+        {
+            assert_eq!(x, 68.0);
+            assert!(
+                (y - expected_y).abs() < 1e-8,
+                "actual {y}, expected {expected_y}"
+            );
+        }
+        assert_eq!(code_panel_height(&page.svg), 411.75);
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -519,6 +569,6 @@ fn table_explicit_percentage_spacing_uses_the_native_ordinary_baseline() {
     let svg = render(table(content, 200.0));
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.0, 85.251), ("DEF".into(), 26.0, 157.251),]
+        vec![("ABC".into(), 26.5, 85.751), ("DEF".into(), 26.5, 157.751),]
     );
 }

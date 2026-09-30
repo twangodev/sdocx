@@ -24,6 +24,7 @@ pub(in crate::render) struct MeasuredObject {
     pub source: Range<usize>,
     pub span_index: usize,
     pub bounds: BoundingBox,
+    pub height: f64,
     pub inline: bool,
     pub top_margin: f64,
     pub bottom_margin: f64,
@@ -40,6 +41,7 @@ impl TextObject<'_> {
             source: self.source.clone(),
             span_index: self.span_index,
             bounds: self.bounds,
+            height: self.bounds.y_max - self.bounds.y_min,
             inline: self.span.layout_option == ObjectSpanLayoutOption::Inline,
             top_margin: margin,
             bottom_margin: margin,
@@ -140,7 +142,12 @@ fn object_bounds(span: &RichTextObjectSpan) -> Result<BoundingBox, ObjectDiagnos
             }
             Ok(crate::render::image_drawn_bbox(image))
         }
-        Some(RichTextObjectContent::Table(table)) => Ok(table.bbox),
+        Some(RichTextObjectContent::Table(table)) => {
+            if !valid_bounds(table.bbox) {
+                return Err(ObjectDiagnosticKind::InvalidBounds);
+            }
+            Ok(crate::render::table::table_drawn_bounds(table))
+        }
         Some(RichTextObjectContent::CodeBlock(code)) => Ok(code.bbox),
         None => Err(ObjectDiagnosticKind::UnsupportedContent),
     }
@@ -309,6 +316,7 @@ mod tests {
             assert_eq!(measured.source, 2..3);
             assert_eq!(measured.span_index, 0);
             assert_eq!(measured.bounds, object.bounds);
+            assert_eq!(measured.height, object.bounds.y_max - object.bounds.y_min);
             assert_eq!(measured.inline, inline);
         }
     }
@@ -337,6 +345,7 @@ mod tests {
                 assert_eq!(measured.bounds, object.bounds);
                 assert_eq!(measured.bounds.x_max - measured.bounds.x_min, 30.0);
                 assert_eq!(measured.bounds.y_max - measured.bounds.y_min, 60.0);
+                assert_eq!(measured.height, 60.0);
             }
         }
     }
@@ -355,6 +364,7 @@ mod tests {
         });
         assert!((measured.bounds.x_max - measured.bounds.x_min - 60.0).abs() < 1e-10);
         assert!((measured.bounds.y_max - measured.bounds.y_min - 20.0).abs() < 1e-10);
+        assert!((measured.height - 20.0).abs() < 1e-10);
         assert!(((measured.bounds.x_min + measured.bounds.x_max) / 2.0).abs() < 1e-10);
         assert!(((measured.bounds.y_min + measured.bounds.y_max) / 2.0 - 10.0).abs() < 1e-10);
     }
@@ -530,15 +540,8 @@ mod tests {
         assert!(index.issues().is_empty());
     }
 
-    #[test]
-    fn table_uses_object_bounds_instead_of_content_bounds() {
-        let bounds = BoundingBox {
-            x_min: 10.0,
-            y_min: 20.0,
-            x_max: 100.0,
-            y_max: 200.0,
-        };
-        let mut table = image(0, 20.0);
+    fn table_object(anchor: i32, bounds: BoundingBox) -> RichTextObjectSpan {
+        let mut table = image(anchor, 20.0);
         table.object_type = ObjectType::Table;
         table.content = Some(RichTextObjectContent::Table(Box::new(
             crate::RichTextTable {
@@ -566,10 +569,101 @@ mod tests {
                 rows: Vec::new(),
             },
         )));
+        table
+    }
+
+    #[test]
+    fn table_uses_object_bounds_instead_of_content_bounds() {
+        let bounds = BoundingBox {
+            x_min: 10.0,
+            y_min: 20.0,
+            x_max: 100.0,
+            y_max: 200.0,
+        };
+        let table = table_object(0, bounds);
         let text = text("\u{fffc}", vec![table]);
         let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
-        assert_eq!(object_bounds(index.in_range(0..1)[0].span).unwrap(), bounds);
+        assert_eq!(
+            object_bounds(index.in_range(0..1)[0].span).unwrap(),
+            BoundingBox {
+                x_min: bounds.x_min - 0.5,
+                y_min: bounds.y_min - 0.5,
+                x_max: bounds.x_max + 0.5,
+                y_max: bounds.y_max + 0.5
+            }
+        );
         assert!(index.issues().is_empty());
+    }
+
+    #[test]
+    fn table_border_expansion_keeps_double_precision_and_invalid_originals_do_not_expand() {
+        let bounds = BoundingBox {
+            x_min: 0.1234567890123456,
+            y_min: 0.9876543210987654,
+            x_max: 984.1234567890123,
+            y_max: 216.98765432109877,
+        };
+        let content = text("\u{fffc}", vec![table_object(0, bounds)]);
+        let index = TextObjectIndex::new(&content, &TextIndex::new(&content.text));
+        let selected = &index.in_range(0..1)[0];
+        assert_eq!(selected.bounds.x_min, bounds.x_min - 0.5);
+        assert_eq!(selected.bounds.y_max, bounds.y_max + 0.5);
+        assert_ne!(
+            selected.bounds.x_min,
+            f64::from(selected.bounds.x_min as f32)
+        );
+        for invalid in [
+            BoundingBox {
+                x_max: bounds.x_min,
+                ..bounds
+            },
+            BoundingBox {
+                y_max: bounds.y_min - 0.25,
+                ..bounds
+            },
+        ] {
+            let text = text("\u{fffc}", vec![table_object(0, invalid)]);
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            assert!(index.in_range(0..1).is_empty());
+            assert_eq!(index.issues()[0].kind, ObjectDiagnosticKind::InvalidBounds);
+        }
+    }
+
+    #[test]
+    fn expanded_table_bounds_are_checked_before_the_object_consumes_source() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: f64::from(f32::MAX),
+            y_max: 20.0,
+        };
+        let mut span = table_object(1, bounds);
+        if let Some(RichTextObjectContent::Table(table)) = span.content.as_mut() {
+            let edge = crate::TableEdgeStyle {
+                color: 0,
+                width: f32::MAX,
+                start_radius: 0.0,
+                end_radius: 0.0,
+            };
+            table.style.border = Some(crate::TableBorder {
+                left: edge,
+                top: edge,
+                right: edge,
+                bottom: edge,
+                metadata: crate::TableRecordMetadata::default(),
+            });
+        }
+        assert!(valid_bounds(bounds));
+        let text = text("A\u{fffc}B", vec![span]);
+        let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+        assert!(index.in_range(0..3).is_empty());
+        assert_eq!(
+            index.issues(),
+            &[ObjectDiagnostic {
+                anchor_utf16: 1,
+                kind: ObjectDiagnosticKind::InvalidBounds
+            }]
+        );
     }
 
     #[test]

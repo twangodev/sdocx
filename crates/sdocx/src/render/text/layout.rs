@@ -86,6 +86,10 @@ impl TextCursor {
         }
     }
 
+    pub fn candidate_top(&self, line: &WrappedLine, frame: &TextFrame<'_>) -> f64 {
+        frame.bbox.y_min + self.position + self.pending_bottom.max(line.object_margins()[0])
+    }
+
     pub fn place(
         &mut self,
         line: &WrappedLine,
@@ -118,6 +122,48 @@ impl TextCursor {
         let epsilon = if has_objects { 0.001 } else { 0.0 };
         self.position += top - candidate_top + advance + epsilon;
         top + offset
+    }
+}
+
+pub(in crate::render) fn prepare_line_objects(
+    line: &mut WrappedLine,
+    styled: &StyledText<'_>,
+    candidate_top: f64,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) {
+    for placement in &mut line.objects {
+        let Some(span) = styled.object_span(placement.object.span_index) else {
+            continue;
+        };
+        let Some(crate::RichTextObjectContent::CodeBlock(code)) = span.content.as_ref() else {
+            continue;
+        };
+        let prepared = crate::render::code::prepare_code(
+            code,
+            span.layout_constraint,
+            candidate_top,
+            theme,
+            renderer,
+        );
+        match &prepared {
+            Ok(prepared) => {
+                let height = prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+                if matches!(
+                    span.layout_constraint,
+                    crate::ObjectSpanLayoutConstraint::OverPages
+                        | crate::ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+                ) && (height - placement.object.height).abs() > 0.001
+                {
+                    placement.object.height = height;
+                }
+            }
+            Err(kind) => renderer.report_object_issues(&[super::ObjectDiagnostic {
+                anchor_utf16: span.text_index_utf16,
+                kind: *kind,
+            }]),
+        }
+        placement.prepared_code = Some(prepared.map(Box::new));
     }
 }
 
@@ -228,7 +274,7 @@ pub(in crate::render) fn layout_text(
             renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
         }
         cursor.add_spacing(layout.spacing_before);
-        for line in measure_paragraph(
+        for mut line in measure_paragraph(
             styled,
             paragraph.content.clone(),
             width,
@@ -236,6 +282,8 @@ pub(in crate::render) fn layout_text(
             layout.predefined_style,
             renderer,
         ) {
+            let candidate_top = cursor.candidate_top(&line, &frame);
+            prepare_line_objects(&mut line, styled, candidate_top, theme, renderer);
             renderer.report_line_geometry(&line, layout.line_spacing);
             let baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
             lines.push(TextLine {
@@ -495,11 +543,13 @@ mod tests {
                     x_max: 50.0,
                     y_max: 100.0,
                 },
+                height: 100.0,
                 inline,
                 top_margin: margins[0],
                 bottom_margin: margins[1],
             },
             x: 0.0,
+            prepared_code: None,
         });
         line
     }

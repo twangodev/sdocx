@@ -53,7 +53,12 @@ pub(in crate::render) fn render_measured_line(
             Some(ParagraphAlignment::Right) => remaining,
             _ => 0.0,
         };
-    if line.placements.is_empty() {
+    if line.placements.is_empty()
+        || line
+            .objects
+            .iter()
+            .any(|object| matches!(object.prepared_code, Some(Err(_))))
+    {
         render_text_fragments(svg, styled, line, x, baseline, theme, predefined, renderer);
         return;
     }
@@ -128,6 +133,9 @@ fn text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
     let mut ranges = Vec::with_capacity(line.objects.len() + 1);
     let mut start = line.source.start;
     for object in &line.objects {
+        if matches!(object.prepared_code, Some(Err(_))) {
+            continue;
+        }
         if start < object.object.source.start {
             ranges.push(start..object.object.source.start);
         }
