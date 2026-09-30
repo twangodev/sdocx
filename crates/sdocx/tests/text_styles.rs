@@ -605,15 +605,19 @@ fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
-        assert_eq!(
-            page.text_diagnostics,
-            vec![sdocx::TextDiagnostic {
-                kind: sdocx::TextDiagnosticKind::UnavailableFamily,
+        let mut expected = vec![sdocx::TextDiagnostic {
+            kind: sdocx::TextDiagnosticKind::UnavailableFamily,
+            family: family.into(),
+            codepoints: Vec::new(),
+        }];
+        if matches!(context, Context::Flow) {
+            expected.push(sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::MeasurementFailure,
                 family: family.into(),
                 codepoints: Vec::new(),
-            }],
-            "{context:?}"
-        );
+            });
+        }
+        assert_eq!(page.text_diagnostics, expected, "{context:?}");
         assert!(font_css(&page.svg).is_empty(), "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(tspan(&xml, "empty").text(), Some("empty"));
@@ -640,15 +644,19 @@ fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
-        assert_eq!(
-            page.text_diagnostics,
-            vec![sdocx::TextDiagnostic {
-                kind: sdocx::TextDiagnosticKind::UnusableFontData,
+        let mut expected = vec![sdocx::TextDiagnostic {
+            kind: sdocx::TextDiagnosticKind::UnusableFontData,
+            family: family.into(),
+            codepoints: Vec::new(),
+        }];
+        if matches!(context, Context::Flow) {
+            expected.push(sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::MeasurementFailure,
                 family: family.into(),
                 codepoints: Vec::new(),
-            }],
-            "{context:?}"
-        );
+            });
+        }
+        assert_eq!(page.text_diagnostics, expected, "{context:?}");
         assert!(font_css(&page.svg).is_empty(), "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(tspan(&xml, "damaged").text(), Some("damaged"));
@@ -866,8 +874,8 @@ fn mixed_font_sizes_position_each_placed_line_using_its_own_maximum() {
 fn flow_line_spacing_uses_the_largest_local_size_and_native_spacing_units() {
     for (spacing, first_baseline, next_baseline) in [
         (None, "60.00", "111.00"),
-        (Some((0_u32, 4.0_f32)), "51.00", "103.50"),
-        (Some((1_u32, 1.5_f32)), "69.00", "124.50"),
+        (Some((0_u32, 4.0_f32)), "60.00", "102.00"),
+        (Some((1_u32, 1.5_f32)), "60.00", "120.00"),
     ] {
         let mut content = text("aB\nc");
         content.spans = vec![span(

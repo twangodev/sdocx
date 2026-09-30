@@ -11,6 +11,7 @@ pub enum TextDiagnosticKind {
     UnavailableFamily,
     UnusableFontData,
     MissingGlyphs,
+    MeasurementFailure,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -130,6 +131,14 @@ impl<'a> TextRenderer<'a> {
 
     pub fn diagnostics(&self) -> Vec<TextDiagnostic> {
         self.diagnostics.borrow().clone()
+    }
+
+    pub fn measurement_failed(&self, family: &str) {
+        self.record(TextDiagnostic {
+            kind: TextDiagnosticKind::MeasurementFailure,
+            family: family.into(),
+            codepoints: Vec::new(),
+        });
     }
 
     fn record(&self, mut diagnostic: TextDiagnostic) {

@@ -7,9 +7,13 @@ use crate::{
 
 use super::RenderTheme;
 
+mod breaks;
+mod measurement;
 mod resources;
+mod wrapping;
 pub(super) use resources::TextRenderer;
 pub use resources::{TextDiagnostic, TextDiagnosticKind};
+pub(super) use wrapping::{WrappedLine, wrap_paragraph};
 
 pub(super) const DEFAULT_FONT_SIZE: f32 = 17.0;
 const DEFAULT_FONT_COLOR: Color = Color {
@@ -23,6 +27,7 @@ pub(super) struct TextStyle {
     pub font_size: f64,
     pub family: Option<String>,
     pub color: String,
+    pub source_color: Color,
     pub bold: bool,
     pub italic: bool,
     pub underline: bool,
@@ -80,9 +85,6 @@ impl<'a> StyledText<'a> {
     pub fn context(&self) -> TextContext {
         self.context
     }
-    pub fn text_box(&self) -> &RichTextBox {
-        self.text_box
-    }
     pub fn new(text_box: &'a RichTextBox, context: TextContext, settings: TextSettings) -> Self {
         let index = TextIndex::new(&text_box.text);
         let spans = text_box
@@ -133,6 +135,7 @@ impl<'a> StyledText<'a> {
             font_size,
             family: None,
             color: theme.foreground(Some(text_box.color.unwrap_or(DEFAULT_FONT_COLOR))),
+            source_color: text_box.color.unwrap_or(DEFAULT_FONT_COLOR),
             bold: false,
             italic: false,
             underline: text_box.underline,
@@ -153,6 +156,7 @@ impl<'a> StyledText<'a> {
             match span.kind {
                 RichTextSpanType::ForegroundColor => {
                     if let Some(color) = span.color_value() {
+                        style.source_color = color;
                         style.color = theme.foreground(Some(color));
                     }
                 }
@@ -194,11 +198,12 @@ impl<'a> StyledText<'a> {
             }
         }
         if is_hyperlink {
-            style.color = theme.foreground(Some(Color {
+            style.source_color = Color {
                 r: 0,
                 g: 84,
                 b: 255,
-            }));
+            };
+            style.color = theme.foreground(Some(style.source_color));
             style.underline = true;
         }
         if matches!(

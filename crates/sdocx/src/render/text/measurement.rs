@@ -1,0 +1,505 @@
+use std::collections::BTreeMap;
+use std::ops::Range;
+
+use unicode_bidi::BidiInfo;
+use unicode_script::{Script, ScriptExtension, UnicodeScript};
+
+use crate::PredefinedTextStyle;
+use crate::fonts::{Direction, Feature, FontError, UnicodeBuffer};
+use crate::render::RenderTheme;
+
+use super::{StyledText, TextRenderer, TextStyle};
+
+pub(in crate::render) struct MeasuredText {
+    pub advance: f64,
+    pub font_size: f64,
+    pub clusters: Vec<MeasuredCluster>,
+}
+
+struct MeasuredRun {
+    advance: f64,
+    clusters: Vec<MeasuredCluster>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(in crate::render) struct MeasuredCluster {
+    pub source: Range<usize>,
+    pub advance: f64,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub(in crate::render) enum MeasurementError {
+    #[error("text measurement range is outside its paragraph")]
+    InvalidRange,
+    #[error("no usable face is available for font family {0:?}")]
+    UnavailableFace(String),
+    #[error("shaping returned a cluster outside a Unicode scalar boundary")]
+    InvalidCluster,
+    #[error(transparent)]
+    Font(#[from] FontError),
+}
+
+pub(in crate::render) struct ParagraphMeasurer<'a, 'text, 'fonts> {
+    styled: &'a StyledText<'text>,
+    renderer: &'a TextRenderer<'fonts>,
+    range: Range<usize>,
+    text: &'text str,
+    bytes: Vec<usize>,
+    directions: Vec<Direction>,
+    scripts: Vec<Script>,
+    styles: Vec<(Range<usize>, TextStyle)>,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+}
+
+impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
+    pub fn new(
+        styled: &'a StyledText<'text>,
+        range: Range<usize>,
+        theme: RenderTheme,
+        predefined: Option<PredefinedTextStyle>,
+        renderer: &'a TextRenderer<'fonts>,
+    ) -> Result<Self, MeasurementError> {
+        let text = styled
+            .index
+            .slice(range.clone())
+            .ok_or(MeasurementError::InvalidRange)?;
+        let bidi = BidiInfo::new(text, None);
+        let mut bytes = Vec::new();
+        let mut directions = Vec::new();
+        let mut extensions = Vec::new();
+        for (byte, character) in text.char_indices() {
+            bytes.push(byte);
+            directions.push(if bidi.levels[byte].is_rtl() {
+                Direction::RightToLeft
+            } else {
+                Direction::LeftToRight
+            });
+            extensions.push(character.script_extension());
+        }
+        bytes.push(text.len());
+        let scripts = resolve_scripts(&extensions, &directions);
+        let mut styles = Vec::<(Range<usize>, TextStyle)>::new();
+        for segment in styled.segments(range.clone()) {
+            let style = styled.style_at(segment.start, theme, predefined);
+            if let Some((previous, previous_style)) = styles.last_mut()
+                && previous.end == segment.start
+                && joinable(previous_style, &style)
+            {
+                previous.end = segment.end;
+            } else {
+                styles.push((segment, style));
+            }
+        }
+        Ok(Self {
+            styled,
+            renderer,
+            range,
+            text,
+            bytes,
+            directions,
+            scripts,
+            styles,
+            theme,
+            predefined,
+        })
+    }
+
+    pub fn measure_line(&self, range: Range<usize>) -> Result<MeasuredText, MeasurementError> {
+        if range.start > range.end || range.start < self.range.start || range.end > self.range.end {
+            return Err(MeasurementError::InvalidRange);
+        }
+        let mut runs = Vec::new();
+        for (segment, style) in &self.styles {
+            let start = segment.start.max(range.start);
+            let end = segment.end.min(range.end);
+            if start >= end {
+                continue;
+            }
+            let mut start = start - self.range.start;
+            let end = end - self.range.start;
+            while start < end {
+                let direction = self.directions[start];
+                let script = self.scripts[start];
+                let tab = self.character(start) == Some('\t');
+                let mut stop = start + 1;
+                if !tab {
+                    while stop < end
+                        && self.directions[stop] == direction
+                        && self.scripts[stop] == script
+                        && self.character(stop) != Some('\t')
+                    {
+                        stop += 1;
+                    }
+                }
+                runs.push(self.shape(start..stop, style, direction, script, tab)?);
+                start = stop;
+            }
+        }
+        Ok(MeasuredText {
+            advance: runs.iter().map(|run| run.advance).sum(),
+            font_size: self
+                .styled
+                .line_font_size(range, self.theme, self.predefined),
+            clusters: runs.into_iter().flat_map(|run| run.clusters).collect(),
+        })
+    }
+
+    fn character(&self, character: usize) -> Option<char> {
+        self.text
+            .get(self.bytes[character]..self.bytes[character + 1])?
+            .chars()
+            .next()
+    }
+
+    fn shape(
+        &self,
+        range: Range<usize>,
+        style: &TextStyle,
+        direction: Direction,
+        script: Script,
+        tab: bool,
+    ) -> Result<MeasuredRun, MeasurementError> {
+        let face = self
+            .renderer
+            .resolve(style, self.styled.context())
+            .ok_or_else(|| {
+                MeasurementError::UnavailableFace(
+                    style.family.as_deref().unwrap_or("Roboto").to_owned(),
+                )
+            })?;
+        let start_byte = self.bytes[range.start];
+        let text = if tab {
+            " "
+        } else {
+            &self.text[start_byte..self.bytes[range.end]]
+        };
+        let mut buffer = UnicodeBuffer::new();
+        buffer.push_str(text);
+        buffer.set_direction(direction);
+        buffer.set_script(
+            script
+                .short_name()
+                .parse()
+                .expect("Unicode scripts have valid ISO 15924 tags"),
+        );
+        let latin_features = native_features();
+        let features = if script == Script::Latin {
+            latin_features.as_slice()
+        } else {
+            &[]
+        };
+        let shaped = face.shape(buffer, features)?;
+        let scale = style.font_size / f64::from(shaped.metrics.units_per_em);
+        let multiplier = if tab { 4.0 } else { 1.0 };
+        let mut cluster_glyphs = BTreeMap::<usize, i64>::new();
+        for glyph in &shaped.glyphs {
+            let byte = glyph.cluster as usize;
+            if byte >= text.len() || !text.is_char_boundary(byte) {
+                return Err(MeasurementError::InvalidCluster);
+            }
+            let cluster = cluster_glyphs.entry(byte).or_default();
+            *cluster += i64::from(glyph.x_advance);
+        }
+        let mut clusters = Vec::new();
+        let keys = cluster_glyphs.keys().copied().collect::<Vec<_>>();
+        for (index, &byte) in keys.iter().enumerate() {
+            let next = keys.get(index + 1).copied().unwrap_or(text.len());
+            let source = if tab {
+                self.range.start + range.start..self.range.start + range.end
+            } else {
+                let start = self
+                    .bytes
+                    .binary_search(&(start_byte + byte))
+                    .map_err(|_| MeasurementError::InvalidCluster)?;
+                let end = self
+                    .bytes
+                    .binary_search(&(start_byte + next))
+                    .map_err(|_| MeasurementError::InvalidCluster)?;
+                self.range.start + start..self.range.start + end
+            };
+            let advance = cluster_glyphs[&byte];
+            clusters.push(MeasuredCluster {
+                source,
+                advance: advance as f64 * scale * multiplier,
+            });
+        }
+        Ok(MeasuredRun {
+            advance: shaped.advance_x() as f64 * scale * multiplier,
+            clusters,
+        })
+    }
+}
+
+#[cfg(test)]
+fn measure_text(
+    styled: &StyledText<'_>,
+    range: Range<usize>,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+    renderer: &TextRenderer<'_>,
+) -> Result<MeasuredText, MeasurementError> {
+    ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?.measure_line(range)
+}
+
+fn native_features() -> [Feature; 2] {
+    [
+        Feature::new(rustybuzz::ttf_parser::Tag::from_bytes(b"liga"), 0, ..),
+        Feature::new(rustybuzz::ttf_parser::Tag::from_bytes(b"clig"), 0, ..),
+    ]
+}
+
+fn joinable(left: &TextStyle, right: &TextStyle) -> bool {
+    left.font_size == right.font_size
+        && left.source_color == right.source_color
+        && left.family == right.family
+        && left.bold == right.bold
+        && left.italic == right.italic
+}
+
+fn resolve_scripts(extensions: &[ScriptExtension], directions: &[Direction]) -> Vec<Script> {
+    let mut scripts = vec![Script::Common; extensions.len()];
+    let mut start = 0;
+    while start < extensions.len() {
+        let mut shared = extensions[start];
+        let mut end = start + 1;
+        while end < extensions.len() && directions[end] == directions[start] {
+            let intersection = shared.intersection(extensions[end]);
+            if intersection.is_empty() {
+                break;
+            }
+            shared = intersection;
+            end += 1;
+        }
+        let script = Script::try_from(shared)
+            .unwrap_or_else(|_| shared.iter().next().unwrap_or(Script::Unknown));
+        scripts[start..end].fill(script);
+        start = end;
+    }
+    scripts
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::{TextContext, TextSettings};
+    use super::*;
+    use crate::fonts::FontBook;
+    use crate::{BoundingBox, RichTextBox, RichTextRun, RichTextSpan, RichTextSpanType};
+
+    fn text_box(text: &str) -> RichTextBox {
+        RichTextBox {
+            text_area_type: None,
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: text.into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: Some(45.0),
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    fn measure(text_box: &RichTextBox, context: TextContext) -> MeasuredText {
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(text_box, context, settings);
+        measure_text(
+            &styled,
+            0..styled.index.len(),
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn pinned_regular_advance_uses_font_units_and_local_size() {
+        let measured = measure(&text_box("ABC"), TextContext::Placed);
+        assert_eq!(measured.advance, 86.66015625);
+        assert_eq!(measured.font_size, 45.0);
+        let mut smaller = text_box("ABC");
+        smaller.font_size = Some(22.5);
+        assert_eq!(
+            measure(&smaller, TextContext::Placed).advance,
+            measured.advance / 2.0
+        );
+    }
+
+    #[test]
+    fn native_features_disable_ligatures_without_disabling_kerning() {
+        let office = measure(&text_box("office"), TextContext::Placed);
+        assert_eq!(office.clusters.len(), 6);
+        let av = measure(&text_box("AV"), TextContext::Placed);
+        assert_eq!(av.advance, 2552.0 / 2048.0 * 45.0);
+        let separate = measure(&text_box("A"), TextContext::Placed).advance
+            + measure(&text_box("V"), TextContext::Placed).advance;
+        assert!(av.advance < separate);
+    }
+
+    #[test]
+    fn matching_native_styles_rejoin_and_color_changes_split_shaping() {
+        let mut same = text_box("AV");
+        same.runs.push(RichTextRun {
+            start: 0,
+            end: 1,
+            bold: false,
+            italic: false,
+        });
+        assert_eq!(
+            measure(&same, TextContext::Placed).advance,
+            2552.0 / 2048.0 * 45.0
+        );
+        same.spans.push(RichTextSpan {
+            kind: RichTextSpanType::ForegroundColor,
+            start_utf16: 1,
+            end_utf16: 2,
+            expand: false,
+            payload: vec![0, 0, 255, 255],
+        });
+        let changed = measure(&same, TextContext::Placed);
+        let independent = measure(&text_box("A"), TextContext::Placed).advance
+            + measure(&text_box("V"), TextContext::Placed).advance;
+        assert_eq!(changed.advance, independent);
+    }
+
+    #[test]
+    fn decoration_boundaries_preserve_shaping_context_but_font_styles_split() {
+        let baseline = measure(&text_box("AV"), TextContext::Placed).advance;
+        for kind in [RichTextSpanType::Underline, RichTextSpanType::Strikethrough] {
+            let mut decorated = text_box("AV");
+            decorated.spans.push(RichTextSpan {
+                kind,
+                start_utf16: 0,
+                end_utf16: 1,
+                expand: false,
+                payload: vec![1, 0],
+            });
+            let measured = measure(&decorated, TextContext::Placed);
+            assert_eq!(measured.advance, baseline);
+        }
+        for kind in [RichTextSpanType::Bold, RichTextSpanType::Italic] {
+            let mut changed = text_box("AV");
+            changed.spans.push(RichTextSpan {
+                kind,
+                start_utf16: 0,
+                end_utf16: 1,
+                expand: false,
+                payload: vec![1, 0],
+            });
+            let measured = measure(&changed, TextContext::Placed);
+            assert_ne!(measured.advance, baseline);
+        }
+    }
+
+    #[test]
+    fn combining_and_supplementary_clusters_keep_scalar_source_ranges() {
+        let measured = measure(&text_box("e\u{301}😀"), TextContext::Placed);
+        assert_eq!(measured.clusters[0].source, 0..2);
+        assert_eq!(measured.clusters[1].source, 2..3);
+    }
+
+    #[test]
+    fn bidi_and_script_runs_preserve_logical_source_order() {
+        let text_box = text_box("ab אב cd");
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&text_box, TextContext::Placed, settings);
+        let paragraph = ParagraphMeasurer::new(
+            &styled,
+            0..8,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        )
+        .unwrap();
+        assert!(paragraph.directions.contains(&Direction::RightToLeft));
+        assert!(paragraph.scripts.contains(&Script::Hebrew));
+        let measured = paragraph.measure_line(0..8).unwrap();
+        assert_eq!(measured.clusters.first().unwrap().source.start, 0);
+        assert_eq!(measured.clusters.last().unwrap().source.end, 8);
+        for pair in measured.clusters.windows(2) {
+            assert_eq!(pair[0].source.end, pair[1].source.start);
+        }
+    }
+
+    #[test]
+    fn script_extensions_keep_japanese_shared_marks_with_their_script() {
+        let directions = [Direction::LeftToRight; 2];
+        let extensions = "ーあ"
+            .chars()
+            .map(|character| character.script_extension())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            resolve_scripts(&extensions, &directions),
+            [Script::Hiragana; 2]
+        );
+    }
+
+    #[test]
+    fn tabs_use_four_measured_spaces() {
+        let tab = measure(&text_box("\t"), TextContext::Placed);
+        let space = measure(&text_box(" "), TextContext::Placed);
+        assert_eq!(tab.advance, space.advance * 4.0);
+        assert_eq!(tab.clusters[0].source, 0..1);
+    }
+
+    #[test]
+    fn flow_faux_bold_uses_regular_metrics_and_placed_bold_uses_bold_face() {
+        let mut bold = text_box("ABC");
+        bold.runs.push(RichTextRun {
+            start: 0,
+            end: 3,
+            bold: true,
+            italic: false,
+        });
+        assert_eq!(measure(&bold, TextContext::Flow).advance, 86.66015625);
+        assert_eq!(measure(&bold, TextContext::Placed).advance, 88.43994140625);
+    }
+
+    #[test]
+    fn line_measurement_keeps_paragraph_direction_context_and_checks_ranges() {
+        let text_box = text_box("אב 123 cd");
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&text_box, TextContext::Placed, settings);
+        let paragraph = ParagraphMeasurer::new(
+            &styled,
+            0..9,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        )
+        .unwrap();
+        let number_line = paragraph.measure_line(3..6).unwrap();
+        assert_eq!(paragraph.directions[3], Direction::LeftToRight);
+        assert_eq!(number_line.clusters.first().unwrap().source.start, 3);
+        assert_eq!(number_line.clusters.last().unwrap().source.end, 6);
+        assert!(matches!(
+            paragraph.measure_line(0..10),
+            Err(MeasurementError::InvalidRange)
+        ));
+        let empty = paragraph.measure_line(0..0).unwrap();
+        assert_eq!(empty.advance, 0.0);
+        assert!(empty.clusters.is_empty());
+    }
+}

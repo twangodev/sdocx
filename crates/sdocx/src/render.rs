@@ -4,7 +4,7 @@ use crate::{
     BoundingBox, BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page,
     PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing, PlacedImage,
     PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
-    RichTextParagraphType, RichTextSpanType, Stroke, layout_document,
+    RichTextParagraphType, Stroke, layout_document,
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
@@ -21,7 +21,9 @@ mod text;
 mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
-use text::{StyledText, TextContext, TextRenderer, TextSettings, TextStyle};
+use text::{
+    StyledText, TextContext, TextRenderer, TextSettings, TextStyle, WrappedLine, wrap_paragraph,
+};
 pub use text::{TextDiagnostic, TextDiagnosticKind};
 pub use theme::RenderTheme;
 #[cfg(test)]
@@ -876,23 +878,36 @@ fn render_flow_text_box(
             let text_x = base_x + marker_width;
             let available_width = (content_right - text_x).max(base_style.font_size);
             let lines = if content.is_empty() {
-                std::iter::once(paragraph_start..paragraph_start).collect::<Vec<_>>()
+                vec![WrappedLine {
+                    source: paragraph_start..paragraph_start,
+                    font_size: base_style.font_size,
+                }]
             } else {
                 wrap_paragraph(
                     &styled,
-                    &characters,
                     paragraph_start..paragraph_end,
                     available_width,
                     theme,
                     layout.predefined_style,
+                    renderer,
                 )
+                .unwrap_or_else(|_| {
+                    renderer.measurement_failed(base_style.family.as_deref().unwrap_or("Roboto"));
+                    vec![WrappedLine {
+                        source: paragraph_start..paragraph_end,
+                        font_size: styled.line_font_size(
+                            paragraph_start..paragraph_end,
+                            theme,
+                            layout.predefined_style,
+                        ),
+                    }]
+                })
             };
-            for (line_index, line_range) in lines.iter().enumerate() {
-                let line_font_size =
-                    styled.line_font_size(line_range.clone(), theme, layout.predefined_style);
+            for (line_index, line) in lines.iter().enumerate() {
+                let line_font_size = line.font_size;
                 let line_height =
                     paragraph_line_height(line_font_size, layout.line_spacing, settings);
-                let baseline = cursor_y + line_height - 0.35 * line_font_size;
+                let baseline = cursor_y + line_font_size;
                 if line_index == 0
                     && let Some((marker, _, marker_size, marker_offset)) = marker.as_ref()
                 {
@@ -914,7 +929,7 @@ fn render_flow_text_box(
                 render_flow_line(
                     svg,
                     &styled,
-                    line_range.clone(),
+                    line.source.clone(),
                     text_x,
                     content_right,
                     baseline,
@@ -1072,106 +1087,6 @@ fn roman_marker(number: u32) -> String {
     result.make_ascii_lowercase();
     result.push('.');
     result
-}
-
-fn wrap_paragraph(
-    styled: &StyledText<'_>,
-    characters: &[char],
-    range: Range<usize>,
-    max_width: f64,
-    theme: RenderTheme,
-    predefined_style: Option<PredefinedTextStyle>,
-) -> Vec<Range<usize>> {
-    let mut lines = Vec::new();
-    let mut start = range.start;
-    while start < range.end {
-        let mut width = 0.0;
-        let mut index = start;
-        let mut last_break = None;
-        while index < range.end {
-            let character = characters[index];
-            let style = styled.style_at(index, theme, predefined_style);
-            let next_width = width + estimated_character_width(character, &style);
-            if next_width > max_width && index > start {
-                break;
-            }
-            width = next_width;
-            index += 1;
-            if character.is_whitespace() {
-                last_break = Some((index, index));
-            } else if matches!(character, '/' | '?' | '&' | '#' | '-' | '.')
-                && styled.text_box().spans.iter().any(|span| {
-                    span.kind == RichTextSpanType::Hyperlink
-                        && styled
-                            .index
-                            .char_to_utf16(index - 1)
-                            .is_some_and(|position| {
-                                span.start_utf16 <= position && span.end_utf16 > position
-                            })
-                })
-            {
-                // Samsung's URL line breaker keeps a link with its prefix and
-                // prefers URL punctuation over an arbitrary character split.
-                last_break = Some((index, index));
-            }
-        }
-        if index == range.end {
-            lines.push(start..range.end);
-            break;
-        }
-        let (end, next) = last_break
-            .filter(|(end, _)| *end > start)
-            .unwrap_or((index, index));
-        lines.push(start..end);
-        start = next;
-    }
-    lines
-}
-
-fn estimated_character_width(character: char, style: &TextStyle) -> f64 {
-    // The analyzed Samsung PDF exporter embeds Roboto-Regular with these
-    // advances. Printable ASCII glyph IDs are codepoint - 27 in that font.
-    const ROBOTO_ADVANCES: [u16; 100] = [
-        443, 0, 0, 248, 248, 248, 257, 320, 615, 562, 732, 622, 174, 342, 348, 430, 567, 196, 276,
-        263, 412, 562, 562, 562, 562, 562, 562, 562, 562, 562, 562, 242, 211, 508, 548, 522, 472,
-        897, 652, 623, 650, 656, 568, 552, 681, 713, 271, 551, 627, 538, 873, 713, 687, 630, 687,
-        616, 593, 596, 648, 636, 887, 626, 600, 599, 265, 410, 265, 417, 451, 309, 543, 561, 523,
-        563, 530, 347, 561, 550, 243, 239, 506, 243, 876, 552, 570, 561, 568, 338, 516, 327, 551,
-        484, 751, 496, 473, 496, 338, 244, 338, 680,
-    ];
-    let latin_base = match character {
-        'À'..='Å' => Some('A'),
-        'Ç' => Some('C'),
-        'È'..='Ë' => Some('E'),
-        'Ì'..='Ï' => Some('I'),
-        'Ñ' => Some('N'),
-        'Ò'..='Ö' => Some('O'),
-        'Ù'..='Ü' => Some('U'),
-        'Ý' => Some('Y'),
-        'à'..='å' => Some('a'),
-        'ç' => Some('c'),
-        'è'..='ë' => Some('e'),
-        'ì'..='ï' => Some('i'),
-        'ñ' => Some('n'),
-        'ò'..='ö' => Some('o'),
-        'ù'..='ü' => Some('u'),
-        'ý' | 'ÿ' => Some('y'),
-        _ => None,
-    };
-    let metric_character = latin_base.unwrap_or(character);
-    let factor = if (' '..='~').contains(&metric_character) {
-        let glyph = metric_character as usize - 27;
-        f64::from(ROBOTO_ADVANCES[glyph]) / 1000.0
-    } else if character.is_whitespace() {
-        0.248
-    } else if character == 'ß' || ('\u{0370}'..='\u{052f}').contains(&character) {
-        0.62
-    } else if ('\u{2e80}'..='\u{d7af}').contains(&character) {
-        1.0
-    } else {
-        0.65
-    };
-    style.font_size * factor
 }
 
 #[allow(clippy::too_many_arguments)]
