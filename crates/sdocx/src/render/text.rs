@@ -19,15 +19,17 @@ mod wrapping;
 #[cfg(test)]
 use layout::measure_paragraph;
 pub(super) use layout::{
-    PositionedMarker, TextFrame, TextLayout, VerticalExclusion, layout_flow_text,
-    layout_placed_text, layout_text,
+    PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
+    layout_flow_text, layout_placed_text, layout_text,
 };
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;
-pub(super) use paint::render_measured_line;
-pub(super) use resources::TextRenderer;
+pub(super) use paint::{render_measured_line, text_ranges as body_text_ranges};
+pub(super) use resources::{
+    SourceObjectDiagnostic, SourceOwner, SourceTextDiagnostic, TextRenderer,
+};
 pub use resources::{TextDiagnostic, TextDiagnosticKind};
-pub(super) use wrapping::{WrappedLine, unmeasured_paragraph, wrap_paragraph};
+pub(super) use wrapping::{PositionedObject, WrappedLine, unmeasured_paragraph, wrap_paragraph};
 
 pub(super) const DEFAULT_FONT_SIZE: f32 = 17.0;
 const DEFAULT_FONT_COLOR: Color = Color {

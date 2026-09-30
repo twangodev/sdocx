@@ -11,6 +11,19 @@ pub(super) struct PreparedCode {
     pub panel_bbox: BoundingBox,
     pub title_layout: Option<TextLayout>,
     pub body_layout: Option<TextLayout>,
+    pub min_first_page_height: f64,
+    constraint: ObjectSpanLayoutConstraint,
+}
+
+impl PreparedCode {
+    pub fn minimum_first_page_height(&self) -> Option<f64> {
+        matches!(
+            self.constraint,
+            ObjectSpanLayoutConstraint::OverPages
+                | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+        )
+        .then_some(self.min_first_page_height)
+    }
 }
 
 fn valid_box(bbox: BoundingBox) -> bool {
@@ -109,6 +122,12 @@ pub(super) fn prepare_code(
         .as_ref()
         .map(|body| layout_code_text(body, body_bbox, &exclusions, theme, renderer));
     let body_height = body_layout.as_ref().map_or(0.0, TextLayout::height);
+    let title_height = title_layout.as_ref().map_or(0.0, TextLayout::height);
+    let first_body_line_height = body_layout
+        .as_ref()
+        .and_then(|layout| layout.lines.first())
+        .map_or(0.0, |line| line.bottom - line.top);
+    let min_first_page_height = top + title_height + body_gap + first_body_line_height;
     let panel_bbox = BoundingBox {
         y_min: object_top,
         y_max: body_top + body_height + body_gap + bottom,
@@ -128,6 +147,8 @@ pub(super) fn prepare_code(
         panel_bbox,
         title_layout,
         body_layout,
+        min_first_page_height,
+        constraint,
     })
 }
 
@@ -186,6 +207,81 @@ mod tests {
             &renderer,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn minimum_first_page_height_uses_measured_title_and_first_line_only() {
+        let mut content = code();
+        let mut title = content.body.clone().unwrap();
+        title.text = "language".into();
+        title.gravity = Some(1);
+        content.title = Some(title);
+        let plain = prepare(&content, 200.0);
+        assert_eq!(plain.min_first_page_height, 181.5);
+        assert!((plain.title_layout.as_ref().unwrap().height() - 60.75).abs() < 1e-10);
+        assert_eq!(plain.copy.y_max - plain.copy.y_min, 72.0);
+
+        let body = content.body.as_mut().unwrap();
+        body.paragraphs = [
+            (crate::RichTextParagraphType::SpacingBefore, 7.0_f32),
+            (crate::RichTextParagraphType::SpacingAfter, 9.0_f32),
+        ]
+        .into_iter()
+        .map(|(kind, value)| crate::RichTextParagraph {
+            kind,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: value.to_le_bytes().to_vec(),
+        })
+        .collect();
+        let spaced = prepare(&content, 200.0);
+        assert_eq!(spaced.min_first_page_height, 181.5);
+        assert_eq!(spaced.panel_bbox.y_max - plain.panel_bbox.y_max, 48.0);
+    }
+
+    #[test]
+    fn first_body_line_minimum_retains_object_margin_and_native_epsilon() {
+        let mut content = code();
+        let mut title = content.body.clone().unwrap();
+        title.text = "language".into();
+        content.title = Some(title);
+        let body = content.body.as_mut().unwrap();
+        body.text = "\u{fffc}".into();
+        body.object_spans.push(crate::RichTextObjectSpan {
+            object_type: crate::ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(crate::RichTextObjectContent::Image(Box::new(
+                crate::PlacedImage {
+                    bbox: BoundingBox {
+                        x_min: 0.0,
+                        y_min: 0.0,
+                        x_max: 50.0,
+                        y_max: 100.0,
+                    },
+                    rotation_degrees: None,
+                    media_id: None,
+                    media_index: None,
+                    crop_rect: None,
+                    original_bbox: None,
+                    border_media_id: None,
+                    original_media_id: None,
+                },
+            ))),
+            text_index_utf16: 0,
+            layout_option: crate::ObjectSpanLayoutOption::BlockWithSmallMargin,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        });
+        let prepared = prepare(&content, 200.0);
+        let line = &prepared.body_layout.as_ref().unwrap().lines[0];
+        assert!((line.bottom - line.top - 130.001).abs() < 1e-10);
+        assert!((prepared.min_first_page_height - 250.751).abs() < 1e-10);
+    }
+
+    #[test]
+    fn absent_title_has_no_measured_title_height_in_the_sdk_minimum() {
+        let prepared = prepare(&code(), 200.0);
+        assert!(prepared.title_layout.is_none());
+        assert_eq!(prepared.min_first_page_height, 120.75);
     }
 
     #[test]

@@ -279,15 +279,16 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         script: Script,
         tab: bool,
     ) -> Result<MeasuredSegment, MeasurementError> {
+        let source = self.range.start + range.start..self.range.start + range.end;
         let face = self
             .renderer
+            .for_source(source.clone())
             .resolve(style, self.styled.context())
             .ok_or_else(|| {
                 MeasurementError::UnavailableFace(
                     style.family.as_deref().unwrap_or("Roboto").to_owned(),
                 )
             })?;
-        let source = self.range.start + range.start..self.range.start + range.end;
         let start_byte = self
             .styled
             .index
@@ -494,6 +495,49 @@ mod tests {
             &renderer,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn measured_fallback_issues_keep_full_source_run_ranges() {
+        use super::super::resources::{SourceOwner, TextDiagnosticKind};
+
+        let mut content = text_box("ok\nabcd");
+        let family = b"Missing family\0";
+        let payload = [
+            vec![0; 8],
+            (family.len() as u16).to_le_bytes().to_vec(),
+            family.to_vec(),
+        ]
+        .concat();
+        content.spans.push(RichTextSpan {
+            kind: RichTextSpanType::FontName,
+            start_utf16: 3,
+            end_utf16: 7,
+            expand: false,
+            payload,
+        });
+        let settings = TextSettings::default();
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let paragraph = ParagraphMeasurer::new(
+            &styled,
+            3..7,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        )
+        .unwrap();
+        let measured = paragraph.measure_line(3..7).unwrap();
+        assert_eq!(measured.clusters[0].source.start, 3);
+        let issues = renderer.scoped_diagnostics();
+        assert_eq!(issues.len(), 1);
+        assert_eq!(issues[0].owner, Some(SourceOwner::Text(3..7)));
+        assert_eq!(
+            issues[0].diagnostic.kind,
+            TextDiagnosticKind::UnavailableFamily
+        );
+        assert_eq!(issues[0].diagnostic.family, "Missing family");
     }
 
     #[test]

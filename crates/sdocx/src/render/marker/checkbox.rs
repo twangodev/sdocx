@@ -48,26 +48,26 @@ impl CheckboxMarker {
         })
     }
 
-    pub fn paint(&self, svg: &mut Scene, x: f64, center_y: f64, color: &str) -> Option<()> {
+    pub fn bounds(&self, x: f64, center_y: f64) -> Option<crate::BoundingBox> {
+        finite_native_geometry(x)?;
+        finite_native_geometry(center_y)?;
         let center_x = x + self.button_width / 2.0;
         let center_y = center_y - 1.0;
-        let left = center_x - self.radius;
-        let top = center_y - self.radius;
-        let right = center_x + self.radius;
-        let bottom = center_y + self.radius;
+        super::marker_bounds(
+            center_x - self.radius,
+            center_y - self.radius,
+            center_x + self.radius,
+            center_y + self.radius,
+        )
+    }
+
+    pub fn paint(&self, svg: &mut Scene, x: f64, center_y: f64, color: &str) -> Option<()> {
+        let bounds = self.bounds(x, center_y)?;
         let scale = self.asset_side / 24.0;
-        if ![x, center_x, center_y, left, top, right, bottom, scale]
-            .into_iter()
-            .all(|value| finite_native_geometry(value).is_some())
-            || self.radius <= 0.0
-            || right <= left
-            || bottom <= top
-        {
-            return None;
-        }
+        finite_native_geometry(scale)?;
         let paint = Paint::from_hex(color)?;
         svg.scope(
-            Group::new().transformed(Transform::translate(left, top, 8)),
+            Group::new().transformed(Transform::translate(bounds.x_min, bounds.y_min, 8)),
             |svg| {
                 svg.scope(
                     Group::new().transformed(Transform::scale(scale, scale, 8)),

@@ -1,7 +1,10 @@
+use std::ops::RangeInclusive;
+
 use crate::{Document, ObjectSpanLayoutConstraint};
 
 use super::{TextSettings, VerticalExclusion};
 
+#[derive(Clone)]
 pub(in crate::render) struct PageExclusions {
     boundaries: Vec<f64>,
     padding: f64,
@@ -9,9 +12,22 @@ pub(in crate::render) struct PageExclusions {
 
 impl PageExclusions {
     pub fn for_document(document: &Document, settings: TextSettings) -> Option<Self> {
+        let last_page = document.pages.len().checked_sub(1)?;
+        Self::for_range(document, 0..=last_page, settings)
+    }
+
+    pub fn for_range(
+        document: &Document,
+        pages: RangeInclusive<usize>,
+        settings: TextSettings,
+    ) -> Option<Self> {
         if document.metadata.page_mode != Some(0) || document.pages.is_empty() {
             return None;
         }
+        if pages.is_empty() {
+            return None;
+        }
+        let pages = document.pages.get(pages)?;
         let (width, height) = document.metadata.default_page_dimensions?;
         let density_axis = if document.metadata.orientation.unwrap_or(0) == 0 {
             width
@@ -21,9 +37,9 @@ impl PageExclusions {
         if density_axis as i32 <= 0 {
             return None;
         }
-        let mut boundaries = Vec::with_capacity(document.pages.len() + 1);
+        let mut boundaries = Vec::with_capacity(pages.len() + 1);
         let mut height = 0.0;
-        for page in &document.pages {
+        for page in pages {
             boundaries.push(height);
             height += f64::from(page.height);
         }
@@ -51,9 +67,8 @@ impl PageExclusions {
     pub fn line_bands(&self) -> Vec<VerticalExclusion> {
         self.boundaries
             .iter()
-            .map(|boundary| VerticalExclusion {
-                top: boundary - self.padding,
-                bottom: boundary + self.padding,
+            .map(|boundary| {
+                VerticalExclusion::page_padding(boundary - self.padding, boundary + self.padding)
             })
             .collect()
     }
@@ -70,16 +85,14 @@ impl PageExclusions {
             ObjectSpanLayoutConstraint::OverPages => self
                 .line_bands()
                 .into_iter()
+                .map(|band| VerticalExclusion::obstacle(band.top, band.bottom))
                 .filter(|band| band.bottom > stored_top)
                 .collect(),
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding => self
                 .boundaries
                 .iter()
                 .filter_map(|&boundary| {
-                    let band = VerticalExclusion {
-                        top: boundary,
-                        bottom: boundary + 1.0,
-                    };
+                    let band = VerticalExclusion::obstacle(boundary, boundary + 1.0);
                     (band.bottom > stored_top).then_some(band)
                 })
                 .collect(),
@@ -132,6 +145,21 @@ mod tests {
             .into_iter()
             .map(|band| (band.top, band.bottom))
             .collect()
+    }
+
+    #[test]
+    fn capture_boundaries_restart_at_the_first_selected_physical_page() {
+        let document = document(&[100, 200, 300, 400], Some(0));
+        let settings = TextSettings::from_document(&document.metadata);
+        let capture = PageExclusions::for_range(&document, 1..=2, settings).unwrap();
+        assert_eq!(capture.boundaries, [0.0, 200.0, 500.0]);
+        assert_eq!(
+            bounds(capture.line_bands()),
+            [(-30.0, 30.0), (170.0, 230.0), (470.0, 530.0)]
+        );
+        assert!(PageExclusions::for_range(&document, 1..=4, settings).is_none());
+        let reversed = (2_usize, 1_usize);
+        assert!(PageExclusions::for_range(&document, reversed.0..=reversed.1, settings).is_none());
     }
 
     #[test]

@@ -98,6 +98,24 @@ impl PreparedMarker {
         }
     }
 
+    pub fn bounds(&self, x: f64, center_y: f64) -> Option<BoundingBox> {
+        finite_native_geometry(x)?;
+        finite_native_geometry(center_y)?;
+        match self {
+            Self::Point { metrics, .. } => {
+                let center_x = x + metrics.button_width / 2.0;
+                marker_bounds(
+                    center_x - metrics.radius,
+                    center_y - metrics.radius,
+                    center_x + metrics.radius,
+                    center_y + metrics.radius,
+                )
+            }
+            Self::Number(number) => number.bounds(x, center_y),
+            Self::Checkbox(checkbox) => checkbox.bounds(x, center_y),
+        }
+    }
+
     pub fn paint(
         &self,
         svg: &mut Scene,
@@ -226,6 +244,43 @@ impl PreparedNumber {
         measured
     }
 
+    fn bounds(&self, x: f64, center_y: f64) -> Option<BoundingBox> {
+        let top = center_y - self.layout.height() / 2.0;
+        let mut bounds = marker_bounds(
+            x,
+            top,
+            x + self.source.bbox.x_max,
+            top + self.layout.height(),
+        )?;
+        for line in &self.layout.lines {
+            for placement in &line.line.placements {
+                let cluster = &placement.cluster;
+                let run = &cluster.run;
+                let scale = run.style.font_size / f64::from(run.face.metrics.units_per_em);
+                for glyph in run.glyphs.get(cluster.glyphs.clone())? {
+                    let Some(ink) = run.face.glyph_ink_bounds(glyph.raw.id).ok()? else {
+                        continue;
+                    };
+                    let glyph_x = x + line.x + placement.x - cluster.origin_x
+                        + (glyph.pen_x + i64::from(glyph.raw.x_offset)) as f64 * scale;
+                    let baseline = top + line.baseline
+                        - (glyph.pen_y + i64::from(glyph.raw.y_offset)) as f64 * scale;
+                    let ink = marker_bounds(
+                        glyph_x + f64::from(ink.x_min) * scale,
+                        baseline - f64::from(ink.y_max) * scale,
+                        glyph_x + f64::from(ink.x_max) * scale,
+                        baseline - f64::from(ink.y_min) * scale,
+                    )?;
+                    bounds.x_min = bounds.x_min.min(ink.x_min);
+                    bounds.y_min = bounds.y_min.min(ink.y_min);
+                    bounds.x_max = bounds.x_max.max(ink.x_max);
+                    bounds.y_max = bounds.y_max.max(ink.y_max);
+                }
+            }
+        }
+        Some(bounds)
+    }
+
     fn paint(
         &self,
         svg: &mut Scene,
@@ -251,6 +306,18 @@ impl PreparedNumber {
         );
         Some(())
     }
+}
+
+fn marker_bounds(x_min: f64, y_min: f64, x_max: f64, y_max: f64) -> Option<BoundingBox> {
+    if x_max <= x_min || y_max <= y_min {
+        return None;
+    }
+    Some(BoundingBox {
+        x_min: finite_native_geometry(x_min)?,
+        y_min: finite_native_geometry(y_min)?,
+        x_max: finite_native_geometry(x_max)?,
+        y_max: finite_native_geometry(y_max)?,
+    })
 }
 
 fn numbered_value(kind: BulletType, number: i32) -> Option<String> {
@@ -507,6 +574,75 @@ mod tests {
             strikethrough: true,
             link_target: Some("https://example.com".into()),
         }
+    }
+
+    #[test]
+    fn point_bounds_follow_outer_artwork_and_exclude_the_reserved_gap() {
+        let metrics = metrics(45.0, 3.0, PointMarkerTarget::Uwp);
+        for artwork in [
+            PointMarker::SolidCircle,
+            PointMarker::OpenCircle,
+            PointMarker::SolidSquare,
+            PointMarker::OpenSquare,
+        ] {
+            let marker = PreparedMarker::Point { artwork, metrics };
+            let bounds = marker.bounds(48.0, 401.625).unwrap();
+            assert_eq!(bounds.x_min, 64.0);
+            assert_eq!(bounds.x_max, 92.0);
+            assert_eq!(bounds.y_min, 387.625);
+            assert_eq!(bounds.y_max, 415.625);
+            assert!(bounds.x_max < 48.0 + marker.reserved_width());
+        }
+    }
+
+    #[test]
+    fn checkbox_bounds_cover_assets_larger_than_their_reservation() {
+        for checked in [false, true] {
+            let marker = PreparedMarker::Checkbox(
+                CheckboxMarker::measure(
+                    1000.0,
+                    TextSettings {
+                        scale: 3.0,
+                        ..Default::default()
+                    },
+                    PointMarkerTarget::Mobile,
+                    checked,
+                )
+                .unwrap(),
+            );
+            let bounds = marker.bounds(48.0, 401.625).unwrap();
+            assert_eq!(bounds.x_min, 30.0);
+            assert_eq!(bounds.x_max, 126.0);
+            assert_eq!(bounds.y_min, 352.625);
+            assert_eq!(bounds.y_max, 448.625);
+            assert_eq!(bounds.x_max - bounds.x_min, 96.0);
+            assert!(bounds.x_min < 48.0);
+            assert!(marker.bounds(f64::NAN, 401.625).is_none());
+        }
+    }
+
+    #[test]
+    fn numeric_bounds_retain_negative_glyph_bearings_and_layout_height() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(TextSettings::default(), &fonts);
+        let marker = PreparedMarker::prepare(
+            numbered_bullet(BulletType::Alphabet, 10, 1),
+            0,
+            &body_style(),
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+        .unwrap();
+        let bounds = marker.bounds(70.0, 100.0).unwrap();
+        let PreparedMarker::Number(number) = &marker else {
+            panic!("numeric marker");
+        };
+        assert_eq!(number.source.text, "j.");
+        assert!(bounds.x_min < 70.0, "the j overhang must remain visible");
+        assert!(bounds.y_min <= 100.0 - number.layout.height() / 2.0);
+        assert!(bounds.y_max >= 100.0 + number.layout.height() / 2.0);
+        assert!(bounds.x_max < 70.0 + marker.reserved_width());
+        assert!(marker.bounds(f64::INFINITY, 100.0).is_none());
     }
 
     #[test]

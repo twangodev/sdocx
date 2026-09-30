@@ -17,6 +17,31 @@ pub(in crate::render) struct VerticalExclusion {
     /// Absolute vertical coordinates in the same space as the frame's bounding box.
     pub top: f64,
     pub bottom: f64,
+    pub kind: ExclusionKind,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(in crate::render) enum ExclusionKind {
+    Obstacle,
+    PagePadding,
+}
+
+impl VerticalExclusion {
+    pub fn obstacle(top: f64, bottom: f64) -> Self {
+        Self {
+            top,
+            bottom,
+            kind: ExclusionKind::Obstacle,
+        }
+    }
+
+    pub fn page_padding(top: f64, bottom: f64) -> Self {
+        Self {
+            top,
+            bottom,
+            kind: ExclusionKind::PagePadding,
+        }
+    }
 }
 
 pub(in crate::render) struct ParagraphSpacing {
@@ -79,17 +104,85 @@ pub(in crate::render) struct TextFrame<'a> {
 }
 
 impl TextFrame<'_> {
-    fn line_top(&self, mut top: f64, advance: f64) -> f64 {
+    fn line_top(&self, line: &WrappedLine, mut top: f64, advance: f64) -> f64 {
+        let minimum_first_page_height = line
+            .objects
+            .iter()
+            .filter_map(|placement| {
+                placement
+                    .prepared_code
+                    .as_ref()?
+                    .as_ref()
+                    .ok()?
+                    .minimum_first_page_height()
+            })
+            .reduce(f64::max);
         while let Some(band) = self.exclusions.iter().find(|band| {
             band.top.is_finite()
                 && band.bottom.is_finite()
                 && band.top < band.bottom
                 && top < band.bottom - 0.0001
                 && top + advance > band.top + 0.0001
+                && !(band.kind == ExclusionKind::PagePadding
+                    && minimum_first_page_height.is_some_and(|minimum| {
+                        minimum <= f64::from(f32::EPSILON) || minimum.ceil() <= band.top - top
+                    }))
         }) {
             top = band.bottom;
         }
         top
+    }
+}
+
+pub(in crate::render) struct LinePlacement {
+    pub top: f64,
+    pub baseline: f64,
+    pub bottom: f64,
+    pub post_cursor: f64,
+}
+
+impl LinePlacement {
+    fn translate(&mut self, offset: f64) {
+        self.top += offset;
+        self.baseline += offset;
+        self.bottom += offset;
+        self.post_cursor += offset;
+    }
+}
+
+struct LineMetrics {
+    advance: f64,
+    baseline_offset: f64,
+    epsilon: f64,
+}
+
+impl LineMetrics {
+    fn for_line(
+        line: &WrappedLine,
+        spacing: Option<ParagraphLineSpacing>,
+        settings: super::TextSettings,
+    ) -> Self {
+        let has_objects = !line.objects.is_empty();
+        let block = line.has_block_margins();
+        let base_height = line.font_size.max(line.object_height());
+        let advance = if block {
+            base_height
+        } else if has_objects {
+            base_height + paragraph_line_height(line.font_size, spacing, settings) - line.font_size
+        } else {
+            paragraph_line_height(line.font_size, spacing, settings)
+        };
+        let epsilon = if has_objects { 0.001 } else { 0.0 };
+        let baseline_offset = if block {
+            base_height + epsilon
+        } else {
+            advance - 0.35 * line.font_size + epsilon
+        };
+        Self {
+            advance,
+            baseline_offset,
+            epsilon,
+        }
     }
 }
 
@@ -131,38 +224,80 @@ impl TextCursor {
         frame.bbox.y_min + self.position + self.pending_bottom.max(line.object_margins()[0])
     }
 
-    pub fn place(
+    #[cfg(test)]
+    fn place(
         &mut self,
         line: &WrappedLine,
         spacing: Option<ParagraphLineSpacing>,
         frame: &TextFrame<'_>,
         settings: super::TextSettings,
+    ) -> LinePlacement {
+        self.place_at(
+            line,
+            spacing,
+            frame,
+            settings,
+            self.candidate_top(line, frame),
+        )
+    }
+
+    fn prospective_top(
+        &self,
+        line: &WrappedLine,
+        spacing: Option<ParagraphLineSpacing>,
+        frame: &TextFrame<'_>,
+        settings: super::TextSettings,
+        minimum_top: f64,
     ) -> f64 {
-        let [top_margin, bottom_margin] = line.object_margins();
-        self.position += self.pending_bottom.max(top_margin);
-        self.pending_bottom = bottom_margin;
-        let has_objects = !line.objects.is_empty();
-        let block = line.has_block_margins();
-        let base_height = line.font_size.max(line.object_height());
-        let advance = if block {
-            base_height
-        } else if has_objects {
-            base_height + paragraph_line_height(line.font_size, spacing, settings) - line.font_size
-        } else {
-            paragraph_line_height(line.font_size, spacing, settings)
-        };
-        let candidate_top = frame.bbox.y_min + self.position;
-        let top = frame.line_top(candidate_top, advance);
-        let offset = if block {
-            base_height + 0.001
-        } else if has_objects {
-            advance - 0.35 * line.font_size + 0.001
-        } else {
-            advance - 0.35 * line.font_size
-        };
-        let epsilon = if has_objects { 0.001 } else { 0.0 };
-        self.position += top - candidate_top + advance + epsilon;
-        top + offset
+        let metrics = LineMetrics::for_line(line, spacing, settings);
+        frame.line_top(
+            line,
+            minimum_top.max(self.candidate_top(line, frame)),
+            metrics.advance,
+        )
+    }
+
+    fn prepare_line(
+        &self,
+        line: &mut WrappedLine,
+        styled: &StyledText<'_>,
+        frame: &TextFrame<'_>,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+        spacing: Option<ParagraphLineSpacing>,
+    ) -> f64 {
+        let mut candidate_top = self.candidate_top(line, frame);
+        for _ in 0..=frame.exclusions.len() {
+            prepare_line_objects(line, styled, candidate_top, theme, renderer);
+            let top = self.prospective_top(line, spacing, frame, renderer.settings, candidate_top);
+            if top <= candidate_top {
+                return candidate_top;
+            }
+            candidate_top = top;
+        }
+        candidate_top
+    }
+
+    fn place_at(
+        &mut self,
+        line: &WrappedLine,
+        spacing: Option<ParagraphLineSpacing>,
+        frame: &TextFrame<'_>,
+        settings: super::TextSettings,
+        minimum_top: f64,
+    ) -> LinePlacement {
+        let background_top = frame.bbox.y_min + self.position;
+        let metrics = LineMetrics::for_line(line, spacing, settings);
+        let candidate_top = self.candidate_top(line, frame);
+        let top = self.prospective_top(line, spacing, frame, settings, minimum_top);
+        self.position = top - frame.bbox.y_min + metrics.advance + metrics.epsilon;
+        self.pending_bottom = line.object_margins()[1];
+        LinePlacement {
+            top: background_top + top - candidate_top,
+            baseline: top + metrics.baseline_offset,
+            bottom: frame.bbox.y_min + self.position,
+            post_cursor: frame.bbox.y_min + self.position,
+        }
     }
 }
 
@@ -180,12 +315,13 @@ pub(in crate::render) fn prepare_line_objects(
         let Some(crate::RichTextObjectContent::CodeBlock(code)) = span.content.as_ref() else {
             continue;
         };
+        let object_renderer = renderer.for_object_source(placement.object.source.clone());
         let prepared = crate::render::code::prepare_code(
             code,
             span.layout_constraint,
             candidate_top,
             theme,
-            renderer,
+            &object_renderer,
         );
         match &prepared {
             Ok(prepared) => {
@@ -199,7 +335,7 @@ pub(in crate::render) fn prepare_line_objects(
                     placement.object.height = height;
                 }
             }
-            Err(kind) => renderer.report_object_issues(&[super::ObjectDiagnostic {
+            Err(kind) => object_renderer.report_object_issues(&[super::ObjectDiagnostic {
                 anchor_utf16: span.text_index_utf16,
                 kind: *kind,
             }]),
@@ -213,6 +349,9 @@ pub(in crate::render) struct TextLine {
     pub x: f64,
     pub width: f64,
     pub baseline: f64,
+    pub top: f64,
+    pub bottom: f64,
+    pub post_cursor: f64,
     pub alignment: Option<ParagraphAlignment>,
     pub predefined: Option<PredefinedTextStyle>,
     pub marker: Option<PositionedMarker>,
@@ -286,6 +425,9 @@ impl TextLayout {
         };
         for line in &mut self.lines {
             line.baseline += offset;
+            line.top += offset;
+            line.bottom += offset;
+            line.post_cursor += offset;
             if let Some(marker) = &mut line.marker {
                 marker.center_y += offset;
             }
@@ -352,10 +494,20 @@ pub(in crate::render) fn layout_flow_text(
     layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Flow)
 }
 
+pub(in crate::render) fn layout_capture_text(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> TextLayout {
+    layout_text_with_context(styled, frame, theme, renderer, LayoutContext::Capture)
+}
+
 #[derive(Clone, Copy)]
 enum LayoutContext {
     Frame,
     Flow,
+    Capture,
 }
 
 impl LayoutContext {
@@ -402,7 +554,7 @@ fn layout_text_with_context(
         .index
         .paragraphs()
         .map(|mut paragraph| {
-            if matches!(context, LayoutContext::Flow) {
+            if matches!(context, LayoutContext::Flow | LayoutContext::Capture) {
                 let content = styled.index.slice(paragraph.content.clone()).unwrap();
                 paragraph.content.end =
                     paragraph.content.start + content.trim_end_matches('\r').chars().count();
@@ -425,10 +577,21 @@ fn layout_text_with_context(
     for (paragraph_number, (paragraph, layout)) in
         paragraphs.iter().zip(&paragraph_layouts).enumerate()
     {
+        let paragraph_renderer = renderer.for_source(paragraph.content.clone());
+        let renderer = &paragraph_renderer;
+        let marker_renderer = renderer.for_source(
+            paragraph.content.start..(paragraph.content.start + 1).min(styled.index.len()),
+        );
         let marker_x = content_left + layout.left_indent(settings);
         let marker_style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
         let mut marker = layout.bullet.and_then(|bullet| {
-            PreparedMarker::prepare(bullet, layout.indent_level, &marker_style, theme, renderer)
+            PreparedMarker::prepare(
+                bullet,
+                layout.indent_level,
+                &marker_style,
+                theme,
+                &marker_renderer,
+            )
         });
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
         let x = marker_x + marker_width;
@@ -442,7 +605,7 @@ fn layout_text_with_context(
             renderer,
         );
         let previous = match context {
-            LayoutContext::Flow => styled
+            LayoutContext::Flow | LayoutContext::Capture => styled
                 .index
                 .paragraph_index(paragraph.content.start)
                 .and_then(|ordinal| ordinal.checked_sub(1))
@@ -466,17 +629,28 @@ fn layout_text_with_context(
         }
         for (line_number, mut line) in paragraph_lines.into_iter().enumerate() {
             let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
-            let candidate_top =
-                continuation_top.unwrap_or_else(|| cursor.candidate_top(&line, &frame));
-            prepare_line_objects(&mut line, styled, candidate_top, theme, renderer);
+            let settled_top = if let Some(top) = continuation_top {
+                prepare_line_objects(&mut line, styled, top, theme, renderer);
+                cursor.candidate_top(&line, &frame)
+            } else {
+                cursor.prepare_line(
+                    &mut line,
+                    styled,
+                    &frame,
+                    theme,
+                    renderer,
+                    layout.line_spacing,
+                )
+            };
             renderer.report_line_geometry(&line, layout.line_spacing);
-            let mut baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
+            let mut placement =
+                cursor.place_at(&line, layout.line_spacing, &frame, settings, settled_top);
             if let Some(top) = continuation_top
                 && let [object] = line.objects.as_slice()
             {
-                let correction = top + object.object.height - baseline;
+                let correction = top + object.object.height - placement.baseline;
                 cursor.add_spacing(correction);
-                baseline += correction;
+                placement.translate(correction);
             }
             let positioned_marker = marker.take().and_then(|marker| {
                 PositionedMarker::for_line(
@@ -485,16 +659,19 @@ fn layout_text_with_context(
                     marker_x,
                     &line,
                     layout.line_spacing,
-                    baseline,
-                    frame.bbox.y_min + cursor.position(),
-                    renderer,
+                    placement.baseline,
+                    placement.post_cursor,
+                    &marker_renderer,
                 )
             });
             lines.push(TextLine {
                 line,
                 x,
                 width,
-                baseline,
+                baseline: placement.baseline,
+                top: placement.top,
+                bottom: placement.bottom,
+                post_cursor: placement.post_cursor,
                 alignment: layout.alignment,
                 predefined: layout.predefined_style,
                 marker: positioned_marker,
@@ -592,18 +769,9 @@ mod tests {
     fn touching_edges_and_sub_tolerance_overlap_do_not_move_lines() {
         for bands in [
             Vec::new(),
-            vec![VerticalExclusion {
-                top: 80.0,
-                bottom: 100.0,
-            }],
-            vec![VerticalExclusion {
-                top: 113.5,
-                bottom: 130.0,
-            }],
-            vec![VerticalExclusion {
-                top: 113.49995,
-                bottom: 130.0,
-            }],
+            vec![VerticalExclusion::obstacle(80.0, 100.0)],
+            vec![VerticalExclusion::obstacle(113.5, 130.0)],
+            vec![VerticalExclusion::obstacle(113.49995, 130.0)],
         ] {
             let plan = measure(&text("ABC"), &bands);
             assert_eq!(plan.lines.len(), 1);
@@ -615,7 +783,7 @@ mod tests {
     #[test]
     fn full_line_advance_crossing_a_band_retries_at_its_bottom() {
         for top in [112.0, 113.499] {
-            let plan = measure(&text("ABC"), &[VerticalExclusion { top, bottom: 130.0 }]);
+            let plan = measure(&text("ABC"), &[VerticalExclusion::obstacle(top, 130.0)]);
             assert_eq!(plan.lines[0].baseline, 140.0);
             assert_eq!(plan.height(), 43.5);
         }
@@ -626,14 +794,8 @@ mod tests {
         let plan = measure(
             &text("ABC\nDEF"),
             &[
-                VerticalExclusion {
-                    top: 130.0,
-                    bottom: 145.0,
-                },
-                VerticalExclusion {
-                    top: 105.0,
-                    bottom: 125.0,
-                },
+                VerticalExclusion::obstacle(130.0, 145.0),
+                VerticalExclusion::obstacle(105.0, 125.0),
             ],
         );
         assert_eq!(
@@ -650,13 +812,7 @@ mod tests {
 
     #[test]
     fn starting_inside_a_band_skips_only_the_remaining_height() {
-        let plan = measure(
-            &text("ABC"),
-            &[VerticalExclusion {
-                top: 90.0,
-                bottom: 120.0,
-            }],
-        );
+        let plan = measure(&text("ABC"), &[VerticalExclusion::obstacle(90.0, 120.0)]);
         assert_eq!(plan.lines[0].baseline, 130.0);
         assert_eq!(plan.height(), 33.5);
     }
@@ -674,23 +830,14 @@ mod tests {
         let clear = measure(&content, &[]);
         assert_eq!(clear.lines[0].baseline, 116.0);
         assert_eq!(clear.height(), 22.5);
-        let blocked = measure(
-            &content,
-            &[VerticalExclusion {
-                top: 110.0,
-                bottom: 130.0,
-            }],
-        );
+        let blocked = measure(&content, &[VerticalExclusion::obstacle(110.0, 130.0)]);
         assert_eq!(blocked.lines[0].baseline, 140.0);
         assert_eq!(blocked.height(), 46.5);
     }
 
     #[test]
     fn exclusions_preserve_empty_height_and_measured_gravity() {
-        let bands = [VerticalExclusion {
-            top: 105.0,
-            bottom: 120.0,
-        }];
+        let bands = [VerticalExclusion::obstacle(105.0, 120.0)];
         let mut empty = text("");
         empty.margins = Some([0.0, 2.0, 0.0, 3.0]);
         empty.gravity = Some(1);
@@ -761,20 +908,22 @@ mod tests {
     }
 
     fn place_object(cursor: &mut TextCursor, line: &WrappedLine) -> f64 {
-        cursor.place(
-            line,
-            None,
-            &TextFrame {
-                bbox: BoundingBox::default(),
-                gravity: None,
-                exclusions: &[],
-            },
-            TextSettings {
-                scale: 1.0,
-                font_size_delta: 0.0,
-                ..Default::default()
-            },
-        )
+        cursor
+            .place(
+                line,
+                None,
+                &TextFrame {
+                    bbox: BoundingBox::default(),
+                    gravity: None,
+                    exclusions: &[],
+                },
+                TextSettings {
+                    scale: 1.0,
+                    font_size_delta: 0.0,
+                    ..Default::default()
+                },
+            )
+            .baseline
     }
 
     fn close(actual: f64, expected: f64) {
@@ -834,6 +983,9 @@ mod tests {
             let marker = plan.lines[0].marker.as_ref().unwrap();
             assert_eq!(marker.center_y, expected_center);
             assert_eq!(plan.lines[0].baseline - marker.center_y, 3.25);
+            assert_eq!(plan.lines[0].top, expected_center - 6.75);
+            assert_eq!(plan.lines[0].bottom, expected_center + 6.75);
+            assert_eq!(plan.lines[0].post_cursor, plan.lines[0].bottom);
             assert_eq!(plan.height(), 13.5);
         }
     }
@@ -1096,10 +1248,18 @@ mod tests {
             let theme = RenderTheme::for_canvas(false);
             let placed = layout_text(&styled, frame(), theme, &renderer);
             let flow = layout_flow_text(&styled, frame(), theme, &renderer);
+            let capture = layout_capture_text(&styled, frame(), theme, &renderer);
             assert_eq!(placed.lines.len(), flow.lines.len());
+            assert_eq!(placed.lines.len(), capture.lines.len());
+            for (placed, capture) in placed.lines.iter().zip(&capture.lines) {
+                assert_eq!(placed.baseline, capture.baseline);
+            }
             if continues {
                 close(placed.lines[0].baseline, 100.001);
                 close(flow.lines[0].baseline, 80.0);
+                close(flow.lines[0].top, -20.001);
+                close(flow.lines[0].bottom, 80.0);
+                close(flow.lines[0].post_cursor, 80.0);
                 close(placed.lines[1].baseline, 110.001);
                 close(flow.lines[1].baseline, 90.0);
                 close(flow.height(), 93.5);
@@ -1152,6 +1312,158 @@ mod tests {
                 anchor as usize..anchor as usize + 1
             );
             close(plan.lines.last().unwrap().baseline, next_baseline);
+        }
+    }
+
+    #[test]
+    fn moving_a_parent_code_line_remeasures_child_splits_at_its_final_candidate() {
+        let document = crate::Document {
+            pages: (0..3)
+                .map(|index| crate::Page {
+                    uuid: format!("page-{index}"),
+                    width: 1080,
+                    height: 500,
+                    content_bbox: BoundingBox::default(),
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: Vec::new(),
+                })
+                .collect(),
+            metadata: crate::DocumentMetadata {
+                page_mode: Some(0),
+                default_page_dimensions: Some((1080, 500)),
+                ..Default::default()
+            },
+        };
+        let settings = TextSettings::from_document(&document.metadata);
+        let fonts = FontBook::default();
+        let pages = super::super::PageExclusions::for_document(&document, settings).unwrap();
+        let bands = pages.line_bands();
+        let renderer = TextRenderer::new(settings, &fonts).with_page_exclusions(Some(pages));
+        let mut title = text("language");
+        title.font_size = Some(15.0);
+        let mut body = text("A\nB\nC\nD\nE\nF");
+        body.font_size = Some(15.0);
+        let code = crate::RichTextCodeBlock {
+            bbox: BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 600.0,
+                y_max: 10.0,
+            },
+            rotation_degrees: None,
+            title: Some(title),
+            body: Some(body),
+        };
+        let theme = RenderTheme::for_canvas(false);
+        let initial = crate::render::code::prepare_code(
+            &code,
+            ObjectSpanLayoutConstraint::OverPages,
+            420.0,
+            theme,
+            &renderer,
+        )
+        .unwrap();
+        close(initial.panel_bbox.y_max - initial.panel_bbox.y_min, 556.5);
+        let mut content = text("\u{fffc}\nZ");
+        content.font_size = Some(15.0);
+        content.margins = Some([0.0, 140.0, 0.0, 0.0]);
+        content.object_spans.push(crate::RichTextObjectSpan {
+            object_type: crate::ObjectType::CodeBlock,
+            object_data: Vec::new(),
+            content: Some(crate::RichTextObjectContent::CodeBlock(Box::new(code))),
+            text_index_utf16: 0,
+            layout_option: crate::ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::OverPages,
+        });
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let plan = layout_capture_text(
+            &styled,
+            TextFrame {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 1080.0,
+                    y_max: 0.0,
+                },
+                gravity: None,
+                exclusions: &bands,
+            },
+            theme,
+            &renderer,
+        );
+        let line = &plan.lines[0];
+        let prepared = line.line.objects[0]
+            .prepared_code
+            .as_ref()
+            .unwrap()
+            .as_ref()
+            .unwrap();
+        close(line.top, 530.0);
+        close(prepared.panel_bbox.y_min, 530.0);
+        close(prepared.panel_bbox.y_max, 1150.75);
+        close(line.baseline, 1150.751);
+        close(line.line.objects[0].object.height, 620.75);
+        let body = prepared.body_layout.as_ref().unwrap();
+        close(body.lines[0].baseline, 707.0);
+        close(body.lines[5].baseline, 1075.0);
+        close(plan.lines[1].baseline, 1195.751);
+    }
+
+    #[test]
+    fn prepared_code_may_cross_only_padding_when_its_first_page_minimum_fits() {
+        let fonts = FontBook::default();
+        let settings = TextSettings {
+            scale: 3.0,
+            ..Default::default()
+        };
+        let renderer = TextRenderer::new(settings, &fonts);
+        let mut child_text = text("A");
+        child_text.font_size = Some(15.0);
+        let code = crate::RichTextCodeBlock {
+            bbox: BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 600.0,
+                y_max: 10.0,
+            },
+            rotation_degrees: None,
+            title: Some(child_text.clone()),
+            body: Some(child_text),
+        };
+        for (constraint, obstacle, candidate, expected_baseline) in [
+            (ObjectSpanLayoutConstraint::OverPages, false, 18.0, 270.751),
+            (ObjectSpanLayoutConstraint::OverPages, false, 18.25, 512.751),
+            (ObjectSpanLayoutConstraint::OverPages, true, 18.0, 512.751),
+            (ObjectSpanLayoutConstraint::Normal, false, 18.0, 512.751),
+        ] {
+            let prepared = crate::render::code::prepare_code(
+                &code,
+                constraint,
+                candidate,
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .unwrap();
+            assert_eq!(prepared.min_first_page_height, 181.5);
+            let mut line = object_line(0.0, false, [0.0; 2]);
+            line.objects[0].object.height = prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+            line.objects[0].prepared_code = Some(Ok(Box::new(prepared)));
+            let bands = [if obstacle {
+                VerticalExclusion::obstacle(200.0, 260.0)
+            } else {
+                VerticalExclusion::page_padding(200.0, 260.0)
+            }];
+            let frame = TextFrame {
+                bbox: BoundingBox::default(),
+                gravity: None,
+                exclusions: &bands,
+            };
+            let mut cursor = TextCursor::new(candidate);
+            let placement = cursor.place(&line, None, &frame, settings);
+            close(placement.baseline, expected_baseline);
+            close(placement.bottom, placement.post_cursor);
         }
     }
 

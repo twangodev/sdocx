@@ -31,6 +31,8 @@ pub(in crate::render) fn render_measured_line(
     if line.source.is_empty() {
         return;
     }
+    let scoped_renderer = renderer.for_source(line.source.clone());
+    let renderer = &scoped_renderer;
     if line.placements.is_empty() && line.objects.is_empty() {
         render_flow_line(
             svg,
@@ -129,7 +131,7 @@ pub(in crate::render) fn render_measured_line(
     }
 }
 
-fn text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
+pub(in crate::render) fn text_ranges(line: &WrappedLine) -> Vec<Range<usize>> {
     let mut ranges = Vec::with_capacity(line.objects.len() + 1);
     let mut start = line.source.start;
     for object in &line.objects {
@@ -215,7 +217,9 @@ fn positioned_spans(
             .iter()
             .any(|glyph| glyph.raw.id == 0)
         {
-            renderer.missing_glyphs(&cluster.run.face.family, text);
+            renderer
+                .for_source(cluster.source.clone())
+                .missing_glyphs(&cluster.run.face.family, text);
             supported = false;
             offsets.push(None);
             continue;
@@ -224,7 +228,9 @@ fn positioned_spans(
         if offset.is_none_or(|offset| {
             !(x + placement.x + offset.x).is_finite() || !(baseline + offset.y).is_finite()
         }) {
-            renderer.glyph_positioning_unsupported(&cluster.run.face.family, text);
+            renderer
+                .for_source(cluster.source.clone())
+                .glyph_positioning_unsupported(&cluster.run.face.family, text);
             supported = false;
         }
         offsets.push(offset);
@@ -242,10 +248,12 @@ fn positioned_spans(
             let first = &line.placements[index];
             if first.cluster.source.start < segment.start || first.cluster.source.end > segment.end
             {
-                renderer.glyph_positioning_unsupported(
-                    &first.cluster.run.face.family,
-                    styled.index.slice(first.cluster.source.clone())?,
-                );
+                renderer
+                    .for_source(first.cluster.source.clone())
+                    .glyph_positioning_unsupported(
+                        &first.cluster.run.face.family,
+                        styled.index.slice(first.cluster.source.clone())?,
+                    );
                 return None;
             }
             let offset_y = offsets[index]?.y;
@@ -266,6 +274,9 @@ fn positioned_spans(
                     index += 1;
                 }
             }
+            renderer
+                .for_source(source.clone())
+                .report_resolution(&style, styled.context());
             result.push(PositionedSpan {
                 source,
                 positions,

@@ -58,6 +58,7 @@ struct NativeReference {
     page_index: usize,
     pdf_to_svg_scale: f64,
     logical_pdf_page_height: f64,
+    pdf_viewport: [f64; 4],
     coordinate_tolerance: f64,
     font_size: f64,
     lines: Vec<NativeLine>,
@@ -76,6 +77,8 @@ struct NativeLine {
     x: f64,
     baseline: f64,
     font_size: Option<f64>,
+    visible: Option<bool>,
+    viewport_ink_bounds: Option<[f64; 4]>,
 }
 
 fn fixture() -> Fixture {
@@ -136,8 +139,13 @@ fn native_first_four_page_body_and_saved_code_match_independent_pdf_layout() {
             .unwrap()
             .as_array()
             .unwrap();
-        assert_eq!(media_box[1].as_float().unwrap(), 0.0);
-        let native_viewport_height = f64::from(media_box[3].as_float().unwrap());
+        let media_box =
+            std::array::from_fn::<_, 4, _>(|index| f64::from(media_box[index].as_float().unwrap()));
+        assert_eq!(
+            media_box, reference.pdf_viewport,
+            "native page {page_index}"
+        );
+        let native_viewport_height = media_box[3];
         let viewport_offset = (reference.logical_pdf_page_height - native_viewport_height)
             * reference.pdf_to_svg_scale;
         let svg = sdocx::render_page_svg(&document, page_index, &Default::default())
@@ -194,6 +202,22 @@ fn assert_native_lines(
             .iter()
             .filter(|(_, text)| *text == expected.text)
             .collect::<Vec<_>>();
+        if expected.visible == Some(false) {
+            let [left, top, right, bottom] = expected.viewport_ink_bounds.unwrap();
+            let viewport_width = reference.pdf_viewport[2] * reference.pdf_to_svg_scale;
+            let viewport_height = reference.pdf_viewport[3] * reference.pdf_to_svg_scale;
+            assert!(
+                right <= 0.0 || bottom <= 0.0 || left >= viewport_width || top >= viewport_height,
+                "native page {page_index} {:?} ink must lie outside the viewport",
+                expected.text
+            );
+            assert!(
+                matches.is_empty(),
+                "native page {page_index} {:?} is clipped and must not emit SVG text",
+                expected.text
+            );
+            continue;
+        }
         assert_eq!(matches.len(), 1, "page {page_index} {:?}", expected.text);
         let actual = matches[0].0;
         let positioned = actual

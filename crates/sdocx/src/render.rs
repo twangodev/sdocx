@@ -22,6 +22,7 @@ pub use marker::PointMarkerTarget;
 mod table;
 mod text;
 mod theme;
+mod viewport;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
 pub use text::{ObjectDiagnostic, ObjectDiagnosticKind, TextDiagnostic, TextDiagnosticKind};
@@ -29,6 +30,7 @@ use text::{StyledText, TextContext, TextRenderer, TextSettings, TextStyle, rende
 pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
+use viewport::Viewport;
 mod vector;
 
 /// Color treatment to use while rendering a document.
@@ -184,14 +186,15 @@ fn render_layout_page(
             layout_page.source_page_index,
             settings,
         ));
+    let body_capture = PreparedBodyCapture::new(document, layout_page, theme, &text_renderer);
     let svg = render_page_contents_svg(
         page,
         &document.metadata,
         &document.metadata.media_assets,
-        document.metadata.flow_page_padding,
         theme,
         replay,
         &text_renderer,
+        body_capture.as_ref(),
     );
     RenderedPage {
         source_page_index: layout_page.source_page_index,
@@ -200,6 +203,206 @@ fn render_layout_page(
         svg,
         text_diagnostics: text_renderer.diagnostics(),
         object_diagnostics: text_renderer.object_diagnostics(),
+    }
+}
+
+struct PreparedBodyCapture {
+    text: RichTextBox,
+    layout: text::TextLayout,
+    text_issues: Vec<text::SourceTextDiagnostic>,
+    object_issues: Vec<text::SourceObjectDiagnostic>,
+    exclusions: Option<text::PageExclusions>,
+    object_index: usize,
+    page_top: f64,
+    viewport: Viewport,
+}
+
+impl PreparedBodyCapture {
+    fn new(
+        document: &Document,
+        page: &crate::LayoutPage,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<Self> {
+        let text = page.body_text_capture(document)?;
+        let body = page.body_text_slice()?;
+        let window = body.capture_window.as_ref()?;
+        let exclusions = text::PageExclusions::for_range(
+            document,
+            window.first_page_index..=window.requested_page_index,
+            renderer.settings,
+        );
+        let planner = TextRenderer::new(renderer.settings, renderer.fonts)
+            .with_point_marker_target(renderer.point_marker_target)
+            .with_page_exclusions(exclusions.clone());
+        let bands = exclusions
+            .as_ref()
+            .map_or_else(Vec::new, text::PageExclusions::line_bands);
+        let padding = document
+            .metadata
+            .flow_page_padding
+            .map_or(FLOW_HORIZONTAL_PADDING, |(horizontal, _)| {
+                f64::from(horizontal)
+            });
+        let styled = StyledText::new(&text, TextContext::Flow, renderer.settings);
+        let layout = text::layout_capture_text(
+            &styled,
+            text::TextFrame {
+                bbox: BoundingBox {
+                    x_min: padding,
+                    y_min: 0.0,
+                    x_max: f64::from(page.page.width) - padding,
+                    y_max: 0.0,
+                },
+                gravity: None,
+                exclusions: &bands,
+            },
+            theme,
+            &planner,
+        );
+        let page_top = document.pages[window.first_page_index..window.requested_page_index]
+            .iter()
+            .map(|page| f64::from(page.height))
+            .sum::<f64>();
+        Some(Self {
+            text,
+            layout,
+            text_issues: planner.scoped_diagnostics(),
+            object_issues: planner.scoped_object_diagnostics(),
+            exclusions,
+            object_index: body.object_index,
+            page_top,
+            viewport: Viewport::new(BoundingBox {
+                x_min: 0.0,
+                x_max: f64::from(page.page.width),
+                y_min: page_top,
+                y_max: page_top + f64::from(page.page.height),
+            }),
+        })
+    }
+
+    fn paint(&self, svg: &mut Scene, context: &CompositionContext<'_>) {
+        let renderer = context
+            .text_renderer
+            .clone()
+            .with_page_exclusions(self.exclusions.clone());
+        let styled = StyledText::new(&self.text, TextContext::Flow, renderer.settings);
+        let sources = VisibleTextSources::new(&styled, &self.layout, self.viewport, context.theme);
+        renderer.report_owned_object_issues(
+            &self
+                .object_issues
+                .iter()
+                .filter(|issue| sources.contains(issue.owner.as_ref(), false))
+                .cloned()
+                .collect::<Vec<_>>(),
+        );
+        let clip = svg.definition::<Clip>();
+        svg.push(
+            Definitions::new().add(
+                ClipPath::new(&clip).add(
+                    Rectangle::new()
+                        .x(0)
+                        .y(0)
+                        .width(context.page.width)
+                        .height(context.page.height),
+                ),
+            ),
+        );
+        svg.scope(Group::new().flow().clipped(&clip), |svg| {
+            svg.scope(
+                Group::new().transformed(Transform::translate(0.0, -self.page_top, 5)),
+                |svg| {
+                    paint_text_layout_in_viewport(
+                        svg,
+                        &styled,
+                        &self.layout,
+                        context.media_assets,
+                        context.theme,
+                        &renderer,
+                        Some(self.viewport),
+                    );
+                },
+            );
+        });
+        renderer.report_text_issues(
+            &self
+                .text_issues
+                .iter()
+                .filter(|issue| {
+                    is_layout_issue(&issue.diagnostic)
+                        && sources.contains(
+                            issue.owner.as_ref(),
+                            issue.diagnostic.kind == TextDiagnosticKind::InvalidGeometry,
+                        )
+                })
+                .cloned()
+                .collect::<Vec<_>>(),
+        );
+    }
+}
+
+struct VisibleTextSources {
+    text: Vec<Range<usize>>,
+    layout: Vec<Range<usize>>,
+    objects: Vec<Range<usize>>,
+}
+
+impl VisibleTextSources {
+    fn new(
+        styled: &StyledText<'_>,
+        layout: &text::TextLayout,
+        viewport: Viewport,
+        theme: RenderTheme,
+    ) -> Self {
+        let mut sources = Self {
+            text: Vec::new(),
+            layout: Vec::new(),
+            objects: Vec::new(),
+        };
+        for line in &layout.lines {
+            if viewport.line_visible(line) {
+                sources.layout.push(line.line.source.clone());
+                if viewport.text_visible(styled, line, theme) {
+                    sources.text.push(line.line.source.clone());
+                }
+            }
+            if let Some(marker) = &line.marker
+                && marker
+                    .marker
+                    .bounds(marker.x, marker.center_y)
+                    .is_some_and(|bounds| viewport.intersects(bounds))
+            {
+                sources
+                    .text
+                    .push(marker.source..marker.source.saturating_add(1));
+            }
+            let left = aligned_line_left(&line.line, line.x, line.width, line.alignment);
+            for object in &line.line.objects {
+                if viewport.intersects(object_paint_bounds(object, left, line.baseline)) {
+                    sources.objects.push(object.object.source.clone());
+                }
+            }
+        }
+        sources
+    }
+
+    fn contains(&self, owner: Option<&text::SourceOwner>, geometry: bool) -> bool {
+        let Some(owner) = owner else {
+            return true;
+        };
+        let (source, visible) = match owner {
+            text::SourceOwner::Text(source) => {
+                (source, if geometry { &self.layout } else { &self.text })
+            }
+            text::SourceOwner::Object(source) => (source, &self.objects),
+        };
+        visible.iter().any(|visible| {
+            if source.is_empty() {
+                visible.start <= source.start && source.start <= visible.end
+            } else {
+                source.start < visible.end && visible.start < source.end
+            }
+        })
     }
 }
 
@@ -213,10 +416,10 @@ fn render_page_contents_svg(
     page: &Page,
     metadata: &crate::DocumentMetadata,
     media_assets: &[MediaAsset],
-    flow_page_padding: Option<(u32, u32)>,
     theme: RenderTheme,
     replay: bool,
     text_renderer: &TextRenderer<'_>,
+    body_capture: Option<&PreparedBodyCapture>,
 ) -> String {
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
@@ -255,10 +458,11 @@ fn render_page_contents_svg(
     let composition = CompositionContext {
         page,
         media_assets,
-        flow_page_padding,
+        flow_page_padding: metadata.flow_page_padding,
         text_renderer,
         theme,
         replay,
+        body_capture,
     };
     render_pass(&mut svg, &composition, RenderPass::Base);
     if page
@@ -287,14 +491,21 @@ struct CompositionContext<'a> {
     text_renderer: &'a TextRenderer<'a>,
     theme: RenderTheme,
     replay: bool,
+    body_capture: Option<&'a PreparedBodyCapture>,
 }
 
 fn render_pass(svg: &mut Scene, context: &CompositionContext<'_>, pass: RenderPass) {
     let mut stroke_index = 0;
-    for object in &context.page.objects {
+    for (object_index, object) in context.page.objects.iter().enumerate() {
         if let Some(selected) = object.render_pass() {
             if selected == pass {
-                render_object(svg, context, object, &mut stroke_index);
+                if let Some(body) = context.body_capture
+                    && body.object_index == object_index
+                {
+                    body.paint(svg, context);
+                } else {
+                    render_object(svg, context, object, &mut stroke_index);
+                }
             } else {
                 stroke_index += object.stroke_count();
             }
@@ -756,23 +967,44 @@ fn paint_text_layout(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) {
+    paint_text_layout_in_viewport(svg, styled, layout, media_assets, theme, renderer, None);
+}
+
+fn paint_text_layout_in_viewport(
+    svg: &mut Scene,
+    styled: &StyledText<'_>,
+    layout: &text::TextLayout,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
+) {
     for line in &layout.lines {
-        if let Some(marker) = &line.marker {
+        if let Some(marker) = &line.marker
+            && viewport.is_none_or(|viewport| {
+                marker
+                    .marker
+                    .bounds(marker.x, marker.center_y)
+                    .is_some_and(|bounds| viewport.intersects(bounds))
+            })
+        {
             let style = styled.style_at(marker.source, theme, line.predefined);
             paint_positioned_marker(svg, marker, &style, theme, renderer);
         }
-        render_measured_line(
-            svg,
-            styled,
-            &line.line,
-            line.x,
-            line.width,
-            line.baseline,
-            line.alignment,
-            theme,
-            line.predefined,
-            renderer,
-        );
+        if viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)) {
+            render_measured_line(
+                svg,
+                styled,
+                &line.line,
+                line.x,
+                line.width,
+                line.baseline,
+                line.alignment,
+                theme,
+                line.predefined,
+                renderer,
+            );
+        }
         paint_line_objects(
             svg,
             styled,
@@ -785,6 +1017,7 @@ fn paint_text_layout(
             media_assets,
             theme,
             renderer,
+            viewport,
         );
     }
 }
@@ -802,14 +1035,9 @@ fn paint_line_objects(
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
 ) {
-    let remaining = (available_width - line.advance).max(0.0);
-    let left = left
-        + match alignment {
-            Some(ParagraphAlignment::Center) => remaining / 2.0,
-            Some(ParagraphAlignment::Right) => remaining,
-            _ => 0.0,
-        };
+    let left = aligned_line_left(line, left, available_width, alignment);
     for placement in &line.objects {
         let object = &placement.object;
         let Some(span) = styled.object_span(object.span_index) else {
@@ -819,6 +1047,11 @@ fn paint_line_objects(
             continue;
         }
         let height = object.height;
+        if viewport.is_some_and(|viewport| {
+            !viewport.intersects(object_paint_bounds(placement, left, baseline))
+        }) {
+            continue;
+        }
         let offset = (
             left + placement.x - object.bounds.x_min,
             baseline - height - object.bounds.y_min,
@@ -840,11 +1073,20 @@ fn paint_line_objects(
                                 media_assets,
                                 theme,
                                 renderer,
+                                viewport.map(|viewport| viewport.translated(-offset.0, -shift)),
                             );
                         },
                     );
-                } else if render_embedded_object(svg, span, offset.1, media_assets, theme, renderer)
-                    .is_none()
+                } else if render_embedded_object(
+                    svg,
+                    span,
+                    offset.1,
+                    media_assets,
+                    theme,
+                    renderer,
+                    viewport.map(|viewport| viewport.translated(-offset.0, 0.0)),
+                )
+                .is_none()
                 {
                     render_flow_line(
                         svg,
@@ -864,6 +1106,42 @@ fn paint_line_objects(
     }
 }
 
+fn aligned_line_left(
+    line: &text::WrappedLine,
+    left: f64,
+    width: f64,
+    alignment: Option<ParagraphAlignment>,
+) -> f64 {
+    let remaining = (width - line.advance).max(0.0);
+    left + match alignment {
+        Some(ParagraphAlignment::Center) => remaining / 2.0,
+        Some(ParagraphAlignment::Right) => remaining,
+        _ => 0.0,
+    }
+}
+
+fn object_paint_bounds(object: &text::PositionedObject, left: f64, baseline: f64) -> BoundingBox {
+    let (x_min, width, height) = match &object.prepared_code {
+        Some(Ok(prepared)) => (
+            left + object.x + prepared.panel_bbox.x_min - object.object.bounds.x_min,
+            prepared.panel_bbox.x_max - prepared.panel_bbox.x_min,
+            prepared.panel_bbox.y_max - prepared.panel_bbox.y_min,
+        ),
+        _ => (
+            left + object.x,
+            object.object.bounds.x_max - object.object.bounds.x_min,
+            object.object.height,
+        ),
+    };
+    let y_min = baseline - object.object.height;
+    BoundingBox {
+        x_min,
+        x_max: x_min + width,
+        y_min,
+        y_max: y_min + height,
+    }
+}
+
 fn render_text_frame(
     svg: &mut Scene,
     text_box: &RichTextBox,
@@ -871,14 +1149,59 @@ fn render_text_frame(
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
 ) -> f64 {
     let styled = StyledText::new(text_box, TextContext::Flow, renderer.settings);
-    let layout = text::layout_text(&styled, frame, theme, renderer);
-    paint_text_layout(svg, &styled, &layout, media_assets, theme, renderer);
+    let planner = renderer.planning_scope();
+    let layout = text::layout_text(&styled, frame, theme, &planner);
+    let sources =
+        viewport.map(|viewport| VisibleTextSources::new(&styled, &layout, viewport, theme));
+    paint_text_layout_in_viewport(
+        svg,
+        &styled,
+        &layout,
+        media_assets,
+        theme,
+        renderer,
+        viewport,
+    );
+    renderer.report_text_issues(
+        &planner
+            .scoped_diagnostics()
+            .into_iter()
+            .filter(|issue| {
+                is_layout_issue(&issue.diagnostic)
+                    && sources.as_ref().is_none_or(|sources| {
+                        sources.contains(
+                            issue.owner.as_ref(),
+                            issue.diagnostic.kind == TextDiagnosticKind::InvalidGeometry,
+                        )
+                    })
+            })
+            .collect::<Vec<_>>(),
+    );
+    renderer.report_owned_object_issues(
+        &planner
+            .scoped_object_diagnostics()
+            .into_iter()
+            .filter(|issue| {
+                sources
+                    .as_ref()
+                    .is_none_or(|sources| sources.contains(issue.owner.as_ref(), false))
+            })
+            .collect::<Vec<_>>(),
+    );
     layout.height()
 }
 
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
+
+fn is_layout_issue(issue: &TextDiagnostic) -> bool {
+    matches!(
+        issue.kind,
+        TextDiagnosticKind::MeasurementFailure | TextDiagnosticKind::InvalidGeometry
+    )
+}
 
 fn render_flow_text_box(
     svg: &mut Scene,
@@ -1037,6 +1360,7 @@ fn render_embedded_object(
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
 ) -> Option<f64> {
     match object.content.as_ref() {
         Some(RichTextObjectContent::Image(image)) => {
@@ -1074,6 +1398,15 @@ fn render_embedded_object(
                 svg.scope(Group::new().clipped(&clip), |svg| {
                     for row in &table.rows {
                         for cell in &row.cells {
+                            if viewport.is_some_and(|viewport| {
+                                !viewport.intersects(BoundingBox {
+                                    y_min: cell.bbox.y_min + offset_y,
+                                    y_max: cell.bbox.y_max + offset_y,
+                                    ..cell.bbox
+                                })
+                            }) {
+                                continue;
+                            }
                             let cell_background = table_cell_background(cell, theme);
                             let cell_theme = theme.on_background(cell_background);
                             svg.push(
@@ -1118,6 +1451,7 @@ fn render_embedded_object(
                                 media_assets,
                                 cell_theme,
                                 renderer,
+                                viewport,
                             );
                         }
                     }
@@ -1149,7 +1483,15 @@ fn render_embedded_object(
                     return None;
                 }
             };
-            render_prepared_code(svg, code, &prepared, media_assets, theme, renderer);
+            render_prepared_code(
+                svg,
+                code,
+                &prepared,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
             Some(prepared.panel_bbox.y_max)
         }
         None => None,
@@ -1163,6 +1505,7 @@ fn render_prepared_code(
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
+    viewport: Option<Viewport>,
 ) {
     let settings = renderer.settings;
     let background = argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
@@ -1187,7 +1530,15 @@ fn render_prepared_code(
         );
         if let (Some(title), Some(layout)) = (&code.title, &prepared.title_layout) {
             let styled = StyledText::new(title, TextContext::Flow, settings);
-            paint_text_layout(svg, &styled, layout, media_assets, theme, renderer);
+            paint_text_layout_in_viewport(
+                svg,
+                &styled,
+                layout,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
         }
         let icon_stroke = if theme.is_dark() {
             "#b7b7b7"
@@ -1218,7 +1569,15 @@ fn render_prepared_code(
         );
         if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
             let styled = StyledText::new(body, TextContext::Flow, settings);
-            paint_text_layout(svg, &styled, layout, media_assets, theme, renderer);
+            paint_text_layout_in_viewport(
+                svg,
+                &styled,
+                layout,
+                media_assets,
+                theme,
+                renderer,
+                viewport,
+            );
         }
     });
 }

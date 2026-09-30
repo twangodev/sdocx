@@ -5,6 +5,7 @@
     "shaping": "Direct rustybuzz 0.20.1 shaping of the pinned font bytes, default features, UnicodeBuffer::guess_segment_properties. Cluster offsets are UTF-8 byte offsets.",
     "native_pdf": "Samsung reference PDF Form XObject 5: Tm, Tf, Tj and descendant-font W inspected with lopdf 0.42.0. Line strings independently checked with PyMuPDF 1.28.2 gettext blocks.",
     "native_additional_pages": "Hash-locked Samsung PDF Forms 19, 26, 89 and 111 independently decoded with Rust lopdf 0.42.0: Tm, Tf, Tj/TJ, descendant-font W and ToUnicode. Coordinates retain the logical native canvas height and pdf_to_svg_scale below. Covers ordinary body/heading origins on physical page indices 1-3, numeric marker origins/font sizes on index 3 and code on indices 3-4; excludes table cells, incomplete CJK/emoji extraction and ordinary text after saved code. Numeric widths are independently observed PDF advances, recorded as evidence rather than a bundled-font width parity assertion.",
+    "native_clipping": "Raw code Tj operators are retained even when off-page. Visibility was independently established from native page MediaBox and Form BBox [0,0,600,848], each code line's re/W* clip, and actual encoded-glyph bounds from embedded FontFile2 object 10 using ttf-parser 0.25.1. viewport_ink_bounds are [left,top,right,bottom] at isotropic pdf_to_svg_scale around the actual PDF viewport height. Only four fully clipped code lines are marked visible:false; they must not emit SVG text.",
     "scope": "Font samples establish pinned-font measurements. Native PDF expectations separately establish observed Samsung layout; shaped font advances are not native parity claims."
   },
   "common_font_metrics": {
@@ -79,6 +80,7 @@
     "form_object_id": 5,
     "pdf_to_svg_scale": 1.8,
     "logical_pdf_page_height": 848.3333333333334,
+    "pdf_viewport": [0, 0, 600, 848],
     "coordinate_tolerance": 0.25,
     "font_size": 45,
     "line_spacing": 72,
@@ -148,16 +150,16 @@
           { "text": "───", "x": 48.00000228881836, "baseline": 872.850018310547 },
           { "text": "text", "x": 129.75000457763673, "baseline": 1379.3519897460938 },
           { "text": "fn main() {", "x": 129.75000457763673, "baseline": 1475.3520629882812 },
-          { "text": "    println!(\"Markdown code fence\");", "x": 129.75000457763673, "baseline": 1573.600048828125 },
-          { "text": "}", "x": 129.75000457763673, "baseline": 1634.350048828125 }
+          { "text": "    println!(\"Markdown code fence\");", "x": 129.75000457763673, "baseline": 1573.600048828125, "visible": false, "viewport_ink_bounds": [177.466180093, 1536.898971855, 823.695760646, 1583.327198054] },
+          { "text": "}", "x": 129.75000457763673, "baseline": 1634.350048828125, "visible": false, "viewport_ink_bounds": [130.189457736, 1598.659714120, 143.526861097, 1641.792041629] }
         ]
       },
       {
         "page_index": 4,
         "form_object_id": 111,
         "lines": [
-          { "text": "text", "x": 129.75000457763673, "baseline": -147.64808349609376 },
-          { "text": "fn main() {", "x": 129.75000457763673, "baseline": -51.64801025390625 },
+          { "text": "text", "x": 129.75000457763673, "baseline": -147.64808349609376, "visible": false, "viewport_ink_bounds": [129.947758499, -177.801308407, 203.796631321, -147.808630338] },
+          { "text": "fn main() {", "x": 129.75000457763673, "baseline": -51.64801025390625, "visible": false, "viewport_ink_bounds": [131.090336711, -88.349087227, 337.948672806, -41.920861029] },
           { "text": "    println!(\"Markdown code fence\");", "x": 129.75000457763673, "baseline": 46.5999755859375 },
           { "text": "}", "x": 129.75000457763673, "baseline": 107.3499755859375 }
         ]

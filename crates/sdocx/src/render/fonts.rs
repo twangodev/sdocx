@@ -22,6 +22,7 @@ pub struct ResolvedFace {
     pub weight: Weight,
     pub style: Style,
     data: Arc<dyn AsRef<[u8]> + Send + Sync>,
+    ink_bounds: Arc<Mutex<HashMap<u16, Option<rustybuzz::ttf_parser::Rect>>>>,
     pub index: u32,
     pub metrics: FontMetrics,
 }
@@ -219,6 +220,7 @@ impl FontBook {
                 cap_height: face.as_ref().capital_height(),
             },
             data,
+            ink_bounds: Arc::new(Mutex::new(HashMap::new())),
             index,
         };
         faces.insert(id, resolved.clone());
@@ -255,6 +257,26 @@ impl Default for FontBook {
 impl ResolvedFace {
     pub fn bytes(&self) -> &[u8] {
         self.data.as_ref().as_ref()
+    }
+
+    pub(crate) fn glyph_ink_bounds(
+        &self,
+        glyph_id: u32,
+    ) -> Result<Option<rustybuzz::ttf_parser::Rect>, FontError> {
+        let invalid = || FontError::InvalidData {
+            family: self.family.clone(),
+        };
+        let glyph_id = u16::try_from(glyph_id).map_err(|_| invalid())?;
+        let mut bounds = self.ink_bounds.lock().expect("glyph ink bounds cache lock");
+        if let Some(bounds) = bounds.get(&glyph_id) {
+            return Ok(*bounds);
+        }
+        let face = rustybuzz::Face::from_slice(self.bytes(), self.index).ok_or_else(invalid)?;
+        let ink = face
+            .as_ref()
+            .glyph_bounding_box(rustybuzz::ttf_parser::GlyphId(glyph_id));
+        bounds.insert(glyph_id, ink);
+        Ok(ink)
     }
 
     pub fn shape(
@@ -313,6 +335,22 @@ mod tests {
         let mut buffer = UnicodeBuffer::new();
         buffer.push_str(text);
         buffer
+    }
+
+    #[test]
+    fn glyph_ink_bounds_keep_font_units_and_distinguish_inkless_space() {
+        let face = FontBook::default().resolve("Roboto", false, false).unwrap();
+        let cap = face.shape(buffer("A"), &[]).unwrap().glyphs[0].id;
+        let bounds = face.glyph_ink_bounds(cap).unwrap().unwrap();
+        assert_eq!(bounds.y_min, 0);
+        assert_eq!(bounds.y_max, 1456);
+        let space = face.shape(buffer(" "), &[]).unwrap().glyphs[0].id;
+        assert_eq!(face.glyph_ink_bounds(space).unwrap(), None);
+        assert_eq!(face.glyph_ink_bounds(space).unwrap(), None);
+        assert!(matches!(
+            face.glyph_ink_bounds(u32::MAX),
+            Err(FontError::InvalidData { .. })
+        ));
     }
 
     #[test]
