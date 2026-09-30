@@ -1,6 +1,7 @@
 //! Pinned font resolution and shaping shared by vector text consumers.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
+use std::fmt;
 use std::sync::{Arc, Mutex, OnceLock};
 
 pub use fontdb;
@@ -23,6 +24,27 @@ pub struct ResolvedFace {
     data: Arc<dyn AsRef<[u8]> + Send + Sync>,
     pub index: u32,
     pub metrics: FontMetrics,
+}
+
+impl fmt::Debug for ResolvedFace {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ResolvedFace")
+            .field("id", &self.id)
+            .field("family", &self.family)
+            .field("weight", &self.weight)
+            .field("style", &self.style)
+            .field("index", &self.index)
+            .field("metrics", &self.metrics)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FontSelection {
+    pub face: ResolvedFace,
+    pub requested_family: String,
+    pub used_fallback: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,6 +99,43 @@ impl FontBook {
 
     pub fn database(&self) -> Arc<Database> {
         self.database.clone()
+    }
+
+    /// Select a face from this database, falling back to its default or available families.
+    pub fn resolve_with_fallback(
+        &self,
+        family: &str,
+        bold: bool,
+        italic: bool,
+    ) -> Result<FontSelection, FontError> {
+        let selection = |face, used_fallback| FontSelection {
+            face,
+            requested_family: family.to_owned(),
+            used_fallback,
+        };
+        let requested_error = match self.resolve(family, bold, italic) {
+            Ok(face) => return Ok(selection(face, false)),
+            Err(error @ FontError::MissingFont { .. }) => error,
+            Err(error) => return Err(error),
+        };
+        match self.resolve("sans-serif", bold, italic) {
+            Ok(face) => return Ok(selection(face, true)),
+            Err(FontError::MissingFont { .. }) => {}
+            Err(error) => return Err(error),
+        }
+        let families = self
+            .database
+            .faces()
+            .flat_map(|face| face.families.iter().map(|(name, _)| name.as_str()))
+            .collect::<BTreeSet<_>>();
+        for fallback in families {
+            match self.resolve(fallback, bold, italic) {
+                Ok(face) => return Ok(selection(face, true)),
+                Err(FontError::MissingFont { .. }) => {}
+                Err(error) => return Err(error),
+            }
+        }
+        Err(requested_error)
     }
 
     pub fn resolve(
@@ -358,5 +417,102 @@ mod tests {
                 .collect::<Vec<_>>(),
             [1, 0]
         );
+    }
+
+    #[test]
+    fn missing_named_families_use_the_configured_default_with_actual_style() {
+        let default = FontBook::default();
+        for (bold, italic) in [(false, false), (true, false), (false, true), (true, true)] {
+            let selected = default
+                .resolve_with_fallback("Missing family", bold, italic)
+                .unwrap();
+            let expected = default.resolve("Roboto", bold, italic).unwrap();
+            assert_eq!(selected.requested_family, "Missing family");
+            assert!(selected.used_fallback);
+            assert_eq!(selected.face.id, expected.id);
+            assert_eq!(selected.face.family, expected.family);
+            assert_eq!(selected.face.weight, expected.weight);
+            assert_eq!(selected.face.style, expected.style);
+            assert_eq!(selected.face.metrics, expected.metrics);
+            assert_eq!(selected.face.index, expected.index);
+            assert!(std::ptr::eq(selected.face.bytes(), expected.bytes()));
+        }
+
+        let mut database = default.database().as_ref().clone();
+        database.set_sans_serif_family("Roboto Mono");
+        let custom = FontBook::new(Arc::new(database));
+        let selected = custom
+            .resolve_with_fallback("Missing family", true, true)
+            .unwrap();
+        assert!(selected.used_fallback);
+        assert_eq!(selected.face.family, "Roboto Mono");
+        assert_eq!(selected.face.weight, Weight::BOLD);
+        assert_eq!(selected.face.style, Style::Italic);
+        let named = custom
+            .resolve_with_fallback("Roboto", false, false)
+            .unwrap();
+        assert!(!named.used_fallback);
+        assert_eq!(named.face.family, "Roboto");
+        assert_eq!(named.requested_family, "Roboto");
+    }
+
+    #[test]
+    fn fallback_uses_only_custom_faces_and_reports_the_closest_actual_style() {
+        let source = FontBook::default()
+            .resolve("Roboto Mono", true, true)
+            .unwrap();
+        let mut database = Database::new();
+        database.load_font_data(source.bytes().to_vec());
+        let book = FontBook::new(Arc::new(database));
+        let selected = book
+            .resolve_with_fallback("Missing family", false, false)
+            .unwrap();
+        assert!(selected.used_fallback);
+        assert_eq!(selected.face.family, "Roboto Mono");
+        assert_eq!(selected.face.weight, Weight::BOLD);
+        assert_eq!(selected.face.style, Style::Italic);
+        assert_eq!(selected.face.metrics, source.metrics);
+        assert_eq!(selected.face.bytes(), source.bytes());
+        assert_eq!(book.database().faces().count(), 1);
+    }
+
+    #[test]
+    fn fallback_family_order_is_independent_of_database_insertion_order() {
+        let default = FontBook::default();
+        for families in [["Roboto Mono", "Roboto"], ["Roboto", "Roboto Mono"]] {
+            let mut database = Database::new();
+            database.set_sans_serif_family("Unavailable default");
+            for family in families {
+                database.load_font_data(
+                    default
+                        .resolve(family, false, false)
+                        .unwrap()
+                        .bytes()
+                        .to_vec(),
+                );
+            }
+            let selected = FontBook::new(Arc::new(database))
+                .resolve_with_fallback("Missing family", true, true)
+                .unwrap();
+            assert!(selected.used_fallback);
+            assert_eq!(selected.face.family, "Roboto");
+            assert_eq!(selected.face.weight, Weight::NORMAL);
+            assert_eq!(selected.face.style, Style::Normal);
+        }
+    }
+
+    #[test]
+    fn empty_database_fallback_returns_the_original_request_error() {
+        let error = FontBook::new(Arc::new(Database::new()))
+            .resolve_with_fallback("Original request", true, true)
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            FontError::MissingFont {
+                family,
+                bold: true,
+                italic: true
+            } if family == "Original request"
+        ));
     }
 }
