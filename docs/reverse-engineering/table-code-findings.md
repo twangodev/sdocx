@@ -4,7 +4,7 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-All addresses below are ARM64 virtual addresses in `libSPenModel.so`. This pass
+Addresses are ARM64 virtual addresses in `libSPenModel.so` unless stated otherwise. This pass
 uses native serializers/readers and synthetic records without new SDOCX files.
 
 | Symbol | Address | Confirmed behavior |
@@ -21,7 +21,7 @@ uses native serializers/readers and synthetic records without new SDOCX files.
 | `TableRow::GetBinary_FlexibleData` | `0x3c53cc` | Maximum height under bit 9, then minimum height under bit 1 |
 | `TableRow::ApplyBinary_FlexibleData` | `0x3c5840` | Reads those two fields in the same nonnumerical bit order |
 | `TableCell::NewGetBinary` | `0x3c2e4c` | Untyped cell record with a relative flexible offset and two masks |
-| `TableCell::GetBinary_FixedData` | `0x3c2f50` | Cell coordinates, spans, color, alignment and sized text |
+| `TableCell::GetBinary_FixedData` | `0x3c2f50` | Cell coordinates, spans, color, editability and sized text |
 | `TableCell::GetBinary_FlexibleData` | `0x3c3150` | Field bit 0 contains a sized `TableBorder` record |
 | `TableBorder::NewGetBinarySize` | `0x3dc9a4` | Current border payload is 73 bytes |
 | `TableBorder::NewGetBinary` | `0x3dc9ac` | Untyped header followed by four 16-byte edge styles |
@@ -167,6 +167,44 @@ the shared text engine; native drawing does not extract the first physical line.
 These findings establish adapter inputs and editability semantics. They do
 not prove complete row sizing, merged-cell layout, page splitting or visual
 parity for arbitrary cells.
+
+## Shared code-block text layout
+
+Drawing `CodeBlockLayout::initConstants`, `0x73084`, resolves these IDs through
+`Constant::GetPixels`. The Content library stores the values in 24-byte records
+at `0x77e8 + 24 * id`. Each record below has unit kind 3, document density,
+and rounding mode 3, no rounding. These values come from the native table,
+not measurements of the captured PDF.
+
+| Constant ID | Value before density scaling | Layout use |
+| ---: | ---: | --- |
+| 332 | 16 | Left padding |
+| 333 | 12 | Top padding |
+| 334 | 16 | Right padding |
+| 335 | 12 | Bottom padding |
+| 338 | 12 | Horizontal gap between title and copy button |
+| 339 | 8 | Vertical gap around body |
+| 342 | 24 | Copy-button width and height |
+| 343 | 12 | Rounded radius |
+
+Drawing `CodeBlockLayout::Measure`, `0x732fc`, positions the copy button at
+`width - rightPadding - copySize`, `topPadding`. The title frame extends from
+left padding to `copy.left - horizontalGap`, using the copy button's top and
+bottom. The title measurement return is discarded at `0x73410`; the original
+frame is retained at `0x73428`.
+
+The body starts at `copy.bottom + verticalGap`, with width
+`width - leftPadding - rightPadding`. Both objects use ordinary
+`ObjectTextDrawing` through `measuredObject`, `0x73694`, which returns
+`bottom = input.top + TextLayout::GetHeight(false)` at `0x73764`–`0x73770`.
+The final object bottom is `original.top + measuredBody.bottom + verticalGap
++ bottomPadding` at `0x73584`–`0x735a0`: the vertical gap is reserved both
+above and below the body. Split-page padding rectangles can shift these frames;
+their full behavior remains unverified.
+
+The adapter supplies frames and padding, not fixed text baselines or line
+advances. Paragraph styling, wrapping, margins and text metrics belong in the
+same text engine used for other rich-text objects.
 
 ## Border records
 
