@@ -62,7 +62,8 @@ pub use ink::{InkSupport, PEN_PROFILES, PenProfile, PreparedStroke, RectStamp, p
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{
-    BodyTextCaptureWindow, BodyTextSlice, LayoutDocument, LayoutPage, layout_document,
+    BodyTextCaptureWindow, BodyTextReflow, BodyTextSlice, LayoutDocument, LayoutPage,
+    layout_document,
 };
 pub use math::{MathAngleType, MathMargins, MathMetadata, PlotGraph, PlotMetadata};
 pub use media::{

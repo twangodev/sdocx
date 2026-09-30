@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::sync::Arc;
 
 use crate::PageObjectContent;
 use crate::text_index::TextIndex;
@@ -36,7 +37,7 @@ pub struct LayoutPage {
     pub body_text: Option<BodyTextSlice>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BodyTextSlice {
     /// Character range in `DocumentMetadata::note_text`.
@@ -48,6 +49,22 @@ pub struct BodyTextSlice {
         serde(default, skip_serializing_if = "Option::is_none")
     )]
     pub capture_window: Option<BodyTextCaptureWindow>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub reflow: Option<BodyTextReflow>,
+}
+
+/// Full-source measurement context when usable saved page sections are absent.
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct BodyTextReflow {
+    pub source_range: Range<usize>,
+    pub first_page_index: usize,
+    pub requested_page_index: usize,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    source_snapshot: Option<Arc<RichTextBox>>,
 }
 
 /// Source context measured together for a native page capture.
@@ -162,6 +179,9 @@ impl LayoutPage {
     /// Rebuild validated capture text from the authoritative document body.
     pub fn body_text_capture(&self, document: &Document) -> Option<RichTextBox> {
         let metadata = self.body_text_slice()?;
+        if metadata.reflow.is_some() {
+            return None;
+        }
         let window = metadata.capture_window.as_ref()?;
         if window.requested_page_index != self.source_page_index
             || window.first_page_index > window.requested_page_index
@@ -169,6 +189,57 @@ impl LayoutPage {
         {
             return None;
         }
+        let body = document.metadata.note_text.as_ref()?;
+        let index = TextIndex::new(&body.text);
+        if native_capture_window(document, &index, self.source_page_index).as_ref() != Some(window)
+        {
+            return None;
+        }
+        let ranges = self.validated_inspection_ranges(document, &index)?;
+        let page_heights = document
+            .pages
+            .iter()
+            .map(|page| f64::from(page.height))
+            .collect::<Vec<_>>();
+        let mut capture = body.slice_indexed(&index, window.source_range.clone())?;
+        translate_continuing_objects(
+            &mut capture,
+            &index,
+            &window.source_range,
+            window.first_page_index,
+            &ranges,
+            &page_heights,
+        );
+        Some(capture)
+    }
+
+    /// Retrieve the original body for measured pagination, never its inspection slice.
+    pub fn body_text_reflow(&self, document: &Document) -> Option<RichTextBox> {
+        let metadata = self.body_text_slice()?;
+        let reflow = metadata.reflow.as_ref()?;
+        let body = document.metadata.note_text.as_ref()?;
+        let index = TextIndex::new(&body.text);
+        let visible_count = document.pages.len() - usize::from(omits_trailing_blank_page(document));
+        if metadata.capture_window.is_some()
+            || reflow.first_page_index != 0
+            || reflow.requested_page_index != self.source_page_index
+            || self.source_page_index >= visible_count
+            || reflow.source_range != (0..index.len())
+            || reflow.source_snapshot.as_deref() != Some(body)
+            || saved_inspection_ranges(body, &index, visible_count).is_some()
+        {
+            return None;
+        }
+        self.validated_inspection_ranges(document, &index)?;
+        Some(body.clone())
+    }
+
+    fn validated_inspection_ranges(
+        &self,
+        document: &Document,
+        index: &TextIndex<'_>,
+    ) -> Option<Vec<Option<Range<usize>>>> {
+        let metadata = self.body_text_slice()?;
         let object = self.page.objects.get(metadata.object_index)?;
         let PageObjectContent::Element(PageElement::TextBox(inspection)) = &object.content else {
             return None;
@@ -181,15 +252,10 @@ impl LayoutPage {
             return None;
         }
         let body = document.metadata.note_text.as_ref()?;
-        let index = TextIndex::new(&body.text);
-        if native_capture_window(document, &index, self.source_page_index).as_ref() != Some(window)
-        {
-            return None;
-        }
         let visible_count = document.pages.len() - usize::from(omits_trailing_blank_page(document));
-        let ranges = inspection_text_ranges(body, &index, visible_count);
+        let ranges = inspection_text_ranges(body, index, visible_count);
         let mut expected_range = ranges.get(self.source_page_index)?.clone()?;
-        trim_inspection_lf(&index, &mut expected_range, self.source_page_index);
+        trim_inspection_lf(index, &mut expected_range, self.source_page_index);
         if expected_range != metadata.source_range {
             return None;
         }
@@ -198,10 +264,10 @@ impl LayoutPage {
             .iter()
             .map(|page| f64::from(page.height))
             .collect::<Vec<_>>();
-        let mut expected = body.slice_indexed(&index, expected_range.clone())?;
+        let mut expected = body.slice_indexed(index, expected_range.clone())?;
         translate_continuing_objects(
             &mut expected,
-            &index,
+            index,
             &expected_range,
             self.source_page_index,
             &ranges,
@@ -210,16 +276,7 @@ impl LayoutPage {
         if &expected != inspection {
             return None;
         }
-        let mut capture = body.slice_indexed(&index, window.source_range.clone())?;
-        translate_continuing_objects(
-            &mut capture,
-            &index,
-            &window.source_range,
-            window.first_page_index,
-            &ranges,
-            &page_heights,
-        );
-        Some(capture)
+        Some(ranges)
     }
 }
 
@@ -250,6 +307,13 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .take(visible_count)
         .map(|page| f64::from(page.height))
         .collect::<Vec<_>>();
+    let reflow_source = document
+        .metadata
+        .note_text
+        .as_ref()
+        .zip(text_index.as_ref())
+        .filter(|(body, index)| saved_inspection_ranges(body, index, visible_count).is_none())
+        .map(|(body, _)| Arc::new(body.clone()));
     let pages = document
         .pages
         .iter()
@@ -266,7 +330,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                 let mut range = stored_range.clone();
                 trim_inspection_lf(index, &mut range, source_page_index);
                 if let Some(mut slice) = note_text.slice_indexed(index, range.clone())
-                    && !slice.text.is_empty()
+                    && (!slice.text.is_empty() || reflow_source.is_some())
                 {
                     translate_continuing_objects(
                         &mut slice,
@@ -280,7 +344,16 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                     body_text = Some(BodyTextSlice {
                         source_range: range,
                         object_index: 0,
-                        capture_window: native_capture_window(document, index, source_page_index),
+                        capture_window: reflow_source
+                            .is_none()
+                            .then(|| native_capture_window(document, index, source_page_index))
+                            .flatten(),
+                        reflow: reflow_source.as_ref().map(|source| BodyTextReflow {
+                            source_range: 0..index.len(),
+                            first_page_index: 0,
+                            requested_page_index: source_page_index,
+                            source_snapshot: Some(Arc::clone(source)),
+                        }),
                     });
                 }
             }
@@ -320,18 +393,31 @@ fn inspection_text_ranges(
     index: &TextIndex<'_>,
     page_count: usize,
 ) -> Vec<Option<Range<usize>>> {
-    if body.text_sections.len() >= page_count {
-        body.text_sections
-            .iter()
-            .take(page_count)
-            .map(|section| section_char_range(index, *section))
-            .collect()
-    } else {
+    saved_inspection_ranges(body, index, page_count).unwrap_or_else(|| {
         balanced_line_ranges(&body.text, page_count)
             .into_iter()
             .map(Some)
             .collect()
+    })
+}
+
+fn saved_inspection_ranges(
+    body: &RichTextBox,
+    index: &TextIndex<'_>,
+    page_count: usize,
+) -> Option<Vec<Option<Range<usize>>>> {
+    let ranges = body
+        .text_sections
+        .get(..page_count)?
+        .iter()
+        .map(|section| section_char_range(index, *section))
+        .collect::<Option<Vec<_>>>()?;
+    if (!body.text.is_empty() && ranges.iter().all(Range::is_empty))
+        || ranges.windows(2).any(|pair| pair[0].start > pair[1].start)
+    {
+        return None;
     }
+    Some(ranges.into_iter().map(Some).collect())
 }
 
 fn trim_inspection_lf(index: &TextIndex<'_>, range: &mut Range<usize>, page: usize) {
@@ -932,6 +1018,210 @@ mod tests {
             let mut document = capture_document("body", &[(0, 4)]);
             document.metadata.page_mode = mode;
             assert!(capture(&document, 0).is_none());
+        }
+    }
+
+    fn reflow_document() -> Document {
+        let mut document = capture_document(&"a".repeat(300), &[]);
+        document.pages = (0..2).map(blank_page).collect();
+        document.pages[1].objects.push(
+            PageElement::Image {
+                bbox: BoundingBox::default(),
+                media_index: 9,
+            }
+            .into(),
+        );
+        document
+    }
+
+    #[test]
+    fn reflow_returns_full_source_for_nonempty_and_empty_inspection_pages() {
+        let document = reflow_document();
+        let layout = layout_document(&document);
+        for (page_index, page) in layout.pages.iter().enumerate() {
+            let metadata = page.body_text_slice().unwrap();
+            let reflow = metadata.reflow.as_ref().unwrap();
+            assert_eq!(reflow.source_range, 0..300);
+            assert_eq!(reflow.first_page_index, 0);
+            assert_eq!(reflow.requested_page_index, page_index);
+            assert!(metadata.capture_window.is_none());
+            assert!(page.body_text_capture(&document).is_none());
+            assert_eq!(
+                page.body_text_reflow(&document).as_ref(),
+                document.metadata.note_text.as_ref()
+            );
+        }
+        assert_eq!(
+            layout.pages[0].body_text_slice().unwrap().source_range,
+            0..300
+        );
+        assert_eq!(
+            layout.pages[1].body_text_slice().unwrap().source_range,
+            300..300
+        );
+        let first = layout.pages[0]
+            .body_text
+            .as_ref()
+            .unwrap()
+            .reflow
+            .as_ref()
+            .unwrap();
+        let second = layout.pages[1]
+            .body_text
+            .as_ref()
+            .unwrap()
+            .reflow
+            .as_ref()
+            .unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            first.source_snapshot.as_ref().unwrap(),
+            second.source_snapshot.as_ref().unwrap()
+        ));
+    }
+
+    #[test]
+    fn reflow_rejects_removed_reordered_and_edited_empty_inspection_nodes() {
+        let document = reflow_document();
+        let page = layout_document(&document).pages.remove(1);
+        let mut changed = page.clone();
+        changed.page.objects.clear();
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut changed = page.clone();
+        changed.page.objects.swap(0, 1);
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut changed = page.clone();
+        let PageObjectContent::Element(PageElement::TextBox(inspection)) =
+            &mut changed.page.objects[0].content
+        else {
+            unreachable!()
+        };
+        inspection.font_size = Some(39.0);
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut changed = page.clone();
+        changed.page.objects[0].source_offset = Some(1);
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut changed = page.clone();
+        changed.page.objects[0].render_layer = crate::ObjectRenderLayer::Top;
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut preview = page.clone();
+        preview.page.clear_strokes();
+        assert!(preview.body_text_reflow(&document).is_some());
+    }
+
+    #[test]
+    fn reflow_rejects_changes_outside_the_empty_inspection_slice() {
+        let mut document = reflow_document();
+        let page = layout_document(&document).pages.remove(1);
+        document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .runs
+            .push(RichTextRun {
+                start: 0,
+                end: 1,
+                bold: true,
+                italic: false,
+            });
+        assert!(page.body_text_reflow(&document).is_none());
+        document.metadata.note_text.as_mut().unwrap().runs.clear();
+        document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .text
+            .replace_range(..1, "z");
+        assert!(page.body_text_reflow(&document).is_none());
+    }
+
+    #[test]
+    fn reflow_rejects_stale_bounds_and_native_section_replacement() {
+        let mut document = reflow_document();
+        let page = layout_document(&document).pages.remove(1);
+        let mut changed = page.clone();
+        changed
+            .body_text
+            .as_mut()
+            .unwrap()
+            .reflow
+            .as_mut()
+            .unwrap()
+            .source_range = 0..usize::MAX;
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut changed = page.clone();
+        changed
+            .body_text
+            .as_mut()
+            .unwrap()
+            .reflow
+            .as_mut()
+            .unwrap()
+            .requested_page_index = 0;
+        assert!(changed.body_text_reflow(&document).is_none());
+        let mut changed = page.clone();
+        changed.body_text.as_mut().unwrap().source_range = 0..0;
+        assert!(changed.body_text_reflow(&document).is_none());
+        document.metadata.note_text.as_mut().unwrap().text_sections = vec![
+            RichTextSection {
+                start_utf16: 0,
+                length_utf16: 150,
+            },
+            RichTextSection {
+                start_utf16: 150,
+                length_utf16: 150,
+            },
+        ];
+        assert!(page.body_text_reflow(&document).is_none());
+    }
+
+    #[test]
+    fn reflow_handles_invalid_saved_sections_without_slicing_surrogate_pairs() {
+        for sections in [
+            vec![(0, 2), (2, 2)],
+            vec![(3, 1), (0, 3)],
+            vec![(0, 0), (0, 0)],
+        ] {
+            let mut document = capture_document("A😀B", &sections);
+            document.pages[1].objects.push(
+                PageElement::Image {
+                    bbox: BoundingBox::default(),
+                    media_index: 9,
+                }
+                .into(),
+            );
+            let layout = layout_document(&document);
+            for page in &layout.pages {
+                assert_eq!(page.body_text_reflow(&document).unwrap().text, "A😀B");
+                assert_eq!(
+                    page.body_text_slice()
+                        .unwrap()
+                        .reflow
+                        .as_ref()
+                        .unwrap()
+                        .source_range,
+                    0..3
+                );
+                assert!(page.body_text_capture(&document).is_none());
+            }
+        }
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serialized_reflow_metadata_requires_rebuilt_source_identity() {
+        let document = reflow_document();
+        let layout = layout_document(&document);
+        let serialized = serde_json::to_value(&layout).unwrap();
+        assert!(
+            serialized["pages"][0]["body_text"]["reflow"]
+                .get("source_snapshot")
+                .is_none()
+        );
+        let decoded: super::LayoutDocument = serde_json::from_value(serialized).unwrap();
+        for page in &decoded.pages {
+            assert!(page.body_text_reflow(&document).is_none());
         }
     }
 
