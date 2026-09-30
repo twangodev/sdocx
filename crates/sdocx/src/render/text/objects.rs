@@ -312,6 +312,7 @@ mod tests {
             let measured = object.measured(TextSettings {
                 scale: 1.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             });
             assert_eq!(measured.source, 2..3);
             assert_eq!(measured.span_index, 0);
@@ -339,6 +340,7 @@ mod tests {
                 let measured = object.measured(TextSettings {
                     scale: 3.0,
                     font_size_delta,
+                    ..Default::default()
                 });
                 assert_eq!(measured.top_margin, expected);
                 assert_eq!(measured.bottom_margin, expected);
@@ -361,6 +363,7 @@ mod tests {
         let measured = index.in_range(0..1)[0].measured(TextSettings {
             scale: 3.0,
             font_size_delta: 0.0,
+            ..Default::default()
         });
         assert!((measured.bounds.x_max - measured.bounds.x_min - 60.0).abs() < 1e-10);
         assert!((measured.bounds.y_max - measured.bounds.y_min - 20.0).abs() < 1e-10);
@@ -496,6 +499,7 @@ mod tests {
         let measured = index.in_range(0..1)[0].measured(TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         });
         assert_eq!(measured.bounds, bounds);
         assert_ne!(measured.bounds.x_min, f64::from(bounds.x_min as f32));

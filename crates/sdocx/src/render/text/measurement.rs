@@ -481,6 +481,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let fonts = FontBook::default();
         let renderer = TextRenderer::new(settings, &fonts);
@@ -756,6 +757,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let fonts = FontBook::default();
         let renderer = TextRenderer::new(settings, &fonts);
@@ -818,6 +820,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let fonts = FontBook::default();
         let renderer = TextRenderer::new(settings, &fonts);

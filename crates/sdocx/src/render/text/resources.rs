@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
 
@@ -34,9 +35,10 @@ pub(in crate::render) struct TextRenderer<'a> {
     pub settings: TextSettings,
     pub point_marker_target: crate::render::PointMarkerTarget,
     pub fonts: &'a FontBook,
-    faces: RefCell<Vec<ResolvedFace>>,
-    diagnostics: RefCell<Vec<TextDiagnostic>>,
-    object_diagnostics: RefCell<Vec<ObjectDiagnostic>>,
+    default_family: &'static str,
+    faces: Rc<RefCell<Vec<ResolvedFace>>>,
+    diagnostics: Rc<RefCell<Vec<TextDiagnostic>>>,
+    object_diagnostics: Rc<RefCell<Vec<ObjectDiagnostic>>>,
     page_exclusions: Option<PageExclusions>,
 }
 
@@ -46,9 +48,10 @@ impl<'a> TextRenderer<'a> {
             settings,
             point_marker_target: Default::default(),
             fonts,
-            faces: RefCell::new(Vec::new()),
-            diagnostics: RefCell::new(Vec::new()),
-            object_diagnostics: RefCell::new(Vec::new()),
+            default_family: "Roboto",
+            faces: Default::default(),
+            diagnostics: Default::default(),
+            object_diagnostics: Default::default(),
             page_exclusions: None,
         }
     }
@@ -69,6 +72,26 @@ impl<'a> TextRenderer<'a> {
             .ok()?
             .metrics
             .cap_height_ratio()
+    }
+
+    pub fn for_resolved_text(&self, default_family: &'static str) -> Self {
+        Self {
+            settings: TextSettings::resolved(),
+            point_marker_target: self.point_marker_target,
+            fonts: self.fonts,
+            default_family,
+            faces: Rc::clone(&self.faces),
+            diagnostics: Rc::clone(&self.diagnostics),
+            object_diagnostics: Rc::clone(&self.object_diagnostics),
+            page_exclusions: None,
+        }
+    }
+
+    fn register_face(&self, face: &ResolvedFace) {
+        let mut faces = self.faces.borrow_mut();
+        if !faces.iter().any(|registered| registered.id == face.id) {
+            faces.push(face.clone());
+        }
     }
 
     pub fn object_exclusions(
@@ -92,7 +115,7 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn resolve(&self, style: &TextStyle, context: TextContext) -> Option<ResolvedFace> {
-        let family = style.family.as_deref().unwrap_or("Roboto");
+        let family = style.family.as_deref().unwrap_or(self.default_family);
         let bold = style.bold && matches!(context, TextContext::Placed);
         match self.fonts.resolve_with_fallback(family, bold, style.italic) {
             Ok(selection) => {
@@ -103,10 +126,7 @@ impl<'a> TextRenderer<'a> {
                         codepoints: Vec::new(),
                     });
                 }
-                let mut faces = self.faces.borrow_mut();
-                if !faces.iter().any(|face| face.id == selection.face.id) {
-                    faces.push(selection.face.clone());
-                }
+                self.register_face(&selection.face);
                 Some(selection.face)
             }
             Err(error) => {
@@ -169,6 +189,7 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn output_style_with_face(&self, style: &TextStyle, face: &ResolvedFace) -> TextStyle {
+        self.register_face(face);
         let mut output = style.clone();
         if style.family.is_some() || face.family != "Roboto" {
             output.family = Some(face.family.clone());
@@ -303,6 +324,7 @@ mod tests {
             TextSettings {
                 scale: 1.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
             fonts,
         )
@@ -338,7 +360,8 @@ mod tests {
         assert!(output.bold && output.italic && output.underline && output.strikethrough);
         assert_eq!(output.link_target, style.link_target);
         assert!(renderer.diagnostics().is_empty());
-        assert!(renderer.faces.borrow().is_empty());
+        assert_eq!(renderer.faces.borrow().len(), 1);
+        assert_eq!(renderer.faces.borrow()[0].id, face.id);
     }
 
     #[test]

@@ -300,7 +300,7 @@ numeric_attributes! {
     Ellipse { cx => ("cx", -f64::MAX), cy => ("cy", -f64::MAX), rx => ("rx", 0.), ry => ("ry", 0.) }
     Line { x1 => ("x1", -f64::MAX), y1 => ("y1", -f64::MAX), x2 => ("x2", -f64::MAX), y2 => ("y2", -f64::MAX) }
     Image { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
-    Text { x => ("x", -f64::MAX), y => ("y", -f64::MAX), font_size => ("font-size", 0.) }
+    Text { x => ("x", -f64::MAX), y => ("y", -f64::MAX) }
     TSpan { font_size => ("font-size", 0.) }
     SvgMask { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
     LinearGradient { x1 => ("x1", -f64::MAX), y1 => ("y1", -f64::MAX), x2 => ("x2", -f64::MAX), y2 => ("y2", -f64::MAX) }

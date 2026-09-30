@@ -174,6 +174,7 @@ mod tests {
             TextSettings {
                 scale: 3.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
             &fonts,
         );
@@ -357,6 +358,7 @@ mod tests {
             TextSettings {
                 scale: 1.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
             &fonts,
         );
@@ -381,6 +383,7 @@ mod tests {
             TextSettings {
                 scale: 3.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
             &fonts,
         );
@@ -404,6 +407,7 @@ mod tests {
             TextSettings {
                 scale: 1.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
             &fonts,
         );

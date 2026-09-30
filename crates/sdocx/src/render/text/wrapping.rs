@@ -438,6 +438,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let styled = StyledText::new(content, TextContext::Placed, settings);
         let renderer = TextRenderer::new(settings, fonts);
@@ -632,6 +633,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let styled = StyledText::new(&content, TextContext::Placed, settings);
         let fonts = FontBook::new(Arc::new(fontdb::Database::new()));

@@ -1,14 +1,15 @@
 use std::ops::Range;
 
 use crate::render::RenderTheme;
+use crate::render::marker::{PreparedMarker, marker_center_y};
 use crate::{
-    BoundingBox, BulletType, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
-    PredefinedTextStyle,
+    BoundingBox, BulletType, LineSpacingType, ParagraphAlignment, ParagraphBullet,
+    ParagraphLineSpacing, PredefinedTextStyle,
 };
 
 use super::{
-    StyledText, TextRenderer, WrappedLine, paragraph_layout, paragraph_line_height,
-    unmeasured_paragraph, wrap_paragraph,
+    StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
+    paragraph_line_height, unmeasured_paragraph, wrap_paragraph,
 };
 
 #[derive(Clone, Copy)]
@@ -214,6 +215,56 @@ pub(in crate::render) struct TextLine {
     pub baseline: f64,
     pub alignment: Option<ParagraphAlignment>,
     pub predefined: Option<PredefinedTextStyle>,
+    pub marker: Option<PositionedMarker>,
+}
+
+pub(in crate::render) struct PositionedMarker {
+    pub marker: PreparedMarker,
+    pub source: usize,
+    pub x: f64,
+    pub center_y: f64,
+}
+
+impl PositionedMarker {
+    #[allow(clippy::too_many_arguments)]
+    pub fn for_line(
+        marker: PreparedMarker,
+        source: usize,
+        x: f64,
+        line: &WrappedLine,
+        spacing: Option<ParagraphLineSpacing>,
+        baseline: f64,
+        post_line_cursor: f64,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<Self> {
+        let settings = renderer.settings;
+        let pixels = spacing
+            .filter(|spacing| spacing.kind == LineSpacingType::Pixels)
+            .and_then(|spacing| {
+                explicit_line_height(line.font_size, spacing, settings)
+                    .map(|_| settings.pixels(spacing.value))
+            })
+            .unwrap_or(0.0);
+        let cap_ratio = (pixels != 0.0)
+            .then(|| renderer.default_cap_height_ratio())
+            .flatten();
+        let Some(center_y) = marker_center_y(
+            baseline,
+            post_line_cursor,
+            line.font_size.max(line.object_height()),
+            pixels,
+            cap_ratio,
+        ) else {
+            renderer.measurement_failed("sans-serif");
+            return None;
+        };
+        Some(Self {
+            marker,
+            source,
+            x,
+            center_y,
+        })
+    }
 }
 
 pub(in crate::render) struct TextLayout {
@@ -235,6 +286,9 @@ impl TextLayout {
         };
         for line in &mut self.lines {
             line.baseline += offset;
+            if let Some(marker) = &mut line.marker {
+                marker.center_y += offset;
+            }
         }
     }
 }
@@ -313,7 +367,13 @@ pub(in crate::render) fn layout_text(
     for (paragraph_number, (paragraph, layout)) in
         paragraphs.iter().zip(&paragraph_layouts).enumerate()
     {
-        let x = content_left + layout.left_indent(settings);
+        let marker_x = content_left + layout.left_indent(settings);
+        let marker_style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+        let mut marker = layout.bullet.and_then(|bullet| {
+            PreparedMarker::prepare(bullet, layout.indent_level, &marker_style, theme, renderer)
+        });
+        let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
+        let x = marker_x + marker_width;
         let width = (content_right - x).max(0.0);
         let paragraph_lines = measure_paragraph(
             styled,
@@ -344,6 +404,18 @@ pub(in crate::render) fn layout_text(
             prepare_line_objects(&mut line, styled, candidate_top, theme, renderer);
             renderer.report_line_geometry(&line, layout.line_spacing);
             let baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
+            let positioned_marker = marker.take().and_then(|marker| {
+                PositionedMarker::for_line(
+                    marker,
+                    paragraph.content.start,
+                    marker_x,
+                    &line,
+                    layout.line_spacing,
+                    baseline,
+                    frame.bbox.y_min + cursor.position(),
+                    renderer,
+                )
+            });
             lines.push(TextLine {
                 line,
                 x,
@@ -351,6 +423,7 @@ pub(in crate::render) fn layout_text(
                 baseline,
                 alignment: layout.alignment,
                 predefined: layout.predefined_style,
+                marker: positioned_marker,
             });
         }
         if spacing.after && paragraph_number + 1 < paragraphs.len() {
@@ -408,6 +481,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let fonts = FontBook::default();
         let renderer = TextRenderer::new(settings, &fonts);
@@ -613,6 +687,7 @@ mod tests {
             TextSettings {
                 scale: 1.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
         )
     }
@@ -631,6 +706,104 @@ mod tests {
             checked: false,
             initial_number: 1,
         }
+    }
+
+    fn add_point_bullet(content: &mut RichTextBox) {
+        content.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::Bullet,
+            start_paragraph: 0,
+            end_paragraph: u32::MAX,
+            payload: [8_u32, 1, 0, 1]
+                .into_iter()
+                .flat_map(u32::to_le_bytes)
+                .collect(),
+        });
+    }
+
+    #[test]
+    fn marker_reservation_precedes_wrapping_and_only_the_first_line_retains_it() {
+        let mut content = text("ABC");
+        add_point_bullet(&mut content);
+        content.margins = Some([0.0, 0.0, 990.0, 0.0]);
+        let plan = measure(&content, &[]);
+        assert_eq!(plan.lines.len(), 3);
+        assert_eq!(plan.height(), 40.5);
+        for line in &plan.lines {
+            assert_eq!(line.x, 36.0);
+            assert_eq!(line.width, 0.0);
+        }
+        let marker = plan.lines[0].marker.as_ref().unwrap();
+        assert_eq!(marker.x, 10.0);
+        assert_eq!(marker.source, 0);
+        assert_eq!(marker.center_y, 106.75);
+        assert!(plan.lines[1..].iter().all(|line| line.marker.is_none()));
+    }
+
+    #[test]
+    fn marker_centers_share_the_frame_origin_and_gravity_translation() {
+        let mut content = text("ABC");
+        add_point_bullet(&mut content);
+        for (gravity, expected_center) in [(None, 106.75), (Some(1), 150.0), (Some(2), 193.25)] {
+            content.gravity = gravity;
+            let plan = measure(&content, &[]);
+            let marker = plan.lines[0].marker.as_ref().unwrap();
+            assert_eq!(marker.center_y, expected_center);
+            assert_eq!(plan.lines[0].baseline - marker.center_y, 3.25);
+            assert_eq!(plan.height(), 13.5);
+        }
+    }
+
+    #[test]
+    fn later_paragraph_marker_uses_first_content_font_instead_of_line_maximum() {
+        let mut content = text("A\nBC");
+        add_point_bullet(&mut content);
+        content.spans = [(2, 3, 2.0_f32), (3, 4, 20.0_f32)]
+            .into_iter()
+            .map(|(start, end, size)| crate::RichTextSpan {
+                kind: crate::RichTextSpanType::FontSize,
+                start_utf16: start,
+                end_utf16: end,
+                expand: false,
+                payload: size.to_le_bytes().to_vec(),
+            })
+            .collect();
+        let plan = measure(&content, &[]);
+        let line = &plan.lines[1];
+        assert_eq!(line.line.font_size, 20.0);
+        let marker = line.marker.as_ref().unwrap();
+        assert_eq!(marker.source, 2);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 1.0,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let mut scene = crate::render::vector::Scene::new(crate::render::vector::Svg::new());
+        marker
+            .marker
+            .paint(
+                &mut scene,
+                marker.x,
+                marker.center_y,
+                "#000000",
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .unwrap();
+        let svg = scene.finish();
+        let document = roxmltree::Document::parse(&svg).unwrap();
+        let radius = document
+            .descendants()
+            .find(|node| node.has_tag_name("circle"))
+            .unwrap()
+            .attribute("r")
+            .unwrap()
+            .parse::<f64>()
+            .unwrap();
+        assert_eq!(radius, 1.0);
     }
 
     #[test]

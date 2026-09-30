@@ -1,9 +1,9 @@
 //! Presentation-oriented Svg rendering for parsed Samsung Notes documents.
 
 use crate::{
-    BoundingBox, BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page,
-    PageElement, ParagraphAlignment, ParagraphBullet, PlacedImage, PredefinedTextStyle,
-    RichTextBox, RichTextObjectContent, RichTextObjectSpan, Stroke, layout_document,
+    BoundingBox, Color, Document, LayoutDocument, MediaAsset, Page, PageElement,
+    ParagraphAlignment, PlacedImage, PredefinedTextStyle, RichTextBox, RichTextObjectContent,
+    RichTextObjectSpan, Stroke, layout_document,
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
@@ -760,6 +760,10 @@ fn paint_text_layout(
     renderer: &TextRenderer<'_>,
 ) {
     for line in &layout.lines {
+        if let Some(marker) = &line.marker {
+            let style = styled.style_at(marker.source, theme, line.predefined);
+            paint_positioned_marker(svg, marker, &style, theme, renderer);
+        }
         render_measured_line(
             svg,
             styled,
@@ -932,15 +936,18 @@ fn render_flow_text_box(
                 .flatten();
 
             let base_style = styled.style_at(paragraph_start, theme, layout.predefined_style);
-            let marker = layout.bullet.and_then(|bullet| {
-                bullet_marker_for_indent(
+            let mut marker = layout.bullet.and_then(|bullet| {
+                marker::PreparedMarker::prepare(
                     bullet,
                     layout.indent_level,
-                    base_style.font_size,
+                    &base_style,
+                    theme,
                     renderer,
                 )
             });
-            let marker_width = marker.as_ref().map_or(0.0, BulletMarker::reserved_width);
+            let marker_width = marker
+                .as_ref()
+                .map_or(0.0, marker::PreparedMarker::reserved_width);
             let base_x = content_left + layout.left_indent(settings);
             let text_x = base_x + marker_width;
             let available_width = (content_right - text_x).max(0.0);
@@ -988,60 +995,19 @@ fn render_flow_text_box(
                     baseline += correction;
                 }
                 if line_index == 0
-                    && let Some(marker) = marker.as_ref()
+                    && let Some(marker) = marker.take()
+                    && let Some(marker) = text::PositionedMarker::for_line(
+                        marker,
+                        paragraph_start,
+                        base_x,
+                        line,
+                        layout.line_spacing,
+                        baseline,
+                        cursor.position(),
+                        renderer,
+                    )
                 {
-                    match marker {
-                        BulletMarker::Point { artwork, metrics } => {
-                            let left = base_x + metrics.button_width / 2.0 - metrics.radius;
-                            let pixel_spacing = layout
-                                .line_spacing
-                                .filter(|spacing| spacing.kind == LineSpacingType::Pixels)
-                                .and_then(|spacing| {
-                                    text::explicit_line_height(line.font_size, spacing, settings)
-                                        .map(|_| settings.pixels(spacing.value))
-                                })
-                                .unwrap_or(0.0);
-                            let cap_ratio = (pixel_spacing != 0.0)
-                                .then(|| renderer.default_cap_height_ratio())
-                                .flatten();
-                            if let Some(center_y) = marker::marker_center_y(
-                                baseline,
-                                cursor.position(),
-                                line.font_size.max(line.object_height()),
-                                pixel_spacing,
-                                cap_ratio,
-                            ) {
-                                let top = center_y - metrics.radius;
-                                if artwork
-                                    .paint(svg, *metrics, left, top, &base_style.color)
-                                    .is_none()
-                                {
-                                    renderer.invalid_geometry("sans-serif");
-                                }
-                            } else {
-                                renderer.measurement_failed("sans-serif");
-                            }
-                        }
-                        BulletMarker::Text {
-                            value,
-                            font_size,
-                            offset,
-                            ..
-                        } => svg.scope(
-                            Text::new("")
-                                .x(decimal(base_x + offset, 2))
-                                .y(decimal(
-                                    baseline - if *font_size < 40.0 { 8.0 } else { 0.0 },
-                                    2,
-                                ))
-                                .fill(Paint::from_hex(&base_style.color))
-                                .family(FontFamily::Roboto)
-                                .font_size(decimal(*font_size, 2)),
-                            |svg| {
-                                svg.push(TSpan::new(value));
-                            },
-                        ),
-                    }
+                    paint_positioned_marker(svg, &marker, &base_style, theme, renderer);
                 }
                 render_measured_line(
                     svg,
@@ -1081,115 +1047,27 @@ fn render_flow_text_box(
     });
 }
 
-enum BulletMarker {
-    Point {
-        artwork: marker::PointMarker,
-        metrics: marker::PointMarkerMetrics,
-    },
-    Text {
-        value: String,
-        reserved_width: f64,
-        font_size: f64,
-        offset: f64,
-    },
-}
-
-impl BulletMarker {
-    fn reserved_width(&self) -> f64 {
-        match self {
-            Self::Point { metrics, .. } => metrics.reserved_width,
-            Self::Text { reserved_width, .. } => *reserved_width,
-        }
-    }
-}
-
-fn bullet_marker(
-    bullet: ParagraphBullet,
-    font_size: f64,
+fn paint_positioned_marker(
+    svg: &mut Scene,
+    marker: &text::PositionedMarker,
+    style: &TextStyle,
+    theme: RenderTheme,
     renderer: &TextRenderer<'_>,
-) -> Option<BulletMarker> {
-    let marker_kind = bullet.kind;
-    if let Some(artwork) = marker::PointMarker::from_bullet(marker_kind) {
-        return marker::PointMarkerMetrics::measure(
-            font_size,
-            renderer.settings,
-            renderer.point_marker_target,
+) {
+    if marker
+        .marker
+        .paint(
+            svg,
+            marker.x,
+            marker.center_y,
+            &style.color,
+            theme,
+            renderer,
         )
-        .map(|metrics| BulletMarker::Point { artwork, metrics });
+        .is_none()
+    {
+        renderer.invalid_geometry("sans-serif");
     }
-    let marker = match marker_kind {
-        BulletType::None => return None,
-        BulletType::Checker => {
-            if bullet.checked {
-                "☑".to_string()
-            } else {
-                "☐".to_string()
-            }
-        }
-        BulletType::Digit => format!("{}.", bullet.number),
-        BulletType::CircledDigit => format!("{}", bullet.number),
-        BulletType::Alphabet => alphabetic_marker(bullet.number, false),
-        BulletType::RomanNumeral => roman_marker(bullet.number),
-        BulletType::UppercaseAlphabet => alphabetic_marker(bullet.number, true),
-        _ => "•".to_string(),
-    };
-    let (width, font_size, offset) = match marker_kind {
-        BulletType::Digit => (64.0, 45.0, 0.0),
-        _ => (78.0, 32.0, 12.0),
-    };
-    Some(BulletMarker::Text {
-        value: marker,
-        reserved_width: width,
-        font_size,
-        offset,
-    })
-}
-
-fn bullet_marker_for_indent(
-    mut bullet: ParagraphBullet,
-    indent_level: u32,
-    font_size: f64,
-    renderer: &TextRenderer<'_>,
-) -> Option<BulletMarker> {
-    if bullet.kind == BulletType::SolidCircle && indent_level % 2 == 1 {
-        bullet.kind = BulletType::WhiteCircle;
-    }
-    bullet_marker(bullet, font_size, renderer)
-}
-
-fn alphabetic_marker(number: u32, uppercase: bool) -> String {
-    let offset = number.saturating_sub(1) % 26;
-    let base = if uppercase { b'A' } else { b'a' };
-    format!("{}.", char::from(base + offset as u8))
-}
-
-fn roman_marker(number: u32) -> String {
-    const VALUES: &[(u32, &str)] = &[
-        (1000, "M"),
-        (900, "CM"),
-        (500, "D"),
-        (400, "CD"),
-        (100, "C"),
-        (90, "XC"),
-        (50, "L"),
-        (40, "XL"),
-        (10, "X"),
-        (9, "IX"),
-        (5, "V"),
-        (4, "IV"),
-        (1, "I"),
-    ];
-    let mut remaining = number.max(1);
-    let mut result = String::new();
-    for (value, numeral) in VALUES {
-        while remaining >= *value {
-            result.push_str(numeral);
-            remaining -= value;
-        }
-    }
-    result.make_ascii_lowercase();
-    result.push('.');
-    result
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1739,7 +1617,8 @@ mod tests {
         assert_eq!(
             super::TextSettings {
                 scale: 3.0,
-                font_size_delta: 0.0
+                font_size_delta: 0.0,
+                ..Default::default()
             }
             .font_size(15.0),
             45.0

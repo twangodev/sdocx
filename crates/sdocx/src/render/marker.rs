@@ -1,6 +1,15 @@
-use super::text::{TextSettings, finite_native_geometry};
-use super::vector::{Circle, Paint, Rectangle, Scene, Styled, decimal};
-use crate::BulletType;
+use super::RenderTheme;
+use super::text::{
+    StyledText, TextContext, TextFrame, TextLayout, TextRenderer, TextSettings, TextStyle,
+    finite_native_geometry, layout_text, wrap_paragraph,
+};
+use super::vector::{Circle, Group, Paint, Rectangle, Scene, Styled, Transform, decimal};
+use crate::{
+    BoundingBox, BulletType, ParagraphBullet, RichTextBox, RichTextParagraph, RichTextParagraphType,
+};
+
+mod checkbox;
+use checkbox::CheckboxMarker;
 
 /// Native point-marker image sizing for the rendering display.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -21,6 +30,294 @@ impl PointMarkerTarget {
             Self::Uwp => (7, 4.5, 9.0),
         }
     }
+}
+
+pub(super) enum PreparedMarker {
+    Point {
+        artwork: PointMarker,
+        metrics: PointMarkerMetrics,
+    },
+    Number(Box<PreparedNumber>),
+    Checkbox(CheckboxMarker),
+}
+
+impl PreparedMarker {
+    pub fn prepare(
+        mut bullet: ParagraphBullet,
+        indent: u32,
+        style: &TextStyle,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<Self> {
+        if bullet.kind == BulletType::SolidCircle && indent % 2 == 1 {
+            bullet.kind = BulletType::WhiteCircle;
+        }
+        if let Some(artwork) = PointMarker::from_bullet(bullet.kind) {
+            let metrics = PointMarkerMetrics::measure(
+                style.font_size,
+                renderer.settings,
+                renderer.point_marker_target,
+            );
+            if metrics.is_none() {
+                renderer.invalid_geometry("sans-serif");
+            }
+            return metrics.map(|metrics| Self::Point { artwork, metrics });
+        }
+        if bullet.kind == BulletType::Checker {
+            let checkbox = CheckboxMarker::measure(
+                style.font_size,
+                renderer.settings,
+                renderer.point_marker_target,
+                bullet.checked,
+            );
+            if checkbox.is_none() {
+                renderer.invalid_geometry("sans-serif");
+            }
+            return checkbox.map(Self::Checkbox);
+        }
+        if matches!(bullet.kind, BulletType::None | BulletType::Other(_)) {
+            return None;
+        }
+        let number = bullet
+            .number
+            .wrapping_add(bullet.initial_number)
+            .wrapping_sub(1) as i32;
+        let Some(value) = numbered_value(bullet.kind, number) else {
+            renderer.measurement_failed("sans-serif");
+            return None;
+        };
+        PreparedNumber::prepare(value, number, style, theme, renderer)
+            .map(|number| Self::Number(Box::new(number)))
+    }
+
+    pub fn reserved_width(&self) -> f64 {
+        match self {
+            Self::Point { metrics, .. } => metrics.reserved_width,
+            Self::Number(number) => number.reserved_width,
+            Self::Checkbox(checkbox) => checkbox.reserved_width,
+        }
+    }
+
+    pub fn paint(
+        &self,
+        svg: &mut Scene,
+        x: f64,
+        center_y: f64,
+        color: &str,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<()> {
+        finite_native_geometry(x)?;
+        finite_native_geometry(center_y)?;
+        match self {
+            Self::Point { artwork, metrics } => artwork.paint(
+                svg,
+                *metrics,
+                x + metrics.button_width / 2.0 - metrics.radius,
+                center_y - metrics.radius,
+                color,
+            ),
+            Self::Number(number) => number.paint(svg, x, center_y, theme, renderer),
+            Self::Checkbox(checkbox) => checkbox.paint(svg, x, center_y, color),
+        }
+    }
+}
+
+pub(super) struct PreparedNumber {
+    source: RichTextBox,
+    layout: TextLayout,
+    reserved_width: f64,
+}
+
+impl PreparedNumber {
+    fn prepare(
+        value: String,
+        number: i32,
+        style: &TextStyle,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<Self> {
+        let child = renderer.for_resolved_text("sans-serif");
+        let measured = (|| {
+            let font_size = finite_native_geometry(style.font_size)?;
+            if font_size <= 0.0
+                || !renderer.settings.scale.is_finite()
+                || renderer.settings.scale <= 0.0
+            {
+                return None;
+            }
+            let mut spacing = 1_u32.to_le_bytes().to_vec();
+            spacing.extend_from_slice(&1.3_f32.to_le_bytes());
+            let mut source = RichTextBox {
+                text_area_type: None,
+                bbox: BoundingBox::default(),
+                rotation_degrees: None,
+                text: value,
+                color: Some(style.source_color),
+                highlight_color: None,
+                underline: false,
+                font_size: Some(font_size as f32),
+                runs: Vec::new(),
+                spans: Vec::new(),
+                paragraphs: vec![RichTextParagraph {
+                    kind: RichTextParagraphType::LineSpacing,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: spacing,
+                }],
+                object_spans: Vec::new(),
+                text_sections: Vec::new(),
+                margins: None,
+                gravity: None,
+            };
+            let width = {
+                let styled = StyledText::new(&source, TextContext::Placed, child.settings);
+                let lines = wrap_paragraph(
+                    &styled,
+                    0..styled.index.len(),
+                    f64::from(f32::MAX),
+                    theme,
+                    None,
+                    &child,
+                )
+                .ok()?;
+                let [line] = lines.as_slice() else {
+                    return None;
+                };
+                finite_native_geometry(line.advance.ceil())?
+            };
+            if width < 0.0 {
+                return None;
+            }
+            source.bbox.x_max = width;
+            let styled = StyledText::new(&source, TextContext::Placed, child.settings);
+            let layout = layout_text(
+                &styled,
+                TextFrame {
+                    bbox: source.bbox,
+                    gravity: None,
+                    exclusions: &[],
+                },
+                theme,
+                &child,
+            );
+            let [line] = layout.lines.as_slice() else {
+                return None;
+            };
+            if layout.height() <= 0.0
+                || line.line.placements.is_empty()
+                || ![layout.height(), line.baseline, line.line.advance]
+                    .into_iter()
+                    .all(|value| finite_native_geometry(value).is_some())
+            {
+                return None;
+            }
+            let gap = renderer.settings.scale * if number < 10 { 9.0 } else { 6.0 };
+            let reserved_width = finite_native_geometry(line.line.advance + f64::from(gap))?;
+            Some(Self {
+                source,
+                layout,
+                reserved_width,
+            })
+        })();
+        if measured.is_none() {
+            renderer.measurement_failed("sans-serif");
+        }
+        measured
+    }
+
+    fn paint(
+        &self,
+        svg: &mut Scene,
+        x: f64,
+        center_y: f64,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<()> {
+        let top = finite_native_geometry(center_y - self.layout.height() / 2.0)?;
+        finite_native_geometry(x + self.source.bbox.x_max)?;
+        finite_native_geometry(top + self.layout.height())?;
+        for line in &self.layout.lines {
+            finite_native_geometry(x + line.x)?;
+            finite_native_geometry(top + line.baseline)?;
+        }
+        let child = renderer.for_resolved_text("sans-serif");
+        let styled = StyledText::new(&self.source, TextContext::Placed, child.settings);
+        svg.scope(
+            Group::new().transformed(Transform::translate(x, top, 5)),
+            |svg| {
+                super::paint_text_layout(svg, &styled, &self.layout, &[], theme, &child);
+            },
+        );
+        Some(())
+    }
+}
+
+fn numbered_value(kind: BulletType, number: i32) -> Option<String> {
+    if number <= 0 {
+        return Some(".".into());
+    }
+    let number = number as u32;
+    match kind {
+        BulletType::Digit | BulletType::CircledDigit => Some(format!("{number}.")),
+        BulletType::Alphabet | BulletType::UppercaseAlphabet => Some(alphabetic_value(
+            number,
+            kind == BulletType::UppercaseAlphabet,
+        )),
+        BulletType::RomanNumeral => roman_value(number),
+        _ => None,
+    }
+}
+
+fn alphabetic_value(mut number: u32, uppercase: bool) -> String {
+    let base = if uppercase { b'A' } else { b'a' };
+    let mut characters = Vec::new();
+    while number != 0 {
+        number -= 1;
+        characters.push(base + (number % 26) as u8);
+        number /= 26;
+    }
+    characters.reverse();
+    characters.push(b'.');
+    String::from_utf8(characters).expect("alphabetic markers contain ASCII")
+}
+
+fn roman_value(number: u32) -> Option<String> {
+    const MAX_MARKER_BYTES: usize = 4096;
+    const ROMAN: &[(u32, &str)] = &[
+        (1000, "m"),
+        (900, "cm"),
+        (500, "d"),
+        (400, "cd"),
+        (100, "c"),
+        (90, "xc"),
+        (50, "l"),
+        (40, "xl"),
+        (10, "x"),
+        (9, "ix"),
+        (5, "v"),
+        (4, "iv"),
+        (1, "i"),
+    ];
+    let mut remaining = number;
+    let mut bytes = 1;
+    for &(value, numeral) in ROMAN {
+        bytes += (remaining / value) as usize * numeral.len();
+        if bytes > MAX_MARKER_BYTES {
+            return None;
+        }
+        remaining %= value;
+    }
+    let mut result = String::with_capacity(bytes);
+    remaining = number;
+    for &(value, numeral) in ROMAN {
+        for _ in 0..remaining / value {
+            result.push_str(numeral);
+        }
+        remaining %= value;
+    }
+    result.push('.');
+    Some(result)
 }
 
 pub(super) fn marker_center_y(
@@ -185,12 +482,301 @@ mod tests {
     use super::super::vector::Svg;
     use super::*;
 
+    fn numbered_bullet(kind: BulletType, number: u32, initial_number: u32) -> ParagraphBullet {
+        ParagraphBullet {
+            kind,
+            number,
+            checked: false,
+            initial_number,
+        }
+    }
+
+    fn body_style() -> TextStyle {
+        TextStyle {
+            font_size: 20.0,
+            family: Some("Roboto Mono".into()),
+            color: "#262626".into(),
+            source_color: crate::Color {
+                r: 38,
+                g: 38,
+                b: 38,
+            },
+            bold: true,
+            italic: true,
+            underline: true,
+            strikethrough: true,
+            link_target: Some("https://example.com".into()),
+        }
+    }
+
+    #[test]
+    fn numbered_markers_use_native_decimal_spreadsheet_and_greedy_roman_conversions() {
+        for (kind, number, expected) in [
+            (BulletType::Digit, 12, "12."),
+            (BulletType::CircledDigit, 12, "12."),
+            (BulletType::Alphabet, 26, "z."),
+            (BulletType::Alphabet, 27, "aa."),
+            (BulletType::Alphabet, 52, "az."),
+            (BulletType::Alphabet, 53, "ba."),
+            (BulletType::UppercaseAlphabet, 702, "ZZ."),
+            (BulletType::UppercaseAlphabet, 703, "AAA."),
+            (BulletType::RomanNumeral, 4, "iv."),
+            (BulletType::RomanNumeral, 1999, "mcmxcix."),
+            (BulletType::RomanNumeral, 4000, "mmmm."),
+        ] {
+            assert_eq!(numbered_value(kind, number).as_deref(), Some(expected));
+        }
+        for kind in [
+            BulletType::Digit,
+            BulletType::CircledDigit,
+            BulletType::Alphabet,
+            BulletType::UppercaseAlphabet,
+            BulletType::RomanNumeral,
+        ] {
+            for number in [0, -1, i32::MIN] {
+                assert_eq!(numbered_value(kind, number).as_deref(), Some("."));
+            }
+        }
+    }
+
+    #[test]
+    fn numeric_child_uses_resolved_size_actual_default_face_and_native_gaps() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 3.0,
+                font_size_delta: 7.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let default_face = fonts.resolve("sans-serif", false, false).unwrap();
+        for (number, gap) in [(9, 27.0), (10, 18.0)] {
+            let prepared = PreparedMarker::prepare(
+                numbered_bullet(BulletType::Digit, number, 1),
+                0,
+                &body_style(),
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .unwrap();
+            let PreparedMarker::Number(prepared) = prepared else {
+                panic!("numeric marker");
+            };
+            assert_eq!(prepared.source.text, format!("{number}."));
+            assert_eq!(prepared.source.font_size, Some(20.0));
+            assert_eq!(prepared.source.color, Some(body_style().source_color));
+            assert!(prepared.source.runs.is_empty() && prepared.source.spans.is_empty());
+            let line = &prepared.layout.lines[0];
+            assert_eq!(line.line.font_size, 20.0);
+            assert!((prepared.layout.height() - 26.0).abs() < 0.00001);
+            assert!((line.baseline - 19.0).abs() < 0.00001);
+            let mut buffer = crate::fonts::UnicodeBuffer::new();
+            buffer.push_str(&prepared.source.text);
+            let shaped = default_face.shape(buffer, &[]).unwrap();
+            let expected_advance =
+                shaped.advance_x() as f64 * 20.0 / f64::from(shaped.metrics.units_per_em);
+            assert_eq!(line.line.advance, expected_advance);
+            assert_eq!(prepared.source.bbox.x_max, expected_advance.ceil());
+            assert_eq!(prepared.reserved_width, expected_advance + gap);
+            for placement in &line.line.placements {
+                assert_eq!(placement.cluster.run.face.id, default_face.id);
+                let style = &placement.cluster.run.style;
+                assert!(!style.bold && !style.italic && !style.underline && !style.strikethrough);
+                assert!(style.link_target.is_none());
+            }
+        }
+        assert!(renderer.diagnostics().is_empty());
+    }
+
+    #[test]
+    fn resolved_subpixel_number_size_is_not_clamped_or_scaled_again() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 0.5,
+                font_size_delta: 7.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let style = TextStyle {
+            font_size: 0.5,
+            ..body_style()
+        };
+        let theme = RenderTheme::for_canvas(false);
+        let prepared = PreparedMarker::prepare(
+            numbered_bullet(BulletType::Digit, 1, 1),
+            0,
+            &style,
+            theme,
+            &renderer,
+        )
+        .unwrap();
+        let PreparedMarker::Number(number) = &prepared else {
+            panic!("numeric marker");
+        };
+        assert_eq!(number.source.font_size, Some(0.5));
+        assert_eq!(number.layout.lines[0].line.font_size, 0.5);
+        assert!((number.layout.height() - 0.65).abs() < 0.0000001);
+        assert!((number.layout.lines[0].baseline - 0.475).abs() < 0.0000001);
+        assert_eq!(
+            number.reserved_width,
+            number.layout.lines[0].line.advance + 4.5
+        );
+        let mut scene = Scene::new(Svg::new());
+        prepared
+            .paint(&mut scene, 10.0, 10.0, "#262626", theme, &renderer)
+            .unwrap();
+        let output = scene.finish();
+        let document = roxmltree::Document::parse(&output).unwrap();
+        let sizes = document
+            .descendants()
+            .filter_map(|node| node.attribute("font-size"))
+            .map(|size| size.parse::<f64>().unwrap())
+            .collect::<Vec<_>>();
+        assert!(!sizes.is_empty());
+        assert!(sizes.iter().all(|size| *size == 0.5));
+        assert!(renderer.diagnostics().is_empty());
+    }
+
+    #[test]
+    fn initial_number_and_signed_wrapping_are_preserved_without_clamping() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 3.0,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        for (number, initial, expected) in [
+            (2, 4, "5."),
+            (1, 0, "."),
+            (u32::MAX, 1, "."),
+            (i32::MAX as u32, 2, "."),
+        ] {
+            let prepared = PreparedMarker::prepare(
+                numbered_bullet(BulletType::Digit, number, initial),
+                0,
+                &body_style(),
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .unwrap();
+            let PreparedMarker::Number(prepared) = prepared else {
+                panic!("numeric marker");
+            };
+            assert_eq!(prepared.source.text, expected);
+        }
+    }
+
+    #[test]
+    fn numeric_paint_reuses_measured_layout_and_shared_font_registry() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 3.0,
+                font_size_delta: 5.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let theme = RenderTheme::for_canvas(false);
+        let prepared = PreparedMarker::prepare(
+            numbered_bullet(BulletType::Alphabet, 27, 1),
+            0,
+            &body_style(),
+            theme,
+            &renderer,
+        )
+        .unwrap();
+        let mut scene = Scene::new(Svg::new());
+        prepared
+            .paint(&mut scene, 70.0, 100.0, "#262626", theme, &renderer)
+            .unwrap();
+        renderer.embed_fonts(&mut scene);
+        let output = scene.finish();
+        let document = roxmltree::Document::parse(&output).unwrap();
+        let group = document
+            .descendants()
+            .find(|node| node.has_tag_name("g"))
+            .unwrap();
+        assert_eq!(group.attribute("transform"), Some("translate(70 87.00000)"));
+        let text = document
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .filter_map(|node| node.text())
+            .collect::<String>();
+        assert_eq!(text, "aa.");
+        assert!(output.contains("@font-face"));
+        assert!(!output.contains("Roboto Mono") && !output.contains("text-decoration"));
+        assert!(renderer.diagnostics().is_empty());
+    }
+
+    #[test]
+    fn unsupported_roman_expansion_and_missing_fonts_report_bounded_failures() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 3.0,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        assert!(
+            PreparedMarker::prepare(
+                numbered_bullet(BulletType::RomanNumeral, i32::MAX as u32, 1),
+                0,
+                &body_style(),
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .is_none()
+        );
+        assert_eq!(renderer.diagnostics().len(), 1);
+        assert_eq!(
+            renderer.diagnostics()[0].kind,
+            super::super::TextDiagnosticKind::MeasurementFailure
+        );
+        let fonts =
+            crate::fonts::FontBook::new(std::sync::Arc::new(crate::fonts::fontdb::Database::new()));
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 3.0,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        assert!(
+            PreparedMarker::prepare(
+                numbered_bullet(BulletType::Digit, 1, 1),
+                0,
+                &body_style(),
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .is_none()
+        );
+        assert!(
+            renderer
+                .diagnostics()
+                .iter()
+                .any(|diagnostic| diagnostic.kind
+                    == super::super::TextDiagnosticKind::MeasurementFailure)
+        );
+    }
+
     fn metrics(font_size: f64, scale: f32, target: PointMarkerTarget) -> PointMarkerMetrics {
         PointMarkerMetrics::measure(
             font_size,
             TextSettings {
                 scale,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
             target,
         )
@@ -396,7 +982,8 @@ mod tests {
                     font,
                     TextSettings {
                         scale,
-                        font_size_delta: 0.0
+                        font_size_delta: 0.0,
+                        ..Default::default()
                     },
                     PointMarkerTarget::Mobile
                 )

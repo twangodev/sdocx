@@ -17,8 +17,8 @@ mod paint;
 mod resources;
 mod wrapping;
 pub(super) use layout::{
-    ParagraphSpacing, TextCursor, TextFrame, TextLayout, VerticalExclusion, layout_placed_text,
-    layout_text, measure_paragraph, prepare_line_objects,
+    ParagraphSpacing, PositionedMarker, TextCursor, TextFrame, TextLayout, VerticalExclusion,
+    layout_placed_text, layout_text, measure_paragraph, prepare_line_objects,
 };
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;
@@ -57,6 +57,23 @@ pub(super) enum TextContext {
 pub(super) struct TextSettings {
     pub scale: f32,
     pub font_size_delta: f32,
+    pub(super) font_size_units: FontSizeUnits,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum FontSizeUnits {
+    Logical,
+    Resolved,
+}
+
+impl Default for TextSettings {
+    fn default() -> Self {
+        Self {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            font_size_units: FontSizeUnits::Logical,
+        }
+    }
 }
 
 impl TextSettings {
@@ -67,6 +84,14 @@ impl TextSettings {
                 .body_font_size_delta
                 .filter(|delta| *delta != i32::MIN)
                 .unwrap_or(0) as f32,
+            ..Self::default()
+        }
+    }
+
+    pub fn resolved() -> Self {
+        Self {
+            font_size_units: FontSizeUnits::Resolved,
+            ..Self::default()
         }
     }
 
@@ -82,9 +107,14 @@ impl TextSettings {
 
     fn checked_font_size(self, size: f32) -> Option<f64> {
         size.is_finite().then_some(())?;
-        finite_native_geometry(f64::from(
-            (size + self.font_size_delta).max(1.0) * self.scale,
-        ))
+        let pixels = match self.font_size_units {
+            FontSizeUnits::Logical => (size + self.font_size_delta).max(1.0) * self.scale,
+            FontSizeUnits::Resolved => {
+                (size > 0.0).then_some(())?;
+                size
+            }
+        };
+        finite_native_geometry(f64::from(pixels))
     }
 
     fn checked_pixels(self, value: f32) -> Option<f64> {
@@ -571,6 +601,7 @@ mod tests {
         TextSettings {
             scale: 3.0,
             font_size_delta: 0.0,
+            ..Default::default()
         }
     }
 
@@ -579,6 +610,7 @@ mod tests {
         let settings = TextSettings {
             scale: 2.625,
             font_size_delta: 1.125,
+            ..Default::default()
         };
         let size = 17.3_f32;
         let expected_size = f64::from((size + settings.font_size_delta) * settings.scale);
@@ -616,6 +648,7 @@ mod tests {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
+            ..Default::default()
         };
         let font_size = settings.font_size(f32::MAX);
         assert_eq!(paragraph_line_height(font_size, None, settings), font_size);
@@ -821,6 +854,7 @@ mod tests {
             TextSettings {
                 scale: 1.0,
                 font_size_delta: 0.0,
+                ..Default::default()
             },
         );
         assert_eq!(
