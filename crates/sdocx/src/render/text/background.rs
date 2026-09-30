@@ -5,7 +5,6 @@ use crate::render::vector::{Paint, Rectangle, Scene, Styled, color_hex, decimal}
 use crate::render::viewport::Viewport;
 use crate::{BoundingBox, RichTextSpanType};
 use rustybuzz::Direction;
-use unicode_script::Script;
 
 use super::{StyledText, TextBackground, TextLine};
 
@@ -146,12 +145,7 @@ fn line_backgrounds(
             continue;
         };
         let run = &placement.cluster.run;
-        if run.variable
-            || !matches!(
-                run.script,
-                Script::Latin | Script::Common | Script::Inherited
-            )
-        {
+        if run.variable {
             issues.push(TextBackgroundIssue {
                 source: source.clone(),
             });
@@ -437,12 +431,8 @@ mod tests {
     }
 
     #[test]
-    fn bidi_reordering_and_complex_scripts_report_unsupported_background_positions() {
-        for (source, start, end) in [
-            ("\u{5d0}AB", 1, 3),
-            ("\u{202e}AB\u{202c}", 1, 3),
-            ("λ", 0, 1),
-        ] {
+    fn bidi_reordering_reports_unsupported_background_positions() {
+        for (source, start, end) in [("\u{5d0}AB", 1, 3), ("\u{202e}AB\u{202c}", 1, 3)] {
             let text = text(
                 source,
                 vec![span(
@@ -484,6 +474,109 @@ mod tests {
             line_backgrounds(&styled, line, RenderTheme::for_canvas(false), None);
         assert!(rectangles.is_empty());
         assert!(!issues.is_empty());
+    }
+
+    #[test]
+    fn covered_greek_and_cyrillic_use_retained_native_advances() {
+        for (source, expected_advance) in [("λΩ", 54.84375), ("Жя", 65.54443359375)] {
+            let text = text(
+                source,
+                vec![span(RichTextSpanType::BackgroundColor, 0x80ffff00, 0, 2)],
+            );
+            let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
+            let layout = measure(&text, 200.0);
+            let line = &layout.lines[0];
+            assert!(line.line.placements.iter().all(|placement| {
+                placement.cluster.run.direction == Direction::LeftToRight
+                    && placement.cluster.run.glyphs[placement.cluster.glyphs.clone()]
+                        .iter()
+                        .all(|glyph| glyph.raw.id != 0)
+            }));
+            let (rectangles, issues) =
+                line_backgrounds(&styled, line, RenderTheme::for_canvas(false), None);
+            assert!(issues.is_empty());
+            assert_eq!(rectangles.len(), 1);
+            assert_eq!(rectangles[0].source, 0..2);
+            close(rectangles[0].bounds.x_max, expected_advance);
+        }
+        let text = text(
+            "λλ",
+            vec![span(RichTextSpanType::BackgroundColor, 0xffff0000, 1, 2)],
+        );
+        let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
+        let layout = measure(&text, 200.0);
+        let (rectangles, issues) = line_backgrounds(
+            &styled,
+            &layout.lines[0],
+            RenderTheme::for_canvas(false),
+            None,
+        );
+        assert!(issues.is_empty());
+        assert_eq!(rectangles.len(), 1);
+        close(rectangles[0].bounds.x_min, 25.2685546875);
+        close(rectangles[0].bounds.x_max, 50.185546875);
+    }
+
+    #[test]
+    fn uncovered_ltr_background_keeps_advance_and_foreground_missing_glyph_diagnosis() {
+        let text = text(
+            "中",
+            vec![span(RichTextSpanType::BackgroundColor, 0xffffffff, 0, 1)],
+        );
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(TextSettings::default(), &fonts);
+        let styled = StyledText::new(&text, TextContext::Placed, renderer.settings);
+        let layout = super::super::layout_text(
+            &styled,
+            TextFrame {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 200.0,
+                    y_max: 200.0,
+                },
+                gravity: Some(0),
+                exclusions: &[],
+            },
+            RenderTheme::for_canvas(false),
+            &renderer,
+        );
+        let line = &layout.lines[0];
+        let mut scene = Scene::new(Svg::new());
+        let issues = render_line_backgrounds(
+            &mut scene,
+            &styled,
+            line,
+            RenderTheme::for_canvas(false),
+            None,
+        );
+        assert!(issues.is_empty());
+        super::super::render_measured_line(
+            &mut scene,
+            &styled,
+            &line.line,
+            line.x,
+            line.width,
+            line.baseline,
+            line.alignment,
+            RenderTheme::for_canvas(false),
+            line.predefined,
+            &renderer,
+        );
+        assert!(
+            renderer
+                .diagnostics()
+                .iter()
+                .any(|issue| issue.kind == super::super::TextDiagnosticKind::MissingGlyphs)
+        );
+        let svg = scene.finish();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("rect"))
+                .count(),
+            1
+        );
     }
 
     #[test]

@@ -781,7 +781,7 @@ mod tests {
     }
 
     #[test]
-    fn objects_preserve_full_paragraph_direction_and_script_context() {
+    fn objects_preserve_full_paragraph_direction_context() {
         let mut content = text("ب\u{fffc}.");
         content.object_spans = vec![image(1, 20.0, ObjectSpanLayoutOption::Inline)];
         let lines = wrap(&content, f64::INFINITY);
@@ -793,7 +793,6 @@ mod tests {
             punctuation.run.direction,
             crate::fonts::Direction::RightToLeft
         );
-        assert_eq!(punctuation.run.script, unicode_script::Script::Arabic);
     }
 
     #[test]

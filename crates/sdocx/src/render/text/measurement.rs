@@ -42,7 +42,6 @@ pub(in crate::render) struct MeasuredRun {
     pub style: TextStyle,
     pub face: ResolvedFace,
     pub direction: Direction,
-    pub script: Script,
     pub glyphs: Vec<MeasuredGlyph>,
     pub variable: bool,
     pub tab: bool,
@@ -67,10 +66,6 @@ impl MeasuredCluster {
     pub fn supports_positioned_text(&self) -> bool {
         self.run.direction == Direction::LeftToRight
             && !self.run.variable
-            && matches!(
-                self.run.script,
-                Script::Latin | Script::Common | Script::Inherited
-            )
             && self
                 .run
                 .glyphs
@@ -503,7 +498,6 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             style: style.clone(),
             face,
             direction,
-            script,
             glyphs,
             variable,
             tab,
@@ -672,7 +666,6 @@ mod tests {
         assert_eq!(run.face.family, "Roboto");
         assert_eq!(run.style.font_size, 45.0);
         assert_eq!(run.direction, Direction::LeftToRight);
-        assert_eq!(run.script, Script::Latin);
         assert!(!run.variable);
         assert_eq!(
             run.glyphs
@@ -827,10 +820,63 @@ mod tests {
                     .is_none()
             );
         }
-        let greek = measure(&text_box("λ"), TextContext::Placed);
-        assert_ne!(greek.clusters[0].run.glyphs[0].raw.id, 0);
-        assert_eq!(greek.clusters[0].run.script, Script::Greek);
-        assert!(greek.clusters[0].paint_offset("λ").unwrap().is_none());
+    }
+
+    #[test]
+    fn covered_greek_and_cyrillic_reproduce_pinned_glyph_positions() {
+        for (text, glyphs, advance) in [
+            ("λΩ", [(579, 1134, 0), (569, 1362, 1134)], 54.84375),
+            ("Жя", [(624, 1859, 0), (663, 1124, 1859)], 65.54443359375),
+            ("λλ", [(579, 1150, 0), (579, 1134, 1150)], 50.185546875),
+        ] {
+            let measured = measure(&text_box(text), TextContext::Placed);
+            assert_eq!(measured.advance, advance);
+            assert_eq!(measured.clusters.len(), 2);
+            let run = &measured.clusters[0].run;
+            assert_eq!(run.face.family, "Roboto");
+            assert_eq!(run.direction, Direction::LeftToRight);
+            assert_eq!(
+                run.glyphs
+                    .iter()
+                    .map(|glyph| (glyph.raw.id, glyph.raw.x_advance, glyph.pen_x))
+                    .collect::<Vec<_>>(),
+                glyphs,
+            );
+            for (index, (cluster, character)) in
+                measured.clusters.iter().zip(text.chars()).enumerate()
+            {
+                assert!(Arc::ptr_eq(run, &cluster.run));
+                assert_eq!(cluster.source, index..index + 1);
+                assert_eq!(cluster.glyphs, index..index + 1);
+                assert_eq!(cluster.origin_x, glyphs[index].2 as f64 * 45.0 / 2048.0);
+                assert!(cluster.supports_positioned_text());
+                let offset = cluster
+                    .paint_offset(&character.to_string())
+                    .unwrap()
+                    .unwrap();
+                assert_eq!(offset.x, 0.0);
+                assert_eq!(offset.y, 0.0);
+            }
+        }
+    }
+
+    #[test]
+    fn mixed_supported_scripts_keep_missing_and_mismatched_glyph_fallbacks_local() {
+        let measured = measure(&text_box("λЖ😀"), TextContext::Placed);
+        assert_eq!(measured.clusters.len(), 3);
+        let greek = &measured.clusters[0];
+        let cyrillic = &measured.clusters[1];
+        let missing = &measured.clusters[2];
+        assert_eq!(greek.source, 0..1);
+        assert_eq!(cyrillic.source, 1..2);
+        assert_eq!(missing.source, 2..3);
+        assert!(greek.paint_offset("λ").unwrap().is_some());
+        assert!(cyrillic.paint_offset("Ж").unwrap().is_some());
+        assert!(greek.paint_offset("Ω").unwrap().is_none());
+        assert!(cyrillic.paint_offset("я").unwrap().is_none());
+        assert_eq!(missing.run.glyphs[missing.glyphs.start].raw.id, 0);
+        assert!(!missing.supports_positioned_text());
+        assert!(missing.paint_offset("😀").unwrap().is_none());
     }
 
     #[test]
