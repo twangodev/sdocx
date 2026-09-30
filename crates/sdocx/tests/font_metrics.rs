@@ -59,7 +59,8 @@ struct NativeReference {
     pdf_to_svg_scale: f64,
     logical_pdf_page_height: f64,
     pdf_viewport: [f64; 4],
-    coordinate_tolerance: f64,
+    x_tolerance: f64,
+    baseline_tolerance: f64,
     font_size: f64,
     lines: Vec<NativeLine>,
     additional_pages: Vec<NativePage>,
@@ -102,7 +103,7 @@ fn sha256(bytes: &[u8]) -> String {
 
 #[test]
 #[ignore = "requires the external Hugging Face compatibility corpus"]
-fn native_first_four_page_body_and_saved_code_match_independent_pdf_layout() {
+fn native_first_five_page_text_origins_match_independent_pdf_layout() {
     let reference = fixture().native_reference;
     let root = std::env::var_os("SDOCX_CORPUS_DIR")
         .map(PathBuf::from)
@@ -239,12 +240,17 @@ fn assert_native_lines(
         let local_y = inherited_number(positioned, "y");
         let x = transform.a * local_x + transform.c * local_y + transform.e;
         let y = transform.b * local_x + transform.d * local_y + transform.f;
-        for (attribute, actual, native) in [
-            ("x", x, expected.x),
-            ("y", y, expected.baseline - viewport_offset),
+        for (attribute, actual, native, tolerance) in [
+            ("x", x, expected.x, reference.x_tolerance),
+            (
+                "y",
+                y,
+                expected.baseline - viewport_offset,
+                reference.baseline_tolerance,
+            ),
         ] {
             assert!(
-                (actual - native).abs() <= reference.coordinate_tolerance,
+                (actual - native).abs() <= tolerance,
                 "page {page_index} {:?} {attribute}: {actual} vs native viewport {native}",
                 expected.text
             );
