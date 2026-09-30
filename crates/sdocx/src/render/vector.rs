@@ -404,6 +404,23 @@ impl TSpan {
     pub fn new(content: &str) -> Self {
         Self(Node::new(svg_element::TSpan::new(content)))
     }
+    pub fn x_positions(mut self, positions: &[f64], places: usize) -> Self {
+        if !positions.is_empty() {
+            let positions = positions
+                .iter()
+                .map(|position| decimal(*position, places).map(Number::text))
+                .collect::<Option<Vec<_>>>();
+            self.0.optional(
+                "x",
+                positions.map(|positions| Value::from(positions).to_string()),
+            );
+        }
+        self
+    }
+    pub fn y(mut self, position: impl Into<Numeric>) -> Self {
+        self.0.optional("y", position.into().0.map(Number::text));
+        self
+    }
     pub fn family(mut self, family: FontFamily<'_>) -> Self {
         self.0.attr("font-family", family.text());
         self
@@ -482,3 +499,64 @@ impl Stop {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod text_position_tests {
+    use super::*;
+
+    #[test]
+    fn positioned_text_serializes_finite_coordinates_and_keeps_source_text() {
+        let source = "  A&é🙂 ";
+        let mut scene = Scene::new(Svg::new());
+        scene.scope(Text::new("").preserve_space(), |scene| {
+            scene.push(TSpan::new(source).x_positions(&[-12.345, 0.0, 1000.125], 3));
+        });
+        let output = scene.finish();
+        let xml = roxmltree::Document::parse(&output).unwrap();
+        let span = xml
+            .descendants()
+            .find(|node| node.has_tag_name("tspan"))
+            .unwrap();
+        let positions = svgtypes::NumberListParser::from(span.attribute("x").unwrap())
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(positions, [-12.345, 0.0, 1000.125]);
+        assert_eq!(span.text(), Some(source));
+    }
+
+    #[test]
+    fn invalid_coordinate_lists_are_rejected_as_a_whole() {
+        for position in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let mut scene = Scene::new(Svg::new());
+            scene.scope(Text::new(""), |scene| {
+                scene.push(TSpan::new("invalid").x_positions(&[0.0, position, 1.0], 3));
+                scene.push(TSpan::new("retained"));
+            });
+            let output = scene.finish();
+            let xml = roxmltree::Document::parse(&output).unwrap();
+            let spans = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("tspan"))
+                .collect::<Vec<_>>();
+            assert_eq!(spans.len(), 1);
+            assert_eq!(spans[0].text(), Some("retained"));
+        }
+        assert!(!TSpan::new("invalid").x_positions(&[1.0], 17).0.valid);
+    }
+
+    #[test]
+    fn empty_coordinate_lists_leave_text_unpositioned() {
+        let mut scene = Scene::new(Svg::new());
+        scene.scope(Text::new(""), |scene| {
+            scene.push(TSpan::new("retained").x_positions(&[], 3));
+        });
+        let output = scene.finish();
+        let xml = roxmltree::Document::parse(&output).unwrap();
+        let span = xml
+            .descendants()
+            .find(|node| node.has_tag_name("tspan"))
+            .unwrap();
+        assert_eq!(span.attribute("x"), None);
+        assert_eq!(span.text(), Some("retained"));
+    }
+}
