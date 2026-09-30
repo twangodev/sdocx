@@ -874,9 +874,12 @@ fn render_flow_text_box(
             let previous_is_list_item = paragraph_index > 0
                 && paragraph_layout(text_box, paragraph_index - 1, settings)
                     .bullet
-                    .and_then(bullet_marker)
+                    .and_then(|bullet| bullet_marker(bullet, settings))
                     .is_some();
-            let current_is_list_item = layout.bullet.and_then(bullet_marker).is_some();
+            let current_is_list_item = layout
+                .bullet
+                .and_then(|bullet| bullet_marker(bullet, settings))
+                .is_some();
             let next_start = paragraph_start + paragraph.chars().count();
             let next_is_list_item = next_start < characters.len()
                 && paragraph_layout(
@@ -885,7 +888,7 @@ fn render_flow_text_box(
                     settings,
                 )
                 .bullet
-                .and_then(bullet_marker)
+                .and_then(|bullet| bullet_marker(bullet, settings))
                 .is_some();
             if paragraph_start != 0 && !(previous_is_list_item && current_is_list_item) {
                 if layout.spacing_before_invalid {
@@ -898,7 +901,7 @@ fn render_flow_text_box(
             let base_style = styled.style_at(paragraph_start, theme, layout.predefined_style);
             let marker = layout
                 .bullet
-                .and_then(|bullet| bullet_marker_for_indent(bullet, layout.indent_level));
+                .and_then(|bullet| bullet_marker_for_indent(bullet, layout.indent_level, settings));
             let marker_width = marker.as_ref().map_or(0.0, |(_, width, _, _)| *width);
             let base_x = content_left + layout.left_indent(settings);
             let text_x = base_x + marker_width;
@@ -979,7 +982,10 @@ fn render_flow_text_box(
     });
 }
 
-fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64, f64, f64)> {
+fn bullet_marker(
+    bullet: ParagraphBullet,
+    settings: TextSettings,
+) -> Option<(String, f64, f64, f64)> {
     let marker_kind = bullet.kind;
     let marker = match marker_kind {
         BulletType::None => return None,
@@ -1003,10 +1009,12 @@ fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64, f64, f64)> {
         BulletType::WhiteSquare => "□".to_string(),
         _ => "•".to_string(),
     };
+    let point_width = settings.pixels(20.0) + settings.pixels(6.0);
     let (width, font_size, offset) = match marker_kind {
         BulletType::Digit => (64.0, 45.0, 0.0),
-        BulletType::SolidCircle => (48.0, 24.0, 20.0),
-        BulletType::WhiteCircle => (78.0, 27.0, 20.0),
+        BulletType::SolidCircle => (point_width, 24.0, 20.0),
+        BulletType::WhiteCircle => (point_width, 27.0, 20.0),
+        BulletType::BlackSquare | BulletType::WhiteSquare => (point_width, 32.0, 12.0),
         _ => (78.0, 32.0, 12.0),
     };
     Some((marker, width, font_size, offset))
@@ -1015,11 +1023,12 @@ fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64, f64, f64)> {
 fn bullet_marker_for_indent(
     mut bullet: ParagraphBullet,
     indent_level: u32,
+    settings: TextSettings,
 ) -> Option<(String, f64, f64, f64)> {
     if bullet.kind == BulletType::SolidCircle && indent_level % 2 == 1 {
         bullet.kind = BulletType::WhiteCircle;
     }
-    bullet_marker(bullet)
+    bullet_marker(bullet, settings)
 }
 
 fn alphabetic_marker(number: u32, uppercase: bool) -> String {
