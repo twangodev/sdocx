@@ -654,7 +654,7 @@ Objects participate in the same measured paragraph stream. Text
 `SpanRunFunctor::measureObjectSpan`, `0x779d0`, writes an entry at the
 supplied UTF-16 index, sets entry type 5 (`0x77ac4`–`0x77acc`) and object
 type 1/2 (`0x77a68`, `0x77aa4`, `0x77ac0`). The ordinary branch builds
-`[0, -height, width, 0]` from stored object width/height, span members
+`[0, -height, width, 0]` from converted object width/height, span members
 48/52 (`0x77a80`–`0x77a90`). The margin-enabled branch expands the rectangle
 and dimensions using `RichTextMeasure` object margins at members 40–52
 (`0x77a40`–`0x77a78`). Stored object top/bottom margins, span members
@@ -671,19 +671,100 @@ UTF-16 anchor (`0xd54d8`–`0xd5540`). Repeated anchors overwrite that entry
 in list order; duplicate painting behavior is not established. Only layout
 option 1 becomes inline (`0xd5558`–`0xd55b4`). Options 2/3 receive symmetric
 vertical margins from constants 344/345 multiplied by layout scale
-(`0xd5570`–`0xd559c`); current asymmetric renderer margins are approximations.
+(`0xd5570`–`0xd559c`); the current renderer uses these symmetric margins.
 For a block entry, Text `measureObjectSpan` sets its advance to the entire
 available layout width, subtracting left/right margins (`0x77a94`–`0x77aa8`).
 An inline entry instead uses object width plus horizontal measurement margins.
+Constants 344/345 are records at Content `0x9828` / `0x9840`: logical
+10/20, unit kind 3, rounding kind 3, with zero variant overrides. Widget
+initializes that constant provider with manager document pixel at
+`0xd30d4`–`0xd3114`; conversion multiplies the resulting value by the
+local layout scale. The Widget constructor initializes member 600 to 1.0
+(`0xd3018`–`0xd301c`); `SetTextScale` writes a changed value at `0xd9528`.
+The fresh BodyText capture layout is constructed at `0xca2ac`, receives its
+document at `0xca2b8` and measures at `0xca2d0` without a scale setter.
+That export route therefore uses local scale 1, giving margins 30/60 at
+document density 3. Neither margin includes the font-size delta. Unrecognized
+layout options follow the zero-margin block branch; only constraints 1/2
+set `IsObjectOverPages` (`0xd55bc`–`0xd55d8`).
+
+Object entries contribute their height to line base height but leave the
+text percentage metric zero (`0x77abc`, versus ordinary text's member 60).
+`GetBlockInfo` takes maxima of entry height and text metric independently
+(`0x6aeb4`–`0x6af44`). Both object types set block flag 41
+(`0x6ad3c`–`0x6ad54`), so `GetBaseline` adds `0.001f` to both baseline and
+vertical cursor (`0x6cc0c`–`0x6cc28`). With zero measurement margins,
+`F=20`, `H=100`, default multiplier 1.35 and initial cursor 0 yield cursor
+107.001 and baseline 100.001. An object entry without other font-bearing
+entries has metric 0 and therefore cursor/baseline 100.001. This does not
+describe every object-only paragraph: `RichTextMeasure::measureParagraph`
+gives a leading separator/type-4 entry the following span's font size in
+both height and text metric (`0x78a64`–`0x78acc`). `GetBlockInfo` retains
+that metric maximum (`0x6aef8`–`0x6af00`, `0x6b008`), including when its
+second-entry special branch replaces the height/margins (`0x6aea0`–`0x6aeb0`).
+With a separator font 45 and object height 100, the zero-margin object
+line advances 115.751 and has baseline 100.001. A paragraph adapter that
+removes separators must preserve this first-line metric input explicitly.
+The prefix condition is paragraph ordinal at least 1. Widget
+`updateParagraphs` stores the ordinal in record member 0 (`0xd6fc8`–`0xd6fd0`);
+`textToParagraphs` starts each subsequent record at the separator's own
+index (`0xd67a0`–`0xd67ac`, `0xd684c`), before advancing one UTF-16 unit
+(`0xd687c`). In a content range that excludes its preceding separator,
+this applies only to the first line when its full-source preceding character
+is CR/LF. A source-first object-only paragraph has no inherited prefix font;
+a page slice must retain full-source context rather than infer it from its
+local paragraph number.
+
+A block with both stored vertical margins positive takes the separate
+`IsLineOfObjectSpanWithMargin` branch (`0x6c7ec`, `0x6cb90`–`0x6cb9c`):
+top margin is added before baseline, then base height is used without
+percentage leading or the text baseline subtraction. `H=100`, `F=20`
+and top/bottom margins 30 give baseline/cursor 130.001; final measured
+height includes the deferred bottom margin and is 160.001. Without a
+padding obstacle, adjoining vertical margins collapse to the maximum of
+previous bottom and current top (`0x6c8e8`–`0x6c914`,
+`0x6c9a0`–`0x6c9a8`). They are not added independently at each line edge.
+Obstacle intersection uses `GetRectFromBlock`, `0x6c71c`: its candidate
+contains the base height or full line advance plus adjusted top margin
+(`0x6c754`–`0x6c7b8`), before the later object `0.001f` increment. Final
+height adds the maximum of text-box bottom margin and deferred object
+bottom margin (`0x72134`–`0x72144`), rather than their sum.
+
+The object dimension producer calls virtual slot 160 at Widget
+`0xd54c8`–`0xd54d4`. For images, Model's vptr `0x497b58` and relocation
+`0x497bf8` identify this as `ObjectShape::GetDrawnRect`, `0x397d0c`,
+rather than raw `GetRect` at slot 168. Its implementation, `0x3a63e8`,
+can use path/stroke bounds and rotated bounds (`0x3a652c`, `0x3a6670`).
+Raw saved image rectangle dimensions therefore do not establish measurement
+parity for rotated images or drawing effects; crop-specific bounds still
+require an image-path trace.
+
+Native geometry reaches measurement as `f32`: Model `ObjectBase::GetRect`
+loads four endpoint registers (`0x2caa6c`–`0x2caa70`), Widget span conversion
+stores the drawn endpoints (`0xd54e0`, `0xd54ec`) and width/height
+(`0xd5528`, `0xd5540`), and Text `measureObjectSpan` reads those dimensions
+at `0x779f0`. The SDK rejects nonpositive dimensions and bounds or dimensions
+that are not finite when represented as `f32`, while retaining accepted
+`f64` geometry. No explicit native finite-input rejection was established;
+this is an SDK robustness guard, not malformed-input parity evidence.
+
+Block advance fills available width, while its alignment uses the object's
+actual visual rectangle width: `GetBlockInfo` replaces the logical block
+width with entry rectangle member 32's width (`0x6b11c`–`0x6b1ac`) before
+calling `GetBlockOffSetXByAlign` (`0x6b1d4`–`0x6b1e8`). For available width
+300 and object width 100, center/right offsets are 100/200, despite the
+block's 300-unit wrapping advance. Object visual bounds are translated by
+entry X and shared line baseline (`0x6b774`–`0x6b7ac`).
 
 The locked corpus has object-only U+FFFC paragraphs: the basic-formatting
 table at UTF-16 1427 (option 3, constraint 2), code at 1429 (option 0,
 constraint 1), and seven image-placement anchors (option 0, constraint 0).
 The code anchor occurs on two saved pages because their text ranges overlap.
-There is no captured mixed inline-text case. The current SDK's paragraph
-replacement shortcut can lose neighboring text and accepts inclusive end
-anchors; shared validated anchors and measured text/object entries are still
-required. A synthetic regression must not be labeled captured inline parity.
+There is no captured mixed inline-text case. The SDK now validates UTF-16
+U+FFFC anchors with half-open source ranges and measures text and objects in
+one paragraph stream, preserving neighboring text. Synthetic mixed-layout
+regressions do not establish captured inline parity. Prepared object dimensions
+and full-source page-slice context remain incomplete.
 
 ## Body-flow pagination boundaries
 
@@ -823,28 +904,42 @@ matching this local height does not establish complete composed-page parity.
 
 Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
 before/after spacing 4. Saved first-cell X is 49, while captured text X 72
-and scaled left margin 24 imply a regenerated frame X 48. After shared
-cell/code frame integration, a fresh CLI export gives:
+and scaled left margin 24 imply a regenerated frame X 48. The fresh mixed-stream
+CLI export, `/tmp/sdocx-mixed-native_page3.svg`, gives the comparison below.
+The previous snapshot used shared cell/code frames before mixed-stream body
+composition. Current coordinates include ancestor transforms: the table group
+translates X by -0.5, so its raw text attributes alone are not painted positions.
 
-| Quantity | Earlier SDK | Current SDK | Native reference |
+| Quantity | Previous shared-frame SDK | Current mixed-stream SDK | Native reference |
 | --- | ---: | ---: | ---: |
-| Table header baseline | 1078.25001 | 1089.50001 | 1100.850000 |
-| Table body baseline | 1186.25001 | 1197.50001 | 1208.850110 |
-| First-cell text X | 73 | 73 | 72 |
-| Code panel height | 374.25 | 411.75 | 411.748128 |
-| Code first body baseline | 1463.75001 | 1463.75001 | 1475.352063 |
-| Code second body baseline | 1524.50001 | 1561.99806 | 1573.600049 |
-| Code third body baseline | 1585.25001 | 1622.74806 | 1634.350049 |
-| Code first baseline gap | 60.75 | 98.24805 | 98.247986 |
+| Table header baseline | 1089.50001 | 1113.501010 | 1100.850000 |
+| Table body baseline | 1197.50001 | 1221.501010 | 1208.850110 |
+| First-cell text X | 73 | 72.5 | 72 |
+| Second-cell text X | — | 564.5 | 564.000018 |
+| Code panel height | 411.75 | 411.75 | 411.748128 |
+| Code title baseline | — | 1389.752010 | 1379.351990 |
+| Code first body baseline | 1463.75001 | 1485.752010 | 1475.352063 |
+| Code second body baseline | 1561.99806 | 1584.000060 | 1573.600049 |
+| Code third body baseline | 1622.74806 | 1644.750060 | 1634.350049 |
+| Code first baseline gap | 98.24805 | 98.24805 | 98.247986 |
 | Code second baseline gap | 60.75 | 60.75 | 60.75 |
 
 The current code height differs by approximately 0.002 units and its line
-gaps match. Its absolute baselines remain about 11.602 units above the
-reported native-canvas reference; table baselines remain about 11.35 units
-above it, improved from 22.60. Using the PDF viewport instead reduces those
-differences by 0.6, leaving about 11.002 and 10.75 units respectively.
-Table frame X and complete body-composition origins remain unresolved;
-matching local metrics is not complete composed-page parity within ±0.25.
+gaps match. The painted panel starts at Y 1308.75, with title/body offsets
+81.002010/177.002010. Its absolute baselines are approximately **10.400**
+units below the reported native-canvas reference; table baselines are
+**12.651** units below it, and table text X differs by **+0.5**.
+Converting the native reference to the actual PDF viewport subtracts 0.6
+from native Y, leaving approximately +11.000 and +13.251 units respectively.
+This viewport convention does not resolve the page-3 composition origins.
+
+The saved-overlap code copy on page 4 has current title/body baselines
+-148.24805, -52.24805, 46.00000 and 106.75000. They are approximately 0.6
+above the native-canvas reference and agree with the actual PDF viewport
+convention. The page-3 mixed-stream composition and page-4 saved copy therefore
+need separate origin verification. Table frame X, prepared object sizing and
+complete body-composition origins remain unresolved; matching local metrics
+does not establish complete composed-page parity within ±0.25.
 
 ## Current Rust implementation and remaining gaps
 
@@ -878,13 +973,26 @@ gravity midpoints; the parent text coordinate keeps its older display precision.
 Table cells and code title/body now use the shared engine for every wrapped
 line, styles, scaled margins and measured heights. Code frames include the
 verified page-boundary exclusion rule above; cells retain native top gravity
-and explicit-spacing baseline handling. Mixed object/text paragraphs preserve
-neighboring text and report typed `MixedParagraphLayout` diagnostics; this
-is not complete inline-object layout. Terminal-newline display paragraphs,
-list-spacing enable flags, clipping, full embedded-object composition and
-recomputed pagination still need captured cases and implementation. The current body
+and explicit-spacing baseline handling. Mixed object/text paragraphs now use
+the same measured stream, including inline widths, block breaks, native
+symmetric margins, object alignment and object baseline increments. Validated
+anchors preserve neighboring text, and invalid or unsupported objects retain
+typed diagnostics. This has synthetic coverage but no captured mixed-inline
+reference. Prepared table/code dimensions, full-source context across saved
+page slices and composed-page origins remain incomplete. Terminal-newline
+display paragraphs, list-spacing enable flags, clipping and recomputed
+pagination still need captured cases and implementation. The current body
 baseline follows the capture above; it is not a universal native baseline
 formula.
+
+Malformed style inputs still need a shared validation policy. A public-API
+probe with source `A\nB` and density 3 found that a finite `f32::MAX`
+font size, pixel line spacing, paragraph spacing or top margin can overflow
+the current f32 scaling arithmetic before conversion to f64. Depending on
+the input, SVG text is missing entirely or loses the second paragraph.
+The object-bounds guard does not cover these style values. They require
+explicit diagnostics and finite fallback values at the style-resolution
+boundary; silently accepting nonfinite paint coordinates is insufficient.
 
 The measured paint path now supplies retained X positions and Y offsets
 for clusters that can be expressed by the current typed SVG text adapter,
