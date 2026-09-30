@@ -398,10 +398,6 @@ impl Text {
         self.0.attr("xml:space", "preserve");
         self
     }
-    pub fn decoration(mut self, decoration: TextDecoration) -> Self {
-        self.0.attr("text-decoration", decoration.text());
-        self
-    }
 }
 impl TSpan {
     pub fn new(content: &str) -> Self {

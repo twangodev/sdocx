@@ -91,3 +91,15 @@ existing hyperlink scheme validation remains in the native text converter.
 
 Tests compare parsed SVG semantics, preserved text, complete replay boundaries,
 invalid-input handling, vector PDF shading, and Chromium appearance.
+
+## Text styling
+
+Standalone boxes, document flow, shape text, table cells and code lines use
+`render/text` to resolve local styles. `TextIndex` supplies checked character,
+UTF-16 and byte boundaries to parsing, slicing and rendering. CRLF terminators
+retain their original length, and spans that split a surrogate pair are omitted
+from rendered styling. Explicit boolean spans can disable an earlier style.
+
+Text remains selectable SVG text. Font measurement, wrapping, paragraph layout
+and embedded-object placement are still being consolidated; shared style
+resolution alone does not establish native typography parity.

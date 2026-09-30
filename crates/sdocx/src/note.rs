@@ -336,6 +336,7 @@ struct TextCommon {
 
 impl TextCommon {
     fn into_rich_text_box(self, object_base: ObjectMetadata) -> RichTextBox {
+        let index = crate::text_index::TextIndex::new(&self.text);
         let mut runs = Vec::new();
         for span in &self.spans {
             let (bold, italic) = match span.kind {
@@ -346,10 +347,10 @@ impl TextCommon {
             if span.boolean_value() != Some(true) {
                 continue;
             }
-            let Some(start) = utf16_to_char_index(&self.text, span.start_utf16) else {
+            let Some(start) = index.utf16_to_char(span.start_utf16) else {
                 continue;
             };
-            let Some(end) = utf16_to_char_index(&self.text, span.end_utf16) else {
+            let Some(end) = index.utf16_to_char(span.end_utf16) else {
                 continue;
             };
             if start < end {
@@ -362,13 +363,13 @@ impl TextCommon {
             }
         }
 
-        let text_length_utf16 = self.text.encode_utf16().count();
+        let text_length_utf16 = index.char_to_utf16(index.len());
         let whole_text_span = |kind| {
             self.spans.iter().rev().find(|span| {
                 span.kind == kind
-                    && text_length_utf16 > 0
+                    && !index.is_empty()
                     && span.start_utf16 == 0
-                    && usize::try_from(span.end_utf16) == Ok(text_length_utf16)
+                    && Some(span.end_utf16) == text_length_utf16
             })
         };
         let color =
@@ -890,21 +891,6 @@ fn open_next_object_frame<'a>(
     Err(Error::Format(format!(
         "{field} frame type {expected_data_type} was not found"
     )))
-}
-
-fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
-    let target = usize::try_from(target).ok()?;
-    let mut utf16_offset = 0_usize;
-    for (char_index, character) in text.chars().enumerate() {
-        if utf16_offset == target {
-            return Some(char_index);
-        }
-        utf16_offset = utf16_offset.checked_add(character.len_utf16())?;
-        if utf16_offset > target {
-            return None;
-        }
-    }
-    (utf16_offset == target).then_some(text.chars().count())
 }
 
 fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()> {

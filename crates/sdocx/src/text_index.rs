@@ -1,0 +1,168 @@
+use std::ops::Range;
+
+pub(crate) struct TextIndex<'a> {
+    text: &'a str,
+    byte_offsets: Vec<usize>,
+    utf16_offsets: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Paragraph {
+    pub physical: Range<usize>,
+    pub content: Range<usize>,
+}
+
+impl<'a> TextIndex<'a> {
+    pub fn new(text: &'a str) -> Self {
+        let mut byte_offsets = Vec::new();
+        let mut utf16_offsets = Vec::new();
+        let mut utf16_offset = 0;
+        for (byte_offset, character) in text.char_indices() {
+            byte_offsets.push(byte_offset);
+            utf16_offsets.push(utf16_offset);
+            utf16_offset += character.len_utf16();
+        }
+        byte_offsets.push(text.len());
+        utf16_offsets.push(utf16_offset);
+        Self {
+            text,
+            byte_offsets,
+            utf16_offsets,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.byte_offsets.len() - 1
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn char_to_utf16(&self, character_index: usize) -> Option<u32> {
+        u32::try_from(*self.utf16_offsets.get(character_index)?).ok()
+    }
+
+    pub fn utf16_to_char(&self, utf16_index: u32) -> Option<usize> {
+        self.utf16_offsets
+            .binary_search(&usize::try_from(utf16_index).ok()?)
+            .ok()
+    }
+
+    pub fn slice(&self, range: Range<usize>) -> Option<&'a str> {
+        if range.start > range.end {
+            return None;
+        }
+        self.text
+            .get(*self.byte_offsets.get(range.start)?..*self.byte_offsets.get(range.end)?)
+    }
+
+    pub fn paragraphs(&self) -> impl Iterator<Item = Paragraph> + '_ {
+        self.text.split_inclusive('\n').scan(0, |start, text| {
+            let content = text
+                .strip_suffix("\r\n")
+                .or_else(|| text.strip_suffix('\n'))
+                .unwrap_or(text);
+            let physical_end = *start + text.chars().count();
+            let paragraph = Paragraph {
+                physical: *start..physical_end,
+                content: *start..*start + content.chars().count(),
+            };
+            *start = physical_end;
+            Some(paragraph)
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unicode_boundaries_preserve_supplementary_and_combining_characters() {
+        let index = TextIndex::new("A😀e\u{301}中");
+        assert_eq!(index.len(), 5);
+        assert!(!index.is_empty());
+        for (character, utf16) in [(0, 0), (1, 1), (2, 3), (3, 4), (4, 5), (5, 6)] {
+            assert_eq!(index.char_to_utf16(character), Some(utf16));
+            assert_eq!(index.utf16_to_char(utf16), Some(character));
+        }
+        assert_eq!(index.slice(1..4), Some("😀e\u{301}"));
+        assert_eq!(index.slice(4..5), Some("中"));
+        assert_eq!(index.slice(5..5), Some(""));
+    }
+
+    #[test]
+    fn invalid_ranges_and_surrogate_interiors_are_rejected() {
+        let index = TextIndex::new("A😀B");
+        assert_eq!(index.utf16_to_char(2), None);
+        assert_eq!(index.utf16_to_char(5), None);
+        assert_eq!(index.utf16_to_char(u32::MAX), None);
+        assert_eq!(index.char_to_utf16(4), None);
+        assert_eq!(index.slice(Range { start: 2, end: 1 }), None);
+        assert_eq!(index.slice(0..4), None);
+        assert_eq!(index.slice(4..4), None);
+    }
+
+    #[test]
+    fn paragraphs_keep_exact_newline_ranges_and_unicode_offsets() {
+        let index = TextIndex::new("A\r\n😀\n\r\nlast\r");
+        let paragraphs = index.paragraphs().collect::<Vec<_>>();
+        assert_eq!(
+            paragraphs,
+            [
+                Paragraph {
+                    physical: 0..3,
+                    content: 0..1
+                },
+                Paragraph {
+                    physical: 3..5,
+                    content: 3..4
+                },
+                Paragraph {
+                    physical: 5..7,
+                    content: 5..5
+                },
+                Paragraph {
+                    physical: 7..12,
+                    content: 7..12
+                },
+            ]
+        );
+        assert_eq!(index.slice(paragraphs[1].physical.clone()), Some("😀\n"));
+        assert_eq!(index.slice(paragraphs[1].content.clone()), Some("😀"));
+        assert_eq!(index.slice(paragraphs[2].physical.clone()), Some("\r\n"));
+        assert_eq!(index.slice(paragraphs[2].content.clone()), Some(""));
+        assert_eq!(index.char_to_utf16(paragraphs[2].physical.start), Some(6));
+    }
+
+    #[test]
+    fn empty_text_and_terminal_newlines_have_defined_boundaries() {
+        let empty = TextIndex::new("");
+        assert!(empty.is_empty());
+        assert_eq!(empty.slice(0..0), Some(""));
+        assert_eq!(empty.char_to_utf16(0), Some(0));
+        assert_eq!(empty.utf16_to_char(0), Some(0));
+        assert_eq!(empty.paragraphs().count(), 0);
+        assert_eq!(
+            TextIndex::new("x\n").paragraphs().collect::<Vec<_>>(),
+            [Paragraph {
+                physical: 0..2,
+                content: 0..1
+            }]
+        );
+        assert_eq!(
+            TextIndex::new("\n\n").paragraphs().collect::<Vec<_>>(),
+            [
+                Paragraph {
+                    physical: 0..1,
+                    content: 0..0
+                },
+                Paragraph {
+                    physical: 1..2,
+                    content: 1..1
+                },
+            ]
+        );
+    }
+}

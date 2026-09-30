@@ -45,6 +45,7 @@ mod shape;
 mod storage;
 mod stroke_metadata;
 mod table;
+mod text_index;
 mod types;
 
 pub use end_tag::{

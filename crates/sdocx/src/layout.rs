@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use crate::text_index::TextIndex;
 use crate::types::{Document, Page, PageElement, RichTextBox, RichTextObjectContent};
 
 /// A presentation-oriented view of a parsed document.
@@ -48,16 +49,22 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .len()
         .saturating_sub(usize::from(omitted_trailing_blank_page));
 
+    let text_index = document
+        .metadata
+        .note_text
+        .as_ref()
+        .map(|text| TextIndex::new(&text.text));
     let text_ranges = document
         .metadata
         .note_text
         .as_ref()
-        .map_or_else(Vec::new, |text| {
+        .zip(text_index.as_ref())
+        .map_or_else(Vec::new, |(text, index)| {
             if text.text_sections.len() >= visible_count {
                 text.text_sections
                     .iter()
                     .take(visible_count)
-                    .map(|section| section_char_range(&text.text, *section))
+                    .map(|section| section_char_range(index, *section))
                     .collect()
             } else {
                 balanced_line_ranges(&text.text, visible_count)
@@ -79,18 +86,21 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .cloned()
         .enumerate()
         .map(|(source_page_index, mut page)| {
-            if let (Some(note_text), Some(stored_range)) = (
+            if let (Some(note_text), Some(index), Some(stored_range)) = (
                 document.metadata.note_text.as_ref(),
+                text_index.as_ref(),
                 text_ranges.get(source_page_index).and_then(Option::as_ref),
             ) {
                 let mut range = stored_range.clone();
                 // The SDK's continuation sections overlap the preceding page by
                 // its terminating newline. It is a page-break marker, not a
                 // blank paragraph on the new page.
-                if source_page_index > 0 && note_text.text.chars().nth(range.start) == Some('\n') {
+                if source_page_index > 0
+                    && index.slice(range.start..range.start.saturating_add(1)) == Some("\n")
+                {
                     range.start = range.start.saturating_add(1).min(range.end);
                 }
-                if let Some(mut slice) = note_text.slice_chars(range.clone())
+                if let Some(mut slice) = note_text.slice_indexed(index, range.clone())
                     && !slice.text.is_empty()
                 {
                     // Samsung collapses the normal 4-unit paragraph lead into
@@ -104,7 +114,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                     }
                     translate_continuing_objects(
                         &mut slice,
-                        note_text,
+                        index,
                         &range,
                         source_page_index,
                         &text_ranges,
@@ -129,13 +139,13 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
 
 fn translate_continuing_objects(
     slice: &mut RichTextBox,
-    source: &RichTextBox,
+    source: &TextIndex<'_>,
     source_range: &Range<usize>,
     page_index: usize,
     page_ranges: &[Option<Range<usize>>],
     page_heights: &[f64],
 ) {
-    let Some(section_start_utf16) = char_to_utf16_index(&source.text, source_range.start) else {
+    let Some(section_start_utf16) = source.char_to_utf16(source_range.start) else {
         return;
     };
     for object_span in &mut slice.object_spans {
@@ -145,7 +155,7 @@ fn translate_continuing_objects(
         let Some(absolute_utf16) = section_start_utf16.checked_add(local_index) else {
             continue;
         };
-        let Some(absolute_character) = utf16_to_char_index(&source.text, absolute_utf16) else {
+        let Some(absolute_character) = source.utf16_to_char(absolute_utf16) else {
             continue;
         };
         let Some(anchor_page) = page_ranges.iter().position(|range| {
@@ -194,11 +204,14 @@ fn translate_bbox_y(bbox: &mut crate::types::BoundingBox, delta_y: f64) {
     bbox.y_max += delta_y;
 }
 
-fn section_char_range(text: &str, section: crate::types::RichTextSection) -> Option<Range<usize>> {
+fn section_char_range(
+    index: &TextIndex<'_>,
+    section: crate::types::RichTextSection,
+) -> Option<Range<usize>> {
     let start_utf16 = u32::try_from(section.start_utf16).ok()?;
     let length_utf16 = u32::try_from(section.length_utf16).ok()?;
     let end_utf16 = start_utf16.checked_add(length_utf16)?;
-    Some(utf16_to_char_index(text, start_utf16)?..utf16_to_char_index(text, end_utf16)?)
+    Some(index.utf16_to_char(start_utf16)?..index.utf16_to_char(end_utf16)?)
 }
 
 fn has_list_compatibility_page(document: &Document) -> bool {
@@ -284,15 +297,14 @@ impl RichTextBox {
 
     /// Return a character-indexed slice with intersecting style records rebased.
     pub fn slice_chars(&self, range: Range<usize>) -> Option<Self> {
-        if range.start > range.end {
-            return None;
-        }
-        let byte_offsets = char_byte_offsets(&self.text);
-        let byte_start = *byte_offsets.get(range.start)?;
-        let byte_end = *byte_offsets.get(range.end)?;
-        let start_utf16 = char_to_utf16_index(&self.text, range.start)?;
-        let end_utf16 = char_to_utf16_index(&self.text, range.end)?;
-        let paragraph_range = paragraph_range_for_chars(&self.text, range.clone());
+        self.slice_indexed(&TextIndex::new(&self.text), range)
+    }
+
+    fn slice_indexed(&self, index: &TextIndex<'_>, range: Range<usize>) -> Option<Self> {
+        let text = index.slice(range.clone())?;
+        let start_utf16 = index.char_to_utf16(range.start)?;
+        let end_utf16 = index.char_to_utf16(range.end)?;
+        let paragraph_range = paragraph_range_for_chars(index, range.clone())?;
 
         let runs = self
             .runs
@@ -312,6 +324,12 @@ impl RichTextBox {
             .spans
             .iter()
             .filter_map(|span| {
+                if span.start_utf16 >= span.end_utf16
+                    || index.utf16_to_char(span.start_utf16).is_none()
+                    || index.utf16_to_char(span.end_utf16).is_none()
+                {
+                    return None;
+                }
                 let start = span.start_utf16.max(start_utf16);
                 let end = span.end_utf16.min(end_utf16);
                 (start < end).then(|| {
@@ -351,7 +369,7 @@ impl RichTextBox {
             .collect();
 
         let mut slice = self.clone();
-        slice.text = self.text[byte_start..byte_end].to_string();
+        slice.text = text.to_string();
         slice.runs = runs;
         slice.spans = spans;
         slice.paragraphs = paragraphs;
@@ -364,57 +382,24 @@ impl RichTextBox {
     }
 }
 
-fn paragraph_range_for_chars(text: &str, range: Range<usize>) -> Range<u32> {
-    let mut start = 0_u32;
-    let mut end = u32::from(range.start != range.end);
-    for (index, character) in text.chars().enumerate().take(range.end) {
-        if matches!(character, '\n' | '\r') {
-            if index < range.start {
-                start = start.saturating_add(1);
-            }
-            end = end.saturating_add(1);
-        }
+fn paragraph_range_for_chars(index: &TextIndex<'_>, range: Range<usize>) -> Option<Range<u32>> {
+    if range.is_empty() {
+        return Some(0..0);
     }
-    start..end
-}
-
-fn char_byte_offsets(text: &str) -> Vec<usize> {
-    let mut offsets = text
-        .char_indices()
-        .map(|(offset, _)| offset)
-        .collect::<Vec<_>>();
-    offsets.push(text.len());
-    offsets
-}
-
-fn char_to_utf16_index(text: &str, character_index: usize) -> Option<u32> {
-    let units = text
-        .chars()
-        .take(character_index)
-        .try_fold(0_usize, |total, character| {
-            total.checked_add(character.len_utf16())
-        })?;
-    u32::try_from(units).ok()
-}
-
-fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
-    let target = usize::try_from(target).ok()?;
-    let mut utf16_offset = 0_usize;
-    for (char_index, character) in text.chars().enumerate() {
-        if utf16_offset == target {
-            return Some(char_index);
-        }
-        utf16_offset = utf16_offset.checked_add(character.len_utf16())?;
-        if utf16_offset > target {
-            return None;
-        }
-    }
-    (utf16_offset == target).then_some(text.chars().count())
+    let mut selected = index.paragraphs().enumerate().filter(|(_, paragraph)| {
+        paragraph.physical.start < range.end && paragraph.physical.end > range.start
+    });
+    let Some((first, _)) = selected.next() else {
+        return Some(0..0);
+    };
+    let last = selected.last().map_or(first, |(ordinal, _)| ordinal);
+    Some(u32::try_from(first).ok()?..u32::try_from(last.checked_add(1)?).ok()?)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::layout_document;
+    use super::{layout_document, section_char_range};
+    use crate::text_index::TextIndex;
     use crate::{
         BoundingBox, Document, DocumentMetadata, Page, PageElement, RichTextBox, RichTextParagraph,
         RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
@@ -704,8 +689,193 @@ mod tests {
 
         assert_eq!(slice.text, "beta\n");
         assert_eq!(slice.paragraphs[0].start_paragraph, 0);
-        assert_eq!(slice.paragraphs[0].end_paragraph, 2);
+        assert_eq!(slice.paragraphs[0].end_paragraph, 1);
         assert_eq!(slice.text_sections[0].start_utf16, 0);
         assert_eq!(slice.text_sections[0].length_utf16, 5);
+    }
+    fn crlf_body() -> RichTextBox {
+        RichTextBox {
+            text_area_type: None,
+            bbox: BoundingBox::default(),
+            rotation_degrees: None,
+            text: "one\r\n😀two\r\nlast".into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: vec![RichTextRun {
+                start: 5,
+                end: 9,
+                bold: true,
+                italic: false,
+            }],
+            spans: vec![
+                RichTextSpan {
+                    kind: RichTextSpanType::Bold,
+                    start_utf16: 5,
+                    end_utf16: 10,
+                    expand: false,
+                    payload: 1_u16.to_le_bytes().to_vec(),
+                },
+                RichTextSpan {
+                    kind: RichTextSpanType::Italic,
+                    start_utf16: 9,
+                    end_utf16: 13,
+                    expand: false,
+                    payload: 1_u16.to_le_bytes().to_vec(),
+                },
+            ],
+            paragraphs: vec![RichTextParagraph {
+                kind: RichTextParagraphType::Alignment,
+                start_paragraph: 1,
+                end_paragraph: 3,
+                payload: 2_u32.to_le_bytes().to_vec(),
+            }],
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    #[test]
+    fn slices_inside_crlf_paragraphs_rebase_unicode_styles_once() {
+        let mut body = crlf_body();
+        body.spans.push(RichTextSpan {
+            kind: RichTextSpanType::FontSize,
+            start_utf16: 6,
+            end_utf16: 14,
+            expand: false,
+            payload: 72_f32.to_le_bytes().to_vec(),
+        });
+        let slice = body.slice_chars(7..11).unwrap();
+        assert_eq!(body.spans.len(), 3);
+        assert_eq!(slice.text, "wo\r\n");
+        assert_eq!(slice.runs.len(), 1);
+        assert_eq!((slice.runs[0].start, slice.runs[0].end), (0, 2));
+        assert_eq!(
+            slice
+                .spans
+                .iter()
+                .map(|span| (span.start_utf16, span.end_utf16))
+                .collect::<Vec<_>>(),
+            [(0, 2), (1, 4)]
+        );
+        assert_eq!(slice.paragraphs.len(), 1);
+        assert_eq!(
+            (
+                slice.paragraphs[0].start_paragraph,
+                slice.paragraphs[0].end_paragraph
+            ),
+            (0, 1)
+        );
+        assert_eq!(slice.paragraphs[0].payload, 2_u32.to_le_bytes());
+        assert_eq!(slice.text_sections[0].start_utf16, 0);
+        assert_eq!(slice.text_sections[0].length_utf16, 4);
+        let last = body.slice_chars(11..15).unwrap();
+        assert_eq!(last.text, "last");
+        assert_eq!(
+            (
+                last.paragraphs[0].start_paragraph,
+                last.paragraphs[0].end_paragraph
+            ),
+            (0, 1)
+        );
+        assert_eq!(last.spans[0].kind, RichTextSpanType::Italic);
+        assert_eq!((last.spans[0].start_utf16, last.spans[0].end_utf16), (0, 1));
+    }
+
+    #[test]
+    fn slices_accept_full_and_empty_boundaries_and_reject_invalid_ranges() {
+        let body = crlf_body();
+        let full = body.slice_chars(0..15).unwrap();
+        assert_eq!(full.text, "one\r\n😀two\r\nlast");
+        assert_eq!(full.text_sections[0].length_utf16, 16);
+        assert_eq!(
+            (full.spans[0].start_utf16, full.spans[0].end_utf16),
+            (5, 10)
+        );
+        assert_eq!(
+            (
+                full.paragraphs[0].start_paragraph,
+                full.paragraphs[0].end_paragraph
+            ),
+            (1, 3)
+        );
+        for range in [0..0, 7..7, 15..15] {
+            let empty = body.slice_chars(range).unwrap();
+            assert_eq!(empty.text, "");
+            assert!(empty.spans.is_empty());
+            assert!(empty.runs.is_empty());
+            assert!(empty.paragraphs.is_empty());
+            assert_eq!(empty.text_sections[0].length_utf16, 0);
+        }
+        assert!(
+            body.slice_chars(std::ops::Range { start: 8, end: 7 })
+                .is_none()
+        );
+        assert!(body.slice_chars(0..16).is_none());
+        assert!(body.slice_chars(16..16).is_none());
+        let index = TextIndex::new(&body.text);
+        for (section, expected) in [
+            (
+                RichTextSection {
+                    start_utf16: 0,
+                    length_utf16: 16,
+                },
+                Some(0..15),
+            ),
+            (
+                RichTextSection {
+                    start_utf16: 5,
+                    length_utf16: 2,
+                },
+                Some(5..6),
+            ),
+            (
+                RichTextSection {
+                    start_utf16: 16,
+                    length_utf16: 0,
+                },
+                Some(15..15),
+            ),
+            (
+                RichTextSection {
+                    start_utf16: 6,
+                    length_utf16: 1,
+                },
+                None,
+            ),
+            (
+                RichTextSection {
+                    start_utf16: 5,
+                    length_utf16: 1,
+                },
+                None,
+            ),
+            (
+                RichTextSection {
+                    start_utf16: 17,
+                    length_utf16: 0,
+                },
+                None,
+            ),
+            (
+                RichTextSection {
+                    start_utf16: -1,
+                    length_utf16: 1,
+                },
+                None,
+            ),
+            (
+                RichTextSection {
+                    start_utf16: 0,
+                    length_utf16: -1,
+                },
+                None,
+            ),
+        ] {
+            assert_eq!(section_char_range(&index, section), expected);
+        }
     }
 }

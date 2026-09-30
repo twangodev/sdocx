@@ -1,10 +1,10 @@
 //! Presentation-oriented Svg rendering for parsed Samsung Notes documents.
 
 use crate::{
-    BoundingBox, BulletType, Color, Document, HyperlinkType, LayoutDocument, LineSpacingType,
-    MediaAsset, Page, PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing,
-    PlacedImage, PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
-    RichTextParagraphType, RichTextRun, RichTextSpanType, Stroke, layout_document,
+    BoundingBox, BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page,
+    PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing, PlacedImage,
+    PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
+    RichTextParagraphType, RichTextSpanType, Stroke, layout_document,
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
@@ -16,7 +16,11 @@ use vector::{
 };
 
 mod fountain;
+mod text;
 mod theme;
+#[cfg(test)]
+use text::sanitize_hyperlink_target;
+use text::{StyledText, TextContext, TextStyle};
 pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
@@ -656,36 +660,28 @@ fn render_text_box(
         if let Some(highlight) = text_box.highlight_color.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        for (line_idx, line) in text.lines().enumerate() {
-            if line.is_empty() {
+        let styled = StyledText::new(text_box, TextContext::Placed);
+        for (line_idx, paragraph) in styled.index.paragraphs().enumerate() {
+            if paragraph.content.is_empty() {
                 continue;
             }
             let text_y = y + font_size + line_idx as f64 * line_height;
-            let line_start = text
-                .lines()
-                .take(line_idx)
-                .map(|line| line.chars().count() + 1)
-                .sum::<usize>();
-            let spans = styled_line_spans(line, line_start, &text_box.runs);
-            let mut node = Text::new("")
+            let node = Text::new("")
                 .x(decimal(x, 2))
                 .y(decimal(text_y, 2))
                 .fill(Paint::from_hex(&color))
                 .family(FontFamily::Arial)
-                .font_size(decimal(font_size, 2));
-            if text_box.underline {
-                node = node.decoration(TextDecoration::Underline);
-            }
+                .font_size(decimal(font_size, 2))
+                .preserve_space();
             svg.scope(node, |svg| {
-                for span in spans {
-                    let mut node = TSpan::new(span.text);
-                    if span.bold {
-                        node = node.bold();
-                    }
-                    if span.italic {
-                        node = node.italic();
-                    }
-                    svg.push(node);
+                for range in styled.segments(paragraph.content.clone()) {
+                    let style = styled.style_at(range.start, theme, None);
+                    write_styled_tspan(
+                        svg,
+                        styled.index.slice(range).unwrap(),
+                        &style,
+                        styled.context(),
+                    );
                 }
             });
         }
@@ -701,17 +697,6 @@ const SAMSUNG_TEXT_SCALE: f64 = 3.0;
 const IMAGE_FLOW_LINE_HEIGHT_RATIO: f64 = 1.35;
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
 const FLOW_INDENT: f64 = 48.0;
-
-#[derive(Clone)]
-struct SvgTextStyle {
-    font_size: f64,
-    color: String,
-    bold: bool,
-    italic: bool,
-    underline: bool,
-    strikethrough: bool,
-    link_target: Option<String>,
-}
 
 #[derive(Default)]
 struct ParagraphLayout {
@@ -743,8 +728,7 @@ fn render_flow_text_box(
     let content_right =
         f64::from(page.width) - horizontal_padding - f64::from(margins[2]) * SAMSUNG_TEXT_SCALE;
     let characters = text_box.text.chars().collect::<Vec<_>>();
-    let utf16_offsets = char_utf16_offsets(&text_box.text);
-    let byte_offsets = char_byte_offsets(&text_box.text);
+    let styled = StyledText::new(text_box, TextContext::Flow);
     let mut paragraph_start = 0_usize;
     let mut cursor_y = content_top;
 
@@ -770,14 +754,9 @@ fn render_flow_text_box(
                 cursor_y += layout.spacing_before;
             }
 
-            let paragraph_start_utf16 = utf16_offsets[paragraph_start];
-            let paragraph_end_utf16 = utf16_offsets[paragraph_end];
-            let base_style = text_style_at(
-                text_box,
-                paragraph_start_utf16,
-                theme,
-                layout.predefined_style,
-            );
+            let paragraph_start_utf16 = styled.index.char_to_utf16(paragraph_start).unwrap();
+            let paragraph_end_utf16 = styled.index.char_to_utf16(paragraph_end).unwrap();
+            let base_style = styled.style_at(paragraph_start, theme, layout.predefined_style);
             let embedded = text_box
                 .object_spans
                 .iter()
@@ -817,9 +796,8 @@ fn render_flow_text_box(
                 std::iter::once(paragraph_start..paragraph_start).collect::<Vec<_>>()
             } else {
                 wrap_paragraph(
-                    text_box,
+                    &styled,
                     &characters,
-                    &utf16_offsets,
                     paragraph_start..paragraph_end,
                     available_width,
                     theme,
@@ -854,9 +832,7 @@ fn render_flow_text_box(
                 }
                 render_flow_line(
                     svg,
-                    text_box,
-                    &utf16_offsets,
-                    &byte_offsets,
+                    &styled,
                     line_range.clone(),
                     text_x,
                     content_right,
@@ -1009,9 +985,8 @@ fn roman_marker(number: u32) -> String {
 }
 
 fn wrap_paragraph(
-    text_box: &RichTextBox,
+    styled: &StyledText<'_>,
     characters: &[char],
-    utf16_offsets: &[u32],
     range: Range<usize>,
     max_width: f64,
     theme: RenderTheme,
@@ -1025,7 +1000,7 @@ fn wrap_paragraph(
         let mut last_break = None;
         while index < range.end {
             let character = characters[index];
-            let style = text_style_at(text_box, utf16_offsets[index], theme, predefined_style);
+            let style = styled.style_at(index, theme, predefined_style);
             let next_width = width + estimated_character_width(character, &style);
             if next_width > max_width && index > start {
                 break;
@@ -1035,10 +1010,14 @@ fn wrap_paragraph(
             if character.is_whitespace() {
                 last_break = Some((index - 1, index));
             } else if matches!(character, '/' | '?' | '&' | '#' | '-' | '.')
-                && text_box.spans.iter().any(|span| {
+                && styled.text_box().spans.iter().any(|span| {
                     span.kind == RichTextSpanType::Hyperlink
-                        && span.start_utf16 <= utf16_offsets[index - 1]
-                        && span.end_utf16 > utf16_offsets[index - 1]
+                        && styled
+                            .index
+                            .char_to_utf16(index - 1)
+                            .is_some_and(|position| {
+                                span.start_utf16 <= position && span.end_utf16 > position
+                            })
                 })
             {
                 // Samsung's URL line breaker keeps a link with its prefix and
@@ -1062,7 +1041,7 @@ fn wrap_paragraph(
     lines
 }
 
-fn estimated_character_width(character: char, style: &SvgTextStyle) -> f64 {
+fn estimated_character_width(character: char, style: &TextStyle) -> f64 {
     // The analyzed Samsung PDF exporter embeds Roboto-Regular with these
     // advances. Printable ASCII glyph IDs are codepoint - 27 in that font.
     const ROBOTO_ADVANCES: [u16; 100] = [
@@ -1111,9 +1090,7 @@ fn estimated_character_width(character: char, style: &SvgTextStyle) -> f64 {
 #[allow(clippy::too_many_arguments)]
 fn render_flow_line(
     svg: &mut Scene,
-    text_box: &RichTextBox,
-    utf16_offsets: &[u32],
-    byte_offsets: &[usize],
+    styled: &StyledText<'_>,
     range: Range<usize>,
     left: f64,
     right: f64,
@@ -1130,24 +1107,6 @@ fn render_flow_line(
         Some(ParagraphAlignment::Right) => (right, TextAnchor::End),
         _ => (left, TextAnchor::Start),
     };
-    let mut boundaries = vec![range.start, range.end];
-    for span in &text_box.spans {
-        if let Some(start) = utf16_to_char_index(&text_box.text, span.start_utf16)
-            && start > range.start
-            && start < range.end
-        {
-            boundaries.push(start);
-        }
-        if let Some(end) = utf16_to_char_index(&text_box.text, span.end_utf16)
-            && end > range.start
-            && end < range.end
-        {
-            boundaries.push(end);
-        }
-    }
-    boundaries.sort_unstable();
-    boundaries.dedup();
-
     svg.scope(
         Text::new("")
             .x(decimal(x, 2))
@@ -1156,148 +1115,20 @@ fn render_flow_line(
             .family(FontFamily::Roboto)
             .preserve_space(),
         |svg| {
-            for segment in boundaries.windows(2) {
-                let start = segment[0];
-                let end = segment[1];
-                let style = text_style_at(text_box, utf16_offsets[start], theme, predefined_style);
+            for segment in styled.segments(range.clone()) {
+                let style = styled.style_at(segment.start, theme, predefined_style);
                 write_styled_tspan(
                     svg,
-                    &text_box.text[byte_offsets[start]..byte_offsets[end]],
+                    styled.index.slice(segment).unwrap(),
                     &style,
+                    styled.context(),
                 );
             }
         },
     );
 }
 
-fn text_style_at(
-    text_box: &RichTextBox,
-    utf16_index: u32,
-    theme: RenderTheme,
-    predefined_style: Option<PredefinedTextStyle>,
-) -> SvgTextStyle {
-    let mut font_size = text_box.font_size.map(samsung_font_to_svg).unwrap_or(45.0);
-    if let Some(style) = predefined_style {
-        font_size = match style {
-            PredefinedTextStyle::Heading1 => 63.0,
-            PredefinedTextStyle::Heading2 => 57.0,
-            PredefinedTextStyle::Heading3 => 51.0,
-            PredefinedTextStyle::Body1 | PredefinedTextStyle::Other(_) => font_size,
-        };
-    }
-    let mut style = SvgTextStyle {
-        font_size,
-        color: theme.foreground(text_box.color),
-        bold: false,
-        italic: false,
-        underline: false,
-        strikethrough: false,
-        link_target: None,
-    };
-    let mut is_hyperlink = false;
-    for span in text_box
-        .spans
-        .iter()
-        .filter(|span| span.start_utf16 <= utf16_index && span.end_utf16 > utf16_index)
-    {
-        match span.kind {
-            RichTextSpanType::ForegroundColor => {
-                style.color = theme.foreground(span.color_value());
-            }
-            RichTextSpanType::FontSize => {
-                if let Some(size) = span.font_size_value() {
-                    style.font_size = samsung_font_to_svg(size);
-                }
-            }
-            RichTextSpanType::Bold => style.bold = span.boolean_value() == Some(true),
-            RichTextSpanType::Italic => style.italic = span.boolean_value() == Some(true),
-            RichTextSpanType::Underline => style.underline = span.boolean_value() == Some(true),
-            RichTextSpanType::Strikethrough => {
-                style.strikethrough = span.boolean_value() == Some(true)
-            }
-            RichTextSpanType::Hyperlink => {
-                is_hyperlink = true;
-                style.link_target = hyperlink_target(text_box, span);
-            }
-            _ => {}
-        }
-    }
-    if is_hyperlink {
-        style.color = theme.foreground(Some(Color {
-            r: 0,
-            g: 84,
-            b: 255,
-        }));
-        style.underline = true;
-    }
-    if matches!(
-        predefined_style,
-        Some(
-            PredefinedTextStyle::Heading1
-                | PredefinedTextStyle::Heading2
-                | PredefinedTextStyle::Heading3
-        )
-    ) {
-        // Markdown headings carry a bold span, but Samsung's PDF exporter uses
-        // the heading face at regular weight.
-        style.bold = false;
-    }
-    style
-}
-
-fn hyperlink_target(text_box: &RichTextBox, span: &crate::RichTextSpan) -> Option<String> {
-    let hyperlink = span.hyperlink_value()?;
-    if let Some(target) = hyperlink.custom_data.filter(|target| !target.is_empty()) {
-        return sanitize_hyperlink_target(target);
-    }
-    let start = utf16_to_char_index(&text_box.text, span.start_utf16)?;
-    let end = utf16_to_char_index(&text_box.text, span.end_utf16)?;
-    let byte_offsets = char_byte_offsets(&text_box.text);
-    let visible_text = &text_box.text[byte_offsets[start]..byte_offsets[end]];
-    let target = match hyperlink.kind {
-        HyperlinkType::Email => Some(format!("mailto:{visible_text}")),
-        HyperlinkType::Telephone => Some(format!("tel:{visible_text}")),
-        HyperlinkType::Url => Some(visible_text.to_string()),
-        _ => None,
-    }?;
-    sanitize_hyperlink_target(target)
-}
-
-fn sanitize_hyperlink_target(target: String) -> Option<String> {
-    let target = target.trim();
-    if target.is_empty() || target.chars().any(char::is_control) {
-        return None;
-    }
-
-    if target.starts_with('#') || target.starts_with('?') {
-        return Some(target.to_string());
-    }
-    if target.starts_with("//") || target.starts_with('\\') {
-        return None;
-    }
-    if target.starts_with('/') || target.starts_with("./") || target.starts_with("../") {
-        return Some(target.to_string());
-    }
-
-    if let Some(colon_index) = target.find(':') {
-        let path_delimiter = target
-            .char_indices()
-            .find_map(|(index, character)| matches!(character, '/' | '?' | '#').then_some(index));
-        if path_delimiter.is_none_or(|index| colon_index < index) {
-            let scheme = &target[..colon_index];
-            if !["http", "https", "mailto", "tel"]
-                .iter()
-                .any(|allowed| scheme.eq_ignore_ascii_case(allowed))
-            {
-                return None;
-            }
-        }
-    }
-
-    Some(target.to_string())
-}
-
-fn write_styled_tspan(svg: &mut Scene, text: &str, style: &SvgTextStyle) {
+fn write_styled_tspan(svg: &mut Scene, text: &str, style: &TextStyle, context: TextContext) {
     let mut span = TSpan::new(text)
         .fill(Paint::from_hex(&style.color))
         .font_size(decimal(style.font_size, 2));
@@ -1311,10 +1142,13 @@ fn write_styled_tspan(svg: &mut Scene, text: &str, style: &SvgTextStyle) {
         span = span.decoration(decoration);
     }
     if style.bold {
-        span = span
-            .stroke(Paint::from_hex(style.color.as_str()))
-            .stroke_width(0.45)
-            .stroke_under_fill();
+        span = match context {
+            TextContext::Placed => span.bold(),
+            TextContext::Flow => span
+                .stroke(Paint::from_hex(style.color.as_str()))
+                .stroke_width(0.45)
+                .stroke_under_fill(),
+        };
     }
     if style.italic {
         span = span.italic();
@@ -1401,8 +1235,7 @@ fn render_embedded_object(
                                 );
                             }
                             if let Some(line) = cell.content.text.lines().next() {
-                                let mut style = text_style_at(&cell.content, 0, cell_theme, None);
-                                style.bold = false;
+                                let styled = StyledText::new(&cell.content, TextContext::Flow);
                                 svg.scope(
                                     Text::new("")
                                         .x(decimal(cell.bbox.x_min + 23., 2))
@@ -1410,7 +1243,17 @@ fn render_embedded_object(
                                         .family(FontFamily::Roboto)
                                         .preserve_space(),
                                     |svg| {
-                                        write_styled_tspan(svg, line, &style);
+                                        for range in styled.segments(0..line.chars().count()) {
+                                            let mut style =
+                                                styled.style_at(range.start, cell_theme, None);
+                                            style.bold = false;
+                                            write_styled_tspan(
+                                                svg,
+                                                styled.index.slice(range).unwrap(),
+                                                &style,
+                                                styled.context(),
+                                            );
+                                        }
                                     },
                                 );
                             }
@@ -1492,19 +1335,18 @@ fn render_embedded_object(
                 );
                 if let Some(body) = &code.body {
                     let mut baseline = object_top + 177.6;
-                    let mut character_start = 0_usize;
-                    for (line_index, line) in body.text.lines().enumerate() {
+                    let index = crate::text_index::TextIndex::new(&body.text);
+                    for (line_index, paragraph) in index.paragraphs().enumerate() {
                         render_embedded_line(
                             svg,
                             body,
-                            line,
-                            character_start,
+                            index.slice(paragraph.content.clone()).unwrap(),
+                            paragraph.content.start,
                             text_x,
                             baseline,
                             FontFamily::Roboto,
                             theme,
                         );
-                        character_start += line.chars().count() + 1;
                         baseline += if line_index == 0 { 98.25 } else { 60.75 };
                     }
                 }
@@ -1526,13 +1368,7 @@ fn render_embedded_line(
     font_family: FontFamily,
     theme: RenderTheme,
 ) {
-    let utf16_index = text_box
-        .text
-        .chars()
-        .take(character_start)
-        .map(|character| character.len_utf16() as u32)
-        .sum();
-    let style = text_style_at(text_box, utf16_index, theme, None);
+    let styled = StyledText::new(text_box, TextContext::Flow);
     svg.scope(
         Text::new("")
             .x(decimal(x, 2))
@@ -1540,7 +1376,15 @@ fn render_embedded_line(
             .family(font_family)
             .preserve_space(),
         |svg| {
-            write_styled_tspan(svg, line, &style);
+            for range in styled.segments(character_start..character_start + line.chars().count()) {
+                let style = styled.style_at(range.start, theme, None);
+                write_styled_tspan(
+                    svg,
+                    styled.index.slice(range).unwrap(),
+                    &style,
+                    styled.context(),
+                );
+            }
         },
     );
 }
@@ -1590,89 +1434,6 @@ fn object_bottom_margin(object: &RichTextObjectSpan) -> f64 {
         crate::ObjectSpanLayoutOption::BlockWithMediumMargin => 24.0,
         _ => 0.0,
     }
-}
-
-fn char_utf16_offsets(text: &str) -> Vec<u32> {
-    let mut offsets = Vec::with_capacity(text.chars().count() + 1);
-    let mut offset = 0_u32;
-    for character in text.chars() {
-        offsets.push(offset);
-        offset = offset.saturating_add(character.len_utf16() as u32);
-    }
-    offsets.push(offset);
-    offsets
-}
-
-fn utf16_to_char_index(text: &str, target: u32) -> Option<usize> {
-    let target = usize::try_from(target).ok()?;
-    let mut utf16_offset = 0_usize;
-    for (char_index, character) in text.chars().enumerate() {
-        if utf16_offset == target {
-            return Some(char_index);
-        }
-        utf16_offset = utf16_offset.checked_add(character.len_utf16())?;
-        if utf16_offset > target {
-            return None;
-        }
-    }
-    (utf16_offset == target).then_some(text.chars().count())
-}
-
-struct StyledSpan<'a> {
-    text: &'a str,
-    bold: bool,
-    italic: bool,
-}
-
-fn styled_line_spans<'a>(
-    line: &'a str,
-    line_start: usize,
-    runs: &[RichTextRun],
-) -> Vec<StyledSpan<'a>> {
-    let char_count = line.chars().count();
-    let mut boundaries = vec![0, char_count];
-    for run in runs {
-        let start = run.start.saturating_sub(line_start).min(char_count);
-        let end = run.end.saturating_sub(line_start).min(char_count);
-        if start < end {
-            boundaries.push(start);
-            boundaries.push(end);
-        }
-    }
-    boundaries.sort_unstable();
-    boundaries.dedup();
-
-    let byte_offsets = char_byte_offsets(line);
-    let mut spans = Vec::new();
-    for pair in boundaries.windows(2) {
-        let start = pair[0];
-        let end = pair[1];
-        if start == end {
-            continue;
-        }
-        let global_start = line_start + start;
-        let global_end = line_start + end;
-        let mut bold = false;
-        let mut italic = false;
-        for run in runs {
-            if run.start < global_end && run.end > global_start {
-                bold |= run.bold;
-                italic |= run.italic;
-            }
-        }
-        spans.push(StyledSpan {
-            text: &line[byte_offsets[start]..byte_offsets[end]],
-            bold,
-            italic,
-        });
-    }
-    spans
-}
-
-fn char_byte_offsets(text: &str) -> Vec<usize> {
-    let mut offsets: Vec<usize> = text.char_indices().map(|(offset, _)| offset).collect();
-    offsets.push(text.len());
-    offsets
 }
 
 fn samsung_font_to_svg(size: f32) -> f64 {
@@ -2340,7 +2101,9 @@ mod tests {
         };
         let surface = super::table_cell_background(&cell, theme);
         assert_eq!(
-            super::text_style_at(&cell.content, 0, theme.on_background(surface), None).color,
+            super::StyledText::new(&cell.content, super::TextContext::Flow)
+                .style_at(0, theme.on_background(surface), None)
+                .color,
             "#000000"
         );
         cell.has_own_background_color = false;
@@ -2349,7 +2112,9 @@ mod tests {
             page.background_color.unwrap()
         );
         assert_eq!(
-            super::text_style_at(&cell.content, 0, theme, None).color,
+            super::StyledText::new(&cell.content, super::TextContext::Flow)
+                .style_at(0, theme, None)
+                .color,
             "#ffffff"
         );
     }

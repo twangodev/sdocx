@@ -138,8 +138,10 @@ not a Samsung reference export or evidence of complete visual equivalence.
 
 - Obtain a Samsung standalone-text fixture plus matching reference PDF to
   verify native placement, wrapping and style fidelity against real output.
-- The standalone SVG renderer still approximates typography: several style
-  values are selected for the whole box, and margins, paragraph layout,
+- Standalone, flowing and embedded text share UTF-16 span resolution for local
+  color, size, emphasis, decorations and hyperlinks. Only full-text spans become
+  box defaults; caret spans and partial formatting do not style the whole box.
+  Typography still approximates font metrics, and margins, paragraph layout,
   gravity, borders and embedded-object layout are not fully rendered.
 - Diagnostics describe detected unsupported features; their absence does not
   certify a lossless parse or render. Inherited base properties and nested
