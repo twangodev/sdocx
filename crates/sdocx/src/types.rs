@@ -476,8 +476,8 @@ pub struct RichTextTableCell {
     pub has_own_background_color: bool,
     /// Cell placement box stored by the table model.
     pub bbox: BoundingBox,
-    /// Raw Samsung vertical-alignment value.
-    pub vertical_alignment: u8,
+    /// Whether the cell contents can be edited.
+    pub editable: bool,
     /// Rich-text contents of the cell.
     pub content: RichTextBox,
 }

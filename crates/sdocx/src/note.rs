@@ -839,7 +839,7 @@ fn parse_table_cell(
         x_max: reader.read_f64("table cell right")?,
         y_max: reader.read_f64("table cell bottom")?,
     };
-    let vertical_alignment = reader.read_u8("table cell vertical alignment")?;
+    let editable = reader.read_u8("table cell editable flag")? != 0;
     let content = parse_sized_text_object(reader, limits, "table cell text", depth)?;
     let border = record
         .fields
@@ -856,7 +856,7 @@ fn parse_table_cell(
         background_color,
         has_own_background_color,
         bbox,
-        vertical_alignment,
+        editable,
         content,
     })
 }
@@ -1284,7 +1284,18 @@ mod tests {
             assert_eq!(parsed.has_own_background_color, width != 0);
             assert_eq!(parsed.bbox.x_min, 10.0);
             assert_eq!(parsed.bbox.y_max, 60.0);
-            assert_eq!(parsed.vertical_alignment, 2);
+            assert!(parsed.editable);
+        }
+    }
+
+    #[test]
+    fn table_cell_editability_normalizes_every_nonzero_byte() {
+        for value in [0, 1, 2, 255] {
+            let mut fixed = table_cell_fixed();
+            fixed[48] = value;
+            let bytes = table_record(&fixed, &[], &[], &[]);
+            let parsed = parse_table_cell(&bytes, &ParseLimits::default(), "test cell", 0).unwrap();
+            assert_eq!(parsed.editable, value != 0, "editable byte {value}");
         }
     }
 

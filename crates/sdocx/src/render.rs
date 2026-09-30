@@ -2088,7 +2088,7 @@ mod tests {
             background_color: 0xffffffff,
             has_own_background_color: true,
             bbox: BoundingBox::default(),
-            vertical_alignment: 0,
+            editable: false,
             content: theme_test_text(),
         };
         let surface = super::table_cell_background(&cell, theme);

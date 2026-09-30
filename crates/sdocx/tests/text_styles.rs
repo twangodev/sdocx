@@ -122,7 +122,7 @@ fn table(content: RichTextBox) -> RichTextObjectContent {
                 background_color: 0,
                 has_own_background_color: false,
                 bbox: bounds(),
-                vertical_alignment: 0,
+                editable: false,
                 content,
             }],
         }],

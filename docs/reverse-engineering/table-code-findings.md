@@ -103,8 +103,17 @@ are excluded from this relative offset.
 A row's fixed data is `f32` height, `u32` row index, `u32` cell count, then a
 `u32` payload size and cell record per cell. A cell's fixed data contains
 `u32` column index, row span, column span and ARGB background; four `f64`
-coordinates; `u8` vertical alignment; and a sized rich-text object.
+coordinates; `u8` editability; and a sized rich-text object.
 Cell property bit 0 identifies an owned background color.
+
+The editability byte was previously mislabeled as vertical alignment. The
+writer loads member 80 at `0x3c30a0` and writes it at `0x3c30ac`.
+`TableCell::SetEditable`, `0x3c24a0`, stores the same member at `0x3c24b0`;
+`IsEditable`, `0x3c24c4`, reads it directly. The reader loads the byte at
+`0x3c344c`, compares it with zero at `0x3c3458`, uses `cset ne` at
+`0x3c345c`, then stores the boolean at `0x3c3460`. Every nonzero byte means
+editable, including 2 and 255. Rust exposes `editable: bool` with this
+normalization; the retained embedded object record preserves the original bytes.
 
 The SDK now bounds each fixed reader at the declared flexible offset. Previously
 it only rejected offsets beyond the record after parsing the fields, allowing
@@ -130,6 +139,34 @@ payload. The analyzed writer writes size 73 and then calls
 `TableBorder::NewGetBinary` (`0x3c31a0`–`0x3c31bc`). `RichTextTableCell.border`
 now decodes that record within the declared payload size. Its bytes cannot be
 treated as additional cell text.
+
+## Shared cell text layout
+
+Addresses in this section refer to the named libraries rather than Model.
+Drawing `ObjectTableCellLayout` derives from ordinary `ObjectTextLayout`:
+its constructor calls the base constructor at `0x8c008`. Its `updateBound`,
+`0x8c328`, calls the base implementation at `0x8c338`, then unconditionally
+sets the underlying `TextLayout` gravity to 0 at `0x8c33c`–`0x8c34c`.
+This is top gravity and overrides the cell content's stored gravity. The
+editability byte must not select top, center or bottom gravity.
+
+Widget `ObjectTextLayout::updateBound`, `0xd713c`, reads the content object's
+four margins and multiplies each by document density and local text scale
+before `TextLayout::SetMargin` at `0xd7220`. The cell adapter retains this
+margin setup before overriding gravity. Model `TableCell::SetMargin`,
+`0x3c2554`, delegates to the content object's `ObjectShapeText::SetMargin`
+at `0x3c2560`; it does not maintain a separate cell alignment field.
+
+Drawing `TableLayout::updateCell`, `0xae914`, supplies the measured cell-frame
+width and height through `ObjectTextLayout::SetLayoutWidth` at `0xae9f4` and
+`SetLayoutHeight` at `0xaea04`. `TableLayout::layoutCell`, `0xb06d4`, supplies
+the same dimensions at `0xb07bc` and `0xb07cc`, then lays out the complete
+text range at `0xb07dc`–`0xb07f0`. All cell lines consequently pass through
+the shared text engine; native drawing does not extract the first physical line.
+
+These findings establish adapter inputs and editability semantics. They do
+not prove complete row sizing, merged-cell layout, page splitting or visual
+parity for arbitrary cells.
 
 ## Border records
 
