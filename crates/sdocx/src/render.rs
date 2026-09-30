@@ -14,6 +14,7 @@ use vector::{
     Transform, ViewBox, color_hex, coordinate, decimal,
 };
 
+mod code;
 pub mod fonts;
 mod fountain;
 mod text;
@@ -1263,59 +1264,12 @@ fn render_embedded_object(
             } else {
                 "#dddddd"
             };
-            let object_top = code.bbox.y_min + offset_y;
-            let left = settings.pixels(16.0);
-            let top = settings.pixels(12.0);
-            let right = settings.pixels(16.0);
-            let bottom = settings.pixels(12.0);
-            let title_copy_gap = settings.pixels(12.0);
-            let body_gap = settings.pixels(8.0);
             let copy_size = settings.pixels(24.0);
             let radius = settings.pixels(12.0);
-            let copy = BoundingBox {
-                x_min: code.bbox.x_max - right - copy_size,
-                y_min: object_top + top,
-                x_max: code.bbox.x_max - right,
-                y_max: object_top + top + copy_size,
-            };
-            let title_bbox = BoundingBox {
-                x_min: code.bbox.x_min + left,
-                y_min: copy.y_min,
-                x_max: copy.x_min - title_copy_gap,
-                y_max: copy.y_max,
-            };
-            let body_top = copy.y_max + body_gap;
-            let body_bbox = BoundingBox {
-                x_min: code.bbox.x_min + left,
-                y_min: body_top,
-                x_max: code.bbox.x_max - right,
-                y_max: body_top,
-            };
-            let exclusions =
-                renderer.object_exclusions(object.layout_constraint, code.bbox.y_min, offset_y);
-            let body_layout = code.body.as_ref().map(|body| {
-                let styled = StyledText::new(body, TextContext::Flow, settings);
-                let layout = text::layout_text(
-                    &styled,
-                    text::TextFrame {
-                        bbox: body_bbox,
-                        gravity: body.gravity,
-                        baseline: text::TextBaseline::LineAdvance,
-                        exclusions: &exclusions,
-                    },
-                    theme,
-                    renderer,
-                );
-                (styled, layout)
-            });
-            let body_height = body_layout
-                .as_ref()
-                .map_or(0.0, |(_, layout)| layout.height());
-            let panel_bbox = BoundingBox {
-                y_min: object_top,
-                y_max: body_top + body_height + body_gap + bottom,
-                ..code.bbox
-            };
+            let prepared =
+                code::prepare_code(code, object.layout_constraint, offset_y, theme, renderer);
+            let copy = prepared.copy;
+            let panel_bbox = prepared.panel_bbox;
             svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
                 svg.push(
                     rectangle(panel_bbox, 0.0, 2)
@@ -1329,7 +1283,7 @@ fn render_embedded_object(
                         svg,
                         title,
                         text::TextFrame {
-                            bbox: title_bbox,
+                            bbox: prepared.title_bbox,
                             gravity: title.gravity,
                             baseline: text::TextBaseline::LineAdvance,
                             exclusions: &[],
@@ -1366,8 +1320,9 @@ fn render_embedded_object(
                         .add(Path::new().data(icon))
                         .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
                 );
-                if let Some((styled, layout)) = &body_layout {
-                    paint_text_layout(svg, styled, layout, media_assets, theme, renderer);
+                if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
+                    let styled = StyledText::new(body, TextContext::Flow, settings);
+                    paint_text_layout(svg, &styled, layout, media_assets, theme, renderer);
                 }
             });
             Some(panel_bbox.y_max)
