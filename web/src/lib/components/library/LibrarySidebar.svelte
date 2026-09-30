@@ -76,6 +76,14 @@
 		<button class="source" onclick={onStorage}
 			><HardDrive size={13} strokeWidth={1.5} /><span>Browser storage</span></button
 		>
+		<p class="mt-2 px-2 text-[10px] leading-relaxed whitespace-nowrap text-muted">
+			Made by <a
+				href="https://twango.dev"
+				target="_blank"
+				rel="noreferrer"
+				class="text-text/75 hover:text-text">James Ding</a
+			> and contributors
+		</p>
 	</div>
 </div>
 
