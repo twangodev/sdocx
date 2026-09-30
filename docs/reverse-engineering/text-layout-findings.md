@@ -745,6 +745,107 @@ just splitting the string into equal chunks. The SDK can retain saved page
 text sections while developing one Rust layout engine, but recomputed page
 breaks and obstacle/inline-object behavior still require reference cases.
 
+## Captured embedded text and page-padding inputs
+
+The `hf/01-basic-formatting.sdocx` / Samsung PDF pair independently exposes
+table/code text as vector PDF spans. PDF Form 89 is physical page 3;
+coordinates below use SVG units, with `x = 1.8 * PDF_x` and
+`baseline = 1.8 * (848.3333333333334 - PDF_y)`.
+This preserves the source's 1527-unit native canvas reference. The PDF's
+actual MediaBox and form BBox are 848 points high, or 1526.4 units; mapping
+from that viewport instead subtracts 0.6 from every reported Y. Page content
+applies no additional transform to these forms.
+
+| Text | X | Baseline | PDF font advance |
+| --- | ---: | ---: | ---: |
+| Column A | 72.000000 | 1100.850000 | 195.390015 |
+| Column B | 564.000018 | 1100.850000 | 194.085015 |
+| Alpha | 72.000000 | 1208.850110 | 114.705009 |
+| Beta | 564.000018 | 1208.850110 | 91.035007 |
+| Code title `text` | 129.750005 | 1379.351990 | 75.600006 |
+| `fn main() {` | 129.750005 | 1475.352063 | 208.665016 |
+| `    println!("Markdown code fence");` | 129.750005 | 1573.600049 | 695.970053 |
+| `}` | 129.750005 | 1634.350049 | 15.210001 |
+
+All these spans select Roboto-Regular at approximately 45 SVG units.
+Headers use PDF stroke-and-fill text mode (`Tr 2`) and 0.45-unit stroke
+width; ordinary cells use fill-only (`Tr 0`). Bold headers consequently
+retain Regular-font advances. Form 111 repeats code text shifted by exactly
+one physical page height, 1527 units. Direct CMap decoding is necessary for
+this PDF: its overlapping `bfchar`/`bfrange` entries make the inspected
+generic `lopdf` font-encoding helper shift some ASCII characters.
+
+The code-panel clip starts at Y 1298.351994 under the native-canvas
+convention above, whereas its saved object box starts at 1297.751953.
+Using the PDF viewport gives clip Y 1297.751994: the 0.6 difference is a
+coordinate convention, not evidence of a composition translation. Relative
+to the painted panel, title and first-body baselines are **81** and **177**
+units under either convention. The density-3 frame constants and ordinary
+45-unit text baseline explain them without adding 0.6 to a shared baseline.
+
+Code body source contains three `ParsingState` paragraph records and no
+line-spacing, before-spacing or after-spacing record. Its first baseline
+gap is 98.247986 units, followed by 60.75; the panel's 411.748128-unit height
+exceeds the ordinary three-line frame height, 374.25, by 37.498128. These
+captured differences must not become a fixed extra gap for every code block.
+The 37.498-unit skip also does not establish the height of a padding band:
+moving a partially overlapping line past a band can skip only part of it.
+
+Bodytext `BodyTextPageObstacle::updatePagePaddingRect`, `0xb8dfc`, creates
+each page-boundary band as `[0, boundary - Constant66, width,
+boundary + Constant65]` (`0xb8f04`–`0xb8f1c`). Content records at `0x7e00`
+and `0x7e18` establish both constants as logical 10, document-density units,
+without rounding: each side is 30 at density 3. `GetSplitOffestForObject`,
+`0xb3504`, selects these bands and offsets them by minus object top.
+Constraint 1, `OverPagesOverlapPadding`, instead produces a one-unit-high
+band starting at the original band's center (`0xb35d8`–`0xb35e8`);
+constraint 2, `OverPages`, preserves the full band.
+`onUpdateObjectSize`, `0xb0b9c`, passes this choice at `0xb0dd8` and supplies
+the resulting vector to object-layout virtual slot 16 at `0xb0de4`.
+
+Drawing `CodeBlockLayout::Measure`, `0x732fc`, converts those bands to body
+coordinates by subtracting body-frame top (`0x73484`–`0x7349c`). Its
+`measuredObject`, `0x73694`, calls `ScrollEditTextView::SetPaddingRectList`
+at `0x736d0` before measurement; returned text-layout height determines panel
+height. The captured code object's constraint is **1**, with block layout
+option 0. It therefore uses the collapsed band `[1527,1528]`, not the full
+60-unit band. Its saved top 1297.751953125 plus the 132-unit body-frame
+offset gives body top 1429.751953125. After the ordinary first-line advance
+60.75, the second candidate starts at 1490.501953125. Moving its overlapping
+line past the band's bottom adds `1528 - 1490.501953125 = 37.498046875`
+units. This reproduces the independently extracted extra baseline gap,
+37.497986, and panel enlargement, 37.498128, within PDF float precision.
+The mechanism is a candidate-line move past a one-unit boundary marker;
+37.498 is neither a constant paragraph gap nor the padding-band height.
+The shared code frame's height consequently has a native-backed explanation.
+The body-composition phase still needs to supply the correct object origin;
+matching this local height does not establish complete composed-page parity.
+
+Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
+before/after spacing 4. Saved first-cell X is 49, while captured text X 72
+and scaled left margin 24 imply a regenerated frame X 48. After shared
+cell/code frame integration, a fresh CLI export gives:
+
+| Quantity | Earlier SDK | Current SDK | Native reference |
+| --- | ---: | ---: | ---: |
+| Table header baseline | 1078.25001 | 1089.50001 | 1100.850000 |
+| Table body baseline | 1186.25001 | 1197.50001 | 1208.850110 |
+| First-cell text X | 73 | 73 | 72 |
+| Code panel height | 374.25 | 411.75 | 411.748128 |
+| Code first body baseline | 1463.75001 | 1463.75001 | 1475.352063 |
+| Code second body baseline | 1524.50001 | 1561.99806 | 1573.600049 |
+| Code third body baseline | 1585.25001 | 1622.74806 | 1634.350049 |
+| Code first baseline gap | 60.75 | 98.24805 | 98.247986 |
+| Code second baseline gap | 60.75 | 60.75 | 60.75 |
+
+The current code height differs by approximately 0.002 units and its line
+gaps match. Its absolute baselines remain about 11.602 units above the
+reported native-canvas reference; table baselines remain about 11.35 units
+above it, improved from 22.60. Using the PDF viewport instead reduces those
+differences by 0.6, leaving about 11.002 and 10.75 units respectively.
+Table frame X and complete body-composition origins remain unresolved;
+matching local metrics is not complete composed-page parity within ±0.25.
+
 ## Current Rust implementation and remaining gaps
 
 The shared Rust body-flow and placed-text pipeline now measures shaped runs with actual
@@ -774,9 +875,14 @@ above. Whitespace remains selectable, and empty boxes retain their highlight.
 Final paragraph after-spacing is excluded from gravity height; between-paragraph
 after-spacing remains. Glyph Y positions retain five decimal places, including
 gravity midpoints; the parent text coordinate keeps its older display precision.
-Terminal-newline display paragraphs, list-spacing enable flags, clipping,
-table/code layout, embedded-object composition and recomputed pagination still need
-the shared measured layout engine and captured cases. The current body
+Table cells and code title/body now use the shared engine for every wrapped
+line, styles, scaled margins and measured heights. Code frames include the
+verified page-boundary exclusion rule above; cells retain native top gravity
+and explicit-spacing baseline handling. Mixed object/text paragraphs preserve
+neighboring text and report typed `MixedParagraphLayout` diagnostics; this
+is not complete inline-object layout. Terminal-newline display paragraphs,
+list-spacing enable flags, clipping, full embedded-object composition and
+recomputed pagination still need captured cases and implementation. The current body
 baseline follows the capture above; it is not a universal native baseline
 formula.
 
