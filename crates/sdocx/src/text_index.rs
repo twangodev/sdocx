@@ -63,6 +63,7 @@ impl<'a> TextIndex<'a> {
             .get(*self.byte_offsets.get(range.start)?..*self.byte_offsets.get(range.end)?)
     }
 
+    #[cfg(any(feature = "render", test))]
     pub fn paragraphs(&self) -> impl Iterator<Item = Paragraph> + '_ {
         self.text.split_inclusive('\n').scan(0, |start, text| {
             let content = text
