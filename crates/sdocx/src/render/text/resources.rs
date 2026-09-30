@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
 
 use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind};
-use super::{TextContext, TextSettings, TextStyle};
+use super::{PageExclusions, TextContext, TextSettings, TextStyle, VerticalExclusion};
 use crate::render::vector::{EmbeddedFont, Scene};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,6 +31,7 @@ pub(in crate::render) struct TextRenderer<'a> {
     faces: RefCell<Vec<ResolvedFace>>,
     diagnostics: RefCell<Vec<TextDiagnostic>>,
     object_diagnostics: RefCell<Vec<ObjectDiagnostic>>,
+    page_exclusions: Option<PageExclusions>,
 }
 
 impl<'a> TextRenderer<'a> {
@@ -41,7 +42,33 @@ impl<'a> TextRenderer<'a> {
             faces: RefCell::new(Vec::new()),
             diagnostics: RefCell::new(Vec::new()),
             object_diagnostics: RefCell::new(Vec::new()),
+            page_exclusions: None,
         }
+    }
+
+    pub fn with_page_exclusions(mut self, exclusions: Option<PageExclusions>) -> Self {
+        self.page_exclusions = exclusions;
+        self
+    }
+
+    pub fn object_exclusions(
+        &self,
+        constraint: crate::ObjectSpanLayoutConstraint,
+        stored_top: f64,
+        offset_y: f64,
+    ) -> Vec<VerticalExclusion> {
+        self.page_exclusions
+            .as_ref()
+            .map_or_else(Vec::new, |pages| {
+                pages
+                    .for_object(constraint, stored_top)
+                    .into_iter()
+                    .map(|band| VerticalExclusion {
+                        top: band.top + offset_y,
+                        bottom: band.bottom + offset_y,
+                    })
+                    .collect()
+            })
     }
 
     pub fn resolve(&self, style: &TextStyle, context: TextContext) -> Option<ResolvedFace> {

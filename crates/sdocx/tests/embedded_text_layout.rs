@@ -330,3 +330,115 @@ fn narrow_table_cell_keeps_complete_repeated_space_and_combining_source() {
             .any(|line| line.0.starts_with('\u{301}') || line.0.ends_with('e'))
     );
 }
+fn code_page_document(mode: Option<u16>, constraint: ObjectSpanLayoutConstraint) -> Document {
+    let mut doc = document(code(text("Title"), text("A\nB\nC")));
+    doc.pages[0].height = 300;
+    doc.metadata.page_mode = mode;
+    let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+        &mut doc.pages[0].objects[0].content else { panic!() };
+    flow.object_spans[0].layout_constraint = constraint;
+    doc
+}
+
+fn code_panel_height(svg: &str) -> f64 {
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    let group = xml.descendants().find(|node|
+        node.attribute("data-sdocx-object") == Some("code-block")).unwrap();
+    group.children().find(|node| node.has_tag_name("rect")).unwrap()
+        .attribute("height").unwrap().parse().unwrap()
+}
+
+#[test]
+fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap() {
+    // Page boundary300; density3 padding bands270..330. Font45 advances60.75.
+    for (constraint, second, third, panel_height) in [
+        (ObjectSpanLayoutConstraint::Normal, 266.75, 327.5, 398.25),
+        (ObjectSpanLayoutConstraint::OverPagesOverlapPadding, 266.75, 346.0, 416.75),
+        (ObjectSpanLayoutConstraint::OverPages, 375.0, 435.75, 506.5),
+    ] {
+        let doc = code_page_document(Some(0), constraint);
+        let svg = sdocx::render_page_svg(&doc, 0, &Default::default()).unwrap().svg;
+        assert_eq!(lines(&svg), vec![
+            ("Title".into(), 74.0, 110.0), ("A".into(), 74.0, 206.0),
+            ("B".into(), 74.0, second), ("C".into(), 74.0, third),
+        ]);
+        assert_eq!(code_panel_height(&svg), panel_height);
+    }
+}
+
+#[test]
+fn continuous_and_unknown_page_modes_do_not_invent_exclusion_bands() {
+    for mode in [None, Some(1), Some(2), Some(99)] {
+        for constraint in [ObjectSpanLayoutConstraint::OverPagesOverlapPadding, ObjectSpanLayoutConstraint::OverPages] {
+            let doc = code_page_document(mode, constraint);
+            let svg = sdocx::render_page_svg(&doc, 0, &Default::default()).unwrap().svg;
+            assert_eq!(lines(&svg), vec![
+                ("Title".into(), 74.0, 110.0), ("A".into(), 74.0, 206.0),
+                ("B".into(), 74.0, 266.75), ("C".into(), 74.0, 327.5),
+            ]);
+            assert_eq!(code_panel_height(&svg), 398.25);
+        }
+    }
+}
+
+#[test]
+fn continuation_code_uses_page_local_exclusions_with_its_negative_stored_top() {
+    let mut doc = code_page_document(Some(0), ObjectSpanLayoutConstraint::OverPages);
+    let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+        &mut doc.pages[0].objects[0].content else { panic!() };
+    let Some(RichTextObjectContent::CodeBlock(code)) = &mut flow.object_spans[0].content else { panic!() };
+    code.bbox.y_min = -100.0;
+    code.bbox.y_max = 300.0;
+    code.body = Some(text("A\nB\nC\nD"));
+    let svg = sdocx::render_page_svg(&doc, 0, &Default::default()).unwrap().svg;
+    assert_eq!(lines(&svg), vec![
+        ("Title".into(), 74.0, -10.0), ("A".into(), 74.0, 86.0),
+        ("B".into(), 74.0, 146.75), ("C".into(), 74.0, 207.5),
+        ("D".into(), 74.0, 375.0),
+    ]);
+    assert_eq!(code_panel_height(&svg), 565.75);
+}
+
+#[test]
+fn saved_code_frame_translates_page_exclusions_and_reproduces_the_captured_gap() {
+    let mut title = text("Title");
+    title.margins = None;
+    let mut body = text("A\nB\nC");
+    body.margins = None;
+    let mut content = code(title, body);
+    let RichTextObjectContent::CodeBlock(code) = &mut content else { panic!() };
+    code.bbox.y_min = 1297.751953125;
+    code.bbox.y_max = 1697.751953125;
+    let mut doc = document(content);
+    doc.metadata.page_mode = Some(0);
+    let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+        &mut doc.pages[0].objects[0].content else { panic!() };
+    flow.object_spans[0].layout_constraint = ObjectSpanLayoutConstraint::OverPagesOverlapPadding;
+    let svg = sdocx::render_page_svg(&doc, 0, &Default::default()).unwrap().svg;
+    // Native stored frame / page1527 imply a 37.498046875 gap after line1.
+    // Glyph positions retain5 decimals; panel bounds serialize2 decimals.
+    assert_eq!(lines(&svg), vec![
+        ("Title".into(), 68.0, 101.0), ("A".into(), 68.0, 197.0),
+        ("B".into(), 68.0, 295.24805), ("C".into(), 68.0, 355.99805),
+    ]);
+    assert_eq!(code_panel_height(&svg), 411.75);
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let group = xml.descendants().find(|node|
+        node.attribute("data-sdocx-object") == Some("code-block")).unwrap();
+    let panel = group.children().find(|node| node.has_tag_name("rect")).unwrap();
+    assert_eq!(panel.attribute("y"), Some("20.00"));
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn table_explicit_percentage_spacing_uses_the_native_ordinary_baseline() {
+    let mut content = text("ABC\nDEF");
+    content.paragraphs.push(RichTextParagraph {
+        kind: RichTextParagraphType::LineSpacing, start_paragraph: 0, end_paragraph: 2,
+        payload: [1_u32.to_le_bytes().to_vec(), 1.6_f32.to_le_bytes().to_vec()].concat(),
+    });
+    let svg = render(table(content, 200.0));
+    assert_eq!(lines(&svg), vec![
+        ("ABC".into(), 26.0, 85.25), ("DEF".into(), 26.0, 157.25),
+    ]);
+}

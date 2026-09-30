@@ -12,14 +12,17 @@ mod breaks;
 mod layout;
 mod measurement;
 mod objects;
+mod pagination;
 mod paint;
 mod resources;
 mod wrapping;
 pub(super) use layout::{
-    TextFrame, TextLayout, layout_placed_text, layout_text, measure_paragraph,
+    TextBaseline, TextFrame, TextLayout, VerticalExclusion, layout_placed_text, layout_text,
+    measure_paragraph,
 };
 pub(super) use objects::TextObjectIndex;
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
+pub(super) use pagination::PageExclusions;
 pub(super) use paint::render_measured_line;
 pub(super) use resources::TextRenderer;
 pub use resources::{TextDiagnostic, TextDiagnosticKind};

@@ -172,7 +172,10 @@ fn render_layout_page(
 ) -> RenderedPage {
     let page = &layout_page.page;
     let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
-    let text_renderer = TextRenderer::new(TextSettings::from_document(&document.metadata), fonts);
+    let settings = TextSettings::from_document(&document.metadata);
+    let text_renderer = TextRenderer::new(settings, fonts).with_page_exclusions(
+        text::PageExclusions::for_page(document, layout_page.source_page_index, settings),
+    );
     let svg = render_page_contents_svg(
         page,
         &document.metadata,
@@ -1174,6 +1177,7 @@ fn render_embedded_object(
                                     ..cell.bbox
                                 },
                                 gravity: Some(0),
+                                baseline: text::TextBaseline::LineAdvance,
                                 exclusions: &[],
                             };
                             render_text_frame(svg, &cell.content, frame, cell_theme, renderer);
@@ -1228,6 +1232,8 @@ fn render_embedded_object(
                 x_max: code.bbox.x_max - right,
                 y_max: body_top,
             };
+            let exclusions =
+                renderer.object_exclusions(object.layout_constraint, code.bbox.y_min, offset_y);
             let body_layout = code.body.as_ref().map(|body| {
                 let styled = StyledText::new(body, TextContext::Flow, settings);
                 let layout = text::layout_text(
@@ -1235,7 +1241,8 @@ fn render_embedded_object(
                     text::TextFrame {
                         bbox: body_bbox,
                         gravity: body.gravity,
-                        exclusions: &[],
+                        baseline: text::TextBaseline::LineAdvance,
+                        exclusions: &exclusions,
                     },
                     theme,
                     renderer,
@@ -1265,6 +1272,7 @@ fn render_embedded_object(
                         text::TextFrame {
                             bbox: title_bbox,
                             gravity: title.gravity,
+                            baseline: text::TextBaseline::LineAdvance,
                             exclusions: &[],
                         },
                         theme,

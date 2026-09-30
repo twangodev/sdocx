@@ -14,9 +14,25 @@ pub(in crate::render) struct VerticalExclusion {
     pub bottom: f64,
 }
 
+#[derive(Clone, Copy)]
+pub(in crate::render) enum TextBaseline {
+    FontSize,
+    LineAdvance,
+}
+
+impl TextBaseline {
+    fn offset(self, font_size: f64, advance: f64) -> f64 {
+        match self {
+            Self::FontSize => font_size,
+            Self::LineAdvance => advance - 0.35 * font_size,
+        }
+    }
+}
+
 pub(in crate::render) struct TextFrame<'a> {
     pub bbox: BoundingBox,
     pub gravity: Option<u8>,
+    pub baseline: TextBaseline,
     pub exclusions: &'a [VerticalExclusion],
 }
 
@@ -103,6 +119,7 @@ pub(in crate::render) fn layout_placed_text(
         TextFrame {
             bbox: styled.text_box.bbox,
             gravity: styled.text_box.gravity,
+            baseline: TextBaseline::FontSize,
             exclusions: &[],
         },
         theme,
@@ -149,7 +166,7 @@ pub(in crate::render) fn layout_text(
             let advance = paragraph_line_height(line.font_size, layout.line_spacing, settings);
             let candidate_top = frame.bbox.y_min + cursor;
             let top = frame.line_top(candidate_top, advance);
-            let baseline = top + line.font_size;
+            let baseline = top + frame.baseline.offset(line.font_size, advance);
             cursor += top - candidate_top + advance;
             lines.push(TextLine {
                 line,
@@ -205,6 +222,14 @@ mod tests {
     }
 
     fn measure(text: &RichTextBox, exclusions: &[VerticalExclusion]) -> TextLayout {
+        measure_with_baseline(text, exclusions, TextBaseline::FontSize)
+    }
+
+    fn measure_with_baseline(
+        text: &RichTextBox,
+        exclusions: &[VerticalExclusion],
+        baseline: TextBaseline,
+    ) -> TextLayout {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
@@ -222,6 +247,7 @@ mod tests {
                     y_max: 200.0,
                 },
                 gravity: text.gravity,
+                baseline,
                 exclusions,
             },
             RenderTheme::for_canvas(false),
@@ -344,5 +370,37 @@ mod tests {
         let plan = measure(&centered, &bands);
         assert_eq!(plan.height(), 33.5);
         assert_eq!(plan.lines[0].baseline, 163.25);
+    }
+
+    #[test]
+    fn native_percent_spacing_baseline_uses_the_full_line_advance() {
+        let mut content = text("ABC");
+        content.font_size = Some(45.0);
+        content.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::LineSpacing,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [1_u32.to_le_bytes(), 1.6_f32.to_le_bytes()].concat(),
+        });
+        let native = measure_with_baseline(&content, &[], TextBaseline::LineAdvance);
+        assert!((native.lines[0].baseline - 156.25).abs() < 0.00001);
+        assert!((native.height() - 72.0).abs() < 0.00001);
+        assert_eq!(measure(&content, &[]).lines[0].baseline, 145.0);
+    }
+
+    #[test]
+    fn native_pixel_spacing_baseline_preserves_the_extra_leading() {
+        let mut content = text("ABC");
+        content.font_size = Some(45.0);
+        content.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::LineSpacing,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [0_u32.to_le_bytes(), 20.0_f32.to_le_bytes()].concat(),
+        });
+        let native = measure_with_baseline(&content, &[], TextBaseline::LineAdvance);
+        assert_eq!(native.lines[0].baseline, 149.25);
+        assert_eq!(native.height(), 65.0);
+        assert_eq!(measure(&content, &[]).lines[0].baseline, 145.0);
     }
 }
