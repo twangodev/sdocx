@@ -168,6 +168,9 @@ fn document_export_uses_visible_layout_and_color_options() {
     let document = sdocx::Document {
         pages: vec![page.clone(), page],
         metadata: sdocx::DocumentMetadata {
+            page_mode: Some(0),
+            flow_dimensions: Some((200, 200)),
+            flow_page_padding: Some((0, 0)),
             note_text: Some(sdocx::RichTextBox {
                 text_area_type: None,
                 bbox: Default::default(),
