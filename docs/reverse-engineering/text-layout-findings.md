@@ -119,6 +119,52 @@ standalone cases and their callers before adding those semantics. The ordinary
 baseline helper is shared with placed text as traced below; standalone visual
 parity still needs a captured reference.
 
+### Shape template text frames
+
+Composer's actual shape writer calls `ObjectTextPDFWriter::WriteTextContent`
+for type 7 (`0x37c8b8`). That writer applies template insets with separate
+`f32` additions/subtractions (`0x3805bc`–`0x380608`) and preserves the original
+geometry center for rotation. Shape text bypasses the outward `ExtendRect`
+rounding used by type-2 PDF text boxes (`0x380684`). Drawing follows the same
+inset policy at `0x80b28`–`0x80b68`.
+
+Model's saved-shape reader converts rectangle endpoints to `f32`
+(`0x3a93f4`–`0x3a9400`), constructs the template, restores its path, and
+applies saved control points. Prepared template margins are separate from
+density-scaled component text margins. Rect-only formulas verified through
+the template factory and margin setters are:
+
+| Template | Horizontal inset per side | Vertical inset per side | Native producer |
+| --- | --- | --- | --- |
+| Ellipse, ID 1 | `(width * 3) / 20` | `(height * 3) / 20` | `0x213b5c` |
+| Rectangle, ID 4 | 0 | 0 | `0x2152e8` |
+| Diamond, ID 8 | `width * f32::from_bits(0x3e851eb8)` | Corresponding height product | `0x218e14`, load path `0x2190f0` |
+
+Rust's typed placed-text frame adapter preserves this operation order and
+supplies the inset frame to the shared layout engine without cloning or
+modifying source text. Measurement dimensions remain independent of frame
+coordinates; rebuilding endpoints from origin plus width can erase the width
+at very large origins. The engine also derives wrapping width from local
+insets rather than subtracting absolute positions. Native measurement
+subtracts inset endpoints in `f32`
+and ceilings width/height to signed 32-bit integers
+(`ScrollEditTextView::SetPosition`, `0xbc234`; layout height, `0xbc9b8`).
+The conversion rounds toward positive infinity and saturates to the integer
+range, as defined by Arm's [FCVTPS documentation](https://developer.arm.com/documentation/dui0801/g/A64-SIMD-Vector-Instructions/FCVTPS--vector-)
+and [FPToFixed pseudocode](https://www.scs.stanford.edu/~zyedidia/arm64/shared_pseudocode.html#func_FPToFixed_6).
+Rotation uses the original endpoint sums multiplied by `0.5` in `f32`
+(`RectF::CenterX/Y`, `0xb1820`, `0xb1838`), independent of the inset frame.
+
+Triangle/right-triangle orientation, rounded-rectangle radius, and other
+path-dependent templates still require their saved geometry. Unsupported
+nonempty shape text retains its saved frame with `UnsupportedTextFrame`;
+invalid known geometry reports `InvalidGeometry` and stays in placed context.
+Whole-box highlights remain the existing SDK approximation: native background
+spans instead paint layout ranges. Free/Path editing and autofit semantics
+remain unverified. The hash-checked corpus has five empty shape text boxes
+and no native shape glyph operators, so these regressions establish source
+contracts and synthetic vector behavior, not captured shape typography parity.
+
 ## Font-name payload and measured fallback
 
 For the modern WDoc record, `FontNameSpan` (kind 4) has this payload **after**
