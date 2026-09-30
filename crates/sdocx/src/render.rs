@@ -21,7 +21,8 @@ mod text;
 mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
-use text::{StyledText, TextContext, TextSettings, TextStyle};
+use text::{StyledText, TextContext, TextRenderer, TextSettings, TextStyle};
+pub use text::{TextDiagnostic, TextDiagnosticKind};
 pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
@@ -61,15 +62,27 @@ pub struct RenderedPage {
     pub height: u32,
     /// Standalone Svg markup.
     pub svg: String,
+    /// Font resolution and glyph coverage limits encountered while rendering.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub text_diagnostics: Vec<TextDiagnostic>,
 }
 
 /// Render every visible page in presentation order.
 pub fn render_document_svg(document: &Document, options: &RenderOptions) -> Vec<RenderedPage> {
+    render_document_svg_with_fonts(document, options, &fonts::FontBook::default())
+}
+
+/// Render every visible page using a caller-controlled font database.
+pub fn render_document_svg_with_fonts(
+    document: &Document,
+    options: &RenderOptions,
+    fonts: &fonts::FontBook,
+) -> Vec<RenderedPage> {
     let layout = layout_document(document);
     layout
         .pages
         .iter()
-        .map(|layout_page| render_layout_page(document, layout_page, options, false))
+        .map(|layout_page| render_layout_page(document, layout_page, options, false, fonts))
         .collect()
 }
 
@@ -90,10 +103,27 @@ pub fn render_layout_page_svg(
     page_index: usize,
     options: &RenderOptions,
 ) -> Option<RenderedPage> {
+    render_layout_page_svg_with_fonts(
+        document,
+        layout,
+        page_index,
+        options,
+        &fonts::FontBook::default(),
+    )
+}
+
+/// Render one prepared visible page with the supplied fonts.
+pub fn render_layout_page_svg_with_fonts(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_index: usize,
+    options: &RenderOptions,
+    fonts: &fonts::FontBook,
+) -> Option<RenderedPage> {
     layout
         .pages
         .get(page_index)
-        .map(|layout_page| render_layout_page(document, layout_page, options, false))
+        .map(|layout_page| render_layout_page(document, layout_page, options, false, fonts))
 }
 
 /// Render the same page with stroke and path boundaries for sample-addressable replay.
@@ -105,10 +135,27 @@ pub fn render_layout_page_replay_svg(
     page_index: usize,
     options: &RenderOptions,
 ) -> Option<RenderedPage> {
+    render_layout_page_replay_svg_with_fonts(
+        document,
+        layout,
+        page_index,
+        options,
+        &fonts::FontBook::default(),
+    )
+}
+
+/// Render sample-addressable replay with the same font resources as export.
+pub fn render_layout_page_replay_svg_with_fonts(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_index: usize,
+    options: &RenderOptions,
+    fonts: &fonts::FontBook,
+) -> Option<RenderedPage> {
     layout
         .pages
         .get(page_index)
-        .map(|page| render_layout_page(document, page, options, true))
+        .map(|page| render_layout_page(document, page, options, true, fonts))
 }
 
 fn render_layout_page(
@@ -116,9 +163,11 @@ fn render_layout_page(
     layout_page: &crate::LayoutPage,
     options: &RenderOptions,
     replay: bool,
+    fonts: &fonts::FontBook,
 ) -> RenderedPage {
     let page = &layout_page.page;
     let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
+    let text_renderer = TextRenderer::new(TextSettings::from_document(&document.metadata), fonts);
     let svg = render_page_contents_svg(
         page,
         &document.metadata,
@@ -126,12 +175,14 @@ fn render_layout_page(
         document.metadata.flow_page_padding,
         theme,
         replay,
+        &text_renderer,
     );
     RenderedPage {
         source_page_index: layout_page.source_page_index,
         width: page.width,
         height: page.height,
         svg,
+        text_diagnostics: text_renderer.diagnostics(),
     }
 }
 
@@ -148,6 +199,7 @@ fn render_page_contents_svg(
     flow_page_padding: Option<(u32, u32)>,
     theme: RenderTheme,
     replay: bool,
+    text_renderer: &TextRenderer<'_>,
 ) -> String {
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
@@ -187,7 +239,7 @@ fn render_page_contents_svg(
         page,
         media_assets,
         flow_page_padding,
-        text_settings: TextSettings::from_document(metadata),
+        text_renderer,
         theme,
         replay,
     };
@@ -207,6 +259,7 @@ fn render_page_contents_svg(
         });
     }
     render_pass(&mut svg, &composition, RenderPass::Masking);
+    text_renderer.embed_fonts(&mut svg);
     svg.finish()
 }
 
@@ -214,7 +267,7 @@ struct CompositionContext<'a> {
     page: &'a Page,
     media_assets: &'a [MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
-    text_settings: TextSettings,
+    text_renderer: &'a TextRenderer<'a>,
     theme: RenderTheme,
     replay: bool,
 }
@@ -336,7 +389,7 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
         page,
         media_assets,
         flow_page_padding,
-        text_settings,
+        text_renderer,
         theme,
         ..
     } = *context;
@@ -352,7 +405,7 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
             media_assets,
             flow_page_padding,
             theme,
-            text_settings,
+            text_renderer,
         ),
         PageElement::Shape(shape) => {
             render_shape(svg, shape, theme);
@@ -371,7 +424,7 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
                     media_assets,
                     flow_page_padding,
                     theme,
-                    text_settings,
+                    text_renderer,
                 );
             }
         }
@@ -637,8 +690,9 @@ fn render_text_box(
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     theme: RenderTheme,
-    settings: TextSettings,
+    renderer: &TextRenderer<'_>,
 ) {
+    let settings = renderer.settings;
     let text = text_box.text.trim_end_matches('\n');
     if text.trim().is_empty() {
         return;
@@ -654,7 +708,7 @@ fn render_text_box(
             media_assets,
             flow_page_padding,
             theme,
-            settings,
+            renderer,
         );
         return;
     }
@@ -693,7 +747,7 @@ fn render_text_box(
                 .x(decimal(x, 2))
                 .y(decimal(text_y, 2))
                 .fill(Paint::from_hex(&color))
-                .family(FontFamily::Arial)
+                .family(FontFamily::Roboto)
                 .font_size(decimal(font_size, 2))
                 .preserve_space();
             svg.scope(node, |svg| {
@@ -704,6 +758,7 @@ fn render_text_box(
                         styled.index.slice(range).unwrap(),
                         &style,
                         styled.context(),
+                        renderer,
                     );
                 }
             });
@@ -738,8 +793,9 @@ fn render_flow_text_box(
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     theme: RenderTheme,
-    settings: TextSettings,
+    renderer: &TextRenderer<'_>,
 ) {
+    let settings = renderer.settings;
     let (horizontal_padding, vertical_padding) = flow_page_padding
         .map(|(horizontal, vertical)| (f64::from(horizontal), f64::from(vertical)))
         .unwrap_or((FLOW_HORIZONTAL_PADDING, 0.0));
@@ -796,7 +852,7 @@ fn render_flow_text_box(
             if !embedded.is_empty() {
                 for object in embedded {
                     if let Some(bottom) =
-                        render_embedded_object(svg, object, cursor_y, media_assets, theme, settings)
+                        render_embedded_object(svg, object, cursor_y, media_assets, theme, renderer)
                     {
                         let bottom_margin =
                             if matches!(object.content, Some(RichTextObjectContent::Image(_))) {
@@ -865,6 +921,7 @@ fn render_flow_text_box(
                     layout.alignment,
                     theme,
                     layout.predefined_style,
+                    renderer,
                 );
                 cursor_y += line_height;
             }
@@ -1128,6 +1185,7 @@ fn render_flow_line(
     alignment: Option<ParagraphAlignment>,
     theme: RenderTheme,
     predefined_style: Option<PredefinedTextStyle>,
+    renderer: &TextRenderer<'_>,
 ) {
     if range.is_empty() {
         return;
@@ -1152,13 +1210,21 @@ fn render_flow_line(
                     styled.index.slice(segment).unwrap(),
                     &style,
                     styled.context(),
+                    renderer,
                 );
             }
         },
     );
 }
 
-fn write_styled_tspan(svg: &mut Scene, text: &str, style: &TextStyle, context: TextContext) {
+fn write_styled_tspan(
+    svg: &mut Scene,
+    text: &str,
+    style: &TextStyle,
+    context: TextContext,
+    renderer: &TextRenderer<'_>,
+) {
+    let style = renderer.output_style(text, style, context);
     let mut span = TSpan::new(text)
         .fill(Paint::from_hex(&style.color))
         .font_size(decimal(style.font_size, 2));
@@ -1199,8 +1265,9 @@ fn render_embedded_object(
     cursor_y: f64,
     media_assets: &[MediaAsset],
     theme: RenderTheme,
-    settings: TextSettings,
+    renderer: &TextRenderer<'_>,
 ) -> Option<f64> {
+    let settings = renderer.settings;
     match object.content.as_ref() {
         Some(RichTextObjectContent::Image(image)) => {
             let drawn = image_drawn_bbox(image);
@@ -1287,6 +1354,7 @@ fn render_embedded_object(
                                                 styled.index.slice(range).unwrap(),
                                                 &style,
                                                 styled.context(),
+                                                renderer,
                                             );
                                         }
                                     },
@@ -1335,7 +1403,7 @@ fn render_embedded_object(
                         object_top + 81.6,
                         FontFamily::Roboto,
                         theme,
-                        settings,
+                        renderer,
                     );
                 }
                 let icon_stroke = if theme.is_dark() {
@@ -1382,7 +1450,7 @@ fn render_embedded_object(
                             baseline,
                             FontFamily::Roboto,
                             theme,
-                            settings,
+                            renderer,
                         );
                         baseline += if line_index == 0 { 98.25 } else { 60.75 };
                     }
@@ -1404,8 +1472,9 @@ fn render_embedded_line(
     baseline: f64,
     font_family: FontFamily,
     theme: RenderTheme,
-    settings: TextSettings,
+    renderer: &TextRenderer<'_>,
 ) {
+    let settings = renderer.settings;
     let styled = StyledText::new(text_box, TextContext::Flow, settings);
     svg.scope(
         Text::new("")
@@ -1421,6 +1490,7 @@ fn render_embedded_line(
                     styled.index.slice(range).unwrap(),
                     &style,
                     styled.context(),
+                    renderer,
                 );
             }
         },

@@ -100,7 +100,8 @@ elements!(
     Image,
     Text,
     TSpan,
-    Anchor
+    Anchor,
+    EmbeddedFont
 );
 macro_rules! constructors {
     ($($name:ident),*) => { $(impl $name { pub fn new() -> Self { Self(Node::new(svg_element::$name::new())) } })* };
@@ -422,6 +423,23 @@ impl TSpan {
     pub fn stroke_under_fill(mut self) -> Self {
         self.0.attr("paint-order", "stroke fill");
         self
+    }
+}
+
+impl EmbeddedFont {
+    pub fn new(family: &str, weight: u16, style: fontdb::Style, data: &[u8]) -> Self {
+        let mut name = String::new();
+        cssparser::serialize_string(family, &mut name).expect("writing a CSS string");
+        let bytes = base64::engine::general_purpose::STANDARD.encode(data);
+        let slant = match style {
+            fontdb::Style::Normal => "normal",
+            fontdb::Style::Italic => "italic",
+            fontdb::Style::Oblique => "oblique",
+        };
+        let css = format!(
+            "@font-face{{font-family:{name};font-weight:{weight};font-style:{slant};src:url(\"data:font/ttf;base64,{bytes}\") format(\"truetype\")}}"
+        );
+        Self(Node::new(svg_element::Style::new(css)))
     }
 }
 impl Anchor {

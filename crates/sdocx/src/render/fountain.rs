@@ -150,6 +150,7 @@ mod tests {
     #[test]
     fn fountain_pdf_retains_vector_shading_and_blending() {
         let page = crate::RenderedPage {
+            text_diagnostics: Vec::new(),
             source_page_index: 0,
             width: 64,
             height: 64,

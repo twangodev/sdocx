@@ -142,7 +142,6 @@ keywords! {
 
 #[derive(Clone, Copy)]
 pub enum FontFamily<'a> {
-    Arial,
     Roboto,
     Named(&'a str),
 }
@@ -150,7 +149,6 @@ pub enum FontFamily<'a> {
 impl FontFamily<'_> {
     pub(super) fn text(self) -> String {
         match self {
-            Self::Arial => "Arial, sans-serif".into(),
             Self::Roboto => "Roboto, Arial, sans-serif".into(),
             Self::Named(name) => {
                 let mut text = String::new();

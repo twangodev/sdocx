@@ -1,5 +1,10 @@
 #![cfg(feature = "render")]
 
+use base64::Engine;
+use sdocx::fonts::{FontBook, fontdb};
+use sha2::{Digest, Sha256};
+use std::sync::Arc;
+
 use sdocx::{
     BoundingBox, Color, Document, DocumentMetadata, ObjectSpanLayoutConstraint,
     ObjectSpanLayoutOption, ObjectType, Page, PageElement, RichTextBox, RichTextCodeBlock,
@@ -188,6 +193,27 @@ fn tspan<'a>(xml: &'a roxmltree::Document<'a>, value: &str) -> roxmltree::Node<'
     xml.descendants()
         .find(|node| node.has_tag_name("tspan") && node.text() == Some(value))
         .unwrap_or_else(|| panic!("missing text span {value:?}"))
+}
+
+fn font_css(svg: &str) -> Vec<String> {
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    xml.descendants()
+        .filter(|node| node.has_tag_name("style"))
+        .map(|node| node.text().unwrap().to_owned())
+        .collect()
+}
+
+fn embedded_font_bytes(css: &str) -> Vec<u8> {
+    let encoded = css
+        .split_once("data:font/ttf;base64,")
+        .unwrap()
+        .1
+        .split_once('"')
+        .unwrap()
+        .0;
+    base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .unwrap()
 }
 
 #[test]
@@ -454,7 +480,7 @@ fn font_name_spans_apply_locally_in_each_text_context() {
     for &context in CONTEXTS {
         let svg = render(context, content.clone());
         let xml = roxmltree::Document::parse(&svg).unwrap();
-        for (value, family) in [("😀", "Roboto Mono"), ("B", "sans-serif")] {
+        for (value, family) in [("😀", "Roboto Mono"), ("B", "Roboto")] {
             let attribute = tspan(&xml, value)
                 .attribute("font-family")
                 .unwrap_or_else(|| panic!("{context:?}: missing family on {value:?}"));
@@ -475,15 +501,27 @@ fn font_name_spans_apply_locally_in_each_text_context() {
 #[test]
 fn font_names_are_one_css_family_and_preserve_raw_source() {
     let family = r#"ACME "Ink", Serif\ <svg onload="boom"> & 'quoted'"#;
+    let defaults = FontBook::default();
+    let regular = defaults.resolve("Roboto", false, false).unwrap();
+    let mut alias = defaults.database().face(regular.id).unwrap().clone();
+    alias.id = fontdb::ID::dummy();
+    alias.families[0].0 = family.into();
+    alias.families.truncate(1);
+    let mut database = fontdb::Database::new();
+    database.push_face_info(alias);
+    database.set_sans_serif_family(family);
+    let fonts = FontBook::new(Arc::new(database));
     let mut content = text("safe");
     content.spans = vec![font_name(0, 4, family)];
     let original = content.spans[0].payload.clone();
     assert_eq!(content.spans[0].font_name_value(), Some(family));
     for &context in CONTEXTS {
         let document = document(context, content.clone());
-        let svg = sdocx::render_page_svg(&document, 0, &Default::default())
-            .unwrap()
-            .svg;
+        let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
+            .pop()
+            .unwrap();
+        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        let svg = page.svg;
         let xml = roxmltree::Document::parse(&svg).unwrap();
         let attribute = tspan(&xml, "safe").attribute("font-family").unwrap();
         let expected = r#""ACME \"Ink\", Serif\\ <svg onload=\"boom\"> & 'quoted'", sans-serif"#;
@@ -513,6 +551,292 @@ fn font_names_are_one_css_family_and_preserve_raw_source() {
         );
         assert_eq!(content.spans[0].payload, original, "{context:?}");
         assert_eq!(&original[10..original.len() - 1], family.as_bytes());
+    }
+}
+
+#[test]
+fn svg_embeds_only_used_pinned_faces_and_replay_has_the_same_font_css() {
+    let fonts = FontBook::default();
+    assert_eq!(fonts.database().faces().count(), 8);
+    let face = fonts.resolve("Roboto", false, false).unwrap();
+    for &context in CONTEXTS {
+        let document = document(context, text("Used font"));
+        let layout = sdocx::layout_document(&document);
+        let normal = sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        let replay = sdocx::render_layout_page_replay_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        assert!(normal.text_diagnostics.is_empty(), "{context:?}");
+        assert_eq!(normal.text_diagnostics, replay.text_diagnostics);
+        let css = font_css(&normal.svg);
+        assert_eq!(css, font_css(&replay.svg), "{context:?}");
+        assert_eq!(css.len(), 1, "{context:?}: unused faces must stay absent");
+        assert_eq!(css[0].matches("@font-face").count(), 1);
+        assert!(css[0].contains("font-family:\"Roboto\";font-weight:400;font-style:normal;"));
+        let bytes = embedded_font_bytes(&css[0]);
+        assert_eq!(bytes, face.bytes(), "{context:?}");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d"
+        );
+    }
+}
+
+#[test]
+fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
+    let family = "Unavailable in empty database";
+    let fonts = FontBook::new(Arc::new(fontdb::Database::new()));
+    let mut content = text("empty");
+    content.spans = vec![font_name(0, 5, family)];
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
+            .pop()
+            .unwrap();
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnavailableFamily,
+                family: family.into(),
+                codepoints: Vec::new(),
+            }],
+            "{context:?}"
+        );
+        assert!(font_css(&page.svg).is_empty(), "{context:?}");
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        assert_eq!(tspan(&xml, "empty").text(), Some("empty"));
+    }
+}
+
+#[test]
+fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
+    let family = "Damaged Native Typeface";
+    let defaults = FontBook::default();
+    let regular = defaults.resolve("Roboto", false, false).unwrap();
+    let mut database = defaults.database().as_ref().clone();
+    let mut invalid = database.face(regular.id).unwrap().clone();
+    invalid.id = fontdb::ID::dummy();
+    invalid.families[0].0 = family.into();
+    invalid.families.truncate(1);
+    invalid.source = fontdb::Source::Binary(Arc::new(vec![0, 1, 2, 3]));
+    database.push_face_info(invalid);
+    let fonts = FontBook::new(Arc::new(database));
+    let mut content = text("damaged");
+    content.spans = vec![font_name(0, 7, family)];
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
+            .pop()
+            .unwrap();
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnusableFontData,
+                family: family.into(),
+                codepoints: Vec::new(),
+            }],
+            "{context:?}"
+        );
+        assert!(font_css(&page.svg).is_empty(), "{context:?}");
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        assert_eq!(tspan(&xml, "damaged").text(), Some("damaged"));
+    }
+}
+
+#[test]
+fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
+    let mut content = text("abcd");
+    content.spans = vec![
+        span(RichTextSpanType::Bold, 1, 2, &[1, 0]),
+        span(RichTextSpanType::Italic, 2, 3, &[1, 0]),
+        span(RichTextSpanType::Bold, 3, 4, &[1, 0]),
+        span(RichTextSpanType::Italic, 3, 4, &[1, 0]),
+    ];
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        let css = font_css(&page.svg);
+        let placed = matches!(context, Context::Standalone);
+        assert_eq!(css.len(), if placed { 4 } else { 2 }, "{context:?}");
+        for (weight, slant, hash) in [
+            (
+                400,
+                "normal",
+                "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d",
+            ),
+            (
+                400,
+                "italic",
+                "fa0b17bb4aaac4a1b2ee149dd4ca3b55e97d3077aa6ba9bb02541b316e7c46ce",
+            ),
+            (
+                700,
+                "normal",
+                "61f89f8db49261c2f6106e8dccc35df7b2f7ed909020db40a3fc905e95f99334",
+            ),
+            (
+                700,
+                "italic",
+                "40083ed54338397cf49d2c49f59eddcd963a30fdb301813d4bd3abbb37a13d12",
+            ),
+        ] {
+            let descriptor = format!("font-weight:{weight};font-style:{slant};");
+            let selected = css.iter().find(|style| style.contains(&descriptor));
+            if weight == 700 && !placed {
+                assert!(
+                    selected.is_none(),
+                    "{context:?}: synthetic bold keeps regular faces"
+                );
+            } else {
+                let bytes = embedded_font_bytes(selected.unwrap());
+                assert_eq!(
+                    format!("{:x}", Sha256::digest(bytes)),
+                    hash,
+                    "{context:?}: {descriptor}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn caller_controlled_oblique_face_keeps_actual_weight_and_style_in_css() {
+    let family = "Caller Controlled";
+    let defaults = FontBook::default();
+    let italic = defaults.resolve("Roboto", false, true).unwrap();
+    let mut face = defaults.database().face(italic.id).unwrap().clone();
+    face.id = fontdb::ID::dummy();
+    face.families[0].0 = family.into();
+    face.families.truncate(1);
+    face.weight = fontdb::Weight(550);
+    face.style = fontdb::Style::Oblique;
+    let mut database = fontdb::Database::new();
+    database.push_face_info(face);
+    database.set_sans_serif_family(family);
+    let fonts = FontBook::new(Arc::new(database));
+    let mut content = text("oblique");
+    content.spans = vec![
+        font_name(0, 7, family),
+        span(RichTextSpanType::Italic, 0, 7, &[1, 0]),
+    ];
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
+            .pop()
+            .unwrap();
+        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        let css = font_css(&page.svg);
+        assert_eq!(css.len(), 1, "{context:?}");
+        assert!(
+            css[0]
+                .contains("font-family:\"Caller Controlled\";font-weight:550;font-style:oblique;"),
+            "{context:?}"
+        );
+        assert_eq!(embedded_font_bytes(&css[0]), italic.bytes(), "{context:?}");
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        assert_eq!(
+            svgtypes::parse_font_families(tspan(&xml, "oblique").attribute("font-family").unwrap())
+                .unwrap(),
+            [
+                svgtypes::FontFamily::Named(family.into()),
+                svgtypes::FontFamily::SansSerif
+            ]
+        );
+    }
+}
+
+#[test]
+fn stroke_only_pages_do_not_embed_font_styles() {
+    let mut document = document(Context::Standalone, text("replaced"));
+    document.pages[0].objects = vec![
+        sdocx::Stroke {
+            bbox: bounds(),
+            rendering: None,
+            points: vec![
+                sdocx::Point { x: 20.0, y: 20.0 },
+                sdocx::Point { x: 40.0, y: 40.0 },
+            ],
+            pressures: Vec::new(),
+            timestamps: Vec::new(),
+            tilts: Vec::new(),
+            orientations: Vec::new(),
+            color: None,
+            pen_width: 2.0,
+        }
+        .into(),
+    ];
+    let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+    let xml = roxmltree::Document::parse(&page.svg).unwrap();
+    assert!(page.text_diagnostics.is_empty());
+    assert!(
+        !xml.descendants()
+            .any(|node| node.has_tag_name("text") || node.has_tag_name("style"))
+    );
+    assert!(!page.svg.contains("data:font/"));
+}
+
+#[test]
+fn unavailable_font_family_uses_roboto_and_reports_the_original_request() {
+    let family = "Missing Native Typeface";
+    let mut content = text("safe");
+    content.spans = vec![font_name(0, 4, family)];
+    let payload = content.spans[0].payload.clone();
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnavailableFamily,
+                family: family.into(),
+                codepoints: Vec::new(),
+            }],
+            "{context:?}"
+        );
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        assert_eq!(
+            svgtypes::parse_font_families(tspan(&xml, "safe").attribute("font-family").unwrap())
+                .unwrap(),
+            [
+                svgtypes::FontFamily::Named("Roboto".into()),
+                svgtypes::FontFamily::SansSerif
+            ],
+            "{context:?}"
+        );
+        assert_eq!(content.spans[0].font_name_value(), Some(family));
+        assert_eq!(content.spans[0].payload, payload);
+    }
+}
+
+#[test]
+fn missing_cjk_and_emoji_glyphs_are_reported_without_losing_text() {
+    for &context in CONTEXTS {
+        let document = document(context, text("中😀中😀"));
+        let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::MissingGlyphs,
+                family: "Roboto".into(),
+                codepoints: vec![0x4e2d, 0x1f600],
+            }],
+            "{context:?}"
+        );
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        assert_eq!(tspan(&xml, "中😀中😀").text(), Some("中😀中😀"));
     }
 }
 

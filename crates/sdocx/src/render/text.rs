@@ -7,6 +7,10 @@ use crate::{
 
 use super::RenderTheme;
 
+mod resources;
+pub(super) use resources::TextRenderer;
+pub use resources::{TextDiagnostic, TextDiagnosticKind};
+
 pub(super) const DEFAULT_FONT_SIZE: f32 = 17.0;
 const DEFAULT_FONT_COLOR: Color = Color {
     r: 38,

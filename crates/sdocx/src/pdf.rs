@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use krilla::{Document as PdfDocument, geom::Size, page::PageSettings};
 use krilla_svg::{SurfaceExt, SvgSettings};
 
-use crate::{Document, RenderOptions, RenderedPage, render_document_svg};
+use crate::{Document, RenderOptions, RenderedPage, render_document_svg_with_fonts};
 
 pub use usvg::fontdb;
 
@@ -55,7 +55,11 @@ pub fn render_document_pdf(
     render_options: &RenderOptions,
     pdf_options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
-    render_svg_pages_pdf(&render_document_svg(document, render_options), pdf_options)
+    let fonts = crate::fonts::FontBook::new(pdf_options.font_database.clone());
+    render_svg_pages_pdf(
+        &render_document_svg_with_fonts(document, render_options, &fonts),
+        pdf_options,
+    )
 }
 
 pub fn render_svg_pages_pdf(
