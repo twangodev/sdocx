@@ -28,11 +28,11 @@ wider text than the reference: the first heading's dark pixels span x=50–787
 instead of the reference's x=51–715. Wrapping follows the SDK's measured Roboto
 advances, so a wider raster font can also extend text past the intended margin.
 
-`--font PATH` now supplies explicit faces for PNG export, can be repeated,
-and loads them before system faces. Exact family/style matches from supplied
-files win ties with system fonts. All pages share the loaded font database.
-Missing or invalid explicit files fail before any page output. SVG continues
-to reference families; this option does not embed fonts in SVG.
+`--font PATH` supplies explicit faces for SVG, PNG and PDF export and can be
+repeated. Supplied faces load before the pinned bundled faces; host fonts are
+not discovered. All pages share the loaded font database. Missing or invalid
+explicit files fail before any page output. SVG embeds the selected faces as
+data fonts so its appearance does not depend on host font installation.
 
 The measured run supplied regular and italic TrueType files from Google's
 [Roboto source repository](https://github.com/googlefonts/roboto-2/tree/main/src/hinted).

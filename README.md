@@ -30,6 +30,8 @@ sdocx-cli note.sdocx -o note.pdf --font /path/to/Roboto-Regular.ttf
 
 PDF combines selected pages into one file; SVG and PNG produce separate files per page. Use `--help` for all options.
 
+`--font` adds fonts for SVG, PNG and PDF. SVG embeds the faces it uses; all formats share the bundled Roboto defaults.
+
 Or run with Docker:
 
 ```sh

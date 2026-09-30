@@ -14,6 +14,10 @@ impl Fixture {
     }
 
     fn with_ids(ids: &[&str]) -> Self {
+        Self::with_objects(ids, &[])
+    }
+
+    fn with_objects(ids: &[&str], objects: &[Vec<u8>]) -> Self {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
         let directory = std::env::temp_dir().join(format!(
@@ -25,7 +29,7 @@ impl Fixture {
         let file = std::fs::File::create(directory.join("note.sdocx")).unwrap();
         let mut zip = zip::ZipWriter::new(file);
         for id in ids {
-            let mut bytes = support::page(&[vec![]], 0, &[]);
+            let mut bytes = support::page(&[objects.to_vec()], 0, &[]);
             let original: Vec<_> = "page".encode_utf16().flat_map(u16::to_le_bytes).collect();
             let offset = bytes
                 .windows(original.len())
@@ -52,6 +56,41 @@ impl Fixture {
             .output()
             .unwrap()
     }
+}
+
+fn text_object(value: &str) -> Vec<u8> {
+    fn frame(kind: i16, fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
+        let offset = 13 + fields.len() + fixed.len();
+        let mut bytes = ((offset + flexible.len()) as u32).to_le_bytes().to_vec();
+        bytes.extend_from_slice(&kind.to_le_bytes());
+        bytes.extend_from_slice(&(offset as u32).to_le_bytes());
+        bytes.extend_from_slice(&[1, u8::from(kind == 0) << 3, fields.len() as u8]);
+        bytes.extend_from_slice(fields);
+        bytes.extend_from_slice(fixed);
+        bytes.extend_from_slice(flexible);
+        bytes
+    }
+    let mut base = 5500_u32.to_le_bytes().to_vec();
+    base.extend_from_slice(&2_u16.to_le_bytes());
+    base.extend_from_slice(b"tx");
+    base.extend_from_slice(&1234_i64.to_le_bytes());
+    for coordinate in [20.0_f64, 20.0, 800.0, 200.0] {
+        base.extend_from_slice(&coordinate.to_le_bytes());
+    }
+    base.extend_from_slice(&[0; 5]);
+    let mut common = (value.encode_utf16().count() as u32).to_le_bytes().to_vec();
+    common.extend(value.encode_utf16().flat_map(u16::to_le_bytes));
+    common.extend_from_slice(&[0; 35]);
+    let mut text = (common.len() as u32).to_le_bytes().to_vec();
+    text.extend_from_slice(&common);
+    let payload = [
+        frame(0, &[1, 0, 0, 0, 0], &base, &0_f32.to_le_bytes()),
+        frame(6, &[], &[], &[]),
+        frame(7, &[1], &[], &text),
+        frame(2, &[], &[], &[]),
+    ]
+    .concat();
+    support::object(2, &payload, &[])
 }
 
 impl Drop for Fixture {
@@ -157,6 +196,55 @@ fn invalid_font_or_scale_does_not_overwrite_output() {
         assert!(!result.status.success());
         assert!(String::from_utf8_lossy(&result.stderr).contains("--pdf-dpi applies to PDF"));
         assert!(!fixture.0.join(format!("note.{format}")).exists());
+    }
+}
+
+#[test]
+fn svg_embeds_the_explicitly_selected_font_and_validates_font_input() {
+    use base64::Engine;
+    let fixture = Fixture::with_objects(&["one1"], &[text_object("Caller font")]);
+    let mut font = include_bytes!("../../sdocx/assets/fonts/Roboto-Regular.ttf").to_vec();
+    font.extend_from_slice(b"sdocx CLI selected font");
+    std::fs::write(fixture.0.join("caller.ttf"), &font).unwrap();
+    let result = fixture.run(&["--font", "caller.ttf", "-o", "selected.svg"]);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let svg = std::fs::read_to_string(fixture.0.join("selected.svg")).unwrap();
+    assert!(svg.contains("Caller font"));
+    assert!(svg.contains(&base64::engine::general_purpose::STANDARD.encode(&font)));
+    for output in ["selected.png", "selected.pdf"] {
+        let result = fixture.run(&["--font", "caller.ttf", "-o", output]);
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+    }
+    assert!(
+        std::fs::read(fixture.0.join("selected.png"))
+            .unwrap()
+            .starts_with(b"\x89PNG\r\n\x1a\n")
+    );
+    let extracted = lopdf::Document::load(fixture.0.join("selected.pdf"))
+        .unwrap()
+        .extract_text(&[1])
+        .unwrap();
+    assert!(
+        extracted.replace('\n', "").contains("Caller font"),
+        "{extracted:?}"
+    );
+
+    std::fs::write(fixture.0.join("bad.ttf"), b"invalid font").unwrap();
+    for invalid in ["bad.ttf", "missing.ttf"] {
+        let result = fixture.run(&["--font", invalid, "-o", "selected.svg"]);
+        assert!(!result.status.success());
+        assert_eq!(
+            std::fs::read_to_string(fixture.0.join("selected.svg")).unwrap(),
+            svg
+        );
     }
 }
 

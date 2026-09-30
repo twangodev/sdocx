@@ -956,6 +956,7 @@ dependencies = [
 name = "sdocx-cli"
 version = "0.7.0"
 dependencies = [
+ "base64",
  "clap",
  "lopdf",
  "resvg",

@@ -116,7 +116,7 @@ struct Cli {
     #[arg(
         long = "font",
         value_name = "PATH",
-        help = "Additional font for PNG/PDF rendering; repeat for multiple files"
+        help = "Additional font for SVG/PNG/PDF rendering; repeat for multiple files"
     )]
     font_files: Vec<PathBuf>,
 
@@ -272,22 +272,15 @@ fn main() {
             std::process::exit(1);
         }
     };
-    if format == Format::Svg && !cli.font_files.is_empty() {
-        eprintln!("Error: --font applies to PNG/PDF output; use -f png or -f pdf");
-        std::process::exit(1);
-    }
     if format != Format::Pdf && cli.pdf_dpi.is_some() {
         eprintln!("Error: --pdf-dpi applies to PDF output; use -f pdf or a .pdf output path");
         std::process::exit(1);
     }
-    let svg_options = if format != Format::Svg {
-        Some(svg_options(&cli.font_files).unwrap_or_else(|error| {
-            eprintln!("Error: {error}");
-            std::process::exit(1);
-        }))
-    } else {
-        None
-    };
+    let svg_options = svg_options(&cli.font_files).unwrap_or_else(|error| {
+        eprintln!("Error: {error}");
+        std::process::exit(1);
+    });
+    let fonts = sdocx::fonts::FontBook::new(svg_options.fontdb.clone());
 
     let output_base = cli
         .output
@@ -303,13 +296,19 @@ fn main() {
     let rendered_pages: Vec<_> = page_indices
         .iter()
         .map(|&index| {
-            sdocx::render_layout_page_svg(&doc, &layout, index, &RenderOptions::default())
-                .expect("validated visible page index")
+            sdocx::render_layout_page_svg_with_fonts(
+                &doc,
+                &layout,
+                index,
+                &RenderOptions::default(),
+                &fonts,
+            )
+            .expect("validated visible page index")
         })
         .collect();
 
     if format == Format::Pdf {
-        let mut options = sdocx::PdfOptions::new(svg_options.as_ref().unwrap().fontdb.clone());
+        let mut options = sdocx::PdfOptions::new(fonts.database());
         if let Some(dpi) = cli.pdf_dpi {
             options.dpi = dpi;
         }
@@ -330,8 +329,9 @@ fn main() {
         return;
     }
 
+    let png_options = (format == Format::Png).then_some(&svg_options);
     if rendered_pages.len() == 1 {
-        write_page(&output_base, &rendered_pages[0].svg, svg_options.as_ref());
+        write_page(&output_base, &rendered_pages[0].svg, png_options);
     } else {
         for (i, rendered_page) in page_indices.iter().zip(&rendered_pages) {
             let stem = output_base
@@ -343,7 +343,7 @@ fn main() {
                 .and_then(|e| e.to_str())
                 .unwrap_or(format.ext());
             let path = output_base.with_file_name(format!("{stem}_page{i}.{ext}"));
-            write_page(&path, &rendered_page.svg, svg_options.as_ref());
+            write_page(&path, &rendered_page.svg, png_options);
         }
     }
 }
