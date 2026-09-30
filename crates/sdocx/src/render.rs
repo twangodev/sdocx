@@ -1155,12 +1155,7 @@ fn aligned_line_left(
     width: f64,
     alignment: Option<ParagraphAlignment>,
 ) -> f64 {
-    let remaining = (width - line.advance).max(0.0);
-    left + match alignment {
-        Some(ParagraphAlignment::Center) => remaining / 2.0,
-        Some(ParagraphAlignment::Right) => remaining,
-        _ => 0.0,
-    }
+    left + text::line_alignment_offset(line.advance, width, alignment)
 }
 
 fn object_paint_bounds(object: &text::PositionedObject, left: f64, baseline: f64) -> BoundingBox {

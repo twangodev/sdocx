@@ -907,16 +907,20 @@ document density 3. Neither margin includes the font-size delta. Unrecognized
 layout options follow the zero-margin block branch; only constraints 1/2
 set `IsObjectOverPages` (`0xd55bc`–`0xd55d8`).
 
-Object entries contribute their height to line base height but leave the
-text percentage metric zero (`0x77abc`, versus ordinary text's member 60).
+Object entries contribute both their height and their resolved source font
+to the line metrics. `SpanRunFunctor` stores the font in member 60 at
+`0x77674` before calling `measureObjectSpan` at `0x77844`; that callee preserves
+the member. The earlier zero-font conclusion inspected only the callee and
+missed this producer. Widget's default/font-span conversion and final span
+copying do not clear the object's font.
 `GetBlockInfo` takes maxima of entry height and text metric independently
 (`0x6aeb4`–`0x6af44`). Both object types set block flag 41
 (`0x6ad3c`–`0x6ad54`), so `GetBaseline` adds `0.001f` to both baseline and
 vertical cursor (`0x6cc0c`–`0x6cc28`). With zero measurement margins,
 `F=20`, `H=100`, default multiplier 1.35 and initial cursor 0 yield cursor
-107.001 and baseline 100.001. An object entry without other font-bearing
-entries has metric 0 and therefore cursor/baseline 100.001. This does not
-describe every object-only paragraph: `RichTextMeasure::measureParagraph`
+107.001 and baseline 100.001, including an object-only initial paragraph.
+Rust's object-only line metric still needs this producer correction.
+`RichTextMeasure::measureParagraph`
 gives a leading separator/type-4 entry the following span's font size in
 both height and text metric (`0x78a64`–`0x78acc`). `GetBlockInfo` retains
 that metric maximum (`0x6aef8`–`0x6af00`, `0x6b008`), including when its
@@ -1300,7 +1304,14 @@ and recomputes the margin after moving the raw candidate to an obstacle's
 bottom. Independent regressions cover the literal cases above, native f32
 probe rounding, and suppression of a preceding object's bottom margin on an
 ordinary text line. Ordinary constraint-0 child feedback was not established
-by this trace; child callback origins still require their own producer proof.
+by this trace. Child callback origins now use their resolved object font:
+inline entries receive raw Y, margin-bearing blocks receive raw Y plus the
+adjusted margin, and marginless blocks receive raw Y plus percentage/pixel
+leading minus `0.35f * object_font`. This is independent of the parent's
+aggregate font metric (`0x6c380`–`0x6c3ac`). Images with either known over-page
+constraint retain callback minimum height zero: the factory supports only
+table/code layouts (`0x86810`–`0x868d0`), so the image's null-layout branch
+returns without replacing the initialized minimum (`0x6c30c`, `0xb0d34`).
 
 Drawing `CodeBlockLayout::Measure`, `0x732fc`, converts those bands to body
 coordinates by subtracting body-frame top (`0x73484`–`0x7349c`). Its
@@ -1322,6 +1333,27 @@ matching this local height does not establish complete composed-page parity.
 The saved-top arithmetic above reconciles this captured copy's numbers;
 the verified general producer instead uses the live candidate and child-size
 feedback described above.
+
+Rust also applies the native paragraph indentation masks: saved RTL indent
+adds only a right inset for right/center/default alignment; other indent
+directions add only a left inset for left/center/default alignment. Both
+alignment applies neither inset (`0x7397c`). Indent direction does not select
+the bidi base or mirror markers. Drawing normalizes unknown alignment to
+internal default 4 through the literal `[4,0,1,2,3]` conversion tables
+(`0x93234`, `0xa5ac8`, `0xd1454`). Default alignment currently follows the
+SDK's LTR display policy. Right/center markers share the glyph alignment
+offset, matching `m_UpdateBullet`'s caller (`0x6b5dc`–`0x6b61c`).
+
+Both alignment now distributes extra width through the shared positioned
+line. Native ordinary constructors initialize layout options to zero
+(`0x636e0`, `0x6fcfc`), so final lines and leading/trailing whitespace are
+included. Only U+0020 and TAB expand, weighted one and four respectively
+(`0x77688`, `0x6af4c`, `0x6b838`). The native f32 share is
+`(available_width - measured_width) / weight_count`, without a positive
+remainder clamp. Markers remain at their reserved block start, and source
+ranges remain unchanged. Complex-script positioning still reports the
+existing unsupported-positioning diagnostic rather than establishing RTL
+justification parity.
 
 Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
 before/after spacing 4. Saved first-cell X is 49, while captured text X 72

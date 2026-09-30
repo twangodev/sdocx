@@ -19,6 +19,7 @@ pub(in crate::render) struct WrappedLine {
 pub(in crate::render) struct PositionedCluster {
     pub cluster: MeasuredCluster,
     pub x: f64,
+    pub extra_advance: f64,
 }
 
 pub(in crate::render) struct PositionedObject {
@@ -70,6 +71,81 @@ impl WrappedLine {
         self.objects.iter().fold(0.0_f64, |height, positioned| {
             height.max(positioned.object.height)
         })
+    }
+
+    pub fn justify(&mut self, styled: &StyledText<'_>, width: f64) -> Result<(), MeasurementError> {
+        #[derive(Clone, Copy)]
+        enum Entry {
+            Text(usize),
+            Object(usize),
+        }
+        let geometry = |value| {
+            super::finite_native_geometry(value)
+                .map(|value| value as f32)
+                .ok_or(MeasurementError::InvalidCluster)
+        };
+        let width = geometry(width)?;
+        let advance = geometry(self.advance)?;
+        let mut entries = Vec::with_capacity(self.placements.len() + self.objects.len());
+        let mut weights = 0_u32;
+        for (index, placement) in self.placements.iter().enumerate() {
+            let text = styled
+                .index
+                .slice(placement.cluster.source.clone())
+                .ok_or(MeasurementError::InvalidRange)?;
+            let weight = text
+                .chars()
+                .try_fold(0_u32, |weight, scalar| {
+                    weight.checked_add(match scalar {
+                        ' ' => 1,
+                        '\t' => 4,
+                        _ => 0,
+                    })
+                })
+                .ok_or(MeasurementError::InvalidCluster)?;
+            weights = weights
+                .checked_add(weight)
+                .ok_or(MeasurementError::InvalidCluster)?;
+            entries.push((
+                geometry(placement.x)?,
+                placement.cluster.source.start,
+                weight,
+                Entry::Text(index),
+            ));
+        }
+        for (index, placement) in self.objects.iter().enumerate() {
+            entries.push((
+                geometry(placement.x)?,
+                placement.object.source.start,
+                0,
+                Entry::Object(index),
+            ));
+        }
+        if weights == 0 {
+            return Ok(());
+        }
+        let extra = geometry(f64::from((width - advance) / weights as f32))?;
+        entries.sort_by(|left, right| left.0.total_cmp(&right.0).then(left.1.cmp(&right.1)));
+        let mut shift = 0.0_f32;
+        let mut positions = Vec::with_capacity(entries.len());
+        for (x, _, weight, entry) in entries {
+            let x = geometry(f64::from(x + shift))?;
+            let extra_advance = geometry(f64::from(extra * weight as f32))?;
+            shift = geometry(f64::from(shift + extra_advance))?;
+            positions.push((entry, f64::from(x), f64::from(extra_advance)));
+        }
+        let advance = geometry(f64::from(advance + shift))?;
+        for (entry, x, extra_advance) in positions {
+            match entry {
+                Entry::Text(index) => {
+                    self.placements[index].x = x;
+                    self.placements[index].extra_advance = extra_advance;
+                }
+                Entry::Object(index) => self.objects[index].x = x,
+            }
+        }
+        self.advance = f64::from(advance);
+        Ok(())
     }
 
     pub fn has_block_margins(&self) -> bool {
@@ -335,6 +411,7 @@ pub(in crate::render) fn wrap_paragraph(
                     placements.push(PositionedCluster {
                         cluster: cluster.clone(),
                         x,
+                        extra_advance: 0.0,
                     });
                 }
                 MeasuredItem::Object(object) => objects.push(PositionedObject {
@@ -460,6 +537,75 @@ mod tests {
             &FontBook::default(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn justification_compresses_negative_residuals_without_clamping() {
+        let content = text("A\t B");
+        let settings = TextSettings {
+            scale: 1.0,
+            ..Default::default()
+        };
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let mut lines = wrap(&content, 1000.0);
+        lines[0].justify(&styled, 50.0).unwrap();
+        assert_eq!(lines[0].advance, 50.0);
+        assert_eq!(lines[0].placements[1].extra_advance, -50.45703125);
+        assert_eq!(lines[0].placements[2].extra_advance, -12.6142578125);
+        assert_eq!(lines[0].placements[3].x, 21.98486328125);
+    }
+
+    #[test]
+    fn justification_moves_inline_objects_with_the_surrounding_text() {
+        let mut content = text("A \u{fffc} B");
+        content.object_spans = vec![image(2, 40.0, ObjectSpanLayoutOption::Inline)];
+        let settings = TextSettings {
+            scale: 1.0,
+            ..Default::default()
+        };
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let mut lines = wrap(&content, 1000.0);
+        lines[0].justify(&styled, 200.0).unwrap();
+        assert_eq!(lines[0].advance, 200.0);
+        assert_eq!(lines[0].objects[0].x, 80.670166015625);
+        assert_eq!(lines[0].placements.last().unwrap().x, 171.98486328125);
+        assert_eq!(lines[0].objects[0].object.source, 2..3);
+        assert_eq!(lines[0].placements.last().unwrap().cluster.source, 4..5);
+    }
+
+    #[test]
+    fn invalid_justification_geometry_does_not_mutate_retained_positions() {
+        let content = text("A B");
+        let settings = TextSettings {
+            scale: 1.0,
+            ..Default::default()
+        };
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let mut lines = wrap(&content, 1000.0);
+        let advance = lines[0].advance;
+        let positions: Vec<_> = lines[0]
+            .placements
+            .iter()
+            .map(|placement| placement.x)
+            .collect();
+        for width in [f64::NAN, f64::INFINITY, f64::MAX] {
+            assert!(lines[0].justify(&styled, width).is_err());
+            assert_eq!(lines[0].advance, advance);
+            assert_eq!(
+                lines[0]
+                    .placements
+                    .iter()
+                    .map(|placement| placement.x)
+                    .collect::<Vec<_>>(),
+                positions
+            );
+            assert!(
+                lines[0]
+                    .placements
+                    .iter()
+                    .all(|placement| placement.extra_advance == 0.0)
+            );
+        }
     }
 
     fn ranges(lines: &[WrappedLine]) -> Vec<Range<usize>> {

@@ -4,7 +4,8 @@ use std::ops::Range;
 use super::TextSettings;
 use crate::text_index::TextIndex;
 use crate::{
-    BoundingBox, ObjectSpanLayoutOption, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
+    BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, RichTextBox,
+    RichTextObjectContent, RichTextObjectSpan,
 };
 
 pub(in crate::render) struct TextObjectIndex<'a> {
@@ -28,6 +29,7 @@ pub(in crate::render) struct MeasuredObject {
     pub inline: bool,
     pub top_margin: f64,
     pub bottom_margin: f64,
+    pub minimum_first_page_height: Option<f64>,
 }
 
 impl TextObject<'_> {
@@ -45,6 +47,15 @@ impl TextObject<'_> {
             inline: self.span.layout_option == ObjectSpanLayoutOption::Inline,
             top_margin: margin,
             bottom_margin: margin,
+            minimum_first_page_height: (matches!(
+                self.span.content.as_ref(),
+                Some(RichTextObjectContent::Image(_))
+            ) && matches!(
+                self.span.layout_constraint,
+                ObjectSpanLayoutConstraint::OverPages
+                    | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+            ))
+            .then_some(0.0),
         }
     }
 }
@@ -349,6 +360,27 @@ mod tests {
                 assert_eq!(measured.bounds.y_max - measured.bounds.y_min, 60.0);
                 assert_eq!(measured.height, 60.0);
             }
+        }
+    }
+
+    #[test]
+    fn image_page_constraints_retain_the_native_zero_first_page_minimum() {
+        for (constraint, expected) in [
+            (ObjectSpanLayoutConstraint::Normal, None),
+            (ObjectSpanLayoutConstraint::OverPages, Some(0.0)),
+            (
+                ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+                Some(0.0),
+            ),
+            (ObjectSpanLayoutConstraint::Other(99), None),
+        ] {
+            let mut span = image(0, 30.0);
+            span.layout_constraint = constraint;
+            let text = text("\u{fffc}", vec![span]);
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            let measured = index.in_range(0..1)[0].measured(TextSettings::default());
+            assert_eq!(measured.minimum_first_page_height, expected);
+            assert_eq!(measured.height, 60.0);
         }
     }
 

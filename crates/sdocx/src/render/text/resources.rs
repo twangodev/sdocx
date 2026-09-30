@@ -705,6 +705,7 @@ mod tests {
                 inline: false,
                 top_margin: 10.0,
                 bottom_margin: 10.0,
+                minimum_first_page_height: None,
             },
         });
         renderer.report_line_geometry(&line, spacing);

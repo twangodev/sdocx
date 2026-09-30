@@ -7,6 +7,7 @@ use crate::{
     ParagraphLineSpacing, PredefinedTextStyle,
 };
 
+use super::objects::MeasuredObject;
 use super::{
     StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
     paragraph_line_height, unmeasured_paragraph, wrap_paragraph,
@@ -116,10 +117,10 @@ impl TextFrame<'_> {
             .filter_map(|placement| {
                 placement
                     .prepared
-                    .as_ref()?
                     .as_ref()
-                    .ok()?
-                    .minimum_first_page_height()
+                    .and_then(|prepared| prepared.as_ref().ok())
+                    .and_then(|prepared| prepared.minimum_first_page_height())
+                    .or(placement.object.minimum_first_page_height)
             })
             .reduce(f64::max);
         self.exclusions.iter().find(|band| {
@@ -171,6 +172,40 @@ struct LineCandidate {
 impl LineCandidate {
     fn top(self) -> f64 {
         self.raw_top + self.margin_top
+    }
+
+    fn object_top(
+        self,
+        object: &MeasuredObject,
+        font_size: f64,
+        spacing: Option<ParagraphLineSpacing>,
+        settings: super::TextSettings,
+    ) -> f64 {
+        if object.inline {
+            return self.raw_top;
+        }
+        if object.top_margin > 0.0 && object.bottom_margin > 0.0 {
+            return self.top();
+        }
+        let font_size = font_size as f32;
+        let leading = match spacing {
+            Some(spacing)
+                if spacing.value.is_finite()
+                    && spacing.value > 0.0
+                    && spacing.kind == LineSpacingType::Pixels =>
+            {
+                settings.pixels(spacing.value) as f32
+            }
+            Some(spacing)
+                if spacing.value.is_finite()
+                    && spacing.value > 0.0
+                    && spacing.kind == LineSpacingType::Percent =>
+            {
+                (spacing.value - 1.0) * font_size
+            }
+            _ => (1.35_f32 - 1.0) * font_size,
+        };
+        f64::from((-0.35_f32).mul_add(font_size, self.raw_top as f32 + leading))
     }
 }
 
@@ -305,12 +340,27 @@ impl TextCursor {
         frame: &TextFrame<'_>,
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
-        spacing: Option<ParagraphLineSpacing>,
+        layout: &super::ParagraphLayout,
     ) -> LineCandidate {
         let mut candidate = self.candidate(line, frame, frame.bbox.y_min + self.position);
         for _ in 0..=frame.exclusions.len() {
-            prepare_line_objects(line, styled, candidate.top(), theme, renderer);
-            let metrics = LineMetrics::for_line(line, spacing, renderer.settings);
+            prepare_line_objects(
+                line,
+                styled,
+                |object| {
+                    let style =
+                        styled.style_at(object.source.start, theme, layout.predefined_style);
+                    candidate.object_top(
+                        object,
+                        style.font_size,
+                        layout.line_spacing,
+                        renderer.settings,
+                    )
+                },
+                theme,
+                renderer,
+            );
+            let metrics = LineMetrics::for_line(line, layout.line_spacing, renderer.settings);
             let Some(band) = frame.overlapping_band(line, candidate.top(), metrics.advance) else {
                 return candidate;
             };
@@ -340,10 +390,10 @@ impl TextCursor {
     }
 }
 
-pub(in crate::render) fn prepare_line_objects(
+fn prepare_line_objects(
     line: &mut WrappedLine,
     styled: &StyledText<'_>,
-    candidate_top: f64,
+    candidate_top: impl Fn(&MeasuredObject) -> f64,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) {
@@ -351,6 +401,7 @@ pub(in crate::render) fn prepare_line_objects(
         let Some(span) = styled.object_span(placement.object.span_index) else {
             continue;
         };
+        let candidate_top = candidate_top(&placement.object);
         let object_renderer = renderer.for_object_source(placement.object.source.clone());
         let prepared = match span.content.as_ref() {
             Some(crate::RichTextObjectContent::CodeBlock(code)) => {
@@ -664,7 +715,8 @@ fn layout_text_with_context(
         let marker_renderer = renderer.for_source(
             paragraph.content.start..(paragraph.content.start + 1).min(styled.index.len()),
         );
-        let marker_x = content_left + layout.left_indent(settings);
+        let [left_indent, right_indent] = layout.indent_insets(settings);
+        let marker_x = content_left + left_indent;
         let marker_style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
         let mut marker = layout.bullet.and_then(|bullet| {
             PreparedMarker::prepare(
@@ -677,7 +729,7 @@ fn layout_text_with_context(
         });
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
         let x = marker_x + marker_width;
-        let width = (content_right - x).max(0.0);
+        let width = (content_right - right_indent - x).max(0.0);
         let paragraph_lines = measure_paragraph(
             styled,
             paragraph.content.clone(),
@@ -713,7 +765,7 @@ fn layout_text_with_context(
         for (line_number, mut line) in paragraph_lines.into_iter().enumerate() {
             let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
             let settled_top = if let Some(top) = continuation_top {
-                prepare_line_objects(&mut line, styled, top, theme, renderer);
+                prepare_line_objects(&mut line, styled, |_| top, theme, renderer);
                 let metrics = LineMetrics::for_line(&line, layout.line_spacing, settings);
                 let mut candidate =
                     cursor.candidate(&line, &frame, frame.bbox.y_min + cursor.position);
@@ -727,15 +779,14 @@ fn layout_text_with_context(
                 }
                 candidate
             } else {
-                cursor.prepare_line(
-                    &mut line,
-                    styled,
-                    &frame,
-                    theme,
-                    renderer,
-                    layout.line_spacing,
-                )
+                cursor.prepare_line(&mut line, styled, &frame, theme, renderer, layout)
             };
+            if layout.alignment == Some(ParagraphAlignment::Both)
+                && line.justify(styled, width).is_err()
+            {
+                let style = styled.style_at(line.source.start, theme, layout.predefined_style);
+                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+            }
             renderer.report_line_geometry(&line, layout.line_spacing);
             let mut placement =
                 cursor.place_at(&line, layout.line_spacing, &frame, settings, settled_top);
@@ -750,7 +801,7 @@ fn layout_text_with_context(
                 PositionedMarker::for_line(
                     marker,
                     paragraph.content.start,
-                    marker_x,
+                    marker_x + super::line_alignment_offset(line.advance, width, layout.alignment),
                     &line,
                     layout.line_spacing,
                     placement.baseline,
@@ -994,6 +1045,7 @@ mod tests {
                 inline,
                 top_margin: margins[0],
                 bottom_margin: margins[1],
+                minimum_first_page_height: None,
             },
             x: 0.0,
             prepared: None,
@@ -1575,6 +1627,145 @@ mod tests {
         );
         close(cursor.position(), 107.001);
         close(cursor.height(), 107.001);
+    }
+
+    #[test]
+    fn child_callbacks_use_the_object_anchor_font_and_native_layout_option() {
+        let fonts = FontBook::default();
+        let settings = TextSettings {
+            scale: 1.0,
+            ..Default::default()
+        };
+        let renderer = TextRenderer::new(settings, &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        for (option, kind, spacing, object_font, expected) in [
+            (
+                crate::ObjectSpanLayoutOption::Block,
+                LineSpacingType::Percent,
+                1.6,
+                20.0,
+                105.0,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::Block,
+                LineSpacingType::Pixels,
+                20.0,
+                20.0,
+                113.0,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::Block,
+                LineSpacingType::Percent,
+                2.0,
+                40.0,
+                126.0,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::Block,
+                LineSpacingType::Percent,
+                2.0,
+                10.0,
+                106.5,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::Block,
+                LineSpacingType::Pixels,
+                9.0,
+                40.0,
+                95.0,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::Block,
+                LineSpacingType::Pixels,
+                9.0,
+                10.0,
+                105.5,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::Inline,
+                LineSpacingType::Pixels,
+                9.0,
+                40.0,
+                100.0,
+            ),
+            (
+                crate::ObjectSpanLayoutOption::BlockWithSmallMargin,
+                LineSpacingType::Pixels,
+                9.0,
+                40.0,
+                110.0,
+            ),
+        ] {
+            let mut content = text("\u{fffc}");
+            content.spans.push(crate::RichTextSpan {
+                kind: crate::RichTextSpanType::FontSize,
+                start_utf16: 0,
+                end_utf16: 1,
+                expand: false,
+                payload: (object_font as f32).to_le_bytes().to_vec(),
+            });
+            content.paragraphs.push(RichTextParagraph {
+                kind: RichTextParagraphType::LineSpacing,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: [
+                    (if kind == LineSpacingType::Percent {
+                        1_u32
+                    } else {
+                        0_u32
+                    })
+                    .to_le_bytes(),
+                    (spacing as f32).to_le_bytes(),
+                ]
+                .concat(),
+            });
+            content.object_spans.push(crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::CodeBlock,
+                object_data: Vec::new(),
+                content: Some(crate::RichTextObjectContent::CodeBlock(Box::new(
+                    crate::RichTextCodeBlock {
+                        bbox: BoundingBox {
+                            x_min: 0.0,
+                            y_min: 0.0,
+                            x_max: 500.0,
+                            y_max: 10.0,
+                        },
+                        rotation_degrees: None,
+                        title: Some(text("Title")),
+                        body: Some(text("Body")),
+                    },
+                ))),
+                text_index_utf16: 0,
+                layout_option: option,
+                layout_constraint: ObjectSpanLayoutConstraint::OverPages,
+            });
+            let styled = StyledText::new(&content, TextContext::Placed, settings);
+            let plan = layout_text(
+                &styled,
+                TextFrame {
+                    bbox: BoundingBox {
+                        x_min: 0.0,
+                        y_min: 100.0,
+                        x_max: 500.0,
+                        y_max: 1000.0,
+                    },
+                    gravity: None,
+                    exclusions: &[],
+                },
+                theme,
+                &renderer,
+            );
+            let prepared = plan.lines[0].line.objects[0]
+                .prepared
+                .as_ref()
+                .unwrap()
+                .as_ref()
+                .unwrap();
+            let crate::render::embedded::PreparedObject::Code(code) = prepared else {
+                panic!("expected retained code");
+            };
+            close(code.panel_bbox.y_min, expected);
+        }
     }
 
     #[test]

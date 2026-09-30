@@ -53,13 +53,7 @@ pub(in crate::render) fn render_measured_line(
         );
         return;
     }
-    let remaining = (available_width - line.advance).max(0.0);
-    let x = left
-        + match alignment {
-            Some(ParagraphAlignment::Center) => remaining / 2.0,
-            Some(ParagraphAlignment::Right) => remaining,
-            _ => 0.0,
-        };
+    let x = left + super::line_alignment_offset(line.advance, available_width, alignment);
     if line.placements.is_empty()
         || line
             .objects
@@ -123,7 +117,10 @@ pub(in crate::render) fn render_measured_line(
             continue;
         }
         let start = x + line.placements[first].x;
-        let end = x + line.placements[last - 1].x + line.placements[last - 1].cluster.advance;
+        let end = x
+            + line.placements[last - 1].x
+            + line.placements[last - 1].cluster.advance
+            + line.placements[last - 1].extra_advance;
         let thickness = style.font_size * f64::from(1.0_f32 / 18.0);
         for offset in [
             style.underline.then_some(f64::from(1.0_f32 / 9.0)),
@@ -293,6 +290,7 @@ fn positioned_spans(
                 index += 1;
                 while let Some(next) = line.placements.get(index)
                     && offsets[index].is_none()
+                    && (line.placements[index - 1].extra_advance == 0.0 || context.is_some())
                     && next.cluster.source.start == source.end
                     && next.cluster.run.face.id == run.face.id
                     && (next.cluster.run.direction == run.direction

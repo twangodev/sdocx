@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::{
-    Color, HyperlinkType, LineSpacingType, ParagraphAlignment, ParagraphBullet,
+    Color, HyperlinkType, LineSpacingType, ParagraphAlignment, ParagraphBullet, ParagraphDirection,
     ParagraphLineSpacing, PredefinedTextStyle, RichTextBox, RichTextParagraphType, RichTextSpan,
     RichTextSpanType, text_index::TextIndex,
 };
@@ -134,6 +134,7 @@ impl TextSettings {
 pub(in crate::render) struct ParagraphLayout {
     pub alignment: Option<ParagraphAlignment>,
     pub indent_level: u32,
+    pub indent_direction: Option<ParagraphDirection>,
     pub line_spacing: Option<ParagraphLineSpacing>,
     pub bullet: Option<ParagraphBullet>,
     pub spacing_before: f64,
@@ -144,15 +145,28 @@ pub(in crate::render) struct ParagraphLayout {
 }
 
 impl ParagraphLayout {
-    pub fn left_indent(&self, settings: TextSettings) -> f64 {
-        if matches!(
-            self.alignment,
-            Some(ParagraphAlignment::Right | ParagraphAlignment::Both)
-        ) {
-            0.0
-        } else {
-            settings.indent(self.indent_level)
+    pub fn indent_insets(&self, settings: TextSettings) -> [f64; 2] {
+        let indent = settings.indent(self.indent_level);
+        match (self.indent_direction, self.alignment) {
+            (Some(ParagraphDirection::RightToLeft), Some(ParagraphAlignment::Left))
+            | (_, Some(ParagraphAlignment::Both)) => [0.0; 2],
+            (Some(ParagraphDirection::RightToLeft), _) => [0.0, indent],
+            (_, Some(ParagraphAlignment::Right)) => [0.0; 2],
+            _ => [indent, 0.0],
         }
+    }
+}
+
+pub(super) fn line_alignment_offset(
+    advance: f64,
+    width: f64,
+    alignment: Option<ParagraphAlignment>,
+) -> f64 {
+    let remaining = (width - advance).max(0.0);
+    match alignment {
+        Some(ParagraphAlignment::Right) => remaining,
+        Some(ParagraphAlignment::Center) => remaining / 2.0,
+        _ => 0.0,
     }
 }
 
@@ -170,6 +184,7 @@ pub(in crate::render) fn paragraph_layout(
             RichTextParagraphType::IndentLevel => {
                 if let Some(indent) = paragraph.indent() {
                     layout.indent_level = indent.level;
+                    layout.indent_direction = Some(indent.direction);
                 }
             }
             RichTextParagraphType::LineSpacing => layout.line_spacing = paragraph.line_spacing(),
