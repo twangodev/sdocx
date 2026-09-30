@@ -1,5 +1,31 @@
 use crate::{BoundingBox, NativeShape, RichTextBox};
 
+mod native;
+mod polygon;
+mod rounded;
+mod triangle;
+
+use native::NativeRect;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct TextInsets {
+    left: f32,
+    top: f32,
+    right: f32,
+    bottom: f32,
+}
+
+impl TextInsets {
+    fn symmetric(horizontal: f32, vertical: f32) -> Self {
+        Self {
+            left: horizontal,
+            top: vertical,
+            right: horizontal,
+            bottom: vertical,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct TextRotation {
     pub degrees: f64,
@@ -42,6 +68,16 @@ impl PlacedTextFrame {
     }
 
     pub fn for_shape(shape: &NativeShape) -> Result<Self, ShapeTextFrameIssue> {
+        if matches!(shape.shape_type, 2 | 3 | 5 | 6 | 11) {
+            let rect = NativeRect::new(shape.geometry_bbox)?;
+            let insets = match shape.shape_type {
+                2 | 3 => triangle::insets(shape, &rect)?,
+                5 => rounded::insets(shape, &rect)?,
+                6 | 11 => polygon::insets(shape, &rect)?,
+                _ => unreachable!(),
+            };
+            return Self::from_native_rect(rect, insets, shape.rotation_degrees);
+        }
         Self::from_shape_geometry(
             shape.shape_type,
             shape.geometry_bbox,
@@ -57,39 +93,9 @@ impl PlacedTextFrame {
         if !matches!(template, 1 | 4 | 8) {
             return Err(ShapeTextFrameIssue::UnsupportedTemplate);
         }
-        let [left, top, right, bottom] = [
-            geometry.x_min as f32,
-            geometry.y_min as f32,
-            geometry.x_max as f32,
-            geometry.y_max as f32,
-        ];
-        let width = right - left;
-        let height = bottom - top;
-        let background_bounds = BoundingBox {
-            x_min: f64::from(left),
-            y_min: f64::from(top),
-            x_max: f64::from(right),
-            y_max: f64::from(bottom),
-        };
-        let center = [(left + right) * 0.5, (top + bottom) * 0.5];
-        if ![
-            left,
-            top,
-            right,
-            bottom,
-            width,
-            height,
-            center[0],
-            center[1],
-            rotation_degrees,
-        ]
-        .into_iter()
-        .all(f32::is_finite)
-            || width <= 0.0
-            || height <= 0.0
-        {
-            return Err(ShapeTextFrameIssue::InvalidGeometry);
-        }
+        let rect = NativeRect::new(geometry)?;
+        let width = rect.width;
+        let height = rect.height;
         let [horizontal, vertical] = match template {
             1 => [(width * 3.0) / 20.0, (height * 3.0) / 20.0],
             4 => [0.0, 0.0],
@@ -99,15 +105,27 @@ impl PlacedTextFrame {
             ],
             _ => unreachable!(),
         };
+        Self::from_native_rect(
+            rect,
+            TextInsets::symmetric(horizontal, vertical),
+            rotation_degrees,
+        )
+    }
+
+    fn from_native_rect(
+        rect: NativeRect,
+        insets: TextInsets,
+        rotation_degrees: f32,
+    ) -> Result<Self, ShapeTextFrameIssue> {
         let [left, top, right, bottom] = [
-            left + horizontal,
-            top + vertical,
-            right - horizontal,
-            bottom - vertical,
+            rect.left + insets.left,
+            rect.top + insets.top,
+            rect.right - insets.right,
+            rect.bottom - insets.bottom,
         ];
         let width = right - left;
         let height = bottom - top;
-        if ![left, top, right, bottom, width, height]
+        if ![left, top, right, bottom, width, height, rotation_degrees]
             .into_iter()
             .all(f32::is_finite)
             || width <= 0.0
@@ -123,11 +141,11 @@ impl PlacedTextFrame {
         };
         Ok(Self {
             bounds,
-            background_bounds,
+            background_bounds: rect.bounds(),
             measured_size: Some([width.ceil() as i32, height.ceil() as i32]),
             rotation: Some(TextRotation {
                 degrees: f64::from(rotation_degrees),
-                center: center.map(f64::from),
+                center: rect.center.map(f64::from),
             }),
         })
     }
