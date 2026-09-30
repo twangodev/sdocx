@@ -309,12 +309,6 @@ pub(in crate::render) fn prepare_line_objects(
     renderer: &TextRenderer<'_>,
 ) {
     for placement in &mut line.objects {
-        if matches!(
-            placement.prepared,
-            Some(Ok(crate::render::embedded::PreparedObject::Table(_)))
-        ) {
-            continue;
-        }
         let Some(span) = styled.object_span(placement.object.span_index) else {
             continue;
         };
@@ -331,17 +325,26 @@ pub(in crate::render) fn prepare_line_objects(
                 .map(|code| crate::render::embedded::PreparedObject::Code(Box::new(code)))
             }
             Some(crate::RichTextObjectContent::Table(table)) => {
-                let Some(prepared) = crate::render::table::prepare_table(
-                    table,
-                    span.layout_constraint,
-                    candidate_top,
-                    theme,
-                    &object_renderer,
-                ) else {
-                    continue;
-                };
-                prepared
-                    .map(|table| crate::render::embedded::PreparedObject::Table(Box::new(table)))
+                if let Some(Ok(crate::render::embedded::PreparedObject::Table(mut retained))) =
+                    placement.prepared.take()
+                {
+                    retained
+                        .relayout(table, candidate_top, theme, &object_renderer)
+                        .map(|()| crate::render::embedded::PreparedObject::Table(retained))
+                } else {
+                    let Some(prepared) = crate::render::table::prepare_table(
+                        table,
+                        span.layout_constraint,
+                        candidate_top,
+                        theme,
+                        &object_renderer,
+                    ) else {
+                        continue;
+                    };
+                    prepared.map(|table| {
+                        crate::render::embedded::PreparedObject::Table(Box::new(table))
+                    })
+                }
             }
             _ => continue,
         };
@@ -362,7 +365,18 @@ pub(in crate::render) fn prepare_line_objects(
                 kind: *kind,
             }]),
         }
-        placement.prepared = Some(prepared);
+        if matches!(
+            prepared,
+            Err(super::ObjectDiagnosticKind::UnsupportedContent)
+        ) && matches!(
+            span.content.as_ref(),
+            Some(crate::RichTextObjectContent::Table(_))
+        ) {
+            placement.object.height = placement.object.bounds.y_max - placement.object.bounds.y_min;
+            placement.prepared = None;
+        } else {
+            placement.prepared = Some(prepared);
+        }
     }
 }
 
@@ -428,6 +442,7 @@ impl PositionedMarker {
     }
 }
 
+#[derive(Default)]
 pub(in crate::render) struct TextLayout {
     pub lines: Vec<TextLine>,
     content_height: f64,
@@ -438,6 +453,20 @@ impl TextLayout {
         self.content_height
     }
 
+    pub fn translate(&mut self, dx: f64, dy: f64) {
+        for line in &mut self.lines {
+            line.x += dx;
+            line.baseline += dy;
+            line.top += dy;
+            line.bottom += dy;
+            line.post_cursor += dy;
+            if let Some(marker) = &mut line.marker {
+                marker.x += dx;
+                marker.center_y += dy;
+            }
+        }
+    }
+
     fn apply_gravity(&mut self, gravity: Option<u8>, outer_height: f64) {
         let available_height = (outer_height - self.height()).max(0.0);
         let offset = match gravity {
@@ -445,15 +474,7 @@ impl TextLayout {
             Some(2) => available_height,
             _ => 0.0,
         };
-        for line in &mut self.lines {
-            line.baseline += offset;
-            line.top += offset;
-            line.bottom += offset;
-            line.post_cursor += offset;
-            if let Some(marker) = &mut line.marker {
-                marker.center_y += offset;
-            }
-        }
+        self.translate(0.0, offset);
     }
 }
 

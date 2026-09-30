@@ -971,12 +971,15 @@ the composed draw-rectangle origin remains a separate input.
 The ordinary, non-spannable drawing branch instead reads each model cell's
 rectangle, subtracts the model table origin, and adds the supplied draw origin
 (`0xa68bc`–`0xa6b50`). It must retain that distinct coordinate producer. Rust now
-prepares complete unmerged grids for constraints 1/2 only when the actual child
-split list is empty. Each cell retains its shared Rust text layout for painting;
-rows grow during cold measurement and the first-row minimum is retained.
-Normal tables, active page splits, fractional column widths, merged/sparse grids,
-nested objects and unsupported size constraints retain the saved-frame path.
-This establishes the cold prepared path, not warm pagination parity.
+prepares complete unmerged grids for constraints 1/2 with retained split lists.
+Each cell uses the shared Rust engine at the native integer-truncated cell
+dimensions and retains that plan for painting. Cold measurement grows saved rows;
+warm retries retain caches, shrink or grow rows, and preserve pending page gaps.
+Normal tables, merged/sparse grids, nested objects and unsupported active size
+constraints retain the saved-frame path. Partial horizontal obstacles report
+`UnsupportedContent` and preserve saved-cell painting; the shared cell engine
+currently represents full-width vertical bands. Invalid derived bounds retain
+the separate replacement-marker recovery policy.
 
 Native prepared table frames are stateful. Bodytext caches the child layout
 (`0xb0cac`–`0xb0d64`); construction sets its dirty byte (`0xa9e78`), while
@@ -986,14 +989,29 @@ heights; warm layout can grow or shrink them (`0xaecf4`). Later rows can
 move past a split using actual first-line height plus top margin
 (`0xac9f0`, `0xb2360`), and trailing empty space can compress a row
 (`0xb294c`, `0xb28ec`). Fresh measurement at every candidate is therefore
-not established as equivalent. These producers bound a future unmerged-grid
-implementation; merged-cell frame union and rowspan growth remain unverified.
+not established as equivalent. Rust now retains these phases for unmerged grids;
+merged-cell frame union and rowspan growth remain unverified.
 
 Warm row movement also retains page displacement. Positive preceding-row growth
 consumes that displacement before moving later frames; negative growth first
 removes the retained gap (`0xade70`–`0xadfb4`). Split-list comparison checks count
 and only the first rectangle at tolerance 0.001; distinct empty lists cause
-relayout (`0xb2e18`–`0xb2ea4`). These state transitions remain unfinished in Rust.
+relayout (`0xb2e18`–`0xb2ea4`). The first-rectangle comparison checks all four
+coordinates with inclusive `f32` tolerance `abs(delta) <= 0.001`
+(Base `0xb14b0`–`0xb150c`). Rust preserves this cache policy, including unchanged
+later bands when count and first rectangle match. Warm processing updates each
+row's list, then resizes all remaining rows from their current cached metrics,
+before compressing the current row. Later rows can therefore still use older
+split lists during the earlier resize callback. Numeric regressions distinguish
+this ordering from fresh cold measurement and cover gap consumption/removal,
+first-line relocation, and compression using last-line bottom without bottom
+margin.
+
+Cold `Measure` calls `init`, `extendRowBySplit(0)` and `updateMeasuredRect`
+(`0xaa5bc`–`0xaa5d0`). Its growth test is strictly positive (`0xab0c8`–`0xab0cc`),
+so even a positive delta below 0.001 grows the row. The separate editor insertion
+route's `measureRow` threshold does not apply to this cold drawing phase. Warm
+resizing retains its native 0.001 threshold.
 
 Native geometry reaches measurement as `f32`: Model `ObjectBase::GetRect`
 loads four endpoint registers (`0x2caa6c`–`0x2caa70`), Widget span conversion
@@ -1046,8 +1064,9 @@ maximum falls back to the first cached frame's height, then adds
 `contentRect.top - measuredRect.top`. Cold unmerged frames begin at the global
 drawing half-border offset. Bodytext lays out the child before reading its
 minimum (`0xb0e28`, `0xb0f20`–`0xb0f30`), so a missing Rust plan cannot stand
-in for native zero. Prepared minima for paged tables and their spanning frames remain
-unfinished; whole-table padding avoidance can misplace a long table.
+in for native zero. Prepared paged grids now retain this minimum and their shared
+cell layouts; parent retries update the retained native row state rather than
+rebuilding a cold grid.
 
 Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs
 `IBodyTextDocument::Page` records with cumulative integer Y at member 0,
@@ -1056,6 +1075,19 @@ a local rectangle at member 4, and the original `WPage` pointer at member
 at `0xa94bc`–`0xa94f4`, then adds that rectangle's height to the next Y
 at `0xa9598`–`0xa95a4`. These are actual page sizes, not font density or
 the default-page size used to resolve density.
+
+The selected body's text frame and split rectangles use its maximum physical
+page width. `convertPageList` computes the maximum immediately at
+`0xa95b4`–`0xa95f0`; `GetPageMaxWidth`, `0xa98c8`, returns it. `SetBodyTextDocument`
+(`0xb039c`–`0xb03b4`), `onLayoutText` (`0xb1a10`–`0xb1a2c`) and `measureText`
+(`0xb2e64`–`0xb2e80`) pass it to `ObjectTextLayout::SetLayoutWidth`.
+`updatePagePaddingRect` fetches it once at `0xb8ebc`–`0xb8ed0`, so every split
+rectangle has X `[0,max_selected_width]`, including the terminal boundary.
+Table/cell conversion subtracts only Y. The inspected right-padding producers
+(`0xb9d24`, `0xb9d28`) are return stubs; this path does not add narrower-page
+right-side obstacles. Rust uses this selected-range maximum for both body
+measurement and retained table split rectangles, while projection preserves each
+physical viewport's own dimensions.
 
 `isDownLine`, `0xb7d90`, uses `TextLayout::GetLineBgBound` and returns true
 when `line_top >= page_y`, or when `line_top < page_y` and
@@ -1207,18 +1239,46 @@ subtracts its local body-frame top (`0x73480`–`0x7349c`). Although code
 the height subtraction cancels that origin. This does not authorize using
 saved Y to choose the bands.
 
-`GetAdjustedBlockTopMargin`, `0x6c8a0`, normally returns
-`max(current_top_margin, previous_bottom_margin)`. Its obstacle probe covers
-`[candidate_top - enabled_before - 1, candidate_top - enabled_before]`
-(`0x6c930`–`0x6c968`). For an intersecting flagged band of nonzero height,
-`max(0, current_top_margin - band_height / 2)` replaces the normal collapse
-(`0x6c970`–`0x6c99c`); this calculation has no font-size operand. `SetLayout`
-adds the adjusted margin at `0x6b4f0`–`0x6b510`; the margin-bearing object
-baseline branch uses base object height (`0x6cb90`–`0x6cb9c`) before the
-object epsilon. Rust now feeds prepared code heights back for constraints
-1/2 using the live candidate plus ordinary collapsed margins. The flagged
-obstacle-margin exception and table child remeasurement remain unimplemented;
-ordinary constraint-0 child feedback was not established by this trace.
+`AdjustedBlockTopMargin`, `0x6c8a0`, normally returns
+`max(current_top_margin, previous_bottom_margin)`. Previous bottom comes
+from the last retained line's member 36, or caller-supplied
+`ParagraphLayoutData` member 28 when no line is retained (`0x6c8c4`–`0x6c90c`).
+Its f32 probe covers `[Q - 1, Q]`, where
+`Q = candidate_top - enabled_paragraph_before` (`0x6c930`–`0x6c968`). Both
+callers pass Y after paragraph-before spacing and before object top margin
+(`0x6c79c`–`0x6c7a8`, `0x6c360`–`0x6c374`). Before spacing is added once
+before the wrapping loop (`0x6a740`), but paragraph member 88 remains enabled
+through that loop; the probe still subtracts it on subsequent wrapped lines.
+
+The obstacle-tree Boolean **includes padding when true**. Its true branch
+goes directly to intersection (`0x6e7fc` → `0x6e838`), bypassing the
+minimum-first-page-height gate. Parent block checks pass the inverse of
+their over-page flag (`0x6c6bc`–`0x6c6dc`), allowing that gate to apply to
+over-page objects. The margin probe instead explicitly passes true and
+minimum height zero (`0x6c944`, `0x6c958`); the paragraph wrapper preserves
+the Boolean and forwards the minimum as s2 (`0x6c9ec`–`0x6c9f8`). Thus its
+flagged-padding branch is reachable even with a zero minimum.
+
+For an intersecting flagged band of nonzero height, the result becomes
+`max(0, current_top_margin - band_height / 2)` (`0x6c970`–`0x6c99c`), ignoring
+previous bottom. An unflagged obstacle keeps ordinary collapse. Intersection
+requires more than `.0001f` overlap on both axes (`0x6e6b4`–`0x6e700`);
+touching a band boundary does not count. These are literal consequences of
+the native branches, not captured fixture measurements, for a flagged band
+`[1497,1557]`, current top 60 and previous bottom 80:
+
+| Candidate Y | Enabled before | Probe | Adjusted top |
+|---:|---:|---|---:|
+| 1557 | 0 | [1556,1557] | 30 |
+| 1558 | 0 | [1557,1558] | 80 |
+| 1497 | 0 | [1496,1497] | 80 |
+| 1569 | 12 | [1556,1557] | 30 |
+
+`SetLayout` adds the adjusted margin at `0x6b4f0`–`0x6b510`; the
+margin-bearing object baseline uses base object height (`0x6cb90`–`0x6cb9c`)
+before the object epsilon. The flagged obstacle-margin exception is not yet
+implemented in Rust. Ordinary constraint-0 child feedback was not established
+by this trace.
 
 Drawing `CodeBlockLayout::Measure`, `0x732fc`, converts those bands to body
 coordinates by subtracting body-frame top (`0x73484`–`0x7349c`). Its
@@ -1355,8 +1415,8 @@ symmetric margins, object alignment and object baseline increments. Validated
 anchors preserve neighboring text, and invalid or unsupported objects retain
 typed diagnostics. This has synthetic coverage but no captured mixed-inline
 reference. Code height feedback and table drawn bounds are implemented;
-regenerated table frames, full-source context across saved page slices and
-complex object composition remain incomplete. Paragraph-gap enable flags now
+unmerged table frames and validated full-source page context are implemented;
+merged grids and complex object composition remain incomplete. Paragraph-gap enable flags now
 follow the native bullet conversion and source-edge object rules, with
 synthetic regressions. Terminal-newline display paragraphs, clipping and
 recomputed pagination still need captured cases and implementation. Ordinary

@@ -164,6 +164,18 @@ impl<'a> TextRenderer<'a> {
             })
     }
 
+    pub fn table_split_rects(
+        &self,
+        constraint: crate::ObjectSpanLayoutConstraint,
+        candidate_top: f64,
+    ) -> Vec<crate::BoundingBox> {
+        self.page_exclusions
+            .as_ref()
+            .map_or_else(Vec::new, |pages| {
+                pages.table_split_rects(constraint, candidate_top)
+            })
+    }
+
     pub fn resolve(&self, style: &TextStyle, context: TextContext) -> Option<ResolvedFace> {
         let family = style.family.as_deref().unwrap_or(self.default_family);
         let bold = style.bold && matches!(context, TextContext::Placed);

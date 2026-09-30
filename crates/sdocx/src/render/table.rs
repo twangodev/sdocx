@@ -1,19 +1,25 @@
 use crate::{
-    BoundingBox, ObjectSpanLayoutConstraint, RichTextTable, RichTextTableCell, TableAutoFit,
-    TableBorder,
+    BoundingBox, ObjectSpanLayoutConstraint, RichTextTable, RichTextTableCell, TableBorder,
 };
 
 use super::RenderTheme;
 use super::text::{
     ObjectDiagnosticKind, StyledText, TextContext, TextFrame, TextLayout, TextRenderer,
-    finite_native_geometry,
+    VerticalExclusion, finite_native_geometry,
 };
+
+mod pagination;
+
+use pagination::BandList;
 
 pub(super) struct PreparedTable {
     pub measured_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
     pub min_first_page_height: f64,
     constraint: ObjectSpanLayoutConstraint,
+    bands: BandList,
+    pending_gaps: Vec<f64>,
+    half_border: f64,
 }
 
 impl PreparedTable {
@@ -24,6 +30,18 @@ impl PreparedTable {
                 | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
         )
         .then_some(self.min_first_page_height)
+    }
+
+    pub fn relayout(
+        &mut self,
+        table: &RichTextTable,
+        candidate_top: f64,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Result<(), ObjectDiagnosticKind> {
+        self.bands = table_bands(self.constraint, candidate_top, renderer)?;
+        pagination::warm(self, table, theme, renderer)?;
+        self.update_geometry(table, renderer)
     }
 }
 
@@ -36,6 +54,15 @@ pub(super) struct PreparedTableCell {
     pub column_index: usize,
     pub frame: BoundingBox,
     pub layout: TextLayout,
+    bands: BandList,
+    metrics: CellMetrics,
+}
+
+#[derive(Default)]
+struct CellMetrics {
+    measured_height: f64,
+    first_line_height: f64,
+    last_line_bottom: f64,
 }
 
 pub(super) fn prepare_table(
@@ -45,11 +72,7 @@ pub(super) fn prepare_table(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Option<Result<PreparedTable, ObjectDiagnosticKind>> {
-    if !supports_cold_grid(table, constraint)
-        || !renderer
-            .object_exclusions(constraint, candidate_top, 0.0)
-            .is_empty()
-    {
+    if !supports_cold_grid(table, constraint) {
         return None;
     }
     if !valid_grid_geometry(table, candidate_top) {
@@ -58,11 +81,17 @@ pub(super) fn prepare_table(
     if table
         .column_widths
         .iter()
-        .any(|width| width.fract() != 0.0 || f64::from(*width) > f64::from(i32::MAX))
+        .any(|width| f64::from(*width) > f64::from(i32::MAX))
     {
         return None;
     }
-    Some(prepare_cold_grid(table, constraint, theme, renderer))
+    Some(prepare_cold_grid(
+        table,
+        constraint,
+        candidate_top,
+        theme,
+        renderer,
+    ))
 }
 
 fn supports_cold_grid(table: &RichTextTable, constraint: ObjectSpanLayoutConstraint) -> bool {
@@ -75,19 +104,12 @@ fn supports_cold_grid(table: &RichTextTable, constraint: ObjectSpanLayoutConstra
         && !table.column_widths.is_empty()
         && !table.rows.is_empty()
         && !table.style.max_height_enabled
-        && table
-            .style
-            .auto_fit
-            .is_none_or(|fit| fit == TableAutoFit::None)
         && table.style.min_column_widths.is_none()
         && table.style.max_column_widths.is_none()
         && table.style.max_width.is_none()
-        && table.style.min_column_width.is_none()
-        && table.style.min_row_height.is_none()
         && table.style.content_bbox.is_none()
         && table.rows.iter().enumerate().all(|(row_index, row)| {
             row.index as usize == row_index
-                && row.min_height.is_none_or(|height| height == 0.0)
                 && row.max_height.is_none_or(|height| height == f32::MAX)
                 && row.cells.len() == table.column_widths.len()
                 && row.cells.iter().enumerate().all(|(column_index, cell)| {
@@ -122,10 +144,13 @@ fn valid_grid_geometry(table: &RichTextTable, candidate_top: f64) -> bool {
             .column_widths
             .iter()
             .all(|width| width.is_finite() && *width > 0.0)
-        && table
-            .rows
-            .iter()
-            .all(|row| row.height.is_finite() && row.height >= 0.0)
+        && table.rows.iter().all(|row| {
+            row.height.is_finite()
+                && row.height >= 0.0
+                && row
+                    .min_height
+                    .is_none_or(|height| height.is_finite() && height >= 0.0)
+        })
         && table
             .style
             .border
@@ -188,6 +213,7 @@ fn valid_cell_layout(layout: &TextLayout) -> bool {
 fn prepare_cold_grid(
     table: &RichTextTable,
     constraint: ObjectSpanLayoutConstraint,
+    candidate_top: f64,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<PreparedTable, ObjectDiagnosticKind> {
@@ -195,16 +221,16 @@ fn prepare_cold_grid(
     let mut top = half_border;
     let mut rows = Vec::with_capacity(table.rows.len());
     for (row_index, row) in table.rows.iter().enumerate() {
-        let mut height = f64::from(row.height);
+        let bottom = native_add(top, f64::from(row.height))?;
         let mut left = half_border;
         let mut cells = Vec::with_capacity(row.cells.len());
-        for (column_index, cell) in row.cells.iter().enumerate() {
-            let right = left + f64::from(table.column_widths[column_index]);
+        for column_index in 0..row.cells.len() {
+            let right = native_add(left, f64::from(table.column_widths[column_index]))?;
             let frame = BoundingBox {
                 x_min: left,
                 y_min: top,
                 x_max: right,
-                y_max: top + f64::from(row.height),
+                y_max: bottom,
             };
             if [left, right, top, frame.y_max]
                 .into_iter()
@@ -213,85 +239,211 @@ fn prepare_cold_grid(
             {
                 return Err(ObjectDiagnosticKind::InvalidBounds);
             }
-            let styled = StyledText::new(&cell.content, TextContext::Flow, renderer.settings);
-            let cell_theme = theme.on_background(super::table_cell_background(cell, theme));
-            let layout = super::text::layout_text(
-                &styled,
-                TextFrame {
-                    bbox: frame,
-                    gravity: Some(0),
-                    exclusions: &[],
-                },
-                cell_theme,
-                renderer,
-            );
-            if !valid_cell_layout(&layout) {
-                return Err(ObjectDiagnosticKind::InvalidBounds);
-            }
-            height = height.max(native_measured_height(layout.height())?);
             cells.push(PreparedTableCell {
                 column_index,
                 frame,
-                layout,
+                layout: TextLayout::default(),
+                bands: BandList::default(),
+                metrics: CellMetrics::default(),
             });
             left = right;
         }
-        top += height;
-        if finite_native_geometry(top).is_none() {
-            return Err(ObjectDiagnosticKind::InvalidBounds);
-        }
-        for cell in &mut cells {
-            cell.frame.y_max = top;
-        }
+        top = bottom;
         rows.push(PreparedTableRow { row_index, cells });
     }
-    let right = rows[0].cells.last().unwrap().frame.x_max;
-    let content_bbox = BoundingBox {
-        x_min: half_border,
-        y_min: half_border,
-        x_max: right,
-        y_max: top,
-    };
-    let [left, upper, right_border, bottom] = table_border_widths(table);
-    let measured_bbox = BoundingBox {
-        x_min: 0.0,
-        y_min: 0.0,
-        x_max: content_bbox.x_max - content_bbox.x_min + (left + right_border) / 2.0,
-        y_max: content_bbox.y_max - content_bbox.y_min + (upper + bottom) / 2.0,
-    };
-    if [measured_bbox.x_max, measured_bbox.y_max]
-        .into_iter()
-        .any(|value| finite_native_geometry(value).is_none())
-        || measured_bbox.x_max <= 0.0
-        || measured_bbox.y_max <= 0.0
-    {
-        return Err(ObjectDiagnosticKind::InvalidBounds);
-    }
-    let mut first_row_height = 0.0_f64;
-    for cell in &rows[0].cells {
-        let source = &table.rows[0].cells[cell.column_index].content;
-        let height = if source.text.is_empty() {
-            cell.layout.height()
-        } else {
-            let line = cell.layout.lines.first().unwrap();
-            native_measured_height(line.bottom - line.top)?
-                + renderer
-                    .settings
-                    .pixels(source.margins.unwrap_or([0.0; 4])[1])
-        };
-        first_row_height = first_row_height.max(native_measured_height(height)?);
-    }
-    if first_row_height == 0.0 {
-        first_row_height = rows[0].cells[0].frame.y_max - rows[0].cells[0].frame.y_min;
-    }
-    let min_first_page_height =
-        native_measured_height(first_row_height + content_bbox.y_min - measured_bbox.y_min)?;
-    Ok(PreparedTable {
-        measured_bbox,
+    let mut prepared = PreparedTable {
+        measured_bbox: BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 0.0,
+            y_max: 0.0,
+        },
+        pending_gaps: vec![0.0; rows.len()],
         rows,
-        min_first_page_height,
+        min_first_page_height: 0.0,
         constraint,
-    })
+        half_border,
+        bands: table_bands(constraint, candidate_top, renderer)?,
+    };
+    pagination::cold(&mut prepared, table, theme, renderer)?;
+    prepared.update_geometry(table, renderer)?;
+    Ok(prepared)
+}
+
+fn native_add(left: f64, right: f64) -> Result<f64, ObjectDiagnosticKind> {
+    native_measured_height(f64::from(
+        native_measured_height(left)? as f32 + native_measured_height(right)? as f32,
+    ))
+}
+
+fn native_sub(left: f64, right: f64) -> Result<f64, ObjectDiagnosticKind> {
+    native_measured_height(f64::from(
+        native_measured_height(left)? as f32 - native_measured_height(right)? as f32,
+    ))
+}
+
+fn table_bands(
+    constraint: ObjectSpanLayoutConstraint,
+    candidate_top: f64,
+    renderer: &TextRenderer<'_>,
+) -> Result<BandList, ObjectDiagnosticKind> {
+    let rectangles = renderer.table_split_rects(constraint, candidate_top);
+    BandList::new(rectangles)
+}
+
+impl PreparedTable {
+    fn layout_cell(
+        &mut self,
+        row_index: usize,
+        column_index: usize,
+        table: &RichTextTable,
+        theme: RenderTheme,
+        renderer: &TextRenderer<'_>,
+    ) -> Result<(), ObjectDiagnosticKind> {
+        let cell = &mut self.rows[row_index].cells[column_index];
+        let source = &table.rows[row_index].cells[column_index];
+        let width = native_sub(cell.frame.x_max, cell.frame.x_min)? as f32 as i32;
+        let height = native_sub(cell.frame.y_max, cell.frame.y_min)? as f32 as i32;
+        if cell
+            .bands
+            .rectangles
+            .iter()
+            .any(|rect| rect.x_min > 0.0 || rect.x_max < f64::from(width))
+        {
+            return Err(ObjectDiagnosticKind::UnsupportedContent);
+        }
+        let exclusions = cell
+            .bands
+            .rectangles
+            .iter()
+            .map(|rect| VerticalExclusion::obstacle(rect.y_min, rect.y_max))
+            .collect::<Vec<_>>();
+        let styled = StyledText::new(&source.content, TextContext::Flow, renderer.settings);
+        let theme = theme.on_background(super::table_cell_background(source, theme));
+        let mut layout = super::text::layout_text(
+            &styled,
+            TextFrame {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: f64::from(width),
+                    y_max: f64::from(height),
+                },
+                gravity: Some(0),
+                exclusions: &exclusions,
+            },
+            theme,
+            renderer,
+        );
+        if !valid_cell_layout(&layout) {
+            return Err(ObjectDiagnosticKind::InvalidBounds);
+        }
+        let first_line_height = layout
+            .lines
+            .first()
+            .map(|line| native_sub(line.bottom, line.top))
+            .transpose()?
+            .unwrap_or(0.0);
+        let last_line_bottom = if source.content.text.is_empty() {
+            0.0
+        } else {
+            layout
+                .lines
+                .last()
+                .map(|line| native_measured_height(line.bottom))
+                .transpose()?
+                .unwrap_or(0.0)
+        };
+        let measured_height = if source.content.text.is_empty() {
+            native_measured_height(layout.height())?
+        } else {
+            native_add(
+                last_line_bottom,
+                renderer
+                    .settings
+                    .pixels(source.content.margins.unwrap_or([0.0; 4])[3]),
+            )?
+        };
+        layout.translate(cell.frame.x_min, cell.frame.y_min);
+        cell.layout = layout;
+        cell.metrics = CellMetrics {
+            measured_height,
+            first_line_height,
+            last_line_bottom,
+        };
+        Ok(())
+    }
+
+    fn row_height(&self, row_index: usize) -> Result<f64, ObjectDiagnosticKind> {
+        let frame = self.rows[row_index].cells[0].frame;
+        native_sub(frame.y_max, frame.y_min)
+    }
+
+    fn first_line_minimum(
+        &self,
+        row_index: usize,
+        table: &RichTextTable,
+        renderer: &TextRenderer<'_>,
+    ) -> Result<f64, ObjectDiagnosticKind> {
+        let mut height = 0.0_f64;
+        for cell in &self.rows[row_index].cells {
+            let source = &table.rows[row_index].cells[cell.column_index].content;
+            let cell_height = if source.text.is_empty() {
+                cell.metrics.measured_height
+            } else {
+                native_add(
+                    cell.metrics.first_line_height,
+                    renderer
+                        .settings
+                        .pixels(source.margins.unwrap_or([0.0; 4])[1]),
+                )?
+            };
+            height = height.max(cell_height);
+        }
+        if height == 0.0 {
+            self.row_height(0)
+        } else {
+            Ok(height)
+        }
+    }
+
+    fn update_geometry(
+        &mut self,
+        table: &RichTextTable,
+        renderer: &TextRenderer<'_>,
+    ) -> Result<(), ObjectDiagnosticKind> {
+        for row in &self.rows {
+            for cell in &row.cells {
+                let frame = cell.frame;
+                if [frame.x_min, frame.y_min, frame.x_max, frame.y_max]
+                    .into_iter()
+                    .any(|value| finite_native_geometry(value).is_none())
+                    || frame.x_max <= frame.x_min
+                    || frame.y_max < frame.y_min
+                    || !valid_cell_layout(&cell.layout)
+                {
+                    return Err(ObjectDiagnosticKind::InvalidBounds);
+                }
+            }
+        }
+        let first = self.rows[0].cells[0].frame;
+        let last = self.rows.last().unwrap().cells.last().unwrap().frame;
+        let [left, upper, right, bottom] = table_border_widths(table);
+        let expanded_left = native_sub(first.x_min, left / 2.0)?;
+        let expanded_top = native_sub(first.y_min, upper / 2.0)?;
+        self.measured_bbox = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: native_sub(native_add(last.x_max, right / 2.0)?, expanded_left)?,
+            y_max: native_sub(native_add(last.y_max, bottom / 2.0)?, expanded_top)?,
+        };
+        if self.measured_bbox.x_max <= 0.0 || self.measured_bbox.y_max <= 0.0 {
+            return Err(ObjectDiagnosticKind::InvalidBounds);
+        }
+        self.min_first_page_height =
+            native_add(self.first_line_minimum(0, table, renderer)?, first.y_min)?;
+        Ok(())
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -371,7 +523,7 @@ mod tests {
     use super::*;
     use crate::{RichTextBox, RichTextTableRow, TableEdgeStyle, TableRecordMetadata, TableStyle};
 
-    fn grid(heights: &[f32], widths: &[f32]) -> RichTextTable {
+    pub(super) fn grid(heights: &[f32], widths: &[f32]) -> RichTextTable {
         let mut table = table();
         table.column_widths = widths.to_vec();
         table.rows = heights
@@ -395,7 +547,7 @@ mod tests {
         table
     }
 
-    fn prepared(table: &RichTextTable) -> PreparedTable {
+    pub(super) fn prepared(table: &RichTextTable) -> PreparedTable {
         let fonts = crate::fonts::FontBook::default();
         let renderer = TextRenderer::new(
             super::super::text::TextSettings {
@@ -511,6 +663,74 @@ mod tests {
     }
 
     #[test]
+    fn cold_growth_preserves_native_positive_deltas_below_one_thousandth() {
+        for saved_height in [45.0_f32 - 0.0005, 45.0_f32 - 0.002] {
+            let mut table = grid(&[saved_height, 100.0], &[200.0]);
+            table.rows[0].cells[0].content.font_size = Some(15.0);
+            let plan = prepared(&table);
+            assert_eq!(plan.rows[0].cells[0].metrics.measured_height, 45.0);
+            assert_eq!(plan.rows[0].cells[0].frame.y_max, 45.5);
+            assert_eq!(plan.rows[1].cells[0].frame.y_min, 45.5);
+        }
+    }
+
+    #[test]
+    fn warm_empty_band_callback_shrinks_frames_and_keeps_selectable_source() {
+        let mut table = grid(&[100.0], &[200.5]);
+        let content = &mut table.rows[0].cells[0].content;
+        content.text = "A".into();
+        content.font_size = Some(10.0);
+        content.margins = Some([0.0, 0.0, 0.0, 2.0]);
+        table.style.auto_fit = Some(crate::TableAutoFit::Both);
+        table.style.min_column_width = Some(500.0);
+        table.style.min_row_height = Some(500.0);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let mut plan = prepare_table(
+            &table,
+            ObjectSpanLayoutConstraint::OverPages,
+            0.0,
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(plan.row_height(0).unwrap(), 100.0);
+        close(plan.rows[0].cells[0].layout.lines[0].baseline, 10.5);
+        plan.relayout(&table, 0.0, theme, &renderer).unwrap();
+        assert_eq!(plan.row_height(0).unwrap(), 15.5);
+        assert_eq!(plan.measured_bbox.y_max, 16.5);
+        assert_eq!(plan.rows[0].cells[0].frame.x_max, 201.0);
+        assert_eq!(plan.rows[0].cells[0].layout.lines[0].line.source, 0..1);
+        assert_eq!(plan.min_first_page_height, 14.0);
+    }
+
+    #[test]
+    fn cell_metrics_distinguish_empty_cursor_height_from_last_output_line() {
+        let mut table = grid(&[100.0], &[200.0]);
+        table.rows[0].cells[0].content.font_size = Some(10.0);
+        table.rows[0].cells[0].content.margins = Some([0.0, 2.0, 0.0, 3.0]);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let mut plan = prepare_table(
+            &table,
+            ObjectSpanLayoutConstraint::OverPages,
+            0.0,
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(plan.rows[0].cells[0].metrics.measured_height, 15.0);
+        assert_eq!(plan.rows[0].cells[0].metrics.last_line_bottom, 0.0);
+        plan.relayout(&table, 0.0, theme, &renderer).unwrap();
+        assert_eq!(plan.row_height(0).unwrap(), 15.0);
+        assert_eq!(plan.min_first_page_height, 15.5);
+    }
+
+    #[test]
     fn drawable_outer_border_offset_is_distinct_from_drawn_boundary_cell_expansion() {
         let mut table = grid(&[108.0], &[100.0]);
         table.style.border = Some(border([2.0, 4.0, 6.0, 8.0], 0xff000000));
@@ -543,7 +763,7 @@ mod tests {
     }
 
     #[test]
-    fn child_split_bands_leave_the_stateful_table_path_explicitly_unsupported() {
+    fn child_split_bands_are_retained_even_when_beyond_the_first_row() {
         let document = crate::Document {
             pages: vec![crate::Page {
                 uuid: "page".into(),
@@ -570,16 +790,16 @@ mod tests {
             ObjectSpanLayoutConstraint::OverPages,
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
         ] {
-            assert!(
-                prepare_table(
-                    &table,
-                    constraint,
-                    100.0,
-                    RenderTheme::for_canvas(false),
-                    &renderer
-                )
-                .is_none()
-            );
+            let plan = prepare_table(
+                &table,
+                constraint,
+                100.0,
+                RenderTheme::for_canvas(false),
+                &renderer,
+            )
+            .unwrap()
+            .unwrap();
+            assert!(!plan.rows[0].cells[0].bands.rectangles.is_empty());
             assert!(
                 prepare_table(
                     &table,
@@ -614,9 +834,12 @@ mod tests {
         assert!(prepare(&merged, ObjectSpanLayoutConstraint::OverPages).is_none());
         let mut fractional = original.clone();
         fractional.column_widths[0] = 200.5;
-        assert!(prepare(&fractional, ObjectSpanLayoutConstraint::OverPages).is_none());
+        let fractional = prepare(&fractional, ObjectSpanLayoutConstraint::OverPages)
+            .unwrap()
+            .unwrap();
+        assert_eq!(fractional.rows[0].cells[0].frame.x_max, 201.0);
         let mut overridden = original.clone();
-        overridden.style.min_column_width = Some(0.0);
+        overridden.style.content_bbox = Some(BoundingBox::default());
         assert!(prepare(&overridden, ObjectSpanLayoutConstraint::OverPages).is_none());
         let mut invalid_width = original.clone();
         invalid_width.column_widths[0] = f32::NAN;

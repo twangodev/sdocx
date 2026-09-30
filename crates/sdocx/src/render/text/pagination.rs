@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use crate::{Document, ObjectSpanLayoutConstraint};
+use crate::{BoundingBox, Document, ObjectSpanLayoutConstraint};
 
 use super::{TextSettings, VerticalExclusion};
 
@@ -8,6 +8,7 @@ use super::{TextSettings, VerticalExclusion};
 pub(in crate::render) struct PageExclusions {
     boundaries: Vec<f64>,
     padding: f64,
+    max_width: f64,
 }
 
 impl PageExclusions {
@@ -47,6 +48,7 @@ impl PageExclusions {
         Some(Self {
             boundaries,
             padding: settings.pixels(10.0),
+            max_width: pages.iter().map(|page| page.width).max().map(f64::from)?,
         })
     }
 
@@ -98,6 +100,24 @@ impl PageExclusions {
                 .collect(),
             _ => Vec::new(),
         }
+    }
+
+    pub fn table_split_rects(
+        &self,
+        constraint: ObjectSpanLayoutConstraint,
+        candidate_top: f64,
+    ) -> Vec<BoundingBox> {
+        let candidate_top = candidate_top as f32;
+        self.for_object(constraint, f64::from(candidate_top))
+            .into_iter()
+            .filter(|band| band.bottom as f32 > candidate_top)
+            .map(|band| BoundingBox {
+                x_min: 0.0,
+                x_max: f64::from(self.max_width as f32),
+                y_min: f64::from(band.top as f32 - candidate_top),
+                y_max: f64::from(band.bottom as f32 - candidate_top),
+            })
+            .collect()
     }
 }
 
@@ -160,6 +180,72 @@ mod tests {
         assert!(PageExclusions::for_range(&document, 1..=4, settings).is_none());
         let reversed = (2_usize, 1_usize);
         assert!(PageExclusions::for_range(&document, reversed.0..=reversed.1, settings).is_none());
+    }
+
+    #[test]
+    fn table_split_rects_use_the_selected_page_maximum_width_and_local_y_only() {
+        let mut document = document(&[80, 80, 80], Some(0));
+        document.metadata.default_page_dimensions = Some((360, 80));
+        document.pages[0].width = 900;
+        document.pages[1].width = 300;
+        document.pages[2].width = 400;
+        let settings = TextSettings::from_document(&document.metadata);
+        let pages = PageExclusions::for_range(&document, 1..=2, settings).unwrap();
+        let full = pages.table_split_rects(ObjectSpanLayoutConstraint::OverPages, 10.0);
+        assert_eq!(
+            full,
+            [
+                BoundingBox {
+                    x_min: 0.0,
+                    x_max: 400.0,
+                    y_min: 60.0,
+                    y_max: 80.0
+                },
+                BoundingBox {
+                    x_min: 0.0,
+                    x_max: 400.0,
+                    y_min: 140.0,
+                    y_max: 160.0
+                },
+            ]
+        );
+        let stripes =
+            pages.table_split_rects(ObjectSpanLayoutConstraint::OverPagesOverlapPadding, 10.0);
+        assert_eq!(
+            stripes,
+            [
+                BoundingBox {
+                    x_min: 0.0,
+                    x_max: 400.0,
+                    y_min: 70.0,
+                    y_max: 71.0
+                },
+                BoundingBox {
+                    x_min: 0.0,
+                    x_max: 400.0,
+                    y_min: 150.0,
+                    y_max: 151.0
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn table_split_offset_rounds_the_candidate_before_native_subtraction() {
+        let pages = PageExclusions {
+            boundaries: vec![80.0],
+            padding: 10.0,
+            max_width: 100.0,
+        };
+        assert_eq!(
+            pages.table_split_rects(ObjectSpanLayoutConstraint::OverPages, 69.999_999_1),
+            [BoundingBox {
+                x_min: 0.0,
+                x_max: 100.0,
+                y_min: 0.0,
+                y_max: 20.0
+            }]
+        );
     }
 
     #[test]

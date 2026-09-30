@@ -241,12 +241,14 @@ Y within 0.000045 units. Numbered-item body X retains an approximately
 must not emit SVG text. Their original coordinates remain in the fixture.
 The post-code ordinary-text error improved from about -15 units to +0.75.
 Table-cell placement and post-code ordinary text remain outside the passing
-native subset. Prepared table pagination and spanning frames are also
-unfinished; current whole-table padding avoidance can misplace long tables.
-The cold table subset now retains regenerated cell frames and shared text
-layouts for complete unmerged over-pages grids with empty split lists. Numeric
-regressions cover native frame origins, row growth, first-row minima, and
-selectable SVG/PDF text; this subset does not establish warm spanning parity.
+native subset. Prepared table pagination now retains regenerated cell frames
+and shared text layouts for complete unmerged over-pages grids. Numeric
+regressions cover cold row growth, warm shrink/grow ordering, first-row minima,
+first-band cache comparison, retained page gaps and trailing-space compression.
+Public SVG/PDF regressions cover both page split modes and candidate retries,
+including visible-only fonts and diagnostics. Merged/sparse grids, nested child
+objects and partial horizontal obstacles remain outside this prepared subset;
+captured table placement still needs its composition-origin producer resolved.
 See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
 for the producers and measured residuals. Recomputed pagination and full
 document composition parity remain incomplete. Samsung device-default fonts,
