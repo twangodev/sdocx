@@ -623,6 +623,25 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
         .collect();
     assert_eq!(shapes.len(), 5);
     assert!(shapes.iter().all(|shape| shape.text_editable));
+    let native_rect = |bounds: sdocx::BoundingBox| {
+        [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max]
+            .map(|value| (value as f32).to_bits())
+    };
+    for shape in &shapes {
+        assert_eq!(
+            native_rect(shape.metadata.bbox),
+            native_rect(shape.drawn_bbox),
+            "template {} reloads without native saved-bounds resizing",
+            shape.shape_type,
+        );
+        assert_ne!(
+            native_rect(shape.geometry_bbox),
+            native_rect(shape.drawn_bbox)
+        );
+        assert_eq!(shape.rotation_degrees, 0.0);
+        assert_eq!(shape.metadata.rotation_degrees, None);
+        assert!(shape.text.as_ref().is_none_or(|text| text.text.is_empty()));
+    }
     assert_eq!(page.template.unwrap().id, 7);
     assert_eq!(page.background.image_mode, Some(2));
     assert_eq!(page.background.width, Some(1848));

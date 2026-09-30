@@ -195,9 +195,9 @@ underflow (`0x2145bc`); common rounded/hexagon projection uses divisor 1.
 Polygon margin getters retain finite signed insets (`0x21b740`–`0x21b774`,
 `0x217564`–`0x2175e0`); Rust validates the resulting frame instead of clamping
 those margins to zero.
-Model's subsequent `Refresh` and saved-bounds/nonunit-scale path
-(`0x3a96b8` to `0x3a9af0`/`0x3a9c40`, virtual slot 24, and
-`0x3a96c8`–`0x3a96f0`) is not fully implemented or proven for these adapters.
+Model's subsequent saved-bounds `Refresh` has a separate load-state contract,
+described below. Changed bounds and nonunit load magnification still require
+per-template resize replay beyond these adapters.
 The covered contracts do not establish unrestricted template parity.
 Unsupported nonempty shape text retains its saved frame with `UnsupportedTextFrame`;
 invalid known geometry reports `InvalidGeometry` and stays in placed context.
@@ -214,6 +214,35 @@ wrapping/alignment/gravity, original background clips, replay and selectable
 Unicode PDF output. Non-cardinal source-instruction literals in
 [`placed/native.rs`](../../crates/sdocx/src/render/placed/native.rs) pin the
 center arithmetic and narrowing stages; these are not Android runtime captures.
+
+### Saved-bounds refresh
+
+`ObjectShape::NewGetBinary`, `0x399b40`, snapshots geometry `G`, drawn bounds
+`D` and rotation `R` (`0x399b84`–`0x399bbc`). For type 7 it temporarily puts
+`D` and zero rotation into the base frame (`0x399bd0`–`0x399be8`), writes both
+frames, then restores `G/R` (`0x399cb4`–`0x399ccc`). Normal unscaled loading
+therefore starts with current owner bounds `C == D`, even when `G != D`.
+
+After path/control replay, `Refresh`, `0x3a9af0`, compares narrowed `D` with
+the current owner base rectangle `C` (`0x3a9b80`, getter `0x37aa94`). Equal
+bounds cache `G` without calling template slot 24 (`0x3a9bd4`–`0x3a9bdc`).
+All five HF02 shapes have identical base/drawn `f32` endpoint bits, distinct
+geometry bounds, zero shape rotation and absent base rotation. The locked
+corpus regression preserves those predicates. Using saved `G/R` for their
+text frames is consistent with this ordinary load branch.
+
+Changed bounds inverse-rotate `C/D`, affine-map `G` between those rectangles
+with separate `f32` operations and FMAs, then call template slot 24
+(`0x3a9bf0`–`0x3a9c40`). Load magnification comes from the current supplied
+axis divided by the stored orientation-selected axis (`0x2db4b8`–`0x2db4cc`).
+Nonunit loading separately resets template bounds to scaled original `G`
+after Refresh (`0x3a96c8`–`0x3a96f0`), while the owner receives Refresh's
+cached rectangle/rotation (`0x399edc`–`0x399ef8`). These are separate states.
+Common slot 24 (`0x20dba0`) transforms retained paths through `0x20dd10`;
+templates can override it. Scaling the saved rectangle alone does not replay
+those path/control-dependent margins. Changed-bounds, nonunit and additional
+owner-rotation cases remain outside the proven current adapter scope, and
+HF02's empty text does not establish typography parity for them.
 
 ## Native text backgrounds and current vector limits
 
