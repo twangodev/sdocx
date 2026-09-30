@@ -97,10 +97,7 @@ impl TextCursor {
         self.position += self.pending_bottom.max(top_margin);
         self.pending_bottom = bottom_margin;
         let has_objects = !line.objects.is_empty();
-        let block = line.placements.is_empty()
-            && line.objects.iter().any(|object| !object.object.inline)
-            && top_margin > 0.0
-            && bottom_margin > 0.0;
+        let block = line.has_block_margins();
         let base_height = line.font_size.max(line.object_height());
         let advance = if block {
             base_height
@@ -206,6 +203,7 @@ pub(in crate::render) fn layout_text(
 ) -> TextLayout {
     let text_box = styled.text_box;
     let settings = renderer.settings;
+    renderer.report_geometry_issues(styled.geometry_issues());
     let margins = text_box
         .margins
         .unwrap_or([0.0; 4])
@@ -225,6 +223,10 @@ pub(in crate::render) fn layout_text(
         let layout = paragraph_layout(text_box, ordinal, settings);
         let x = content_left + layout.left_indent(settings);
         let width = (content_right - x).max(0.0);
+        if layout.spacing_before_invalid {
+            let style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+            renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+        }
         cursor.add_spacing(layout.spacing_before);
         for line in measure_paragraph(
             styled,
@@ -234,6 +236,7 @@ pub(in crate::render) fn layout_text(
             layout.predefined_style,
             renderer,
         ) {
+            renderer.report_line_geometry(&line, layout.line_spacing);
             let baseline = cursor.place(&line, layout.line_spacing, &frame, settings);
             lines.push(TextLine {
                 line,
@@ -245,6 +248,11 @@ pub(in crate::render) fn layout_text(
             });
         }
         if paragraph_number + 1 < paragraphs.len() {
+            if layout.spacing_after_invalid {
+                let style =
+                    styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+            }
             cursor.add_spacing(layout.spacing_after);
         }
     }

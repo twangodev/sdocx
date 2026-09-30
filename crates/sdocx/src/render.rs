@@ -852,6 +852,7 @@ fn render_flow_text_box(
     let characters = text_box.text.chars().collect::<Vec<_>>();
     let styled = StyledText::new(text_box, TextContext::Flow, settings);
     renderer.report_object_issues(styled.object_issues());
+    renderer.report_geometry_issues(styled.geometry_issues());
     let mut paragraph_start = 0_usize;
     let mut cursor = text::TextCursor::new(content_top);
     let frame = text::TextFrame {
@@ -886,6 +887,10 @@ fn render_flow_text_box(
                 .and_then(bullet_marker)
                 .is_some();
             if paragraph_start != 0 && !(previous_is_list_item && current_is_list_item) {
+                if layout.spacing_before_invalid {
+                    let style = styled.style_at(paragraph_start, theme, layout.predefined_style);
+                    renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+                }
                 cursor.add_spacing(layout.spacing_before);
             }
 
@@ -906,6 +911,7 @@ fn render_flow_text_box(
                 renderer,
             );
             for (line_index, line) in lines.iter().enumerate() {
+                renderer.report_line_geometry(line, layout.line_spacing);
                 let mut baseline = cursor.place(line, layout.line_spacing, &frame, settings);
                 if paragraph_start == 0
                     && line_index == 0
@@ -960,7 +966,11 @@ fn render_flow_text_box(
                     renderer,
                 );
             }
-            if !(current_is_list_item && next_is_list_item) {
+            if next_start < characters.len() && !(current_is_list_item && next_is_list_item) {
+                if layout.spacing_after_invalid {
+                    let style = styled.style_at(paragraph_start, theme, layout.predefined_style);
+                    renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+                }
                 cursor.add_spacing(layout.spacing_after);
             }
             paragraph_start += paragraph.chars().count();

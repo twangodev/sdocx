@@ -3,8 +3,12 @@ use std::cell::RefCell;
 use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
 
 use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind};
-use super::{PageExclusions, TextContext, TextSettings, TextStyle, VerticalExclusion};
+use super::{
+    PageExclusions, TextContext, TextSettings, TextStyle, VerticalExclusion, WrappedLine,
+    explicit_line_height, finite_native_geometry,
+};
 use crate::render::vector::{EmbeddedFont, Scene};
+use crate::{LineSpacingType, ParagraphLineSpacing};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -13,6 +17,7 @@ pub enum TextDiagnosticKind {
     UnusableFontData,
     MissingGlyphs,
     MeasurementFailure,
+    InvalidGeometry,
     /// Measured glyph positions cannot be reproduced by independently positioned SVG text.
     UnsupportedGlyphPositioning,
 }
@@ -184,6 +189,45 @@ impl<'a> TextRenderer<'a> {
         }
     }
 
+    pub fn report_geometry_issues(&self, issues: &[TextDiagnostic]) {
+        for issue in issues {
+            self.record(issue.clone());
+        }
+    }
+
+    pub fn invalid_geometry(&self, family: &str) {
+        self.record(TextDiagnostic {
+            kind: TextDiagnosticKind::InvalidGeometry,
+            family: family.into(),
+            codepoints: Vec::new(),
+        });
+    }
+
+    pub fn report_line_geometry(&self, line: &WrappedLine, spacing: Option<ParagraphLineSpacing>) {
+        if line.has_block_margins() {
+            return;
+        }
+        let explicit_height = spacing
+            .and_then(|spacing| explicit_line_height(line.font_size, spacing, self.settings));
+        let invalid_spacing = spacing.is_some_and(|spacing| {
+            matches!(
+                spacing.kind,
+                LineSpacingType::Pixels | LineSpacingType::Percent
+            ) && (spacing.value > 0.0 || !spacing.value.is_finite())
+                && explicit_height.is_none()
+        });
+        let invalid_default_height =
+            explicit_height.is_none() && finite_native_geometry(line.font_size * 1.35).is_none();
+        if invalid_spacing || invalid_default_height {
+            let family = line
+                .placements
+                .first()
+                .and_then(|placement| placement.cluster.run.style.family.as_deref())
+                .unwrap_or("Roboto");
+            self.invalid_geometry(family);
+        }
+    }
+
     pub fn object_layout_unsupported(&self, anchor_utf16: i32) {
         self.report_object_issues(&[ObjectDiagnostic {
             anchor_utf16,
@@ -280,6 +324,56 @@ mod tests {
         assert_eq!(output.link_target, style.link_target);
         assert!(renderer.diagnostics().is_empty());
         assert!(renderer.faces.borrow().is_empty());
+    }
+
+    #[test]
+    fn geometry_diagnostics_merge_cached_and_used_spacing_issues() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        let issue = TextDiagnostic {
+            kind: TextDiagnosticKind::InvalidGeometry,
+            family: "Roboto".into(),
+            codepoints: Vec::new(),
+        };
+        renderer.report_geometry_issues(std::slice::from_ref(&issue));
+        renderer.report_geometry_issues(std::slice::from_ref(&issue));
+        renderer.invalid_geometry("Roboto");
+        assert_eq!(renderer.diagnostics(), [issue]);
+    }
+
+    #[test]
+    fn margin_blocks_skip_unused_line_spacing_validation() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        let spacing = Some(ParagraphLineSpacing {
+            kind: LineSpacingType::Percent,
+            value: f32::MAX,
+        });
+        let mut line = WrappedLine::unmeasured(0..1, 45.0);
+        line.objects.push(super::super::wrapping::PositionedObject {
+            x: 0.0,
+            object: super::super::objects::MeasuredObject {
+                source: 0..1,
+                span_index: 0,
+                bounds: crate::BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 100.0,
+                    y_max: 80.0,
+                },
+                inline: false,
+                top_margin: 10.0,
+                bottom_margin: 10.0,
+            },
+        });
+        renderer.report_line_geometry(&line, spacing);
+        assert!(renderer.diagnostics().is_empty());
+        line.objects[0].object.inline = true;
+        renderer.report_line_geometry(&line, spacing);
+        assert_eq!(
+            renderer.diagnostics()[0].kind,
+            TextDiagnosticKind::InvalidGeometry
+        );
     }
 
     #[test]

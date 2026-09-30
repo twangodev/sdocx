@@ -70,6 +70,14 @@ impl WrappedLine {
         })
     }
 
+    pub fn has_block_margins(&self) -> bool {
+        let [top, bottom] = self.object_margins();
+        self.placements.is_empty()
+            && self.objects.iter().any(|object| !object.object.inline)
+            && top > 0.0
+            && bottom > 0.0
+    }
+
     pub fn object_margins(&self) -> [f64; 2] {
         self.objects
             .iter()
