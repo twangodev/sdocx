@@ -148,7 +148,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     let supported_path = if path_data.is_empty() {
         false
     } else {
-        let (size, supported) = visit_path(&path_data, |_, _| {})?;
+        let (size, supported) = visit_path(&path_data, |_| {})?;
         if !supported || size != path_data.len() {
             unsupported.push("unsupported native path commands or trailing data");
         }
@@ -293,7 +293,7 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
             .transpose()?;
         if frame.fields.contains(3) {
             let bytes = &frame.flexible[fields.position()..];
-            let (size, supported) = visit_path(bytes, |_, _| {})?;
+            let (size, supported) = visit_path(bytes, |_| {})?;
             path_data = fields.read_bytes(size, "line path")?.to_vec();
             if !supported {
                 unsupported.push("unsupported native path commands");
@@ -474,12 +474,34 @@ fn same_bbox(a: BoundingBox, b: BoundingBox) -> bool {
     a.x_min == b.x_min && a.y_min == b.y_min && a.x_max == b.x_max && a.y_max == b.y_max
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum NativePathCommand {
+    Move([f64; 2]),
+    Line([f64; 2]),
+    Quadratic([[f64; 2]; 2]),
+    Cubic([[f64; 2]; 3]),
+    Arc([f64; 6]),
+    Close,
+    Oval([f64; 4]),
+}
+
 /// Visit native WDoc path commands without allocating from the untrusted count.
 /// Unknown verbs have unknown widths; their bounded remainder stays opaque.
 pub(crate) fn visit_path(
     data: &[u8],
-    mut visitor: impl FnMut(u8, &[f64]),
+    mut visitor: impl FnMut(NativePathCommand),
 ) -> Result<(usize, bool)> {
+    fn coordinates<const N: usize>(reader: &mut Reader<'_>) -> Result<[f64; N]> {
+        let mut values = [0.0; N];
+        for value in &mut values {
+            *value = reader.read_f64("path coordinate")?;
+            if !value.is_finite() {
+                return Err(Error::Format("non-finite path coordinate".into()));
+            }
+        }
+        Ok(values)
+    }
+
     let mut reader = Reader::new(data, "native shape path");
     let count = reader.read_u32("path command count")? as usize;
     if count > reader.remaining() {
@@ -490,22 +512,27 @@ pub(crate) fn visit_path(
     let mut supported = count != 0;
     for index in 0..count {
         let verb = reader.read_u8("path verb")?;
-        let values = match verb {
-            1 | 2 => 2,
-            3 | 7 => 4,
-            4 | 5 => 6,
-            6 => 0,
+        let command = match verb {
+            1 => NativePathCommand::Move(coordinates(&mut reader)?),
+            2 => NativePathCommand::Line(coordinates(&mut reader)?),
+            3 => {
+                let [x1, y1, x2, y2] = coordinates(&mut reader)?;
+                NativePathCommand::Quadratic([[x1, y1], [x2, y2]])
+            }
+            4 => {
+                let [x1, y1, x2, y2, x3, y3] = coordinates(&mut reader)?;
+                NativePathCommand::Cubic([[x1, y1], [x2, y2], [x3, y3]])
+            }
+            5 => NativePathCommand::Arc(coordinates(&mut reader)?),
+            6 => NativePathCommand::Close,
+            7 => NativePathCommand::Oval(coordinates(&mut reader)?),
             _ => return Ok((data.len(), false)),
         };
-        let mut coordinates = [0.0; 6];
-        for value in &mut coordinates[..values] {
-            *value = reader.read_f64("path coordinate")?;
-            if !value.is_finite() {
-                return Err(Error::Format("non-finite path coordinate".into()));
-            }
-        }
-        supported &= matches!(verb, 1..=4 | 6) && (index != 0 || verb == 1);
-        visitor(verb, &coordinates[..values]);
+        supported &= !matches!(
+            command,
+            NativePathCommand::Arc(_) | NativePathCommand::Oval(_)
+        ) && (index != 0 || matches!(command, NativePathCommand::Move(_)));
+        visitor(command);
     }
     Ok((reader.position(), supported))
 }
@@ -518,4 +545,131 @@ fn read_extensions(reader: &mut Reader<'_>, unsupported: &mut Vec<&'static str>)
         unsupported.push("additional shape/line frames");
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{NativePathCommand, visit_path};
+
+    fn path(commands: &[(u8, &[f64])]) -> Vec<u8> {
+        let mut bytes = (commands.len() as u32).to_le_bytes().to_vec();
+        for (verb, coordinates) in commands {
+            bytes.push(*verb);
+            for value in *coordinates {
+                bytes.extend(value.to_le_bytes());
+            }
+        }
+        bytes
+    }
+
+    #[test]
+    fn path_commands_preserve_typed_points_and_control_point_order() {
+        let bytes = path(&[
+            (1, &[1.25, -2.5]),
+            (2, &[3.0, 4.0]),
+            (3, &[5.0, 6.0, 7.0, 8.0]),
+            (4, &[9.0, 10.0, 11.0, 12.0, 13.0, 14.0]),
+            (6, &[]),
+        ]);
+        let mut commands = Vec::new();
+        assert_eq!(
+            visit_path(&bytes, |command| commands.push(command)).unwrap(),
+            (bytes.len(), true)
+        );
+        assert_eq!(
+            commands,
+            [
+                NativePathCommand::Move([1.25, -2.5]),
+                NativePathCommand::Line([3.0, 4.0]),
+                NativePathCommand::Quadratic([[5.0, 6.0], [7.0, 8.0]]),
+                NativePathCommand::Cubic([[9.0, 10.0], [11.0, 12.0], [13.0, 14.0]]),
+                NativePathCommand::Close,
+            ]
+        );
+    }
+
+    #[test]
+    fn opaque_arc_and_oval_keep_known_widths_without_enabling_rendering() {
+        let bytes = path(&[
+            (1, &[1.0, 2.0]),
+            (5, &[3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+            (7, &[9.0, 10.0, 11.0, 12.0]),
+            (2, &[13.0, 14.0]),
+        ]);
+        let mut commands = Vec::new();
+        assert_eq!(
+            visit_path(&bytes, |command| commands.push(command)).unwrap(),
+            (bytes.len(), false)
+        );
+        assert_eq!(
+            commands,
+            [
+                NativePathCommand::Move([1.0, 2.0]),
+                NativePathCommand::Arc([3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+                NativePathCommand::Oval([9.0, 10.0, 11.0, 12.0]),
+                NativePathCommand::Line([13.0, 14.0]),
+            ]
+        );
+    }
+
+    #[test]
+    fn malformed_commands_never_visit_partial_coordinates() {
+        for (verb, coordinates) in [
+            (2, &[3.0, 4.0][..]),
+            (3, &[3.0, 4.0, 5.0, 6.0][..]),
+            (4, &[3.0, 4.0, 5.0, 6.0, 7.0, 8.0][..]),
+            (5, &[3.0, 4.0, 5.0, 6.0, 7.0, 8.0][..]),
+            (7, &[3.0, 4.0, 5.0, 6.0][..]),
+        ] {
+            let bytes = path(&[(1, &[1.0, 2.0]), (verb, coordinates)]);
+            for end in 22..bytes.len() {
+                let mut visited = Vec::new();
+                assert!(visit_path(&bytes[..end], |command| visited.push(command)).is_err());
+                assert_eq!(visited, [NativePathCommand::Move([1.0, 2.0])]);
+            }
+        }
+        for bytes in [&[][..], &[1, 0, 0][..], &u32::MAX.to_le_bytes()[..]] {
+            let mut visited = 0;
+            assert!(visit_path(bytes, |_| visited += 1).is_err());
+            assert_eq!(visited, 0);
+        }
+    }
+
+    #[test]
+    fn nonfinite_commands_reject_the_path_after_only_complete_prefix_visits() {
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let bytes = path(&[(1, &[1.0, 2.0]), (2, &[value, 4.0])]);
+            let mut visited = Vec::new();
+            assert!(visit_path(&bytes, |command| visited.push(command)).is_err());
+            assert_eq!(visited, [NativePathCommand::Move([1.0, 2.0])]);
+        }
+    }
+
+    #[test]
+    fn unknown_verbs_preserve_only_the_complete_prefix_and_opaque_remainder() {
+        let mut bytes = path(&[(1, &[1.0, 2.0]), (99, &[])]);
+        bytes.extend(f64::NAN.to_le_bytes());
+        bytes.push(4);
+        let mut visited = Vec::new();
+        assert_eq!(
+            visit_path(&bytes, |command| visited.push(command)).unwrap(),
+            (bytes.len(), false)
+        );
+        assert_eq!(visited, [NativePathCommand::Move([1.0, 2.0])]);
+    }
+
+    #[test]
+    fn complete_support_requires_a_move_and_exact_payload_extent() {
+        for bytes in [path(&[]), path(&[(2, &[1.0, 2.0])]), path(&[(6, &[])])] {
+            assert_eq!(visit_path(&bytes, |_| {}).unwrap(), (bytes.len(), false));
+        }
+        let mut trailing = path(&[(1, &[1.0, 2.0]), (6, &[])]);
+        let command_extent = trailing.len();
+        trailing.push(0xff);
+        assert_eq!(
+            visit_path(&trailing, |_| {}).unwrap(),
+            (command_extent, true)
+        );
+        assert_ne!(command_extent, trailing.len());
+    }
 }

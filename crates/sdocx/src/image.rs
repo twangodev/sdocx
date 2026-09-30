@@ -2,7 +2,7 @@ use crate::binary::Reader;
 use crate::frame::Frame;
 use crate::media::MediaResolver;
 use crate::object::read_bbox;
-use crate::shape::{read_style, visit_path};
+use crate::shape::{NativePathCommand, read_style, visit_path};
 use crate::{
     BoundingBox, DiagnosticCode, Error, ObjectMetadata, ObjectSpanLayoutConstraint,
     ObjectSpanLayoutOption, ObjectType, ParseReport, PlacedImage, Result, RichTextBox,
@@ -282,11 +282,13 @@ fn is_placement_rectangle(data: &[u8], bbox: BoundingBox, rotation: f64) -> Resu
     let mut points = [[0.0; 2]; 4];
     let mut commands = 0;
     let mut rectangular = true;
-    let (consumed, supported) = visit_path(data, |verb, coordinates| {
-        if commands < 4 && verb == if commands == 0 { 1 } else { 2 } {
-            points[commands].copy_from_slice(coordinates);
-        } else if commands != 4 || verb != 6 {
-            rectangular = false;
+    let (consumed, supported) = visit_path(data, |command| {
+        match (commands, command) {
+            (0, NativePathCommand::Move(point)) | (1..=3, NativePathCommand::Line(point)) => {
+                points[commands] = point;
+            }
+            (4, NativePathCommand::Close) => {}
+            _ => rectangular = false,
         }
         commands += 1;
     })?;

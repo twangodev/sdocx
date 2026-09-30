@@ -692,24 +692,47 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
 // Both shape and line writers serialize the drawing path in page coordinates,
 // including rotation. Reject an unsupported path as a whole, never draw a prefix.
 fn native_svg_path(bytes: &[u8]) -> Option<Data> {
+    use crate::shape::NativePathCommand;
+
+    fn coordinates<const N: usize>(values: [f64; N]) -> Option<[f32; N]> {
+        let values = values.map(|value| coordinate(value, 2));
+        values
+            .iter()
+            .all(|value| value.is_finite())
+            .then_some(values)
+    }
+
+    fn append(data: Data, command: NativePathCommand) -> Option<Data> {
+        Some(match command {
+            NativePathCommand::Move(point) => {
+                let [x, y] = coordinates(point)?;
+                data.move_to((x, y))
+            }
+            NativePathCommand::Line(point) => {
+                let [x, y] = coordinates(point)?;
+                data.line_to((x, y))
+            }
+            NativePathCommand::Quadratic([[x1, y1], [x, y]]) => {
+                let [x1, y1, x, y] = coordinates([x1, y1, x, y])?;
+                data.quadratic_curve_to((x1, y1, x, y))
+            }
+            NativePathCommand::Cubic([[x1, y1], [x2, y2], [x, y]]) => {
+                let [x1, y1, x2, y2, x, y] = coordinates([x1, y1, x2, y2, x, y])?;
+                data.cubic_curve_to((x1, y1, x2, y2, x, y))
+            }
+            NativePathCommand::Close => data.close(),
+            NativePathCommand::Arc(_) | NativePathCommand::Oval(_) => data,
+        })
+    }
+
     let mut data = Data::new();
     let mut representable = true;
-    let parsed = crate::shape::visit_path(bytes, |verb, values| {
-        let v: Vec<f32> = values.iter().map(|&value| coordinate(value, 2)).collect();
-        if v.iter().any(|value| !value.is_finite()) {
+    let parsed = crate::shape::visit_path(bytes, |command| {
+        if let Some(next) = append(std::mem::take(&mut data), command) {
+            data = next;
+        } else {
             representable = false;
-            return;
         }
-        data = match (verb, v.as_slice()) {
-            (1, &[x, y]) => std::mem::take(&mut data).move_to((x, y)),
-            (2, &[x, y]) => std::mem::take(&mut data).line_to((x, y)),
-            (3, &[x1, y1, x, y]) => std::mem::take(&mut data).quadratic_curve_to((x1, y1, x, y)),
-            (4, &[x1, y1, x2, y2, x, y]) => {
-                std::mem::take(&mut data).cubic_curve_to((x1, y1, x2, y2, x, y))
-            }
-            (6, &[]) => std::mem::take(&mut data).close(),
-            _ => return,
-        };
     });
     parsed
         .ok()
