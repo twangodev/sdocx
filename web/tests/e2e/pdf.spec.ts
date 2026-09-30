@@ -137,6 +137,100 @@ test('WASM PDF API validates page, color, fonts and disposed sessions', async ({
 	expect(errors.disposed).toContain('disposed');
 });
 
+test('standalone SVG images use the pinned Rust font without network requests', async ({ page, browserName }) => {
+	test.skip(browserName !== 'chromium', 'Chromium preview and vector exports are the immediate target.');
+	await page.route('https://rybbit.twango.dev/api/script.js', route => route.fulfill({ body: '' }));
+	await page.goto('/');
+	await expect(page.getByRole('heading', { name: 'Your notes, in one place', exact: true })).toBeVisible();
+	await page.evaluate(() => document.fonts.ready.then(() => undefined));
+	const fontRequests: string[] = [];
+	page.on('request', request => {
+		if (/^https?:/.test(request.url()) && /\.(?:ttf|otf|woff2?)(?:\?|$)/.test(request.url())) fontRequests.push(request.url());
+	});
+	const font = await readFile(resolve('../crates/sdocx/assets/fonts/Roboto-Regular.ttf'));
+	const result = await page.evaluate(async ({ note, font }) => {
+		const module = await import(`${location.origin}/wasm/sdocx_wasm.js`);
+		await module.default();
+		const session = new module.DocumentSession(new Uint8Array(note));
+		let rendered: string;
+		try { rendered = session.render_svg(0, 'light'); } finally { session.free(); }
+		const parsed = new DOMParser().parseFromString(rendered, 'image/svg+xml');
+		const text = parsed.querySelector('text');
+		if (!text) throw new Error('The real WASM fixture rendered no selectable text.');
+		const styles = [...parsed.querySelectorAll('style')];
+		const size = Number(text.getAttribute('font-size'));
+		const label = text.textContent!;
+		const reference = new FontFace('Sdocx Reference Roboto', new Uint8Array(font));
+		await reference.load();
+		document.fonts.add(reference);
+		try {
+			const measure = document.createElement('canvas').getContext('2d')!;
+			measure.font = `${size}px "Sdocx Reference Roboto"`;
+			const metrics = measure.measureText(label);
+			const x = Number(text.getAttribute('x'));
+			const y = Number(text.getAttribute('y'));
+			const width = Math.ceil(metrics.width + size * 2);
+			const height = Math.ceil(size * 3);
+			const scale = 4;
+			const isolated = parsed.documentElement;
+			isolated.replaceChildren(...styles.map(style => style.cloneNode(true)), text.cloneNode(true));
+			isolated.setAttribute('viewBox', `${x - size} ${y - size * 2} ${width} ${height}`);
+			isolated.setAttribute('width', String(width * scale));
+			isolated.setAttribute('height', String(height * scale));
+			const raster = async (svg: Element) => {
+				const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }));
+				try {
+					const image = new Image();
+					image.src = url;
+					await image.decode();
+					const canvas = document.createElement('canvas');
+					canvas.width = image.naturalWidth;
+					canvas.height = image.naturalHeight;
+					const context = canvas.getContext('2d')!;
+					context.drawImage(image, 0, 0);
+					const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+					let left = canvas.width;
+					let right = -1;
+					let hash = 2166136261;
+					for (let offset = 0; offset < pixels.length; offset++) {
+						hash = Math.imul(hash ^ pixels[offset], 16777619) >>> 0;
+						if (offset % 4 === 3 && pixels[offset] > 0) {
+							const column = Math.floor(offset / 4) % canvas.width;
+							left = Math.min(left, column);
+							right = Math.max(right, column);
+						}
+					}
+					return { inkWidth: (right - left + 1) / scale, hash };
+				} finally { URL.revokeObjectURL(url); }
+			};
+			const original = await raster(isolated);
+			const probe = isolated.cloneNode(true) as Element;
+			for (const style of probe.querySelectorAll('style')) {
+				style.textContent = style.textContent!.replace('font-family:"Roboto"', 'font-family:"SdocxEmbeddedFontProbe"');
+			}
+			for (const node of probe.querySelectorAll('[font-family]')) {
+				node.setAttribute('font-family', node.getAttribute('font-family')!.replace(/^("?)Roboto\1(?=,|$)/, '"SdocxEmbeddedFontProbe"'));
+			}
+			const renamed = await raster(probe);
+			for (const style of probe.querySelectorAll('style')) style.remove();
+			for (const node of probe.querySelectorAll('[font-family]')) node.setAttribute('font-family', 'SdocxEmbeddedFontProbe, monospace');
+			const fallback = await raster(probe);
+			return {
+				faceCount: styles.length,
+				embedded: styles.every(style => style.textContent!.includes('data:font/ttf;base64,')),
+				expectedInkWidth: metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight,
+				original, renamed, fallback
+			};
+		} finally { document.fonts.delete(reference); }
+	}, { note: [...pdfNote()], font: [...font] });
+	expect(result.faceCount).toBe(1);
+	expect(result.embedded).toBe(true);
+	expect(result.original.hash).toBe(result.renamed.hash);
+	expect(result.original.inkWidth).toBeCloseTo(result.expectedInkWidth, 0);
+	expect(Math.abs(result.fallback.inkWidth - result.original.inkWidth)).toBeGreaterThan(2);
+	expect(fontRequests).toEqual([]);
+});
+
 test('custom ranges validate, retain scope and package original page numbers', async ({ page }) => {
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles({ name: 'ranges.sdocx', mimeType: 'application/zip', buffer: pdfNote(false, true) });
