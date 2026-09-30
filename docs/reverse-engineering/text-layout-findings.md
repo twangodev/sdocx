@@ -383,6 +383,17 @@ bottom margins; it does not establish suppression for ordinary table-cell
 text. Removing the captured cell's 12-unit before spacing merely to fit a
 baseline would contradict the inspected ordinary producer.
 
+After spacing is enabled by default in `RichTextLayout::DoLayout`. It is
+suppressed when both the current and next native bullet enums are in 1–9
+(`0x719c4`–`0x719ec`), or when the current paragraph's final measured entry
+is an object with both vertical margins positive (`0x71a38`–`0x71a94`).
+Before laying the next paragraph, enabled after spacing from the previous
+paragraph is added to the vertical cursor (`0x71a98`–`0x71abc`). In the
+captured body sequence, ordinary paragraph 59 has after spacing 4 logical
+units, paragraph 60 is empty and paragraph 61 contains the table. Neither
+suppression applies to paragraph 59: its 12 scaled units remain when entering
+paragraph 60; the later table cannot suppress them across that empty paragraph.
+
 Text `TextUtil::GetLineSpacing`, `0x8e180`, computes `pixels` when nonzero,
 otherwise `(multiplier - 1) * metric`. `GetLineHeightWithSpacing`, `0x8e100`,
 adds that amount to a base height. Thus a pixel value is extra spacing in
@@ -793,10 +804,16 @@ require an image-path trace.
 
 Tables also distinguish raw and drawn bounds. Model `ObjectTable::GetDrawnRect`,
 `0x3d48c4`, delegates to `ObjectTableImpl::GetDrawnRect`, `0x3c6cac`.
-When an outer border exists, the implementation expands raw left/top/right/bottom
-by the corresponding drawn-border half-widths (`0x3c6cf4`–`0x3c6d30`). The
-captured table's raw 984×216 rectangle and unit borders therefore yield a
-985×217 measurement input; the current SDK object index still uses raw 984×216.
+The implementation expands raw left/top/right/bottom by the corresponding
+drawn-border half-widths (`0x3c6cf4`–`0x3c6d30`). The edge getters
+(`0x3c6d5c`, `0x3c6dd8`, `0x3c6e54`, `0x3c6ee0`) take the maximum of
+the outer edge and matching boundary-cell edges. Cells are selected from
+the stored row/grid vectors (`0x3c7510`, `0x3c75a8`); an explicit cell
+border overrides the table default. Missing outer/default-cell records use
+the native unit-width constructors (`0x3c5d20`, `0x3dc670`, `0x3dc280`).
+These drawn-width getters do not gate on color or alpha. The captured
+table's raw 984×216 rectangle and unit borders therefore yield a 985×217
+measurement input. Rust now uses these drawn bounds when reserving an object.
 
 Drawing regenerates cell frames from column widths and row heights rather
 than reusing saved cell rectangles. `TableLayout::getHalfBorderWidth`,
@@ -1008,9 +1025,10 @@ saved Y to choose the bands.
 (`0x6c970`–`0x6c99c`); this calculation has no font-size operand. `SetLayout`
 adds the adjusted margin at `0x6b4f0`–`0x6b510`; the margin-bearing object
 baseline branch uses base object height (`0x6cb90`–`0x6cb9c`) before the
-object epsilon. Prepared child sizes and this candidate-dependent feedback
-remain composition inputs to implement; ordinary constraint-0 child feedback
-was not established by this trace.
+object epsilon. Rust now feeds prepared code heights back for constraints
+1/2 using the live candidate plus ordinary collapsed margins. The flagged
+obstacle-margin exception and table child remeasurement remain unimplemented;
+ordinary constraint-0 child feedback was not established by this trace.
 
 Drawing `CodeBlockLayout::Measure`, `0x732fc`, converts those bands to body
 coordinates by subtracting body-frame top (`0x73484`–`0x7349c`). Its
@@ -1035,42 +1053,79 @@ feedback described above.
 
 Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
 before/after spacing 4. Saved first-cell X is 49, while captured text X 72
-and scaled left margin 24 imply a regenerated frame X 48. The fresh mixed-stream
-CLI export, `/tmp/sdocx-mixed-native_page3.svg`, gives the comparison below.
-The previous snapshot used shared cell/code frames before mixed-stream body
-composition. Current coordinates include ancestor transforms: the table group
-translates X by -0.5, so its raw text attributes alone are not painted positions.
+and scaled left margin 24 imply a regenerated frame X 48. The current CLI
+exports `/tmp/sdocx-child-feedback_page3.svg` and `_page4.svg` include candidate
+code preparation, child-size feedback and table stroke-bound expansion. The
+comparison retains the previous mixed-stream snapshot and accumulates all SVG
+ancestor transforms. Index 3 is the fourth physical PDF page / Form 89; index 4
+is the fifth page / Form 111. CLI `--pages 4-5` selects these two pages.
 
-| Quantity | Previous shared-frame SDK | Current mixed-stream SDK | Native reference |
+| Quantity | Previous mixed-stream SDK | Current SDK | Native canvas reference |
 | --- | ---: | ---: | ---: |
-| Table header baseline | 1089.50001 | 1113.501010 | 1100.850000 |
-| Table body baseline | 1197.50001 | 1221.501010 | 1208.850110 |
-| First-cell text X | 73 | 72.5 | 72 |
-| Second-cell text X | — | 564.5 | 564.000018 |
-| Code panel height | 411.75 | 411.75 | 411.748128 |
-| Code title baseline | — | 1389.752010 | 1379.351990 |
-| Code first body baseline | 1463.75001 | 1485.752010 | 1475.352063 |
-| Code second body baseline | 1561.99806 | 1584.000060 | 1573.600049 |
-| Code third body baseline | 1622.74806 | 1644.750060 | 1634.350049 |
-| Code first baseline gap | 98.24805 | 98.24805 | 98.247986 |
+| Table header baseline | 1113.501010 | 1114.001010 | 1100.850000 |
+| Table body baseline | 1221.501010 | 1222.001010 | 1208.850110 |
+| First-cell text X | 72.5 | 73 | 72 |
+| Second-cell text X | 564.5 | 565 | 564.000018 |
+| Code panel height | 411.75 | 399.75 | 411.748128 |
+| Code title baseline | 1389.752010 | 1390.752010 | 1379.351990 |
+| Code first body baseline | 1485.752010 | 1486.752010 | 1475.352063 |
+| Code second body baseline | 1584.000060 | 1573.001000 | 1573.600049 |
+| Code third body baseline | 1644.750060 | 1633.751000 | 1634.350049 |
+| Code first baseline gap | 98.24805 | 86.24899 | 98.247986 |
 | Code second baseline gap | 60.75 | 60.75 | 60.75 |
 
-The current code height differs by approximately 0.002 units and its line
-gaps match. The painted panel starts at Y 1308.75, with title/body offsets
-81.002010/177.002010. Its absolute baselines are approximately **10.400**
-units below the reported native-canvas reference; table baselines are
-**12.651** units below it, and table text X differs by **+0.5**.
-Converting the native reference to the actual PDF viewport subtracts 0.6
-from native Y, leaving approximately +11.000 and +13.251 units respectively.
-This viewport convention does not resolve composition origins on page index 3.
+The current painted table starts at X 48.5 / Y 1033.25. Stroke-bound expansion
+removed the previous -0.5 X translation and moved its painted origin by +0.5
+in both axes. Cell text consequently differs from native by **+1 X** and
+**+13.151 Y** under the native-canvas convention, or **+13.751 Y** under the
+actual PDF viewport. This worsens the local X difference until the missing
+regenerated table-frame producer supplies the correct frame. Retained first
+paragraph before spacing is not evidence of an error: removing it to match
+the target baseline would bypass the verified native policy.
+
+The code panel now starts at Y 1309.751. Its title and first-body baselines
+remain approximately **12.000 units below the actual PDF viewport reference**.
+The second and third body baselines instead agree with that reference within
+**0.001 units**. Candidate-based preparation moves the body-frame origin by
+approximately 12 units relative to the captured copy, so the first boundary
+skip shrinks by approximately 12 units: height 399.75 and first baseline gap
+86.24899 are both about 11.998 below the captured local quantities. The later
+lines land at the same boundary even though the first line starts too low.
+This separates the remaining composition-origin error from the verified
+boundary mechanism; forcing a constant panel height would hide that cause.
 
 The saved-overlap code copy on page index 4 has current title/body baselines
 -148.24805, -52.24805, 46.00000 and 106.75000. They are approximately 0.6
 above the native-canvas reference and agree with the actual PDF viewport
-convention. The mixed-stream composition at index 3 and saved copy at index 4 therefore
-need separate origin verification. Table frame X, prepared object sizing and
-complete body-composition origins remain unresolved; matching local metrics
-does not establish complete composed-page parity within ±0.25.
+convention; its height remains 411.75. Following ordinary text still diverges:
+`Whitespace samples` now has baseline 311.5, versus previous 310.75098 and
+native actual-viewport 337.750928. This **-26.250928** difference needs separate
+continuation-flow verification. The ordinary lines preceding the table at
+index 3 remain approximately +0.75 relative to the actual viewport, with no
+accumulating vertical drift. Table frame regeneration and complete
+body-composition origins therefore remain unresolved.
+
+A fresh two-page CLI PDF at `--pdf-dpi 129.6` has MediaBox approximately
+599.999939 × 848.333313 points. Independent Rust `lopdf` extraction of CTM,
+text matrices, `ToUnicode` and font sizes reproduces all table/code SVG
+baselines above within 0.001 units; font size 45 becomes approximately
+44.999997 after float conversion. This checks export transport, not native
+composition parity. The default pinned Roboto face returns missing glyph
+ID 0 for `●`, `○` and `───`; the exported PDF has no direct `ToUnicode`
+mapping for those missing glyphs. It carries `ActualText` for `○` and each
+`─`, so absence from the glyph CMap alone does not prove that their selectable
+source is lost. No `ActualText` for `●` was observed. These metadata paths do
+not supply missing visible glyphs. Point-marker text currently bypasses coverage diagnostics.
+The corrected marker advance does not establish complete marker rendering;
+native vector marker geometry or suitable glyph fallback remains necessary.
+The native point-marker producer already identifies a vector route:
+Widget `initBulletPoint` assigns resource IDs 38–41 for solid circle,
+outline circle, solid square and outline square (`0xd96fc`–`0xd9798`).
+`SpenResources.ResourceID` maps these to the four `spen_ic_text_bullet`
+vector assets. Their viewport is 4×4: solid circle radius 2; outline
+circle radius 1.75 with 0.5 stroke; solid square 4×4; outline square
+3.5×3.5 inset 0.25 with 0.5 stroke. Their final native size and placement
+still need tracing before replacing the current glyph painter.
 
 ## Current Rust implementation and remaining gaps
 
@@ -1109,8 +1164,9 @@ the same measured stream, including inline widths, block breaks, native
 symmetric margins, object alignment and object baseline increments. Validated
 anchors preserve neighboring text, and invalid or unsupported objects retain
 typed diagnostics. This has synthetic coverage but no captured mixed-inline
-reference. Prepared table/code dimensions, full-source context across saved
-page slices and composed-page origins remain incomplete. Terminal-newline
+reference. Code height feedback and table drawn bounds are implemented;
+regenerated table frames, full-source context across saved page slices and
+composed-page origins remain incomplete. Terminal-newline
 display paragraphs, list-spacing enable flags, clipping and recomputed
 pagination still need captured cases and implementation. The current body
 baseline follows the capture above; it is not a universal native baseline
@@ -1136,12 +1192,31 @@ flow, placed, shape, table and both code text contexts. Arbitrary malformed
 frame rectangles and oversized aggregate page geometry still need their own
 validation policy.
 
-Code painting now consumes a `PreparedCode` with concrete title/copy/panel
-rectangles and an owned measured body layout. It does not remeasure the body
-while painting. This establishes a reusable preparation boundary; parent
-span-height feedback and live candidate-relative exclusions described above
-remain to be integrated. The extraction preserves the current comparison
-coordinates and is not itself a composition-origin correction.
+Code preparation now retains owned title and body layouts, copy and panel
+rectangles. Parent lines prepare these plans before placement; constraints
+1/2 replace their reserved height when the measured height differs by more
+than 0.001. Other constraints retain their saved reservation. Split bands
+are selected using the live parent candidate, and painting translates the
+retained plan without measuring it again, including under parent gravity.
+The saved negative-top continuation adapter remains necessary until full
+source layout replaces page-slice reconstruction. This is not a complete
+composition-origin correction.
+
+Rejected derived code geometry retains the original replacement marker and
+neighboring text, reports `InvalidBounds`, and never falls back into measuring
+and painting the rejected block again. The same preparation boundary checks
+normal and split constraints. This is an SDK robustness policy, rather than
+an established native malformed-input recovery rule.
+
+The prepared-object milestone is committed as `0d17727`. Twenty focused
+regressions cover native chrome constants, candidate-relative bands, retained
+gravity, nested height feedback, rejected source markers and selectable PDF
+text. Workspace tests, strict Clippy, render-only and no-default-feature
+checks pass. The locked external corpus and independent first-page PDF text
+comparison pass. A fresh WASM build of the same source passes all 23 Chromium
+tests and all 66 web unit tests; typecheck reports no errors or warnings.
+These checks establish the covered contracts, rather than closing the
+composition and missing-glyph differences quantified above.
 
 The measured paint path now supplies retained X positions and Y offsets
 for clusters that can be expressed by the current typed SVG text adapter,
