@@ -2,6 +2,7 @@ use std::cell::RefCell;
 
 use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
 
+use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 use super::{TextContext, TextSettings, TextStyle};
 use crate::render::vector::{EmbeddedFont, Scene};
 
@@ -29,6 +30,7 @@ pub(in crate::render) struct TextRenderer<'a> {
     pub fonts: &'a FontBook,
     faces: RefCell<Vec<ResolvedFace>>,
     diagnostics: RefCell<Vec<TextDiagnostic>>,
+    object_diagnostics: RefCell<Vec<ObjectDiagnostic>>,
 }
 
 impl<'a> TextRenderer<'a> {
@@ -38,6 +40,7 @@ impl<'a> TextRenderer<'a> {
             fonts,
             faces: RefCell::new(Vec::new()),
             diagnostics: RefCell::new(Vec::new()),
+            object_diagnostics: RefCell::new(Vec::new()),
         }
     }
 
@@ -139,6 +142,26 @@ impl<'a> TextRenderer<'a> {
 
     pub fn diagnostics(&self) -> Vec<TextDiagnostic> {
         self.diagnostics.borrow().clone()
+    }
+
+    pub fn object_diagnostics(&self) -> Vec<ObjectDiagnostic> {
+        self.object_diagnostics.borrow().clone()
+    }
+
+    pub fn report_object_issues(&self, issues: &[ObjectDiagnostic]) {
+        let mut diagnostics = self.object_diagnostics.borrow_mut();
+        for issue in issues {
+            if !diagnostics.contains(issue) {
+                diagnostics.push(*issue);
+            }
+        }
+    }
+
+    pub fn object_layout_unsupported(&self, anchor_utf16: i32) {
+        self.report_object_issues(&[ObjectDiagnostic {
+            anchor_utf16,
+            kind: ObjectDiagnosticKind::MixedParagraphLayout,
+        }]);
     }
 
     pub fn measurement_failed(&self, family: &str) {
@@ -260,5 +283,46 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn object_diagnostics_preserve_distinct_anchors_and_reasons() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        let issues = [
+            ObjectDiagnostic {
+                anchor_utf16: -1,
+                kind: ObjectDiagnosticKind::InvalidAnchor,
+            },
+            ObjectDiagnostic {
+                anchor_utf16: 3,
+                kind: ObjectDiagnosticKind::NonReplacementAnchor,
+            },
+            ObjectDiagnostic {
+                anchor_utf16: 3,
+                kind: ObjectDiagnosticKind::UnsupportedContent,
+            },
+        ];
+        renderer.report_object_issues(&issues);
+        renderer.report_object_issues(&issues);
+        renderer.object_layout_unsupported(3);
+        renderer.object_layout_unsupported(3);
+        renderer.object_layout_unsupported(4);
+        let expected = [
+            issues.to_vec(),
+            vec![
+                ObjectDiagnostic {
+                    anchor_utf16: 3,
+                    kind: ObjectDiagnosticKind::MixedParagraphLayout,
+                },
+                ObjectDiagnostic {
+                    anchor_utf16: 4,
+                    kind: ObjectDiagnosticKind::MixedParagraphLayout,
+                },
+            ],
+        ]
+        .concat();
+        assert_eq!(renderer.object_diagnostics(), expected);
+        assert!(renderer.diagnostics().is_empty());
     }
 }

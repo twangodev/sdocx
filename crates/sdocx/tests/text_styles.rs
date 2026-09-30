@@ -421,28 +421,58 @@ fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
         for value in ["a", "c"] {
             let node = tspan(&xml, value);
             assert_eq!(node.attribute("font-style"), Some("italic"), "{context:?}");
-            assert_eq!(
-                node.attribute("text-decoration"),
-                if matches!(context, Context::Standalone | Context::Flow) {
-                    None
-                } else {
-                    Some("underline line-through")
-                },
-                "{context:?}"
-            );
+            assert_eq!(node.attribute("text-decoration"), None, "{context:?}");
             match context {
                 Context::Standalone => assert_eq!(node.attribute("font-weight"), Some("bold")),
-                #[cfg(feature = "serde")]
-                Context::Table => {
-                    assert_eq!(node.attribute("font-weight"), None);
-                    assert_eq!(node.attribute("stroke"), None);
-                }
                 _ => {
+                    assert_eq!(node.attribute("font-weight"), None, "{context:?}");
                     assert_eq!(node.attribute("stroke"), Some("#000000"), "{context:?}");
                     assert_eq!(node.attribute("stroke-width"), Some("0.45"), "{context:?}");
                 }
             }
         }
+        let position = |value| {
+            tspan(&xml, value)
+                .attribute("x")
+                .unwrap()
+                .split_whitespace()
+                .next()
+                .unwrap()
+                .parse::<f64>()
+                .unwrap()
+        };
+        let plain_start = position("b");
+        let plain_end = position("c");
+        let decorations = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#000000"))
+            .collect::<Vec<_>>();
+        assert_eq!(decorations.len(), 4, "{context:?}");
+        let mut before_plain = 0;
+        let mut after_plain = 0;
+        for rectangle in decorations {
+            let start = rectangle.attribute("x").unwrap().parse::<f64>().unwrap();
+            let width = rectangle
+                .attribute("width")
+                .unwrap()
+                .parse::<f64>()
+                .unwrap();
+            assert!(width > 0.0, "{context:?}");
+            if start < plain_start {
+                assert!(
+                    start + width <= plain_start,
+                    "{context:?}: decoration crosses plain b"
+                );
+                before_plain += 1;
+            } else {
+                assert!(
+                    start >= plain_end,
+                    "{context:?}: decoration crosses plain b"
+                );
+                after_plain += 1;
+            }
+        }
+        assert_eq!((before_plain, after_plain), (2, 2), "{context:?}");
     }
 }
 
@@ -609,18 +639,18 @@ fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
-        let mut expected = vec![sdocx::TextDiagnostic {
-            kind: sdocx::TextDiagnosticKind::UnavailableFamily,
-            family: family.into(),
-            codepoints: Vec::new(),
-        }];
-        if matches!(context, Context::Flow | Context::Standalone) {
-            expected.push(sdocx::TextDiagnostic {
+        let expected = vec![
+            sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnavailableFamily,
+                family: family.into(),
+                codepoints: Vec::new(),
+            },
+            sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::MeasurementFailure,
                 family: family.into(),
                 codepoints: Vec::new(),
-            });
-        }
+            },
+        ];
         assert_eq!(page.text_diagnostics, expected, "{context:?}");
         assert!(font_css(&page.svg).is_empty(), "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
@@ -648,18 +678,18 @@ fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
-        let mut expected = vec![sdocx::TextDiagnostic {
-            kind: sdocx::TextDiagnosticKind::UnusableFontData,
-            family: family.into(),
-            codepoints: Vec::new(),
-        }];
-        if matches!(context, Context::Flow | Context::Standalone) {
-            expected.push(sdocx::TextDiagnostic {
+        let expected = vec![
+            sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnusableFontData,
+                family: family.into(),
+                codepoints: Vec::new(),
+            },
+            sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::MeasurementFailure,
                 family: family.into(),
                 codepoints: Vec::new(),
-            });
-        }
+            },
+        ];
         assert_eq!(page.text_diagnostics, expected, "{context:?}");
         assert!(font_css(&page.svg).is_empty(), "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();

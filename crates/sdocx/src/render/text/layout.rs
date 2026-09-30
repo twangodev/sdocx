@@ -1,13 +1,18 @@
 use std::ops::Range;
 
 use crate::render::RenderTheme;
-use crate::{ParagraphAlignment, PredefinedTextStyle};
+use crate::{BoundingBox, ParagraphAlignment, PredefinedTextStyle};
 
 use super::{
     StyledText, TextRenderer, WrappedLine, paragraph_layout, paragraph_line_height, wrap_paragraph,
 };
 
-pub(in crate::render) struct PlacedLine {
+pub(in crate::render) struct TextFrame {
+    pub bbox: BoundingBox,
+    pub gravity: Option<u8>,
+}
+
+pub(in crate::render) struct TextLine {
     pub line: WrappedLine,
     pub x: f64,
     pub width: f64,
@@ -16,14 +21,18 @@ pub(in crate::render) struct PlacedLine {
     pub predefined: Option<PredefinedTextStyle>,
 }
 
-pub(in crate::render) struct PlacedTextLayout {
-    pub lines: Vec<PlacedLine>,
+pub(in crate::render) struct TextLayout {
+    pub lines: Vec<TextLine>,
     content_height: f64,
 }
 
-impl PlacedTextLayout {
+impl TextLayout {
+    pub fn height(&self) -> f64 {
+        self.content_height
+    }
+
     fn apply_gravity(&mut self, gravity: Option<u8>, outer_height: f64) {
-        let available_height = (outer_height - self.content_height).max(0.0);
+        let available_height = (outer_height - self.height()).max(0.0);
         let offset = match gravity {
             Some(1) => available_height / 2.0,
             Some(2) => available_height,
@@ -65,17 +74,34 @@ pub(in crate::render) fn layout_placed_text(
     styled: &StyledText<'_>,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
-) -> PlacedTextLayout {
+) -> TextLayout {
+    layout_text(
+        styled,
+        TextFrame {
+            bbox: styled.text_box.bbox,
+            gravity: styled.text_box.gravity,
+        },
+        theme,
+        renderer,
+    )
+}
+
+pub(in crate::render) fn layout_text(
+    styled: &StyledText<'_>,
+    frame: TextFrame,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> TextLayout {
     let text_box = styled.text_box;
     let settings = renderer.settings;
     let margins = text_box
         .margins
         .unwrap_or([0.0; 4])
         .map(|margin| settings.pixels(margin));
-    let outer_width = (text_box.bbox.x_max - text_box.bbox.x_min).ceil();
-    let outer_height = (text_box.bbox.y_max - text_box.bbox.y_min).ceil();
-    let content_left = text_box.bbox.x_min + margins[0];
-    let content_right = text_box.bbox.x_min + outer_width - margins[2];
+    let outer_width = (frame.bbox.x_max - frame.bbox.x_min).ceil();
+    let outer_height = (frame.bbox.y_max - frame.bbox.y_min).ceil();
+    let content_left = frame.bbox.x_min + margins[0];
+    let content_right = frame.bbox.x_min + outer_width - margins[2];
     let paragraphs = styled.index.paragraphs().collect::<Vec<_>>();
     let mut lines = Vec::new();
     let mut cursor = margins[1];
@@ -96,9 +122,9 @@ pub(in crate::render) fn layout_placed_text(
             layout.predefined_style,
             renderer,
         ) {
-            let baseline = text_box.bbox.y_min + cursor + line.font_size;
+            let baseline = frame.bbox.y_min + cursor + line.font_size;
             cursor += paragraph_line_height(line.font_size, layout.line_spacing, settings);
-            lines.push(PlacedLine {
+            lines.push(TextLine {
                 line,
                 x,
                 width,
@@ -116,10 +142,10 @@ pub(in crate::render) fn layout_placed_text(
     } else {
         cursor + margins[3].max(0.0)
     };
-    let mut layout = PlacedTextLayout {
+    let mut layout = TextLayout {
         lines,
         content_height,
     };
-    layout.apply_gravity(text_box.gravity, outer_height);
+    layout.apply_gravity(frame.gravity, outer_height);
     layout
 }

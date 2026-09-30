@@ -20,11 +20,11 @@ mod text;
 mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
+pub use text::{ObjectDiagnostic, ObjectDiagnosticKind, TextDiagnostic, TextDiagnosticKind};
 use text::{
     StyledText, TextContext, TextRenderer, TextSettings, TextStyle, measure_paragraph,
     paragraph_layout, paragraph_line_height, render_measured_line,
 };
-pub use text::{TextDiagnostic, TextDiagnosticKind};
 pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
@@ -67,6 +67,9 @@ pub struct RenderedPage {
     /// Font resolution and glyph coverage limits encountered while rendering.
     #[cfg_attr(feature = "serde", serde(default))]
     pub text_diagnostics: Vec<TextDiagnostic>,
+    /// Embedded-object anchors and composition that could not be laid out.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub object_diagnostics: Vec<ObjectDiagnostic>,
 }
 
 /// Render every visible page in presentation order.
@@ -185,6 +188,7 @@ fn render_layout_page(
         height: page.height,
         svg,
         text_diagnostics: text_renderer.diagnostics(),
+        object_diagnostics: text_renderer.object_diagnostics(),
     }
 }
 
@@ -729,26 +733,49 @@ fn render_text_box(
         if let Some(highlight) = text_box.highlight_color.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        for line in &layout.lines {
-            render_measured_line(
-                svg,
-                &styled,
-                &line.line,
-                line.x,
-                line.width,
-                line.baseline,
-                line.alignment,
-                theme,
-                line.predefined,
-                renderer,
-            );
-        }
+        paint_text_layout(svg, &styled, &layout, theme, renderer);
         for span in &text_box.object_spans {
             if let Some(RichTextObjectContent::Image(image)) = &span.content {
                 render_placed_image(svg, image, media_assets);
             }
         }
     });
+}
+
+fn paint_text_layout(
+    svg: &mut Scene,
+    styled: &StyledText<'_>,
+    layout: &text::TextLayout,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) {
+    for line in &layout.lines {
+        render_measured_line(
+            svg,
+            styled,
+            &line.line,
+            line.x,
+            line.width,
+            line.baseline,
+            line.alignment,
+            theme,
+            line.predefined,
+            renderer,
+        );
+    }
+}
+
+fn render_text_frame(
+    svg: &mut Scene,
+    text_box: &RichTextBox,
+    frame: text::TextFrame,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> f64 {
+    let styled = StyledText::new(text_box, TextContext::Flow, renderer.settings);
+    let layout = text::layout_text(&styled, frame, theme, renderer);
+    paint_text_layout(svg, &styled, &layout, theme, renderer);
+    layout.height()
 }
 
 const IMAGE_FLOW_LINE_HEIGHT_RATIO: f64 = 1.35;
@@ -774,6 +801,8 @@ fn render_flow_text_box(
     let content_right = f64::from(page.width) - horizontal_padding - settings.pixels(margins[2]);
     let characters = text_box.text.chars().collect::<Vec<_>>();
     let styled = StyledText::new(text_box, TextContext::Flow, settings);
+    let objects = text::TextObjectIndex::new(text_box, &styled.index);
+    renderer.report_object_issues(objects.issues());
     let mut paragraph_start = 0_usize;
     let mut cursor_y = content_top;
 
@@ -805,20 +834,11 @@ fn render_flow_text_box(
                 cursor_y += layout.spacing_before;
             }
 
-            let paragraph_start_utf16 = styled.index.char_to_utf16(paragraph_start).unwrap();
-            let paragraph_end_utf16 = styled.index.char_to_utf16(paragraph_end).unwrap();
             let base_style = styled.style_at(paragraph_start, theme, layout.predefined_style);
-            let embedded = text_box
-                .object_spans
-                .iter()
-                .filter(|object| {
-                    u32::try_from(object.text_index_utf16).is_ok_and(|index| {
-                        index >= paragraph_start_utf16 && index <= paragraph_end_utf16
-                    })
-                })
-                .collect::<Vec<_>>();
-            if !embedded.is_empty() {
+            let embedded = objects.in_range(paragraph_start..paragraph_end);
+            if !embedded.is_empty() && embedded.len() == paragraph_end - paragraph_start {
                 for object in embedded {
+                    let object = object.span;
                     if let Some(bottom) =
                         render_embedded_object(svg, object, cursor_y, media_assets, theme, renderer)
                     {
@@ -834,6 +854,9 @@ fn render_flow_text_box(
                 cursor_y += layout.spacing_after;
                 paragraph_start += paragraph.chars().count();
                 continue;
+            }
+            for object in embedded {
+                renderer.object_layout_unsupported(object.span.text_index_utf16);
             }
 
             let marker = layout
@@ -1144,31 +1167,15 @@ fn render_embedded_object(
                                         .stroke_width(1),
                                 );
                             }
-                            if let Some(line) = cell.content.text.lines().next() {
-                                let styled =
-                                    StyledText::new(&cell.content, TextContext::Flow, settings);
-                                svg.scope(
-                                    Text::new("")
-                                        .x(decimal(cell.bbox.x_min + 23., 2))
-                                        .y(decimal(cell.bbox.y_min + offset_y + 81., 2))
-                                        .family(FontFamily::Roboto)
-                                        .preserve_space(),
-                                    |svg| {
-                                        for range in styled.segments(0..line.chars().count()) {
-                                            let mut style =
-                                                styled.style_at(range.start, cell_theme, None);
-                                            style.bold = false;
-                                            write_styled_tspan(
-                                                svg,
-                                                styled.index.slice(range).unwrap(),
-                                                &style,
-                                                styled.context(),
-                                                renderer,
-                                            );
-                                        }
-                                    },
-                                );
-                            }
+                            let frame = text::TextFrame {
+                                bbox: BoundingBox {
+                                    y_min: cell.bbox.y_min + offset_y,
+                                    y_max: cell.bbox.y_max + offset_y,
+                                    ..cell.bbox
+                                },
+                                gravity: Some(0),
+                            };
+                            render_text_frame(svg, &cell.content, frame, cell_theme, renderer);
                         }
                     }
                 });
@@ -1192,25 +1199,71 @@ fn render_embedded_object(
             } else {
                 "#dddddd"
             };
+            let object_top = code.bbox.y_min + offset_y;
+            let left = settings.pixels(16.0);
+            let top = settings.pixels(12.0);
+            let right = settings.pixels(16.0);
+            let bottom = settings.pixels(12.0);
+            let title_copy_gap = settings.pixels(12.0);
+            let body_gap = settings.pixels(8.0);
+            let copy_size = settings.pixels(24.0);
+            let radius = settings.pixels(12.0);
+            let copy = BoundingBox {
+                x_min: code.bbox.x_max - right - copy_size,
+                y_min: object_top + top,
+                x_max: code.bbox.x_max - right,
+                y_max: object_top + top + copy_size,
+            };
+            let title_bbox = BoundingBox {
+                x_min: code.bbox.x_min + left,
+                y_min: copy.y_min,
+                x_max: copy.x_min - title_copy_gap,
+                y_max: copy.y_max,
+            };
+            let body_top = copy.y_max + body_gap;
+            let body_bbox = BoundingBox {
+                x_min: code.bbox.x_min + left,
+                y_min: body_top,
+                x_max: code.bbox.x_max - right,
+                y_max: body_top,
+            };
+            let body_layout = code.body.as_ref().map(|body| {
+                let styled = StyledText::new(body, TextContext::Flow, settings);
+                let layout = text::layout_text(
+                    &styled,
+                    text::TextFrame {
+                        bbox: body_bbox,
+                        gravity: body.gravity,
+                    },
+                    theme,
+                    renderer,
+                );
+                (styled, layout)
+            });
+            let body_height = body_layout
+                .as_ref()
+                .map_or(0.0, |(_, layout)| layout.height());
+            let panel_bbox = BoundingBox {
+                y_min: object_top,
+                y_max: body_top + body_height + body_gap + bottom,
+                ..code.bbox
+            };
             svg.scope(Group::new().object(ObjectKind::CodeBlock), |svg| {
                 svg.push(
-                    rectangle(code.bbox, offset_y, 2)
-                        .rx(36)
+                    rectangle(panel_bbox, 0.0, 2)
+                        .rx(decimal(radius, 2))
                         .fill(Paint::from_hex(&fill))
                         .stroke(Paint::from_hex(stroke))
                         .stroke_width(1),
                 );
-                let object_top = code.bbox.y_min + offset_y;
-                let text_x = code.bbox.x_min + 81.75;
                 if let Some(title) = &code.title {
-                    render_embedded_line(
+                    render_text_frame(
                         svg,
                         title,
-                        title.text.lines().next().unwrap_or_default(),
-                        0,
-                        text_x,
-                        object_top + 81.6,
-                        FontFamily::Roboto,
+                        text::TextFrame {
+                            bbox: title_bbox,
+                            gravity: title.gravity,
+                        },
                         theme,
                         renderer,
                     );
@@ -1221,89 +1274,35 @@ fn render_embedded_object(
                     "#8b8b8b"
                 };
                 let icon = Data::new()
-                    .move_to((
-                        coordinate(code.bbox.x_min + 895., 2),
-                        coordinate(object_top + 61., 2),
-                    ))
+                    .move_to((31, 25))
                     .vertical_line_by(-4)
                     .quadratic_curve_by((0., -8., 8., -8.))
                     .horizontal_line_by(17)
                     .quadratic_curve_by((8., 0., 8., 8.))
                     .vertical_line_by(29);
+                let icon_scale = copy_size / 72.0;
                 svg.push(
                     Group::new()
+                        .transformed(Transform::matrix(
+                            [icon_scale, 0.0, 0.0, icon_scale, copy.x_min, copy.y_min],
+                            6,
+                            2,
+                        ))
                         .fill(Paint::None)
                         .stroke(Paint::from_hex(icon_stroke))
                         .stroke_width(6)
                         .line_join(LineJoin::Round)
                         .add(Path::new().data(icon))
-                        .add(
-                            Rectangle::new()
-                                .x(decimal(code.bbox.x_min + 879., 2))
-                                .y(decimal(object_top + 59., 2))
-                                .width(31)
-                                .height(38)
-                                .rx(5),
-                        ),
+                        .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
                 );
-                if let Some(body) = &code.body {
-                    let mut baseline = object_top + 177.6;
-                    let index = crate::text_index::TextIndex::new(&body.text);
-                    for (line_index, paragraph) in index.paragraphs().enumerate() {
-                        render_embedded_line(
-                            svg,
-                            body,
-                            index.slice(paragraph.content.clone()).unwrap(),
-                            paragraph.content.start,
-                            text_x,
-                            baseline,
-                            FontFamily::Roboto,
-                            theme,
-                            renderer,
-                        );
-                        baseline += if line_index == 0 { 98.25 } else { 60.75 };
-                    }
+                if let Some((styled, layout)) = &body_layout {
+                    paint_text_layout(svg, styled, layout, theme, renderer);
                 }
             });
-            Some(code.bbox.y_max + offset_y)
+            Some(panel_bbox.y_max)
         }
         None => None,
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn render_embedded_line(
-    svg: &mut Scene,
-    text_box: &RichTextBox,
-    line: &str,
-    character_start: usize,
-    x: f64,
-    baseline: f64,
-    font_family: FontFamily,
-    theme: RenderTheme,
-    renderer: &TextRenderer<'_>,
-) {
-    let settings = renderer.settings;
-    let styled = StyledText::new(text_box, TextContext::Flow, settings);
-    svg.scope(
-        Text::new("")
-            .x(decimal(x, 2))
-            .y(decimal(baseline, 2))
-            .family(font_family)
-            .preserve_space(),
-        |svg| {
-            for range in styled.segments(character_start..character_start + line.chars().count()) {
-                let style = styled.style_at(range.start, theme, None);
-                write_styled_tspan(
-                    svg,
-                    styled.index.slice(range).unwrap(),
-                    &style,
-                    styled.context(),
-                    renderer,
-                );
-            }
-        },
-    );
 }
 
 fn object_flow_offset(stored_top: f64, cursor_y: f64, top_margin: f64) -> f64 {
