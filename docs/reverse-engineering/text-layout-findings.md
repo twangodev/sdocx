@@ -665,6 +665,26 @@ paragraph is not replaced by an independent stack of embedded objects.
 The exact replacement-character producer and table-cell padding adapter
 remain unverified in this trace.
 
+Widget `ObjectTextLayout::convertObjectSpan`, `0xd53e4`, iterates stored
+spans and writes object geometry to the single entry at the supplied
+UTF-16 anchor (`0xd54d8`–`0xd5540`). Repeated anchors overwrite that entry
+in list order; duplicate painting behavior is not established. Only layout
+option 1 becomes inline (`0xd5558`–`0xd55b4`). Options 2/3 receive symmetric
+vertical margins from constants 344/345 multiplied by layout scale
+(`0xd5570`–`0xd559c`); current asymmetric renderer margins are approximations.
+For a block entry, Text `measureObjectSpan` sets its advance to the entire
+available layout width, subtracting left/right margins (`0x77a94`–`0x77aa8`).
+An inline entry instead uses object width plus horizontal measurement margins.
+
+The locked corpus has object-only U+FFFC paragraphs: the basic-formatting
+table at UTF-16 1427 (option 3, constraint 2), code at 1429 (option 0,
+constraint 1), and seven image-placement anchors (option 0, constraint 0).
+The code anchor occurs on two saved pages because their text ranges overlap.
+There is no captured mixed inline-text case. The current SDK's paragraph
+replacement shortcut can lose neighboring text and accepts inclusive end
+anchors; shared validated anchors and measured text/object entries are still
+required. A synthetic regression must not be labeled captured inline parity.
+
 ## Body-flow pagination boundaries
 
 Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs
