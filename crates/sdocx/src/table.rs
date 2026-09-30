@@ -12,7 +12,7 @@ pub struct TableRecordMetadata {
     pub flexible_trailing_data: Vec<u8>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct TableStyle {

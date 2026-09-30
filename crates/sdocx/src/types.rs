@@ -172,7 +172,7 @@ impl PageElement {
 }
 
 /// A native image placement. Unresolved images retain their place in the model.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct PlacedImage {
@@ -364,7 +364,7 @@ impl TextAreaType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextBox {
     pub text_area_type: Option<TextAreaType>,
@@ -399,7 +399,7 @@ pub struct RichTextBox {
 }
 
 /// An object embedded into flowing text at a UTF-16 text index.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextObjectSpan {
     /// Object kind encoded before the object binary.
@@ -417,7 +417,7 @@ pub struct RichTextObjectSpan {
 }
 
 /// Parsed contents of an object embedded into flowing text.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum RichTextObjectContent {
@@ -429,7 +429,7 @@ pub enum RichTextObjectContent {
 }
 
 /// A table embedded in flowing note text.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextTable {
     pub style: crate::TableStyle,
@@ -444,7 +444,7 @@ pub struct RichTextTable {
 }
 
 /// One row in an embedded table.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextTableRow {
     pub max_height: Option<f32>,
@@ -459,7 +459,7 @@ pub struct RichTextTableRow {
 }
 
 /// One cell in an embedded table.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextTableCell {
     pub border: Option<crate::TableBorder>,
@@ -483,7 +483,7 @@ pub struct RichTextTableCell {
 }
 
 /// A fenced code block embedded in flowing note text.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextCodeBlock {
     /// Object placement box stored by the S Pen model.
@@ -553,7 +553,7 @@ pub struct RichTextSection {
 }
 
 /// A rich text style run.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextRun {
     /// Start character index, inclusive.
@@ -567,7 +567,7 @@ pub struct RichTextRun {
 }
 
 /// A style span from Samsung's rich-text model.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextSpan {
     /// Span attribute kind.
@@ -777,7 +777,7 @@ impl From<u32> for RichTextSpanType {
 }
 
 /// A paragraph attribute record from Samsung's rich-text model.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RichTextParagraph {
     /// Paragraph attribute kind.

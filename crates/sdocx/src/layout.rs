@@ -158,23 +158,74 @@ impl LayoutPage {
         )
         .then_some(slice)
     }
+
+    /// Rebuild validated capture text from the authoritative document body.
+    pub fn body_text_capture(&self, document: &Document) -> Option<RichTextBox> {
+        let metadata = self.body_text_slice()?;
+        let window = metadata.capture_window.as_ref()?;
+        if window.requested_page_index != self.source_page_index
+            || window.first_page_index > window.requested_page_index
+            || window.requested_page_index >= document.pages.len()
+        {
+            return None;
+        }
+        let object = self.page.objects.get(metadata.object_index)?;
+        let PageObjectContent::Element(PageElement::TextBox(inspection)) = &object.content else {
+            return None;
+        };
+        if object.render_layer != crate::ObjectRenderLayer::Base
+            || object.source_offset.is_some()
+            || !(inspection.bbox.x_max <= inspection.bbox.x_min
+                || inspection.bbox.y_max <= inspection.bbox.y_min)
+        {
+            return None;
+        }
+        let body = document.metadata.note_text.as_ref()?;
+        let index = TextIndex::new(&body.text);
+        if native_capture_window(document, &index, self.source_page_index).as_ref() != Some(window)
+        {
+            return None;
+        }
+        let visible_count = document.pages.len() - usize::from(omits_trailing_blank_page(document));
+        let ranges = inspection_text_ranges(body, &index, visible_count);
+        let mut expected_range = ranges.get(self.source_page_index)?.clone()?;
+        trim_inspection_lf(&index, &mut expected_range, self.source_page_index);
+        if expected_range != metadata.source_range {
+            return None;
+        }
+        let page_heights = document
+            .pages
+            .iter()
+            .map(|page| f64::from(page.height))
+            .collect::<Vec<_>>();
+        let mut expected = body.slice_indexed(&index, expected_range.clone())?;
+        translate_continuing_objects(
+            &mut expected,
+            &index,
+            &expected_range,
+            self.source_page_index,
+            &ranges,
+            &page_heights,
+        );
+        if &expected != inspection {
+            return None;
+        }
+        let mut capture = body.slice_indexed(&index, window.source_range.clone())?;
+        translate_continuing_objects(
+            &mut capture,
+            &index,
+            &window.source_range,
+            window.first_page_index,
+            &ranges,
+            &page_heights,
+        );
+        Some(capture)
+    }
 }
 
 /// Build a visible-page view without changing the parsed storage model.
 pub fn layout_document(document: &Document) -> LayoutDocument {
-    let has_flowing_text = document
-        .metadata
-        .note_text
-        .as_ref()
-        .is_some_and(|text| !text.text.trim().is_empty());
-    // Native list-mode export excludes its final compatibility record, even
-    // when the body text is empty. Require a complete flow canvas and matching
-    // background so incomplete/ambiguous documents retain their final page.
-    let list_compatibility_page = has_list_compatibility_page(document);
-    let legacy_text_compatibility = document.metadata.page_mode.is_none() && has_flowing_text;
-    let omitted_trailing_blank_page = (list_compatibility_page || legacy_text_compatibility)
-        && document.pages.len() > 1
-        && document.pages.last().is_some_and(is_blank_storage_page);
+    let omitted_trailing_blank_page = omits_trailing_blank_page(document);
     let visible_count = document
         .pages
         .len()
@@ -191,18 +242,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .as_ref()
         .zip(text_index.as_ref())
         .map_or_else(Vec::new, |(text, index)| {
-            if text.text_sections.len() >= visible_count {
-                text.text_sections
-                    .iter()
-                    .take(visible_count)
-                    .map(|section| section_char_range(index, *section))
-                    .collect()
-            } else {
-                balanced_line_ranges(&text.text, visible_count)
-                    .into_iter()
-                    .map(Some)
-                    .collect()
-            }
+            inspection_text_ranges(text, index, visible_count)
         });
     let page_heights = document
         .pages
@@ -224,14 +264,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                 text_ranges.get(source_page_index).and_then(Option::as_ref),
             ) {
                 let mut range = stored_range.clone();
-                // The SDK's continuation sections overlap the preceding page by
-                // its terminating newline. It is a page-break marker, not a
-                // blank paragraph on the new page.
-                if source_page_index > 0
-                    && index.slice(range.start..range.start.saturating_add(1)) == Some("\n")
-                {
-                    range.start = range.start.saturating_add(1).min(range.end);
-                }
+                trim_inspection_lf(index, &mut range, source_page_index);
                 if let Some(mut slice) = note_text.slice_indexed(index, range.clone())
                     && !slice.text.is_empty()
                 {
@@ -263,6 +296,47 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         pages,
         stored_page_count: document.pages.len(),
         omitted_trailing_blank_page,
+    }
+}
+
+fn omits_trailing_blank_page(document: &Document) -> bool {
+    let has_flowing_text = document
+        .metadata
+        .note_text
+        .as_ref()
+        .is_some_and(|text| !text.text.trim().is_empty());
+    // Native list-mode export excludes its final compatibility record, even
+    // when the body text is empty. Require a complete flow canvas and matching
+    // background so incomplete/ambiguous documents retain their final page.
+    let list_compatibility_page = has_list_compatibility_page(document);
+    let legacy_text_compatibility = document.metadata.page_mode.is_none() && has_flowing_text;
+    (list_compatibility_page || legacy_text_compatibility)
+        && document.pages.len() > 1
+        && document.pages.last().is_some_and(is_blank_storage_page)
+}
+
+fn inspection_text_ranges(
+    body: &RichTextBox,
+    index: &TextIndex<'_>,
+    page_count: usize,
+) -> Vec<Option<Range<usize>>> {
+    if body.text_sections.len() >= page_count {
+        body.text_sections
+            .iter()
+            .take(page_count)
+            .map(|section| section_char_range(index, *section))
+            .collect()
+    } else {
+        balanced_line_ranges(&body.text, page_count)
+            .into_iter()
+            .map(Some)
+            .collect()
+    }
+}
+
+fn trim_inspection_lf(index: &TextIndex<'_>, range: &mut Range<usize>, page: usize) {
+    if page > 0 && index.slice(range.start..range.start.saturating_add(1)) == Some("\n") {
+        range.start = range.start.saturating_add(1).min(range.end);
     }
 }
 
@@ -517,8 +591,9 @@ mod tests {
     use super::{layout_document, native_capture_window, section_char_range};
     use crate::text_index::TextIndex;
     use crate::{
-        BoundingBox, Document, DocumentMetadata, Page, PageElement, RichTextBox, RichTextParagraph,
-        RichTextParagraphType, RichTextRun, RichTextSection, RichTextSpan, RichTextSpanType,
+        BoundingBox, Document, DocumentMetadata, Page, PageElement, PageObjectContent, RichTextBox,
+        RichTextObjectContent, RichTextParagraph, RichTextParagraphType, RichTextRun,
+        RichTextSection, RichTextSpan, RichTextSpanType,
     };
 
     fn blank_page(index: usize) -> Page {
@@ -682,6 +757,168 @@ mod tests {
         assert!(page.body_text_slice().is_some());
         page.page.objects.clear();
         assert!(page.body_text_slice().is_none());
+    }
+
+    #[test]
+    fn body_capture_rejects_replaced_reordered_or_cleared_inspection_content() {
+        let mut document = capture_document("body", &[(0, 4)]);
+        let mut native = document.metadata.note_text.as_ref().unwrap().clone();
+        native.text = "native".into();
+        document.pages[0]
+            .objects
+            .push(PageElement::TextBox(native).into());
+        let page = layout_document(&document).pages.remove(0);
+        assert!(page.body_text_capture(&document).is_some());
+
+        let mut reordered = page.clone();
+        reordered.page.objects.swap(0, 1);
+        assert!(reordered.body_text_capture(&document).is_none());
+        let mut cleared = page.clone();
+        cleared.page.objects.clear();
+        assert!(cleared.body_text_capture(&document).is_none());
+        let mut changed = page.clone();
+        let PageObjectContent::Element(PageElement::TextBox(body)) =
+            &mut changed.page.objects[0].content
+        else {
+            unreachable!()
+        };
+        body.font_size = Some(37.0);
+        assert!(changed.body_text_capture(&document).is_none());
+        let mut stored = page.clone();
+        stored.page.objects[0].source_offset = Some(42);
+        assert!(stored.body_text_capture(&document).is_none());
+        let mut top = page.clone();
+        top.page.objects[0].render_layer = crate::ObjectRenderLayer::Top;
+        assert!(top.body_text_capture(&document).is_none());
+    }
+
+    #[test]
+    fn body_capture_rejects_source_and_window_changes() {
+        let mut document = capture_document("a😀bc", &[(0, 5)]);
+        let page = layout_document(&document).pages.remove(0);
+        let mut bad_range = page.clone();
+        bad_range.body_text.as_mut().unwrap().source_range = 0..usize::MAX;
+        assert!(bad_range.body_text_capture(&document).is_none());
+        let mut bad_window = page.clone();
+        bad_window
+            .body_text
+            .as_mut()
+            .unwrap()
+            .capture_window
+            .as_mut()
+            .unwrap()
+            .first_page_index = 1;
+        assert!(bad_window.body_text_capture(&document).is_none());
+        let mut wrong_page = page.clone();
+        wrong_page.source_page_index = 1;
+        assert!(wrong_page.body_text_capture(&document).is_none());
+        document.metadata.note_text.as_mut().unwrap().font_size = Some(23.0);
+        assert!(page.body_text_capture(&document).is_none());
+        document.metadata.note_text.as_mut().unwrap().font_size = None;
+        document.metadata.note_text.as_mut().unwrap().text = "z😀bc".into();
+        assert!(page.body_text_capture(&document).is_none());
+    }
+
+    fn add_capture_object(document: &mut Document) {
+        document
+            .metadata
+            .note_text
+            .as_mut()
+            .unwrap()
+            .object_spans
+            .push(crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::CodeBlock,
+                object_data: Vec::new(),
+                content: Some(RichTextObjectContent::CodeBlock(Box::new(
+                    crate::RichTextCodeBlock {
+                        bbox: BoundingBox {
+                            x_min: 10.0,
+                            y_min: 205.0,
+                            x_max: 100.0,
+                            y_max: 235.0,
+                        },
+                        rotation_degrees: None,
+                        title: None,
+                        body: None,
+                    },
+                ))),
+                text_index_utf16: 2,
+                layout_option: crate::ObjectSpanLayoutOption::Block,
+                layout_constraint: crate::ObjectSpanLayoutConstraint::OverPages,
+            });
+    }
+
+    fn code_top(text: &RichTextBox) -> f64 {
+        let Some(RichTextObjectContent::CodeBlock(code)) = text.object_spans[0].content.as_ref()
+        else {
+            unreachable!()
+        };
+        code.bbox.y_min
+    }
+
+    #[test]
+    fn capture_rebuilds_group_objects_from_source_and_preserves_debugger_clones() {
+        let mut document = capture_document("ab\u{fffc}cd", &[(0, 3), (2, 3)]);
+        add_capture_object(&mut document);
+        document.pages[1].objects.push(
+            crate::Stroke {
+                rendering: None,
+                bbox: BoundingBox::default(),
+                points: Vec::new(),
+                pressures: Vec::new(),
+                timestamps: Vec::new(),
+                tilts: Vec::new(),
+                orientations: Vec::new(),
+                color: None,
+                pen_width: 1.0,
+            }
+            .into(),
+        );
+        let layout = layout_document(&document);
+        let mut preview = layout.pages[1].clone();
+        let PageObjectContent::Element(PageElement::TextBox(inspection)) =
+            &preview.page.objects[0].content
+        else {
+            unreachable!()
+        };
+        assert_eq!(code_top(inspection), 205.0 - 1527.0);
+        assert_eq!(preview.page.strokes().count(), 1);
+        preview.page.clear_strokes();
+        assert_eq!(preview.page.strokes().count(), 0);
+        let capture = preview.body_text_capture(&document).unwrap();
+        assert_eq!(capture.text, "ab\u{fffc}cd");
+        assert_eq!(capture.object_spans[0].text_index_utf16, 2);
+        assert_eq!(code_top(&capture), 205.0);
+        let PageObjectContent::Element(PageElement::TextBox(inspection)) =
+            &mut preview.page.objects[0].content
+        else {
+            unreachable!()
+        };
+        let Some(RichTextObjectContent::CodeBlock(code)) =
+            inspection.object_spans[0].content.as_mut()
+        else {
+            unreachable!()
+        };
+        code.bbox.y_min += 1.0;
+        assert!(preview.body_text_capture(&document).is_none());
+    }
+
+    #[test]
+    fn capture_translates_only_objects_anchored_before_its_first_page_once() {
+        let mut document = capture_document("ab\u{fffc}cd", &[(0, 5), (2, 0), (2, 3)]);
+        add_capture_object(&mut document);
+        let page = layout_document(&document).pages.remove(2);
+        let capture = page.body_text_capture(&document).unwrap();
+        assert_eq!(capture.object_spans[0].text_index_utf16, 0);
+        assert_eq!(code_top(&capture), 205.0 - 3054.0);
+        assert_eq!(
+            code_top(document.metadata.note_text.as_ref().unwrap()),
+            205.0
+        );
+        assert_eq!(
+            code_top(&page.body_text_capture(&document).unwrap()),
+            205.0 - 3054.0
+        );
     }
 
     #[test]
