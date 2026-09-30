@@ -65,6 +65,12 @@ impl Default for ShapeStyle {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct NativeShape {
+    /// Actual horizontal orientation (type-7 property bit 0), independent of flip capability.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub horizontal_flip: bool,
+    /// Actual vertical orientation (type-7 property bit 1), independent of flip capability.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub vertical_flip: bool,
     /// Whether Samsung Notes permits editing the shape text (type-7 property bit 2).
     #[cfg_attr(feature = "serde", serde(default))]
     pub text_editable: bool,
@@ -156,11 +162,13 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     };
     let control_points = read_points(&mut fixed)?;
     let drawn_bbox = read_bbox(&mut fixed)?;
+    let horizontal_flip = frame.properties.contains(0);
+    let vertical_flip = frame.properties.contains(1);
     let text_editable = frame.properties.contains(2);
     if fixed.remaining() != 0 {
         unsupported.push("shape geometry extensions");
     }
-    if frame.properties.has_other_bits(0x04) {
+    if frame.properties.has_other_bits(0x07) {
         unsupported.push("unknown shape geometry properties");
     }
     if !supported_path && !control_points.is_empty() {
@@ -235,6 +243,8 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     read_extensions(&mut reader, &mut unsupported)?;
     Ok(Decoded {
         value: NativeShape {
+            horizontal_flip,
+            vertical_flip,
             text_editable,
             text_area_type,
             metadata,
@@ -475,14 +485,14 @@ fn same_bbox(a: BoundingBox, b: BoundingBox) -> bool {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) enum NativePathCommand {
-    Move([f64; 2]),
-    Line([f64; 2]),
-    Quadratic([[f64; 2]; 2]),
-    Cubic([[f64; 2]; 3]),
-    Arc([f64; 6]),
+pub(crate) enum NativePathCommand<T = f64> {
+    Move([T; 2]),
+    Line([T; 2]),
+    Quadratic([[T; 2]; 2]),
+    Cubic([[T; 2]; 3]),
+    Arc([T; 6]),
     Close,
-    Oval([f64; 4]),
+    Oval([T; 4]),
 }
 
 /// Visit native WDoc path commands without allocating from the untrusted count.
