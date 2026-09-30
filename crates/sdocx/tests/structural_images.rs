@@ -598,8 +598,8 @@ fn image_flow_sections_render_each_anchor_once_and_preserve_page_margins() {
         },
     ];
     let layout = sdocx::layout_document(&document);
-    assert_eq!(layout.pages.len(), 2);
-    for page in &layout.pages {
+    assert_eq!(layout.pages.len(), 3);
+    for page in layout.pages.iter().take(2) {
         let PageElement::TextBox(text) = page.page.elements().next().unwrap() else {
             panic!("text flow")
         };
@@ -607,9 +607,13 @@ fn image_flow_sections_render_each_anchor_once_and_preserve_page_margins() {
         assert_eq!(text.object_spans[0].text_index_utf16, 0);
         assert_eq!(text.margins.unwrap()[1], 10.0);
     }
+    assert!(layout.pages[2].body_text_slice().is_none());
     #[cfg(feature = "render")]
-    for page in sdocx::render_document_svg(&document, &sdocx::RenderOptions::default()) {
-        assert_eq!(page.svg.matches("<image ").count(), 1);
+    for (index, page) in sdocx::render_document_svg(&document, &sdocx::RenderOptions::default())
+        .iter()
+        .enumerate()
+    {
+        assert_eq!(page.svg.matches("<image ").count(), usize::from(index < 2));
     }
 }
 
