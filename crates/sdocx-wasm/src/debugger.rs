@@ -123,11 +123,22 @@ impl Source {
         }
         Ok(&self.cache.as_ref().unwrap().1)
     }
+    #[cfg(test)]
     pub fn request(
         &mut self,
         parsed: &ParsedDocument,
         layout: &LayoutDocument,
         request: &str,
+    ) -> Result<String, String> {
+        self.request_with_fonts(parsed, layout, request, &sdocx::fonts::FontBook::default())
+    }
+
+    pub fn request_with_fonts(
+        &mut self,
+        parsed: &ParsedDocument,
+        layout: &LayoutDocument,
+        request: &str,
+        fonts: &sdocx::fonts::FontBook,
     ) -> Result<String, String> {
         let r: Value = serde_json::from_str(request).map_err(|e| e.to_string())?;
         let limits = super::browser_parse_options().limits;
@@ -310,13 +321,14 @@ impl Source {
                             options.color_mode,
                         );
                         let render = if replay {
-                            sdocx::render_layout_page_replay_svg
+                            sdocx::render_layout_page_replay_svg_with_fonts
                         } else {
-                            sdocx::render_layout_page_svg
+                            sdocx::render_layout_page_svg_with_fonts
                         };
-                        let background = render(&parsed.document, &preview_layout, 0, &options)
-                            .ok_or("cannot render page")?
-                            .svg;
+                        let background =
+                            render(&parsed.document, &preview_layout, 0, &options, fonts)
+                                .ok_or("cannot render page")?
+                                .svg;
                         json!({"svg": background,"defaultInk":theme.default_ink()})
                     }
                     _ => {
@@ -369,7 +381,7 @@ mod tests {
 
 #[cfg(test)]
 #[path = "debugger_test_support.rs"]
-mod support;
+pub(crate) mod support;
 
 #[cfg(test)]
 mod source_tests {

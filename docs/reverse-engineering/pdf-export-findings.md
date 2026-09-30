@@ -16,10 +16,11 @@ Rust 1.92. PDF dependencies remain optional for library consumers. The WASM bind
 enable `pdf` and `serde`, exposing the same renderer through
 `DocumentSession.render_pdf`. Eight pinned Roboto/Roboto Mono faces are bundled
 in the Rust SDK and available immediately in both native and WASM builds.
-`add_pdf_font` can supply additional faces without browser font requests.
+`add_pdf_font` supplies additional faces for preview, replay and PDF export
+without browser font requests.
 
 The supplied font database is shared across all pages. CLI font precedence
-matches PNG: explicit faces are loaded before bundled faces. Available fonts
+matches SVG and PNG: explicit faces are loaded before bundled faces. Available fonts
 are embedded and text retains Unicode mappings. The SDK's default PDF options
 use the bundled database; `PdfOptions::new` accepts a caller-controlled database.
 The default does not discover host fonts. Bundled coverage is Latin, Greek and
