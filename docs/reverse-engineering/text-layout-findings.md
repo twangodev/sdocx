@@ -50,6 +50,85 @@ all ordinary spans, separate font-size spans, paragraphs, gravity and ellipsis
 settings to a `TextLayout`. A shared Rust input adapter should preserve these
 inputs instead of choosing the first style of each kind for the entire box.
 
+## Font-name payload and measured fallback
+
+For the modern WDoc record, `FontNameSpan` (kind 4) has this payload **after**
+the 16-byte kind/start/end/expansion header, excluding the outer record length:
+`[8 skipped bytes][u16 little-endian UTF-8 byte count][counted UTF-8 bytes]`.
+The count includes one trailing NUL. Model `GetBinary`, `0x40974c`, calls
+`TextSpanBase::GetBinarySize` at `0x409780`; `0x409794` adds that result to
+the original buffer, `0x40979c` writes the count at payload offset 8, and
+`0x4097a0` supplies payload offset 10 to `String::GetUTF8`. The WDoc base
+size is 16 (`0x40ccbc`, reader `0x40cfb4`–`0x40d050`). Base
+`String::GetUTF8Size` adds the NUL byte at `0xc4980`; `GetUTF8` writes it at
+`0xc48b0`. An empty native name therefore has count 1 and a zero byte.
+`FontNameSpan::ApplyBinary`, `0x4097fc`, skips 8 payload bytes for format
+version >= 8 (`0x40986c`–`0x409898`) and 4 for older versions (`0x409900`).
+Keep the prefix and original payload; its contents are not explained here.
+
+The Java `SpenFontNameSpan` setter stores the supplied nonnull string.
+Model `FontNameSpan::SetName`, `0x409404`, forwards to `String::Set`,
+`0xc3380`, which clears and appends the source. These setters do not trim,
+case-fold or replace unknown names. A bounded SDK getter can validate the
+count and UTF-8, remove the terminal NUL and preserve the original bytes.
+Native reading uses `String::Set(char const*)` at `0x40999c`, so an embedded
+NUL terminates the native name; malformed payload handling must remain
+distinct from a valid but unavailable font name.
+
+Widget `convertTextSpanImpl`, `0xd7ba8`, copies `FontNameSpan::GetName`
+into `RichTextSpan` member 24 at `0xd7d60`–`0xd7d98`. Text
+`SpanRunFunctor::operator()`, `0x7710c`, selects that name when nonnull,
+otherwise the supplied default name (`0x7715c`–`0x77164`), and passes it to
+`TypefaceFactoryImplMinikin::CreateFromFontName`, `0x8a614`. The factory
+resolves name to family through `FontManager`, calls `resolveFontStyle`,
+then creates a typeface for that family. The selected family enters the
+Minikin measurement setup at `0x76bbc`–`0x76bec`, before run measurement
+at `0x77304`. A font name is a measurement input, not just an SVG attribute.
+
+`FontListParser::GetFontFamilyNameByFontName`, `0x8076c`, obtains the
+configured default family first (`0x8079c`) and returns it when its name
+lookup finds no entry (`0x807b4`, `0x807d8`–`0x807ec`). Preserve an unknown
+stored name while resolving a fallback for measurement. This proves the
+fallback rule, not the concrete default family or fallback order on a device.
+
+## Document scale and font-size delta
+
+The rendered scale is `document_pixel * local_text_scale`. Widget
+`ObjectTextLayout::updateSpan` reads text-manager virtual slot 144 and
+multiplies by its local scale at `0xd4f44`–`0xd4f5c`; Drawing does the same
+at `0x8cfbc`–`0x8cfd8` / `0x8d09c`. The TextManager vtable identifies slot
+144 as `GetDocumentPixel` (vptr `0xf1ec0`, relocation `0xf1f50`), whereas
+`GetTextScale` is slot 440 (`0xf2078`). Local scales initialize to 1 in
+Widget `0xd3018`–`0xd301c` and Drawing `0x8c49c`–`0x8c4a0`.
+
+Composer `NoteTextManager::SetDocument`, `0x3a16f0`, assigns document pixel
+from `WNote::GetDocumentDensity` when positive, otherwise 1
+(`0x3a1734`–`0x3a175c`). It takes the font-size delta from
+`WNote::GetBodyTextFontSizeDelta` through `TextViewUtil::SetTextSizeDelta`
+at `0x3a1774`–`0x3a1788`, and shares the resolved delta with the body editor
+at `0x3a1794`–`0x3a17a8`. Widget `CalculateTextSizeDelta`, `0xe0ea8`,
+passes an explicit delta through unchanged; `INT_MIN` selects a display
+default. The exported tablet/phone default constants at `0x6526c` /
+`0x65270` are -5 / 0, respectively.
+
+Standard PDF's X delegate constructs a `NoteTextManager` and calls this
+same `SetDocument` at Composer `0x3575ec`–`0x3575fc`. Widget's body layout
+constructor reads its manager's resolved delta at `0xd3124`–`0xd3138`;
+Drawing's constructor does so at `0x8c520`–`0x8c53c`. Bodytext
+`BodyTextLayout::SetTextScale`, `0xb3a2c`, forwards a changed local scale
+to the shared `ObjectTextLayout` at `0xb3a64`–`0xb3a6c`. A document density
+of 3 can explain scale 3 in a captured fixture; it cannot justify a universal
+factor of 3. Export context, native density, stored delta and local scale must remain
+explicit inputs to one Rust layout pipeline.
+
+The current parser exposes the stored delta as
+`StoredNote::metadata(note_bytes)?.body_font_size_delta` (`NoteMetadata`,
+flexible field 11). It is not promoted to `DocumentMetadata`. Neither public
+structure currently exposes `document_density`; `StoredNoteHeader` provides
+flow dimensions and `StoredNote::default_page_dimensions` provides the
+separate default dimensions. Resolving the native density getter remains
+necessary before choosing which dimensions define text scale.
+
 ## Margins and vertical gravity
 
 `SetFromObject` multiplies left/top/right/bottom margins by its supplied
@@ -123,9 +202,37 @@ otherwise `(multiplier - 1) * metric`. `GetLineHeightWithSpacing`, `0x8e100`,
 adds that amount to a base height. Thus a pixel value is extra spacing in
 this helper, not an absolute line height. If the result exceeds the supplied
 limit, it marks the overflow flag and returns the original base height
-(`0x8e12c`–`0x8e170`). The precise source of the metric and limit arguments,
-first/last-line policy and mixed-font baseline aggregation remain unverified;
-do not substitute font size for the metric and call the result parity.
+(`0x8e12c`–`0x8e170`). The five float arguments are base height, extra
+pixels, multiplier, percentage metric and height limit, respectively.
+
+The ordinary text producer establishes that percentage metric: Text
+`SpanRunFunctor` copies the resolved `RichTextSpan` font size to
+`MeasureData` members 4 and 60 at `0x7766c`–`0x77674`. `GetBlockInfo`
+aggregates the maximum size into `BlockInfo` member 52, with base height in
+member 56 (`0x6aef8`–`0x6af44`, `0x6b008`). `LineLayoutInfoManager::
+AddNewBlock` takes maxima across blocks into line members 24 and 28 at
+`0x6d7b4`–`0x6d7dc`. Ordinary mixed-size text consequently uses the
+largest resolved size in the line for both base height and percentage metric,
+rather than a raw font ascent, descent or `getFontSpacing` result.
+
+`ParagraphLayout::GetBaseline`, `0x6cb0c`, passes line member 28 as base
+height, paragraph members 32/36 as pixel/multiplier spacing, line member 24
+as percentage metric and `ParagraphLayoutData` member 36 as the limit
+(`0x6cba4`–`0x6cbbc`). It advances the vertical cursor by the resulting
+height, then sets the ordinary baseline to `cursor - 0.35f * max_font_size`
+at `0x6cbd0`–`0x6cbdc`; the constant bytes at `0x2663c` are `33 33 b3 be`.
+For uniform ordinary text with default 1.35 spacing and no limit overflow,
+the advance is `1.35 * resolved_size` and the baseline offset from the line
+start is `resolved_size`. This does not define glyph ink bounds.
+
+`SetLayout` adds the line's aggregated top margin (member 32) before this
+baseline call (`0x6b4f0`–`0x6b510`). Completed intermediate lines call it
+at `0x6b388`; the final line calls it at `0x6a9bc`. Thus the inspected
+ordinary baseline calculation is shared by those lines. Lines containing
+objects with margins take a separate baseline branch at `0x6cb90` and can
+add an extra offset at `0x6cc0c`; do not apply the ordinary text formula to
+embedded objects. Paragraph-edge, bullet, empty-line and page-limit effects
+still need captured cases before claiming complete first/last-line parity.
 
 ## Measurement, body flow and embedded objects
 
