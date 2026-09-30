@@ -415,11 +415,8 @@ fn spans_with_half_surrogate_boundaries_are_ignored_entirely() {
 #[test]
 fn mixed_styles_remain_selectable_vector_text_with_bundled_roboto() {
     let mut fonts = sdocx::pdf::fontdb::Database::new();
-    fonts.load_font_data(
-        include_bytes!("../../../web/static/pdf-fonts/Roboto-Regular.ttf").to_vec(),
-    );
-    fonts
-        .load_font_data(include_bytes!("../../../web/static/pdf-fonts/Roboto-Italic.ttf").to_vec());
+    fonts.load_font_data(include_bytes!("../assets/fonts/Roboto-Regular.ttf").to_vec());
+    fonts.load_font_data(include_bytes!("../assets/fonts/Roboto-Italic.ttf").to_vec());
     fonts.set_sans_serif_family("Roboto");
     let options = sdocx::PdfOptions::new(std::sync::Arc::new(fonts));
     let mut content = text("Alpha Beta");

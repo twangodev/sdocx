@@ -4,6 +4,13 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PDFDocument, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
 import { pdfNote } from '../fixtures/pdf-note';
+import type { ConverterRequest } from '../../src/lib/converter/protocol';
+
+declare global {
+	interface Window {
+		exportPdfGate: { pending: (() => void)[]; release(): void };
+	}
+}
 
 async function openDocument(page: Page, oversized = false) {
 	await page.route('https://rybbit.twango.dev/api/script.js', (route) => route.fulfill({ body: '' }));
@@ -24,8 +31,10 @@ async function inspectPdf(bytes: Buffer) {
 for (const scope of ['current', 'all'] as const) {
 	test(`PDF exports ${scope} pages with vector paths and original dimensions`, async ({ page }) => {
 		const remote: string[] = [];
+		const fontRequests: string[] = [];
 		page.on('request', (request) => {
 			if (request.url().startsWith('http') && !request.url().startsWith('http://127.0.0.1:4173') && !request.url().includes('rybbit.twango.dev')) remote.push(request.url());
+			if (new URL(request.url()).pathname.startsWith('/pdf-fonts/')) fontRequests.push(request.url());
 		});
 		await openDocument(page);
 		await page.getByRole('radio', { name: 'Dark document mode' }).click();
@@ -58,6 +67,7 @@ for (const scope of ['current', 'all'] as const) {
 
 		await expect(page.getByRole('dialog').getByText('Download started', { exact: true })).toBeVisible();
 		expect(remote).toEqual([]);
+		expect(fontRequests, 'Native PDF fonts require no browser fetches').toEqual([]);
 	});
 }
 
@@ -198,19 +208,42 @@ test('custom ranges validate, retain scope and package original page numbers', a
 });
 
 test('hiding a busy export keeps the download running', async ({ page }) => {
+	await page.addInitScript(() => {
+		let released = false;
+		const controls = window.exportPdfGate = {
+			pending: [] as (() => void)[],
+			release() {
+				released = true;
+				controls.pending.splice(0).forEach(send => send());
+			}
+		};
+		const original = Worker.prototype.postMessage;
+		Worker.prototype.postMessage = function(message: ConverterRequest, options?: StructuredSerializeOptions | Transferable[]) {
+			const post = original.bind(this);
+			const send = () => {
+				if (Array.isArray(options)) post(message, options);
+				else post(message, options);
+			};
+			if (!released && message.type === 'exportPdf') controls.pending.push(send);
+			else send();
+		};
+	});
 	await openDocument(page);
-	let release!: () => void;
-	const gate = new Promise<void>((resolve) => { release = resolve; });
-	await page.route('**/pdf-fonts/*.ttf', async (route) => { await gate; await route.continue(); });
 	await page.getByRole('button', { name: 'Export document', exact: true }).click();
 	const started = page.waitForEvent('download');
 	await page.getByRole('button', { name: 'Download PDF', exact: true }).click();
+	await expect.poll(() => page.evaluate(() => window.exportPdfGate.pending.length)).toBe(1);
 	const dialog = page.getByRole('dialog');
 	await expect(dialog.getByRole('status')).toContainText('Generating PDF');
 	await expect(page.getByLabel('Format', { exact: true })).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await expect(dialog).not.toBeVisible();
-	release();
-	expect((await started).suggestedFilename()).toBe('vector-note.pdf');
+	await page.evaluate(() => window.exportPdfGate.release());
+	const download = await started;
+	expect(download.suggestedFilename()).toBe('vector-note.pdf');
+	const { pdf, dictionaries } = await inspectPdf(await readFile((await download.path())!));
+	expect(pdf.getPageCount()).toBe(2);
+	expect(dictionaries).toContain('/FontFile2');
+	expect(dictionaries).not.toContain('/Subtype /Image');
 	await expect(page.getByRole('button', { name: 'Export document', exact: true })).toBeEnabled();
 });

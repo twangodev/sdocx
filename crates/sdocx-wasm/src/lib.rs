@@ -22,7 +22,7 @@ pub struct DocumentSession {
     parsed: Option<sdocx::ParsedDocument>,
     layout: Option<sdocx::LayoutDocument>,
     page_count: usize,
-    pdf_fonts: sdocx::pdf::fontdb::Database,
+    pdf_fonts: std::sync::Arc<sdocx::pdf::fontdb::Database>,
     debugger: Option<debugger::Source>,
 }
 
@@ -45,7 +45,7 @@ impl DocumentSession {
             parsed: Some(parsed),
             layout: Some(layout),
             page_count,
-            pdf_fonts: sdocx::pdf::fontdb::Database::new(),
+            pdf_fonts: sdocx::fonts::FontBook::default().database(),
         })
     }
 
@@ -71,24 +71,21 @@ impl DocumentSession {
             .ok_or_else(|| JsError::new("page index is out of bounds"))
     }
 
-    /// Add a TTF/OTF font for PDF text. Browsers cannot discover system fonts.
-    /// Load the required fonts before calling `render_pdf`.
+    /// Add a TTF/OTF font to supplement the bundled Roboto and Roboto Mono faces.
     pub fn add_pdf_font(&mut self, bytes: &[u8]) -> Result<(), JsError> {
         self.parsed()?;
         let before = self.pdf_fonts.faces().count();
-        self.pdf_fonts.load_font_data(bytes.to_vec());
+        std::sync::Arc::make_mut(&mut self.pdf_fonts).load_font_data(bytes.to_vec());
         if self.pdf_fonts.faces().count() == before {
             return Err(JsError::new(
                 "no usable PDF font faces in the supplied data",
             ));
         }
-        self.pdf_fonts.set_sans_serif_family("Roboto");
-        self.pdf_fonts.set_monospace_family("Roboto Mono");
         Ok(())
     }
 
     /// Export all visible pages, or one zero-based page, using the CLI's PDF engine.
-    /// Returns PDF bytes; fonts are supplied separately with `add_pdf_font`.
+    /// Returns PDF bytes with bundled fonts and any supplied additional faces.
     pub fn render_pdf(
         &self,
         page_index: Option<usize>,
@@ -128,7 +125,7 @@ impl DocumentSession {
                     .ok_or_else(|| JsError::new("page index is out of bounds"))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let pdf_options = sdocx::PdfOptions::new(std::sync::Arc::new(self.pdf_fonts.clone()));
+        let pdf_options = sdocx::PdfOptions::new(self.pdf_fonts.clone());
         sdocx::render_svg_pages_pdf(&pages, &pdf_options)
             .map_err(|error| JsError::new(&error.to_string()))
     }
@@ -152,7 +149,7 @@ impl DocumentSession {
 
     /// Release the parsed document before the JavaScript wrapper is collected.
     pub fn dispose(&mut self) {
-        self.pdf_fonts = sdocx::pdf::fontdb::Database::new();
+        self.pdf_fonts = std::sync::Arc::new(sdocx::pdf::fontdb::Database::new());
         self.debugger = None;
         self.parsed = None;
         self.layout = None;

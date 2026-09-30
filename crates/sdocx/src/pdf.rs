@@ -29,11 +29,7 @@ impl PdfOptions {
 
 impl Default for PdfOptions {
     fn default() -> Self {
-        let mut fonts = fontdb::Database::new();
-        fonts.load_system_fonts();
-        fonts.set_sans_serif_family("DejaVu Sans");
-        fonts.set_monospace_family("DejaVu Sans Mono");
-        Self::new(Arc::new(fonts))
+        Self::new(crate::fonts::FontBook::default().database())
     }
 }
 

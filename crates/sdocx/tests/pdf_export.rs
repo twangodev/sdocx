@@ -21,13 +21,7 @@ fn no_fonts() -> PdfOptions {
 
 #[test]
 fn pages_keep_order_dimensions_vectors_and_selectable_embedded_text() {
-    let mut fonts = sdocx::pdf::fontdb::Database::new();
-    fonts.load_system_fonts();
-    let family = fonts.faces().next().expect("a system font").families[0]
-        .0
-        .clone();
-    fonts.set_sans_serif_family(&family);
-    let options = PdfOptions::new(Arc::new(fonts));
+    let options = PdfOptions::default();
     let pages = [
         page(
             400,

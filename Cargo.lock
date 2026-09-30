@@ -846,12 +846,14 @@ name = "sdocx"
 version = "0.7.0"
 dependencies = [
  "base64",
+ "fontdb",
  "krilla",
  "krilla-svg",
  "lopdf",
  "png",
  "resvg",
  "roxmltree 0.21.1",
+ "rustybuzz",
  "serde",
  "serde_json",
  "sha2",

@@ -9,7 +9,7 @@ repository = "https://github.com/twangodev/sdocx"
 readme = "../../README.md"
 
 [features]
-render = ["dep:base64", "dep:svg"]
+render = ["dep:base64", "dep:svg", "dep:fontdb", "dep:rustybuzz"]
 pdf = ["render", "dep:krilla", "dep:krilla-svg", "dep:usvg", "dep:png"]
 serde = ["dep:serde"]
 
@@ -20,6 +20,8 @@ thiserror = "2.0.18"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 svg = { version = "0.18.0", optional = true }
 base64 = { version = "0.22", optional = true }
+fontdb = { version = "0.23.0", optional = true, default-features = false }
+rustybuzz = { version = "0.20.1", optional = true }
 krilla = { version = "0.8.2", optional = true, default-features = false }
 krilla-svg = { version = "0.8.1", optional = true }
 usvg = { version = "0.47.0", optional = true }

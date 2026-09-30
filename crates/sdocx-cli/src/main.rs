@@ -55,9 +55,12 @@ fn svg_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, 
             return Err(format!("no usable font faces in {}", path.display()));
         }
     }
-    fontdb.load_system_fonts();
-    fontdb.set_sans_serif_family("DejaVu Sans");
-    fontdb.set_monospace_family("DejaVu Sans Mono");
+    let bundled = sdocx::fonts::FontBook::default().database();
+    for face in bundled.faces() {
+        fontdb.load_font_source(face.source.clone());
+    }
+    fontdb.set_sans_serif_family("Roboto");
+    fontdb.set_monospace_family("Roboto Mono");
     Ok(opt)
 }
 
@@ -383,11 +386,11 @@ mod tests {
     }
 
     #[test]
-    fn explicit_font_file_wins_over_the_same_system_face() {
+    fn explicit_font_file_wins_over_the_same_bundled_face() {
         use resvg::usvg::fontdb::{Family, Query, Source};
-        let system = svg_options(&[]).unwrap();
-        let face = system.fontdb.faces().next().expect("system font");
-        let data = system
+        let bundled = svg_options(&[]).unwrap();
+        let face = bundled.fontdb.faces().next().expect("bundled font");
+        let data = bundled
             .fontdb
             .with_face_data(face.id, |data, _| data.to_vec())
             .unwrap();
@@ -520,7 +523,7 @@ mod tests {
     }
 
     #[test]
-    fn svg_to_png_rasterizes_text_with_system_fonts() {
+    fn svg_to_png_rasterizes_text_with_bundled_fonts() {
         let svg = r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60"><rect width="200" height="60" fill="#252525"/><text x="5" y="40" fill="#ffffff" font-family="Arial, sans-serif" font-size="32">visible</text></svg>"##;
         let png = svg_to_png(svg).expect("render should succeed");
         let pixmap = resvg::tiny_skia::Pixmap::decode_png(&png).expect("decode rendered PNG");

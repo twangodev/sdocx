@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "provenance": {
+    "font_tables": "Direct head, hhea, OS/2, cmap and hmtx inspection with ttf-parser 0.25.1; no production FontBook calls.",
+    "shaping": "Direct rustybuzz 0.20.1 shaping of the pinned font bytes, default features, UnicodeBuffer::guess_segment_properties. Cluster offsets are UTF-8 byte offsets.",
+    "native_pdf": "Samsung reference PDF Form XObject 5: Tm, Tf, Tj and descendant-font W inspected with lopdf 0.42.0. Line strings independently checked with PyMuPDF 1.28.2 gettext blocks.",
+    "scope": "Font samples establish pinned-font measurements. Native PDF expectations separately establish observed Samsung layout; shaped font advances are not native parity claims."
+  },
+  "common_font_metrics": {
+    "units_per_em": 2048,
+    "ascender": 2146,
+    "descender": -555,
+    "line_gap": 0,
+    "hhea_matches_os2_typographic_metrics": true,
+    "has_gsub": true,
+    "has_gpos": true,
+    "covered_characters": ["A", "é", "́", "λ", "Я"],
+    "missing_characters": ["中", "😀"]
+  },
+  "fonts": [
+    {
+      "id": "regular",
+      "family": "Roboto",
+      "path": "crates/sdocx/assets/fonts/Roboto-Regular.ttf",
+      "sha256": "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d",
+      "weight": 400,
+      "italic": false,
+      "abc_glyph_ids": [38, 39, 40],
+      "abc_hmtx_advances": [1336, 1275, 1333]
+    },
+    {
+      "id": "bold",
+      "family": "Roboto",
+      "path": "crates/sdocx/assets/fonts/Roboto-Bold.ttf",
+      "sha256": "61f89f8db49261c2f6106e8dccc35df7b2f7ed909020db40a3fc905e95f99334",
+      "weight": 700,
+      "italic": false,
+      "abc_glyph_ids": [38, 39, 40],
+      "abc_hmtx_advances": [1378, 1307, 1340]
+    },
+    {
+      "id": "italic",
+      "family": "Roboto",
+      "path": "crates/sdocx/assets/fonts/Roboto-Italic.ttf",
+      "sha256": "fa0b17bb4aaac4a1b2ee149dd4ca3b55e97d3077aa6ba9bb02541b316e7c46ce",
+      "weight": 400,
+      "italic": true,
+      "abc_glyph_ids": [38, 39, 40],
+      "abc_hmtx_advances": [1306, 1247, 1303]
+    },
+    {
+      "id": "bold_italic",
+      "family": "Roboto",
+      "path": "crates/sdocx/assets/fonts/Roboto-BoldItalic.ttf",
+      "sha256": "40083ed54338397cf49d2c49f59eddcd963a30fdb301813d4bd3abbb37a13d12",
+      "weight": 700,
+      "italic": true,
+      "abc_glyph_ids": [38, 39, 40],
+      "abc_hmtx_advances": [1347, 1278, 1310]
+    }
+  ],
+  "font_samples": [
+    { "font": "regular", "text": "ABC", "font_size": 45, "advance_units": 3944, "advance": 86.66015625, "glyph_ids": [38, 39, 40], "clusters_utf8": [0, 1, 2] },
+    { "font": "bold", "text": "ABC", "font_size": 45, "advance_units": 4025, "advance": 88.43994140625, "glyph_ids": [38, 39, 40], "clusters_utf8": [0, 1, 2] },
+    { "font": "italic", "text": "ABC", "font_size": 45, "advance_units": 3856, "advance": 84.7265625, "glyph_ids": [38, 39, 40], "clusters_utf8": [0, 1, 2] },
+    { "font": "bold_italic", "text": "ABC", "font_size": 45, "advance_units": 3935, "advance": 86.46240234375, "glyph_ids": [38, 39, 40], "clusters_utf8": [0, 1, 2] },
+    { "font": "regular", "text": "e\u0301", "font_size": 45, "advance_units": 1085, "advance": 23.84033203125, "glyph_ids": [2317], "clusters_utf8": [0] },
+    { "font": "regular", "text": "é", "font_size": 45, "advance_units": 1085, "advance": 23.84033203125, "glyph_ids": [2317], "clusters_utf8": [0] },
+    { "font": "regular", "text": "office", "font_size": 45, "advance_units": 5170, "advance": 113.5986328125, "glyph_ids": [84, 75, 1834, 72, 74], "clusters_utf8": [0, 1, 2, 4, 5] },
+    { "font": "regular", "text": "AV", "font_size": 45, "advance_units": 2552, "advance": 56.07421875, "glyph_ids": [38, 59], "clusters_utf8": [0, 1] },
+    { "font": "regular", "text": "A  B", "font_size": 45, "advance_units": 3625, "advance": 79.65087890625, "glyph_ids": [38, 5, 5, 39], "clusters_utf8": [0, 1, 2, 3] }
+  ],
+  "native_reference": {
+    "fixture": "01-basic-formatting",
+    "sdocx_sha256": "86716d1ccc070d101272ff0760276b8e2d913bfcde88e34d3d64c5c51a1fd21b",
+    "pdf_sha256": "fb1437be8c1c172374b6c798cb65ace68e7ccffaad61db3807e4e8e0d2dcc2a1",
+    "page_index": 0,
+    "form_object_id": 5,
+    "pdf_to_svg_scale": 1.8,
+    "logical_pdf_page_height": 848.3333333333334,
+    "coordinate_tolerance": 0.25,
+    "font_size": 45,
+    "line_spacing": 72,
+    "lines": [
+      { "text": "Compatibility Test 01 - Basic Test", "x": 48, "baseline": 98.85, "width": 669.87 },
+      { "text": "Project Atlas", "x": 48, "baseline": 182.85 },
+      { "text": "This document tests ordinary typed text in a ", "x": 48, "baseline": 326.85 },
+      { "text": "Samsung Notes document. The text should ", "x": 48, "baseline": 398.85 },
+      { "text": "remain readable, selectable, and in the same ", "x": 48, "baseline": 470.85 },
+      { "text": "order after parsing and rendering.", "x": 48, "baseline": 542.85 }
+    ]
+  }
+}

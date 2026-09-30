@@ -15,6 +15,7 @@ use vector::{
     Transform, ViewBox, color_hex, coordinate, decimal,
 };
 
+pub mod fonts;
 mod fountain;
 mod text;
 mod theme;

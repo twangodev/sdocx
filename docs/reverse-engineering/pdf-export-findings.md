@@ -14,13 +14,19 @@ and [krilla-svg 0.8.1](https://docs.rs/krilla-svg/0.8.1/krilla_svg/), with
 usvg/resvg 0.47.0 shared with PNG export. All workspace packages now declare
 Rust 1.92. PDF dependencies remain optional for library consumers. The WASM bindings
 enable `pdf` and `serde`, exposing the same renderer through
-`DocumentSession.render_pdf`. Browser fonts are supplied as bytes through
-`add_pdf_font`; the website loads its bundled Roboto/Roboto Mono fonts on demand.
+`DocumentSession.render_pdf`. Eight pinned Roboto/Roboto Mono faces are bundled
+in the Rust SDK and available immediately in both native and WASM builds.
+`add_pdf_font` can supply additional faces without browser font requests.
 
 The supplied font database is shared across all pages. CLI font precedence
-matches PNG: explicit faces are loaded before system faces. Available fonts
+matches PNG: explicit faces are loaded before bundled faces. Available fonts
 are embedded and text retains Unicode mappings. The SDK's default PDF options
-discover system fonts; `PdfOptions::new` accepts a caller-controlled database.
+use the bundled database; `PdfOptions::new` accepts a caller-controlled database.
+The default does not discover host fonts. Bundled coverage is Latin, Greek and
+Cyrillic; CJK and emoji require caller-supplied fonts. `fonts::FontBook` resolves
+actual face metadata and measures shaped runs using the same font database.
+The pinned samples in `conformance/text-metrics.json` establish font measurements;
+their native PDF observations are separate layout expectations.
 
 ## Physical size and error behavior
 

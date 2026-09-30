@@ -17,7 +17,6 @@ for (const fixture of ['01-basic-formatting', '02-shapes-and-dot-calibration', '
 					render_svg(page: number, color: string): string;
 					inspection(): { layout: { pages: { source_page_index: number }[] } };
 					render_pdf_pages(pages: Uint32Array, color: string): Uint8Array;
-					add_pdf_font(bytes: Uint8Array): void;
 					debug(request: string): string;
 					free(): void;
 				};
@@ -35,9 +34,6 @@ for (const fixture of ['01-basic-formatting', '02-shapes-and-dot-calibration', '
 				} finally { URL.revokeObjectURL(url); }
 			};
 			try {
-				for (const name of ['Roboto-Regular.ttf', 'Roboto-Bold.ttf', 'Roboto-Italic.ttf', 'Roboto-BoldItalic.ttf']) {
-					session.add_pdf_font(new Uint8Array(await (await fetch(`/pdf-fonts/${name}`)).arrayBuffer()));
-				}
 				const rows = [];
 				for (const [pageIndex, layoutPage] of session.inspection().layout.pages.entries()) {
 					for (const mode of ['auto', 'light', 'dark']) {
