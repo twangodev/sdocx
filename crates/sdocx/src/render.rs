@@ -1,10 +1,9 @@
 //! Presentation-oriented Svg rendering for parsed Samsung Notes documents.
 
 use crate::{
-    BoundingBox, BulletType, Color, Document, LayoutDocument, LineSpacingType, MediaAsset, Page,
-    PageElement, ParagraphAlignment, ParagraphBullet, ParagraphLineSpacing, PlacedImage,
-    PredefinedTextStyle, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
-    RichTextParagraphType, Stroke, layout_document,
+    BoundingBox, BulletType, Color, Document, LayoutDocument, MediaAsset, Page, PageElement,
+    ParagraphAlignment, ParagraphBullet, PlacedImage, PredefinedTextStyle, RichTextBox,
+    RichTextObjectContent, RichTextObjectSpan, Stroke, layout_document,
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
@@ -22,7 +21,8 @@ mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
 use text::{
-    StyledText, TextContext, TextRenderer, TextSettings, TextStyle, WrappedLine, wrap_paragraph,
+    StyledText, TextContext, TextRenderer, TextSettings, TextStyle, WrappedLine, paragraph_layout,
+    paragraph_line_height, render_measured_line, wrap_paragraph,
 };
 pub use text::{TextDiagnostic, TextDiagnosticKind};
 pub use theme::RenderTheme;
@@ -720,13 +720,17 @@ fn render_text_box(
         text_box.bbox.x_max - text_box.bbox.x_min,
         text_box.bbox.y_max - text_box.bbox.y_min,
     );
+    let margins = text_box.margins.unwrap_or([0.0; 4]);
+    let content_box = BoundingBox {
+        x_min: x + settings.pixels(margins[0]),
+        y_min: y + settings.pixels(margins[1]),
+        x_max: x + width.ceil() - settings.pixels(margins[2]),
+        y_max: y + height - settings.pixels(margins[3]),
+    };
     let theme = text_box
         .highlight_color
         .map_or(theme, |color| theme.on_background(color));
     let styled = StyledText::new(text_box, TextContext::Placed, settings);
-    let default_style = styled.style_at(styled.index.len(), theme, None);
-    let color = default_style.color;
-    let font_size = default_style.font_size;
     let mut group = Group::new();
     if let Some(rotation) = text_box.rotation_degrees {
         let cx = x + width / 2.0;
@@ -737,33 +741,63 @@ fn render_text_box(
         if let Some(highlight) = text_box.highlight_color.as_ref() {
             svg.push(rectangle(text_box.bbox, 0., 2).fill(Paint::from_hex(&color_hex(highlight))));
         }
-        let mut cursor_y = y;
+        let mut cursor_y = content_box.y_min;
         for paragraph in styled.index.paragraphs() {
-            let line_font_size = styled.line_font_size(paragraph.content.clone(), theme, None);
-            let text_y = cursor_y + line_font_size;
-            cursor_y += line_font_size * 1.35;
-            if paragraph.content.is_empty() {
-                continue;
+            let paragraph_index = styled
+                .index
+                .paragraph_index(paragraph.content.start)
+                .unwrap();
+            let layout = text::paragraph_layout(text_box, paragraph_index, settings);
+            let indent = layout.left_indent(settings);
+            let text_x = content_box.x_min + indent;
+            let available_width = (content_box.x_max - text_x).max(0.0);
+            let base_style =
+                styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+            let lines = if paragraph.content.is_empty() {
+                vec![WrappedLine::unmeasured(
+                    paragraph.content.clone(),
+                    base_style.font_size,
+                )]
+            } else {
+                wrap_paragraph(
+                    &styled,
+                    paragraph.content.clone(),
+                    available_width,
+                    theme,
+                    layout.predefined_style,
+                    renderer,
+                )
+                .unwrap_or_else(|_| {
+                    renderer.measurement_failed(base_style.family.as_deref().unwrap_or("Roboto"));
+                    vec![WrappedLine::unmeasured(
+                        paragraph.content.clone(),
+                        styled.line_font_size(
+                            paragraph.content.clone(),
+                            theme,
+                            layout.predefined_style,
+                        ),
+                    )]
+                })
+            };
+            cursor_y += layout.spacing_before;
+            for line in lines {
+                let baseline = cursor_y + line.font_size;
+                render_measured_line(
+                    svg,
+                    &styled,
+                    &line,
+                    text_x,
+                    available_width,
+                    baseline,
+                    layout.alignment,
+                    theme,
+                    layout.predefined_style,
+                    renderer,
+                );
+                cursor_y +=
+                    text::paragraph_line_height(line.font_size, layout.line_spacing, settings);
             }
-            let node = Text::new("")
-                .x(decimal(x, 2))
-                .y(decimal(text_y, 2))
-                .fill(Paint::from_hex(&color))
-                .family(FontFamily::Roboto)
-                .font_size(decimal(font_size, 2))
-                .preserve_space();
-            svg.scope(node, |svg| {
-                for range in styled.segments(paragraph.content.clone()) {
-                    let style = styled.style_at(range.start, theme, None);
-                    write_styled_tspan(
-                        svg,
-                        styled.index.slice(range).unwrap(),
-                        &style,
-                        styled.context(),
-                        renderer,
-                    );
-                }
-            });
+            cursor_y += layout.spacing_after;
         }
         for span in &text_box.object_spans {
             if let Some(RichTextObjectContent::Image(image)) = &span.content {
@@ -775,18 +809,6 @@ fn render_text_box(
 
 const IMAGE_FLOW_LINE_HEIGHT_RATIO: f64 = 1.35;
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
-const FLOW_INDENT: f64 = 48.0;
-
-#[derive(Default)]
-struct ParagraphLayout {
-    alignment: Option<ParagraphAlignment>,
-    indent_level: u32,
-    line_spacing: Option<ParagraphLineSpacing>,
-    bullet: Option<ParagraphBullet>,
-    spacing_before: f64,
-    spacing_after: f64,
-    predefined_style: Option<PredefinedTextStyle>,
-}
 
 fn render_flow_text_box(
     svg: &mut Scene,
@@ -874,14 +896,14 @@ fn render_flow_text_box(
                 .bullet
                 .and_then(|bullet| bullet_marker_for_indent(bullet, layout.indent_level));
             let marker_width = marker.as_ref().map_or(0.0, |(_, width, _, _)| *width);
-            let base_x = content_left + f64::from(layout.indent_level) * FLOW_INDENT;
+            let base_x = content_left + layout.left_indent(settings);
             let text_x = base_x + marker_width;
             let available_width = (content_right - text_x).max(base_style.font_size);
             let lines = if content.is_empty() {
-                vec![WrappedLine {
-                    source: paragraph_start..paragraph_start,
-                    font_size: base_style.font_size,
-                }]
+                vec![WrappedLine::unmeasured(
+                    paragraph_start..paragraph_start,
+                    base_style.font_size,
+                )]
             } else {
                 wrap_paragraph(
                     &styled,
@@ -893,14 +915,14 @@ fn render_flow_text_box(
                 )
                 .unwrap_or_else(|_| {
                     renderer.measurement_failed(base_style.family.as_deref().unwrap_or("Roboto"));
-                    vec![WrappedLine {
-                        source: paragraph_start..paragraph_end,
-                        font_size: styled.line_font_size(
+                    vec![WrappedLine::unmeasured(
+                        paragraph_start..paragraph_end,
+                        styled.line_font_size(
                             paragraph_start..paragraph_end,
                             theme,
                             layout.predefined_style,
                         ),
-                    }]
+                    )]
                 })
             };
             for (line_index, line) in lines.iter().enumerate() {
@@ -926,12 +948,12 @@ fn render_flow_text_box(
                         },
                     );
                 }
-                render_flow_line(
+                render_measured_line(
                     svg,
                     &styled,
-                    line.source.clone(),
+                    line,
                     text_x,
-                    content_right,
+                    available_width,
                     baseline,
                     layout.alignment,
                     theme,
@@ -946,69 +968,6 @@ fn render_flow_text_box(
             paragraph_start += paragraph.chars().count();
         }
     });
-}
-
-fn paragraph_layout(
-    text_box: &RichTextBox,
-    paragraph_index: u32,
-    settings: TextSettings,
-) -> ParagraphLayout {
-    let mut layout = ParagraphLayout::default();
-    for paragraph in text_box.paragraphs.iter().filter(|paragraph| {
-        paragraph.start_paragraph <= paragraph_index && paragraph.end_paragraph > paragraph_index
-    }) {
-        match paragraph.kind {
-            RichTextParagraphType::Alignment => layout.alignment = paragraph.alignment(),
-            RichTextParagraphType::IndentLevel => {
-                if let Some(indent) = paragraph.indent() {
-                    layout.indent_level = indent.level;
-                }
-            }
-            RichTextParagraphType::LineSpacing => layout.line_spacing = paragraph.line_spacing(),
-            RichTextParagraphType::Bullet => layout.bullet = paragraph.bullet(),
-            RichTextParagraphType::SpacingBefore => {
-                layout.spacing_before = paragraph
-                    .spacing()
-                    .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
-                    .map_or(0.0, |spacing| settings.pixels(spacing));
-            }
-            RichTextParagraphType::SpacingAfter => {
-                layout.spacing_after = paragraph
-                    .spacing()
-                    .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
-                    .map_or(0.0, |spacing| settings.pixels(spacing));
-            }
-            RichTextParagraphType::PredefinedStyle => {
-                layout.predefined_style = paragraph.predefined_style().map(|style| style.style)
-            }
-            _ => {}
-        }
-    }
-    layout
-}
-
-fn paragraph_line_height(
-    font_size: f64,
-    spacing: Option<ParagraphLineSpacing>,
-    settings: TextSettings,
-) -> f64 {
-    match spacing {
-        Some(spacing)
-            if spacing.value.is_finite()
-                && spacing.value > 0.0
-                && spacing.kind == LineSpacingType::Percent =>
-        {
-            font_size * f64::from(spacing.value)
-        }
-        Some(spacing)
-            if spacing.value.is_finite()
-                && spacing.value > 0.0
-                && spacing.kind == LineSpacingType::Pixels =>
-        {
-            font_size + settings.pixels(spacing.value)
-        }
-        _ => font_size * 1.35,
-    }
 }
 
 fn bullet_marker(bullet: ParagraphBullet) -> Option<(String, f64, f64, f64)> {
@@ -1140,6 +1099,11 @@ fn write_styled_tspan(
     renderer: &TextRenderer<'_>,
 ) {
     let style = renderer.output_style(text, style, context);
+    let span = styled_tspan(text, &style, context);
+    push_text_span(svg, span, &style);
+}
+
+fn styled_tspan(text: &str, style: &TextStyle, context: TextContext) -> TSpan {
     let mut span = TSpan::new(text)
         .fill(Paint::from_hex(&style.color))
         .font_size(decimal(style.font_size, 2));
@@ -1167,6 +1131,10 @@ fn write_styled_tspan(
     if style.italic {
         span = span.italic();
     }
+    span
+}
+
+fn push_text_span(svg: &mut Scene, span: TSpan, style: &TextStyle) {
     if let Some(target) = &style.link_target {
         svg.scope(Anchor::new(target), |svg| svg.push(span));
     } else {
@@ -2009,7 +1977,7 @@ mod tests {
             );
             assert!(
                 xml.descendants()
-                    .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some(foreground))
+                    .any(|n| n.has_tag_name("tspan") && n.attribute("fill") == Some(foreground))
             );
             let theme =
                 super::RenderTheme::resolve(&doc.pages[0], &doc.metadata, options.color_mode);
@@ -2041,7 +2009,7 @@ mod tests {
         let xml = roxmltree::Document::parse(&svg).unwrap();
         assert!(
             xml.descendants()
-                .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some("#000000"))
+                .any(|n| n.has_tag_name("tspan") && n.attribute("fill") == Some("#000000"))
         );
         assert!(
             xml.descendants()
@@ -2080,7 +2048,7 @@ mod tests {
             );
             assert!(
                 xml.descendants()
-                    .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some(ink))
+                    .any(|n| n.has_tag_name("tspan") && n.attribute("fill") == Some(ink))
             );
         }
     }
@@ -2097,7 +2065,7 @@ mod tests {
         let xml = roxmltree::Document::parse(&svg).unwrap();
         assert!(
             xml.descendants()
-                .any(|n| n.has_tag_name("text") && n.attribute("fill") == Some("#ffffff"))
+                .any(|n| n.has_tag_name("tspan") && n.attribute("fill") == Some("#ffffff"))
         );
     }
 
@@ -2249,7 +2217,11 @@ mod tests {
                 .contains(r##"<a href="https://example.com/markdown-test">"##)
         );
         assert!(pages[0].svg.contains(r##"fill="#0054ff""##));
-        assert!(pages[0].svg.contains(r#"text-decoration="underline""#));
+        let xml = roxmltree::Document::parse(&pages[0].svg).unwrap();
+        assert!(
+            xml.descendants()
+                .any(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#0054ff"))
+        );
     }
 
     #[test]
@@ -2370,7 +2342,14 @@ mod tests {
         let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
             .svg
             .clone();
-        let text_at = svg.find("under the highlighter").unwrap();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let text = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .filter_map(|node| node.text())
+            .collect::<String>();
+        assert_eq!(text, "under the highlighter");
+        let text_at = svg.find("<text").unwrap();
         let group_at = svg.find(r#"<g style="mix-blend-mode:darken">"#).unwrap();
         assert!(text_at < group_at);
         assert_eq!(svg.matches(r#"mix-blend-mode:darken"#).count(), 1);

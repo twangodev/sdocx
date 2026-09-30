@@ -4,12 +4,30 @@ use crate::PredefinedTextStyle;
 use crate::render::RenderTheme;
 
 use super::breaks::{BreakKind, break_candidates};
-use super::measurement::{MeasurementError, ParagraphMeasurer};
+use super::measurement::{MeasuredCluster, MeasurementError, ParagraphMeasurer};
 use super::{StyledText, TextRenderer};
 
 pub(in crate::render) struct WrappedLine {
     pub source: Range<usize>,
     pub font_size: f64,
+    pub advance: f64,
+    pub placements: Vec<PositionedCluster>,
+}
+
+pub(in crate::render) struct PositionedCluster {
+    pub cluster: MeasuredCluster,
+    pub x: f64,
+}
+
+impl WrappedLine {
+    pub fn unmeasured(source: Range<usize>, font_size: f64) -> Self {
+        Self {
+            source,
+            font_size,
+            advance: 0.0,
+            placements: Vec::new(),
+        }
+    }
 }
 
 pub(in crate::render) fn wrap_paragraph(
@@ -68,6 +86,7 @@ pub(in crate::render) fn wrap_paragraph(
     let mut lines = Vec::new();
     let mut start = 0;
     let mut candidate_index = 0;
+    let mut cluster_index = 0;
     while start < range.len() {
         let mut selected = None;
         let mut overflow_end = None;
@@ -111,7 +130,24 @@ pub(in crate::render) fn wrap_paragraph(
         } else {
             measurer.font_size(source.clone())?
         };
-        lines.push(WrappedLine { source, font_size });
+        let mut placements = Vec::new();
+        let mut x = 0.0;
+        while let Some(cluster) = measured.clusters.get(cluster_index)
+            && cluster.source.end <= source.end
+        {
+            placements.push(PositionedCluster {
+                cluster: cluster.clone(),
+                x,
+            });
+            x += cluster.advance;
+            cluster_index += 1;
+        }
+        lines.push(WrappedLine {
+            source,
+            font_size,
+            advance: advances[end] - advances[start],
+            placements,
+        });
         start = end;
     }
     Ok(lines)
@@ -193,6 +229,36 @@ mod tests {
     fn assert_single_line(lines: &[WrappedLine], expected: Range<usize>) {
         assert_eq!(lines.len(), 1);
         assert_eq!(lines[0].source, expected);
+    }
+
+    #[test]
+    fn wrapped_placements_keep_shared_paragraph_glyphs_and_kerning_positions() {
+        let lines = wrap(&text("AVA"), 55.0);
+        assert_eq!(ranges(&lines), [0..2, 2..3]);
+        assert_eq!(lines[0].advance, 54.42626953125);
+        assert_eq!(lines[1].advance, 29.35546875);
+        assert_eq!(lines[0].placements.len(), 2);
+        assert_eq!(lines[1].placements.len(), 1);
+        assert_eq!(lines[0].placements[0].x, 0.0);
+        assert_eq!(lines[0].placements[1].x, 27.44384765625);
+        assert_eq!(lines[1].placements[0].x, 0.0);
+        let run = &lines[0].placements[0].cluster.run;
+        assert!(Arc::ptr_eq(run, &lines[0].placements[1].cluster.run));
+        assert!(Arc::ptr_eq(run, &lines[1].placements[0].cluster.run));
+        assert_eq!(run.glyphs[1].raw.x_advance, 1228);
+        for (placement, character) in lines
+            .iter()
+            .flat_map(|line| &line.placements)
+            .zip("AVA".chars())
+        {
+            let offset = placement
+                .cluster
+                .paint_offset(&character.to_string())
+                .unwrap()
+                .unwrap();
+            assert_eq!(offset.x, 0.0);
+            assert_eq!(offset.y, 0.0);
+        }
     }
 
     #[test]

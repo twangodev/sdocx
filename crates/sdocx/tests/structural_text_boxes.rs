@@ -56,8 +56,13 @@ fn hidden_text_is_retained_without_entering_svg_exports() {
     {
         let rendered =
             sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default()).unwrap();
-        assert!(rendered.svg.contains("visible phrase"));
-        assert!(!rendered.svg.contains("hidden phrase"));
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        let text = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .filter_map(|node| node.text())
+            .collect::<String>();
+        assert_eq!(text, "visible phrase");
     }
 }
 
@@ -363,7 +368,7 @@ fn uses_declared_bounds_rotation_and_utf16_style_ranges() {
             .unwrap()
             .svg;
         assert!(svg.contains("rotate(30.00 80.00 90.00)"));
-        assert!(svg.contains("x=\"-20.00\""));
+        assert!(svg.contains("x=\"-18.00\""));
         assert!(svg.contains("fill=\"#123456\""));
         assert!(svg.contains("font-weight=\"bold\">😀"));
         assert!(svg.contains("font-style=\"italic\">中"));
@@ -401,9 +406,13 @@ fn reads_and_renders_text_and_strokes_from_the_current_layer() {
         {
             let svg = sdocx::render_page_svg(&parsed.document, 0, &sdocx::RenderOptions::default())
                 .unwrap();
-            assert!(svg.svg.contains(visible));
-            assert!(!svg.svg.contains(_inactive));
-            assert!(!svg.svg.contains("decoy text"));
+            let xml = roxmltree::Document::parse(&svg.svg).unwrap();
+            let text = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("tspan"))
+                .filter_map(|node| node.text())
+                .collect::<String>();
+            assert_eq!(text, visible);
         }
         assert!(
             parsed

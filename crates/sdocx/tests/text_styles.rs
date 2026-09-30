@@ -340,8 +340,8 @@ fn flow_alignment_uses_native_paragraph_ordinals_after_crlf() {
     let svg = render(Context::Flow, content);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let node = tspan(&xml, "b").parent().unwrap();
-    assert_eq!(node.attribute("text-anchor"), Some("end"));
-    assert_eq!(node.attribute("x"), Some("1752.00"));
+    assert_eq!(node.attribute("text-anchor"), Some("start"));
+    assert_eq!(node.attribute("x"), Some("1735.17"));
     assert_eq!(
         tspan(&xml, "a").parent().unwrap().attribute("text-anchor"),
         Some("start")
@@ -423,7 +423,11 @@ fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
             assert_eq!(node.attribute("font-style"), Some("italic"), "{context:?}");
             assert_eq!(
                 node.attribute("text-decoration"),
-                Some("underline line-through"),
+                if matches!(context, Context::Standalone | Context::Flow) {
+                    None
+                } else {
+                    Some("underline line-through")
+                },
                 "{context:?}"
             );
             match context {
@@ -610,7 +614,7 @@ fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
             family: family.into(),
             codepoints: Vec::new(),
         }];
-        if matches!(context, Context::Flow) {
+        if matches!(context, Context::Flow | Context::Standalone) {
             expected.push(sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::MeasurementFailure,
                 family: family.into(),
@@ -649,7 +653,7 @@ fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
             family: family.into(),
             codepoints: Vec::new(),
         }];
-        if matches!(context, Context::Flow) {
+        if matches!(context, Context::Flow | Context::Standalone) {
             expected.push(sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::MeasurementFailure,
                 family: family.into(),

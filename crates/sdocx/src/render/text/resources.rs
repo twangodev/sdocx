@@ -12,6 +12,8 @@ pub enum TextDiagnosticKind {
     UnusableFontData,
     MissingGlyphs,
     MeasurementFailure,
+    /// Measured glyph positions cannot be reproduced by independently positioned SVG text.
+    UnsupportedGlyphPositioning,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,9 +76,7 @@ impl<'a> TextRenderer<'a> {
     pub fn output_style(&self, text: &str, style: &TextStyle, context: TextContext) -> TextStyle {
         let mut output = style.clone();
         if let Some(face) = self.resolve(style, context) {
-            if style.family.is_some() || face.family != "Roboto" {
-                output.family = Some(face.family.clone());
-            }
+            output = self.output_style_with_face(style, &face);
             let mut buffer = UnicodeBuffer::new();
             buffer.push_str(text);
             if let Ok(run) = face.shape(buffer, &[]) {
@@ -118,6 +118,14 @@ impl<'a> TextRenderer<'a> {
         output
     }
 
+    pub fn output_style_with_face(&self, style: &TextStyle, face: &ResolvedFace) -> TextStyle {
+        let mut output = style.clone();
+        if style.family.is_some() || face.family != "Roboto" {
+            output.family = Some(face.family.clone());
+        }
+        output
+    }
+
     pub fn embed_fonts(&self, svg: &mut Scene) {
         for face in self.faces.borrow().iter() {
             svg.push(EmbeddedFont::new(
@@ -141,6 +149,22 @@ impl<'a> TextRenderer<'a> {
         });
     }
 
+    pub fn glyph_positioning_unsupported(&self, family: &str, text: &str) {
+        self.record(TextDiagnostic {
+            kind: TextDiagnosticKind::UnsupportedGlyphPositioning,
+            family: family.into(),
+            codepoints: text.chars().map(u32::from).collect(),
+        });
+    }
+
+    pub fn missing_glyphs(&self, family: &str, text: &str) {
+        self.record(TextDiagnostic {
+            kind: TextDiagnosticKind::MissingGlyphs,
+            family: family.into(),
+            codepoints: text.chars().map(u32::from).collect(),
+        });
+    }
+
     fn record(&self, mut diagnostic: TextDiagnostic) {
         let mut diagnostics = self.diagnostics.borrow_mut();
         if let Some(existing) = diagnostics.iter_mut().find(|existing| {
@@ -154,5 +178,87 @@ impl<'a> TextRenderer<'a> {
             diagnostic.codepoints.dedup();
             diagnostics.push(diagnostic);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use super::*;
+    use crate::Color;
+    use crate::fonts::fontdb::Database;
+
+    fn renderer(fonts: &FontBook) -> TextRenderer<'_> {
+        TextRenderer::new(
+            TextSettings {
+                scale: 1.0,
+                font_size_delta: 0.0,
+            },
+            fonts,
+        )
+    }
+
+    #[test]
+    fn supplied_face_changes_family_without_resolving_or_losing_emphasis() {
+        let fonts = FontBook::new(Arc::new(Database::new()));
+        let renderer = renderer(&fonts);
+        let face = FontBook::default()
+            .resolve("Roboto Mono", false, false)
+            .unwrap();
+        let style = TextStyle {
+            font_size: 19.0,
+            family: Some("Unavailable".into()),
+            color: "#123456".into(),
+            source_color: Color {
+                r: 18,
+                g: 52,
+                b: 86,
+            },
+            bold: true,
+            italic: true,
+            underline: true,
+            strikethrough: true,
+            link_target: Some("https://example.com".into()),
+        };
+        let output = renderer.output_style_with_face(&style, &face);
+        assert_eq!(output.family.as_deref(), Some("Roboto Mono"));
+        assert_eq!(output.font_size, style.font_size);
+        assert_eq!(output.color, style.color);
+        assert_eq!(output.source_color, style.source_color);
+        assert!(output.bold && output.italic && output.underline && output.strikethrough);
+        assert_eq!(output.link_target, style.link_target);
+        assert!(renderer.diagnostics().is_empty());
+        assert!(renderer.faces.borrow().is_empty());
+    }
+
+    #[test]
+    fn positioning_and_coverage_diagnostics_merge_by_family_and_reason() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        renderer.glyph_positioning_unsupported("Roboto", "e\u{301}😀e");
+        renderer.glyph_positioning_unsupported("Roboto", "😀中");
+        renderer.glyph_positioning_unsupported("Roboto Mono", "e");
+        renderer.missing_glyphs("Roboto", "中😀中");
+        assert_eq!(
+            renderer.diagnostics(),
+            [
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedGlyphPositioning,
+                    family: "Roboto".into(),
+                    codepoints: vec![0x65, 0x301, 0x4e2d, 0x1f600],
+                },
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedGlyphPositioning,
+                    family: "Roboto Mono".into(),
+                    codepoints: vec![0x65],
+                },
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::MissingGlyphs,
+                    family: "Roboto".into(),
+                    codepoints: vec![0x4e2d, 0x1f600],
+                },
+            ]
+        );
     }
 }

@@ -128,19 +128,35 @@ fn draw_order(svg: &str) -> Vec<String> {
                     .filter(|color| *color != "none")
                     .or_else(|| node.attribute("fill").filter(|color| *color != "none"))
                     .map(str::to_owned)
-            } else if node.is_text()
-                && node
-                    .parent()
-                    .is_some_and(|parent| parent.has_tag_name("tspan"))
+            } else if node.has_tag_name("g")
+                && node.children().any(|child| child.has_tag_name("text"))
             {
-                node.text()
-                    .filter(|text| !text.trim().is_empty())
-                    .map(str::to_owned)
+                let label: String = node
+                    .children()
+                    .filter(|child| child.has_tag_name("text"))
+                    .flat_map(|child| child.descendants())
+                    .filter(|child| child.is_text())
+                    .filter_map(|child| child.text())
+                    .collect();
+                (!label.trim().is_empty()).then_some(label)
             } else {
                 None
             }
         })
         .collect()
+}
+
+#[test]
+fn draw_order_keeps_wrapped_text_objects_distinct() {
+    let svg = r##"<svg xmlns="http://www.w3.org/2000/svg"><g>
+        <g><text><tspan>first </tspan></text><text><tspan>object</tspan></text></g>
+        <g><text><tspan>second </tspan></text><text><tspan>object</tspan></text></g>
+        <path stroke="#ff0000"/>
+    </g></svg>"##;
+    assert_eq!(
+        draw_order(svg),
+        ["first object", "second object", "#ff0000"]
+    );
 }
 
 #[test]

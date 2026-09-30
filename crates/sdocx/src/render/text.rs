@@ -1,16 +1,19 @@
 use std::ops::Range;
 
 use crate::{
-    Color, HyperlinkType, PredefinedTextStyle, RichTextBox, RichTextSpan, RichTextSpanType,
-    text_index::TextIndex,
+    Color, HyperlinkType, LineSpacingType, ParagraphAlignment, ParagraphBullet,
+    ParagraphLineSpacing, PredefinedTextStyle, RichTextBox, RichTextParagraphType, RichTextSpan,
+    RichTextSpanType, text_index::TextIndex,
 };
 
 use super::RenderTheme;
 
 mod breaks;
 mod measurement;
+mod paint;
 mod resources;
 mod wrapping;
+pub(super) use paint::render_measured_line;
 pub(super) use resources::TextRenderer;
 pub use resources::{TextDiagnostic, TextDiagnosticKind};
 pub(super) use wrapping::{WrappedLine, wrap_paragraph};
@@ -69,6 +72,97 @@ impl TextSettings {
 
     pub fn pixels(self, value: f32) -> f64 {
         f64::from(value * self.scale)
+    }
+
+    pub fn indent(self, level: u32) -> f64 {
+        f64::from((level as i32 as f32 * (16.0 * self.scale)) as i32)
+    }
+}
+
+#[derive(Default)]
+pub(in crate::render) struct ParagraphLayout {
+    pub alignment: Option<ParagraphAlignment>,
+    pub indent_level: u32,
+    pub line_spacing: Option<ParagraphLineSpacing>,
+    pub bullet: Option<ParagraphBullet>,
+    pub spacing_before: f64,
+    pub spacing_after: f64,
+    pub predefined_style: Option<PredefinedTextStyle>,
+}
+
+impl ParagraphLayout {
+    pub fn left_indent(&self, settings: TextSettings) -> f64 {
+        if matches!(
+            self.alignment,
+            Some(ParagraphAlignment::Right | ParagraphAlignment::Both)
+        ) {
+            0.0
+        } else {
+            settings.indent(self.indent_level)
+        }
+    }
+}
+
+pub(in crate::render) fn paragraph_layout(
+    text_box: &RichTextBox,
+    paragraph_index: u32,
+    settings: TextSettings,
+) -> ParagraphLayout {
+    let mut layout = ParagraphLayout::default();
+    for paragraph in text_box.paragraphs.iter().filter(|paragraph| {
+        paragraph.start_paragraph <= paragraph_index && paragraph.end_paragraph > paragraph_index
+    }) {
+        match paragraph.kind {
+            RichTextParagraphType::Alignment => layout.alignment = paragraph.alignment(),
+            RichTextParagraphType::IndentLevel => {
+                if let Some(indent) = paragraph.indent() {
+                    layout.indent_level = indent.level;
+                }
+            }
+            RichTextParagraphType::LineSpacing => layout.line_spacing = paragraph.line_spacing(),
+            RichTextParagraphType::Bullet => layout.bullet = paragraph.bullet(),
+            RichTextParagraphType::SpacingBefore => {
+                layout.spacing_before = paragraph
+                    .spacing()
+                    .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
+                    .map_or(0.0, |spacing| settings.pixels(spacing));
+            }
+            RichTextParagraphType::SpacingAfter => {
+                layout.spacing_after = paragraph
+                    .spacing()
+                    .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
+                    .map_or(0.0, |spacing| settings.pixels(spacing));
+            }
+            RichTextParagraphType::PredefinedStyle => {
+                layout.predefined_style = paragraph.predefined_style().map(|style| style.style)
+            }
+            _ => {}
+        }
+    }
+    layout
+}
+
+pub(in crate::render) fn paragraph_line_height(
+    font_size: f64,
+    spacing: Option<ParagraphLineSpacing>,
+    settings: TextSettings,
+) -> f64 {
+    match spacing {
+        Some(spacing)
+            if spacing.value.is_finite()
+                && spacing.value > 0.0
+                && spacing.kind == LineSpacingType::Percent =>
+        {
+            font_size * f64::from(spacing.value)
+        }
+        Some(spacing)
+            if spacing.value.is_finite()
+                && spacing.value > 0.0
+                && spacing.kind == LineSpacingType::Pixels =>
+        {
+            font_size + settings.pixels(spacing.value)
+        }
+        _ => font_size * 1.35,
     }
 }
 
@@ -220,11 +314,22 @@ impl<'a> StyledText<'a> {
     }
 
     pub fn segments(&self, range: Range<usize>) -> impl Iterator<Item = Range<usize>> + '_ {
-        self.boundaries.windows(2).filter_map(move |pair| {
-            let start = pair[0].max(range.start);
-            let end = pair[1].min(range.end);
-            (start < end).then_some(start..end)
-        })
+        let first = self
+            .boundaries
+            .partition_point(|boundary| *boundary <= range.start)
+            .saturating_sub(1);
+        let last = self
+            .boundaries
+            .partition_point(|boundary| *boundary < range.end)
+            .saturating_add(1)
+            .min(self.boundaries.len());
+        self.boundaries[first.min(last)..last]
+            .windows(2)
+            .filter_map(move |pair| {
+                let start = pair[0].max(range.start);
+                let end = pair[1].min(range.end);
+                (start < end).then_some(start..end)
+            })
     }
 
     pub fn line_font_size(
@@ -290,4 +395,67 @@ pub(super) fn sanitize_hyperlink_target(target: String) -> Option<String> {
         }
     }
     Some(target.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn style_segments_clip_unicode_ranges_and_handle_empty_and_reversed_queries() {
+        let text_box = RichTextBox {
+            text_area_type: None,
+            bbox: Default::default(),
+            rotation_degrees: None,
+            text: "ab😀cdef".into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: vec![crate::RichTextRun {
+                start: 1,
+                end: 6,
+                bold: true,
+                italic: false,
+            }],
+            spans: vec![RichTextSpan {
+                kind: RichTextSpanType::ForegroundColor,
+                start_utf16: 4,
+                end_utf16: 6,
+                expand: false,
+                payload: vec![0, 0, 255, 255],
+            }],
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        };
+        let styled = StyledText::new(
+            &text_box,
+            TextContext::Flow,
+            TextSettings {
+                scale: 1.0,
+                font_size_delta: 0.0,
+            },
+        );
+        assert_eq!(
+            styled.segments(2..6).collect::<Vec<_>>(),
+            [2..3, 3..5, 5..6]
+        );
+        assert!(styled.segments(3..5).eq(std::iter::once(3..5)));
+        assert!(styled.segments(6..7).eq(std::iter::once(6..7)));
+        assert_eq!(
+            styled.segments(4..usize::MAX).collect::<Vec<_>>(),
+            [4..5, 5..6, 6..7]
+        );
+        for range in [0..0, 2..2, 7..7, 8..usize::MAX, Range { start: 6, end: 2 }] {
+            assert_eq!(styled.segments(range).count(), 0);
+        }
+        let names = styled
+            .segments(2..6)
+            .map(|range| styled.index.slice(range).unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(names, ["😀", "cd", "e"]);
+    }
 }
