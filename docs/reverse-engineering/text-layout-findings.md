@@ -103,7 +103,18 @@ Widget `0xd3018`–`0xd301c` and Drawing `0x8c49c`–`0x8c4a0`.
 
 Composer `NoteTextManager::SetDocument`, `0x3a16f0`, assigns document pixel
 from `WNote::GetDocumentDensity` when positive, otherwise 1
-(`0x3a1734`–`0x3a175c`). It takes the font-size delta from
+(`0x3a1734`–`0x3a175c`). The getter itself is now directly verified in
+WDoc at `0x9ec70`: it reads default dimensions from implementation members
+176/180 and orientation from member 188 (`0x9ec84`–`0x9ecb0`). Orientation
+0 selects width; **every nonzero orientation** selects height. It converts
+that dimension as signed i32 to f32 and divides by `360.0f`
+(`0x9ecb4`–`0x9eccc`). These are the optional default dimensions loaded
+after the body object (`WNoteLoadHandler`, `0xa9290`–`0xa92f0`), not flow
+canvas dimensions or individual page bounds. The getter does not clamp zero
+or negative dimensions; a missing implementation returns 0 at `0x9ed10`.
+The fallback to 1 belongs to `NoteTextManager::SetDocument`, not this getter.
+
+`NoteTextManager::SetDocument` takes the font-size delta from
 `WNote::GetBodyTextFontSizeDelta` through `TextViewUtil::SetTextSizeDelta`
 at `0x3a1774`–`0x3a1788`, and shares the resolved delta with the body editor
 at `0x3a1794`–`0x3a17a8`. Widget `CalculateTextSizeDelta`, `0xe0ea8`,
@@ -112,11 +123,35 @@ default. The exported tablet/phone default constants at `0x6526c` /
 `0x65270` are -5 / 0, respectively.
 
 Standard PDF's X delegate constructs a `NoteTextManager` and calls this
-same `SetDocument` at Composer `0x3575ec`–`0x3575fc`. Widget's body layout
+same `SetDocument` at Composer `0x3575ec`–`0x3575fc`. Its page-section
+preparation then creates a separate manager through `BodyTextUtil::
+CreateTextManagerWithFontSizeDeltaBy` (`0x3a2624`). That helper, Bodytext
+`0xcee14`, uses the same `WNote::GetDocumentDensity` at `0xcee60` and
+forwards the density unchanged to `SetDocumentPixel` at `0xcee70`, without
+the nonpositive clamp. It resolves the stored delta at `0xcee74`–`0xcee88`.
+Widget `updateSpan` replaces an exactly zero combined scale with 1 at
+`0xd4f60`–`0xd4f94`; this is not a general negative-scale clamp.
+
+Widget's body layout
 constructor reads its manager's resolved delta at `0xd3124`–`0xd3138`;
 Drawing's constructor does so at `0x8c520`–`0x8c53c`. Bodytext
 `BodyTextLayout::SetTextScale`, `0xb3a2c`, forwards a changed local scale
-to the shared `ObjectTextLayout` at `0xb3a64`–`0xb3a6c`. A document density
+to the shared `ObjectTextLayout` at `0xb3a64`–`0xb3a6c`.
+`BodyTextLayout` initializes its local scale to 1 (`0xaf964`, `0xaf9b0`),
+and constructs the shared Widget layout at `0xafed0`. Standard PDF's
+section preparation constructs this layout, assigns the body document and
+measures at Composer `0x3a2640`–`0x3a2654`, without an intervening scale
+setter. Both the ordinary placed Drawing layout and this fresh body layout
+therefore start with local scale 1.
+
+Interactive body views can change that state. With text scaling enabled,
+`BodyTextView::updateTextScale`, `0xdacc0`, multiplies its view delta
+(member 1192) by manager `GetTextScale` (slot 440), then forwards the product
+to `BodyTextLayout::SetTextScale` (`0xdacf0`–`0xdad4c`). Disabling it resets
+the layout scale to 1 (`0xd1e98`–`0xd1ea0`). This proves a view-dependent
+local scale; it does not establish that editor zoom belongs in saved exports.
+
+A document density
 of 3 can explain scale 3 in a captured fixture; it cannot justify a universal
 factor of 3. Export context, native density, stored delta and local scale must remain
 explicit inputs to one Rust layout pipeline.
@@ -126,8 +161,9 @@ The current parser exposes the stored delta as
 flexible field 11). It is not promoted to `DocumentMetadata`. Neither public
 structure currently exposes `document_density`; `StoredNoteHeader` provides
 flow dimensions and `StoredNote::default_page_dimensions` provides the
-separate default dimensions. Resolving the native density getter remains
-necessary before choosing which dimensions define text scale.
+separate default dimensions. Those default dimensions and raw orientation
+are sufficient to resolve the verified native density formula, with fallback
+policy explicit at the selected layout-context adapter.
 
 ## Margins and vertical gravity
 

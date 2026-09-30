@@ -112,6 +112,13 @@ resolution alone does not establish native typography parity.
 Missing text styles use Samsung's `#262626` base color and logical font size 17,
 then apply the current theme and coordinate conversion. Font-size conversion
 uses the native minimum of one logical unit and preserves larger stored sizes.
+The document's native default dimensions and orientation supply density:
+portrait width or landscape height divided by 360. Missing/nonpositive density
+uses one. The stored body font-size delta applies before the logical minimum and
+density conversion, including within local spans and headings. The device-default
+`i32::MIN` sentinel is retained but currently resolves to zero delta; Samsung's
+device configuration is unavailable. Margins and paragraph pixel spacing use
+that same document density. Stored object coordinates remain unchanged.
 Ordinary placed and flow lines use their largest local font size, with a default
 1.35 spacing multiplier. Pixel line spacing adds scaled pixels to that size;
 percentage spacing multiplies it. Table/code line positions still follow the

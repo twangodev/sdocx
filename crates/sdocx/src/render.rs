@@ -21,7 +21,7 @@ mod text;
 mod theme;
 #[cfg(test)]
 use text::sanitize_hyperlink_target;
-use text::{StyledText, TextContext, TextStyle};
+use text::{StyledText, TextContext, TextSettings, TextStyle};
 pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
@@ -187,6 +187,7 @@ fn render_page_contents_svg(
         page,
         media_assets,
         flow_page_padding,
+        text_settings: TextSettings::from_document(metadata),
         theme,
         replay,
     };
@@ -213,6 +214,7 @@ struct CompositionContext<'a> {
     page: &'a Page,
     media_assets: &'a [MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
+    text_settings: TextSettings,
     theme: RenderTheme,
     replay: bool,
 }
@@ -246,14 +248,7 @@ fn render_object(
             );
             *stroke_index += 1;
         }
-        PageObjectContent::Element(element) => render_element(
-            svg,
-            element,
-            context.page,
-            context.media_assets,
-            context.flow_page_padding,
-            context.theme,
-        ),
+        PageObjectContent::Element(element) => render_element(svg, element, context),
         PageObjectContent::Container(children) => {
             for child in children {
                 render_object(svg, context, child, stroke_index);
@@ -336,22 +331,29 @@ fn render_dot_background(
     );
 }
 
-fn render_element(
-    svg: &mut Scene,
-    element: &PageElement,
-    page: &Page,
-    media_assets: &[MediaAsset],
-    flow_page_padding: Option<(u32, u32)>,
-    theme: RenderTheme,
-) {
+fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionContext<'_>) {
+    let CompositionContext {
+        page,
+        media_assets,
+        flow_page_padding,
+        text_settings,
+        theme,
+        ..
+    } = *context;
     match element {
         PageElement::Image { bbox, media_index } => {
             render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
         PageElement::PlacedImage(image) => render_placed_image(svg, image, media_assets),
-        PageElement::TextBox(text_box) => {
-            render_text_box(svg, text_box, page, media_assets, flow_page_padding, theme)
-        }
+        PageElement::TextBox(text_box) => render_text_box(
+            svg,
+            text_box,
+            page,
+            media_assets,
+            flow_page_padding,
+            theme,
+            text_settings,
+        ),
         PageElement::Shape(shape) => {
             render_shape(svg, shape, theme);
             if let Some(text) = &shape.text {
@@ -362,7 +364,15 @@ fn render_element(
                     ),
                     _ => theme,
                 };
-                render_text_box(svg, text, page, media_assets, flow_page_padding, theme);
+                render_text_box(
+                    svg,
+                    text,
+                    page,
+                    media_assets,
+                    flow_page_padding,
+                    theme,
+                    text_settings,
+                );
             }
         }
         PageElement::Line(line) => render_line(svg, line, theme),
@@ -627,6 +637,7 @@ fn render_text_box(
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     theme: RenderTheme,
+    settings: TextSettings,
 ) {
     let text = text_box.text.trim_end_matches('\n');
     if text.trim().is_empty() {
@@ -636,7 +647,15 @@ fn render_text_box(
     let is_note_body =
         text_box.bbox.x_max <= text_box.bbox.x_min || text_box.bbox.y_max <= text_box.bbox.y_min;
     if is_note_body {
-        render_flow_text_box(svg, text_box, page, media_assets, flow_page_padding, theme);
+        render_flow_text_box(
+            svg,
+            text_box,
+            page,
+            media_assets,
+            flow_page_padding,
+            theme,
+            settings,
+        );
         return;
     }
     let (x, y, width, height) = (
@@ -648,7 +667,7 @@ fn render_text_box(
     let theme = text_box
         .highlight_color
         .map_or(theme, |color| theme.on_background(color));
-    let styled = StyledText::new(text_box, TextContext::Placed);
+    let styled = StyledText::new(text_box, TextContext::Placed, settings);
     let default_style = styled.style_at(styled.index.len(), theme, None);
     let color = default_style.color;
     let font_size = default_style.font_size;
@@ -697,7 +716,6 @@ fn render_text_box(
     });
 }
 
-const SAMSUNG_TEXT_SCALE: f64 = 3.0;
 const IMAGE_FLOW_LINE_HEIGHT_RATIO: f64 = 1.35;
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
 const FLOW_INDENT: f64 = 48.0;
@@ -720,19 +738,18 @@ fn render_flow_text_box(
     media_assets: &[MediaAsset],
     flow_page_padding: Option<(u32, u32)>,
     theme: RenderTheme,
+    settings: TextSettings,
 ) {
     let (horizontal_padding, vertical_padding) = flow_page_padding
         .map(|(horizontal, vertical)| (f64::from(horizontal), f64::from(vertical)))
         .unwrap_or((FLOW_HORIZONTAL_PADDING, 0.0));
     let margins = text_box.margins.unwrap_or([0.0; 4]);
-    let content_left = horizontal_padding + f64::from(margins[0]) * SAMSUNG_TEXT_SCALE;
+    let content_left = horizontal_padding + settings.pixels(margins[0]);
     let image_flow = text_box.is_image_flow();
-    let content_top = f64::from(margins[1]) * SAMSUNG_TEXT_SCALE
-        + if image_flow { 0.0 } else { vertical_padding };
-    let content_right =
-        f64::from(page.width) - horizontal_padding - f64::from(margins[2]) * SAMSUNG_TEXT_SCALE;
+    let content_top = settings.pixels(margins[1]) + if image_flow { 0.0 } else { vertical_padding };
+    let content_right = f64::from(page.width) - horizontal_padding - settings.pixels(margins[2]);
     let characters = text_box.text.chars().collect::<Vec<_>>();
-    let styled = StyledText::new(text_box, TextContext::Flow);
+    let styled = StyledText::new(text_box, TextContext::Flow, settings);
     let mut paragraph_start = 0_usize;
     let mut cursor_y = content_top;
 
@@ -743,19 +760,23 @@ fn render_flow_text_box(
             let content = paragraph.trim_end_matches(['\n', '\r']);
             let content_length = content.chars().count();
             let paragraph_end = paragraph_start + content_length;
-            let layout = paragraph_layout(text_box, paragraph_index);
+            let layout = paragraph_layout(text_box, paragraph_index, settings);
             let previous_is_list_item = paragraph_index > 0
-                && paragraph_layout(text_box, paragraph_index - 1)
+                && paragraph_layout(text_box, paragraph_index - 1, settings)
                     .bullet
                     .and_then(bullet_marker)
                     .is_some();
             let current_is_list_item = layout.bullet.and_then(bullet_marker).is_some();
             let next_start = paragraph_start + paragraph.chars().count();
             let next_is_list_item = next_start < characters.len()
-                && paragraph_layout(text_box, styled.index.paragraph_index(next_start).unwrap())
-                    .bullet
-                    .and_then(bullet_marker)
-                    .is_some();
+                && paragraph_layout(
+                    text_box,
+                    styled.index.paragraph_index(next_start).unwrap(),
+                    settings,
+                )
+                .bullet
+                .and_then(bullet_marker)
+                .is_some();
             if paragraph_start != 0 && !(previous_is_list_item && current_is_list_item) {
                 cursor_y += layout.spacing_before;
             }
@@ -775,7 +796,7 @@ fn render_flow_text_box(
             if !embedded.is_empty() {
                 for object in embedded {
                     if let Some(bottom) =
-                        render_embedded_object(svg, object, cursor_y, media_assets, theme)
+                        render_embedded_object(svg, object, cursor_y, media_assets, theme, settings)
                     {
                         let bottom_margin =
                             if matches!(object.content, Some(RichTextObjectContent::Image(_))) {
@@ -813,7 +834,8 @@ fn render_flow_text_box(
             for (line_index, line_range) in lines.iter().enumerate() {
                 let line_font_size =
                     styled.line_font_size(line_range.clone(), theme, layout.predefined_style);
-                let line_height = paragraph_line_height(line_font_size, layout.line_spacing);
+                let line_height =
+                    paragraph_line_height(line_font_size, layout.line_spacing, settings);
                 let baseline = cursor_y + line_font_size;
                 if line_index == 0
                     && let Some((marker, _, marker_size, marker_offset)) = marker.as_ref()
@@ -854,7 +876,11 @@ fn render_flow_text_box(
     });
 }
 
-fn paragraph_layout(text_box: &RichTextBox, paragraph_index: u32) -> ParagraphLayout {
+fn paragraph_layout(
+    text_box: &RichTextBox,
+    paragraph_index: u32,
+    settings: TextSettings,
+) -> ParagraphLayout {
     let mut layout = ParagraphLayout::default();
     for paragraph in text_box.paragraphs.iter().filter(|paragraph| {
         paragraph.start_paragraph <= paragraph_index && paragraph.end_paragraph > paragraph_index
@@ -872,13 +898,13 @@ fn paragraph_layout(text_box: &RichTextBox, paragraph_index: u32) -> ParagraphLa
                 layout.spacing_before = paragraph
                     .spacing()
                     .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
-                    .map_or(0.0, |spacing| f64::from(spacing) * SAMSUNG_TEXT_SCALE);
+                    .map_or(0.0, |spacing| settings.pixels(spacing));
             }
             RichTextParagraphType::SpacingAfter => {
                 layout.spacing_after = paragraph
                     .spacing()
                     .filter(|spacing| spacing.is_finite() && *spacing > 0.0)
-                    .map_or(0.0, |spacing| f64::from(spacing) * SAMSUNG_TEXT_SCALE);
+                    .map_or(0.0, |spacing| settings.pixels(spacing));
             }
             RichTextParagraphType::PredefinedStyle => {
                 layout.predefined_style = paragraph.predefined_style().map(|style| style.style)
@@ -889,7 +915,11 @@ fn paragraph_layout(text_box: &RichTextBox, paragraph_index: u32) -> ParagraphLa
     layout
 }
 
-fn paragraph_line_height(font_size: f64, spacing: Option<ParagraphLineSpacing>) -> f64 {
+fn paragraph_line_height(
+    font_size: f64,
+    spacing: Option<ParagraphLineSpacing>,
+    settings: TextSettings,
+) -> f64 {
     match spacing {
         Some(spacing)
             if spacing.value.is_finite()
@@ -903,7 +933,7 @@ fn paragraph_line_height(font_size: f64, spacing: Option<ParagraphLineSpacing>) 
                 && spacing.value > 0.0
                 && spacing.kind == LineSpacingType::Pixels =>
         {
-            font_size + f64::from(spacing.value) * SAMSUNG_TEXT_SCALE
+            font_size + settings.pixels(spacing.value)
         }
         _ => font_size * 1.35,
     }
@@ -1172,6 +1202,7 @@ fn render_embedded_object(
     cursor_y: f64,
     media_assets: &[MediaAsset],
     theme: RenderTheme,
+    settings: TextSettings,
 ) -> Option<f64> {
     match object.content.as_ref() {
         Some(RichTextObjectContent::Image(image)) => {
@@ -1241,7 +1272,8 @@ fn render_embedded_object(
                                 );
                             }
                             if let Some(line) = cell.content.text.lines().next() {
-                                let styled = StyledText::new(&cell.content, TextContext::Flow);
+                                let styled =
+                                    StyledText::new(&cell.content, TextContext::Flow, settings);
                                 svg.scope(
                                     Text::new("")
                                         .x(decimal(cell.bbox.x_min + 23., 2))
@@ -1306,6 +1338,7 @@ fn render_embedded_object(
                         object_top + 81.6,
                         FontFamily::Roboto,
                         theme,
+                        settings,
                     );
                 }
                 let icon_stroke = if theme.is_dark() {
@@ -1352,6 +1385,7 @@ fn render_embedded_object(
                             baseline,
                             FontFamily::Roboto,
                             theme,
+                            settings,
                         );
                         baseline += if line_index == 0 { 98.25 } else { 60.75 };
                     }
@@ -1373,8 +1407,9 @@ fn render_embedded_line(
     baseline: f64,
     font_family: FontFamily,
     theme: RenderTheme,
+    settings: TextSettings,
 ) {
-    let styled = StyledText::new(text_box, TextContext::Flow);
+    let styled = StyledText::new(text_box, TextContext::Flow, settings);
     svg.scope(
         Text::new("")
             .x(decimal(x, 2))
@@ -1439,14 +1474,6 @@ fn object_bottom_margin(object: &RichTextObjectSpan) -> f64 {
         crate::ObjectSpanLayoutOption::BlockWithSmallMargin => 12.0,
         crate::ObjectSpanLayoutOption::BlockWithMediumMargin => 24.0,
         _ => 0.0,
-    }
-}
-
-fn samsung_font_to_svg(size: f32) -> f64 {
-    if size.is_finite() {
-        f64::from(size.max(1.0)) * SAMSUNG_TEXT_SCALE
-    } else {
-        f64::from(text::DEFAULT_FONT_SIZE) * SAMSUNG_TEXT_SCALE
     }
 }
 
@@ -1620,8 +1647,7 @@ fn normalized_stroke_width(pen_width: f32) -> f64 {
 mod tests {
     use super::{
         RenderColorMode, RenderOptions, is_dark_background, normalized_stroke_width,
-        object_flow_offset, render_document_svg, render_layout_page_svg, samsung_font_to_svg,
-        sanitize_hyperlink_target,
+        object_flow_offset, render_document_svg, render_layout_page_svg, sanitize_hyperlink_target,
     };
     use crate::{
         BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, Point, RichTextBox,
@@ -1669,7 +1695,11 @@ mod tests {
     fn document(page: Page) -> Document {
         Document {
             pages: vec![page],
-            metadata: DocumentMetadata::default(),
+            metadata: DocumentMetadata {
+                default_page_dimensions: Some((1080, 1527)),
+                orientation: Some(0),
+                ..DocumentMetadata::default()
+            },
         }
     }
 
@@ -1686,7 +1716,14 @@ mod tests {
 
     #[test]
     fn uses_pdf_measured_text_and_object_flow_units() {
-        assert_eq!(samsung_font_to_svg(15.0), 45.0);
+        assert_eq!(
+            super::TextSettings {
+                scale: 3.0,
+                font_size_delta: 0.0
+            }
+            .font_size(15.0),
+            45.0
+        );
         assert_eq!(object_flow_offset(949.5, 984.0, 36.0), 70.5);
         assert_eq!(object_flow_offset(-229.25, 42.0, 38.0), 0.0);
     }
@@ -2106,9 +2143,13 @@ mod tests {
         };
         let surface = super::table_cell_background(&cell, theme);
         assert_eq!(
-            super::StyledText::new(&cell.content, super::TextContext::Flow)
-                .style_at(0, theme.on_background(surface), None)
-                .color,
+            super::StyledText::new(
+                &cell.content,
+                super::TextContext::Flow,
+                super::TextSettings::from_document(&DocumentMetadata::default())
+            )
+            .style_at(0, theme.on_background(surface), None)
+            .color,
             "#000000"
         );
         cell.has_own_background_color = false;
@@ -2117,9 +2158,13 @@ mod tests {
             page.background_color.unwrap()
         );
         assert_eq!(
-            super::StyledText::new(&cell.content, super::TextContext::Flow)
-                .style_at(0, theme, None)
-                .color,
+            super::StyledText::new(
+                &cell.content,
+                super::TextContext::Flow,
+                super::TextSettings::from_document(&DocumentMetadata::default())
+            )
+            .style_at(0, theme, None)
+            .color,
             "#ffffff"
         );
     }

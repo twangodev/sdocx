@@ -5,7 +5,7 @@ use crate::{
     text_index::TextIndex,
 };
 
-use super::{RenderTheme, samsung_font_to_svg};
+use super::RenderTheme;
 
 pub(super) const DEFAULT_FONT_SIZE: f32 = 17.0;
 const DEFAULT_FONT_COLOR: Color = Color {
@@ -32,10 +32,42 @@ pub(super) enum TextContext {
     Placed,
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct TextSettings {
+    pub scale: f32,
+    pub font_size_delta: f32,
+}
+
+impl TextSettings {
+    pub fn from_document(metadata: &crate::DocumentMetadata) -> Self {
+        Self {
+            scale: metadata.document_density(),
+            font_size_delta: metadata
+                .body_font_size_delta
+                .filter(|delta| *delta != i32::MIN)
+                .unwrap_or(0) as f32,
+        }
+    }
+
+    pub fn font_size(self, size: f32) -> f64 {
+        let size = if size.is_finite() {
+            size
+        } else {
+            DEFAULT_FONT_SIZE
+        };
+        f64::from((size + self.font_size_delta).max(1.0) * self.scale)
+    }
+
+    pub fn pixels(self, value: f32) -> f64 {
+        f64::from(value * self.scale)
+    }
+}
+
 pub(super) struct StyledText<'a> {
     pub index: TextIndex<'a>,
     text_box: &'a RichTextBox,
     context: TextContext,
+    settings: TextSettings,
     boundaries: Vec<usize>,
     spans: Vec<(Range<usize>, &'a RichTextSpan)>,
 }
@@ -47,7 +79,7 @@ impl<'a> StyledText<'a> {
     pub fn text_box(&self) -> &RichTextBox {
         self.text_box
     }
-    pub fn new(text_box: &'a RichTextBox, context: TextContext) -> Self {
+    pub fn new(text_box: &'a RichTextBox, context: TextContext, settings: TextSettings) -> Self {
         let index = TextIndex::new(&text_box.text);
         let spans = text_box
             .spans
@@ -69,6 +101,7 @@ impl<'a> StyledText<'a> {
             index,
             text_box,
             context,
+            settings,
             boundaries,
             spans,
         }
@@ -81,12 +114,14 @@ impl<'a> StyledText<'a> {
         predefined: Option<PredefinedTextStyle>,
     ) -> TextStyle {
         let text_box = self.text_box;
-        let mut font_size = samsung_font_to_svg(text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE));
+        let mut font_size = self
+            .settings
+            .font_size(text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE));
         if let Some(style) = predefined {
             font_size = match style {
-                PredefinedTextStyle::Heading1 => 63.0,
-                PredefinedTextStyle::Heading2 => 57.0,
-                PredefinedTextStyle::Heading3 => 51.0,
+                PredefinedTextStyle::Heading1 => self.settings.font_size(21.0),
+                PredefinedTextStyle::Heading2 => self.settings.font_size(19.0),
+                PredefinedTextStyle::Heading3 => self.settings.font_size(17.0),
                 _ => font_size,
             };
         }
@@ -119,7 +154,7 @@ impl<'a> StyledText<'a> {
                 }
                 RichTextSpanType::FontSize => {
                     if let Some(size) = span.font_size_value().filter(|size| size.is_finite()) {
-                        style.font_size = samsung_font_to_svg(size);
+                        style.font_size = self.settings.font_size(size);
                     }
                 }
                 RichTextSpanType::FontName => {

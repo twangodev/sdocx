@@ -170,7 +170,11 @@ fn document(context: Context, mut content: RichTextBox) -> Document {
             background: Default::default(),
             objects: vec![PageElement::TextBox(content).into()],
         }],
-        metadata: DocumentMetadata::default(),
+        metadata: DocumentMetadata {
+            default_page_dimensions: Some((1080, 1527)),
+            orientation: Some(0),
+            ..DocumentMetadata::default()
+        },
     }
 }
 
@@ -227,6 +231,73 @@ fn font_size_conversion_preserves_native_minimum_and_large_sizes() {
                 Some(expected),
                 "{context:?}"
             );
+        }
+    }
+}
+
+#[test]
+fn font_sizes_use_document_density_in_each_text_context() {
+    for (dimensions, orientation, default_size, local_size) in [
+        (Some((720, 1527)), Some(0), "20.00", "40.00"),
+        (Some((1527, 720)), Some(1), "20.00", "40.00"),
+        (None, Some(0), "10.00", "20.00"),
+    ] {
+        let mut content = text("AB");
+        content.spans = vec![span(
+            RichTextSpanType::FontSize,
+            1,
+            2,
+            &20.0_f32.to_le_bytes(),
+        )];
+        for &context in CONTEXTS {
+            let mut document = document(context, content.clone());
+            document.metadata.default_page_dimensions = dimensions;
+            document.metadata.orientation = orientation;
+            let svg = sdocx::render_page_svg(&document, 0, &Default::default())
+                .unwrap()
+                .svg;
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            for (value, size) in [("A", default_size), ("B", local_size)] {
+                assert_eq!(
+                    tspan(&xml, value).attribute("font-size"),
+                    Some(size),
+                    "{context:?}: {dimensions:?}, {orientation:?}, {value}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn body_font_delta_is_applied_before_density_and_native_minimum() {
+    for (delta, default_size, local_size) in [
+        (2, "24.00", "44.00"),
+        (-20, "2.00", "2.00"),
+        (i32::MIN, "20.00", "40.00"),
+    ] {
+        let mut content = text("AB");
+        content.spans = vec![span(
+            RichTextSpanType::FontSize,
+            1,
+            2,
+            &20.0_f32.to_le_bytes(),
+        )];
+        for &context in CONTEXTS {
+            let mut document = document(context, content.clone());
+            document.metadata.default_page_dimensions = Some((720, 1527));
+            document.metadata.body_font_size_delta = Some(delta);
+            let svg = sdocx::render_page_svg(&document, 0, &Default::default())
+                .unwrap()
+                .svg;
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            for (value, size) in [("A", default_size), ("B", local_size)] {
+                assert_eq!(
+                    tspan(&xml, value).attribute("font-size"),
+                    Some(size),
+                    "{context:?}: delta {delta}, {value}"
+                );
+            }
+            assert_eq!(document.metadata.body_font_size_delta, Some(delta));
         }
     }
 }

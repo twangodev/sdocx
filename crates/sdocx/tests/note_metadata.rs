@@ -1,4 +1,11 @@
-use sdocx::{Error, NoteMetadata, ParseLimits, parse_note_bytes};
+use std::io::{Cursor, Write};
+
+use sdocx::{
+    Error, NoteMetadata, ParseLimits, parse_bytes, parse_bytes_detailed, parse_note_bytes,
+};
+
+#[allow(dead_code)]
+mod support;
 
 fn string(value: &str) -> Vec<u8> {
     let mut bytes = (value.encode_utf16().count() as u16).to_le_bytes().to_vec();
@@ -288,6 +295,48 @@ fn decodes_consecutive_fields_with_distinct_values_and_preserves_repeated_ids() 
     assert_eq!(metadata.app_custom_data.as_deref(), Some("A🖊"));
     assert_eq!(metadata.first_unparsed_field, None);
     assert!(metadata.trailing_data.is_empty());
+}
+
+#[test]
+fn archive_metadata_preserves_body_font_delta_with_and_without_string_table() {
+    for delta in [-12_i32, i32::MIN] {
+        for with_string_table in [false, true] {
+            let mut fields = Vec::new();
+            if with_string_table {
+                fields.push((10, string_table()));
+            }
+            fields.push((11, delta.to_le_bytes().to_vec()));
+            let note_bytes = note(&fields);
+            let page_bytes = support::page(&[Vec::new()], 0, &[]);
+            let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+            for (name, bytes) in [("note.note", &note_bytes), ("page.page", &page_bytes)] {
+                writer
+                    .start_file(name, zip::write::SimpleFileOptions::default())
+                    .unwrap();
+                writer.write_all(bytes).unwrap();
+            }
+            let archive = writer.finish().unwrap().into_inner();
+
+            let document = parse_bytes(&archive).unwrap();
+            assert_eq!(document.metadata.body_font_size_delta, Some(delta));
+            let detailed = parse_bytes_detailed(&archive).unwrap();
+            assert_eq!(detailed.document.metadata.body_font_size_delta, Some(delta));
+            let source = detailed.note.unwrap().metadata(&note_bytes).unwrap();
+            assert_eq!(source.body_font_size_delta, Some(delta));
+            assert_eq!(source.string_table.is_some(), with_string_table);
+            if let Some(table) = source.string_table {
+                assert_eq!(
+                    table
+                        .entries
+                        .iter()
+                        .map(|entry| (entry.id, entry.text.as_str()))
+                        .collect::<Vec<_>>(),
+                    [(12, "first"), (12, "second 🖊")]
+                );
+                assert_eq!(table.trailing_data, [0xf1, 0xf2]);
+            }
+        }
+    }
 }
 
 #[test]

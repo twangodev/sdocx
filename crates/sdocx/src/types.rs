@@ -33,6 +33,9 @@ pub struct DocumentMetadata {
     /// Raw document orientation: 0 portrait, 1 landscape.
     #[cfg_attr(feature = "serde", serde(default))]
     pub orientation: Option<i32>,
+    /// Native body font-size adjustment; `i32::MIN` requests the device default.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub body_font_size_delta: Option<i32>,
     /// Dimensions of the document-level flowing text canvas.
     pub flow_dimensions: Option<(u32, u32)>,
     /// Horizontal and vertical padding used by the flowing text canvas.
@@ -45,6 +48,22 @@ pub struct DocumentMetadata {
     pub note_text: Option<RichTextBox>,
     /// Top-level note title from `note.note`, if present.
     pub note_title: Option<RichTextBox>,
+}
+
+impl DocumentMetadata {
+    /// Scale logical text units from the oriented native default page size.
+    pub fn document_density(&self) -> f32 {
+        let Some((width, height)) = self.default_page_dimensions else {
+            return 1.0;
+        };
+        let axis = if self.orientation.unwrap_or(0) == 0 {
+            width
+        } else {
+            height
+        };
+        let density = axis as i32 as f32 / 360.0;
+        if density <= 0.0 { 1.0 } else { density }
+    }
 }
 
 /// Samsung Notes binary format version.
@@ -1193,9 +1212,9 @@ impl Default for BoundingBox {
 #[cfg(test)]
 mod tests {
     use super::{
-        BulletType, FormatVersion, HyperlinkType, LineSpacingType, ObjectType, ParagraphAlignment,
-        ParagraphDirection, PredefinedTextStyle, RichTextParagraph, RichTextParagraphType,
-        RichTextSpan, RichTextSpanType,
+        BulletType, DocumentMetadata, FormatVersion, HyperlinkType, LineSpacingType, ObjectType,
+        ParagraphAlignment, ParagraphDirection, PredefinedTextStyle, RichTextParagraph,
+        RichTextParagraphType, RichTextSpan, RichTextSpanType,
     };
 
     fn paragraph(kind: RichTextParagraphType, values: &[u32]) -> RichTextParagraph {
@@ -1227,6 +1246,50 @@ mod tests {
         assert!(!ObjectType::Table.is_supported_by(FormatVersion(5399)));
         assert!(ObjectType::Table.is_supported_by(FormatVersion::TABLE_AND_CODE_BLOCK_OBJECTS));
         assert!(ObjectType::Stroke.is_supported_by(FormatVersion::INITIAL));
+    }
+
+    #[test]
+    fn document_density_uses_native_default_dimensions_and_orientation() {
+        let mut metadata = DocumentMetadata {
+            default_page_dimensions: Some((1080, 1440)),
+            page_dimensions: Some((360, 360)),
+            flow_dimensions: Some((720, 720)),
+            ..Default::default()
+        };
+        assert_eq!(metadata.document_density(), 3.0);
+        metadata.orientation = Some(0);
+        assert_eq!(metadata.document_density(), 3.0);
+        for orientation in [1, 2, -1, i32::MIN] {
+            metadata.orientation = Some(orientation);
+            assert_eq!(metadata.document_density(), 4.0);
+        }
+        metadata.default_page_dimensions = Some((180, 720));
+        metadata.orientation = Some(0);
+        assert_eq!(metadata.document_density(), 0.5);
+    }
+
+    #[test]
+    fn document_density_falls_back_for_absent_or_invalid_signed_axes() {
+        let mut metadata = DocumentMetadata {
+            page_dimensions: Some((1080, 1440)),
+            flow_dimensions: Some((1080, 1440)),
+            ..Default::default()
+        };
+        assert_eq!(metadata.document_density(), 1.0);
+        for dimensions in [(0, 720), (u32::MAX, 720), (0x8000_0000, 720)] {
+            metadata.default_page_dimensions = Some(dimensions);
+            metadata.orientation = Some(0);
+            assert_eq!(metadata.document_density(), 1.0);
+            metadata.orientation = Some(1);
+            assert_eq!(metadata.document_density(), 2.0);
+        }
+        for dimensions in [(720, 0), (720, u32::MAX), (720, 0x8000_0000)] {
+            metadata.default_page_dimensions = Some(dimensions);
+            metadata.orientation = Some(1);
+            assert_eq!(metadata.document_density(), 1.0);
+            metadata.orientation = Some(0);
+            assert_eq!(metadata.document_density(), 2.0);
+        }
     }
 
     fn font_name_span(payload: &[u8]) -> RichTextSpan {

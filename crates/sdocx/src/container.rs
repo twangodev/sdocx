@@ -83,10 +83,11 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     // Parse note.note (optional)
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
         let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
-        if let Ok(extra) = parsed_note.metadata_with_limits(&buf, &options.limits)
-            && let Some(table) = extra.string_table
-        {
-            stroke_resources = crate::StrokeResources::new(&table);
+        if let Ok(extra) = parsed_note.metadata_with_limits(&buf, &options.limits) {
+            metadata.body_font_size_delta = extra.body_font_size_delta;
+            if let Some(table) = extra.string_table {
+                stroke_resources = crate::StrokeResources::new(&table);
+            }
         }
         apply_note_metadata(&parsed_note.header, &mut metadata);
         metadata.default_page_dimensions = parsed_note.default_page_dimensions();
