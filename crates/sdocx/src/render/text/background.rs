@@ -64,18 +64,7 @@ fn line_backgrounds(
             .background
             .filter(|background| background.alpha != 0)
     };
-    let paragraph = styled
-        .index
-        .paragraph_index(line.line.source.start)
-        .and_then(|ordinal| styled.index.native_paragraphs().nth(ordinal as usize));
-    let contexts = paragraph
-        .and_then(|paragraph| {
-            styled
-                .index
-                .slice(paragraph.content.clone())
-                .map(|text| super::paint::bidi_contexts(text, paragraph.content.start))
-        })
-        .unwrap_or_default();
+    let contexts = super::paint::paragraph_bidi_contexts(styled, line.line.source.start);
     let reordered = line
         .line
         .placements

@@ -218,7 +218,7 @@ fn positioned_spans(
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
 ) -> Option<Vec<PositionedSpan>> {
-    let contexts = bidi_contexts(styled.index.slice(line.source.clone())?, line.source.start);
+    let contexts = paragraph_bidi_contexts(styled, line.source.start);
     let mut context_index = 0;
     let mut cluster_contexts = Vec::with_capacity(line.placements.len());
     let mut offsets = Vec::with_capacity(line.placements.len());
@@ -359,7 +359,24 @@ fn positioned_spans(
     Some(result)
 }
 
-pub(in crate::render) fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
+pub(in crate::render) fn paragraph_bidi_contexts(
+    styled: &StyledText<'_>,
+    source_start: usize,
+) -> Vec<Range<usize>> {
+    styled
+        .index
+        .paragraph_index(source_start)
+        .and_then(|ordinal| styled.index.native_paragraphs().nth(ordinal as usize))
+        .and_then(|paragraph| {
+            styled
+                .index
+                .slice(paragraph.content.clone())
+                .map(|text| bidi_contexts(text, paragraph.content.start))
+        })
+        .unwrap_or_default()
+}
+
+fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
     #[derive(PartialEq)]
     enum Context {
         Embedding,
