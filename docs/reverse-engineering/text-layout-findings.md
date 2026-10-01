@@ -990,6 +990,79 @@ iterator bypasses further paragraph analysis when that bit is present
 (`0x9abdc`, `0x9ad8c`). Paragraph base direction and shaped-run direction
 are separate inputs. Mixed RTL/LTR output still needs a captured reference.
 
+`RichTextLayout::DoParagraphLayout` obtains ICU's logical-to-visual map at
+`0x72eb0`–`0x72ec0`. `ParagraphLayout::m_CopyLayoutData` copies those paragraph
+ranks (`0x6aa6c`–`0x6aaa0`); `SetInverseLogicalMap` sorts the selected line's
+source interval by them (`0x6ca80`–`0x6cb04`). Positioning consumes that map at
+`0x6b6ac`–`0x6b7ac`. This route does not call `ubidi_setLine`: a fresh line-level
+L1 whitespace reset would change the inspected behavior. For `Aאב  גZ`, the
+first five scalars retain visual source order `[0,4,3,2,1]`, rather than
+`[0,2,1,3,4]` from a fresh line reset. Inline object anchors participate in the
+same map; their measured object widths replace ordinary glyph advances.
+
+ICU's preliminary `getBaseDirection` scan includes strong characters inside
+isolates; its subsequent automatic paragraph resolution excludes those
+characters. Rust therefore uses the preliminary RTL default only when the
+library's P2/P3 scan finds no outer strong character. `RLIאPDI123` chooses
+RTL base and visual order `123א`, while `RLIאPDIABC` still chooses LTR base.
+Blindly forcing the preliminary direction, or always using LTR for a neutral
+outer paragraph, both differ from the native caller. The library performs
+paragraph analysis once; Rust uses its public base-direction helper rather
+than duplicating isolate parsing. The preliminary policy appears in
+[ICU 76.1's scan](https://github.com/unicode-org/icu/blob/release-76-1/icu4c/source/common/ubidi.cpp#L340)
+and native measure/layout callers at `0x78b40`–`0x78c24` and
+`0x72878`–`0x728f4`. Independent ICU76 literals and covered-font public tests
+exercise LRI/RLI/FSI, neutral numbers, opposite outer strong text and unchanged
+native CR/LF boundaries.
+
+ICU also assigns retained X9 controls the following character's level, after
+whole-paragraph L1. The policy is identical in inspected
+[ICU 60.3](https://github.com/unicode-org/icu/blob/release-60-3/icu4c/source/common/ubidi.cpp#L2294)
+and [ICU 76.1](https://github.com/unicode-org/icu/blob/release-76-1/icu4c/source/common/ubidi.cpp#L2289).
+Direct ICU76 probes distinguish that policy from `unicode-bidi`'s retained
+control levels. Rust applies the source-backed X9 adjustment once, retaining
+typed levels and scalar-atomic cluster ranges. ICU's uniform-direction getter
+can collapse all levels to the paragraph level; Rust retains resolved levels
+instead. Tested uniform cases agree in direction parity and visual ranks,
+but canonical full-level equality and the device's ICU version remain unproven.
+Internal Unicode B-class paragraph separators remain unsupported for this
+native visual map; native CR/LF paragraph handling is unchanged.
+
+Default alignment is independent of detected paragraph direction.
+`CalculateParagraphLayout` passes global `layout_direction == 1` at
+`0x73eb0`–`0x73ee0`, and `GetLineAlign` uses it for Default4
+(`0x6aac0`–`0x6aacc`). Globally LTR exports therefore retain left default
+alignment, including naturally RTL paragraphs.
+
+Native painting reads retained per-source glyph IDs and positions
+(`0x66df0`–`0x66e1c`, `0x6732c`–`0x673fc`). RTL flushing reverses glyph IDs
+and their positions together (`0x67140`–`0x671c0`, `0x67c0c`–`0x67c80`);
+it does not reshape reordered Unicode. The Rust SVG adapter admits native
+visual positions only after every cluster in the line reproduces its retained
+glyph IDs and relative offsets through isolated export shaping. RTL clusters
+must be scalar-sized; multi-scalar fragments that resolve RTL under usvg's
+LTR paragraph base are rejected even if native shaping was forced LTR.
+Mirrored punctuation, joined Arabic, unsupported fonts and split cluster
+styles retain the diagnosed fallback. Object lines retain their maps but do
+not yet apply bidi visual positions.
+
+Roboto override/isolate fixtures verify logical Unicode preservation,
+wrapped origins, kerning, visual decoration intervals and backgrounds across
+placed/flow and normal/replay paths. Chromium scalar-position probes match
+independently positioned glyph references pixel-for-pixel. SVG scalar position
+lists and browser UTF16 character APIs use different indexing for supplementary
+characters. PDF preserves control collisions with `ActualText`; lopdf's plain
+text extractor ignores that metadata, so regressions inspect both CMaps and
+marked text. These are transport and source-derived contracts, not captured
+Samsung RTL appearance parity: the four current HF documents contain no RTL
+letters or directional controls.
+
+Covered Hebrew/Arabic regressions use caller-selected DejaVu Sans 2.37:
+`tests/assets/fonts/DejaVuSans.ttf`, 759,720 bytes, SHA-256
+`57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e`.
+Its upstream font notices accompany the fixture. It is test-only; default
+fonts and browser/WASM bundles continue to contain the pinned Roboto families.
+
 Text `WordBreakerImplMinikin::Next`, `0x7b2f8`, delegates to `0x9e9b4`.
 The ordinary branch filters ICU break candidates in `0x9ea00`–`0x9ec08`,
 including surrogate decoding, soft hyphen, Myanmar virama, ZWJ and emoji
@@ -1788,7 +1861,8 @@ support for SVG font-feature properties. Multi-scalar combining clusters
 stay together, and independently reproduced glyph IDs/offsets are checked
 before positioning. Pinned Greek/Cyrillic regressions cover glyph positions,
 kerning, uniform backgrounds and selectable vector PDF text without a script
-whitelist. Variable-font optical size, bidi L1 resets,
+whitelist. Paragraph bidi maps now also drive proven scalar RTL transports.
+Variable-font optical size, the uniform-direction ICU level shortcut,
 paired script punctuation, native emergency breaking and the reference
 device's ICU version/locale remain unverified. Placed and shape text now use
 the shared measured wrapper, scaled margins, paragraph spacing, integer
