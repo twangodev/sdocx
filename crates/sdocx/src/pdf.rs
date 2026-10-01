@@ -1,7 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use krilla::{Document as PdfDocument, geom::Size, page::PageSettings};
-use krilla_svg::{SurfaceExt, SvgSettings};
+use self::svg::{SurfaceExt, SvgSettings};
+
+mod svg;
 
 use crate::{Document, RenderOptions, RenderedPage, render_document_svg_with_fonts};
 
