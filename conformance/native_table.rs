@@ -33,6 +33,9 @@ mod merges;
 #[path = "native_table/lifecycle.rs"]
 mod lifecycle;
 
+#[path = "native_table/clipping.rs"]
+mod clipping;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1051,7 +1054,8 @@ fn main() {
             | "--row-bottom"
             | "--warm-control"
             | "--cell-inputs"
-            | "--lifecycle"),
+            | "--lifecycle"
+            | "--clipping"),
         ) => {
             let drawing_path = std::env::args_os()
                 .nth(3)
@@ -1071,6 +1075,7 @@ fn main() {
                 "--warm-control" => control::capture,
                 "--cell-inputs" => cell_inputs::capture,
                 "--lifecycle" => lifecycle::capture,
+                "--clipping" => clipping::capture,
                 _ => geometry::capture,
             };
             capture(
@@ -1094,7 +1099,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping or no capture mode"
         ),
     }
     let mut cases = Vec::new();
