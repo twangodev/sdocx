@@ -184,6 +184,61 @@ These findings establish adapter inputs and editability semantics. They do
 not prove complete row sizing, merged-cell layout, page splitting or visual
 parity for arbitrary cells.
 
+## Export row sizing and merged-frame ownership
+
+The ARM64 Drawing library used here has SHA-256
+`788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd`;
+Model has SHA-256
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`.
+
+Drawing's cold `TableLayout::init`, `0xaa6b4`, reads actual row heights at
+`0xaaa60` and column widths at `0xaaab8`. `extendRowBySplit`, `0xaaf2c`,
+measures cell height differences and grows the row for a strictly positive
+maximum difference (`0xab0ac`–`0xab0f0`). The warm
+`updatePositionFromRow`, `0xaecf4`, selects the largest measured visible-cell
+height. Only a result below the small-height threshold is replaced by
+`ObjectTable::GetMinRowHeight` (`0xaedfc`–`0xaee10`); the stored minimum is
+not an unconditional lower clamp on every nonempty row.
+
+These selected cold/warm export routines do not read the saved row maximum.
+Model exposes that value through `ObjectTable::GetMaxRowHeight`, `0x3d3844`,
+and `TableRow::GetMaxHeight`, `0x3c4244`, but its presence must not reject the
+export preparation path or introduce a maximum-height clamp. Rust now accepts
+saved row maxima while retaining their parsed values. The table-wide
+maximum-height flag is separate and still outside the supported prepared path.
+
+Model `ObjectTableImpl::GetCell`, `0x3c7570`, indexes the stored row and column
+vectors directly (`0x3c75a8`–`0x3c75b0`).
+`GetFrameCell`, `0x3c75c0`, is a different producer: it searches earlier
+positions backwards, tests whether their row/column spans cover the requested
+position (`0x3c7630`–`0x3c7698`), and follows a covering cell's own origin
+(`0x3c76c0`–`0x3c76cc`). Without a covering earlier cell it returns the
+stored cell at the requested position (`0x3c7754`–`0x3c7764`). This is not
+equivalent to expanding every serialized cell into an independent visible box.
+
+Drawing `layoutRow`, `0xb0420`, compares `GetCell` with `GetFrameCell` and
+lays out text only when they return the same cell
+(`0xb0478`–`0xb04c8`). `updateMeasuredRect`, `0xab168`, obtains the first
+and last grid positions through `GetFrameCell` before reading cached frames
+(`0xab198`–`0xab238`). Merged layout therefore needs distinct stored slots,
+visible owners and cached frame geometry. Sparse records, frame union, rowspan
+growth and malformed overlap handling are not yet established by these traces.
+
+`TableLayout::getHalfBorderWidth`, `0xb325c`, iterates
+`ObjectTable::GetBorderPath` (`0xb3288`) and selects positive widths with
+nonzero ARGB values (`0xb32ac`–`0xb32c4`) before halving the maximum.
+Model's `GetBorderPath`, `0x3cb464`, reads the outer border pointer at member
+152 and constructs its four paths. This initializer does not inspect every
+cell border. The later per-edge drawn-bound widths include boundary cells and
+do not gate on color; those two measurements must remain distinct.
+
+Rust regressions exercise saved row maxima below measured content height through
+callback preparation, final drawing, light/dark SVG preview, replay and retained
+PDF. They require unchanged source ranges, baselines and vector text, with no
+PDF image resources. These establish the metadata-invariance and transport
+contracts; the current locked Samsung corpus has no dedicated row-maximum or
+merged/sparse table reference capture.
+
 ## Shared code-block text layout
 
 Drawing `CodeBlockLayout::initConstants`, `0x73084`, resolves these IDs through
@@ -242,7 +297,7 @@ and `0x156998` are `color`, `width`, `startRadius` and `endRadius`, confirming
 the public names independently of decompiled class field order. The exact
 corner geometry used by the native renderer remains to be investigated.
 
-## Validation and next work
+## Validation and limits
 
 The note parser's synthetic unit tests cover variable masks, valid zero offsets,
 cell identity/geometry, all offsets that truncate fixed cell or row data, offsets
@@ -255,8 +310,9 @@ available for inspection. The existing embedded table/code-block tests continue
 to pass. These tests establish bounds and structure, not Samsung rendering
 fidelity.
 
-Next APK work can trace native border rendering and add standalone object
-decoding with explicit diagnostics for unsupported features. The renderer
-currently uses approximations for embedded table/code-block styling and does
-not yet apply the newly decoded styles. Inherited shape data and native layout
-behavior must be considered before claiming equivalent standalone rendering.
+The shared Rust engine measures and paints supported embedded table/code text.
+Table border styling remains approximate, and standalone table decoding is not
+established. Inherited shape data and native layout behavior are separate from
+the bounded embedded-record decoding described here. Current layout support
+and transport limits are documented in
+[vector text support](../text-vector-support.md).

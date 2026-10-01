@@ -223,7 +223,6 @@ fn supports_grid(table: &RichTextTable) -> bool {
         && !table.style.max_height_enabled
         && table.rows.iter().enumerate().all(|(row_index, row)| {
             row.index as usize == row_index
-                && row.max_height.is_none_or(|height| height == f32::MAX)
                 && row.cells.len() == table.column_widths.len()
                 && row.cells.iter().enumerate().all(|(column_index, cell)| {
                     cell.column_index as usize == column_index
@@ -1418,6 +1417,59 @@ mod tests {
                 .unwrap()
                 .is_ok()
             );
+        }
+    }
+
+    #[test]
+    fn saved_row_maximum_does_not_cap_callback_or_drawing_layout() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let mut table = grid(&[10.0, 10.0], &[200.0]);
+        for row in &mut table.rows {
+            row.cells[0].content.text = "First\nSecond\nThird".into();
+            row.cells[0].content.font_size = Some(15.0);
+        }
+        for constraint in [
+            ObjectSpanLayoutConstraint::Normal,
+            ObjectSpanLayoutConstraint::OverPages,
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ] {
+            let baseline =
+                prepare_table_drawing(&table, constraint, [10.0, 20.0], theme, &renderer)
+                    .unwrap()
+                    .unwrap();
+            for maximum in [0.0, 1.0, 10.0] {
+                let mut limited = table.clone();
+                for row in &mut limited.rows {
+                    row.max_height = Some(maximum);
+                }
+                let drawing =
+                    prepare_table_drawing(&limited, constraint, [10.0, 20.0], theme, &renderer)
+                        .unwrap()
+                        .unwrap();
+                assert_eq!(drawing.measured_bbox, baseline.measured_bbox);
+                for (actual, expected) in drawing.rows.iter().zip(&baseline.rows) {
+                    let actual = &actual.cells[0];
+                    let expected = &expected.cells[0];
+                    assert_eq!(actual.frame, expected.frame);
+                    assert!(actual.frame.y_max - actual.frame.y_min > f64::from(maximum));
+                    assert_eq!(actual.layout.lines.len(), 3);
+                    for (actual, expected) in actual.layout.lines.iter().zip(&expected.layout.lines)
+                    {
+                        assert_eq!(actual.baseline, expected.baseline);
+                        assert_eq!(actual.line.source, expected.line.source);
+                    }
+                }
+                if constraint != ObjectSpanLayoutConstraint::Normal {
+                    let mut callback = prepare_table(&limited, constraint, 20.0, theme, &renderer)
+                        .unwrap()
+                        .unwrap();
+                    callback.relayout(&limited, 20.0, theme, &renderer).unwrap();
+                    assert!(callback.measured_bbox.y_max > f64::from(maximum));
+                    assert_eq!(callback.rows[0].cells[0].layout.lines.len(), 3);
+                }
+            }
         }
     }
 

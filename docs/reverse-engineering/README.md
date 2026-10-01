@@ -211,7 +211,7 @@ Notes APK, native serializers, or real compatibility fixtures.
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   table styles, per-edge borders, bounded row/cell data and the nonnumerical
-  row-height field order.
+  row-height field order; export sizing and merged-frame ownership.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,
