@@ -18,6 +18,11 @@ impl Fixture {
     }
 
     fn with_objects(ids: &[&str], objects: &[Vec<u8>]) -> Self {
+        let pages = ids.iter().map(|&id| (id, objects)).collect::<Vec<_>>();
+        Self::with_page_objects(&pages)
+    }
+
+    fn with_page_objects(pages: &[(&str, &[Vec<u8>])]) -> Self {
         use std::sync::atomic::{AtomicUsize, Ordering};
         static SEQUENCE: AtomicUsize = AtomicUsize::new(0);
         let directory = std::env::temp_dir().join(format!(
@@ -28,7 +33,7 @@ impl Fixture {
         std::fs::create_dir(&directory).unwrap();
         let file = std::fs::File::create(directory.join("note.sdocx")).unwrap();
         let mut zip = zip::ZipWriter::new(file);
-        for id in ids {
+        for (id, objects) in pages {
             let mut bytes = support::page(&[objects.to_vec()], 0, &[]);
             let original: Vec<_> = "page".encode_utf16().flat_map(u16::to_le_bytes).collect();
             let offset = bytes
@@ -245,6 +250,45 @@ fn svg_embeds_the_explicitly_selected_font_and_validates_font_input() {
             std::fs::read_to_string(fixture.0.join("selected.svg")).unwrap(),
             svg
         );
+    }
+}
+
+#[test]
+fn selected_page_render_warnings_are_reported_without_failing_export() {
+    let fixture = Fixture::with_page_objects(&[
+        ("one1", &[text_object("A")]),
+        ("two2", &[text_object("אא")]),
+    ]);
+    let expected = "Warning [MissingGlyphs] visible page 2: font \"Roboto\"; codepoints U+05D0";
+    for format in ["svg", "png", "pdf"] {
+        let noisy_output = format!("noisy.{format}");
+        let result = fixture.run(&["--pages", "2,2", "-o", &noisy_output]);
+        let diagnostics = String::from_utf8_lossy(&result.stderr);
+        assert!(result.status.success(), "{diagnostics}");
+        assert!(result.stdout.is_empty());
+        assert_eq!(diagnostics.matches(expected).count(), 1, "{diagnostics}");
+        assert_eq!(diagnostics.matches("Warning [MissingGlyphs]").count(), 1);
+        let bytes = std::fs::read(fixture.0.join(&noisy_output)).unwrap();
+        match format {
+            "svg" => assert!(String::from_utf8(bytes).unwrap().contains("אא")),
+            "png" => assert!(bytes.starts_with(b"\x89PNG\r\n\x1a\n")),
+            "pdf" => assert_eq!(
+                lopdf::Document::load_mem(&bytes).unwrap().get_pages().len(),
+                1
+            ),
+            _ => unreachable!(),
+        }
+
+        let clean_output = format!("clean.{format}");
+        let result = fixture.run(&["--pages", "1", "-o", &clean_output]);
+        let diagnostics = String::from_utf8_lossy(&result.stderr);
+        assert!(result.status.success(), "{diagnostics}");
+        assert!(result.stdout.is_empty());
+        assert!(
+            !diagnostics.contains("] visible page "),
+            "{diagnostics}"
+        );
+        assert!(fixture.0.join(clean_output).exists());
     }
 }
 

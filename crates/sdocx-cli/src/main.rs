@@ -3,6 +3,51 @@ use sdocx::{Document, LayoutDocument, PageTemplate, PageTemplateSource, RenderOp
 use std::fs;
 use std::path::PathBuf;
 
+#[derive(Default)]
+struct RenderWarnings {
+    pages: std::collections::HashSet<usize>,
+}
+
+impl RenderWarnings {
+    fn report(
+        &mut self,
+        page_index: usize,
+        text: &[sdocx::TextDiagnostic],
+        objects: &[sdocx::ObjectDiagnostic],
+    ) {
+        if !self.pages.insert(page_index) {
+            return;
+        }
+        for diagnostic in text {
+            let codepoints = diagnostic
+                .codepoints
+                .iter()
+                .map(|value| format!("U+{value:04X}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let affected = if codepoints.is_empty() {
+                String::new()
+            } else {
+                format!("; codepoints {codepoints}")
+            };
+            eprintln!(
+                "Warning [{:?}] visible page {}: font {:?}{affected}",
+                diagnostic.kind,
+                page_index + 1,
+                diagnostic.family,
+            );
+        }
+        for diagnostic in objects {
+            eprintln!(
+                "Warning [{:?}] visible page {}: object at UTF-16 offset {}",
+                diagnostic.kind,
+                page_index + 1,
+                diagnostic.anchor_utf16,
+            );
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
 enum Format {
     Svg,
@@ -293,13 +338,14 @@ fn main() {
             }),
         None => (0..layout.pages.len()).collect(),
     };
+    let mut render_warnings = RenderWarnings::default();
 
     if format == Format::Pdf {
         let mut options = sdocx::PdfOptions::new(fonts.database());
         if let Some(dpi) = cli.pdf_dpi {
             options.dpi = dpi;
         }
-        let pdf = sdocx::render_layout_pages_pdf_with_fonts(
+        let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
             &doc,
             &layout,
             &page_indices,
@@ -311,6 +357,14 @@ fn main() {
             eprintln!("Error: {error}");
             std::process::exit(1);
         });
+        for page in &output.pages {
+            render_warnings.report(
+                page.page_index,
+                &page.text_diagnostics,
+                &page.object_diagnostics,
+            );
+        }
+        let pdf = output.bytes;
         if let Err(error) = fs::write(&output_base, &pdf) {
             eprintln!("Error: failed to write {}: {error}", output_base.display());
             std::process::exit(1);
@@ -324,19 +378,18 @@ fn main() {
         return;
     }
 
+    let mut text_cache = sdocx::DocumentTextCache::default();
     let rendered_pages: Vec<_> = page_indices
         .iter()
         .map(|&index| {
-            sdocx::render_layout_page_svg_with_fonts(
-                &doc,
-                &layout,
-                index,
-                &RenderOptions::default(),
-                &fonts,
-            )
-            .expect("validated visible page index")
+            text_cache
+                .render_layout_page_svg(&doc, &layout, index, &RenderOptions::default(), &fonts)
+                .expect("validated visible page index")
         })
         .collect();
+    for (&page_index, page) in page_indices.iter().zip(&rendered_pages) {
+        render_warnings.report(page_index, &page.text_diagnostics, &page.object_diagnostics);
+    }
 
     let png_options = (format == Format::Png).then_some(&svg_options);
     if rendered_pages.len() == 1 {

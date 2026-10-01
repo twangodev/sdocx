@@ -15,7 +15,7 @@ current, narrower completion criteria.
 | Caret spans in captures | Native zero-length font spans survive valid captures with their interval semantics. | Verified |
 | Empty list markers | Marker font size and reserved width use the empty paragraph's caret formatting. | Verified |
 | Collection fonts in SVG | SVG embeds the selected TTC/OTC face; Chromium displays the face Rust measured. | Verified |
-| CLI render diagnostics | Selected-page text and object warnings are reported for SVG, PNG, and PDF. | Pending |
+| CLI render diagnostics | Selected-page text and object warnings are reported for SVG, PNG, and PDF. | Verified |
 | Diagnostic collection | Ordered, source-owned diagnostics use indexed deduplication. | Verified |
 | Repeated body preparation | Document exports and browser sessions reuse compatible body plans across pages. | Verified |
 | Off-page font warnings | Invalid font geometry remains attributed to the affected source range. | Verified |
