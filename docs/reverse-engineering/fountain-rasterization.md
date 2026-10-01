@@ -1,9 +1,9 @@
 # FountainPen stamp rasterization
 
-Current implementation work is tracked in [fountain parity](fountain-parity.md).
-The implementation target is vector SVG/PDF output. The added software
-rasterizer and shader-comparison tooling were removed. This document preserves
-historical APK research; it does not describe a current SDK raster backend.
+Current vector SVG/PDF behavior is described in [fountain parity](fountain-parity.md).
+The software rasterizer and shader-comparison tooling are not in the SDK.
+This document preserves historical APK research; it does not describe a
+current SDK raster backend.
 
 > The reproduction commands in this note refer to experiment scripts removed
 > during test cleanup, including `conformance/fountain_raster.py` and

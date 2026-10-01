@@ -11,8 +11,7 @@ share the resulting SVG renderer.
 Pages own one `objects: Vec<PageObject>` tree, retaining stored order, container
 boundaries, source offsets and render-layer selection inputs. `strokes()` and
 `elements()` expose borrowed recursive views; their mutable counterparts edit
-the same content. Rust callers and serialized page consumers must migrate from
-the former owned `strokes`/`elements` fields to this object tree.
+the same content.
 
 Composition selects root objects into Base, Top and Masking passes, preserving
 stored order within each pass. A selected container draws its children in place;

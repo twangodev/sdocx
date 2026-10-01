@@ -47,8 +47,6 @@ at this output scale.
 
 The crop contains 5,691 stamps; serialized prototypes grew from about 6.5 MB
 at 8 increments to 46.9 MB at 64. These experiments remain outside production.
-Any replacement must resolve maximum coverage while preserving continuous
-shading and edge coverage, rather than stacking antialiased threshold contours.
 
 ### Continuous-gradient partition experiment
 
@@ -86,9 +84,7 @@ took 450 ms in Chromium and 356 ms in Firefox in single diagnostic runs.
 Incremental partitioning remains an experiment. It restores continuous shading
 in Firefox and resolves the analytical seam, but has larger output and higher
 normal-scale native alpha error than the existing Chromium gradient renderer.
-A Rust implementation would need bounded geometric approximation, robust
-polygon operations, full-page/PDF checks, and measured replay cost before
-replacing production shading.
+Full-page, PDF and replay behavior were not validated for this prototype.
 
 Recovering consecutive sampled circle edges as SVG arcs reduces this crop from
 22,568,631 to 4,319,196 bytes. Recovery requires both endpoints to lie on a known
@@ -112,4 +108,3 @@ values share a generic `Value` trait rather than attribute-specific types;
 ordinary floating-point attributes round to six decimal places; and the public
 element API has no arbitrary `data-*` setter for replay metadata. Its raw-XML
 escape hatch would reintroduce manual markup. No production dependency was added.
-

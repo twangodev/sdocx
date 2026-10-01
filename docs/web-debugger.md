@@ -41,18 +41,21 @@ sample interval. Every inter-stroke gap is a synthetic 150 ms. Equal timestamps,
 empty strokes, and single-point strokes are retained. The original values are
 never rewritten.
 
-The debugger uses the existing viewer and its color-mode setting. Selection is a
-lightweight SVG overlay on the cached page image, with no replay Canvas allocated
-until playback or scrubbing begins. During partial replay, a stroke-free
-background is requested lazily from the same renderer, and handwriting uses its
-shared color and pressure-width calculation in a Canvas overlay. The original
-page image and gesture cache remain mounted for immediate reuse after replay.
-The covered SVG is hidden during replay so browser paint and hit-testing do not
-reprocess its paths on every scrub.
-This is an inspection preview, not a new Samsung-fidelity renderer: eraser history and unsupported pen effects are not
-reconstructed. Source bounds need not match the exact painted outline, especially
-for flowing or transformed non-stroke content. Normal viewer/export rendering is
-unchanged.
+Selection uses an SVG overlay on the existing viewer. Partial replay lazily
+requests an annotated page SVG from the shared Rust renderer. `ReplaySvg`
+reveals stamp groups or serialized path prefixes using the prepared
+`sample_ends`; the browser does not recalculate pen geometry, shading or opacity.
+Non-stroke content and blend groups retain the renderer's paint order.
+
+Timeline changes reuse the same SVG DOM. A page or color-mode change loads a new
+SVG. The normal page image is hidden while partial replay is visible and returns
+at the end of the timeline. The viewer's camera and gesture cache stay mounted.
+
+Replay reconstructs saved geometry. Eraser history, live prediction, temporary
+tips and unsupported pen effects are not reconstructed. Source bounds need not
+match the painted outline, especially for flowing or transformed content.
+Fountain mask and blending limitations in Firefox are recorded in
+[vector parity](reverse-engineering/fountain-parity.md#vector-replay).
 
 ## Resources and validation
 
@@ -60,39 +63,23 @@ The WASM session retains one compressed source copy and at most one decompressed
 entry, under the existing 250 MiB input and 256 MiB entry limits. The previous
 entry is released before expanding another. The debugger loads stroke data for
 one replay page at a time; optional record metadata is requested on demand.
-Replay caches are created lazily on the first partial replay and retained when
-seeking to the end, until the page changes or the sidebar closes. `PageCanvas`
-uses the existing viewer camera and scroll container to render only the visible
-page region. Resolution levels follow zoom and device pixel density, rounded up
-in square-root-of-two steps so nearby zoom levels can reuse cached ink. During a
-zoom gesture the current surface follows the camera transform; it is rerendered
-at the new resolution when the gesture settles.
-
-The visible Canvas and its composition buffer are each limited to eight million
-pixels and 4096 pixels per side (64 MiB combined). On extremely large/high-density
-viewports this cap can lower the effective resolution. Ink tiles are at most
-512 × 512 pixels, cropped to their painted bounds, with a separate 48 MiB LRU
-budget. Each tile contains an ordered batch of 32 strokes; offscreen batches and
-strokes are culled before drawing. Reverse seeks reuse these tiles, and panning
-reuses tiles at the same resolution. `CanvasCache` also manages eviction and
-backing-store cleanup for the existing gesture preview cache.
-
-Cold seeks yield between batches after a 6 ms work budget and use the latest
-requested position. One batch or unusually large stroke may exceed that budget.
-Page and ink changes invalidate replay tiles; old resolution levels are evicted
-within the same byte budget. Disposal clears all backing stores.
-These limits are additional to the existing parsed document and browser rendering memory.
+The annotated SVG is retained when seeking to the end, until its page or color
+mode changes or the sidebar closes. Replay allocates no Canvas or ink tiles.
+Large documents still require memory for the SVG DOM and can make seeks costly;
+reusing nodes does not establish a frame-rate guarantee.
 
 Changing or closing the file disposes the worker document, source buffers,
-selection, URLs, and animations. Closing the sidebar releases its replay data,
-background URL, and overlay surfaces while leaving the existing viewer images, camera, and gesture cache
-intact. Opening the sidebar does not render a second static preview.
+selection, URLs, and animations. Closing the sidebar releases its replay data
+and SVG DOM while leaving the viewer images, camera and gesture cache intact.
+Stale worker and SVG responses are discarded. Opening the sidebar does not
+render a second static preview.
 
 Unit tests cover timing fallbacks, byte bounds, exact integers, source identities,
 and stale worker requests. Browser tests cover inspection, replay, narrow-screen
 panels, and URL cleanup. The optional dense replay test uses
 `SDOCX_DEBUG_FIXTURE` or `tmp/stroke-conformance/handwritten.sdocx` and records frame
-cadence and Canvas memory without making machine-dependent frame-rate assertions.
-The dense scrubbing test also measures backward seeks, checks raster reuse, and
-compares pixels after revisiting a timestamp. Zoom tests cover 400% rendering at
-2× screen density and scrolling through the visible region.
+cadence and SVG node counts without making machine-dependent frame-rate
+assertions. Dense scrubbing checks retained nodes, backward seeks, zero replay
+canvases and pixels after revisiting a timestamp. Zoom tests cover 400% rendering
+at 2× screen density and scrolling through the visible region. Interaction and
+normal/replay equality checks alone do not establish native appearance parity.

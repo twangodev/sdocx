@@ -1,6 +1,6 @@
 # Fountain pen vector parity
 
-The supported saved V14 fountain profile now uses Rust-generated vector
+The supported saved V14 fountain profile uses Rust-generated vector
 shading in SVG previews and PDF exports. V14/V16 positions and widths retain
 the native reconstruction; no global width adjustment is applied.
 
@@ -11,10 +11,10 @@ Firefox currently fails mask visibility and maximum-blending checks. Appearance
 is not identical across SVG consumers, and the experimental alternatives below
 are not part of the implementation.
 
-The agreed target is Chromium preview and vector SVG/PDF export. Firefox
-appearance parity is deferred; its two independent regressions remain expected
-failures. Native pixel identity is not established: the measured partial-alpha
-differences below remain, despite matching reconstructed geometry.
+Chromium preview and vector SVG/PDF export have appearance coverage. Firefox's
+two independent regressions remain expected failures. Native pixel identity is
+not established: the measured partial-alpha differences below remain, despite
+matching reconstructed geometry.
 
 ## Geometry and appearance
 
@@ -24,9 +24,9 @@ direction. Native fixtures compare positions, radii, directions and
 original-sample boundaries. Pressure, tilt and movement continue through the
 existing native saved-stroke reconstruction.
 
-Previously every V14 stamp was filled opaquely. The native directional gradient
-is flat over the central half and falls linearly to 0.07 at its tangent-aligned
-ends. `render/fountain.rs` expresses that function as an SVG linear gradient,
+The native directional gradient is flat over the central half and falls
+linearly to 0.07 at its tangent-aligned ends. `render/fountain.rs` expresses
+that function as an SVG linear gradient,
 transformed with each stamp's native radius and direction.
 
 Opaque grayscale stamps blend with Lighten over black in a luminance mask.
@@ -43,13 +43,10 @@ screen output at every zoom level.
 
 ## Validation on 2026-09-25
 
-The final source audit passed all eight fountain Rust tests, all five PDF
-integration tests, and all eleven Chromium debugger tests after the negative
-pressure correction. The browser run confirmed identical completed replay
-pixels and preserved SVG nodes across seeks, with zero replay canvases, images,
-or filters. Its median frame interval was 16.6 ms (17.4 ms p95); median and
-maximum measured seeks were 182.6 ms and 239.3 ms. No Firefox workaround or
-experimental geometry dependency was added to production.
+Chromium checks observed identical completed replay pixels and preserved SVG
+nodes across seeks, with zero replay canvases, images or filters. A local probe
+measured a 16.6 ms median frame interval (17.4 ms p95) and seeks of 182.6 ms
+median and 239.3 ms maximum. These are fixture-specific host measurements.
 
 - Re-executing the hash-pinned native fixture oracles checked 68 V14 cases /
   4,062 stamps with zero error, and 187 V16 cases / 12,331 stamps with maximum
@@ -58,7 +55,7 @@ experimental geometry dependency was added to production.
 - The available `handwritten.sdocx` contains 2,769 V14 strokes and 56,713 stamps.
   The native saved-redraw oracle and Rust geometry agreed exactly on x, y,
   radius, direction x/y and original-sample boundaries.
-- New regressions check gradient orientation and interior maximum blending with
+- Regressions check gradient orientation and interior maximum blending with
   repeated stamps, including stroke opacity. PDF object checks require native
   shadings and Lighten and reject image XObjects.
 - The real SVG is 10,739,219 bytes. The PDF is 42,045,542 bytes and contains zero
@@ -105,10 +102,9 @@ cs61bl_su22.sdocx    fa2d3ba44023871c6a53436e810772f7b4f45b190dd28e05c172886b8f7
 handwritten.sdocx   77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3
 ```
 
-The V14 `--prepared` command previously captured native output without
-comparing the supplied geometry. It now compares every prepared stamp and
-sample boundary and fails on a mismatch. A deliberately modified tangent
-was rejected, then all three real V14 documents passed the corrected check.
+The V14 `--prepared` command compares every supplied stamp and sample boundary
+against native output and fails on a mismatch. A deliberately modified tangent
+was rejected; the three real V14 documents passed the comparison.
 Both oracles exclude other pen profiles in mixed documents and reject
 unequal prepared attribute lengths before combining their channels.
 These results prove geometry agreement for the listed inputs, not complete
@@ -116,22 +112,20 @@ native appearance or coverage of absent historical settings.
 
 An input-channel audit checked both profiles with tools 1–3: absent optional
 tilt matched an explicit zero-tilt channel, but a null pressure array caused
-native reads at addresses zero or 0x50. The emulator originally mapped the
-first library's ELF header over these addresses, hiding invalid reads. Its
-null page is now unmapped; all 255 current native fixture cases pass, and the
-null-pressure probes fail with unmapped-memory errors. Rust therefore retains
+native reads at addresses zero or 0x50. The emulator leaves the null page
+unmapped; null-pressure probes fail with unmapped-memory errors. Rust retains
 its requirement for a complete pressure channel even when the tool's width
 calculation ignores pressure values.
 
-After that correction, fresh exports from the current Rust source were checked
-against native redraw for all five fountain-containing documents in the table.
+Exports were checked against native redraw with the null page unmapped for all
+five fountain-containing documents in the table.
 All 7,282 strokes / 242,800 stamps still had zero measured attribute error and
 identical sample boundaries. The real-corpus geometry result therefore does not
 depend on accepting null-page reads.
 
 ## Vector replay
 
-The debugger now uses the same Rust SVG renderer as the completed page. Replay
+The debugger uses the same Rust SVG renderer as the completed page. Replay
 adds stroke indices and prepared-point boundaries without changing geometry or
 paint. The UI reveals stamp groups or path prefixes using `sample_ends`; it
 does not calculate pen shapes, shading, or opacity. Fountain stamps remain in
@@ -139,10 +133,9 @@ their original luminance mask, so partial strokes retain directional shading
 and maximum blending. Ordinary ink, page elements, and the Darken highlighter
 batch keep the renderer's paint order.
 
-The canvas replay renderer, tile caches, and viewport raster helpers were
-removed. A page/color-mode change loads a new SVG; timeline changes retain the
-same DOM and reveal existing vectors. This is saved-geometry replay, not a
-reconstruction of native live prediction or temporary tips.
+A page/color-mode change loads a new SVG; timeline changes retain the same DOM
+and reveal existing vectors. Replay allocates no Canvas or ink tiles. This is
+saved-geometry replay, not native live prediction or temporary tips.
 
 Rust regressions compare annotated and normal page appearance in both color
 modes. Browser checks cover backward seeks, completed-page appearance, zoom,
@@ -151,13 +144,10 @@ replay matched the normal page's RGBA output at 462 pixels wide. A local
 Chromium playback probe measured a 16.7 ms median frame interval and 17.3 ms
 p95 with 143,886 SVG nodes and zero replay canvases. These measurements cover
 this fixture and host, not every document or device. Large forward/backward
-seeks in the latest run took 179.5 ms median and 229 ms maximum. All eleven
-Chromium debugger tests passed using the WASM build containing saved-opacity
-support, including the independent visibility and overlap checks. After
-installing Firefox, eight existing debugger
-tests passed and its Chromium-only performance test was skipped. This does not
-establish appearance parity: both sides of the completed-page comparison can
-render incorrectly in the same way.
+seeks in that probe took 179.5 ms median and 229 ms maximum. Normal/replay
+equality alone does not establish native appearance parity: both sides can
+render incorrectly in the same way. The independent visibility and overlap
+checks below isolate Firefox failures.
 
 Firefox currently renders a production V14 stroke completely transparent when
 the SVG is loaded as an image. Inline replay also shows striped stroke interiors.

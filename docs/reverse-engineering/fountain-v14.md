@@ -1,10 +1,8 @@
 # FountainPen V14 saved redraw
 
 > `conformance/fountain_v14_native.py` and `conformance/fountain-v14.json` are
-> in this checkout. The independent reconstruction
-> `conformance/fountain_v14_model.py` was removed during test cleanup; recover
-> it from Git revision `40de721` in a separate checkout. Rust reconstructs
-> saved V14 geometry through the shared SmPath and prepared-dot pipeline.
+> in this checkout. Rust reconstructs saved V14 geometry through the shared
+> SmPath and prepared-dot pipeline.
 > [Vector parity](fountain-parity.md) records directional shading and appearance
 > limits; [current validation](../../conformance/README.md#native-geometry-checks)
 > describes the retained native checks.
@@ -56,7 +54,7 @@ The native oracle covers saved input modes 1, 2 and 3, including fixed width.
 Shape-specific paths, live event prediction, reused-drawable state and other
 historical drawing versions are outside these geometry captures.
 
-## Independent reconstruction
+## Archived reconstruction measurements
 
 `conformance/fountain_v14_model.py` at Git revision `40de721` reconstructs the
 saved variable-width stylus algorithm without loading the APK or executing
@@ -64,14 +62,8 @@ native functions. It uses float32 arithmetic, midpoint quadratics, adaptive
 SmPath subdivision, distance-to-parameter interpolation, analytic normalized
 tangents, distance filtering, alternating short-event filtering, the direction
 ratio ring, the pressure/tilt width law, width limiting, residual stamp
-spacing, and endpoint handling. Python 3.13 or newer is required for
-`math.fma`. The script is not in this checkout. Check out `40de721` separately
-and run it from that tree:
-
-```sh
-python3 conformance/fountain_v14_model.py
-python3 conformance/fountain_v14_model.py --prepared /tmp/handwriting-ink.json --native /tmp/fountain-v14-native.json
-```
+spacing and endpoint handling. This archived research script is not part of
+the implementation or current validation suite.
 
 The measurements below were recorded from that archived script's original
 26-case stylus subset. They are distinct from the current Rust/native fixture
@@ -93,8 +85,7 @@ from residual-overrun rejection: the former retains the newly computed
 midpoint, while the latter restores the previous midpoint. The independent
 model follows that distinction.
 
-The archived model remains a research reference. Production uses the Rust
-saved-stroke reconstruction for settings `14;`, sharing validation guards,
-SmPath and prepared-dot rendering with V16. Saved fixed-width and input modes
-1, 2 and 3 are supported. Live input remains separate; native pixel identity
-is not established by geometry parity.
+Production uses the Rust saved-stroke reconstruction for settings `14;`,
+sharing validation guards, SmPath and prepared-dot rendering with V16. Saved
+fixed width and input modes 1, 2 and 3 are supported. Geometry parity does not
+establish native pixel identity or live-input behavior.

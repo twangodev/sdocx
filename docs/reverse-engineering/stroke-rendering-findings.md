@@ -1,12 +1,10 @@
 # Stroke rendering findings
 
-> Parser findings and the FountainPen V16 geometry in
-> `crates/sdocx/src/ink/fountain.rs` describe this checkout.
-> `conformance/fountain-v16.json`, `conformance/fountain_native.py`, and
-> `conformance/ink_visual.py` are here. `conformance/native_ink.py` and the
-> other retired experiment scripts are at Git revision `40de721`. V14 is not
-> implemented in Rust. See
-> [current validation](../../conformance/README.md#native-geometry-checks).
+Saved FountainPen V14/V16 geometry is implemented in
+`crates/sdocx/src/ink/fountain.rs`. The
+[vector parity findings](fountain-parity.md) describe directional shading and
+appearance limits; [native geometry checks](../../conformance/README.md#native-geometry-checks)
+describe the retained validation harnesses.
 
 ## Root cause of top-right artifacts
 
@@ -48,9 +46,9 @@ fixed channel block.
 The full bit tables and uncompressed form are in
 [`file-format.md`](file-format.md#stroke-frame).
 
-## Implemented fix
+## Rust decoding
 
-The Rust parser now walks `StoredPage` layers and recursive object records,
+The Rust parser walks `StoredPage` layers and recursive object records,
 then decodes type-0/type-1 frames within each stroke's payload. It no longer has
 selection-by-larger-point-count or `StartPointMinusThree`. Channel presence
 comes from the stroke property mask; fixed channel bytes must end exactly at
@@ -76,41 +74,40 @@ comparison. Fixture 02's rough strokes were later identified as FountainPen
 
 ### Current SDK behavior
 
-`prepare_stroke` chooses the geometry, and SVG export and Canvas replay share
-it. A saved `FountainPen` stroke with settings `18;0;100;`, stylus tool type
-2, and inputs accepted by `ink/fountain.rs` becomes circular stamps.
-`render_stroke` draws those stamps as one filled SVG path. The debugger's
-`replay-raster.ts::drawStroke` fills the same circles when `dot_radii` is
-present. That profile is `InkSupport::Reconstructed`: stamp positions and
-radii follow the native saved-stroke helpers. SVG and Canvas antialiasing are
-not Samsung's GPU shader, and zoom does not resample the stamps.
+`prepare_stroke` chooses geometry shared by SVG export, vector PDF and replay.
+Saved `FountainPen` settings `14;` and `18;0;100;` support input modes 1–3
+and fixed width when the saved inputs pass `ink/fountain.rs` validation.
+Both profiles produce circular stamps and report `InkSupport::Reconstructed`.
+V14 also retains tangent directions for vector gradient shading. SVG consumers
+perform edge antialiasing; zoom does not resample the native stamp geometry.
 
 A saved `Marker2` stroke whose settings are absent or whose first settings
 token is a nonnegative integer uses the same stamp path with one radius for
 the whole stroke. Pressure does not change that radius. The saved ARGB alpha
 is one `fill-opacity` on the path. V1 and V2 share this geometry; the V2
-thin-edge shader is not ported. `Marker` and `Marker3` stay on the pressure fallback. Marker4 settings `8;`
-now use a shared rounded rectangular stamp approximation; see
-[Marker4 findings](marker4-rendering-findings.md). Other Marker4 settings and
-straight-line aliases stay on the fallback. Strokes with `top_layer_pen` are
-drawn after the page's other objects, in stored order, inside one
-`mix-blend-mode:darken` group. Debugger canvas replay applies the same per-stroke opacity to the stamp
-union, but does not apply that batch blend.
+thin-edge shader is not ported. `Marker` and `Marker3` stay on the pressure
+fallback. Marker4 settings `7;` and `8;` use rounded rectangular stamps; see
+[V7 findings](marker4-v7.md) and [V8 findings](marker4-rendering-findings.md).
+Other Marker4 settings and straight-line aliases stay on the fallback.
+Composition selects root objects into Base, Top and Masking passes, preserving
+stored order within each pass. The shared top batch uses Darken on light paper
+and Lighten on dark paper; replay retains those SVG blend groups. See
+[composition](../svg-rendering.md) and [theme policy](../render-themes.md).
 
-Every other pen stays on the older approximation. That includes FountainPen
-settings `14;`, fixed width, rainbow, eraser, straighten, and any V16 or
-Marker2 input the checks reject. `stroke_paint` uses `pen_width / 2.5`, clamped to 0.4–12,
-then multiplies each segment by `0.3 + 0.7 * clamp(pressure, 0.05, 1)` when a
+Other pens and rejected saved settings use the pressure approximation, including
+rainbow, eraser and straighten effects. `stroke_paint` uses `pen_width / 2.5`,
+clamped to 0.4–12, then multiplies each segment by
+`0.3 + 0.7 * clamp(pressure, 0.05, 1)` when a
 pressure channel is present. `render_stroke` draws one straight, round-capped
 SVG line per point pair at that segment's starting width, or a straight
 polyline when pressure is absent. A single sample becomes a circle. This path
 does not build centerline curves or continuous width transitions, so straight
 segments can show angular turns and width changes can show shoulders. Raising
-raster resolution does not remove those geometry differences.
+output resolution does not remove those geometry differences.
 
 `Stroke` carries optional `StrokeRendering`: pen name, settings, tool type,
 and style. The approximation ignores timestamps, tilt, and orientation. The
-V16 profile uses pressure, tilt, and timestamps.
+fountain profiles use pressure, tilt, timestamps and geometric movement history.
 
 ### DefaultPen curve-enabled branch
 
@@ -160,14 +157,13 @@ or optional beautification blindly on samples already saved by the app.
 
 ## Saved rendering inputs
 
-The semantic `Stroke` now carries optional `StrokeRendering`, populated by the
+The semantic `Stroke` carries optional `StrokeRendering`, populated by the
 existing bounded style decoder. It retains the complete known style,
 properties and tool type, plus resolved pen/settings strings. Both document
 parsing and debugger inspection/replay use `StrokeResources` to resolve IDs.
 The modern name takes precedence; only an absent or -1 modern ID uses the
-legacy ID. Original sample arrays are unchanged. Old serialized strokes default
-to no rendering metadata; Rust callers constructing `Stroke` literals must add
-`rendering: None` (or supply decoded settings).
+legacy ID. Original sample arrays are unchanged. Serialized strokes without
+rendering metadata default to `None`.
 
 All 77 strokes in fixture 02 resolve to
 `com.samsung.android.sdk.pen.pen.preload.FountainPen`, settings `18;0;100;`.
@@ -178,25 +174,20 @@ calculation, width smoothing and tip handling requiring their own trace.
 ## Shared preparation and replay
 
 `prepare_stroke` supplies geometry inputs, paint, conservative bounds and
-profile/support status for both SVG exports and Canvas replay. The initial
-profile preserves the old pressure/width approximation and borrows original
-samples. Single-sample strokes now produce a dot. The debugger uses prepared
-bounds instead of independently estimating them, and exposes profile/support
+profile/support status for SVG exports and vector replay. The fallback profile
+borrows original samples for its pressure/width approximation. Single-sample
+strokes produce a dot. The debugger uses prepared bounds instead of independently
+estimating them, and exposes profile/support
 status without asserting native parity.
 
 The native registry is represented by `PEN_PROFILES`: 44 names, with aliases
-kept separate and 30 distinct bundled library stems. At this stage every
-recognized profile reported `Approximate`; a pen name alone still does not
-activate an unverified renderer. FountainPen V16 and Marker2 are later exceptions, and
-only when their saved inputs match.
-The existing 48 MiB replay tile cache and optimized backend primitives are
-retained. A filled-capsule path experiment was rejected after cold seeks rose
-from approximately 322 ms to 461 ms; splitting it into fragments did not fix
-that regression. None of that experimental path/cache code is shipped.
+kept separate and 30 distinct bundled library stems. A pen name alone does not
+activate a reconstructed renderer. Saved FountainPen V14/V16 and Marker2 report
+`Reconstructed` only when their inputs pass the profile's validation; Marker4
+V7/V8 remain `Approximate` because vector outlines approximate native coverage.
 
-Textures, live tips, and the other bundled pens remain unfinished. Saved
-FountainPen V16 and Marker2 are the reconstructed profiles. Shared preparation
-is not a claim of full Samsung parity.
+Texture pens and live tips remain unsupported. Shared preparation does not
+establish full Samsung parity.
 
 ### FountainPen version selection refinement
 
@@ -218,7 +209,7 @@ clamps to 75 degrees and maps the portion above 15 degrees to 0–3
 are included in the V16 geometry port below. The render-thread coverage
 shader is still not ported.
 
-The pure V16 width-limiter helper at `0x79298`–`0x792f4` now has a bounded
+The pure V16 width-limiter helper at `0x79298`–`0x792f4` has a bounded
 native oracle in `conformance/native_ink.py` at revision `40de721`.
 It checks the library SHA-256, executes only that helper in ARM64 emulation,
 and compares a float32 reconstruction over 4,128 deterministic cases. All
@@ -227,20 +218,13 @@ limits width changes, enforces pressure/size lower bounds and retains prior
 width in its non-stylus unchanged-pressure branch. This validates one numeric
 primitive, not the complete pressure law or full rendered pen.
 
-After rejecting filled paths, the final prepared-primitive backend measures
-346 ms cold seek versus 322 ms baseline, and 50 ms median/p95 warm seeks in
-both builds. The reverse-seek test reproduces identical pixels; accounted
-raster surfaces remain approximately 654 KiB for that measured viewport.
-These are single-run host measurements, not a cross-device performance claim.
-
 ## FountainPen V16 saved geometry implementation
 
-`ink/fountain.rs` now reconstructs the saved stylus profile selected by
-`FountainPen` / `18;0;100;`. This is active shared rendering, not just registry
-recognition. Other versions, fixed-width strokes, unsupported inputs and
-expansion beyond the preparation budget retain `Approximate`. The new profile
-reports `Reconstructed`: native geometry is reproduced, while SVG/Canvas
-antialiasing is not the Samsung GPU shader.
+`ink/fountain.rs` reconstructs saved `FountainPen` / `18;0;100;` geometry.
+Input modes 1–3 and fixed width are covered by native captures described in
+[vector parity](fountain-parity.md). Unsupported inputs and expansion beyond
+the preparation budget retain `Approximate`. `Reconstructed` describes native
+geometry agreement, not identical edge antialiasing across SVG consumers.
 
 The native saved-object entry (`0x7851c`) performs a width collection pass,
 completes smoothing, then redraws with timestamp-indexed widths. A nonzero tip
@@ -256,7 +240,7 @@ The implementation includes:
 - Midpoint quadratics, native SmPath subdivision/length parameterization and
   distance-spaced circular stamps. The canonical inverse scale is one, giving
   repeat distance 0.82. Native `getInverseScale` multiplies that repeat distance
-  by the minimum inverse canvas scale; our prepared geometry is currently
+  by the minimum inverse canvas scale; prepared geometry is
   stable across zoom levels rather than resampled for each native GPU scale.
 - Float32 pressure, direction-history and tilt calculations, width limits,
   timestamp deduplication/interpolation and forward-window width smoothing.
@@ -266,7 +250,7 @@ The implementation includes:
 - The native ratio ring surviving between collection and redraw, constant-width
   final quadratic/endpoint, tap radius and minimum radius 0.1.
 - Original-sample-to-generated-dot mapping, bounds from actual dot radii,
-  bounded geometry expansion, and one fill per stroke in each backend.
+  bounded geometry expansion, and opacity applied once to each stroke union.
 
 `conformance/fountain_native.py` executes the actual hash-pinned FountainPen,
 PenCommon and Base helpers in Unicorn. Memory allocation is bounded, each
@@ -293,7 +277,7 @@ maximum radius difference is 0.000000716. The ordinary whole-page PDF visual
 comparison improves from 1.25% missing / 0.72% extra ink to 0.72% missing /
 0.69% extra ink (0.83% changed pixels). These percentages include the page's
 shapes and background; they are not per-pen or cross-device parity guarantees.
-Texture pens, other FountainPen versions, fixed-width mode and the native
+Texture pens, other FountainPen versions and the native
 scale-dependent shader's thin-line/antialias coverage remain outside this
 profile's validated scope.
 
@@ -308,14 +292,6 @@ regions are included. Reproduce it with:
 uv run --project conformance --locked python conformance/ink_visual.py \
   /tmp/ink-geometry.json /path/to/reference_page0.png /path/to/sdk.png
 ```
-
-A same-fixture Chromium comparison against the isolated pre-preparation
-`119705d` build measures cold seek at 26.1 ms before and 25.2 ms after; both
-measure 50 ms median / 50.1 ms p95 warm seeks, identical pixels on reverse
-seeks, and approximately 1.38 MB accounted raster surfaces. These are single
-host runs. The browser metric now counts fills as well as stroke calls so
-native circular paths are included in drawing-work reports. Chromium and
-Firefox both pass the replay interaction checks for this fixture.
 
 The dense `handwritten.sdocx` fixture resolves to FountainPen `14;`.
 Its separate Rust reconstruction retains native positions, radii, tangent

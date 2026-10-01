@@ -17,8 +17,12 @@ and distinguishes recovered behavior from implementation and evidence limits.
 - [`fixture-validation.md`](fixture-validation.md) — historical measurements
   from three retired fixtures, preserving the evidence behind the format map.
 - [`stroke-rendering-findings.md`](stroke-rendering-findings.md) — stray
-  top-right stroke cause, packed-point layout, and the current FountainPen V16
-  stamp geometry versus the approximate renderer.
+  top-right stroke cause, packed-point layout, saved FountainPen V14/V16
+  geometry and fallback rendering.
+- [`fountain-parity.md`](fountain-parity.md) — native geometry coverage,
+  Chromium/vector PDF appearance measurements and Firefox limitations.
+- [`fountain-vector-experiments.md`](fountain-vector-experiments.md) — measured
+  browser blend workarounds and unshipped vector prototypes.
 - [`fountain-v14.md`](fountain-v14.md) — saved V14 redraw differences. The
   native oracle and Rust geometry port cover saved stylus input; directional
   shader coverage remains approximate.

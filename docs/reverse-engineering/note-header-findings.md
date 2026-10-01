@@ -4,7 +4,6 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-No newly captured SDOCX document was required.
 
 | Source | Confirmed behavior |
 | --- | --- |
@@ -21,9 +20,9 @@ offset 14. That offset is a property of the current writer, not an invariant of
 the reader. The native property getters and Java names identify background
 inversion and tape visibility; they do not encode a background RGB color there.
 
-## SDK changes
+## Rust decoding
 
-`parse_note_bytes` now walks both length-prefixed masks and the UTF-16 note ID.
+`parse_note_bytes` walks both length-prefixed masks and the UTF-16 note ID.
 Fixed fields, title and body are read within the declared flexible-data offset.
 A corrupt string or object length cannot consume bytes beyond that boundary.
 Unknown fixed bytes after the body are retained in `StoredNote.fixed_trailing_data`.
@@ -39,21 +38,18 @@ accessors expose the confirmed property bits.
 The parser also retains masks wider than four bytes, consistent with its other
 forward-compatible mask readers. This exceeds the analyzed native reader's
 accepted width and is tested synthetically; no meaning is assigned to unknown
-bits. Malformed structural offsets now fail parsing even when integrity checks
+bits. Malformed structural offsets fail parsing even when integrity checks
 are disabled. Missing hash bytes remain an integrity-coverage issue when the
 fixed fields and declared flexible boundary are otherwise readable.
 
-Archive metadata now comes from the structured note header. The format version
+Archive metadata comes from the structured note header. The format version
 is never truncated to fit the legacy `FormatVersion(u16)` field. Core note times
 provide a fallback when a valid end tag did not supply timestamps; valid end-tag
 metadata retains precedence. Flow dimensions and padding use the decoded fields,
 and physical page dimensions continue to come from the first ordered page.
 
-The previous container helper searched all note bytes for a color-shaped pattern.
-No native note-header field supports that search. It could match text or unknown
-data and report that as a document background. That scan is removed. The document
-background now reflects the first ordered page's explicit decoded background
-field, which the renderer already reads structurally.
+The document background comes from the first ordered page's explicit decoded
+background field. No native note-header field encodes that RGB color.
 
 ## Validation and evidence limits
 
@@ -63,12 +59,11 @@ future masks, fixed extensions, limits and malformed offsets. It also verifies
 end-tag precedence, full-width format versions and a deliberate false color
 pattern next to an independently encoded page background.
 
-The two earlier container tests using partial fake note headers were replaced
-by complete synthetic archive cases. Integrity tests still cover raw-note hashes;
-an offset outside the record now fails structurally instead of reaching optional
-integrity reporting. These checks do not replace comparison with future exports.
+Integrity tests cover raw-note hashes; an offset outside the record fails
+structurally before optional integrity reporting. Synthetic checks do not
+establish compatibility with unobserved writer variants.
 
-Document-level flexible fields now have an explicit bounded decoder, including
+Document-level flexible fields have a bounded decoder, including
 application metadata, pen settings, attachment/voice references and fixed font,
 text-direction and background-theme properties. See
 [note metadata findings](note-metadata-findings.md) for its evidence and limits.
