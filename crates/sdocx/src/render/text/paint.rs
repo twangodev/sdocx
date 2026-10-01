@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use crate::fonts::fontdb;
+use crate::fonts::{FontSynthesis, fontdb};
 use unicode_bidi::{BidiClass, bidi_class};
 
 use crate::render::vector::{
@@ -17,6 +17,7 @@ struct PositionedSpan {
     offset_y: f64,
     style: TextStyle,
     font_face: Option<(fontdb::Weight, fontdb::Style)>,
+    synthesis: FontSynthesis,
     positioned: bool,
 }
 
@@ -107,9 +108,10 @@ pub(in crate::render) fn render_measured_line(
                 if !span.positions.is_empty() {
                     node = node.x_positions(&span.positions, 5);
                 }
-                if let Some((weight, style)) = span.font_face {
-                    node = node.font_face(weight, style);
+                if let Some((weight, face_style)) = span.font_face {
+                    node = node.font_face(weight, face_style);
                 }
+                node = node.font_synthesis(span.synthesis);
                 push_text_span(svg, node, &style);
             }
         },
@@ -278,15 +280,11 @@ fn render_retained_fragment(
             font_size: measured.style.font_size,
             paint: NativeTextPaint {
                 color,
-                stroke_width: (style.bold && matches!(styled.context(), super::TextContext::Flow))
-                    .then_some(0.45),
+                bold: style.bold,
+                skew_x: measured.synthesis.skew_x(),
             },
             glyphs,
             variable: measured.variable,
-            synthetic_italic: style.italic && measured.face.style == fontdb::Style::Normal,
-            synthetic_bold: style.bold
-                && matches!(styled.context(), super::TextContext::Placed)
-                && measured.face.weight < fontdb::Weight::BOLD,
         });
     }
     let inkless = runs.iter().all(|run| {
@@ -334,7 +332,8 @@ fn render_retained_fragment(
                 .font_face(
                     placement.cluster.run.face.weight,
                     placement.cluster.run.face.style,
-                );
+                )
+                .font_synthesis(placement.cluster.run.synthesis);
                 push_text_span(svg, span, &style);
             }
             if inkless {
@@ -630,6 +629,7 @@ fn positioned_spans(
                         font_face: run
                             .coverage_fallback
                             .then_some((run.face.weight, run.face.style)),
+                        synthesis: run.synthesis,
                         positioned: false,
                     });
                 }
@@ -644,6 +644,7 @@ fn positioned_spans(
                 .run
                 .coverage_fallback
                 .then_some((face.weight, face.style));
+            let synthesis = first.cluster.run.synthesis;
             index += 1;
             if source.len() == 1 {
                 while let Some(next) = line.placements.get(index)
@@ -668,6 +669,7 @@ fn positioned_spans(
                 offset_y,
                 style: renderer.output_style_with_face(&style, face),
                 font_face,
+                synthesis,
                 positioned: true,
             });
         }

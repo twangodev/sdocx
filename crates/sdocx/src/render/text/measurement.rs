@@ -6,7 +6,9 @@ use unicode_script::{Script, ScriptExtension, UnicodeScript};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::PredefinedTextStyle;
-use crate::fonts::{Direction, Feature, FontError, ResolvedFace, ShapedGlyph, UnicodeBuffer};
+use crate::fonts::{
+    Direction, Feature, FontError, FontSynthesis, ResolvedFace, ShapedGlyph, UnicodeBuffer, fontdb,
+};
 use crate::render::RenderTheme;
 
 use super::bidi::{BidiError, ParagraphBidi};
@@ -41,6 +43,7 @@ pub(in crate::render) struct MeasuredRun {
     pub source: Range<usize>,
     pub style: TextStyle,
     pub face: ResolvedFace,
+    pub synthesis: FontSynthesis,
     pub direction: Direction,
     pub glyphs: Vec<MeasuredGlyph>,
     pub variable: bool,
@@ -585,10 +588,18 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 measured
             })
             .collect();
+        let requested_weight =
+            if style.bold && matches!(self.styled.context(), super::TextContext::Placed) {
+                fontdb::Weight::BOLD
+            } else {
+                fontdb::Weight::NORMAL
+            };
+        let synthesis = face.synthesis(requested_weight, style.italic);
         let run = Arc::new(MeasuredRun {
             source,
             style: style.clone(),
             face,
+            synthesis,
             direction,
             glyphs,
             variable,
@@ -1216,6 +1227,42 @@ mod tests {
         });
         assert_eq!(measure(&bold, TextContext::Flow).advance, 86.66015625);
         assert_eq!(measure(&bold, TextContext::Placed).advance, 88.43994140625);
+    }
+
+    #[test]
+    fn retained_synthesis_uses_context_and_selected_face_without_metric_changes() {
+        let mut database = fontdb::Database::new();
+        database
+            .load_font_data(include_bytes!("../../../assets/fonts/Roboto-Regular.ttf").to_vec());
+        let fonts = FontBook::new(Arc::new(database));
+        let mut content = text_box("ABC");
+        content.runs.push(RichTextRun {
+            start: 0,
+            end: 3,
+            bold: true,
+            italic: true,
+        });
+        for context in [TextContext::Placed, TextContext::Flow] {
+            let measured = measure_with_fonts(&content, context, &fonts);
+            assert_eq!(measured.advance, 86.66015625);
+            for cluster in &measured.clusters {
+                assert_eq!(cluster.run.face.weight, fontdb::Weight::NORMAL);
+                assert_eq!(cluster.run.face.style, fontdb::Style::Normal);
+                assert_eq!(
+                    cluster.run.synthesis,
+                    FontSynthesis {
+                        bold: matches!(context, TextContext::Placed),
+                        italic: true,
+                    }
+                );
+            }
+        }
+        let real_styles = measure(&content, TextContext::Placed);
+        assert!(real_styles.clusters.iter().all(|cluster| {
+            cluster.run.face.weight == fontdb::Weight::BOLD
+                && cluster.run.face.style == fontdb::Style::Italic
+                && cluster.run.synthesis == FontSynthesis::default()
+        }));
     }
 
     #[test]

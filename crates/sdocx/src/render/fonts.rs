@@ -27,6 +27,18 @@ pub struct ResolvedFace {
     pub metrics: FontMetrics,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct FontSynthesis {
+    pub bold: bool,
+    pub italic: bool,
+}
+
+impl FontSynthesis {
+    pub fn skew_x(self) -> f32 {
+        if self.italic { -0.25 } else { 0.0 }
+    }
+}
+
 impl fmt::Debug for ResolvedFace {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
@@ -314,6 +326,18 @@ impl Default for FontBook {
 }
 
 impl ResolvedFace {
+    pub(crate) fn synthesis(
+        &self,
+        requested_weight: Weight,
+        requested_italic: bool,
+    ) -> FontSynthesis {
+        FontSynthesis {
+            bold: requested_weight.0 >= 600
+                && requested_weight.0.saturating_sub(self.weight.0) >= 200,
+            italic: requested_italic && self.style == Style::Normal,
+        }
+    }
+
     pub fn bytes(&self) -> &[u8] {
         self.data.as_ref().as_ref()
     }
@@ -471,6 +495,56 @@ mod tests {
             book.resolve("monospace", false, false).unwrap().family,
             "Roboto Mono"
         );
+    }
+
+    #[test]
+    fn native_synthesis_requires_both_weight_thresholds() {
+        let mut face = FontBook::default().resolve("Roboto", false, false).unwrap();
+        for (requested, selected, expected) in [
+            (599, 399, false),
+            (600, 400, true),
+            (600, 401, false),
+            (700, 500, true),
+            (700, 501, false),
+            (700, 550, false),
+            (700, 700, false),
+            (700, 900, false),
+        ] {
+            face.weight = Weight(selected);
+            assert_eq!(face.synthesis(Weight(requested), false).bold, expected);
+        }
+    }
+
+    #[test]
+    fn selected_faces_determine_synthesis_without_changing_the_font() {
+        let defaults = FontBook::default();
+        let regular = defaults.resolve("Roboto", false, false).unwrap();
+        let mut database = Database::new();
+        database.load_font_data(regular.bytes().to_vec());
+        let regular_only = FontBook::new(Arc::new(database));
+        let selected = regular_only.resolve("Roboto", true, true).unwrap();
+        assert_eq!(selected.weight, Weight::NORMAL);
+        assert_eq!(selected.style, Style::Normal);
+        assert_eq!(selected.bytes(), regular.bytes());
+        let synthesis = selected.synthesis(Weight::BOLD, true);
+        assert_eq!(
+            synthesis,
+            FontSynthesis {
+                bold: true,
+                italic: true
+            }
+        );
+        assert_eq!(synthesis.skew_x(), -0.25);
+        for (bold, italic) in [(false, false), (false, true), (true, false), (true, true)] {
+            let selected = defaults.resolve("Roboto", bold, italic).unwrap();
+            let synthesis =
+                selected.synthesis(if bold { Weight::BOLD } else { Weight::NORMAL }, italic);
+            assert_eq!(synthesis, FontSynthesis::default());
+            assert_eq!(synthesis.skew_x(), 0.0);
+        }
+        let mut oblique = regular;
+        oblique.style = Style::Oblique;
+        assert!(!oblique.synthesis(Weight::NORMAL, true).italic);
     }
 
     #[test]

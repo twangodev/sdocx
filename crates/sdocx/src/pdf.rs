@@ -167,7 +167,7 @@ fn render_pages_pdf<'a>(
         ..Default::default()
     };
     let mut pdf = PdfDocument::new();
-    let mut painter = NativePdfPainter::default();
+    let mut painter = NativePdfPainter::new(options.dpi);
     let mut tags = TagTree::default();
     let mut page_count = 0;
     let mut retained_text = false;

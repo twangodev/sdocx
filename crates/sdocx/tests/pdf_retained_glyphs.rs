@@ -138,6 +138,7 @@ struct Glyph {
     y: f64,
     operation: usize,
     clips: usize,
+    basis: [f64; 4],
 }
 
 fn number(object: &Object) -> f64 {
@@ -186,10 +187,15 @@ fn glyphs(bytes: &[u8]) -> Vec<Glyph> {
 }
 
 fn glyphs_on_page(bytes: &[u8], page_number: u32) -> Vec<Glyph> {
+    glyphs_at_dpi(bytes, page_number, 96.0)
+}
+
+fn glyphs_at_dpi(bytes: &[u8], page_number: u32, dpi: f64) -> Vec<Glyph> {
     let pdf = lopdf::Document::load_mem(bytes).unwrap();
     let page_id = pdf.get_pages()[&page_number];
     let page = pdf.get_dictionary(page_id).unwrap();
     let height = number(&page.get(b"MediaBox").unwrap().as_array().unwrap()[3]);
+    let scale = dpi / 72.0;
     let fonts = pdf.get_page_fonts(page_id).unwrap();
     let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
     let mut result = Vec::new();
@@ -261,10 +267,16 @@ fn glyphs_on_page(bytes: &[u8], page_number: u32) -> Vec<Glyph> {
                                 result.push(Glyph {
                                     outline: shape,
                                     advance: face.glyph_hor_advance(GlyphId(gid)).unwrap(),
-                                    x: (transform.e + transform.a * cursor) / 0.75,
-                                    y: (height - transform.f - transform.b * cursor) / 0.75,
+                                    x: (transform.e + transform.a * cursor) * scale,
+                                    y: (height - transform.f - transform.b * cursor) * scale,
                                     operation: operation_index,
                                     clips,
+                                    basis: [
+                                        transform.a * scale,
+                                        -transform.b * scale,
+                                        transform.c * scale,
+                                        -transform.d * scale,
+                                    ],
                                 });
                             }
                             cursor += cid_width(font, cid) * font_size / 1000.0;
@@ -306,6 +318,260 @@ fn assert_glyph(actual: &[Glyph], id: u16, advance: u16, x: f64, y: f64) {
     assert_eq!(glyph.advance, advance);
     assert!((glyph.x - x).abs() < 0.0002, "GID{id} x {} != {x}", glyph.x);
     assert!((glyph.y - y).abs() < 0.0002, "GID{id} y {} != {y}", glyph.y);
+}
+
+#[derive(Debug)]
+struct StrokedOutline {
+    moves: Vec<[f64; 2]>,
+    width_points: f64,
+    basis: [f64; 4],
+}
+
+fn stroked_outlines(bytes: &[u8], dpi: f64) -> Vec<StrokedOutline> {
+    let pdf = lopdf::Document::load_mem(bytes).unwrap();
+    let page_id = pdf.get_pages()[&1];
+    let page = pdf.get_dictionary(page_id).unwrap();
+    let height = number(&page.get(b"MediaBox").unwrap().as_array().unwrap()[3]);
+    let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
+    let scale = dpi / 72.0;
+    let mut ctm = Transform::default();
+    let mut width = 1.0;
+    let mut stack = Vec::new();
+    let mut moves = Vec::new();
+    let mut outlines = Vec::new();
+    for operation in content.operations {
+        match operation.operator.as_str() {
+            "q" => stack.push((ctm, width)),
+            "Q" => (ctm, width) = stack.pop().unwrap(),
+            "cm" => {
+                let values = operation.operands.iter().map(number).collect::<Vec<_>>();
+                ctm = compose(
+                    ctm,
+                    Transform::new(
+                        values[0], values[1], values[2], values[3], values[4], values[5],
+                    ),
+                );
+            }
+            "w" => width = number(&operation.operands[0]),
+            "m" => {
+                let x = number(&operation.operands[0]);
+                let y = number(&operation.operands[1]);
+                moves.push([
+                    (ctm.a * x + ctm.c * y + ctm.e) * scale,
+                    (height - ctm.b * x - ctm.d * y - ctm.f) * scale,
+                ]);
+            }
+            "S" | "s" => {
+                outlines.push(StrokedOutline {
+                    moves: std::mem::take(&mut moves),
+                    width_points: width * (ctm.a * ctm.d - ctm.b * ctm.c).abs().sqrt(),
+                    basis: [ctm.a * scale, -ctm.b * scale, ctm.c * scale, -ctm.d * scale],
+                });
+            }
+            "n" | "f" | "f*" => moves.clear(),
+            _ => {}
+        }
+    }
+    outlines
+}
+
+fn assert_synthesized_strokes(
+    strokes: &[StrokedOutline],
+    glyphs: &[(u16, f64, f64)],
+    skew: f64,
+    rotation: Option<[f64; 2]>,
+) {
+    let face = Face::parse(FONT, 0).unwrap();
+    assert!(!strokes.is_empty());
+    for stroke in strokes {
+        assert!((stroke.width_points - 0.25).abs() < 0.00002, "{stroke:?}");
+        assert_rectangle(
+            stroke.basis,
+            if rotation.is_some() {
+                [0.0, 1.0, -1.0, 0.0]
+            } else {
+                [1.0, 0.0, 0.0, 1.0]
+            },
+        );
+    }
+    let mut actual_moves = strokes
+        .iter()
+        .flat_map(|stroke| stroke.moves.iter().copied())
+        .collect::<Vec<_>>();
+    for &(id, origin_x, baseline) in glyphs {
+        let expected = outline(&face, id)
+            .0
+            .into_iter()
+            .filter_map(|(kind, coordinates)| {
+                if kind != 0 {
+                    return None;
+                }
+                let x = f64::from(f32::from_bits(coordinates[0]));
+                let y = f64::from(f32::from_bits(coordinates[1]));
+                let point = [
+                    origin_x + (x + skew * y) * 20.0 / 2048.0,
+                    baseline - y * 20.0 / 2048.0,
+                ];
+                Some(if let Some([center_x, center_y]) = rotation {
+                    [
+                        center_x - point[1] + center_y,
+                        center_y + point[0] - center_x,
+                    ]
+                } else {
+                    point
+                })
+            })
+            .collect::<Vec<_>>();
+        for expected in expected {
+            let index = actual_moves
+                .iter()
+                .position(|actual| {
+                    actual
+                        .iter()
+                        .zip(&expected)
+                        .all(|(actual, expected)| (actual - expected).abs() < 0.0002)
+                })
+                .unwrap_or_else(|| {
+                    panic!("GID{id} source contour {expected:?} absent from {strokes:?}")
+                });
+            actual_moves.swap_remove(index);
+        }
+    }
+    assert!(
+        actual_moves.is_empty(),
+        "unexpected stroke contours: {actual_moves:?}"
+    );
+}
+
+fn synthesize(content: &mut RichTextBox, start: u32, end: u32) {
+    for kind in [RichTextSpanType::Bold, RichTextSpanType::Italic] {
+        content.spans.push(decoration(kind, start, end, true));
+    }
+}
+
+#[test]
+fn synthetic_italic_and_bold_keep_arabic_glyphs_and_a_quarter_point_pen() {
+    for dpi in [72.0_f32, 96.0, 144.0] {
+        for (flow, italic) in [(false, false), (false, true), (true, false), (true, true)] {
+            let mut content = text("لَا");
+            content
+                .spans
+                .push(decoration(RichTextSpanType::Bold, 0, 3, true));
+            if italic {
+                content
+                    .spans
+                    .push(decoration(RichTextSpanType::Italic, 0, 3, true));
+            }
+            let skew = if italic { 0.25 } else { 0.0 };
+            let mut doc = document(content.clone());
+            let (x, y) = if flow {
+                content.bbox = BoundingBox::default();
+                doc.pages[0].objects.clear();
+                doc.metadata.note_text = Some(content);
+                doc.metadata.page_mode = Some(0);
+                doc.metadata.flow_page_padding = Some((0, 0));
+                (0.0, 30.0)
+            } else {
+                (10.0, 40.0)
+            };
+            let mut options = options();
+            options.dpi = dpi;
+            let bytes = sdocx::render_document_pdf(&doc, &Default::default(), &options).unwrap();
+            let actual = glyphs_at_dpi(&bytes, 1, f64::from(dpi));
+            assert_glyph(&actual, 5365, 1168, x, y);
+            assert_glyph(&actual, 1399, 0, x + 3.466796875, y - 4.39453125);
+            for glyph in &actual {
+                assert_rectangle(glyph.basis, [1.0, 0.0, skew, -1.0]);
+            }
+            assert_synthesized_strokes(
+                &stroked_outlines(&bytes, f64::from(dpi)),
+                &[(5365, x, y), (1399, x + 3.466796875, y - 4.39453125)],
+                skew,
+                None,
+            );
+            let geometry = pdf_geometry::read(&bytes, f64::from(dpi));
+            assert_eq!(geometry.source, "لَا");
+            assert_eq!(geometry.image_resources, 0);
+            assert_eq!(pdf_geometry::tagged_source(&bytes), "لَا");
+            if flow {
+                assert!(actual.iter().all(|glyph| glyph.clips > 0));
+            }
+        }
+    }
+}
+
+#[test]
+fn synthetic_italic_alone_keeps_selectable_arabic_without_a_bold_stroke() {
+    let mut content = text("لَا");
+    content
+        .spans
+        .push(decoration(RichTextSpanType::Italic, 0, 3, true));
+    let bytes = export(content);
+    let actual = glyphs(&bytes);
+    assert_glyph(&actual, 5365, 1168, 10.0, 40.0);
+    assert_glyph(&actual, 1399, 0, 13.466796875, 35.60546875);
+    for glyph in &actual {
+        assert_rectangle(glyph.basis, [1.0, 0.0, 0.25, -1.0]);
+    }
+    assert!(stroked_outlines(&bytes, 96.0).is_empty());
+    assert_eq!(selected_source(&bytes), "لَا");
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "لَا");
+}
+
+#[test]
+fn partial_synthetic_styles_do_not_slant_or_stroke_the_normal_neighbor() {
+    let mut content = text("AB");
+    synthesize(&mut content, 0, 1);
+    let bytes = export(content);
+    let actual = glyphs(&bytes);
+    assert_glyph(&actual, 36, 1401, 10.0, 40.0);
+    assert_glyph(&actual, 37, 1405, 23.681640625, 40.0);
+    let face = Face::parse(FONT, 0).unwrap();
+    let a = actual
+        .iter()
+        .find(|glyph| glyph.outline == outline(&face, 36))
+        .unwrap();
+    let b = actual
+        .iter()
+        .find(|glyph| glyph.outline == outline(&face, 37))
+        .unwrap();
+    assert_rectangle(a.basis, [1.0, 0.0, 0.25, -1.0]);
+    assert_rectangle(b.basis, [1.0, 0.0, 0.0, -1.0]);
+    assert_synthesized_strokes(
+        &stroked_outlines(&bytes, 96.0),
+        &[(36, 10.0, 40.0)],
+        0.25,
+        None,
+    );
+    assert_eq!(selected_source(&bytes), "AB");
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "AB");
+}
+
+#[test]
+fn synthesized_glyph_fill_and_outline_follow_the_original_rotation_pivot() {
+    let mut content = text("لَا");
+    content.bbox = BoundingBox {
+        x_min: 30.0,
+        y_min: 80.0,
+        x_max: 190.0,
+        y_max: 180.0,
+    };
+    content.rotation_degrees = Some(90.0);
+    synthesize(&mut content, 0, 3);
+    let bytes = export(content);
+    let actual = glyphs(&bytes);
+    assert_glyph(&actual, 5365, 1168, 140.0, 50.0);
+    assert_glyph(&actual, 1399, 0, 144.39453125, 53.466796875);
+    for glyph in &actual {
+        assert_rectangle(glyph.basis, [0.0, 1.0, 1.0, 0.25]);
+    }
+    assert_synthesized_strokes(
+        &stroked_outlines(&bytes, 96.0),
+        &[(5365, 30.0, 100.0), (1399, 33.466796875, 95.60546875)],
+        0.25,
+        Some([110.0, 130.0]),
+    );
+    assert_eq!(selected_source(&bytes), "لَا");
 }
 
 fn black_rectangles(bytes: &[u8]) -> Vec<[f64; 4]> {

@@ -521,6 +521,15 @@ impl TSpan {
         );
         self
     }
+    pub fn font_synthesis(mut self, synthesis: crate::fonts::FontSynthesis) -> Self {
+        if synthesis.bold {
+            self = self.bold();
+        }
+        if synthesis.skew_x() != 0.0 {
+            self = self.italic();
+        }
+        self
+    }
     pub fn decoration(mut self, decoration: TextDecoration) -> Self {
         self.0.attr("text-decoration", decoration.text());
         self

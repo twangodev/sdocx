@@ -824,6 +824,51 @@ fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
 }
 
 #[test]
+fn coverage_fallback_preserves_requested_synthetic_italic_and_bold() {
+    let defaults = FontBook::default();
+    let mut database = fontdb::Database::new();
+    for (family, italic) in [("Roboto", true), ("Roboto Mono", false)] {
+        let face = defaults.resolve(family, false, italic).unwrap();
+        database.load_font_data(face.bytes().to_vec());
+    }
+    database.set_sans_serif_family("Roboto");
+    let fonts = FontBook::new(Arc::new(database));
+    let mut content = text("A∕B");
+    content.spans = vec![
+        font_name(0, 3, "Roboto"),
+        span(RichTextSpanType::Italic, 0, 3, &[1, 0]),
+        span(RichTextSpanType::Bold, 0, 3, &[1, 0]),
+    ];
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
+            .pop()
+            .unwrap();
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        let fallback = tspan(&xml, "∕");
+        assert_eq!(
+            fallback.attribute("font-family"),
+            Some("\"Roboto Mono\", sans-serif")
+        );
+        assert_eq!(fallback.attribute("font-style"), Some("italic"));
+        if matches!(context, Context::Standalone) {
+            assert_eq!(fallback.attribute("font-weight"), Some("bold"));
+        } else {
+            assert_eq!(fallback.attribute("font-weight"), Some("400"));
+            assert_eq!(fallback.attribute("stroke-width"), Some("0.45"));
+        }
+        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("tspan"))
+                .filter_map(|node| node.text())
+                .collect::<String>(),
+            "A∕B"
+        );
+    }
+}
+
+#[test]
 fn caller_controlled_oblique_face_keeps_actual_weight_and_style_in_css() {
     let family = "Caller Controlled";
     let defaults = FontBook::default();
@@ -1142,32 +1187,37 @@ fn mixed_styles_remain_selectable_vector_text_with_bundled_roboto() {
     for &context in CONTEXTS {
         let document = document(context, content.clone());
         let rendered = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
-        let bytes = sdocx::render_svg_pages_pdf(&[rendered], &options).unwrap();
-        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
-        let extracted = pdf.extract_text(&[1]).unwrap().replace('\n', "");
-        let alpha = extracted
-            .find("Alpha")
-            .unwrap_or_else(|| panic!("{context:?}: {extracted:?}"));
-        let beta = extracted
-            .find("Beta")
-            .unwrap_or_else(|| panic!("{context:?}: {extracted:?}"));
-        assert!(alpha < beta, "{context:?}: {extracted:?}");
-        assert!(
-            pdf.objects.values().any(|object| object
-                .as_dict()
-                .is_ok_and(|dict| dict.has(b"FontFile2") || dict.has(b"FontFile3"))),
-            "{context:?}"
-        );
-        assert!(
-            !pdf.objects
-                .values()
-                .any(|object| object.as_stream().is_ok_and(|stream| {
-                    stream
-                        .dict
-                        .get(b"Subtype")
-                        .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
-                })),
-            "{context:?}"
-        );
+        let exports = [
+            sdocx::render_svg_pages_pdf(&[rendered], &options).unwrap(),
+            sdocx::render_document_pdf(&document, &Default::default(), &options).unwrap(),
+        ];
+        for bytes in exports {
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let extracted = pdf.extract_text(&[1]).unwrap().replace('\n', "");
+            let alpha = extracted
+                .find("Alpha")
+                .unwrap_or_else(|| panic!("{context:?}: {extracted:?}"));
+            let beta = extracted
+                .find("Beta")
+                .unwrap_or_else(|| panic!("{context:?}: {extracted:?}"));
+            assert!(alpha < beta, "{context:?}: {extracted:?}");
+            assert!(
+                pdf.objects.values().any(|object| object
+                    .as_dict()
+                    .is_ok_and(|dict| dict.has(b"FontFile2") || dict.has(b"FontFile3"))),
+                "{context:?}"
+            );
+            assert!(
+                !pdf.objects
+                    .values()
+                    .any(|object| object.as_stream().is_ok_and(|stream| {
+                        stream
+                            .dict
+                            .get(b"Subtype")
+                            .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+                    })),
+                "{context:?}"
+            );
+        }
     }
 }
