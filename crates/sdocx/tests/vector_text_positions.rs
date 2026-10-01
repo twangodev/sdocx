@@ -425,7 +425,7 @@ fn decorations_cover_retained_advances_continuously_across_paint_spans() {
 #[test]
 fn unsupported_rtl_clusters_keep_logical_source_and_report_the_fallback() {
     for &context in CONTEXTS {
-        let source = "A\u{202e}AV\u{202c}Z";
+        let source = "A\u{202e}(AV)\u{202c}Z";
         let page = render(context, text(source), 500);
         assert_eq!(svg_text(&page.svg), source);
         assert!(
@@ -446,7 +446,7 @@ fn unsupported_rtl_clusters_keep_logical_source_and_report_the_fallback() {
                 .iter()
                 .map(|node| node.text().unwrap())
                 .collect::<Vec<_>>(),
-            ["A", "\u{202e}AV\u{202c}", "Z"]
+            ["A", "\u{202e}(AV)\u{202c}", "Z"]
         );
         assert!(spans.iter().all(|node| node.attribute("x").is_some()));
         assert_eq!(

@@ -80,31 +80,17 @@ fn diagnostic(page: &RenderedPage, kind: TextDiagnosticKind, scalar: char) -> bo
 }
 
 #[test]
-fn wrapped_even_override_and_isolate_keep_their_paragraph_guard() {
+fn wrapped_even_override_and_isolate_keep_proven_positions_and_backgrounds() {
     for context in [Context::Placed, Context::Flow] {
         for replay in [false, true] {
             for (open, close) in [('\u{202d}', '\u{202c}'), ('\u{2066}', '\u{2069}')] {
                 let source = format!("A{open}BC{close}Z");
                 let page = render(context, &source, 14, replay);
                 assert!(
-                    diagnostic(&page, TextDiagnosticKind::UnsupportedGlyphPositioning, 'C'),
+                    page.text_diagnostics.is_empty(),
                     "{context:?} {source:?}: {:?}",
                     page.text_diagnostics
                 );
-                assert!(page.text_diagnostics.iter().any(
-                    |issue| issue.kind == TextDiagnosticKind::UnsupportedBackgroundPositioning
-                ));
-                for scalar in ['A', 'Z'] {
-                    assert!(!diagnostic(
-                        &page,
-                        TextDiagnosticKind::UnsupportedGlyphPositioning,
-                        scalar
-                    ));
-                }
-                assert!(!page.text_diagnostics.iter().any(|issue| matches!(
-                    issue.kind,
-                    TextDiagnosticKind::MissingGlyphs | TextDiagnosticKind::MeasurementFailure
-                )));
                 let xml = roxmltree::Document::parse(&page.svg).unwrap();
                 let spans: Vec<_> = xml
                     .descendants()
@@ -129,9 +115,52 @@ fn wrapped_even_override_and_isolate_keep_their_paragraph_guard() {
                     node.attribute("y").unwrap().parse::<f64>().unwrap()
                 };
                 assert!(y(continuation) > y(first));
-                assert!(!xml.descendants().any(|node| node.has_tag_name("rect")
-                    && node.attribute("fill") == Some("#00ff00")
-                    && (y(&node) - (y(continuation) - 20.0)).abs() < 0.0001));
+                assert!((y(continuation) - y(first) - 27.0).abs() < 0.0001);
+                let left = match context {
+                    Context::Placed => 10.0,
+                    Context::Flow => 48.0,
+                };
+                assert!(
+                    (continuation
+                        .attribute("x")
+                        .unwrap()
+                        .split_whitespace()
+                        .next()
+                        .unwrap()
+                        .parse::<f64>()
+                        .unwrap()
+                        - left)
+                        .abs()
+                        < 0.0001
+                );
+                let background = xml
+                    .descendants()
+                    .find(|node| {
+                        node.has_tag_name("rect")
+                            && node.attribute("fill") == Some("#00ff00")
+                            && (y(node) - (y(continuation) - 20.0)).abs() < 0.0001
+                    })
+                    .unwrap();
+                assert!(
+                    (background
+                        .attribute("width")
+                        .unwrap()
+                        .parse::<f64>()
+                        .unwrap()
+                        - 1333.0 / 2048.0 * 20.0)
+                        .abs()
+                        < 0.0001
+                );
+                assert!(
+                    (background
+                        .attribute("height")
+                        .unwrap()
+                        .parse::<f64>()
+                        .unwrap()
+                        - 27.0)
+                        .abs()
+                        < 0.0001
+                );
             }
         }
     }
@@ -142,23 +171,11 @@ fn unclosed_override_stops_at_each_native_cr_and_lf_boundary() {
     for context in [Context::Placed, Context::Flow] {
         for replay in [false, true] {
             let page = render(context, "\u{202d}B\rC\nD\r\nE", 100, replay);
-            assert!(diagnostic(
-                &page,
-                TextDiagnosticKind::UnsupportedGlyphPositioning,
-                'B'
-            ));
-            assert!(page.text_diagnostics.iter().any(|issue| issue.kind == TextDiagnosticKind::UnsupportedBackgroundPositioning));
-            for scalar in ['C', 'D', 'E'] {
-                assert!(
-                    !diagnostic(
-                        &page,
-                        TextDiagnosticKind::UnsupportedGlyphPositioning,
-                        scalar
-                    ),
-                    "{context:?}: {:?}",
-                    page.text_diagnostics
-                );
-            }
+            assert!(
+                page.text_diagnostics.is_empty(),
+                "{context:?}: {:?}",
+                page.text_diagnostics
+            );
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
             assert_eq!(
                 xml.descendants()
@@ -172,8 +189,90 @@ fn unclosed_override_stops_at_each_native_cr_and_lf_boundary() {
                     .filter(|node| node.has_tag_name("rect")
                         && node.attribute("fill") == Some("#00ff00"))
                     .count(),
-                3
+                4
             );
+        }
+    }
+}
+
+#[test]
+fn unproven_continuation_keeps_the_guard_from_an_earlier_line() {
+    for context in [Context::Placed, Context::Flow] {
+        for replay in [false, true] {
+            for (open, close) in [('\u{202d}', '\u{202c}'), ('\u{2066}', '\u{2069}')] {
+                let source = format!("A{open}BB C中{close}Z");
+                let page = render(context, &source, 30, replay);
+                assert!(diagnostic(&page, TextDiagnosticKind::MissingGlyphs, '中'));
+                assert!(
+                    diagnostic(&page, TextDiagnosticKind::UnsupportedGlyphPositioning, 'C'),
+                    "{context:?} {source:?}: {:?}",
+                    page.text_diagnostics
+                );
+                let xml = roxmltree::Document::parse(&page.svg).unwrap();
+                let spans: Vec<_> = xml
+                    .descendants()
+                    .filter(|node| node.has_tag_name("tspan"))
+                    .collect();
+                assert_eq!(
+                    spans
+                        .iter()
+                        .filter_map(|node| node.text())
+                        .collect::<String>(),
+                    source
+                );
+                let containing = |scalar| {
+                    spans
+                        .iter()
+                        .find(|node| node.text().is_some_and(|text| text.contains(scalar)))
+                        .unwrap()
+                };
+                let y = |node: &roxmltree::Node<'_, '_>| {
+                    node.attribute("y").unwrap().parse::<f64>().unwrap()
+                };
+                assert_eq!(y(containing('C')), y(containing('中')));
+                assert!(y(containing('C')) > y(containing(open)));
+                assert!(!xml.descendants().any(|node| node.has_tag_name("rect")
+                    && node.attribute("fill") == Some("#00ff00")
+                    && (y(&node) - (y(containing('C')) - 20.0)).abs() < 0.0001));
+            }
+        }
+    }
+}
+
+#[test]
+fn fallback_after_cr_or_lf_does_not_inherit_the_previous_paragraph_override() {
+    for context in [Context::Placed, Context::Flow] {
+        for replay in [false, true] {
+            for separator in ["\r", "\n", "\r\n"] {
+                let page = render(context, &format!("\u{202d}B{separator}C中"), 100, replay);
+                assert!(diagnostic(&page, TextDiagnosticKind::MissingGlyphs, '中'));
+                assert!(
+                    !page.text_diagnostics.iter().any(|issue| matches!(
+                        issue.kind,
+                        TextDiagnosticKind::UnsupportedGlyphPositioning
+                            | TextDiagnosticKind::UnsupportedBackgroundPositioning
+                    )),
+                    "{context:?} {separator:?}: {:?}",
+                    page.text_diagnostics
+                );
+                let xml = roxmltree::Document::parse(&page.svg).unwrap();
+                let continuation = xml
+                    .descendants()
+                    .find(|node| {
+                        node.has_tag_name("tspan")
+                            && node.text().is_some_and(|text| text.contains('C'))
+                    })
+                    .unwrap();
+                let baseline = continuation.attribute("y").unwrap().parse::<f64>().unwrap();
+                assert!(xml.descendants().any(|node| {
+                    node.has_tag_name("rect")
+                        && node.attribute("fill") == Some("#00ff00")
+                        && (node.attribute("y").unwrap().parse::<f64>().unwrap()
+                            - (baseline - 20.0))
+                            .abs()
+                            < 0.0001
+                }));
+            }
         }
     }
 }

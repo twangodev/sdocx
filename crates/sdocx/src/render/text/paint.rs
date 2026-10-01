@@ -116,11 +116,31 @@ pub(in crate::render) fn render_measured_line(
         if first == last {
             continue;
         }
-        let start = x + line.placements[first].x;
-        let end = x
-            + line.placements[last - 1].x
-            + line.placements[last - 1].cluster.advance
-            + line.placements[last - 1].extra_advance;
+        let mut intervals = line.placements[first..last]
+            .iter()
+            .map(|placement| {
+                let start = x + placement.x;
+                (
+                    placement.visual_rank,
+                    start,
+                    start + placement.cluster.advance + placement.extra_advance,
+                )
+            })
+            .filter(|(_, start, end)| end > start)
+            .collect::<Vec<_>>();
+        intervals.sort_unstable_by_key(|&(rank, _, _)| rank);
+        let mut joined: Vec<(usize, f64, f64)> = Vec::new();
+        for (rank, start, end) in intervals {
+            if let Some(previous) = joined.last_mut()
+                && (rank == previous.0 + 1 || start <= previous.2)
+            {
+                previous.0 = rank;
+                previous.1 = previous.1.min(start);
+                previous.2 = previous.2.max(end);
+            } else {
+                joined.push((rank, start, end));
+            }
+        }
         let thickness = style.font_size * f64::from(1.0_f32 / 18.0);
         for offset in [
             style.underline.then_some(f64::from(1.0_f32 / 9.0)),
@@ -129,14 +149,16 @@ pub(in crate::render) fn render_measured_line(
         .into_iter()
         .flatten()
         {
-            svg.push(
-                Rectangle::new()
-                    .x(decimal(start, 5))
-                    .y(decimal(baseline + style.font_size * offset, 5))
-                    .width(decimal((end - start).max(0.0), 5))
-                    .height(decimal(thickness, 5))
-                    .fill(Paint::from_hex(&style.color)),
-            );
+            for &(_, start, end) in &joined {
+                svg.push(
+                    Rectangle::new()
+                        .x(decimal(start, 5))
+                        .y(decimal(baseline + style.font_size * offset, 5))
+                        .width(decimal((end - start).max(0.0), 5))
+                        .height(decimal(thickness, 5))
+                        .fill(Paint::from_hex(&style.color)),
+                );
+            }
         }
     }
 }
@@ -218,7 +240,11 @@ fn positioned_spans(
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
 ) -> Option<Vec<PositionedSpan>> {
-    let contexts = paragraph_bidi_contexts(styled, line.source.start);
+    let contexts = if line.native_positioned {
+        Vec::new()
+    } else {
+        paragraph_bidi_contexts(styled, line.source.start)
+    };
     let mut context_index = 0;
     let mut cluster_contexts = Vec::with_capacity(line.placements.len());
     let mut offsets = Vec::with_capacity(line.placements.len());
@@ -249,10 +275,14 @@ fn positioned_spans(
             offsets.push(None);
             continue;
         }
-        let offset = context
-            .is_none()
-            .then(|| cluster.paint_offset(text).ok().flatten())
-            .flatten();
+        let offset = if line.native_positioned {
+            cluster.native_paint_offset(text).ok().flatten()
+        } else {
+            context
+                .is_none()
+                .then(|| cluster.paint_offset(text).ok().flatten())
+                .flatten()
+        };
         if offset.is_none_or(|offset| {
             !(x + placement.x + offset.x).is_finite() || !(baseline + offset.y).is_finite()
         }) {

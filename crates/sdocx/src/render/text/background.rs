@@ -64,15 +64,20 @@ fn line_backgrounds(
             .background
             .filter(|background| background.alpha != 0)
     };
-    let contexts = super::paint::paragraph_bidi_contexts(styled, line.line.source.start);
-    let reordered = line
-        .line
-        .placements
-        .iter()
-        .any(|placement| placement.cluster.run.direction == Direction::RightToLeft)
-        || contexts
+    let contexts = if line.line.native_positioned {
+        Vec::new()
+    } else {
+        super::paint::paragraph_bidi_contexts(styled, line.line.source.start)
+    };
+    let reordered = !line.line.native_positioned
+        && (line
+            .line
+            .placements
             .iter()
-            .any(|range| range.start < line.line.source.end && range.end > line.line.source.start);
+            .any(|placement| placement.cluster.run.direction == Direction::RightToLeft)
+            || contexts.iter().any(|range| {
+                range.start < line.line.source.end && range.end > line.line.source.start
+            }));
     if line.line.placements.is_empty() || reordered {
         if viewport.is_none_or(|viewport| viewport.background_visible(line)) {
             for range in ranges {
@@ -87,7 +92,7 @@ fn line_backgrounds(
     }
     let origin =
         line.x + super::line_alignment_offset(line.line.advance, line.width, line.alignment);
-    for placement in &line.line.placements {
+    for placement in line.line.text_in_visual_order() {
         let source = &placement.cluster.source;
         if source.is_empty()
             || !ranges
@@ -142,12 +147,13 @@ fn line_backgrounds(
         }
         if let Some(previous) = rectangles.last_mut()
             && previous.background == background
-            && previous.source.end == source.start
+            && (previous.source.end == source.start || source.end == previous.source.start)
             && previous.bounds.x_max == bounds.x_min
             && previous.bounds.y_min == bounds.y_min
             && previous.bounds.y_max == bounds.y_max
         {
-            previous.source.end = source.end;
+            previous.source =
+                previous.source.start.min(source.start)..previous.source.end.max(source.end);
             previous.bounds.x_max = bounds.x_max;
         } else {
             rectangles.push(BackgroundRectangle {
@@ -421,7 +427,7 @@ mod tests {
 
     #[test]
     fn bidi_reordering_reports_unsupported_background_positions() {
-        for (source, start, end) in [("\u{5d0}AB", 1, 3), ("\u{202e}AB\u{202c}", 1, 3)] {
+        for (source, start, end) in [("\u{5d0}AB", 1, 3), ("\u{202e}(AB)\u{202c}", 1, 3)] {
             let text = text(
                 source,
                 vec![span(
@@ -442,6 +448,10 @@ mod tests {
             assert!(rectangles.is_empty());
             assert!(!issues.is_empty());
         }
+    }
+
+    #[test]
+    fn safe_wrapped_embeddings_use_retained_background_bounds() {
         let text = text(
             "\u{202a}AAAA\u{202c}",
             vec![span(RichTextSpanType::BackgroundColor, 0xffff0000, 0, 6)],
@@ -461,8 +471,9 @@ mod tests {
         );
         let (rectangles, issues) =
             line_backgrounds(&styled, line, RenderTheme::for_canvas(false), None);
-        assert!(rectangles.is_empty());
-        assert!(!issues.is_empty());
+        assert!(line.line.native_positioned);
+        assert_eq!(rectangles.len(), 1);
+        assert!(issues.is_empty());
     }
 
     #[test]

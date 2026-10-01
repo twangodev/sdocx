@@ -201,7 +201,7 @@ fn each_wrapped_line_including_the_final_line_is_justified() {
 
 #[test]
 fn missing_and_reordered_clusters_preserve_source_and_report_their_limits() {
-    for source_text in ["A \u{10ffff} B", "A\u{202e}A V\u{202c}Z"] {
+    for source_text in ["A \u{10ffff} B", "A\u{202e}(A V)\u{202c}Z"] {
         for flow in [false, true] {
             let page = render(text(source_text, 300.0), 300, flow);
             assert_eq!(source(&page), source_text);

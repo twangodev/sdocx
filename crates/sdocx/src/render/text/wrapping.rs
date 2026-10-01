@@ -15,12 +15,21 @@ pub(in crate::render) struct WrappedLine {
     pub advance: f64,
     pub placements: Vec<PositionedCluster>,
     pub objects: Vec<PositionedObject>,
+    pub visual_order: Vec<LineEntry>,
+    pub native_positioned: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(in crate::render) enum LineEntry {
+    Text(usize),
+    Object(usize),
 }
 
 pub(in crate::render) struct PositionedCluster {
     pub cluster: MeasuredCluster,
     pub x: f64,
     pub extra_advance: f64,
+    pub visual_rank: usize,
 }
 
 pub(in crate::render) struct PositionedObject {
@@ -61,6 +70,21 @@ impl MeasuredItem {
 }
 
 impl WrappedLine {
+    pub fn text_in_visual_order(&self) -> impl Iterator<Item = &PositionedCluster> {
+        self.placements
+            .iter()
+            .filter(move |_| !self.native_positioned)
+            .chain(
+                self.visual_order
+                    .iter()
+                    .filter(move |_| self.native_positioned)
+                    .filter_map(|entry| match entry {
+                        LineEntry::Text(index) => self.placements.get(*index),
+                        LineEntry::Object(_) => None,
+                    }),
+            )
+    }
+
     pub fn unmeasured(source: Range<usize>, font_size: f64) -> Self {
         Self {
             source,
@@ -69,6 +93,8 @@ impl WrappedLine {
             advance: 0.0,
             placements: Vec::new(),
             objects: Vec::new(),
+            visual_order: Vec::new(),
+            native_positioned: false,
         }
     }
 
@@ -82,12 +108,36 @@ impl WrappedLine {
         self.text_height.max(self.object_height())
     }
 
-    pub fn justify(&mut self, styled: &StyledText<'_>, width: f64) -> Result<(), MeasurementError> {
-        #[derive(Clone, Copy)]
-        enum Entry {
-            Text(usize),
-            Object(usize),
+    fn position_native(&mut self, styled: &StyledText<'_>) -> Result<(), MeasurementError> {
+        if !self.objects.is_empty()
+            || self.placements.iter().any(|placement| {
+                let source = &placement.cluster.source;
+                styled.foreground_segments(source.clone()).count() != 1
+                    || styled.index.slice(source.clone()).is_none_or(|text| {
+                        !matches!(placement.cluster.native_paint_offset(text), Ok(Some(_)))
+                    })
+            })
+        {
+            return Ok(());
         }
+        let mut positions = Vec::with_capacity(self.visual_order.len());
+        let mut x = 0.0;
+        for (rank, &entry) in self.visual_order.iter().enumerate() {
+            let LineEntry::Text(index) = entry else {
+                return Err(MeasurementError::InvalidCluster);
+            };
+            positions.push((index, x, rank));
+            x = finite_advance(x + self.placements[index].cluster.advance)?;
+        }
+        for (index, x, rank) in positions {
+            self.placements[index].x = x;
+            self.placements[index].visual_rank = rank;
+        }
+        self.native_positioned = true;
+        Ok(())
+    }
+
+    pub fn justify(&mut self, styled: &StyledText<'_>, width: f64) -> Result<(), MeasurementError> {
         let geometry = |value| {
             super::finite_native_geometry(value)
                 .map(|value| value as f32)
@@ -117,9 +167,13 @@ impl WrappedLine {
                 .ok_or(MeasurementError::InvalidCluster)?;
             entries.push((
                 geometry(placement.x)?,
-                placement.cluster.source.start,
+                if self.native_positioned {
+                    placement.visual_rank
+                } else {
+                    placement.cluster.source.start
+                },
                 weight,
-                Entry::Text(index),
+                LineEntry::Text(index),
             ));
         }
         for (index, placement) in self.objects.iter().enumerate() {
@@ -127,7 +181,7 @@ impl WrappedLine {
                 geometry(placement.x)?,
                 placement.object.source.start,
                 0,
-                Entry::Object(index),
+                LineEntry::Object(index),
             ));
         }
         if weights == 0 {
@@ -146,11 +200,11 @@ impl WrappedLine {
         let advance = geometry(f64::from(advance + shift))?;
         for (entry, x, extra_advance) in positions {
             match entry {
-                Entry::Text(index) => {
+                LineEntry::Text(index) => {
                     self.placements[index].x = x;
                     self.placements[index].extra_advance = extra_advance;
                 }
-                Entry::Object(index) => self.objects[index].x = x,
+                LineEntry::Object(index) => self.objects[index].x = x,
             }
         }
         self.advance = f64::from(advance);
@@ -419,17 +473,22 @@ pub(in crate::render) fn wrap_paragraph(
         let mut font_size = 0.0_f64;
         let mut text_height = 0.0_f64;
         let mut x = 0.0;
+        let mut logical_sources = Vec::new();
+        let mut logical_entries = Vec::new();
         while let Some(item) = items.get(item_index)
             && item.source().end <= source.end
         {
+            logical_sources.push(item.source().clone());
             match item {
                 MeasuredItem::TextCluster(cluster) => {
                     font_size = font_size.max(cluster.run.style.font_size);
                     text_height = text_height.max(cluster.run.style.font_size);
+                    logical_entries.push(LineEntry::Text(placements.len()));
                     placements.push(PositionedCluster {
                         cluster: cluster.clone(),
                         x,
                         extra_advance: 0.0,
+                        visual_rank: logical_entries.len() - 1,
                     });
                 }
                 MeasuredItem::Object {
@@ -437,6 +496,7 @@ pub(in crate::render) fn wrap_paragraph(
                     font_size: object_font_size,
                 } => {
                     font_size = font_size.max(*object_font_size);
+                    logical_entries.push(LineEntry::Object(objects.len()));
                     objects.push(PositionedObject {
                         object: object.clone(),
                         x,
@@ -453,14 +513,24 @@ pub(in crate::render) fn wrap_paragraph(
         if lines.is_empty() {
             font_size = font_size.max(first_font_size);
         }
-        lines.push(WrappedLine {
+        let visual_order = measurer.visual_order(source.clone(), &logical_sources);
+        let mut line = WrappedLine {
             source,
             font_size,
             text_height,
             advance: line_advance,
             placements,
             objects,
-        });
+            visual_order: visual_order
+                .as_ref()
+                .map(|order| order.iter().map(|&index| logical_entries[index]).collect())
+                .unwrap_or_default(),
+            native_positioned: false,
+        };
+        if visual_order.is_ok() {
+            line.position_native(styled)?;
+        }
+        lines.push(line);
         start = end;
     }
     Ok(lines)
@@ -562,6 +632,108 @@ mod tests {
             &FontBook::default(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn native_override_positions_keep_placements_in_logical_source_order() {
+        let lines = wrap(&text("A\u{202e}BC\u{202c}D"), f64::INFINITY);
+        let line = &lines[0];
+        assert!(line.native_positioned);
+        assert_eq!(
+            line.placements
+                .iter()
+                .map(|placement| placement.cluster.source.clone())
+                .collect::<Vec<_>>(),
+            [0..1, 1..2, 2..3, 3..4, 4..5, 5..6]
+        );
+        assert_eq!(
+            line.visual_order,
+            [
+                LineEntry::Text(0),
+                LineEntry::Text(3),
+                LineEntry::Text(2),
+                LineEntry::Text(1),
+                LineEntry::Text(4),
+                LineEntry::Text(5)
+            ]
+        );
+        assert_eq!(
+            line.text_in_visual_order()
+                .map(|placement| placement.cluster.source.start)
+                .collect::<Vec<_>>(),
+            [0, 3, 2, 1, 4, 5]
+        );
+        assert_eq!(line.placements[3].x, 29.35546875);
+        assert!(line.placements[2].x > line.placements[3].x);
+        assert!(line.placements[5].x > line.placements[2].x);
+    }
+
+    #[test]
+    fn unsafe_native_transport_keeps_legacy_geometry_and_the_visual_map() {
+        for source in [
+            "A\u{202e}(BC)\u{202c}D",
+            "A\u{202e}e\u{301}\u{202c}D",
+            "A\u{2029}BC",
+        ] {
+            let line = wrap(&text(source), f64::INFINITY).remove(0);
+            assert!(!line.native_positioned, "{source:?}");
+            assert!(
+                line.placements
+                    .windows(2)
+                    .all(|pair| pair[0].x <= pair[1].x)
+            );
+            assert_eq!(line.visual_order.is_empty(), source.contains('\u{2029}'));
+        }
+    }
+
+    #[test]
+    fn native_visual_map_includes_objects_without_reordering_source_arrays() {
+        let mut content = text("A\u{202e}B\u{fffc}C\u{202c}D");
+        content
+            .object_spans
+            .push(image(3, 20.0, ObjectSpanLayoutOption::Inline));
+        let line = wrap(&content, f64::INFINITY).remove(0);
+        assert!(!line.native_positioned);
+        assert_eq!(line.objects[0].object.source, 3..4);
+        assert_eq!(
+            line.visual_order,
+            [
+                LineEntry::Text(0),
+                LineEntry::Text(3),
+                LineEntry::Object(0),
+                LineEntry::Text(2),
+                LineEntry::Text(1),
+                LineEntry::Text(4),
+                LineEntry::Text(5)
+            ]
+        );
+        assert_eq!(
+            line.placements
+                .iter()
+                .map(|placement| placement.cluster.source.start)
+                .collect::<Vec<_>>(),
+            [0, 1, 2, 4, 5, 6]
+        );
+    }
+
+    #[test]
+    fn native_justification_uses_visual_rank_for_zero_advance_control_ties() {
+        let content = text("A\u{202e}B\u{202a} \u{202c}D\u{202c}Z");
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let mut line = wrap(&content, f64::INFINITY).remove(0);
+        assert!(line.native_positioned);
+        assert_eq!(line.placements[5].x, line.placements[3].x);
+        assert_eq!(line.placements[3].x, line.placements[4].x);
+        line.justify(&styled, line.advance + 20.0).unwrap();
+        assert_eq!(line.placements[5].x, line.placements[3].x);
+        assert_eq!(line.placements[3].x, line.placements[4].x);
+        assert_eq!(line.placements[4].extra_advance, 20.0);
+        assert!(line.placements[2].x > line.placements[4].x);
     }
 
     #[test]

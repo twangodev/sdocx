@@ -9,6 +9,7 @@ use crate::{
 use super::RenderTheme;
 
 mod background;
+mod bidi;
 mod breaks;
 mod layout;
 mod measurement;

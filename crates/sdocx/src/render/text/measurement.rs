@@ -2,7 +2,6 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Range;
 use std::sync::{Arc, Mutex};
 
-use unicode_bidi::BidiInfo;
 use unicode_script::{Script, ScriptExtension, UnicodeScript};
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -10,6 +9,7 @@ use crate::PredefinedTextStyle;
 use crate::fonts::{Direction, Feature, FontError, ResolvedFace, ShapedGlyph, UnicodeBuffer};
 use crate::render::RenderTheme;
 
+use super::bidi::{BidiError, ParagraphBidi};
 use super::{StyledText, TextRenderer, TextStyle};
 
 pub(in crate::render) struct MeasuredText {
@@ -64,8 +64,11 @@ pub(in crate::render) struct ClusterPaintOffset {
 
 impl MeasuredCluster {
     pub fn supports_positioned_text(&self) -> bool {
-        self.run.direction == Direction::LeftToRight
-            && !self.run.variable
+        self.run.direction == Direction::LeftToRight && self.has_static_glyphs()
+    }
+
+    fn has_static_glyphs(&self) -> bool {
+        !self.run.variable
             && self
                 .run
                 .glyphs
@@ -74,10 +77,36 @@ impl MeasuredCluster {
     }
 
     pub fn paint_offset(&self, text: &str) -> Result<Option<ClusterPaintOffset>, FontError> {
-        if !self.supports_positioned_text()
+        self.paint_offset_impl(text, false)
+    }
+
+    pub fn native_paint_offset(&self, text: &str) -> Result<Option<ClusterPaintOffset>, FontError> {
+        self.paint_offset_impl(text, true)
+    }
+
+    fn paint_offset_impl(
+        &self,
+        text: &str,
+        native_transport: bool,
+    ) -> Result<Option<ClusterPaintOffset>, FontError> {
+        let supported = self.supports_positioned_text()
+            || (native_transport
+                && self.run.direction == Direction::RightToLeft
+                && self.source.len() == 1
+                && self.has_static_glyphs());
+        if !supported
             || text.chars().count() != self.source.len()
             || self.source.start < self.run.source.start
             || self.source.end > self.run.source.end
+        {
+            return Ok(None);
+        }
+        if native_transport
+            && self.source.len() > 1
+            && unicode_bidi::BidiInfo::new(text, Some(unicode_bidi::Level::ltr()))
+                .levels
+                .iter()
+                .any(|level| level.is_rtl())
         {
             return Ok(None);
         }
@@ -156,7 +185,7 @@ pub(in crate::render) struct ParagraphMeasurer<'a, 'text, 'fonts> {
     styled: &'a StyledText<'text>,
     renderer: &'a TextRenderer<'fonts>,
     range: Range<usize>,
-    directions: Vec<Direction>,
+    bidi: ParagraphBidi<'text>,
     scripts: Vec<Script>,
     styles: Vec<(Range<usize>, TextStyle)>,
     theme: RenderTheme,
@@ -175,15 +204,16 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             .index
             .slice(range.clone())
             .ok_or(MeasurementError::InvalidRange)?;
-        let bidi = BidiInfo::new(text, None);
-        let mut directions = Vec::new();
+        let bidi =
+            ParagraphBidi::new(text, range.start).map_err(|_| MeasurementError::InvalidRange)?;
+        let directions = (0..range.len())
+            .map(|scalar| {
+                bidi.direction_at(scalar)
+                    .expect("validated paragraph scalar")
+            })
+            .collect::<Vec<_>>();
         let mut extensions = Vec::new();
-        for (byte, character) in text.char_indices() {
-            directions.push(if bidi.levels[byte].is_rtl() {
-                Direction::RightToLeft
-            } else {
-                Direction::LeftToRight
-            });
+        for character in text.chars() {
             extensions.push(character.script_extension());
         }
         let scripts = resolve_scripts(&extensions, &directions);
@@ -203,7 +233,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             styled,
             renderer,
             range,
-            directions,
+            bidi,
             scripts,
             styles,
             theme,
@@ -231,13 +261,16 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             let mut start = start - self.range.start;
             let end = end - self.range.start;
             while start < end {
-                let direction = self.directions[start];
+                let direction = self
+                    .bidi()
+                    .direction_at(start)
+                    .ok_or(MeasurementError::InvalidRange)?;
                 let script = self.scripts[start];
                 let tab = self.character(start) == Some('\t');
                 let mut stop = start + 1;
                 if !tab {
                     while stop < end
-                        && self.directions[stop] == direction
+                        && self.bidi().direction_at(stop) == Some(direction)
                         && self.scripts[stop] == script
                         && self.character(stop) != Some('\t')
                     {
@@ -253,6 +286,18 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             font_size: self.font_size(range)?,
             clusters: runs.into_iter().flat_map(|run| run.clusters).collect(),
         })
+    }
+
+    pub fn bidi(&self) -> &ParagraphBidi<'text> {
+        &self.bidi
+    }
+
+    pub fn visual_order(
+        &self,
+        line: Range<usize>,
+        logical_items: &[Range<usize>],
+    ) -> Result<Vec<usize>, BidiError> {
+        self.bidi().visual_order(line, logical_items)
     }
 
     pub fn font_size(&self, range: Range<usize>) -> Result<f64, MeasurementError> {
@@ -823,6 +868,37 @@ mod tests {
     }
 
     #[test]
+    fn native_rtl_scalar_positions_require_exact_standalone_glyphs() {
+        let measured = measure(&text_box("\u{202e}AV"), TextContext::Placed);
+        let letters = &measured.clusters[1..];
+        assert_eq!(letters.len(), 2);
+        assert_eq!(
+            letters[0]
+                .run
+                .glyphs
+                .iter()
+                .map(|glyph| (glyph.raw.id, glyph.source.clone()))
+                .collect::<Vec<_>>(),
+            [(59, 2..3), (38, 1..2), (5, 0..1)]
+        );
+        for (cluster, character) in letters.iter().zip(["A", "V"]) {
+            assert_eq!(cluster.run.direction, Direction::RightToLeft);
+            assert!(cluster.paint_offset(character).unwrap().is_none());
+            let offset = cluster.native_paint_offset(character).unwrap().unwrap();
+            assert_eq!(offset.x, 0.0);
+            assert_eq!(offset.y, 0.0);
+        }
+        let mirrored = measure(&text_box("\u{202e}("), TextContext::Placed);
+        let bracket = &mirrored.clusters[1];
+        assert_eq!(bracket.run.direction, Direction::RightToLeft);
+        assert!(bracket.native_paint_offset("(").unwrap().is_none());
+        let marked = measure(&text_box("\u{202e}x\u{301}"), TextContext::Placed);
+        let combined = &marked.clusters[1];
+        assert_eq!(combined.source, 1..3);
+        assert!(combined.native_paint_offset("x\u{301}").unwrap().is_none());
+    }
+
+    #[test]
     fn covered_greek_and_cyrillic_reproduce_pinned_glyph_positions() {
         for (text, glyphs, advance) in [
             ("λΩ", [(579, 1134, 0), (569, 1362, 1134)], 54.84375),
@@ -877,6 +953,7 @@ mod tests {
         assert_eq!(missing.run.glyphs[missing.glyphs.start].raw.id, 0);
         assert!(!missing.supports_positioned_text());
         assert!(missing.paint_offset("😀").unwrap().is_none());
+        assert!(missing.native_paint_offset("😀").unwrap().is_none());
     }
 
     #[test]
@@ -984,7 +1061,10 @@ mod tests {
             &renderer,
         )
         .unwrap();
-        assert!(paragraph.directions.contains(&Direction::RightToLeft));
+        assert_eq!(
+            paragraph.bidi().direction_at(3),
+            Some(Direction::RightToLeft)
+        );
         assert!(paragraph.scripts.contains(&Script::Hebrew));
         let measured = paragraph.measure_line(0..8).unwrap();
         assert_eq!(measured.clusters.first().unwrap().source.start, 0);
@@ -1070,7 +1150,10 @@ mod tests {
         )
         .unwrap();
         let number_line = paragraph.measure_line(3..6).unwrap();
-        assert_eq!(paragraph.directions[3], Direction::LeftToRight);
+        assert_eq!(
+            paragraph.bidi().direction_at(3),
+            Some(Direction::LeftToRight)
+        );
         assert_eq!(number_line.clusters.first().unwrap().source.start, 3);
         assert_eq!(number_line.clusters.last().unwrap().source.end, 6);
         assert!(matches!(

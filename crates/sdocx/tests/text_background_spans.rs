@@ -633,7 +633,7 @@ fn rotated_ellipse_background_clips_to_original_geometry_rather_than_the_inset_t
 
 #[test]
 fn unsupported_rtl_background_reports_positioning_without_painting_logical_order_rectangles() {
-    for (source_text, start, end) in [("אב", 0, 1), ("\u{202e}AV\u{202c}", 1, 2)] {
+    for (source_text, start, end) in [("אב", 0, 1), ("\u{202e}(AV)\u{202c}", 1, 2)] {
         let plain = text(source_text);
         let mut highlighted = plain.clone();
         highlighted.spans.push(background(start, end, RED));
