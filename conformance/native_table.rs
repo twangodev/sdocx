@@ -18,6 +18,9 @@ mod splits;
 #[path = "native_table/bottom.rs"]
 mod bottom;
 
+#[path = "native_table/control.rs"]
+mod control;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -40,6 +43,7 @@ unsafe extern "C" {
         end: u64,
         ...
     ) -> i32;
+    fn uc_hook_del(engine: Engine, hook: usize) -> i32;
 }
 
 const LIBRARY_SHA256: &str = "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a";
@@ -1013,7 +1017,7 @@ fn main() {
             rows::capture(&mut machine, Path::new(&base_path), Path::new(&widget_path));
             return;
         }
-        Some(mode @ ("--measured-geometry" | "--row-bottom")) => {
+        Some(mode @ ("--measured-geometry" | "--row-bottom" | "--warm-control")) => {
             let drawing_path = std::env::args_os()
                 .nth(3)
                 .expect("libSPenDrawing.so path required");
@@ -1027,10 +1031,10 @@ fn main() {
                 .nth(6)
                 .expect("libSPenText.so path required");
             machine.load_drawing(Path::new(&drawing_path));
-            let capture = if mode == "--row-bottom" {
-                bottom::capture
-            } else {
-                geometry::capture
+            let capture = match mode {
+                "--row-bottom" => bottom::capture,
+                "--warm-control" => control::capture,
+                _ => geometry::capture,
             };
             capture(
                 &mut machine,
@@ -1053,7 +1057,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry, --row-splits, --row-bottom or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control or no capture mode"
         ),
     }
     let mut cases = Vec::new();

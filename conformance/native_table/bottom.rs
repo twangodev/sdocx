@@ -104,15 +104,7 @@ impl Case {
     }
 }
 
-pub(super) fn capture(
-    machine: &mut Machine,
-    base_path: &Path,
-    widget_path: &Path,
-    text_path: &Path,
-) {
-    frames::load_base(machine, base_path);
-    splits::load_lists(machine);
-    geometry::load_measurements(machine, widget_path, text_path);
+pub(super) fn load_compression(machine: &Machine) {
     for (plt, target) in [
         (DRAWING_BASE + 0xbd440, BASE + 0x9e3f0),
         (DRAWING_BASE + 0xb92a0, BASE + 0xb11bc),
@@ -122,6 +114,18 @@ pub(super) fn capture(
     ] {
         bind_native(machine.engine, plt, target);
     }
+}
+
+pub(super) fn capture(
+    machine: &mut Machine,
+    base_path: &Path,
+    widget_path: &Path,
+    text_path: &Path,
+) {
+    frames::load_base(machine, base_path);
+    splits::load_lists(machine);
+    geometry::load_measurements(machine, widget_path, text_path);
+    load_compression(machine);
     let mut cases = vec![Case::new("unmerged-compression", 3, 2)];
     for (name, spans) in [
         ("first-column-owner-cache", vec![(0, [3, 1])]),

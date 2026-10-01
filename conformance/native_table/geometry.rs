@@ -119,7 +119,7 @@ impl TextMetrics {
         );
     }
 
-    fn json(self) -> String {
+    pub fn json(self) -> String {
         format!(
             "{{\"has_text_layout\":{},\"has_text\":{},\"first_line_height\":{:?},\"top_margin\":{:?},\"measured_height\":{:?}}}",
             self.has_text_layout,
