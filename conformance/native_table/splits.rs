@@ -1,11 +1,81 @@
 use super::*;
 use frames::{BASE, BASE_SHA256, LAYOUT};
 
-const UPDATE_SPLIT: u64 = DRAWING_BASE + 0xb24cc;
+pub(super) const UPDATE_SPLIT: u64 = DRAWING_BASE + 0xb24cc;
 const FIND_SPLIT: u64 = DRAWING_BASE + 0xb4194;
 const KEY: u64 = MODEL + 0xe000;
 const RECTANGLES: u64 = MODEL + 0xe100;
 const DIAGNOSTIC_TLS: u64 = 0x0300_0100;
+
+pub(super) fn initialize_cache(machine: &Machine) {
+    write(
+        machine.engine,
+        LAYOUT + 792,
+        &(MODEL + 0xd600).to_le_bytes(),
+    );
+    write(machine.engine, LAYOUT + 800, &64_u64.to_le_bytes());
+    write(machine.engine, LAYOUT + 824, &1_f32.to_le_bytes());
+}
+
+pub(super) fn supply_bands(machine: &Machine, rectangles: &[[f32; 4]]) {
+    assert!(rectangles.len() <= 8);
+    write(machine.engine, LAYOUT + 688, &RECTANGLES.to_le_bytes());
+    write(
+        machine.engine,
+        LAYOUT + 696,
+        &(RECTANGLES + rectangles.len() as u64 * 16).to_le_bytes(),
+    );
+    for (index, rectangle) in rectangles.iter().enumerate() {
+        for (axis, coordinate) in rectangle.iter().enumerate() {
+            assert!(coordinate.is_finite());
+            write(
+                machine.engine,
+                RECTANGLES + index as u64 * 16 + axis as u64 * 4,
+                &coordinate.to_le_bytes(),
+            );
+        }
+    }
+}
+
+pub(super) fn snapshot(machine: &Machine, cells: usize) -> Vec<Option<Vec<[f32; 4]>>> {
+    (0..cells)
+        .map(|slot| {
+            let cell = CELL_BASE + slot as u64 * CELL_STRIDE;
+            write(machine.engine, KEY, &cell.to_le_bytes());
+            let node = machine.call(FIND_SPLIT, &[LAYOUT + 792, KEY]);
+            if node == 0 {
+                return None;
+            }
+            let list = read_u64(machine.engine, node + 24);
+            assert!((HEAP..machine.heap.cursor).contains(&list));
+            let count = machine.call(BASE + 0x9d120, &[list]);
+            assert!(count <= 8);
+            Some(
+                (0..count)
+                    .map(|index| {
+                        let pointer = machine.call(BASE + 0x9d608, &[list, index]);
+                        assert!((HEAP..machine.heap.cursor).contains(&pointer));
+                        std::array::from_fn(|axis| {
+                            read_float(machine.engine, pointer + axis as u64 * 4)
+                        })
+                    })
+                    .collect(),
+            )
+        })
+        .collect()
+}
+
+pub(super) fn snapshot_json(machine: &Machine, cells: usize) -> String {
+    snapshot(machine, cells)
+        .iter()
+        .map(|rectangles| {
+            rectangles
+                .as_ref()
+                .map_or("null".to_owned(), |r| format!("{r:?}"))
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
 
 struct Update {
     row: usize,
@@ -49,64 +119,21 @@ impl Case {
         frames::initialize(machine, &self.grid);
         let rows = self.grid.heights.len();
         let columns = self.grid.widths.len();
-        write(
-            machine.engine,
-            LAYOUT + 792,
-            &(MODEL + 0xd600).to_le_bytes(),
-        );
-        write(machine.engine, LAYOUT + 800, &64_u64.to_le_bytes());
-        write(machine.engine, LAYOUT + 824, &1_f32.to_le_bytes());
+        initialize_cache(machine);
         let frames = frames::snapshot(machine, rows, columns).grid;
         let mut updates = Vec::new();
         for update in &self.updates {
-            assert!(update.row < rows && update.rectangles.len() <= 8);
-            write(machine.engine, LAYOUT + 688, &RECTANGLES.to_le_bytes());
-            write(
-                machine.engine,
-                LAYOUT + 696,
-                &(RECTANGLES + update.rectangles.len() as u64 * 16).to_le_bytes(),
-            );
-            for (index, rectangle) in update.rectangles.iter().enumerate() {
-                for (axis, coordinate) in rectangle.iter().enumerate() {
-                    assert!(coordinate.is_finite());
-                    write(
-                        machine.engine,
-                        RECTANGLES + index as u64 * 16 + axis as u64 * 4,
-                        &coordinate.to_le_bytes(),
-                    );
-                }
-            }
+            assert!(update.row < rows);
+            supply_bands(machine, &update.rectangles);
             let changed = machine.call(UPDATE_SPLIT, &[LAYOUT, update.row as u64]);
             assert!(changed <= 1);
-            let mut splits = Vec::new();
-            for slot in 0..rows * columns {
-                let cell = CELL_BASE + slot as u64 * CELL_STRIDE;
-                write(machine.engine, KEY, &cell.to_le_bytes());
-                let node = machine.call(FIND_SPLIT, &[LAYOUT + 792, KEY]);
-                if node == 0 {
-                    splits.push("null".to_owned());
-                    continue;
-                }
-                let list = read_u64(machine.engine, node + 24);
-                assert!((HEAP..machine.heap.cursor).contains(&list));
-                let count = machine.call(BASE + 0x9d120, &[list]);
-                assert!(count <= 8);
-                let mut rectangles = Vec::new();
-                for index in 0..count {
-                    let pointer = machine.call(BASE + 0x9d608, &[list, index]);
-                    assert!((HEAP..machine.heap.cursor).contains(&pointer));
-                    rectangles.push(std::array::from_fn::<_, 4, _>(|axis| {
-                        read_float(machine.engine, pointer + axis as u64 * 4)
-                    }));
-                }
-                splits.push(format!("{rectangles:?}"));
-            }
+            let splits = snapshot_json(machine, rows * columns);
             updates.push(format!(
                 "{{\"row\":{},\"rectangles\":{:?},\"changed\":{},\"cell_splits\":[{}]}}",
                 update.row,
                 update.rectangles,
                 changed == 1,
-                splits.join(",")
+                splits
             ));
         }
         format!(
@@ -120,8 +147,7 @@ impl Case {
     }
 }
 
-pub(super) fn capture(machine: &mut Machine, base_path: &Path) {
-    frames::load_base(machine, base_path);
+pub(super) fn load_lists(machine: &Machine) {
     for (plt, target) in [
         (DRAWING_BASE + 0xbd340, 0x3d2d3c),
         (DRAWING_BASE + 0xbd2d0, DRAWING_BASE + 0xb2cac),
@@ -171,6 +197,11 @@ pub(super) fn capture(machine: &mut Machine, base_path: &Path) {
         );
     }
     bind_native(machine.engine, BASE + 0xe7bb0, DIAGNOSTIC_TLS);
+}
+
+pub(super) fn capture(machine: &mut Machine, base_path: &Path) {
+    frames::load_base(machine, base_path);
+    load_lists(machine);
     let mut cases = Vec::new();
     for (name, rows, columns, spans) in [
         ("unmerged", 3, 2, vec![]),

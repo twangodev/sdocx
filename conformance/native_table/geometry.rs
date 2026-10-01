@@ -2,9 +2,11 @@ use super::*;
 use frames::{BASE, BASE_SHA256, LAYOUT};
 
 const WIDGET: u64 = 0x0400_0000;
-const WIDGET_SHA256: &str = "cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9";
+pub(super) const WIDGET_SHA256: &str =
+    "cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9";
 const TEXT: u64 = 0x0500_0000;
-const TEXT_SHA256: &str = "5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b";
+pub(super) const TEXT_SHA256: &str =
+    "5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b";
 const UPDATE_GEOMETRY: u64 = DRAWING_BASE + 0xab168;
 const FIRST_PAGE_MINIMUM: u64 = DRAWING_BASE + 0xac9f0;
 const FIND_LAYOUT: u64 = DRAWING_BASE + 0xb3788;
@@ -13,16 +15,16 @@ const KEY: u64 = MODEL + 0xe000;
 const REGISTER_S0: i32 = 136;
 
 #[derive(Clone, Copy)]
-struct TextMetrics {
-    has_text_layout: bool,
-    has_text: bool,
-    first_line_height: f32,
-    top_margin: f32,
-    measured_height: f32,
+pub(super) struct TextMetrics {
+    pub has_text_layout: bool,
+    pub has_text: bool,
+    pub first_line_height: f32,
+    pub top_margin: f32,
+    pub measured_height: f32,
 }
 
 impl TextMetrics {
-    fn supply(self, machine: &Machine, slot: usize) {
+    pub fn supply(self, machine: &Machine, slot: usize) {
         let cell = CELL_BASE + slot as u64 * CELL_STRIDE;
         write(machine.engine, KEY, &cell.to_le_bytes());
         let node = machine.call(FIND_LAYOUT, &[LAYOUT + 712, KEY]);
@@ -80,6 +82,40 @@ impl TextMetrics {
         assert_eq!(
             machine.call(TEXT + 0x8b104, &[text]),
             u64::from(self.has_text)
+        );
+    }
+
+    pub fn supply_last_line(self, machine: &Machine, slot: usize, bottom: f32) {
+        assert!(bottom.is_finite());
+        self.supply(machine, slot);
+        if !self.has_text_layout {
+            return;
+        }
+        let cell = CELL_BASE + slot as u64 * CELL_STRIDE;
+        write(machine.engine, KEY, &cell.to_le_bytes());
+        let node = machine.call(FIND_LAYOUT, &[LAYOUT + 712, KEY]);
+        let layout = read_u64(machine.engine, node + 24);
+        let text = read_u64(machine.engine, layout + 368);
+        let implementation = read_u64(machine.engine, text + 64);
+        let lines = machine.call(NEW, &[112]);
+        write(machine.engine, lines, &[0; 112]);
+        write(
+            machine.engine,
+            lines + 20,
+            &self.first_line_height.to_le_bytes(),
+        );
+        write(machine.engine, lines + 76, &bottom.to_le_bytes());
+        write(machine.engine, implementation + 272, &lines.to_le_bytes());
+        write(
+            machine.engine,
+            implementation + 280,
+            &(lines + 112).to_le_bytes(),
+        );
+        assert_eq!(machine.call(TEXT + 0x8adb0, &[text]), 2);
+        machine.call(TEXT + 0x8b4d8, &[text, 1]);
+        assert_eq!(
+            read_register(machine.engine, REGISTER_S0) as u32,
+            bottom.to_bits()
         );
     }
 
@@ -209,13 +245,7 @@ impl Case {
     }
 }
 
-pub(super) fn capture(
-    machine: &mut Machine,
-    base_path: &Path,
-    widget_path: &Path,
-    text_path: &Path,
-) {
-    frames::load_base(machine, base_path);
+pub(super) fn load_measurements(machine: &Machine, widget_path: &Path, text_path: &Path) {
     map_library(machine.engine, widget_path, WIDGET, WIDGET_SHA256);
     map_library(machine.engine, text_path, TEXT, TEXT_SHA256);
     for (plt, target) in [
@@ -235,9 +265,20 @@ pub(super) fn capture(
         (DRAWING_BASE + 0xb8b20, BASE + 0xb109c),
         (DRAWING_BASE + 0xbd070, FIRST_PAGE_MINIMUM),
         (TEXT + 0xeee20, BASE + 0xb109c),
+        (TEXT + 0xef430, TEXT + 0x74058),
     ] {
         bind_native(machine.engine, plt, target);
     }
+}
+
+pub(super) fn capture(
+    machine: &mut Machine,
+    base_path: &Path,
+    widget_path: &Path,
+    text_path: &Path,
+) {
+    frames::load_base(machine, base_path);
+    load_measurements(machine, widget_path, text_path);
     let mut cases = Vec::new();
     for (name, rows, columns, spans) in [
         ("unmerged", 3, 2, vec![]),
