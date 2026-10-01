@@ -29,6 +29,7 @@ pub(super) struct PreparedTable {
     bands: BandList,
     pub pending_gaps: Vec<f64>,
     half_border: f64,
+    topology: TableGrid,
 }
 
 pub(super) struct PreparedTableDrawing {
@@ -341,6 +342,7 @@ fn prepare_cold_grid(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<PreparedTable, ObjectDiagnosticKind> {
+    let topology = TableGrid::new(table).map_err(|_| ObjectDiagnosticKind::UnsupportedContent)?;
     let half_border = drawable_half_border(table);
     let rows = initialize_rows(table, half_border)?;
     let mut prepared = PreparedTable {
@@ -355,6 +357,7 @@ fn prepare_cold_grid(
         min_first_page_height: 0.0,
         constraint,
         half_border,
+        topology,
         bands: table_bands(constraint, candidate_top, renderer)?,
     };
     pagination::cold(&mut prepared, table, theme, renderer)?;

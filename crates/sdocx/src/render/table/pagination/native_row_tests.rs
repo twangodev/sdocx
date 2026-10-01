@@ -1,6 +1,6 @@
-use super::super::{drawable_half_border, initialize_rows, tests::grid};
+use super::super::{CellPosition, TableGrid, initialize_rows, tests::grid};
 use super::*;
-use crate::{ObjectSpanLayoutConstraint, TableBorder, TableEdgeStyle, TableRecordMetadata};
+use crate::ObjectSpanLayoutConstraint;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -11,8 +11,10 @@ struct Capture {
     model_library_sha256: String,
     drawing_library_sha256: String,
     base_library_sha256: String,
-    initializer_address: String,
-    text_adapter: String,
+    widget_library_sha256: String,
+    update_rows_address: String,
+    measured_height_address: String,
+    measurement_inputs: String,
     allocation_fills: Vec<u8>,
     cases: Vec<Case>,
 }
@@ -20,44 +22,19 @@ struct Capture {
 #[derive(Deserialize)]
 struct Case {
     name: String,
-    origin: [f32; 2],
     heights: Vec<f32>,
     widths: Vec<f32>,
     spans: Vec<[u32; 2]>,
-    native_defaults: bool,
-    outer_border: Option<[Edge; 4]>,
-    initial_frames: Vec<[f32; 4]>,
+    frame_owners: Vec<usize>,
+    minima: Vec<f32>,
+    maxima: Vec<f32>,
+    measured_heights: Vec<Option<f32>>,
+    start: usize,
     pending_gaps: Vec<f32>,
-    changes: Vec<Change>,
+    initial_frames: Vec<[f32; 4]>,
     frames: Vec<[f32; 4]>,
     cached_frames: Vec<[f32; 4]>,
     final_pending_gaps: Vec<f32>,
-}
-
-#[derive(Deserialize)]
-struct Edge {
-    color: u32,
-    width: f32,
-    start_radius: f32,
-    end_radius: f32,
-}
-
-impl From<Edge> for TableEdgeStyle {
-    fn from(edge: Edge) -> Self {
-        Self {
-            color: edge.color,
-            width: edge.width,
-            start_radius: edge.start_radius,
-            end_radius: edge.end_radius,
-        }
-    }
-}
-
-#[derive(Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-enum Change {
-    OffsetRows { row: usize, amount: f32 },
-    ExtendRow { row: usize, amount: f32 },
 }
 
 fn frame_bits(rows: &[super::super::PreparedTableRow]) -> Vec<[u32; 4]> {
@@ -72,17 +49,18 @@ fn frame_bits(rows: &[super::super::PreparedTableRow]) -> Vec<[u32; 4]> {
 }
 
 #[test]
-fn native_initialization_and_row_frame_updates_match() {
+fn native_warm_row_sizing_uses_owner_measurements() {
     let bytes = include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../conformance/table-cold-frames.json"
+        "/../../conformance/table-warm-rows.json"
     ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "498bfb15e663cfeb648ed51a8c0ed2a2490b09fa47b578d1419e0d7eac0cdb84"
+        "4a1b17063dadcf9d8d3ca819dbf92b6f75f689f87b3e1f38ab4369d3f215610e"
     );
     let capture: Capture = serde_json::from_slice(bytes).unwrap();
     assert_eq!(capture.apk_version, "4.4.45.37");
+    assert_eq!(capture.allocation_fills, [0, 165, 255]);
     assert_eq!(
         capture.apk_sha256,
         "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
@@ -99,31 +77,21 @@ fn native_initialization_and_row_frame_updates_match() {
         capture.base_library_sha256,
         "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
     );
-    assert_eq!(capture.initializer_address, "0xaa6b4");
-    assert_eq!(capture.allocation_fills, [0, 165, 255]);
     assert_eq!(
-        capture.text_adapter,
-        "zeroed text-layout storage; SetObject and SetTextScale omitted; native shaping not executed"
+        capture.widget_library_sha256,
+        "cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9"
     );
-    assert_eq!(capture.cases.len(), 93);
+    assert_eq!(capture.update_rows_address, "0xaecf4");
+    assert_eq!(capture.measured_height_address, "0xd3b78");
+    assert_eq!(
+        capture.measurement_inputs,
+        "supplied cached heights or null layouts, not native text shaping"
+    );
+    assert_eq!(capture.cases.len(), 142);
     let mut cells = 0;
-    for (index, case) in capture.cases.into_iter().enumerate() {
-        let context = format!("{}, input {index}", case.name);
+    for case in capture.cases {
         let mut source = grid(&case.heights, &case.widths);
-        source.bbox.x_min = f64::from(case.origin[0]);
-        source.bbox.y_min = f64::from(case.origin[1]);
-        if !case.native_defaults {
-            source.style.border = case.outer_border.map(|edges| {
-                let [left, top, right, bottom] = edges.map(Into::into);
-                TableBorder {
-                    left,
-                    top,
-                    right,
-                    bottom,
-                    metadata: TableRecordMetadata::default(),
-                }
-            });
-        }
+        let columns = case.widths.len();
         for (cell, span) in source
             .rows
             .iter_mut()
@@ -132,18 +100,42 @@ fn native_initialization_and_row_frame_updates_match() {
         {
             [cell.row_span, cell.column_span] = span;
         }
-        let half_border = drawable_half_border(&source);
-        let rows = initialize_rows(&source, half_border).unwrap();
+        for ((row, minimum), maximum) in source.rows.iter_mut().zip(case.minima).zip(case.maxima) {
+            row.min_height = Some(minimum);
+            row.max_height = Some(maximum);
+        }
+        let topology = TableGrid::new(&source).unwrap();
+        let owners: Vec<_> = (0..source.rows.len() * columns)
+            .map(|slot| {
+                let owner = topology
+                    .frame_owner(CellPosition {
+                        row: slot / columns,
+                        column: slot % columns,
+                    })
+                    .unwrap();
+                owner.row * columns + owner.column
+            })
+            .collect();
+        assert_eq!(owners, case.frame_owners, "{}, owners", case.name);
+        let mut rows = initialize_rows(&source, 0.5).unwrap();
         assert_eq!(
             frame_bits(&rows),
             case.initial_frames
                 .iter()
                 .map(|frame| frame.map(f32::to_bits))
                 .collect::<Vec<_>>(),
-            "{context}, initialization"
+            "{}, initialization",
+            case.name
         );
+        for (cell, height) in rows
+            .iter_mut()
+            .flat_map(|row| &mut row.cells)
+            .zip(case.measured_heights)
+        {
+            cell.metrics.measured_height = f64::from(height.unwrap_or(0.0));
+        }
         let mut plan = PreparedTable {
-            topology: super::super::TableGrid::new(&source).unwrap(),
+            topology,
             measured_bbox: BoundingBox {
                 x_min: 0.0,
                 y_min: 0.0,
@@ -155,17 +147,9 @@ fn native_initialization_and_row_frame_updates_match() {
             min_first_page_height: 0.0,
             constraint: ObjectSpanLayoutConstraint::OverPages,
             bands: BandList::default(),
-            half_border,
+            half_border: 0.5,
         };
-        for change in case.changes {
-            match change {
-                Change::OffsetRows { row, amount } => {
-                    offset_from_row(&mut plan, row, f64::from(amount))
-                }
-                Change::ExtendRow { row, amount } => extend_row(&mut plan, row, f64::from(amount)),
-            }
-            .unwrap();
-        }
+        update_positions(&mut plan, case.start, &source).unwrap();
         let actual = frame_bits(&plan.rows);
         for expected in [case.frames, case.cached_frames] {
             assert_eq!(
@@ -174,7 +158,8 @@ fn native_initialization_and_row_frame_updates_match() {
                     .iter()
                     .map(|frame| frame.map(f32::to_bits))
                     .collect::<Vec<_>>(),
-                "{context}, updated frames"
+                "{}, updated frames",
+                case.name
             );
         }
         assert_eq!(
@@ -186,9 +171,10 @@ fn native_initialization_and_row_frame_updates_match() {
                 .into_iter()
                 .map(f32::to_bits)
                 .collect::<Vec<_>>(),
-            "{context}, pending gaps"
+            "{}, pending gaps",
+            case.name
         );
         cells += actual.len();
     }
-    assert_eq!(cells, 1082);
+    assert_eq!(cells, 1189);
 }

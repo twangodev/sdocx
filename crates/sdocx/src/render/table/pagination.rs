@@ -7,6 +7,9 @@ use crate::BoundingBox;
 #[cfg(test)]
 mod native_frame_tests;
 
+#[cfg(test)]
+mod native_row_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
@@ -206,11 +209,21 @@ fn update_positions(
     table: &RichTextTable,
 ) -> Result<(), ObjectDiagnosticKind> {
     for row_index in start..plan.rows.len() {
-        let mut height = plan.rows[row_index]
-            .cells
-            .iter()
-            .map(|cell| cell.metrics.measured_height)
-            .fold(0.0_f64, f64::max);
+        let mut height = 0.0_f64;
+        for column in 0..plan.rows[row_index].cells.len() {
+            let owner = plan
+                .topology
+                .frame_owner(super::CellPosition {
+                    row: row_index,
+                    column,
+                })
+                .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+            height = height.max(
+                plan.rows[owner.row].cells[owner.column]
+                    .metrics
+                    .measured_height,
+            );
+        }
         if height < CHANGE_EPSILON {
             height = f64::from(table.rows[row_index].min_height.unwrap_or(0.0));
         }
