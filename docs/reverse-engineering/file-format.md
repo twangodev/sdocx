@@ -881,7 +881,7 @@ This was deterministic in all three fixtures:
 
 ## Parser architecture implied by the APK
 
-The robust parse path should be:
+The frame boundaries and ordering establish this parse path:
 
 ```text
 ZIP directory
@@ -895,34 +895,21 @@ ZIP directory
   -> renderer-facing document model
 ```
 
-Concrete changes for this repository:
-
-1. Make the structural `StoredPage` parser authoritative for page traversal.
-2. Rename page/note header fields to flexible offsets and variable mask blocks.
-3. Add a reusable generic frame parser bounded by `frame_size` and
-   `flexible_data_offset`.
-4. Decode stroke frames only inside outer type-1 object payloads.
-5. Delete `StartPointMinusThree` and all selection-by-larger-point-count logic.
-6. Decode point channels according to stroke property bits, never by guessing
-   from remaining bytes.
-7. Decode style fields in field-mask order and preserve unknown masked bytes.
-8. Verify note, page-manifest and page signature/hash links when requested,
-   while keeping logical object/layer hash validation separately configurable.
-9. Retain unknown object types and unknown flexible fields for forward
-   compatibility.
-
-The structural stroke migration implements traversal and channel decoding in
+Structural traversal and channel decoding are implemented in
 `storage.rs`, `frame.rs`, `page.rs` and `decode.rs`. Page/layer masks are now
 length-prefixed; existing public header field names are retained for API
 compatibility. Color and pen size are read in field-mask order, with later
-unexposed style bytes safely left inside their frame. End-tag/hash work and
-complete non-stroke decoding remain separate roadmap items.
+unexposed style bytes safely left inside their frame. Current object decoding,
+end-tag handling and optional integrity checks are documented in
+[parser findings](parser-findings.md).
 
 ## Still unresolved
 
 - Exact public semantic names for several obfuscated page and layer properties.
 - Complete fixed/flexible layouts for every non-stroke object type.
-- The proprietary `.spi` media payload format.
+- General `.spi` compatibility and SDK integration; recovered framing and
+  experimental codec behavior are documented in
+  [SPI media findings](spi-media-findings.md).
 - Byte-exact protected/encrypted end-tag variant without an encrypted fixture.
 
 These gaps do not block fixing stroke geometry: the frame and stroke layouts

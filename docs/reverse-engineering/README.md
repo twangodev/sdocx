@@ -220,8 +220,8 @@ Notes APK, native serializers, or real compatibility fixtures.
   embedded strokes, image references and label graphs.
 - [`formula-rendering-findings.md`](formula-rendering-findings.md) — image/ink
   precedence, image placement, visible-stroke bounds and expression-type limits.
-- [`parser-roadmap.md`](parser-roadmap.md) — implementation sequence and
-  compatibility rules for the Rust parser.
+- [`parser-findings.md`](parser-findings.md) — structural decoding, metadata,
+  compatibility rules and evidence limits for the Rust parser.
 
 ## Maintenance rules
 

@@ -88,7 +88,6 @@ tails, zero-offset headers without flexible fields, malformed offsets, every
 truncated known-field prefix, invalid UTF-16 and allocation bounds.
 
 Layer UUID and modified-time decoding supplies the missing input for logical
-layer-hash verification. The next step is optional integrity reporting across
-objects, layers, pages, the note trailer and manifest links. New captures should
-include non-default layer transparency and visible shadows to validate the
-discrepant writer path and measure rendering fidelity.
+layer-hash verification through the optional checks described in
+[integrity findings](integrity-findings.md). The discrepant transparency writer
+and visible-shadow rendering lack matching captured evidence.

@@ -1,10 +1,10 @@
 # Rust vector text support
 
-This milestone provides one Rust measurement and layout engine for document
+One Rust measurement and layout engine serves document
 Flow, standalone text boxes, supported shape text, table cells and code blocks.
 Preview, replay and document PDF export consume that engine with shared font
 resources. Chromium preview and vector SVG/PDF exports are the supported target
-for this milestone. Full Samsung Notes visual parity is not claimed.
+for this implementation. Full Samsung Notes visual parity is not claimed.
 
 ## Layout and transport
 
@@ -56,59 +56,67 @@ object-bounding-box effects can still depend on carrier geometry; their native
 equivalence is not established. SVG/browser synthesis and its existing Flow
 bold stroke are distinct from the native PDF pen contract.
 
-The closing consistency audit added native-document PDF checks alongside
-generic SVG conversion for mixed styled text, regular-only synthesized shape
-text checks through preview/replay/PDF, and styled Arabic WASM downloads.
-It also fixed synthesized italic leaking into an adjacent plain Arabic SVG
-fallback span; those fallback runs now respect synthesis boundaries.
+SVG fallback runs respect synthesis boundaries, including adjacent italic and
+plain Arabic spans.
 
-## Closing scope and follow-up work
+## Known limits
 
-The milestone closes with the synthesis implementation committed, the shared
-text contexts checked through preview/replay and PDF, the native corpus checks
-passing, and the final built WASM verified against the served browser artifact.
-New font, table or script features are separate work rather than prerequisites
-for calling this bounded pipeline implemented.
-
-Follow-up areas:
-
-1. Merged/sparse table preparation, rowspan growth, and unsupported nested or
-   rotated object feedback.
-2. A complete SVG transport for complex joined scripts and clusters crossing
-   style boundaries, while preserving selectable source.
-3. Native font-selection and measurement-style anomalies, variable-font
-   instances, and device-specific fallback fonts.
-4. Captured standalone text modes, RTL justification, separator-only clipping,
-   and unusual page/composition behavior.
-5. Extreme frame/page validation and unsupported glyph/effect boundaries.
+- Merged/sparse table preparation, rowspan growth, and nested or rotated object
+  feedback are incomplete.
+- SVG transport does not reproduce every complex joined script or cluster
+  crossing a style boundary.
+- Native font-selection and measurement-style anomalies, variable-font
+  instances, and device-specific fallback selection are not established.
+- Standalone text modes, RTL justification, separator-only clipping, and
+  unusual page/composition behavior need additional captured evidence.
+- Extreme frame/page geometry and unsupported glyph/effect combinations retain
+  explicit validation and transport limits.
 
 Samsung output remains reference evidence. The implementation and regression
 contracts stay in Rust; no second authored Python layout engine is required.
 Exact native addresses, historical comparisons and evidence limits are in
 [Text layout findings](reverse-engineering/text-layout-findings.md).
 
-## Validation
+## Preparation and diagnostic contracts
 
-The closure checks include workspace tests with all features, strict Clippy,
-formatting, render-only and minimal builds, the five external native-reference
-checks, web typecheck/unit tests, and Chromium against freshly built WASM.
-Focused regressions cover retained PDF glyphs, mixed styles in all shared
-text contexts, shape frames and synthesized styles.
+Full-source reflow recognizes unchanged recovered geometry, including retained
+NaN values; source edits invalidate that identity. Captures preserve native
+zero-length font-span intervals. Empty list markers use caret formatting for
+their font size and reserved width. Native CopyText interval revision is a
+separate operation.
 
-Closure results on 2026-09-30, implementation and tests at `0a06b1a`:
+SVG embeds the selected TTC/OTC face used for measurement. CLI exports report
+text and object diagnostics for the selected pages. Ordered diagnostics use
+indexed deduplication and retain source attribution; font validation includes
+metrics contributing to inline-object leading.
 
-| Check | Result |
-| --- | --- |
-| Workspace tests, all features | Passed, including 496 core tests, 26 retained-PDF tests, 27 text-style tests and 10 shape-frame tests. |
-| Strict workspace/all-target Clippy, formatting | Passed. |
-| Render-only tests and minimal-feature build | Passed. |
-| External native references | Five passed. |
-| Web typecheck and unit tests | Zero errors/warnings; 66 tests passed. |
-| Chromium preview/export tests | 58 passed; one WebKit-only test skipped. |
-| Final WASM and application build | Passed; packaged, built and served WASM bytes matched. |
+Document exports and browser sessions reuse compatible body plans across
+pages. Style boundary resolution avoids repeated full-span scans, and fallback
+lines reuse paragraph bidi contexts. Release measurements from the review
+machine showed the following changes; these are historical observations, not
+portable performance thresholds:
 
-The matched WASM SHA-256 was
-`10d47282f36cd2bfc89a30e7e861839354e7ab7dae42570984cf5748896ea734`.
+| Probe | Before | After |
+| --- | ---: | ---: |
+| 80,000 missing glyphs | 2,233 ms | 142 ms |
+| 10,000 style boundaries | 259 ms | 32.5 ms |
+| 50-page full-source reflow | 153.76 ms | 11.29 ms |
+
+## Regression evidence
+
+- [Source identity](../crates/sdocx/tests/source_identity_review.rs) and
+  [capture intervals](../crates/sdocx/tests/layout_review_regressions.rs) cover
+  recovered geometry, source edits and caret formatting.
+- [Body preparation](../crates/sdocx/tests/body_preparation_review.rs) and
+  [geometry diagnostics](../crates/sdocx/tests/text_geometry_review_regressions.rs)
+  cover compatible plan reuse and source attribution.
+- [Collection-font SVG](../crates/sdocx/tests/font_collection_svg.rs) and
+  [Chromium selected-face checks](../web/tests/e2e/font-collection.spec.ts)
+  compare the embedded face with the face used for Rust measurement.
+- [Retained PDF glyphs](../crates/sdocx/tests/pdf_retained_glyphs.rs),
+  [text styles](../crates/sdocx/tests/text_styles.rs) and
+  [shape text frames](../crates/sdocx/tests/shape_text_frame.rs) cover shared
+  layout, synthesis, selectable source and vector transport.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
