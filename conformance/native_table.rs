@@ -21,6 +21,9 @@ mod bottom;
 #[path = "native_table/control.rs"]
 mod control;
 
+#[path = "native_table/cell_inputs.rs"]
+mod cell_inputs;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1017,7 +1020,9 @@ fn main() {
             rows::capture(&mut machine, Path::new(&base_path), Path::new(&widget_path));
             return;
         }
-        Some(mode @ ("--measured-geometry" | "--row-bottom" | "--warm-control")) => {
+        Some(
+            mode @ ("--measured-geometry" | "--row-bottom" | "--warm-control" | "--cell-inputs"),
+        ) => {
             let drawing_path = std::env::args_os()
                 .nth(3)
                 .expect("libSPenDrawing.so path required");
@@ -1034,6 +1039,7 @@ fn main() {
             let capture = match mode {
                 "--row-bottom" => bottom::capture,
                 "--warm-control" => control::capture,
+                "--cell-inputs" => cell_inputs::capture,
                 _ => geometry::capture,
             };
             capture(
@@ -1057,7 +1063,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs or no capture mode"
         ),
     }
     let mut cases = Vec::new();
