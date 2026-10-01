@@ -539,51 +539,12 @@ fn native_isolate_base_direction_moves_outer_numbers_but_not_strong_latin() {
 }
 
 #[cfg(feature = "pdf")]
+#[path = "support/pdf_geometry.rs"]
+mod pdf_geometry;
+
+#[cfg(feature = "pdf")]
 mod pdf {
     use super::*;
-    use lopdf::{Object, content::Content};
-    use svgtypes::Transform;
-
-    fn number(value: &Object) -> f64 {
-        f64::from(value.as_float().unwrap())
-    }
-
-    fn matrix(values: &[Object]) -> Transform {
-        Transform::new(
-            number(&values[0]),
-            number(&values[1]),
-            number(&values[2]),
-            number(&values[3]),
-            number(&values[4]),
-            number(&values[5]),
-        )
-    }
-
-    fn compose(left: Transform, right: Transform) -> Transform {
-        Transform::new(
-            left.a * right.a + left.c * right.b,
-            left.b * right.a + left.d * right.b,
-            left.a * right.c + left.c * right.d,
-            left.b * right.c + left.d * right.d,
-            left.a * right.e + left.c * right.f + left.e,
-            left.b * right.e + left.d * right.f + left.f,
-        )
-    }
-
-    fn actual_text(value: &Object) -> String {
-        let bytes = value.as_str().unwrap();
-        assert!(bytes.starts_with(&[0xfe, 0xff]));
-        let (units, remainder) = bytes[2..].as_chunks::<2>();
-        assert!(remainder.is_empty());
-        String::from_utf16(
-            &units
-                .iter()
-                .copied()
-                .map(u16::from_be_bytes)
-                .collect::<Vec<_>>(),
-        )
-        .unwrap()
-    }
 
     #[test]
     fn pdf_keeps_native_visible_positions_and_logical_control_metadata() {
@@ -593,104 +554,25 @@ mod pdf {
                 let page = render(text(source), 500, flow, replay);
                 assert_source(&page, source);
                 let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
-                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                let pdf = pdf_geometry::read(&bytes, 96.0);
                 assert_eq!(
-                    pdf.extract_text(&[1])
-                        .unwrap()
+                    pdf.extracted_text
                         .chars()
                         .filter(|character| *character != '\n' && !formatting(*character))
                         .collect::<String>(),
                     "ABCD"
                 );
-                assert!(
-                    !pdf.objects
-                        .values()
-                        .any(|object| object.as_stream().is_ok_and(|stream| stream
-                            .dict
-                            .get(b"Subtype")
-                            .is_ok_and(|kind| {
-                                kind.as_name().is_ok_and(|name| name == b"Image")
-                            })))
-                );
-                let page_id = pdf.get_pages()[&1];
-                let page = pdf.get_dictionary(page_id).unwrap();
-                let height = number(&page.get(b"MediaBox").unwrap().as_array().unwrap()[3]);
-                let fonts = pdf.get_page_fonts(page_id).unwrap();
-                let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
-                let mut ctm = Transform::default();
-                let mut stack = Vec::new();
-                let mut tm = Transform::default();
-                let mut font = Vec::new();
-                let mut controls = String::new();
-                let mut marked_text = Vec::new();
-                let mut logical_source = String::new();
-                let mut visible = Vec::new();
-                for operation in content.operations {
-                    match operation.operator.as_str() {
-                        "q" => stack.push(ctm),
-                        "Q" => ctm = stack.pop().unwrap(),
-                        "cm" => ctm = compose(ctm, matrix(&operation.operands)),
-                        "Tm" => tm = matrix(&operation.operands),
-                        "Tf" => font = operation.operands[0].as_name().unwrap().to_vec(),
-                        "BDC" => {
-                            let replacement = operation.operands[1]
-                                .as_dict()
-                                .unwrap()
-                                .get(b"ActualText")
-                                .ok()
-                                .map(actual_text);
-                            if let Some(value) = &replacement {
-                                controls.extend(
-                                    value.chars().filter(|character| formatting(*character)),
-                                );
-                            }
-                            marked_text.push((replacement, false));
-                        }
-                        "BMC" => marked_text.push((None, false)),
-                        "EMC" => {
-                            marked_text.pop().unwrap();
-                        }
-                        "Tj" | "TJ" => {
-                            let encoding = fonts[&font].get_font_encoding(&pdf).unwrap();
-                            let values = if let Ok(values) = operation.operands[0].as_array() {
-                                values.as_slice()
-                            } else {
-                                operation.operands.as_slice()
-                            };
-                            for value in values {
-                                if let Object::String(bytes, _) = value {
-                                    let decoded =
-                                        lopdf::Document::decode_text(&encoding, bytes).unwrap();
-                                    if let Some((Some(replacement), emitted)) =
-                                        marked_text.last_mut()
-                                    {
-                                        if !*emitted {
-                                            logical_source.push_str(replacement);
-                                            *emitted = true;
-                                        }
-                                    } else {
-                                        logical_source.push_str(&decoded);
-                                    }
-                                    if decoded
-                                        .chars()
-                                        .any(|character| matches!(character, 'A'..='D'))
-                                    {
-                                        assert_eq!(decoded.chars().count(), 1);
-                                        let transform = compose(ctm, tm);
-                                        visible.push((
-                                            decoded,
-                                            transform.e * 4.0 / 3.0,
-                                            (height - transform.f) * 4.0 / 3.0,
-                                        ));
-                                    }
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                assert!(controls.contains('\u{202c}'));
-                assert_eq!(logical_source, source);
+                assert_eq!(pdf.image_resources, 0);
+                assert!(pdf.images.is_empty());
+                assert!(pdf.actual_text.iter().any(|text| text.contains('\u{202c}')));
+                assert_eq!(pdf.source, source);
+                let visible = pdf
+                    .text
+                    .iter()
+                    .filter(|(text, _, _)| {
+                        text.chars().any(|character| matches!(character, 'A'..='D'))
+                    })
+                    .collect::<Vec<_>>();
                 assert_eq!(visible.len(), 4);
                 let origin = if flow { 48.0 } else { 10.0 };
                 for ((text, x, y), (expected, offset)) in visible.iter().zip([
