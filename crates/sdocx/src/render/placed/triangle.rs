@@ -74,17 +74,7 @@ fn right_triangle(
     angle: f32,
     horizontal_flip: bool,
 ) -> Result<TextInsets, ShapeTextFrameIssue> {
-    let delta_x = points[1][0] - points[0][0];
-    let delta_y = points[1][1] - points[0][1];
-    let direction = ((delta_y.atan2(delta_x) * 180.0) as f64 / std::f64::consts::PI) as f32;
-    let direction = if direction < 0.0 {
-        direction + 360.0
-    } else {
-        direction
-    };
-    if !direction.is_finite() {
-        return Err(ShapeTextFrameIssue::InvalidGeometry);
-    }
+    let direction = vertex_direction(points)?;
     if (direction == 0.0 && !horizontal_flip) || (direction == 180.0 && horizontal_flip) {
         for point in &mut points {
             *point = rect.rotate_point(*point, -angle)?;
@@ -106,6 +96,30 @@ fn right_triangle(
         right: (rect.width * right) / 400.0,
         bottom: (rect.height * bottom) / 400.0,
     })
+}
+
+fn vertex_direction(points: [[f32; 2]; 2]) -> Result<f32, ShapeTextFrameIssue> {
+    let delta_x = points[1][0] - points[0][0];
+    let delta_y = points[1][1] - points[0][1];
+    let radians = if delta_y == 0.0 && !delta_x.is_nan() {
+        if delta_x.is_sign_negative() {
+            std::f32::consts::PI.copysign(delta_y)
+        } else {
+            delta_y
+        }
+    } else {
+        delta_y.atan2(delta_x)
+    };
+    let direction = (f64::from(radians * 180.0) / std::f64::consts::PI) as f32;
+    let direction = if direction < 0.0 {
+        direction + 360.0
+    } else {
+        direction
+    };
+    direction
+        .is_finite()
+        .then_some(direction)
+        .ok_or(ShapeTextFrameIssue::InvalidGeometry)
 }
 
 fn checked(insets: TextInsets) -> Result<TextInsets, ShapeTextFrameIssue> {
@@ -212,6 +226,38 @@ mod tests {
         assert_eq!(
             values(right_triangle(&rect(), reversed, 90.0, false).unwrap()),
             [165.0, 17.5, 35.0, 117.5],
+        );
+    }
+
+    #[test]
+    fn horizontal_vertex_directions_are_exact_for_both_zero_signs() {
+        for delta_y in [0.0, -0.0] {
+            for delta_x in [400.0, f32::INFINITY, -400.0, f32::NEG_INFINITY] {
+                let expected = if delta_x.is_sign_negative() {
+                    180.0
+                } else {
+                    0.0
+                };
+                assert_eq!(
+                    vertex_direction([[0.0, 0.0], [delta_x, delta_y]]),
+                    Ok(expected)
+                );
+            }
+        }
+        assert_eq!(
+            vertex_direction([[0.0, 0.0], [f32::NAN, 0.0]]),
+            Err(ShapeTextFrameIssue::InvalidGeometry),
+        );
+    }
+
+    #[test]
+    fn nearby_nonhorizontal_vertices_do_not_reload_as_horizontal() {
+        let points = [[400.0, 0.0], [0.0, 0.01]];
+        let direction = vertex_direction(points).unwrap();
+        assert!(direction > 179.99 && direction < 180.0);
+        assert_eq!(
+            values(right_triangle(&rect(), points, 180.0, true).unwrap()),
+            [165.0, 117.5, 35.0, 17.5],
         );
     }
 

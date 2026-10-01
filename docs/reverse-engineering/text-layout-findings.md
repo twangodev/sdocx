@@ -222,6 +222,11 @@ Rotation uses the original endpoint sums multiplied by `0.5` in `f32`
 
 Right-triangle replay retains the direction/flip-dependent extra inverse
 rotation branch, rather than replacing it with a default margin table.
+The direction helper (`0x211670`) multiplies `atan2f` radians by 180 in `f32`,
+divides by pi in `f64`, then narrows before the exact 0/180 comparisons.
+Rust supplies signed zero or binary32 pi for exactly horizontal vectors:
+host `atan2` rounding otherwise made the flipped 180-degree branch fail in
+macOS ARM64 CI. Nonhorizontal directions retain the native arithmetic chain.
 Arbitrary noncanonical paths and unsupported templates remain diagnosed.
 Horizontal control projection preserves native comparison behavior (`0x210df8`):
 positive/negative infinity selects an endpoint, while unordered projection
