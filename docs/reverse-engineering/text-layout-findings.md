@@ -1043,8 +1043,12 @@ glyph IDs and relative offsets through isolated export shaping. RTL clusters
 must be scalar-sized; multi-scalar fragments that resolve RTL under usvg's
 LTR paragraph base are rejected even if native shaping was forced LTR.
 Mirrored punctuation, joined Arabic, unsupported fonts and split cluster
-styles retain the diagnosed fallback. Object lines retain their maps but do
-not yet apply bidi visual positions.
+styles retain the diagnosed fallback. Object lines apply the same visual map
+after child preparation and obstacle retries, before justification. Text and
+object arrays stay in source order; only their X positions and visual ranks
+change. A rejected child plan keeps the whole line in its existing fallback,
+including the replacement-character anchor. This malformed-input recovery is
+an SDK policy, not established native behavior.
 
 Roboto override/isolate fixtures verify logical Unicode preservation,
 wrapped origins, kerning, visual decoration intervals and backgrounds across
@@ -1233,6 +1237,30 @@ vertical margins from constants 344/345 multiplied by layout scale
 For a block entry, Text `measureObjectSpan` sets its advance to the entire
 available layout width, subtracting left/right margins (`0x77a94`–`0x77aa8`).
 An inline entry instead uses object width plus horizontal measurement margins.
+Those horizontal margins come from the measurement context, rather than saved
+object X coordinates or the block-spacing option. `RichTextMeasure` initializes
+them to zero (`0x78090`–`0x780ac`). Bodytext `updateObstacle` supplies constants
+63/64 (`0xb2d88`–`0xb2db8`): their Content records at `0x7dd0` / `0x7de8`
+contain logical 4 / 0 with document-density units. Native PDF's
+`BodyTextPDFWriter::WriteBodyText` constructs `BodyTextCapture` at `0x375e2c`
+and requests its drawn text at `0x375ea4`. The capture constructs a fresh
+`BodyTextLayout` (`0xca2ac`), assigns the document (`0xca2b8`) and measures
+(`0xca2d0`). `Measure` chooses layout type 2 (`0xb2c14`), whose active layout
+branch updates obstacles before updating and measuring text
+(`0xb1a40`–`0xb1a68`). Body-flow inline entries therefore reserve four logical
+units on each side; a width-30 object at density 1 has advance 38 and local
+content bounds `[4,-height,34,0]`. At density 3 these become advance 54 and
+`[12,-height,42,0]`. Fresh placed/frame measurement retains zero horizontal
+margins. Nested frame layouts need their own producer context, independently
+of the style defaults used to paint their text. Rust selects typed
+`ObjectMeasurementContext::Body` from flow/capture layout and `Frame` from
+placed, shape, code and table frame layout. Reserved advances include both
+horizontal margins, while object drawing and culling use content X and visible
+width. The same rule applies to measured and diagnosed measurement-fallback
+paths; it does not apply body obstacle margins to a child merely because the
+child uses flow typography. Density-1/3 synthetic fixtures exercise distinct
+body/frame positions, wrapping thresholds and nested child layout ownership.
+
 Constants 344/345 are records at Content `0x9828` / `0x9840`: logical
 10/20, unit kind 3, rounding kind 3, with zero variant overrides. Widget
 initializes that constant provider with manager document pixel at
@@ -1918,8 +1946,9 @@ Code preparation now retains owned title and body layouts, copy and panel
 rectangles. Parent lines prepare these plans before placement; constraints
 1/2 replace their reserved height when the measured height differs by more
 than 0.001. Other constraints retain their saved reservation. Split bands
-are selected using the live parent candidate, and painting translates the
-retained plan without measuring it again, including under parent gravity.
+are selected using the live parent candidate. Final code/table drawing prepares
+its frames at the settled baseline and world X, including parent gravity;
+candidate feedback and final drawing both use the shared Rust layout engine.
 Validated native capture windows now replace individual page-slice painting.
 They retain native source separators, prepare object feedback in group-local
 physical coordinates and project the selected viewport once. Typed glyph,
@@ -1933,6 +1962,42 @@ whole visible object. The negative-top adapter remains only for fallback
 inspection slices. Captured body/code/table origins are covered by the
 comparisons above; merged/sparse table preparation and arbitrary object
 composition remain outside those references.
+
+Width feedback remains incomplete. Native `m_CheckObjectChanged` compares both
+callback height (`0x6c42c`–`0x6c45c`) and width (`0x6c460`–`0x6c490`) with a
+0.001 threshold. A changed width updates the visual rectangle and replaces
+the measured advance with the callback width directly, then records the source
+anchor in a changed-object notification (`0x6c4a0`–`0x6c4c4`). It does not
+simply add the old obstacle margins to the new width. Code's measured width
+remains its source width
+(`0x73340`–`0x73350`, `0x73584`–`0x735b4`), while a table's regenerated column
+frames can change its measured width (`0xab168`–`0xab2c0`). The captured table
+retains width 985 in both paths and does not exercise this discrepancy.
+`GetBlockInfo` tests the current object's fit using its old advance
+(`0x6ada4`, `0x6ae18`, `0x6ae80`), then reloads the changed advance and adds
+it to the accumulated width for following entries (`0x6af08`–`0x6af0c`).
+The returned block width includes that change (`0x6aff8`). Thus an accepted
+object can expand on the current line while pushing the following text onto
+another line; eagerly rewrapping the entire paragraph would change the
+current object's acceptance. The selected capture route commits this pass
+without an established convergence loop. Its changed-object notification is
+separate from the editor event route, which updates stored span dimensions
+and remeasures the changed paragraph (`0xd4c90`–`0xd4e28`). Rust still needs
+this staged fit/feedback protocol; changing only the final paint translation
+or repeating measurement until stable would not reproduce the inspected
+capture behavior.
+
+Callback timing also matters. An old-width precheck skips ordinary overflowing
+lookahead (`0x6ae28`–`0x6ae30`), but a permitted first-object overflow can enter
+the callback path. A second check tests the same old-width sum after the
+callback (`0x6ae80`–`0x6ae84`); failure keeps the current logical anchor for a
+later candidate (`0x6b014`–`0x6b108`). Child layouts survive that failure and
+are reused and remeasured at the next candidate (`0xb0cac`–`0xb0e2c`). Body
+width feedback is capped by the minimum of the child measured width and the
+object's transformed width cap (`0xb0ed8`–`0xb0f1c`). Applying a callback only
+after acceptance, to every rejected lookahead, or to regular constraints would
+lose these distinctions. Constraints 1/2 use this width-feedback route;
+ordinary constraints retain their separate top-of-page shrink branch.
 
 Rejected derived code geometry retains the original replacement marker and
 neighboring text, reports `InvalidBounds`, and never falls back into measuring
