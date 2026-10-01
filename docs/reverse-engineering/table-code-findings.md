@@ -1046,6 +1046,66 @@ axis radii, selectable source and zero image resources. Native device appearance
 merged shaping and complete border clipping across split pages remain
 outside this evidence.
 
+### Visible rectangles and canvas clipping
+
+Drawing `TableDrawing::SetDisplayRect`, `0xa84f4`, stores the four supplied
+coordinates unchanged. `applyClippingForSpannableTable`, `0xa72d4`, emits no
+canvas clip for constraint 0 or an empty display rectangle. Otherwise it scans
+the split bands in supplied order. A display top strictly inside a band moves
+to its bottom; a display bottom strictly inside moves to its top. Equal edges
+remain unchanged, and band X coordinates do not participate.
+
+`TableLayout::GetVisibleMeasuredRect`, `0xaba50`, returns measured bounds when
+the split list or query rectangle is empty. Otherwise `getLastVisibleRow`,
+`0xabba4`, selects the prefix of physical rows whose first raw cell top is at
+most the query bottom. When a row is selected, the visible rectangle is the
+union of the first raw cell and the last raw cell of that row, followed by a
+vertical clamp only when the query overlaps strictly in Y. It ignores query X;
+disjoint Y retains the rectangle. With no selected row, measured bounds remain
+the starting rectangle. The private `getVisibleMeasuredRect`, `0xab8e8`, with
+its intersection flag instead intersects both axes and returns zero on a miss.
+An empty split list/query bypasses even that intersection.
+
+These raw endpoints differ from the frame-owner endpoints used for measured
+bounds. A captured whole-grid merge has measured bounds `[0,0,41,21]`; with a
+nonempty split list and a query covering all rows, its visible rectangle is
+`[0.5,0.5,100.5,90.5]`. Visibility does not enlarge the owner frame or remeasure
+the table. Cell backgrounds and border paths still use full raw cached frames.
+
+The canvas clip expands this visible rectangle by
+`f32::mul_add(outline_width, 0.5, 1.0)`. Base `RectF::ExtendRect(float)`,
+`0xb16e0`, then floors left/top and ceils right/bottom. Drawing computes f32
+width/height and truncates X, Y, width and height to signed integers, passing
+operation 0 to canvas virtual slot 64. The border guard and outward rounding
+belong to the clip; they do not change glyph origins or layout bounds.
+
+[`table-clipping.json`](../../conformance/table-clipping.json), SHA-256
+`5d21686615f74c43a054e850dd19ec57c2170e860920846965f71d7b8084e476`,
+records 55 native states, 1,690 rectangle queries and 1,240 canvas clip calls.
+It covers merged/covered owners, empty/inverted queries, adjacent-float row
+boundaries, disjoint axes, empty/unsorted/overlapping bands, signed row offsets,
+constraints 0/1/2 and fractional outline widths. Public and private vertical-only
+visibility agree bit for bit. Allocation fills `0x00`, `0xa5` and `0xff`
+produce identical output.
+
+Native cold frame initialization, owner-based measured bounds, display-rectangle
+assignment, rectangle helpers and clip selection execute unchanged. Empty text
+caches isolate shaping and row sizing. The host supplies allocation, deletion,
+memory fill/move and the canvas command recorder. This capture establishes clip
+arguments, not canvas pixels, the caller's display-rectangle selection, text-pass
+clipping or complete device pagination. Rust currently clips cell paint/text to
+the measured table rectangle; its equivalence to this separate native clip is
+not established.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --clipping scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-clipping.json
+cmp /tmp/table-clipping.json conformance/table-clipping.json
+```
+
 ### Cell background selection
 
 [The background capture](../../conformance/table-backgrounds.json), SHA-256

@@ -217,7 +217,8 @@ and distinguishes recovered behavior from implementation and evidence limits.
   bounded table/code records, merge construction, frame ownership and paint
   visibility; captured borders, fills, column minima, saved height limits,
   cold/warm measurement, bounds, split caches, row-bottom compression, warm-row
-  control, cell text dimensions and public layout lifecycle; vector evidence limits.
+  control, cell text dimensions, public layout lifecycle, visible rectangles and
+  canvas clip arguments; vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

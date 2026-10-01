@@ -72,6 +72,9 @@ plain Arabic spans.
   canvas scales. Document vectors use the unit-scale result; screen coverage,
   complete split-page clipping and device-rendered appearance remain unverified.
   See [border painting evidence](reverse-engineering/table-code-findings.md#border-painting).
+  [Native clip commands](reverse-engineering/table-code-findings.md#visible-rectangles-and-canvas-clipping)
+  establish separate raw-endpoint visible bounds and outward-rounded canvas clips;
+  the Rust measured-rectangle clip has not been validated against that route.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native font-selection and measurement-style anomalies, variable-font
