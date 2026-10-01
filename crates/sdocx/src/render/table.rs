@@ -13,6 +13,9 @@ mod fills;
 mod grid;
 mod pagination;
 
+#[cfg(test)]
+mod native_geometry_tests;
+
 pub(super) use borders::{BorderPath, TableBorderGeometry};
 pub(super) use fills::CellFill;
 pub(super) use grid::{CellPosition, TableGrid};
@@ -77,7 +80,7 @@ pub(super) struct PreparedTableCell {
 #[derive(Default)]
 struct CellMetrics {
     measured_height: f64,
-    first_line_height: f64,
+    first_line_height: Option<f64>,
     last_line_bottom: f64,
 }
 
@@ -482,12 +485,14 @@ impl PreparedTable {
         {
             return Err(ObjectDiagnosticKind::UnsupportedContent);
         }
-        let first_line_height = layout
-            .lines
-            .first()
-            .map(|line| native_sub(line.bottom, line.top))
-            .transpose()?
-            .unwrap_or(0.0);
+        let first_line_height = Some(
+            layout
+                .lines
+                .first()
+                .map(|line| native_sub(line.bottom, line.top))
+                .transpose()?
+                .unwrap_or(-1.0),
+        );
         let last_line_bottom = if source.content.text.is_empty() {
             0.0
         } else {
@@ -523,6 +528,43 @@ impl PreparedTable {
         native_sub(frame.y_max, frame.y_min)
     }
 
+    fn frame_cell(
+        &self,
+        position: CellPosition,
+    ) -> Result<(CellPosition, &PreparedTableCell), ObjectDiagnosticKind> {
+        let owner = self
+            .topology
+            .frame_owner(position)
+            .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+        let cell = self
+            .rows
+            .get(owner.row)
+            .and_then(|row| row.cells.get(owner.column))
+            .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+        Ok((owner, cell))
+    }
+
+    fn content_bounds(&self) -> Result<BoundingBox, ObjectDiagnosticKind> {
+        let (_, first) = self.frame_cell(CellPosition { row: 0, column: 0 })?;
+        let row = self
+            .rows
+            .len()
+            .checked_sub(1)
+            .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+        let column = self.rows[row]
+            .cells
+            .len()
+            .checked_sub(1)
+            .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+        let (_, last) = self.frame_cell(CellPosition { row, column })?;
+        Ok(BoundingBox {
+            x_min: first.frame.x_min.min(last.frame.x_min),
+            y_min: first.frame.y_min.min(last.frame.y_min),
+            x_max: first.frame.x_max.max(last.frame.x_max),
+            y_max: first.frame.y_max.max(last.frame.y_max),
+        })
+    }
+
     fn first_line_minimum(
         &self,
         row_index: usize,
@@ -530,17 +572,20 @@ impl PreparedTable {
         renderer: &TextRenderer<'_>,
     ) -> Result<f64, ObjectDiagnosticKind> {
         let mut height = 0.0_f64;
-        for cell in &self.rows[row_index].cells {
-            let source = &table.rows[row_index].cells[cell.column_index].content;
-            let cell_height = if source.text.is_empty() {
-                cell.metrics.measured_height
-            } else {
-                native_add(
-                    cell.metrics.first_line_height,
+        for column in 0..self.rows[row_index].cells.len() {
+            let (owner, cell) = self.frame_cell(CellPosition {
+                row: row_index,
+                column,
+            })?;
+            let source = &table.rows[owner.row].cells[owner.column].content;
+            let cell_height = match cell.metrics.first_line_height {
+                Some(first_line_height) if !source.text.is_empty() => native_add(
+                    first_line_height,
                     renderer
                         .settings
                         .pixels(source.margins.unwrap_or([0.0; 4])[1]),
-                )?
+                )?,
+                _ => cell.metrics.measured_height,
             };
             height = height.max(cell_height);
         }
@@ -570,23 +615,33 @@ impl PreparedTable {
                 }
             }
         }
-        let first = self.rows[0].cells[0].frame;
-        let last = self.rows.last().unwrap().cells.last().unwrap().frame;
+        let content = self.content_bounds()?;
         let [left, upper, right, bottom] = table_border_widths(table);
-        let expanded_left = native_sub(first.x_min, left / 2.0)?;
-        let expanded_top = native_sub(first.y_min, upper / 2.0)?;
+        let expanded_left = native_sub(content.x_min, left / 2.0)?;
+        let expanded_top = native_sub(content.y_min, upper / 2.0)?;
         self.measured_bbox = BoundingBox {
             x_min: 0.0,
             y_min: 0.0,
-            x_max: native_sub(native_add(last.x_max, right / 2.0)?, expanded_left)?,
-            y_max: native_sub(native_add(last.y_max, bottom / 2.0)?, expanded_top)?,
+            x_max: native_sub(native_add(content.x_max, right / 2.0)?, expanded_left)?,
+            y_max: native_sub(native_add(content.y_max, bottom / 2.0)?, expanded_top)?,
         };
         if self.measured_bbox.x_max <= 0.0 || self.measured_bbox.y_max <= 0.0 {
             return Err(ObjectDiagnosticKind::InvalidBounds);
         }
-        self.min_first_page_height =
-            native_add(self.first_line_minimum(0, table, renderer)?, first.y_min)?;
+        self.min_first_page_height = self.first_page_minimum(0, table, renderer)?;
         Ok(())
+    }
+
+    fn first_page_minimum(
+        &self,
+        row_index: usize,
+        table: &RichTextTable,
+        renderer: &TextRenderer<'_>,
+    ) -> Result<f64, ObjectDiagnosticKind> {
+        native_add(
+            self.first_line_minimum(row_index, table, renderer)?,
+            self.content_bounds()?.y_min,
+        )
     }
 }
 

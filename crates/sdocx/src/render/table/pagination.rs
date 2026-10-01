@@ -211,18 +211,11 @@ fn update_positions(
     for row_index in start..plan.rows.len() {
         let mut height = 0.0_f64;
         for column in 0..plan.rows[row_index].cells.len() {
-            let owner = plan
-                .topology
-                .frame_owner(super::CellPosition {
-                    row: row_index,
-                    column,
-                })
-                .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
-            height = height.max(
-                plan.rows[owner.row].cells[owner.column]
-                    .metrics
-                    .measured_height,
-            );
+            let (_, cell) = plan.frame_cell(super::CellPosition {
+                row: row_index,
+                column,
+            })?;
+            height = height.max(cell.metrics.measured_height);
         }
         if height < CHANGE_EPSILON {
             height = f64::from(table.rows[row_index].min_height.unwrap_or(0.0));
