@@ -429,6 +429,17 @@ fn table_bands(
     BandList::new(rectangles)
 }
 
+fn cell_text_bounds(frame: BoundingBox) -> Result<BoundingBox, ObjectDiagnosticKind> {
+    let width = native_sub(frame.x_max, frame.x_min)? as f32 as i32;
+    let height = native_sub(frame.y_max, frame.y_min)? as f32 as i32;
+    Ok(BoundingBox {
+        x_min: 0.0,
+        y_min: 0.0,
+        x_max: f64::from(width),
+        y_max: f64::from(height),
+    })
+}
+
 impl PreparedTable {
     fn layout_cell(
         &mut self,
@@ -444,8 +455,8 @@ impl PreparedTable {
             .as_ref()
             .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
         let source = &table.rows[row_index].cells[column_index];
-        let width = native_sub(cell.frame.x_max, cell.frame.x_min)? as f32 as i32;
-        let height = native_sub(cell.frame.y_max, cell.frame.y_min)? as f32 as i32;
+        let bounds = cell_text_bounds(cell.frame)?;
+        let width = bounds.x_max as i32;
         let full_width = |rect: &&BoundingBox| rect.x_min <= 0.0 && rect.x_max >= f64::from(width);
         let exclusions = bands
             .rectangles
@@ -459,12 +470,7 @@ impl PreparedTable {
         let mut layout = super::text::layout_text(
             &styled,
             TextFrame {
-                bbox: BoundingBox {
-                    x_min: 0.0,
-                    y_min: 0.0,
-                    x_max: f64::from(width),
-                    y_max: f64::from(height),
-                },
+                bbox: bounds,
                 gravity: Some(0),
                 exclusions: &exclusions,
             },

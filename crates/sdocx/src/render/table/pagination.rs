@@ -19,6 +19,9 @@ mod native_bottom_tests;
 #[cfg(test)]
 mod native_control_tests;
 
+#[cfg(test)]
+mod native_cell_input_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
