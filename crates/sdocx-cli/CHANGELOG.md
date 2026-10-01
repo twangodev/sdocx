@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.7.0...sdocx-cli-v1.0.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **model:** Page owns objects instead of strokes and elements; serialized pages use the same object tree.
+
+### Features
+
+* **cli:** share caller fonts across vector and image exports ([a9c92b9](https://github.com/twangodev/sdocx/commit/a9c92b9e70257e1fe3acb030d1d291fe44abc6f5))
+* **pdf:** paint retained Rust glyph plans in document exports ([71bc17b](https://github.com/twangodev/sdocx/commit/71bc17b110ed9f21247bed3e2585e29fd149dbb1))
+* **text:** share pinned Rust fonts and shaped metrics across exports ([198bf8c](https://github.com/twangodev/sdocx/commit/198bf8c3eb2fa2a47d42086187dd825f0ac5c0f2))
+
+
+### Bug Fixes
+
+* **cli:** report selected-page rendering diagnostics ([2d5fd59](https://github.com/twangodev/sdocx/commit/2d5fd59947b6691d33ab12bfea2bd1e5b6841393))
+
+
+### Code Refactoring
+
+* **model:** preserve page objects in one ordered Rust tree ([5089616](https://github.com/twangodev/sdocx/commit/508961678538b8a6c270e802a48035e4c703403a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.7.0 to 1.0.0
+
 ## [0.7.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.6.0...sdocx-cli-v0.7.0) (2026-09-25)
 
 

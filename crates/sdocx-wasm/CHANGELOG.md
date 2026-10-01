@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.5.0...sdocx-wasm-v1.0.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **model:** Page owns objects instead of strokes and elements; serialized pages use the same object tree.
+
+### Features
+
+* **ink:** add shared Rust fountain rasterization ([3dd2fca](https://github.com/twangodev/sdocx/commit/3dd2fca15854858bbe4d857f4832cce8aeb6645b))
+* **layout:** retain native body text capture windows ([0d8219c](https://github.com/twangodev/sdocx/commit/0d8219cc153259ec472ff5daa14b3020deb13f53))
+* **pdf:** paint retained Rust glyph plans in document exports ([71bc17b](https://github.com/twangodev/sdocx/commit/71bc17b110ed9f21247bed3e2585e29fd149dbb1))
+* **text:** preserve typed native span intervals ([7526e31](https://github.com/twangodev/sdocx/commit/7526e3184c6b8abef0518d263db2e54ceb6ca113))
+* **text:** share pinned Rust fonts and shaped metrics across exports ([198bf8c](https://github.com/twangodev/sdocx/commit/198bf8c3eb2fa2a47d42086187dd825f0ac5c0f2))
+* **wasm:** share font resources across preview replay and PDF ([f84e3c6](https://github.com/twangodev/sdocx/commit/f84e3c692d415fdca3155e891eb678a10ddb8e2a))
+
+
+### Bug Fixes
+
+* **debugger:** derive replay hit targets from Rust composition ([aacf065](https://github.com/twangodev/sdocx/commit/aacf0658832d6df2dde9264f839e3e6401fa8ff6))
+* **render:** preserve native object order within composition passes ([d903c27](https://github.com/twangodev/sdocx/commit/d903c270e466cb5ae56f6286142c5fdbae313abb))
+* **render:** resolve paper and foreground defaults together ([b65f5b7](https://github.com/twangodev/sdocx/commit/b65f5b7befc184170f37e3f43e08e4940937d7b7))
+
+
+### Performance Improvements
+
+* **render:** reuse body plans across previews and exports ([bbe089d](https://github.com/twangodev/sdocx/commit/bbe089d491e5277d1d6c97112a69aaa8f64bfe26))
+
+
+### Code Refactoring
+
+* **model:** preserve page objects in one ordered Rust tree ([5089616](https://github.com/twangodev/sdocx/commit/508961678538b8a6c270e802a48035e4c703403a))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.7.0 to 1.0.0
+
 ## [0.5.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.4.0...sdocx-wasm-v0.5.0) (2026-09-25)
 
 
