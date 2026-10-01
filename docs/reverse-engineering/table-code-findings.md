@@ -184,6 +184,64 @@ These findings establish adapter inputs and editability semantics. They do
 not prove complete row sizing, merged-cell layout, page splitting or visual
 parity for arbitrary cells.
 
+## Cell layout frames and integer text dimensions
+
+Drawing `TableLayout::layoutCell`, `0xb06d4`, looks up the text wrapper and
+frame cache by the exact supplied cell pointer. A null pointer or missing
+wrapper/frame entry returns zero without calling the text engine. This routine
+does not resolve a frame owner or combine saved row/column spans.
+
+The split-list lookup uses the same raw cell key. Widget
+`ObjectTextLayout::SetPaddingRectList`, `0xd73a0`, forwards that list to the
+underlying text layout. Drawing then offsets the cached frame to local origin
+and passes its `f32` width and height to Widget's setters at `0xd398c` and
+`0xd399c`. `ClearLayout`, `0xd3b80`, resets the completed-layout flag before
+`ObjectTextLayout::layout`, `0xd3b88`, processes the complete text range.
+
+The setters retain fractional dimensions. Inside the wrapper's layout routine,
+`0xd3cc0`–`0xd3cd0` converts each dimension to a signed integer by truncating
+toward zero before calling `TextLayout::Layout`. Thus a width immediately below
+40 becomes 39, while a width immediately above 40 becomes 40. Drawing's returned
+height difference still subtracts the fractional local frame height from the
+cached measured height at `0xb07f4`–`0xb0808`; it does not subtract the integer
+text-layout height.
+
+[`table-cell-inputs.json`](../../conformance/table-cell-inputs.json), SHA-256
+`0e936c9d767d9db6556d62e4298a2aa63435be41e64d8d31d093f93182249020`,
+captures 138 inputs and 850 cell-layout calls through native Drawing and Widget
+instructions. Cases include covered cells and span chains, per-cell cache
+frames, subpixel and zero-height frames, integer boundaries, large translated
+coordinates, empty split lists and unsorted bands. Every input also verifies
+that null and uncached cell pointers return zero without text calls. Allocation
+fills `0x00`, `0xa5` and `0xff` produce identical results.
+
+Frames and measured heights are supplied. Text wrappers start in measured
+state with their completed-layout flag set; native `ClearLayout` removes that
+flag before layout. The `TextLayout::Layout` and `SetPaddingRectList` boundaries
+record inputs without shaping or assigning obstacles. Text initialization,
+critical-section calls, bullet positioning, wrapper status and diagnostics are
+isolated. The capture establishes cell input selection and conversion, not
+native line breaking, complete merged preparation or device appearance.
+
+The Rust regression uses the production `cell_text_bounds` conversion and
+`BandList::for_row` filter. It matches floating dimensions, integer bounds,
+band order/coordinates and height-difference bits for all 850 calls.
+
+Reproduce the capture with the hash-pinned libraries:
+
+```sh
+rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
+  -L native=scratch/apk-analysis-runtime/python/unicorn/lib \
+  -C link-arg=-Wl,-rpath,"$PWD/scratch/apk-analysis-runtime/python/unicorn/lib" \
+  -o /tmp/sdocx-native-table
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-inputs scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-cell-inputs.json
+cmp /tmp/table-cell-inputs.json conformance/table-cell-inputs.json
+```
+
 ## Export row sizing and merged-frame ownership
 
 The ARM64 Drawing library used here has SHA-256

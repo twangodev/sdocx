@@ -161,6 +161,11 @@ portable performance thresholds:
   movement flags, ordered cell selection, frames, pending gaps and split caches
   across 1,089 actions. Metrics remain fixed across relayout calls; native
   shaping, merged-frame construction and complete pagination are unverified.
+- [Native cell layout inputs](../conformance/table-cell-inputs.json) match Rust
+  cached frame dimensions, integer text bounds, local split bands and
+  height-difference bits across 850 calls. Drawing and Widget execute native
+  selection/conversion; shaping and obstacle assignment are intercepted.
+  Complete merged preparation and device appearance remain unverified.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
