@@ -189,7 +189,7 @@ fn table_cells_render_all_lines_with_margins_and_force_top_gravity() {
         .svg;
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.0, 54.0), ("DEF".into(), 26.0, 129.75)]
+        vec![("ABC".into(), 38.0, 54.0), ("DEF".into(), 38.0, 129.75)]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let styled = xml
@@ -220,7 +220,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
         payload: 2_u32.to_le_bytes().to_vec(),
     });
     let svg = render(table(content.clone(), 200.0));
-    assert_eq!(lines(&svg), vec![("ABC".into(), 73.67, 54.0)]);
+    assert_eq!(lines(&svg), vec![("ABC".into(), 85.67, 54.0)]);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let positioned = xml
         .descendants()
@@ -228,12 +228,12 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
         .unwrap();
     assert_eq!(
         positioned.attribute("x").unwrap().split_whitespace().next(),
-        Some("73.66992")
+        Some("85.66992")
     );
     content.paragraphs.clear();
     assert_eq!(
         lines(&render(table(content, 104.0))),
-        vec![("AB".into(), 26.0, 54.0), ("C".into(), 26.0, 114.75),]
+        vec![("AB".into(), 38.0, 54.0), ("C".into(), 38.0, 114.75),]
     );
 }
 
@@ -251,10 +251,10 @@ fn code_title_and_body_render_every_paragraph_inside_native_frames() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("ABC".into(), 74.0, 90.001),
-            ("DEF".into(), 74.0, 150.751),
-            ("GHI".into(), 74.0, 186.001),
-            ("JKL".into(), 74.0, 322.501),
+            ("ABC".into(), 86.0, 90.001),
+            ("DEF".into(), 86.0, 150.751),
+            ("GHI".into(), 86.0, 186.001),
+            ("JKL".into(), 86.0, 322.501),
         ]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
@@ -272,10 +272,10 @@ fn code_title_and_body_wrap_using_their_separate_native_frame_widths() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("ABCABC".into(), 74.0, 90.001),
-            ("ABC".into(), 74.0, 150.751),
-            ("ABCABCABC".into(), 74.0, 186.001),
-            ("ABC".into(), 74.0, 246.751),
+            ("ABCABC".into(), 86.0, 90.001),
+            ("ABC".into(), 86.0, 150.751),
+            ("ABCABCABC".into(), 86.0, 186.001),
+            ("ABC".into(), 86.0, 246.751),
         ]
     );
 }
@@ -397,10 +397,10 @@ fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap()
         assert_eq!(
             lines(&svg),
             vec![
-                ("Title".into(), 74.0, 90.001),
-                ("A".into(), 74.0, 186.001),
-                ("B".into(), 74.0, second),
-                ("C".into(), 74.0, third),
+                ("Title".into(), 86.0, 90.001),
+                ("A".into(), 86.0, 186.001),
+                ("B".into(), 86.0, second),
+                ("C".into(), 86.0, third),
             ]
         );
         assert_eq!(code_panel_height(&svg), panel_height);
@@ -434,10 +434,10 @@ fn vertical_page_padding_does_not_replace_native_body_text_margins() {
             assert_eq!(
                 lines(&page.svg),
                 [
-                    ("Title".into(), 74.0, 90.001),
-                    ("A".into(), 74.0, 186.001),
-                    ("B".into(), 74.0, 246.751),
-                    ("C".into(), 74.0, 375.0),
+                    ("Title".into(), 86.0, 90.001),
+                    ("A".into(), 86.0, 186.001),
+                    ("B".into(), 86.0, 246.751),
+                    ("C".into(), 86.0, 375.0),
                 ]
             );
             assert_eq!(code_panel_height(&page.svg), 465.75);
@@ -459,10 +459,10 @@ fn continuous_and_unknown_page_modes_do_not_invent_exclusion_bands() {
             assert_eq!(
                 lines(&svg),
                 vec![
-                    ("Title".into(), 74.0, 90.001),
-                    ("A".into(), 74.0, 186.001),
-                    ("B".into(), 74.0, 246.751),
-                    ("C".into(), 74.0, 307.501),
+                    ("Title".into(), 86.0, 90.001),
+                    ("A".into(), 86.0, 186.001),
+                    ("B".into(), 86.0, 246.751),
+                    ("C".into(), 86.0, 307.501),
                 ]
             );
             assert_eq!(code_panel_height(&svg), 398.25);
@@ -529,10 +529,10 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("Title".into(), 68.0, 81.001),
-            ("A".into(), 68.0, 177.001),
-            ("B".into(), 68.0, 237.751),
-            ("C".into(), 68.0, 298.501),
+            ("Title".into(), 80.0, 81.001),
+            ("A".into(), 80.0, 177.001),
+            ("B".into(), 80.0, 237.751),
+            ("C".into(), 80.0, 298.501),
         ]
     );
     assert_eq!(code_panel_height(&svg), 374.25);
@@ -610,6 +610,6 @@ fn table_explicit_percentage_spacing_uses_the_native_ordinary_baseline() {
     let svg = render(table(content, 200.0));
     assert_eq!(
         lines(&svg),
-        vec![("ABC".into(), 26.0, 65.25), ("DEF".into(), 26.0, 137.25),]
+        vec![("ABC".into(), 38.0, 65.25), ("DEF".into(), 38.0, 137.25),]
     );
 }

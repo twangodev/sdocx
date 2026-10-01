@@ -197,6 +197,7 @@ impl PreparedNumber {
                     theme,
                     None,
                     &child,
+                    super::text::ObjectMeasurementContext::Frame,
                 )
                 .ok()?;
                 let [line] = lines.as_slice() else {

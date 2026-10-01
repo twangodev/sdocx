@@ -143,14 +143,14 @@ fn inline_image_uses_pinned_neighbor_advances_and_native_mixed_baseline() {
         assert_eq!(selectable(&page.svg), "AB");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(position(span(&xml, "A"), "x"), 10.0);
-        assert_eq!(position(span(&xml, "B"), "x"), 53.04688);
+        assert_eq!(position(span(&xml, "B"), "x"), 61.04688);
         assert_eq!(position(span(&xml, "A"), "y"), 100.001);
         assert_eq!(position(span(&xml, "B"), "y"), 100.001);
         let image = xml
             .descendants()
             .find(|node| node.has_tag_name("image"))
             .unwrap();
-        assert_eq!(image_position(image), (23.046875, 0.001));
+        assert_eq!(image_position(image), (27.046875, 0.001));
         assert_eq!(image.attribute("width"), Some("30.00"));
         assert_eq!(image.attribute("height"), Some("100.00"));
     }
@@ -158,7 +158,7 @@ fn inline_image_uses_pinned_neighbor_advances_and_native_mixed_baseline() {
 
 #[test]
 fn wrapping_accounts_for_the_object_width_and_preserves_text_neighbors() {
-    for (page_width, suffix_baseline) in [(76, 100.001), (75, 127.001)] {
+    for (page_width, suffix_baseline) in [(84, 100.001), (83, 127.001)] {
         let mut doc = document(PageElement::TextBox(mixed()));
         doc.pages[0].width = page_width;
         for page in modes(&doc) {
@@ -295,7 +295,7 @@ fn last_stored_duplicate_selects_its_own_geometry_without_consuming_neighbor_tex
             .collect::<Vec<_>>();
         assert_eq!(images.len(), 1);
         assert_eq!(images[0].attribute("width"), Some("60.00"));
-        assert_eq!(position(span(&xml, "B"), "x"), 83.04688);
+        assert_eq!(position(span(&xml, "B"), "x"), 91.04688);
     }
 }
 
@@ -354,7 +354,7 @@ fn local_styles_remain_on_both_sides_of_the_object_and_end_at_the_next_line() {
         }
         assert_eq!(span(&xml, "B").attribute("font-style"), Some("italic"));
         assert_eq!(span(&xml, "C").attribute("font-style"), None);
-        assert_eq!(position(span(&xml, "B"), "x"), 51.74219);
+        assert_eq!(position(span(&xml, "B"), "x"), 59.74219);
         assert_eq!(position(span(&xml, "C"), "y"), 127.701);
     }
 }

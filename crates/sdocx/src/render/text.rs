@@ -25,6 +25,7 @@ pub(super) use layout::{
     PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
     layout_flow_text, layout_text, layout_text_with_size,
 };
+pub(super) use objects::ObjectMeasurementContext;
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use pagination::PageExclusions;
 pub(super) use paint::{render_measured_line, text_ranges as body_text_ranges};
@@ -900,7 +901,15 @@ mod tests {
         let renderer = TextRenderer::new(settings, &fonts);
         let measure = |text: &RichTextBox| {
             let styled = StyledText::new(text, TextContext::Placed, settings);
-            measure_paragraph(&styled, 0..2, 1000.0, theme, None, &renderer)
+            measure_paragraph(
+                &styled,
+                0..2,
+                1000.0,
+                theme,
+                None,
+                &renderer,
+                objects::ObjectMeasurementContext::Frame,
+            )
         };
         let plain = measure(&text);
         text.spans.push(background_span(0x80ffeedd, 1, 2));
@@ -973,6 +982,7 @@ mod tests {
             RenderTheme::for_canvas(false),
             None,
             &renderer,
+            objects::ObjectMeasurementContext::Frame,
         );
         renderer.report_line_geometry(&lines[0], None);
         assert_eq!(
@@ -1111,6 +1121,7 @@ mod tests {
                     RenderTheme::for_canvas(false),
                     None,
                     &renderer,
+                    objects::ObjectMeasurementContext::Frame,
                 )
                 .unwrap();
                 let layout = paragraph_layout(text, 0, settings);

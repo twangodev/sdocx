@@ -385,7 +385,7 @@ fn assert_visible_code_body(page: &sdocx::RenderedPage) {
     assert_eq!(spans.len(), 2);
     // Native chrome places the body 44px below the object. Four 13.5px lines
     // plus its bottom gap and padding give 118px, despite the saved 10px box.
-    for (span, expected) in spans.into_iter().zip([(16.0, 11.001), (16.0, 24.501)]) {
+    for (span, expected) in spans.into_iter().zip([(20.0, 11.001), (20.0, 24.501)]) {
         let actual = span_position(span);
         assert!((actual.0 - expected.0).abs() < 1e-8, "{actual:?}");
         assert!((actual.1 - expected.1).abs() < 1e-8, "{actual:?}");

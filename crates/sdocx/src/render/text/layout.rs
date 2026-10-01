@@ -7,7 +7,7 @@ use crate::{
     ParagraphLineSpacing, PredefinedTextStyle,
 };
 
-use super::objects::MeasuredObject;
+use super::objects::{MeasuredObject, ObjectMeasurementContext};
 use super::{
     StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
     paragraph_line_height, unmeasured_paragraph, wrap_paragraph,
@@ -578,6 +578,7 @@ pub(in crate::render) fn measure_paragraph(
     theme: RenderTheme,
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
+    object_context: ObjectMeasurementContext,
 ) -> Vec<WrappedLine> {
     renderer.report_object_issues(styled.objects.issues());
     if source.is_empty() {
@@ -586,13 +587,20 @@ pub(in crate::render) fn measure_paragraph(
             styled.font_size_at_caret(source.start),
         )];
     }
-    wrap_paragraph(styled, source.clone(), width, theme, predefined, renderer).unwrap_or_else(
-        |_| {
-            let style = styled.style_at(source.start, theme, predefined);
-            renderer.measurement_failed(style.family.as_deref().unwrap_or("Roboto"));
-            unmeasured_paragraph(styled, source, theme, predefined, renderer)
-        },
+    wrap_paragraph(
+        styled,
+        source.clone(),
+        width,
+        theme,
+        predefined,
+        renderer,
+        object_context,
     )
+    .unwrap_or_else(|_| {
+        let style = styled.style_at(source.start, theme, predefined);
+        renderer.measurement_failed(style.family.as_deref().unwrap_or("Roboto"));
+        unmeasured_paragraph(styled, source, theme, predefined, renderer, object_context)
+    })
 }
 
 pub(in crate::render) fn layout_text(
@@ -647,6 +655,13 @@ enum LayoutContext {
 }
 
 impl LayoutContext {
+    fn object_measurement(self) -> ObjectMeasurementContext {
+        match self {
+            Self::Frame => ObjectMeasurementContext::Frame,
+            Self::Flow | Self::Capture => ObjectMeasurementContext::Body,
+        }
+    }
+
     fn continuation_top(
         self,
         paragraph_number: usize,
@@ -742,6 +757,7 @@ fn layout_text_with_context(
             theme,
             layout.predefined_style,
             renderer,
+            context.object_measurement(),
         );
         let previous = match context {
             LayoutContext::Flow | LayoutContext::Capture => styled
@@ -1246,6 +1262,8 @@ mod tests {
                 },
                 height: 100.0,
                 inline,
+                left_margin: 0.0,
+                right_margin: 0.0,
                 top_margin: margins[0],
                 bottom_margin: margins[1],
                 minimum_first_page_height: None,
@@ -1549,6 +1567,75 @@ mod tests {
         close(flow.lines[1].baseline, 123.5);
         close(placed.lines[2].baseline, 142.0);
         close(flow.lines[2].baseline, 142.0);
+    }
+
+    #[test]
+    fn object_measurement_margins_follow_layout_ownership_instead_of_text_style_context() {
+        let mut content = text("A\u{fffc}B");
+        content.font_size = Some(45.0);
+        content.object_spans.push(crate::RichTextObjectSpan {
+            object_type: crate::ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(crate::RichTextObjectContent::Image(Box::new(
+                crate::PlacedImage {
+                    bbox: BoundingBox {
+                        x_min: 500.0,
+                        y_min: 700.0,
+                        x_max: 540.0,
+                        y_max: 760.0,
+                    },
+                    rotation_degrees: None,
+                    media_id: None,
+                    media_index: None,
+                    crop_rect: None,
+                    original_bbox: None,
+                    border_media_id: None,
+                    original_media_id: None,
+                },
+            ))),
+            text_index_utf16: 1,
+            layout_option: crate::ObjectSpanLayoutOption::Inline,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        });
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        for style_context in [TextContext::Flow, TextContext::Placed] {
+            let styled = StyledText::new(&content, style_context, settings);
+            for (context, margin) in [
+                (LayoutContext::Frame, 0.0),
+                (LayoutContext::Flow, 4.0),
+                (LayoutContext::Capture, 4.0),
+            ] {
+                let plan = layout_text_with_context(
+                    &styled,
+                    TextFrame {
+                        bbox: BoundingBox {
+                            x_min: 10.0,
+                            y_min: 100.0,
+                            x_max: 1010.0,
+                            y_max: 1000.0,
+                        },
+                        gravity: None,
+                        exclusions: &[],
+                    },
+                    RenderTheme::for_canvas(false),
+                    &renderer,
+                    context,
+                    None,
+                );
+                assert_eq!(plan.lines.len(), 1);
+                let line = &plan.lines[0].line;
+                assert!(line.native_positioned);
+                assert_eq!(line.objects[0].object.bounds.x_min, 500.0);
+                assert_eq!(line.objects[0].x, 29.35546875 + margin);
+                assert_eq!(line.placements[1].x, 69.35546875 + 2.0 * margin);
+            }
+        }
     }
 
     #[test]

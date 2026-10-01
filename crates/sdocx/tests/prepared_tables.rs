@@ -211,10 +211,10 @@ fn fresh_over_pages_drawing_rounds_cell_frames_and_forces_top_gravity() {
             assert_lines(
                 &render(&doc, replay),
                 &[
-                    ("A", 12.0, 80.25),
-                    ("B", 504.0, 80.25),
-                    ("C", 12.0, 188.25),
-                    ("D", 504.0, 188.25),
+                    ("A", 24.0, 80.25),
+                    ("B", 516.0, 80.25),
+                    ("C", 24.0, 188.25),
+                    ("D", 516.0, 188.25),
                 ],
             );
         }
@@ -233,7 +233,7 @@ fn fresh_cold_measurement_grows_a_row_before_warm_drawing_positions_later_cells(
         for replay in [false, true] {
             assert_lines(
                 &render(&doc, replay),
-                &[("A", 12.0, 80.25), ("B", 12.0, 152.25), ("C", 12.0, 260.25)],
+                &[("A", 24.0, 80.25), ("B", 24.0, 152.25), ("C", 24.0, 260.25)],
             );
         }
     }
@@ -289,10 +289,10 @@ fn regenerated_table_text_stays_selectable_and_vector_in_pdf() {
         assert_lines(
             &page,
             &[
-                ("A", 12.0, 80.25),
-                ("B", 504.0, 80.25),
-                ("C", 12.0, 188.25),
-                ("D", 504.0, 188.25),
+                ("A", 24.0, 80.25),
+                ("B", 516.0, 80.25),
+                ("C", 24.0, 188.25),
+                ("D", 516.0, 188.25),
             ],
         );
         let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
@@ -414,23 +414,23 @@ fn paginated_first_row_uses_child_bands_when_its_first_line_fits() {
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             vec![
-                ("A", 0.0, 20.0),
-                ("B", 0.0, 33.5),
-                ("C", 0.0, 47.0),
-                ("D", 0.0, 60.5),
-                ("E", 0.0, 74.0),
+                ("A", 4.0, 20.0),
+                ("B", 4.0, 33.5),
+                ("C", 4.0, 47.0),
+                ("D", 4.0, 60.5),
+                ("E", 4.0, 74.0),
             ],
-            vec![("F", 0.0, 10.499)],
+            vec![("F", 4.0, 10.499)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             vec![
-                ("A", 0.0, 20.0),
-                ("B", 0.0, 33.5),
-                ("C", 0.0, 47.0),
-                ("D", 0.0, 60.5),
+                ("A", 4.0, 20.0),
+                ("B", 4.0, 33.5),
+                ("C", 4.0, 47.0),
+                ("D", 4.0, 60.5),
             ],
-            vec![("E", 0.0, 19.499), ("F", 0.0, 32.999)],
+            vec![("E", 4.0, 19.499), ("F", 4.0, 32.999)],
         ),
     ] {
         let doc = paginated_document(constraint, false);
@@ -569,7 +569,7 @@ fn fresh_warm_drawing_compresses_rows_while_the_cold_callback_reservation_is_ret
             );
             assert_lines(
                 &render_capture_page(&doc, &layout, 0, replay, &fonts),
-                &[("A", 0.0, 20.0), ("B", 0.0, 34.0)],
+                &[("A", 4.0, 20.0), ("B", 4.0, 34.0)],
             );
         }
     }
@@ -608,25 +608,25 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding => (
             85.0,
             vec![
-                ("A", 0.0, 20.0),
-                ("B", 0.0, 33.5),
-                ("C", 0.0, 47.0),
-                ("D", 0.0, 60.5),
-                ("E", 0.0, 74.0),
+                ("A", 4.0, 20.0),
+                ("B", 4.0, 33.5),
+                ("C", 4.0, 47.0),
+                ("D", 4.0, 60.5),
+                ("E", 4.0, 74.0),
             ],
-            vec![("F", 0.0, 10.49899), ("End", 0.0, 28.501)],
+            vec![("F", 4.0, 10.49899), ("End", 0.0, 28.501)],
         ),
         ObjectSpanLayoutConstraint::OverPages => (
             108.0,
             vec![
-                ("A", 0.0, 20.0),
-                ("B", 0.0, 33.5),
-                ("C", 0.0, 47.0),
-                ("D", 0.0, 60.5),
+                ("A", 4.0, 20.0),
+                ("B", 4.0, 33.5),
+                ("C", 4.0, 47.0),
+                ("D", 4.0, 60.5),
             ],
             vec![
-                ("E", 0.0, 19.49899),
-                ("F", 0.0, 32.99899),
+                ("E", 4.0, 19.49899),
+                ("F", 4.0, 32.99899),
                 ("End", 0.0, 51.001),
             ],
         ),
@@ -708,13 +708,13 @@ fn preceding_lf_seeds_the_native_inline_object_text_metric() {
     for (constraint, expected) in [
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            vec![("F", 0.0, 10.49899), ("End", 0.0, 28.501)],
+            vec![("F", 4.0, 10.49899), ("End", 0.0, 28.501)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             vec![
-                ("E", 0.0, 19.49899),
-                ("F", 0.0, 32.99899),
+                ("E", 4.0, 19.49899),
+                ("F", 4.0, 32.99899),
                 ("End", 0.0, 51.001),
             ],
         ),

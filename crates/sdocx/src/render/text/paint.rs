@@ -207,7 +207,7 @@ fn render_text_fragments(
                     .rev()
                     .find(|object| object.object.source.end <= range.start)
                     .map_or(0.0, |object| {
-                        object.x + (object.object.bounds.x_max - object.object.bounds.x_min)
+                        object.x + object.object.width() + object.object.right_margin
                     })
             },
             |placement| placement.x,

@@ -5,7 +5,7 @@ use crate::render::RenderTheme;
 
 use super::breaks::{BreakCandidate, BreakKind, ParagraphBreaks, break_candidates};
 use super::measurement::{MeasuredCluster, MeasurementError, ParagraphMeasurer};
-use super::objects::MeasuredObject;
+use super::objects::{MeasuredObject, ObjectMeasurementContext};
 use super::{StyledText, TextRenderer};
 
 pub(in crate::render) struct WrappedLine {
@@ -65,7 +65,7 @@ impl MeasuredItem {
     fn advance(&self) -> f64 {
         match self {
             Self::TextCluster(cluster) => cluster.advance,
-            Self::Object { object, .. } => object.bounds.x_max - object.bounds.x_min,
+            Self::Object { object, .. } => object.advance(),
         }
     }
 }
@@ -131,12 +131,15 @@ impl WrappedLine {
         for (rank, &entry) in self.visual_order.iter().enumerate() {
             let advance = match entry {
                 LineEntry::Text(index) => self.placements[index].cluster.advance,
-                LineEntry::Object(index) => {
-                    let bounds = self.objects[index].object.bounds;
-                    bounds.x_max - bounds.x_min
-                }
+                LineEntry::Object(index) => self.objects[index].object.advance(),
             };
-            positions.push((entry, x, rank));
+            let content_x = match entry {
+                LineEntry::Object(index) => {
+                    finite_advance(x + self.objects[index].object.left_margin)?
+                }
+                LineEntry::Text(_) => x,
+            };
+            positions.push((entry, content_x, rank));
             x = finite_advance(x + advance)?;
         }
         for (entry, x, rank) in positions {
@@ -259,6 +262,7 @@ fn measured_items(
     measurer: &ParagraphMeasurer<'_, '_, '_>,
     renderer: &TextRenderer<'_>,
     breaks: &mut ParagraphBreaks,
+    object_context: ObjectMeasurementContext,
 ) -> Result<ParagraphItems, MeasurementError> {
     let paragraph_objects = styled.objects.in_range(range.clone());
     let mut items = Vec::new();
@@ -272,7 +276,7 @@ fn measured_items(
             advance += measured.advance;
             items.extend(measured.clusters.into_iter().map(MeasuredItem::TextCluster));
         }
-        let object = object.measured(renderer.settings);
+        let object = object.measured(renderer.settings, object_context);
         let object_font_size = measurer.font_size(object.source.clone())?;
         font_size = font_size.max(object_font_size);
         let kind = if object.inline {
@@ -288,7 +292,7 @@ fn measured_items(
             }
         }
         start = object.source.end;
-        advance += object.bounds.x_max - object.bounds.x_min;
+        advance += object.advance();
         items.push(MeasuredItem::Object {
             object,
             font_size: object_font_size,
@@ -347,6 +351,7 @@ pub(in crate::render) fn unmeasured_paragraph(
     theme: RenderTheme,
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
+    object_context: ObjectMeasurementContext,
 ) -> Vec<WrappedLine> {
     let objects = styled.objects.in_range(source.clone());
     if objects.is_empty() {
@@ -365,15 +370,16 @@ pub(in crate::render) fn unmeasured_paragraph(
                 styled.line_font_size(text, theme, predefined),
             ));
         }
-        let measured = object.measured(renderer.settings);
+        let measured = object.measured(renderer.settings, object_context);
         let mut line = WrappedLine::unmeasured(measured.source.clone(), 0.0);
         line.font_size = styled
             .style_at(measured.source.start, theme, predefined)
             .font_size;
-        line.advance = measured.bounds.x_max - measured.bounds.x_min;
+        line.advance = measured.advance();
+        let x = measured.left_margin;
         line.objects.push(PositionedObject {
             object: measured,
-            x: 0.0,
+            x,
             visual_rank: 0,
             prepared: None,
         });
@@ -402,6 +408,7 @@ pub(in crate::render) fn wrap_paragraph(
     theme: RenderTheme,
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
+    object_context: ObjectMeasurementContext,
 ) -> Result<Vec<WrappedLine>, MeasurementError> {
     let text = styled
         .index
@@ -409,7 +416,14 @@ pub(in crate::render) fn wrap_paragraph(
         .ok_or(MeasurementError::InvalidRange)?;
     let mut breaks = break_candidates(text);
     let measurer = ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?;
-    let measured = measured_items(styled, range.clone(), &measurer, renderer, &mut breaks)?;
+    let measured = measured_items(
+        styled,
+        range.clone(),
+        &measurer,
+        renderer,
+        &mut breaks,
+        object_context,
+    )?;
     let first_font_size = paragraph_prefix_font_size(styled, &range, theme, predefined);
     let items = measured.items;
     let mut advances = vec![0.0; range.len() + 1];
@@ -522,7 +536,7 @@ pub(in crate::render) fn wrap_paragraph(
                     logical_entries.push(LineEntry::Object(objects.len()));
                     objects.push(PositionedObject {
                         object: object.clone(),
-                        x,
+                        x: finite_advance(x + object.left_margin)?,
                         visual_rank: logical_entries.len() - 1,
                         prepared: None,
                     });
@@ -645,6 +659,7 @@ mod tests {
             RenderTheme::for_canvas(false),
             None,
             &renderer,
+            ObjectMeasurementContext::Frame,
         )
     }
 
@@ -656,6 +671,60 @@ mod tests {
             &FontBook::default(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn body_inline_margins_position_content_and_change_wrap_opportunities() {
+        let mut content = text("A\u{fffc}B");
+        content
+            .object_spans
+            .push(image(1, 40.0, ObjectSpanLayoutOption::Inline));
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let measure = |width, context| {
+            wrap_paragraph(
+                &styled,
+                0..3,
+                width,
+                RenderTheme::for_canvas(false),
+                None,
+                &renderer,
+                context,
+            )
+            .unwrap()
+        };
+        let frame = measure(f64::INFINITY, ObjectMeasurementContext::Frame);
+        let body = measure(f64::INFINITY, ObjectMeasurementContext::Body);
+        assert_eq!(frame[0].objects[0].x, 29.35546875);
+        assert_eq!(body[0].objects[0].x, 33.35546875);
+        assert_eq!(frame[0].placements[1].x, 69.35546875);
+        assert_eq!(body[0].placements[1].x, 77.35546875);
+        assert_eq!(body[0].advance - frame[0].advance, 8.0);
+        assert_eq!(
+            ranges(&measure(77.0, ObjectMeasurementContext::Frame)),
+            [0..2, 2..3]
+        );
+        assert_eq!(
+            ranges(&measure(77.0, ObjectMeasurementContext::Body)),
+            [0..1, 1..3]
+        );
+        let fallback = unmeasured_paragraph(
+            &styled,
+            0..3,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+            ObjectMeasurementContext::Body,
+        );
+        assert_eq!(ranges(&fallback), [0..1, 1..2, 2..3]);
+        assert_eq!(fallback[1].advance, 48.0);
+        assert_eq!(fallback[1].objects[0].x, 4.0);
     }
 
     #[test]
@@ -1066,6 +1135,7 @@ mod tests {
             RenderTheme::for_canvas(false),
             None,
             &renderer,
+            ObjectMeasurementContext::Frame,
         );
         assert_eq!(ranges(&lines), [0..1, 1..2, 2..3, 3..4, 4..5]);
         assert_eq!(lines[1].advance, 40.0);

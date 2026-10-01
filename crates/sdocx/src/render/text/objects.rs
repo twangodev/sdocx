@@ -20,6 +20,12 @@ pub(in crate::render) struct TextObject<'a> {
     pub bounds: BoundingBox,
 }
 
+#[derive(Clone, Copy)]
+pub(in crate::render) enum ObjectMeasurementContext {
+    Frame,
+    Body,
+}
+
 #[derive(Debug, Clone)]
 pub(in crate::render) struct MeasuredObject {
     pub source: Range<usize>,
@@ -27,24 +33,48 @@ pub(in crate::render) struct MeasuredObject {
     pub bounds: BoundingBox,
     pub height: f64,
     pub inline: bool,
+    pub left_margin: f64,
+    pub right_margin: f64,
     pub top_margin: f64,
     pub bottom_margin: f64,
     pub minimum_first_page_height: Option<f64>,
 }
 
+impl MeasuredObject {
+    pub fn width(&self) -> f64 {
+        self.bounds.x_max - self.bounds.x_min
+    }
+
+    pub fn advance(&self) -> f64 {
+        self.width() + self.left_margin + self.right_margin
+    }
+}
+
 impl TextObject<'_> {
-    pub fn measured(&self, settings: TextSettings) -> MeasuredObject {
+    pub fn measured(
+        &self,
+        settings: TextSettings,
+        context: ObjectMeasurementContext,
+    ) -> MeasuredObject {
         let margin = match self.span.layout_option {
             ObjectSpanLayoutOption::BlockWithSmallMargin => settings.pixels(10.0),
             ObjectSpanLayoutOption::BlockWithMediumMargin => settings.pixels(20.0),
             _ => 0.0,
+        };
+        let inline = self.span.layout_option == ObjectSpanLayoutOption::Inline;
+        let horizontal_margin = if inline && matches!(context, ObjectMeasurementContext::Body) {
+            settings.pixels(4.0)
+        } else {
+            0.0
         };
         MeasuredObject {
             source: self.source.clone(),
             span_index: self.span_index,
             bounds: self.bounds,
             height: self.bounds.y_max - self.bounds.y_min,
-            inline: self.span.layout_option == ObjectSpanLayoutOption::Inline,
+            inline,
+            left_margin: horizontal_margin,
+            right_margin: horizontal_margin,
             top_margin: margin,
             bottom_margin: margin,
             minimum_first_page_height: (matches!(
@@ -320,11 +350,14 @@ mod tests {
             let text = text("A😀\u{fffc}B", vec![span]);
             let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
             let object = &index.in_range(0..4)[0];
-            let measured = object.measured(TextSettings {
-                scale: 1.0,
-                font_size_delta: 0.0,
-                ..Default::default()
-            });
+            let measured = object.measured(
+                TextSettings {
+                    scale: 1.0,
+                    font_size_delta: 0.0,
+                    ..Default::default()
+                },
+                ObjectMeasurementContext::Frame,
+            );
             assert_eq!(measured.source, 2..3);
             assert_eq!(measured.span_index, 0);
             assert_eq!(measured.bounds, object.bounds);
@@ -348,17 +381,55 @@ mod tests {
             let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
             let object = &index.in_range(0..1)[0];
             for font_size_delta in [-100.0, 0.0, 500.0] {
-                let measured = object.measured(TextSettings {
-                    scale: 3.0,
-                    font_size_delta,
-                    ..Default::default()
-                });
+                let measured = object.measured(
+                    TextSettings {
+                        scale: 3.0,
+                        font_size_delta,
+                        ..Default::default()
+                    },
+                    ObjectMeasurementContext::Frame,
+                );
                 assert_eq!(measured.top_margin, expected);
                 assert_eq!(measured.bottom_margin, expected);
                 assert_eq!(measured.bounds, object.bounds);
                 assert_eq!(measured.bounds.x_max - measured.bounds.x_min, 30.0);
                 assert_eq!(measured.bounds.y_max - measured.bounds.y_min, 60.0);
                 assert_eq!(measured.height, 60.0);
+            }
+        }
+    }
+
+    #[test]
+    fn body_horizontal_margins_reserve_density_scaled_space_only_for_inline_objects() {
+        for option in [
+            ObjectSpanLayoutOption::Inline,
+            ObjectSpanLayoutOption::Block,
+        ] {
+            let mut span = image(0, 30.0);
+            span.layout_option = option;
+            let text = text("\u{fffc}", vec![span]);
+            let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+            let object = &index.in_range(0..1)[0];
+            let settings = TextSettings {
+                scale: 3.0,
+                font_size_delta: 500.0,
+                ..Default::default()
+            };
+            let frame = object.measured(settings, ObjectMeasurementContext::Frame);
+            let body = object.measured(settings, ObjectMeasurementContext::Body);
+            assert_eq!(frame.advance(), 30.0);
+            assert_eq!(frame.left_margin, 0.0);
+            assert_eq!(frame.right_margin, 0.0);
+            assert_eq!(body.bounds, object.bounds);
+            assert_eq!(body.height, 60.0);
+            assert_eq!(body.top_margin, 0.0);
+            assert_eq!(body.bottom_margin, 0.0);
+            if option == ObjectSpanLayoutOption::Inline {
+                assert_eq!(body.left_margin, 12.0);
+                assert_eq!(body.right_margin, 12.0);
+                assert_eq!(body.advance(), 54.0);
+            } else {
+                assert_eq!(body.advance(), 30.0);
             }
         }
     }
@@ -378,7 +449,8 @@ mod tests {
             span.layout_constraint = constraint;
             let text = text("\u{fffc}", vec![span]);
             let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
-            let measured = index.in_range(0..1)[0].measured(TextSettings::default());
+            let measured = index.in_range(0..1)[0]
+                .measured(TextSettings::default(), ObjectMeasurementContext::Frame);
             assert_eq!(measured.minimum_first_page_height, expected);
             assert_eq!(measured.height, 60.0);
         }
@@ -392,11 +464,14 @@ mod tests {
         }
         let text = text("\u{fffc}", vec![span]);
         let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
-        let measured = index.in_range(0..1)[0].measured(TextSettings {
-            scale: 3.0,
-            font_size_delta: 0.0,
-            ..Default::default()
-        });
+        let measured = index.in_range(0..1)[0].measured(
+            TextSettings {
+                scale: 3.0,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            ObjectMeasurementContext::Frame,
+        );
         assert!((measured.bounds.x_max - measured.bounds.x_min - 60.0).abs() < 1e-10);
         assert!((measured.bounds.y_max - measured.bounds.y_min - 20.0).abs() < 1e-10);
         assert!((measured.height - 20.0).abs() < 1e-10);
@@ -528,11 +603,14 @@ mod tests {
         )));
         let text = text("\u{fffc}", vec![code]);
         let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
-        let measured = index.in_range(0..1)[0].measured(TextSettings {
-            scale: 1.0,
-            font_size_delta: 0.0,
-            ..Default::default()
-        });
+        let measured = index.in_range(0..1)[0].measured(
+            TextSettings {
+                scale: 1.0,
+                font_size_delta: 0.0,
+                ..Default::default()
+            },
+            ObjectMeasurementContext::Frame,
+        );
         assert_eq!(measured.bounds, bounds);
         assert_ne!(measured.bounds.x_min, f64::from(bounds.x_min as f32));
         assert_ne!(measured.bounds.y_max, f64::from(bounds.y_max as f32));

@@ -710,6 +710,8 @@ mod tests {
                 },
                 height: 80.0,
                 inline: false,
+                left_margin: 0.0,
+                right_margin: 0.0,
                 top_margin: 10.0,
                 bottom_margin: 10.0,
                 minimum_first_page_height: None,
