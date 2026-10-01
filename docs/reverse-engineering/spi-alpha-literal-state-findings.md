@@ -208,12 +208,12 @@ visible alpha byte exactly. The resulting 153 alpha blocks use mode 3
 129 times and mode 0 twenty-four times; none uses literal mode 5.
 This sample does not establish that the encoder never emits alpha literals.
 
-The write footprint and the tested interactions are now recovered.
-Remaining questions are actual encoder emission, real-export usage,
-portable handling of cases outside the bounded model, other color/header
-configurations and broader malformed-input limits. Native behavior that
+The write footprint and the tested interactions are recovered.
+Actual encoder emission, real-export usage, portable handling of cases
+outside the bounded model, other color/header configurations and broader
+malformed-input limits are unverified. Native behavior that
 depends on writes into adjacent allocations cannot define a portable
-pixel result from the format bytes alone. Device exports and rendered
-references are still needed for compatibility validation.
+pixel result from the format bytes alone. These synthetic streams do not
+establish device-export compatibility.
 
 Generated sequences and scripts remain disposable.

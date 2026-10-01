@@ -1211,8 +1211,9 @@ the two runtime flags at offsets 16 and 17 are not serialized.
 The JNI conversion writes color at offset 0 and the three floats at offsets
 4, 8 and 12. Its field-name strings at `0x14c26b`, `0x1512ec`, `0x137f52`
 and `0x156998` are `color`, `width`, `startRadius` and `endRadius`, confirming
-the public names independently of decompiled class field order. The exact
-corner geometry used by the native renderer remains to be investigated.
+the public names independently of decompiled class field order. Captured axis
+radii and the limits of corner-painting evidence are described in
+[border painting](#border-painting).
 
 ## Validation and limits
 

@@ -33,7 +33,7 @@ and distinguishes recovered behavior from implementation and evidence limits.
 - [`fountain-live-tip.md`](fountain-live-tip.md) — live tip state machine,
   separate from saved-stroke geometry.
 - [`shapes-dot-calibration-findings.md`](shapes-dot-calibration-findings.md) —
-  fixture 02 investigation, then the dot background and saved shape paths.
+  fixture 02 measurements, dot-background spacing and saved shape paths.
 - [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
   bounded rich-text decoding, diagnostics, regressions and rendering limits.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original

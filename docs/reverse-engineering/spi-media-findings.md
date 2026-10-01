@@ -150,9 +150,9 @@ The [header trace](spi-header-findings.md) follows consumption at
 `0x5da00` and property queries at `0x5d938` into concrete implementations.
 The [data-packet trace](spi-data-packet-findings.md) follows image-data
 consumption through packet prefixes and block coordinates. The
-[native codec tests](spi-codec-validation.md) now exercise block payloads
+[native codec tests](spi-codec-validation.md) exercise block payloads
 and pixel output at `0x5da34` on synthetic bitmaps. They also expose a
 capacity limitation in a single-worker experiment using the wrapper's
 allocation formula. Complete payload syntax, device execution and SDK
-support remain unresolved; device SPI payloads and rendered references
-are still needed for compatibility validation.
+support are unverified; these synthetic bitmaps do not establish
+device-export compatibility.

@@ -5,16 +5,13 @@ The software rasterizer and shader-comparison tooling are not in the SDK.
 This document preserves historical APK research; it does not describe a
 current SDK raster backend.
 
-> The reproduction commands in this note refer to experiment scripts removed
-> during test cleanup, including `conformance/fountain_raster.py` and
-> `conformance/fountain_gpu.mjs`. Recover them from Git revision `40de721` in
-> a separate checkout. Saved V16 stamp positions are implemented; these
-> shaders are not. See
-> [current validation](../../conformance/README.md#native-geometry-checks).
+The experiment scripts cited here are archived at Git revision `40de721`.
+See [native geometry checks](../../conformance/README.md#native-geometry-checks)
+for current validation and archive recovery.
 
 This extends the saved-geometry findings with the rendering backend from the
-same hash-pinned Samsung Notes 4.4.45.37 ARM64 libraries. It does not yet enable
-these shaders in the SDK. `FountainPenStrokeDrawableGLV14` uses RTV4; GLV16 uses
+same hash-pinned Samsung Notes 4.4.45.37 ARM64 libraries.
+`FountainPenStrokeDrawableGLV14` uses RTV4; GLV16 uses
 RTV5. Drawing versions and shader versions are different numbering schemes.
 
 ## Native instance attributes
@@ -76,7 +73,8 @@ pixel comparison added on 2026-09-25 verifies that mapping. V4's direct color
 shader multiplies `(RGB, 1)` by pointAlpha;
 its alpha-only shader writes pointAlpha, and its composite shader applies the
 stroke color alpha afterward. The draw-time choice and blend state are traced
-below; the SDK does not yet implement these paths.
+below. SVG gradients reproduce the supported vector appearance without
+executing these shaders.
 
 V5 uses an axis-aligned quad and omits the directional gradient. Its direct
 color shader applies a circular mask, the same edge and width compensation,
@@ -87,15 +85,10 @@ by the conformance tool if encountered.
 
 ## GPU conformance and its limits
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_raster.py --output /tmp/fountain-raster.json
-node conformance/fountain_gpu.mjs /tmp/fountain-raster.json
-```
-
-The first command extracts the unmodified V4/V5 and live-tip vertex and fragment
-shaders into the local output JSON, after verifying the library hash. No APK
-shader source is checked into this repository. The second uses the web app's
-Playwright installation and Chromium/SwiftShader to execute those shaders.
+The archived capture extracted unmodified V4/V5 and live-tip vertex and
+fragment shaders after verifying the library hash. No APK shader source is
+checked into this repository. The pixel experiment executed those shaders
+with Playwright and Chromium/SwiftShader.
 
 The reference interpolates native quad UVs after float32 vertex arithmetic
 and snapping to the GPU's reported subpixel grid. Omitting that step caused
@@ -132,10 +125,6 @@ The two blend descriptors created by each Init method are `(0, 1, 7)` and
 the native descriptor setters and GLES `BlendStateObject::Activate` from
 libSPenRenderer, intercepting its final GL calls:
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_blend_native.py
-```
-
 - `(0, 1, 7)` becomes `FUNC_ADD`, `ONE`, `ONE_MINUS_SRC_ALPHA`.
 - `(4, 1, 1)` becomes `MAX`, `ONE`, `ONE`.
 
@@ -146,7 +135,7 @@ the stroke color/alpha once. V4's intermediate coverage is read from alpha;
 V5's is read from red. This distinction is explicit in their native composite
 fragment shaders.
 
-`fountain_gpu.mjs` now also executes the unmodified native alpha/composite
+`fountain_gpu.mjs` also executes the unmodified native alpha/composite
 shaders, using the verified blend modes. It checks 24 combinations of backend,
 radius and stroke alpha, three overlapping stamp transparencies, a repeated
 stamp, and a translucent background. Maximum coverage matches exactly; all
@@ -166,7 +155,7 @@ saved-stroke geometry algorithm.
 
 ## Live-tip attributes and shader execution
 
-The same tools now cover FountainPenStrokeTipDrawableRT::AddPoint
+The same tools cover FountainPenStrokeTipDrawableRT::AddPoint
 (`0xa6a8c`) and SetTotalLength (`0xa7398`). There are 1,269 additional
 deterministic tip cases: boundary and random widths, unequal X/Y inverse
 scales, opacity, RGB, distance, endpoint alpha, and positive/zero/negative or
@@ -223,7 +212,7 @@ FountainPenStrokeTipCompositeShader (vertex `0x430fd`, fragment `0x431b3`).
 Init stores those shader objects at offsets 200 and 208 respectively. Draw
 selects maximum blending at `0xa761c`, runs the alpha shader, then selects
 source-over at `0xa76a4` and runs the composite shader on the page target.
-The extraction tool now exports these unmodified shaders into its temporary
+The extraction tool exports these unmodified shaders into its temporary
 JSON alongside the existing shaders.
 
 Despite its name, the tip alpha shader stores **straight RGB and coverage
@@ -244,7 +233,7 @@ and stamp color, and intermediate alpha against the already-verified direct
 shader at unit uniform alpha. It then checks channelwise maximum and the
 final composite equation over a translucent background.
 
-`fountain_blend_native.py` now executes the actual branch instructions at
+`fountain_blend_native.py` executes the actual branch instructions at
 `0xa7510` for all eight combinations of enhanced AA, redraw and rainbow flags:
 
 | Enhanced AA | Redraw or rainbow | Selected path |
@@ -287,10 +276,6 @@ strings; it does not execute the manager's string-key cache or allocate a
 native GL texture. Sixteen acquisitions cover four dimensions, two
 initialization states and one/two-sub-bitmap responses.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_canvas_native.py
-```
-
 CreatePenCanvas (`0xa68ec`) requests a surface through the manager's virtual
 GetPenCanvas method, using the **manager's queue**, not its own supplied queue
 argument. It passes width/height, integer 0, boolean false, texture-memory
@@ -328,7 +313,7 @@ The three clear-related operations have different effects:
   scheduling remains outside this test.
 
 The graphics implementation adds a crucial qualification: Clear(0) respects
-the active clipping state. The harness now also loads hash-pinned
+the active clipping state. The harness also loads hash-pinned
 libSPenGraphics (`aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621`).
 Its SPPenCanvasRT::Clear(int), at `0xb0400`, converts color zero to RGBA
 `(0,0,0,0)` and calls SPPenCanvasImpl::ClearRT (`0xafd0c`). For texture-backed
@@ -342,7 +327,7 @@ boundaries.
 The queued task's vtable relocation at FountainPen `0xd28a8` identifies its
 Member0 execution body at `0x63804`. It loads the saved target and member
 encoding, adjusts the target by the signed member adjustment, resolves
-virtual slot 80, then tail-calls it. The harness now executes this actual
+virtual slot 80, then tail-calls it. The harness executes this actual
 body using the task captured from `SetCanvasCleared`, with slot 80 bound to
 native `ClearPenCanvas` and the retained surface bound to native
 `SPPenCanvasRT::Clear(int)`. All four clear paths above execute through this
@@ -366,10 +351,6 @@ selection block for 1,626 combinations. Cases include identity, translation,
 unequal scale, reflection, rotation, shear, singular matrices, empty/inverted
 rectangles, off-canvas coordinates and seeded general matrices. Viewport
 dimensions are positive in this suite.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_rect_native.py
-```
 
 Input RectF is `[left, top, right, bottom]`. The matrix is column-major; points
 are multiplied as `(x,y,0,1)`. For each component the native helper first
@@ -415,10 +396,6 @@ drawable. `conformance/fountain_presenter_native.py` executes this block,
 including the complete bitmap-copy helper at `0x102a8c`, actual SPPaint
 construction, native matrix operations and actual fountain tip Draw.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_presenter_native.py
-```
-
 The observed submission order is:
 
 1. Save the canvas at presenter offset 104; copy from the bitmap at offset
@@ -460,7 +437,7 @@ pen canvas must not be assumed to be the same object.
 
 Graphics `SPBitmapDrawable::DrawBitmapRT` reads paint offset 44 at `0x9632c`
 and resolves it with `SPGraphicsUtil::GetBlendingStateDescriptor` (`0xc7fe0`).
-`fountain_blend_native.py` now executes this resolver for the presenter's
+`fountain_blend_native.py` executes this resolver for the presenter's
 mode 8, followed by the actual GLES blend-state activation. Both color and
 alpha resolve to `GL_FUNC_ADD`, source factor `GL_ONE`, destination factor
 `GL_ZERO`, with all color channels enabled. The equation is therefore
@@ -473,7 +450,7 @@ zero-alpha source texels. With no tint, each outputs sampled premultiplied
 RGBA multiplied by paint alpha and vertex coverage. ColorClamp additionally
 clamps RGB to the output alpha. Both agree on valid premultiplied input.
 
-The shader exporter now reads both bitmap variants from the hash-pinned
+The shader exporter reads both bitmap variants from the hash-pinned
 Graphics library. The GPU suite executes their unmodified sources with the
 verified mode-8 blending. Its **36 cases** cover both variants, full/cropped/
 degenerate copy rectangles, scissor on/off and paint alpha 0/0.5/1. A
@@ -483,32 +460,21 @@ half a byte; pixels outside the copy/scissor intersection remain unchanged.
 The copied regions include **11,280 transparent pixels** that erase the
 previous destination instead of leaving it behind.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_blend_native.py
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_canvas_native.py
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_raster.py --output /tmp/fountain-raster.json
-node conformance/fountain_gpu.mjs /tmp/fountain-raster.json
-```
-
 These pixel checks use nearest sampling, identity mapping and full vertex
 coverage on an RGBA8 Chromium/SwiftShader target. They establish the copy
 equation and transparent replacement, not native bitmap filtering, edge
 geometry, color-space conversion or an end-to-end Android frame. The real
 queued clear dispatch and the real copy shader are verified components;
-their complete framebuffer integration remains unfinished.
+their complete Android framebuffer integration is unverified.
 
 ### Presenter dirty-region reconstruction
 
-`conformance/fountain_presenter_rect.py` now executes the complete Engine
+`conformance/fountain_presenter_rect.py` executes the complete Engine
 helper at `0x103d24`, including the actual fountain tip's
 `CalculateUpdateRect`, rather than supplying only a chosen copy rectangle.
 Its independent presenter model matches **630 native results**, and **42
 computed regions** are fed into the real copy/clear-notification/tip-draw
 block from the preceding test.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_presenter_rect.py
-```
 
 The helper performs these operations in order:
 
@@ -556,10 +522,6 @@ frame cases** match its independent state model: 42 draw a tip and 54 defer
 drawing. This includes **32 complete calls** to native
 `TouchPresenter::OnPredictTouch` at Engine `0x10314c`, on the no-new-event
 route, without skipping its prologue, branch decisions or epilogue.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_presenter_state.py
-```
 
 The initial native union at `0x1031d0` combines the previous tip region at
 offset 236 with the pending main region at offset 220. This becomes the

@@ -1,12 +1,10 @@
-# FountainPen live tip investigation
+# FountainPen live tip findings
 
-> The reproduction commands in this note refer to experiment scripts and
-> fixtures removed during test cleanup, including `conformance/fountain-live.json`
-> and `conformance/fountain-smoother.json`. Recover them from Git revision
-> `40de721` in a separate checkout. Saved V16 geometry in the SDK, plus
-> `conformance/fountain_native.py` and `conformance/fountain_v14_native.py`,
-> are current. Live tip rendering is not implemented. See
-> [current validation](../../conformance/README.md#native-geometry-checks).
+The experiment scripts and fixtures cited here are archived at Git revision
+`40de721`; they are not part of the current conformance suite. See
+[native geometry checks](../../conformance/README.md#native-geometry-checks)
+for current validation and archive recovery. Live tip rendering is not
+implemented in the SDK.
 
 Saved-stroke redraw and live-event rendering are separate paths. The V16
 geometry in `ink/fountain.rs` and `ink/fountain_v14.rs` does not
@@ -51,10 +49,6 @@ write their fields without recomputing the current active limit. `SetDpi`
 stores separate float32 horizontal/vertical DPI. StoreAllEvents is a separate
 boolean.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_tip_native.py
-```
-
 The oracle executes the native constructor, configuration setters and getters
 with the existing bounded ARM64 harness. It verifies all 66 unit/length
 combinations, including negative values, values above 100, signed-32-bit
@@ -67,15 +61,9 @@ prediction is claimed by this test.
 history batching, channel getters, cloning, PointTipManager::Update, and all
 three non-tip/original-tip/rendered-tip event getters. Unlike the saved-stroke
 primitive oracle, it does not stub MotionEvent getters. The shared ELF loader
-now resolves weak function exports too, allowing the actual native matrix
+resolves weak function exports too, allowing the actual native matrix
 constructors, transforms and inverse to execute. Input events are checked by
 round-tripping their native getters before Update receives them.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_live_native.py --output /tmp/fountain-live.json
-python3 conformance/fountain_live_model.py
-python3 conformance/fountain_live_model.py /tmp/fountain-live.json
-```
 
 The independent scalar model matches every output channel exactly over 50
 sequences / 1,845 updates. Cases cover all four units, lengths 0/50/100,
@@ -92,7 +80,8 @@ The verified partition rules are:
 
 - Down and up update the position anchor but do not enqueue a sample or flush
   the retained queue. This describes PointTipManager itself; the surrounding
-  pen's down/up behavior must be traced separately.
+  pen's down/up behavior is covered separately in the V16 ingress and terminal
+  drawing captures below.
 - Move appends every historical sample and then the current sample, preserving
   pressure and tilt. Native MotionEvent getters expose timestamps relative to
   down time. The test uses down time 1000 ms and verifies that normalization.
@@ -122,9 +111,9 @@ verifies how predictions are consumed, not how another component generates
 their coordinates. GetTipStrokeEvent assembles those points; matching its
 output does not establish an upstream prediction algorithm.
 
-## Remaining live pipeline
+## Live event entry points
 
-The next native entry is `PointTipManager::Update` (`0x54c6c`), which consumes
+`PointTipManager::Update` (`0x54c6c`) consumes
 the current and historical MotionEvent channels and invokes
 `updatePointLists` (`0x55ce8`). The latter dispatches by unit and partitions
 the tip/non-tip data. The event-count path also adjusts its count using time
@@ -134,8 +123,8 @@ GetNonTipPointList (`0x56b00`), GetOriginTipStrokeEvent (`0x56cc0`) and
 GetTipStrokeEvent (`0x56e68`) are covered for the event sequences above.
 GetTipPointsCoord (`0x573a8`), SetTipPointsCoord (`0x57608`) and
 GetSmoothedPoints (`0x57774`) are covered by the coordinate sequences below.
-The main-to-tip state-copy blocks are now covered below. The enclosing live
-geometry and down/move/up width-smoothing transitions now have an executable
+The main-to-tip state-copy blocks are covered below. The enclosing live
+geometry and down/move/up width-smoothing transitions have an executable
 native integration harness below. Prediction flags, non-identity transforms,
 non-stylus input and GPU rendering remain outside that harness. Neither
 configuration nor queue partitioning alone establishes live stroke parity.
@@ -144,11 +133,7 @@ configuration nor queue partitioning alone establishes live stroke parity.
 
 `conformance/fountain_tip_coords.py` executes 30 native sequences: zero, one,
 two, four and 35 moves; 0/1/17-ms intervals; with and without predictions;
-and two successive coordinate edits per sequence. Run with:
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_tip_coords.py
-```
+and two successive coordinate edits per sequence.
 
 The scalar expectations match every returned channel, including NaN cases:
 
@@ -178,21 +163,17 @@ The scalar expectations match every returned channel, including NaN cases:
   stored-point branch and StoreAllEvents mode remain unverified.
 
 The separate `StrokeSmoother::Transform` entry (`0x58c44`) dispatches through
-an implementation vtable. Its algorithm and enclosing caller still need
-execution-based reconstruction; the getter name alone is not evidence for it.
+an implementation vtable. The cubic implementation and V16 caller evidence
+are described below; the getter name alone does not establish its use.
 
 ## Cubic stroke smoother: executable reference
 
-`conformance/fountain_smoother_native.py` now executes the concrete
+`conformance/fountain_smoother_native.py` executes the concrete
 `CSAPSPenStrokeSmoother::Transform` (`0x70788`) through its complete native
 `csaps::UnivariateCubicSmoothingSpline` construction, sparse solve and evaluation.
 The 42 cases in `conformance/fountain-smoother.json` at revision `40de721` cover lengths
 0/1/4/5/10/30, strengths 0/25/50/75/100, time offsets and intervals, duplicate
-and backward timestamps, and all-identical timestamps. Run:
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_smoother_native.py
-```
+and backward timestamps, and all-identical timestamps.
 
 This is a native reference. The independent fitted-coordinate model is
 described in the following section. Allocation, memory primitives, logging, strlen and host glibc libm
@@ -235,14 +216,10 @@ again to already saved coordinates.
 
 ## Independent spline reconstruction
 
-`conformance/fountain_smoother_model.py` now independently reproduces the
+`conformance/fountain_smoother_model.py` independently reproduces the
 smoother's fitted coordinates at its accepted sample times, using dense
 Gaussian elimination rather than the APK's Eigen sparse solver. It requires
 Python 3.13+ and host libm, but no APK, Unicorn, NumPy or spline package.
-
-```sh
-python3 conformance/fountain_smoother_model.py
-```
 
 The original 42 cases match within 5.51e-14 coordinate units. Five additional
 state sequences (`conformance/fountain-smoother-state.json`) exercise 65
@@ -312,19 +289,15 @@ updates match the existing queue reference snapshots, and a second down after
 move matches a fresh manager. An instruction hook rejects any execution of
 exported StrokeSmoother/CSAPSPenStrokeSmoother entries during these tests.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_ingress_native.py
-```
-
 The Draw path is a separate boundary: it obtains/clears committed non-tip
 samples (`0x76730..0x7673c`) and calls movePen on them (`0x76754`). At stroke
 end it obtains the real tip (`0x7678c`), completes width smoothing when enabled
 (`0x767c8`), and feeds movePen/endPen (`0x767e4`, `0x767f8`). The separate
 FountainPenStrokeTipDrawableGL gets real-plus-predicted tip samples at
-`0xa4094`. The executable Draw integration below now covers these calls;
+`0xa4094`. The executable Draw integration below covers these calls;
 GPU execution remains separate. Their smoothing is WidthSmoothManager; the cubic
-coordinate smoother is not demonstrated on this path. Upstream prediction
-and preprocessing still require tracing outside the fountain event entry.
+coordinate smoother is not demonstrated on this path. This event entry
+consumes supplied predictions; it does not establish their upstream generator.
 
 ## Upstream PointBeautifier execution
 
@@ -333,8 +306,8 @@ The engine contains a concrete caller that constructs PointBeautifier
 routine copies a MotionEvent, calls OnTouch (`0x13a108`), obtains GetResult
 (`0x13a114`), and passes a non-null result to a virtual consumer. On up, it
 also calls ApplyFilter (`0x13a1a0`) before passing the original up event to
-that consumer. The consumer's identity and the conditions selecting this
-engine path remain unverified; do not assume every fountain stroke uses it.
+that consumer. The WritingViewPenAction gate selects this helper for InkPen2
+with tool type 2 or 6, as established in the engine-selection section below.
 
 `conformance/fountain_beautifier_native.py` executes the complete PenCommon
 OnTouch/GetResult path with the optional PenKalmanFilter enabled and disabled.
@@ -343,10 +316,6 @@ and three-sample historical batches, down/move/up and changing pressure.
 No prediction or filtering function is stubbed. Only host allocation/memory,
 logging and double `pow` are callbacks. Identity transforms and stylus tool 2
 are used. These are native references, not an independent filter model.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_beautifier_native.py
-```
 
 Observed boundaries:
 
@@ -369,9 +338,8 @@ Observed boundaries:
   The null-event branch is static evidence only.
 
 This separates PointBeautifier's own prediction/coordinate processing from
-its optional Kalman stage. Both algorithms and the engine selection/consumer
-still need independent reconstruction and caller verification. The separate
-NNPredictor library must not be assumed to generate these particular results.
+its optional Kalman stage. The independent models and engine-selection gate
+below establish the tested path; these results do not come from NNPredictor.
 
 ## Independent Kalman reconstruction
 
@@ -382,13 +350,8 @@ on 600 deterministic updates across the four constructor-created handlers.
 Every float32 value matches exactly, including enabled updates, disabled-mask
 bypass, up actions and repeated down resets.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_kalman_native.py
-python3 conformance/fountain_kalman_model.py
-```
-
-The second command requires no APK or Unicorn. It takes the independently
-captured *unfiltered* PointBeautifier results as input and exactly reproduces
+The archived scalar Kalman model requires no APK or Unicorn. It takes the
+independently captured *unfiltered* PointBeautifier results as input and exactly reproduces
 all 92 filtered output samples in the six corresponding enabled-filter
 sequences, including their historical batches. This isolates and verifies the
 Kalman contribution; it does not independently generate the unfiltered data.
@@ -426,8 +389,7 @@ activation mask is 1, so the tested normal event path filters position while
 preserving pressure and tilt. The primitive tests deliberately call all four
 handlers directly; they do not establish that the engine enables those other
 channels. Non-diagonal/custom configurations and the wrapper's other tools,
-transforms and pointer counts remain unverified. PointBeautifier's preceding
-prediction algorithm and engine selection still require reconstruction.
+transforms and pointer counts remain unverified.
 
 ## Independent PointBeautifier prediction math
 
@@ -438,10 +400,6 @@ constructed queues and also observes 264 actual doPredict calls inside the
 computes the expected result, observes addPredictedPoint without replacing it,
 and compares at return. Emission/rejection, coordinates, timestamp, pressure
 and tilt match exactly in every case. No native prediction code is stubbed.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_prediction_native.py
-```
 
 The synthetic queues cover 0/1/2/3/4/8/10/12/13 points, 0/1/10/50-ms intervals,
 linear, zigzag, zero-X and seeded random coordinates, plus duplicate/backward
@@ -473,26 +431,19 @@ The reconstructed algorithm:
    pressure and tilt while replacing its coordinates. The extrapolation
    horizon does not advance that stored timestamp.
 
-The independent model matches the predictor calculation inside real events,
-but still receives the retained queue from native code. Queue admission,
-trimming, output assembly/deduplication, complete transform handling and
-engine path selection remain separate unfinished work. This is distinct from
-the NNPredictor component and from the PointTipManager's consumption of supplied
-predictions. No production renderer behavior changes in this increment.
+This predictor model receives the retained queue from native code. The event
+preprocessing model below independently supplies admission, trimming and
+output assembly. Neither is NNPredictor or PointTipManager, which consumes
+supplied predictions.
 
 ## Independent event preprocessing model
 
-`conformance/fountain_beautifier_model.py` now combines admission, retained
+`conformance/fountain_beautifier_model.py` combines admission, retained
 queue state, prediction, output assembly and optional Kalman filtering without
 reading native queue state or consuming native intermediate results. It
 matches 468 complete events in 18 sequences, including whether an output exists,
 action, timestamps, coordinates, pressure and tilt. It also matches the
 observable input-event coordinates after OnTouch.
-
-```sh
-python3 conformance/fountain_beautifier_model.py
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_beautifier_native.py
-```
 
 The six added `fountain-beautifier-stress.json` sequences use seeded mixed
 single/historical batches, duplicate and backward timestamps, pressure outside
@@ -532,10 +483,8 @@ irregular timestamps that happened to reveal it.
 
 Current verification covers single-pointer stylus events, identity transforms,
 finite coordinates and the native harness's fixed down-time convention.
-Non-identity transforms, metadata outside the captured channels, engine path
-selection, and integration into a complete live drawable/GPU execution still
-remain. This establishes an independent model for the tested preprocessing
-path, not completion of all fountain rendering behavior.
+Non-identity transforms, metadata outside the captured channels and complete
+live drawable/GPU integration are outside this preprocessing capture.
 
 ## Engine selection: PointBeautifier is an InkPen2 special case
 
@@ -559,10 +508,6 @@ String::CompareTo is a host lexical comparison reading the actual native
 constant. No gate instruction is replaced. The test stops at the two branch
 successors; it does not execute the entire writing-view state machine.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_engine_gate.py
-```
-
 The additional Engine library is hash-pinned:
 `79a8024586ce58ceeca613ddfce159e92274c597c5a863dd0aaf3e8e32e1b505`.
 The enclosing gate itself is reached only under earlier writing-view conditions;
@@ -572,10 +517,9 @@ normal FountainPen route. Applying its reconstructed prediction or Kalman
 processing to saved fountain coordinates would therefore lack supporting
 caller evidence and could change the stroke incorrectly.
 
-This trace does not establish the complete FountainPen main/tip draw,
-width-history backup/restore or supplied prediction-source contracts. Alternate
-modes of separately reconstructed components are not evidence of missing
-FountainPen features.
+This gate trace does not execute FountainPen drawing or establish supplied
+prediction-source contracts. The main/tip draw and width-history snapshot
+captures below are separate evidence.
 
 ## Incoming prediction length and presenter acceptance
 
@@ -633,10 +577,6 @@ accepts and previous time 21 falls back, although the original input extended
 to time 40. A previous time newer than the last real time also reaches the
 presenter's existing early-return path after fallback in these fixtures.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_prediction_length.py
-```
-
 Device policy is supplied through explicit configuration/provider interfaces;
 these tests do not establish which flag values a physical device chooses.
 String comparison supplies FountainPen metadata while checking the actual
@@ -690,10 +630,6 @@ three times after replacing temporary state. All 128 saves and 384 restores
 match the independent mapping exactly; main/shared source state stays intact.
 This is a block-level state-transfer test, not a full Draw or geometry test.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_tip_state.py
-```
-
 Static control flow also establishes how width calculation reuses tip code.
 `CalculateSmoothedWidths` (`0xa4be0`) returns immediately for zero tip length.
 Otherwise it sets WidthSmoothManager mode 1, clears tip offset 312, calls
@@ -708,17 +644,13 @@ copy alone does not establish their correctness.
 
 ## Executable V16 main/tip Draw integration
 
-`conformance/fountain_draw_native.py` now executes the actual V16 and tip
+`conformance/fountain_draw_native.py` executes the actual V16 and tip
 constructors, `SetEventsForDraw`, main `Draw`, and tip `Draw` for all 1,845
 events in the 50 queue sequences. This includes the native width-only tip
 pass, final width completion on up, saved-state restoration, real MotionEvent
 history, PenTolerance, SmPath, drawPoint, and both renderer AddPoint methods.
 It captures native instance attributes after SetTotalLength and before the
 return callback releases the buffer. These are instance records, not pixels.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_draw_native.py
-```
 
 The test also runs every sequence without drawing the temporary tip. All
 committed stamp and attribute-buffer hashes must match between the two runs.
@@ -760,7 +692,7 @@ Tip AddPoint (`0xa6a8c`) writes an eleven-float record: position (2), extent
 `1 - (1 - endpoint_alpha) * distance / total_length`, with float32 arithmetic
 and a fused final operation. Its default endpoint alpha is float32 0.9.
 Every SetTotalLength call in these ordinary variable-width sequences receives
-zero. The separate attribute suite now exercises positive lengths directly;
+zero. The separate attribute suite exercises positive lengths directly;
 see [live-tip raster checks](fountain-rasterization.md#live-tip-attributes-and-shader-execution).
 
 The extracted vertex shader at `0x432de` passes the distance attribute to
@@ -768,9 +700,9 @@ the fragment stage, but the fragment shader at `0x43626` never uses it.
 Its output uses circle coverage, subpixel alpha, input alpha, per-stamp RGB
 and uniform color alpha. Therefore neither the field name nor its setter
 justifies adding distance fading to the reconstructed visible tip. The GPU
-suite now verifies this with 2,516 byte-identical renders while changing the
+suite verifies this with 2,516 byte-identical renders while changing the
 distance attribute. The intermediate shader stages, blend selection and
-copy-quad construction now also have checks in the linked raster findings.
+copy-quad construction also have checks in the linked raster findings.
 Alternate configurations and the full native surface lifecycle remain
 separate checks.
 
@@ -797,15 +729,11 @@ The fixture supplies the existing stroke, pen interfaces and identity canvas;
 locking is a host no-op, and `ObjectStroke::AddPoint` records arguments instead
 of mutating a native model object. Down/up/cancel lifecycle, the presenter's
 pending-event list, Android scheduling and final framebuffer pixels remain
-outside this comparison. Run from the repository root:
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_touch_drawing.py
-```
+outside this comparison.
 
 ### Pending real events and shortened prediction integration
 
-`conformance/fountain_pending_events.py` now connects the native prediction
+`conformance/fountain_pending_events.py` connects the native prediction
 controller and complete `OnPredictTouch` call to Drawing's `OnTouch` and the
 V16 renderer. The fixture supplies a native-layout pending event list;
 Engine's `DrawStroke` (`0x102738`) traverses it and calls the real drawing
@@ -830,10 +758,6 @@ stroke creation/end/cancel lifecycle, uniform-latency policy, asynchronous
 renderer execution and final framebuffer output remain unverified.
 Canvas calls and model persistence use the same explicit host boundaries as
 the preceding fixtures; these checks do not establish Android scheduling.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_pending_events.py
-```
 
 ### Ending and cancelling an existing stroke
 
@@ -865,10 +789,6 @@ check of branch selection and bounds propagation, not transformed pixels.
 Stroke creation/ownership and complete final presenter-frame behavior remain
 unverified by this test.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_stroke_end.py
-```
-
 ### Real-event terminal presentation and prediction shutdown
 
 The final real-event handler is distinct from `OnPredictTouch`. Engine
@@ -896,16 +816,12 @@ up event and calling `OnPredictTouch` does not reproduce the real-event
 handler's terminal path. Such a fixture can instead take the old-prediction
 timestamp guard and retain dirty regions without final presentation.
 
-The terminal fixture now executes native
+The terminal fixture executes native
 `DrawingUtil::SetPredictionPenBitmap` and `PenStrokeTipDrawableGL::SetCanvas`.
 Only `SPGraphicsFactory::ReleaseBitmap/ReleaseCanvas` remain observed host
 boundaries at that level. Upstream real-event setup, the complete enclosing
 real-event handler, and Android resource lifetime are not yet established
 by this bounded branch test.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_final_frame.py
-```
 
 ### Native prediction-canvas detachment and deferred unref
 
@@ -917,7 +833,7 @@ queues a Member1 task containing the old canvas before clearing the tip's
 canvas pointer. The second detach sees an already-null canvas and does not
 queue another unref, but it still submits another clear notification.
 
-All 18 terminal cases now verify exactly one old-canvas unref task and two
+All 18 terminal cases verify exactly one old-canvas unref task and two
 tip clear tasks. The harness resolves the native unref member-function GOT
 relocation at PenCommon `0x7a520`; it does not substitute a host detach
 implementation. After verifying submission has not unrefed the canvas, it
@@ -958,11 +874,7 @@ Factory allocation, actual reference counting, shader initialization and
 Android worker scheduling remain observation boundaries. These checks establish native orchestration across those
 boundaries rather than a full renderer/resource-lifetime simulation.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_prediction_canvas.py
-```
-
-The attachment fixture now connects those previously separate task and
+The attachment fixture connects those previously separate task and
 render-thread setup checks. The actual data manager provides the queue;
 native CreatePenCanvas requests a separate private surface with the supplied
 dimensions, flags `(0, 0, 6, 2)`, clears it with argument 0, and records its
@@ -1009,10 +921,6 @@ host observation boundary. This fixture supplies cache hits and key objects;
 cache misses, shader construction/compilation, native cache synchronization
 and GPU allocation remain unverified by this test.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_tip_init.py
-```
-
 ### Shader construction on supplied cache misses
 
 `conformance/fountain_shader_creation.py` extends Init to all eight hit/miss
@@ -1042,10 +950,6 @@ the native GLES compiler or native shader-cache tree allocation/locking.
 The separate GPU suite executes extracted source; this test connects those
 source identities to native construction, without proving driver parity.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_shader_creation.py
-```
-
 ### Complete tip render-thread Draw commands
 
 `conformance/fountain_tip_render.py` connects native Init/cache-miss shader
@@ -1073,10 +977,6 @@ A nonempty post-update vertex vector and one instance are supplied explicitly;
 this does not yet connect live geometry upload to framebuffer pixels. Dirty
 copy rectangles and nonidentity subbitmap projection remain covered only by
 separate helper tests, not this complete-call fixture.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_tip_render.py
-```
 
 ### Live geometry through queued buffer handoff and RT upload
 
@@ -1106,10 +1006,6 @@ and arguments but do not rasterize them. This closes the supplied-vector gap
 in the previous complete-call test, while leaving asynchronous ordering and
 final framebuffer parity open.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_live_render.py
-```
-
 ### Captured native render-message execution
 
 `conformance/fountain_render_task.py` executes the actual `PenGLRenderMsg`
@@ -1138,10 +1034,6 @@ settable interfaces are absent in this fountain configuration. Actual
 thread scheduling, tile pixel coverage and final framebuffer parity remain
 outside its evidence.
 
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_render_task.py
-```
-
 ### Deferred vector deletion after captured render messages
 
 `conformance/fountain_buffer_lifetime.py` captures the tip callback's emitted
@@ -1168,10 +1060,6 @@ queued property operations and main-stroke vector deletions are not executed
 by this fixture. Allocations remain monotonic and host deletion does not
 reuse addresses, so the check is evidence for ownership/order under this
 execution model, not a general native allocator or concurrency proof.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_buffer_lifetime.py
-```
 
 ### Captured tip render-property updates
 
@@ -1215,7 +1103,3 @@ checks it against native V17, tip and preview functions.
 This removes preset renderer color/mode/bounds from the connected task
 test. It does not establish application configuration defaults, Android
 thread ordering, GPU framebuffer parity, or historical-version parity.
-
-```sh
-PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_render_properties.py
-```

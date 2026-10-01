@@ -273,6 +273,7 @@ adds primary submode 3. The [reference-cache trace](spi-reference-cache-findings
 adds multiple-cache selection, and the
 [mixed-prediction trace](spi-mixed-prediction-findings.md) combines intra
 and temporal blocks with complete binary edge-availability rules.
-Alpha literal marker behavior, other header
+The [literal-state trace](spi-alpha-literal-state-findings.md) records bounded
+alpha literal marker writes and allocation-dependent output. Other header
 and packet configurations, malformed-input limits, SDK integration and
-device-export validation also remain open.
+device-export compatibility remain unverified.
