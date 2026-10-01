@@ -869,6 +869,54 @@ fn coverage_fallback_preserves_requested_synthetic_italic_and_bold() {
 }
 
 #[test]
+fn complex_svg_fallback_keeps_synthesis_local_to_the_requested_span() {
+    let mut database = fontdb::Database::new();
+    database.load_font_data(include_bytes!("assets/fonts/DejaVuSans.ttf").to_vec());
+    let fonts = FontBook::new(Arc::new(database));
+    let mut content = text("لالا");
+    content.spans = vec![
+        font_name(0, 4, "DejaVu Sans"),
+        span(RichTextSpanType::Italic, 0, 2, &[1, 0]),
+        span(RichTextSpanType::Bold, 0, 2, &[1, 0]),
+    ];
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
+            .pop()
+            .unwrap();
+        let xml = roxmltree::Document::parse(&page.svg).unwrap();
+        let spans: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .collect();
+        assert_eq!(
+            spans
+                .iter()
+                .filter_map(|node| node.text())
+                .collect::<String>(),
+            "لالا"
+        );
+        assert_eq!(spans.len(), 2, "{context:?}: {}", page.svg);
+        assert_eq!(spans[0].attribute("font-style"), Some("italic"));
+        assert_ne!(
+            spans[1].attribute("font-style"),
+            Some("italic"),
+            "{context:?}"
+        );
+        assert_ne!(
+            spans[1].attribute("font-weight"),
+            Some("bold"),
+            "{context:?}"
+        );
+        assert!(
+            page.text_diagnostics
+                .iter()
+                .all(|issue| issue.kind == sdocx::TextDiagnosticKind::UnsupportedGlyphPositioning)
+        );
+    }
+}
+
+#[test]
 fn caller_controlled_oblique_face_keeps_actual_weight_and_style_in_css() {
     let family = "Caller Controlled";
     let defaults = FontBook::default();

@@ -612,6 +612,7 @@ fn positioned_spans(
                         || context.is_some() && cluster_contexts[index] == context)
                     && next.cluster.run.style.font_size == run.style.font_size
                     && next.cluster.run.coverage_fallback == run.coverage_fallback
+                    && next.cluster.run.synthesis == run.synthesis
                 {
                     source.end = next.cluster.source.end;
                     index += 1;
