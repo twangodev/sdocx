@@ -9,6 +9,9 @@ mod frames;
 #[path = "native_table/rows.rs"]
 mod rows;
 
+#[path = "native_table/geometry.rs"]
+mod geometry;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1004,9 +1007,31 @@ fn main() {
             rows::capture(&mut machine, Path::new(&base_path), Path::new(&widget_path));
             return;
         }
+        Some("--measured-geometry") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base_path = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            let widget_path = std::env::args_os()
+                .nth(5)
+                .expect("libSPenWidget.so path required");
+            let text_path = std::env::args_os()
+                .nth(6)
+                .expect("libSPenText.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            geometry::capture(
+                &mut machine,
+                Path::new(&base_path),
+                Path::new(&widget_path),
+                Path::new(&text_path),
+            );
+            return;
+        }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry or no capture mode"
         ),
     }
     let mut cases = Vec::new();
