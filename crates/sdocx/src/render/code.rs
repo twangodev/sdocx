@@ -82,6 +82,17 @@ pub(super) fn prepare_code(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<PreparedCode, ObjectDiagnosticKind> {
+    prepare_code_frame(code, code.bbox, constraint, candidate_top, theme, renderer)
+}
+
+fn prepare_code_frame(
+    code: &RichTextCodeBlock,
+    bbox: BoundingBox,
+    constraint: ObjectSpanLayoutConstraint,
+    candidate_top: f64,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Result<PreparedCode, ObjectDiagnosticKind> {
     let settings = renderer.settings;
     let background = super::argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
     let theme = theme.on_background(background);
@@ -94,22 +105,22 @@ pub(super) fn prepare_code(
     let body_gap = settings.pixels(8.0);
     let copy_size = settings.pixels(24.0);
     let copy = BoundingBox {
-        x_min: code.bbox.x_max - right - copy_size,
+        x_min: bbox.x_max - right - copy_size,
         y_min: object_top + top,
-        x_max: code.bbox.x_max - right,
+        x_max: bbox.x_max - right,
         y_max: object_top + top + copy_size,
     };
     let title_bbox = BoundingBox {
-        x_min: code.bbox.x_min + left,
+        x_min: bbox.x_min + left,
         y_min: copy.y_min,
         x_max: copy.x_min - title_copy_gap,
         y_max: copy.y_max,
     };
     let body_top = copy.y_max + body_gap;
     let body_bbox = BoundingBox {
-        x_min: code.bbox.x_min + left,
+        x_min: bbox.x_min + left,
         y_min: body_top,
-        x_max: code.bbox.x_max - right,
+        x_max: bbox.x_max - right,
         y_max: body_top,
     };
     let exclusions = renderer.object_exclusions(constraint, candidate_top, 0.0);
@@ -131,7 +142,7 @@ pub(super) fn prepare_code(
     let panel_bbox = BoundingBox {
         y_min: object_top,
         y_max: body_top + body_height + body_gap + bottom,
-        ..code.bbox
+        ..bbox
     };
     if !valid_box(panel_bbox)
         || !valid_box(copy)
@@ -150,6 +161,17 @@ pub(super) fn prepare_code(
         min_first_page_height,
         constraint,
     })
+}
+
+pub(super) fn prepare_code_drawing(
+    code: &RichTextCodeBlock,
+    constraint: ObjectSpanLayoutConstraint,
+    target: BoundingBox,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Result<PreparedCode, ObjectDiagnosticKind> {
+    let bbox = super::embedded::cloned_raw_bounds(code.bbox, code.bbox, target)?;
+    prepare_code_frame(code, bbox, constraint, bbox.y_min, theme, renderer)
 }
 
 #[cfg(test)]
@@ -207,6 +229,43 @@ mod tests {
             &renderer,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn cloned_drawing_frame_rewraps_without_replacing_callback_height() {
+        let mut content = code();
+        content.body.as_mut().unwrap().text = "AAAAAAAA".into();
+        let callback = prepare(&content, 200.0);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(
+            TextSettings {
+                scale: 3.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let drawing = prepare_code_drawing(
+            &content,
+            ObjectSpanLayoutConstraint::OverPages,
+            BoundingBox {
+                x_min: 10.0,
+                y_min: 20.0,
+                x_max: 190.0,
+                y_max: 300.0,
+            },
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+        .unwrap();
+        assert_eq!(callback.body_layout.as_ref().unwrap().lines.len(), 1);
+        assert_eq!(drawing.body_layout.as_ref().unwrap().lines.len(), 4);
+        assert_eq!(drawing.panel_bbox.x_min, 10.000001907348633);
+        assert_eq!(drawing.panel_bbox.x_max, 190.00001525878906);
+        assert!(
+            drawing.panel_bbox.y_max - drawing.panel_bbox.y_min
+                > callback.panel_bbox.y_max - callback.panel_bbox.y_min
+        );
+        assert_eq!(content.bbox.x_max - content.bbox.x_min, 600.0);
     }
 
     #[test]

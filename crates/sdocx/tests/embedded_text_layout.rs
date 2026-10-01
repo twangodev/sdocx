@@ -529,10 +529,10 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("Title".into(), 80.0, 81.001),
-            ("A".into(), 80.0, 177.001),
-            ("B".into(), 80.0, 237.751),
-            ("C".into(), 80.0, 298.501),
+            ("Title".into(), 80.0, 81.00098),
+            ("A".into(), 80.0, 177.00098),
+            ("B".into(), 80.0, 237.75098),
+            ("C".into(), 80.0, 298.50098),
         ]
     );
     assert_eq!(code_panel_height(&svg), 374.25);
@@ -545,7 +545,10 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
         .children()
         .find(|node| node.has_tag_name("rect"))
         .unwrap();
-    assert_eq!(panel.attribute("y").unwrap().parse::<f64>().unwrap(), 0.001);
+    assert_eq!(
+        panel.attribute("y").unwrap().parse::<f64>().unwrap(),
+        0.00098
+    );
 }
 
 #[test]

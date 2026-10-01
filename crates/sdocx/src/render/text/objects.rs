@@ -20,21 +20,30 @@ pub(in crate::render) struct TextObject<'a> {
     pub bounds: BoundingBox,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::render) enum ObjectMeasurementContext {
     Frame,
     Body,
+}
+
+#[derive(Clone, Copy, Default)]
+pub(in crate::render) enum ObjectPageOwnership {
+    #[default]
+    Unknown,
+    Detached,
 }
 
 #[derive(Debug, Clone)]
 pub(in crate::render) struct MeasuredObject {
     pub source: Range<usize>,
     pub span_index: usize,
+    pub context: ObjectMeasurementContext,
     pub bounds: BoundingBox,
+    pub width: f64,
+    pub advance: f64,
     pub height: f64,
     pub inline: bool,
     pub left_margin: f64,
-    pub right_margin: f64,
     pub top_margin: f64,
     pub bottom_margin: f64,
     pub minimum_first_page_height: Option<f64>,
@@ -42,11 +51,58 @@ pub(in crate::render) struct MeasuredObject {
 
 impl MeasuredObject {
     pub fn width(&self) -> f64 {
-        self.bounds.x_max - self.bounds.x_min
+        self.width
     }
 
     pub fn advance(&self) -> f64 {
-        self.width() + self.left_margin + self.right_margin
+        self.advance
+    }
+
+    pub fn callback_width_limit(
+        &self,
+        span: &RichTextObjectSpan,
+        content_width: f64,
+        ownership: ObjectPageOwnership,
+    ) -> Result<Option<f64>, ObjectDiagnosticKind> {
+        let (raw_width, maximum) = match span.content.as_ref() {
+            Some(RichTextObjectContent::Table(table)) => (
+                f64::from(table.bbox.x_max as f32 - table.bbox.x_min as f32),
+                f64::from(table.style.max_width.unwrap_or(0.0)),
+            ),
+            Some(RichTextObjectContent::CodeBlock(code))
+                if matches!(ownership, ObjectPageOwnership::Detached) =>
+            {
+                let metadata = span
+                    .object_metadata()
+                    .map_err(|_| ObjectDiagnosticKind::UnsupportedContent)?;
+                let maximum = metadata
+                    .map(|metadata| metadata.flexible_metadata())
+                    .transpose()
+                    .map_err(|_| ObjectDiagnosticKind::UnsupportedContent)?
+                    .and_then(|metadata| metadata.max_size)
+                    .map_or(0.0, |size| f64::from(size.width));
+                (
+                    f64::from(code.bbox.x_max as f32 - code.bbox.x_min as f32),
+                    maximum,
+                )
+            }
+            Some(RichTextObjectContent::CodeBlock(_)) => {
+                return Err(ObjectDiagnosticKind::UnsupportedWidthLimitContext);
+            }
+            _ => return Ok(None),
+        };
+        let cap = if maximum > 0.0 {
+            maximum
+        } else {
+            content_width
+        };
+        let drawn_width = self.bounds.x_max as f32 - self.bounds.x_min as f32;
+        let width = f64::from(drawn_width * (cap as f32 / raw_width as f32));
+        if raw_width > 0.0 && width > 0.0 && !width.is_nan() {
+            Ok(Some(width))
+        } else {
+            Err(ObjectDiagnosticKind::InvalidBounds)
+        }
     }
 }
 
@@ -70,11 +126,13 @@ impl TextObject<'_> {
         MeasuredObject {
             source: self.source.clone(),
             span_index: self.span_index,
+            context,
             bounds: self.bounds,
+            width: self.bounds.x_max - self.bounds.x_min,
+            advance: self.bounds.x_max - self.bounds.x_min + 2.0 * horizontal_margin,
             height: self.bounds.y_max - self.bounds.y_min,
             inline,
             left_margin: horizontal_margin,
-            right_margin: horizontal_margin,
             top_margin: margin,
             bottom_margin: margin,
             minimum_first_page_height: (matches!(
@@ -98,6 +156,7 @@ pub enum ObjectDiagnosticKind {
     UnsupportedContent,
     InvalidBounds,
     MixedParagraphLayout,
+    UnsupportedWidthLimitContext,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -419,14 +478,12 @@ mod tests {
             let body = object.measured(settings, ObjectMeasurementContext::Body);
             assert_eq!(frame.advance(), 30.0);
             assert_eq!(frame.left_margin, 0.0);
-            assert_eq!(frame.right_margin, 0.0);
             assert_eq!(body.bounds, object.bounds);
             assert_eq!(body.height, 60.0);
             assert_eq!(body.top_margin, 0.0);
             assert_eq!(body.bottom_margin, 0.0);
             if option == ObjectSpanLayoutOption::Inline {
                 assert_eq!(body.left_margin, 12.0);
-                assert_eq!(body.right_margin, 12.0);
                 assert_eq!(body.advance(), 54.0);
             } else {
                 assert_eq!(body.advance(), 30.0);
@@ -684,6 +741,58 @@ mod tests {
             },
         )));
         table
+    }
+
+    #[test]
+    fn callback_cap_uses_native_endpoint_subtraction_before_width_scaling() {
+        let mut span = table_object(
+            0,
+            BoundingBox {
+                x_min: 16_777_216.0,
+                x_max: 16_777_219.0,
+                y_min: 0.0,
+                y_max: 20.0,
+            },
+        );
+        let Some(RichTextObjectContent::Table(table)) = span.content.as_mut() else {
+            panic!()
+        };
+        table.style.max_width = Some(40.0);
+        let text = text("\u{fffc}", vec![span]);
+        let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+        let object = &index.in_range(0..1)[0];
+        let measured = object.measured(TextSettings::default(), ObjectMeasurementContext::Body);
+        assert_eq!(
+            measured.callback_width_limit(object.span, 260.0, ObjectPageOwnership::Unknown),
+            Ok(Some(40.0))
+        );
+    }
+
+    #[test]
+    fn positive_infinite_cap_remains_available_for_a_finite_child_minimum() {
+        let mut span = table_object(
+            0,
+            BoundingBox {
+                x_min: 0.0,
+                x_max: 1.0,
+                y_min: 0.0,
+                y_max: 20.0,
+            },
+        );
+        let Some(RichTextObjectContent::Table(table)) = span.content.as_mut() else {
+            panic!()
+        };
+        table.style.max_width = Some(f32::MAX);
+        let text = text("\u{fffc}", vec![span]);
+        let index = TextObjectIndex::new(&text, &TextIndex::new(&text.text));
+        let object = &index.in_range(0..1)[0];
+        let measured = object.measured(TextSettings::default(), ObjectMeasurementContext::Body);
+        let cap = measured
+            .callback_width_limit(object.span, 260.0, ObjectPageOwnership::Unknown)
+            .unwrap()
+            .unwrap();
+        assert_eq!(cap, f64::INFINITY);
+        assert_eq!(4.0_f64.min(cap), 4.0);
     }
 
     #[test]

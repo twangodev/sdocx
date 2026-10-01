@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
 
-use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind};
+use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind, ObjectPageOwnership};
 use super::{
     PageExclusions, TextContext, TextSettings, TextStyle, VerticalExclusion, WrappedLine,
     explicit_line_height, finite_native_geometry,
@@ -58,6 +58,7 @@ pub(in crate::render) struct SourceObjectDiagnostic {
 pub(in crate::render) struct TextRenderer<'a> {
     pub settings: TextSettings,
     pub point_marker_target: crate::render::PointMarkerTarget,
+    pub object_page_ownership: ObjectPageOwnership,
     pub fonts: &'a FontBook,
     default_family: &'static str,
     faces: Rc<RefCell<Vec<ResolvedFace>>>,
@@ -73,6 +74,7 @@ impl<'a> TextRenderer<'a> {
         Self {
             settings,
             point_marker_target: Default::default(),
+            object_page_ownership: Default::default(),
             fonts,
             default_family: "Roboto",
             faces: Default::default(),
@@ -94,6 +96,11 @@ impl<'a> TextRenderer<'a> {
         self
     }
 
+    pub fn with_object_page_ownership(mut self, ownership: ObjectPageOwnership) -> Self {
+        self.object_page_ownership = ownership;
+        self
+    }
+
     pub fn default_cap_height_ratio(&self) -> Option<f64> {
         self.fonts
             .resolve("sans-serif", false, false)
@@ -106,6 +113,7 @@ impl<'a> TextRenderer<'a> {
         Self {
             settings: TextSettings::resolved(),
             point_marker_target: self.point_marker_target,
+            object_page_ownership: self.object_page_ownership,
             fonts: self.fonts,
             default_family,
             faces: Rc::clone(&self.faces),
@@ -700,6 +708,7 @@ mod tests {
             visual_rank: 0,
             prepared: None,
             object: super::super::objects::MeasuredObject {
+                context: super::super::objects::ObjectMeasurementContext::Frame,
                 source: 0..1,
                 span_index: 0,
                 bounds: crate::BoundingBox {
@@ -708,10 +717,11 @@ mod tests {
                     x_max: 100.0,
                     y_max: 80.0,
                 },
+                width: 100.0,
+                advance: 100.0,
                 height: 80.0,
                 inline: false,
                 left_margin: 0.0,
-                right_margin: 0.0,
                 top_margin: 10.0,
                 bottom_margin: 10.0,
                 minimum_first_page_height: None,

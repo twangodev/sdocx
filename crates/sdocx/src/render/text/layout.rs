@@ -8,9 +8,11 @@ use crate::{
 };
 
 use super::objects::{MeasuredObject, ObjectMeasurementContext};
+#[cfg(test)]
+use super::wrap_paragraph;
 use super::{
     StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
-    paragraph_line_height, unmeasured_paragraph, wrap_paragraph,
+    paragraph_line_height, unmeasured_paragraph,
 };
 
 #[derive(Clone, Copy)]
@@ -51,6 +53,7 @@ pub(in crate::render) struct ParagraphSpacing {
 }
 
 impl ParagraphSpacing {
+    #[cfg(test)]
     pub fn for_lines(
         lines: &[WrappedLine],
         previous: Option<ParagraphBullet>,
@@ -71,9 +74,23 @@ impl ParagraphSpacing {
                     && placement.object.bottom_margin > 0.0
             })
         });
+        Self::for_edges(
+            [first_margin_object, last_margin_object],
+            previous,
+            current,
+            next,
+        )
+    }
+
+    fn for_edges(
+        margins: [bool; 2],
+        previous: Option<ParagraphBullet>,
+        current: Option<ParagraphBullet>,
+        next: Option<ParagraphBullet>,
+    ) -> Self {
         Self {
-            before: !(spacing_bullet(previous) && spacing_bullet(current)) && !first_margin_object,
-            after: !(spacing_bullet(current) && spacing_bullet(next)) && !last_margin_object,
+            before: !(spacing_bullet(previous) && spacing_bullet(current)) && !margins[0],
+            after: !(spacing_bullet(current) && spacing_bullet(next)) && !margins[1],
         }
     }
 }
@@ -333,42 +350,6 @@ impl TextCursor {
         self.place_at(line, spacing, frame, settings, candidate)
     }
 
-    fn prepare_line(
-        &self,
-        line: &mut WrappedLine,
-        styled: &StyledText<'_>,
-        frame: &TextFrame<'_>,
-        theme: RenderTheme,
-        renderer: &TextRenderer<'_>,
-        layout: &super::ParagraphLayout,
-    ) -> LineCandidate {
-        let mut candidate = self.candidate(line, frame, frame.bbox.y_min + self.position);
-        for _ in 0..=frame.exclusions.len() {
-            prepare_line_objects(
-                line,
-                styled,
-                |object| {
-                    let style =
-                        styled.style_at(object.source.start, theme, layout.predefined_style);
-                    candidate.object_top(
-                        object,
-                        style.font_size,
-                        layout.line_spacing,
-                        renderer.settings,
-                    )
-                },
-                theme,
-                renderer,
-            );
-            let metrics = LineMetrics::for_line(line, layout.line_spacing, renderer.settings);
-            let Some(band) = frame.overlapping_band(line, candidate.top(), metrics.advance) else {
-                return candidate;
-            };
-            candidate = self.candidate(line, frame, band.bottom);
-        }
-        candidate
-    }
-
     fn place_at(
         &mut self,
         line: &WrappedLine,
@@ -391,83 +372,129 @@ impl TextCursor {
     }
 }
 
-fn prepare_line_objects(
-    line: &mut WrappedLine,
+fn prepare_object(
+    placement: &mut super::wrapping::PositionedObject,
     styled: &StyledText<'_>,
-    candidate_top: impl Fn(&MeasuredObject) -> f64,
+    candidate_top: f64,
+    content_width: f64,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) {
-    for placement in &mut line.objects {
-        let Some(span) = styled.object_span(placement.object.span_index) else {
-            continue;
-        };
-        let candidate_top = candidate_top(&placement.object);
-        let object_renderer = renderer.for_object_source(placement.object.source.clone());
-        let prepared = match span.content.as_ref() {
-            Some(crate::RichTextObjectContent::CodeBlock(code)) => {
-                crate::render::code::prepare_code(
-                    code,
+    let Some(span) = styled.object_span(placement.object.span_index) else {
+        return;
+    };
+
+    let object_renderer = renderer.for_object_source(placement.object.source.clone());
+    if placement.object.context == ObjectMeasurementContext::Body
+        && matches!(
+            span.layout_constraint,
+            crate::ObjectSpanLayoutConstraint::OverPages
+                | crate::ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+        )
+        && matches!(span.content.as_ref(), Some(crate::RichTextObjectContent::CodeBlock(code))
+            if code.rotation_degrees.is_some_and(|rotation| rotation != 0.0))
+    {
+        let kind = super::ObjectDiagnosticKind::UnsupportedContent;
+        object_renderer.report_object_issues(&[super::ObjectDiagnostic {
+            anchor_utf16: span.text_index_utf16,
+            kind,
+        }]);
+        placement.prepared = Some(Err(kind));
+        return;
+    }
+    let prepared = match span.content.as_ref() {
+        Some(crate::RichTextObjectContent::CodeBlock(code)) => crate::render::code::prepare_code(
+            code,
+            span.layout_constraint,
+            candidate_top,
+            theme,
+            &object_renderer,
+        )
+        .map(|code| crate::render::embedded::PreparedObject::Code(Box::new(code))),
+        Some(crate::RichTextObjectContent::Table(table)) => {
+            if let Some(Ok(crate::render::embedded::PreparedObject::Table(mut retained))) =
+                placement.prepared.take()
+            {
+                retained
+                    .relayout(table, candidate_top, theme, &object_renderer)
+                    .map(|()| crate::render::embedded::PreparedObject::Table(retained))
+            } else {
+                let Some(prepared) = crate::render::table::prepare_table(
+                    table,
                     span.layout_constraint,
                     candidate_top,
                     theme,
                     &object_renderer,
-                )
-                .map(|code| crate::render::embedded::PreparedObject::Code(Box::new(code)))
+                ) else {
+                    return;
+                };
+                prepared
+                    .map(|table| crate::render::embedded::PreparedObject::Table(Box::new(table)))
             }
-            Some(crate::RichTextObjectContent::Table(table)) => {
-                if let Some(Ok(crate::render::embedded::PreparedObject::Table(mut retained))) =
-                    placement.prepared.take()
-                {
-                    retained
-                        .relayout(table, candidate_top, theme, &object_renderer)
-                        .map(|()| crate::render::embedded::PreparedObject::Table(retained))
-                } else {
-                    let Some(prepared) = crate::render::table::prepare_table(
-                        table,
-                        span.layout_constraint,
-                        candidate_top,
-                        theme,
-                        &object_renderer,
-                    ) else {
-                        continue;
-                    };
-                    prepared.map(|table| {
-                        crate::render::embedded::PreparedObject::Table(Box::new(table))
-                    })
-                }
+        }
+        _ => return,
+    };
+    match &prepared {
+        Ok(prepared) => {
+            let height = prepared.height();
+            if matches!(
+                span.layout_constraint,
+                crate::ObjectSpanLayoutConstraint::OverPages
+                    | crate::ObjectSpanLayoutConstraint::OverPagesOverlapPadding
+            ) && (height as f32 - placement.object.height as f32).abs() > 0.001_f32
+            {
+                placement.object.height = height;
             }
-            _ => continue,
-        };
-        match &prepared {
-            Ok(prepared) => {
-                let height = prepared.height();
-                if matches!(
+            if placement.object.context == super::ObjectMeasurementContext::Body
+                && matches!(
                     span.layout_constraint,
                     crate::ObjectSpanLayoutConstraint::OverPages
                         | crate::ObjectSpanLayoutConstraint::OverPagesOverlapPadding
-                ) && (height - placement.object.height).abs() > 0.001
-                {
-                    placement.object.height = height;
+                )
+            {
+                match placement.object.callback_width_limit(
+                    span,
+                    content_width,
+                    renderer.object_page_ownership,
+                ) {
+                    Ok(limit) => {
+                        let width =
+                            limit.map_or(prepared.width(), |limit| prepared.width().min(limit));
+                        if super::finite_native_geometry(width).is_some() && width > 0.0 {
+                            if (width as f32 - placement.object.width as f32).abs() > 0.001_f32 {
+                                placement.object.width = width;
+                                placement.object.advance = width;
+                            }
+                        } else {
+                            object_renderer.report_object_issues(&[super::ObjectDiagnostic {
+                                anchor_utf16: span.text_index_utf16,
+                                kind: super::ObjectDiagnosticKind::InvalidBounds,
+                            }]);
+                        }
+                    }
+                    Err(kind) => object_renderer.report_object_issues(&[super::ObjectDiagnostic {
+                        anchor_utf16: span.text_index_utf16,
+                        kind,
+                    }]),
                 }
             }
-            Err(kind) => object_renderer.report_object_issues(&[super::ObjectDiagnostic {
-                anchor_utf16: span.text_index_utf16,
-                kind: *kind,
-            }]),
         }
-        if matches!(
-            prepared,
-            Err(super::ObjectDiagnosticKind::UnsupportedContent)
-        ) && matches!(
-            span.content.as_ref(),
-            Some(crate::RichTextObjectContent::Table(_))
-        ) {
-            placement.object.height = placement.object.bounds.y_max - placement.object.bounds.y_min;
-            placement.prepared = None;
-        } else {
-            placement.prepared = Some(prepared);
-        }
+        Err(kind) => object_renderer.report_object_issues(&[super::ObjectDiagnostic {
+            anchor_utf16: span.text_index_utf16,
+            kind: *kind,
+        }]),
+    }
+    if matches!(
+        prepared,
+        Err(super::ObjectDiagnosticKind::UnsupportedContent)
+    ) && matches!(
+        span.content.as_ref(),
+        Some(crate::RichTextObjectContent::Table(_))
+    ) {
+        placement.object.height = placement.object.bounds.y_max - placement.object.bounds.y_min;
+        placement.prepared = None;
+    } else {
+        placement.prepared = Some(prepared);
     }
 }
 
@@ -571,6 +598,135 @@ impl TextLayout {
     }
 }
 
+struct ParagraphLines<'a, 'text, 'fonts> {
+    styled: &'a StyledText<'text>,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+    renderer: &'a TextRenderer<'fonts>,
+    object_context: ObjectMeasurementContext,
+    measured: Option<super::wrapping::ParagraphWrapper<'a, 'text, 'fonts>>,
+    fallback: std::collections::VecDeque<WrappedLine>,
+}
+
+impl<'a, 'text, 'fonts> ParagraphLines<'a, 'text, 'fonts> {
+    fn new(
+        styled: &'a StyledText<'text>,
+        source: Range<usize>,
+        width: f64,
+        theme: RenderTheme,
+        predefined: Option<PredefinedTextStyle>,
+        renderer: &'a TextRenderer<'fonts>,
+        object_context: ObjectMeasurementContext,
+    ) -> Self {
+        let mut lines = Self {
+            styled,
+            theme,
+            predefined,
+            renderer,
+            object_context,
+            measured: None,
+            fallback: Default::default(),
+        };
+        if source.is_empty() {
+            lines.fallback.push_back(WrappedLine::unmeasured(
+                source.clone(),
+                styled.font_size_at_caret(source.start),
+            ));
+        } else {
+            match super::wrapping::ParagraphWrapper::new(
+                styled,
+                source.clone(),
+                width,
+                theme,
+                predefined,
+                renderer,
+                object_context,
+            ) {
+                Ok(measured) => lines.measured = Some(measured),
+                Err(_) => lines.recover(source),
+            }
+        }
+        lines
+    }
+
+    fn recover(&mut self, source: Range<usize>) {
+        let style = self
+            .styled
+            .style_at(source.start, self.theme, self.predefined);
+        self.renderer
+            .measurement_failed(style.family.as_deref().unwrap_or("Roboto"));
+        self.fallback = unmeasured_paragraph(
+            self.styled,
+            source,
+            self.theme,
+            self.predefined,
+            self.renderer,
+            self.object_context,
+        )
+        .into();
+        self.measured = None;
+    }
+
+    fn object_edge_margins(&self) -> [bool; 2] {
+        if let Some(measured) = &self.measured {
+            measured.object_edge_margins()
+        } else {
+            let margins = |line: Option<&WrappedLine>, first: bool| {
+                line.is_some_and(|line| {
+                    line.objects.iter().any(|placement| {
+                        (if first {
+                            placement.object.source.start == line.source.start
+                        } else {
+                            placement.object.source.end == line.source.end
+                        }) && placement.object.top_margin > 0.0
+                            && placement.object.bottom_margin > 0.0
+                    })
+                })
+            };
+            [
+                margins(self.fallback.front(), true),
+                margins(self.fallback.back(), false),
+            ]
+        }
+    }
+
+    fn candidate(
+        &mut self,
+        width: f64,
+        mut prepare: impl FnMut(&mut super::wrapping::PositionedObject),
+    ) -> Option<WrappedLine> {
+        if let Some(measured) = &mut self.measured {
+            match measured.candidate(width, &mut prepare) {
+                Ok(line) => return line,
+                Err(_) => {
+                    let source = measured.remaining_source();
+                    self.recover(source);
+                }
+            }
+        }
+        let mut line = self.fallback.pop_front()?;
+        for object in &mut line.objects {
+            prepare(object);
+        }
+        Some(line)
+    }
+
+    fn restore(&mut self, line: WrappedLine) {
+        if let Some(measured) = &mut self.measured {
+            measured.restore(line);
+        } else {
+            self.fallback.push_front(line);
+        }
+    }
+
+    fn commit(&mut self, source_end: usize) {
+        if let Some(measured) = &mut self.measured {
+            measured.commit(source_end);
+        }
+    }
+}
+
+#[cfg(test)]
 pub(in crate::render) fn measure_paragraph(
     styled: &StyledText<'_>,
     source: Range<usize>,
@@ -750,7 +906,7 @@ fn layout_text_with_context(
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
         let x = marker_x + marker_width;
         let width = (content_width - left_indent - right_indent - marker_width).max(0.0);
-        let paragraph_lines = measure_paragraph(
+        let mut paragraph_lines = ParagraphLines::new(
             styled,
             paragraph.content.clone(),
             width,
@@ -773,7 +929,12 @@ fn layout_text_with_context(
         let next = paragraph_layouts
             .get(paragraph_number + 1)
             .and_then(|layout| layout.bullet);
-        let spacing = ParagraphSpacing::for_lines(&paragraph_lines, previous, layout.bullet, next);
+        let spacing = ParagraphSpacing::for_edges(
+            paragraph_lines.object_edge_margins(),
+            previous,
+            layout.bullet,
+            next,
+        );
         if spacing.before && layout.spacing_before_invalid {
             let style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
             renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
@@ -783,25 +944,85 @@ fn layout_text_with_context(
         } else {
             0.0
         });
-        for (line_number, mut line) in paragraph_lines.into_iter().enumerate() {
-            let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
-            let settled_top = if let Some(top) = continuation_top {
-                prepare_line_objects(&mut line, styled, |_| top, theme, renderer);
-                let metrics = LineMetrics::for_line(&line, layout.line_spacing, settings);
-                let mut candidate =
-                    cursor.candidate(&line, &frame, frame.bbox.y_min + cursor.position);
-                for _ in 0..frame.exclusions.len() {
-                    let Some(band) =
-                        frame.overlapping_band(&line, candidate.top(), metrics.advance)
-                    else {
-                        break;
+        let mut line_number = 0;
+        loop {
+            let mut raw_top = frame.bbox.y_min + cursor.position;
+            let mut settled = None;
+            for attempt in 0..=frame.exclusions.len() {
+                let line = paragraph_lines.candidate(width, |placement| {
+                    let margin_top = frame.adjusted_top_margin(
+                        raw_top,
+                        cursor.enabled_before,
+                        placement.object.top_margin,
+                        cursor.pending_bottom,
+                    );
+                    let candidate = LineCandidate {
+                        raw_top,
+                        margin_top,
                     };
-                    candidate = cursor.candidate(&line, &frame, band.bottom);
+                    let style = styled.style_at(
+                        placement.object.source.start,
+                        theme,
+                        layout.predefined_style,
+                    );
+                    let continuation = matches!(context, LayoutContext::Flow)
+                        && paragraph_number == 0
+                        && line_number == 0
+                        && !placement.object.inline
+                        && placement.object.source.start == paragraph.content.start
+                        && placement.object.bounds.y_min < 0.0;
+                    let object_top = if continuation {
+                        placement.object.bounds.y_min
+                    } else {
+                        candidate.object_top(
+                            &placement.object,
+                            style.font_size,
+                            layout.line_spacing,
+                            settings,
+                        )
+                    };
+                    prepare_object(
+                        placement,
+                        styled,
+                        object_top,
+                        content_width,
+                        theme,
+                        renderer,
+                    );
+                });
+                let Some(line) = line else {
+                    break;
+                };
+                let mut candidate = cursor.candidate(&line, &frame, raw_top);
+                let metrics = LineMetrics::for_line(&line, layout.line_spacing, settings);
+                if context
+                    .continuation_top(paragraph_number, line_number, &line)
+                    .is_some()
+                {
+                    for _ in 0..frame.exclusions.len() {
+                        let Some(band) =
+                            frame.overlapping_band(&line, candidate.top(), metrics.advance)
+                        else {
+                            break;
+                        };
+                        candidate = cursor.candidate(&line, &frame, band.bottom);
+                    }
+                } else if let Some(band) =
+                    frame.overlapping_band(&line, candidate.top(), metrics.advance)
+                    && attempt < frame.exclusions.len()
+                {
+                    raw_top = band.bottom;
+                    paragraph_lines.restore(line);
+                    continue;
                 }
-                candidate
-            } else {
-                cursor.prepare_line(&mut line, styled, &frame, theme, renderer, layout)
+                settled = Some((line, candidate));
+                break;
+            }
+            let Some((mut line, settled_top)) = settled else {
+                break;
             };
+            paragraph_lines.commit(line.source.end);
+            let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
             if !line.objects.is_empty() && line.position_native(styled).is_err() {
                 let style = styled.style_at(line.source.start, theme, layout.predefined_style);
                 renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
@@ -847,6 +1068,7 @@ fn layout_text_with_context(
                 predefined: layout.predefined_style,
                 marker: positioned_marker,
             });
+            line_number += 1;
         }
         if spacing.after && paragraph_number + 1 < paragraphs.len() {
             if layout.spacing_after_invalid {
@@ -1252,6 +1474,7 @@ mod tests {
         let mut line = WrappedLine::unmeasured(0..1, font_size);
         line.objects.push(PositionedObject {
             object: MeasuredObject {
+                context: super::super::objects::ObjectMeasurementContext::Frame,
                 source: 0..1,
                 span_index: 0,
                 bounds: BoundingBox {
@@ -1261,9 +1484,10 @@ mod tests {
                     y_max: 100.0,
                 },
                 height: 100.0,
+                width: 50.0,
+                advance: 50.0,
                 inline,
                 left_margin: 0.0,
-                right_margin: 0.0,
                 top_margin: margins[0],
                 bottom_margin: margins[1],
                 minimum_first_page_height: None,

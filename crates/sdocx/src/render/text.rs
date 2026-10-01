@@ -25,8 +25,8 @@ pub(super) use layout::{
     PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
     layout_flow_text, layout_text, layout_text_with_size,
 };
-pub(super) use objects::ObjectMeasurementContext;
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
+pub(super) use objects::{ObjectMeasurementContext, ObjectPageOwnership};
 pub(super) use pagination::PageExclusions;
 pub(super) use paint::{render_measured_line, text_ranges as body_text_ranges};
 pub(super) use resources::{

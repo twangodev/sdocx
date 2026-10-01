@@ -420,7 +420,7 @@ fn paginated_first_row_uses_child_bands_when_its_first_line_fits() {
                 ("D", 4.0, 60.5),
                 ("E", 4.0, 74.0),
             ],
-            vec![("F", 4.0, 10.499)],
+            vec![("F", 4.0, 10.48071)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
@@ -430,7 +430,7 @@ fn paginated_first_row_uses_child_bands_when_its_first_line_fits() {
                 ("C", 4.0, 47.0),
                 ("D", 4.0, 60.5),
             ],
-            vec![("E", 4.0, 19.499), ("F", 4.0, 32.999)],
+            vec![("E", 4.0, 19.34351), ("F", 4.0, 32.84351)],
         ),
     ] {
         let doc = paginated_document(constraint, false);
@@ -614,7 +614,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 ("D", 4.0, 60.5),
                 ("E", 4.0, 74.0),
             ],
-            vec![("F", 4.0, 10.49899), ("End", 0.0, 28.501)],
+            vec![("F", 4.0, 10.48071), ("End", 0.0, 28.501)],
         ),
         ObjectSpanLayoutConstraint::OverPages => (
             108.0,
@@ -625,8 +625,8 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 ("D", 4.0, 60.5),
             ],
             vec![
-                ("E", 4.0, 19.49899),
-                ("F", 4.0, 32.99899),
+                ("E", 4.0, 19.34351),
+                ("F", 4.0, 32.84351),
                 ("End", 0.0, 51.001),
             ],
         ),
@@ -639,8 +639,8 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
     let fonts = sdocx::fonts::FontBook::default();
     // At 70 the raw1/raw2 cold row grows to 104/113; the parent minimum
     // moves it to 90. Warm layout shrinks to 84/106.5 plus unit outer border.
-    // Fresh bands subtract90.001: row heights83.999/106.499 plus border1
-    // cancel that epsilon at world bottoms175/197.5, rounded to175/198.
+    // Native inverse maps saved drawn height82 to85/107.5, giving fresh
+    // origins90.01929473876953/90.15648651123047 for the last-page bands.
     // Its cell source is reused after frame rounding; callback reservation
     // remains85/107.5 plus anchor-font leading3.5+.001, then End adds10.
     for replay in [false, true] {
@@ -708,13 +708,13 @@ fn preceding_lf_seeds_the_native_inline_object_text_metric() {
     for (constraint, expected) in [
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            vec![("F", 4.0, 10.49899), ("End", 0.0, 28.501)],
+            vec![("F", 4.0, 10.48071), ("End", 0.0, 28.501)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             vec![
-                ("E", 4.0, 19.49899),
-                ("F", 4.0, 32.99899),
+                ("E", 4.0, 19.34351),
+                ("F", 4.0, 32.84351),
                 ("End", 0.0, 51.001),
             ],
         ),
@@ -753,7 +753,7 @@ fn preceding_lf_seeds_the_native_inline_object_text_metric() {
 }
 
 #[test]
-fn unsupported_table_band_width_preserves_saved_cell_text_in_preview_and_pdf() {
+fn a_partial_width_band_outside_cell_text_keeps_the_full_vector_grid() {
     let mut grid = table(&[&["Visible Cell"]]);
     grid.bbox = bounds(0.0, 0.0, 200.0, 20.0);
     grid.column_widths = vec![200.0];
@@ -784,12 +784,7 @@ fn unsupported_table_band_width_preserves_saved_cell_text_in_preview_and_pdf() {
             "{:?}",
             page.text_diagnostics
         );
-        assert_eq!(page.object_diagnostics.len(), 1);
-        assert_eq!(page.object_diagnostics[0].anchor_utf16, 0);
-        assert_eq!(
-            page.object_diagnostics[0].kind,
-            sdocx::ObjectDiagnosticKind::UnsupportedContent
-        );
+        assert!(page.object_diagnostics.is_empty());
         #[cfg(feature = "pdf")]
         {
             let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();

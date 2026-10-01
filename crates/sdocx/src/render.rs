@@ -253,6 +253,18 @@ impl PreparedBodyText {
         );
         let planner = TextRenderer::new(renderer.settings, renderer.fonts)
             .with_point_marker_target(renderer.point_marker_target)
+            .with_object_page_ownership(
+                if body.capture_window.as_ref().is_some_and(|window| {
+                    window.first_page_index != 0
+                        || document.metadata.note_text.as_ref().is_some_and(|source| {
+                            window.saved_source_range != (0..source.text.chars().count())
+                        })
+                }) {
+                    text::ObjectPageOwnership::Detached
+                } else {
+                    text::ObjectPageOwnership::Unknown
+                },
+            )
             .with_page_exclusions(exclusions.clone());
         let bands = exclusions
             .as_ref()
@@ -1182,38 +1194,88 @@ fn paint_line_objects(
         let drawing_renderer = renderer
             .for_object_source(object.source.clone())
             .planning_scope();
+        let body_clone = object.context == text::ObjectMeasurementContext::Body
+            && match &span.content {
+                Some(RichTextObjectContent::CodeBlock(code)) => {
+                    code.rotation_degrees.is_none_or(|rotation| rotation == 0.0)
+                }
+                Some(RichTextObjectContent::Table(table)) => table
+                    .rotation_degrees
+                    .is_none_or(|rotation| rotation == 0.0),
+                _ => false,
+            };
+        let target = BoundingBox {
+            x_min: left + placement.x,
+            x_max: left + placement.x + object.width(),
+            y_min: baseline - height,
+            y_max: baseline,
+        };
         let drawing_code = match (&placement.prepared, &span.content) {
             (
                 Some(Ok(embedded::PreparedObject::Code(_))),
                 Some(RichTextObjectContent::CodeBlock(code)),
-            ) => Some(code::prepare_code(
-                code,
-                span.layout_constraint,
-                baseline - height,
-                theme,
-                &drawing_renderer,
-            )),
+            ) => Some(if body_clone {
+                code::prepare_code_drawing(
+                    code,
+                    span.layout_constraint,
+                    target,
+                    theme,
+                    &drawing_renderer,
+                )
+            } else {
+                code::prepare_code(
+                    code,
+                    span.layout_constraint,
+                    baseline - height,
+                    theme,
+                    &drawing_renderer,
+                )
+            }),
             _ => None,
         };
         let drawing_table = match &span.content {
-            Some(RichTextObjectContent::Table(table)) => table::prepare_table_drawing(
-                table,
-                span.layout_constraint,
-                [left + placement.x, baseline - height],
-                theme,
-                &drawing_renderer,
-            ),
+            Some(RichTextObjectContent::Table(table)) => {
+                if body_clone {
+                    table::prepare_table_clone_drawing(
+                        table,
+                        span.layout_constraint,
+                        target,
+                        theme,
+                        &drawing_renderer,
+                    )
+                } else {
+                    table::prepare_table_drawing(
+                        table,
+                        span.layout_constraint,
+                        [left + placement.x, baseline - height],
+                        theme,
+                        &drawing_renderer,
+                    )
+                }
+            }
             _ => None,
         };
         let mut paint_bounds = object_paint_bounds(placement, left, baseline);
         if let Some(Ok(prepared)) = &drawing_code {
-            paint_bounds.y_max =
-                paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+            if body_clone {
+                paint_bounds = prepared.panel_bbox;
+            } else {
+                paint_bounds.y_max =
+                    paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+            }
         }
         if let Some(Ok(prepared)) = &drawing_table {
             paint_bounds = prepared.measured_bbox;
         }
         if viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds)) {
+            continue;
+        }
+        if body_clone
+            && let (Some(Ok(prepared)), Some(RichTextObjectContent::CodeBlock(code))) =
+                (&drawing_code, &span.content)
+        {
+            render_prepared_code(svg, code, prepared, media_assets, theme, renderer, viewport);
+            report_drawing_layout_issues(renderer, &drawing_renderer);
             continue;
         }
         if let (Some(Ok(prepared)), Some(RichTextObjectContent::Table(table))) =
@@ -1248,6 +1310,23 @@ fn paint_line_objects(
                 anchor_utf16: span.text_index_utf16,
                 kind: *kind,
             }]);
+        }
+        if body_clone
+            && (matches!(drawing_code, Some(Err(_))) || matches!(drawing_table, Some(Err(_))))
+        {
+            render_flow_line(
+                svg,
+                styled,
+                object.source.clone(),
+                target.x_min,
+                target.x_max,
+                baseline,
+                None,
+                theme,
+                predefined,
+                renderer,
+            );
+            continue;
         }
         let offset = (
             left + placement.x - object.bounds.x_min,
@@ -2447,6 +2526,89 @@ mod tests {
             text_sections: vec![],
             margins: None,
             gravity: None,
+        }
+    }
+
+    #[test]
+    fn collapsed_native_clone_keeps_source_without_stale_code_artwork() {
+        let fixture = |padding: u32| {
+            let mut body = theme_test_text();
+            body.bbox = BoundingBox::default();
+            body.text = "A\u{fffc}".into();
+            body.object_spans.push(crate::RichTextObjectSpan {
+                object_type: crate::ObjectType::CodeBlock,
+                object_data: Vec::new(),
+                content: Some(crate::RichTextObjectContent::CodeBlock(Box::new(
+                    crate::RichTextCodeBlock {
+                        bbox: BoundingBox {
+                            x_min: 0.0,
+                            y_min: 0.0,
+                            x_max: 1.0,
+                            y_max: 20.0,
+                        },
+                        rotation_degrees: None,
+                        title: None,
+                        body: None,
+                    },
+                ))),
+                text_index_utf16: 1,
+                layout_option: crate::ObjectSpanLayoutOption::Inline,
+                layout_constraint: crate::ObjectSpanLayoutConstraint::Normal,
+            });
+            Document {
+                pages: vec![Page {
+                    uuid: "collapsed-clone".into(),
+                    width: 2 * padding + 100,
+                    height: 500,
+                    content_bbox: BoundingBox::default(),
+                    background_color: None,
+                    template: None,
+                    background: Default::default(),
+                    objects: Vec::new(),
+                }],
+                metadata: DocumentMetadata {
+                    note_text: Some(body),
+                    page_mode: Some(0),
+                    default_page_dimensions: Some((360, 500)),
+                    orientation: Some(0),
+                    flow_page_padding: Some((padding, 0)),
+                    ..Default::default()
+                },
+            }
+        };
+        for padding in [0, 16_777_216] {
+            let document = fixture(padding);
+            let layout = layout_document(&document);
+            for rendered in [
+                render_layout_page_svg(&document, &layout, 0, &Default::default()).unwrap(),
+                super::render_layout_page_replay_svg(&document, &layout, 0, &Default::default())
+                    .unwrap(),
+            ] {
+                let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+                let source = xml
+                    .descendants()
+                    .filter(|node| node.has_tag_name("tspan"))
+                    .filter_map(|node| node.text())
+                    .collect::<String>();
+                let artwork = xml
+                    .descendants()
+                    .any(|node| node.attribute("data-sdocx-object") == Some("code-block"));
+                if padding == 0 {
+                    assert_eq!(source, "A");
+                    assert!(artwork);
+                    assert!(rendered.object_diagnostics.is_empty());
+                } else {
+                    assert_eq!(source, "A\u{fffc}");
+                    assert!(!artwork);
+                    assert!(
+                        rendered
+                            .object_diagnostics
+                            .iter()
+                            .any(|issue| issue.anchor_utf16 == 1
+                                && issue.kind == crate::ObjectDiagnosticKind::InvalidBounds)
+                    );
+                }
+            }
         }
     }
 

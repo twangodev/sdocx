@@ -43,7 +43,7 @@ pub(in crate::render) struct PositionedObject {
 enum MeasuredItem {
     TextCluster(MeasuredCluster),
     Object {
-        object: MeasuredObject,
+        placement: PositionedObject,
         font_size: f64,
     },
 }
@@ -51,21 +51,20 @@ enum MeasuredItem {
 struct ParagraphItems {
     items: Vec<MeasuredItem>,
     font_size: f64,
-    advance: f64,
 }
 
 impl MeasuredItem {
     fn source(&self) -> &Range<usize> {
         match self {
             Self::TextCluster(cluster) => &cluster.source,
-            Self::Object { object, .. } => &object.source,
+            Self::Object { placement, .. } => &placement.object.source,
         }
     }
 
     fn advance(&self) -> f64 {
         match self {
             Self::TextCluster(cluster) => cluster.advance,
-            Self::Object { object, .. } => object.advance(),
+            Self::Object { placement, .. } => placement.object.advance(),
         }
     }
 }
@@ -268,12 +267,11 @@ fn measured_items(
     let mut items = Vec::new();
     let mut start = range.start;
     let mut font_size = 0.0_f64;
-    let mut advance = 0.0;
     for object in paragraph_objects {
         if start < object.source.start {
             let measured = measurer.measure_line(start..object.source.start)?;
+            finite_advance(measured.advance)?;
             font_size = font_size.max(measured.font_size);
-            advance += measured.advance;
             items.extend(measured.clusters.into_iter().map(MeasuredItem::TextCluster));
         }
         let object = object.measured(renderer.settings, object_context);
@@ -292,16 +290,20 @@ fn measured_items(
             }
         }
         start = object.source.end;
-        advance += object.advance();
         items.push(MeasuredItem::Object {
-            object,
+            placement: PositionedObject {
+                object,
+                x: 0.0,
+                visual_rank: 0,
+                prepared: None,
+            },
             font_size: object_font_size,
         });
     }
     if start < range.end {
         let measured = measurer.measure_line(start..range.end)?;
+        finite_advance(measured.advance)?;
         font_size = font_size.max(measured.font_size);
-        advance += measured.advance;
         items.extend(measured.clusters.into_iter().map(MeasuredItem::TextCluster));
     }
     if !paragraph_objects.is_empty() {
@@ -312,11 +314,7 @@ fn measured_items(
         breaks.emergency.sort_unstable();
         breaks.emergency.dedup();
     }
-    Ok(ParagraphItems {
-        items,
-        font_size,
-        advance,
-    })
+    Ok(ParagraphItems { items, font_size })
 }
 
 fn paragraph_prefix_font_size(
@@ -401,121 +399,194 @@ pub(in crate::render) fn unmeasured_paragraph(
     lines
 }
 
-pub(in crate::render) fn wrap_paragraph(
-    styled: &StyledText<'_>,
+pub(in crate::render) struct ParagraphWrapper<'a, 'text, 'fonts> {
+    styled: &'a StyledText<'text>,
+    measurer: ParagraphMeasurer<'a, 'text, 'fonts>,
     range: Range<usize>,
-    max_width: f64,
-    theme: RenderTheme,
-    predefined: Option<PredefinedTextStyle>,
-    renderer: &TextRenderer<'_>,
-    object_context: ObjectMeasurementContext,
-) -> Result<Vec<WrappedLine>, MeasurementError> {
-    let text = styled
-        .index
-        .slice(range.clone())
-        .ok_or(MeasurementError::InvalidRange)?;
-    let mut breaks = break_candidates(text);
-    let measurer = ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?;
-    let measured = measured_items(
-        styled,
-        range.clone(),
-        &measurer,
-        renderer,
-        &mut breaks,
-        object_context,
-    )?;
-    let first_font_size = paragraph_prefix_font_size(styled, &range, theme, predefined);
-    let items = measured.items;
-    let mut advances = vec![0.0; range.len() + 1];
-    let mut cluster_ends = vec![false; range.len() + 1];
-    cluster_ends[0] = true;
-    let mut source_end = range.start;
-    let mut advance = 0.0;
-    for item in &items {
-        let source = item.source();
-        if source.start != source_end || source.end <= source_end || source.end > range.end {
+    items: Vec<MeasuredItem>,
+    allowed: Vec<bool>,
+    mandatory: Vec<bool>,
+    emergency: Vec<bool>,
+    first_font_size: f64,
+    font_size: f64,
+    full_width: f64,
+    start_item: usize,
+}
+
+impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
+    pub fn new(
+        styled: &'a StyledText<'text>,
+        range: Range<usize>,
+        width: f64,
+        theme: RenderTheme,
+        predefined: Option<PredefinedTextStyle>,
+        renderer: &'a TextRenderer<'fonts>,
+        object_context: ObjectMeasurementContext,
+    ) -> Result<Self, MeasurementError> {
+        let text = styled
+            .index
+            .slice(range.clone())
+            .ok_or(MeasurementError::InvalidRange)?;
+        let mut breaks = break_candidates(text);
+        let measurer = ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?;
+        let measured = measured_items(
+            styled,
+            range.clone(),
+            &measurer,
+            renderer,
+            &mut breaks,
+            object_context,
+        )?;
+        let mut cluster_ends = vec![false; range.len() + 1];
+        cluster_ends[0] = true;
+        let mut source_end = range.start;
+        let mut advance = 0.0;
+        for item in &measured.items {
+            let source = item.source();
+            if source.start != source_end || source.end <= source_end || source.end > range.end {
+                return Err(MeasurementError::InvalidCluster);
+            }
+            advance = finite_advance(advance + item.advance())?;
+            cluster_ends[source.end - range.start] = true;
+            source_end = source.end;
+        }
+        if source_end != range.end {
             return Err(MeasurementError::InvalidCluster);
         }
-        advance = finite_advance(advance + item.advance())?;
-        let end = source.end - range.start;
-        advances[end] = advance;
-        cluster_ends[end] = true;
-        source_end = source.end;
-    }
-    if source_end != range.end {
-        return Err(MeasurementError::InvalidCluster);
-    }
-    advances[range.len()] = finite_advance(measured.advance)?;
-    if breaks
-        .candidates
-        .iter()
-        .any(|candidate| candidate.kind == BreakKind::Mandatory && !cluster_ends[candidate.end])
-    {
-        return Err(MeasurementError::InvalidCluster);
-    }
-    breaks
-        .candidates
-        .retain(|candidate| cluster_ends[candidate.end]);
-    breaks.emergency.retain(|&end| cluster_ends[end]);
-    let width = if max_width.is_nan() {
-        0.0
-    } else {
-        max_width.max(0.0)
-    };
-    let mut lines = Vec::new();
-    let mut start = 0;
-    let mut candidate_index = 0;
-    let mut item_index = 0;
-    while start < range.len() {
-        let mut selected = None;
-        let mut overflow_end = None;
-        while breaks
-            .candidates
-            .get(candidate_index)
-            .is_some_and(|candidate| candidate.end <= start)
-        {
-            candidate_index += 1;
-        }
-        let mut probe = candidate_index;
-        for candidate in &breaks.candidates[candidate_index..] {
-            if finite_advance(advances[candidate.end] - advances[start])? > width {
-                overflow_end = Some(candidate.end);
-                break;
-            }
-            selected = Some(candidate.end);
-            probe += 1;
-            if candidate.kind == BreakKind::Mandatory {
-                break;
-            }
-        }
-        candidate_index = probe;
-        if selected.is_none() {
-            let overflow_end = overflow_end.ok_or(MeasurementError::InvalidRange)?;
-            let first = breaks.emergency.partition_point(|&end| end <= start);
-            let last = breaks.emergency.partition_point(|&end| end <= overflow_end);
-            let ends = &breaks.emergency[first..last];
-            for &end in ends {
-                if finite_advance(advances[end] - advances[start])? > width {
-                    break;
+        let mut allowed = vec![false; range.len() + 1];
+        let mut mandatory = vec![false; range.len() + 1];
+        let mut emergency = vec![false; range.len() + 1];
+        for candidate in breaks.candidates {
+            if !cluster_ends[candidate.end] {
+                if candidate.kind == BreakKind::Mandatory {
+                    return Err(MeasurementError::InvalidCluster);
                 }
-                selected = Some(end);
+                continue;
             }
-            selected = selected.or_else(|| ends.first().copied());
+            allowed[candidate.end] = true;
+            mandatory[candidate.end] = candidate.kind == BreakKind::Mandatory;
         }
-        let end = selected.ok_or(MeasurementError::InvalidRange)?;
-        let line_advance = finite_advance(advances[end] - advances[start])?;
-        let source = range.start + start..range.start + end;
+        for end in breaks.emergency {
+            emergency[end] = cluster_ends[end];
+        }
+        Ok(Self {
+            styled,
+            measurer,
+            range: range.clone(),
+            items: measured.items,
+            allowed,
+            mandatory,
+            emergency,
+            first_font_size: paragraph_prefix_font_size(styled, &range, theme, predefined),
+            font_size: measured.font_size,
+            full_width: normalized_width(width),
+            start_item: 0,
+        })
+    }
+
+    pub fn remaining_source(&self) -> Range<usize> {
+        self.items
+            .get(self.start_item)
+            .map_or(self.range.end, |item| item.source().start)..self.range.end
+    }
+
+    pub fn object_edge_margins(&self) -> [bool; 2] {
+        let has_margins = |item: Option<&MeasuredItem>| matches!(item, Some(MeasuredItem::Object { placement, .. }) if placement.object.top_margin > 0.0 && placement.object.bottom_margin > 0.0);
+        [
+            has_margins(self.items.first()),
+            has_margins(self.items.last()),
+        ]
+    }
+
+    pub fn candidate(
+        &mut self,
+        width: f64,
+        mut prepare: impl FnMut(&mut PositionedObject),
+    ) -> Result<Option<WrappedLine>, MeasurementError> {
+        if self.start_item == self.items.len() {
+            return Ok(None);
+        }
+        let width = normalized_width(width);
+        let mut advance = 0.0;
+        let mut last_allowed = None;
+        let mut last_emergency = None;
+        let mut selected = None;
+        for index in self.start_item..self.items.len() {
+            let snapshot = self.items[index].advance();
+            let old_sum = finite_advance(advance + snapshot)?;
+            let first_object = index == self.start_item
+                && width >= self.full_width
+                && matches!(self.items[index], MeasuredItem::Object { .. });
+            if old_sum > width
+                && !first_object
+                && (last_allowed.is_some() || last_emergency.is_some())
+            {
+                break;
+            }
+            if let MeasuredItem::Object { placement, .. } = &mut self.items[index]
+                && (old_sum <= width || first_object)
+            {
+                placement.x = finite_advance(advance + placement.object.left_margin)?;
+                prepare(placement);
+            }
+            advance = finite_advance(advance + self.items[index].advance())?;
+            let end = self.items[index].source().end - self.range.start;
+            if self.emergency[end] {
+                last_emergency = Some(index + 1);
+            }
+            if self.allowed[end] {
+                last_allowed = Some(index + 1);
+            }
+            if (self.mandatory[end] || old_sum > width) && self.emergency[end] {
+                selected = Some(index + 1);
+                break;
+            }
+        }
+        let end_item = selected
+            .or(last_allowed)
+            .or(last_emergency)
+            .ok_or(MeasurementError::InvalidCluster)?;
+        self.make_line(end_item).map(Some)
+    }
+
+    pub fn restore(&mut self, line: WrappedLine) {
+        for placement in line.objects {
+            let source = placement.object.source.start;
+            let index = self
+                .items
+                .partition_point(|item| item.source().start < source);
+            if let Some(MeasuredItem::Object {
+                placement: stored, ..
+            }) = self.items.get_mut(index)
+            {
+                *stored = placement;
+            }
+        }
+    }
+
+    pub fn commit(&mut self, source_end: usize) {
+        self.start_item = self
+            .items
+            .partition_point(|item| item.source().end <= source_end);
+    }
+
+    fn make_line(&mut self, end_item: usize) -> Result<WrappedLine, MeasurementError> {
+        let source =
+            self.items[self.start_item].source().start..self.items[end_item - 1].source().end;
         let mut placements = Vec::new();
         let mut objects = Vec::new();
-        let mut font_size = 0.0_f64;
+        let mut font_size = if self.start_item == 0 {
+            self.first_font_size
+        } else {
+            0.0
+        };
         let mut text_height = 0.0_f64;
         let mut x = 0.0;
         let mut logical_sources = Vec::new();
         let mut logical_entries = Vec::new();
-        while let Some(item) = items.get(item_index)
-            && item.source().end <= source.end
-        {
+        for item in &mut self.items[self.start_item..end_item] {
             logical_sources.push(item.source().clone());
+            let advance = item.advance();
             match item {
                 MeasuredItem::TextCluster(cluster) => {
                     font_size = font_size.max(cluster.run.style.font_size);
@@ -529,34 +600,30 @@ pub(in crate::render) fn wrap_paragraph(
                     });
                 }
                 MeasuredItem::Object {
-                    object,
+                    placement,
                     font_size: object_font_size,
                 } => {
                     font_size = font_size.max(*object_font_size);
                     logical_entries.push(LineEntry::Object(objects.len()));
                     objects.push(PositionedObject {
-                        object: object.clone(),
-                        x: finite_advance(x + object.left_margin)?,
+                        object: placement.object.clone(),
+                        x: finite_advance(x + placement.object.left_margin)?,
                         visual_rank: logical_entries.len() - 1,
-                        prepared: None,
+                        prepared: placement.prepared.take(),
                     });
                 }
             }
-            x = finite_advance(x + item.advance())?;
-            item_index += 1;
+            x = finite_advance(x + advance)?;
         }
-        if source == range {
-            font_size = measured.font_size;
+        let visual_order = self.measurer.visual_order(source.clone(), &logical_sources);
+        if source == self.range {
+            font_size = font_size.max(self.font_size);
         }
-        if lines.is_empty() {
-            font_size = font_size.max(first_font_size);
-        }
-        let visual_order = measurer.visual_order(source.clone(), &logical_sources);
         let mut line = WrappedLine {
             source,
             font_size,
             text_height,
-            advance: line_advance,
+            advance: x,
             placements,
             objects,
             visual_order: visual_order
@@ -566,10 +633,38 @@ pub(in crate::render) fn wrap_paragraph(
             native_positioned: false,
         };
         if visual_order.is_ok() && line.objects.is_empty() {
-            line.position_native(styled)?;
+            line.position_native(self.styled)?;
         }
+        Ok(line)
+    }
+}
+
+fn normalized_width(width: f64) -> f64 {
+    if width.is_nan() { 0.0 } else { width.max(0.0) }
+}
+
+pub(in crate::render) fn wrap_paragraph(
+    styled: &StyledText<'_>,
+    range: Range<usize>,
+    max_width: f64,
+    theme: RenderTheme,
+    predefined: Option<PredefinedTextStyle>,
+    renderer: &TextRenderer<'_>,
+    object_context: ObjectMeasurementContext,
+) -> Result<Vec<WrappedLine>, MeasurementError> {
+    let mut paragraph = ParagraphWrapper::new(
+        styled,
+        range,
+        max_width,
+        theme,
+        predefined,
+        renderer,
+        object_context,
+    )?;
+    let mut lines = Vec::new();
+    while let Some(line) = paragraph.candidate(max_width, |_| {})? {
+        paragraph.commit(line.source.end);
         lines.push(line);
-        start = end;
     }
     Ok(lines)
 }
@@ -671,6 +766,138 @@ mod tests {
             &FontBook::default(),
         )
         .unwrap()
+    }
+
+    fn paragraph_with_object<'a, 'text, 'fonts>(
+        styled: &'a StyledText<'text>,
+        renderer: &'a TextRenderer<'fonts>,
+        width: f64,
+    ) -> ParagraphWrapper<'a, 'text, 'fonts> {
+        ParagraphWrapper::new(
+            styled,
+            0..styled.index.len(),
+            width,
+            RenderTheme::for_canvas(false),
+            None,
+            renderer,
+            ObjectMeasurementContext::Body,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn object_admission_uses_the_old_width_and_downstream_text_uses_the_new_width() {
+        let mut content = text("AA\u{fffc}B");
+        content.font_size = Some(10.0);
+        content.object_spans = vec![image(2, 21.0, ObjectSpanLayoutOption::Inline)];
+        let settings = TextSettings::default();
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let mut paragraph = paragraph_with_object(&styled, &renderer, 70.0);
+        let mut calls = 0;
+        let line = paragraph
+            .candidate(70.0, |placement| {
+                calls += 1;
+                placement.object.width = 61.0;
+                placement.object.advance = 61.0;
+            })
+            .unwrap()
+            .unwrap();
+        assert_eq!(calls, 1);
+        assert_eq!(line.source, 0..3);
+        assert_eq!(line.advance, 74.046875);
+        assert_eq!(line.objects[0].x, 17.046875);
+        paragraph.commit(line.source.end);
+        let next = paragraph
+            .candidate(70.0, |_| panic!("no object remains"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(next.source, 3..4);
+        assert_eq!(next.advance, 6.2255859375);
+    }
+
+    #[test]
+    fn obstacle_retry_retains_the_mutated_object_width_before_readmission() {
+        let mut content = text("AA\u{fffc}");
+        content.font_size = Some(10.0);
+        content.object_spans = vec![image(2, 21.0, ObjectSpanLayoutOption::Inline)];
+        let settings = TextSettings::default();
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let mut paragraph = paragraph_with_object(&styled, &renderer, 70.0);
+        let first = paragraph
+            .candidate(70.0, |placement| {
+                placement.object.width = 61.0;
+                placement.object.advance = 61.0;
+            })
+            .unwrap()
+            .unwrap();
+        assert_eq!(first.source, 0..3);
+        paragraph.restore(first);
+        let retried = paragraph
+            .candidate(70.0, |_| panic!("old overflow skips callback"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(retried.source, 0..2);
+        paragraph.commit(retried.source.end);
+        let object = paragraph.candidate(70.0, |_| {}).unwrap().unwrap();
+        assert_eq!(object.source, 2..3);
+        assert_eq!(object.advance, 61.0);
+        assert_eq!(object.objects[0].x, 4.0);
+    }
+
+    #[test]
+    fn ordinary_object_overflow_skips_callback_but_first_object_overflow_invokes_it() {
+        let mut content = text("A\u{fffc}B");
+        content.font_size = Some(10.0);
+        content.object_spans = vec![image(1, 40.0, ObjectSpanLayoutOption::Inline)];
+        let settings = TextSettings::default();
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let mut paragraph = paragraph_with_object(&styled, &renderer, 20.0);
+        let first = paragraph
+            .candidate(20.0, |_| panic!("ordinary old overflow skips callback"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(first.source, 0..1);
+        paragraph.commit(first.source.end);
+        let mut calls = 0;
+        let object = paragraph
+            .candidate(20.0, |placement| {
+                calls += 1;
+                placement.object.width = 61.0;
+                placement.object.advance = 61.0;
+            })
+            .unwrap()
+            .unwrap();
+        assert_eq!(calls, 1);
+        assert_eq!(object.source, 1..2);
+        assert_eq!(object.advance, 61.0);
+    }
+
+    #[test]
+    fn shrinking_an_admitted_object_allows_following_text_on_the_same_line() {
+        let mut content = text("A\u{fffc}B");
+        content.font_size = Some(10.0);
+        content.object_spans = vec![image(1, 40.0, ObjectSpanLayoutOption::Inline)];
+        let settings = TextSettings::default();
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let mut paragraph = paragraph_with_object(&styled, &renderer, 55.0);
+        let line = paragraph
+            .candidate(55.0, |placement| {
+                placement.object.width = 10.0;
+                placement.object.advance = 10.0;
+            })
+            .unwrap()
+            .unwrap();
+        assert_eq!(line.source, 0..3);
+        assert_eq!(line.advance, 22.7490234375);
+        assert_eq!(line.placements[1].x, 16.5234375);
     }
 
     #[test]

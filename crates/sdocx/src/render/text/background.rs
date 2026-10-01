@@ -399,6 +399,7 @@ mod tests {
                 visual_rank: 1,
                 prepared: None,
                 object: super::super::objects::MeasuredObject {
+                    context: super::super::objects::ObjectMeasurementContext::Frame,
                     source: 1..2,
                     span_index: 0,
                     bounds: BoundingBox {
@@ -408,9 +409,10 @@ mod tests {
                         y_max: 20.0,
                     },
                     height: 20.0,
+                    width: 20.0,
+                    advance: 20.0,
                     inline: true,
                     left_margin: 0.0,
-                    right_margin: 0.0,
                     top_margin: 0.0,
                     bottom_margin: 0.0,
                     minimum_first_page_height: None,

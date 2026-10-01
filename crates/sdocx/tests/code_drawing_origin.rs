@@ -150,10 +150,12 @@ fn assert_page(page: &sdocx::RenderedPage, index: usize, expected: &[(&str, f64,
         "{:?}",
         page.text_diagnostics
     );
-    assert!(
-        page.object_diagnostics.is_empty(),
-        "{:?}",
-        page.object_diagnostics
+    assert_eq!(
+        page.object_diagnostics,
+        [sdocx::ObjectDiagnostic {
+            anchor_utf16: 2,
+            kind: sdocx::ObjectDiagnosticKind::UnsupportedWidthLimitContext,
+        }]
     );
     let xml = roxmltree::Document::parse(&page.svg).unwrap();
     let lines: Vec<_> = xml

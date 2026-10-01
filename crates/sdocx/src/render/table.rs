@@ -152,6 +152,28 @@ pub(super) fn prepare_table_drawing(
     })())
 }
 
+pub(super) fn prepare_table_clone_drawing(
+    table: &RichTextTable,
+    constraint: ObjectSpanLayoutConstraint,
+    target: BoundingBox,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
+    let bbox =
+        match super::embedded::cloned_raw_bounds(table.bbox, table_drawn_bounds(table), target) {
+            Ok(bbox) => bbox,
+            Err(kind) => return Some(Err(kind)),
+        };
+    let drawn = drawn_bounds_for_rect(table, bbox);
+    prepare_table_drawing(
+        table,
+        constraint,
+        [drawn.x_min, drawn.y_min],
+        theme,
+        renderer,
+    )
+}
+
 fn translate_cell_drawing(
     layout: &mut TextLayout,
     origin: [f64; 2],
@@ -396,18 +418,12 @@ impl PreparedTable {
         let source = &table.rows[row_index].cells[column_index];
         let width = native_sub(cell.frame.x_max, cell.frame.x_min)? as f32 as i32;
         let height = native_sub(cell.frame.y_max, cell.frame.y_min)? as f32 as i32;
-        if cell
-            .bands
-            .rectangles
-            .iter()
-            .any(|rect| rect.x_min > 0.0 || rect.x_max < f64::from(width))
-        {
-            return Err(ObjectDiagnosticKind::UnsupportedContent);
-        }
+        let full_width = |rect: &&BoundingBox| rect.x_min <= 0.0 && rect.x_max >= f64::from(width);
         let exclusions = cell
             .bands
             .rectangles
             .iter()
+            .filter(full_width)
             .map(|rect| VerticalExclusion::obstacle(rect.y_min, rect.y_max))
             .collect::<Vec<_>>();
         let styled = StyledText::new(&source.content, TextContext::Flow, renderer.settings);
@@ -429,6 +445,20 @@ impl PreparedTable {
         );
         if !valid_cell_layout(&layout) {
             return Err(ObjectDiagnosticKind::InvalidBounds);
+        }
+        if cell
+            .bands
+            .rectangles
+            .iter()
+            .filter(|rect| !full_width(rect))
+            .any(|rect| {
+                layout
+                    .lines
+                    .iter()
+                    .any(|line| line.bottom > rect.y_min && line.top < rect.y_max)
+            })
+        {
+            return Err(ObjectDiagnosticKind::UnsupportedContent);
         }
         let first_line_height = layout
             .lines
@@ -656,12 +686,16 @@ impl Edge {
 }
 
 pub(super) fn table_drawn_bounds(table: &RichTextTable) -> BoundingBox {
+    drawn_bounds_for_rect(table, table.bbox)
+}
+
+fn drawn_bounds_for_rect(table: &RichTextTable, rect: BoundingBox) -> BoundingBox {
     let [left, top, right, bottom] = table_border_widths(table);
     BoundingBox {
-        x_min: table.bbox.x_min - left / 2.0,
-        y_min: table.bbox.y_min - top / 2.0,
-        x_max: table.bbox.x_max + right / 2.0,
-        y_max: table.bbox.y_max + bottom / 2.0,
+        x_min: rect.x_min - left / 2.0,
+        y_min: rect.y_min - top / 2.0,
+        x_max: rect.x_max + right / 2.0,
+        y_max: rect.y_max + bottom / 2.0,
     }
 }
 
@@ -757,6 +791,78 @@ mod tests {
 
     fn close(actual: f64, expected: f64) {
         assert!((actual - expected).abs() < 1e-5, "{actual} != {expected}");
+    }
+
+    #[test]
+    fn cloned_outer_frame_changes_drawn_origin_without_fitting_columns() {
+        let mut table = grid(&[100.0], &[200.0]);
+        table.bbox = BoundingBox {
+            x_min: 100.0,
+            y_min: 200.0,
+            x_max: 300.0,
+            y_max: 300.0,
+        };
+        table.style.border = Some(border([2.0; 4], 0xff000000));
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let drawing = prepare_table_clone_drawing(
+            &table,
+            ObjectSpanLayoutConstraint::Normal,
+            BoundingBox {
+                x_min: 10.0,
+                y_min: 20.0,
+                x_max: 111.0,
+                y_max: 122.0,
+            },
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(drawing.measured_bbox.x_min, 9.0);
+        assert_eq!(drawing.measured_bbox.x_max, 212.0);
+        let cell = drawing.rows[0].cells[0].frame;
+        assert_eq!(cell.x_min, 10.0);
+        assert_eq!(cell.x_max, 210.0);
+        assert_eq!(table.column_widths, [200.0]);
+    }
+
+    #[test]
+    fn partial_width_bands_require_an_actual_text_line_intersection() {
+        let mut table = grid(&[100.0], &[60.0]);
+        let content = &mut table.rows[0].cells[0].content;
+        content.text = "T".into();
+        content.font_size = Some(10.0);
+        content.margins = None;
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let mut prepared = prepare_table(
+            &table,
+            ObjectSpanLayoutConstraint::OverPages,
+            0.0,
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        for (top, expected) in [
+            (0.0, Err(ObjectDiagnosticKind::UnsupportedContent)),
+            (100.0, Ok(())),
+        ] {
+            prepared.rows[0].cells[0].bands = BandList::new(vec![BoundingBox {
+                x_min: 0.0,
+                y_min: top,
+                x_max: 50.0,
+                y_max: top + 20.0,
+            }])
+            .unwrap();
+            assert_eq!(
+                prepared.layout_cell(0, 0, &table, theme, &renderer),
+                expected
+            );
+        }
+        assert_eq!(prepared.rows[0].cells[0].layout.lines.len(), 1);
     }
 
     #[test]

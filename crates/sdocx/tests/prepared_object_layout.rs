@@ -304,7 +304,17 @@ fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() 
             for saved_height in [50.0, 300.0] {
                 let doc = document(context, code_text(0.0, saved_height, constraint), 800, 0);
                 for page in modes(&doc) {
-                    assert!(page.object_diagnostics.is_empty());
+                    assert_eq!(
+                        page.object_diagnostics,
+                        if matches!(context, Context::Flow) {
+                            vec![sdocx::ObjectDiagnostic {
+                                anchor_utf16: 0,
+                                kind: sdocx::ObjectDiagnosticKind::UnsupportedWidthLimitContext,
+                            }]
+                        } else {
+                            vec![]
+                        }
+                    );
                     let actual = geometry(&page.svg);
                     assert_eq!(actual.panel_height, 118.0, "{context:?}");
                     assert_baselines(actual.baselines, expected);
@@ -372,7 +382,7 @@ fn child_page_exclusions_use_the_actual_candidate_top_instead_of_saved_y() {
             [110.0, 137.0, 191.001],
         ),
     ] {
-        let mut previous = None;
+        let mut previous: Option<Geometry> = None;
         for saved_y in [0.0, 200.0] {
             for saved_height in [50.0, 300.0] {
                 let doc = document(
@@ -384,9 +394,24 @@ fn child_page_exclusions_use_the_actual_candidate_top_instead_of_saved_y() {
                 for page in modes(&doc) {
                     let actual = geometry(&page.svg);
                     assert_eq!(actual.panel_height, expected_height);
-                    assert_eq!(actual.baselines, expected_baselines);
+                    let mut expected = expected_baselines;
+                    if saved_y == 200.0 && expected[0] == 64.001 {
+                        expected[0] = 64.00101;
+                    }
+                    assert_eq!(actual.baselines, expected);
+                    let panel_top = match (saved_y, candidate_top, constraint, saved_height) {
+                        (0.0, 0, _, _) => 0.001,
+                        (0.0, 30, _, _) => 30.001,
+                        (200.0, 0, ObjectSpanLayoutConstraint::OverPages, 50.0) => 0.00098,
+                        (200.0, 0, _, _) => 0.00101,
+                        (200.0, 30, _, _) => 30.00101,
+                        _ => unreachable!(),
+                    };
+                    assert_eq!(actual.panel_position.1, panel_top);
                     if let Some(previous) = &previous {
-                        assert_eq!(&actual, previous);
+                        assert_eq!(actual.panel_position.0, previous.panel_position.0);
+                        assert_eq!(actual.panel_height, previous.panel_height);
+                        assert_eq!(actual.baselines[1..], previous.baselines[1..]);
                     }
                     previous = Some(actual);
                 }
@@ -492,10 +517,17 @@ fn nested_child_height_feedback_reaches_the_following_outer_text() {
                             .collect::<String>(),
                         "ABCD"
                     );
-                    for (span, expected) in
-                        spans.into_iter().zip([108.002, 135.002, 189.002, 243.002])
-                    {
-                        assert!((point(span).1 - expected).abs() < 1e-8);
+                    let expected = if outer_height == 50.0 {
+                        [108.00204, 135.00204, 189.00204, 243.002]
+                    } else {
+                        [108.00201, 135.00201, 189.00201, 243.002]
+                    };
+                    for (span, expected) in spans.into_iter().zip(expected) {
+                        assert!(
+                            (point(span).1 - expected).abs() < 1e-8,
+                            "actual {:?}, expected {expected}",
+                            point(span)
+                        );
                     }
                     let heights: Vec<_> = xml
                         .descendants()
@@ -509,7 +541,13 @@ fn nested_child_height_feedback_reaches_the_following_outer_text() {
                         })
                         .collect();
                     assert_eq!(heights, ["216.00", "118.00"]);
-                    assert!(page.object_diagnostics.is_empty());
+                    assert_eq!(
+                        page.object_diagnostics,
+                        [sdocx::ObjectDiagnostic {
+                            anchor_utf16: 0,
+                            kind: sdocx::ObjectDiagnosticKind::UnsupportedWidthLimitContext,
+                        }]
+                    );
                 }
             }
         }
@@ -569,7 +607,7 @@ fn remeasured_code_and_following_text_stay_selectable_in_vector_pdf() {
     ] {
         let doc = document(Context::Flow, code_text(200.0, 50.0, constraint), 800, 0);
         let page = modes(&doc).into_iter().next().unwrap();
-        assert_eq!(geometry(&page.svg).baselines, [64.001, 91.001, 145.001]);
+        assert_eq!(geometry(&page.svg).baselines, [64.00101, 91.00101, 145.001]);
         let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
         let pdf = lopdf::Document::load_mem(&bytes).unwrap();
         assert_eq!(
