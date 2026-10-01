@@ -1365,22 +1365,24 @@ starts the first row/column at it, and accumulates prior frame endpoints
 and 108-unit rows consequently give first local frame
 `[0.5,0.5,492.5,108.5]`. `updateMeasuredRect` unions frame bounds, expands
 individual outer edges by their border half-widths and normalizes measured
-bounds (`0xab23c`–`0xab2c0`), giving `[0,0,985,217]` here. Over-pages table
-text selects these frames at `0xa6b04`–`0xa6b24`, then offsets by the supplied
+bounds (`0xab23c`–`0xab2c0`), giving `[0,0,985,217]` here. The union uses
+the first and last frame owners; it does not cover every raw slot. Over-pages
+table text selects these frames at `0xa6b04`–`0xa6b24`, then offsets by the supplied
 draw rectangle minus measured origin at `0xa6b38`–`0xa6b50`. These rules
 support prepared geometry, not an arbitrary -0.5 shift of table glyphs;
 the composed draw-rectangle origin remains a separate input.
 
 The ordinary, non-spannable drawing branch instead reads each model cell's
 rectangle, subtracts the model table origin, and adds the supplied draw origin
-(`0xa68bc`–`0xa6b50`). It must retain that distinct coordinate producer. Rust now
-prepares complete unmerged grids for constraints 1/2 with retained split lists.
-Each cell uses the shared Rust engine at the native integer-truncated cell
+(`0xa68bc`–`0xa6b50`). It must retain that distinct coordinate producer. Rust
+prepares bounded dense unmerged/merged grids for constraints 1/2 with retained
+split lists. Each cell uses the shared Rust engine at the native integer-truncated cell
 dimensions and retains that plan for painting. Cold measurement grows saved rows;
 warm retries retain caches, shrink or grow rows, and preserve pending page gaps.
-Normal tables, merged/sparse grids, nested objects and unsupported active size
-constraints retain the saved-frame path. Partial horizontal obstacles report
-`UnsupportedContent` and preserve saved-cell painting; the shared cell engine
+Fresh drawing also prepares Normal tables; their callback reservation remains
+separate. Sparse grids, nested objects and rotated layouts retain saved-frame
+fallbacks. Partial horizontal obstacles report `UnsupportedContent` and preserve
+saved-cell painting; the shared cell engine
 currently represents full-width vertical bands. Invalid derived bounds retain
 the separate replacement-marker recovery policy.
 
@@ -1392,8 +1394,10 @@ heights; warm layout can grow or shrink them (`0xaecf4`). Later rows can
 move past a split using actual first-line height plus top margin
 (`0xac9f0`, `0xb2360`), and trailing empty space can compress a row
 (`0xb294c`, `0xb28ec`). Fresh measurement at every candidate is therefore
-not established as equivalent. Rust now retains these phases for unmerged grids;
-merged-cell frame union and rowspan growth remain unverified.
+not established as equivalent. Rust retains these phases for dense merged grids.
+The [table captures](table-code-findings.md#public-table-measurement-and-layout-lifecycle)
+verify raw-slot cold sizing, owner-based warm sizing and endpoint-owner bounds.
+Native merged shaping and complete parent pagination remain unverified.
 
 Warm row movement also retains page displacement. Positive preceding-row growth
 consumes that displacement before moving later frames; negative growth first
@@ -1464,7 +1468,7 @@ Table `GetMinHeightInFirstPage` (`0xac9d4`, Drawing) instead measures its first
 cached row (`0xac9f0`–`0xacb48`). Nonempty cells contribute first-line background
 height plus text top margin; empty cells contribute measured height. A zero
 maximum falls back to the first cached frame's height, then adds
-`contentRect.top - measuredRect.top`. Cold unmerged frames begin at the global
+`contentRect.top - measuredRect.top`. Cold slot frames begin at the global
 drawing half-border offset. Bodytext lays out the child before reading its
 minimum (`0xb0e28`, `0xb0f20`–`0xb0f30`), so a missing Rust plan cannot stand
 in for native zero. Prepared paged grids now retain this minimum and their shared
@@ -1768,8 +1772,8 @@ Child text origins also use native `f32` addition (`0x37f670`–`0x37f684`):
 at world X 16,777,216 a local text inset of 3 yields X 16,777,220. Retaining
 the addition in `f64` would instead produce 16,777,219.
 
-Rust regenerates complete, unmerged, unrotated grids with this same engine
-and keeps the final world geometry in a distinct drawing plan. It preserves
+Rust regenerates bounded dense unmerged/merged grids without rotation through
+this same engine and keeps final world geometry in a distinct drawing plan. It preserves
 the callback reservation and translates retained cell text once. The captured
 table's former saved-frame fallback placed text 1 unit right and about
 1.751 units low. Fresh hash-checked comparisons now include all four native
@@ -1933,7 +1937,7 @@ faces and report visible font resolution; planner issues retain source or
 outer-object ownership. Structural and geometry diagnostics can still cover a
 whole visible object. The negative-top adapter remains only for fallback
 inspection slices. Captured body/code/table origins are covered by the
-comparisons above; merged/sparse table preparation and arbitrary object
+comparisons above; native merged/sparse parent composition and arbitrary object
 composition remain outside those references.
 
 Shared line assembly retains mutable object measurements and child plans

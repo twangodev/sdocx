@@ -273,8 +273,7 @@ and `0xff` produce identical captures.
 The Rust regression runs the production cold scheduler with supplied heights.
 It matches call order, fractional dimensions, local bands, frame coordinates,
 pending gaps and absent/present split-cache states. Each cell's growth uses its
-own fractional frame height. Export preparation remains limited to unmerged
-grids; these scheduler checks do not establish complete merged composition.
+own fractional frame height.
 
 The native capture executes frame initialization, the cold driver, cell update
 and measurement-difference routines, frame setters/getters and row updates.
@@ -372,9 +371,9 @@ split lists, pending gaps, measured bounds and first-page minima. Repeats under
 all three allocation fills agree as well. Text measurements remain supplied
 caches; the editing setter itself is not executed by these captures.
 
-Rust accepts the flag for supported unmerged preparation and retains saved
+Rust accepts the flag for supported dense preparation and retains saved
 height metadata. It does not replay the editing-time resize or cap the measured
-rows. This does not extend support to complete merged preparation.
+rows.
 
 ### Warm row sizing from cached owner measurements
 
@@ -407,9 +406,9 @@ Drawing and Base hashes recorded below, plus Widget SHA-256
 The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_row_tests.rs)
 matches every coordinate and pending-gap bit using production row updates.
 Preparation caches the bounded `TableGrid` ownership map once and warm sizing
-reads owner measurements through that map. Export preparation still accepts
-only unmerged grids. The capture supplies measured heights directly and uses
-the isolated text initialization described below; it does not establish native
+reads owner measurements through that map. The capture supplies measured
+heights directly and uses the isolated text initialization described below;
+it does not establish native
 text measurement, complete merged pagination or device appearance.
 
 ```sh
@@ -465,8 +464,8 @@ pagination selection or device appearance.
 The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_frame_tests.rs)
 matches initial/final coordinate bits and final pending-gap bits for every input.
 It uses the same frame initializer and row updates as export preparation, before
-text measurement. Export still restricts preparation to unmerged grids; matching
-these frame primitives does not establish complete merged-table support.
+text measurement. Matching these frame primitives does not establish complete
+merged-table parity.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -524,7 +523,7 @@ selection or device appearance.
 The [Rust regressions](../../crates/sdocx/src/render/table/native_geometry_tests.rs)
 match content/measured bounds, edge widths and every minimum-height query by
 `f32` bits. Production bounds and first-page sizing use the same owner lookup
-as warm row sizing. Export preparation remains restricted to unmerged grids.
+as warm row sizing.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -588,8 +587,7 @@ The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_spli
 matches every changed flag, cache-presence state and rectangle coordinate bit.
 Cell split caches are typed `Option<BandList>` values. Warm splitting uses the
 first owner's top, copies only to frame-owning cells and preserves stale lists
-when the native comparison succeeds. Export preparation still accepts only
-unmerged grids.
+when the native comparison succeeds.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -711,8 +709,8 @@ merged preparation.
 The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_bottom_tests.rs)
 matches selected-band, displacement, frame-coordinate and pending-gap bits.
 Production compression reads owner caches through the bounded `TableGrid`.
-Prepared exports still accept only unmerged grids; full merged shaping, nested
-objects, complete pagination and device appearance remain outside this evidence.
+Full native merged shaping, nested objects, complete pagination and device
+appearance remain outside this evidence.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -832,7 +830,7 @@ Diagnostics and cold text initialization are isolated in the harness.
 cmp /tmp/table-merge-cells.json conformance/table-merge-cells.json
 ```
 
-### Rust saved-frame painting
+### Rust preparation and painting
 
 The [Rust grid model](../../crates/sdocx/src/render/table/grid.rs) preserves stored
 slots, resolves frame owners and selects paint-visible cells separately. Its
@@ -841,19 +839,24 @@ native capture. Input validation requires a dense grid, matching stored origins,
 positive in-bounds spans, at most 65,536 slots and at most 1,048,576 accumulated
 span positions. These bounds are Rust work limits, not recovered Samsung limits.
 
-Merged tables retain saved cell frames and paint only native-visible cells.
-The saved and prepared drawing paths share that selection. An internal
-covered-span-chain regression supplies prepared frames and checks that covered
-text/backgrounds are omitted while later paint-visible cells remain; it also
-checks the retained PDF text source. This selection regression does not enable
-merged preparation.
-Sparse records and invalid spans retain the saved-cell fallback. Both report
-`UnsupportedContent`: merged frame sizing, rowspan growth and pagination are
-still unimplemented. [Vector-output regressions](../../crates/sdocx/tests/embedded_text_layout.rs)
+Dense merged grids use the shared Rust preparation engine. Cold sizing measures
+every raw slot; warm sizing reads frame owners, retaining covered-cell caches.
+Callback preparation supports constraints 1/2; fresh drawing supports 0/1/2.
+Content bounds retain the first/last owner-frame union through drawing rounding
+and painting. The outline does not substitute the last raw slot's frame.
+Saved and prepared painting share native visible-cell selection.
+
+Sparse records, invalid spans, rotated layouts and nested cell objects remain
+outside this prepared subset. Sparse/invalid grids retain usable saved frames
+and report `UnsupportedContent` with the original source anchor.
+[Vector-output regressions](../../crates/sdocx/tests/embedded_text_layout.rs)
 cover horizontal, vertical, rectangular and covered-span-chain cases in both
 themes and all three layout constraints. They check identical SVG preview/replay,
-selectable PDF source, matching baselines and zero PDF image resources. This is
-visibility and transport coverage; it does not establish native merged geometry.
+selectable/tagged PDF source, matching baselines and zero PDF image resources.
+[Paged Rust regressions](../../crates/sdocx/tests/prepared_tables.rs) compare
+merged owners with an unmerged projection while holding saved bounds fixed.
+Native cache captures establish row sizing and bounds independently; native
+merged shaping, parent placement and complete device pagination remain unverified.
 
 ### Column minimum cache selection
 
@@ -1040,7 +1043,7 @@ background corner squaring and paint-pass ordering have assembly evidence.
 The capture does not execute the canvas's line/rectangle painting or clipping.
 Public SVG/replay and PDF regressions check edge precedence, widths, opacity,
 axis radii, selectable source and zero image resources. Native device appearance,
-merged prepared sizing and complete border clipping across split pages remain
+merged shaping and complete border clipping across split pages remain
 outside this evidence.
 
 ### Cell background selection

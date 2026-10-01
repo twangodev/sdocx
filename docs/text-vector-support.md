@@ -14,7 +14,7 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics and captured body/code/table origins; emergency breaking, RTL justification and all standalone native modes are not established. |
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
-| Embedded content | Images, code title/body, unmerged table preparation, native merged-cell visibility with saved frames, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; saved row maxima and table-wide height limits do not cap the traced export layout. Merged frame sizing, sparse preparation and arbitrary nested composition remain incomplete. |
+| Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
 | Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii and composited text surfaces | Hash-pinned Model paths, Drawing outline aggregation and background selection; SVG/replay/PDF transport tests. Complete clipping and device appearance remain unverified. |
 | Decorations | Underline, strikethrough, uniform cluster backgrounds and vector list markers | Retained layout and native endpoint contracts; backgrounds changing inside a glyph cluster remain conservative. |
 | SVG preview/replay | Typed SVG elements, embedded fonts, retained text positions where reproducible, source-preserving text fallback elsewhere | Chromium tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
@@ -62,9 +62,10 @@ plain Arabic spans.
 
 ## Known limits
 
-- Merged/sparse table preparation, rowspan growth, and nested or rotated object
-  feedback are incomplete. Merged saved-frame painting follows native visibility;
-  merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`.
+- Dense merged preparation uses captured frame-owner sizing and native visibility.
+  Sparse/invalid grids retain saved-frame painting with `UnsupportedContent`.
+  Rotated/nested preparation and native merged shaping/parent pagination remain
+  incomplete or unverified.
 - Table border paths match the [native capture](../conformance/table-border-paths.json).
   Outline color, thickness and axis radii also match
   [native Drawing aggregation](../conformance/table-border-drawing.json) at seven
@@ -118,9 +119,10 @@ lines reuse paragraph bidi contexts.
   [shape text frames](../crates/sdocx/tests/shape_text_frame.rs) cover shared
   layout, synthesis, selectable source and vector transport.
 - [Embedded layout regressions](../crates/sdocx/tests/embedded_text_layout.rs)
-  check saved/prepared table painting, code panels, themes, selectable text and
-  vector transport. Saved and prepared table painting share native visible-cell
-  selection; this does not establish complete merged preparation.
+  check dense merged preparation, saved fallbacks, code panels, themes,
+  selectable text and vector transport. [Paged table regressions](../crates/sdocx/tests/prepared_tables.rs)
+  compare merged owner placement with an unmerged projection at identical saved
+  bounds. These transport checks do not establish device appearance parity.
 - The [native table capture matrix](../conformance/README.md#document-composition-regressions)
   records each hash-pinned fixture's coverage and isolated dependencies. It
   distinguishes ownership, merge construction, borders/fills, column minima,
