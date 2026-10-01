@@ -12,6 +12,9 @@ mod rows;
 #[path = "native_table/geometry.rs"]
 mod geometry;
 
+#[path = "native_table/splits.rs"]
+mod splits;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1029,9 +1032,20 @@ fn main() {
             );
             return;
         }
+        Some("--row-splits") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base_path = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            splits::capture(&mut machine, Path::new(&base_path));
+            return;
+        }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows, --measured-geometry, --row-splits or no capture mode"
         ),
     }
     let mut cases = Vec::new();
