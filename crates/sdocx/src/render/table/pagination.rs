@@ -22,6 +22,9 @@ mod native_control_tests;
 #[cfg(test)]
 mod native_cell_input_tests;
 
+#[cfg(test)]
+mod native_cold_row_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
@@ -95,15 +98,30 @@ pub(super) fn cold(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<(), ObjectDiagnosticKind> {
-    for row_index in 0..plan.rows.len() {
+    cold_from_row_using(plan, 0, |plan, position| {
+        plan.layout_cell(position.row, position.column, table, theme, renderer)
+    })
+}
+
+fn cold_from_row_using(
+    plan: &mut PreparedTable,
+    start: usize,
+    mut measure: impl FnMut(&mut PreparedTable, super::CellPosition) -> Result<(), ObjectDiagnosticKind>,
+) -> Result<(), ObjectDiagnosticKind> {
+    for row_index in start..plan.rows.len() {
+        let mut growth = 0.0_f64;
         for column_index in 0..plan.rows[row_index].cells.len() {
             let top = plan.rows[row_index].cells[column_index].frame.y_min;
             plan.rows[row_index].cells[column_index].bands = Some(plan.bands.for_row(top)?);
-            plan.layout_cell(row_index, column_index, table, theme, renderer)?;
-        }
-        let height = plan.row_height(row_index)?;
-        let mut growth = 0.0_f64;
-        for cell in &plan.rows[row_index].cells {
+            measure(
+                plan,
+                super::CellPosition {
+                    row: row_index,
+                    column: column_index,
+                },
+            )?;
+            let cell = &plan.rows[row_index].cells[column_index];
+            let height = native_sub(cell.frame.y_max, cell.frame.y_min)?;
             growth = growth.max(native_sub(cell.metrics.measured_height, height)?);
         }
         if growth > 0.0 {
