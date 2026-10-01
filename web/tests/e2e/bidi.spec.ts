@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { zipSync } from 'fflate';
 import { PDFDocument, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
+import { join, zero, u16, u32, f32, f64, frame } from '../fixtures/wdoc';
 
 interface BidiCase {
 	source: string;
@@ -38,18 +39,7 @@ const suites = [
 	{ name: 'native bidi inline image follows visual order with selectable vector text', examples: [inlineImage], family: 'Roboto', font: '../crates/sdocx/assets/fonts/Roboto-Regular.ttf', injectFont: false }
 ];
 
-const join = (...parts: Uint8Array[]) => Buffer.concat(parts);
-const zero = (length: number) => Buffer.alloc(length);
-const u16 = (value: number) => { const bytes = Buffer.alloc(2); bytes.writeUInt16LE(value); return bytes; };
-const u32 = (value: number) => { const bytes = Buffer.alloc(4); bytes.writeUInt32LE(value); return bytes; };
-const f32 = (value: number) => { const bytes = Buffer.alloc(4); bytes.writeFloatLE(value); return bytes; };
-const f64 = (value: number) => { const bytes = Buffer.alloc(8); bytes.writeDoubleLE(value); return bytes; };
 const redPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
-
-function frame(kind: number, fields: number, fixed = zero(0), flexible = zero(0)) {
-	const offset = 18 + fixed.length;
-	return join(u32(offset + flexible.length), u16(kind), u32(offset), Buffer.from([2]), u16(kind === 0 ? 8 : 0), Buffer.from([4]), u32(fields), fixed, flexible);
-}
 
 function imagePayload(image: NonNullable<BidiCase['image']>): Buffer {
 	const bbox = [0, 0, image.width, image.height];
