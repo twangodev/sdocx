@@ -893,7 +893,11 @@ fn layout_text_with_context(
         );
         let [left_indent, right_indent] = layout.indent_insets(settings);
         let marker_x = content_left + left_indent;
-        let marker_style = styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+        let mut marker_style =
+            styled.style_at(paragraph.content.start, theme, layout.predefined_style);
+        if paragraph.content.is_empty() {
+            marker_style.font_size = styled.font_size_at_caret(paragraph.content.start);
+        }
         let mut marker = layout.bullet.and_then(|bullet| {
             PreparedMarker::prepare(
                 bullet,
