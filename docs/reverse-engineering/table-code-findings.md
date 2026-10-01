@@ -262,8 +262,8 @@ unchanged. This driver does not read saved row minima or maxima. Its selection
 differs from warm sizing, which reads frame-owner measurements.
 
 [`table-cold-rows.json`](../../conformance/table-cold-rows.json), SHA-256
-`bbdb16741d4e80d36a583cb16d792400968f2c49bf3757083915c57546dd6202`,
-captures 144 inputs, 147 runs, 608 measurement calls and 1,260 resulting slot
+`c807d89806b9696aa3708a873f9c8811873693f063b5c931c2d729dd17fa5f62`,
+captures 160 inputs, 163 runs, 704 measurement calls and 1,356 resulting slot
 frames. It covers dense and merged grids, covered-span chains, positive-growth
 boundaries, zero/subpixel heights, row starts including the end of the table,
 pending gaps, unsorted/empty bands and repeated cold measurement. Minima and
@@ -311,10 +311,29 @@ not an unconditional lower clamp on every nonempty row.
 
 These selected cold/warm export routines do not read the saved row maximum.
 Model exposes that value through `ObjectTable::GetMaxRowHeight`, `0x3d3844`,
-and `TableRow::GetMaxHeight`, `0x3c4244`, but its presence must not reject the
-export preparation path or introduce a maximum-height clamp. Rust accepts
-saved row maxima while retaining their parsed values. The table-wide
-maximum-height flag is separate and still outside the supported prepared path.
+and `TableRow::GetMaxHeight`, `0x3c4244`. Rust retains the parsed maxima without
+capping export row measurement.
+
+### Table-wide height limit
+
+`ObjectTable::IsMaxHeightEnabled`, `0x3db38c`, reads implementation byte 186;
+`GetMaxHeight`, `0x3dabcc`, forwards to the float at offset 176. Model's
+`SetMaxHeightEnabled`, `0x3d17dc`, writes that flag and calls `fitTableRect`
+(`0x3d183c`) when it changes. That editing-time resize is separate from Drawing's
+layout of saved rows and columns.
+
+The cold-row, warm-row and measured-geometry captures each include sixteen
+height-limit cases: flag off/on, maxima 0/1/10/1000, and unmerged/merged grids.
+The native getters verify the supplied metadata before cold frame initialization.
+For each case the harness also runs an otherwise identical grid without the
+limit. Every captured output agrees: cold/warm frames, measurement selections,
+split lists, pending gaps, measured bounds and first-page minima. Repeats under
+all three allocation fills agree as well. Text measurements remain supplied
+caches; the editing setter itself is not executed by these captures.
+
+Rust accepts the flag for supported unmerged preparation and retains saved
+height metadata. It does not replay the editing-time resize or cap the measured
+rows. This does not extend support to complete merged preparation.
 
 ### Warm row sizing from cached owner measurements
 
@@ -335,8 +354,8 @@ changes the physical row height, then `offsetFromRow` moves subsequent rows.
 Rows before the start index retain their frames.
 
 [The warm-row capture](../../conformance/table-warm-rows.json), SHA-256
-`4a1b17063dadcf9d8d3ca819dbf92b6f75f689f87b3e1f38ab4369d3f215610e`,
-contains 142 inputs and 1,189 slot frames. It covers merged owners, covered-span
+`fc01a44d106fb82a4810c0ea78dff1411a28a7a41370387163055cdda9193c92`,
+contains 158 inputs and 1,285 slot frames. It covers merged owners, covered-span
 chains, supplied/null layout measurements, threshold-adjacent heights, saved
 minima/maxima, start indices and pending gaps. Each input produces identical
 outputs with allocation fills `0x00`, `0xa5` and `0xff`. The
@@ -445,8 +464,8 @@ normalization this is the content's top coordinate. `GetMinHeightInFirstPage`,
 `0xac9d4`, requests row zero with this flag enabled.
 
 [The geometry capture](../../conformance/table-measured-geometry.json), SHA-256
-`e877970b7966c5d10c9df478c4d608d9d56db26f288f7e1ec0d68adeffad09fa`,
-records 138 table states, 1,185 supplied/cold slot frames and 818 minimum-height
+`6b210cfa59fa00971addb39da7d7576eeb3238214fa560d31a9dcdf7f4039ed4`,
+records 154 table states, 1,281 supplied/cold slot frames and 914 minimum-height
 queries with both origin-flag values. Cases include endpoint owners from earlier
 rows/columns, covered-span chains, endpoint-cache union, asymmetric edge widths,
 nonempty/empty text, absent text layouts and the first-row fallback. Every output
@@ -1025,12 +1044,13 @@ do not establish device appearance or application-level theme selection.
 cmp /tmp/table-backgrounds.json conformance/table-backgrounds.json
 ```
 
-Rust regressions exercise saved row maxima below measured content height through
-callback preparation, final drawing, light/dark SVG preview, replay and retained
+Rust regressions exercise saved row maxima and enabled table-wide height limits
+below measured content height through callback preparation, final drawing,
+light/dark SVG preview, replay and retained
 PDF. They require unchanged source ranges, baselines and vector text, with no
 PDF image resources. These establish the metadata-invariance and transport
-contracts; the current locked Samsung corpus has no dedicated row-maximum or
-merged/sparse table reference capture.
+contracts; the current locked Samsung corpus has no dedicated height-limit or
+merged/sparse table source/reference pair.
 
 ## Shared code-block text layout
 
