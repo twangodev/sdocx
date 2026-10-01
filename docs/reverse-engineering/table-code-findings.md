@@ -348,9 +348,55 @@ neither follows a sum performed once in `f64` and narrowed at the end.
 cmp /tmp/table-border-paths.json conformance/table-border-paths.json
 ```
 
-The Rust table painter still uses a uniform one-unit border and fixed rounded
-clip. Parsed edge styles and these captured paths do not yet drive its paint;
-native border appearance parity is not established.
+The Rust border model matches every captured segment, style and endpoint,
+including the native `f32` staging. Its topology is bounded to 65,536 cells;
+paint work is independently bounded to 1,048,576 perimeter segments after
+frame-owner propagation. Invalid numeric inputs report `InvalidBounds`;
+unsupported topology or excessive paint work report `UnsupportedContent`.
+
+### Border painting
+
+Drawing's `drawTableCellWithoutText`, `0xa748c`, scans paint-visible cells and
+calls Model's perimeter builder at `0xa7c34`. It rejects ARGB zero and exact
+width zero (`0xa7c6c`–`0xa7c7c`), then raises widths below one to one. Negative
+widths survive Model and reach this minimum-width branch. A nonzero ARGB with
+zero alpha still participates in selection, although its paint is transparent.
+
+Shared boundaries generally select the later cell's left/top edge. With an
+active outer border, Drawing suppresses the first-column left edge, first-row
+top edge and all right edges (`0xa7c98`–`0xa7cd0`). A bottom edge is retained
+when the next row's pending gap exceeds `0.001f`. Without an active outer
+border, the right edge is retained only for a cell originating in the last
+column, and bottom edges are retained on the last row or before a pending gap
+(`0xa7cdc`–`0xa7d0c`). This uses the layout's pending-gap cache at member 856,
+not a difference inferred from rounded cell frames.
+
+`getTableBorderStyle`, `0xa6fb4`, aggregates the outer paths: the last nonzero
+ARGB with positive width supplies the color, and the maximum drawable width
+supplies thickness after a one-unit minimum. Horizontal-edge radius maxima
+supply `rx`; vertical-edge maxima supply `ry` (`0xa70e8`–`0xa711c`). Radii
+are read even from inactive edges. When both radii are positive,
+`drawTableBorder`, `0xa8218`, paints one rounded rectangle with this aggregate
+style. Otherwise it retains each outer edge's style and endpoint direction.
+The rounded cell backgrounds are painted separately; non-perimeter corners
+are squared by additional rectangles (`0xa7b10`–`0xa7c0c`).
+
+Spannable paths use prepared content and cell frames; saved paths retain Model
+coordinates with drawing offsets. Outer content bounds are distinct from the
+border-expanded measured rectangle (`TableLayout::updateMeasuredRect`,
+`0xab168`; `GetContentRect`, `0xab4a8`). Cell backgrounds and borders are
+painted in cell order, then the outer border; text uses a separate pass.
+
+The Rust vector painter applies these rules with typed lines and rectangles,
+stored edge colors/alpha, shared theme conversion and metadata-derived radii.
+Its width policy is the native unit-canvas policy. Native `drawLinePath`,
+`0xa8008`, also enforces a one-pixel minimum using the canvas X scale;
+zoom-dependent screen coverage is not reproduced by the document-space vectors.
+The Drawing rules above are assembly evidence, not captured Drawing execution.
+Public SVG/replay and PDF regressions check edge precedence, widths, opacity,
+axis radii, selectable source and zero image resources. Native device appearance,
+merged prepared sizing and complete border clipping across split pages remain
+outside this evidence.
 
 Rust regressions exercise saved row maxima below measured content height through
 callback preparation, final drawing, light/dark SVG preview, replay and retained
@@ -431,7 +477,8 @@ to pass. These tests establish bounds and structure, not Samsung rendering
 fidelity.
 
 The shared Rust engine measures and paints supported embedded table/code text.
-Table border styling remains approximate, and standalone table decoding is not
+Table border painting follows the captured Model geometry and traced Drawing
+rules within the evidence limits above; standalone table decoding is not
 established. Inherited shape data and native layout behavior are separate from
 the bounded embedded-record decoding described here. Current layout support
 and transport limits are documented in

@@ -221,7 +221,7 @@ Native reference coverage is narrower than synthetic coverage:
 | --- | --- | --- |
 | [`text-metrics.json`](text-metrics.json) | Independently decoded, hash-locked Samsung PDF observations for baselines, markers and clipping. | Table-cell placement and post-code ordinary text are outside the passing native subset. Coordinate conventions and residuals are recorded in [text layout findings](../docs/reverse-engineering/text-layout-findings.md). |
 | [`table-ownership.json`](table-ownership.json) | Frame owners and paint-visible cells for 279 native synthetic dense grids; Rust matches the captured outputs. | Covers saved-frame visibility, not merged measurement or device-rendered geometry. Merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`. |
-| [`table-border-paths.json`](table-border-paths.json) | Model perimeter segments, styles and line equations for twelve native synthetic grids, including merged boundaries and constructor defaults. | Does not validate the Rust border painter or device-rendered appearance. Native rules are recorded in [table findings](../docs/reverse-engineering/table-code-findings.md). |
+| [`table-border-paths.json`](table-border-paths.json) | Model perimeter segments, styles and line equations for twelve native synthetic grids, including merged boundaries and constructor defaults; Rust matches the captured paths. | Drawing-derived SVG/PDF paint rules have separate vector regressions, without captured Drawing execution or device appearance. See [table findings](../docs/reverse-engineering/table-code-findings.md#border-painting). |
 
 Prepared table regressions cover complete unmerged over-pages grids, cold/warm
 row sizing, page gaps and both split modes. Merged/sparse grids, nested child
