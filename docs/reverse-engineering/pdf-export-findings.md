@@ -1,16 +1,20 @@
-# SVG-based PDF export
+# Document and SVG PDF export
 
 ## Implementation and scope
 
-The optional Rust `pdf` feature exports the existing visible-page SVGs into one
-PDF. `render_document_pdf` uses the shared document layout and render options;
-`render_svg_pages_pdf` accepts previously rendered pages in slice order.
+The optional Rust `pdf` feature exports visible pages into one PDF.
+`render_document_pdf` retains the shared Rust layout's selected faces, glyphs,
+positions and logical source. A private text registry supplies those glyphs
+while the SVG converter handles surrounding graphics, transforms and clipping.
+`render_svg_pages_pdf` accepts serialized pages in slice order without that
+registry and can reshape their text. The two transport contracts are described
+in [vector text support](../text-vector-support.md).
 The CLI supports `--format pdf`, `.pdf` output inference, repeated `--font`
 paths and `--pdf-dpi`. Explicit format selection takes precedence over the
 filename extension. PDF writes one document even when the note has many pages.
 
 The implementation uses [krilla 0.8.2](https://docs.rs/krilla/0.8.2/krilla/)
-and [krilla-svg 0.8.1](https://docs.rs/krilla-svg/0.8.1/krilla_svg/), with
+and a [bundled krilla-svg 0.8.1 adapter](../../crates/sdocx/src/pdf/svg/UPSTREAM.md), with
 usvg/resvg 0.47.0 shared with PNG export. All workspace packages now declare
 Rust 1.92. PDF dependencies remain optional for library consumers. The WASM bindings
 enable `pdf` and `serde`, exposing the same renderer through
@@ -85,28 +89,28 @@ runner's 16-channel-value threshold and zero missing/extra ink. Interior color
 samples agreed within two channel values. These are SVG/PDF integration checks,
 not Samsung shape/image fidelity evidence.
 
-## Validation and remaining limits
+## Regression coverage and export limits
 
-- Five SDK PDF tests decode exported bytes with an independent PDF parser:
+- SDK PDF tests decode exported bytes with an independent PDF parser:
   page order, mixed sizes, scale, selectable text, embedded fonts/images,
   vector paths, trailing-storage-page omission, color options and invalid input.
 - CLI tests exercise actual processes and files: multipage output naming,
   extension/flag precedence, custom scale, invalid fonts/DPI and preservation
   of existing output on conversion failure.
-- Fourteen Python runner tests pass, including PDF page order/counts, physical
-  dimensions, extracted text, artifact hashes and report download links. The
-  exact locked CI command also passes in an isolated environment.
-- Workspace tests, strict Clippy, formatting, the Rust 1.92 all-targets check,
-  a parser-only build and the browser WASM target check pass locally.
-- All five PNG output hashes still match the pre-PDF baseline with the same
-  supplied fonts. Hosted CI has not run for these local commits.
+- [Retained-glyph tests](../../crates/sdocx/tests/pdf_retained_glyphs.rs) verify
+  selected font outlines, full glyph XY placement, synthesis at multiple DPI
+  values and logical structure-tree order independently of paint order.
+- [Chromium export tests](../../web/tests/e2e/font-collection.spec.ts) inspect
+  actual WASM PDF downloads and the selected embedded font face.
 
 PDF export inherits the shared SVG renderer's limitations: unsupported native
 shapes, image effects and incomplete Unicode fonts remain incomplete. SVG
-filter effects may become bitmaps. Hyperlink annotations, semantic document
-tags, editable Samsung object structure and original pen channels are not
-preserved as PDF features. The new PDF API is currently Rust/CLI functionality;
-browser export requires a separate integration.
+filter effects may become bitmaps. Retained text hidden by effects that bypass
+the registry fails explicitly rather than silently rasterizing. Document PDFs
+carry logical source through `ActualText` and structure-tree order; this does
+not establish universal accessibility conformance. Hyperlink annotations,
+editable Samsung object structure and original pen channels are not preserved
+as PDF features. CLI and browser WASM export use the retained document path.
 
 The APK's own vector list exporter rasterizes stroke batches before PDF
 insertion, as documented in [native PDF stroke findings](native-pdf-stroke-findings.md).
@@ -117,5 +121,5 @@ and opacity are investigated independently.
 Public export option names also differ from the native factory types.
 [Standard PDF composition findings](standard-pdf-composition-findings.md)
 trace the actual UI choice to its X delegate, ordered ordinary-object
-batches and explicit Darken highlighter pass. Reference captures should
-record the UI option instead of inferring the implementation from its name.
+batches and explicit Darken highlighter pass. The public UI option and native
+factory type are distinct identifiers.

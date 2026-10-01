@@ -159,7 +159,7 @@ append loop. This does not imply absence of a callback: the
 [completion path](predictor-callback-findings.md) can deliver a null event.
 Unbuffered dispatch does not bypass the preceding acceleration gate.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The library bytes were matched to the identified APK. Getter mappings,
 threshold loads, inline constructor stores, output bounds and both expiry
@@ -177,4 +177,4 @@ displacement, deviation and candidate-distance gates. The
 [estimator trace](predictor-acceleration-findings.md) supplies the acceleration
 fields. The [input-speed trace](predictor-speed-findings.md) recovers earlier
 low-speed admission. Readiness/chronology checks and application-level
-configuration/runtime reachability remain. No SDK code or corpus fixture changed.
+configuration/runtime reachability remain.

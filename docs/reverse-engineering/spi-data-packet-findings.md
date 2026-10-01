@@ -220,4 +220,4 @@ native helpers. They did not execute the buffer-copy shortcut, complete
 block traversal, pixel callbacks, allocation or worker threads. Later
 [native codec tests](spi-codec-validation.md) execute complete synthetic
 bitmap round trips. Device SPI payloads and rendered references remain
-needed for compatibility validation. No SDK code changed.
+needed for compatibility validation.

@@ -196,10 +196,9 @@ recovered SDOCX wrapper layout.
 All 108 artifact digests and 540 independently reconstructed frame
 digests were checked after generation. The APK/ELF identity, thirty cited
 instruction words, marker callback bindings and existing availability
-dispatch tables were checked against the binary. All 801 local
-documentation links and 181 heading anchors pass validation.
+dispatch tables were checked against the binary.
 
-## Encoder coverage and remaining work
+## Encoder coverage and evidence limits
 
 Twenty-seven native encoder calls use dimensions 16 by 16, 33 by 17 and
 65 by 17, quality options one/24/51, fixed color bytes, and alpha noise,
@@ -217,5 +216,4 @@ depends on writes into adjacent allocations cannot define a portable
 pixel result from the format bytes alone. Device exports and rendered
 references are still needed for compatibility validation.
 
-Generated sequences and scripts remain disposable. Maintained changes
-are Markdown-only; no SDK code changed.
+Generated sequences and scripts remain disposable.

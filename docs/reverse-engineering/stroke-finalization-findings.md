@@ -188,7 +188,7 @@ RTTI, imported bitmap-type methods, parameter constants and replacement
 count checks were verified. Disposable arithmetic reconstruction checked
 the parameter boundaries and timestamp rounding examples. These are
 static results, not execution of Samsung's native smoother or a visual
-comparison against a new device fixture. No SDK code changed.
+comparison against a new device fixture.
 
 Keep the saved point arrays authoritative during document replay. A live
 input filter or optional finalizer may already have changed them; rerunning

@@ -97,7 +97,7 @@ trailing bytes. The complete original payload remains available through
 `UnsupportedObjectType` for plots, because expression evaluation and graph
 rendering are not implemented.
 
-## Validation and next work
+## Validation and evidence limits
 
 Five synthetic integration tests cover all six fields, multiple graph styles
 and substitutions, all truncated field prefixes with a following decoy frame,
@@ -105,7 +105,6 @@ unknown masks/modes/visibility, zero offsets, cumulative counts, UTF-8 decoding
 and UTF-16-unit limits, malformed types and invalid payload bounds. Existing
 math-envelope tests exercise the shared size/count helpers.
 
-Remaining work includes interpreting formula-to-plot relationships, native graph
-evaluation and layout, and any captured-bitmap persistence in older variants.
-Real SDOCX/PDF pairs are needed to compare plotted output and verify writer
-variants beyond this APK.
+Formula-to-plot evaluation/layout and captured-bitmap persistence in older
+variants are not established. Synthetic parser cases do not validate plotted
+appearance or writer variants beyond this APK.

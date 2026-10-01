@@ -177,7 +177,7 @@ is at most 255 at `0x6ab2c`. This is not equivalent bounds checking.
 Malformed runs, oversized magnitudes and truncated bitstreams have not
 been matched against native behavior.
 
-## Remaining work
+## Evidence limits
 
 The [payload trace](spi-alpha-payload-findings.md) now decodes prediction
 modes and coded-partition masks. The [pixel trace](spi-alpha-pixel-findings.md)
@@ -188,6 +188,3 @@ recovers nonzero-Q coefficients and complete primary mode-3 reconstruction
 for full-size submode 1. Other submodes and configurations remain unresolved.
 Device-exported SPI files and visual references remain necessary for
 compatibility validation.
-
-Only Markdown findings are maintained. Scratch readers, native harnesses
-and generated artifacts are disposable local tooling. No SDK code changed.

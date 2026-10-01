@@ -108,7 +108,7 @@ rendering. The ordinary document model still omits standalone math objects and
 reports `UnsupportedObjectType`; calling the inspection method does not remove
 that warning. Stored outer child records continue through the existing traversal.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Seven synthetic integration tests cover all fields together and individually,
 every truncated field prefix with a later decoy frame, absent fields and zero

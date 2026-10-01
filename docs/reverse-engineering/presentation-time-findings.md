@@ -171,7 +171,7 @@ Composer also uses this helper for the
 [prediction pacing coefficient](predictor-position-findings.md), with its
 own sample selection, 3 ms subtraction and presenter-rate denominator.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and all three native byte streams were verified. JNI
 registration entries, singleton construction, vtable targets, native
@@ -185,7 +185,6 @@ float-derived frame durations.
 The helper's numerical mapping and configuration field identities are
 established statically. The [external timing producer](predictor-timing-findings.md)
 uses a separate rate source and double-derived period. Runtime display
-configuration and device timing behavior remain separate work. No SDK
-code changed and no device capture or new SDOCX fixture was used. This
-live display-timing model should not be reapplied to stored stroke
-timestamps during export.
+configuration and device timing behavior remain unmeasured. No device capture
+or SDOCX fixture was used. Live display timing is separate from the timestamps
+already stored in a saved stroke.

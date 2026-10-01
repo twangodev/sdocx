@@ -208,7 +208,7 @@ Whether that condition is reachable after successful application startup
 remains unresolved. This Boolean must not be interpreted as proof of
 delivery or cleanup.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest, freshly extracted DEX, and Base/Predictor/Composer native
 byte streams were verified. JNI strings and registration, imported Handler
@@ -229,5 +229,4 @@ release, capture callbacks and native Composer ownership. The
 [release preparation trace](editor-release-preparation-findings.md) identifies
 capture's first-draw post and the separate document-change initialization post.
 Prediction ordering inside other drawing and cleanup delegates remains
-unresolved. No SDK code, saved-stroke format rule, corpus fixture or device
-execution changed.
+unresolved. No device execution was used.

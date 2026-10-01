@@ -2,7 +2,7 @@
 
 ## Native evidence
 
-This milestone uses Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`, plus
+The native findings use Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`, plus
 the decompiled `SpenObjectShape`, `SpenObjectLine` and `shapeeffect` Java APIs.
 The native sources remain ignored, alongside the APK analysis artifacts.
 
@@ -109,7 +109,6 @@ comparison used an isolated archived checkout and a separate Cargo target.
 An image regression also verifies that the inherited shape angle is not
 mistaken for a corner radius when it matches the image rotation.
 
-Workspace tests, Clippy, formatting, Rust 1.88 and the WASM target check pass.
 The external rich-text fixture passed during the migration. The
 [historical fixture audit](fixture-validation.md) retained all 7,182 strokes
 and 924,442 points, with all 21 media hashes verified; those inputs are retired.
@@ -117,11 +116,11 @@ A disposable synthetic archive was converted through the CLI to SVG and PNG
 and visually checked for geometry, rotation, transparency and curved paths.
 This is runtime coverage, not a Samsung reference comparison.
 
-## Remaining limits and next work
+## Rendering limits
 
-Native contracts and synthetic tests do not establish Samsung visual equivalence.
-Obtain real shape/line documents with matching Samsung PDF exports to measure
-placement, template geometry and style fidelity. Rounded/specialized templates,
+Native contracts and synthetic tests do not establish Samsung visual equivalence
+for every shape/line variant. The [fixture 02 comparison](shapes-dot-calibration-findings.md)
+covers its saved shape paths and diagonal line. Rounded/specialized templates,
 arc/oval path commands, connector routing, pen simulation,
 gradients, dashed/compound outlines and arrowheads remain incomplete. Known
 basic templates may render approximately when unsupported adjustments exist.

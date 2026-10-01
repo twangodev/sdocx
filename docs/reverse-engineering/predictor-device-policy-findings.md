@@ -153,7 +153,7 @@ These strings are predicate examples, not a verified product catalog.
 A missing property yields false for both final flags. No Android property
 was changed or queried from an actual device for this reconstruction.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 All four native byte streams were matched to the APK. Relocated prefix
 lists, null terminators, property strings, factory and vtable targets,
@@ -164,5 +164,5 @@ equal to, and above 29.
 
 This narrows the worker construction path without establishing the active
 device model, cached SDK initialization, selected predictor, or unbuffered
-mode. Callback queue ownership and delivery remain separate work.
-No SDK code or corpus fixture changed.
+mode. The [queue trace](predictor-queue-findings.md) records callback ownership
+and local cancellation; actual device delivery remains unmeasured.

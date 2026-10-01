@@ -144,7 +144,7 @@ rendering defaults, media resolution or network behavior. A malformed optional
 field produces an error from this method while structural note parsing remains
 available. Raw author image/media IDs are retained without fetching anything.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 `crates/sdocx/tests/note_metadata.rs` covers all 20 mapped fields individually
 and in a single consecutive record, every truncated prefix of those field
@@ -153,7 +153,7 @@ sized-record isolation, historical pen/voice boundaries, wider masks and
 aggregate allocation limits. Deliberately invalid hash bytes demonstrate that
 metadata decoding is independent of integrity verification.
 
-Real exports are still needed to validate combinations emitted by Samsung's UI
-and their rendering implications. Further APK work can map fixed-property enum
-values, voice actions and attachment resolution. Document-level style settings
+The synthetic cases do not validate combinations emitted by Samsung's UI or
+their rendering implications. Fixed-property enum semantics, voice actions and
+attachment resolution remain unestablished. Document-level style settings
 are exposed for inspection; they are not yet applied to the renderer.

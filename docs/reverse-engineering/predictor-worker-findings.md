@@ -217,7 +217,7 @@ be described as draining pending work. The
 [model lifecycle trace](neural-lifecycle-findings.md) follows holder
 replacement and the lifetime of already-bound inference pointers.
 
-## Validation and follow-up
+## Validation and evidence limits
 
 Both native byte streams were matched to the APK. The documented
 instruction addresses, task vtable slots, and imported thread, mutex,
@@ -233,5 +233,4 @@ native execution or the absence of additional application synchronization.
 The model lifecycle trace establishes that replacement destroys resources
 referenced by earlier task bindings. Which outer callers serialize model
 changes and teardown remains unresolved. Saved SDOCX/PDF pairs alone cannot
-resolve these scheduling questions; they need runtime input and lifecycle traces. No SDK code or
-corpus fixture changed.
+resolve these scheduling questions; they need runtime input and lifecycle traces.

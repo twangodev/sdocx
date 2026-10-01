@@ -189,14 +189,6 @@ their semantic paths; SVG checks verify that hidden text and images stay out
 of exports. Existing rendering fixtures now set the native visible bit in
 their common frames.
 
-Validation passed for workspace tests with all features, Clippy with warnings
-denied, Rust 1.92 workspace checking, and the WASM target. The existing
-`01-basic-formatting` corpus also passed its locked hashes and parser/layout
-expectations. Its reference PDF was read from the local LFS cache into a
-temporary corpus directory because the `hf` checkout's PDF was absent. This
-existing formatting fixture does not establish hidden-object visual parity.
-
-New Samsung captures should include visible and hidden versions of the same
-objects and containers, hidden layers, and overlapping objects across layers.
-They are needed to validate visual parity and the remaining collection and
-compositing behavior.
+The locked `01-basic-formatting` parser/layout expectations do not establish
+visual parity for hidden objects/containers, hidden layers or overlapping
+objects across layers. Those combinations have no captured comparison here.

@@ -224,7 +224,7 @@ including the −32768-to-1 boundary. These are byte planes throughout;
 the full-size intra path's signed forward/inverse color conversion is
 not part of temporal submode 2.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Native sequences are opened once through constructor `0x5d528` and
 header consumer `0x5da00`. Each complete image's packet groups are then
@@ -293,5 +293,4 @@ offsets. Portable handling of literal marker overruns and broader
 malformed-input limits remain open. In particular, successful
 submode-0/2 sequences do not establish all packet-B-one combinations.
 Device exports and rendered references remain necessary for compatibility
-validation. Maintained changes are Markdown-only; generated sequences
-and scratch decoders remain disposable.
+validation.

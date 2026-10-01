@@ -186,16 +186,17 @@ interpreter, then the flat-buffer model at `0x38be4`, `0x38bf0`,
 and `0x38c04`. This final destruction order differs from `AddModel`'s
 replacement order, which clears the flat-buffer owner before the interpreter.
 
-## Validation and follow-up
+## Validation and evidence limits
 
 Both native byte streams were matched to the APK. Documented instructions,
 owner-reset calls, branch destinations, imported interpreter destructor,
-TFLite runner storage and deletion, and Markdown links were checked.
+and TFLite runner storage/deletion were checked.
 Disposable ownership reconstruction covered repeated input-type updates,
 five setup outcomes, missing-record preservation, stable map identity,
 and stale task bindings after replacement.
 
 No native inference, fault injection, or device lifecycle stress test was
-performed. Composer's selection and deletion ordering is now traced;
-callback queue ownership and cancellation remain open. This work changes only research
-documentation; it supplies no new saved-stroke decoding rule or SDK behavior.
+performed. Composer's selection and deletion ordering is traced; the
+[queue trace](predictor-queue-findings.md) records local callback ownership and
+cancellation. Outer application synchronization remains unverified. These are
+live predictor contracts, separate from saved-stroke decoding.

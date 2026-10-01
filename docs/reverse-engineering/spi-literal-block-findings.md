@@ -178,9 +178,9 @@ Representative independently constructed SPI outputs are:
 These differ from the native encoder's outputs because every block is
 forced to literal mode. The maintained artifact is this specification;
 the constructor, decoder, emulator and generated images remain disposable
-local tooling. No SDK code changed.
+local tooling.
 
-## Remaining work
+## Evidence limits
 
 The later [alpha neighbor-state trace](spi-alpha-state-findings.md#alpha-literal-marker-writes-need-separate-treatment)
 found that native alpha literals pass pixel X directly to a marker helper
@@ -195,8 +195,12 @@ The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
 and 1 alongside literals, and the [palette trace](spi-palette-block-findings.md)
 adds primary mode 4. The [differential trace](spi-differential-block-findings.md)
 adds primary mode 2. The [mode-3 color trace](spi-color-intra-findings.md)
-adds full-size planes with zero quantization. Next targets are the remaining
-mode-3 paths, marker state, reference-buffer behavior, color/flag variants and malformed-input
-limits. An independent decoder for arbitrary SPI images is still incomplete.
+adds full-size planes with zero quantization. Later
+[quantized color](spi-quantized-color-findings.md),
+[temporal](spi-temporal-block-findings.md),
+[reference-cache](spi-reference-cache-findings.md) and
+[mixed-prediction](spi-mixed-prediction-findings.md) findings cover those
+branches independently. General color/flag variants and malformed-input
+behavior remain outside these bounded results.
 Device-exported files and rendered references remain necessary for
 compatibility validation.

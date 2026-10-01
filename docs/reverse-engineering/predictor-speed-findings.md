@@ -180,7 +180,7 @@ This update consumes the getter unchanged. Direct factory users retaining
 the raw microsecond default would produce a different threshold scale if
 they installed this threshold without Composer's millisecond setter sequence.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Both native libraries were matched to the identified APK. Measurement
 ordering, scale constants, 16-byte queue records, strict endpoint trimming,
@@ -195,7 +195,6 @@ the native input pipeline.
 
 The [task-pacing trace](predictor-chrono-findings.md) recovers the time/VSync
 gate, and the [base dispatch trace](predictor-dispatch-findings.md) recovers
-its callback scheduling. A complete audit of threshold-mode changes remains
-separate work.
+its callback scheduling. Threshold-mode changes outside the inspected setters
+remain unverified.
 Actual device sampling and prediction outcomes remain unmeasured.
-No SDK code or corpus fixture changed.

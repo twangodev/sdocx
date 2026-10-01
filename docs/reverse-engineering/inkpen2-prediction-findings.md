@@ -177,7 +177,7 @@ timestamp. The downstream event constructor adds down time back to the
 retained relative milliseconds, as established in the
 [result-routing trace](inkpen2-input-findings.md#result-filtering-and-the-no-result-fallback-differ).
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and PenCommon byte stream were verified. The fit helper,
 `pow` import, determinant constant, sample skip, integer horizon, candidate

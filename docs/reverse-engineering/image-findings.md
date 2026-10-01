@@ -94,13 +94,12 @@ counter have been removed; only the native image decoder produces placed images.
   [historical fixture audit](fixture-validation.md) also retained 7,182 strokes
   and 924,442 points and verified all 21 media hashes at versions 5202/5400
   against the actual PNG/PDF/SPI bytes. Those three audit inputs are retired.
-- Workspace tests, Clippy, formatting, Rust 1.88 and WASM target checks pass.
 - A disposable synthetic archive converted through the CLI to SVG and PNG
   displays the expected blue/red/blue sequence, one rotated placement, and a
   blank missing-ID location with its diagnostic. This is a runtime smoke check,
   not a Samsung visual-fidelity comparison.
 
-## Remaining gaps and next work
+## Rendering limits
 
 Crop rectangles with an original-image placement are rendered by clipping the
 original placement to the displayed bounds. Pixel crops without that placement
@@ -113,8 +112,9 @@ audio and video assets are not raster image render inputs.
 The subsequent [shape/line migration](shape-line-findings.md) removes the
 remaining UUID/text heuristics. Native setters also confirm that type-7 fields
 2/4 reference pen-name/settings strings, correcting the provisional color label.
-Standalone image objects still need a Samsung reference pair; text-flow image
-coverage does not establish fidelity for every image container or style.
+The [locked image fixture](../../conformance/README.md#image-and-media-regressions)
+contains seven text-flow images and no standalone page images. Standalone
+image placement and style fidelity remain unverified by a Samsung reference pair.
 
 ## Images embedded in document text flow
 
@@ -158,8 +158,8 @@ layouts are also explicitly reported as incomplete. The corpus now locks both
 decoded and resolved embedded-image counts, and a rendering regression checks
 the per-page placement counts. Synthetic regressions cover UTF-16 anchors,
 media binding, hidden images, truncation, limits, crops and page slicing.
-Workspace tests, the full external corpus and Clippy pass. The existing five
-formatting SVG pages are byte-identical to the pre-change SDK output.
+At that revision, the existing five formatting SVG pages were byte-identical
+to the pre-change SDK output.
 
 ## Standard image settings and diagnostic precision
 
@@ -196,8 +196,3 @@ outline variants, dormant nine-patch width, active effects, custom paths,
 unknown properties and malformed path/outline lengths. All three image SVG
 pages and all five formatting SVG pages remain byte-identical to the output
 before this diagnostic correction.
-
-Validation passes all 259 workspace tests, both external corpus tests,
-Clippy with warnings denied, formatting, Rust 1.92 checks and the WASM target
-check. The source/reference hashes were verified in an isolated corpus copy;
-the existing `hf` checkout was preserved.

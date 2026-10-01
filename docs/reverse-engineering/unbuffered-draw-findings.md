@@ -186,7 +186,7 @@ that pixels were drawn. In contrast, neural
 [prediction completion](predictor-chrono-findings.md#completion-commits-the-time-reset-only-when-an-event-exists)
 calls its separate reset only when `GetPredictedPenEvent` returns non-null.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Both native byte streams were matched to the APK. Object/backend/receiver
 vtables and RTTI, callable installation/removal, configuration getter,
@@ -202,5 +202,4 @@ completion condition. None of these checks executes the native library.
 
 Initial registration of the draw receiver, complete fallback eligibility
 and measured drawing cadence remain unresolved. The recovered equations
-and callback presence alone do not prove active VSync delivery. No SDK code
-or corpus fixture changed.
+and callback presence alone do not prove active VSync delivery.

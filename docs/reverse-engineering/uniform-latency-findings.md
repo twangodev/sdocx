@@ -261,7 +261,7 @@ tail without the controller's counter state and caller configuration.
 It also does not establish that any specific hardware input hits these
 exact synthetic boundary values.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and Composer byte stream were verified. Setup gates,
 getter bindings, timing-field loads, signed span conversion, coefficient
@@ -279,4 +279,4 @@ origin to Java frame callbacks. Runtime configuration values and
 enablement still need their own evidence.
 These findings establish the local numerical behavior without new SDOCX
 files, but matching device exports remain necessary to measure rendering
-fidelity. No SDK code changed.
+fidelity.

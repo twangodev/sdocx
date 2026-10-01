@@ -234,7 +234,7 @@ though its normalizer uses `k - 2`; it is not the usual average of only
 three-segment second differences. The neural gate reads these exact fields
 and their float product.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The library bytes were matched to the identified APK. Input-call ordering,
 count packing, array layout and copies, index/cutoff branches, float constants,
@@ -251,4 +251,3 @@ and control flow; they do not execute the native estimator.
 The [input-speed trace](predictor-speed-findings.md) recovers the earlier
 low-speed gate and its threshold/configuration sources. Actual device
 sampling, cache histories and admission outcomes require runtime evidence.
-No SDK code or corpus fixture changed.

@@ -151,7 +151,7 @@ at `0x31368`. It does not replace the candidate's millisecond or
 nanosecond fields. The alignment calculation is described in the
 [predictor timing trace](predictor-timing-findings.md).
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and native byte stream were verified. Output-data loads,
 DPI arithmetic, inverse-rotation lane construction, channel copies,
@@ -164,7 +164,7 @@ horizon conversions. Five ideal geometric rotations were inverted as a
 separate check, without claiming native trigonometric equivalence.
 
 The [selection trace](neural-selection-findings.md) recovers output-index
-marking and construction of callback events from selected records. Task
-rejection and active device settings remain separate work. These findings
-do not establish which candidates a device delivers or serializes. No SDK
-code or fixture changed.
+marking and construction of callback events from selected records. The
+[admission trace](neural-admission-findings.md) records task rejection. Active
+device settings remain unverified. These findings
+do not establish which candidates a device delivers or serializes.

@@ -181,7 +181,7 @@ These examples reconstruct numerical inputs to the controller. They do
 not assert that uniform latency is enabled for every producer path, or
 that the supplied synthetic prediction timestamps are emitted by a device.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and all three native byte streams were verified. Exported
 function addresses, rate getter/setter bindings, double constants,
@@ -193,6 +193,6 @@ the separate task time and four consumer coefficient examples.
 The [VSync delivery trace](vsync-delivery-findings.md) identifies the
 `OnVSync` argument as the unchanged Java frame-callback timestamp and
 recovers subscription/removal. Active device configuration and neural
-model behavior remain separate work. No SDK code changed and no native
-device execution or new SDOCX fixture was used. The callback timing must
+model behavior remain unvalidated. No device execution or SDOCX fixture
+was used. The callback timing must
 not be reapplied to stored timestamps during export.

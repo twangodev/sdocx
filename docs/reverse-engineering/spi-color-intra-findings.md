@@ -20,8 +20,8 @@ The complete reader supports primary modes 0/1/2/3/4/5 and alpha modes
 adds nonzero quantization for the same full-size submode. The
 [reduced-plane trace](spi-reduced-color-findings.md) adds header flags `0xf0`
 with separate secondary-plane sizing and quantization. Other submodes
-remain open. No SDK implementation changed, and generated
-codec inputs do not establish compatibility with device-exported documents.
+are covered in separate findings. Generated codec inputs do not establish
+compatibility with device-exported documents.
 
 ## A block selects its quantizer before three plane payloads
 
@@ -192,7 +192,7 @@ out-of-range samples. The forward and inverse equations recover valid
 byte triples exactly; this is not an exhaustive characterization of every
 malformed signed-16 input to all prediction and conversion paths.
 
-## Native-generated quality settings expose the next decoding gap
+## Native-generated quality settings
 
 A 16×16 input with API byte tuple
 `((3*x+2*y)%256, (x+5*y)%256, (7*((x+y)//2))%256, 255)`
@@ -211,8 +211,8 @@ encoder quality arguments. Every primary block selects C directly:
 
 These are measured native encode/decode results, not a general quality
 mapping or fidelity metric. In particular, quality 24 is not universally
-lossless. At this milestone only Q zero was independently decoded;
-the later [quantized decoder](spi-quantized-color-findings.md) matches all
+lossless. The Q-zero path is recovered here;
+the [quantized decoder](spi-quantized-color-findings.md) matches all
 seven outputs. The Q-zero SPI
 SHA-256 is `73ceef275fbcf6a65acf685bbb4000fbae25c9a9cdf713ebeab30f2abe04a161`;
 the decoded pixels hash to
@@ -258,10 +258,9 @@ prediction tables and callback relocations were checked.
 
 The complete independent reader consumes only header and packet bytes;
 native state is compared afterward. Scratch readers, generators, native
-harnesses and generated artifacts remain disposable. Maintained changes
-are Markdown-only.
+harnesses and generated artifacts are local experimental evidence.
 
-## Remaining work
+## Evidence limits
 
 The [quantized color trace](spi-quantized-color-findings.md) now recovers
 nonzero-Q coefficients, scaling, inverse transforms and reconstruction.

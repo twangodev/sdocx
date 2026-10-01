@@ -223,4 +223,3 @@ decisions around this gate, and the
 [position trace](predictor-position-findings.md) identifies the coefficient
 caller chain. The [worker trace](predictor-worker-findings.md) separately
 recovers task routing, pending ownership, wait predicates and input capture.
-No SDK code or corpus fixture changed.

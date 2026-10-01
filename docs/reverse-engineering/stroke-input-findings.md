@@ -171,20 +171,22 @@ can change per-object pen state and composition. The successful InkPen2
 beautification branch returns before this ordinary split check, so the
 trace does not establish the same splitting behavior for that path.
 
-## Validation and next targets
+## Validation and evidence limits
 
 The APK digest and the Composer/Drawing library bytes were checked against
 the extracted APK entries. The filter literal, factory constructor
 bindings, RTTI, primary-vtable offsets, forwarding functions and numerical
 threshold were checked against the ARM64 instructions and relocations.
-No new device fixtures or native execution were used, and no SDK rendering
-code changed.
+No device fixtures or native execution were used.
 
 The [presentation trace](stroke-prediction-findings.md) establishes the
 ordinary real-event dispatch and separate Marker2 V2 prediction drawable.
 The [finalization](stroke-finalization-findings.md) and
 [insertion](stroke-insertion-findings.md) traces resolve optional coordinate
-replacement and later page-offset translation. Remaining APK targets include
-transforms before recording, prediction algorithms, the PointBeautifier's
-numerical behavior and insertion callbacks. Long-gesture and InkPen2 SDOCX/PDF pairs can
-eventually validate stored counts, split boundaries and filtered geometry.
+replacement and later page-offset translation.
+[View transforms](view-input-transform-findings.md) and the
+[InkPen2 input](inkpen2-input-findings.md),
+[prediction](inkpen2-prediction-findings.md) and
+[Kalman](inkpen2-kalman-findings.md) traces record preprocessing separately.
+These static contracts do not establish device-exported long-gesture split
+boundaries or InkPen2 appearance.

@@ -212,7 +212,7 @@ the current coordinate used by the event-time getters.
 The completed event then follows the previously recovered
 [consumer callback and lifetime path](predictor-callback-findings.md).
 
-## Validation and remaining work
+## Validation and evidence limits
 
 All three native byte streams were matched to the identified APK. Maximum-time
 stores, float conversions, index comparisons, candidate-byte handling,
@@ -232,4 +232,3 @@ single-output configuration whose processed prefix and selected range do
 not intersect; the Composer sequence above instead enables multiple outputs.
 The [motion trace](neural-motion-findings.md) recovers candidate rejection;
 application reachability of that configuration remains to be checked.
-No SDK code or corpus fixture changed.

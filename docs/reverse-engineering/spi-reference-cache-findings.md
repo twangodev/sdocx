@@ -208,7 +208,7 @@ rank decoder rejects R at or above N. The signed-byte comparison also
 requires separate analysis for large positive codes that wrap or become
 negative; those values are outside these whole-sequence comparisons.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The main corpus contains 315 independently assembled sequences and 2835
 frames, with 76140 block operations. Capacities 1–5 each use three
@@ -262,17 +262,14 @@ that the SDOCX bitmap wrapper emits this multi-frame layout.
 All 315 artifact digests and 2835 independently reconstructed frame
 digests were checked again after generation. The APK digest, extracted
 ELF, 52 cited instruction words, cache layout and copy callback binding
-were checked, as were 771 local documentation links and 176 heading
-anchors. Generated sequences, native harnesses
-and independent decoder scripts remain disposable local artifacts;
-maintained changes are Markdown-only.
+were checked against the native bytes.
 
 The [mixed-prediction trace](spi-mixed-prediction-findings.md) adds ordinary
 intra/temporal spatial-edge completion and marker transitions. The
 [literal-state trace](spi-alpha-literal-state-findings.md) adds bounded
-alpha literal mixtures and their prediction/cache comparisons. Remaining
-work includes portable handling of literal marker overruns, capacities
-outside 1–5, wrapped rank codes, larger displacement limits and a complete malformed-input
-policy. These experiments do not establish which temporal/cache configurations Samsung
-actually emits in device-exported SDOCX files. Real files and rendered
-references remain necessary for that compatibility claim. No SDK code changed.
+alpha literal mixtures and their prediction/cache comparisons. Portable
+handling of literal marker overruns, capacities outside 1–5, wrapped rank codes,
+larger displacement limits and general malformed-input behavior remain
+unestablished. These experiments do not identify which temporal/cache
+configurations Samsung emits in device-exported SDOCX files. Real files and rendered
+references remain necessary for that compatibility claim.

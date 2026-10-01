@@ -217,10 +217,9 @@ label reference without dereferencing it. Endpoint tests cover an empty graph
 and valid start/end indices, while the complete fixture preserves unresolved
 endpoints and raw stroke-index bits.
 
-Remaining work includes expression enum semantics, matching recognition stroke
-indices to stored strokes, image resolution, and native layout/evaluation. Samsung
-SDOCX/PDF pairs are still needed to verify real writer variants and visual
-output.
+Expression enum semantics, recognition-stroke index resolution, image
+resolution and native layout/evaluation are not established by these parser
+cases. Real writer variants and visual output remain unverified.
 
 The drawing path now has a separate trace covering image/ink precedence,
 placement dependencies and the expression setter's accepted range; see

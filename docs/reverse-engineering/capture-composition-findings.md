@@ -197,11 +197,9 @@ Those inspected setup paths preserve the separate physical layers. The SDK
 now constructs semantic page objects from the saved current layer while
 retaining all layers in its structural representation.
 
-SDK exports also need an ordered object representation and stroke render
-properties before this evidence can support a complete composition change.
-New captures should combine body text, ordinary strokes, highlighters, masking and
-overlapping objects across physical layers, with light, dark and PDF
-backgrounds.
+The SDK retains ordered objects and stroke render properties. Captured parity
+for combinations of body text, ordinary strokes, highlighters, masking and
+overlapping physical layers across light/dark/PDF backgrounds remains unverified.
 
 ## Vector PDF export uses a separate collection path
 

@@ -158,14 +158,13 @@ the ordinary branch uses `inputColor.a`. The StrokeTip composite shader at
 `0x12fe8` has another `inputOpacity` multiplier and emits premultiplied RGB.
 Those shader differences are further reason to scope the V1 result narrowly.
 
-## SDK implications and remaining work
+## SDK behavior and evidence limits
 
 The SDK preserves complete ARGB in stroke metadata, while ordinary `Stroke`
-decoding currently retains RGB. A future semantic rendering change needs
-both alpha preservation and the right scope for coverage/composition.
-Giving each overlapping stamp an independent opacity would differ from the
-inspected maximum-coverage mask. Applying opacity after constructing one
-stroke mask is a closer model for this specific path.
+decoding retains RGB and saved rendering metadata. Reconstructed profiles use
+saved alpha at stroke scope. Giving each overlapping stamp independent opacity
+would differ from the inspected maximum-coverage mask; its alpha is applied
+after constructing the stroke mask.
 
 The [capture compositor](capture-composition-findings.md) and
 [Standard PDF writer](standard-pdf-composition-findings.md) apply their own
@@ -180,8 +179,7 @@ call-site audit finds no identified callers of `PenDrawableRT::SetAlpha`
 inside the APK. Other brush plugins, StrokeTip opacity, reveal/effect
 overrides and dynamic state changes remain outside these conclusions.
 
-Useful new pairs are one self-crossing highlighter stroke, two separate
-overlapping strokes of the same color, and strokes crossing text or images,
-with pen identity and export mode recorded. These distinguish internal mask
-coverage, between-stroke composition and final page blending. The present
-findings are static contracts; visual equivalence remains unmeasured.
+Internal mask coverage, between-stroke composition and final page blending
+are distinct contracts. The static findings here do not establish visual
+equivalence for self-crossings, separate overlapping strokes or strokes
+crossing text/images in every export mode.

@@ -11,9 +11,12 @@ allowing the subpixel aspect-ratio difference caused by integer rounding.
 Content is not shifted or aligned during comparison.
 
 The [published corpus](https://huggingface.co/datasets/twangodev/sdocx-compatibility/tree/main)
-was checked on 2026-09-04 and contains only this pair. It exercises flowing
+contained only this pair when checked on 2026-09-04. It exercises flowing
 text, formatting, Unicode, lists, a table and a code block. It provides no
-standalone shape/line or image-placement visual coverage.
+standalone shape/line or image-placement visual coverage. The current
+[locked manifest](../../conformance/corpus.json) also includes shape/dot,
+text-flow image and Marker4 reference pairs; those do not change the scope of
+the historical measurements below.
 
 The reusable runner is [`conformance/visual.py`](../../conformance/visual.py).
 It produces per-page PNGs, an interactive HTML report, CLI diagnostics and
@@ -80,7 +83,7 @@ The report also shows why SVG text extraction alone is insufficient: code-block
 titles and lines remain in the continuation SVG at negative coordinates and
 are correctly clipped. They are not duplicated on the visible page.
 
-## Validation and next work
+## Validation and evidence limits
 
 The raster scores above describe the initial font experiment, not the current
 text engine. Fresh Rust PDF-coordinate comparisons now place matched ordinary
@@ -97,20 +100,9 @@ differences are table cells X +1 and Y about +1.751, numeric-item text X about
 complete pagination, font fallback or whole-document visual parity. See
 [native text layout inputs](text-layout-findings.md) for source addresses.
 
-- Twelve small Python tests cover blank-output detection, alpha compositing,
-  pixel arithmetic, tolerance, rotated PDF dimensions, file hashes, path
-  boundaries, page ordering/counts, stale output and font forwarding. They pass
-  in an isolated environment using the exact locked CI command.
-- Three CLI regressions cover supplied-font precedence, repeated font options,
-  and missing/invalid font failures. All workspace tests, Clippy, formatting
-  and the Rust 1.88 all-target check pass.
-- The real five-page pair completes the runner with both system and explicit
-  fonts. A local Chromium check loads all 25 report images, changes the overlay
-  opacity and reports no JavaScript errors. Hosted CI has not run for these
-  local commits.
-
-Next, capture Samsung shape/line and image pairs using the
-[fixture checklist](../../conformance/fixture-capture.md). Use those references
-before claiming template, arrowhead, gradient, crop or rotation fidelity.
-For the existing text pair, the next measured improvement is controlled Unicode
-font coverage, followed by typography and marker geometry.
+Runner regressions cover blank-output detection, alpha compositing, tolerance,
+rotated PDF dimensions, hashes, path boundaries, page ordering/counts, stale
+output and font forwarding. CLI regressions cover supplied-font precedence,
+repeated font options and missing/invalid font failures. Those tooling contracts
+do not establish appearance parity for unsupported templates, arrowheads,
+gradients or image effects.

@@ -178,9 +178,9 @@ state is observed for comparison, not supplied to reconstruction.
   digests when decoded by the extended reader.
 
 Scratch readers, generators, emulation harnesses and generated artifacts
-remain disposable. Maintained changes are Markdown-only; no SDK code changed.
+remain disposable.
 
-## Remaining work
+## Evidence limits
 
 The [differential trace](spi-differential-block-findings.md) now adds primary
 mode 2. The [mode-3 color trace](spi-color-intra-findings.md) adds full-size

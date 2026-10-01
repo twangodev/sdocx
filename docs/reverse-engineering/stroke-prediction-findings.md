@@ -244,7 +244,7 @@ bitwise operation were verified against the binary. The controller's
 constructor, slot bindings and resampled-state branches were also checked.
 The source and anchor-selection examples are static derivations;
 no device prediction trace or new document pair
-was used, and no SDK code changed.
+was used.
 
 Keep ordinary Marker2 stored-array rendering distinct from prediction
 presentation. Preserve recorded samples and per-object boundaries, use

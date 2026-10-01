@@ -182,10 +182,9 @@ instructions, and writer checks executed 186, without imported host calls.
 These are synthetic compatibility checks, not device-file validation.
 
 The independent encoder/decoder, emulator harness and generated artifacts
-remain disposable local tooling. Maintained conclusions are Markdown-only.
-No SDK code changed.
+remain local experimental evidence.
 
-## Remaining work
+## Evidence limits
 
 The [mode-3 color trace](spi-color-intra-findings.md) recovers full-size
 planes with zero quantization; other mode-3 paths remain open.

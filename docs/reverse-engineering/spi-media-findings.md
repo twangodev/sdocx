@@ -37,7 +37,7 @@ alone does not establish the byte order of a standalone decoder's output.
 
 The page-cache caller supplies quality 100. The Maetel wrapper changes
 that value to 24 at `0xd7bb0` through `0xd7bbc`, then stores it in the
-codec setup at `0xd7cb4`. A later [native quality sweep](spi-color-intra-findings.md#native-generated-quality-settings-expose-the-next-decoding-gap)
+codec setup at `0xd7cb4`. The [native quality sweep](spi-color-intra-findings.md#native-generated-quality-settings)
 shows that quality 24 does not universally preserve input pixels: a
 synthetic gradient selects nonzero mode-3 quantization and changes pixels.
 The complete quality mapping remains open.
@@ -113,8 +113,8 @@ pixel output through `0x5da34` at `0xd7954`.
 
 The recovered success path does not compare the end of the second block
 with the end of the entire supplied buffer. It therefore does not establish
-that trailing bytes are rejected. A future SDK reader needs its own
-explicit bounds and trailing-data policy.
+that trailing bytes are rejected. The native path supplies no complete
+trailing-data rejection contract.
 
 ## Dimensions and color information come from codec queries
 
@@ -137,7 +137,7 @@ four at `0xd7478` through `0xd74d8`. That establishes a four-byte pixel
 output buffer for this wrapper. It does not yet establish the complete
 channel order, color conversion or compressed sample coding.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The Base ELF stream and APK digest were verified against the archive.
 Exported symbol addresses, imported writer dispatch, marker constants,

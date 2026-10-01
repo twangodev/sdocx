@@ -125,8 +125,7 @@ used isolated archive checkouts and separate Cargo target directories.
 
 The external `01-basic-formatting.sdocx` conformance check passed during the
 migration, alongside the [historical fixture audit](fixture-validation.md)
-(7,182 strokes and 924,442 points). Those three audit inputs are retired. The
-workspace tests, Clippy, Rust 1.88 checks and WASM target checks pass.
+(7,182 strokes and 924,442 points). Those three audit inputs are retired.
 
 A disposable synthetic archive was converted to SVG and PNG through the CLI.
 Its text, rotation and stroke appeared, and the stored border generated the
@@ -134,19 +133,19 @@ expected warning. The SVG preserves Japanese/CJK text; this machine's installed
 fonts produced missing-glyph boxes for those characters in the PNG. This is
 not a Samsung reference export or evidence of complete visual equivalence.
 
-## Remaining gaps
+## Rendering behavior and evidence limits
 
-- Obtain a Samsung standalone-text fixture plus matching reference PDF to
-  verify native placement, wrapping and style fidelity against real output.
-- Standalone, flowing and embedded text share UTF-16 span resolution for local
-  color, size, emphasis, decorations and hyperlinks. Only full-text spans become
-  box defaults; caret spans and partial formatting do not style the whole box.
-  Typography still approximates font metrics, and margins, paragraph layout,
-  gravity, borders and embedded-object layout are not fully rendered.
-- Diagnostics describe detected unsupported features; their absence does not
-  certify a lossless parse or render. Inherited base properties and nested
-  extension semantics remain incomplete.
-- The subsequent [image migration](image-findings.md) replaces image scanning
-  and encounter-order media assignment. The [shape/line migration](shape-line-findings.md)
-  removes the remaining UUID/text heuristics and reuses `TextCommon` for
-  embedded shape text; visual comparison remains necessary.
+Standalone, flowing and embedded text share UTF-16 span resolution for local
+color, size, emphasis, decorations and hyperlinks. Only full-text spans become
+box defaults; caret spans and partial formatting do not style the whole box.
+The shared Rust engine measures font faces, wraps text and applies margins,
+paragraph layout and ordinary vertical gravity. Its transport and composition
+limits are recorded in [vector text support](../text-vector-support.md).
+Standalone placement and typography have synthetic coverage; no Samsung
+standalone-text reference pair establishes their visual parity.
+
+Diagnostics describe detected unsupported features; their absence does not
+certify a lossless parse or render. Inherited base properties and nested
+extension semantics remain incomplete. The [image decoder](image-findings.md)
+uses explicit media references, and the [shape/line decoder](shape-line-findings.md)
+uses native fields and shared `TextCommon` for embedded shape text.

@@ -198,11 +198,7 @@ the APK digest were rechecked. The geometry port is checked against the
 synthetic chord in the sampling note and against a Darken raster of cyan over
 red. It is not a Samsung PDF comparison.
 
-Useful new comparisons include thin Marker2 strokes around drawing size 3,
-fractional sizes, one self-crossing stroke, two overlapping strokes and
-strokes recorded with different input tools. Their stored name, advanced
-settings, width and export scale should be recorded with the PDF. The
-[touch-recording trace](stroke-recording-findings.md) distinguishes stored
-samples from these stamps and identifies a live/replay source difference.
-Upstream event preprocessing, StrokeTip opacity and the remaining brush
-plugins are still available for APK-only investigation.
+The [touch-recording trace](stroke-recording-findings.md) distinguishes stored
+samples from stamps and identifies a live/replay source difference. The
+geometry checks do not establish device appearance for fractional widths,
+thin V2 edges, self-crossings or every input tool.

@@ -181,7 +181,7 @@ Historical reconstruction similarly adds down time at `0x599e4` before
 `AddBatch` at `0x599f8`. These timestamps are metadata for the output event;
 they do not enter the recovered Kalman equations.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and PenCommon byte stream were verified. Exported function
 entries, imported sample getters, channel-mask data flow, exact constant
@@ -189,7 +189,7 @@ bits, down reset and arithmetic instructions were checked against the
 ARM64 image. Numerical checks exercised the diagonal scalar/matrix
 equivalence, including 100 updates with varying X/Y, and constant-input
 behavior with explicit float rounding.
-No SDK code changed and no native execution or new device fixture was used.
+No native execution or device fixture was used.
 
 [Result construction](inkpen2-result-findings.md) separately establishes
 geometric selection, resampled-state rewriting and candidate lifetime.

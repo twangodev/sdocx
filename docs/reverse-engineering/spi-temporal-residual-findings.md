@@ -12,7 +12,7 @@ submode 2. It differs from both the earlier
 
 The recovered partitions have sides 8 and 16. Independent parsing,
 native coefficient comparisons and complete multi-frame comparisons
-validate the stated configuration. No SDK implementation changed.
+validate the stated configuration.
 
 ## A plane has one split bit and a temporal mask
 
@@ -82,8 +82,8 @@ indexes these tables without equivalent explicit bounds.
 For P partitions, partition p consumes coefficients when mask bit
 `P + 1 - p` is set. In the full-size path, each color plane has its own
 mask; bits 1 and 0 do not introduce further arrays. The reduced temporal
-path uses those bits separately and remains outside the complete decoder
-in this milestone.
+path uses those bits separately, as recorded in the
+[reduced temporal findings](spi-reduced-temporal-findings.md).
 
 ## Coefficient tokens have 63 compact entries per side
 
@@ -171,7 +171,7 @@ The independent reader requires both `K <= side*side` and every
 accumulated scan index below `side*side` before reading the scan. It
 does not reproduce the native out-of-partition access.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 All 11040 isolated coefficient streams matched native coefficients,
 flags and consumed bits at all eight initial bit alignments:
@@ -192,5 +192,4 @@ identity, numeric tables and cited instruction bytes were verified.
 validates bundled primary/secondary residuals and their reconstruction.
 The [selected-plane trace](spi-selected-plane-findings.md) adds primary
 submode 3. Broader malformed-input policy and device-export
-compatibility remain open. Scratch tools and
-generated streams remain disposable; maintained findings are Markdown-only.
+compatibility remain unvalidated.

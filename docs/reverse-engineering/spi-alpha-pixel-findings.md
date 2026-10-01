@@ -258,7 +258,7 @@ The isolated checks executed 1680 distinct native instructions. Only
 prediction, accumulation and combination instructions ran natively.
 The 98 constructed images exercised 4639 distinct native instructions.
 
-## Remaining work
+## Evidence limits
 
 The [neighbor-state trace](spi-alpha-state-findings.md) now initializes
 markers and external edges independently and combines alpha reconstruction
@@ -267,5 +267,4 @@ with the recovered copy/literal color modes. The
 edge-availability pattern and complete sequences combining compressed color,
 intra alpha and temporal blocks. Alpha literal marker behavior, other
 packet/header settings and malformed-input behavior remain open, as does
-device-export compatibility. Maintained findings are Markdown-only; no SDK code changed
-and scratch implementations remain disposable local tooling.
+device-export compatibility.

@@ -196,8 +196,8 @@ rules when reproducing document export.
 The APK digest and all four library byte streams were verified. Constructor
 bindings, provider relocations, append count updates, writer count accesses
 and source initialization were checked against their instructions. The
-down/up and source-flag cases are static derivations; no SDK rendering code
-changed and no new device fixtures were used.
+down/up and source-flag cases are static derivations; no device fixtures were
+used.
 
 The [pen-action input trace](stroke-input-findings.md) establishes a
 separate InkPen2 filter and an ordinary long-gesture split at 65501 recorded
@@ -206,7 +206,8 @@ ordinary Marker2 recording from prediction drawing, and the
 [finalization trace](stroke-finalization-findings.md) identifies an optional
 coordinate replacement that preserves the count and parallel channels.
 The [insertion trace](stroke-insertion-findings.md) resolves first-point
-page selection and page-offset translation. Further APK targets include
-nonnull coordinate providers, transforms before recording and single-point
-import handling. Tap and short-stroke SDOCX/PDF
-pairs can test stored counts, repeated coordinates, tool types and marks.
+page selection and page-offset translation. The
+[view-input trace](view-input-transform-findings.md) records transforms before
+recording. Nonnull coordinate providers and single-point import handling are
+outside this trace. The synthetic tap cases do not establish device-exported
+appearance.

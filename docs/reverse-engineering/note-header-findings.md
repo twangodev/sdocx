@@ -55,7 +55,7 @@ data and report that as a document background. That scan is removed. The documen
 background now reflects the first ordered page's explicit decoded background
 field, which the renderer already reads structurally.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 `crates/sdocx/tests/note_header.rs` exercises all combinations of one- through
 four-byte masks, Unicode IDs, distinct timestamps, shifted dimensions, wider

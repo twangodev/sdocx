@@ -1,9 +1,8 @@
 # Shapes and dot calibration fixture
 
 Investigated `hf/02-shapes-and-dot-calibration.{sdocx,pdf}` on 2026-09-21,
-against parent revision `b0b33d5`. The sections through
-[follow-up boundaries](#follow-up-implementation-boundaries) record that
-snapshot. Later sections record the renderer changes that followed.
+against parent revision `b0b33d5`. The historical comparisons below identify
+that renderer revision; later sections describe the implemented native rules.
 
 Since that snapshot, built-in dot templates 7/8/9 are drawn, saved native
 shape paths (including pentagon 11 and hexagon 6) are rendered, and the
@@ -79,8 +78,8 @@ The PDF contains a separate 1800 × 2545 JPEG for the dotted background, placed 
 There are 21 visible columns, including a clipped left-edge column, and 31 rows.
 These are **measurements of this export**, not established universal constants
 for Samsung's template 7. In particular, assuming a square grid would disagree
-with this reference. Exact template sizing, anchoring, and color behavior should
-be established before generalizing support to other page dimensions or themes.
+with this reference. The native sizing, anchoring and color rules are recorded
+in the [dot renderer](#apk-backed-dot-renderer) below.
 
 ## Hand-drawn calibration dots: decoded, with rendering differences
 
@@ -121,18 +120,6 @@ fallback geometry. All five have retained path data, including 90 bytes for
 the pentagon and 107 for the hexagon. The corpus manifest now locks zero
 diagnostics for this fixture.
 
-## Follow-up implementation boundaries
-
-1. Done for templates 7/8/9 in the [dot renderer](#apk-backed-dot-renderer).
-   The measured spacings remain measurements of this export.
-2. Done for this fixture's saved paths, including the pentagon and hexagon.
-   See [saved shape paths](shape-line-findings.md#saved-shape-paths-fixture-02).
-   Path-less copies of those templates are still not invented from the type id.
-3. The twelve marks now render as V16 stamps. Do not change decoded
-   coordinates to compensate for a remaining raster difference. The later
-   comparison is in
-   [stroke rendering findings](stroke-rendering-findings.md#fountainpen-v16-saved-geometry-implementation).
-
 ## APK-backed implementation: page layout and native dimensions
 
 Samsung Notes 4.4.45.37 arm64 `libSPenComposer.so`,
@@ -163,10 +150,9 @@ inferring a scale from the exported PDF.
 
 The manifest now locks the 02 hashes, two stored/one visible page, 77 strokes,
 five shapes, one line, and no diagnostics. The formerly unknown `0x04`
-property is [text editability](shape-line-findings.md#shape-text-editability-property-0x04). All three
-locked corpus pairs pass structural and reference page-count checks. The deleted
-01 PDF in the working dataset was left untouched; that check used its local LFS
-object in a temporary corpus directory.
+property is [text editability](shape-line-findings.md#shape-orientation-and-text-editability-properties-0x01-0x02-0x04). All three
+locked corpus pairs passed structural and reference page-count checks at that
+revision.
 
 ## APK-backed dot renderer
 
@@ -207,7 +193,6 @@ spacing. Unknown template IDs retain the full `u32` value.
 radius and spacing rules. The 02 PDF contains a JPEG background, so this change
 follows the native drawing/capture path; it does not conflate the two exporters.
 
-
 Raster validation caught an exporter detail: resvg 0.47 rounds SVG pattern-tile
 sizes to integer pixels (`render_pattern_pixmap` in its `src/path.rs`). A
 91.7 × 83.16 repeating tile became 92 × 83, causing cumulative drift. Explicit
@@ -223,15 +208,13 @@ The Samsung PDF MediaBox is 600 × 848 points while its captured background is
 PDF point of page-size rounding; a larger mismatch still fails. Content is not
 translated or aligned to reduce the error.
 
-Final validation also covers CLI PDF output (0.87% changed pixels, 1.58% missing
-ink, 0.63% extra ink), a PNG regression sampling distant grid intersections,
-and the actual WASM viewer/replay path in Chromium and Firefox. The browser
+The same revision's CLI PDF output measured 0.87% changed pixels, 1.58% missing
+ink and 0.63% extra ink. A PNG regression samples distant grid intersections;
+browser tests exercise the actual WASM viewer/replay path in Chromium and Firefox. The browser
 check verifies that both views share identical template geometry, all six
 native shape/line paths survive the replay background, the clear top margin
 renders correctly, and the second stored page stays inspectable without a
-second visible preview. WebKit could not launch on this host because its system
-libraries are missing. Workspace all-feature tests, parser-only checks, Clippy,
-formatting, web type checks, 39 web unit tests and the production build pass.
+second visible preview.
 
 ## Ruled templates: narrow, medium and wide
 

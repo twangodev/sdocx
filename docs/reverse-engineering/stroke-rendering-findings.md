@@ -158,18 +158,7 @@ The optional post-input coordinate smoother is a separate mechanism:
 ordinary constructor selects no transformer. Do not rerun input prediction
 or optional beautification blindly on samples already saved by the app.
 
-### Implementation direction
-
-Resolve each stroke's saved pen identity/settings into a rendering profile,
-then implement the verified profile's curve, sampling and width rules in a
-shared Rust geometry layer. Preserve original samples for inspection. SVG
-exports and Canvas replay should consume that geometry, including consistent
-partial-stroke handling, rather than independently rebuilding straight lines.
-Keep unsupported pens explicitly approximate. Validate with enlarged curves,
-pressure transitions, dots, sharp corners and stroke ends against paired
-Samsung exports before replacing a pen's renderer. Saved FountainPen V16 and Marker2 now use this shared layer.
-
-## Implementation progress: saved rendering inputs
+## Saved rendering inputs
 
 The semantic `Stroke` now carries optional `StrokeRendering`, populated by the
 existing bounded style decoder. It retains the complete known style,
@@ -186,7 +175,7 @@ DefaultPen curve findings alone therefore cannot establish parity for this
 fixture. FountainPen has separate renderer versions, pressure/speed width
 calculation, width smoothing and tip handling requiring their own trace.
 
-## Implementation progress: shared preparation and replay
+## Shared preparation and replay
 
 `prepare_stroke` supplies geometry inputs, paint, conservative bounds and
 profile/support status for both SVG exports and Canvas replay. The initial

@@ -23,7 +23,6 @@ inverse transform and prediction/residual combination. Later
 [reduced-plane work](spi-reduced-color-findings.md) recovers the same submode
 with header flags `0xf0`, including its distinct Q-zero behavior. Other
 submodes, broader configurations and device-export validation remain open.
-Maintained changes are Markdown-only; no SDK code changed.
 
 ## The side-4 partition mask depends on Q
 
@@ -411,7 +410,7 @@ alpha, palette, differential and zero-quantizer image cases retain their
 recorded output, and all seven quality-sweep outputs now match independently.
 Scratch code and generated artifacts remain disposable.
 
-## Remaining work
+## Evidence limits
 
 The [reduced-plane trace](spi-reduced-color-findings.md) now recovers mode-3
 submode 1 with reduced secondary planes. The

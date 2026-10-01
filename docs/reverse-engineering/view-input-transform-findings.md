@@ -169,14 +169,14 @@ establish how every upstream setting changes that pen member when zoom
 or content scale changes. In particular, the sample transform above is
 not evidence that stored width should be divided by the same matrix scale.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and all six library byte streams were verified. Imported
 view-method and pen-getter bindings, sample-vector accesses, copy-constructor
 matrix preservation, coordinate stores and float arithmetic were checked
 against the ARM64 instructions. Disposable arithmetic reconstruction checked
 the scale/offset and precision examples. These are static results; no new
-device fixture or native execution was used, and no SDK code changed.
+device fixture or native execution was used.
 
 Keep decoded stroke points and widths authoritative for replay. Input
 coordinates can already include view conversion, filtering, optional

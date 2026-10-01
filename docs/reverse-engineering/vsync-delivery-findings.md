@@ -153,7 +153,7 @@ future delivery, while the field remains zero until a frame callback
 stores a value. A nonzero prediction period does not prove a VSync
 origin has already arrived.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and all three native byte streams were verified. Fresh
 class decompilation confirmed the callback argument and repost/removal
@@ -164,8 +164,8 @@ stores were checked against ARM64 instructions.
 This establishes the callback's origin and local lifecycle. It does not
 measure the relationship between frame callbacks and physical display
 scanout, active device refresh settings, or neural model output. Those
-remain separate from this value trace. No SDK code changed and no new
-SDOCX fixture or device execution was used.
+remain separate from this value trace. No SDOCX fixture or device execution
+was used.
 
 Composer's separate [unbuffered drawing chronometer](unbuffered-draw-findings.md)
 also installs provider callbacks and a receiver interface. Its initial

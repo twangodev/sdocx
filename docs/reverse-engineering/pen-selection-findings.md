@@ -205,22 +205,18 @@ version or a previously applied version on a cached pen. The
 shared alpha composition and identifies a thin-stroke smoothing difference;
 the pen name alone still does not establish the renderer version.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The string-reference regression failed on the earlier mapping and passes
 after the correction. The 11 stroke-metadata tests also cover truncated
 fields, unknown-field stops, signed IDs, limits and shared color/width
 alignment. Native addresses, relocation targets and registry library
 presence were checked directly against the APK's extracted binaries.
-Workspace tests with all features, Clippy with warnings denied, Rust 1.92
-checking, the WASM target and the cached `01-basic-formatting` corpus check
-passed. The corpus check retained its locked parser/layout expectations;
-it does not validate the newly traced pen rendering behavior.
+The locked `01-basic-formatting` parser/layout expectations do not validate
+all pen rendering behavior identified by this registry trace.
 
-[Curve sampling and ordinary completion](marker2-sampling-findings.md) have
-since been traced. Remaining APK work includes saved-point producers,
-StrokeTip opacity, per-plugin advanced-setting overrides and alias-specific
-configuration.
-New SDOCX/PDF pairs should record
-pen selection and export mode; the stored string table can then distinguish
-the exact name and settings used in each visual comparison.
+[Curve sampling and ordinary completion](marker2-sampling-findings.md) and
+[stroke recording](stroke-recording-findings.md) establish the saved-sample
+paths. StrokeTip opacity, per-plugin setting overrides and alias-specific
+configuration are outside this registry trace. Stored string-table references
+identify pen names/settings separately from the selected PDF export mode.

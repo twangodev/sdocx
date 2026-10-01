@@ -201,11 +201,9 @@ and Samsung's native decoder. Native comparisons exercised 5515 distinct
 instructions. The marker-write probe above is separate from these images.
 
 The independent image reader uses only the header and packet bytes. Native
-state is observed for comparison, not passed into reconstruction. Scratch
-code and generated artifacts remain disposable; maintained results are
-Markdown-only and no SDK code changed.
+state is observed for comparison, not passed into reconstruction.
 
-## Remaining work
+## Evidence limits
 
 Subsequent [palette work](spi-palette-block-findings.md) adds primary mode 4
 and independent decoding of the 30 original native-generated images.
@@ -215,9 +213,9 @@ planes with zero quantization and independent color marker grids. The
 [mixed-prediction trace](spi-mixed-prediction-findings.md) extends edge
 completion and marker transitions to temporal neighbors. The
 [literal-state trace](spi-alpha-literal-state-findings.md) recovers alpha
-literal offsets and their prediction effects. Extend other packet/header
-variants and malformed-input handling, including a portable policy for
-literal writes beyond the marker buffer. Device-exported files are still
-needed to establish compatibility beyond these synthetic cases. The selected
+literal offsets and their prediction effects. Other packet/header variants,
+malformed-input handling and portable behavior for literal writes beyond the
+marker buffer remain unestablished. Synthetic cases do not establish
+device-export compatibility. The selected
 configuration now has complete independent decoding for its supported
 color and alpha mode combinations.

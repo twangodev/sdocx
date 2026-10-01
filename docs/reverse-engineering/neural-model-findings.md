@@ -152,7 +152,7 @@ This recovers model-driven filter configuration. The external predictor's
 filter implementation remains distinct from the separately traced
 [InkPen2 Kalman implementation](inkpen2-kalman-findings.md).
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and extracted predictor byte stream were verified.
 Exported global addresses, relocated pointers, zero-initialized bytes,
@@ -163,8 +163,9 @@ ARM64 instructions.
 The [feature preparation trace](neural-feature-findings.md) recovers the
 buffer's sample differences, normalization and flat memory order.
 [Interpreter setup](neural-inference-setup-findings.md) identifies requested
-tensor shapes, names and the time-feature validator. Serialized model
-metadata, output conversion and candidate rejection remain separate work.
-No SDK behavior or saved stroke decoding changed. These findings
-concern live pen prediction; they do not establish that predicted points
-are serialized into SDOCX.
+tensor shapes, names and the time-feature validator.
+[Output conversion](neural-output-findings.md) and
+[candidate rejection](neural-admission-findings.md) record later stages.
+Serialized model graph contents remain unvalidated. These findings concern
+live pen prediction; they do not establish that predicted points are serialized
+into SDOCX.

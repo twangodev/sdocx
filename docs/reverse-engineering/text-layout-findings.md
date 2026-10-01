@@ -47,8 +47,9 @@ and interval flags and computes `max(1, stored_size + font_size_delta) *
 text_scale` at `0xdb800`–`0xdb808`. No upper-size clamp appears in that
 conversion. `TextLayoutUtil::SetFromObject`, `0xdae94`, transfers the text,
 all ordinary spans, separate font-size spans, paragraphs, gravity and ellipsis
-settings to a `TextLayout`. A shared Rust input adapter should preserve these
-inputs instead of choosing the first style of each kind for the entire box.
+settings to a `TextLayout`. These are separate interval/paragraph inputs;
+selecting the first style of each kind for the whole box does not reproduce
+the native transfer contract.
 
 The fourth header word is an interval enum, not a boolean expansion flag.
 Model's WDoc reader preserves it unchanged at `0x40d040`–`0x40d050`;
@@ -63,10 +64,10 @@ For position `i`, its exact endpoint predicates are:
 
 | Native interval | Caret predicate |
 | --- | --- |
-| 0 / ClosedOpen | `i == start || (start < i && i < end)` |
+| 0 / ClosedOpen | `i == start \|\| (start < i && i < end)` |
 | 1 / ClosedClosed | `start <= i && i <= end` |
 | 2 / OpenOpen | `start < i && i < end` |
-| 3 / OpenClosed, or another value | `i == end || (start < i && i < end)` |
+| 3 / OpenClosed, or another value | `i == end \|\| (start < i && i < end)` |
 
 Zero-length font spans therefore affect caret metrics for values 0/1/3,
 without styling a glyph. The producer retains them in source order
@@ -1165,15 +1166,15 @@ Native emergency splitting is still not proven grapheme/cluster-safe;
 keeping graphemes intact is an SDK policy until captured boundary cases
 establish native behavior. The retained advances also do not prove that
 independently reshaping each exported SVG line reproduces the same glyph
-positions; measurement and paint must eventually consume the same layout.
+positions. The retained Rust document PDF path consumes the measured layout;
+SVG text transport retains the limits described below.
 The native ordinary drawing path obtains cached `GlyphInfo` at `0x65e04`
 and builds each glyph point by adding its retained X/Y offset to the
 `MeasureData` run point and supplied draw offset (`0x660c4`–`0x660e8`).
 `drawGlyphs` forwards those positions to the canvas at `0x66a94`–`0x66ac8`.
-That is stronger than matching line advance alone: faithful Rust placement
-must eventually retain and paint selected glyphs, face choices and cluster
-positions from the same measurement result, including clusters spanning
-several UTF-16 entries.
+The native contract retains selected glyphs, face choices and cluster positions
+from the same measurement result, including clusters spanning several UTF-16
+entries. Matching line advance alone does not establish this placement contract.
 
 `ParagraphLayout::GetBlockInfo`, `0x6ab9c`, accumulates measured advances
 and tests candidate width against the current available rectangle with a
@@ -2079,31 +2080,17 @@ cases retained their line counts, serialized SVG sizes and complete source.
 These local timings establish no observed scaling regression in that probe;
 they are not portable performance limits or mixed-object benchmarks.
 
-At `3d5c9a0`, workspace tests passed with all features, including 464 core
-unit tests and fourteen public width regressions. Render-only checks passed
-with 449 core unit tests, and strict workspace/all-target Clippy passed.
-The five ignored external-corpus comparisons also passed, retaining the
-locked native body/code/table references. A fresh WASM build passed all 27
-Chromium checks, all 66 web unit tests and typecheck; packaged, built and
-served WASM hashes matched. These gates cover the bounded contracts above,
-not unknown runtime caps or arbitrary table/complex-glyph composition.
-
 Rejected derived code geometry retains the original replacement marker and
 neighboring text, reports `InvalidBounds`, and never falls back into measuring
 and painting the rejected block again. The same preparation boundary checks
 normal and split constraints. This is an SDK robustness policy, rather than
 an established native malformed-input recovery rule.
 
-At the historical prepared-object milestone `0d17727`, twenty focused
-regressions covered native chrome constants, candidate-relative bands, retained
-gravity, nested height feedback, rejected source markers and selectable PDF
-text. Workspace tests, strict Clippy, render-only and no-default-feature
-checks passed. The locked external corpus and independent first-page PDF text
-comparison passed. A fresh WASM build of that source passed all 23 Chromium
-tests and all 66 web unit tests; typecheck reported no errors or warnings.
-Current locked PDF comparisons cover five physical pages, including body,
-code and table origins. Historical validation counts above do not replace
-the current checks or establish device-font and arbitrary composition parity.
+The locked PDF comparisons cover five physical pages, including body, code
+and table origins. Prepared-object regressions cover native chrome constants,
+candidate-relative bands, retained gravity, nested height feedback, rejected
+source markers and selectable PDF text. These checks do not establish
+device-font or arbitrary composition parity.
 
 The measured paint path now supplies retained X positions and Y offsets
 for clusters that can be expressed by the current typed SVG text adapter,
@@ -2207,7 +2194,7 @@ the same span buffer without shifting flags: `GetSpan` at `0x78d28`,
 `0x76800`/`0x76880`. `InitMinikinFontStyle` initializes weight 400 and
 italic false (`0x76c18`–`0x76c2c`). Runtime captures are needed before changing
 Rust's shaping metrics or face-selection policy to reproduce this anomaly.
-This milestone leaves retained shaping advances and offsets unchanged.
+Rust retains its existing shaping advances and offsets for this branch.
 
 In cached Samsung Notes 4.4.45.37 ARM64 `libSPenPdf.so`,
 `PdfiumTextHandler::DrawText` at `0xa2230` maps logical bold `0x1` to fill plus
@@ -2279,15 +2266,9 @@ paragraphs also retain their original marker-before-content order. Glyph tests
 pin DejaVu Sans bytes (SHA-256
 `57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e`), native
 HarfBuzz glyphs 5365/1399 and an isolated-run X of 58.173828125, then inspect
-embedded outlines and PDF origins. At the source-order milestone `d44d379`,
-the workspace suite passed, including 486 core unit tests and 22 retained-PDF
-integration tests, as did render-only and minimal-feature checks, formatting
-and strict workspace Clippy. Five external native-reference checks passed.
-The built WASM matched the served artifact; Chromium passed 57 tests with
-one WebKit-only test skipped, including the
-embedded-font and logical-source PDF download regression. These gates validate
-this transport milestone, not complete visual parity or the outstanding limits
-above.
+embedded outlines and PDF origins. Chromium regressions exercise embedded
+fonts and logical-source PDF downloads through the actual WASM exporter.
+These transport checks do not establish complete visual parity.
 
 The synthesis regressions pin the same font and GIDs, verify per-glyph contours
 independently through `ttf-parser`, and normalize PDF matrices and strokes at
@@ -2301,25 +2282,23 @@ regular and synthesized bold-italic Arabic through actual WASM preview and PDF
 downloads, checking embedded font bytes, normalized shear, the physical pen,
 exact logical source and absence of image resources or canvas.
 
-The bounded milestone and remaining work are listed in
-[Vector text support](../text-vector-support.md). That support statement
-separates implemented behavior, captured native evidence and transport limits.
+[Vector text support](../text-vector-support.md) records implemented behavior,
+captured native evidence and transport limits.
 
-## Evidence required before claiming visual parity
+## Capture coverage limits
 
-- A Samsung-exported standalone text box and reference PDF covering margins,
-  vertical gravity, rotation, wrapping and all text-area modes. Existing
-  standalone cases are synthetic parser/renderer tests.
-- Mixed font sizes/families and overlapping nonempty styles, including emoji,
-  combining marks, RTL text and CJK fallback; verify actual selected fonts,
-  advances, baseline metrics and break positions.
-- Pixel/percentage line spacing, before/after spacing, indent and justified
-  paragraphs in both positioned text and body flow. Resolve the context scale
-  and default spacing of each captured export route.
-- Inline images/tables/code, obstacle wrapping, explicit page breaks and
-  multipage text. Preserve raw UTF-16 and paragraph ranges through measurement,
-  pagination and export; ranges are not interchangeable with glyph clusters.
+Standalone text-box cases for margins, vertical gravity, rotation, wrapping
+and text-area modes are synthetic parser/renderer regressions. They do not
+establish Samsung-exported standalone typography parity.
 
-These rules can become Rust contract tests backed by the addresses above.
-Captured Samsung output remains reference evidence; it need not become a
-second authored layout implementation.
+Captured coverage does not establish arbitrary mixed families/sizes,
+overlapping styles, emoji, combining marks, RTL and CJK fallback selection.
+Native font choices, baseline metrics and line breaks can differ from the
+pinned-font contracts. Pixel/percentage spacing, indents, justification and
+before/after gaps also have route-specific scaling limits.
+
+Locked body/code/table origins do not establish arbitrary inline composition,
+obstacle wrapping, explicit page breaks or merged/sparse tables. UTF-16 source
+and paragraph ranges remain distinct from glyph clusters throughout these
+contracts. Captured Samsung output supplies reference evidence; the authored
+layout implementation remains Rust.

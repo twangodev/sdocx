@@ -194,7 +194,7 @@ maintains motion availability, rotating image descriptors and the
 outputs refresh the cache through `0x5dfdc` for primary color; selected
 plane updates retain their different cache-write behavior.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The isolated completion suite uses 106 independent pairs of 33-byte
 edge arrays: constants, ramps, deterministic random values, and an
@@ -248,15 +248,12 @@ the earlier temporal experiments, not a recovered SDOCX wrapper layout.
 The APK/ELF identity, 48 cited instruction words, 216 dispatch-table
 bytes and both marker callbacks were verified against the native binary.
 All 396 artifact digests and 1116 independently reconstructed frame
-digests were checked after generation. Local documentation paths and
-heading anchors also pass validation.
+digests were checked after generation.
 
 These findings close the ordinary binary-availability edge rules for the
 tested intra/temporal mixtures. The
 [literal-state trace](spi-alpha-literal-state-findings.md) adds bounded
 alpha literal mixtures and demonstrates selected non-binary availability
-values caused by marker overruns. Remaining work includes portable
-handling of those cases, broader malformed-input limits, other
-color/header configurations and real-file compatibility.
-Generated artifacts and scripts remain disposable. Maintained changes
-are Markdown-only, and no SDK code changed.
+values caused by marker overruns. Portable handling of those cases, broader
+malformed-input limits, other color/header configurations and real-file
+compatibility remain unestablished.

@@ -139,7 +139,7 @@ InkPen2 resets them. Neither branch changes period or next bound here.
 This is a pen-specific controller rule, separate from the upstream
 [InkPen2 beautifier](inkpen2-input-findings.md).
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and Composer byte stream were verified. Vtable targets,
 signature/name strings, sample collection order, matrix calls, final
@@ -149,8 +149,9 @@ setup rates, 21 successive output selections, a shorter supplied list,
 Marker2 counter retention and exact-name InkPen2 reset.
 
 [Uniform-latency findings](uniform-latency-findings.md) recover the
-coefficient, strict cutoff comparisons and interpolation. External timing
-producers and display configuration still need independent tracing.
-No native execution, new device fixture or SDK change was
-used here. The recovered sample prefix belongs to temporary prediction
-presentation; stored Marker2 replay should continue to use decoded points.
+coefficient, strict cutoff comparisons and interpolation. The
+[timing trace](predictor-timing-findings.md) and
+[presentation-time trace](presentation-time-findings.md) record the external
+producers and display configuration fields. No native execution or device
+fixture was used here. The recovered sample prefix belongs to temporary
+prediction presentation, separate from saved Marker2 samples.

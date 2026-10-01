@@ -188,15 +188,13 @@ The host memory-copy implementation honored that native request.
 This demonstrates that the formula and a success return did not provide
 a sufficient output guarantee in this single-worker codec configuration.
 It does not prove the same result in the file wrapper's threaded path or
-on a device. A future SDK encoder needs independently checked capacity
-and error propagation rather than adopting this formula as a guarantee.
+on a device. The native allocation formula alone is not a safe output-capacity
+contract.
 
-## Remaining work
+## Evidence limits
 
 The APK digest, extracted ELF, cited instruction bytes, import bindings,
-mode-dispatch tables and output digests were checked. Generated samples,
-raw pixels and the emulator harness remain disposable local artifacts.
-Only Markdown findings are maintained here.
+mode-dispatch tables and output digests were checked.
 
 The [mode-5 trace](spi-literal-block-findings.md) now specifies literal
 planes and validates independently constructed multiple-packet images.
@@ -223,9 +221,9 @@ rank selection for capacities 1–5 and temporal mode-0/1 copies, including
 the distinct alpha source and overlap behavior.
 The [mixed-prediction trace](spi-mixed-prediction-findings.md) combines intra
 and temporal blocks using all sixteen binary edge-availability patterns.
-Remaining targets include other mode-3 paths, alpha literal
-marker behavior and other residual paths,
-other reference-buffer configurations, color and quality settings, malformed-input
-behavior and general independent decoding.
+The [literal-state trace](spi-alpha-literal-state-findings.md) records alpha
+literal marker writes and allocation-dependent output. Other reference-buffer
+configurations, color/quality settings and general malformed-input behavior
+remain outside these bounded results.
 Device-exported SPI files and rendered references remain necessary for
-compatibility validation. No SDK code changed.
+compatibility validation.

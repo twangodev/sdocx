@@ -158,8 +158,3 @@ The partial-rectangle test has zero stroke points and two partial rectangles,
 so a mistaken dependency on point count cannot pass through alignment.
 These are parser contract checks; new Samsung captures remain necessary
 for visual conformance of the additional rendering properties.
-
-Workspace tests with all features, Clippy with warnings denied, Rust 1.92
-checking and the WASM target passed. The existing `01-basic-formatting`
-corpus retained its locked hashes and parser/layout expectations, using the
-temporary corpus copy with its reference PDF from the local LFS cache.

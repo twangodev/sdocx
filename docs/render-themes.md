@@ -19,7 +19,7 @@ adaptation on dark-mode compatibility and an exact canonical white match.
 `#010101`. The renderer's existing `#252525` export paper is retained pending
 verification of the native page surface separately from composer UI chrome.
 
-## Native evidence and remaining work
+## Native evidence
 
 Local APK sources are under `scratch/apk-analysis-decompiled/sources/`:
 

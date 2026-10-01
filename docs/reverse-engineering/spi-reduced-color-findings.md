@@ -13,7 +13,6 @@ packet byte B zero and API output color value 500. The selected quantizer
 is bounded to 0–51. Independently constructed streams exercise the native
 decoder; these are not device exports or samples emitted by the native
 encoder. Other submodes and configurations remain outside this result.
-Maintained changes are Markdown-only; no SDK code changed.
 
 ## Header bit 4 selects the reduced path
 
@@ -248,7 +247,7 @@ This branch skips signed inverse color conversion `0x5ed8c`. Complete
 image output retains the established channel order and crops partial
 edge blocks to the declared dimensions.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The independent reader derives fields, markers, edges and pixels from
 header and packet bytes alone. Native intermediate state supplies only

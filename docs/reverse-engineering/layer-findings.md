@@ -77,8 +77,8 @@ Metadata decoding is explicit. Structural parsing can still retain a layer
 whose metadata is unknown or malformed, while a metadata request returns the
 specific error. The decoder bounds fixed fields and flexible fields separately,
 honors text limits, and cannot consume an object's count, hash or sibling layer.
-Layer visibility, transparency, alpha lock and shadow effects are exposed for
-future rendering work; this change does not apply them to the rendered page.
+Layer visibility, transparency, alpha lock and shadow effects are exposed as
+metadata. This decoder does not apply those effects to the rendered page.
 The semantic decoder selects the saved current physical layer, as documented
 in [saved physical-layer selection](page-layer-selection-findings.md).
 

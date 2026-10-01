@@ -149,20 +149,14 @@ uses normal blending, or that raster and vector export look identical.
 The Standard X implementation explicitly assigns Darken through a different
 PDF writer, as recorded in the linked composition findings.
 
-## SDK implications and remaining validation
+## SDK behavior and evidence limits
 
-The SDK can continue to preserve SVG paths where supported; matching the
-native choice to rasterize strokes is not itself a fidelity requirement.
-The Rust object tree now preserves ordered content. Remaining fidelity work
-includes pen settings, coverage and opacity behavior. PDF reference inspection
-must distinguish native stroke
-bitmaps from vector paths before attributing image differences to SDK
-geometry alone.
+The SDK preserves supported SVG paths and ordered content. Native stroke
+bitmaps and vector paths use different coverage/compositing contracts, so
+image differences alone do not isolate a geometry error. Pen settings,
+coverage and opacity have the limits recorded in the linked rendering findings.
 
 The mixed-list final-batch condition remains unresolved as documented in
 the capture findings. Rechecking the iterator tail confirmed no additional
-flush between iterator exhaustion and list destruction. List preparation
-and runtime examples are still needed to establish the practical effect.
-Useful new pairs include ordinary pens and highlighters crossing text or
-images, overlapping strokes with different alpha, and pages ending in
-strokes after a non-stroke object, exported through each available PDF mode.
+flush between iterator exhaustion and list destruction. The static trace does
+not establish the practical effect after list preparation or runtime batching.

@@ -158,7 +158,7 @@ That fallback must not be confused with a completed prediction carrying
 measured frame timing. Its zero fields come from explicit stores in the
 proxy. This function does not delete that input event.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and both native byte streams were verified. Exported
 functions, RTTI, vtable targets, dynamic-loader relocations and all
@@ -170,5 +170,4 @@ entity fields and their separation from the neural task's later time.
 The Handler trace identifies queue selection and local cancellation;
 outer teardown ordering and actual delivery timing remain unmeasured.
 Runtime predictor selection, neural model behavior and device behavior
-also remain unmeasured. No SDK code changed, and no new SDOCX fixture or
-device execution was used.
+also remain unmeasured. No SDOCX fixture or device execution was used.

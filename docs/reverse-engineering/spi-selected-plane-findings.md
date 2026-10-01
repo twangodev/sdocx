@@ -199,7 +199,7 @@ These observed successful calls should not be interpreted as a fourth
 supported color selector. The bounded independent sequence decoder
 accepts selectors 0–2 and rejects selector 3.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 All 1740 independently constructed corpus sequences match native output
 for all 3984 frames:
@@ -259,12 +259,10 @@ a recovered multi-frame SDOCX wrapper layout.
 
 APK/ELF identity, 59 cited instruction words, nine coefficient-reader
 calls, two scan pointers, two combination callbacks and 372 mask/class
-table bytes were verified against the native binary. Local documentation
-paths and heading links also pass validation.
+table bytes were verified against the native binary.
 
 [Multiple-cache selection](spi-reference-cache-findings.md) is now covered
 for capacities 1–5. The [mixed-prediction trace](spi-mixed-prediction-findings.md)
 adds intra/temporal edge completion and marker transitions, including
 selected-plane blocks. Broader malformed-input handling and device-export
-compatibility remain open. Maintained changes are Markdown-only; scripts
-and constructed sequences remain disposable local evidence.
+compatibility remain unvalidated.

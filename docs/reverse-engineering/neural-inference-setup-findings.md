@@ -149,19 +149,19 @@ Adjacent binary32 boundary checks also confirm that `0x3f4ccccc` and
 `0x3f4ccccd` pass, while `0x3f4cccce` fails. Those checks isolate the
 inclusive threshold from millisecond-to-float conversion.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and native byte stream were verified. Requested tensor
 dimensions, name strings, TFLite call bindings, runtime-handle stores,
 validator construction and vtable, float constants and branch conditions
 were checked against the ELF and disassembly. Disposable numerical checks
 covered all six integer-interval examples and the three adjacent float
-values. Markdown links and whitespace checks passed.
+values.
 
 The [output conversion trace](neural-output-findings.md) follows output
 tensors into candidate coordinates, pen channels and timestamp fields.
-Horizon selection and rejection after inference remain separate work.
+Later [selection](neural-selection-findings.md) and
+[admission](neural-admission-findings.md) traces cover horizon handling and rejection.
 The [lifecycle trace](neural-lifecycle-findings.md) recovers resource
 replacement, failure state, and the ownership of copied task handles.
-Model graph contents and actual inference remain unvalidated. No SDK code
-or corpus fixture changed.
+Model graph contents and actual inference remain unvalidated.

@@ -195,4 +195,4 @@ These checks do not execute native drawing or prediction. The
 [drawing-cadence trace](unbuffered-draw-findings.md) recovers the separate
 chronometer's checks and reset sites while preserving the unresolved initial
 registration edge. Runtime configuration and worker scheduling remain
-additional work. No SDK code or corpus fixture changed.
+unverified.

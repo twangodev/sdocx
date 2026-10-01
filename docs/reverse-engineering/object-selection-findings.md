@@ -90,16 +90,16 @@ on the existing canvas and pen canvas. It applies no inherited parent matrix.
 Saved child geometry and angles already reflect this rotation operation;
 adding a parent SVG rotation would apply it again.
 
-## SDK scope and remaining work
+## SDK scope and evidence limits
 
 The Rust renderer preserves ordered roots, containers and render passes.
-Native intersection selection remains unimplemented: use typed per-object
-selection and partial-content checks before claiming this additional parity.
-Retain current leaf transforms and avoid culling on serialized root bounds.
+Native intersection selection remains unimplemented. The inspected native
+selection paths use per-object geometry and partial-content tests; serialized
+root bounds alone do not reproduce those paths.
 
 The inspected collector, selection methods and container drawing branch do
 not consult `IsOutOfCanvasEnabled` or its base-data byte 63. This establishes
 no selection bypass in these paths, not the flag's behavior in every editor
 operation or clipping path. Image-flag serialization, detailed path/margin
 algorithms, other container edit operations and captured pixel fidelity remain
-separate work.
+outside this selection trace.

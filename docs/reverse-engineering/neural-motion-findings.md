@@ -215,7 +215,7 @@ Later candidates can still be considered. This differs from the two
 whole-task checks above and can remove a candidate marked by horizon
 selection.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The native byte stream was matched to the identified APK. Model-rate
 dispatch, endpoint indices, time units, statistics, comparison branches,
@@ -232,4 +232,3 @@ The [acceleration estimator](predictor-acceleration-findings.md) and
 [low-speed admission](predictor-speed-findings.md) are now traced.
 Readiness/chronology checks and application configuration/runtime evidence
 remain relevant to the [unmarked-vector reachability question](neural-admission-findings.md#member-112-is-the-discarded-output-count).
-No SDK code or corpus fixture changed.

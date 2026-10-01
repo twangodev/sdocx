@@ -180,12 +180,10 @@ Final pixels remained native-produced in these field checks. The original
 payload acceptance and field agreement. The subsequent pixel findings add
 independent reconstruction and intermediate-buffer comparisons.
 
-## Remaining work
+## Evidence limits
 
 Marker initialization, block-row transitions and external edge preparation
 are now covered by the [neighbor-state findings](spi-alpha-state-findings.md).
 Prediction pixels and residual combination in `0x6ce0c` are covered by
 the pixel findings. Other submodes, selector values, invalid neighbor
-states and general truncated-payload behavior remain unresolved. No SDK
-code changed; maintained results are Markdown-only, with scratch tooling
-and generated cases remaining disposable local artifacts.
+states and general truncated-payload behavior remain unresolved.

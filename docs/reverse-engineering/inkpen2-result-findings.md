@@ -182,7 +182,7 @@ transform. The caller's
 remains relevant when the candidate vector is empty or every candidate
 fails current selection.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and both native byte streams were verified. The vector
 offsets, down-anchor copy, reverse/forward branches, exact threshold,

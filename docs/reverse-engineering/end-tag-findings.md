@@ -66,7 +66,7 @@ encryption blob itself, so fields cannot borrow bytes from later timestamps.
 The pure end-tag parser retains opaque encryption bytes; archive parsing also
 validates their structure before accepting a tag.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 `crates/sdocx/tests/end_tag_contracts.rs` reconstructs the Java writer's field
 sequence with distinct timestamps and nonempty strings. It checks Unicode

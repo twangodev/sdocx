@@ -37,8 +37,8 @@ their own four-byte prefixes. Missing title or body is representable.
 The table chain is `0 + 6 + 7 + 22`. The call at `0x3d9f4c` uses
 `ObjectShape::NewGetBinary`, which calls `ObjectShapeBase::NewGetBinary` at
 `0x399c08` and writes its own shape frame at `0x399c20`. The existing embedded
-decoder finds the type-22 frame after the base; future standalone decoding must
-also account for inherited geometry and styles.
+decoder finds the type-22 frame after the base. The native table record also
+contains inherited shape geometry and styles.
 
 ## Table properties and flexible fields
 

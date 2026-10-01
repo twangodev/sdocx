@@ -125,8 +125,8 @@ through GOT entry `0xeee00`:
 
 The bitmap wrapper accepts API values 400, 500 and 501, corresponding to
 wire indices 2, 4 and 5. Channel order and compression semantics remain
-unassigned. The field reader itself accepts arbitrary index bytes; a
-future SDK lookup must validate an index before accessing its own mapping.
+unassigned. The field reader itself accepts arbitrary index bytes; accepted
+indices are not necessarily valid entries in a decoder's channel mapping.
 
 ## Native acceptance has distinct boundaries
 
@@ -150,7 +150,7 @@ compare it with 20 before entering the field reader. The encoder emits
 20; the outer wrapper separately compares consumed bytes with its block
 length. These are distinct checks.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest, Base ELF stream, constructor dispatch bindings, bit-order
 helpers, property table and cited instructions were checked against the
@@ -180,4 +180,3 @@ The [reference-cache trace](spi-reference-cache-findings.md) also tests flags
 `0x80`/`0x90` and connects flag C to non-explicit temporal mode-1 syntax.
 Real-file compatibility, other auxiliary field semantics,
 general independent decoding and rendering remain unvalidated.
-No SDK code changed.

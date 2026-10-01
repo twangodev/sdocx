@@ -101,9 +101,9 @@ completion separately.
 
 | Conditions after the nonzero-length check | Call `DoPredict` | Direct completion condition | Return value |
 | --- | --- | --- | --- |
-| `!needPredict || low_speed` | No | `due || large_history || !unbuffered` | True |
+| `!needPredict \|\| low_speed` | No | `due \|\| large_history \|\| !unbuffered` | True |
 | `needPredict && !low_speed && due` | Yes | None here; delegated to predictor | True |
-| `needPredict && !low_speed && !due` | No | `large_history || !unbuffered` | False |
+| `needPredict && !low_speed && !due` | No | `large_history \|\| !unbuffered` | False |
 
 The first row calls slot 248 at `0x2ec9c`, then overrides its local
 completion flag when history is large at `0x2ecb4`. The unbuffered test
@@ -174,7 +174,7 @@ Only a non-null constructed event triggers the time backend's saved-reset
 commit; the [pacing trace](predictor-chrono-findings.md) records that
 additional distinction.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Both native byte streams were matched to the APK. Input argument retention,
 packed return handling, branch instructions, float/double constants,
@@ -186,5 +186,4 @@ conditions, plus equality and first-forced-count boundaries at three rates.
 These are static control-flow checks, not native execution or measured
 callback rates. The [position trace](predictor-position-findings.md) recovers
 coefficient caller ordering. Full input-status producer semantics and
-concurrent worker behavior remain separate work. No SDK code or corpus
-fixture changed.
+concurrent worker behavior remain unverified.

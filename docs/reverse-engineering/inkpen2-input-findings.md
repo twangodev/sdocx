@@ -150,14 +150,14 @@ names containing prediction do not establish whether their output is
 temporary presentation or input to the recorder; the caller determines
 that boundary.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and all three library byte streams were verified. Named
 imports, action branches, both time fields, pressure instructions, queue
 copies and result/fallback argument identities were checked against the
 ARM64 code. Disposable reconstruction checked admission equality, the
-finite pressure examples and queue trimming. No SDK code changed and no
-new device fixture or native execution was used.
+finite pressure examples and queue trimming. No device fixture or native
+execution was used.
 
 The [prediction trace](inkpen2-prediction-findings.md) now recovers
 `doPredict`'s linear fits, horizon, distance rejection and timestamp

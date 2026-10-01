@@ -1,8 +1,8 @@
 # Reverse-engineering knowledge base
 
-This directory is the maintained Markdown memory for Samsung Notes SDOCX/WDoc
-reverse engineering. It records conclusions that are backed by the Samsung
-Notes APK, native serializers, or real compatibility fixtures.
+This directory records Samsung Notes SDOCX/WDoc findings from the APK, native
+serializers and compatibility fixtures. Each finding identifies its source
+and distinguishes recovered behavior from implementation and evidence limits.
 
 ## Documents
 
@@ -222,19 +222,6 @@ Notes APK, native serializers, or real compatibility fixtures.
   precedence, image placement, visible-stroke bounds and expression-type limits.
 - [`parser-findings.md`](parser-findings.md) — structural decoding, metadata,
   compatibility rules and evidence limits for the Rust parser.
-
-## Maintenance rules
-
-- Mark facts as confirmed, inferred or unresolved.
-- Prefer declared record sizes, offsets and masks over fixture-specific magic
-  numbers.
-- Record the APK version and fixture set used for a conclusion.
-- Keep unknown fields and object types round-trippable where practical.
-- Do not commit the APK, decompiled sources or compatibility documents here.
-  Store the test corpus externally and keep only measurements/expectations in
-  the repository.
-- Keep the knowledge base Markdown-only. One-off disassembly/audit programs can
-  remain disposable local tooling; durable conclusions belong in these files.
 
 ## Sources and validation
 

@@ -181,6 +181,6 @@ The APK digest and both native library byte streams were verified.
 Fresh constructor output, JNI field names, record stores, getter arithmetic
 and recorder imports were checked against the APK and ARM64 instructions.
 Disposable reconstruction checked pointer-major ordering and the timestamp
-example. No native execution or new SDOCX fixture was used, and no SDK code
-changed. Remaining input targets include resampled-state consumers,
-special action/tool remapping and nanosecond consumers.
+example. No native execution or SDOCX fixture was used. Resampled-state
+consumers, special action/tool remapping and nanosecond consumers are outside
+this adapter trace.

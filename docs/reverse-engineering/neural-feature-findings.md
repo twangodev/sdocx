@@ -229,14 +229,15 @@ stationary-tail rejection, pressure saturation, negative pressure and
 unwrapped orientation differences. Ideal rotation geometry was checked
 for five segment directions without claiming bit-exact native trigonometry.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and extracted library byte stream were verified. Function
 bindings, referenced instructions, record fields, vtable slots, constants,
-buffer strides and Markdown links were checked against the local evidence.
+and buffer strides were checked against the local evidence.
 
 The [setup trace](neural-inference-setup-findings.md) identifies the installed
-time-feature checker. Remaining work includes declared model metadata,
-output selection and rejection, the output rotation and actual device
-behavior. The reference checks do not run Samsung's native code or establish
-rendering conformance. No SDK code changed.
+time-feature checker. [Output conversion](neural-output-findings.md),
+[selection](neural-selection-findings.md) and
+[admission](neural-admission-findings.md) record the subsequent stages.
+Model graph contents and actual device behavior remain unvalidated. The
+reference checks do not execute native inference or establish rendering conformance.

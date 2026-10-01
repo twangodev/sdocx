@@ -12,8 +12,7 @@ have byte B equal to one. API output uses color value 500.
 The independent decoder consumes constructed serialized sequences.
 Native instructions execute unchanged and supply comparison results,
 including intermediate coefficients and complete output pixels. These
-sequences are not device exports. Maintained changes are Markdown-only;
-SDK integration remains separate work.
+sequences are not device exports.
 
 ## One mask covers primary and secondary residuals
 
@@ -146,7 +145,7 @@ register arguments X2/X3 do not provide general stride support here.
 The last horizontal sample uses input columns 13, 14 and 15. Vertical
 reduction pairs rows 0/1 through 14/15 without an extra edge extension.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Sequence comparisons cover consumed bits, motion availability and vectors,
 raw coefficient arrays and flags, primary split/mask fields, every coded
@@ -200,8 +199,8 @@ its fourth frame's output has SHA-256
 `ed0b8664b79f7ec2fae167d9e70ed7d983ce7718036203fcd16c22e85b7e3ce3`.
 The disposable storage prefixes the header and each image-data block with
 a little-endian length; it does not assert a multi-frame SDOCX wrapper
-layout. APK/ELF identity, forty cited instruction words, callback/table
-relocations and local documentation links were verified.
+layout. APK/ELF identity, forty cited instruction words and callback/table
+relocations were verified against the native bytes.
 
 The [selected-plane trace](spi-selected-plane-findings.md) adds primary
 submode 3. The [reference-cache trace](spi-reference-cache-findings.md)

@@ -159,7 +159,7 @@ sequence. The Java close and raster-owner deletion chain are now traced
 in [writing-view teardown](writing-view-teardown-findings.md); scheduling
 at the application call sites remains unresolved.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 Both native byte streams were matched to the APK. Presenter and proxy
 vtables, the concrete destructor and pointer-setter targets, factory
@@ -172,5 +172,5 @@ These findings narrow the earlier holder-replacement example to callers
 that change a live instance's model directly. They do not prove all such
 callers absent or establish the safety of pending work during destruction.
 Callback queue ownership, Java close and raster deletion are now traced
-separately; the next boundary is application call-site ordering. No SDK code,
-saved-stroke decoding rule, or corpus fixture changed.
+separately. Application call-site ordering outside those paths remains
+unverified.

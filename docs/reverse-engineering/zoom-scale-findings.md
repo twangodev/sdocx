@@ -167,12 +167,12 @@ The writing-view setter also stores zoom in its own member 1508 at
 `content_scale * zoom_scale` to `StrokeDiagramTransformer::SetScale`
 at `0x4285c0`. There is no ordinary pen-size setter in this method.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and both library byte streams were verified. Scroller
 construction, callback registration, vtable relocations, view setter
 imports, scale arithmetic and remover RTTI were checked against the
-ARM64 binaries. Documentation links were checked. No SDK code changed.
+ARM64 binaries.
 
 The [pen size trace](pen-size-findings.md) now resolves the note-writing
 manager's document-relative conversion and native size assignment, plus

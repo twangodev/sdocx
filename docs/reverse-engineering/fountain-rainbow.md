@@ -224,7 +224,7 @@ invalidation policy.
 
 This closes the saved geometry-to-native-attribute-to-upload boundary for
 these cases. RTV6 Draw, shader execution, blend/composite behavior and final
-framebuffer parity remain separate work.
+framebuffer parity remain unverified.
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_v17_raster.py
@@ -1088,7 +1088,7 @@ The inner redraw disassembly additionally shows codes 1 and 3 substituting
 pressure 0.5 for the initial and intermediate samples, with code 1 selecting
 a 50-unit distance threshold versus 5 for the other tested codes. Complete
 independent models of each tool's variable-width behavior and the public
-fixed-width settings path remain separate work. Smoothing orchestration is
+fixed-width settings path remain outside this trace. Smoothing orchestration is
 still supplied as two passes, consistent with the nonzero-tip-length outer
 path; this fixture does not cover the zero-tip-length mode-0 path.
 

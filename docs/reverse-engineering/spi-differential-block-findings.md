@@ -227,10 +227,9 @@ table, clamp table, callbacks and normal neighbor dispatches were checked.
 
 The complete reader uses only the header and packet bytes. Native state
 is compared afterward, not provided as reconstruction input. Scratch code
-and generated artifacts remain disposable; maintained changes are
-Markdown-only and no SDK code changed.
+and generated artifacts are not part of the SDK decoder.
 
-## Remaining work
+## Evidence limits
 
 The [mode-3 color trace](spi-color-intra-findings.md) now recovers full-size
 planes with zero quantization; the [quantized color trace](spi-quantized-color-findings.md)

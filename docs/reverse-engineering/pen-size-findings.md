@@ -281,7 +281,7 @@ path from the selected ViewCore pen to recorded width. The path carries
 PenData and copies its size through pen setters; it does not derive width
 from the event's inverse coordinate-transform matrix.
 
-## Validation and remaining work
+## Validation and evidence limits
 
 The APK digest and five native library byte streams were verified.
 JNI names/signatures, view-core and pen vtable slots, action constructor
@@ -289,8 +289,7 @@ arguments, raster forwarding, Marker2 constants, the float arithmetic
 and recording-pointer transfer were checked against the binaries.
 Fresh fallback Java output confirmed the manager conversion
 branches and the density source, and disposable float reconstruction
-checked both utilities' example widths and level boundaries. Documentation
-links were checked. No SDK code changed.
+checked both utilities' example widths and level boundaries.
 
 The ordinary raster assignment is now resolved. Other drawing factory
 branches, specialized actions, setting changes during an active stroke

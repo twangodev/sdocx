@@ -140,7 +140,6 @@ native integration harness below. Prediction flags, non-identity transforms,
 non-stylus input and GPU rendering remain outside that harness. Neither
 configuration nor queue partitioning alone establishes live stroke parity.
 
-
 ## Coordinate editing and point extraction
 
 `conformance/fountain_tip_coords.py` executes 30 native sequences: zero, one,
@@ -545,7 +544,6 @@ selection, and integration into a complete live drawable/GPU execution still
 remain. This establishes an independent model for the tested preprocessing
 path, not completion of all fountain rendering behavior.
 
-
 ## Engine selection: PointBeautifier is an InkPen2 special case
 
 The constructor at Engine `0x139410` belongs to WritingViewPenAction, as
@@ -581,10 +579,10 @@ normal FountainPen route. Applying its reconstructed prediction or Kalman
 processing to saved fountain coordinates would therefore lack supporting
 caller evidence and could change the stroke incorrectly.
 
-Further fountain work should follow its actual main/tip Draw orchestration,
-width-history backup/restore, supplied prediction source and rasterization.
-Alternate modes of these separately reconstructed components are not, by
-themselves, missing fountain features.
+This trace does not establish the complete FountainPen main/tip draw,
+width-history backup/restore or supplied prediction-source contracts. Alternate
+modes of separately reconstructed components are not evidence of missing
+FountainPen features.
 
 ## Incoming prediction length and presenter acceptance
 
@@ -836,7 +834,7 @@ also establish main save/draw/restore before bitmap copy and tip drawing.
 This closes the earlier gap where incoming presenter tests populated the
 point manager separately and left the pending list empty. The list producer,
 stroke creation/end/cancel lifecycle, uniform-latency policy, asynchronous
-renderer execution and final framebuffer comparison remain separate work.
+renderer execution and final framebuffer output remain unverified.
 Canvas calls and model persistence use the same explicit host boundaries as
 the preceding fixtures; these checks do not establish Android scheduling.
 

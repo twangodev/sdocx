@@ -194,7 +194,7 @@ construction, RTTI, append and setter vtable bindings, the first-point
 load, integer-offset negation, float-coordinate addition and flag-only
 timestamp update were checked against their instructions and relocations.
 These are static results; no new device fixture or native execution was
-used, and no SDK code changed.
+used.
 
 For decoding and page rendering, keep the stored coordinates authoritative:
 the mode-0 insertion path has already subtracted the selected page's origin.

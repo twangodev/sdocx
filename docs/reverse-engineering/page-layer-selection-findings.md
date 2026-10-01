@@ -119,15 +119,11 @@ Explicit metadata access remains available for inspecting such records.
 Synthetic regressions cover both selected indices, nonsequential layer
 numbers, empty selected layers, inactive malformed payloads, invalid inactive
 object boundaries, cross-layer stroke limits, text/SVG selection, global
-image resolution and retained structural diagnostics. Workspace tests with
-all features, Clippy with warnings denied, Rust 1.92 workspace checks, the
-WASM target and the existing locked external corpus all passed. The corpus
-check used the temporary directory containing the cached reference PDF,
-preserving the missing PDF in the `hf` checkout.
+image resolution and retained structural diagnostics.
 
-That corpus does not supply a captured multilayer comparison. New multilayer
-SDOCX/PDF pairs are still needed to measure
-fidelity and observe editor operations that change the selected layer.
+The locked corpus does not supply a captured multilayer comparison. Layer
+selection fidelity and editor operations that change the selected layer remain
+unverified by device exports.
 
 This change does not infer physical-layer opacity or visibility composition
 from the metadata. Ordered object rendering, pen behavior and single-page
