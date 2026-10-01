@@ -326,12 +326,6 @@ GPU execution remains separate. Their smoothing is WidthSmoothManager; the cubic
 coordinate smoother is not demonstrated on this path. Upstream prediction
 and preprocessing still require tracing outside the fountain event entry.
 
-The next concrete upstream lead is libSPenEngine's imports of
-PointBeautifier::OnTouch, ApplyFilter and GetResult. libSPenPredictor also
-exports CreatePredictor and NNPredictor methods. Their presence identifies
-investigation targets, not proof that a particular predictor/model is enabled
-for fountain strokes on a given device.
-
 ## Upstream PointBeautifier execution
 
 The engine contains a concrete caller that constructs PointBeautifier

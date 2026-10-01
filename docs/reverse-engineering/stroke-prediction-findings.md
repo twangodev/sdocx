@@ -236,7 +236,7 @@ implementation can replace recorded X/Y while retaining the original count
 and parallel channels. This is separate from the still-unresolved
 document-insertion coordinate transform.
 
-## Validation and SDK implications
+## Validation and evidence limits
 
 The APK digest and all four library byte streams were checked. Vtable
 bindings, RTTI, the version table, event argument registers and the source
@@ -246,9 +246,6 @@ The source and anchor-selection examples are static derivations;
 no device prediction trace or new document pair
 was used.
 
-Keep ordinary Marker2 stored-array rendering distinct from prediction
-presentation. Preserve recorded samples and per-object boundaries, use
-the recovered ordinary version's replay rules, and do not manufacture
-future samples to imitate the temporary live tail. Predictions, final
-coordinate transforms and pen-specific replacement providers should be
-validated independently as more of their native paths are recovered.
+Ordinary Marker2 stored-array rendering and prediction presentation follow
+separate paths. This trace does not establish final document-insertion
+coordinate transforms or all pen-specific replacement providers.

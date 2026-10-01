@@ -26,8 +26,7 @@ The success returned by `drawFormula` records bitmap retrieval, not successful
 raster upload or painting. The flag is saved at `0x838d4` and returned at
 `0x8393c`; the result of `drawFormulaBitmap` at `0x83914` does not replace it.
 Thus the native path can suppress ink even if a later graphics allocation
-fails. A portable renderer should report missing/unsupported image resources
-explicitly and distinguish that failure from an image-free formula.
+fails.
 
 This drawing path does not evaluate LaTeX strings. Stored expressions, answer
 text and label graphs are recognition/editing data; the visible representation
@@ -104,9 +103,8 @@ stroking the decoded point sequence.
 unsigned values greater than or equal to 2 at `0x42a178`–`0x42a17c`. Accepted
 values are stored at implementation offset 288. The names of 0 and 1 are not
 established by this setter, so the inspection API retains `expression_type_raw`.
-The serialized reader accepts the stored value without this setter's check;
-the parser should not reject future enum values merely because this APK's
-editing API would reject them.
+The serialized reader accepts the stored value without this setter's check.
+The editing API's range restriction is not a serialized-format invariant.
 
 The similarly named `HwrMathExpression::SetExprType` in `libSPenHwrData.so`
 stores a 16-bit value at offset 184 (`0x3a998`). Its `IsAssign` method reads a
@@ -117,7 +115,5 @@ has been confirmed.
 ## Implementation status
 
 Formula inspection decodes both stroke lists, image media ID and result
-rectangle. Automatic formula rendering is still absent. The next dependencies
-are common visibility metadata, native pen-category/drawn-bound mapping,
-formula image resolution, and enclosing transforms. Real SDOCX/PDF pairs will
-be needed to check final placement and appearance against Samsung exports.
+rectangle. Automatic formula rendering is absent. Final placement and
+appearance have not been checked against a paired Samsung SDOCX/PDF export.

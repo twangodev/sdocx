@@ -3,8 +3,8 @@
 ## Evidence and scope
 
 Confirmed against Samsung Notes 4.4.45.37, `arm64-v8a/libSPenModel.so`.
-This investigation uses native reader, writer and getter code. No new SDOCX
-or Samsung PDF fixtures were available for this change.
+This investigation uses native reader, writer and getter code, without a paired
+SDOCX/Samsung PDF comparison.
 
 Every mapped object chain begins with a type-0 frame. The bounded decoder
 exposes that frame through `StoredObject::base_metadata`, as well as the `base`
@@ -107,13 +107,13 @@ in [optional object findings](object-flexible-findings.md).
 ## Implementation and verification
 
 `ObjectMetadata` exposes the eleven confirmed properties, replay timestamp,
-resize byte, masks and bounded extensions. Existing page rendering does not
-yet apply these visibility flags automatically. This metadata is a prerequisite
-for the visible-stroke bounds needed by formula rendering.
+resize byte, masks and bounded extensions. Page decoding excludes hidden
+recognized objects and their subtrees from the semantic model while retaining
+their physical records. Automatic formula rendering remains unimplemented.
 
 Synthetic regressions cover independent property bits across five mask bytes,
 inverted removable behavior, zero-extension, raw resize values, UTF-8 identity,
 named resize modes with unknown-value preservation, extension preservation,
 and fixed/rotation truncation that cannot borrow bytes
 from flexible data or later frames. They also retain non-finite rotation
-rejection. Real-file visual conformance remains a separate task.
+rejection. These regressions do not establish real-file visual parity.

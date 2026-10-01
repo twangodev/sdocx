@@ -195,7 +195,5 @@ all-rejected candidates and a nonzero saved anchor.
 These checks complete the local candidate-selection contract without
 native execution or a new device fixture. They do not establish visual
 parity, settings prevalence, or which synthetic candidate sequences are
-reachable from actual hardware input. Matching InkPen2 SDOCX/PDF fixtures
-remain the way to validate stored geometry and rendered output. The SDK
-should preserve decoded samples rather than replaying these admission,
-prediction, selection and smoothing stages during export.
+reachable from actual hardware input. Stored geometry and rendered output
+remain unverified against paired InkPen2 SDOCX/PDF exports.

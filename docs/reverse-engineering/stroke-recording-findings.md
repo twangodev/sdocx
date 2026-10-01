@@ -145,10 +145,8 @@ fixture or a claim that every Samsung tap has exactly two samples.
 There is also no universal two-point model invariant. Model's array-based
 `ObjectStroke::Construct`, `0x2ddbf8`, enters its copy path for a count of
 1 at `0x2ddd60`–`0x2ddd64` and stores the supplied count at `0x2dddd4`.
-The model can consequently hold a one-point object. Importers and direct
-object construction must be investigated separately from a completed touch
-sequence; parsers should not reject a stored one-point record merely to
-match the common touch path.
+The model can consequently hold a one-point object. The common completed-touch
+sequence does not establish a minimum stored count of two.
 
 ## Replay resets the input source
 

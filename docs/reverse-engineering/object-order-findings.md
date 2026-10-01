@@ -171,9 +171,9 @@ child's stored top-layer flag does not independently move it into the page's
 top batch through this path. This is a control-flow conclusion; the pen
 renderer can still apply its own pixel behavior to that child.
 
-## Consequences for the SDK
+## SDK behavior and evidence limits
 
-The high-level SDK page now retains one ordered `PageObject` tree with typed
+The high-level SDK page retains one ordered `PageObject` tree with typed
 containers, source offsets and render-layer metadata. Root selection precedes
 child traversal; selected children draw in place without independent pass
 classification. Hidden recognized objects suppress their subtrees during
@@ -187,13 +187,8 @@ stored-bbox overlap. Saved container rotations already update child geometry
 and angles, so rendering does not add an inherited parent rotation.
 Group-ID strings are not used to reconstruct container membership.
 
-The existing [Standard PDF trace](standard-pdf-composition-findings.md#ordinary-objects-retain-interleaving-and-flush-the-tail)
+The [Standard PDF trace](standard-pdf-composition-findings.md#ordinary-objects-retain-interleaving-and-flush-the-tail)
 establishes image/text flush boundaries and the explicit final bitmap flush.
-Those boundaries should be preserved when converting the ordered scene to
-SVG/PDF. Top-pass bitmap blending and pen-level opacity remain distinct.
-
-Useful synthetic regressions for that implementation include stroke/image/
-stroke, stroke/text/stroke, mixed children inside a visible base container,
-hidden containers, and top-only versus combined query masks. New captured
-pairs are still required to validate pixels and determine which unusual
+Top-pass bitmap blending and pen-level opacity remain distinct. The synthetic
+regressions do not establish native pixel parity or which unusual
 render-ID/container combinations occur in editor-generated notes.

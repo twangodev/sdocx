@@ -164,8 +164,6 @@ The [prediction trace](inkpen2-prediction-findings.md) now recovers
 retention. The [Kalman trace](inkpen2-kalman-findings.md) recovers channel
 defaults and correction equations. The
 [result trace](inkpen2-result-findings.md) establishes geometric selection,
-resampled-state rewriting and candidate lifetime. Synthetic queue cases can
-bound those algorithms, but actual InkPen2 SDOCX/PDF pairs are still needed
-to test the complete stored geometry and rendered appearance. The SDK
-should preserve already decoded points and channels rather than applying
-these live-input queue rules again during export.
+resampled-state rewriting and candidate lifetime. These live-input traces do
+not establish complete stored geometry or rendered appearance against paired
+InkPen2 SDOCX/PDF exports.
