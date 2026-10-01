@@ -27,6 +27,9 @@ mod cell_inputs;
 #[path = "native_table/cold_rows.rs"]
 mod cold_rows;
 
+#[path = "native_table/merges.rs"]
+mod merges;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1009,6 +1012,17 @@ fn main() {
             frames::capture(&mut machine, Path::new(&base_path));
             return;
         }
+        Some("--merge-cells") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base_path = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            merges::capture(&mut machine, Path::new(&base_path));
+            return;
+        }
         Some(mode @ ("--warm-rows" | "--cold-rows")) => {
             let drawing_path = std::env::args_os()
                 .nth(3)
@@ -1071,7 +1085,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs or no capture mode"
         ),
     }
     let mut cases = Vec::new();

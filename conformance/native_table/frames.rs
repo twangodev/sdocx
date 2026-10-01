@@ -134,6 +134,10 @@ fn initialize_adapter(machine: &Machine) {
 
 pub(super) fn initialize(machine: &mut Machine, case: &BorderCase) {
     machine.initialize_borders(case);
+    initialize_layout(machine);
+}
+
+pub(super) fn initialize_layout(machine: &Machine) {
     initialize_adapter(machine);
     for (index, instruction) in [0xaa1f03e1_u32, 0xd2805002, 0x14000000].iter().enumerate() {
         write(
