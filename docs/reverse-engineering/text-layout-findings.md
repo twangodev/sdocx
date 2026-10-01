@@ -2197,14 +2197,27 @@ non-anchor decoration changes do not split a retained glyph.
 
 Tagged PDF blocks carry full logical source through `ActualText`, independent
 of visual glyph order. Viewers that ignore `ActualText` may still extract
-ligatures, combining marks or bidi runs differently. Each inline-object text
-fragment preserves its source, but aggregate reading order still follows
-painting order rather than a separate document tag-tree order. Independent regressions
+ligatures, combining marks or bidi runs differently. The Rust scene records
+semantic source scopes separately from paint order. Parent fragments sort by
+scalar source position; embedded text descends at its object anchor, with code
+title before body and table cells in row-major order. Numbered markers precede
+their paragraph content. Each exported page occurrence contributes its own
+ordered tag groups, including repeated selections. Glyph positions, transforms,
+clipping and z-order retain the existing paint traversal. Readers that ignore
+the structure tree can still expose paint order around inline objects.
+
+Independent regressions traverse `StructTreeRoot` children and resolve
+page-scoped marked-content IDs instead of assuming content-stream order. A
+hand-built PDF has declared reading order `BCA` while its streams paint `ABC`.
+Six behavioral regression failures on pristine `15fc41e` cover inline code,
+nested objects, title/body, RTL, table cells and repeated pages; the new scopes
+correct each order without changing the pinned glyph geometry. Numbered
+paragraphs also retain their original marker-before-content order. Glyph tests
 pin DejaVu Sans bytes (SHA-256
 `57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e`), native
 HarfBuzz glyphs 5365/1399 and an isolated-run X of 58.173828125, then inspect
-embedded outlines and PDF origins. The workspace suite passes, including 480
-core unit tests and 14 retained-PDF integration tests, as do render-only and
+embedded outlines and PDF origins. The workspace suite passes, including 486
+core unit tests and 22 retained-PDF integration tests, as do render-only and
 minimal-feature checks, formatting and strict workspace Clippy. Five external
 native-reference checks pass. The final built WASM matches the served artifact;
 Chromium passes 57 tests with one WebKit-only test skipped, including the new
