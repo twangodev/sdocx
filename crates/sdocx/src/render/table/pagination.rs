@@ -13,6 +13,9 @@ mod native_row_tests;
 #[cfg(test)]
 mod native_split_tests;
 
+#[cfg(test)]
+mod native_bottom_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
@@ -310,11 +313,18 @@ fn offset_from_row(
     Ok(())
 }
 
-fn compress_row(plan: &mut PreparedTable, row_index: usize) -> Result<(), ObjectDiagnosticKind> {
+fn last_intersect_split(
+    plan: &PreparedTable,
+    row_index: usize,
+) -> Result<Option<BoundingBox>, ObjectDiagnosticKind> {
     let height = plan.row_height(row_index)?;
     let mut selected = None;
-    let Some(bands) = &plan.rows[row_index].cells[0].bands else {
-        return Ok(());
+    let (_, first) = plan.frame_cell(super::CellPosition {
+        row: row_index,
+        column: 0,
+    })?;
+    let Some(bands) = &first.bands else {
+        return Ok(None);
     };
     for band in &bands.rectangles {
         if band.y_min > height {
@@ -322,21 +332,40 @@ fn compress_row(plan: &mut PreparedTable, row_index: usize) -> Result<(), Object
         }
         selected = Some(*band);
     }
-    let Some(band) = selected.filter(|band| band.x_max > band.x_min && band.y_max > band.y_min)
+    Ok(selected)
+}
+
+fn row_bottom_offset(plan: &PreparedTable, row_index: usize) -> Result<f64, ObjectDiagnosticKind> {
+    let Some(band) = last_intersect_split(plan, row_index)?
+        .filter(|band| band.x_max > band.x_min && band.y_max > band.y_min)
     else {
-        return Ok(());
+        return Ok(0.0);
     };
-    let last_bottom = plan.rows[row_index]
-        .cells
-        .iter()
-        .map(|cell| cell.metrics.last_line_bottom)
-        .fold(0.0_f64, f64::max);
-    if last_bottom < band.y_min {
-        let displacement = native_sub(native_sub(band.y_min, height)?, plan.half_border)?;
-        if displacement < 0.0 {
-            extend_row(plan, row_index, displacement)?;
-            offset_from_row(plan, row_index + 1, displacement)?;
+    let mut last_bottom = 0.0_f64;
+    for column in 0..plan.rows[row_index].cells.len() {
+        let (_, cell) = plan.frame_cell(super::CellPosition {
+            row: row_index,
+            column,
+        })?;
+        if cell.metrics.first_line_height.is_some() {
+            last_bottom = last_bottom.max(cell.metrics.last_line_bottom);
         }
+    }
+    if last_bottom < band.y_min {
+        native_sub(
+            native_sub(band.y_min, plan.row_height(row_index)?)?,
+            plan.half_border,
+        )
+    } else {
+        Ok(0.0)
+    }
+}
+
+fn compress_row(plan: &mut PreparedTable, row_index: usize) -> Result<(), ObjectDiagnosticKind> {
+    let displacement = row_bottom_offset(plan, row_index)?;
+    if displacement < 0.0 {
+        extend_row(plan, row_index, displacement)?;
+        offset_from_row(plan, row_index + 1, displacement)?;
     }
     Ok(())
 }
