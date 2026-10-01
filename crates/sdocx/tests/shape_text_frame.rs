@@ -3,6 +3,10 @@
 #[path = "support/shape_text.rs"]
 mod shape_text;
 
+#[cfg(feature = "pdf")]
+#[path = "support/pdf_geometry.rs"]
+mod pdf_geometry;
+
 use sdocx::{RichTextParagraph, RichTextParagraphType, TextDiagnosticKind};
 use shape_text::{assert_lines, bounds, document, render, shape, text};
 
@@ -18,6 +22,76 @@ fn known_shape_geometry_overrides_the_asymmetric_saved_child_frame() {
             assert_eq!(render(&doc, replay), page);
         }
         assert_eq!(serde_json::to_value(&doc).unwrap(), source);
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn synthesized_shape_text_keeps_its_frame_and_selectable_vector_pdf() {
+    use sdocx::{RichTextSpan, RichTextSpanType, SpanIntervalType};
+    use std::sync::Arc;
+
+    let mut database = sdocx::fonts::fontdb::Database::new();
+    database.load_font_data(include_bytes!("../assets/fonts/Roboto-Regular.ttf").to_vec());
+    database.set_sans_serif_family("Roboto");
+    let fonts = sdocx::fonts::FontBook::new(Arc::new(database));
+    let options = sdocx::PdfOptions::new(fonts.database());
+    for (kind, x, y) in [(1, 30.0, 25.0), (4, 0.0, 10.0), (8, 52.0, 36.0)] {
+        let mut content = text("A");
+        content.spans = [RichTextSpanType::Bold, RichTextSpanType::Italic]
+            .into_iter()
+            .map(|kind| RichTextSpan {
+                kind,
+                start_utf16: 0,
+                end_utf16: 1,
+                interval_type: SpanIntervalType::from(1),
+                payload: vec![1, 0],
+            })
+            .collect();
+        let doc = document(shape(kind, content), 1);
+        let layout = sdocx::layout_document(&doc);
+        for replay in [false, true] {
+            let render = if replay {
+                sdocx::render_layout_page_replay_svg_with_fonts
+            } else {
+                sdocx::render_layout_page_svg_with_fonts
+            };
+            let page = render(&doc, &layout, 0, &Default::default(), &fonts).unwrap();
+            assert_lines(&page, &[("A", x, y)]);
+            assert!(page.text_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&page.svg).unwrap();
+            let span = xml
+                .descendants()
+                .find(|node| node.has_tag_name("tspan"))
+                .unwrap();
+            assert_eq!(span.attribute("font-style"), Some("italic"));
+            assert_eq!(span.attribute("font-weight"), Some("bold"));
+        }
+        let bytes = sdocx::render_layout_pages_pdf_with_fonts(
+            &doc,
+            &layout,
+            &[0],
+            &Default::default(),
+            &options,
+            &fonts,
+        )
+        .unwrap();
+        let geometry = pdf_geometry::read(&bytes, f64::from(options.dpi));
+        assert_eq!(geometry.source, "A");
+        assert_eq!(geometry.extracted_text.trim(), "A");
+        assert_eq!(pdf_geometry::tagged_source(&bytes), "A");
+        assert_eq!(geometry.image_resources, 0);
+        assert_eq!(geometry.text.len(), 1);
+        assert!(
+            (geometry.text[0].1 - x).abs() < 0.0001,
+            "{kind}: {:?}",
+            geometry.text
+        );
+        assert!(
+            (geometry.text[0].2 - y).abs() < 0.0001,
+            "{kind}: {:?}",
+            geometry.text
+        );
     }
 }
 
