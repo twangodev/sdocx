@@ -381,6 +381,31 @@ style. Otherwise it retains each outer edge's style and endpoint direction.
 The rounded cell backgrounds are painted separately; non-perimeter corners
 are squared by additional rectangles (`0xa7b10`–`0xa7c0c`).
 
+[The Drawing outline capture](../../conformance/table-border-drawing.json),
+SHA-256 `63b57494de2caa428cd110021ab5ec36d5a93316ecf373bdd87bb1cbcb288c87`,
+executes native `getTableBorderStyle` against Model's native outer paths.
+It covers 25 style inputs at seven positive canvas X scales (`0.125`, `0.3`,
+`0.5`, `0.75`, `1`, `2`, `4`): 175 outputs, each repeated under allocation
+fills `0x00`, `0xa5` and `0xff`. Both libraries are hash-checked. The host
+supplies the canvas matrix getter, allocation, deletion and memory fill;
+style aggregation and Model constructors/path helpers execute natively.
+
+The outputs confirm all sixteen active-edge masks, absent outer pointers,
+constructor defaults, nonpositive widths, nonzero colors with zero alpha,
+signed radius maxima and radii from inactive edges. All-negative radii remain
+negative; the aggregation does not clamp them to zero. After selecting the
+drawable width, native Drawing raises it to `1.0f / canvas_scale` when
+`width * canvas_scale < 1.0f`. The Rust border model matches all four output
+fields, including exact `f32` width bits, for every captured scale. Document
+vectors use the unit-scale result.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --drawing-borders scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  > /tmp/table-border-drawing.json
+cmp /tmp/table-border-drawing.json conformance/table-border-drawing.json
+```
+
 Spannable paths use prepared content and cell frames; saved paths retain Model
 coordinates with drawing offsets. Outer content bounds are distinct from the
 border-expanded measured rectangle (`TableLayout::updateMeasuredRect`,
@@ -392,7 +417,9 @@ stored edge colors/alpha, shared theme conversion and metadata-derived radii.
 Its width policy is the native unit-canvas policy. Native `drawLinePath`,
 `0xa8008`, also enforces a one-pixel minimum using the canvas X scale;
 zoom-dependent screen coverage is not reproduced by the document-space vectors.
-The Drawing rules above are assembly evidence, not captured Drawing execution.
+The outline aggregation has captured Drawing execution; edge selection,
+background corner squaring and paint-pass ordering have assembly evidence.
+The capture does not execute the canvas's line/rectangle painting or clipping.
 Public SVG/replay and PDF regressions check edge precedence, widths, opacity,
 axis radii, selectable source and zero image resources. Native device appearance,
 merged prepared sizing and complete border clipping across split pages remain

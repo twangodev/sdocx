@@ -65,9 +65,11 @@ plain Arabic spans.
   feedback are incomplete. Merged saved-frame painting follows native visibility;
   merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`.
 - Table border paths match the [native capture](../conformance/table-border-paths.json).
-  The vector painter uses native style precedence, alpha and axis radii at unit
-  canvas scale; zoom-dependent minimum pixel widths, complete split-page clipping
-  and device-rendered appearance remain unverified. See [border painting evidence](reverse-engineering/table-code-findings.md#border-painting).
+  Outline color, thickness and axis radii also match
+  [native Drawing aggregation](../conformance/table-border-drawing.json) at seven
+  canvas scales. Document vectors use the unit-scale result; screen coverage,
+  complete split-page clipping and device-rendered appearance remain unverified.
+  See [border painting evidence](reverse-engineering/table-code-findings.md#border-painting).
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native font-selection and measurement-style anomalies, variable-font
@@ -127,8 +129,10 @@ portable performance thresholds:
   distinguish frame owners from paint-visible cells; merged geometry remains
   outside that evidence.
 - [Native table border paths](../conformance/table-border-paths.json) and
-  [border output regressions](../crates/sdocx/tests/embedded_text_layout.rs)
-  cover Model perimeters and Drawing-derived SVG/PDF style transport separately.
+  [Drawing outline aggregation](../conformance/table-border-drawing.json) match
+  the Rust border model.
+  [Border output regressions](../crates/sdocx/tests/embedded_text_layout.rs)
+  cover SVG/PDF style transport separately.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
