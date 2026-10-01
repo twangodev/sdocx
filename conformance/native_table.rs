@@ -1,5 +1,8 @@
 use std::{ffi::c_void, fs, path::Path, process::Command, ptr};
 
+#[path = "native_table/columns.rs"]
+mod columns;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -102,15 +105,23 @@ fn map_library(engine: Engine, path: &Path, base: u64, expected_sha256: &str) {
     let ph_offset = u64::from_le_bytes(binary[32..40].try_into().unwrap()) as usize;
     let ph_size = u16::from_le_bytes(binary[54..56].try_into().unwrap()) as usize;
     let ph_count = u16::from_le_bytes(binary[56..58].try_into().unwrap()) as usize;
-    let load = (0..ph_count)
+    let loads: Vec<_> = (0..ph_count)
         .map(|index| &binary[ph_offset + index * ph_size..][..ph_size])
-        .find(|header| u32::from_le_bytes(header[..4].try_into().unwrap()) == 1)
-        .unwrap();
-    assert_eq!(u64::from_le_bytes(load[8..16].try_into().unwrap()), 0);
-    assert_eq!(u64::from_le_bytes(load[16..24].try_into().unwrap()), 0);
-    let size = u64::from_le_bytes(load[32..40].try_into().unwrap());
-    check(unsafe { uc_mem_map(engine, base, (size + 0xfff) & !0xfff, 7) });
-    write(engine, base, &binary[..size as usize]);
+        .filter(|header| u32::from_le_bytes(header[..4].try_into().unwrap()) == 1)
+        .collect();
+    assert_eq!(u64::from_le_bytes(loads[0][8..16].try_into().unwrap()), 0);
+    assert_eq!(u64::from_le_bytes(loads[0][16..24].try_into().unwrap()), 0);
+    for load in loads {
+        let offset = u64::from_le_bytes(load[8..16].try_into().unwrap()) as usize;
+        let address = base + u64::from_le_bytes(load[16..24].try_into().unwrap());
+        let file_size = u64::from_le_bytes(load[32..40].try_into().unwrap()) as usize;
+        let memory_size = u64::from_le_bytes(load[40..48].try_into().unwrap());
+        assert!(file_size as u64 <= memory_size && memory_size > 0);
+        let begin = address & !0xfff;
+        let end = (address + memory_size + 0xfff) & !0xfff;
+        check(unsafe { uc_mem_map(engine, begin, end - begin, 7) });
+        write(engine, address, &binary[offset..offset + file_size]);
+    }
 }
 
 fn bind_native(engine: Engine, plt: u64, target: u64) {
@@ -215,6 +226,7 @@ impl Machine {
             (DRAWING_BASE + 0xbcd50, 0x3dc280),
             (DRAWING_BASE + 0xbcd60, 0x3d8098),
             (DRAWING_BASE + 0xb8b00, DELETE),
+            (DRAWING_BASE + 0xb8ae0, NEW),
             (0x486ed0, GET_BORDER_PATH),
         ] {
             bind_native(self.engine, plt, target);
@@ -909,8 +921,18 @@ fn main() {
             background_cases(&mut machine);
             return;
         }
+        Some("--column-minima") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            columns::capture(&mut machine);
+            return;
+        }
         None => {}
-        _ => panic!("expected --border-paths, --drawing-borders, --backgrounds or no capture mode"),
+        _ => panic!(
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima or no capture mode"
+        ),
     }
     let mut cases = Vec::new();
     for (name, rows, columns, changes) in [
