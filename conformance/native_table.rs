@@ -3,6 +3,9 @@ use std::{ffi::c_void, fs, path::Path, process::Command, ptr};
 #[path = "native_table/columns.rs"]
 mod columns;
 
+#[path = "native_table/frames.rs"]
+mod frames;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -121,6 +124,47 @@ fn map_library(engine: Engine, path: &Path, base: u64, expected_sha256: &str) {
         let end = (address + memory_size + 0xfff) & !0xfff;
         check(unsafe { uc_mem_map(engine, begin, end - begin, 7) });
         write(engine, address, &binary[offset..offset + file_size]);
+    }
+    relocate_local_symbols(engine, &binary, base);
+}
+
+fn relocate_local_symbols(engine: Engine, binary: &[u8], base: u64) {
+    let section_offset = u64::from_le_bytes(binary[40..48].try_into().unwrap()) as usize;
+    let section_size = u16::from_le_bytes(binary[58..60].try_into().unwrap()) as usize;
+    let section_count = u16::from_le_bytes(binary[60..62].try_into().unwrap()) as usize;
+    let sections: Vec<_> = (0..section_count)
+        .map(|index| &binary[section_offset + index * section_size..][..section_size])
+        .collect();
+    for section in &sections {
+        if u32::from_le_bytes(section[4..8].try_into().unwrap()) != 4 {
+            continue;
+        }
+        let offset = u64::from_le_bytes(section[24..32].try_into().unwrap()) as usize;
+        let size = u64::from_le_bytes(section[32..40].try_into().unwrap()) as usize;
+        let symbol_section = u32::from_le_bytes(section[40..44].try_into().unwrap()) as usize;
+        assert_eq!(u64::from_le_bytes(section[56..64].try_into().unwrap()), 24);
+        let symbols = sections[symbol_section];
+        let symbol_offset = u64::from_le_bytes(symbols[24..32].try_into().unwrap()) as usize;
+        assert_eq!(u64::from_le_bytes(symbols[56..64].try_into().unwrap()), 24);
+        for relocation in binary[offset..offset + size].chunks_exact(24) {
+            let address = u64::from_le_bytes(relocation[..8].try_into().unwrap());
+            let info = u64::from_le_bytes(relocation[8..16].try_into().unwrap());
+            let addend = i64::from_le_bytes(relocation[16..24].try_into().unwrap());
+            let symbol = &binary[symbol_offset + (info >> 32) as usize * 24..][..24];
+            let value = match info as u32 {
+                1027 => 0,
+                257 | 1025 | 1026 if u16::from_le_bytes(symbol[6..8].try_into().unwrap()) != 0 => {
+                    u64::from_le_bytes(symbol[8..16].try_into().unwrap())
+                }
+                _ => continue,
+            };
+            let target = base
+                .checked_add(value)
+                .unwrap()
+                .checked_add_signed(addend)
+                .unwrap();
+            write(engine, base + address, &target.to_le_bytes());
+        }
     }
 }
 
@@ -929,9 +973,20 @@ fn main() {
             columns::capture(&mut machine);
             return;
         }
+        Some("--cold-frames") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base_path = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            frames::capture(&mut machine, Path::new(&base_path));
+            return;
+        }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames or no capture mode"
         ),
     }
     let mut cases = Vec::new();
