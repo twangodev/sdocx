@@ -36,6 +36,9 @@ mod lifecycle;
 #[path = "native_table/clipping.rs"]
 mod clipping;
 
+#[path = "native_table/export_clipping.rs"]
+mod export_clipping;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1000,6 +1003,24 @@ fn main() {
             background_cases(&mut machine);
             return;
         }
+        Some("--export-clipping") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base_path = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            let composer_path = std::env::args_os()
+                .nth(5)
+                .expect("libSPenComposer.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            export_clipping::capture(
+                &mut machine,
+                Path::new(&base_path),
+                Path::new(&composer_path),
+            );
+            return;
+        }
         Some("--column-minima") => {
             let drawing_path = std::env::args_os()
                 .nth(3)
@@ -1099,7 +1120,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping, --export-clipping or no capture mode"
         ),
     }
     let mut cases = Vec::new();

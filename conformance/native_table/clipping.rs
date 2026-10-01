@@ -29,15 +29,15 @@ unsafe extern "C" fn copy_memory(engine: Engine, _: u64, _: u32, _: *mut c_void)
     write(engine, destination, &bytes);
 }
 
-struct Recorder {
+pub(super) struct Recorder {
     engine: Engine,
     hook: usize,
     copy_hook: usize,
-    calls: Box<Vec<[i32; 5]>>,
+    pub(super) calls: Box<Vec<[i32; 5]>>,
 }
 
 impl Recorder {
-    fn new(machine: &Machine) -> Self {
+    pub(super) fn new(machine: &Machine) -> Self {
         let mut recorder = Self {
             engine: machine.engine,
             hook: 0,
