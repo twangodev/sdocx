@@ -218,7 +218,7 @@ and distinguishes recovered behavior from implementation and evidence limits.
   visibility; captured borders, fills, column minima, saved height limits,
   cold/warm measurement, bounds, split caches, row-bottom compression, warm-row
   control, cell text dimensions, public layout lifecycle, visible rectangles and
-  canvas clip arguments; vector evidence limits.
+  canvas clip arguments, PDF artwork crops and vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

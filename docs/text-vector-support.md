@@ -15,7 +15,7 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
-| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii and composited text surfaces | Hash-pinned Model paths, Drawing outline aggregation and background selection; SVG/replay/PDF transport tests. Complete clipping and device appearance remain unverified. |
+| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Per-run text clipping and device appearance remain unverified. |
 | Decorations | Underline, strikethrough, uniform cluster backgrounds and vector list markers | Retained layout and native endpoint contracts; backgrounds changing inside a glyph cluster remain conservative. |
 | SVG preview/replay | Typed SVG elements, embedded fonts, retained text positions where reproducible, source-preserving text fallback elsewhere | Chromium tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
 | Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; combining-mark Y parity with Samsung's common-baseline PDF route remains unverified. |
@@ -74,7 +74,10 @@ plain Arabic spans.
   See [border painting evidence](reverse-engineering/table-code-findings.md#border-painting).
   [Native clip commands](reverse-engineering/table-code-findings.md#visible-rectangles-and-canvas-clipping)
   establish separate raw-endpoint visible bounds and outward-rounded canvas clips;
-  the Rust measured-rectangle clip has not been validated against that route.
+  the native PDF route bypasses that display clip and uses the
+  [captured export artwork crop](reverse-engineering/table-code-findings.md#export-artwork-crop).
+  The SDK's measured-table text clip remains conservative; native per-run text
+  clipping is unverified.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native font-selection and measurement-style anomalies, variable-font

@@ -1093,9 +1093,9 @@ assignment, rectangle helpers and clip selection execute unchanged. Empty text
 caches isolate shaping and row sizing. The host supplies allocation, deletion,
 memory fill/move and the canvas command recorder. This capture establishes clip
 arguments, not canvas pixels, the caller's display-rectangle selection, text-pass
-clipping or complete device pagination. Rust currently clips cell paint/text to
-the measured table rectangle; its equivalence to this separate native clip is
-not established.
+clipping or complete device pagination. The PDF writer uses the separate
+[export artwork crop](#export-artwork-crop) below; it does not supply a display
+rectangle to this Drawing clip.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -1105,6 +1105,51 @@ not established.
   scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-clipping.json
 cmp /tmp/table-clipping.json conformance/table-clipping.json
 ```
+
+### Export artwork crop
+
+Composer `ObjectTablePDFWriter::WriteObject`, `0x37e37c`, offsets measured
+bounds by the source drawn origin and rounds them outward before computing
+its artwork crop. At `0x37e534`–`0x37e568`, it constructs
+`[0, scaled_body_top_margin, page_width, page_height - scaled_body_bottom_margin]`,
+intersects it with the rounded measured bounds, then calls
+`RectF::ExtendRect(1)`. Page mode 0 uses the note body's margins multiplied
+by document density (`0x37e50c`–`0x37e530`); other modes use zero margins.
+The margin getters read ComponentText's stored top/bottom fields at
+`0x39e6c4` / `0x39e74c` in Model.
+
+Base intersection uses strict edge comparisons and leaves its receiver
+unchanged on a miss. The writer ignores that return value, so disjoint or
+exactly touching tables retain the page/body rectangle before expansion.
+Expansion subtracts/adds one in f32, then floors left/top and ceils right/bottom.
+It does not substitute an empty rectangle on a miss.
+
+`createBackgroundImage`, `0x37fed8`, translates the canvas by rounded table
+origin minus crop origin and constructs a fresh `TableDrawing` at `0x380098`.
+The constructor, `0xa5634`, leaves the display rectangle zero. No
+`SetDisplayRect` call intervenes before `DrawObjectWithoutText`, `0x3800c0`;
+the separate spannable Drawing clip therefore emits no canvas clip even for
+constraints 1/2. Native export renders table artwork into this cropped bitmap;
+the SDK represents the same crop with vector SVG elements.
+
+[`table-export-clipping.json`](../../conformance/table-export-clipping.json),
+SHA-256 `872b937dedb795d3b995249c4ab26ae421d3f6f0eaec909ccf396038cf7d38b8`,
+records 78 crop cases and the constructor's zero display rectangle/no-clip
+results for constraints 0/1/2. It executes the unmodified Composer crop
+instruction window, Base helpers and Drawing constructor with allocation fills
+`0x00`, `0xa5` and `0xff`. Bounds, integer page dimensions and density-scaled
+margins are supplied; fractional bounds probe the helper independently of the
+writer's preceding rounding. Logging and canvas recording are host interfaces;
+bitmap factories and pixels are not executed by this capture.
+
+Rust matches every crop coordinate bit. Prepared table fills, cell borders and
+outer outlines share this artwork clip; page and parent paint translations
+retain its coordinate space. SVG/replay regressions check page mode and density,
+and PDF checks retain selectable text without image resources. Saved-frame
+fallback painting remains outside this prepared export contract.
+Text uses a separate pass: the SDK's measured-table text clip is still
+conservative. Native `writeTextBlock` conditionally clips individual runs;
+that behavior and complete split-page/device appearance are unverified.
 
 ### Cell background selection
 
