@@ -155,8 +155,8 @@ The output RGB is premultiplied. For example, an opaque source channel 0.8
 and destination channel 0.4 produce 0.4 with darken and 0.8 with lighten.
 With source alpha 0.5 and destination alpha 1, those channels produce 0.4
 and 0.6 respectively, both with output alpha 1. This establishes the blend
-math for this GPU path; texture sampling, edge coverage, color conversion
-and pen rasterization still need separate conformance checks.
+math for this GPU path. It does not establish texture sampling, edge coverage,
+color conversion or pen rasterization parity.
 
 ## Clone state and collection boundaries
 

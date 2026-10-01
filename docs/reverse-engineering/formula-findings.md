@@ -184,7 +184,7 @@ The pointers are `R_AARCH64_RELATIVE` relocations, so reading only their
 unrelocated file bytes would miss the names. `FormulaLabelRelationKind` keeps
 native zero (`Unknown`) distinct from unmapped numbers (`Other(u32)`). These
 names establish the stored categories; layout rules and the exact interpretation
-of `Index` still need tracing.
+of `Index` remain unresolved.
 
 ## SDK inspection and validation
 

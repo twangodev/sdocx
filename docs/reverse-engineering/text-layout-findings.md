@@ -151,10 +151,9 @@ No `GetTextAreaType` or `GetTextAutoFitOption` read was found in the inspected
 ordinary Drawing/Widget adapter route. The saved Margin/Free/Path values are
 verified in [text-box-findings.md](text-box-findings.md), but mapping Free to
 no-wrap, Path to a shape clip, or auto-fit to dynamic font resizing remains
-unverified. Upstream editing/resizing and export clipping need captured
-standalone cases and their callers before adding those semantics. The ordinary
-baseline helper is shared with placed text as traced below; standalone visual
-parity still needs a captured reference.
+unverified. Standalone editing/resizing, export clipping and visual parity
+have no captured reference in this evidence set. The ordinary baseline helper
+is shared with placed text as traced below.
 
 ### Shape template text frames
 
@@ -630,8 +629,8 @@ still append a paragraph. For `A\n`, the two native records are start/count
 `0/1` and `1/1`; `\n` retains initial `0/0` plus separator-only `0/1`.
 In raw `a\r\nb`, `b` belongs to ordinal 2, not 1, and the intervening CR-only
 paragraph has layout height. Neither inspected producer coalesces CRLF.
-Reference fixtures still need to establish whether the Samsung editor
-permits/saves raw CRLF or normalizes it during text entry.
+Whether the Samsung editor saves raw CRLF or normalizes it during text entry
+is not established by the reference fixtures.
 
 The separator-only paragraph resolves its font at `start + 1` using
 `GetFontSize` (`0x78ab4`), including the terminal caret; a separator followed
@@ -729,8 +728,8 @@ at `0x6b388`; the final line calls it at `0x6a9bc`. Thus the inspected
 ordinary baseline calculation is shared by those lines. Lines containing
 objects with margins take a separate baseline branch at `0x6cb90` and can
 add an extra offset at `0x6cc0c`; do not apply the ordinary text formula to
-embedded objects. Paragraph-edge, bullet, empty-line and page-limit effects
-still need captured cases before claiming complete first/last-line parity.
+embedded objects. These branches do not establish complete first/last-line
+parity for paragraph edges, bullets, empty lines and page limits.
 
 The ordinary placed route uses this same helper: Drawing `0x80c80` calls
 `ScrollEditTextView::Measure`; Widget `0xbc7f0` calls its layout, which forwards
@@ -833,8 +832,10 @@ is not a complete implementation of those lists; malformed signed indentation
 remains unverified.
 
 Point artwork is vector geometry. Native resource IDs 38–41 select the
-4 × 4 circle/square XML paths (`0xd96fc`–`0xd9798`); Rust emits typed SVG
-circles and rectangles with the same open-marker border proportions. Image
+4 × 4 circle/square XML paths (`0xd96fc`–`0xd9798`): solid circle radius 2;
+outline circle radius 1.75 with 0.5 stroke; solid square 4 × 4; outline square
+3.5 × 3.5 inset 0.25 with 0.5 stroke. Rust emits typed SVG circles and rectangles
+with the same open-marker border proportions. Image
 size uses constants 119–122 and descending font thresholds
 (`0xd98fc`, `0xd9984`, `0xd2354`), then centers bounds using
 `ceil(image_size / 2)` (`0xb310c`–`0xb3138`). The rendering display selects
@@ -969,7 +970,7 @@ shaping or establish the policy for every other script.
 No `kern=0` override was established in this producer/caller trace. The
 captured heading matching an unkerned bundled-font width is useful fixture
 evidence, but does not prove a universal native kerning setting. Font choice,
-style-run boundaries and native advance quantization still need comparison.
+style-run boundaries and native advance quantization remain unverified.
 The native horizontal-advance callback, `0x9d728`, converts a font advance
 to a 256-scaled integer with `trunc(advance * 256 + 0.5)`; its vector
 counterpart at `0x9d858` truncates each 256-scaled advance. Those inputs
@@ -994,7 +995,7 @@ parity and sends that parity to `AddStyleRun` (`0x78cc4`–`0x78d48`;
 run then selects direction value 4/5 at `0x96e28`–`0x96e74`; its bidi
 iterator bypasses further paragraph analysis when that bit is present
 (`0x9abdc`, `0x9ad8c`). Paragraph base direction and shaped-run direction
-are separate inputs. Mixed RTL/LTR output still needs a captured reference.
+are separate inputs. Mixed RTL/LTR appearance has no captured reference here.
 
 `RichTextLayout::DoParagraphLayout` obtains ICU's logical-to-visual map at
 `0x72eb0`–`0x72ec0`. `ParagraphLayout::m_CopyLayoutData` copies those paragraph
@@ -1527,8 +1528,8 @@ at `GetLineStartIndex(first_line)` (`0xb7980`–`0xb7990`) and counts through
 the next page scan with the preceding page's last line
 (`0xb7868`–`0xb7878`, `0xb79e8`–`0xb7a34`), preserving overlap instead of
 forcing disjoint string chunks. This proves page indexing of an already
-measured layout; moving/resizing objects or repaginating the document is
-a separate operation and still needs captured reference cases.
+measured layout. It does not establish moving/resizing objects or document
+repagination.
 
 Text `TextPaintImplSkia::getFontMetrics`, `0x7c16c`, calls
 `SkPaint::getFontMetrics` at `0x7c1ac`; `getFontSpacing`, `0x7c290`, delegates
@@ -1773,13 +1774,13 @@ at world X 16,777,216 a local text inset of 3 yields X 16,777,220. Retaining
 the addition in `f64` would instead produce 16,777,219.
 
 Rust regenerates bounded dense unmerged/merged grids without rotation through
-this same engine and keeps final world geometry in a distinct drawing plan. It preserves
-the callback reservation and translates retained cell text once. The captured
-table's former saved-frame fallback placed text 1 unit right and about
-1.751 units low. Fresh hash-checked comparisons now include all four native
-cell glyph origins, alongside the existing body and code references.
-Merged/sparse grids, nested objects, active height limits and full table
-border styling remain outside this supported drawing path.
+this same engine and keeps final world geometry in a distinct drawing plan.
+It preserves the callback reservation and translates retained cell text once.
+Hash-checked comparisons include all four native cell glyph origins, alongside
+the body and code references. Sparse, rotated and nested preparation remains
+unsupported; native merged shaping/parent placement and complete split-page
+border clipping remain unverified. Saved height limits do not cap the traced
+export layout; see [table/code findings](table-code-findings.md).
 
 Rust also applies the native paragraph indentation masks: saved RTL indent
 adds only a right inset for right/center/default alignment; other indent
@@ -1802,83 +1803,6 @@ ranges remain unchanged. Covered static Greek/Cyrillic positions now retain
 their advances through justification; unsupported placement still reports its
 diagnostic. RTL justification parity remains unverified.
 
-The following table and discussion record an earlier debugging snapshot,
-before the callback/drawing separation above; their SDK values are historical.
-Table cells retain logical margins `[8,4,8,4]`, line multiplier 1.6, and
-before/after spacing 4. Saved first-cell X is 49, while captured text X 72
-and scaled left margin 24 imply a regenerated frame X 48. That snapshot's CLI
-exports `/tmp/sdocx-child-feedback_page3.svg` and `_page4.svg` include candidate
-code preparation, child-size feedback and table stroke-bound expansion. The
-comparison retains the previous mixed-stream snapshot and accumulates all SVG
-ancestor transforms. Index 3 is the fourth physical PDF page / Form 89; index 4
-is the fifth page / Form 111. CLI `--pages 4-5` selects these two pages.
-
-| Quantity | Earlier mixed-stream SDK | Historical child-feedback SDK | Native canvas reference |
-| --- | ---: | ---: | ---: |
-| Table header baseline | 1113.501010 | 1114.001010 | 1100.850000 |
-| Table body baseline | 1221.501010 | 1222.001010 | 1208.850110 |
-| First-cell text X | 72.5 | 73 | 72 |
-| Second-cell text X | 564.5 | 565 | 564.000018 |
-| Code panel height | 411.75 | 399.75 | 411.748128 |
-| Code title baseline | 1389.752010 | 1390.752010 | 1379.351990 |
-| Code first body baseline | 1485.752010 | 1486.752010 | 1475.352063 |
-| Code second body baseline | 1584.000060 | 1573.001000 | 1573.600049 |
-| Code third body baseline | 1644.750060 | 1633.751000 | 1634.350049 |
-| Code first baseline gap | 98.24805 | 86.24899 | 98.247986 |
-| Code second baseline gap | 60.75 | 60.75 | 60.75 |
-
-In that snapshot, the painted table starts at X 48.5 / Y 1033.25. Stroke-bound expansion
-removed the previous -0.5 X translation and moved its painted origin by +0.5
-in both axes. Cell text consequently differs from native by **+1 X** and
-**+13.151 Y** under the native-canvas convention, or **+13.751 Y** under the
-actual PDF viewport. This worsens the local X difference until the missing
-regenerated table-frame producer supplies the correct frame. Retained first
-paragraph before spacing is not evidence of an error: removing it to match
-the target baseline would bypass the verified native policy.
-
-The historical code panel starts at Y 1309.751. Its title and first-body baselines
-remain approximately **12.000 units below the actual PDF viewport reference**.
-The second and third body baselines instead agree with that reference within
-**0.001 units**. Candidate-based preparation moves the body-frame origin by
-approximately 12 units relative to the captured copy, so the first boundary
-skip shrinks by approximately 12 units: height 399.75 and first baseline gap
-86.24899 are both about 11.998 below the captured local quantities. The later
-lines land at the same boundary even though the first line starts too low.
-This separates the remaining composition-origin error from the verified
-boundary mechanism; forcing a constant panel height would hide that cause.
-
-The same snapshot's saved-overlap code copy on page index 4 has title/body baselines
--148.24805, -52.24805, 46.00000 and 106.75000. They are approximately 0.6
-above the native-canvas reference and agree with the actual PDF viewport
-convention; its height remains 411.75. Following ordinary text still diverges:
-`Whitespace samples` now has baseline 311.5, versus previous 310.75098 and
-native actual-viewport 337.750928. This historical **-26.250928** difference
-preceded the continuation-flow correction. The ordinary lines preceding the table at
-index 3 remain approximately +0.75 relative to the actual viewport, with no
-accumulating vertical drift. These historical frame/origin differences were
-resolved by the callback/drawing separation and captured comparisons above.
-
-A fresh two-page CLI PDF at `--pdf-dpi 129.6` has MediaBox approximately
-599.999939 × 848.333313 points. Independent Rust `lopdf` extraction of CTM,
-text matrices, `ToUnicode` and font sizes reproduces all table/code SVG
-baselines above within 0.001 units; font size 45 becomes approximately
-44.999997 after float conversion. This checks export transport, not native
-composition parity. The default pinned Roboto face returns missing glyph
-ID 0 for `●`, `○` and `───`; the exported PDF has no direct `ToUnicode`
-mapping for those missing glyphs. It carries `ActualText` for `○` and each
-`─`, so absence from the glyph CMap alone does not prove that their selectable
-source is lost. No `ActualText` for `●` was observed. These metadata paths do
-not supply missing visible glyphs. That snapshot's point-marker glyph painter
-bypassed coverage diagnostics; the current point markers use vector geometry.
-The native point-marker producer already identifies a vector route:
-Widget `initBulletPoint` assigns resource IDs 38–41 for solid circle,
-outline circle, solid square and outline square (`0xd96fc`–`0xd9798`).
-`SpenResources.ResourceID` maps these to the four `spen_ic_text_bullet`
-vector assets. Their viewport is 4×4: solid circle radius 2; outline
-circle radius 1.75 with 0.5 stroke; solid square 4×4; outline square
-3.5×3.5 inset 0.25 with 0.5 stroke. Current native size and placement contracts
-are recorded in the list-marker section above.
-
 ## Rust layout contracts
 
 The shared Rust engine measures shaped runs with actual font faces and wraps
@@ -1888,9 +1812,10 @@ line widths use retained advances. Missing usable metrics report
 italic; the inspected Latin policy disables `liga`/`clig`.
 
 The [support matrix](../text-vector-support.md) records supported adapters,
-glyph transport, diagnostics and reference coverage. Merged/sparse table
-preparation, arbitrary nested composition, native emergency breaking and
-device ICU/font selection remain unverified or unsupported.
+glyph transport, diagnostics and reference coverage. Sparse table preparation
+and arbitrary nested composition remain unsupported; native merged shaping,
+parent placement, emergency breaking and device ICU/font selection remain
+unverified.
 
 Placed-text gravity excludes final paragraph after-spacing while retaining
 between-paragraph after-spacing. Glyph Y positions retain five decimal places,
@@ -2163,9 +2088,9 @@ unexpectedly reads literal mask `0x4` for base skew and `0x2` for fake bold
 the same span buffer without shifting flags: `GetSpan` at `0x78d28`,
 `AddStyleRun` at `0x78d30`–`0x78d48`, and the helper at `0x76ad4` through
 `0x76800`/`0x76880`. `InitMinikinFontStyle` initializes weight 400 and
-italic false (`0x76c18`–`0x76c2c`). Runtime captures are needed before changing
-Rust's shaping metrics or face-selection policy to reproduce this anomaly.
-Rust retains its existing shaping advances and offsets for this branch.
+italic false (`0x76c18`–`0x76c2c`). The runtime effect of this anomaly is
+unverified. Rust retains its existing shaping advances, offsets and
+face-selection policy for this branch.
 
 In cached Samsung Notes 4.4.45.37 ARM64 `libSPenPdf.so`,
 `PdfiumTextHandler::DrawText` at `0xa2230` maps logical bold `0x1` to fill plus

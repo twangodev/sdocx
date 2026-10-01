@@ -92,7 +92,7 @@ at offset 292. The scalar passed to `RectF::IncreaseRect` at `0x2e9604` is:
 | Remaining values | `size * 0.5 + 4` |
 
 The category names, category-10 constant and exact `IncreaseRect` convention
-still need mapping before this table becomes a portable geometry algorithm.
+are unresolved; this table does not establish a portable geometry algorithm.
 For nonzero object rotation, the native code subsequently applies
 `RectF::GetRotatedBound` at `0x2e9660`. This is a separate calculation from
 stroking the decoded point sequence.

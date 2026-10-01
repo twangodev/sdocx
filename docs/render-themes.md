@@ -16,8 +16,8 @@ This is an export policy, not a claim that Samsung uses all these aliases.
 Samsung's decompiled `BackgroundColorUtil.isComposerViewDarkTheme` gates paper
 adaptation on dark-mode compatibility and an exact canonical white match.
 `res/values/colors.xml` defines that white as `#fcfcfc` and composer dark as
-`#010101`. The renderer's existing `#252525` export paper is retained pending
-verification of the native page surface separately from composer UI chrome.
+`#010101`. The renderer uses `#252525` for export paper; the native page surface
+has not been verified separately from composer UI chrome.
 
 ## Native evidence
 
@@ -73,8 +73,7 @@ Top-layer highlighters use one vector Darken batch on light paper and Lighten
 on dark paper. The dark-paper rule preserves light ink and keeps colored marks
 visible on black. Rust pixel tests cover normal/replay equality, and PDF tests
 verify a Lighten blend state without image objects. Dark-paper Lighten is an
-export policy; a Samsung dark-paper highlighter export is still needed to prove
-its native compositing mode.
+export policy; the native dark-paper compositing mode has no captured reference.
 
 Library import and regeneration both render the first page in Auto mode,
 independent of the viewer selection. Catalog version 2 invalidates old thumbnail
@@ -98,16 +97,16 @@ table paper, highlighter visibility, and vector PDF/replay preservation.
 Thumbnail tests cover canonical mode, stale results, and catalog migration without
 losing originals or collection membership.
 
-The unresolved native-parity questions are deliberately narrower than these fixes:
+Native evidence limits:
 
 - Exact page-surface dark color: the APK composer resource is `#010101`, while the
   existing export default is `#252525`. Composer chrome does not establish page
-  surface output; a native dark-page export is needed before changing that value.
+  surface output, which remains unverified.
 - Per-object selection: the native conversion primitive is verified, but the
   renderer's contrast guard and canonical paper aliases are explicit export
   policies rather than verified Samsung selection rules.
-- Dark-paper highlighter blending: Lighten fixes visibility and preserves light
-  ink in vector outputs, but native dark-paper reference output is still needed.
+- Dark-paper highlighter blending: Lighten preserves light ink in vector outputs;
+  its native equivalence remains unverified.
 - Hyperlink palette: native `DarkColorTheme::GetColor(0xff0054ff)` returns the same
   blue (included in the checked fixture). That color is therefore preserved and
   can remain low contrast on dark paper. A separate native link/palette rule has

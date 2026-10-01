@@ -170,8 +170,7 @@ Alpha computes the linear source offset at `0x5e26c`. Its local check
 rejects a negative offset or one at least `visible_height*stride`, with
 `-1999` at `0x5e294`. It does not separately validate X/Y or the full
 16-by-16 region. The B-nonzero primary path bypasses the separate
-B-zero origin checks. These are native checks, not a safe input policy
-for a future SDK decoder.
+B-zero origin checks. These native checks do not validate the full copy region.
 
 Alpha first copies the source into the cache at `0x5e2d0`, then copies
 that source into the current destination at `0x5e2e8`. Callback 1584,

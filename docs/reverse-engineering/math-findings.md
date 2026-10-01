@@ -120,6 +120,6 @@ are checked for exact preservation rather than interpreted as valid formulas.
 Type-20 plot fields and graph expressions now have their own bounded inspection
 API; see [plot findings](plot-findings.md). Type-11 formulas also expose their
 expressions, embedded strokes and label graphs; see
-[formula findings](formula-findings.md). Samsung-generated
-math/formula/plot documents and matching PDF exports are still needed to check
-real writer variants, layout and visual fidelity.
+[formula findings](formula-findings.md). Real writer variants, layout and visual
+fidelity remain unverified against Samsung-generated math/formula/plot documents
+and matching PDF exports.

@@ -133,7 +133,9 @@ columns from zero to `block_columns - 1`. Before each block it stores:
 
 It calls block routine `0x6b36c` at `0x5c558`, two selected callbacks at
 `0x5c570` and `0x5c590`, then a row-completion callback at `0x5c5c0`.
-These operations still need tracing before pixel coding can be specified.
+The block syntax and pixel operations are recorded in the linked
+[codec](spi-codec-validation.md) and [literal-block](spi-literal-block-findings.md)
+findings.
 
 The loop performs one pass, plus another when context byte 1025 is 1;
 `0x5c5ec` through `0x5c604` controls repetition and clears buffered bits

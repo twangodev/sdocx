@@ -2,7 +2,7 @@
 
 Native converters in `render.rs` and `render/fountain.rs` use the private Rust API
 in `render/vector`. Only that adapter imports `svg`, names SVG attributes, or
-formats their values. It covers the elements and attributes we currently emit;
+formats their values. It covers the emitted elements and attributes;
 it does not expose a generic attribute setter or raw XML constructor.
 
 `ink` owns Samsung stroke reconstruction. Preview, replay, and PDF conversion
@@ -43,8 +43,8 @@ source offsets and dense replay indices. Independent overlap-color expectations
 check image/stroke and shape/stroke order, including identical normal/replay SVG
 pixels. PDF regressions inspect paint order through form objects, selectable
 text and the absence of image objects for vector-only scenes. These establish
-the supported composition contracts; new Samsung captures are still needed for
-full mixed-container pixel parity.
+the supported composition contracts. Full mixed-container pixel parity remains
+unverified against Samsung captures.
 
 ## Adding a native converter
 
@@ -145,8 +145,9 @@ capture windows measure native paragraph and overlap context through that same
 Rust engine, then project the requested page. Retained line, glyph, marker and
 object bounds filter painting; code and table child text receives its translated
 viewport. Measurement registries are separate from painted fonts. Table-cell
-placement, numeric text advance, post-code height and complete pagination still
-have measured gaps. Prepared tables retain cell layouts, split lists and pending
+placement and post-code text origins match the locked five-page native reference;
+numeric text advance retains a font-dependent difference, and complete pagination
+remains unverified. Prepared tables retain cell layouts, split lists and pending
 row gaps for bounded dense unmerged/merged grids. Cold row growth and warm grow/shrink,
 first-line movement and trailing-space compression follow the native state
 ordering. Ordinary model-cell drawing and paged table layout remain separate

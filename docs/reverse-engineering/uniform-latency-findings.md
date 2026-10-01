@@ -275,8 +275,6 @@ helper's orientation/geometry equations and configuration field identities.
 The [external timing producer trace](predictor-timing-findings.md) identifies
 the real-event reference, clock sample, VSync origin and frame period.
 The [VSync delivery trace](vsync-delivery-findings.md) connects the neural
-origin to Java frame callbacks. Runtime configuration values and
-enablement still need their own evidence.
-These findings establish the local numerical behavior without new SDOCX
-files, but matching device exports remain necessary to measure rendering
-fidelity.
+origin to Java frame callbacks. Runtime configuration values and enablement
+remain unverified. These findings establish local numerical behavior, not
+device rendering fidelity.

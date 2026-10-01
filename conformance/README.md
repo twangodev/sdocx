@@ -69,8 +69,8 @@ PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_v14_
 ```
 
 These require locally extracted libraries and Unicorn. They validate stroke
-geometry, not complete native pixel parity. Keep routine validation focused on
-production regressions and the real-file visual comparison below.
+geometry, not complete native pixel parity. Production regressions and the
+real-file visual comparison below check separate rendering contracts.
 
 Marker4 V7 stylus captures in `marker4-v7.json` also run in ordinary Rust CI.
 They cover 36 cases, including fractional widths, the minimum radius, short

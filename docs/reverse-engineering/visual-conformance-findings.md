@@ -85,20 +85,19 @@ are correctly clipped. They are not duplicated on the visible page.
 
 ## Validation and evidence limits
 
-The raster scores above describe the initial font experiment, not the current
-text engine. Fresh Rust PDF-coordinate comparisons now place matched ordinary
-body/heading baseline Y on the first four pages within 0.0001 SVG units of
-the reference's actual viewport. The retained logical-canvas measurements in
-`conformance/text-metrics.json` are 0.6 units higher: 848.333333 versus 848 PDF
-points, multiplied by 1.8. Code origins and heights have float roundoff only.
-Numbered markers now use prepared shared text layout and match the two locked
-native marker baselines within 0.000045 units; the former +1.125 Y error and
-fixed 64-unit reservation are retired. Remaining measured SDK-minus-reference
-differences are table cells X +1 and Y about +1.751, numeric-item text X about
--0.04393 from font/advance disagreement, and post-code ordinary text Y about
--15.001. Point and checkbox artwork is typed vector geometry. These findings do not establish
-complete pagination, font fallback or whole-document visual parity. See
-[native text layout inputs](text-layout-findings.md) for source addresses.
+The raster scores above describe the initial font experiment. Current Rust
+PDF-coordinate comparisons check body/heading, numbered-marker, table-cell,
+code and post-code text origins across five physical pages against the locked
+native reference. Baseline tolerance is 0.001 SVG units. The retained
+logical-canvas measurements in
+[`conformance/text-metrics.json`](../../conformance/text-metrics.json) are
+0.6 units higher than the actual viewport: 848.333333 versus 848 PDF points,
+multiplied by 1.8. Numeric-item text X retains an approximately -0.04393-unit
+font/advance difference. Point and checkbox artwork is typed vector geometry.
+These comparisons do not establish complete pagination, font fallback or
+whole-document visual parity. See
+[native text layout inputs](text-layout-findings.md) for source addresses and
+the [reference regression](../../crates/sdocx/tests/font_metrics.rs) for assertions.
 
 Runner regressions cover blank-output detection, alpha compositing, tolerance,
 rotated PDF dimensions, hashes, path boundaries, page ordering/counts, stale
