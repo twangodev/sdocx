@@ -215,8 +215,8 @@ and distinguishes recovered behavior from implementation and evidence limits.
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   bounded table/code records, frame ownership and paint visibility; captured
-  borders, fills, column minima, cold/warm sizing, bounds, split caches,
-  row-bottom compression, warm-row control and cell text dimensions;
+  borders, fills, column minima, cold and warm measurement selection, bounds,
+  split caches, row-bottom compression, warm-row control and cell text dimensions;
   vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.

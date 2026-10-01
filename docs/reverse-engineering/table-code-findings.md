@@ -242,6 +242,59 @@ rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
 cmp /tmp/table-cell-inputs.json conformance/table-cell-inputs.json
 ```
 
+## Cold row sizing from raw cell measurements
+
+Drawing `TableLayout::extendRowBySplit`, `0xaaf2c`, walks physical rows from the
+supplied starting index and visits every stored column. It reads each raw cell's
+cached frame directly, without resolving merged-frame ownership. A missing
+frame cache skips that cell.
+
+For each present frame it replaces the cell's split list with all supplied
+bands whose top is at least the cached frame top, subtracting that frame top
+from their vertical coordinates. List order is retained. It then calls native
+`updateCell`, `0xae914`, and `measureCell`, `0xaea60`. The former supplies the
+raw frame's local dimensions and split list to the text wrapper; the latter
+returns measured-width and measured-height differences against that frame.
+
+The driver retains the largest positive height difference across the row.
+It ignores the width difference. Any positive height difference, including
+values below `0.001`, extends the row and offsets subsequent rows through the
+native pending-gap rules. Zero or negative differences leave the row height
+unchanged. This driver does not read saved row minima or maxima. Its selection
+differs from warm sizing, which reads frame-owner measurements.
+
+[`table-cold-rows.json`](../../conformance/table-cold-rows.json), SHA-256
+`bbdb16741d4e80d36a583cb16d792400968f2c49bf3757083915c57546dd6202`,
+captures 144 inputs, 147 runs, 608 measurement calls and 1,260 resulting slot
+frames. It covers dense and merged grids, covered-span chains, positive-growth
+boundaries, zero/subpixel heights, row starts including the end of the table,
+pending gaps, unsorted/empty bands and repeated cold measurement. Minima and
+maxima vary independently of measured heights. Allocation fills `0x00`, `0xa5`
+and `0xff` produce identical captures.
+
+The Rust regression runs the production cold scheduler with supplied heights.
+It matches call order, fractional dimensions, local bands, frame coordinates,
+pending gaps and absent/present split-cache states. Each cell's growth uses its
+own fractional frame height. Export preparation remains limited to unmerged
+grids; these scheduler checks do not establish complete merged composition.
+
+The native capture executes frame initialization, the cold driver, cell update
+and measurement-difference routines, frame setters/getters and row updates.
+Text initialization, update/measurement, padding assignment, font selection,
+single-thread synchronization and diagnostics are isolated. Measured heights
+are supplied caches; native shaping, complete merged preparation and device
+pagination remain unverified.
+
+Reproduce the capture with the same compiled harness and hash-pinned libraries:
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cold-rows scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so > /tmp/table-cold-rows.json
+cmp /tmp/table-cold-rows.json conformance/table-cold-rows.json
+```
+
 ## Export row sizing and merged-frame ownership
 
 The ARM64 Drawing library used here has SHA-256
