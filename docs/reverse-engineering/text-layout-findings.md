@@ -1963,7 +1963,12 @@ inspection slices. Captured body/code/table origins are covered by the
 comparisons above; merged/sparse table preparation and arbitrary object
 composition remain outside those references.
 
-Width feedback remains incomplete. Native `m_CheckObjectChanged` compares both
+Shared line assembly now retains mutable object measurements and child plans
+for each paragraph. Body entries with constraints 1/2 apply staged width
+feedback before scanning following entries; retries retain the callback's
+changed dimensions and child state. Frame entries retain their established
+height policy without assuming the Body callback exists there. Native
+`m_CheckObjectChanged` compares both
 callback height (`0x6c42c`–`0x6c45c`) and width (`0x6c460`–`0x6c490`) with a
 0.001 threshold. A changed width updates the visual rectangle and replaces
 the measured advance with the callback width directly, then records the source
@@ -1982,22 +1987,101 @@ another line; eagerly rewrapping the entire paragraph would change the
 current object's acceptance. The selected capture route commits this pass
 without an established convergence loop. Its changed-object notification is
 separate from the editor event route, which updates stored span dimensions
-and remeasures the changed paragraph (`0xd4c90`–`0xd4e28`). Rust still needs
-this staged fit/feedback protocol; changing only the final paint translation
-or repeating measurement until stable would not reproduce the inspected
-capture behavior.
+and remeasures the changed paragraph (`0xd4c90`–`0xd4e28`). The Rust driver
+measures paragraph text once and admits each object against the previous
+width snapshot. Changing only the final paint translation or repeating
+measurement until stable would not reproduce this capture behavior.
 
 Callback timing also matters. An old-width precheck skips ordinary overflowing
 lookahead (`0x6ae28`–`0x6ae30`), but a permitted first-object overflow can enter
-the callback path. A second check tests the same old-width sum after the
-callback (`0x6ae80`–`0x6ae84`); failure keeps the current logical anchor for a
-later candidate (`0x6b014`–`0x6b108`). Child layouts survive that failure and
-are reused and remeasured at the next candidate (`0xb0cac`–`0xb0e2c`). Body
-width feedback is capped by the minimum of the child measured width and the
-object's transformed width cap (`0xb0ed8`–`0xb0f1c`). Applying a callback only
-after acceptance, to every rejected lookahead, or to regular constraints would
-lose these distinctions. Constraints 1/2 use this width-feedback route;
-ordinary constraints retain their separate top-of-page shrink branch.
+the callback path. The exception compares the candidate rectangle width with
+the paragraph's full width, not with the object's width (`0x6ada8`–`0x6add8`).
+Its scan offset and prior-break tracker reset for every candidate
+(`0x6acec`–`0x6ad0c`), so it can apply to continuation lines. A second check
+tests the same old-width sum after the callback (`0x6ae80`–`0x6ae84`). With
+a prior break, failure returns that break and leaves the current anchor for
+another candidate. Without one, the first-object or character-overflow branch
+can force inclusion and consume the updated advance (`0x6b03c`–`0x6b108`).
+Child layouts survive rejected visits and are reused and remeasured at the
+next candidate (`0xb0cac`–`0xb0e2c`). Applying a callback only after acceptance,
+to every rejected lookahead, or to regular constraints would lose these
+distinctions. Constraints 1/2 use this width-feedback route; ordinary
+constraints retain their separate top-of-page shrink branch.
+
+Body width feedback is the minimum of the child's measured width and the
+object's transformed width cap (`0xb0ed8`–`0xb0f1c`). Tables override the
+maximum-width getter with their raw table property (`0x3dac24`, relocation
+`0x495240`). Code inherits the base getter (`0x2cb6cc`): an attached context
+can replace a nonpositive or oversized raw maximum with twice its requested
+width; a detached object returns the raw maximum. A nonpositive result falls back
+to the parent layout width minus its global text margins
+(`0xb0e54`–`0xb0ec0`, `0x8b8f0`, `0x8b928`), not paragraph indentation or
+the inline object's four-unit margins. The transformed cap scales the saved
+drawn width by the cap divided by the saved raw width, in native float
+arithmetic; it does not add an unchanged border after scaling.
+
+The owner is runtime context (`ObjectImpl + 56`), distinct from saved owner
+page-size metadata. Partial capture clones a detached text box and its spans
+(`0xdf30c`–`0xdf358`, `0x4179b8`–`0x417a78`); property copying does not copy
+that context. `setBodyText` and `ObjectTextLayout::SetObject` merely retain
+the copied model (`0xa90d4`, `0xaff08`–`0xaff10`, `0xd3974`). Consequently
+a partial capture's code cap must not assume the physical source page's width.
+Full first-page coverage with the native completed-section flag bypasses
+copying (`0xaa4cc`–`0xaa4dc`), and missing sections likewise use the original
+body (`0xaa478`–`0xaa688`, `0xa8f50`–`0xa8f58`). The original body attaches
+to the note context (`0xa0b60`–`0xa0b74`), whose nested text context forwards
+its width requester (`0x3e1cfc`, `0x3e1f48`–`0x3e1f64`). That width comes
+from a runtime loader argument stored at note implementation offset 128
+(`0x90674`, `0x90c20`), distinct from the persisted note width at offset
+132 (`0x91e34`). Saved physical page widths, default dimensions and flow
+dimensions therefore cannot substitute for it. Full-body code caps need
+that runtime input or an explicit unsupported-context diagnostic.
+
+Final object drawing also converts the selected drawn rectangle back into
+the original object's raw rectangle (`0x376418`–`0x376474`). The inverse
+uses independent X/Y affine ratios against the original drawn rectangle
+(`0xe2064`–`0xe2258`). A detached table clone stores only that outer raw
+rectangle; fresh grid measurement still uses the saved column widths
+(`0xaaab8`–`0xaaad8`). Its final drawn origin includes the unchanged border
+inset before the writer rounds it (`0x37e4ac`–`0x37e4f4`). For raw width 20,
+drawn width 21, border 1, selected width 61 and selected left 10.5234375,
+the cloned drawn left is approximately 11.47582 and the writer floors it to
+11. The grid remains 61 units wide. A width cap therefore changes the parent
+reservation and clone placement without necessarily shrinking or clipping
+the table grid. Code instead requires fresh layout in its cloned raw frame;
+its final wrapping cannot simply reuse the callback's original-width plan.
+
+Independent public regressions cover table expansion, shrinkage, strict
+callback thresholds, current-object admission, following-text wrapping,
+alignment, global margin caps, signed paragraph indents and densities 1/3.
+They check ordinary/replay SVG and selectable PDF, including the full table
+grid beyond a capped reservation. Partial-capture code regressions use typed
+ObjectBase maximum-size metadata and verify fresh final wrapping without
+changing the parent's retained callback height. Full-body code reports
+`UnsupportedWidthLimitContext` rather than inferring its runtime cap from
+saved dimensions. Rotated Body code with over-page feedback remains an
+explicit unsupported case. Rejected derived clone bounds preserve the source
+replacement marker and never repaint the stale callback plan; the regression
+isolates float-coordinate collapse at world X 16,777,216 from an otherwise
+valid one-unit code frame. This is SDK recovery behavior, not a native
+malformed-input claim.
+
+The staged-width driver was compared with `3579456` using the same release
+probe and three alternating runs of each compiled artifact. At 50k source
+characters, median rendering times were 58.7 to 55.2 ms for repeated Latin,
+54.7 to 55.0 ms for long URLs and 40.3 to 38.8 ms for prose. All nine size/type
+cases retained their line counts, serialized SVG sizes and complete source.
+These local timings establish no observed scaling regression in that probe;
+they are not portable performance limits or mixed-object benchmarks.
+
+At `3d5c9a0`, workspace tests passed with all features, including 464 core
+unit tests and fourteen public width regressions. Render-only checks passed
+with 449 core unit tests, and strict workspace/all-target Clippy passed.
+The five ignored external-corpus comparisons also passed, retaining the
+locked native body/code/table references. A fresh WASM build passed all 27
+Chromium checks, all 66 web unit tests and typecheck; packaged, built and
+served WASM hashes matched. These gates cover the bounded contracts above,
+not unknown runtime caps or arbitrary table/complex-glyph composition.
 
 Rejected derived code geometry retains the original replacement marker and
 neighboring text, reports `InvalidBounds`, and never falls back into measuring
