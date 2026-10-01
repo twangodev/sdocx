@@ -25,7 +25,7 @@ pub(in crate::render) struct ParagraphBidi<'text> {
 
 impl<'text> ParagraphBidi<'text> {
     pub fn new(text: &'text str, source_start: usize) -> Result<Self, BidiError> {
-        let analysis = BidiInfo::new(text, None);
+        let analysis = BidiInfo::new(text, native_paragraph_level(text));
         let source_end = source_start
             .checked_add(text.chars().count())
             .ok_or(BidiError::InvalidRange)?;
@@ -145,6 +145,22 @@ impl<'text> ParagraphBidi<'text> {
         }
         Ok(source.start - self.source.start..source.end - self.source.start)
     }
+}
+
+fn native_paragraph_level(text: &str) -> Option<Level> {
+    let mut first_strong = None;
+    for character in text.chars() {
+        match unicode_bidi::bidi_class(character) {
+            BidiClass::B => return None,
+            class @ (BidiClass::L | BidiClass::R | BidiClass::AL) if first_strong.is_none() => {
+                first_strong = Some(class);
+            }
+            _ => {}
+        }
+    }
+    (matches!(first_strong, Some(BidiClass::R | BidiClass::AL))
+        && unicode_bidi::get_base_direction(text) == unicode_bidi::Direction::Mixed)
+        .then_some(Level::rtl())
 }
 
 fn direction(level: Level) -> Direction {
@@ -298,6 +314,88 @@ mod tests {
         assert_eq!(
             isolate.visual_order(0..6, &scalar_items(0..6)).unwrap(),
             [0, 1, 3, 2, 4, 5]
+        );
+    }
+
+    #[test]
+    fn isolated_first_strong_rtl_seeds_a_neutral_outer_paragraph() {
+        for isolate in ['\u{2066}', '\u{2067}', '\u{2068}'] {
+            let text = format!("{isolate}א\u{2069}123");
+            let bidi = ParagraphBidi::new(&text, 20).unwrap();
+            assert_eq!(bidi.base_direction(), Direction::RightToLeft);
+            assert_eq!(
+                bidi.levels().iter().map(Level::number).collect::<Vec<_>>(),
+                [1, 3, 1, 2, 2, 2]
+            );
+            assert_eq!(
+                bidi.visual_order(20..26, &scalar_items(20..26)).unwrap(),
+                [3, 4, 5, 2, 1, 0]
+            );
+        }
+    }
+
+    #[test]
+    fn outer_strong_text_still_selects_the_paragraph_base() {
+        for (text, base, expected_levels, expected_order) in [
+            (
+                "\u{2067}א\u{2069}ABC",
+                Direction::LeftToRight,
+                [0, 1, 0, 0, 0, 0],
+                [0, 1, 2, 3, 4, 5],
+            ),
+            (
+                "\u{2066}ABC\u{2069}א",
+                Direction::RightToLeft,
+                [1, 2, 2, 2, 1, 1],
+                [5, 4, 1, 2, 3, 0],
+            ),
+        ] {
+            let bidi = ParagraphBidi::new(text, 0).unwrap();
+            assert_eq!(bidi.base_direction(), base);
+            assert_eq!(
+                bidi.levels().iter().map(Level::number).collect::<Vec<_>>(),
+                expected_levels
+            );
+            assert_eq!(
+                bidi.visual_order(0..6, &scalar_items(0..6)).unwrap(),
+                expected_order
+            );
+            assert_eq!(native_paragraph_level(text), None);
+        }
+    }
+
+    #[test]
+    fn isolated_latin_and_all_neutral_text_keep_the_default_ltr_base() {
+        for text in [
+            "\u{2066}ABC\u{2069}",
+            "\u{2067}ABC\u{2069}",
+            "\u{2068}ABC\u{2069}",
+            "123 ?!",
+        ] {
+            let bidi = ParagraphBidi::new(text, 0).unwrap();
+            let len = text.chars().count();
+            assert_eq!(bidi.base_direction(), Direction::LeftToRight);
+            assert!((0..len).all(|index| bidi.direction_at(index) == Some(Direction::LeftToRight)));
+            assert_eq!(
+                bidi.visual_order(0..len, &scalar_items(0..len)).unwrap(),
+                (0..len).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn internal_paragraph_separators_preserve_the_existing_base_analysis() {
+        let text = "\u{2067}א\u{2069}\u{2029}123";
+        let bidi = ParagraphBidi::new(text, 0).unwrap();
+        assert_eq!(native_paragraph_level(text), None);
+        assert_eq!(bidi.base_direction(), Direction::LeftToRight);
+        assert_eq!(
+            bidi.levels().iter().map(Level::number).collect::<Vec<_>>(),
+            [0, 1, 0, 0, 0, 0, 0]
+        );
+        assert_eq!(
+            bidi.visual_order(0..7, &scalar_items(0..7)),
+            Err(BidiError::UnsupportedParagraphSeparator)
         );
     }
 

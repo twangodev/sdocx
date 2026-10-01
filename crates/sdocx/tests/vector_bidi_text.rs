@@ -474,6 +474,70 @@ fn covered_arabic_clusters_and_ltr_override_keep_diagnosed_contextual_fallbacks(
     }
 }
 
+#[test]
+fn native_isolate_base_direction_moves_outer_numbers_but_not_strong_latin() {
+    let fonts = covered_test_font();
+    for (source, expected) in [
+        (
+            "\u{2067}א\u{2069}123",
+            vec![
+                ("א", 1319, 85.89111328125),
+                ("1", 20, 0.0),
+                ("2", 21, 28.63037109375),
+                ("3", 22, 57.2607421875),
+            ],
+        ),
+        (
+            "\u{2068}א\u{2069}123",
+            vec![
+                ("א", 1319, 85.89111328125),
+                ("1", 20, 0.0),
+                ("2", 21, 28.63037109375),
+                ("3", 22, 57.2607421875),
+            ],
+        ),
+        (
+            "\u{2066}א\u{2069}_123",
+            vec![
+                ("א", 1319, 108.39111328125),
+                ("_", 66, 85.89111328125),
+                ("1", 20, 0.0),
+                ("2", 21, 28.63037109375),
+                ("3", 22, 57.2607421875),
+            ],
+        ),
+        (
+            "\u{2067}א\u{2069}ABC",
+            vec![
+                ("א", 1319, 0.0),
+                ("A", 36, 30.08056640625),
+                ("B", 37, 60.8642578125),
+                ("C", 38, 90.94482421875),
+            ],
+        ),
+    ] {
+        for flow in [false, true] {
+            for replay in [false, true] {
+                let page = render_with_fonts(covered_text(source), 500, flow, replay, &fonts);
+                assert_source(&page, source);
+                assert!(
+                    page.text_diagnostics.is_empty(),
+                    "{:?}",
+                    page.text_diagnostics
+                );
+                let actual = glyphs_with_fonts(&page, &fonts);
+                assert_eq!(actual.len(), expected.len());
+                let origin = if flow { 48.0 } else { 10.0 };
+                for (glyph, (text, id, x)) in actual.iter().zip(&expected) {
+                    assert_eq!((glyph.text.as_str(), glyph.id), (*text, *id));
+                    close(glyph.x, origin + x);
+                    close(glyph.y, actual[0].y);
+                }
+            }
+        }
+    }
+}
+
 #[cfg(feature = "pdf")]
 mod pdf {
     use super::*;
