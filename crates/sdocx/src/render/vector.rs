@@ -164,6 +164,43 @@ impl Scene {
         #[cfg(not(feature = "pdf"))]
         false
     }
+    pub fn text_source(&mut self, draw: impl FnOnce(&mut Self)) {
+        #[cfg(feature = "pdf")]
+        if let Some(text) = self.native_text.as_mut() {
+            text.enter_text_source();
+        }
+        draw(self);
+        #[cfg(feature = "pdf")]
+        if let Some(text) = self.native_text.as_mut() {
+            text.leave_text_source();
+        }
+    }
+    pub fn inline_text_object(&mut self, anchor: usize, draw: impl FnOnce(&mut Self)) {
+        #[cfg(feature = "pdf")]
+        if let Some(text) = self.native_text.as_mut() {
+            text.enter_inline_object(anchor);
+        }
+        #[cfg(not(feature = "pdf"))]
+        let _ = anchor;
+        draw(self);
+        #[cfg(feature = "pdf")]
+        if let Some(text) = self.native_text.as_mut() {
+            text.leave_inline_object();
+        }
+    }
+    pub fn text_marker(&mut self, anchor: usize, draw: impl FnOnce(&mut Self)) {
+        #[cfg(feature = "pdf")]
+        if let Some(text) = self.native_text.as_mut() {
+            text.enter_marker(anchor);
+        }
+        #[cfg(not(feature = "pdf"))]
+        let _ = anchor;
+        draw(self);
+        #[cfg(feature = "pdf")]
+        if let Some(text) = self.native_text.as_mut() {
+            text.leave_marker();
+        }
+    }
     #[cfg(feature = "pdf")]
     pub fn native_text(&mut self) -> &mut super::text::native::NativeTextRegistry {
         self.native_text.as_mut().expect("retained text scene")

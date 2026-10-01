@@ -4,7 +4,12 @@ use std::{
 };
 
 use self::svg::{SurfaceExt, SvgSettings};
-use krilla::{Document as PdfDocument, geom::Size, page::PageSettings};
+use krilla::{
+    Document as PdfDocument,
+    geom::Size,
+    page::PageSettings,
+    tagging::{TagGroup, TagTree},
+};
 
 mod svg;
 
@@ -163,6 +168,7 @@ fn render_pages_pdf<'a>(
     };
     let mut pdf = PdfDocument::new();
     let mut painter = NativePdfPainter::default();
+    let mut tags = TagTree::default();
     let mut page_count = 0;
     let mut retained_text = false;
     for (page_index, source) in pages.into_iter().enumerate() {
@@ -201,12 +207,14 @@ fn render_pages_pdf<'a>(
         let mut surface = page.surface();
         if let Some(registry) = source.text {
             retained_text = true;
-            draw_retained_page(&mut surface, &tree, size, registry, &mut painter).map_err(
-                |message| PdfError::UnsupportedText {
-                    page_index,
-                    message,
-                },
-            )?;
+            let page_tags = draw_retained_page(&mut surface, &tree, size, registry, &mut painter)
+                .map_err(|message| PdfError::UnsupportedText {
+                page_index,
+                message,
+            })?;
+            for tag in page_tags {
+                tags.push(tag);
+            }
         } else {
             surface
                 .draw_svg(&tree, size, SvgSettings::default())
@@ -219,7 +227,7 @@ fn render_pages_pdf<'a>(
         return Err(PdfError::EmptyDocument);
     }
     if retained_text {
-        pdf.set_tag_tree(painter.take_tag_tree());
+        pdf.set_tag_tree(tags);
     }
     pdf.finish()
         .map_err(|error| PdfError::Conversion(error.to_string()))
@@ -231,35 +239,39 @@ fn draw_retained_page(
     size: Size,
     registry: &NativeTextRegistry,
     painter: &mut NativePdfPainter,
-) -> Result<(), String> {
+) -> Result<Vec<TagGroup>, String> {
     let mut nodes = HashMap::with_capacity(registry.len());
-    for (index, (id, block)) in registry.iter().enumerate() {
+    for (id, block) in registry.iter() {
         let Some(usvg::Node::Text(text)) = tree.node_by_id(&id.svg_id()) else {
             return Err(format!(
                 "retained text {} was lost during SVG parsing",
                 id.svg_id()
             ));
         };
-        nodes.insert(text.as_ref() as *const usvg::Text, (index, block));
+        nodes.insert(text.as_ref() as *const usvg::Text, (id, block));
     }
-    let mut handled = vec![false; registry.len()];
+    let mut tags = HashMap::with_capacity(registry.len());
     surface.draw_svg_with_text(tree, size, SvgSettings::default(), &mut |text, surface| {
-        let Some(&(index, block)) = nodes.get(&(text as *const usvg::Text)) else {
+        let Some(&(id, block)) = nodes.get(&(text as *const usvg::Text)) else {
             return Ok(false);
         };
-        if handled[index] {
+        if tags.contains_key(&id) {
             return Err("retained text was painted more than once".into());
         }
-        painter
+        let tag = painter
             .paint(block, surface)
             .map_err(|error| error.to_string())?;
-        handled[index] = true;
+        tags.insert(id, tag);
         Ok(true)
     })?;
-    if handled.iter().any(|&painted| !painted) {
-        return Err("retained text was skipped by an unsupported SVG effect".into());
-    }
-    Ok(())
+    registry
+        .ordered_ids()
+        .into_iter()
+        .map(|id| {
+            tags.remove(&id)
+                .ok_or_else(|| "retained text was skipped by an unsupported SVG effect".into())
+        })
+        .collect()
 }
 
 fn validate_png(bytes: &[u8]) -> Result<(), String> {

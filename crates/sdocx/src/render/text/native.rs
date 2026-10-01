@@ -6,7 +6,7 @@ use krilla::color::rgb;
 use krilla::geom::Point;
 use krilla::paint::{Fill, Stroke};
 use krilla::surface::Surface;
-use krilla::tagging::{ContentTag, SpanTag, Tag, TagGroup, TagTree};
+use krilla::tagging::{ContentTag, SpanTag, Tag, TagGroup};
 use krilla::text::{Font, GlyphId, KrillaGlyph};
 
 use crate::Color;
@@ -72,14 +72,121 @@ pub(crate) enum NativeTextError {
 
 #[derive(Debug, Default)]
 pub(crate) struct NativeTextRegistry {
-    blocks: Vec<NativeTextBlock>,
+    blocks: Vec<RegisteredText>,
+    scopes: Vec<ReadingScope>,
+    next_source: usize,
+}
+
+#[derive(Debug)]
+struct RegisteredText {
+    block: NativeTextBlock,
+    order: Vec<usize>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReadingScopeKind {
+    TextSource,
+    InlineObject,
+    Marker,
+}
+
+#[derive(Clone, Copy)]
+enum ReadingPhase {
+    BeforeContent = 0,
+    Content = 1,
+}
+
+#[derive(Debug)]
+struct ReadingScope {
+    path: Vec<usize>,
+    next_source: usize,
+    kind: ReadingScopeKind,
 }
 
 impl NativeTextRegistry {
-    pub fn register(&mut self, block: NativeTextBlock) -> Result<NativeTextId, NativeTextError> {
+    pub fn enter_text_source(&mut self) {
+        let (mut path, ordinal) = if let Some(parent) = self.scopes.last_mut() {
+            let ordinal = parent.next_source;
+            parent.next_source += 1;
+            (parent.path.clone(), ordinal)
+        } else {
+            let ordinal = self.next_source;
+            self.next_source += 1;
+            (Vec::new(), ordinal)
+        };
+        path.push(ordinal);
+        self.scopes.push(ReadingScope {
+            path,
+            next_source: 0,
+            kind: ReadingScopeKind::TextSource,
+        });
+    }
+
+    pub fn leave_text_source(&mut self) {
+        self.leave_scope(ReadingScopeKind::TextSource);
+    }
+
+    pub fn enter_inline_object(&mut self, anchor: usize) {
+        self.enter_anchored_scope(
+            anchor,
+            ReadingPhase::Content,
+            ReadingScopeKind::InlineObject,
+        );
+    }
+
+    pub fn leave_inline_object(&mut self) {
+        self.leave_scope(ReadingScopeKind::InlineObject);
+    }
+
+    pub fn enter_marker(&mut self, anchor: usize) {
+        self.enter_anchored_scope(
+            anchor,
+            ReadingPhase::BeforeContent,
+            ReadingScopeKind::Marker,
+        );
+    }
+
+    pub fn leave_marker(&mut self) {
+        self.leave_scope(ReadingScopeKind::Marker);
+    }
+
+    fn enter_anchored_scope(&mut self, anchor: usize, phase: ReadingPhase, kind: ReadingScopeKind) {
+        let mut path = self
+            .scopes
+            .last()
+            .expect("anchored text requires a parent text source")
+            .path
+            .clone();
+        path.extend([anchor, phase as usize]);
+        self.scopes.push(ReadingScope {
+            path,
+            next_source: 0,
+            kind,
+        });
+    }
+
+    fn leave_scope(&mut self, kind: ReadingScopeKind) {
+        let scope = self.scopes.pop().expect("unbalanced reading scope");
+        assert_eq!(scope.kind, kind, "mismatched reading scope");
+    }
+
+    pub fn register(
+        &mut self,
+        source_start: usize,
+        block: NativeTextBlock,
+    ) -> Result<NativeTextId, NativeTextError> {
         block.validate()?;
+        let mut order = self.scopes.last().map_or_else(
+            || {
+                let ordinal = self.next_source;
+                self.next_source += 1;
+                vec![ordinal]
+            },
+            |scope| scope.path.clone(),
+        );
+        order.extend([source_start, ReadingPhase::Content as usize]);
         let id = NativeTextId(self.blocks.len());
-        self.blocks.push(block);
+        self.blocks.push(RegisteredText { block, order });
         Ok(id)
     }
 
@@ -87,7 +194,13 @@ impl NativeTextRegistry {
         self.blocks
             .iter()
             .enumerate()
-            .map(|(index, block)| (NativeTextId(index), block))
+            .map(|(index, registered)| (NativeTextId(index), &registered.block))
+    }
+
+    pub fn ordered_ids(&self) -> Vec<NativeTextId> {
+        let mut ids = (0..self.blocks.len()).map(NativeTextId).collect::<Vec<_>>();
+        ids.sort_by(|left, right| self.blocks[left.0].order.cmp(&self.blocks[right.0].order));
+        ids
     }
 
     pub fn len(&self) -> usize {
@@ -147,7 +260,6 @@ fn positive_native(value: f64) -> bool {
 #[derive(Default)]
 pub(crate) struct NativePdfPainter {
     fonts: HashMap<(fontdb::ID, u32), Font>,
-    tags: TagTree,
 }
 
 impl NativePdfPainter {
@@ -155,7 +267,7 @@ impl NativePdfPainter {
         &mut self,
         block: &NativeTextBlock,
         surface: &mut Surface<'_>,
-    ) -> Result<(), NativeTextError> {
+    ) -> Result<TagGroup, NativeTextError> {
         block.validate()?;
         let prepared = block
             .runs
@@ -208,13 +320,7 @@ impl NativePdfPainter {
         surface.set_fill(old_fill);
         surface.set_stroke(old_stroke);
         surface.end_tagged();
-        self.tags
-            .push(TagGroup::with_children(Tag::Span, vec![identifier.into()]));
-        Ok(())
-    }
-
-    pub fn take_tag_tree(&mut self) -> TagTree {
-        std::mem::take(&mut self.tags)
+        Ok(TagGroup::with_children(Tag::Span, vec![identifier.into()]))
     }
 
     fn font(&mut self, face: &ResolvedFace) -> Result<Font, NativeTextError> {
@@ -268,6 +374,7 @@ fn positioned_glyphs(run: &NativeGlyphRun) -> Result<(Point, Vec<KrillaGlyph>), 
 mod tests {
     use super::*;
     use crate::fonts::FontBook;
+    use krilla::tagging::TagTree;
     use krilla::{Document, geom::Size, page::PageSettings, text::Glyph};
     use lopdf::{Object, content::Content};
 
@@ -315,12 +422,12 @@ mod tests {
         surface.set_fill(Some(previous_fill.clone()));
         surface.set_stroke(Some(previous_stroke.clone()));
         let mut painter = NativePdfPainter::default();
-        painter.paint(block, &mut surface).unwrap();
+        let tag = painter.paint(block, &mut surface).unwrap();
         assert_eq!(surface.get_fill(), Some(&previous_fill));
         assert_eq!(surface.get_stroke(), Some(&previous_stroke));
         surface.finish();
         page.finish();
-        document.set_tag_tree(painter.take_tag_tree());
+        document.set_tag_tree(TagTree::from(vec![tag.into()]));
         lopdf::Document::load_mem(&document.finish().unwrap()).unwrap()
     }
 
@@ -336,16 +443,144 @@ mod tests {
         let mut invalid = run();
         invalid.glyphs[0].source = 1..2;
         assert_eq!(
-            registry.register(block("é", invalid)),
+            registry.register(0, block("é", invalid)),
             Err(NativeTextError::InvalidSource)
         );
         assert_eq!(registry.len(), 0);
         let mut valid = run();
         valid.glyphs[0].source = 0..2;
-        let id = registry.register(block("é", valid)).unwrap();
+        let id = registry.register(0, block("é", valid)).unwrap();
         assert_eq!(id.svg_id(), "sdocx-native-text-0");
         assert_eq!(&*registry.iter().next().unwrap().1.source, "é");
         assert_eq!(registry.iter().map(|(id, _)| id).collect::<Vec<_>>(), [id]);
+    }
+
+    #[test]
+    fn semantic_order_inserts_object_text_without_changing_registration_order() {
+        let mut registry = NativeTextRegistry::default();
+        registry.enter_text_source();
+        let before = registry.register(0, block("A", run())).unwrap();
+        let after = registry.register(2, block("B", run())).unwrap();
+        registry.enter_inline_object(1);
+        registry.enter_text_source();
+        let child = registry.register(0, block("Q", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_inline_object();
+        registry.leave_text_source();
+        assert_eq!(registry.ordered_ids(), [before, child, after]);
+        assert_eq!(
+            registry.iter().map(|(id, _)| id).collect::<Vec<_>>(),
+            [before, after, child]
+        );
+    }
+
+    #[test]
+    fn nested_objects_keep_distinct_child_sources_and_restore_parent_order() {
+        let mut registry = NativeTextRegistry::default();
+        registry.enter_text_source();
+        let first = registry.register(0, block("A", run())).unwrap();
+        let last = registry.register(5, block("Z", run())).unwrap();
+        registry.enter_inline_object(2);
+        registry.enter_text_source();
+        let title_before = registry.register(0, block("T", run())).unwrap();
+        let title_after = registry.register(2, block("U", run())).unwrap();
+        registry.enter_inline_object(1);
+        registry.enter_text_source();
+        let nested = registry.register(0, block("N", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_inline_object();
+        registry.leave_text_source();
+        registry.enter_text_source();
+        let body = registry.register(0, block("B", run())).unwrap();
+        registry.enter_inline_object(1);
+        registry.enter_text_source();
+        let body_nested = registry.register(0, block("C", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_inline_object();
+        registry.leave_text_source();
+        registry.leave_inline_object();
+        registry.enter_inline_object(4);
+        registry.enter_text_source();
+        let second_object = registry.register(0, block("Q", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_inline_object();
+        registry.leave_text_source();
+        assert_eq!(
+            registry.ordered_ids(),
+            [
+                first,
+                title_before,
+                nested,
+                title_after,
+                body,
+                body_nested,
+                second_object,
+                last,
+            ]
+        );
+    }
+
+    #[test]
+    fn unrelated_sources_do_not_sort_by_their_local_scalar_offsets() {
+        let mut registry = NativeTextRegistry::default();
+        registry.enter_text_source();
+        let first = registry.register(100, block("A", run())).unwrap();
+        registry.leave_text_source();
+        registry.enter_text_source();
+        let second = registry.register(0, block("B", run())).unwrap();
+        registry.leave_text_source();
+        let unscoped = registry.register(0, block("C", run())).unwrap();
+        assert_eq!(registry.ordered_ids(), [first, second, unscoped]);
+    }
+
+    #[test]
+    fn markers_precede_same_anchor_content_and_follow_earlier_paragraphs() {
+        let mut registry = NativeTextRegistry::default();
+        registry.enter_text_source();
+        let first = registry.register(0, block("A", run())).unwrap();
+        let second = registry.register(10, block("B", run())).unwrap();
+        registry.enter_marker(10);
+        registry.enter_text_source();
+        let second_marker = registry.register(0, block("2", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_marker();
+        registry.enter_marker(0);
+        registry.enter_text_source();
+        let first_marker = registry.register(0, block("1", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_marker();
+        registry.leave_text_source();
+        assert_eq!(
+            registry.ordered_ids(),
+            [first_marker, first, second_marker, second]
+        );
+    }
+
+    #[test]
+    fn a_marker_and_an_inline_object_at_the_same_anchor_do_not_collide() {
+        let mut registry = NativeTextRegistry::default();
+        registry.enter_text_source();
+        let after = registry.register(1, block("A", run())).unwrap();
+        registry.enter_inline_object(0);
+        registry.enter_text_source();
+        let object = registry.register(0, block("Q", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_inline_object();
+        registry.enter_marker(0);
+        registry.enter_text_source();
+        let marker = registry.register(0, block("1", run())).unwrap();
+        registry.leave_text_source();
+        registry.leave_marker();
+        registry.leave_text_source();
+        assert_eq!(registry.ordered_ids(), [marker, object, after]);
+    }
+
+    #[test]
+    #[should_panic(expected = "mismatched reading scope")]
+    fn semantic_scopes_require_balanced_kinds() {
+        let mut registry = NativeTextRegistry::default();
+        registry.enter_text_source();
+        registry.leave_inline_object();
     }
 
     #[test]
@@ -581,7 +816,7 @@ mod tests {
         assert_eq!(surface.get_stroke(), previous_stroke.as_ref());
         surface.finish();
         page.finish();
-        document.set_tag_tree(painter.take_tag_tree());
+        document.set_tag_tree(TagTree::new());
         let pdf = lopdf::Document::load_mem(&document.finish().unwrap()).unwrap();
         assert!(
             !operations(&pdf)

@@ -216,6 +216,7 @@ fn render_retained_fragment(
         .index
         .char_to_byte(range.start)
         .ok_or("invalid retained line source")?;
+    let source_start = range.start;
     let source: Arc<str> = styled
         .index
         .slice(range)
@@ -297,7 +298,7 @@ fn render_retained_fragment(
     });
     let id = svg
         .native_text()
-        .register(NativeTextBlock { source, runs })
+        .register(source_start, NativeTextBlock { source, runs })
         .map_err(|error| error.to_string())?;
     svg.scope(
         Text::new("")

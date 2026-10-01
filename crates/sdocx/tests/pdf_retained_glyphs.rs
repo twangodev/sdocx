@@ -461,6 +461,224 @@ fn selected_source(bytes: &[u8]) -> String {
     geometry.source
 }
 
+fn inline_code(content: &mut RichTextBox, index_utf16: i32, body: RichTextBox) {
+    content.object_spans.push(sdocx::RichTextObjectSpan {
+        object_type: sdocx::ObjectType::CodeBlock,
+        text_index_utf16: index_utf16,
+        object_data: Vec::new(),
+        content: Some(sdocx::RichTextObjectContent::CodeBlock(Box::new(
+            sdocx::RichTextCodeBlock {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 160.0,
+                    y_max: 100.0,
+                },
+                rotation_degrees: None,
+                title: None,
+                body: Some(body),
+            },
+        ))),
+        layout_option: sdocx::ObjectSpanLayoutOption::Inline,
+        layout_constraint: sdocx::ObjectSpanLayoutConstraint::Normal,
+    });
+}
+
+#[test]
+fn structure_tree_reading_order_follows_k_and_page_scoped_mcids() {
+    use lopdf::dictionary;
+
+    let mut pdf = lopdf::Document::with_version("1.7");
+    let pages = pdf.new_object_id();
+    let root = pdf.new_object_id();
+    let font = pdf.add_object(
+        dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" },
+    );
+    let content = pdf.add_object(lopdf::Stream::new(Dictionary::new(),
+        b"/Span << /MCID 0 /ActualText (A) >> BDC BT /F1 12 Tf (A) Tj ET EMC /Span << /MCID 1 /ActualText (B) >> BDC BT /F1 12 Tf (B) Tj ET EMC".to_vec()));
+    let page_one = pdf.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![0.into(),0.into(),300.into(),300.into()], "Contents" => content, "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } } });
+    let content = pdf.add_object(lopdf::Stream::new(
+        Dictionary::new(),
+        b"/Span << /MCID 0 /ActualText (C) >> BDC BT /F1 12 Tf (C) Tj ET EMC".to_vec(),
+    ));
+    let page_two = pdf.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![0.into(),0.into(),300.into(),300.into()], "Contents" => content, "Resources" => dictionary! { "Font" => dictionary! { "F1" => font } } });
+    pdf.objects.insert(pages, dictionary! { "Type" => "Pages", "Kids" => vec![page_one.into(),page_two.into()], "Count" => 2 }.into());
+    let first = pdf.add_object(dictionary! { "Type" => "StructElem", "S" => "Span", "P" => root, "Pg" => page_one, "K" => 1 });
+    let last = pdf.add_object(dictionary! { "Type" => "StructElem", "S" => "Span", "P" => root, "Pg" => page_one, "K" => vec![0.into()] });
+    pdf.objects.insert(root, dictionary! { "Type" => "StructTreeRoot", "K" => vec![first.into(), dictionary! { "Type" => "MCR", "Pg" => page_two, "MCID" => 0 }.into(), last.into()] }.into());
+    let catalog = pdf.add_object(
+        dictionary! { "Type" => "Catalog", "Pages" => pages, "StructTreeRoot" => root },
+    );
+    pdf.trailer.set("Root", catalog);
+    let mut bytes = Vec::new();
+    pdf.save_to(&mut bytes).unwrap();
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "BCA");
+}
+
+#[test]
+fn inline_code_structure_order_is_independent_of_glyph_paint_order() {
+    let mut content = text("A\u{fffc}لا");
+    inline_code(&mut content, 1, text("Q"));
+    let bytes = export(content);
+    assert_eq!(selected_source(&bytes), "AلاQ");
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "AQلا");
+    let actual = glyphs(&bytes);
+    assert_glyph(&actual, 36, 1401, 10.0, 120.001);
+    assert_glyph(&actual, 5365, 1168, 183.681640625, 120.001);
+    assert_glyph(&actual, 52, 1612, 39.681640625, 84.001);
+}
+
+#[test]
+fn inline_code_title_and_body_follow_the_object_source_anchor() {
+    let mut content = text("A\u{fffc}لا");
+    inline_code(&mut content, 1, text("Q"));
+    let Some(sdocx::RichTextObjectContent::CodeBlock(code)) = &mut content.object_spans[0].content
+    else {
+        panic!()
+    };
+    code.title = Some(text("T"));
+    let bytes = export(content);
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "ATQلا");
+}
+
+#[test]
+#[cfg(feature = "serde")]
+fn inline_table_cell_reading_order_is_row_major_at_the_object_anchor() {
+    let mut content = text("A\u{fffc}لا");
+    let frame = BoundingBox {
+        x_min: 0.0,
+        y_min: 0.0,
+        x_max: 160.0,
+        y_max: 100.0,
+    };
+    let rows = [["Q", "R"], ["S", "T"]]
+        .into_iter()
+        .enumerate()
+        .map(|(row, values)| sdocx::RichTextTableRow {
+            max_height: None,
+            min_height: None,
+            metadata: Default::default(),
+            index: row as u32,
+            height: 50.0,
+            cells: values
+                .into_iter()
+                .enumerate()
+                .map(|(column, source)| {
+                    let bbox = BoundingBox {
+                        x_min: column as f64 * 80.0,
+                        y_min: row as f64 * 50.0,
+                        x_max: (column + 1) as f64 * 80.0,
+                        y_max: (row + 1) as f64 * 50.0,
+                    };
+                    let mut child = text(source);
+                    child.bbox = bbox;
+                    sdocx::RichTextTableCell {
+                        border: None,
+                        metadata: Default::default(),
+                        column_index: column as u32,
+                        row_span: 1,
+                        column_span: 1,
+                        background_color: 0,
+                        has_own_background_color: false,
+                        bbox,
+                        editable: true,
+                        content: child,
+                    }
+                })
+                .collect(),
+        })
+        .collect();
+    content.object_spans.push(sdocx::RichTextObjectSpan {
+        object_type: sdocx::ObjectType::Table,
+        text_index_utf16: 1,
+        object_data: Vec::new(),
+        content: Some(sdocx::RichTextObjectContent::Table(Box::new(
+            sdocx::RichTextTable {
+                style: serde_json::from_value(serde_json::json!({
+                    "heading_column_enabled": false,
+                    "heading_row_enabled": false,
+                    "max_height_enabled": false,
+                    "metadata": { "property_mask": [], "field_mask": [],
+                        "fixed_trailing_data": [], "flexible_trailing_data": [] }
+                }))
+                .unwrap(),
+                bbox: frame,
+                rotation_degrees: None,
+                column_widths: vec![80.0, 80.0],
+                rows,
+            },
+        ))),
+        layout_option: sdocx::ObjectSpanLayoutOption::Inline,
+        layout_constraint: sdocx::ObjectSpanLayoutConstraint::Normal,
+    });
+    let bytes = export(content);
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "AQRSTلا");
+}
+
+#[test]
+fn nested_inline_code_structure_preserves_each_source_location() {
+    let mut inner = text("Q\u{fffc}S");
+    inline_code(&mut inner, 1, text("R"));
+    let mut content = text("A\u{fffc}لا");
+    inline_code(&mut content, 1, inner);
+    let bytes = export(content);
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "AQRSلا");
+}
+
+#[test]
+fn rtl_inline_code_structure_keeps_logical_source_order() {
+    let mut content = text("اب\u{fffc}A");
+    inline_code(&mut content, 2, text("Q"));
+    let bytes = export(content);
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "ابQA");
+}
+
+#[test]
+fn repeated_selected_pages_keep_independent_tagged_object_sources() {
+    let mut content = text("A\u{fffc}لا");
+    inline_code(&mut content, 1, text("Q"));
+    let mut doc = document(content);
+    doc.pages.push(document(text("B")).pages.remove(0));
+    let layout = sdocx::layout_document(&doc);
+    let options = options();
+    let fonts = sdocx::fonts::FontBook::new(options.font_database.clone());
+    let bytes = sdocx::render_layout_pages_pdf_with_fonts(
+        &doc,
+        &layout,
+        &[1, 0, 0],
+        &Default::default(),
+        &options,
+        &fonts,
+    )
+    .unwrap();
+    assert_eq!(
+        lopdf::Document::load_mem(&bytes).unwrap().get_pages().len(),
+        3
+    );
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "BAQلاAQلا");
+}
+
+#[test]
+fn numbered_paragraph_markers_precede_their_own_content_in_the_structure_tree() {
+    let mut content = text(" X\n Y");
+    content.paragraphs = [1_u32, 2]
+        .into_iter()
+        .enumerate()
+        .map(|(ordinal, number)| sdocx::RichTextParagraph {
+            kind: sdocx::RichTextParagraphType::Bullet,
+            start_paragraph: ordinal as u32,
+            end_paragraph: ordinal as u32 + 1,
+            payload: [4_u32, number, 0, 1]
+                .into_iter()
+                .flat_map(u32::to_le_bytes)
+                .collect(),
+        })
+        .collect();
+    let bytes = export(content);
+    assert_eq!(selected_source(&bytes), "1. X2. Y");
+    assert_eq!(pdf_geometry::tagged_source(&bytes), "1. X2. Y");
+}
+
 #[test]
 fn arabic_ligature_keeps_the_selected_glyph_and_logical_source() {
     let bytes = export(text("لا"));

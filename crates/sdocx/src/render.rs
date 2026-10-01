@@ -1178,20 +1178,36 @@ fn paint_text_foreground(
     renderer: &TextRenderer<'_>,
     viewport: Option<Viewport>,
 ) {
-    for line in &layout.lines {
-        if let Some(marker) = &line.marker
-            && viewport.is_none_or(|viewport| {
-                marker
-                    .marker
-                    .bounds(marker.x, marker.center_y)
-                    .is_some_and(|bounds| viewport.intersects(bounds))
-            })
-        {
-            let style = styled.style_at(marker.source, theme, line.predefined);
-            paint_positioned_marker(svg, marker, &style, theme, renderer);
-        }
-        if viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)) {
-            render_measured_line(
+    svg.text_source(|svg| {
+        for line in &layout.lines {
+            if let Some(marker) = &line.marker
+                && viewport.is_none_or(|viewport| {
+                    marker
+                        .marker
+                        .bounds(marker.x, marker.center_y)
+                        .is_some_and(|bounds| viewport.intersects(bounds))
+                })
+            {
+                let style = styled.style_at(marker.source, theme, line.predefined);
+                svg.text_marker(marker.source, |svg| {
+                    paint_positioned_marker(svg, marker, &style, theme, renderer);
+                });
+            }
+            if viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)) {
+                render_measured_line(
+                    svg,
+                    styled,
+                    &line.line,
+                    line.x,
+                    line.width,
+                    line.baseline,
+                    line.alignment,
+                    theme,
+                    line.predefined,
+                    renderer,
+                );
+            }
+            paint_line_objects(
                 svg,
                 styled,
                 &line.line,
@@ -1199,26 +1215,14 @@ fn paint_text_foreground(
                 line.width,
                 line.baseline,
                 line.alignment,
-                theme,
                 line.predefined,
+                media_assets,
+                theme,
                 renderer,
+                viewport,
             );
         }
-        paint_line_objects(
-            svg,
-            styled,
-            &line.line,
-            line.x,
-            line.width,
-            line.baseline,
-            line.alignment,
-            line.predefined,
-            media_assets,
-            theme,
-            renderer,
-            viewport,
-        );
-    }
+    });
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1251,225 +1255,227 @@ fn paint_line_objects(
         if matches!(placement.prepared, Some(Err(_))) {
             continue;
         }
-        let height = object.height;
-        let drawing_renderer = renderer
-            .for_object_source(object.source.clone())
-            .planning_scope();
-        let body_clone = object.context == text::ObjectMeasurementContext::Body
-            && match &span.content {
-                Some(RichTextObjectContent::CodeBlock(code)) => {
-                    code.rotation_degrees.is_none_or(|rotation| rotation == 0.0)
-                }
-                Some(RichTextObjectContent::Table(table)) => table
-                    .rotation_degrees
-                    .is_none_or(|rotation| rotation == 0.0),
-                _ => false,
+        svg.inline_text_object(object.source.start, |svg| {
+            let height = object.height;
+            let drawing_renderer = renderer
+                .for_object_source(object.source.clone())
+                .planning_scope();
+            let body_clone = object.context == text::ObjectMeasurementContext::Body
+                && match &span.content {
+                    Some(RichTextObjectContent::CodeBlock(code)) => {
+                        code.rotation_degrees.is_none_or(|rotation| rotation == 0.0)
+                    }
+                    Some(RichTextObjectContent::Table(table)) => table
+                        .rotation_degrees
+                        .is_none_or(|rotation| rotation == 0.0),
+                    _ => false,
+                };
+            let target = BoundingBox {
+                x_min: left + placement_x,
+                x_max: left + placement_x + object.width(),
+                y_min: baseline - height,
+                y_max: baseline,
             };
-        let target = BoundingBox {
-            x_min: left + placement_x,
-            x_max: left + placement_x + object.width(),
-            y_min: baseline - height,
-            y_max: baseline,
-        };
-        let drawing_code = match (&placement.prepared, &span.content) {
-            (
-                Some(Ok(embedded::PreparedObject::Code(_))),
-                Some(RichTextObjectContent::CodeBlock(code)),
-            ) => Some(if body_clone {
-                code::prepare_code_drawing(
-                    code,
-                    span.layout_constraint,
-                    target,
-                    theme,
-                    &drawing_renderer,
-                )
-            } else {
-                code::prepare_code(
-                    code,
-                    span.layout_constraint,
-                    baseline - height,
-                    theme,
-                    &drawing_renderer,
-                )
-            }),
-            _ => None,
-        };
-        let drawing_table = match &span.content {
-            Some(RichTextObjectContent::Table(table)) => {
-                if body_clone {
-                    table::prepare_table_clone_drawing(
-                        table,
+            let drawing_code = match (&placement.prepared, &span.content) {
+                (
+                    Some(Ok(embedded::PreparedObject::Code(_))),
+                    Some(RichTextObjectContent::CodeBlock(code)),
+                ) => Some(if body_clone {
+                    code::prepare_code_drawing(
+                        code,
                         span.layout_constraint,
                         target,
                         theme,
                         &drawing_renderer,
                     )
                 } else {
-                    table::prepare_table_drawing(
-                        table,
+                    code::prepare_code(
+                        code,
                         span.layout_constraint,
-                        [left + placement_x, baseline - height],
+                        baseline - height,
                         theme,
                         &drawing_renderer,
                     )
+                }),
+                _ => None,
+            };
+            let drawing_table = match &span.content {
+                Some(RichTextObjectContent::Table(table)) => {
+                    if body_clone {
+                        table::prepare_table_clone_drawing(
+                            table,
+                            span.layout_constraint,
+                            target,
+                            theme,
+                            &drawing_renderer,
+                        )
+                    } else {
+                        table::prepare_table_drawing(
+                            table,
+                            span.layout_constraint,
+                            [left + placement_x, baseline - height],
+                            theme,
+                            &drawing_renderer,
+                        )
+                    }
+                }
+                _ => None,
+            };
+            let mut paint_bounds =
+                object_paint_bounds(placement, left + placement_x - placement.x, baseline);
+            if let Some(Ok(prepared)) = &drawing_code {
+                if body_clone {
+                    paint_bounds = prepared.panel_bbox;
+                } else {
+                    paint_bounds.y_max =
+                        paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
                 }
             }
-            _ => None,
-        };
-        let mut paint_bounds =
-            object_paint_bounds(placement, left + placement_x - placement.x, baseline);
-        if let Some(Ok(prepared)) = &drawing_code {
-            if body_clone {
-                paint_bounds = prepared.panel_bbox;
-            } else {
-                paint_bounds.y_max =
-                    paint_bounds.y_min + prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
+            if let Some(Ok(prepared)) = &drawing_table {
+                paint_bounds = prepared.measured_bbox;
             }
-        }
-        if let Some(Ok(prepared)) = &drawing_table {
-            paint_bounds = prepared.measured_bbox;
-        }
-        if viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds)) {
-            continue;
-        }
-        if body_clone
-            && let (Some(Ok(prepared)), Some(RichTextObjectContent::CodeBlock(code))) =
-                (&drawing_code, &span.content)
-        {
-            render_prepared_code(svg, code, prepared, media_assets, theme, renderer, viewport);
-            report_drawing_layout_issues(renderer, &drawing_renderer);
-            continue;
-        }
-        if let (Some(Ok(prepared)), Some(RichTextObjectContent::Table(table))) =
-            (&drawing_table, &span.content)
-        {
-            render_table(
-                svg,
-                table,
-                Some(prepared.into()),
-                0.0,
-                media_assets,
-                theme,
-                renderer,
-                viewport,
-            );
-            report_drawing_layout_issues(renderer, &drawing_renderer);
-            continue;
-        }
-        report_drawing_layout_issues(renderer, &drawing_renderer);
-        for kind in [
-            drawing_code
-                .as_ref()
-                .and_then(|result| result.as_ref().err()),
-            drawing_table
-                .as_ref()
-                .and_then(|result| result.as_ref().err()),
-        ]
-        .into_iter()
-        .flatten()
-        {
-            renderer.report_object_issues(&[ObjectDiagnostic {
-                anchor_utf16: span.text_index_utf16,
-                kind: *kind,
-            }]);
-        }
-        if body_clone
-            && (matches!(drawing_code, Some(Err(_))) || matches!(drawing_table, Some(Err(_))))
-        {
-            render_flow_line(
-                svg,
-                styled,
-                object.source.clone(),
-                target.x_min,
-                target.x_max,
-                baseline,
-                None,
-                theme,
-                predefined,
-                renderer,
-            );
-            continue;
-        }
-        let offset = (
-            left + placement_x - object.bounds.x_min,
-            baseline - height - object.bounds.y_min,
-        );
-        svg.scope(
-            Group::new().transformed(Transform::translate(offset.0, 0.0, 5)),
-            |svg| {
-                if let (
-                    Some(Ok(embedded::PreparedObject::Code(prepared))),
-                    Some(RichTextObjectContent::CodeBlock(code)),
-                ) = (&placement.prepared, &span.content)
-                {
-                    let prepared = drawing_code
-                        .as_ref()
-                        .and_then(|result| result.as_ref().ok())
-                        .unwrap_or(prepared);
-                    let shift = baseline - height - prepared.panel_bbox.y_min;
-                    svg.scope(
-                        Group::new().transformed(Transform::translate(0.0, shift, 5)),
-                        |svg| {
-                            render_prepared_code(
-                                svg,
-                                code,
-                                prepared,
-                                media_assets,
-                                theme,
-                                renderer,
-                                viewport.map(|viewport| viewport.translated(-offset.0, -shift)),
-                            );
-                        },
-                    );
-                } else if let (
-                    Some(Ok(embedded::PreparedObject::Table(prepared))),
-                    Some(RichTextObjectContent::Table(table)),
-                ) = (&placement.prepared, &span.content)
-                {
-                    let shift = (object.bounds.x_min, baseline - height);
-                    svg.scope(
-                        Group::new().transformed(Transform::translate(shift.0, shift.1, 5)),
-                        |svg| {
-                            render_table(
-                                svg,
-                                table,
-                                Some(prepared.as_ref().into()),
-                                0.0,
-                                media_assets,
-                                theme,
-                                renderer,
-                                viewport.map(|viewport| {
-                                    viewport.translated(-offset.0 - shift.0, -shift.1)
-                                }),
-                            );
-                        },
-                    );
-                } else if render_embedded_object(
+            if viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds)) {
+                return;
+            }
+            if body_clone
+                && let (Some(Ok(prepared)), Some(RichTextObjectContent::CodeBlock(code))) =
+                    (&drawing_code, &span.content)
+            {
+                render_prepared_code(svg, code, prepared, media_assets, theme, renderer, viewport);
+                report_drawing_layout_issues(renderer, &drawing_renderer);
+                return;
+            }
+            if let (Some(Ok(prepared)), Some(RichTextObjectContent::Table(table))) =
+                (&drawing_table, &span.content)
+            {
+                render_table(
                     svg,
-                    span,
-                    offset.1,
+                    table,
+                    Some(prepared.into()),
+                    0.0,
                     media_assets,
                     theme,
                     renderer,
-                    viewport.map(|viewport| viewport.translated(-offset.0, 0.0)),
-                )
-                .is_none()
-                {
-                    render_flow_line(
+                    viewport,
+                );
+                report_drawing_layout_issues(renderer, &drawing_renderer);
+                return;
+            }
+            report_drawing_layout_issues(renderer, &drawing_renderer);
+            for kind in [
+                drawing_code
+                    .as_ref()
+                    .and_then(|result| result.as_ref().err()),
+                drawing_table
+                    .as_ref()
+                    .and_then(|result| result.as_ref().err()),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                renderer.report_object_issues(&[ObjectDiagnostic {
+                    anchor_utf16: span.text_index_utf16,
+                    kind: *kind,
+                }]);
+            }
+            if body_clone
+                && (matches!(drawing_code, Some(Err(_))) || matches!(drawing_table, Some(Err(_))))
+            {
+                render_flow_line(
+                    svg,
+                    styled,
+                    object.source.clone(),
+                    target.x_min,
+                    target.x_max,
+                    baseline,
+                    None,
+                    theme,
+                    predefined,
+                    renderer,
+                );
+                return;
+            }
+            let offset = (
+                left + placement_x - object.bounds.x_min,
+                baseline - height - object.bounds.y_min,
+            );
+            svg.scope(
+                Group::new().transformed(Transform::translate(offset.0, 0.0, 5)),
+                |svg| {
+                    if let (
+                        Some(Ok(embedded::PreparedObject::Code(prepared))),
+                        Some(RichTextObjectContent::CodeBlock(code)),
+                    ) = (&placement.prepared, &span.content)
+                    {
+                        let prepared = drawing_code
+                            .as_ref()
+                            .and_then(|result| result.as_ref().ok())
+                            .unwrap_or(prepared);
+                        let shift = baseline - height - prepared.panel_bbox.y_min;
+                        svg.scope(
+                            Group::new().transformed(Transform::translate(0.0, shift, 5)),
+                            |svg| {
+                                render_prepared_code(
+                                    svg,
+                                    code,
+                                    prepared,
+                                    media_assets,
+                                    theme,
+                                    renderer,
+                                    viewport.map(|viewport| viewport.translated(-offset.0, -shift)),
+                                );
+                            },
+                        );
+                    } else if let (
+                        Some(Ok(embedded::PreparedObject::Table(prepared))),
+                        Some(RichTextObjectContent::Table(table)),
+                    ) = (&placement.prepared, &span.content)
+                    {
+                        let shift = (object.bounds.x_min, baseline - height);
+                        svg.scope(
+                            Group::new().transformed(Transform::translate(shift.0, shift.1, 5)),
+                            |svg| {
+                                render_table(
+                                    svg,
+                                    table,
+                                    Some(prepared.as_ref().into()),
+                                    0.0,
+                                    media_assets,
+                                    theme,
+                                    renderer,
+                                    viewport.map(|viewport| {
+                                        viewport.translated(-offset.0 - shift.0, -shift.1)
+                                    }),
+                                );
+                            },
+                        );
+                    } else if render_embedded_object(
                         svg,
-                        styled,
-                        object.source.clone(),
-                        object.bounds.x_min,
-                        object.bounds.x_min,
-                        baseline,
-                        None,
+                        span,
+                        offset.1,
+                        media_assets,
                         theme,
-                        predefined,
                         renderer,
-                    );
-                }
-            },
-        );
+                        viewport.map(|viewport| viewport.translated(-offset.0, 0.0)),
+                    )
+                    .is_none()
+                    {
+                        render_flow_line(
+                            svg,
+                            styled,
+                            object.source.clone(),
+                            object.bounds.x_min,
+                            object.bounds.x_min,
+                            baseline,
+                            None,
+                            theme,
+                            predefined,
+                            renderer,
+                        );
+                    }
+                },
+            );
+        });
     }
 }
 

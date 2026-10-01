@@ -1,4 +1,6 @@
-use lopdf::{Object, content::Content};
+use std::collections::HashMap;
+
+use lopdf::{Object, ObjectId, content::Content};
 use svgtypes::Transform;
 
 #[derive(Default)]
@@ -173,4 +175,126 @@ pub fn read(bytes: &[u8], dpi: f64) -> PdfGeometry {
         }
     }
     result
+}
+
+#[allow(dead_code)]
+pub fn tagged_source(bytes: &[u8]) -> String {
+    let pdf = lopdf::Document::load_mem(bytes).unwrap();
+    let mut sources = HashMap::new();
+    for page_id in pdf.get_pages().into_values() {
+        let fonts = pdf.get_page_fonts(page_id).unwrap();
+        let content = Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
+        let mut marked: Vec<(Option<i64>, Option<String>, bool)> = Vec::new();
+        let mut font = Vec::new();
+        for operation in content.operations {
+            match operation.operator.as_str() {
+                "BDC" => {
+                    let properties = pdf.dereference(&operation.operands[1]).unwrap().1;
+                    let properties = properties.as_dict().unwrap();
+                    let mcid = properties
+                        .get(b"MCID")
+                        .ok()
+                        .map(|value| value.as_i64().unwrap());
+                    let replacement = properties.get(b"ActualText").ok().map(actual_text);
+                    if let Some(mcid) = mcid {
+                        assert!(sources.insert((page_id, mcid), String::new()).is_none());
+                    }
+                    marked.push((mcid, replacement, false));
+                }
+                "BMC" => marked.push((None, None, false)),
+                "EMC" => {
+                    marked.pop().unwrap();
+                }
+                "Tf" => font = operation.operands[0].as_name().unwrap().to_vec(),
+                "Tj" | "TJ" => {
+                    let values = operation.operands[0]
+                        .as_array()
+                        .map_or(operation.operands.as_slice(), Vec::as_slice);
+                    for value in values {
+                        let Object::String(bytes, _) = value else {
+                            continue;
+                        };
+                        let replacement = marked
+                            .iter()
+                            .position(|(_, replacement, _)| replacement.is_some());
+                        let mcid = replacement
+                            .and_then(|index| marked[index].0)
+                            .or_else(|| marked.iter().rev().find_map(|(mcid, _, _)| *mcid));
+                        let Some(mcid) = mcid else { continue };
+                        let source = if let Some(index) = replacement {
+                            if marked[index].2 {
+                                continue;
+                            }
+                            marked[index].2 = true;
+                            marked[index].1.clone().unwrap()
+                        } else {
+                            let encoding = fonts[&font].get_font_encoding(&pdf).unwrap();
+                            lopdf::Document::decode_text(&encoding, bytes).unwrap()
+                        };
+                        sources.get_mut(&(page_id, mcid)).unwrap().push_str(&source);
+                    }
+                }
+                _ => {}
+            }
+        }
+        assert!(marked.is_empty());
+    }
+
+    fn visit(
+        pdf: &lopdf::Document,
+        object: &Object,
+        page: Option<ObjectId>,
+        sources: &HashMap<(ObjectId, i64), String>,
+        output: &mut String,
+        depth: usize,
+    ) {
+        assert!(
+            depth < 64,
+            "cyclic or excessively nested PDF structure tree"
+        );
+        let object = pdf.dereference(object).unwrap().1;
+        match object {
+            Object::Array(children) => {
+                for child in children {
+                    visit(pdf, child, page, sources, output, depth + 1);
+                }
+            }
+            Object::Integer(mcid) => output.push_str(&sources[&(page.unwrap(), *mcid)]),
+            Object::Dictionary(node) => {
+                let page = node
+                    .get(b"Pg")
+                    .ok()
+                    .map(|page| page.as_reference().unwrap())
+                    .or(page);
+                if let Ok(replacement) = node.get(b"ActualText") {
+                    output.push_str(&actual_text(replacement));
+                } else if let Ok(mcid) = node.get(b"MCID") {
+                    output.push_str(&sources[&(page.unwrap(), mcid.as_i64().unwrap())]);
+                } else if let Ok(children) = node.get(b"K") {
+                    visit(pdf, children, page, sources, output, depth + 1);
+                } else {
+                    assert_eq!(node.get(b"Type").unwrap().as_name().unwrap(), b"OBJR");
+                }
+            }
+            Object::Null => {}
+            other => panic!("unexpected PDF structure child: {other:?}"),
+        }
+    }
+
+    let catalog = pdf
+        .dereference(pdf.trailer.get(b"Root").unwrap())
+        .unwrap()
+        .1
+        .as_dict()
+        .unwrap();
+    let mut output = String::new();
+    visit(
+        &pdf,
+        catalog.get(b"StructTreeRoot").unwrap(),
+        None,
+        &sources,
+        &mut output,
+        0,
+    );
+    output
 }
