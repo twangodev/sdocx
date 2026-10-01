@@ -10,6 +10,9 @@ mod native_frame_tests;
 #[cfg(test)]
 mod native_row_tests;
 
+#[cfg(test)]
+mod native_split_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
@@ -86,7 +89,7 @@ pub(super) fn cold(
     for row_index in 0..plan.rows.len() {
         for column_index in 0..plan.rows[row_index].cells.len() {
             let top = plan.rows[row_index].cells[column_index].frame.y_min;
-            plan.rows[row_index].cells[column_index].bands = plan.bands.for_row(top)?;
+            plan.rows[row_index].cells[column_index].bands = Some(plan.bands.for_row(top)?);
             plan.layout_cell(row_index, column_index, table, theme, renderer)?;
         }
         let height = plan.row_height(row_index)?;
@@ -117,15 +120,41 @@ pub(super) fn warm(
 }
 
 fn update_split(plan: &mut PreparedTable, row_index: usize) -> Result<bool, ObjectDiagnosticKind> {
-    let row = &mut plan.rows[row_index];
-    let bands = plan.bands.for_row(row.cells[0].frame.y_min)?;
-    if row.cells[0].bands.same_native(&bands) {
+    let (owner, first) = plan.frame_cell(super::CellPosition {
+        row: row_index,
+        column: 0,
+    })?;
+    let bands = plan.bands.for_row(first.frame.y_min)?;
+    if first
+        .bands
+        .as_ref()
+        .is_some_and(|cached| cached.same_native(&bands))
+    {
         return Ok(false);
     }
-    for cell in &mut row.cells {
-        cell.bands = bands.clone();
+    plan.rows[owner.row].cells[owner.column].bands = Some(bands.clone());
+    for column in 1..plan.rows[row_index].cells.len() {
+        let position = super::CellPosition {
+            row: row_index,
+            column,
+        };
+        if plan.topology.frame_owner(position) == Some(position) {
+            plan.rows[row_index].cells[column].bands = Some(bands.clone());
+        }
     }
     Ok(true)
+}
+
+fn first_split(
+    plan: &PreparedTable,
+    row: usize,
+) -> Result<Option<BoundingBox>, ObjectDiagnosticKind> {
+    let (_, cell) = plan.frame_cell(super::CellPosition { row, column: 0 })?;
+    Ok(cell
+        .bands
+        .as_ref()
+        .and_then(|bands| bands.rectangles.first())
+        .copied())
 }
 
 fn layout_row(
@@ -144,7 +173,7 @@ fn layout_row(
         let minimum = plan.first_line_minimum(row_index, table, renderer)?;
         let pending = plan.pending_gaps[row_index];
         if pending > CHANGE_EPSILON {
-            let Some(previous) = plan.rows[row_index - 1].cells[0].bands.rectangles.first() else {
+            let Some(previous) = first_split(plan, row_index - 1)? else {
                 return Ok(());
             };
             let previous_height = native_sub(previous.y_max, previous.y_min)?;
@@ -155,7 +184,7 @@ fn layout_row(
             offset_from_row(plan, row_index, -pending)?;
             return Ok(());
         }
-        let Some(first) = plan.rows[row_index].cells[0].bands.rectangles.first() else {
+        let Some(first) = first_split(plan, row_index)? else {
             return Ok(());
         };
         if native_sub(minimum, first.y_min)? <= FLOAT_EPSILON {
@@ -167,7 +196,13 @@ fn layout_row(
         update_split(plan, row_index)?;
     }
     for column_index in 0..plan.rows[row_index].cells.len() {
-        plan.layout_cell(row_index, column_index, table, theme, renderer)?;
+        let position = super::CellPosition {
+            row: row_index,
+            column: column_index,
+        };
+        if plan.topology.frame_owner(position) == Some(position) {
+            plan.layout_cell(row_index, column_index, table, theme, renderer)?;
+        }
     }
     Ok(())
 }
@@ -178,7 +213,7 @@ fn adjust_first_line(
     table: &RichTextTable,
     renderer: &TextRenderer<'_>,
 ) -> Result<(), ObjectDiagnosticKind> {
-    if row_index == 0 || plan.rows[row_index].cells[0].bands.rectangles.is_empty() {
+    if row_index == 0 || first_split(plan, row_index)?.is_none() {
         return Ok(());
     }
     let pending = plan.pending_gaps[row_index];
@@ -187,7 +222,7 @@ fn adjust_first_line(
         offset_from_row(plan, row_index, -pending)?;
         update_split(plan, row_index)?;
     }
-    let Some(first) = plan.rows[row_index].cells[0].bands.rectangles.first() else {
+    let Some(first) = first_split(plan, row_index)? else {
         return Ok(());
     };
     if native_sub(
@@ -278,7 +313,10 @@ fn offset_from_row(
 fn compress_row(plan: &mut PreparedTable, row_index: usize) -> Result<(), ObjectDiagnosticKind> {
     let height = plan.row_height(row_index)?;
     let mut selected = None;
-    for band in &plan.rows[row_index].cells[0].bands.rectangles {
+    let Some(bands) = &plan.rows[row_index].cells[0].bands else {
+        return Ok(());
+    };
+    for band in &bands.rectangles {
         if band.y_min > height {
             break;
         }
@@ -345,10 +383,13 @@ mod tests {
     fn unchanged_first_band_preserves_stale_later_bands() {
         let source = grid(&[100.0], &[200.0]);
         let mut plan = prepared(&source);
-        plan.rows[0].cells[0].bands = bands(&[(10.0, 30.0), (50.0, 70.0)]);
+        plan.rows[0].cells[0].bands = Some(bands(&[(10.0, 30.0), (50.0, 70.0)]));
         plan.bands = bands(&[(10.5, 30.5), (60.5, 90.5)]);
         assert!(!update_split(&mut plan, 0).unwrap());
-        assert_eq!(plan.rows[0].cells[0].bands.rectangles[1].y_min, 50.0);
+        assert_eq!(
+            plan.rows[0].cells[0].bands.as_ref().unwrap().rectangles[1].y_min,
+            50.0
+        );
     }
 
     #[test]
@@ -408,7 +449,7 @@ mod tests {
     fn compression_uses_last_intersecting_band_and_excludes_bottom_margin() {
         for (last_bottom, expected_height) in [(50.0, 79.5), (80.0, 100.0)] {
             let mut plan = prepared(&grid(&[100.0; 2], &[200.0]));
-            plan.rows[0].cells[0].bands = bands(&[(80.0, 100.0), (120.0, 140.0)]);
+            plan.rows[0].cells[0].bands = Some(bands(&[(80.0, 100.0), (120.0, 140.0)]));
             plan.rows[0].cells[0].metrics.last_line_bottom = last_bottom;
             plan.rows[0].cells[0].metrics.measured_height = 150.0;
             compress_row(&mut plan, 0).unwrap();
@@ -422,7 +463,7 @@ mod tests {
         let source = grid(&[100.0; 2], &[200.0]);
         let mut plan = prepared(&source);
         for row in &mut plan.rows {
-            row.cells[0].bands = bands(&[(10.0, 30.0)]);
+            row.cells[0].bands = Some(bands(&[(10.0, 30.0)]));
             row.cells[0].metrics.measured_height = 20.0;
         }
         plan.bands = bands(&[(110.5, 130.5)]);
@@ -441,8 +482,8 @@ mod tests {
         for (minimum, expected_top, expected_pending) in [(20.0, 60.5, 0.0), (21.0, 100.5, 40.0)] {
             let source = grid(&[100.0; 2], &[200.0]);
             let mut plan = prepared(&source);
-            plan.rows[0].cells[0].bands = bands(&[(10.0, 30.0)]);
-            plan.rows[1].cells[0].bands = bands(&[(10.0, 30.0)]);
+            plan.rows[0].cells[0].bands = Some(bands(&[(10.0, 30.0)]));
+            plan.rows[1].cells[0].bands = Some(bands(&[(10.0, 30.0)]));
             plan.rows[1].cells[0].metrics.measured_height = minimum;
             plan.pending_gaps[1] = 40.0;
             plan.bands = bands(&[(110.5, 130.5)]);
@@ -459,7 +500,10 @@ mod tests {
             .unwrap();
             assert_eq!(plan.rows[1].cells[0].frame.y_min, expected_top);
             assert_eq!(plan.pending_gaps[1], expected_pending);
-            assert_eq!(plan.rows[1].cells[0].bands.rectangles[0].y_min, 10.0);
+            assert_eq!(
+                plan.rows[1].cells[0].bands.as_ref().unwrap().rectangles[0].y_min,
+                10.0
+            );
         }
     }
 

@@ -73,7 +73,7 @@ pub(super) struct PreparedTableCell {
     pub column_index: usize,
     pub frame: BoundingBox,
     pub layout: TextLayout,
-    bands: BandList,
+    bands: Option<BandList>,
     metrics: CellMetrics,
 }
 
@@ -397,7 +397,7 @@ fn initialize_rows(
                 column_index,
                 frame,
                 layout: TextLayout::default(),
-                bands: BandList::default(),
+                bands: None,
                 metrics: CellMetrics::default(),
             });
             left = right;
@@ -439,12 +439,15 @@ impl PreparedTable {
         renderer: &TextRenderer<'_>,
     ) -> Result<(), ObjectDiagnosticKind> {
         let cell = &mut self.rows[row_index].cells[column_index];
+        let bands = cell
+            .bands
+            .as_ref()
+            .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
         let source = &table.rows[row_index].cells[column_index];
         let width = native_sub(cell.frame.x_max, cell.frame.x_min)? as f32 as i32;
         let height = native_sub(cell.frame.y_max, cell.frame.y_min)? as f32 as i32;
         let full_width = |rect: &&BoundingBox| rect.x_min <= 0.0 && rect.x_max >= f64::from(width);
-        let exclusions = cell
-            .bands
+        let exclusions = bands
             .rectangles
             .iter()
             .filter(full_width)
@@ -471,8 +474,7 @@ impl PreparedTable {
         if !valid_cell_layout(&layout) {
             return Err(ObjectDiagnosticKind::InvalidBounds);
         }
-        if cell
-            .bands
+        if bands
             .rectangles
             .iter()
             .filter(|rect| !full_width(rect))
@@ -504,7 +506,7 @@ impl PreparedTable {
                 .unwrap_or(0.0)
         };
         let measured_height = if source.content.text.is_empty() {
-            empty_cell_height(&styled, source, width, &cell.bands, theme, renderer)?
+            empty_cell_height(&styled, source, width, bands, theme, renderer)?
         } else {
             native_add(
                 last_line_bottom,
@@ -906,13 +908,15 @@ pub(super) mod tests {
             (0.0, Err(ObjectDiagnosticKind::UnsupportedContent)),
             (100.0, Ok(())),
         ] {
-            prepared.rows[0].cells[0].bands = BandList::new(vec![BoundingBox {
-                x_min: 0.0,
-                y_min: top,
-                x_max: 50.0,
-                y_max: top + 20.0,
-            }])
-            .unwrap();
+            prepared.rows[0].cells[0].bands = Some(
+                BandList::new(vec![BoundingBox {
+                    x_min: 0.0,
+                    y_min: top,
+                    x_max: 50.0,
+                    y_max: top + 20.0,
+                }])
+                .unwrap(),
+            );
             assert_eq!(
                 prepared.layout_cell(0, 0, &table, theme, &renderer),
                 expected
@@ -1462,7 +1466,14 @@ pub(super) mod tests {
             )
             .unwrap()
             .unwrap();
-            assert!(!plan.rows[0].cells[0].bands.rectangles.is_empty());
+            assert!(
+                !plan.rows[0].cells[0]
+                    .bands
+                    .as_ref()
+                    .unwrap()
+                    .rectangles
+                    .is_empty()
+            );
             assert!(
                 prepare_table(
                     &table,
