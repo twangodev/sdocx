@@ -553,6 +553,121 @@ fn paginated_table_paints_only_visible_cell_fonts_and_diagnostics() {
 }
 
 #[test]
+fn paginated_merged_owners_match_unmerged_projection_with_same_saved_bounds() {
+    for constraint in [
+        ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ObjectSpanLayoutConstraint::OverPages,
+    ] {
+        let fonts = sdocx::fonts::FontBook::default();
+        for merge_rows in [false, true] {
+            let mut grid = if merge_rows {
+                table(&[&["A\nB\nC\nD\nE\nF"], &["COVERED"]])
+            } else {
+                table(&[&["A\nB\nC\nD\nE\nF", "COVERED"]])
+            };
+            grid.column_widths = if merge_rows {
+                vec![300.0]
+            } else {
+                vec![300.0, 100.0]
+            };
+            grid.bbox = bounds(
+                0.0,
+                0.0,
+                if merge_rows { 300.0 } else { 400.0 },
+                if merge_rows { 162.0 } else { 81.0 },
+            );
+            for row in &mut grid.rows {
+                row.height = 81.0;
+                for cell in &mut row.cells {
+                    cell.content.font_size = Some(10.0);
+                    cell.content.paragraphs.clear();
+                    cell.content.margins = None;
+                }
+            }
+            if merge_rows {
+                grid.rows[0].cells[0].row_span = 2;
+            } else {
+                grid.rows[0].cells[0].column_span = 2;
+            }
+            let mut baseline = paginated_document(constraint, false);
+            let Some(RichTextObjectContent::Table(projected)) =
+                &mut baseline.metadata.note_text.as_mut().unwrap().object_spans[0].content
+            else {
+                panic!()
+            };
+            projected.bbox = grid.bbox;
+            let baseline_layout = sdocx::layout_document(&baseline);
+            let doc = paginated_grid_document(grid, constraint);
+            let original = serde_json::to_value(&doc).unwrap();
+            let layout = sdocx::layout_document(&doc);
+            for replay in [false, true] {
+                let mut pages = Vec::new();
+                for index in 0..2 {
+                    let actual = render_capture_page(&doc, &layout, index, replay, &fonts);
+                    let expected =
+                        render_capture_page(&baseline, &baseline_layout, index, replay, &fonts);
+                    assert_eq!(
+                        lines(&actual.svg),
+                        lines(&expected.svg),
+                        "{constraint:?}, row merge {merge_rows}, page {index}"
+                    );
+                    assert!(
+                        actual.object_diagnostics.is_empty(),
+                        "{:?}",
+                        actual.object_diagnostics
+                    );
+                    assert!(
+                        actual.text_diagnostics.is_empty(),
+                        "{:?}",
+                        actual.text_diagnostics
+                    );
+                    pages.push(actual);
+                }
+                assert_eq!(serde_json::to_value(&doc).unwrap(), original);
+                #[cfg(feature = "pdf")]
+                {
+                    let expected = if constraint == ObjectSpanLayoutConstraint::OverPages {
+                        "EF"
+                    } else {
+                        "F"
+                    };
+                    let bytes = sdocx::render_svg_pages_pdf(&pages, &Default::default()).unwrap();
+                    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                    assert_eq!(
+                        pdf.extract_text(&[2])
+                            .unwrap()
+                            .split_whitespace()
+                            .collect::<String>(),
+                        expected
+                    );
+                    let bytes =
+                        sdocx::render_document_pdf(&doc, &Default::default(), &Default::default())
+                            .unwrap();
+                    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                    assert_eq!(
+                        pdf.extract_text(&[2])
+                            .unwrap()
+                            .split_whitespace()
+                            .collect::<String>(),
+                        expected
+                    );
+                    assert!(
+                        !pdf.objects
+                            .values()
+                            .any(|object| object.as_stream().is_ok_and(|stream| stream
+                                .dict
+                                .get(b"Subtype")
+                                .is_ok_and(|value| value
+                                    .as_name()
+                                    .is_ok_and(|name| name == b"Image"))))
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn fresh_warm_drawing_compresses_rows_while_the_cold_callback_reservation_is_retained() {
     for constraint in [
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding,

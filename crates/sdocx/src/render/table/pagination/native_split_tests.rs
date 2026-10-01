@@ -111,6 +111,7 @@ fn native_row_split_updates_preserve_owner_caches_and_stale_later_rectangles() {
             case.name
         );
         let mut plan = PreparedTable {
+            content_bbox: BoundingBox::default(),
             measured_bbox: rect([0.0; 4]),
             topology: TableGrid::new(&source).unwrap(),
             pending_gaps: vec![0.0; rows.len()],

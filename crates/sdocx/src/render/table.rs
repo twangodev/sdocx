@@ -26,6 +26,7 @@ use pagination::BandList;
 
 pub(super) struct PreparedTable {
     pub measured_bbox: BoundingBox,
+    pub content_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
     pub min_first_page_height: f64,
     constraint: ObjectSpanLayoutConstraint,
@@ -37,6 +38,7 @@ pub(super) struct PreparedTable {
 
 pub(super) struct PreparedTableDrawing {
     pub measured_bbox: BoundingBox,
+    pub content_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
     pub pending_gaps: Vec<f64>,
 }
@@ -94,10 +96,10 @@ pub(super) fn prepare_table(
     if !matches!(
         constraint,
         ObjectSpanLayoutConstraint::OverPages | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
-    ) || !supports_grid(table)
-    {
+    ) {
         return None;
     }
+    let topology = preparation_grid(table)?;
     if !valid_grid_geometry(table, candidate_top) {
         return Some(Err(ObjectDiagnosticKind::InvalidBounds));
     }
@@ -110,6 +112,7 @@ pub(super) fn prepare_table(
     }
     Some(prepare_cold_grid(
         table,
+        topology,
         constraint,
         candidate_top,
         theme,
@@ -129,25 +132,32 @@ pub(super) fn prepare_table_drawing(
         ObjectSpanLayoutConstraint::Normal
             | ObjectSpanLayoutConstraint::OverPages
             | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
-    ) || !supports_grid(table)
-        || table
-            .column_widths
-            .iter()
-            .any(|width| f64::from(*width) > f64::from(i32::MAX))
+    ) || table
+        .column_widths
+        .iter()
+        .any(|width| f64::from(*width) > f64::from(i32::MAX))
     {
         return None;
     }
+    let topology = preparation_grid(table)?;
     if !valid_grid_geometry(table, drawing_origin[1])
         || finite_native_geometry(drawing_origin[0]).is_none()
     {
         return Some(Err(ObjectDiagnosticKind::InvalidBounds));
     }
     Some((|| {
-        let mut prepared =
-            prepare_cold_grid(table, constraint, drawing_origin[1], theme, renderer)?;
+        let mut prepared = prepare_cold_grid(
+            table,
+            topology,
+            constraint,
+            drawing_origin[1],
+            theme,
+            renderer,
+        )?;
         prepared.relayout(table, drawing_origin[1], theme, renderer)?;
         let measured_bbox = offset_rounded_rect(prepared.measured_bbox, drawing_origin)?;
         let origin = [measured_bbox.x_min, measured_bbox.y_min];
+        let content_bbox = offset_rounded_rect(prepared.content_bbox, origin)?;
         for row in &mut prepared.rows {
             for cell in &mut row.cells {
                 let frame = offset_rounded_rect(cell.frame, origin)?;
@@ -161,6 +171,7 @@ pub(super) fn prepare_table_drawing(
         }
         Ok(PreparedTableDrawing {
             measured_bbox,
+            content_bbox,
             rows: prepared.rows,
             pending_gaps: prepared.pending_gaps,
         })
@@ -229,26 +240,26 @@ fn offset_rounded_rect(
     Ok(result)
 }
 
-fn supports_grid(table: &RichTextTable) -> bool {
-    table
+fn preparation_grid(table: &RichTextTable) -> Option<TableGrid> {
+    if table
         .rotation_degrees
-        .is_none_or(|rotation| rotation == 0.0)
-        && !table.column_widths.is_empty()
-        && !table.rows.is_empty()
-        && table.rows.iter().enumerate().all(|(row_index, row)| {
-            row.index as usize == row_index
-                && row.cells.len() == table.column_widths.len()
-                && row.cells.iter().enumerate().all(|(column_index, cell)| {
-                    cell.column_index as usize == column_index
-                        && cell.column_span == 1
-                        && cell.row_span == 1
-                        && cell.content.object_spans.is_empty()
-                        && cell
-                            .content
-                            .rotation_degrees
-                            .is_none_or(|rotation| rotation == 0.0)
-                })
+        .is_some_and(|rotation| rotation != 0.0)
+    {
+        return None;
+    }
+    let topology = TableGrid::new(table).ok()?;
+    table
+        .rows
+        .iter()
+        .flat_map(|row| &row.cells)
+        .all(|cell| {
+            cell.content.object_spans.is_empty()
+                && cell
+                    .content
+                    .rotation_degrees
+                    .is_none_or(|rotation| rotation == 0.0)
         })
+        .then_some(topology)
 }
 
 fn valid_grid_geometry(table: &RichTextTable, candidate_top: f64) -> bool {
@@ -339,15 +350,16 @@ fn valid_cell_layout(layout: &TextLayout) -> bool {
 
 fn prepare_cold_grid(
     table: &RichTextTable,
+    topology: TableGrid,
     constraint: ObjectSpanLayoutConstraint,
     candidate_top: f64,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<PreparedTable, ObjectDiagnosticKind> {
-    let topology = TableGrid::new(table).map_err(|_| ObjectDiagnosticKind::UnsupportedContent)?;
     let half_border = drawable_half_border(table);
     let rows = initialize_rows(table, half_border)?;
     let mut prepared = PreparedTable {
+        content_bbox: BoundingBox::default(),
         measured_bbox: BoundingBox {
             x_min: 0.0,
             y_min: 0.0,
@@ -623,6 +635,7 @@ impl PreparedTable {
             }
         }
         let content = self.content_bounds()?;
+        self.content_bbox = content;
         let [left, upper, right, bottom] = table_border_widths(table);
         let expanded_left = native_sub(content.x_min, left / 2.0)?;
         let expanded_top = native_sub(content.y_min, upper / 2.0)?;
@@ -1984,6 +1997,8 @@ pub(super) mod tests {
     #[test]
     fn saved_and_prepared_paint_use_visible_cells_in_covered_span_chains() {
         let mut source = grid(&[100.0], &[90.0; 4]);
+        source.rows[0].cells[0].column_span = 2;
+        source.rows[0].cells[1].column_span = 3;
         for (slot, cell) in source.rows[0].cells.iter_mut().enumerate() {
             cell.content.text = ["A", "B", "C", "D"][slot].into();
             cell.content.font_size = Some(8.0);
@@ -2012,8 +2027,6 @@ pub(super) mod tests {
         for (source, measured) in source.rows[0].cells.iter_mut().zip(&drawing.rows[0].cells) {
             source.bbox = measured.frame;
         }
-        source.rows[0].cells[0].column_span = 2;
-        source.rows[0].cells[1].column_span = 3;
         for prepared in [None, Some(super::super::TablePaint::from(&drawing))] {
             let mut scene = super::super::Scene::new(super::super::Svg::new());
             #[cfg(feature = "pdf")]
@@ -2050,6 +2063,113 @@ pub(super) mod tests {
             }
             assert!(!svg.contains("#a25678"), "covered background: {svg}");
         }
+    }
+
+    #[test]
+    fn merged_preparation_keeps_raw_cold_metrics_and_uses_warm_frame_owners() {
+        let mut source = grid(&[100.0; 3], &[200.0, 100.0]);
+        source.rows[0].cells[0].row_span = 3;
+        source.rows[0].cells[0].column_span = 2;
+        for cell in source.rows.iter_mut().flat_map(|row| &mut row.cells) {
+            cell.content.text = "A".into();
+            cell.content.font_size = Some(10.0);
+        }
+        source.rows[0].cells[1].content.text = ["B"; 12].join("\n");
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            super::super::text::TextSettings {
+                scale: 1.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let theme = RenderTheme::for_canvas(false);
+        for constraint in [
+            ObjectSpanLayoutConstraint::OverPages,
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ] {
+            let mut plan = prepare_table(&source, constraint, 0.0, theme, &renderer)
+                .unwrap()
+                .unwrap();
+            assert_eq!(plan.rows[0].cells[1].layout.lines.len(), 12);
+            assert_eq!(plan.rows[0].cells[1].metrics.measured_height, 162.0);
+            assert_eq!(plan.row_height(0).unwrap(), 162.0);
+            assert_eq!(plan.measured_bbox.y_max, 163.0);
+            assert_eq!(plan.content_bbox, plan.rows[0].cells[0].frame);
+            plan.relayout(&source, 0.0, theme, &renderer).unwrap();
+            for row in 0..3 {
+                assert_eq!(plan.row_height(row).unwrap(), 13.5);
+            }
+            assert_eq!(plan.rows[0].cells[1].metrics.measured_height, 162.0);
+            assert_eq!(plan.measured_bbox.y_max, 14.5);
+            assert_eq!(plan.content_bbox, plan.rows[0].cells[0].frame);
+        }
+    }
+
+    #[test]
+    fn merged_outline_uses_owner_content_bounds_after_drawing_rounding() {
+        let mut source = grid(&[100.0], &[90.0; 4]);
+        source.rows[0].cells[0].column_span = 2;
+        source.rows[0].cells[1].column_span = 3;
+        let mut outer = border([1.0; 4], 0xff112233);
+        for edge in [
+            &mut outer.left,
+            &mut outer.top,
+            &mut outer.right,
+            &mut outer.bottom,
+        ] {
+            edge.start_radius = 3.0;
+            edge.end_radius = 3.0;
+        }
+        source.style.border = Some(outer);
+        for cell in &mut source.rows[0].cells {
+            cell.content.text = "A".into();
+            cell.content.font_size = Some(8.0);
+        }
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            super::super::text::TextSettings {
+                scale: 1.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let theme = RenderTheme::for_canvas(false);
+        let drawing = prepare_table_drawing(
+            &source,
+            ObjectSpanLayoutConstraint::Normal,
+            [0.0, 0.0],
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(drawing.content_bbox, drawing.rows[0].cells[0].frame);
+        assert_eq!(drawing.content_bbox.x_max, 91.0);
+        assert_eq!(drawing.rows[0].cells[3].frame.x_max, 361.0);
+        let mut scene = super::super::Scene::new(super::super::Svg::new());
+        super::super::render_table(
+            &mut scene,
+            &source,
+            0,
+            Some((&drawing).into()),
+            0.0,
+            &[],
+            theme,
+            &renderer,
+            None,
+        );
+        let svg = scene.finish();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let outline = xml
+            .descendants()
+            .find(|node| node.has_tag_name("rect") && node.attribute("stroke") == Some("#112233"))
+            .unwrap();
+        assert_eq!(outline.attribute("x").unwrap().parse::<f64>().unwrap(), 0.0);
+        assert_eq!(
+            outline.attribute("width").unwrap().parse::<f64>().unwrap(),
+            91.0
+        );
     }
 
     #[test]

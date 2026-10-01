@@ -522,7 +522,7 @@ fn rounded_table_outline_uses_native_axis_maxima_and_last_drawable_color() {
 
 #[cfg(feature = "serde")]
 #[test]
-fn merged_saved_perimeters_use_styles_on_covered_boundary_cells() {
+fn merged_prepared_perimeters_use_styles_on_covered_boundary_cells() {
     let RichTextObjectContent::Table(mut table) = saved_grid(2, 2, &[(0, 2, 2)]) else {
         panic!()
     };
@@ -537,12 +537,10 @@ fn merged_saved_perimeters_use_styles_on_covered_boundary_cells() {
     }
     let doc = document(RichTextObjectContent::Table(table));
     let page = sdocx::render_page_svg(&doc, 0, &Default::default()).unwrap();
-    assert_eq!(
-        page.object_diagnostics,
-        [sdocx::ObjectDiagnostic {
-            anchor_utf16: 0,
-            kind: sdocx::ObjectDiagnosticKind::UnsupportedContent
-        }]
+    assert!(
+        page.object_diagnostics.is_empty(),
+        "{:?}",
+        page.object_diagnostics
     );
     let xml = roxmltree::Document::parse(&page.svg).unwrap();
     let edges: Vec<_> = xml
@@ -578,7 +576,7 @@ fn merged_saved_perimeters_use_styles_on_covered_boundary_cells() {
 
 #[cfg(feature = "serde")]
 #[test]
-fn merged_saved_cells_keep_native_visibility_across_vector_outputs() {
+fn merged_prepared_cells_keep_native_visibility_across_vector_outputs() {
     for (rows, columns, spans, visible) in [
         (1, 4, vec![(0, 1, 2)], vec![0, 2, 3]),
         (4, 1, vec![(0, 2, 1)], vec![0, 2, 3]),
@@ -618,12 +616,10 @@ fn merged_saved_cells_keep_native_visibility_across_vector_outputs() {
                         .map(|index| format!("A{index}"))
                         .collect::<Vec<_>>()
                 );
-                assert_eq!(
-                    preview.object_diagnostics,
-                    [sdocx::ObjectDiagnostic {
-                        anchor_utf16: 0,
-                        kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
-                    }]
+                assert!(
+                    preview.object_diagnostics.is_empty(),
+                    "{:?}",
+                    preview.object_diagnostics
                 );
                 #[cfg(feature = "pdf")]
                 {
@@ -670,7 +666,14 @@ fn sparse_and_malformed_tables_preserve_saved_text_with_diagnostics() {
             2 => table.rows[0].cells[0].column_span = u32::MAX,
             _ => unreachable!(),
         }
-        let doc = document(RichTextObjectContent::Table(table));
+        let mut doc = document(RichTextObjectContent::Table(table));
+        let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+            &mut doc.pages[0].objects[0].content
+        else {
+            panic!()
+        };
+        flow.text = "BEFORE\n\u{fffc}\nAFTER".into();
+        flow.object_spans[0].text_index_utf16 = 7;
         let layout = sdocx::layout_document(&doc);
         for rendered in [
             sdocx::render_layout_page_svg(&doc, &layout, 0, &Default::default()).unwrap(),
@@ -679,20 +682,21 @@ fn sparse_and_malformed_tables_preserve_saved_text_with_diagnostics() {
             assert_eq!(
                 rendered.object_diagnostics,
                 [sdocx::ObjectDiagnostic {
-                    anchor_utf16: 0,
+                    anchor_utf16: 7,
                     kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
                 }]
             );
-            let actual: Vec<_> = lines(&rendered.svg)
+            let mut actual: Vec<_> = lines(&rendered.svg)
                 .into_iter()
                 .map(|line| line.0)
                 .collect();
+            actual.sort();
             assert_eq!(
                 actual,
                 if variant == 0 {
-                    vec!["A1"]
+                    vec!["A1", "AFTER", "BEFORE"]
                 } else {
-                    vec!["A0", "A1"]
+                    vec!["A0", "A1", "AFTER", "BEFORE"]
                 }
             );
         }
@@ -701,7 +705,7 @@ fn sparse_and_malformed_tables_preserve_saved_text_with_diagnostics() {
 
 #[cfg(feature = "serde")]
 #[test]
-fn merged_table_diagnostic_keeps_original_anchor_and_neighbor_text() {
+fn merged_table_layout_keeps_original_anchor_and_neighbor_text() {
     let mut doc = document(saved_grid(1, 4, &[(0, 1, 2), (1, 1, 3)]));
     let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
         &mut doc.pages[0].objects[0].content
@@ -715,12 +719,10 @@ fn merged_table_diagnostic_keeps_original_anchor_and_neighbor_text() {
         sdocx::render_layout_page_svg(&doc, &layout, 0, &Default::default()).unwrap(),
         sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &Default::default()).unwrap(),
     ] {
-        assert_eq!(
-            rendered.object_diagnostics,
-            [sdocx::ObjectDiagnostic {
-                anchor_utf16: 7,
-                kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
-            }]
+        assert!(
+            rendered.object_diagnostics.is_empty(),
+            "{:?}",
+            rendered.object_diagnostics
         );
         let mut actual: Vec<_> = lines(&rendered.svg)
             .into_iter()

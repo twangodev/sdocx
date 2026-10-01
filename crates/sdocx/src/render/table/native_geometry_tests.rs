@@ -179,6 +179,7 @@ impl Case {
             cell.metrics.measured_height = f64::from(self.metrics[slot].measured_height);
         }
         let plan = PreparedTable {
+            content_bbox: BoundingBox::default(),
             measured_bbox: BoundingBox {
                 x_min: 0.0,
                 y_min: 0.0,
@@ -222,7 +223,7 @@ fn native_measured_geometry_uses_endpoint_owner_frames() {
             case.name
         );
         assert_eq!(
-            rect_bits(plan.content_bounds().unwrap()),
+            rect_bits(plan.content_bbox),
             case.content_bbox.map(f32::to_bits),
             "{}, content bounds",
             case.name

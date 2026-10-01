@@ -143,6 +143,7 @@ fn native_initialization_and_row_frame_updates_match() {
             "{context}, initialization"
         );
         let mut plan = PreparedTable {
+            content_bbox: BoundingBox::default(),
             topology: super::super::TableGrid::new(&source).unwrap(),
             measured_bbox: BoundingBox {
                 x_min: 0.0,

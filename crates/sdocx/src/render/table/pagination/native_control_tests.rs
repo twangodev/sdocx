@@ -167,6 +167,7 @@ impl Case {
             };
         }
         let mut plan = PreparedTable {
+            content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             rows,
             measured_bbox: rect([0.0; 4]),

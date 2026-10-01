@@ -122,6 +122,11 @@ fn assert_state(plan: &PreparedTable, selected: &[usize], state: &State, label: 
         state.content_bbox.map(f32::to_bits),
         "{label}, content bounds"
     );
+    assert_eq!(
+        bits(plan.content_bbox),
+        state.content_bbox.map(f32::to_bits),
+        "{label}, retained content bounds"
+    );
 }
 
 #[test]
@@ -191,6 +196,7 @@ fn native_public_table_lifecycle_matches_composed_rust_phases() {
             cell.content.text = "x".into();
         }
         let mut plan = PreparedTable {
+            content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             rows: initialize_rows(&source, 0.5).unwrap(),
             measured_bbox: rect([0.0; 4]),

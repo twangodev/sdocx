@@ -144,6 +144,7 @@ fn native_row_bottom_compression_uses_owner_bands_and_last_lines() {
             cell.metrics.measured_height = 300.0;
         }
         let mut plan = PreparedTable {
+            content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             measured_bbox: rect([0.0; 4]),
             rows,

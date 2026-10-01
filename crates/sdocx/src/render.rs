@@ -2006,6 +2006,7 @@ fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRende
 
 struct TablePaint<'a> {
     measured_bbox: BoundingBox,
+    content_bbox: BoundingBox,
     rows: &'a [table::PreparedTableRow],
     pending_gaps: &'a [f64],
 }
@@ -2014,6 +2015,7 @@ impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
     fn from(table: &'a table::PreparedTable) -> Self {
         Self {
             measured_bbox: table.measured_bbox,
+            content_bbox: table.content_bbox,
             rows: &table.rows,
             pending_gaps: &table.pending_gaps,
         }
@@ -2024,6 +2026,7 @@ impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
     fn from(table: &'a table::PreparedTableDrawing) -> Self {
         Self {
             measured_bbox: table.measured_bbox,
+            content_bbox: table.content_bbox,
             rows: &table.rows,
             pending_gaps: &table.pending_gaps,
         }
@@ -2072,16 +2075,9 @@ fn render_table(
         .unwrap_or_default();
     let content_bbox = prepared
         .as_ref()
-        .and_then(|prepared| {
-            let first = prepared.rows.first()?.cells.first()?.frame;
-            let last = prepared.rows.last()?.cells.last()?.frame;
-            Some(BoundingBox {
-                x_max: last.x_max,
-                y_max: last.y_max,
-                ..first
-            })
-        })
-        .unwrap_or(table.style.content_bbox.unwrap_or(table.bbox));
+        .map_or(table.style.content_bbox.unwrap_or(table.bbox), |prepared| {
+            prepared.content_bbox
+        });
     let mut cells = Vec::new();
     let mut add_cell = |row: usize, column: usize| {
         let cell = &table.rows[row].cells[column];
