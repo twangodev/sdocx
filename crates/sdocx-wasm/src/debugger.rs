@@ -133,12 +133,30 @@ impl Source {
         self.request_with_fonts(parsed, layout, request, &sdocx::fonts::FontBook::default())
     }
 
+    #[cfg(test)]
     pub fn request_with_fonts(
         &mut self,
         parsed: &ParsedDocument,
         layout: &LayoutDocument,
         request: &str,
         fonts: &sdocx::fonts::FontBook,
+    ) -> Result<String, String> {
+        self.request_with_text_cache(
+            parsed,
+            layout,
+            request,
+            fonts,
+            &mut sdocx::DocumentTextCache::default(),
+        )
+    }
+
+    pub fn request_with_text_cache(
+        &mut self,
+        parsed: &ParsedDocument,
+        layout: &LayoutDocument,
+        request: &str,
+        fonts: &sdocx::fonts::FontBook,
+        text_cache: &mut sdocx::DocumentTextCache,
     ) -> Result<String, String> {
         let r: Value = serde_json::from_str(request).map_err(|e| e.to_string())?;
         let limits = super::browser_parse_options().limits;
@@ -321,15 +339,25 @@ impl Source {
                             &parsed.document.metadata,
                             options.color_mode,
                         );
-                        let render = if replay {
-                            sdocx::render_layout_page_replay_svg_with_fonts
+                        let background = if replay {
+                            text_cache.render_layout_page_replay_svg(
+                                &parsed.document,
+                                &preview_layout,
+                                0,
+                                &options,
+                                fonts,
+                            )
                         } else {
-                            sdocx::render_layout_page_svg_with_fonts
-                        };
-                        let background =
-                            render(&parsed.document, &preview_layout, 0, &options, fonts)
-                                .ok_or("cannot render page")?
-                                .svg;
+                            text_cache.render_layout_page_svg(
+                                &parsed.document,
+                                &preview_layout,
+                                0,
+                                &options,
+                                fonts,
+                            )
+                        }
+                        .ok_or("cannot render page")?
+                        .svg;
                         json!({"svg": background,"defaultInk":theme.default_ink()})
                     }
                     _ => {

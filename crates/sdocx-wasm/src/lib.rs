@@ -1,6 +1,7 @@
 mod debugger;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
+use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 
 const MAX_BROWSER_INPUT_SIZE: usize = 250 * 1024 * 1024;
@@ -23,6 +24,7 @@ pub struct DocumentSession {
     layout: Option<sdocx::LayoutDocument>,
     page_count: usize,
     fonts: sdocx::fonts::FontBook,
+    text_cache: RefCell<sdocx::DocumentTextCache>,
     debugger: Option<debugger::Source>,
 }
 
@@ -46,6 +48,7 @@ impl DocumentSession {
             layout: Some(layout),
             page_count,
             fonts: sdocx::fonts::FontBook::default(),
+            text_cache: RefCell::new(sdocx::DocumentTextCache::default()),
         })
     }
 
@@ -66,30 +69,24 @@ impl DocumentSession {
         let parsed = self.parsed()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
-        sdocx::render_layout_page_svg_with_fonts(
-            &parsed.document,
-            self.layout()?,
-            page_index,
-            &options,
-            &self.fonts,
-        )
-        .map(|page| page.svg)
-        .ok_or_else(|| JsError::new("page index is out of bounds"))
+        self.text_cache
+            .borrow_mut()
+            .render_layout_page_svg(
+                &parsed.document,
+                self.layout()?,
+                page_index,
+                &options,
+                &self.fonts,
+            )
+            .map(|page| page.svg)
+            .ok_or_else(|| JsError::new("page index is out of bounds"))
     }
 
     /// Add a TTF/OTF font for preview, replay, and PDF export.
     pub fn add_pdf_font(&mut self, bytes: &[u8]) -> Result<(), JsError> {
         self.parsed()?;
-        let mut database = self.fonts.database();
-        let before = database.faces().count();
-        std::sync::Arc::make_mut(&mut database).load_font_data(bytes.to_vec());
-        if database.faces().count() == before {
-            return Err(JsError::new(
-                "no usable PDF font faces in the supplied data",
-            ));
-        }
-        self.fonts = sdocx::fonts::FontBook::new(database);
-        Ok(())
+        self.add_font(bytes)
+            .map_err(|message| JsError::new(&message))
     }
 
     /// Export all visible pages, or one zero-based page, using the CLI's PDF engine.
@@ -137,14 +134,16 @@ impl DocumentSession {
             return Err(JsError::new("page index is out of bounds"));
         }
         let pdf_options = sdocx::PdfOptions::new(self.fonts.database());
-        sdocx::render_layout_pages_pdf_with_fonts(
+        sdocx::render_layout_pages_pdf_detailed_with_cache(
             &parsed.document,
             layout,
             &page_indices,
             &options,
             &pdf_options,
             &self.fonts,
+            &mut self.text_cache.borrow_mut(),
         )
+        .map(|output| output.bytes)
         .map_err(|error| JsError::new(&error.to_string()))
     }
 
@@ -161,7 +160,13 @@ impl DocumentSession {
         self.debugger
             .as_mut()
             .ok_or_else(|| JsError::new("session disposed"))?
-            .request_with_fonts(parsed, layout, request, &self.fonts)
+            .request_with_text_cache(
+                parsed,
+                layout,
+                request,
+                &self.fonts,
+                self.text_cache.get_mut(),
+            )
             .map_err(|e| JsError::new(&e))
     }
 
@@ -170,6 +175,7 @@ impl DocumentSession {
         self.fonts =
             sdocx::fonts::FontBook::new(std::sync::Arc::new(sdocx::fonts::fontdb::Database::new()));
         self.debugger = None;
+        self.text_cache.get_mut().clear();
         self.parsed = None;
         self.layout = None;
         self.page_count = 0;
@@ -177,6 +183,18 @@ impl DocumentSession {
 }
 
 impl DocumentSession {
+    fn add_font(&mut self, bytes: &[u8]) -> Result<(), String> {
+        let mut database = self.fonts.database();
+        let before = database.faces().count();
+        std::sync::Arc::make_mut(&mut database).load_font_data(bytes.to_vec());
+        if database.faces().count() == before {
+            return Err("no usable PDF font faces in the supplied data".into());
+        }
+        self.fonts = sdocx::fonts::FontBook::new(database);
+        self.text_cache.get_mut().clear();
+        Ok(())
+    }
+
     fn parsed(&self) -> Result<&sdocx::ParsedDocument, JsError> {
         self.parsed
             .as_ref()
@@ -431,5 +449,129 @@ mod tests {
         assert_eq!(repeated_pdf, pdf);
         session.dispose();
         assert_eq!(session.fonts.database().faces().count(), 0);
+    }
+
+    fn body_session(text: &str, family: &str) -> DocumentSession {
+        let page = crate::debugger::support::page(&[Vec::new()], 0, &[]);
+        let archive = crate::debugger::support::archive(&page);
+        let mut session = DocumentSession::new(&archive).unwrap();
+        let mut database = fontdb::Database::new();
+        database
+            .load_font_data(include_bytes!("../../sdocx/assets/fonts/Roboto-Regular.ttf").to_vec());
+        database.set_sans_serif_family("Roboto");
+        session.fonts = FontBook::new(Arc::new(database));
+        let mut payload = vec![0; 8];
+        payload.extend(((family.len() + 1) as u16).to_le_bytes());
+        payload.extend(family.as_bytes());
+        payload.push(0);
+        let parsed = session.parsed.as_mut().unwrap();
+        parsed.document.pages[0].width = 260;
+        parsed.document.pages[0].height = 120;
+        parsed.document.pages = vec![parsed.document.pages[0].clone(); 3];
+        parsed.document.metadata.flow_page_padding = Some((10, 0));
+        parsed.document.metadata.note_text = Some(sdocx::RichTextBox {
+            text_area_type: None,
+            bbox: Default::default(),
+            rotation_degrees: None,
+            text: text.into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: Some(20.0),
+            runs: Vec::new(),
+            spans: vec![sdocx::RichTextSpan {
+                kind: sdocx::RichTextSpanType::FontName,
+                start_utf16: 0,
+                end_utf16: text.encode_utf16().count() as u32,
+                interval_type: sdocx::SpanIntervalType::from(0),
+                payload,
+            }],
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        });
+        session.layout = Some(sdocx::layout_document(&parsed.document));
+        session.page_count = session.layout.as_ref().unwrap().pages.len();
+        session
+    }
+
+    #[test]
+    fn body_preparation_preserves_cold_and_warm_pages_across_themes() {
+        let mut session = body_session(&"alpha beta gamma delta epsilon ".repeat(80), "Roboto");
+        assert_eq!(session.page_count(), 3);
+        for color_mode in ["light", "dark", "auto", "light"] {
+            let mut options = sdocx::RenderOptions::default();
+            options.color_mode = parse_render_color_mode(color_mode).unwrap();
+            for page_index in [2, 0, 1, 2] {
+                let expected = sdocx::render_layout_page_svg_with_fonts(
+                    &session.parsed.as_ref().unwrap().document,
+                    session.layout.as_ref().unwrap(),
+                    page_index,
+                    &options,
+                    &session.fonts,
+                )
+                .unwrap();
+                assert_eq!(
+                    session.render_svg(page_index, color_mode).unwrap(),
+                    expected.svg
+                );
+                assert_eq!(
+                    session.render_svg(page_index, color_mode).unwrap(),
+                    expected.svg
+                );
+            }
+            let preview = session.render_svg(0, color_mode).unwrap();
+            for kind in ["replay-svg", "background"] {
+                let response = session
+                    .debug(&format!(
+                        r#"{{"kind":"{kind}","page":0,"colorMode":"{color_mode}"}}"#,
+                    ))
+                    .unwrap();
+                let response: serde_json::Value = serde_json::from_str(&response).unwrap();
+                assert_eq!(response["svg"].as_str().unwrap(), preview);
+            }
+        }
+        let warm_pdf = session.render_pdf_pages(&[2, 0, 2], "light").unwrap();
+        let cold_session = body_session(&"alpha beta gamma delta epsilon ".repeat(80), "Roboto");
+        assert_eq!(
+            cold_session.render_pdf_pages(&[2, 0, 2], "light").unwrap(),
+            warm_pdf
+        );
+    }
+
+    #[test]
+    fn body_preparation_is_isolated_and_invalidated_only_after_successful_font_import() {
+        let text = "iiiiiiii iiiiiiii ".repeat(60);
+        let mut first = body_session(&text, "Roboto Mono");
+        let second = body_session(&text, "Roboto Mono");
+        let before = first.render_svg(1, "light").unwrap();
+        assert_eq!(second.render_svg(1, "light").unwrap(), before);
+        let original_database = first.fonts.database();
+        let warm_references = Arc::strong_count(&original_database);
+        assert!(first.add_font(b"invalid font bytes").is_err());
+        assert!(Arc::ptr_eq(&original_database, &first.fonts.database()));
+        assert_eq!(Arc::strong_count(&original_database), warm_references);
+        assert_eq!(first.render_svg(1, "light").unwrap(), before);
+        first
+            .add_pdf_font(include_bytes!(
+                "../../sdocx/assets/fonts/RobotoMono-Regular.ttf"
+            ))
+            .unwrap();
+        assert_eq!(Arc::strong_count(&original_database), 1);
+        let after = first.render_svg(1, "light").unwrap();
+        assert_ne!(after, before);
+        assert!(after.contains("@font-face{font-family:\"Roboto Mono\""));
+        assert_eq!(second.render_svg(1, "light").unwrap(), before);
+        let imported_database = first.fonts.database();
+        first.dispose();
+        assert_eq!(first.page_count(), 0);
+        assert!(first.parsed.is_none());
+        assert!(first.layout.is_none());
+        assert!(first.debugger.is_none());
+        assert_eq!(first.fonts.database().faces().count(), 0);
+        assert_eq!(Arc::strong_count(&imported_database), 1);
+        assert_eq!(second.render_svg(1, "light").unwrap(), before);
     }
 }

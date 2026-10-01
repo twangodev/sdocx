@@ -3,7 +3,7 @@ use crate::{Color, DocumentMetadata, Page};
 use super::{DEFAULT_INK_DARK_MODE, DEFAULT_INK_LIGHT_MODE, RenderColorMode};
 
 /// Resolved paper and foreground defaults shared by rendering and inspection.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RenderTheme {
     background: Color,
     adapt_colors: bool,

@@ -13,8 +13,10 @@ use krilla::{
 
 mod svg;
 
-use crate::render::{NativePdfPainter, NativeTextRegistry, render_layout_page_scene};
-use crate::{Document, LayoutDocument, RenderOptions, RenderedPage};
+use crate::render::{DocumentTextCache, NativePdfPainter, NativeTextRegistry};
+use crate::{
+    Document, LayoutDocument, ObjectDiagnostic, RenderOptions, RenderedPage, TextDiagnostic,
+};
 
 pub use usvg::fontdb;
 
@@ -42,6 +44,21 @@ impl Default for PdfOptions {
     fn default() -> Self {
         Self::new(crate::fonts::FontBook::default().database())
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PdfOutput {
+    pub bytes: Vec<u8>,
+    /// Render diagnostics in exported page order, including repeated selections.
+    pub pages: Vec<PdfPageDiagnostics>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PdfPageDiagnostics {
+    /// The selected page's index in the supplied visible layout.
+    pub page_index: usize,
+    pub text_diagnostics: Vec<TextDiagnostic>,
+    pub object_diagnostics: Vec<ObjectDiagnostic>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -93,31 +110,78 @@ pub fn render_layout_pages_pdf_with_fonts(
     pdf_options: &PdfOptions,
     fonts: &crate::fonts::FontBook,
 ) -> Result<Vec<u8>, PdfError> {
+    render_layout_pages_pdf_detailed_with_fonts(
+        document,
+        layout,
+        page_indices,
+        render_options,
+        pdf_options,
+        fonts,
+    )
+    .map(|output| output.bytes)
+}
+
+/// Export selected pages and retain nonfatal diagnostics from the same render plans.
+pub fn render_layout_pages_pdf_detailed_with_fonts(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_indices: &[usize],
+    render_options: &RenderOptions,
+    pdf_options: &PdfOptions,
+    fonts: &crate::fonts::FontBook,
+) -> Result<PdfOutput, PdfError> {
+    render_layout_pages_pdf_detailed_with_cache(
+        document,
+        layout,
+        page_indices,
+        render_options,
+        pdf_options,
+        fonts,
+        &mut DocumentTextCache::default(),
+    )
+}
+
+/// Reuse document text preparation across previews and selected-page PDF exports.
+pub fn render_layout_pages_pdf_detailed_with_cache(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_indices: &[usize],
+    render_options: &RenderOptions,
+    pdf_options: &PdfOptions,
+    fonts: &crate::fonts::FontBook,
+    cache: &mut DocumentTextCache,
+) -> Result<PdfOutput, PdfError> {
     let mut pdf_options = pdf_options.clone();
     pdf_options.font_database = fonts.database();
-    let scenes = page_indices
+    let selected_pages = page_indices
         .iter()
         .map(|&page_index| {
-            let page = layout
+            layout
                 .pages
                 .get(page_index)
-                .ok_or(PdfError::InvalidPageIndex { page_index })?;
-            Ok(render_layout_page_scene(
-                document,
-                page,
-                render_options,
-                fonts,
-            ))
+                .ok_or(PdfError::InvalidPageIndex { page_index })
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
-    render_pages_pdf(
+    let scenes = cache.render_layout_page_scenes(document, &selected_pages, render_options, fonts);
+    let bytes = render_pages_pdf(
         scenes.iter().map(|scene| PdfPage {
             page: &scene.page,
             text: Some(&scene.text),
             text_error: scene.text_error.as_deref(),
         }),
         &pdf_options,
-    )
+    )?;
+    let pages = page_indices
+        .iter()
+        .copied()
+        .zip(scenes)
+        .map(|(page_index, scene)| PdfPageDiagnostics {
+            page_index,
+            text_diagnostics: scene.page.text_diagnostics,
+            object_diagnostics: scene.page.object_diagnostics,
+        })
+        .collect();
+    Ok(PdfOutput { bytes, pages })
 }
 
 pub fn render_svg_pages_pdf(

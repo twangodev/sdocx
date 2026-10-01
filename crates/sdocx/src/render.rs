@@ -7,6 +7,8 @@ use crate::{
 };
 use crate::{PageObject, PageObjectContent, composition::RenderPass};
 use std::ops::Range;
+use std::rc::Rc;
+use std::sync::Arc;
 use vector::{
     Anchor, Blend, Circle, Clip, ClipPath, Data, Definitions, Ellipse, FontFamily, Group, Image,
     Line, LineCap, LineJoin, ObjectKind, PageTemplate, Paint, Path, Polygon, Rectangle, ReplayPart,
@@ -82,6 +84,115 @@ pub struct RenderedPage {
     pub object_diagnostics: Vec<ObjectDiagnostic>,
 }
 
+/// Reuses body-text measurement across pages without retaining rendered SVG.
+/// Source, fonts, options and page geometry changes automatically invalidate plans.
+#[derive(Default)]
+pub struct DocumentTextCache {
+    context: Option<BodyPreparationContext>,
+    plans: Vec<(BodyPlanKey, Rc<PreparedBodyPlan>)>,
+}
+
+#[derive(PartialEq, Eq)]
+struct BodyPreparationMetrics {
+    scale: u32,
+    font_size_delta: u32,
+    default_page_dimensions: Option<(u32, u32)>,
+    orientation: Option<i32>,
+    page_mode: Option<u16>,
+    padding: Option<(u32, u32)>,
+    pages: Vec<(u32, u32)>,
+    options: RenderOptions,
+}
+
+struct BodyPreparationContext {
+    source: Option<RichTextBox>,
+    metrics: BodyPreparationMetrics,
+    fonts: Arc<fonts::fontdb::Database>,
+}
+
+#[derive(PartialEq, Eq)]
+struct BodyPlanKey {
+    source_range: Range<usize>,
+    first_page_index: usize,
+    last_page_index: usize,
+    detached: bool,
+    theme: RenderTheme,
+}
+
+const BODY_PLAN_CACHE_CAPACITY: usize = 2;
+
+impl DocumentTextCache {
+    /// Release retained body plans and their font references.
+    pub fn clear(&mut self) {
+        self.context = None;
+        self.plans.clear();
+    }
+
+    /// Render a visible page, sharing compatible body measurements with prior calls.
+    pub fn render_layout_page_svg(
+        &mut self,
+        document: &Document,
+        layout: &LayoutDocument,
+        page_index: usize,
+        options: &RenderOptions,
+        fonts: &fonts::FontBook,
+    ) -> Option<RenderedPage> {
+        let page = layout.pages.get(page_index)?;
+        Some(self.render_page(document, page, options, false, fonts))
+    }
+
+    /// Render sample-addressable replay using the same retained body measurements.
+    pub fn render_layout_page_replay_svg(
+        &mut self,
+        document: &Document,
+        layout: &LayoutDocument,
+        page_index: usize,
+        options: &RenderOptions,
+        fonts: &fonts::FontBook,
+    ) -> Option<RenderedPage> {
+        let page = layout.pages.get(page_index)?;
+        Some(self.render_page(document, page, options, true, fonts))
+    }
+
+    fn bind(&mut self, document: &Document, options: &RenderOptions, fonts: &fonts::FontBook) {
+        let settings = TextSettings::from_document(&document.metadata);
+        let metrics = BodyPreparationMetrics {
+            scale: settings.scale.to_bits(),
+            font_size_delta: settings.font_size_delta.to_bits(),
+            default_page_dimensions: document.metadata.default_page_dimensions,
+            orientation: document.metadata.orientation,
+            page_mode: document.metadata.page_mode,
+            padding: document.metadata.flow_page_padding,
+            pages: document
+                .pages
+                .iter()
+                .map(|page| (page.width, page.height))
+                .collect(),
+            options: options.clone(),
+        };
+        let database = fonts.database();
+        let compatible = self.context.as_ref().is_some_and(|context| {
+            context.metrics == metrics
+                && Arc::ptr_eq(&context.fonts, &database)
+                && match (&context.source, &document.metadata.note_text) {
+                    (Some(previous), Some(current)) => {
+                        crate::layout::same_text_source(previous, current)
+                    }
+                    (None, None) => true,
+                    _ => false,
+                }
+        });
+        if !compatible {
+            self.plans.clear();
+            self.context = Some(BodyPreparationContext {
+                source: document.metadata.note_text.clone(),
+                metrics,
+                fonts: database,
+            });
+        }
+    }
+}
+
 /// Render every visible page in presentation order.
 pub fn render_document_svg(document: &Document, options: &RenderOptions) -> Vec<RenderedPage> {
     render_document_svg_with_fonts(document, options, &fonts::FontBook::default())
@@ -94,10 +205,12 @@ pub fn render_document_svg_with_fonts(
     fonts: &fonts::FontBook,
 ) -> Vec<RenderedPage> {
     let layout = layout_document(document);
+    let mut cache = DocumentTextCache::default();
+    cache.bind(document, options, fonts);
     layout
         .pages
         .iter()
-        .map(|layout_page| render_layout_page(document, layout_page, options, false, fonts))
+        .map(|layout_page| cache.render_bound_page(document, layout_page, options, false, fonts))
         .collect()
 }
 
@@ -180,11 +293,7 @@ fn render_layout_page(
     replay: bool,
     fonts: &fonts::FontBook,
 ) -> RenderedPage {
-    let (page, scene) = prepare_layout_page(document, layout_page, options, replay, fonts, false);
-    RenderedPage {
-        svg: scene.finish(),
-        ..page
-    }
+    DocumentTextCache::default().render_page(document, layout_page, options, replay, fonts)
 }
 
 #[cfg(feature = "pdf")]
@@ -194,76 +303,117 @@ pub(crate) struct RenderedScene {
     pub text_error: Option<String>,
 }
 
-#[cfg(feature = "pdf")]
-pub(crate) fn render_layout_page_scene(
-    document: &Document,
-    layout_page: &crate::LayoutPage,
-    options: &RenderOptions,
-    fonts: &fonts::FontBook,
-) -> RenderedScene {
-    let (mut page, mut scene) =
-        prepare_layout_page(document, layout_page, options, false, fonts, true);
-    let text = scene.take_native_text();
-    let text_error = scene.take_native_text_error();
-    page.svg = scene.finish();
-    RenderedScene {
-        page,
-        text,
-        text_error,
+impl DocumentTextCache {
+    fn render_page(
+        &mut self,
+        document: &Document,
+        layout_page: &crate::LayoutPage,
+        options: &RenderOptions,
+        replay: bool,
+        fonts: &fonts::FontBook,
+    ) -> RenderedPage {
+        self.bind(document, options, fonts);
+        self.render_bound_page(document, layout_page, options, replay, fonts)
+    }
+
+    fn render_bound_page(
+        &mut self,
+        document: &Document,
+        layout_page: &crate::LayoutPage,
+        options: &RenderOptions,
+        replay: bool,
+        fonts: &fonts::FontBook,
+    ) -> RenderedPage {
+        let (page, scene) = self.prepare_page(document, layout_page, options, replay, fonts, false);
+        RenderedPage {
+            svg: scene.finish(),
+            ..page
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    pub(crate) fn render_layout_page_scenes(
+        &mut self,
+        document: &Document,
+        pages: &[&crate::LayoutPage],
+        options: &RenderOptions,
+        fonts: &fonts::FontBook,
+    ) -> Vec<RenderedScene> {
+        self.bind(document, options, fonts);
+        pages
+            .iter()
+            .map(|page| {
+                let (mut page, mut scene) =
+                    self.prepare_page(document, page, options, false, fonts, true);
+                let text = scene.take_native_text();
+                let text_error = scene.take_native_text_error();
+                page.svg = scene.finish();
+                RenderedScene {
+                    page,
+                    text,
+                    text_error,
+                }
+            })
+            .collect()
+    }
+
+    fn prepare_page(
+        &mut self,
+        document: &Document,
+        layout_page: &crate::LayoutPage,
+        options: &RenderOptions,
+        replay: bool,
+        fonts: &fonts::FontBook,
+        retain_text: bool,
+    ) -> (RenderedPage, Scene) {
+        let page = &layout_page.page;
+        let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
+        let settings = TextSettings::from_document(&document.metadata);
+        let text_renderer = TextRenderer::new(settings, fonts)
+            .with_point_marker_target(options.point_marker_target)
+            .with_page_exclusions(text::PageExclusions::for_page(
+                document,
+                layout_page.source_page_index,
+                settings,
+            ));
+        let body_text = PreparedBodyText::new(document, layout_page, theme, &text_renderer, self);
+        let svg = render_page_contents_svg(
+            page,
+            &document.metadata,
+            &document.metadata.media_assets,
+            theme,
+            replay,
+            &text_renderer,
+            body_text.as_ref(),
+            retain_text,
+        );
+        (
+            RenderedPage {
+                source_page_index: layout_page.source_page_index,
+                width: page.width,
+                height: page.height,
+                svg: String::new(),
+                text_diagnostics: text_renderer.diagnostics(),
+                object_diagnostics: text_renderer.object_diagnostics(),
+            },
+            svg,
+        )
     }
 }
 
-fn prepare_layout_page(
-    document: &Document,
-    layout_page: &crate::LayoutPage,
-    options: &RenderOptions,
-    replay: bool,
-    fonts: &fonts::FontBook,
-    retain_text: bool,
-) -> (RenderedPage, Scene) {
-    let page = &layout_page.page;
-    let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
-    let settings = TextSettings::from_document(&document.metadata);
-    let text_renderer = TextRenderer::new(settings, fonts)
-        .with_point_marker_target(options.point_marker_target)
-        .with_page_exclusions(text::PageExclusions::for_page(
-            document,
-            layout_page.source_page_index,
-            settings,
-        ));
-    let body_text = PreparedBodyText::new(document, layout_page, theme, &text_renderer);
-    let svg = render_page_contents_svg(
-        page,
-        &document.metadata,
-        &document.metadata.media_assets,
-        theme,
-        replay,
-        &text_renderer,
-        body_text.as_ref(),
-        retain_text,
-    );
-    (
-        RenderedPage {
-            source_page_index: layout_page.source_page_index,
-            width: page.width,
-            height: page.height,
-            svg: String::new(),
-            text_diagnostics: text_renderer.diagnostics(),
-            object_diagnostics: text_renderer.object_diagnostics(),
-        },
-        svg,
-    )
+struct PreparedBodyText {
+    plan: Rc<PreparedBodyPlan>,
+    object_index: usize,
+    page_top: f64,
+    viewport: Viewport,
 }
 
-struct PreparedBodyText {
+struct PreparedBodyPlan {
     text: RichTextBox,
     layout: text::TextLayout,
     text_issues: Vec<text::SourceTextDiagnostic>,
     object_issues: Vec<text::SourceObjectDiagnostic>,
     exclusions: Option<text::PageExclusions>,
-    object_index: usize,
-    page_top: f64,
-    viewport: Viewport,
 }
 
 impl PreparedBodyText {
@@ -272,6 +422,7 @@ impl PreparedBodyText {
         page: &crate::LayoutPage,
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
+        cache: &mut DocumentTextCache,
     ) -> Option<Self> {
         let body = page.body_text_slice()?;
         let (text, first_page_index, last_page_index) =
@@ -288,66 +439,38 @@ impl PreparedBodyText {
                     document.pages.len().checked_sub(1)?,
                 )
             };
-        let frame_width = document.pages[first_page_index..=last_page_index]
-            .iter()
-            .map(|page| page.width)
-            .max()
-            .map(f64::from)?;
-        let exclusions = text::PageExclusions::for_range(
-            document,
-            first_page_index..=last_page_index,
-            renderer.settings,
-        );
-        let planner = TextRenderer::new(renderer.settings, renderer.fonts)
-            .with_point_marker_target(renderer.point_marker_target)
-            .with_object_page_ownership(
-                if body.capture_window.as_ref().is_some_and(|window| {
-                    window.first_page_index != 0
-                        || document.metadata.note_text.as_ref().is_some_and(|source| {
-                            window.saved_source_range != (0..source.text.chars().count())
-                        })
-                }) {
-                    text::ObjectPageOwnership::Detached
-                } else {
-                    text::ObjectPageOwnership::Unknown
-                },
-            )
-            .with_page_exclusions(exclusions.clone());
-        let bands = exclusions
-            .as_ref()
-            .map_or_else(Vec::new, text::PageExclusions::line_bands);
-        let padding = document
-            .metadata
-            .flow_page_padding
-            .map_or(FLOW_HORIZONTAL_PADDING, |(horizontal, _)| {
-                f64::from(horizontal)
-            });
-        let styled = StyledText::new(&text, TextContext::Flow, renderer.settings);
-        let layout = text::layout_capture_text(
-            &styled,
-            text::TextFrame {
-                bbox: BoundingBox {
-                    x_min: padding,
-                    y_min: 0.0,
-                    x_max: frame_width - padding,
-                    y_max: 0.0,
-                },
-                gravity: None,
-                exclusions: &bands,
-            },
+        let detached = body.capture_window.as_ref().is_some_and(|window| {
+            window.first_page_index != 0
+                || document.metadata.note_text.as_ref().is_some_and(|source| {
+                    window.saved_source_range != (0..source.text.chars().count())
+                })
+        });
+        let key = BodyPlanKey {
+            source_range: body.capture_window.as_ref().map_or_else(
+                || body.reflow.as_ref().unwrap().source_range.clone(),
+                |window| window.source_range.clone(),
+            ),
+            first_page_index,
+            last_page_index,
+            detached,
             theme,
-            &planner,
-        );
+        };
+        let plan = if let Some((_, plan)) = cache.plans.iter().find(|(stored, _)| *stored == key) {
+            Rc::clone(plan)
+        } else {
+            let plan = Rc::new(PreparedBodyPlan::new(document, text, &key, renderer)?);
+            if cache.plans.len() == BODY_PLAN_CACHE_CAPACITY {
+                cache.plans.remove(0);
+            }
+            cache.plans.push((key, Rc::clone(&plan)));
+            plan
+        };
         let page_top = document.pages[first_page_index..page.source_page_index]
             .iter()
             .map(|page| f64::from(page.height))
             .sum::<f64>();
         Some(Self {
-            text,
-            layout,
-            text_issues: planner.scoped_diagnostics(),
-            object_issues: planner.scoped_object_diagnostics(),
-            exclusions,
+            plan,
             object_index: body.object_index,
             page_top,
             viewport: Viewport::new(BoundingBox {
@@ -360,14 +483,15 @@ impl PreparedBodyText {
     }
 
     fn paint(&self, svg: &mut Scene, context: &CompositionContext<'_>) {
+        let plan = &self.plan;
         let renderer = context
             .text_renderer
             .clone()
-            .with_page_exclusions(self.exclusions.clone());
-        let styled = StyledText::new(&self.text, TextContext::Flow, renderer.settings);
-        let sources = VisibleTextSources::new(&styled, &self.layout, self.viewport, context.theme);
+            .with_page_exclusions(plan.exclusions.clone());
+        let styled = StyledText::new(&plan.text, TextContext::Flow, renderer.settings);
+        let sources = VisibleTextSources::new(&styled, &plan.layout, self.viewport, context.theme);
         renderer.report_owned_object_issues(
-            &self
+            &plan
                 .object_issues
                 .iter()
                 .filter(|issue| sources.contains(issue.owner.as_ref(), false))
@@ -393,7 +517,7 @@ impl PreparedBodyText {
                     paint_text_layout_in_viewport(
                         svg,
                         &styled,
-                        &self.layout,
+                        &plan.layout,
                         context.media_assets,
                         context.theme,
                         &renderer,
@@ -403,7 +527,7 @@ impl PreparedBodyText {
             );
         });
         renderer.report_text_issues(
-            &self
+            &plan
                 .text_issues
                 .iter()
                 .filter(|issue| {
@@ -416,6 +540,66 @@ impl PreparedBodyText {
                 .cloned()
                 .collect::<Vec<_>>(),
         );
+    }
+}
+
+impl PreparedBodyPlan {
+    fn new(
+        document: &Document,
+        text: RichTextBox,
+        key: &BodyPlanKey,
+        renderer: &TextRenderer<'_>,
+    ) -> Option<Self> {
+        let frame_width = document.pages[key.first_page_index..=key.last_page_index]
+            .iter()
+            .map(|page| page.width)
+            .max()
+            .map(f64::from)?;
+        let exclusions = text::PageExclusions::for_range(
+            document,
+            key.first_page_index..=key.last_page_index,
+            renderer.settings,
+        );
+        let planner = TextRenderer::new(renderer.settings, renderer.fonts)
+            .with_point_marker_target(renderer.point_marker_target)
+            .with_object_page_ownership(if key.detached {
+                text::ObjectPageOwnership::Detached
+            } else {
+                text::ObjectPageOwnership::Unknown
+            })
+            .with_page_exclusions(exclusions.clone());
+        let bands = exclusions
+            .as_ref()
+            .map_or_else(Vec::new, text::PageExclusions::line_bands);
+        let padding = document
+            .metadata
+            .flow_page_padding
+            .map_or(FLOW_HORIZONTAL_PADDING, |(horizontal, _)| {
+                f64::from(horizontal)
+            });
+        let styled = StyledText::new(&text, TextContext::Flow, renderer.settings);
+        let layout = text::layout_capture_text(
+            &styled,
+            text::TextFrame {
+                bbox: BoundingBox {
+                    x_min: padding,
+                    y_min: 0.0,
+                    x_max: frame_width - padding,
+                    y_max: 0.0,
+                },
+                gravity: None,
+                exclusions: &bands,
+            },
+            key.theme,
+            &planner,
+        );
+        Some(Self {
+            text,
+            layout,
+            text_issues: planner.scoped_diagnostics(),
+            object_issues: planner.scoped_object_diagnostics(),
+            exclusions,
+        })
     }
 }
 
@@ -2600,6 +2784,105 @@ mod tests {
             margins: None,
             gravity: None,
         }
+    }
+
+    fn preparation_document() -> Document {
+        let mut body = theme_test_text();
+        body.bbox = BoundingBox::default();
+        body.text = "visible body ".repeat(40);
+        let mut page = page_with_uncolored_stroke();
+        page.objects.clear();
+        let mut document = document(page.clone());
+        document.pages = vec![page; 4];
+        document.metadata.note_text = Some(body);
+        document.metadata.default_page_dimensions = Some((360, 100));
+        document.metadata.page_mode = Some(0);
+        document.metadata.flow_page_padding = Some((0, 0));
+        document
+    }
+
+    #[test]
+    fn body_preparation_reuses_identity_across_svg_replay_and_native_pdf_paint() {
+        let document = preparation_document();
+        let layout = layout_document(&document);
+        let fonts = super::fonts::FontBook::default();
+        let options = RenderOptions::default();
+        let mut cache = super::DocumentTextCache::default();
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &fonts);
+        let plan = super::Rc::clone(&cache.plans[0].1);
+        for index in 0..layout.pages.len() {
+            cache.render_layout_page_svg(&document, &layout, index, &options, &fonts);
+            cache.render_layout_page_replay_svg(&document, &layout, index, &options, &fonts);
+            assert_eq!(cache.plans.len(), 1);
+            assert!(super::Rc::ptr_eq(&plan, &cache.plans[0].1));
+        }
+        #[cfg(feature = "pdf")]
+        {
+            let pages = layout.pages.iter().collect::<Vec<_>>();
+            let scenes = cache.render_layout_page_scenes(&document, &pages, &options, &fonts);
+            assert!(scenes.iter().all(|scene| scene.text_error.is_none()));
+            assert!(super::Rc::ptr_eq(&plan, &cache.plans[0].1));
+        }
+    }
+
+    #[test]
+    fn body_preparation_keeps_distinct_capture_windows_and_themes_bounded() {
+        let mut document = preparation_document();
+        let fonts = super::fonts::FontBook::default();
+        let options = RenderOptions::default();
+        let mut cache = super::DocumentTextCache::default();
+        for (index, page) in document.pages.iter_mut().enumerate() {
+            let gray = (index * 70) as u8;
+            page.background_color = Some(Color {
+                r: gray,
+                g: gray,
+                b: gray,
+            });
+        }
+        let layout = layout_document(&document);
+        for index in 0..layout.pages.len() {
+            cache.render_layout_page_svg(&document, &layout, index, &options, &fonts);
+            assert_eq!(
+                cache.plans.len(),
+                (index + 1).min(super::BODY_PLAN_CACHE_CAPACITY)
+            );
+        }
+        let source = document.metadata.note_text.as_mut().unwrap();
+        source.text_sections = (0..4)
+            .map(|index| crate::RichTextSection {
+                start_utf16: index * 40,
+                length_utf16: 40,
+            })
+            .collect();
+        let layout = layout_document(&document);
+        for index in 0..layout.pages.len() {
+            cache.render_layout_page_svg(&document, &layout, index, &options, &fonts);
+            assert_eq!(
+                cache.plans.len(),
+                (index + 1).min(super::BODY_PLAN_CACHE_CAPACITY)
+            );
+            assert_eq!(cache.plans.last().unwrap().0.last_page_index, index);
+        }
+    }
+
+    #[test]
+    fn body_preparation_reuses_unchanged_nan_and_invalidates_changed_nan() {
+        let mut document = preparation_document();
+        document.metadata.note_text.as_mut().unwrap().font_size = Some(f32::from_bits(0x7fc00001));
+        let fonts = super::fonts::FontBook::default();
+        let options = RenderOptions::default();
+        let layout = layout_document(&document);
+        let mut cache = super::DocumentTextCache::default();
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &fonts);
+        let plan = super::Rc::clone(&cache.plans[0].1);
+        cache.render_layout_page_replay_svg(&document, &layout, 1, &options, &fonts);
+        assert!(super::Rc::ptr_eq(&plan, &cache.plans[0].1));
+        document.metadata.note_text.as_mut().unwrap().font_size = Some(f32::from_bits(0x7fc00002));
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &fonts);
+        assert!(cache.plans.is_empty());
+        let layout = layout_document(&document);
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &fonts);
+        assert!(!super::Rc::ptr_eq(&plan, &cache.plans[0].1));
     }
 
     #[test]

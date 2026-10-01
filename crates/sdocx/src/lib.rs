@@ -84,13 +84,14 @@ pub use page_objects::{PageObject, PageObjectContent};
 pub use page_selection::{PageSelectionError, parse_page_selection};
 #[cfg(feature = "pdf")]
 pub use pdf::{
-    PdfError, PdfOptions, render_document_pdf, render_layout_pages_pdf_with_fonts,
-    render_svg_pages_pdf,
+    PdfError, PdfOptions, PdfOutput, PdfPageDiagnostics, render_document_pdf,
+    render_layout_pages_pdf_detailed_with_cache, render_layout_pages_pdf_detailed_with_fonts,
+    render_layout_pages_pdf_with_fonts, render_svg_pages_pdf,
 };
 #[cfg(feature = "render")]
 pub use render::{
-    ObjectDiagnostic, ObjectDiagnosticKind, PointMarkerTarget, RenderColorMode, RenderOptions,
-    RenderTheme, RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts,
+    DocumentTextCache, ObjectDiagnostic, ObjectDiagnosticKind, PointMarkerTarget, RenderColorMode,
+    RenderOptions, RenderTheme, RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts,
     render_document_svg, render_document_svg_with_fonts, render_layout_page_replay_svg,
     render_layout_page_replay_svg_with_fonts, render_layout_page_svg,
     render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
