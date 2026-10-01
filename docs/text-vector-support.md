@@ -149,6 +149,10 @@ portable performance thresholds:
   match Rust content/measured rectangles, edge widths and 818 minimum-height
   queries using supplied caches. This verifies owner selection and arithmetic;
   complete merged frames and pagination remain outside that evidence.
+- [Native row split caches](../conformance/table-row-splits.json) match Rust
+  changed flags, cache presence and coordinates across 1,068 updates. The capture
+  verifies owner selection and stale-list retention with supplied bands; text
+  layout, row movement decisions and complete merged pagination are outside it.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression

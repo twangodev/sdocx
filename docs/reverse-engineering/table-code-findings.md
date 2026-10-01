@@ -366,6 +366,69 @@ as warm row sizing. Export preparation remains restricted to unmerged grids.
 cmp /tmp/table-measured-geometry.json conformance/table-measured-geometry.json
 ```
 
+### Row split caches and warm text selection
+
+Drawing `updateSplitOfARow`, `0xb24cc`, resolves the first column's frame
+owner (`0xb2524`). It selects supplied table split rectangles whose top is at
+or below that owner's cached frame top, then offsets them by the negative owner
+top using Base `RectF::OffSet`. Rectangle order is retained; it is not sorted.
+The resulting native list is compared with the first owner's cached list.
+
+`isSameRectList`, `0xb2e18`, first checks pointer identity and null pointers.
+Distinct nonnull lists must have the same count and a first rectangle whose
+four coordinates differ by at most `0.001f`, through Base `RectF::Equal`,
+`0xb14b0`. Later rectangles are not compared. Distinct empty lists therefore
+compare unequal: their first-rectangle lookups return null. A missing list and
+a stored empty list are separate cache states.
+
+If the comparison succeeds, the new list is discarded and every cell cache
+remains unchanged. Otherwise the first owner's list is replaced. For columns
+one onward, replacement happens only when `GetCell(row,column)` equals
+`GetFrameCell(row,column)` (`0xb2710`–`0xb2734`). Those cells receive separate
+copies of the first owner's local list, even when their own frame tops differ.
+Covered raw cells retain their previous list or absent-cache state. A first
+owner from an earlier row can make the comparison succeed before an independent
+cell in the requested row has received any list.
+
+Drawing `layoutRow`, `0xb0420`, also compares raw cells with frame owners before
+`layoutCell` (`0xb0484`–`0xb04b4`, `0xb0644`–`0xb0674`). It lays out only cells
+that own their frames. Its current/previous first-list lookups use first-column
+frame owners (`0xb04f4`, `0xb050c`), independently of the physical row frames
+that row offsets move. These text-selection branches are disassembly findings;
+the split capture below does not execute text layout.
+
+[The split capture](../../conformance/table-row-splits.json), SHA-256
+`0e77850a6312268018e9e27ceeab0dc7f41654690de13e0171982b9fa6f2ff2e`,
+records 139 inputs, 1,068 split updates and 10,828 cell-cache snapshots. Cases
+include column/row merges, owners from earlier rows, covered-span chains,
+first-rectangle threshold boundaries, changes to later rectangles, empty lists
+and unsorted supplied bands. Every output is identical with allocation fills
+`0x00`, `0xa5` and `0xff`.
+
+The [Rust capture module](../../conformance/native_table/splits.rs) checks Model,
+Drawing and Base hashes recorded above. Frame lookup, list construction/copying,
+cache comparison, rectangle arithmetic and deletion paths execute native code.
+Host allocation/deletion interfaces, text initialization, single-thread mutex
+operations and diagnostic interfaces are isolated. In particular, the native
+list's empty first-element lookup takes its diagnostic path and returns null;
+the capture does not validate its logging or thread-local error storage.
+The results establish split-cache selection, not text shaping, first-line
+relocation decisions, row compression, complete pagination or device appearance.
+
+The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_split_tests.rs)
+matches every changed flag, cache-presence state and rectangle coordinate bit.
+Cell split caches are typed `Option<BandList>` values. Warm splitting uses the
+first owner's top, copies only to frame-owning cells and preserves stale lists
+when the native comparison succeeds. Export preparation still accepts only
+unmerged grids.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --row-splits scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-row-splits.json
+cmp /tmp/table-row-splits.json conformance/table-row-splits.json
+```
+
 ### Stored cells and frame owners
 
 Model `ObjectTableImpl::GetCell`, `0x3c7570`, indexes the stored row and column

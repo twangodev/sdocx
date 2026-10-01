@@ -217,7 +217,7 @@ and distinguishes recovered behavior from implementation and evidence limits.
   canvas scales; native heading/owned/default background selection; edge
   precedence, pending-gap selection, native column-minimum cache selection,
   cold frame caches, row updates, warm frame-owner sizing, measured bounds,
-  first-page minima and vector evidence limits.
+  first-page minima, row split caches, warm text selection and vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,
