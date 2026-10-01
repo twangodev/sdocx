@@ -16,6 +16,9 @@ mod native_split_tests;
 #[cfg(test)]
 mod native_bottom_tests;
 
+#[cfg(test)]
+mod native_control_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
@@ -167,31 +170,47 @@ fn layout_row(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<(), ObjectDiagnosticKind> {
+    layout_row_using(plan, row_index, table, renderer, |plan, position| {
+        plan.layout_cell(position.row, position.column, table, theme, renderer)
+    })
+    .map(|_| ())
+}
+
+fn layout_row_using(
+    plan: &mut PreparedTable,
+    row_index: usize,
+    table: &RichTextTable,
+    renderer: &TextRenderer<'_>,
+    mut relayout: impl FnMut(
+        &mut PreparedTable,
+        super::CellPosition,
+    ) -> Result<(), ObjectDiagnosticKind>,
+) -> Result<bool, ObjectDiagnosticKind> {
     if update_split(plan, row_index)? {
         adjust_first_line(plan, row_index, table, renderer)?;
     } else {
         if row_index == 0 {
-            return Ok(());
+            return Ok(false);
         }
         let minimum = plan.first_line_minimum(row_index, table, renderer)?;
         let pending = plan.pending_gaps[row_index];
         if pending > CHANGE_EPSILON {
             let Some(previous) = first_split(plan, row_index - 1)? else {
-                return Ok(());
+                return Ok(false);
             };
             let previous_height = native_sub(previous.y_max, previous.y_min)?;
             if minimum > native_sub(pending, previous_height)? {
-                return Ok(());
+                return Ok(false);
             }
             plan.pending_gaps[row_index] = 0.0;
             offset_from_row(plan, row_index, -pending)?;
-            return Ok(());
+            return Ok(true);
         }
         let Some(first) = first_split(plan, row_index)? else {
-            return Ok(());
+            return Ok(false);
         };
         if native_sub(minimum, first.y_min)? <= FLOAT_EPSILON {
-            return Ok(());
+            return Ok(false);
         }
         let displacement = first.y_max;
         offset_from_row(plan, row_index, displacement)?;
@@ -204,10 +223,10 @@ fn layout_row(
             column: column_index,
         };
         if plan.topology.frame_owner(position) == Some(position) {
-            plan.layout_cell(row_index, column_index, table, theme, renderer)?;
+            relayout(plan, position)?;
         }
     }
-    Ok(())
+    Ok(true)
 }
 
 fn adjust_first_line(
