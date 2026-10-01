@@ -214,7 +214,8 @@ and distinguishes recovered behavior from implementation and evidence limits.
 - [`note-metadata-findings.md`](note-metadata-findings.md) — optional application,
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
-  bounded table/code records, frame ownership and paint visibility; captured
+  bounded table/code records, merge construction, frame ownership and paint
+  visibility; captured
   borders, fills, column minima, cold and warm measurement selection, bounds,
   split caches, row-bottom compression, warm-row control and cell text dimensions;
   vector evidence limits.

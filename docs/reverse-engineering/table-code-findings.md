@@ -735,6 +735,45 @@ rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
 cmp /tmp/table-ownership.json conformance/table-ownership.json
 ```
 
+### Merge construction without an attached document
+
+Model `ObjectTable::MergeCells`, `0x3d6038`, first calls
+`ObjectTableImpl::IsValidMergeRange`, `0x3ca320`. This checks range bounds and
+requires the resolved frame owner at every selected position to fit entirely
+inside the range. A range that cuts through an existing merged owner is rejected.
+Repeating an already matching merge returns success without changing spans.
+
+With no document attached at object offset 16, a successful changed merge writes
+the top-left raw cell's row/column spans and sets its dirty bytes at offsets
+81 and 82. It retains the other raw cells and their spans. The document/history
+branch also contains text-transfer and undo operations; those are not exercised
+by this capture.
+
+[`table-merge-cells.json`](../../conformance/table-merge-cells.json), SHA-256
+`96eda7bc2741c68e0eb18469193217678aad7922e78c2b4acda4d1879214ac33`,
+records 134 inputs and 1,046 merge attempts through the native public method.
+Cases include row/column/rectangle merges, expansion, repeated merges,
+combining disjoint owners, rejected bounds/inverted ranges and an initial
+covered-span chain. All raw cell pointers remain identical. Each attempt
+records the resulting spans, dirty bytes, frame owners and paint-visible list.
+Allocation fills `0x00`, `0xa5` and `0xff` produce identical captures.
+
+Native cold frame initialization then runs against the resulting model,
+including the merge-set dirty bytes. It retains per-slot frames from saved
+column widths and row heights; it does not combine them into a spanning owner
+rectangle. Rust matches all 9,240 captured owner positions, visible lists and
+the final initialized frames. This verifies merge-generated structural states
+and cold frame primitives. It does not establish document-attached text
+transfer, native shaping, complete merged preparation or device appearance.
+Diagnostics and cold text initialization are isolated in the harness.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --merge-cells scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-merge-cells.json
+cmp /tmp/table-merge-cells.json conformance/table-merge-cells.json
+```
+
 ### Rust saved-frame painting
 
 The [Rust grid model](../../crates/sdocx/src/render/table/grid.rs) preserves stored
@@ -745,6 +784,11 @@ positive in-bounds spans, at most 65,536 slots and at most 1,048,576 accumulated
 span positions. These bounds are Rust work limits, not recovered Samsung limits.
 
 Merged tables retain saved cell frames and paint only native-visible cells.
+The saved and prepared drawing paths share that selection. An internal
+covered-span-chain regression supplies prepared frames and checks that covered
+text/backgrounds are omitted while later paint-visible cells remain; it also
+checks the retained PDF text source. This selection regression does not enable
+merged preparation.
 Sparse records and invalid spans retain the saved-cell fallback. Both report
 `UnsupportedContent`: merged frame sizing, rowspan growth and pagination are
 still unimplemented. [Vector-output regressions](../../crates/sdocx/tests/embedded_text_layout.rs)

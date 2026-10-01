@@ -134,6 +134,11 @@ portable performance thresholds:
   the Rust border model.
   [Border output regressions](../crates/sdocx/tests/embedded_text_layout.rs)
   cover SVG/PDF style transport separately.
+- [Native merge construction](../conformance/table-merge-cells.json) produces
+  states whose owners, paint-visible lists and cold frames match Rust across
+  1,046 attempts. The capture has no attached document/history and does not
+  establish text transfer or complete merged preparation. Saved and prepared
+  paint selection share the same visible-cell list.
 - [Native cold frames and row updates](../conformance/table-cold-frames.json)
   match Rust coordinate and pending-gap bits across 93 supplied inputs. This
   isolates frame primitives from text measurement; final merged sizing remains
