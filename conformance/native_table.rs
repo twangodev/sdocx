@@ -39,6 +39,9 @@ mod clipping;
 #[path = "native_table/export_clipping.rs"]
 mod export_clipping;
 
+#[path = "native_table/text_clipping.rs"]
+mod text_clipping;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1003,6 +1006,20 @@ fn main() {
             background_cases(&mut machine);
             return;
         }
+        Some("--text-clipping") => {
+            let paths = [3, 4, 5].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so, libSPenComposer.so and libSPenPdf.so paths required")
+            });
+            text_clipping::capture(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+            );
+            return;
+        }
         Some("--export-clipping") => {
             let drawing_path = std::env::args_os()
                 .nth(3)
@@ -1120,7 +1137,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping, --export-clipping or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping, --export-clipping, --text-clipping or no capture mode"
         ),
     }
     let mut cases = Vec::new();
