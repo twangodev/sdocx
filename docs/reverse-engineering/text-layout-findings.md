@@ -2132,6 +2132,86 @@ lines and diagnostics without asserting wall-clock thresholds:
 cargo test -p sdocx --all-features --test text_layout_scaling --release --offline -- --ignored --nocapture
 ```
 
+## Retained glyph PDF transport
+
+Document PDF export now consumes the shared Rust measurement and canonical
+physical placement plans directly. A private registry retains source text,
+resolved face bytes and face index, glyph IDs, UTF-8 cluster ranges, origins
+and advances in both axes. The bundled SVG converter hooks the corresponding
+text nodes under its existing transform, clip, opacity and blend scopes;
+it does not reshape those registered glyphs. Registry entries must be handled
+exactly once. Missing nodes or effects that bypass the hook fail explicitly.
+SVG still supplies the surrounding vector graphics and clipping geometry.
+The supplied font book also controls carrier parsing. Inkless runs use a
+private ink-bearing carrier that the hook replaces entirely; its glyph and
+source never enter the PDF. Arbitrary object-bounding-box effects still derive
+bounds from the carrier and are not established as native-equivalent.
+
+`render_document_pdf` and `render_layout_pages_pdf_with_fonts`, including CLI
+and WASM document export, use this retained path. `render_svg_pages_pdf` remains
+the generic compatibility conversion for arbitrary or serialized SVG; that
+round trip has no private glyph registry. The existing SVG text fallback and
+its positioning diagnostics remain unchanged. Canonical layout geometry is
+therefore separate from either transport's ability to reproduce it.
+
+The native source supports this separation. HarfBuzz extraction stores the
+whole cluster advance at its UTF-16 anchor (`0x9cd60`–`0x9cd70`); other entries
+remain zero-initialized (`0x9b1e0`–`0x9b1fc`). The result aggregator retains
+cluster-relative glyph positions (`0x9dc60`–`0x9dc98`), and `SpanRunFunctor`
+caches glyph IDs and positions at the anchor (`0x77390`–`0x77418`). Canvas
+painting adds the physical entry position and those retained XY offsets
+(`0x660c4`–`0x660e8`). It does not distribute advance across a ligature's
+constituent characters or reshape the chosen line for painting. These addresses
+refer to the cached `libSPenText.so` ARM64 disassembly cited above; Rust UTF-8
+source ranges remain distinct from native UTF-16 indices.
+
+Samsung's PDF transport is narrower than that canvas contract. The ordinary
+`getDrawnTextRun` branch retains glyph X (`0x67330`–`0x673fc`) but not each
+cached glyph Y. Its common baseline is entry baseline plus caller offset and
+RichText member 212 (`0x66d0c`–`0x66d14`, `0x672b4`–`0x672c4`), stored at
+DrawnText offset 84 (`0x680e8`). Composer's ordinary-font writer consumes that
+baseline (`0x380e28`–`0x380e44`); color emoji selects a different rectangle
+endpoint. The Rust PDF path preserves full XY from the canvas contract.
+Arbitrary combining-mark Y parity with captured Samsung PDFs is not established.
+
+Native synthesis also has distinct boundaries. `FontFakery`'s low byte selects
+fake bold and its high byte selects fake italic (`0x886bc`–`0x886e4`). The
+Skia adapter subtracts 0.25 from existing skew for fake italic
+(`0x887f0`–`0x88814`), while canvas logical italic sets skew to −0.25
+(`0x63c64`–`0x63c84`). Shaping already applies base skew to retained offsets
+through `x_offset − y_offset * skew` (`0x9cab0`). The active measurement helper
+unexpectedly reads span bit 2 for base skew and bit 1 for fake bold
+(`0x76b7c`–`0x76bb4`), unlike the canvas flag mapping; it copies that skew
+into MinikinPaint (`0x76c80`–`0x76c8c`). This anomaly needs captured evidence.
+The retained PDF adapter currently returns `UnsupportedText` for required
+synthetic italic/bold or variable-font instances instead of guessing their
+outline transform. Supported body faux bold retains its existing stroke policy.
+
+Decorations use anchor-entry X and advance endpoints (`0x66758`–`0x6678c`),
+not glyph ink bounds. Backgrounds use individual source-entry rectangles;
+non-anchor constituents have zero advance. Partial-cluster background geometry
+still reports `UnsupportedBackgroundPositioning` conservatively. Neither
+transport invents proportional background or decoration widths within a glyph.
+Adjacent compatible decorations share joined intervals in both adapters;
+non-anchor decoration changes do not split a retained glyph.
+
+Tagged PDF blocks carry full logical source through `ActualText`, independent
+of visual glyph order. Viewers that ignore `ActualText` may still extract
+ligatures, combining marks or bidi runs differently. Each inline-object text
+fragment preserves its source, but aggregate reading order still follows
+painting order rather than a separate document tag-tree order. Independent regressions
+pin DejaVu Sans bytes (SHA-256
+`57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e`), native
+HarfBuzz glyphs 5365/1399 and an isolated-run X of 58.173828125, then inspect
+embedded outlines and PDF origins. The workspace suite passes, including 480
+core unit tests and 14 retained-PDF integration tests, as do render-only and
+minimal-feature checks, formatting and strict workspace Clippy. Five external
+native-reference checks pass. The final built WASM matches the served artifact;
+Chromium passes 57 tests with one WebKit-only test skipped, including the new
+embedded-font and logical-source PDF download regression. These gates validate
+this transport milestone, not complete visual parity or the outstanding limits
+above.
+
 ## Evidence required before claiming visual parity
 
 - A Samsung-exported standalone text box and reference PDF covering margins,
