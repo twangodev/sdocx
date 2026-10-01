@@ -38,18 +38,7 @@ fn compose(left: Transform, right: Transform) -> Transform {
 }
 
 fn actual_text(value: &Object) -> String {
-    let bytes = value.as_str().unwrap();
-    assert!(bytes.starts_with(&[0xfe, 0xff]));
-    let (units, remainder) = bytes[2..].as_chunks::<2>();
-    assert!(remainder.is_empty());
-    String::from_utf16(
-        &units
-            .iter()
-            .copied()
-            .map(u16::from_be_bytes)
-            .collect::<Vec<_>>(),
-    )
-    .unwrap()
+    lopdf::decode_text_string(value).unwrap()
 }
 
 pub fn read(bytes: &[u8], dpi: f64) -> PdfGeometry {
@@ -125,7 +114,10 @@ pub fn read(bytes: &[u8], dpi: f64) -> PdfGeometry {
                 for value in values {
                     if let Object::String(bytes, _) = value {
                         let decoded = lopdf::Document::decode_text(&encoding, bytes).unwrap();
-                        if let Some((Some(replacement), emitted)) = marked_text.last_mut() {
+                        if let Some((Some(replacement), emitted)) = marked_text
+                            .iter_mut()
+                            .find(|(replacement, _)| replacement.is_some())
+                        {
                             if !*emitted {
                                 result.source.push_str(replacement);
                                 *emitted = true;

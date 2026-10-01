@@ -23,6 +23,8 @@ pub use marker::PointMarkerTarget;
 mod placed;
 mod table;
 mod text;
+#[cfg(feature = "pdf")]
+pub(crate) use text::native::{NativePdfPainter, NativeTextRegistry};
 mod theme;
 mod viewport;
 #[cfg(test)]
@@ -178,6 +180,47 @@ fn render_layout_page(
     replay: bool,
     fonts: &fonts::FontBook,
 ) -> RenderedPage {
+    let (page, scene) = prepare_layout_page(document, layout_page, options, replay, fonts, false);
+    RenderedPage {
+        svg: scene.finish(),
+        ..page
+    }
+}
+
+#[cfg(feature = "pdf")]
+pub(crate) struct RenderedScene {
+    pub page: RenderedPage,
+    pub text: text::native::NativeTextRegistry,
+    pub text_error: Option<String>,
+}
+
+#[cfg(feature = "pdf")]
+pub(crate) fn render_layout_page_scene(
+    document: &Document,
+    layout_page: &crate::LayoutPage,
+    options: &RenderOptions,
+    fonts: &fonts::FontBook,
+) -> RenderedScene {
+    let (mut page, mut scene) =
+        prepare_layout_page(document, layout_page, options, false, fonts, true);
+    let text = scene.take_native_text();
+    let text_error = scene.take_native_text_error();
+    page.svg = scene.finish();
+    RenderedScene {
+        page,
+        text,
+        text_error,
+    }
+}
+
+fn prepare_layout_page(
+    document: &Document,
+    layout_page: &crate::LayoutPage,
+    options: &RenderOptions,
+    replay: bool,
+    fonts: &fonts::FontBook,
+    retain_text: bool,
+) -> (RenderedPage, Scene) {
     let page = &layout_page.page;
     let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
     let settings = TextSettings::from_document(&document.metadata);
@@ -197,15 +240,19 @@ fn render_layout_page(
         replay,
         &text_renderer,
         body_text.as_ref(),
+        retain_text,
     );
-    RenderedPage {
-        source_page_index: layout_page.source_page_index,
-        width: page.width,
-        height: page.height,
+    (
+        RenderedPage {
+            source_page_index: layout_page.source_page_index,
+            width: page.width,
+            height: page.height,
+            svg: String::new(),
+            text_diagnostics: text_renderer.diagnostics(),
+            object_diagnostics: text_renderer.object_diagnostics(),
+        },
         svg,
-        text_diagnostics: text_renderer.diagnostics(),
-        object_diagnostics: text_renderer.object_diagnostics(),
-    }
+    )
 }
 
 struct PreparedBodyText {
@@ -443,6 +490,7 @@ const DEFAULT_INK_LIGHT_MODE: &str = "#1a1a1a";
 // Pressure channel on v4.4.x files can be present but all-zero; treat as absent.
 const PRESSURE_PRESENT_EPSILON: f64 = 0.01;
 
+#[allow(clippy::too_many_arguments)]
 fn render_page_contents_svg(
     page: &Page,
     metadata: &crate::DocumentMetadata,
@@ -451,7 +499,8 @@ fn render_page_contents_svg(
     replay: bool,
     text_renderer: &TextRenderer<'_>,
     body_text: Option<&PreparedBodyText>,
-) -> String {
+    retain_text: bool,
+) -> Scene {
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
     let vb_y = 0.0;
@@ -466,6 +515,12 @@ fn render_page_contents_svg(
             .width(svg_w)
             .height(svg_h),
     );
+    #[cfg(feature = "pdf")]
+    if retain_text {
+        svg.retain_text();
+    }
+    #[cfg(not(feature = "pdf"))]
+    let _ = retain_text;
     svg.push(
         Rectangle::new()
             .x(vb_x)
@@ -512,7 +567,7 @@ fn render_page_contents_svg(
     }
     render_pass(&mut svg, &composition, RenderPass::Masking);
     text_renderer.embed_fonts(&mut svg);
-    svg.finish()
+    svg
 }
 
 struct CompositionContext<'a> {
@@ -1181,8 +1236,14 @@ fn paint_line_objects(
     renderer: &TextRenderer<'_>,
     viewport: Option<Viewport>,
 ) {
-    let left = aligned_line_left(line, left, available_width, alignment);
-    for placement in &line.objects {
+    let canonical = svg.retains_text();
+    let advance = line.advance_for_paint(canonical).unwrap_or(line.advance);
+    let left = left + text::line_alignment_offset(advance, available_width, alignment);
+    for (index, placement) in line.objects.iter().enumerate() {
+        let Some(position) = line.object_position(index, canonical) else {
+            continue;
+        };
+        let placement_x = position.x;
         let object = &placement.object;
         let Some(span) = styled.object_span(object.span_index) else {
             continue;
@@ -1205,8 +1266,8 @@ fn paint_line_objects(
                 _ => false,
             };
         let target = BoundingBox {
-            x_min: left + placement.x,
-            x_max: left + placement.x + object.width(),
+            x_min: left + placement_x,
+            x_max: left + placement_x + object.width(),
             y_min: baseline - height,
             y_max: baseline,
         };
@@ -1247,7 +1308,7 @@ fn paint_line_objects(
                     table::prepare_table_drawing(
                         table,
                         span.layout_constraint,
-                        [left + placement.x, baseline - height],
+                        [left + placement_x, baseline - height],
                         theme,
                         &drawing_renderer,
                     )
@@ -1255,7 +1316,8 @@ fn paint_line_objects(
             }
             _ => None,
         };
-        let mut paint_bounds = object_paint_bounds(placement, left, baseline);
+        let mut paint_bounds =
+            object_paint_bounds(placement, left + placement_x - placement.x, baseline);
         if let Some(Ok(prepared)) = &drawing_code {
             if body_clone {
                 paint_bounds = prepared.panel_bbox;
@@ -1329,7 +1391,7 @@ fn paint_line_objects(
             continue;
         }
         let offset = (
-            left + placement.x - object.bounds.x_min,
+            left + placement_x - object.bounds.x_min,
             baseline - height - object.bounds.y_min,
         );
         svg.scope(
@@ -1578,6 +1640,11 @@ fn render_flow_line(
     renderer: &TextRenderer<'_>,
 ) {
     if range.is_empty() {
+        return;
+    }
+    #[cfg(feature = "pdf")]
+    if svg.retains_text() {
+        svg.reject_native_text("text fallback has no retained glyph plan".into());
         return;
     }
     let (x, anchor) = match alignment {

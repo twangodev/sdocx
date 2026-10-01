@@ -3,6 +3,7 @@ use std::ops::Range;
 use crate::PredefinedTextStyle;
 use crate::render::RenderTheme;
 
+use super::bidi::BidiError;
 use super::breaks::{BreakCandidate, BreakKind, ParagraphBreaks, break_candidates};
 use super::measurement::{MeasuredCluster, MeasurementError, ParagraphMeasurer};
 use super::objects::{MeasuredObject, ObjectMeasurementContext};
@@ -17,6 +18,36 @@ pub(in crate::render) struct WrappedLine {
     pub objects: Vec<PositionedObject>,
     pub visual_order: Vec<LineEntry>,
     pub native_positioned: bool,
+    pub geometry: LineGeometry,
+}
+
+#[derive(Debug)]
+pub(in crate::render) enum LineGeometry {
+    Unmeasured,
+    Positioned {
+        advance: f64,
+        text: Vec<LinePosition>,
+        objects: Vec<LinePosition>,
+    },
+    Unavailable(BidiError),
+}
+
+impl std::fmt::Display for LineGeometry {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unmeasured => formatter.write_str("text geometry was not measured"),
+            Self::Positioned { .. } => formatter.write_str("positioned text geometry"),
+            Self::Unavailable(error) => error.fmt(formatter),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(in crate::render) struct LinePosition {
+    pub x: f64,
+    pub glyph_offset_x: f64,
+    pub extra_advance: f64,
+    pub visual_rank: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -70,21 +101,6 @@ impl MeasuredItem {
 }
 
 impl WrappedLine {
-    pub fn text_in_visual_order(&self) -> impl Iterator<Item = &PositionedCluster> {
-        self.placements
-            .iter()
-            .filter(move |_| !self.native_positioned)
-            .chain(
-                self.visual_order
-                    .iter()
-                    .filter(move |_| self.native_positioned)
-                    .filter_map(|entry| match entry {
-                        LineEntry::Text(index) => self.placements.get(*index),
-                        LineEntry::Object(_) => None,
-                    }),
-            )
-    }
-
     pub fn unmeasured(source: Range<usize>, font_size: f64) -> Self {
         Self {
             source,
@@ -95,7 +111,105 @@ impl WrappedLine {
             objects: Vec::new(),
             visual_order: Vec::new(),
             native_positioned: false,
+            geometry: LineGeometry::Unmeasured,
         }
+    }
+
+    pub fn advance_for_paint(&self, canonical: bool) -> Option<f64> {
+        if !canonical {
+            return Some(self.advance);
+        }
+        match &self.geometry {
+            LineGeometry::Positioned { advance, .. } => Some(*advance),
+            _ => None,
+        }
+    }
+
+    pub fn text_position(&self, index: usize, canonical: bool) -> Option<LinePosition> {
+        if canonical {
+            match &self.geometry {
+                LineGeometry::Positioned { text, .. } => text.get(index).copied(),
+                _ => None,
+            }
+        } else {
+            self.placements.get(index).map(|placement| LinePosition {
+                x: placement.x,
+                glyph_offset_x: 0.0,
+                extra_advance: placement.extra_advance,
+                visual_rank: placement.visual_rank,
+            })
+        }
+    }
+
+    pub fn object_position(&self, index: usize, canonical: bool) -> Option<LinePosition> {
+        if canonical {
+            match &self.geometry {
+                LineGeometry::Positioned { objects, .. } => objects.get(index).copied(),
+                _ => None,
+            }
+        } else {
+            self.objects.get(index).map(|placement| LinePosition {
+                x: placement.x,
+                glyph_offset_x: 0.0,
+                extra_advance: 0.0,
+                visual_rank: placement.visual_rank,
+            })
+        }
+    }
+
+    fn canonical_geometry(&self) -> Result<LineGeometry, MeasurementError> {
+        if self.visual_order.len() != self.placements.len() + self.objects.len() {
+            return Err(MeasurementError::InvalidCluster);
+        }
+        let mut text = vec![LinePosition::default(); self.placements.len()];
+        let mut objects = vec![LinePosition::default(); self.objects.len()];
+        let mut seen_text = vec![false; text.len()];
+        let mut seen_objects = vec![false; objects.len()];
+        let mut x = 0.0;
+        for (rank, &entry) in self.visual_order.iter().enumerate() {
+            let (position, seen, advance, content_x) = match entry {
+                LineEntry::Text(index) => (
+                    text.get_mut(index),
+                    seen_text.get_mut(index),
+                    self.placements
+                        .get(index)
+                        .map(|placement| placement.cluster.advance),
+                    x,
+                ),
+                LineEntry::Object(index) => (
+                    objects.get_mut(index),
+                    seen_objects.get_mut(index),
+                    self.objects
+                        .get(index)
+                        .map(|placement| placement.object.advance()),
+                    finite_advance(
+                        x + self
+                            .objects
+                            .get(index)
+                            .ok_or(MeasurementError::InvalidCluster)?
+                            .object
+                            .left_margin,
+                    )?,
+                ),
+            };
+            let position = position.ok_or(MeasurementError::InvalidCluster)?;
+            let seen = seen.ok_or(MeasurementError::InvalidCluster)?;
+            if *seen {
+                return Err(MeasurementError::InvalidCluster);
+            }
+            *seen = true;
+            *position = LinePosition {
+                x: content_x,
+                visual_rank: rank,
+                ..Default::default()
+            };
+            x = finite_advance(x + advance.ok_or(MeasurementError::InvalidCluster)?)?;
+        }
+        Ok(LineGeometry::Positioned {
+            advance: x,
+            text,
+            objects,
+        })
     }
 
     pub fn object_height(&self) -> f64 {
@@ -125,114 +239,138 @@ impl WrappedLine {
         {
             return Ok(());
         }
-        let mut positions = Vec::with_capacity(self.visual_order.len());
-        let mut x = 0.0;
-        for (rank, &entry) in self.visual_order.iter().enumerate() {
-            let advance = match entry {
-                LineEntry::Text(index) => self.placements[index].cluster.advance,
-                LineEntry::Object(index) => self.objects[index].object.advance(),
-            };
-            let content_x = match entry {
-                LineEntry::Object(index) => {
-                    finite_advance(x + self.objects[index].object.left_margin)?
-                }
-                LineEntry::Text(_) => x,
-            };
-            positions.push((entry, content_x, rank));
-            x = finite_advance(x + advance)?;
+        if matches!(self.geometry, LineGeometry::Unmeasured) {
+            self.geometry = self.canonical_geometry()?;
         }
-        for (entry, x, rank) in positions {
-            match entry {
-                LineEntry::Text(index) => {
-                    self.placements[index].x = x;
-                    self.placements[index].visual_rank = rank;
-                }
-                LineEntry::Object(index) => {
-                    self.objects[index].x = x;
-                    self.objects[index].visual_rank = rank;
-                }
-            }
+        let LineGeometry::Positioned { text, objects, .. } = &self.geometry else {
+            return Ok(());
+        };
+        for (placement, position) in self.placements.iter_mut().zip(text) {
+            placement.x = position.x;
+            placement.visual_rank = position.visual_rank;
+        }
+        for (placement, position) in self.objects.iter_mut().zip(objects) {
+            placement.x = position.x;
+            placement.visual_rank = position.visual_rank;
         }
         self.native_positioned = true;
         Ok(())
     }
 
     pub fn justify(&mut self, styled: &StyledText<'_>, width: f64) -> Result<(), MeasurementError> {
-        let geometry = |value| {
-            super::finite_native_geometry(value)
-                .map(|value| value as f32)
-                .ok_or(MeasurementError::InvalidCluster)
-        };
-        let width = geometry(width)?;
-        let advance = geometry(self.advance)?;
-        let mut entries = Vec::with_capacity(self.placements.len() + self.objects.len());
-        let mut weights = 0_u32;
-        for (index, placement) in self.placements.iter().enumerate() {
+        let width = native_geometry(width)?;
+        let advance = native_geometry(self.advance)?;
+        let mut weights = Vec::with_capacity(self.placements.len());
+        let mut total_weight = 0_u32;
+        for placement in &self.placements {
             let text = styled
                 .index
                 .slice(placement.cluster.source.clone())
                 .ok_or(MeasurementError::InvalidRange)?;
-            let weight = text
-                .chars()
-                .try_fold(0_u32, |weight, scalar| {
-                    weight.checked_add(match scalar {
-                        ' ' => 1,
-                        '\t' => 4,
-                        _ => 0,
-                    })
-                })
-                .ok_or(MeasurementError::InvalidCluster)?;
-            weights = weights
+            let mut weight = 0_u32;
+            let mut leading_weight = 0_u32;
+            for (index, scalar) in text.chars().enumerate() {
+                let scalar_weight = justification_weight(scalar);
+                weight = weight
+                    .checked_add(scalar_weight)
+                    .ok_or(MeasurementError::InvalidCluster)?;
+                if index > 0
+                    && placement.cluster.run.direction == crate::fonts::Direction::RightToLeft
+                {
+                    leading_weight = leading_weight
+                        .checked_add(scalar_weight)
+                        .ok_or(MeasurementError::InvalidCluster)?;
+                }
+            }
+            total_weight = total_weight
                 .checked_add(weight)
                 .ok_or(MeasurementError::InvalidCluster)?;
-            entries.push((
-                geometry(placement.x)?,
-                if self.native_positioned {
-                    placement.visual_rank
-                } else {
-                    placement.cluster.source.start
-                },
-                weight,
-                LineEntry::Text(index),
-            ));
+            weights.push((weight, leading_weight));
         }
-        for (index, placement) in self.objects.iter().enumerate() {
-            entries.push((
-                geometry(placement.x)?,
-                if self.native_positioned {
-                    placement.visual_rank
-                } else {
-                    placement.object.source.start
-                },
-                0,
-                LineEntry::Object(index),
-            ));
-        }
-        if weights == 0 {
+        if total_weight == 0 {
             return Ok(());
         }
-        let extra = geometry(f64::from((width - advance) / weights as f32))?;
-        entries.sort_by(|left, right| left.0.total_cmp(&right.0).then(left.1.cmp(&right.1)));
-        let mut shift = 0.0_f32;
-        let mut positions = Vec::with_capacity(entries.len());
-        for (x, _, weight, entry) in entries {
-            let x = geometry(f64::from(x + shift))?;
-            let extra_advance = geometry(f64::from(extra * weight as f32))?;
-            shift = geometry(f64::from(shift + extra_advance))?;
-            positions.push((entry, f64::from(x), f64::from(extra_advance)));
-        }
-        let advance = geometry(f64::from(advance + shift))?;
-        for (entry, x, extra_advance) in positions {
+        let extra = native_geometry(f64::from((width - advance) / total_weight as f32))?;
+        let compatibility = self.justification_entries(&weights, false)?;
+        let (compatibility, advance) = justify_entries(compatibility, extra, advance, false)?;
+        let canonical = if let LineGeometry::Positioned { advance, .. } = &self.geometry {
+            let entries = self.justification_entries(&weights, true)?;
+            Some(justify_entries(
+                entries,
+                extra,
+                native_geometry(*advance)?,
+                true,
+            )?)
+        } else {
+            None
+        };
+        for (entry, position) in compatibility {
             match entry {
                 LineEntry::Text(index) => {
-                    self.placements[index].x = x;
-                    self.placements[index].extra_advance = extra_advance;
+                    self.placements[index].x = position.x;
+                    self.placements[index].extra_advance = position.extra_advance;
                 }
-                LineEntry::Object(index) => self.objects[index].x = x,
+                LineEntry::Object(index) => self.objects[index].x = position.x,
             }
+        }
+        if let Some((positions, advance)) = canonical
+            && let LineGeometry::Positioned {
+                advance: stored_advance,
+                text,
+                objects,
+            } = &mut self.geometry
+        {
+            for (entry, position) in positions {
+                match entry {
+                    LineEntry::Text(index) => text[index] = position,
+                    LineEntry::Object(index) => objects[index] = position,
+                }
+            }
+            *stored_advance = f64::from(advance);
         }
         self.advance = f64::from(advance);
         Ok(())
+    }
+
+    fn justification_entries(
+        &self,
+        weights: &[(u32, u32)],
+        canonical: bool,
+    ) -> Result<Vec<JustificationEntry>, MeasurementError> {
+        let mut entries = Vec::with_capacity(self.placements.len() + self.objects.len());
+        for (index, placement) in self.placements.iter().enumerate() {
+            let position = self
+                .text_position(index, canonical)
+                .ok_or(MeasurementError::InvalidCluster)?;
+            entries.push(JustificationEntry {
+                entry: LineEntry::Text(index),
+                position,
+                weight: weights[index].0,
+                leading_weight: if canonical { weights[index].1 } else { 0 },
+                rank: if canonical || self.native_positioned {
+                    position.visual_rank
+                } else {
+                    placement.cluster.source.start
+                },
+            });
+        }
+        for (index, placement) in self.objects.iter().enumerate() {
+            let position = self
+                .object_position(index, canonical)
+                .ok_or(MeasurementError::InvalidCluster)?;
+            entries.push(JustificationEntry {
+                entry: LineEntry::Object(index),
+                position,
+                weight: 0,
+                leading_weight: 0,
+                rank: if canonical || self.native_positioned {
+                    position.visual_rank
+                } else {
+                    placement.object.source.start
+                },
+            });
+        }
+        Ok(entries)
     }
 
     pub fn has_block_margins(&self) -> bool {
@@ -253,6 +391,66 @@ impl WrappedLine {
                 ]
             })
     }
+}
+
+struct JustificationEntry {
+    entry: LineEntry,
+    position: LinePosition,
+    weight: u32,
+    leading_weight: u32,
+    rank: usize,
+}
+
+fn native_geometry(value: f64) -> Result<f32, MeasurementError> {
+    super::finite_native_geometry(value)
+        .map(|value| value as f32)
+        .ok_or(MeasurementError::InvalidCluster)
+}
+
+fn justification_weight(scalar: char) -> u32 {
+    match scalar {
+        ' ' => 1,
+        '\t' => 4,
+        _ => 0,
+    }
+}
+
+fn justify_entries(
+    mut entries: Vec<JustificationEntry>,
+    extra: f32,
+    advance: f32,
+    canonical: bool,
+) -> Result<(Vec<(LineEntry, LinePosition)>, f32), MeasurementError> {
+    if canonical {
+        entries.sort_unstable_by_key(|entry| entry.rank);
+    } else {
+        entries.sort_by(|left, right| {
+            left.position
+                .x
+                .total_cmp(&right.position.x)
+                .then(left.rank.cmp(&right.rank))
+        });
+    }
+    let mut shift = 0.0_f32;
+    let mut positions = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let x = native_geometry(f64::from(native_geometry(entry.position.x)? + shift))?;
+        let extra_advance = native_geometry(f64::from(extra * entry.weight as f32))?;
+        let glyph_offset_x = native_geometry(f64::from(
+            native_geometry(entry.position.glyph_offset_x)? + extra * entry.leading_weight as f32,
+        ))?;
+        shift = native_geometry(f64::from(shift + extra_advance))?;
+        positions.push((
+            entry.entry,
+            LinePosition {
+                x: f64::from(x),
+                glyph_offset_x: f64::from(glyph_offset_x),
+                extra_advance: f64::from(extra_advance),
+                visual_rank: entry.position.visual_rank,
+            },
+        ));
+    }
+    Ok((positions, native_geometry(f64::from(advance + shift))?))
 }
 
 fn measured_items(
@@ -631,8 +829,13 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 .map(|order| order.iter().map(|&index| logical_entries[index]).collect())
                 .unwrap_or_default(),
             native_positioned: false,
+            geometry: LineGeometry::Unmeasured,
         };
-        if visual_order.is_ok() && line.objects.is_empty() {
+        line.geometry = match visual_order {
+            Ok(_) => line.canonical_geometry()?,
+            Err(error) => LineGeometry::Unavailable(error),
+        };
+        if matches!(line.geometry, LineGeometry::Positioned { .. }) && line.objects.is_empty() {
             line.position_native(self.styled)?;
         }
         Ok(line)
@@ -766,6 +969,136 @@ mod tests {
             &FontBook::default(),
         )
         .unwrap()
+    }
+
+    fn arabic_fonts() -> FontBook {
+        let mut database = fontdb::Database::new();
+        database
+            .load_font_data(include_bytes!("../../../tests/assets/fonts/DejaVuSans.ttf").to_vec());
+        database.set_sans_serif_family("DejaVu Sans");
+        FontBook::new(Arc::new(database))
+    }
+
+    #[test]
+    fn lam_alef_has_canonical_geometry_without_standalone_svg_admission() {
+        let content = text("لا");
+        let line = wrap_with_fonts(&content, 0..2, 1000.0, &arabic_fonts())
+            .unwrap()
+            .remove(0);
+        assert_eq!(line.source, 0..2);
+        assert_eq!(line.placements.len(), 1);
+        assert_eq!(line.placements[0].cluster.source, 0..2);
+        assert_eq!(line.placements[0].cluster.advance, 25.6640625);
+        assert!(!line.native_positioned);
+        assert_eq!(line.advance_for_paint(true), Some(25.6640625));
+        assert_eq!(line.text_position(0, true).unwrap().x, 0.0);
+        assert!(matches!(line.geometry, LineGeometry::Positioned { .. }));
+        assert!(
+            line.placements[0]
+                .cluster
+                .native_paint_offset("لا")
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn rtl_ligature_geometry_keeps_logical_source_and_svg_compatibility() {
+        let content = text("لا אב");
+        let line = wrap_with_fonts(&content, 0..5, 1000.0, &arabic_fonts())
+            .unwrap()
+            .remove(0);
+        assert!(!line.native_positioned);
+        assert_eq!(
+            line.placements
+                .iter()
+                .map(|placement| placement.cluster.source.clone())
+                .collect::<Vec<_>>(),
+            [0..2, 2..3, 3..4, 4..5]
+        );
+        assert_eq!(
+            line.visual_order,
+            [
+                LineEntry::Text(3),
+                LineEntry::Text(2),
+                LineEntry::Text(1),
+                LineEntry::Text(0)
+            ]
+        );
+        assert_eq!(
+            (0..4)
+                .map(|index| line.text_position(index, true).unwrap().x)
+                .collect::<Vec<_>>(),
+            [70.400390625, 56.09619140625, 26.015625, 0.0]
+        );
+        assert_eq!(
+            (0..4)
+                .map(|index| line.text_position(index, false).unwrap().x)
+                .collect::<Vec<_>>(),
+            [0.0, 25.6640625, 39.96826171875, 70.048828125]
+        );
+        assert_eq!(line.advance_for_paint(true), Some(96.064453125));
+    }
+
+    #[test]
+    fn justification_positions_rtl_ligatures_without_replacing_svg_geometry() {
+        let content = text("لا  אב");
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        let mut line = wrap_with_fonts(&content, 0..6, 1000.0, &arabic_fonts())
+            .unwrap()
+            .remove(0);
+        assert_eq!(line.advance_for_paint(true), Some(110.36865234375));
+        line.justify(&styled, 200.0).unwrap();
+        assert!(!line.native_positioned);
+        assert_eq!(line.source, 0..6);
+        assert_eq!(line.advance_for_paint(true), Some(200.0));
+        assert_eq!(line.advance_for_paint(false), Some(200.0));
+        assert_eq!(
+            (0..5)
+                .map(|index| line.text_position(index, true).unwrap().x)
+                .collect::<Vec<_>>(),
+            [
+                174.3359375,
+                115.216064453125,
+                56.09619140625,
+                26.015625,
+                0.0
+            ]
+        );
+        assert_eq!(
+            (0..5)
+                .map(|index| line.text_position(index, false).unwrap().x)
+                .collect::<Vec<_>>(),
+            [
+                0.0,
+                25.6640625,
+                84.783935546875,
+                143.90380859375,
+                173.984375
+            ]
+        );
+        for index in [1, 2] {
+            assert_eq!(
+                line.text_position(index, true).unwrap().extra_advance,
+                44.815673828125
+            );
+        }
+        assert_eq!(line.placements[0].cluster.source, 0..2);
+    }
+
+    #[test]
+    fn unsupported_paragraph_bidi_retains_its_geometry_reason() {
+        let lines = wrap(&text("A\u{2029}ב"), 1000.0);
+        assert_eq!(ranges(&lines), [0..2, 2..3]);
+        for line in lines {
+            assert!(matches!(
+                line.geometry,
+                LineGeometry::Unavailable(BidiError::UnsupportedParagraphSeparator)
+            ));
+            assert_eq!(line.advance_for_paint(true), None);
+            assert!(line.text_position(0, true).is_none());
+            assert!(line.text_position(0, false).is_some());
+        }
     }
 
     fn paragraph_with_object<'a, 'text, 'fonts>(
@@ -978,8 +1311,12 @@ mod tests {
             ]
         );
         assert_eq!(
-            line.text_in_visual_order()
-                .map(|placement| placement.cluster.source.start)
+            line.visual_order
+                .iter()
+                .filter_map(|entry| match entry {
+                    LineEntry::Text(index) => Some(line.placements[*index].cluster.source.start),
+                    LineEntry::Object(_) => None,
+                })
                 .collect::<Vec<_>>(),
             [0, 3, 2, 1, 4, 5]
         );
@@ -1058,6 +1395,8 @@ mod tests {
         line.position_native(&styled).unwrap();
         assert!(!line.native_positioned);
         assert_eq!(line.objects[0].x, object_x);
+        assert_eq!(line.object_position(0, true).unwrap().x, 58.64501953125);
+        assert_eq!(line.text_position(3, true).unwrap().x, 29.35546875);
         assert_eq!(
             line.placements.iter().map(|p| p.x).collect::<Vec<_>>(),
             positions
@@ -1128,6 +1467,9 @@ mod tests {
         let styled = StyledText::new(&content, TextContext::Placed, settings);
         let mut lines = wrap(&content, 1000.0);
         let advance = lines[0].advance;
+        let canonical_positions: Vec<_> = (0..lines[0].placements.len())
+            .map(|index| lines[0].text_position(index, true))
+            .collect();
         let positions: Vec<_> = lines[0]
             .placements
             .iter()
@@ -1136,6 +1478,12 @@ mod tests {
         for width in [f64::NAN, f64::INFINITY, f64::MAX] {
             assert!(lines[0].justify(&styled, width).is_err());
             assert_eq!(lines[0].advance, advance);
+            assert_eq!(
+                (0..lines[0].placements.len())
+                    .map(|index| lines[0].text_position(index, true))
+                    .collect::<Vec<_>>(),
+                canonical_positions
+            );
             assert_eq!(
                 lines[0]
                     .placements

@@ -62,7 +62,54 @@ pub(in crate::render) struct ClusterPaintOffset {
     pub y: f64,
 }
 
+#[cfg(any(feature = "pdf", test))]
+pub(in crate::render) struct RetainedGlyph<'a> {
+    pub face: &'a ResolvedFace,
+    pub source: &'a Range<usize>,
+    pub source_bytes: Range<usize>,
+    pub glyph_id: u32,
+    pub offset_x: f64,
+    pub offset_y: f64,
+    pub advance_x: f64,
+    pub advance_y: f64,
+}
+
 impl MeasuredCluster {
+    #[cfg(any(feature = "pdf", test))]
+    pub fn retained_glyphs<'a>(
+        &'a self,
+        index: &crate::text_index::TextIndex<'_>,
+    ) -> Result<impl Iterator<Item = RetainedGlyph<'a>> + 'a, MeasurementError> {
+        let glyphs = self
+            .run
+            .glyphs
+            .get(self.glyphs.clone())
+            .ok_or(MeasurementError::InvalidCluster)?;
+        let first = glyphs.first().ok_or(MeasurementError::InvalidCluster)?;
+        let source_bytes = index
+            .char_to_byte(self.source.start)
+            .ok_or(MeasurementError::InvalidRange)?
+            ..index
+                .char_to_byte(self.source.end)
+                .ok_or(MeasurementError::InvalidRange)?;
+        if glyphs.iter().any(|glyph| glyph.source != self.source) {
+            return Err(MeasurementError::InvalidCluster);
+        }
+        let scale = self.run.style.font_size / f64::from(self.run.face.metrics.units_per_em);
+        let pen_x = first.pen_x;
+        let pen_y = first.pen_y;
+        Ok(glyphs.iter().map(move |glyph| RetainedGlyph {
+            face: &self.run.face,
+            source: &glyph.source,
+            source_bytes: source_bytes.clone(),
+            glyph_id: glyph.raw.id,
+            offset_x: (glyph.pen_x - pen_x + i64::from(glyph.raw.x_offset)) as f64 * scale,
+            offset_y: -((glyph.pen_y - pen_y + i64::from(glyph.raw.y_offset)) as f64 * scale),
+            advance_x: f64::from(glyph.raw.x_advance) * scale,
+            advance_y: -(f64::from(glyph.raw.y_advance) * scale),
+        }))
+    }
+
     pub fn supports_positioned_text(&self) -> bool {
         self.run.direction == Direction::LeftToRight && self.has_static_glyphs()
     }
@@ -642,13 +689,20 @@ mod tests {
     }
 
     fn measure(text_box: &RichTextBox, context: TextContext) -> MeasuredText {
+        measure_with_fonts(text_box, context, &FontBook::default())
+    }
+
+    fn measure_with_fonts(
+        text_box: &RichTextBox,
+        context: TextContext,
+        fonts: &FontBook,
+    ) -> MeasuredText {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
             ..Default::default()
         };
-        let fonts = FontBook::default();
-        let renderer = TextRenderer::new(settings, &fonts);
+        let renderer = TextRenderer::new(settings, fonts);
         let styled = StyledText::new(text_box, context, settings);
         measure_text(
             &styled,
@@ -658,6 +712,40 @@ mod tests {
             &renderer,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn retained_arabic_mark_and_ligature_keep_original_glyphs_and_source_bytes() {
+        let mut database = crate::fonts::fontdb::Database::new();
+        database
+            .load_font_data(include_bytes!("../../../tests/assets/fonts/DejaVuSans.ttf").to_vec());
+        database.set_sans_serif_family("DejaVu Sans");
+        let fonts = FontBook::new(Arc::new(database));
+        let content = text_box("Aلَّا");
+        let measured = measure_with_fonts(&content, TextContext::Placed, &fonts);
+        assert_eq!(measured.clusters.len(), 2);
+        let cluster = &measured.clusters[1];
+        assert_eq!(cluster.source, 1..5);
+        assert_eq!(cluster.run.direction, Direction::RightToLeft);
+        assert_eq!(cluster.advance, 25.6640625);
+        let index = crate::text_index::TextIndex::new(&content.text);
+        let glyphs: Vec<_> = cluster.retained_glyphs(&index).unwrap().collect();
+        assert_eq!(glyphs.len(), 2);
+        assert_eq!(glyphs[0].glyph_id, 6020);
+        assert_eq!(glyphs[1].glyph_id, 5365);
+        for glyph in &glyphs {
+            assert_eq!(glyph.source, &(1..5));
+            assert_eq!(glyph.source_bytes, 1..9);
+            assert_eq!(glyph.face.family, "DejaVu Sans");
+            assert_eq!(glyph.advance_y, 0.0);
+        }
+        assert_eq!(glyphs[0].offset_x, 7.80029296875);
+        assert_eq!(glyphs[0].offset_y, -9.8876953125);
+        assert_eq!(glyphs[0].advance_x, 0.0);
+        assert_eq!(glyphs[1].offset_x, 0.0);
+        assert_eq!(glyphs[1].offset_y, 0.0);
+        assert_eq!(glyphs[1].advance_x, 25.6640625);
+        assert!(cluster.native_paint_offset("لَّا").unwrap().is_none());
     }
 
     #[test]

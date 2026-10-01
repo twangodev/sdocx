@@ -83,7 +83,10 @@ pub use object_flexible::{
 pub use page_objects::{PageObject, PageObjectContent};
 pub use page_selection::{PageSelectionError, parse_page_selection};
 #[cfg(feature = "pdf")]
-pub use pdf::{PdfError, PdfOptions, render_document_pdf, render_svg_pages_pdf};
+pub use pdf::{
+    PdfError, PdfOptions, render_document_pdf, render_layout_pages_pdf_with_fonts,
+    render_svg_pages_pdf,
+};
 #[cfg(feature = "render")]
 pub use render::{
     ObjectDiagnostic, ObjectDiagnosticKind, PointMarkerTarget, RenderColorMode, RenderOptions,

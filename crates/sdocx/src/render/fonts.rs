@@ -318,6 +318,11 @@ impl ResolvedFace {
         self.data.as_ref().as_ref()
     }
 
+    #[cfg(feature = "pdf")]
+    pub(crate) fn shared_data(&self) -> Arc<dyn AsRef<[u8]> + Send + Sync> {
+        self.data.clone()
+    }
+
     /// Test glyph coverage while preserving shaping normalization and default ignorables.
     pub fn covers(&self, text: &str) -> Result<bool, FontError> {
         let face = rustybuzz::Face::from_slice(self.bytes(), self.index).ok_or_else(|| {

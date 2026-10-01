@@ -25,7 +25,8 @@ pub(in crate::render) fn render_line_backgrounds(
     theme: RenderTheme,
     viewport: Option<Viewport>,
 ) -> Vec<TextBackgroundIssue> {
-    let (rectangles, issues) = line_backgrounds(styled, line, theme, viewport);
+    let (rectangles, issues) =
+        line_backgrounds_for_paint(styled, line, theme, viewport, svg.retains_text());
     for rectangle in rectangles {
         let bounds = rectangle.bounds;
         svg.push(
@@ -41,11 +42,22 @@ pub(in crate::render) fn render_line_backgrounds(
     issues
 }
 
+#[cfg(test)]
 fn line_backgrounds(
     styled: &StyledText<'_>,
     line: &TextLine,
     theme: RenderTheme,
     viewport: Option<Viewport>,
+) -> (Vec<BackgroundRectangle>, Vec<TextBackgroundIssue>) {
+    line_backgrounds_for_paint(styled, line, theme, viewport, false)
+}
+
+fn line_backgrounds_for_paint(
+    styled: &StyledText<'_>,
+    line: &TextLine,
+    theme: RenderTheme,
+    viewport: Option<Viewport>,
+    canonical: bool,
 ) -> (Vec<BackgroundRectangle>, Vec<TextBackgroundIssue>) {
     let mut rectangles: Vec<BackgroundRectangle> = Vec::new();
     let mut issues = Vec::new();
@@ -64,12 +76,14 @@ fn line_backgrounds(
             .background
             .filter(|background| background.alpha != 0)
     };
-    let contexts = if line.line.native_positioned {
+    let visual_positioned =
+        line.line.native_positioned || (canonical && line.line.advance_for_paint(true).is_some());
+    let contexts = if visual_positioned {
         Vec::new()
     } else {
         super::paint::paragraph_bidi_contexts(styled, line.line.source.start)
     };
-    let reordered = !line.line.native_positioned
+    let reordered = !visual_positioned
         && (line
             .line
             .placements
@@ -90,9 +104,35 @@ fn line_backgrounds(
         }
         return (rectangles, issues);
     }
-    let origin =
-        line.x + super::line_alignment_offset(line.line.advance, line.width, line.alignment);
-    for placement in line.line.text_in_visual_order() {
+    let advance = line
+        .line
+        .advance_for_paint(canonical)
+        .unwrap_or(line.line.advance);
+    let origin = line.x + super::line_alignment_offset(advance, line.width, line.alignment);
+    let placements = line
+        .line
+        .placements
+        .iter()
+        .enumerate()
+        .filter(|_| !visual_positioned)
+        .chain(
+            line.line
+                .visual_order
+                .iter()
+                .filter(|_| visual_positioned)
+                .filter_map(|entry| match entry {
+                    super::wrapping::LineEntry::Text(index) => line
+                        .line
+                        .placements
+                        .get(*index)
+                        .map(|placement| (*index, placement)),
+                    super::wrapping::LineEntry::Object(_) => None,
+                }),
+        );
+    for (index, placement) in placements {
+        let Some(position) = line.line.text_position(index, canonical) else {
+            continue;
+        };
         let source = &placement.cluster.source;
         if source.is_empty()
             || !ranges
@@ -101,8 +141,8 @@ fn line_backgrounds(
         {
             continue;
         }
-        let left = origin + placement.x;
-        let right = left + placement.cluster.advance + placement.extra_advance;
+        let left = origin + position.x;
+        let right = left + placement.cluster.advance + position.extra_advance;
         let bounds = BoundingBox {
             x_min: left,
             y_min: line.background_top,

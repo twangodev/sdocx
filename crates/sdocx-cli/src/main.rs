@@ -293,6 +293,37 @@ fn main() {
             }),
         None => (0..layout.pages.len()).collect(),
     };
+
+    if format == Format::Pdf {
+        let mut options = sdocx::PdfOptions::new(fonts.database());
+        if let Some(dpi) = cli.pdf_dpi {
+            options.dpi = dpi;
+        }
+        let pdf = sdocx::render_layout_pages_pdf_with_fonts(
+            &doc,
+            &layout,
+            &page_indices,
+            &RenderOptions::default(),
+            &options,
+            &fonts,
+        )
+        .unwrap_or_else(|error| {
+            eprintln!("Error: {error}");
+            std::process::exit(1);
+        });
+        if let Err(error) = fs::write(&output_base, &pdf) {
+            eprintln!("Error: failed to write {}: {error}", output_base.display());
+            std::process::exit(1);
+        }
+        eprintln!(
+            "Wrote {} ({} bytes, {} pages)",
+            output_base.display(),
+            pdf.len(),
+            page_indices.len()
+        );
+        return;
+    }
+
     let rendered_pages: Vec<_> = page_indices
         .iter()
         .map(|&index| {
@@ -306,28 +337,6 @@ fn main() {
             .expect("validated visible page index")
         })
         .collect();
-
-    if format == Format::Pdf {
-        let mut options = sdocx::PdfOptions::new(fonts.database());
-        if let Some(dpi) = cli.pdf_dpi {
-            options.dpi = dpi;
-        }
-        let pdf = sdocx::render_svg_pages_pdf(&rendered_pages, &options).unwrap_or_else(|error| {
-            eprintln!("Error: {error}");
-            std::process::exit(1);
-        });
-        if let Err(error) = fs::write(&output_base, &pdf) {
-            eprintln!("Error: failed to write {}: {error}", output_base.display());
-            std::process::exit(1);
-        }
-        eprintln!(
-            "Wrote {} ({} bytes, {} pages)",
-            output_base.display(),
-            pdf.len(),
-            rendered_pages.len()
-        );
-        return;
-    }
 
     let png_options = (format == Format::Png).then_some(&svg_options);
     if rendered_pages.len() == 1 {

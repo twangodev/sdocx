@@ -138,13 +138,47 @@ children!(Group, Definitions, ClipPath, LinearGradient);
 pub(super) struct Scene {
     elements: Vec<Node>,
     next_id: usize,
+    #[cfg(feature = "pdf")]
+    native_text: Option<super::text::native::NativeTextRegistry>,
+    #[cfg(feature = "pdf")]
+    native_text_error: Option<String>,
 }
 impl Scene {
     pub fn new(root: Svg) -> Self {
         Self {
             elements: vec![root.into()],
             next_id: 0,
+            #[cfg(feature = "pdf")]
+            native_text: None,
+            #[cfg(feature = "pdf")]
+            native_text_error: None,
         }
+    }
+    #[cfg(feature = "pdf")]
+    pub fn retain_text(&mut self) {
+        self.native_text = Some(Default::default());
+    }
+    pub fn retains_text(&self) -> bool {
+        #[cfg(feature = "pdf")]
+        return self.native_text.is_some();
+        #[cfg(not(feature = "pdf"))]
+        false
+    }
+    #[cfg(feature = "pdf")]
+    pub fn native_text(&mut self) -> &mut super::text::native::NativeTextRegistry {
+        self.native_text.as_mut().expect("retained text scene")
+    }
+    #[cfg(feature = "pdf")]
+    pub fn take_native_text(&mut self) -> super::text::native::NativeTextRegistry {
+        self.native_text.take().expect("retained text scene")
+    }
+    #[cfg(feature = "pdf")]
+    pub fn reject_native_text(&mut self, message: String) {
+        self.native_text_error.get_or_insert(message);
+    }
+    #[cfg(feature = "pdf")]
+    pub fn take_native_text_error(&mut self) -> Option<String> {
+        self.native_text_error.take()
     }
     pub fn push(&mut self, node: impl Into<Node>) {
         let node = node.into();
@@ -397,6 +431,11 @@ impl Text {
     }
     pub fn preserve_space(mut self) -> Self {
         self.0.attr("xml:space", "preserve");
+        self
+    }
+    #[cfg(feature = "pdf")]
+    pub fn native_id(mut self, id: super::text::native::NativeTextId) -> Self {
+        self.0.attr("id", id.svg_id());
         self
     }
 }

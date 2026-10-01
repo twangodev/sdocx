@@ -13,6 +13,8 @@ mod bidi;
 mod breaks;
 mod layout;
 mod measurement;
+#[cfg(feature = "pdf")]
+pub(crate) mod native;
 mod objects;
 mod pagination;
 mod paint;

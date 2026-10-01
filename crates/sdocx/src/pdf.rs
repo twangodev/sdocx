@@ -1,11 +1,15 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
-use krilla::{Document as PdfDocument, geom::Size, page::PageSettings};
 use self::svg::{SurfaceExt, SvgSettings};
+use krilla::{Document as PdfDocument, geom::Size, page::PageSettings};
 
 mod svg;
 
-use crate::{Document, RenderOptions, RenderedPage, render_document_svg_with_fonts};
+use crate::render::{NativePdfPainter, NativeTextRegistry, render_layout_page_scene};
+use crate::{Document, LayoutDocument, RenderOptions, RenderedPage};
 
 pub use usvg::fontdb;
 
@@ -44,6 +48,10 @@ pub enum PdfError {
     InvalidDpi,
     #[error("invalid PDF dimensions for page {page_index}")]
     InvalidPageSize { page_index: usize },
+    #[error("visible page index {page_index} is out of bounds")]
+    InvalidPageIndex { page_index: usize },
+    #[error("unsupported retained text on page {page_index}: {message}")]
+    UnsupportedText { page_index: usize, message: String },
     #[error("invalid SVG on page {page_index}: {message}")]
     InvalidSvg { page_index: usize, message: String },
     #[error("invalid PNG on page {page_index}: {message}")]
@@ -58,9 +66,52 @@ pub fn render_document_pdf(
     pdf_options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
     let fonts = crate::fonts::FontBook::new(pdf_options.font_database.clone());
-    render_svg_pages_pdf(
-        &render_document_svg_with_fonts(document, render_options, &fonts),
+    let layout = crate::layout_document(document);
+    let indices = (0..layout.pages.len()).collect::<Vec<_>>();
+    render_layout_pages_pdf_with_fonts(
+        document,
+        &layout,
+        &indices,
+        render_options,
         pdf_options,
+        &fonts,
+    )
+}
+
+/// Export selected visible pages using the authoritative Rust text and font plans.
+/// The supplied font book controls both measurement and SVG carrier parsing.
+pub fn render_layout_pages_pdf_with_fonts(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_indices: &[usize],
+    render_options: &RenderOptions,
+    pdf_options: &PdfOptions,
+    fonts: &crate::fonts::FontBook,
+) -> Result<Vec<u8>, PdfError> {
+    let mut pdf_options = pdf_options.clone();
+    pdf_options.font_database = fonts.database();
+    let scenes = page_indices
+        .iter()
+        .map(|&page_index| {
+            let page = layout
+                .pages
+                .get(page_index)
+                .ok_or(PdfError::InvalidPageIndex { page_index })?;
+            Ok(render_layout_page_scene(
+                document,
+                page,
+                render_options,
+                fonts,
+            ))
+        })
+        .collect::<Result<Vec<_>, PdfError>>()?;
+    render_pages_pdf(
+        scenes.iter().map(|scene| PdfPage {
+            page: &scene.page,
+            text: Some(&scene.text),
+            text_error: scene.text_error.as_deref(),
+        }),
+        &pdf_options,
     )
 }
 
@@ -68,11 +119,28 @@ pub fn render_svg_pages_pdf(
     pages: &[RenderedPage],
     options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
+    render_pages_pdf(
+        pages.iter().map(|page| PdfPage {
+            page,
+            text: None,
+            text_error: None,
+        }),
+        options,
+    )
+}
+
+struct PdfPage<'a> {
+    page: &'a RenderedPage,
+    text: Option<&'a NativeTextRegistry>,
+    text_error: Option<&'a str>,
+}
+
+fn render_pages_pdf<'a>(
+    pages: impl IntoIterator<Item = PdfPage<'a>>,
+    options: &PdfOptions,
+) -> Result<Vec<u8>, PdfError> {
     if !options.dpi.is_finite() || options.dpi <= 0.0 {
         return Err(PdfError::InvalidDpi);
-    }
-    if pages.is_empty() {
-        return Err(PdfError::EmptyDocument);
     }
     let image_error = Mutex::new(None);
     let data_resolver = usvg::ImageHrefResolver::default_data_resolver();
@@ -94,7 +162,18 @@ pub fn render_svg_pages_pdf(
         ..Default::default()
     };
     let mut pdf = PdfDocument::new();
-    for (page_index, rendered) in pages.iter().enumerate() {
+    let mut painter = NativePdfPainter::default();
+    let mut page_count = 0;
+    let mut retained_text = false;
+    for (page_index, source) in pages.into_iter().enumerate() {
+        page_count += 1;
+        let rendered = source.page;
+        if let Some(message) = source.text_error {
+            return Err(PdfError::UnsupportedText {
+                page_index,
+                message: message.into(),
+            });
+        }
         let width = rendered.width as f32 * (PDF_POINTS_PER_INCH / options.dpi);
         let height = rendered.height as f32 * (PDF_POINTS_PER_INCH / options.dpi);
         if width > MAX_PDF_PAGE_POINTS || height > MAX_PDF_PAGE_POINTS {
@@ -120,14 +199,67 @@ pub fn render_svg_pages_pdf(
         }
         let mut page = pdf.start_page_with(PageSettings::new(size));
         let mut surface = page.surface();
-        surface
-            .draw_svg(&tree, size, SvgSettings::default())
-            .ok_or_else(|| PdfError::Conversion(format!("cannot draw page {page_index}")))?;
+        if let Some(registry) = source.text {
+            retained_text = true;
+            draw_retained_page(&mut surface, &tree, size, registry, &mut painter).map_err(
+                |message| PdfError::UnsupportedText {
+                    page_index,
+                    message,
+                },
+            )?;
+        } else {
+            surface
+                .draw_svg(&tree, size, SvgSettings::default())
+                .ok_or_else(|| PdfError::Conversion(format!("cannot draw page {page_index}")))?;
+        }
         surface.finish();
         page.finish();
     }
+    if page_count == 0 {
+        return Err(PdfError::EmptyDocument);
+    }
+    if retained_text {
+        pdf.set_tag_tree(painter.take_tag_tree());
+    }
     pdf.finish()
         .map_err(|error| PdfError::Conversion(error.to_string()))
+}
+
+fn draw_retained_page(
+    surface: &mut krilla::surface::Surface<'_>,
+    tree: &usvg::Tree,
+    size: Size,
+    registry: &NativeTextRegistry,
+    painter: &mut NativePdfPainter,
+) -> Result<(), String> {
+    let mut nodes = HashMap::with_capacity(registry.len());
+    for (index, (id, block)) in registry.iter().enumerate() {
+        let Some(usvg::Node::Text(text)) = tree.node_by_id(&id.svg_id()) else {
+            return Err(format!(
+                "retained text {} was lost during SVG parsing",
+                id.svg_id()
+            ));
+        };
+        nodes.insert(text.as_ref() as *const usvg::Text, (index, block));
+    }
+    let mut handled = vec![false; registry.len()];
+    surface.draw_svg_with_text(tree, size, SvgSettings::default(), &mut |text, surface| {
+        let Some(&(index, block)) = nodes.get(&(text as *const usvg::Text)) else {
+            return Ok(false);
+        };
+        if handled[index] {
+            return Err("retained text was painted more than once".into());
+        }
+        painter
+            .paint(block, surface)
+            .map_err(|error| error.to_string())?;
+        handled[index] = true;
+        Ok(true)
+    })?;
+    if handled.iter().any(|&painted| !painted) {
+        return Err("retained text was skipped by an unsupported SVG effect".into());
+    }
+    Ok(())
 }
 
 fn validate_png(bytes: &[u8]) -> Result<(), String> {

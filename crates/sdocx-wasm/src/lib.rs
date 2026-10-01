@@ -126,22 +126,26 @@ impl DocumentSession {
         let layout = self.layout()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
-        let pages = page_indices
+        let page_indices = page_indices
             .iter()
-            .map(|&index| {
-                sdocx::render_layout_page_svg_with_fonts(
-                    &parsed.document,
-                    layout,
-                    index as usize,
-                    &options,
-                    &self.fonts,
-                )
-                .ok_or_else(|| JsError::new("page index is out of bounds"))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+            .map(|&index| index as usize)
+            .collect::<Vec<_>>();
+        if page_indices
+            .iter()
+            .any(|&index| index >= layout.pages.len())
+        {
+            return Err(JsError::new("page index is out of bounds"));
+        }
         let pdf_options = sdocx::PdfOptions::new(self.fonts.database());
-        sdocx::render_svg_pages_pdf(&pages, &pdf_options)
-            .map_err(|error| JsError::new(&error.to_string()))
+        sdocx::render_layout_pages_pdf_with_fonts(
+            &parsed.document,
+            layout,
+            &page_indices,
+            &options,
+            &pdf_options,
+            &self.fonts,
+        )
+        .map_err(|error| JsError::new(&error.to_string()))
     }
 
     /// Lazy debugger request. Large integers are returned as decimal strings.
