@@ -284,10 +284,7 @@ fn selected_page_render_warnings_are_reported_without_failing_export() {
         let diagnostics = String::from_utf8_lossy(&result.stderr);
         assert!(result.status.success(), "{diagnostics}");
         assert!(result.stdout.is_empty());
-        assert!(
-            !diagnostics.contains("] visible page "),
-            "{diagnostics}"
-        );
+        assert!(!diagnostics.contains("] visible page "), "{diagnostics}");
         assert!(fixture.0.join(clean_output).exists());
     }
 }

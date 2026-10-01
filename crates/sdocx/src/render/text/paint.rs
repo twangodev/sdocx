@@ -839,13 +839,14 @@ mod tests {
     #[test]
     fn cached_context_ranges_preserve_unclosed_and_nested_controls() {
         for (text, expected) in [
-            ("😀\u{2067}A\u{202a}B\u{2069}Z", vec![1..6]),
-            ("A\u{202e}😀B", vec![1..4]),
-            ("A\u{2067}B\u{202c}C", vec![1..5]),
-            ("\u{2069}A\u{202c}Z", vec![]),
+            ("😀\u{2067}A\u{202a}B\u{2069}Z", Some(1..6)),
+            ("A\u{202e}😀B", Some(1..4)),
+            ("A\u{2067}B\u{202c}C", Some(1..5)),
+            ("\u{2069}A\u{202c}Z", None),
         ] {
             let index = TextIndex::new(text);
             let cache = ParagraphBidiContexts::new(&index);
+            let expected = expected.as_slice();
             assert_eq!(cache.at(&index, 0), expected);
             assert_eq!(cache.at(&index, index.len()), expected);
         }
