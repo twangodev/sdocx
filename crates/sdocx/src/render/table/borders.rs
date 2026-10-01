@@ -268,6 +268,10 @@ impl<'a> TableBorderGeometry<'a> {
     }
 
     pub fn outline(&self) -> OutlineStyle {
+        self.outline_at_scale(1.0)
+    }
+
+    fn outline_at_scale(&self, canvas_scale: f32) -> OutlineStyle {
         let mut result = OutlineStyle::default();
         for path in self.outer_paths(None) {
             let style = path.style;
@@ -282,6 +286,9 @@ impl<'a> TableBorderGeometry<'a> {
                 Edge::Right => result.ry = result.ry.max(radius),
                 Edge::Bottom => result.rx = result.rx.max(radius),
             }
+        }
+        if result.width > 0.0 && result.width * canvas_scale < 1.0 {
+            result.width = 1.0 / canvas_scale;
         }
         result
     }
@@ -374,6 +381,34 @@ mod tests {
         style: CapturedStyle,
         endpoints: [f32; 4],
         equation: [f32; 3],
+    }
+
+    #[derive(Deserialize)]
+    struct DrawingCapture {
+        apk_version: String,
+        apk_sha256: String,
+        model_library_sha256: String,
+        drawing_library_sha256: String,
+        allocation_fills: Vec<u8>,
+        border_style_address: String,
+        cases: Vec<DrawingCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct DrawingCase {
+        name: String,
+        canvas_scale: f32,
+        native_defaults: bool,
+        outer_border: Option<[CapturedStyle; 4]>,
+        outline: CapturedOutline,
+    }
+
+    #[derive(Deserialize)]
+    struct CapturedOutline {
+        color: u32,
+        width: f32,
+        rx: f32,
+        ry: f32,
     }
 
     fn border([left, top, right, bottom]: [TableEdgeStyle; 4]) -> TableBorder {
@@ -506,6 +541,68 @@ mod tests {
         }
         assert_eq!(segment_count, 364);
         assert_eq!(outer_count, 8);
+    }
+
+    #[test]
+    fn native_drawing_outline_matches_at_each_canvas_scale() {
+        let bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-border-drawing.json"
+        ));
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "63b57494de2caa428cd110021ab5ec36d5a93316ecf373bdd87bb1cbcb288c87"
+        );
+        let capture: DrawingCapture = serde_json::from_slice(bytes).unwrap();
+        assert_eq!(capture.apk_version, "4.4.45.37");
+        assert_eq!(
+            capture.apk_sha256,
+            "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
+        );
+        assert_eq!(
+            capture.model_library_sha256,
+            "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a"
+        );
+        assert_eq!(
+            capture.drawing_library_sha256,
+            "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd"
+        );
+        assert_eq!(capture.allocation_fills, [0, 165, 255]);
+        assert_eq!(capture.border_style_address, "0xa6fb4");
+        assert_eq!(capture.cases.len(), 175);
+        for case in capture.cases {
+            let mut table = grid(&[10.0], &[20.0]);
+            table.style.border = case
+                .outer_border
+                .map(|styles| border(styles.map(Into::into)));
+            let topology = TableGrid::new(&table).unwrap();
+            let defaults = case.native_defaults.then_some(DEFAULT_EDGE);
+            let geometry =
+                TableBorderGeometry::with_defaults(&table, &topology, defaults, defaults).unwrap();
+            let actual = geometry.outline_at_scale(case.canvas_scale);
+            assert_eq!(
+                actual.color, case.outline.color,
+                "{}, scale {}",
+                case.name, case.canvas_scale
+            );
+            assert_eq!(
+                actual.width.to_bits(),
+                case.outline.width.to_bits(),
+                "{}, scale {}",
+                case.name,
+                case.canvas_scale
+            );
+            assert_eq!(
+                [actual.rx, actual.ry],
+                [case.outline.rx, case.outline.ry],
+                "{}, scale {}",
+                case.name,
+                case.canvas_scale
+            );
+            if case.canvas_scale == 1.0 {
+                assert_eq!(actual, geometry.outline(), "{}, unit canvas", case.name);
+            }
+        }
     }
 
     #[test]

@@ -25,13 +25,23 @@ unsafe extern "C" {
 }
 
 const LIBRARY_SHA256: &str = "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a";
+const DRAWING_SHA256: &str = "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd";
+const DRAWING_BASE: u64 = 0x0100_0000;
 const MODEL: u64 = 0x1000_0000;
-const HEAP: u64 = MODEL + 0x10000;
+const HEAP: u64 = MODEL + 0x40000;
 const STOP: u64 = MODEL + 0xff000;
 const STACK: u64 = MODEL + 0xfe000;
 const TLS: u64 = MODEL + 0xfd000;
-const CELL_BASE: u64 = MODEL + 0x2000;
+const CELL_BASE: u64 = MODEL + 0x20000;
+const CELL_STRIDE: u64 = 256;
 const RETURN_VECTOR: u64 = MODEL + 0x8000;
+const TABLE_OBJECT: u64 = MODEL + 0x9000;
+const DRAWING_OBJECT: u64 = MODEL + 0x9100;
+const CANVAS: u64 = MODEL + 0x9200;
+const RETURN_STYLE: u64 = MODEL + 0x9300;
+const CANVAS_VTABLE: u64 = MODEL + 0xa000;
+const CANVAS_MATRIX: u64 = MODEL + 0xa300;
+const MATRIX_GETTER: u64 = MODEL + 0xa400;
 const REGISTER_X0: i32 = 199;
 const REGISTER_X30: i32 = 2;
 const REGISTER_SP: i32 = 4;
@@ -40,6 +50,7 @@ const GET_FRAME_CELL: u64 = 0x3c75c0;
 const GET_VISIBLE_CELLS: u64 = 0x3c7784;
 const GET_CELL_BORDER_PATH: u64 = 0x3cad9c;
 const GET_BORDER_PATH: u64 = 0x3cb464;
+const GET_DRAWING_BORDER_STYLE: u64 = DRAWING_BASE + 0xa6fb4;
 const NEW: u64 = 0x47ac90;
 const DELETE: u64 = 0x47ac00;
 const MEMSET: u64 = 0x48b3f0;
@@ -72,6 +83,39 @@ fn read_float(engine: Engine, address: u64) -> f32 {
     let value = f32::from_bits(read_u32(engine, address));
     assert!(value.is_finite());
     value
+}
+
+fn map_library(engine: Engine, path: &Path, base: u64, expected_sha256: &str) {
+    let digest = Command::new("sha256sum").arg(path).output().unwrap();
+    assert!(digest.status.success());
+    assert_eq!(
+        String::from_utf8(digest.stdout)
+            .unwrap()
+            .split_whitespace()
+            .next(),
+        Some(expected_sha256)
+    );
+    let binary = fs::read(path).unwrap();
+    assert_eq!(&binary[..4], b"\x7fELF");
+    let ph_offset = u64::from_le_bytes(binary[32..40].try_into().unwrap()) as usize;
+    let ph_size = u16::from_le_bytes(binary[54..56].try_into().unwrap()) as usize;
+    let ph_count = u16::from_le_bytes(binary[56..58].try_into().unwrap()) as usize;
+    let load = (0..ph_count)
+        .map(|index| &binary[ph_offset + index * ph_size..][..ph_size])
+        .find(|header| u32::from_le_bytes(header[..4].try_into().unwrap()) == 1)
+        .unwrap();
+    assert_eq!(u64::from_le_bytes(load[8..16].try_into().unwrap()), 0);
+    assert_eq!(u64::from_le_bytes(load[16..24].try_into().unwrap()), 0);
+    let size = u64::from_le_bytes(load[32..40].try_into().unwrap());
+    check(unsafe { uc_mem_map(engine, base, (size + 0xfff) & !0xfff, 7) });
+    write(engine, base, &binary[..size as usize]);
+}
+
+fn bind_native(engine: Engine, plt: u64, target: u64) {
+    let displacement = target as i64 - plt as i64;
+    assert!(displacement % 4 == 0 && (-0x8000000..0x8000000).contains(&displacement));
+    let branch = 0x14000000_u32 | ((displacement / 4) as u32 & 0x03ffffff);
+    write(engine, plt, &branch.to_le_bytes());
 }
 
 struct Heap {
@@ -118,44 +162,21 @@ struct Machine {
 }
 impl Machine {
     fn new(path: &Path) -> Self {
-        let digest = Command::new("sha256sum").arg(path).output().unwrap();
-        assert!(digest.status.success());
-        assert_eq!(
-            String::from_utf8(digest.stdout)
-                .unwrap()
-                .split_whitespace()
-                .next(),
-            Some(LIBRARY_SHA256)
-        );
-        let binary = fs::read(path).unwrap();
-        assert_eq!(&binary[..4], b"\x7fELF");
-        let ph_offset = u64::from_le_bytes(binary[32..40].try_into().unwrap()) as usize;
-        let ph_size = u16::from_le_bytes(binary[54..56].try_into().unwrap()) as usize;
-        let ph_count = u16::from_le_bytes(binary[56..58].try_into().unwrap()) as usize;
-        let load = (0..ph_count)
-            .map(|index| &binary[ph_offset + index * ph_size..][..ph_size])
-            .find(|header| u32::from_le_bytes(header[..4].try_into().unwrap()) == 1)
-            .unwrap();
-        assert_eq!(u64::from_le_bytes(load[8..16].try_into().unwrap()), 0);
-        assert_eq!(u64::from_le_bytes(load[16..24].try_into().unwrap()), 0);
-        let size = u64::from_le_bytes(load[32..40].try_into().unwrap());
         let mut engine = ptr::null_mut();
         check(unsafe { uc_open(2, 0, &mut engine) });
-        check(unsafe { uc_mem_map(engine, 0, (size + 0xfff) & !0xfff, 7) });
-        write(engine, 0, &binary[..size as usize]);
+        map_library(engine, path, 0, LIBRARY_SHA256);
         check(unsafe { uc_mem_map(engine, MODEL, 0x100000, 7) });
         for (plt, target) in [
-            (0x486bf0_u64, 0x3c7328_i64),
+            (0x486bf0_u64, 0x3c7328_u64),
             (0x486c30, 0x3c77b0),
-            (0x486c20, GET_FRAME_CELL as i64),
+            (0x486c20, GET_FRAME_CELL),
             (0x486c10, 0x3c7510),
             (0x486c00, 0x3c7474),
             (0x4872b0, 0x3dc280),
             (0x4872c0, 0x3dc420),
             (0x486930, 0x3dc670),
         ] {
-            let branch = 0x14000000_u32 | (((target - plt as i64) / 4) as u32 & 0x03ffffff);
-            write(engine, plt, &branch.to_le_bytes());
+            bind_native(engine, plt, target);
         }
         let mut machine = Self {
             engine,
@@ -184,6 +205,17 @@ impl Machine {
         }
         register(engine, REGISTER_TPIDR_EL0, TLS);
         machine
+    }
+    fn load_drawing(&self, path: &Path) {
+        map_library(self.engine, path, DRAWING_BASE, DRAWING_SHA256);
+        for (plt, target) in [
+            (DRAWING_BASE + 0xbcd50, 0x3dc280),
+            (DRAWING_BASE + 0xbcd60, 0x3d8098),
+            (DRAWING_BASE + 0xb8b00, DELETE),
+            (0x486ed0, GET_BORDER_PATH),
+        ] {
+            bind_native(self.engine, plt, target);
+        }
     }
     fn call(&self, function: u64, arguments: &[u64]) -> u64 {
         for (index, &value) in arguments.iter().enumerate() {
@@ -257,7 +289,7 @@ impl Machine {
             write(self.engine, row_pointer + 80, &cells_pointer.to_le_bytes());
             for column in 0..columns {
                 let position = row * columns + column;
-                let cell_pointer = CELL_BASE + position as u64 * 128;
+                let cell_pointer = CELL_BASE + position as u64 * CELL_STRIDE;
                 write(
                     self.engine,
                     cells_pointer + column as u64 * 8,
@@ -318,7 +350,7 @@ impl Machine {
         }
         expected
     }
-    fn border_fixture(&mut self, case: &BorderCase) -> String {
+    fn initialize_borders(&mut self, case: &BorderCase) -> [f32; 4] {
         let rows = case.heights.len();
         let columns = case.widths.len();
         assert_eq!(case.borders.len(), rows * columns);
@@ -378,11 +410,17 @@ impl Machine {
                 self.write_border(pointer, *border);
                 write(
                     self.engine,
-                    CELL_BASE + position as u64 * 128 + 96,
+                    CELL_BASE + position as u64 * CELL_STRIDE + 96,
                     &pointer.to_le_bytes(),
                 );
             }
         }
+        [case.origin[0], case.origin[1], width, height]
+    }
+    fn border_fixture(&mut self, case: &BorderCase) -> String {
+        let bbox = self.initialize_borders(case);
+        let rows = case.heights.len();
+        let columns = case.widths.len();
         let mut paths = Vec::new();
         for position in 0..rows * columns {
             register(self.engine, REGISTER_X0 + 8, RETURN_VECTOR);
@@ -408,7 +446,7 @@ impl Machine {
             "{{\"name\":{:?},\"native_defaults\":{},\"content_bbox\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"default_border\":{},\"outer_border\":{},\"borders\":[{}],\"paths\":[{}],\"outer_paths\":{outer_paths}}}",
             case.name,
             case.native_defaults,
-            [case.origin[0], case.origin[1], width, height],
+            bbox,
             case.heights,
             case.widths,
             case.spans,
@@ -417,6 +455,58 @@ impl Machine {
             borders.join(","),
             paths.join(",")
         )
+    }
+    fn drawing_border_fixture(&mut self, case: &BorderCase, scale: f32) -> String {
+        self.initialize_borders(case);
+        write(self.engine, TABLE_OBJECT + 104, &MODEL.to_le_bytes());
+        write(
+            self.engine,
+            DRAWING_OBJECT + 104,
+            &TABLE_OBJECT.to_le_bytes(),
+        );
+        write(self.engine, CANVAS, &CANVAS_VTABLE.to_le_bytes());
+        write(
+            self.engine,
+            CANVAS_VTABLE + 80,
+            &MATRIX_GETTER.to_le_bytes(),
+        );
+        write(self.engine, CANVAS_MATRIX, &scale.to_le_bytes());
+        write(self.engine, MATRIX_GETTER, &0x58000040_u32.to_le_bytes());
+        write(
+            self.engine,
+            MATRIX_GETTER + 4,
+            &0xd65f03c0_u32.to_le_bytes(),
+        );
+        write(self.engine, MATRIX_GETTER + 8, &CANVAS_MATRIX.to_le_bytes());
+        register(self.engine, REGISTER_X0 + 8, RETURN_STYLE);
+        self.call(GET_DRAWING_BORDER_STYLE, &[DRAWING_OBJECT, CANVAS]);
+        let outline = format!(
+            "{{\"color\":{},\"width\":{:?},\"rx\":{:?},\"ry\":{:?}}}",
+            read_u32(self.engine, RETURN_STYLE),
+            read_float(self.engine, RETURN_STYLE + 4),
+            read_float(self.engine, RETURN_STYLE + 8),
+            read_float(self.engine, RETURN_STYLE + 12)
+        );
+        format!(
+            "{{\"name\":{:?},\"canvas_scale\":{scale:?},\"native_defaults\":{},\"outer_border\":{},\"outline\":{outline}}}",
+            case.name,
+            case.native_defaults,
+            border_json(case.outer_border)
+        )
+    }
+    fn capture_drawing_border(&mut self, case: &BorderCase, scale: f32) -> String {
+        self.heap.allocation_fill = 0;
+        let expected = self.drawing_border_fixture(case, scale);
+        for fill in [0xa5, 0xff] {
+            self.heap.allocation_fill = fill;
+            assert_eq!(
+                self.drawing_border_fixture(case, scale),
+                expected,
+                "{}, scale {scale}",
+                case.name
+            );
+        }
+        expected
     }
     fn read_border_paths(&self, limit: usize) -> String {
         let begin = read_u64(self.engine, RETURN_VECTOR);
@@ -455,9 +545,9 @@ impl Machine {
         }
     }
     fn position(&self, pointer: u64, count: usize) -> usize {
-        assert!(pointer >= CELL_BASE && pointer < CELL_BASE + count as u64 * 128);
-        assert_eq!((pointer - CELL_BASE) % 128, 0);
-        ((pointer - CELL_BASE) / 128) as usize
+        assert!(pointer >= CELL_BASE && pointer < CELL_BASE + count as u64 * CELL_STRIDE);
+        assert_eq!((pointer - CELL_BASE) % CELL_STRIDE, 0);
+        ((pointer - CELL_BASE) / CELL_STRIDE) as usize
     }
 }
 impl Drop for Machine {
@@ -607,19 +697,127 @@ fn border_cases(machine: &mut Machine) {
     );
 }
 
+fn drawing_border_cases(machine: &mut Machine) {
+    let mut cases = Vec::new();
+    cases.push(BorderCase::new("absent-outer-border", 1, 1));
+    let mut native = BorderCase::new("native-constructor-default", 1, 1);
+    native.native_defaults = true;
+    native.outer_border = Some(
+        [BorderStyle {
+            color: 0xff000000,
+            width: 1.0,
+            start_radius: 0.0,
+            end_radius: 0.0,
+        }; 4],
+    );
+    cases.push(native);
+    for mask in 0..16 {
+        let mut case = BorderCase::new("active-edge-mask", 1, 1);
+        case.outer_border = Some(std::array::from_fn(|edge| BorderStyle {
+            color: if mask & (1 << edge) == 0 {
+                0
+            } else {
+                0xff102030 + edge as u32
+            },
+            width: [0.25, 1.0, 2.5, 4.0][edge],
+            start_radius: [3.0, 7.0, 11.0, 13.0][edge],
+            end_radius: [5.0, 2.0, 1.0, 17.0][edge],
+        }));
+        cases.push(case);
+    }
+    for (name, colors, widths, starts, ends) in [
+        (
+            "all-thin-widths",
+            [0xff102030; 4],
+            [0.1, 0.25, 0.75, 0.99],
+            [0.0; 4],
+            [0.0; 4],
+        ),
+        (
+            "nonpositive-widths",
+            [0xff102030; 4],
+            [0.0, -1.0, -2.5, -100.0],
+            [3.0, 7.0, 11.0, 13.0],
+            [5.0, 2.0, 1.0, 17.0],
+        ),
+        (
+            "mixed-widths",
+            [0xff102030, 0xff405060, 0xff708090, 0xffabcdef],
+            [-5.0, 0.0, 0.5, 3.0],
+            [3.0, 7.0, 11.0, 13.0],
+            [5.0, 2.0, 1.0, 17.0],
+        ),
+        (
+            "zero-alpha-nonzero-colors",
+            [0x00123456, 0x80112233, 0x00445566, 0x00000001],
+            [1.0, 2.0, 3.0, 4.0],
+            [0.0; 4],
+            [0.0; 4],
+        ),
+        (
+            "negative-radius-maxima",
+            [0xff102030; 4],
+            [1.0; 4],
+            [-8.0, -4.0, -7.0, -3.0],
+            [-2.0, -6.0, -5.0, -1.0],
+        ),
+        (
+            "inactive-radius-maxima",
+            [0xff102030, 0, 0xff708090, 0],
+            [2.0, 0.0, 0.25, -10.0],
+            [0.0, 21.0, 0.0, 30.0],
+            [0.0, 22.0, 0.0, 29.0],
+        ),
+        (
+            "one-rounded-axis",
+            [0xff102030; 4],
+            [1.0; 4],
+            [3.0, 0.0, 9.0, 0.0],
+            [5.0, 0.0, 8.0, 0.0],
+        ),
+    ] {
+        let mut case = BorderCase::new(name, 1, 1);
+        case.outer_border = Some(std::array::from_fn(|edge| BorderStyle {
+            color: colors[edge],
+            width: widths[edge],
+            start_radius: starts[edge],
+            end_radius: ends[edge],
+        }));
+        cases.push(case);
+    }
+    let mut captures = Vec::new();
+    for case in &cases {
+        for scale in [0.125, 0.3, 0.5, 0.75, 1.0, 2.0, 4.0] {
+            captures.push(machine.capture_drawing_border(case, scale));
+        }
+    }
+    println!(
+        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"allocation_fills\":[0,165,255],\"model_library_sha256\":\"{LIBRARY_SHA256}\",\"drawing_library_sha256\":\"{DRAWING_SHA256}\",\"border_style_address\":\"0xa6fb4\",\"cases\":[\n{}\n]}}",
+        captures.join(",\n")
+    );
+}
+
 fn main() {
     let path = std::env::args_os()
         .nth(1)
         .expect("libSPenModel.so path required");
     let mut machine = Machine::new(Path::new(&path));
     let mode = std::env::args_os().nth(2);
-    assert!(
-        mode.is_none() || mode.as_deref() == Some(std::ffi::OsStr::new("--border-paths")),
-        "expected --border-paths or no capture mode"
-    );
-    if mode.is_some() {
-        border_cases(&mut machine);
-        return;
+    match mode.as_deref().and_then(|mode| mode.to_str()) {
+        Some("--border-paths") => {
+            border_cases(&mut machine);
+            return;
+        }
+        Some("--drawing-borders") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            drawing_border_cases(&mut machine);
+            return;
+        }
+        None => {}
+        _ => panic!("expected --border-paths, --drawing-borders or no capture mode"),
     }
     let mut cases = Vec::new();
     for (name, rows, columns, changes) in [
