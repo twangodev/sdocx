@@ -30,6 +30,9 @@ mod cold_rows;
 #[path = "native_table/merges.rs"]
 mod merges;
 
+#[path = "native_table/lifecycle.rs"]
+mod lifecycle;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -314,8 +317,9 @@ impl Machine {
         assert_eq!(
             error,
             0,
-            "native function {function:x} failed at PC {:x}, x0 {:x}",
+            "native function {function:x} failed at PC {:x}, LR {:x}, x0 {:x}",
             read_register(self.engine, 260),
+            read_register(self.engine, REGISTER_X30),
             read_register(self.engine, REGISTER_X0)
         );
         assert_eq!(
@@ -1043,7 +1047,11 @@ fn main() {
             return;
         }
         Some(
-            mode @ ("--measured-geometry" | "--row-bottom" | "--warm-control" | "--cell-inputs"),
+            mode @ ("--measured-geometry"
+            | "--row-bottom"
+            | "--warm-control"
+            | "--cell-inputs"
+            | "--lifecycle"),
         ) => {
             let drawing_path = std::env::args_os()
                 .nth(3)
@@ -1062,6 +1070,7 @@ fn main() {
                 "--row-bottom" => bottom::capture,
                 "--warm-control" => control::capture,
                 "--cell-inputs" => cell_inputs::capture,
+                "--lifecycle" => lifecycle::capture,
                 _ => geometry::capture,
             };
             capture(
@@ -1085,7 +1094,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle or no capture mode"
         ),
     }
     let mut cases = Vec::new();

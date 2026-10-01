@@ -25,6 +25,9 @@ mod native_cell_input_tests;
 #[cfg(test)]
 mod native_cold_row_tests;
 
+#[cfg(test)]
+mod native_lifecycle_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 
@@ -138,8 +141,18 @@ pub(super) fn warm(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<(), ObjectDiagnosticKind> {
+    warm_rows_using(plan, table, |plan, row_index| {
+        layout_row(plan, row_index, table, theme, renderer)
+    })
+}
+
+fn warm_rows_using(
+    plan: &mut PreparedTable,
+    table: &RichTextTable,
+    mut layout: impl FnMut(&mut PreparedTable, usize) -> Result<(), ObjectDiagnosticKind>,
+) -> Result<(), ObjectDiagnosticKind> {
     for row_index in 0..plan.rows.len() {
-        layout_row(plan, row_index, table, theme, renderer)?;
+        layout(plan, row_index)?;
         update_positions(plan, row_index, table)?;
         compress_row(plan, row_index)?;
     }

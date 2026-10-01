@@ -175,6 +175,11 @@ pub(super) fn initialize_with_height_limit(
 }
 
 pub(super) fn initialize_layout(machine: &Machine) {
+    configure_layout(machine);
+    machine.call(INITIALIZE, &[LAYOUT]);
+}
+
+pub(super) fn configure_layout(machine: &Machine) {
     initialize_adapter(machine);
     for (index, instruction) in [0xaa1f03e1_u32, 0xd2805002, 0x14000000].iter().enumerate() {
         write(
@@ -195,7 +200,6 @@ pub(super) fn initialize_layout(machine: &Machine) {
         write(machine.engine, map + 8, &64_u64.to_le_bytes());
         write(machine.engine, map + 32, &1_f32.to_le_bytes());
     }
-    machine.call(INITIALIZE, &[LAYOUT]);
 }
 
 fn fixture(machine: &mut Machine, input: &Case) -> String {
