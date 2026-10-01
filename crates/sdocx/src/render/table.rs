@@ -1984,6 +1984,77 @@ pub(super) mod tests {
     }
 
     #[test]
+    fn saved_and_prepared_paint_use_visible_cells_in_covered_span_chains() {
+        let mut source = grid(&[100.0], &[90.0; 4]);
+        for (slot, cell) in source.rows[0].cells.iter_mut().enumerate() {
+            cell.content.text = ["A", "B", "C", "D"][slot].into();
+            cell.content.font_size = Some(8.0);
+            cell.has_own_background_color = true;
+            cell.background_color = [0xffa11234, 0xffa25678, 0xffa39abc, 0xffa4def0][slot];
+        }
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(
+            super::super::text::TextSettings {
+                scale: 1.0,
+                ..Default::default()
+            },
+            &fonts,
+        );
+        let theme = RenderTheme::for_canvas(false);
+        let drawing = prepare_table_drawing(
+            &source,
+            ObjectSpanLayoutConstraint::Normal,
+            [0.0, 0.0],
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        source.bbox = drawing.measured_bbox;
+        for (source, measured) in source.rows[0].cells.iter_mut().zip(&drawing.rows[0].cells) {
+            source.bbox = measured.frame;
+        }
+        source.rows[0].cells[0].column_span = 2;
+        source.rows[0].cells[1].column_span = 3;
+        for prepared in [None, Some(super::super::TablePaint::from(&drawing))] {
+            let mut scene = super::super::Scene::new(super::super::Svg::new());
+            #[cfg(feature = "pdf")]
+            scene.retain_text();
+            super::super::render_table(
+                &mut scene,
+                &source,
+                0,
+                prepared,
+                0.0,
+                &[],
+                theme,
+                &renderer,
+                None,
+            );
+            #[cfg(feature = "pdf")]
+            {
+                assert!(scene.take_native_text_error().is_none());
+                let text = scene.take_native_text();
+                assert_eq!(
+                    text.iter()
+                        .map(|(_, block)| block.source.as_ref())
+                        .collect::<Vec<_>>(),
+                    ["A", "C", "D"]
+                );
+            }
+            let svg = scene.finish();
+            for text in [">A<", ">C<", ">D<"] {
+                assert!(svg.contains(text), "missing {text}: {svg}");
+            }
+            assert!(!svg.contains(">B<"), "covered text: {svg}");
+            for color in ["#a11234", "#a39abc", "#a4def0"] {
+                assert!(svg.contains(color), "missing {color}: {svg}");
+            }
+            assert!(!svg.contains("#a25678"), "covered background: {svg}");
+        }
+    }
+
+    #[test]
     fn native_grid_lookup_uses_stored_positions_without_expanding_span_metadata() {
         let mut table = table();
         table.style.border = Some(border([0.0; 4], 0));

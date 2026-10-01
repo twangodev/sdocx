@@ -1,5 +1,9 @@
 use crate::RichTextTable;
 
+#[cfg(test)]
+#[path = "grid/native_merge_tests.rs"]
+mod native_merge_tests;
+
 const MAX_GRID_CELLS: usize = 65_536;
 const MAX_SPAN_COVERAGE: usize = 1_048_576;
 

@@ -2083,53 +2083,49 @@ fn render_table(
         })
         .unwrap_or(table.style.content_bbox.unwrap_or(table.bbox));
     let mut cells = Vec::new();
-    if let Some(prepared) = &prepared {
-        for row in prepared.rows {
-            for cell in &row.cells {
-                cells.push(TableCellPaint {
-                    cell: &table.rows[row.row_index].cells[cell.column_index],
-                    fill: table::CellFill::resolve(
-                        &table.style,
-                        table.rows[row.row_index].index,
-                        &table.rows[row.row_index].cells[cell.column_index],
-                        theme,
-                    ),
-                    frame: cell.frame,
-                    layout: Some(&cell.layout),
-                    position: table::CellPosition {
-                        row: row.row_index,
-                        column: cell.column_index,
-                    },
-                    gap: prepared
-                        .pending_gaps
-                        .get(row.row_index + 1)
-                        .is_some_and(|gap| (*gap as f32).abs() > 0.001_f32),
-                });
+    let mut add_cell = |row: usize, column: usize| {
+        let cell = &table.rows[row].cells[column];
+        let measured = if let Some(prepared) = &prepared {
+            let Some(measured) = prepared
+                .rows
+                .get(row)
+                .filter(|prepared| prepared.row_index == row)
+                .and_then(|row| {
+                    row.cells
+                        .get(column)
+                        .filter(|cell| cell.column_index == column)
+                })
+            else {
+                return;
+            };
+            Some(measured)
+        } else {
+            None
+        };
+        cells.push(TableCellPaint {
+            cell,
+            fill: table::CellFill::resolve(&table.style, table.rows[row].index, cell, theme),
+            frame: measured.map_or(cell.bbox, |cell| cell.frame),
+            layout: measured.map(|cell| &cell.layout),
+            position: table::CellPosition { row, column },
+            gap: prepared.as_ref().is_some_and(|prepared| {
+                prepared
+                    .pending_gaps
+                    .get(row + 1)
+                    .is_some_and(|gap| (*gap as f32).abs() > 0.001_f32)
+            }),
+        });
+    };
+    match &grid {
+        Ok(grid) => {
+            for position in grid.visible_cells() {
+                add_cell(position.row, position.column);
             }
         }
-    } else {
-        let mut add_cell = |row: usize, column: usize| {
-            let cell = &table.rows[row].cells[column];
-            cells.push(TableCellPaint {
-                cell,
-                fill: table::CellFill::resolve(&table.style, table.rows[row].index, cell, theme),
-                frame: cell.bbox,
-                layout: None,
-                position: table::CellPosition { row, column },
-                gap: false,
-            });
-        };
-        match &grid {
-            Ok(grid) => {
-                for position in grid.visible_cells() {
-                    add_cell(position.row, position.column);
-                }
-            }
-            Err(_) => {
-                for (row_index, row) in table.rows.iter().enumerate() {
-                    for column in 0..row.cells.len() {
-                        add_cell(row_index, column);
-                    }
+        Err(_) => {
+            for (row_index, row) in table.rows.iter().enumerate() {
+                for column in 0..row.cells.len() {
+                    add_cell(row_index, column);
                 }
             }
         }
