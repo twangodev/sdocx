@@ -235,7 +235,6 @@ fn supports_grid(table: &RichTextTable) -> bool {
         .is_none_or(|rotation| rotation == 0.0)
         && !table.column_widths.is_empty()
         && !table.rows.is_empty()
-        && !table.style.max_height_enabled
         && table.rows.iter().enumerate().all(|(row_index, row)| {
             row.index as usize == row_index
                 && row.cells.len() == table.column_widths.len()
@@ -1495,7 +1494,7 @@ pub(super) mod tests {
     }
 
     #[test]
-    fn saved_row_maximum_does_not_cap_callback_or_drawing_layout() {
+    fn saved_height_limits_do_not_cap_callback_or_drawing_layout() {
         let fonts = crate::fonts::FontBook::default();
         let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
         let theme = RenderTheme::for_canvas(false);
@@ -1518,6 +1517,8 @@ pub(super) mod tests {
                 for row in &mut limited.rows {
                     row.max_height = Some(maximum);
                 }
+                limited.style.max_height_enabled = true;
+                limited.style.max_height = Some(maximum);
                 let drawing =
                     prepare_table_drawing(&limited, constraint, [10.0, 20.0], theme, &renderer)
                         .unwrap()
@@ -1571,9 +1572,6 @@ pub(super) mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(fractional.rows[0].cells[0].frame.x_max, 201.0);
-        let mut overridden = original.clone();
-        overridden.style.max_height_enabled = true;
-        assert!(prepare(&overridden, ObjectSpanLayoutConstraint::OverPages).is_none());
         let mut invalid_width = original.clone();
         invalid_width.column_widths[0] = f32::NAN;
         let mut invalid_height = original;

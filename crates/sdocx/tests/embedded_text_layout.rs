@@ -733,62 +733,71 @@ fn merged_table_diagnostic_keeps_original_anchor_and_neighbor_text() {
 
 #[cfg(feature = "serde")]
 #[test]
-fn saved_row_maximum_keeps_preview_replay_and_pdf_geometry() {
-    for constraint in [
-        ObjectSpanLayoutConstraint::Normal,
-        ObjectSpanLayoutConstraint::OverPages,
-        ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-    ] {
-        let mut baseline = document(table(text("ABC\nDEF\nGHI"), 200.0));
-        let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
-            &mut baseline.pages[0].objects[0].content
-        else {
-            panic!()
-        };
-        flow.object_spans[0].layout_constraint = constraint;
-        let mut limited = baseline.clone();
-        let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
-            &mut limited.pages[0].objects[0].content
-        else {
-            panic!()
-        };
-        let Some(RichTextObjectContent::Table(table)) = &mut flow.object_spans[0].content else {
-            panic!()
-        };
-        table.rows[0].max_height = Some(5.0);
-        let baseline_layout = sdocx::layout_document(&baseline);
-        let limited_layout = sdocx::layout_document(&limited);
-        for color_mode in [sdocx::RenderColorMode::Light, sdocx::RenderColorMode::Dark] {
-            let mut options = sdocx::RenderOptions::default();
-            options.color_mode = color_mode;
-            let expected =
-                sdocx::render_layout_page_svg(&baseline, &baseline_layout, 0, &options).unwrap();
-            assert_eq!(lines(&expected.svg).len(), 3);
-            for actual in [
-                sdocx::render_layout_page_svg(&limited, &limited_layout, 0, &options).unwrap(),
-                sdocx::render_layout_page_replay_svg(&limited, &limited_layout, 0, &options)
-                    .unwrap(),
-            ] {
-                assert_eq!(actual.svg, expected.svg);
-                assert_eq!(actual.object_diagnostics, expected.object_diagnostics);
-                assert_eq!(actual.text_diagnostics, expected.text_diagnostics);
-            }
-            #[cfg(feature = "pdf")]
-            {
-                let pdf_options = sdocx::PdfOptions::default();
-                let expected = pdf_geometry::read(
-                    &sdocx::render_document_pdf(&baseline, &options, &pdf_options).unwrap(),
-                    f64::from(pdf_options.dpi),
-                );
-                let actual = pdf_geometry::read(
-                    &sdocx::render_document_pdf(&limited, &options, &pdf_options).unwrap(),
-                    f64::from(pdf_options.dpi),
-                );
-                assert!(!actual.text.is_empty());
-                assert_eq!(actual.text, expected.text);
-                assert_eq!(actual.source, expected.source);
-                assert_eq!(actual.extracted_text, expected.extracted_text);
-                assert_eq!(actual.image_resources, 0);
+fn saved_height_limits_keep_preview_replay_and_pdf_geometry() {
+    for enable_table_limit in [false, true] {
+        for constraint in [
+            ObjectSpanLayoutConstraint::Normal,
+            ObjectSpanLayoutConstraint::OverPages,
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ] {
+            let mut baseline = document(table(text("ABC\nDEF\nGHI"), 200.0));
+            let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+                &mut baseline.pages[0].objects[0].content
+            else {
+                panic!()
+            };
+            flow.object_spans[0].layout_constraint = constraint;
+            let mut limited = baseline.clone();
+            let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+                &mut limited.pages[0].objects[0].content
+            else {
+                panic!()
+            };
+            let Some(RichTextObjectContent::Table(table)) = &mut flow.object_spans[0].content
+            else {
+                panic!()
+            };
+            table.rows[0].max_height = Some(5.0);
+            table.style.max_height_enabled = enable_table_limit;
+            table.style.max_height = Some(5.0);
+            let baseline_layout = sdocx::layout_document(&baseline);
+            let limited_layout = sdocx::layout_document(&limited);
+            for color_mode in [sdocx::RenderColorMode::Light, sdocx::RenderColorMode::Dark] {
+                let mut options = sdocx::RenderOptions::default();
+                options.color_mode = color_mode;
+                let expected =
+                    sdocx::render_layout_page_svg(&baseline, &baseline_layout, 0, &options)
+                        .unwrap();
+                assert_eq!(lines(&expected.svg).len(), 3);
+                for actual in [
+                    sdocx::render_layout_page_svg(&limited, &limited_layout, 0, &options).unwrap(),
+                    sdocx::render_layout_page_replay_svg(&limited, &limited_layout, 0, &options)
+                        .unwrap(),
+                ] {
+                    assert!(
+                        actual.svg == expected.svg,
+                        "saved height limits changed {constraint:?} {color_mode:?} SVG geometry"
+                    );
+                    assert_eq!(actual.object_diagnostics, expected.object_diagnostics);
+                    assert_eq!(actual.text_diagnostics, expected.text_diagnostics);
+                }
+                #[cfg(feature = "pdf")]
+                {
+                    let pdf_options = sdocx::PdfOptions::default();
+                    let expected = pdf_geometry::read(
+                        &sdocx::render_document_pdf(&baseline, &options, &pdf_options).unwrap(),
+                        f64::from(pdf_options.dpi),
+                    );
+                    let actual = pdf_geometry::read(
+                        &sdocx::render_document_pdf(&limited, &options, &pdf_options).unwrap(),
+                        f64::from(pdf_options.dpi),
+                    );
+                    assert!(!actual.text.is_empty());
+                    assert_eq!(actual.text, expected.text);
+                    assert_eq!(actual.source, expected.source);
+                    assert_eq!(actual.extracted_text, expected.extracted_text);
+                    assert_eq!(actual.image_resources, 0);
+                }
             }
         }
     }
