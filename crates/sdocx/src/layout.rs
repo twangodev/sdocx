@@ -225,7 +225,10 @@ impl LayoutPage {
             || reflow.requested_page_index != self.source_page_index
             || self.source_page_index >= visible_count
             || reflow.source_range != (0..index.len())
-            || reflow.source_snapshot.as_deref() != Some(body)
+            || !reflow
+                .source_snapshot
+                .as_deref()
+                .is_some_and(|snapshot| same_text_source(snapshot, body))
             || saved_inspection_ranges(body, &index, visible_count).is_some()
         {
             return None;
@@ -273,10 +276,149 @@ impl LayoutPage {
             &ranges,
             &page_heights,
         );
-        if &expected != inspection {
+        if !same_text_source(&expected, inspection) {
             return None;
         }
         Some(ranges)
+    }
+}
+
+pub(crate) fn same_text_source(left: &RichTextBox, right: &RichTextBox) -> bool {
+    if left == right {
+        return true;
+    }
+    let mut left = left.clone();
+    let mut right = right.clone();
+    let mut left_floats = SourceFloats::default();
+    let mut right_floats = SourceFloats::default();
+    left_floats.text(&mut left);
+    right_floats.text(&mut right);
+    left_floats.0 == right_floats.0 && left == right
+}
+
+#[derive(Default)]
+struct SourceFloats(Vec<u64>);
+
+impl SourceFloats {
+    fn f32(&mut self, value: &mut f32) {
+        self.0.push(if *value == 0.0 {
+            0
+        } else {
+            u64::from(value.to_bits())
+        });
+        *value = 0.0;
+    }
+
+    fn f64(&mut self, value: &mut f64) {
+        self.0.push(if *value == 0.0 { 0 } else { value.to_bits() });
+        *value = 0.0;
+    }
+
+    fn bounds(&mut self, bounds: &mut crate::BoundingBox) {
+        for value in [
+            &mut bounds.x_min,
+            &mut bounds.y_min,
+            &mut bounds.x_max,
+            &mut bounds.y_max,
+        ] {
+            self.f64(value);
+        }
+    }
+
+    fn rotation(&mut self, rotation: &mut Option<f64>) {
+        if let Some(rotation) = rotation {
+            self.f64(rotation);
+        }
+    }
+
+    fn size(&mut self, size: &mut Option<f32>) {
+        if let Some(size) = size {
+            self.f32(size);
+        }
+    }
+
+    fn border(&mut self, border: &mut Option<crate::TableBorder>) {
+        let Some(border) = border else { return };
+        for edge in [
+            &mut border.left,
+            &mut border.top,
+            &mut border.right,
+            &mut border.bottom,
+        ] {
+            self.f32(&mut edge.width);
+            self.f32(&mut edge.start_radius);
+            self.f32(&mut edge.end_radius);
+        }
+    }
+
+    fn text(&mut self, text: &mut RichTextBox) {
+        self.bounds(&mut text.bbox);
+        self.rotation(&mut text.rotation_degrees);
+        self.size(&mut text.font_size);
+        if let Some(margins) = &mut text.margins {
+            for margin in margins {
+                self.f32(margin);
+            }
+        }
+        for object in &mut text.object_spans {
+            match object.content.as_mut() {
+                Some(RichTextObjectContent::Image(image)) => {
+                    self.bounds(&mut image.bbox);
+                    self.rotation(&mut image.rotation_degrees);
+                    if let Some(bounds) = &mut image.original_bbox {
+                        self.bounds(bounds);
+                    }
+                }
+                Some(RichTextObjectContent::Table(table)) => self.table(table),
+                Some(RichTextObjectContent::CodeBlock(code)) => {
+                    self.bounds(&mut code.bbox);
+                    self.rotation(&mut code.rotation_degrees);
+                    if let Some(title) = &mut code.title {
+                        self.text(title);
+                    }
+                    if let Some(body) = &mut code.body {
+                        self.text(body);
+                    }
+                }
+                None => {}
+            }
+        }
+    }
+
+    fn table(&mut self, table: &mut crate::RichTextTable) {
+        self.bounds(&mut table.bbox);
+        self.rotation(&mut table.rotation_degrees);
+        for width in &mut table.column_widths {
+            self.f32(width);
+        }
+        let style = &mut table.style;
+        self.size(&mut style.min_column_width);
+        self.size(&mut style.min_row_height);
+        if let Some(bounds) = &mut style.content_bbox {
+            self.bounds(bounds);
+        }
+        self.border(&mut style.border);
+        self.border(&mut style.default_cell_border);
+        for widths in [&mut style.min_column_widths, &mut style.max_column_widths]
+            .into_iter()
+            .flatten()
+        {
+            for width in widths {
+                self.f32(width);
+            }
+        }
+        self.size(&mut style.max_height);
+        self.size(&mut style.max_width);
+        for row in &mut table.rows {
+            self.size(&mut row.max_height);
+            self.size(&mut row.min_height);
+            self.f32(&mut row.height);
+            for cell in &mut row.cells {
+                self.border(&mut cell.border);
+                self.bounds(&mut cell.bbox);
+                self.text(&mut cell.content);
+            }
+        }
     }
 }
 
@@ -565,7 +707,8 @@ fn balanced_line_ranges(text: &str, page_count: usize) -> Vec<Range<usize>> {
 }
 
 impl RichTextBox {
-    /// Return a character-indexed slice with intersecting style records rebased.
+    /// Return a logical character-indexed slice with intersecting style records rebased.
+    /// Font carets at either boundary retain their original interval policy.
     pub fn slice_chars(&self, range: Range<usize>) -> Option<Self> {
         self.slice_indexed(&TextIndex::new(&self.text), range)
     }
@@ -596,22 +739,7 @@ impl RichTextBox {
         let spans = self
             .spans
             .iter()
-            .filter_map(|span| {
-                if span.start_utf16 >= span.end_utf16
-                    || index.utf16_to_char(span.start_utf16).is_none()
-                    || index.utf16_to_char(span.end_utf16).is_none()
-                {
-                    return None;
-                }
-                let start = span.start_utf16.max(start_utf16);
-                let end = span.end_utf16.min(end_utf16);
-                (start < end).then(|| {
-                    let mut span = span.clone();
-                    span.start_utf16 = start - start_utf16;
-                    span.end_utf16 = end - start_utf16;
-                    span
-                })
-            })
+            .filter_map(|span| slice_span(span, index, start_utf16..end_utf16))
             .collect();
         let paragraphs = self
             .paragraphs
@@ -653,6 +781,31 @@ impl RichTextBox {
         }];
         Some(slice)
     }
+}
+
+fn slice_span(
+    span: &crate::RichTextSpan,
+    index: &TextIndex<'_>,
+    range: Range<u32>,
+) -> Option<crate::RichTextSpan> {
+    if span.start_utf16 > span.end_utf16
+        || index.utf16_to_char(span.start_utf16).is_none()
+        || index.utf16_to_char(span.end_utf16).is_none()
+    {
+        return None;
+    }
+    let start = span.start_utf16.max(range.start);
+    let end = span.end_utf16.min(range.end);
+    let font_caret = span.start_utf16 == span.end_utf16
+        && span.kind == crate::RichTextSpanType::FontSize
+        && range.start <= span.start_utf16
+        && span.start_utf16 <= range.end;
+    (start < end || font_caret).then(|| {
+        let mut span = span.clone();
+        span.start_utf16 = start - range.start;
+        span.end_utf16 = end - range.start;
+        span
+    })
 }
 
 fn paragraph_range_for_chars(index: &TextIndex<'_>, range: Range<usize>) -> Option<Range<u32>> {
