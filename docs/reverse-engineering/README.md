@@ -211,7 +211,8 @@ and distinguishes recovered behavior from implementation and evidence limits.
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   table styles, per-edge borders, bounded row/cell data and the nonnumerical
-  row-height field order; export sizing and merged-frame ownership.
+  row-height field order; export sizing, native frame ownership and the
+  distinct paint-visible cell list.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

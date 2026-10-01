@@ -221,8 +221,59 @@ lays out text only when they return the same cell
 (`0xb0478`–`0xb04c8`). `updateMeasuredRect`, `0xab168`, obtains the first
 and last grid positions through `GetFrameCell` before reading cached frames
 (`0xab198`–`0xab238`). Merged layout therefore needs distinct stored slots,
-visible owners and cached frame geometry. Sparse records, frame union, rowspan
-growth and malformed overlap handling are not yet established by these traces.
+frame owners, paint-visible cells and cached frame geometry. Sparse records,
+frame union and rowspan growth are not established by these traces.
+
+### Native frame ownership and paint visibility
+
+[The ownership capture](../../conformance/table-ownership.json) records native
+`GetFrameCell` and whole-grid `GetVisibleCells` outputs for 279 synthetic dense
+grids: seven named cases, all sixteen positive in-bounds span combinations for
+a 2×2 grid, and 256 deterministic mixed-span cases up to 5×5. Stored origins
+match their physical row and column positions. The Model library SHA-256 is
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`.
+
+`GetFrameCell`, `0x3c75c0`, searches earlier candidates in reverse row/column
+order. It includes spans on cells already covered by another cell, then follows
+the selected candidate's stored origin until no earlier span covers it.
+An origin outside the originally covering rectangle can consequently resolve
+to that rectangle's owner through a covered cell's retained span.
+
+Whole-grid `GetVisibleCells`, `0x3c7784`, calls the range implementation at
+`0x3c77b0`. Its forward row-major scan tests a visited bit at
+`0x3c7b48`–`0x3c7b60`, appends only an unvisited stored cell at
+`0x3c7bb4`–`0x3c7c5c`, then marks that cell's span at
+`0x3c7c60`–`0x3c7cc0`. Covered cells do not contribute their retained spans to
+this mask. Drawing's ordinary and text-canvas paths request this list at
+`0xa6174` and `0xa6894`, respectively.
+
+For a one-row, four-column grid with spans `(1,2)` at column 0 and `(1,3)`
+at covered column 1, native frame owners are `[0,0,0,0]`, but paint-visible
+cells are `[0,2,3]`. The equivalent four-row chain produces the same distinction.
+Thus selecting only cells whose frame owner is themselves does not reproduce
+the native paint list. These synthetic cases establish the two local APIs;
+they do not establish which overlapping retained spans Samsung's editor emits.
+
+The [Rust capture harness](../../conformance/native_table.rs) executes the
+unmodified native routines and their vector helpers in ARM64 Unicorn emulation.
+Two intra-library PLT entries resolve to their native implementations; only
+allocation, deletion and memory fill use host interfaces. Fresh allocations
+filled with `0x00`, `0xa5` and `0xff` give identical outputs across all cases:
+7,197 frame-owner calls and 837 visible-list calls. The inputs do not exercise
+empty/sparse rows, invalid origins, zero/overflowing spans, clipping subranges,
+native table layout, or a device-rendered reference.
+
+```sh
+rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
+  -L native=scratch/apk-analysis-runtime/python/unicorn/lib \
+  -C link-arg=-Wl,-rpath,"$PWD/scratch/apk-analysis-runtime/python/unicorn/lib" \
+  -o /tmp/sdocx-native-table
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  > /tmp/table-ownership.json
+cmp /tmp/table-ownership.json conformance/table-ownership.json
+```
+
+### Outer-border initialization
 
 `TableLayout::getHalfBorderWidth`, `0xb325c`, iterates
 `ObjectTable::GetBorderPath` (`0xb3288`) and selects positive widths with
