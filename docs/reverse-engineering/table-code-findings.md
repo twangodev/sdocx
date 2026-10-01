@@ -293,6 +293,47 @@ Reproduce the capture with the same compiled harness and hash-pinned libraries:
 cmp /tmp/table-cold-rows.json conformance/table-cold-rows.json
 ```
 
+## Public table measurement and layout lifecycle
+
+Drawing `TableLayout::Measure`, `0xaa530`, runs when the table is present and
+its dirty byte at offset 649 is set. It clears that byte, checks the native
+visible-cell list, then initializes frames, sizes cold rows and updates measured
+bounds. A repeated clean `Measure` leaves the captured state unchanged.
+
+`TableLayout::Layout`, `0xaa3d4`, dispatches dirty state to `Measure` through
+virtual slot 56. For clean state it calls `layoutFromRow(0)`, `0xaa448`.
+Each row receives movement/relayout decisions, owner-based sizing of that and
+subsequent rows, then bottom compression. Measured bounds are updated afterward.
+Cold measurement visits raw slots; warm text relayout selects self-owning cells.
+
+[`table-lifecycle.json`](../../conformance/table-lifecycle.json), SHA-256
+`a71265b72c29a2acab94934d865c8a23587befa593051075d4b53546e6eceeb5`,
+captures 69 dense unmerged/merged inputs, including covered-owner chains,
+fractional dimensions and ordered, reversed or empty split bands. Thirty-two
+inputs enter cold measurement through dirty `Layout`. All inputs check clean
+`Measure` and two warm layouts with changed bands. Rust matches 839 cell
+selections and 1,665 frame snapshots, pending gaps, split caches, content/measured
+bounds and warm first-page minima bit for bit. Allocation fills `0x00`, `0xa5`
+and `0xff` produce identical output.
+
+The public drivers, native ownership, frame arithmetic, text metric getters,
+row movement and measured bounds execute together. Heights and line metrics
+are supplied; text initialization/update/measurement,
+padding/font selection, diagnostics and final observers are isolated. This
+capture establishes phase composition with fixed text caches, not native
+shaping, complete merged preparation or device pagination.
+
+Reproduce with the compiled harness and the same hash-pinned libraries:
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --lifecycle scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-lifecycle.json
+cmp /tmp/table-lifecycle.json conformance/table-lifecycle.json
+```
+
 ## Export row sizing and merged-frame ownership
 
 The ARM64 Drawing library used here has SHA-256
