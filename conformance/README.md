@@ -254,6 +254,10 @@ frame owners and paint-visible cells for 279 synthetic dense grids. Rust matches
 all captured outputs and uses the visible list when painting merged tables with
 saved frames. This does not cover merged measurement or device-rendered geometry;
 merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`.
+The [border-path capture](table-border-paths.json) contains native perimeter
+segments, styles and line equations for twelve synthetic grids, including
+merged boundaries and constructor defaults. It covers Model path construction,
+not the current Rust border painter or device-rendered appearance.
 See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
 for the producers and measured residuals. Recomputed pagination and full
 document composition parity remain incomplete. Samsung device-default fonts,

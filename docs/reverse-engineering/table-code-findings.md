@@ -256,7 +256,7 @@ they do not establish which overlapping retained spans Samsung's editor emits.
 
 The [Rust capture harness](../../conformance/native_table.rs) executes the
 unmodified native routines and their vector helpers in ARM64 Unicorn emulation.
-Two intra-library PLT entries resolve to their native implementations; only
+Intra-library PLT entries resolve to their native implementations; only
 allocation, deletion and memory fill use host interfaces. Fresh allocations
 filled with `0x00`, `0xa5` and `0xff` give identical outputs across all cases:
 7,197 frame-owner calls and 837 visible-list calls. The inputs do not exercise
@@ -300,6 +300,57 @@ Model's `GetBorderPath`, `0x3cb464`, reads the outer border pointer at member
 152 and constructs its four paths. This initializer does not inspect every
 cell border. The later per-edge drawn-bound widths include boundary cells and
 do not gate on color; those two measurements must remain distinct.
+
+### Native border paths
+
+[The border-path capture](../../conformance/table-border-paths.json), SHA-256
+`4cae7223084cff60765bddb5e0b9926e8a706b741bf7cb9949cebfe4e2f8dc0d`,
+records native `GetCellBorderPath` (`0x3cad9c`) and `GetBorderPath`
+(`0x3cb464`) outputs for twelve synthetic grids. The 69 requested cell paths
+contain 364 segments; the twelve outer queries contain eight segments. Captures
+under allocation fills `0x00`, `0xa5` and `0xff` agree byte for byte. These are
+Model outputs; they do not capture Drawing, pagination or device appearance.
+
+`getCellBorder`, `0x3c7510`, reads the stored cell's border pointer at member 96
+and falls back to the table's default-cell pointer at member 160
+(`0x3c7554`–`0x3c755c`). A present cell border replaces the whole default;
+a zero-width edge does not select that edge from the default. Null pointers in
+the synthetic capture are distinct from omitted serialized fields.
+
+`GetCellBorderPath` first resolves `GetFrameCell` at `0x3caddc`. It constructs
+the owner's left, top, right and bottom perimeter from the corresponding stored
+boundary cells. A merged rectangle can therefore have different styles along
+one side, including styles on covered cells. It does not expand just the visible
+origin's border around the merged rectangle. Path construction retains zero
+colors and nonpositive widths; later Drawing filters are separate.
+
+The outer path is independent of those cell styles. Its ordered endpoints run
+bottom-to-top on the left, left-to-right on top, top-to-bottom on the right and
+right-to-left on the bottom. Cell-path segments run top-to-bottom on both
+vertical sides and left-to-right on both horizontal sides. Start/end radius
+values must follow the captured endpoint direction.
+
+Model's `TableBorder` constructor produces black (`0xff000000`), one-unit-wide
+edges with zero radii. The capture executes that constructor for the default
+case. `ObjectTableImpl` constructs both the outer and default-cell borders at
+`0x3c5d44` and `0x3c5d68`. Missing serialized styles consequently do not imply
+native null pointers.
+
+Segment coordinates use `f32` prefix sums, followed by subtraction of the
+current row height or column width to recover its start. The large-origin,
+fractional-size case preserves the resulting cancellation and rounding. The
+captured line equations also preserve native fused multiply-add results;
+neither follows a sum performed once in `f64` and narrowed at the end.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --border-paths > /tmp/table-border-paths.json
+cmp /tmp/table-border-paths.json conformance/table-border-paths.json
+```
+
+The Rust table painter still uses a uniform one-unit border and fixed rounded
+clip. Parsed edge styles and these captured paths do not yet drive its paint;
+native border appearance parity is not established.
 
 Rust regressions exercise saved row maxima below measured content height through
 callback preparation, final drawing, light/dark SVG preview, replay and retained

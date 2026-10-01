@@ -64,6 +64,9 @@ plain Arabic spans.
 - Merged/sparse table preparation, rowspan growth, and nested or rotated object
   feedback are incomplete. Merged saved-frame painting follows native visibility;
   merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`.
+- Table border painting is simplified. Parsed per-edge styles and the
+  [native border paths](../conformance/table-border-paths.json) do not yet drive
+  the uniform stroke and rounded clip.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native font-selection and measurement-style anomalies, variable-font
