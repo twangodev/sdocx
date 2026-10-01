@@ -10,6 +10,7 @@ interface BidiCase {
 	characters: string[];
 	x: number[];
 	line: number[];
+	image?: { anchor: number; x: number; width: number; height: number };
 }
 
 // Independent pinned positions from crates/sdocx/tests/vector_bidi_text.rs.
@@ -25,9 +26,16 @@ const isolate: BidiCase = {
 	x: [85.89111328125, 0, 28.63037109375, 57.2607421875], line: [0, 0, 0, 0]
 };
 
+const inlineImage: BidiCase = {
+	source: 'A\u202eB\ufffcC\u202cD', width: 500, characters: ['A', 'B', 'C', 'D'],
+	x: [0, 78.64501953125, 29.35546875, 106.66015625], line: [0, 0, 0, 0],
+	image: { anchor: 3, x: 58.64501953125, width: 20, height: 20 }
+};
+
 const suites = [
 	{ name: 'native bidi SVG images retain logical source, glyph positions and vector PDF text', examples: cases, family: 'Roboto', font: '../crates/sdocx/assets/fonts/Roboto-Regular.ttf', injectFont: false },
-	{ name: 'native isolate paragraph base retains covered Hebrew and number positions', examples: [isolate], family: 'DejaVu Sans', font: '../crates/sdocx/tests/assets/fonts/DejaVuSans.ttf', injectFont: true }
+	{ name: 'native isolate paragraph base retains covered Hebrew and number positions', examples: [isolate], family: 'DejaVu Sans', font: '../crates/sdocx/tests/assets/fonts/DejaVuSans.ttf', injectFont: true },
+	{ name: 'native bidi inline image follows visual order with selectable vector text', examples: [inlineImage], family: 'Roboto', font: '../crates/sdocx/assets/fonts/Roboto-Regular.ttf', injectFont: false }
 ];
 
 const join = (...parts: Uint8Array[]) => Buffer.concat(parts);
@@ -36,10 +44,19 @@ const u16 = (value: number) => { const bytes = Buffer.alloc(2); bytes.writeUInt1
 const u32 = (value: number) => { const bytes = Buffer.alloc(4); bytes.writeUInt32LE(value); return bytes; };
 const f32 = (value: number) => { const bytes = Buffer.alloc(4); bytes.writeFloatLE(value); return bytes; };
 const f64 = (value: number) => { const bytes = Buffer.alloc(8); bytes.writeDoubleLE(value); return bytes; };
+const redPixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC', 'base64');
 
 function frame(kind: number, fields: number, fixed = zero(0), flexible = zero(0)) {
 	const offset = 18 + fixed.length;
 	return join(u32(offset + flexible.length), u16(kind), u32(offset), Buffer.from([2]), u16(kind === 0 ? 8 : 0), Buffer.from([4]), u32(fields), fixed, flexible);
+}
+
+function imagePayload(image: NonNullable<BidiCase['image']>): Buffer {
+	const bbox = [0, 0, image.width, image.height];
+	const base = frame(0, 1, join(u32(5500), u16(2), Buffer.from('im'), zero(8), ...bbox.map(f64), zero(5)), f32(0));
+	const fixed = join(u32(4), ...bbox.map(f64), f32(0), u32(0), zero(1));
+	const fill = join(zero(1), u32(7), ...[0, 0, 0, 0, 0, 0, 100, 100, 0].map(f32), zero(21));
+	return join(base, frame(6, 0), frame(7, 32, fixed, join(u32(fill.length), Buffer.from([2]), fill)), frame(3, 0));
 }
 
 function bidiNote(example: BidiCase, family: string): Buffer {
@@ -52,7 +69,12 @@ function bidiNote(example: BidiCase, family: string): Buffer {
 		const payload = join(zero(8), u16(name.length + 1), name, zero(1));
 		spans.push(join(u16(16 + payload.length), ...[4, 0, label.length / 2, 1].map(u32), payload));
 	}
-	const common = join(u32(label.length / 2), label, u32(spans.length), ...spans, u32(0), zero(16), zero(11));
+	let objectSpans = zero(8);
+	if (example.image) {
+		const image = imagePayload(example.image);
+		objectSpans = join(u32(1), u32(0), u32(1), u32(image.length + 20), u32(image.length), u32(3), image, u32(example.image.anchor), u32(1), u32(0));
+	}
+	const common = join(u32(label.length / 2), label, u32(spans.length), ...spans, u32(0), zero(16), zero(3), objectSpans);
 	const base = frame(0, 1, join(u32(5500), u16(2), Buffer.from('tx'), zero(8), ...[10, 20, 10 + example.width, 620].map(f64), zero(5)), f32(0));
 	const payload = join(base, frame(6, 0), frame(7, 1, zero(0), join(u32(common.length), common)), frame(2, 0));
 	const object = join(Buffer.from([2]), u16(0), u32(payload.length + 32), payload, zero(32));
@@ -60,7 +82,10 @@ function bidiNote(example: BidiCase, family: string): Buffer {
 	header.writeUInt32LE(header.length, 0);
 	header.writeUInt32LE(header.length, 4);
 	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(1), object, zero(32));
-	return Buffer.from(zipSync({ 'bidi.page': join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK')) }));
+	return Buffer.from(zipSync({
+		'bidi.page': join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK')),
+		...(example.image ? { 'media/7@bidi.png': redPixel } : {})
+	}));
 }
 
 for (const suite of suites) {
@@ -124,8 +149,10 @@ for (const suite of suites) {
 					const session = new module.DocumentSession(new Uint8Array(example.note));
 					let svg: string;
 					let pdf: number[];
+					let storedSource: string;
 					try {
 						if (injectFont) session.add_pdf_font(new Uint8Array(font));
+						storedSource = session.inspection().document.pages[0].objects[0].content.Element.TextBox.text;
 						svg = session.render_svg(0, 'light');
 						pdf = Array.from(session.render_pdf(0, 'light'));
 					} finally { session.free(); }
@@ -141,9 +168,21 @@ for (const suite of suites) {
 					});
 					if (!glyphs.length) throw new Error('The bidi fixture produced no positioned glyphs.');
 					const baseline = glyphs[0].y;
+					const attached = globalThis.document.importNode(document.documentElement, true) as unknown as SVGSVGElement;
+					attached.style.position = 'absolute';
+					attached.style.opacity = '0';
+					globalThis.document.body.append(attached);
+					const images = [...attached.querySelectorAll<SVGImageElement>('image')].map(image => {
+						const bbox = image.getBBox();
+						const transform = attached.getCTM()!.inverse().multiply(image.getCTM()!);
+						const origin = new DOMPoint(bbox.x, bbox.y).matrixTransform(transform);
+						return { x: origin.x, y: origin.y, width: bbox.width, height: bbox.height };
+					});
+					attached.remove();
 					const styles = [...document.querySelectorAll('style')];
 					const isolated = document.documentElement;
-					isolated.replaceChildren(...styles.map(style => style.cloneNode(true)), ...texts.map(text => text.cloneNode(true)));
+					const painting = [...isolated.children].filter(node => node.localName === 'g' || node.localName === 'text');
+					isolated.replaceChildren(...styles.map(style => style.cloneNode(true)), ...painting.map(node => node.cloneNode(true)));
 					isolated.setAttribute('viewBox', `0 0 ${width} ${height}`);
 					isolated.setAttribute('width', String(width * scale));
 					isolated.setAttribute('height', String(height * scale));
@@ -155,6 +194,10 @@ for (const suite of suites) {
 					paint.font = `${45 * scale}px "Sdocx Bidi Reference"`;
 					paint.fillStyle = '#000000';
 					example.characters.forEach((character, index) => paint.fillText(character, (10 + example.x[index]) * scale, (baseline + 60.75 * example.line[index]) * scale));
+					if (example.image) {
+						paint.fillStyle = '#ff0000';
+						paint.fillRect((10 + example.image.x) * scale, (baseline - example.image.height) * scale, example.image.width * scale, example.image.height * scale);
+					}
 					const expected = scan(referenceCanvas);
 					const canonical = isolated.cloneNode(false) as Element;
 					canonical.append(...styles.map(style => style.cloneNode(true)));
@@ -168,6 +211,13 @@ for (const suite of suites) {
 						glyph.textContent = character;
 						canonical.append(glyph);
 					});
+					if (example.image) {
+						const image = isolated.querySelector('image')!.cloneNode(true) as Element;
+						image.removeAttribute('transform');
+						image.setAttribute('x', (10 + example.image.x).toFixed(5));
+						image.setAttribute('y', (baseline - example.image.height).toFixed(5));
+						canonical.append(image);
+					}
 					const expectedPixels = await raster(canonical);
 					const probe = isolated.cloneNode(true) as Element;
 					for (const style of probe.querySelectorAll('style')) {
@@ -180,19 +230,27 @@ for (const suite of suites) {
 					for (const style of probe.querySelectorAll('style')) style.remove();
 					for (const node of probe.querySelectorAll('[font-family]')) node.setAttribute('font-family', 'SdocxBidiEmbeddedProbe, monospace');
 					const fallback = await raster(probe);
-					output.push({ source, glyphs, original, expected, expectedPixels, renamed, fallback, embedded: styles.length === 1 && styles[0].textContent!.includes('data:font/ttf;base64,'), pdf });
+					output.push({ source, storedSource, glyphs, images, original, expected, expectedPixels, renamed, fallback, embedded: styles.length === 1 && styles[0].textContent!.includes('data:font/ttf;base64,'), pdf });
 				}
 				return output;
 			} finally { document.fonts.delete(reference); }
 		}, { examples: suite.examples.map(example => ({ ...example, note: [...bidiNote(example, suite.family)] })), font: [...font], family: suite.family, injectFont: suite.injectFont });
 		for (const [index, result] of results.entries()) {
 			const example = suite.examples[index];
-			expect(result.source).toBe(example.source);
+			expect(result.storedSource).toBe(example.source);
+			expect(result.source).toBe(example.source.replaceAll('\ufffc', ''));
 			expect(result.glyphs.map(glyph => glyph.character)).toEqual(example.characters);
 			for (const [glyphIndex, glyph] of result.glyphs.entries()) {
 				expect(glyph.x).toBeCloseTo(10 + example.x[glyphIndex], 4);
 				expect(glyph.y - result.glyphs[0].y).toBeCloseTo(60.75 * example.line[glyphIndex], 4);
 				expect(glyph.size).toBe(45);
+			}
+			expect(result.images).toHaveLength(example.image ? 1 : 0);
+			if (example.image) {
+				expect(result.images[0].x).toBeCloseTo(10 + example.image.x, 4);
+				expect(result.images[0].y).toBeCloseTo(result.glyphs[0].y - example.image.height, 4);
+				expect(result.images[0].width).toBe(example.image.width);
+				expect(result.images[0].height).toBe(example.image.height);
 			}
 			expect(result.embedded).toBe(true);
 			expect(result.original.hash).toBe(result.expectedPixels.hash);
@@ -207,7 +265,7 @@ for (const suite of suites) {
 				.map(stream => Buffer.from(decodePDFRawStream(stream).decode()).toString('latin1')).join('\n');
 			expect(dictionaries).toContain('/FontFile2');
 			expect(dictionaries).toContain('/ToUnicode');
-			expect(dictionaries).not.toContain('/Subtype /Image');
+			expect(dictionaries.match(/\/Subtype \/Image\b/g) ?? []).toHaveLength(example.image ? 1 : 0);
 			expect(contents).toContain('/ActualText');
 			expect(contents).toMatch(/\b(?:Tj|TJ)\b/);
 		}
