@@ -14,7 +14,7 @@ current, narrower completion criteria.
 | NaN source identity | Unchanged recovered geometry retains full-source reflow; source edits still invalidate it. | Verified |
 | Caret spans in captures | Native zero-length font spans survive valid captures with their interval semantics. | Verified |
 | Empty list markers | Marker font size and reserved width use the empty paragraph's caret formatting. | Verified |
-| Collection fonts in SVG | SVG embeds the selected TTC/OTC face; Chromium displays the face Rust measured. | Pending |
+| Collection fonts in SVG | SVG embeds the selected TTC/OTC face; Chromium displays the face Rust measured. | Verified |
 | CLI render diagnostics | Selected-page text and object warnings are reported for SVG, PNG, and PDF. | Pending |
 | Diagnostic collection | Ordered, source-owned diagnostics use indexed deduplication. | Pending |
 | Repeated body preparation | Document exports and browser sessions reuse compatible body plans across pages. | Pending |

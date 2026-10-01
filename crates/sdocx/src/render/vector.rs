@@ -5,6 +5,7 @@ use svg::{
     node::{Value, element as svg_element},
 };
 
+mod font;
 mod path;
 mod values;
 pub(super) use path::{Data, ReplayPath, coordinate, polyline};
@@ -541,7 +542,19 @@ impl TSpan {
 }
 
 impl EmbeddedFont {
-    pub fn new(family: &str, weight: u16, style: fontdb::Style, data: &[u8]) -> Self {
+    pub fn new(
+        family: &str,
+        weight: u16,
+        style: fontdb::Style,
+        data: &[u8],
+        index: u32,
+    ) -> Result<Self, rustybuzz::ttf_parser::FaceParsingError> {
+        let data = font::standalone_face(data, index)?;
+        let (mime, format) = if data.starts_with(b"OTTO") {
+            ("font/otf", "opentype")
+        } else {
+            ("font/ttf", "truetype")
+        };
         let mut name = String::new();
         cssparser::serialize_string(family, &mut name).expect("writing a CSS string");
         let bytes = base64::engine::general_purpose::STANDARD.encode(data);
@@ -551,9 +564,9 @@ impl EmbeddedFont {
             fontdb::Style::Oblique => "oblique",
         };
         let css = format!(
-            "@font-face{{font-family:{name};font-weight:{weight};font-style:{slant};src:url(\"data:font/ttf;base64,{bytes}\") format(\"truetype\")}}"
+            "@font-face{{font-family:{name};font-weight:{weight};font-style:{slant};src:url(\"data:{mime};base64,{bytes}\") format(\"{format}\")}}"
         );
-        Self(Node::new(svg_element::Style::new(css)))
+        Ok(Self(Node::new(svg_element::Style::new(css))))
     }
 }
 impl Anchor {

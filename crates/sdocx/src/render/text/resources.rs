@@ -276,12 +276,20 @@ impl<'a> TextRenderer<'a> {
 
     pub fn embed_fonts(&self, svg: &mut Scene) {
         for face in self.faces.borrow().iter() {
-            svg.push(EmbeddedFont::new(
+            match EmbeddedFont::new(
                 &face.family,
                 face.weight.0,
                 face.style,
                 face.bytes(),
-            ));
+                face.index,
+            ) {
+                Ok(font) => svg.push(font),
+                Err(_) => self.record(TextDiagnostic {
+                    kind: TextDiagnosticKind::UnusableFontData,
+                    family: face.family.clone(),
+                    codepoints: Vec::new(),
+                }),
+            }
         }
     }
 

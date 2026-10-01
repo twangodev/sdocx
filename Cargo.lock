@@ -939,6 +939,7 @@ dependencies = [
  "unicode-script",
  "unicode-segmentation",
  "usvg",
+ "write-fonts",
  "zip",
 ]
 
