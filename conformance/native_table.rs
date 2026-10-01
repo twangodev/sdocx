@@ -6,6 +6,9 @@ mod columns;
 #[path = "native_table/frames.rs"]
 mod frames;
 
+#[path = "native_table/rows.rs"]
+mod rows;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -40,6 +43,9 @@ const STACK: u64 = MODEL + 0xfe000;
 const TLS: u64 = MODEL + 0xfd000;
 const CELL_BASE: u64 = MODEL + 0x20000;
 const CELL_STRIDE: u64 = 256;
+const ROW_BASE: u64 = MODEL + 0x2000;
+const ROW_STRIDE: u64 = 256;
+const CELL_POINTER_BASE: u64 = MODEL + 0x3000;
 const RETURN_VECTOR: u64 = MODEL + 0x8000;
 const TABLE_OBJECT: u64 = MODEL + 0x9000;
 const DRAWING_OBJECT: u64 = MODEL + 0x9100;
@@ -337,8 +343,8 @@ impl Machine {
             &(widths_pointer + columns as u64 * 4).to_le_bytes(),
         );
         for row in 0..rows {
-            let row_pointer = MODEL + 0x1200 + row as u64 * 128;
-            let cells_pointer = MODEL + 0x1600 + row as u64 * 128;
+            let row_pointer = ROW_BASE + row as u64 * ROW_STRIDE;
+            let cells_pointer = CELL_POINTER_BASE + row as u64 * 128;
             write(
                 self.engine,
                 rows_pointer + row as u64 * 8,
@@ -424,7 +430,7 @@ impl Machine {
         for (row, height) in case.heights.iter().enumerate() {
             write(
                 self.engine,
-                MODEL + 0x1200 + row as u64 * 128 + 72,
+                ROW_BASE + row as u64 * ROW_STRIDE + 72,
                 &height.to_le_bytes(),
             );
         }
@@ -595,7 +601,7 @@ impl Machine {
         for position in 0..9 {
             let row = position / 3;
             let column = position % 3;
-            let row_pointer = MODEL + 0x1200 + row as u64 * 128;
+            let row_pointer = ROW_BASE + row as u64 * ROW_STRIDE;
             let row_callback = MODEL + 0xb000 + row as u64 * 256;
             write(self.engine, row_callback, &row_vtable.to_le_bytes());
             write(self.engine, row_callback + 8, &0x3c3d3c_u64.to_le_bytes());
@@ -984,9 +990,23 @@ fn main() {
             frames::capture(&mut machine, Path::new(&base_path));
             return;
         }
+        Some("--warm-rows") => {
+            let drawing_path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base_path = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            let widget_path = std::env::args_os()
+                .nth(5)
+                .expect("libSPenWidget.so path required");
+            machine.load_drawing(Path::new(&drawing_path));
+            rows::capture(&mut machine, Path::new(&base_path), Path::new(&widget_path));
+            return;
+        }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --warm-rows or no capture mode"
         ),
     }
     let mut cases = Vec::new();

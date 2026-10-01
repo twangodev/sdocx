@@ -1,8 +1,9 @@
 use super::*;
 
-const BASE: u64 = 0x0200_0000;
-const BASE_SHA256: &str = "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb";
-const LAYOUT: u64 = MODEL + 0xc000;
+pub(super) const BASE: u64 = 0x0200_0000;
+pub(super) const BASE_SHA256: &str =
+    "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb";
+pub(super) const LAYOUT: u64 = MODEL + 0xc000;
 const KEY: u64 = MODEL + 0xe000;
 const INITIALIZE: u64 = DRAWING_BASE + 0xaa6b4;
 const FIND_FRAME: u64 = DRAWING_BASE + 0xb4d70;
@@ -62,13 +63,13 @@ impl Case {
     }
 }
 
-struct Snapshot {
-    grid: Vec<[f32; 4]>,
-    cached: Vec<[f32; 4]>,
-    pending_gaps: Vec<f32>,
+pub(super) struct Snapshot {
+    pub grid: Vec<[f32; 4]>,
+    pub cached: Vec<[f32; 4]>,
+    pub pending_gaps: Vec<f32>,
 }
 
-fn snapshot(machine: &Machine, rows: usize, columns: usize) -> Snapshot {
+pub(super) fn snapshot(machine: &Machine, rows: usize, columns: usize) -> Snapshot {
     let grid = read_u64(machine.engine, LAYOUT + 832);
     let end = read_u64(machine.engine, LAYOUT + 840);
     assert_eq!(end - grid, rows as u64 * 24);
@@ -131,8 +132,7 @@ fn initialize_adapter(machine: &Machine) {
     }
 }
 
-fn fixture(machine: &mut Machine, input: &Case) -> String {
-    let case = &input.grid;
+pub(super) fn initialize(machine: &mut Machine, case: &BorderCase) {
     machine.initialize_borders(case);
     initialize_adapter(machine);
     for (index, instruction) in [0xaa1f03e1_u32, 0xd2805002, 0x14000000].iter().enumerate() {
@@ -155,6 +155,11 @@ fn fixture(machine: &mut Machine, input: &Case) -> String {
         write(machine.engine, map + 32, &1_f32.to_le_bytes());
     }
     machine.call(INITIALIZE, &[LAYOUT]);
+}
+
+fn fixture(machine: &mut Machine, input: &Case) -> String {
+    let case = &input.grid;
+    initialize(machine, case);
     let rows = case.heights.len();
     let columns = case.widths.len();
     let initial = snapshot(machine, rows, columns);
@@ -199,9 +204,13 @@ fn fixture(machine: &mut Machine, input: &Case) -> String {
     )
 }
 
-pub(super) fn capture(machine: &mut Machine, base_path: &Path) {
+pub(super) fn load_base(machine: &Machine, base_path: &Path) {
     map_library(machine.engine, base_path, BASE, BASE_SHA256);
     check(unsafe { uc_mem_map(machine.engine, TEXT_CONSTRUCTOR, 0x1000, 7) });
+}
+
+pub(super) fn capture(machine: &mut Machine, base_path: &Path) {
+    load_base(machine, base_path);
     let mut cases = Vec::new();
     for (name, rows, columns, changes) in [
         ("unit", 3, 4, vec![]),
