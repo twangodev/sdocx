@@ -215,8 +215,8 @@ and distinguishes recovered behavior from implementation and evidence limits.
   distinct paint-visible cell list; captured border styles, perimeter segments
   and native coordinate rounding; captured Drawing outline aggregation across
   canvas scales; native heading/owned/default background selection; edge
-  precedence, pending-gap selection, native column-minimum cache selection
-  and vector evidence limits.
+  precedence, pending-gap selection, native column-minimum cache selection,
+  cold frame caches, row updates and vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

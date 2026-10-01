@@ -134,6 +134,10 @@ portable performance thresholds:
   the Rust border model.
   [Border output regressions](../crates/sdocx/tests/embedded_text_layout.rs)
   cover SVG/PDF style transport separately.
+- [Native cold frames and row updates](../conformance/table-cold-frames.json)
+  match Rust coordinate and pending-gap bits across 93 supplied inputs. This
+  isolates frame primitives from text measurement; final merged sizing remains
+  outside the supported prepared path.
 - [Native background selection](../conformance/table-backgrounds.json) covers
   heading overrides and default inheritance. The same vector export regressions
   check fill alpha and text contrast in saved/prepared tables under both themes.

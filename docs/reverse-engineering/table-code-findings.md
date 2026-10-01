@@ -207,6 +207,64 @@ export preparation path or introduce a maximum-height clamp. Rust accepts
 saved row maxima while retaining their parsed values. The table-wide
 maximum-height flag is separate and still outside the supported prepared path.
 
+### Cold frame cache and row updates
+
+`TableLayout::init`, `0xaa6b4`, starts grid coordinates at the half-width of
+the widest drawable outer border. Missing serialized border styles retain
+Model's constructed one-unit black border, giving a half-width of 0.5. Each
+stored slot receives a rectangle with its saved column width and row height.
+The next row starts at the preceding row's first-slot bottom
+(`0xaaa6c`–`0xaaa80`); the next column starts at the preceding column's right
+in the first grid row (`0xaaac8`–`0xaaad8`). Native Base `RectF::OffSet`,
+`0xb11a4`, adds those origins using `f32` arithmetic. The initializer also
+stores the rectangle in a cache keyed by the raw cell pointer
+(`0xaac90`–`0xaae08`). It does not expand rectangles by row/column spans in
+this path. This establishes initial cache geometry, not final merged layout.
+
+Drawing `extendRow`, `0xaff74`, adds its supplied amount to the bottom of
+every stored slot and corresponding cached frame in that row. It does not
+move later rows. `offsetFromRow`, `0xade0c`, moves stored slots and cached
+frames from a supplied row onward. Before movement, a pending gap of at least
+`f32::EPSILON` changes the amount: positive movement consumes the gap and
+stops if more than epsilon remains. Negative movement clears the gap and
+recursively removes its height before applying the original movement. These
+two routines use stored cells directly, independently of frame ownership.
+
+[The frame capture](../../conformance/table-cold-frames.json), SHA-256
+`498bfb15e663cfeb648ed51a8c0ed2a2490b09fa47b578d1419e0d7eac0cdb84`,
+records 93 inputs, 1,082 initial/final slot frames and 532 explicit row changes.
+Cases include unit/merged grids, covered-span chains, fractional/large values,
+zero saved row heights, border-width selection, gap consumption/removal and
+deterministic sequences of row updates. All outputs are identical with fresh
+allocations filled by `0x00`, `0xa5` or `0xff`. The capture hash checks Model
+and Drawing as above, plus Base SHA-256
+`e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb`.
+
+The [Rust harness module](../../conformance/native_table/frames.rs) runs native
+frame initialization, row updates, rectangle arithmetic, containers and callback
+copies. Local ELF relocations and explicit PLT bindings resolve those native
+calls. Text initialization is isolated: the harness replaces the base
+text-layout constructor with zeroed storage and omits `SetObject` and
+`SetTextScale`. Update amounts
+and pending gaps are supplied inputs. Consequently this capture does not prove
+native text measurement, the decision to grow a row, final merged-frame sizing,
+pagination selection or device appearance.
+
+The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_frame_tests.rs)
+matches initial/final coordinate bits and final pending-gap bits for every input.
+It uses the same frame initializer and row updates as export preparation, before
+text measurement. Export still restricts preparation to unmerged grids; matching
+these frame primitives does not establish complete merged-table support.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cold-frames scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-cold-frames.json
+cmp /tmp/table-cold-frames.json conformance/table-cold-frames.json
+```
+
+### Stored cells and frame owners
+
 Model `ObjectTableImpl::GetCell`, `0x3c7570`, indexes the stored row and column
 vectors directly (`0x3c75a8`–`0x3c75b0`). The public
 `ObjectTable::GetCell`, `0x3d2be0`, validates the requested indices and reads
