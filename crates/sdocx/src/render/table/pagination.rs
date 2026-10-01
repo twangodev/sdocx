@@ -4,6 +4,9 @@ use super::{
 };
 use crate::BoundingBox;
 
+#[cfg(test)]
+mod native_frame_tests;
+
 const CHANGE_EPSILON: f64 = 0.001_f32 as f64;
 const FLOAT_EPSILON: f64 = f32::EPSILON as f64;
 

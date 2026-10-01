@@ -342,6 +342,30 @@ fn prepare_cold_grid(
     renderer: &TextRenderer<'_>,
 ) -> Result<PreparedTable, ObjectDiagnosticKind> {
     let half_border = drawable_half_border(table);
+    let rows = initialize_rows(table, half_border)?;
+    let mut prepared = PreparedTable {
+        measured_bbox: BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 0.0,
+            y_max: 0.0,
+        },
+        pending_gaps: vec![0.0; rows.len()],
+        rows,
+        min_first_page_height: 0.0,
+        constraint,
+        half_border,
+        bands: table_bands(constraint, candidate_top, renderer)?,
+    };
+    pagination::cold(&mut prepared, table, theme, renderer)?;
+    prepared.update_geometry(table, renderer)?;
+    Ok(prepared)
+}
+
+fn initialize_rows(
+    table: &RichTextTable,
+    half_border: f64,
+) -> Result<Vec<PreparedTableRow>, ObjectDiagnosticKind> {
     let mut top = half_border;
     let mut rows = Vec::with_capacity(table.rows.len());
     for (row_index, row) in table.rows.iter().enumerate() {
@@ -375,23 +399,7 @@ fn prepare_cold_grid(
         top = bottom;
         rows.push(PreparedTableRow { row_index, cells });
     }
-    let mut prepared = PreparedTable {
-        measured_bbox: BoundingBox {
-            x_min: 0.0,
-            y_min: 0.0,
-            x_max: 0.0,
-            y_max: 0.0,
-        },
-        pending_gaps: vec![0.0; rows.len()],
-        rows,
-        min_first_page_height: 0.0,
-        constraint,
-        half_border,
-        bands: table_bands(constraint, candidate_top, renderer)?,
-    };
-    pagination::cold(&mut prepared, table, theme, renderer)?;
-    prepared.update_geometry(table, renderer)?;
-    Ok(prepared)
+    Ok(rows)
 }
 
 fn native_add(left: f64, right: f64) -> Result<f64, ObjectDiagnosticKind> {
