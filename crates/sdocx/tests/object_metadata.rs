@@ -1,7 +1,10 @@
 #[allow(dead_code)]
 mod support;
 
-use sdocx::{ObjectMetadata, ObjectResizeMode, Result, parse_stored_page_bytes};
+use sdocx::{
+    ObjectMetadata, ObjectResizeMode, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption,
+    ObjectType, Result, RichTextObjectSpan, parse_stored_page_bytes,
+};
 
 fn frame(properties: &[u8], fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
     let offset = 12 + properties.len() + fields.len() + fixed.len();
@@ -37,6 +40,55 @@ fn metadata(payload: &[u8]) -> Result<ObjectMetadata> {
     let bytes = support::page(&[vec![support::object(250, payload, &[])]], 0, &[]);
     let page = parse_stored_page_bytes(&bytes)?;
     page.layers.layers[0].objects[0].base_metadata(&bytes)
+}
+
+fn object_span(object_data: Vec<u8>) -> RichTextObjectSpan {
+    RichTextObjectSpan {
+        object_type: ObjectType::CodeBlock,
+        object_data,
+        content: None,
+        text_index_utf16: 0,
+        layout_option: ObjectSpanLayoutOption::Block,
+        layout_constraint: ObjectSpanLayoutConstraint::Normal,
+    }
+}
+
+#[test]
+fn embedded_object_metadata_reuses_the_bounded_base_decoder() {
+    let maximum_size: Vec<_> = [300.0_f32, 400.0]
+        .into_iter()
+        .flat_map(f32::to_le_bytes)
+        .collect();
+    let data = [
+        frame(&[8], &[0, 1], &fixed(), &maximum_size),
+        frame(&[], &[], &[0x99; 10], &[]),
+    ]
+    .concat();
+    let span = object_span(data.clone());
+    let value = span.object_metadata().unwrap().unwrap();
+    assert_eq!(value.uuid, "object-🖊");
+    assert_eq!(value.bbox, metadata(&data).unwrap().bbox);
+    let flexible = value.flexible_metadata().unwrap();
+    let maximum = flexible.max_size.unwrap();
+    assert_eq!((maximum.width, maximum.height), (300.0, 400.0));
+    assert_eq!(span.object_data, data);
+}
+
+#[test]
+fn synthetic_embedded_object_has_no_retained_metadata() {
+    assert!(object_span(Vec::new()).object_metadata().unwrap().is_none());
+}
+
+#[test]
+fn malformed_embedded_metadata_reports_errors_without_changing_raw_data() {
+    let valid = frame(&[], &[], &fixed(), &[]);
+    let mut wrong_kind = valid.clone();
+    wrong_kind[4..6].copy_from_slice(&23_i16.to_le_bytes());
+    for data in [vec![1, 2, 3], valid[..valid.len() - 1].to_vec(), wrong_kind] {
+        let span = object_span(data.clone());
+        assert!(span.object_metadata().is_err());
+        assert_eq!(span.object_data, data);
+    }
 }
 
 #[test]

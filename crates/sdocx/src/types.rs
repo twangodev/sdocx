@@ -416,6 +416,17 @@ pub struct RichTextObjectSpan {
     pub layout_constraint: ObjectSpanLayoutConstraint,
 }
 
+impl RichTextObjectSpan {
+    /// Decode the common metadata from the retained WDoc object record.
+    pub fn object_metadata(&self) -> crate::Result<Option<crate::ObjectMetadata>> {
+        if self.object_data.is_empty() {
+            return Ok(None);
+        }
+        let mut reader = crate::binary::Reader::new(&self.object_data, "rich-text object metadata");
+        crate::ObjectMetadata::read(&mut reader).map(Some)
+    }
+}
+
 /// Parsed contents of an object embedded into flowing text.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
