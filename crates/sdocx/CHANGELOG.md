@@ -1,5 +1,106 @@
 # Changelog
 
+## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.7.0...sdocx-v1.0.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **table:** Rust callers must use min_column_width and min_row_height. Serialization emits these names; deserialization accepts the previous padding-named keys. Raw optional values and rendering behavior are unchanged.
+* **model:** Page owns objects instead of strokes and elements; serialized pages use the same object tree.
+
+### Features
+
+* **ink:** add shared Rust fountain rasterization ([3dd2fca](https://github.com/twangodev/sdocx/commit/3dd2fca15854858bbe4d857f4832cce8aeb6645b))
+* **layout:** retain native body text capture windows ([0d8219c](https://github.com/twangodev/sdocx/commit/0d8219cc153259ec472ff5daa14b3020deb13f53))
+* **layout:** retain validated full-source body reflow context ([28a5238](https://github.com/twangodev/sdocx/commit/28a5238a274ec3dca9a4ab7771a9556f650d6027))
+* **pdf:** paint retained Rust glyph plans in document exports ([71bc17b](https://github.com/twangodev/sdocx/commit/71bc17b110ed9f21247bed3e2585e29fd149dbb1))
+* **shape:** retain native orientation flags ([d7be495](https://github.com/twangodev/sdocx/commit/d7be49598252e37972cf9d89ef0ad1499c99de8e))
+* **svg:** add validated lists of text positions ([975d882](https://github.com/twangodev/sdocx/commit/975d882a60bfa5047f2fb08fd6c8cf706f97f16d))
+* **table:** retain native row state across page layout retries ([f7cb92b](https://github.com/twangodev/sdocx/commit/f7cb92b21d8f2f4129fcc9fd44e509edac9705c4))
+* **text:** apply native gravity to measured placed text plans ([8feeedd](https://github.com/twangodev/sdocx/commit/8feeedd5a024a9da2a77b664bec121df0157bdf9))
+* **text:** apply native shape template frames ([d69012b](https://github.com/twangodev/sdocx/commit/d69012b41ce1e95d8737caca8b7900747be4b7d7))
+* **text:** compose measured text and embedded objects in one stream ([7f90aa4](https://github.com/twangodev/sdocx/commit/7f90aa4122f1074e11cead5f8e6a0b713038dbd5))
+* **text:** embed shared fonts in typed vector output ([774b543](https://github.com/twangodev/sdocx/commit/774b543d1d1892de00a5c91005fa8f3713da4896))
+* **text:** expose typed metadata for embedded object records ([615c56e](https://github.com/twangodev/sdocx/commit/615c56e593c2bf472effaa5c002cdc035fe2869b))
+* **text:** implement native paragraph positioning ([cc7c884](https://github.com/twangodev/sdocx/commit/cc7c884c68064fb9a3a404f9bc991b7e04f6c884))
+* **text:** model vertical exclusions in shared text layout ([479e3a6](https://github.com/twangodev/sdocx/commit/479e3a65833627b040f54e73c728710756fd4568))
+* **text:** paint background spans from retained native layout ([b014505](https://github.com/twangodev/sdocx/commit/b014505910111d271b474f5c18ae85aaa78b4bc2))
+* **text:** position proven bidi lines from native paragraph maps ([0423eeb](https://github.com/twangodev/sdocx/commit/0423eebd156af5fa8d7d297db70e87ecb938e46b))
+* **text:** preserve typed native span intervals ([7526e31](https://github.com/twangodev/sdocx/commit/7526e3184c6b8abef0518d263db2e54ceb6ca113))
+* **text:** render native body capture windows as visible vectors ([a794529](https://github.com/twangodev/sdocx/commit/a79452970c65c4cb351dbd2679ff64a596908ba3))
+* **text:** render unsectioned body text with measured reflow ([676cf6d](https://github.com/twangodev/sdocx/commit/676cf6d55f711b90d0582b621c6fc02dfb4f3ac0))
+* **text:** resolve font fallback within the shared Rust database ([7533245](https://github.com/twangodev/sdocx/commit/75332450da5b94973b687f7af5f5b3e580bd4b93))
+* **text:** restore native empty paragraph and cursor metrics ([cbe3593](https://github.com/twangodev/sdocx/commit/cbe3593822c80f9b64af8b66abdf11b2f8caa233))
+* **text:** restore native path-dependent shape frames ([4d71a9d](https://github.com/twangodev/sdocx/commit/4d71a9df90a93468ff1001c9fe7fe47f012ae3db))
+* **text:** retain covered non-Latin vector positions ([1a00342](https://github.com/twangodev/sdocx/commit/1a00342fa365c442737b48a0668d61fc42baf9db))
+* **text:** retain native cold table cell layouts ([bb1179c](https://github.com/twangodev/sdocx/commit/bb1179cdc6ed4d84f0f291cc3ffe07e3a11de42e))
+* **text:** share measured glyph placement across vector text contexts ([6c83ffa](https://github.com/twangodev/sdocx/commit/6c83ffaaed857cad41c541f123d0c4816cb046e3))
+* **text:** share measured layout with table cells and code blocks ([38e4a1a](https://github.com/twangodev/sdocx/commit/38e4a1a76d83f83768d0ce64d0ad1dd2f07323c8))
+* **text:** share pinned Rust fonts and shaped metrics across exports ([198bf8c](https://github.com/twangodev/sdocx/commit/198bf8c3eb2fa2a47d42086187dd825f0ac5c0f2))
+* **text:** wrap Unicode paragraphs with measured Rust font runs ([9e8d2a5](https://github.com/twangodev/sdocx/commit/9e8d2a5c2947c05f817aeb0bca29a275a5758bcf))
+
+
+### Bug Fixes
+
+* **build:** gate display-line indexing on rendering ([1887ba1](https://github.com/twangodev/sdocx/commit/1887ba13f0be259fe52e5407d9363d9c07e272ce))
+* **debugger:** derive replay hit targets from Rust composition ([aacf065](https://github.com/twangodev/sdocx/commit/aacf0658832d6df2dde9264f839e3e6401fa8ff6))
+* **ink:** match native fountain input modes and saved widths ([63b73a7](https://github.com/twangodev/sdocx/commit/63b73a75e88e6f74f6d6f56eae6b23b711a009f5))
+* **ink:** preserve native fountain stamp directions ([434df20](https://github.com/twangodev/sdocx/commit/434df20ac2e3f6c5e58a4119419eb7f9656f5426))
+* **ink:** reconstruct Marker4 V7 highlighter vectors ([1c93776](https://github.com/twangodev/sdocx/commit/1c93776bb778023452d26913036096ef6fe0252a))
+* **layout:** preserve ambiguous blank pages for body reflow ([783d52c](https://github.com/twangodev/sdocx/commit/783d52c6c945b989d44e9ba816d3c1d845797de6))
+* **layout:** preserve caret spans and malformed source identity ([04b0a91](https://github.com/twangodev/sdocx/commit/04b0a912b39524f6489fce7861c4baeeca9f64c0))
+* **layout:** validate native capture source snapshots ([98674a6](https://github.com/twangodev/sdocx/commit/98674a6335d2dbff580062a621ac410282934163))
+* **model:** decode table cell editability from the native flag ([881aba6](https://github.com/twangodev/sdocx/commit/881aba6ef5d296d05eb4730f4f9d06a3d0caade2))
+* **parser:** preserve unresolved object render selection ([8fb1007](https://github.com/twangodev/sdocx/commit/8fb1007f328e88cc34d5269bde01a71a4df58ee9))
+* **pdf:** order embedded text by logical source in tags ([276b3b2](https://github.com/twangodev/sdocx/commit/276b3b2cbe60e38d2f330cfc03bc73b4a129f539))
+* **render:** honor caret fonts for empty list markers ([0429b9a](https://github.com/twangodev/sdocx/commit/0429b9a9648b1bb69070746e74c4f6fc07e070a9))
+* **render:** keep vector highlighters visible on dark paper ([6cdfef2](https://github.com/twangodev/sdocx/commit/6cdfef22696e6e187a3b1cfa86957893a59bbc0e))
+* **render:** preserve composed SVG styles and verify typed output ([00ffccb](https://github.com/twangodev/sdocx/commit/00ffccb63fc2a6156f1d9d0656c6dc3cad613ad6))
+* **render:** preserve native object order within composition passes ([d903c27](https://github.com/twangodev/sdocx/commit/d903c270e466cb5ae56f6286142c5fdbae313abb))
+* **render:** resolve paper and foreground defaults together ([b65f5b7](https://github.com/twangodev/sdocx/commit/b65f5b7befc184170f37e3f43e08e4940937d7b7))
+* **render:** shade V14 fountain strokes with vector gradients ([fae17ca](https://github.com/twangodev/sdocx/commit/fae17ca5f55ea8fa239871525cd14ee31ff2f5bb))
+* **render:** share native color adaptation across vector content ([07b45e0](https://github.com/twangodev/sdocx/commit/07b45e008f287c099be35f65df1667c33e71e4f3))
+* **render:** stabilize horizontal triangle directions ([6672969](https://github.com/twangodev/sdocx/commit/667296916e71cb577464fdd69cd6fac25f5bbb53))
+* **svg:** embed the selected font collection face ([26fbb18](https://github.com/twangodev/sdocx/commit/26fbb18009930de77fe8f367f401bc8b0fa549c8))
+* **svg:** keep synthesized styles within fallback spans ([ba48e22](https://github.com/twangodev/sdocx/commit/ba48e227963053eb4026bd1b561aaca3b0728b88))
+* **table:** name native minimum size constraints correctly ([5f10c52](https://github.com/twangodev/sdocx/commit/5f10c521d08c82d99603834d5a39a6cac0398e00))
+* **table:** regenerate native drawing frames at final origins ([d68254c](https://github.com/twangodev/sdocx/commit/d68254c4005b77528071e88745a1c75538e7204a))
+* **text:** apply native body-flow object margins by layout context ([037527e](https://github.com/twangodev/sdocx/commit/037527ea7f538de0bc6f22853ff9ac89c66697fa))
+* **text:** apply native embedded baselines and page exclusions ([c86c69b](https://github.com/twangodev/sdocx/commit/c86c69bd0688fc724e17ff1435d9b18d3993d9ac))
+* **text:** apply native line spacing to text baselines ([f6df979](https://github.com/twangodev/sdocx/commit/f6df979b38a494c8ffae7e9d57f7ce0b5527f488))
+* **text:** apply staged native object width feedback ([9ebef82](https://github.com/twangodev/sdocx/commit/9ebef8226c161c5d2c678a9e38610a67c5fd2a04))
+* **text:** derive font sizing and spacing from native document density ([7efbd14](https://github.com/twangodev/sdocx/commit/7efbd14b090e7da0dc4a7b36f56ba4711e58d00a))
+* **text:** feed prepared code heights into native object placement ([e2af3e0](https://github.com/twangodev/sdocx/commit/e2af3e00a5de4a093a8b52c8b64f1c011cf8f4bc))
+* **text:** honor local font families and native line spacing ([a2cc167](https://github.com/twangodev/sdocx/commit/a2cc167a239762996881ec347b5e72239e8fce3b))
+* **text:** honor native defaults and paragraph ordinals ([1425f6c](https://github.com/twangodev/sdocx/commit/1425f6c4b22d68b49818c26043d7e06c62cd1b4a))
+* **text:** keep partial span styles out of whole-box defaults ([a2632a2](https://github.com/twangodev/sdocx/commit/a2632a299080f13ef1a6ed9c1461659d39356837))
+* **text:** position embedded objects in native bidi order ([c5478aa](https://github.com/twangodev/sdocx/commit/c5478aa45f7210ec79f7b7f73d7a8f163252f773))
+* **text:** prepare measured list markers through shared layout ([ea5c5a6](https://github.com/twangodev/sdocx/commit/ea5c5a6e25ff70222f6bf1911d4c0076679d77f5))
+* **text:** preserve glyph positions and faces through local fallback ([f1bc6aa](https://github.com/twangodev/sdocx/commit/f1bc6aa897b68626395d2151b339b6364ad2852f))
+* **text:** preserve native RTL defaults around isolates ([c2ec5f5](https://github.com/twangodev/sdocx/commit/c2ec5f538fd3d0c417e7d60acb308dc2a9678b04))
+* **text:** preserve source when object geometry exceeds native bounds ([01c3c6c](https://github.com/twangodev/sdocx/commit/01c3c6c711b9492c06e7f2f348313f73dda2ca0f))
+* **text:** preserve vector text when native style scaling overflows ([2686eda](https://github.com/twangodev/sdocx/commit/2686edaba9528beec3e073b08d82503d6f84455a))
+* **text:** preserve wrapped spaces and lock native line positions ([0fdeed8](https://github.com/twangodev/sdocx/commit/0fdeed8fc74c3cd93c80db6216085cc534594391))
+* **text:** recompute native margins at page boundaries ([0139478](https://github.com/twangodev/sdocx/commit/01394783dbd86831eab68e61d27124bb7f670a32))
+* **text:** reject invalid runs before pagination clips them ([c31190e](https://github.com/twangodev/sdocx/commit/c31190e7641b3f4619ab6d955c4d039893e3c852))
+* **text:** retain bidi context across wrapped lines ([d7ded25](https://github.com/twangodev/sdocx/commit/d7ded2501b0a72eaa7bf82cf0837d593a3b3b0cc))
+* **text:** retain synthesized styles in vector PDF exports ([ef56a28](https://github.com/twangodev/sdocx/commit/ef56a285b40b2039261628bd9dd5d1091c22ee32))
+* **text:** scale point marker reservations using native constants ([14acf13](https://github.com/twangodev/sdocx/commit/14acf135b8de8893e10ba0b455fbc50df2bbd40a))
+* **text:** scope diagnostics and index style and bidi lookups ([6a8fe9a](https://github.com/twangodev/sdocx/commit/6a8fe9ac9110b08ba5d37a972c01d595ae6262cf))
+* **text:** separate object metrics from final drawing geometry ([bf4a300](https://github.com/twangodev/sdocx/commit/bf4a300703a3039dbe481a6056bac79d4fa82056))
+* **text:** share native cursors and render point markers as vectors ([62d44c7](https://github.com/twangodev/sdocx/commit/62d44c7c3fb7646cd170de79a00fb4029670eecd))
+
+
+### Performance Improvements
+
+* **render:** reuse body plans across previews and exports ([bbe089d](https://github.com/twangodev/sdocx/commit/bbe089d491e5277d1d6c97112a69aaa8f64bfe26))
+* **text:** reuse native paragraph advances for line wrapping ([05392a7](https://github.com/twangodev/sdocx/commit/05392a714481dc3ed795c624179363628b0aaa3f))
+
+
+### Code Refactoring
+
+* **model:** preserve page objects in one ordered Rust tree ([5089616](https://github.com/twangodev/sdocx/commit/508961678538b8a6c270e802a48035e4c703403a))
+
 ## [0.7.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.6.0...sdocx-v0.7.0) (2026-09-25)
 
 
