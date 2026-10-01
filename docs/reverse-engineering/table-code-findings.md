@@ -1148,8 +1148,61 @@ retain its coordinate space. SVG/replay regressions check page mode and density,
 and PDF checks retain selectable text without image resources. Saved-frame
 fallback painting remains outside this prepared export contract.
 Text uses a separate pass: the SDK's measured-table text clip is still
-conservative. Native `writeTextBlock` conditionally clips individual runs;
-that behavior and complete split-page/device appearance are unverified.
+conservative. The native per-run clip decision is captured below; run-rectangle
+production and complete split-page/device appearance remain unverified.
+
+### Export text clips
+
+Composer `writeTextContent`, `0x37ec88`, gets the cell's content object at
+`0x37ecd0` and its cached frame at `0x37ee14`. It offsets the frame by the
+rounded measured-table origin, then rounds it outward for ordinary type-2
+text (`0x37ee90`–`0x37ee94`). The layout supplies `GetDrawnTextData` with zero
+local offset (`0x37eee4`–`0x37ef00`); the writer passes the frame origin separately.
+Drawing initialization assigns the cell content object to its text wrapper
+(`0xaad20`–`0xaad30`); Widget `SetObject`, `0xd3974`, retains that pointer at
+offset 416. Layout width/height setters write wrapper fields 524/528, independently
+of the Model rectangle read by `GetRect`, `0x2caa60`.
+
+`writeTextBlock`, `0x37f508`, starts with an empty explicit clip. It compares
+`DrawnText` rectangle bottom at offset 116 with the content object's rectangle
+height in f32 (`0x37f6ac`–`0x37f6e4`). Equality takes the no-clip branch; one
+representable step above the height takes the clipping branch. The test uses
+height, not the object's world-space bottom. On overflow it offsets the run
+rectangle by the cell origin and intersects it with the content object rectangle.
+The intersection result is ignored: disjoint and touching rectangles retain
+the translated run bounds, rather than becoming empty. PDF scaling and an
+offset relative to the scaled object center follow; the paint receives the
+matching center translation (`0x37f724`–`0x37f7ac`).
+
+Pdfium `DrawText`, `0xa2230` in `libSPenPdf.so`, adds a clip path only when the
+explicit rectangle pointer is nonnull and `RectF::IsEmpty` is false
+(`0xa23d4`–`0xa23e0`). Zero/inverted clip dimensions therefore skip clipping.
+The separately supplied run rectangle provides character width/height at
+`0xa2474`–`0xa24a0`; it is not used as an unconditional clip by this handler.
+
+[`table-text-clipping.json`](../../conformance/table-text-clipping.json), SHA-256
+`6e72c668c96255d87561db715cbec349371ae02be499ead7d675440165343850`,
+records 132 cases across exact/adjacent height boundaries, translated/fractional
+origins, PDF scales, disjoint/touching bounds and degenerate dimensions. The Rust
+harness executes the unchanged Composer decision/transform window, Model getter,
+Base rectangle/point helpers and Pdfium empty-clip gate. Supplied object and
+stack memory prefilled with `0x00`, `0xa5` and `0xff` yields identical outputs.
+Page bounds and paint translation recording are host interfaces. Shaping, native
+rectangle producers, final PDF paths and device pixels are outside this capture.
+
+Text `getDrawnTextRun` offsets and unions retained entry rectangles
+(`0x67274`–`0x672ec`); `appendTextBlock` stores the second rectangle argument
+at `DrawnText` offsets 104–116 (`0x680e0`–`0x6810c`). These producer instructions
+have static evidence, but the capture supplies their output. The SDK's table-wide
+text clip does not reproduce the conditional native contract.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-clipping scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenPdf.so > /tmp/table-text-clipping.json
+cmp /tmp/table-text-clipping.json conformance/table-text-clipping.json
+```
 
 ### Cell background selection
 
