@@ -273,6 +273,24 @@ rustc --edition 2024 -D warnings -C panic=abort conformance/native_table.rs \
 cmp /tmp/table-ownership.json conformance/table-ownership.json
 ```
 
+### Rust saved-frame painting
+
+The [Rust grid model](../../crates/sdocx/src/render/table/grid.rs) preserves stored
+slots, resolves frame owners and selects paint-visible cells separately. Its
+regression matches all 2,399 owner positions and 279 visible lists in the pinned
+native capture. Input validation requires a dense grid, matching stored origins,
+positive in-bounds spans, at most 65,536 slots and at most 1,048,576 accumulated
+span positions. These bounds are Rust work limits, not recovered Samsung limits.
+
+Merged tables retain saved cell frames and paint only native-visible cells.
+Sparse records and invalid spans retain the saved-cell fallback. Both report
+`UnsupportedContent`: merged frame sizing, rowspan growth and pagination are
+still unimplemented. [Vector-output regressions](../../crates/sdocx/tests/embedded_text_layout.rs)
+cover horizontal, vertical, rectangular and covered-span-chain cases in both
+themes and all three layout constraints. They check identical SVG preview/replay,
+selectable PDF source, matching baselines and zero PDF image resources. This is
+visibility and transport coverage; it does not establish native merged geometry.
+
 ### Outer-border initialization
 
 `TableLayout::getHalfBorderWidth`, `0xb325c`, iterates

@@ -249,6 +249,11 @@ Public SVG/PDF regressions cover both page split modes and candidate retries,
 including visible-only fonts and diagnostics. Merged/sparse grids, nested child
 objects and partial horizontal obstacles remain outside this prepared subset;
 captured table placement still needs its composition-origin producer resolved.
+The [table ownership capture](table-ownership.json) separately records native
+frame owners and paint-visible cells for 279 synthetic dense grids. Rust matches
+all captured outputs and uses the visible list when painting merged tables with
+saved frames. This does not cover merged measurement or device-rendered geometry;
+merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`.
 See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
 for the producers and measured residuals. Recomputed pagination and full
 document composition parity remain incomplete. Samsung device-default fonts,

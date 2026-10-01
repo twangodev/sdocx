@@ -178,6 +178,200 @@ fn lines(svg: &str) -> Vec<(String, f64, f64)> {
 }
 
 #[cfg(feature = "serde")]
+fn saved_grid(rows: usize, columns: usize, spans: &[(usize, u32, u32)]) -> RichTextObjectContent {
+    let RichTextObjectContent::Table(mut table) = table(text("A0"), 100.0) else {
+        panic!()
+    };
+    let template = table.rows[0].clone();
+    table.bbox.x_max = 20.0 + columns as f64 * 100.0;
+    table.bbox.y_max = 20.0 + rows as f64 * 100.0;
+    table.column_widths = vec![100.0; columns];
+    table.rows = (0..rows)
+        .map(|row| {
+            let mut record = template.clone();
+            record.index = row as u32;
+            record.height = 100.0;
+            record.cells = (0..columns)
+                .map(|column| {
+                    let mut cell = template.cells[0].clone();
+                    cell.column_index = column as u32;
+                    cell.content = text(&format!("A{}", row * columns + column));
+                    cell.bbox = BoundingBox {
+                        x_min: 20.0 + column as f64 * 100.0,
+                        y_min: 20.0 + row as f64 * 100.0,
+                        x_max: 120.0 + column as f64 * 100.0,
+                        y_max: 120.0 + row as f64 * 100.0,
+                    };
+                    cell
+                })
+                .collect();
+            record
+        })
+        .collect();
+    for &(index, row_span, column_span) in spans {
+        let cell = &mut table.rows[index / columns].cells[index % columns];
+        cell.row_span = row_span;
+        cell.column_span = column_span;
+    }
+    RichTextObjectContent::Table(table)
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn merged_saved_cells_keep_native_visibility_across_vector_outputs() {
+    for (rows, columns, spans, visible) in [
+        (1, 4, vec![(0, 1, 2)], vec![0, 2, 3]),
+        (4, 1, vec![(0, 2, 1)], vec![0, 2, 3]),
+        (2, 2, vec![(0, 2, 2)], vec![0]),
+        (1, 4, vec![(0, 1, 2), (1, 1, 3)], vec![0, 2, 3]),
+        (4, 1, vec![(0, 2, 1), (1, 3, 1)], vec![0, 2, 3]),
+    ] {
+        for constraint in [
+            ObjectSpanLayoutConstraint::Normal,
+            ObjectSpanLayoutConstraint::OverPages,
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ] {
+            let mut doc = document(saved_grid(rows, columns, &spans));
+            let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+                &mut doc.pages[0].objects[0].content
+            else {
+                panic!()
+            };
+            flow.object_spans[0].layout_constraint = constraint;
+            let layout = sdocx::layout_document(&doc);
+            for color_mode in [sdocx::RenderColorMode::Light, sdocx::RenderColorMode::Dark] {
+                let mut options = sdocx::RenderOptions::default();
+                options.color_mode = color_mode;
+                let preview = sdocx::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
+                let replay =
+                    sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+                assert_eq!(preview.svg, replay.svg);
+                assert_eq!(preview.object_diagnostics, replay.object_diagnostics);
+                let svg_text = lines(&preview.svg);
+                assert_eq!(
+                    svg_text
+                        .iter()
+                        .map(|line| line.0.clone())
+                        .collect::<Vec<_>>(),
+                    visible
+                        .iter()
+                        .map(|index| format!("A{index}"))
+                        .collect::<Vec<_>>()
+                );
+                assert_eq!(
+                    preview.object_diagnostics,
+                    [sdocx::ObjectDiagnostic {
+                        anchor_utf16: 0,
+                        kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+                    }]
+                );
+                #[cfg(feature = "pdf")]
+                {
+                    let pdf_options = sdocx::PdfOptions::default();
+                    let bytes = sdocx::render_document_pdf(&doc, &options, &pdf_options).unwrap();
+                    let pdf = pdf_geometry::read(&bytes, f64::from(pdf_options.dpi));
+                    assert_eq!(
+                        pdf.source,
+                        svg_text
+                            .iter()
+                            .map(|line| line.0.as_str())
+                            .collect::<String>()
+                    );
+                    assert_eq!(pdf_geometry::tagged_source(&bytes), pdf.source);
+                    assert_eq!(
+                        pdf.extracted_text.split_whitespace().collect::<String>(),
+                        pdf.source
+                    );
+                    assert_eq!(pdf.image_resources, 0);
+                    assert_eq!(pdf.text.len(), svg_text.len());
+                    for (pdf_line, svg_line) in pdf.text.iter().zip(&svg_text) {
+                        assert_eq!(pdf_line.0, svg_line.0);
+                        assert!((pdf_line.1 - svg_line.1).abs() < 0.02);
+                        assert!((pdf_line.2 - svg_line.2).abs() < 0.02);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn sparse_and_malformed_tables_preserve_saved_text_with_diagnostics() {
+    for variant in 0..3 {
+        let RichTextObjectContent::Table(mut table) = saved_grid(1, 2, &[]) else {
+            panic!()
+        };
+        match variant {
+            0 => {
+                table.rows[0].cells.remove(0);
+            }
+            1 => table.rows[0].cells[0].column_span = 0,
+            2 => table.rows[0].cells[0].column_span = u32::MAX,
+            _ => unreachable!(),
+        }
+        let doc = document(RichTextObjectContent::Table(table));
+        let layout = sdocx::layout_document(&doc);
+        for rendered in [
+            sdocx::render_layout_page_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+            sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+        ] {
+            assert_eq!(
+                rendered.object_diagnostics,
+                [sdocx::ObjectDiagnostic {
+                    anchor_utf16: 0,
+                    kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+                }]
+            );
+            let actual: Vec<_> = lines(&rendered.svg)
+                .into_iter()
+                .map(|line| line.0)
+                .collect();
+            assert_eq!(
+                actual,
+                if variant == 0 {
+                    vec!["A1"]
+                } else {
+                    vec!["A0", "A1"]
+                }
+            );
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn merged_table_diagnostic_keeps_original_anchor_and_neighbor_text() {
+    let mut doc = document(saved_grid(1, 4, &[(0, 1, 2), (1, 1, 3)]));
+    let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+        &mut doc.pages[0].objects[0].content
+    else {
+        panic!()
+    };
+    flow.text = "BEFORE\n\u{fffc}\nAFTER".into();
+    flow.object_spans[0].text_index_utf16 = 7;
+    let layout = sdocx::layout_document(&doc);
+    for rendered in [
+        sdocx::render_layout_page_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+        sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &Default::default()).unwrap(),
+    ] {
+        assert_eq!(
+            rendered.object_diagnostics,
+            [sdocx::ObjectDiagnostic {
+                anchor_utf16: 7,
+                kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+            }]
+        );
+        let mut actual: Vec<_> = lines(&rendered.svg)
+            .into_iter()
+            .map(|line| line.0)
+            .collect();
+        actual.sort();
+        assert_eq!(actual, ["A0", "A2", "A3", "AFTER", "BEFORE"]);
+    }
+}
+
+#[cfg(feature = "serde")]
 #[test]
 fn saved_row_maximum_keeps_preview_replay_and_pdf_geometry() {
     for constraint in [

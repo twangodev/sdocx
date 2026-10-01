@@ -8,7 +8,10 @@ use super::text::{
     VerticalExclusion, finite_native_geometry,
 };
 
+mod grid;
 mod pagination;
+
+pub(super) use grid::TableGrid;
 
 use pagination::BandList;
 

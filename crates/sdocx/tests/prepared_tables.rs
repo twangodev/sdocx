@@ -240,26 +240,40 @@ fn fresh_cold_measurement_grows_a_row_before_warm_drawing_positions_later_cells(
 }
 
 #[test]
-fn sparse_merged_normal_and_paged_tables_keep_all_selectable_cell_source() {
+fn saved_table_fallbacks_preserve_source_and_report_unsupported_preparation() {
     let mut sparse = table(&[&["A", "B"], &["C", "D"]]);
     sparse.rows[0].cells.remove(0);
     let mut merged = table(&[&["A", "B"], &["C", "D"]]);
     merged.rows[0].cells[0].column_span = 2;
     merged.rows[0].cells.pop();
-    for (table, constraint, page_mode, expected) in [
-        (sparse, ObjectSpanLayoutConstraint::OverPages, None, "BCD"),
-        (merged, ObjectSpanLayoutConstraint::OverPages, None, "ACD"),
+    for (table, constraint, page_mode, expected, unsupported) in [
+        (
+            sparse,
+            ObjectSpanLayoutConstraint::OverPages,
+            None,
+            "BCD",
+            true,
+        ),
+        (
+            merged,
+            ObjectSpanLayoutConstraint::OverPages,
+            None,
+            "ACD",
+            true,
+        ),
         (
             table(&[&["A", "B"], &["C", "D"]]),
             ObjectSpanLayoutConstraint::Normal,
             None,
             "ABCD",
+            false,
         ),
         (
             table(&[&["A", "B"], &["C", "D"]]),
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             Some(0),
             "ABCD",
+            false,
         ),
     ] {
         let mut doc = document(table, constraint);
@@ -268,11 +282,15 @@ fn sparse_merged_normal_and_paged_tables_keep_all_selectable_cell_source() {
             let page = render(&doc, replay);
             let source: String = lines(&page.svg).into_iter().map(|line| line.0).collect();
             assert_eq!(source, expected);
-            assert!(
-                page.object_diagnostics.is_empty(),
-                "{:?}",
-                page.object_diagnostics
-            );
+            let diagnostics = if unsupported {
+                vec![sdocx::ObjectDiagnostic {
+                    anchor_utf16: 0,
+                    kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+                }]
+            } else {
+                Vec::new()
+            };
+            assert_eq!(page.object_diagnostics, diagnostics);
         }
     }
 }

@@ -1535,6 +1535,7 @@ fn paint_line_objects(
                 render_table(
                     svg,
                     table,
+                    span.text_index_utf16,
                     Some(prepared.into()),
                     0.0,
                     media_assets,
@@ -1622,6 +1623,7 @@ fn paint_line_objects(
                                 render_table(
                                     svg,
                                     table,
+                                    span.text_index_utf16,
                                     Some(prepared.as_ref().into()),
                                     0.0,
                                     media_assets,
@@ -1639,7 +1641,7 @@ fn paint_line_objects(
                         offset.1,
                         media_assets,
                         theme,
-                        renderer,
+                        &renderer.for_object_source(object.source.clone()),
                         viewport.map(|viewport| viewport.translated(-offset.0, 0.0)),
                     )
                     .is_none()
@@ -1949,6 +1951,7 @@ fn render_embedded_object(
             render_table(
                 svg,
                 table,
+                object.text_index_utf16,
                 None,
                 offset_y,
                 media_assets,
@@ -2028,6 +2031,7 @@ impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
 fn render_table(
     svg: &mut Scene,
     table: &crate::RichTextTable,
+    anchor_utf16: i32,
     prepared: Option<TablePaint<'_>>,
     offset_y: f64,
     media_assets: &[MediaAsset],
@@ -2135,9 +2139,29 @@ fn render_table(
                     }
                 }
             } else {
-                for row in &table.rows {
-                    for cell in &row.cells {
-                        paint_cell(cell, cell.bbox, None);
+                let grid = table::TableGrid::new(table);
+                if grid
+                    .as_ref()
+                    .map_or(true, |grid| grid.requires_merged_layout())
+                {
+                    renderer.report_object_issues(&[ObjectDiagnostic {
+                        anchor_utf16,
+                        kind: ObjectDiagnosticKind::UnsupportedContent,
+                    }]);
+                }
+                match grid {
+                    Ok(grid) => {
+                        for position in grid.visible_cells() {
+                            let cell = &table.rows[position.row].cells[position.column];
+                            paint_cell(cell, cell.bbox, None);
+                        }
+                    }
+                    Err(_) => {
+                        for row in &table.rows {
+                            for cell in &row.cells {
+                                paint_cell(cell, cell.bbox, None);
+                            }
+                        }
                     }
                 }
             }
