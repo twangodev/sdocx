@@ -140,6 +140,7 @@ pub(in crate::render) struct TextRenderer<'a> {
     pub settings: TextSettings,
     pub point_marker_target: crate::render::PointMarkerTarget,
     pub object_page_ownership: ObjectPageOwnership,
+    pub table_export_page: Option<crate::render::table::TableExportPage>,
     pub fonts: &'a FontBook,
     default_family: &'static str,
     faces: Rc<RefCell<Vec<ResolvedFace>>>,
@@ -156,6 +157,7 @@ impl<'a> TextRenderer<'a> {
             settings,
             point_marker_target: Default::default(),
             object_page_ownership: Default::default(),
+            table_export_page: None,
             fonts,
             default_family: "Roboto",
             faces: Default::default(),
@@ -170,6 +172,20 @@ impl<'a> TextRenderer<'a> {
     pub fn with_page_exclusions(mut self, exclusions: Option<PageExclusions>) -> Self {
         self.page_exclusions = exclusions.map(Rc::new);
         self
+    }
+
+    pub fn with_table_export_page(
+        mut self,
+        page: Option<crate::render::table::TableExportPage>,
+    ) -> Self {
+        self.table_export_page = page;
+        self
+    }
+
+    pub fn translated_paint(&self, dx: f64, dy: f64) -> Self {
+        let mut renderer = self.clone();
+        renderer.table_export_page = self.table_export_page.map(|page| page.translated(dx, dy));
+        renderer
     }
 
     pub fn with_point_marker_target(mut self, target: crate::render::PointMarkerTarget) -> Self {
@@ -195,6 +211,7 @@ impl<'a> TextRenderer<'a> {
             settings: TextSettings::resolved(),
             point_marker_target: self.point_marker_target,
             object_page_ownership: self.object_page_ownership,
+            table_export_page: self.table_export_page,
             fonts: self.fonts,
             default_family,
             faces: Rc::clone(&self.faces),

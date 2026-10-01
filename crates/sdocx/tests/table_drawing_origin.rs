@@ -238,6 +238,93 @@ fn fresh_table_drawing_rounds_world_bounds_without_changing_parent_reservation()
     }
 }
 
+fn nearest_clip<'a>(node: roxmltree::Node<'a, '_>) -> Option<&'a str> {
+    node.ancestors()
+        .find_map(|ancestor| ancestor.attribute("clip-path"))
+}
+
+#[test]
+fn export_artwork_crop_uses_page_body_margins_without_cropping_text_to_them() {
+    for (mode, density_width, expected) in [
+        (Some(0), 360, [-1.0, 1.0, 101.0, 18.0]),
+        (Some(0), 1080, [-1.0, 5.0, 101.0, 12.0]),
+        (Some(1), 360, [-1.0, -1.0, 101.0, 21.0]),
+        (None, 360, [-1.0, -1.0, 101.0, 21.0]),
+    ] {
+        let mut doc = document(-0.25, -1.751, ObjectSpanLayoutConstraint::Normal);
+        doc.pages[0].width = 100;
+        doc.pages[0].height = 20;
+        doc.metadata.page_mode = mode;
+        doc.metadata.default_page_dimensions = Some((density_width, 300));
+        let mut body = text("unused body");
+        body.margins = Some([77.0, 2.0, 88.0, 3.0]);
+        doc.metadata.note_text = Some(body);
+        let source = serde_json::to_value(&doc).unwrap();
+        for replay in [false, true] {
+            let page = render(&doc, replay);
+            assert!(
+                page.object_diagnostics.is_empty(),
+                "{:?}",
+                page.object_diagnostics
+            );
+            let xml = roxmltree::Document::parse(&page.svg).unwrap();
+            let fill = xml
+                .descendants()
+                .find(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#abcdef"))
+                .unwrap();
+            let clip = nearest_clip(fill).unwrap();
+            let id = clip
+                .strip_prefix("url(#")
+                .unwrap()
+                .strip_suffix(')')
+                .unwrap();
+            let rectangle = xml
+                .descendants()
+                .find(|node| node.attribute("id") == Some(id))
+                .unwrap()
+                .children()
+                .find(|node| node.has_tag_name("rect"))
+                .unwrap();
+            let number = |name| rectangle.attribute(name).unwrap().parse::<f64>().unwrap();
+            assert_eq!(
+                [
+                    number("x"),
+                    number("y"),
+                    number("x") + number("width"),
+                    number("y") + number("height")
+                ],
+                expected
+            );
+            let table = fill
+                .ancestors()
+                .find(|node| node.attribute("data-sdocx-object") == Some("table"))
+                .unwrap();
+            let mut borders = 0;
+            for border in table
+                .descendants()
+                .filter(|node| node.attribute("stroke").is_some())
+            {
+                assert_eq!(nearest_clip(border), Some(clip));
+                borders += 1;
+            }
+            assert!(borders > 0);
+            let glyph = table
+                .descendants()
+                .find(|node| node.has_tag_name("text"))
+                .unwrap();
+            assert_ne!(nearest_clip(glyph), Some(clip));
+            assert!(!xml.descendants().any(|node| node.has_tag_name("image")));
+            assert!(
+                table
+                    .descendants()
+                    .filter_map(|node| node.text())
+                    .any(|text| text == "A")
+            );
+        }
+        assert_eq!(serde_json::to_value(&doc).unwrap(), source);
+    }
+}
+
 #[cfg(feature = "pdf")]
 #[test]
 fn rounded_table_pdf_keeps_selectable_text_and_embedded_vector_fonts() {

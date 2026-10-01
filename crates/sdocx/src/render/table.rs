@@ -9,6 +9,7 @@ use super::text::{
 };
 
 mod borders;
+mod export;
 mod fills;
 mod grid;
 mod pagination;
@@ -17,6 +18,7 @@ mod pagination;
 mod native_geometry_tests;
 
 pub(super) use borders::{BorderPath, TableBorderGeometry};
+pub(super) use export::{TableExportPage, artwork_bounds};
 pub(super) use fills::CellFill;
 pub(super) use grid::{CellPosition, TableGrid};
 

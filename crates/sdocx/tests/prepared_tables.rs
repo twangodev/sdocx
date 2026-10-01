@@ -786,9 +786,10 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 _ => &last[..],
             };
             assert_lines(&page, expected);
+            let direct_page = render_capture_page(&direct, &direct_layout, index, replay, &fonts);
             assert_eq!(
-                page,
-                render_capture_page(&direct, &direct_layout, index, replay, &fonts)
+                checked_retry_table_layout(&page, index, false),
+                checked_retry_table_layout(&direct_page, index, true),
             );
             if index == 1 {
                 let xml = roxmltree::Document::parse(&page.svg).unwrap();
@@ -836,6 +837,58 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
             }
         }
     }
+}
+
+fn checked_retry_table_layout(
+    page: &sdocx::RenderedPage,
+    index: usize,
+    direct: bool,
+) -> sdocx::RenderedPage {
+    let xml = roxmltree::Document::parse(&page.svg).unwrap();
+    let mut result = page.clone();
+    let Some(table) = xml
+        .descendants()
+        .find(|node| node.attribute("data-sdocx-object") == Some("table"))
+    else {
+        assert_eq!(index, 0);
+        return result;
+    };
+    let artwork = table
+        .children()
+        .find(|node| node.has_tag_name("g"))
+        .unwrap();
+    let id = artwork
+        .attribute("clip-path")
+        .unwrap()
+        .strip_prefix("url(#")
+        .unwrap()
+        .strip_suffix(')')
+        .unwrap();
+    let clip = table
+        .descendants()
+        .find(|node| node.attribute("id") == Some(id))
+        .unwrap();
+    let rectangle = clip.children().find(|node| node.has_tag_name("rect"));
+    if direct {
+        assert!(
+            rectangle.is_none(),
+            "body top margin 90 exceeds the 80-unit page"
+        );
+    } else {
+        let rectangle = rectangle.unwrap();
+        let number = |name| rectangle.attribute(name).unwrap().parse::<f64>().unwrap();
+        let expected = if index == 1 {
+            [3.0, 149.0, 303.0, 12.0]
+        } else {
+            [-1.0, 229.0, 362.0, 12.0]
+        };
+        assert_eq!(
+            [number("x"), number("y"), number("width"), number("height")],
+            expected
+        );
+    }
+    result.svg.replace_range(clip.range(), "");
+    result
 }
 
 #[test]

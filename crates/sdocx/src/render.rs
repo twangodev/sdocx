@@ -371,6 +371,7 @@ impl DocumentTextCache {
         let settings = TextSettings::from_document(&document.metadata);
         let text_renderer = TextRenderer::new(settings, fonts)
             .with_point_marker_target(options.point_marker_target)
+            .with_table_export_page(table::TableExportPage::for_page(page, &document.metadata))
             .with_page_exclusions(text::PageExclusions::for_page(
                 document,
                 layout_page.source_page_index,
@@ -486,7 +487,7 @@ impl PreparedBodyText {
         let plan = &self.plan;
         let renderer = context
             .text_renderer
-            .clone()
+            .translated_paint(0.0, self.page_top)
             .with_page_exclusions(plan.exclusions.clone());
         let styled = StyledText::new(&plan.text, TextContext::Flow, renderer.settings);
         let sources = VisibleTextSources::new(&styled, &plan.layout, self.viewport, context.theme);
@@ -1628,7 +1629,7 @@ fn paint_line_objects(
                                     0.0,
                                     media_assets,
                                     theme,
-                                    renderer,
+                                    &renderer.translated_paint(-offset.0 - shift.0, -shift.1),
                                     viewport.map(|viewport| {
                                         viewport.translated(-offset.0 - shift.0, -shift.1)
                                     }),
@@ -1641,7 +1642,9 @@ fn paint_line_objects(
                         offset.1,
                         media_assets,
                         theme,
-                        &renderer.for_object_source(object.source.clone()),
+                        &renderer
+                            .for_object_source(object.source.clone())
+                            .translated_paint(-offset.0, 0.0),
                         viewport.map(|viewport| viewport.translated(-offset.0, 0.0)),
                     )
                     .is_none()
@@ -2126,23 +2129,36 @@ fn render_table(
             }
         }
     }
-    cells.retain(|paint| {
-        viewport.is_none_or(|viewport| {
-            viewport.intersects(BoundingBox {
-                y_min: paint.frame.y_min + offset_y,
-                y_max: paint.frame.y_max + offset_y,
-                ..paint.frame
-            })
-        })
-    });
     svg.scope(Group::new().object(ObjectKind::Table), |svg| {
         let clip = svg.definition::<Clip>();
+        let artwork_clip = svg.definition::<Clip>();
+        let measured_bounds = BoundingBox {
+            y_min: table_bbox.y_min + offset_y,
+            y_max: table_bbox.y_max + offset_y,
+            ..table_bbox
+        };
+        let artwork_bounds = if prepared.is_some() {
+            table::artwork_bounds(measured_bounds, renderer.table_export_page)
+        } else {
+            measured_bounds
+        };
         svg.push(
-            Definitions::new().add(ClipPath::new(&clip).add(rectangle(table_bbox, offset_y, 2))),
+            Definitions::new()
+                .add(ClipPath::new(&clip).add(rectangle(measured_bounds, 0.0, 2)))
+                .add(ClipPath::new(&artwork_clip).add(rectangle(artwork_bounds, 0.0, 5))),
         );
-        svg.scope(Group::new().clipped(&clip), |svg| {
+        svg.scope(Group::new().clipped(&artwork_clip), |svg| {
             let shape = [table.rows.len(), table.column_widths.len()];
             for paint in &cells {
+                if viewport.is_some_and(|viewport| {
+                    !viewport.intersects(paint.artwork_bounds(
+                        borders.as_ref(),
+                        offset_y,
+                        prepared.is_some(),
+                    ))
+                }) {
+                    continue;
+                }
                 paint_table_cell_background(svg, paint, shape, [outline.rx, outline.ry], offset_y);
                 if let Some(borders) = &borders {
                     for path in borders.cell_paths(paint.position) {
@@ -2157,28 +2173,24 @@ fn render_table(
                     }
                 }
             }
-        });
-        if outline.active() {
-            if outline.rounded() {
-                svg.push(
-                    rectangle(content_bbox, offset_y, 5)
-                        .rx(decimal(f64::from(outline.rx), 5))
-                        .ry(decimal(f64::from(outline.ry), 5))
-                        .fill(Paint::None)
-                        .stroke(Paint::from_hex(&color_hex(
-                            &theme.foreground_color(argb_color(outline.color)),
-                        )))
-                        .stroke_opacity(decimal(f64::from(outline.color >> 24) / 255.0, 6))
-                        .stroke_width(decimal(f64::from(outline.width), 5)),
-                );
-            } else if let Some(borders) = &borders {
-                for path in borders.outer_paths(Some(content_bbox)) {
-                    paint_table_border(svg, path, offset_y, theme);
-                }
+            if prepared.is_some() {
+                paint_table_outline(svg, borders.as_ref(), content_bbox, offset_y, theme);
             }
+        });
+        if prepared.is_none() {
+            paint_table_outline(svg, borders.as_ref(), content_bbox, offset_y, theme);
         }
         svg.scope(Group::new().clipped(&clip), |svg| {
             for paint in &cells {
+                if viewport.is_some_and(|viewport| {
+                    !viewport.intersects(BoundingBox {
+                        y_min: paint.frame.y_min + offset_y,
+                        y_max: paint.frame.y_max + offset_y,
+                        ..paint.frame
+                    })
+                }) {
+                    continue;
+                }
                 let cell_theme = paint.fill.theme(theme);
                 if let Some(layout) = paint.layout {
                     let styled =
@@ -2224,6 +2236,66 @@ struct TableCellPaint<'a> {
     layout: Option<&'a text::TextLayout>,
     position: table::CellPosition,
     gap: bool,
+}
+
+impl TableCellPaint<'_> {
+    fn artwork_bounds(
+        &self,
+        borders: Option<&table::TableBorderGeometry>,
+        offset_y: f64,
+        prepared: bool,
+    ) -> BoundingBox {
+        let guard = if prepared {
+            borders.map_or(0.0, |borders| {
+                borders
+                    .cell_paths(self.position)
+                    .into_iter()
+                    .filter_map(|path| path.paint_width())
+                    .fold(0.0_f32, f32::max)
+                    / 2.0
+            })
+        } else {
+            0.0
+        };
+        let guard = f64::from(guard);
+        BoundingBox {
+            x_min: self.frame.x_min - guard,
+            y_min: self.frame.y_min + offset_y - guard,
+            x_max: self.frame.x_max + guard,
+            y_max: self.frame.y_max + offset_y + guard,
+        }
+    }
+}
+
+fn paint_table_outline(
+    svg: &mut Scene,
+    borders: Option<&table::TableBorderGeometry>,
+    bounds: BoundingBox,
+    offset_y: f64,
+    theme: RenderTheme,
+) {
+    let Some(borders) = borders else { return };
+    let outline = borders.outline();
+    if !outline.active() {
+        return;
+    }
+    if outline.rounded() {
+        svg.push(
+            rectangle(bounds, offset_y, 5)
+                .rx(decimal(f64::from(outline.rx), 5))
+                .ry(decimal(f64::from(outline.ry), 5))
+                .fill(Paint::None)
+                .stroke(Paint::from_hex(&color_hex(
+                    &theme.foreground_color(argb_color(outline.color)),
+                )))
+                .stroke_opacity(decimal(f64::from(outline.color >> 24) / 255.0, 6))
+                .stroke_width(decimal(f64::from(outline.width), 5)),
+        );
+    } else {
+        for path in borders.outer_paths(Some(bounds)) {
+            paint_table_border(svg, path, offset_y, theme);
+        }
+    }
 }
 
 fn paint_table_cell_background(
