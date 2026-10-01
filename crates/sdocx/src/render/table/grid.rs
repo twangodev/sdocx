@@ -106,6 +106,18 @@ impl TableGrid {
         &self.visible_cells
     }
 
+    pub fn frame_owner(&self, position: CellPosition) -> Option<CellPosition> {
+        if position.column >= self.columns {
+            return None;
+        }
+        position
+            .row
+            .checked_mul(self.columns)
+            .and_then(|index| index.checked_add(position.column))
+            .and_then(|index| self.frame_owners.get(index))
+            .copied()
+    }
+
     pub fn requires_merged_layout(&self) -> bool {
         self.frame_owners
             .iter()

@@ -367,7 +367,7 @@ macro_rules! numeric_attributes {
 }
 numeric_attributes! {
     Svg { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
-    Rectangle { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.), rx => ("rx", 0.) }
+    Rectangle { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.), rx => ("rx", 0.), ry => ("ry", 0.) }
     Circle { cx => ("cx", -f64::MAX), cy => ("cy", -f64::MAX), r => ("r", 0.) }
     Ellipse { cx => ("cx", -f64::MAX), cy => ("cy", -f64::MAX), rx => ("rx", 0.), ry => ("ry", 0.) }
     Line { x1 => ("x1", -f64::MAX), y1 => ("y1", -f64::MAX), x2 => ("x2", -f64::MAX), y2 => ("y2", -f64::MAX) }

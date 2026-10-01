@@ -8,10 +8,14 @@ use super::text::{
     VerticalExclusion, finite_native_geometry,
 };
 
+mod borders;
 mod grid;
 mod pagination;
 
-pub(super) use grid::TableGrid;
+pub(super) use borders::{BorderPath, TableBorderGeometry};
+pub(super) use grid::{CellPosition, TableGrid};
+
+use borders::Edge;
 
 use pagination::BandList;
 
@@ -21,13 +25,14 @@ pub(super) struct PreparedTable {
     pub min_first_page_height: f64,
     constraint: ObjectSpanLayoutConstraint,
     bands: BandList,
-    pending_gaps: Vec<f64>,
+    pub pending_gaps: Vec<f64>,
     half_border: f64,
 }
 
 pub(super) struct PreparedTableDrawing {
     pub measured_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
+    pub pending_gaps: Vec<f64>,
 }
 
 impl PreparedTable {
@@ -151,6 +156,7 @@ pub(super) fn prepare_table_drawing(
         Ok(PreparedTableDrawing {
             measured_bbox,
             rows: prepared.rows,
+            pending_gaps: prepared.pending_gaps,
         })
     })())
 }
@@ -664,27 +670,6 @@ fn empty_cell_height(
     }
     let cursor_bottom = (top + cursor_height) + (centering as i32) as f32;
     native_measured_height(f64::from(cursor_bottom + margins[3]))
-}
-
-#[derive(Clone, Copy)]
-enum Edge {
-    Left,
-    Top,
-    Right,
-    Bottom,
-}
-
-impl Edge {
-    fn width(self, border: Option<&TableBorder>) -> f64 {
-        border.map_or(1.0, |border| {
-            f64::from(match self {
-                Self::Left => border.left.width,
-                Self::Top => border.top.width,
-                Self::Right => border.right.width,
-                Self::Bottom => border.bottom.width,
-            })
-        })
-    }
 }
 
 pub(super) fn table_drawn_bounds(table: &RichTextTable) -> BoundingBox {

@@ -679,7 +679,9 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 let xml = roxmltree::Document::parse(&page.svg).unwrap();
                 assert!(xml.descendants().any(|node| {
                     node.has_tag_name("rect")
-                        && node.attribute("stroke") == Some("#b8b0a3")
+                        && node
+                            .parent()
+                            .is_some_and(|parent| parent.has_tag_name("clipPath"))
                         && node
                             .attribute("width")
                             .and_then(|value| value.parse::<f64>().ok())

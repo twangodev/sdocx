@@ -175,7 +175,15 @@ fn assert_page(
     }
     let panel = xml
         .descendants()
-        .find(|node| node.has_tag_name("rect") && node.attribute("stroke") == Some("#b8b0a3"))
+        .find(|node| {
+            node.has_tag_name("rect")
+                && node
+                    .parent()
+                    .is_some_and(|parent| parent.has_tag_name("clipPath"))
+                && node
+                    .ancestors()
+                    .any(|ancestor| ancestor.attribute("data-sdocx-object") == Some("table"))
+        })
         .unwrap();
     let background = xml
         .descendants()

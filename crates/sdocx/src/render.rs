@@ -2007,6 +2007,7 @@ fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRende
 struct TablePaint<'a> {
     measured_bbox: BoundingBox,
     rows: &'a [table::PreparedTableRow],
+    pending_gaps: &'a [f64],
 }
 
 impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
@@ -2014,6 +2015,7 @@ impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
         Self {
             measured_bbox: table.measured_bbox,
             rows: &table.rows,
+            pending_gaps: &table.pending_gaps,
         }
     }
 }
@@ -2023,6 +2025,7 @@ impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
         Self {
             measured_bbox: table.measured_bbox,
             rows: &table.rows,
+            pending_gaps: &table.pending_gaps,
         }
     }
 }
@@ -2042,138 +2045,277 @@ fn render_table(
     let table_bbox = prepared
         .as_ref()
         .map_or(table.bbox, |table| table.measured_bbox);
-    svg.scope(Group::new().object(ObjectKind::Table), |svg| {
-        let stroke = if theme.is_dark() {
-            "#777777"
-        } else {
-            "#b8b0a3"
+    let grid = table::TableGrid::new(table);
+    if prepared.is_none()
+        && grid
+            .as_ref()
+            .map_or(true, |grid| grid.requires_merged_layout())
+    {
+        renderer.report_object_issues(&[ObjectDiagnostic {
+            anchor_utf16,
+            kind: ObjectDiagnosticKind::UnsupportedContent,
+        }]);
+    }
+    let borders =
+        grid.as_ref()
+            .ok()
+            .and_then(|grid| match table::TableBorderGeometry::new(table, grid) {
+                Ok(borders) => Some(borders),
+                Err(kind) => {
+                    renderer.report_object_issues(&[ObjectDiagnostic { anchor_utf16, kind }]);
+                    None
+                }
+            });
+    let outline = borders
+        .as_ref()
+        .map(|borders| borders.outline())
+        .unwrap_or_default();
+    let content_bbox = prepared
+        .as_ref()
+        .and_then(|prepared| {
+            let first = prepared.rows.first()?.cells.first()?.frame;
+            let last = prepared.rows.last()?.cells.last()?.frame;
+            Some(BoundingBox {
+                x_max: last.x_max,
+                y_max: last.y_max,
+                ..first
+            })
+        })
+        .unwrap_or(table.style.content_bbox.unwrap_or(table.bbox));
+    let mut cells = Vec::new();
+    if let Some(prepared) = &prepared {
+        for row in prepared.rows {
+            for cell in &row.cells {
+                cells.push(TableCellPaint {
+                    cell: &table.rows[row.row_index].cells[cell.column_index],
+                    frame: cell.frame,
+                    layout: Some(&cell.layout),
+                    position: table::CellPosition {
+                        row: row.row_index,
+                        column: cell.column_index,
+                    },
+                    gap: prepared
+                        .pending_gaps
+                        .get(row.row_index + 1)
+                        .is_some_and(|gap| (*gap as f32).abs() > 0.001_f32),
+                });
+            }
+        }
+    } else {
+        let mut add_cell = |row: usize, column: usize| {
+            let cell = &table.rows[row].cells[column];
+            cells.push(TableCellPaint {
+                cell,
+                frame: cell.bbox,
+                layout: None,
+                position: table::CellPosition { row, column },
+                gap: false,
+            });
         };
+        match &grid {
+            Ok(grid) => {
+                for position in grid.visible_cells() {
+                    add_cell(position.row, position.column);
+                }
+            }
+            Err(_) => {
+                for (row_index, row) in table.rows.iter().enumerate() {
+                    for column in 0..row.cells.len() {
+                        add_cell(row_index, column);
+                    }
+                }
+            }
+        }
+    }
+    cells.retain(|paint| {
+        viewport.is_none_or(|viewport| {
+            viewport.intersects(BoundingBox {
+                y_min: paint.frame.y_min + offset_y,
+                y_max: paint.frame.y_max + offset_y,
+                ..paint.frame
+            })
+        })
+    });
+    svg.scope(Group::new().object(ObjectKind::Table), |svg| {
         let clip = svg.definition::<Clip>();
         svg.push(
-            Definitions::new()
-                .add(ClipPath::new(&clip).add(rectangle(table_bbox, offset_y, 2).rx(24))),
+            Definitions::new().add(ClipPath::new(&clip).add(rectangle(table_bbox, offset_y, 2))),
         );
         svg.scope(Group::new().clipped(&clip), |svg| {
-            let mut paint_cell =
-                |cell: &crate::RichTextTableCell,
-                 cell_bbox: BoundingBox,
-                 layout: Option<&text::TextLayout>| {
-                    if viewport.is_some_and(|viewport| {
-                        !viewport.intersects(BoundingBox {
-                            y_min: cell_bbox.y_min + offset_y,
-                            y_max: cell_bbox.y_max + offset_y,
-                            ..cell_bbox
-                        })
-                    }) {
-                        return;
-                    }
-                    let cell_background = table_cell_background(cell, theme);
-                    let cell_theme = theme.on_background(cell_background);
-                    svg.push(
-                        rectangle(cell_bbox, offset_y, 2)
-                            .fill(Paint::from_hex(&color_hex(&cell_background))),
-                    );
-                    if cell_bbox.x_min > table_bbox.x_min + 1.0 {
-                        svg.push(
-                            Line::new()
-                                .x1(decimal(cell_bbox.x_min, 2))
-                                .y1(decimal(cell_bbox.y_min + offset_y, 2))
-                                .x2(decimal(cell_bbox.x_min, 2))
-                                .y2(decimal(cell_bbox.y_max + offset_y, 2))
-                                .stroke(Paint::from_hex(stroke))
-                                .stroke_width(1),
-                        );
-                    }
-                    if cell_bbox.y_min > table_bbox.y_min + 1.0 {
-                        svg.push(
-                            Line::new()
-                                .x1(decimal(cell_bbox.x_min, 2))
-                                .y1(decimal(cell_bbox.y_min + offset_y, 2))
-                                .x2(decimal(cell_bbox.x_max, 2))
-                                .y2(decimal(cell_bbox.y_min + offset_y, 2))
-                                .stroke(Paint::from_hex(stroke))
-                                .stroke_width(1),
-                        );
-                    }
-                    if let Some(layout) = layout {
-                        let styled =
-                            StyledText::new(&cell.content, TextContext::Flow, renderer.settings);
-                        paint_text_layout_in_viewport(
-                            svg,
-                            &styled,
-                            layout,
-                            media_assets,
-                            cell_theme,
-                            renderer,
-                            viewport,
-                        );
-                    } else {
-                        let frame = text::TextFrame {
-                            bbox: BoundingBox {
-                                y_min: cell_bbox.y_min + offset_y,
-                                y_max: cell_bbox.y_max + offset_y,
-                                ..cell_bbox
-                            },
-                            gravity: Some(0),
-                            exclusions: &[],
-                        };
-                        render_text_frame(
-                            svg,
-                            &cell.content,
-                            frame,
-                            media_assets,
-                            cell_theme,
-                            renderer,
-                            viewport,
-                        );
-                    }
-                };
-            if let Some(prepared) = prepared {
-                for row in prepared.rows {
-                    for cell in &row.cells {
-                        paint_cell(
-                            &table.rows[row.row_index].cells[cell.column_index],
-                            cell.frame,
-                            Some(&cell.layout),
-                        );
-                    }
-                }
-            } else {
-                let grid = table::TableGrid::new(table);
-                if grid
-                    .as_ref()
-                    .map_or(true, |grid| grid.requires_merged_layout())
-                {
-                    renderer.report_object_issues(&[ObjectDiagnostic {
-                        anchor_utf16,
-                        kind: ObjectDiagnosticKind::UnsupportedContent,
-                    }]);
-                }
-                match grid {
-                    Ok(grid) => {
-                        for position in grid.visible_cells() {
-                            let cell = &table.rows[position.row].cells[position.column];
-                            paint_cell(cell, cell.bbox, None);
-                        }
-                    }
-                    Err(_) => {
-                        for row in &table.rows {
-                            for cell in &row.cells {
-                                paint_cell(cell, cell.bbox, None);
-                            }
+            let shape = [table.rows.len(), table.column_widths.len()];
+            for paint in &cells {
+                paint_table_cell_background(
+                    svg,
+                    paint,
+                    shape,
+                    [outline.rx, outline.ry],
+                    offset_y,
+                    theme,
+                );
+                if let Some(borders) = &borders {
+                    for path in borders.cell_paths(paint.position) {
+                        if path.selected(paint.position, shape, outline.active(), paint.gap) {
+                            let path = if prepared.is_some() {
+                                path.on_frame(paint.frame)
+                            } else {
+                                path
+                            };
+                            paint_table_border(svg, path, offset_y, theme);
                         }
                     }
                 }
             }
         });
-        svg.push(
-            rectangle(table_bbox, offset_y, 2)
-                .rx(24)
-                .fill(Paint::None)
-                .stroke(Paint::from_hex(stroke))
-                .stroke_width(1),
-        );
+        if outline.active() {
+            if outline.rounded() {
+                svg.push(
+                    rectangle(content_bbox, offset_y, 5)
+                        .rx(decimal(f64::from(outline.rx), 5))
+                        .ry(decimal(f64::from(outline.ry), 5))
+                        .fill(Paint::None)
+                        .stroke(Paint::from_hex(&color_hex(
+                            &theme.foreground_color(argb_color(outline.color)),
+                        )))
+                        .stroke_opacity(decimal(f64::from(outline.color >> 24) / 255.0, 6))
+                        .stroke_width(decimal(f64::from(outline.width), 5)),
+                );
+            } else if let Some(borders) = &borders {
+                for path in borders.outer_paths(Some(content_bbox)) {
+                    paint_table_border(svg, path, offset_y, theme);
+                }
+            }
+        }
+        svg.scope(Group::new().clipped(&clip), |svg| {
+            for paint in &cells {
+                let cell_theme = theme.on_background(table_cell_background(paint.cell, theme));
+                if let Some(layout) = paint.layout {
+                    let styled =
+                        StyledText::new(&paint.cell.content, TextContext::Flow, renderer.settings);
+                    paint_text_layout_in_viewport(
+                        svg,
+                        &styled,
+                        layout,
+                        media_assets,
+                        cell_theme,
+                        renderer,
+                        viewport,
+                    );
+                } else {
+                    let frame = text::TextFrame {
+                        bbox: BoundingBox {
+                            y_min: paint.frame.y_min + offset_y,
+                            y_max: paint.frame.y_max + offset_y,
+                            ..paint.frame
+                        },
+                        gravity: Some(0),
+                        exclusions: &[],
+                    };
+                    render_text_frame(
+                        svg,
+                        &paint.cell.content,
+                        frame,
+                        media_assets,
+                        cell_theme,
+                        renderer,
+                        viewport,
+                    );
+                }
+            }
+        });
     });
+}
+
+struct TableCellPaint<'a> {
+    cell: &'a crate::RichTextTableCell,
+    frame: BoundingBox,
+    layout: Option<&'a text::TextLayout>,
+    position: table::CellPosition,
+    gap: bool,
+}
+
+fn paint_table_cell_background(
+    svg: &mut Scene,
+    paint: &TableCellPaint<'_>,
+    shape: [usize; 2],
+    radii: [f32; 2],
+    offset_y: f64,
+    theme: RenderTheme,
+) {
+    let fill = Paint::from_hex(&color_hex(&table_cell_background(paint.cell, theme)));
+    let [rx, ry] = radii;
+    let first_row = paint.position.row == 0;
+    let first_column = paint.position.column == 0;
+    let last_row = paint.position.row.checked_add(paint.cell.row_span as usize) == Some(shape[0]);
+    let last_column = paint
+        .position
+        .column
+        .checked_add(paint.cell.column_span as usize)
+        == Some(shape[1]);
+    let corners = [
+        first_row && first_column,
+        first_row && last_column,
+        last_row && last_column,
+        last_row && first_column,
+    ];
+    if rx <= 0.0 || ry <= 0.0 || !corners.into_iter().any(|corner| corner) {
+        svg.push(rectangle(paint.frame, offset_y, 5).fill(fill));
+        return;
+    }
+    svg.push(
+        rectangle(paint.frame, offset_y, 5)
+            .rx(decimal(f64::from(rx), 5))
+            .ry(decimal(f64::from(ry), 5))
+            .fill(fill),
+    );
+    let BoundingBox {
+        x_min,
+        y_min,
+        x_max,
+        y_max,
+    } = paint.frame;
+    let [left, top, right, bottom] = [x_min, y_min, x_max, y_max].map(|value| value as f32);
+    for (rounded, [x_min, y_min, x_max, y_max]) in corners.into_iter().zip([
+        [left, top, left + rx, top + ry],
+        [right - rx, top, right, top + ry],
+        [right - rx, bottom - ry, right, bottom],
+        [left, bottom - ry, left + rx, bottom],
+    ]) {
+        if !rounded {
+            let [x_min, y_min, x_max, y_max] = [x_min, y_min, x_max, y_max].map(f64::from);
+            svg.push(
+                rectangle(
+                    BoundingBox {
+                        x_min,
+                        y_min,
+                        x_max,
+                        y_max,
+                    },
+                    offset_y,
+                    5,
+                )
+                .fill(fill),
+            );
+        }
+    }
+}
+
+fn paint_table_border(svg: &mut Scene, path: table::BorderPath, offset_y: f64, theme: RenderTheme) {
+    let Some(width) = path.paint_width() else {
+        return;
+    };
+    let [x1, y1, x2, y2] = path.endpoints.map(f64::from);
+    svg.push(
+        Line::new()
+            .x1(x1)
+            .y1(y1 + offset_y)
+            .x2(x2)
+            .y2(y2 + offset_y)
+            .stroke(Paint::from_hex(&color_hex(
+                &theme.foreground_color(argb_color(path.style.color)),
+            )))
+            .stroke_opacity(decimal(f64::from(path.style.color >> 24) / 255.0, 6))
+            .stroke_width(width),
+    );
 }
 
 fn render_prepared_code(

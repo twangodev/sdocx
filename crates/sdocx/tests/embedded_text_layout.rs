@@ -217,6 +217,254 @@ fn saved_grid(rows: usize, columns: usize, spans: &[(usize, u32, u32)]) -> RichT
 }
 
 #[cfg(feature = "serde")]
+fn edge_border(edges: [(u32, f32, f32, f32); 4]) -> sdocx::TableBorder {
+    let [left, top, right, bottom] = edges.map(|(color, width, start_radius, end_radius)| {
+        serde_json::json!({ "color": color, "width": width,
+            "start_radius": start_radius, "end_radius": end_radius })
+    });
+    serde_json::from_value(serde_json::json!({ "left": left, "top": top,
+        "right": right, "bottom": bottom,
+        "metadata": { "property_mask": [], "field_mask": [],
+            "fixed_trailing_data": [], "flexible_trailing_data": [] } }))
+    .unwrap()
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn table_borders_keep_native_edge_precedence_alpha_and_vector_transport() {
+    let RichTextObjectContent::Table(mut table) = saved_grid(2, 2, &[]) else {
+        panic!()
+    };
+    let outer = [
+        (0xffff0000, 2.0, 0.0, 0.0),
+        (0xff00ff00, 3.0, 0.0, 0.0),
+        (0xff0000ff, 4.0, 0.0, 0.0),
+        (0x80441100, 5.0, 0.0, 0.0),
+    ];
+    table.style.border = Some(edge_border(outer));
+    let inactive = (0, 0.0, 0.0, 0.0);
+    for cell in table.rows.iter_mut().flat_map(|row| &mut row.cells) {
+        cell.border = Some(edge_border([
+            inactive,
+            inactive,
+            (0xffff00ff, 40.0, 0.0, 0.0),
+            (0xffff00ff, 50.0, 0.0, 0.0),
+        ]));
+    }
+    table.rows[0].cells[1].border.as_mut().unwrap().left =
+        edge_border([(0x80441100, 2.5, 0.0, 0.0); 4]).left;
+    table.rows[1].cells[0].border.as_mut().unwrap().top =
+        edge_border([(0xff336699, 4.0, 0.0, 0.0); 4]).top;
+    table.rows[1].cells[1].border = Some(edge_border([
+        (0xff77aa33, 6.0, 0.0, 0.0),
+        (0xff993366, 8.0, 0.0, 0.0),
+        (0xffff00ff, 40.0, 0.0, 0.0),
+        (0xffff00ff, 50.0, 0.0, 0.0),
+    ]));
+    let doc = document(RichTextObjectContent::Table(table));
+    let layout = sdocx::layout_document(&doc);
+    for color_mode in [sdocx::RenderColorMode::Light, sdocx::RenderColorMode::Dark] {
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = color_mode;
+        let preview = sdocx::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
+        let replay = sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+        assert_eq!(preview.svg, replay.svg);
+        assert!(preview.object_diagnostics.is_empty());
+        let xml = roxmltree::Document::parse(&preview.svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|node| {
+                node.has_tag_name("line")
+                    && node
+                        .ancestors()
+                        .any(|ancestor| ancestor.attribute("data-sdocx-object") == Some("table"))
+            })
+            .collect();
+        assert_eq!(paths.len(), 8);
+        let widths: Vec<f64> = paths
+            .iter()
+            .map(|node| node.attribute("stroke-width").unwrap().parse().unwrap())
+            .collect();
+        assert_eq!(widths, [2.5, 4.0, 6.0, 8.0, 2.0, 3.0, 4.0, 5.0]);
+        for (index, path) in paths.iter().enumerate() {
+            let opacity: f64 = path.attribute("stroke-opacity").unwrap().parse().unwrap();
+            let expected = if index == 0 || index == 7 {
+                128.0 / 255.0
+            } else {
+                1.0
+            };
+            assert!((opacity - expected).abs() < 0.000001);
+        }
+        if color_mode == sdocx::RenderColorMode::Light {
+            let colors: Vec<_> = paths
+                .iter()
+                .map(|node| node.attribute("stroke").unwrap())
+                .collect();
+            assert_eq!(
+                colors,
+                [
+                    "#441100", "#336699", "#77aa33", "#993366", "#ff0000", "#00ff00", "#0000ff",
+                    "#441100"
+                ]
+            );
+        }
+        let source = lines(&preview.svg)
+            .iter()
+            .map(|line| line.0.as_str())
+            .collect::<String>();
+        assert_eq!(source, "A0A1A2A3");
+        #[cfg(feature = "pdf")]
+        {
+            let bytes = sdocx::render_document_pdf(&doc, &options, &Default::default()).unwrap();
+            let geometry = pdf_geometry::read(&bytes, 96.0);
+            assert_eq!(geometry.source, source);
+            assert_eq!(geometry.image_resources, 0);
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let mut widths = Vec::new();
+            for op in
+                lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                    .unwrap()
+                    .operations
+            {
+                if op.operator == "w" {
+                    widths.push(f64::from(op.operands[0].as_float().unwrap()));
+                }
+            }
+            for object in pdf.objects.values() {
+                let Ok(stream) = object.as_stream() else {
+                    continue;
+                };
+                if stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|kind| kind.as_name().is_ok_and(|name| name == b"Form"))
+                {
+                    let decoded = stream
+                        .decompressed_content()
+                        .unwrap_or_else(|_| stream.content.clone());
+                    for op in lopdf::content::Content::decode(&decoded)
+                        .unwrap()
+                        .operations
+                    {
+                        if op.operator == "w" {
+                            widths.push(f64::from(op.operands[0].as_float().unwrap()));
+                        }
+                    }
+                }
+            }
+            for expected in [2.5, 6.0, 8.0] {
+                assert!(widths.contains(&expected), "{widths:?}");
+            }
+            assert!(
+                pdf.objects
+                    .values()
+                    .any(|object| object.as_dict().is_ok_and(|dict| {
+                        [b"CA".as_slice(), b"ca".as_slice()].into_iter().any(|key| {
+                            dict.get(key).is_ok_and(|value| {
+                                value.as_float().is_ok_and(|alpha| {
+                                    (f64::from(alpha) - 128.0 / 255.0).abs() < 0.00001
+                                })
+                            })
+                        })
+                    }))
+            );
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn rounded_table_outline_uses_native_axis_maxima_and_last_drawable_color() {
+    let RichTextObjectContent::Table(mut table) = saved_grid(1, 1, &[]) else {
+        panic!()
+    };
+    table.style.border = Some(edge_border([
+        (0xffff0000, 2.0, 4.0, 8.0),
+        (0xff00ff00, 0.25, 3.0, 7.0),
+        (0xff0000ff, 5.0, 9.0, 2.0),
+        (0x80441100, 3.0, 6.0, 1.0),
+    ]));
+    let svg = render(RichTextObjectContent::Table(table));
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let outline = xml
+        .descendants()
+        .find(|node| {
+            node.has_tag_name("rect")
+                && node.attribute("fill") == Some("none")
+                && node.attribute("stroke") == Some("#441100")
+        })
+        .unwrap();
+    assert_eq!(outline.attribute("rx"), Some("7.00000"));
+    assert_eq!(outline.attribute("ry"), Some("9.00000"));
+    assert_eq!(outline.attribute("stroke-width"), Some("5.00000"));
+    assert_eq!(outline.attribute("stroke-opacity"), Some("0.501961"));
+    assert!(!xml.descendants().any(|node| node.has_tag_name("line")));
+    assert_eq!(
+        lines(&svg)
+            .iter()
+            .map(|line| line.0.as_str())
+            .collect::<String>(),
+        "A0"
+    );
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn merged_saved_perimeters_use_styles_on_covered_boundary_cells() {
+    let RichTextObjectContent::Table(mut table) = saved_grid(2, 2, &[(0, 2, 2)]) else {
+        panic!()
+    };
+    table.style.border = Some(edge_border([(0, 0.0, 0.0, 0.0); 4]));
+    for (cell, (color, width)) in table.rows.iter_mut().flat_map(|row| &mut row.cells).zip([
+        (0xffff0000, 2.0),
+        (0xff00ff00, 3.0),
+        (0xff0000ff, 4.0),
+        (0xffff00ff, 5.0),
+    ]) {
+        cell.border = Some(edge_border([(color, width, 0.0, 0.0); 4]));
+    }
+    let doc = document(RichTextObjectContent::Table(table));
+    let page = sdocx::render_page_svg(&doc, 0, &Default::default()).unwrap();
+    assert_eq!(
+        page.object_diagnostics,
+        [sdocx::ObjectDiagnostic {
+            anchor_utf16: 0,
+            kind: sdocx::ObjectDiagnosticKind::UnsupportedContent
+        }]
+    );
+    let xml = roxmltree::Document::parse(&page.svg).unwrap();
+    let edges: Vec<_> = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("line"))
+        .map(|node| {
+            (
+                node.attribute("stroke").unwrap(),
+                node.attribute("stroke-width")
+                    .unwrap()
+                    .parse::<f64>()
+                    .unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        edges,
+        [
+            ("#ff0000", 2.0),
+            ("#0000ff", 4.0),
+            ("#ff0000", 2.0),
+            ("#00ff00", 3.0)
+        ]
+    );
+    assert_eq!(
+        lines(&page.svg)
+            .iter()
+            .map(|line| line.0.as_str())
+            .collect::<String>(),
+        "A0"
+    );
+}
+
+#[cfg(feature = "serde")]
 #[test]
 fn merged_saved_cells_keep_native_visibility_across_vector_outputs() {
     for (rows, columns, spans, visible) in [
