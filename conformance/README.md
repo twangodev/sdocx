@@ -110,7 +110,7 @@ V14 also compares tangent directions. A mismatch fails the command. Other
 pens in a mixed document are excluded, and an empty selection fails.
 
 See [fountain vector parity](../docs/reverse-engineering/fountain-parity.md)
-for the verified native geometry and remaining vector-output work.
+for the verified native geometry and vector appearance limits.
 
 The intermediate live drawing, GPU, cache, and lifecycle experiments were
 retired. Their findings remain in `docs/reverse-engineering/`; their scripts
@@ -205,64 +205,29 @@ record the current converter, page-size convention, validation and limits.
 
 The initial five-page measurements and font findings are recorded in
 [`visual-conformance-findings.md`](../docs/reverse-engineering/visual-conformance-findings.md).
-Use the [capture checklist](fixture-capture.md) to prepare the missing native
-shape/line, image-placement and standalone-text reference pairs.
+The [capture procedure](fixture-capture.md) describes source/reference identity,
+metadata and registration requirements.
 
 ## Document composition regressions
 
 The shared Rust text engine has synthetic coverage for paragraph spacing,
-ordinary baselines, embedded-object measurement, nested numbered-marker
-measurement, and typed vector point/checkbox artwork. Marker widths are
-prepared before wrapping; placement, gravity, resolved-size conversion and
-retained-font embedding use the shared text pipeline. Body flow now uses the
-same layout loop, retaining its saved-slice continuation policy. Native capture
-windows now measure the required earlier page group from authoritative source
-text and project its requested physical viewport. Text, markers and child
-objects are filtered before painting, preserving selectable vector exports
-without off-page text or font embedding.
-When saved sections are missing or malformed, validated layout pages instead
-measure the complete original body against every physical page boundary through
-the same Rust engine. Balanced inspection slices do not determine pagination.
-Empty inspection pages retain source identity, and edited or stale layouts
-cannot restore removed content. Serialized reflow layouts must be rebuilt with
-`layout_document` before canonical full-source rendering.
-`text-metrics.json` also stores independently decoded, hash-locked Samsung PDF
-observations. Its retained logical canvas height is 848.333333 PDF points;
-the reference's actual viewport is 848 points. At scale 1.8, convert a stored
-baseline to the actual viewport by subtracting 0.6 SVG units. This conversion
-explains the coordinate convention; it does not align content to improve a score.
+baselines, embedded-object measurement, numbered markers, body-flow pagination
+and selectable vector transport. Its current contracts and limits are documented
+in [text vector support](../docs/text-vector-support.md).
 
-The current five-page comparison puts matched ordinary baseline Y on the first
-four pages within 0.0001 units of the actual viewport. The tests retain their
-0.25-unit tolerance. Two locked numbered-marker references now match baseline
-Y within 0.000045 units. Numbered-item body X retains an approximately
--0.04393-unit font/advance difference. Visible continued code matches within
-0.0011 units; four raw PDF lines are independently proven fully clipped and
-must not emit SVG text. Their original coordinates remain in the fixture.
-The post-code ordinary-text error improved from about -15 units to +0.75.
-Table-cell placement and post-code ordinary text remain outside the passing
-native subset. Prepared table pagination now retains regenerated cell frames
-and shared text layouts for complete unmerged over-pages grids. Numeric
-regressions cover cold row growth, warm shrink/grow ordering, first-row minima,
-first-band cache comparison, retained page gaps and trailing-space compression.
-Public SVG/PDF regressions cover both page split modes and candidate retries,
-including visible-only fonts and diagnostics. Merged/sparse grids, nested child
-objects and partial horizontal obstacles remain outside this prepared subset;
-captured table placement still needs its composition-origin producer resolved.
-The [table ownership capture](table-ownership.json) separately records native
-frame owners and paint-visible cells for 279 synthetic dense grids. Rust matches
-all captured outputs and uses the visible list when painting merged tables with
-saved frames. This does not cover merged measurement or device-rendered geometry;
-merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`.
-The [border-path capture](table-border-paths.json) contains native perimeter
-segments, styles and line equations for twelve synthetic grids, including
-merged boundaries and constructor defaults. It covers Model path construction,
-not the current Rust border painter or device-rendered appearance.
-See [text layout evidence](../docs/reverse-engineering/text-layout-findings.md)
-for the producers and measured residuals. Recomputed pagination and full
-document composition parity remain incomplete. Samsung device-default fonts,
-complete point-type cycles and tiny-font serialization precision are also
-outside the established coverage.
+Native reference coverage is narrower than synthetic coverage:
+
+| Fixture | Established evidence | Limits |
+| --- | --- | --- |
+| [`text-metrics.json`](text-metrics.json) | Independently decoded, hash-locked Samsung PDF observations for baselines, markers and clipping. | Table-cell placement and post-code ordinary text are outside the passing native subset. Coordinate conventions and residuals are recorded in [text layout findings](../docs/reverse-engineering/text-layout-findings.md). |
+| [`table-ownership.json`](table-ownership.json) | Frame owners and paint-visible cells for 279 native synthetic dense grids; Rust matches the captured outputs. | Covers saved-frame visibility, not merged measurement or device-rendered geometry. Merged sizing and sparse/invalid-grid fallbacks report `UnsupportedContent`. |
+| [`table-border-paths.json`](table-border-paths.json) | Model perimeter segments, styles and line equations for twelve native synthetic grids, including merged boundaries and constructor defaults. | Does not validate the Rust border painter or device-rendered appearance. Native rules are recorded in [table findings](../docs/reverse-engineering/table-code-findings.md). |
+
+Prepared table regressions cover complete unmerged over-pages grids, cold/warm
+row sizing, page gaps and both split modes. Merged/sparse grids, nested child
+objects and partial horizontal obstacles are outside this prepared subset.
+Complete document composition, Samsung device-default fonts, complete point-type
+cycles and tiny-font serialization precision remain unverified.
 
 Rust tests cover stored object order, root render-pass selection, visibility,
 nested containers, saved child transforms and replay indices. Export tests
@@ -274,8 +239,8 @@ cargo test -p sdocx --all-features --test composition --test composition_exports
 ```
 
 These tests use the production Rust parser and renderer. They do not establish
-complete Samsung visual parity. Native intersection selection and new captured
-mixed-container references remain separate work, described in
+complete Samsung visual parity. Native intersection selection and captured
+mixed-container reference coverage are described in
 [object selection findings](../docs/reverse-engineering/object-selection-findings.md).
 
 ## Stroke regressions
@@ -286,8 +251,7 @@ empty strokes, optional stylus channels, nested objects, multiple layers,
 variable mask sizes, unknown extensions, resource limits and malformed records.
 Historical native-frame measurements are preserved in
 [`fixture-validation.md`](../docs/reverse-engineering/fixture-validation.md).
-The retired documents are not part of the current corpus; add new Samsung
-stroke/reference-PDF pairs using the [capture checklist](fixture-capture.md).
+The retired documents are not part of the current corpus.
 
 ## Standalone text-box regressions
 
@@ -302,8 +266,8 @@ cargo test -p sdocx --all-features --test structural_text_boxes
 
 The native frame evidence and current rendering limits are recorded in
 [`text-box-findings.md`](../docs/reverse-engineering/text-box-findings.md).
-The real corpus still needs a Samsung standalone-text-box export and reference
-PDF; synthetic coverage does not establish Samsung visual parity.
+The corpus contains no Samsung standalone-text-box/reference-PDF pair;
+synthetic coverage does not establish Samsung visual parity.
 
 ## Image and media regressions
 
@@ -334,11 +298,10 @@ cover supported templates, straight lines and quadratic/cubic curves:
 cargo test -p sdocx --all-features --test structural_shapes
 ```
 
-The object-preservation regression fails on the previous scanner at `3c78cd2`.
 Native evidence and current limits are recorded in
 [`shape-line-findings.md`](../docs/reverse-engineering/shape-line-findings.md).
-Real Samsung shapes/lines with matching reference PDFs are still needed for
-visual compatibility coverage.
+The `02-shapes-and-dot-calibration` pair contains five native shapes and one
+line. Other templates, dashes and arrowhead settings lack reference coverage.
 
 ## Native color checks
 
