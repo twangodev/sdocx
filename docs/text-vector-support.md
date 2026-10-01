@@ -15,6 +15,7 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, unmerged table preparation, native merged-cell visibility with saved frames, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; saved row maxima do not cap the traced table export layout. Merged frame sizing, sparse preparation and arbitrary nested composition remain incomplete. |
+| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii and composited text surfaces | Hash-pinned Model paths, Drawing outline aggregation and background selection; SVG/replay/PDF transport tests. Complete clipping and device appearance remain unverified. |
 | Decorations | Underline, strikethrough, uniform cluster backgrounds and vector list markers | Retained layout and native endpoint contracts; backgrounds changing inside a glyph cluster remain conservative. |
 | SVG preview/replay | Typed SVG elements, embedded fonts, retained text positions where reproducible, source-preserving text fallback elsewhere | Chromium tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
 | Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; combining-mark Y parity with Samsung's common-baseline PDF route remains unverified. |
@@ -133,6 +134,9 @@ portable performance thresholds:
   the Rust border model.
   [Border output regressions](../crates/sdocx/tests/embedded_text_layout.rs)
   cover SVG/PDF style transport separately.
+- [Native background selection](../conformance/table-backgrounds.json) covers
+  heading overrides and default inheritance. The same vector export regressions
+  check fill alpha and text contrast in saved/prepared tables under both themes.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression

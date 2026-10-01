@@ -49,9 +49,12 @@ yet proven to use this guard. The conversion itself matches 785 independently
 executed native cases, including threshold boundaries and alpha values.
 
 Text in a highlighted box, filled shape, table cell, or code block receives its
-local surface. Table cells without an owned background inherit the actual paper
-color, including custom paper. Compatibility-disabled documents preserve
-explicit foreground colors; missing colors still receive readable defaults.
+local surface. Table fills use native heading overrides, owned colors or table
+defaults and preserve alpha. Text contrast uses the fill composited over paper;
+a transparent fill retains the actual paper color, including custom paper.
+See [cell background selection](reverse-engineering/table-code-findings.md#cell-background-selection).
+Compatibility-disabled documents preserve explicit foreground colors; missing
+colors still receive readable defaults.
 
 Run the optional APK oracle from the repository root:
 

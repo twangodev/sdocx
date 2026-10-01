@@ -425,6 +425,48 @@ axis radii, selectable source and zero image resources. Native device appearance
 merged prepared sizing and complete border clipping across split pages remain
 outside this evidence.
 
+### Cell background selection
+
+[The background capture](../../conformance/table-backgrounds.json), SHA-256
+`46fe91b4a788c5276534b641b4a7224604a2410154724cd8ce56296809b78f44`,
+records `TableCell::GetBackgroundColor(bool)` (`0x3c2384`) and
+`ObjectTableImpl::GetCellBackgroundColor(int,int,bool)` (`0x3cbf7c`). The
+hash-checked Rust harness executes both getters, native row forwarding and
+the bound callback operators. Their outputs agree for 40 synthetic 3×3 grids:
+720 selected colors across both values of the heading-override argument.
+The inputs cover all heading flag combinations, owned/unowned cells, zero and
+partial-alpha colors, and unit/merged spans.
+
+`ObjectTableImpl::getCellBgColor`, `0x3c8cfc`, selects heading color when the
+stored row index is zero with heading-row enabled, or the stored column index
+is zero with heading-column enabled. Otherwise it selects the default cell
+color. The constructor initializes both colors to ARGB zero at `0x3c5d2c`.
+`TableCell::GetBackgroundColor` returns this inherited value when the cell
+has no owned background, or when heading override is enabled for a heading
+cell; otherwise it returns the owned color. The table getter selects the raw
+stored cell, independently of merged-frame ownership.
+
+Drawing requests heading override at `0xa79f8`, then calls the context's color
+conversion with theme mode 3 at `0xa7ad0`. `Context::GetColor`, `0x6c39c` in
+`libSPenView.so` (SHA-256
+`c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8`),
+selects the active default color theme for that mode. The light and dark
+theme primitives preserve the input alpha. Drawing passes the resulting ARGB
+to `SPPaint::SetColor` at `0xa7ae0`; no opaque beige substitution appears in
+this path.
+
+The Rust fill model matches every captured selected color. SVG/replay and PDF
+preserve the alpha of inherited and owned fills, including zero. Text contrast
+uses the fill composited over the resolved paper, in both measurement and final
+drawing. This retains the renderer's documented contrast policy; the captures
+do not establish device appearance or application-level theme selection.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --backgrounds > /tmp/table-backgrounds.json
+cmp /tmp/table-backgrounds.json conformance/table-backgrounds.json
+```
+
 Rust regressions exercise saved row maxima below measured content height through
 callback preparation, final drawing, light/dark SVG preview, replay and retained
 PDF. They require unchanged source ranges, baselines and vector text, with no
