@@ -786,6 +786,10 @@ fn layout_text_with_context(
             } else {
                 cursor.prepare_line(&mut line, styled, &frame, theme, renderer, layout)
             };
+            if !line.objects.is_empty() && line.position_native(styled).is_err() {
+                let style = styled.style_at(line.source.start, theme, layout.predefined_style);
+                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+            }
             if layout.alignment == Some(ParagraphAlignment::Both)
                 && line.justify(styled, width).is_err()
             {
@@ -1247,6 +1251,7 @@ mod tests {
                 minimum_first_page_height: None,
             },
             x: 0.0,
+            visual_rank: 0,
             prepared: None,
         });
         line

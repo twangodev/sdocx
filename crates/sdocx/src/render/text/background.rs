@@ -396,6 +396,7 @@ mod tests {
             .objects
             .push(super::super::wrapping::PositionedObject {
                 x: 29.35546875,
+                visual_rank: 1,
                 prepared: None,
                 object: super::super::objects::MeasuredObject {
                     source: 1..2,
