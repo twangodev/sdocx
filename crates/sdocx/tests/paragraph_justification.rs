@@ -200,8 +200,8 @@ fn each_wrapped_line_including_the_final_line_is_justified() {
 }
 
 #[test]
-fn missing_and_complex_clusters_preserve_source_and_report_their_limits() {
-    for source_text in ["A \u{10ffff} B", "A Ω B", "A\u{202e}A V\u{202c}Z"] {
+fn missing_and_reordered_clusters_preserve_source_and_report_their_limits() {
+    for source_text in ["A \u{10ffff} B", "A\u{202e}A V\u{202c}Z"] {
         for flow in [false, true] {
             let page = render(text(source_text, 300.0), 300, flow);
             assert_eq!(source(&page), source_text);
@@ -216,6 +216,22 @@ fn missing_and_complex_clusters_preserve_source_and_report_their_limits() {
                 close(last.x, if flow { 48.0 } else { 10.0 } + 271.98486328125);
             }
         }
+    }
+}
+
+#[test]
+fn covered_greek_justifies_with_retained_glyph_positions() {
+    for flow in [false, true] {
+        let page = render(text("A Ω B", 300.0), 300, flow);
+        assert_eq!(source(&page), "A Ω B");
+        assert!(page.text_diagnostics.is_empty());
+        let glyphs = glyphs(&page);
+        assert_eq!(glyphs[2].id, 569);
+        assert_eq!(glyphs.last().unwrap().id, 39);
+        close(
+            glyphs.last().unwrap().x,
+            if flow { 48.0 } else { 10.0 } + 271.98486328125,
+        );
     }
 }
 
