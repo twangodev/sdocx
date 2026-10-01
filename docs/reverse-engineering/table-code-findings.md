@@ -153,7 +153,7 @@ appear, so decoding known fields past that uncertainty would be unsafe.
 Cell flexible bit 0 contains a four-byte size followed by a table-border
 payload. The analyzed writer writes size 73 and then calls
 `TableBorder::NewGetBinary` (`0x3c31a0`–`0x3c31bc`). `RichTextTableCell.border`
-now decodes that record within the declared payload size. Its bytes cannot be
+decodes that record within the declared payload size. Its bytes cannot be
 treated as additional cell text.
 
 ## Shared cell text layout
@@ -203,12 +203,14 @@ not an unconditional lower clamp on every nonempty row.
 These selected cold/warm export routines do not read the saved row maximum.
 Model exposes that value through `ObjectTable::GetMaxRowHeight`, `0x3d3844`,
 and `TableRow::GetMaxHeight`, `0x3c4244`, but its presence must not reject the
-export preparation path or introduce a maximum-height clamp. Rust now accepts
+export preparation path or introduce a maximum-height clamp. Rust accepts
 saved row maxima while retaining their parsed values. The table-wide
 maximum-height flag is separate and still outside the supported prepared path.
 
 Model `ObjectTableImpl::GetCell`, `0x3c7570`, indexes the stored row and column
-vectors directly (`0x3c75a8`–`0x3c75b0`).
+vectors directly (`0x3c75a8`–`0x3c75b0`). The public
+`ObjectTable::GetCell`, `0x3d2be0`, validates the requested indices and reads
+the same stored slot (`0x3d2c30`–`0x3d2c60`); it does not substitute a frame owner.
 `GetFrameCell`, `0x3c75c0`, is a different producer: it searches earlier
 positions backwards, tests whether their row/column spans cover the requested
 position (`0x3c7630`–`0x3c7698`), and follows a covering cell's own origin
@@ -290,6 +292,60 @@ cover horizontal, vertical, rectangular and covered-span-chain cases in both
 themes and all three layout constraints. They check identical SVG preview/replay,
 selectable PDF source, matching baselines and zero PDF image resources. This is
 visibility and transport coverage; it does not establish native merged geometry.
+
+### Column minimum cache selection
+
+Drawing `TableLayout::GetMinColumnLayoutWidth`, `0xab7a0`, starts with Model's
+indexed `ObjectTable::GetMinColumnWidth`, `0x3da870`. That getter reads the
+per-column minimum vector at implementation offset 56, independently of the
+global minimum at offset 12. An absent table returns zero.
+
+For each stored row, Drawing uses `GetCell` directly and looks up that cell's
+cached layout (`0xab80c`–`0xab848`). It does not resolve frame owners or skip
+covered cells. A missing layout causes an immediate return of the saved
+per-column minimum, discarding values from preceding rows. An existing layout
+with no optional width contributes nothing. When every layout exists and at
+least one optional width is present, the result is the larger of the saved
+minimum and the **smallest** present cached width (`0xab850`–`0xab898`). For
+example, cached widths 100 and 25 with a saved minimum of 10 return 25; replacing
+either layout with a missing entry returns 10. With no rows or no present
+optional widths, the getter returns the saved minimum.
+
+The optional payload is a float at cell-layout offset 620, followed by its
+presence byte at 624. `ObjectTableCellLayout::GetMinLayoutWidth`, `0x8c078`,
+returns those fields. The traced producer `getCellLayoutWidth`, `0x8c13c`,
+takes the maximum of each line's width plus its paragraph rectangle width and
+indent, then adds the text layout's left and right margins (`0x8c19c`–`0x8c238`). It
+sets the optional width when that result is at least the configured layout
+width; otherwise it clears the presence byte and returns the configured
+width (`0x8c23c`–`0x8c260`). This producer trace is separate from the capture
+of supplied cache values below.
+
+[The column-minimum capture](../../conformance/table-column-minima.json),
+SHA-256 `571f54fbc638314d34080bedee692d7010d42574844d21af03869cf56aacc68f`,
+contains 179 synthetic cache inputs and 182 column queries. It covers all 81
+four-row combinations of missing layouts, unset optional widths and present
+widths, both with unit spans and with a four-row owner span. Other cases check
+column independence, reversed value order, fractional float bits, unset payloads
+containing stale values or NaNs, global-minimum independence and an absent
+table. Allocation fills `0x00`, `0xa5` and `0xff` produce identical captures
+across 546 native getter calls.
+
+The [Rust capture module](../../conformance/native_table/columns.rs) constructs
+the cache with native hash-map insertion and verifies entries with native
+lookup. Both ELF libraries are hash checked and all load segments are mapped;
+PLT calls resolve to native implementations except allocation/deletion. Cache
+widths are supplied inputs: this capture does not execute native text shaping,
+column resizing, cold merged-frame construction or Samsung device rendering.
+Rust export preparation retains saved column widths and does not implement
+this column-minimum cache getter.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --column-minima scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  > /tmp/table-column-minima.json
+cmp /tmp/table-column-minima.json conformance/table-column-minima.json
+```
 
 ### Outer-border initialization
 
