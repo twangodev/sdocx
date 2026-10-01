@@ -9,10 +9,10 @@
 > [current validation](../../conformance/README.md#native-geometry-checks).
 
 Saved-stroke redraw and live-event rendering are separate paths. The V16
-geometry in `ink/fountain.rs`, and the archived V14 reconstruction, do not
+geometry in `ink/fountain.rs` and `ink/fountain_v14.rs` does not
 reproduce PointTipManager's live state machine.
-This document records the verified configuration layer and the remaining
-event-processing work, from Samsung Notes 4.4.45.37's hash-pinned libraries.
+This document records configuration and event-processing findings from
+Samsung Notes 4.4.45.37's hash-pinned libraries.
 
 ## Applicability correction
 
@@ -268,7 +268,7 @@ This reconstructs the output needed by Transform, which evaluates only at
 its input knots. It does not yet reconstruct arbitrary-time spline evaluation
 or all native sparse-solver rounding behavior.
 
-The default weighting/state path is now matched as well:
+The default weighting/state path uses these rules:
 
 - Start with endpoint weights 1 and interior weights 1/N.
 - When the first input timestamp is zero, add `15*sqrt(1-i/40)` to the
@@ -282,11 +282,10 @@ The default weighting/state path is now matched as well:
 - Non-increasing float32 times reuse the last accepted coordinate index.
   All-identical times return false without rewriting input coordinates.
 
-Remaining scope includes the alternate distance-based weighting flag,
-non-default enable/configuration paths, arbitrary-time evaluation, integration
-with the enclosing live fountain caller, and the prediction generator. The
-independent model is research conformance code; production rendering is not
-changed by these commits.
+This comparison excludes the alternate distance-based weighting flag,
+non-default configuration, arbitrary-time evaluation, the enclosing live
+fountain caller and the prediction generator. The archived independent model
+is research conformance code, separate from production rendering.
 
 ## V16 caller verification and cubic-smoother applicability
 

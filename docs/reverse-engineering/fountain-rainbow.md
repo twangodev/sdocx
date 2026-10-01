@@ -626,11 +626,9 @@ The test also reuses all 542 independent rectangle-projection fixtures from
   default full-tile quad. Complete enhanced multi-tile Draw calls verify
   this same fallback even with a nonempty dirty rectangle.
 
-These checks establish native command/coordinate behavior. The repeated
-color-tile-0 selection, accumulation between tiled calls, framebuffer sizes
-and linear resampling must still be combined in a GPU frame experiment;
-separate passing allocation, shader and matrix checks do not prove that
-complete frame or Android driver parity.
+These checks establish native command/coordinate behavior. They do not
+establish complete-frame behavior combining color-tile-0 selection, tiled
+accumulation, framebuffer sizes and linear resampling, or Android driver parity.
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_v17_tiles.py

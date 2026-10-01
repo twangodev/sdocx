@@ -3,10 +3,11 @@
 > `conformance/fountain_v14_native.py` and `conformance/fountain-v14.json` are
 > in this checkout. The independent reconstruction
 > `conformance/fountain_v14_model.py` was removed during test cleanup; recover
-> it from Git revision `40de721` in a separate checkout. The Rust renderer now ports saved stylus V14 positions, radii and sample
-> boundaries through the shared SmPath and prepared-dot pipeline. Directional
-> shader coverage remains approximate. Validation is in
-> [current validation](../../conformance/README.md#native-geometry-checks).
+> it from Git revision `40de721` in a separate checkout. Rust reconstructs
+> saved V14 geometry through the shared SmPath and prepared-dot pipeline.
+> [Vector parity](fountain-parity.md) records directional shading and appearance
+> limits; [current validation](../../conformance/README.md#native-geometry-checks)
+> describes the retained native checks.
 
 The existing Samsung Notes 4.4.45.37 APK includes GLV14, selected by saved
 settings `14;`. No additional APK is needed for this version. This is a
@@ -27,12 +28,11 @@ cargo run --offline -p sdocx --features render,serde --example ink_geometry -- t
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/fountain_v14_native.py --prepared /tmp/handwriting-ink.json --output /tmp/fountain-v14-native.json
 ```
 
-All 2,769 strokes in the dense handwriting fixture run successfully, producing
-56,713 stamps. This establishes native output to compare a reconstruction
-against; it does not yet establish SDK parity. The checked-in reference has
-26 synthetic cases and 1,936 stamps, each storing x, y, radius, tangent x and
-tangent y. It includes original-sample boundaries, and rerunning the native
-oracle reproduces every value exactly on this host.
+The checked-in reference has 68 synthetic cases and 4,062 stamps, storing
+x, y, radius, tangent x, tangent y and original-sample boundaries. The Rust
+geometry regression checks all five attributes and boundaries. The dense
+handwriting fixture contains 2,769 strokes and 56,713 stamps; the measured
+native comparisons are recorded in [vector parity](fountain-parity.md).
 
 ## Control flow differences from V16
 
@@ -52,11 +52,9 @@ oracle reproduces every value exactly on this host.
 - SmPath receives a tangent output pointer. drawPoint forwards that tangent
   to RTV4's direction-dependent shader. A zero tangent becomes `(0, 1)`.
 
-The oracle currently requires stylus input. Finger/tool-3 substitutions,
-shape-specific paths, live event prediction, reused-drawable state and the
-remaining historical drawing versions still need separate characterization.
-Production V14 rendering remains approximate until the geometry and coverage
-port is complete.
+The native oracle covers saved input modes 1, 2 and 3, including fixed width.
+Shape-specific paths, live event prediction, reused-drawable state and other
+historical drawing versions are outside these geometry captures.
 
 ## Independent reconstruction
 
@@ -75,12 +73,10 @@ python3 conformance/fountain_v14_model.py
 python3 conformance/fountain_v14_model.py --prepared /tmp/handwriting-ink.json --native /tmp/fountain-v14-native.json
 ```
 
-The measurements below were recorded from that script. The Rust port checks
-all 26 synthetic cases for positions, radii and sample boundaries in ordinary
-CI, with a 0.0001 page-unit tolerance. It does not yet consume shader tangents.
-A real-document check of the Rust port reproduced all 56,713 stamps across
-2,769 handwriting strokes with identical positions, radii and sample boundaries.
-This includes small negative pressures from legacy saved-channel quantization.
+The measurements below were recorded from that archived script's original
+26-case stylus subset. They are distinct from the current Rust/native fixture
+coverage above and include small negative pressures from legacy saved-channel
+quantization.
 
 The 26 synthetic cases reproduce all 1,936 stamps and original-sample
 boundaries. Maximum coordinate error is 0.00001526; maximum tangent-component
@@ -97,8 +93,8 @@ from residual-overrun rejection: the former retains the newly computed
 midpoint, while the latter restores the previous midpoint. The independent
 model follows that distinction.
 
-The archived model remains a research reference. Production now uses its
-saved variable-width stylus geometry for settings `14;`, sharing validation
-guards, SmPath and prepared-dot rendering with V16. Fixed-width, non-stylus
-and live input paths retain their fallback. Circular coverage still approximates
-the native direction-dependent shader; this is geometry parity, not pixel parity.
+The archived model remains a research reference. Production uses the Rust
+saved-stroke reconstruction for settings `14;`, sharing validation guards,
+SmPath and prepared-dot rendering with V16. Saved fixed-width and input modes
+1, 2 and 3 are supported. Live input remains separate; native pixel identity
+is not established by geometry parity.

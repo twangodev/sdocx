@@ -153,9 +153,8 @@ enter the split sequence:
 The restart occurs even if the drawn/pop checks do not reach
 `addStrokeProcess`. This sequence changes the action on the existing event;
 it does not explicitly clear its history or manufacture a coordinate
-array in `NoteWritingViewPenAction`. Downstream routing must still be
-traced before asserting exactly which boundary samples are repeated in
-the resulting objects.
+array in `NoteWritingViewPenAction`. This trace does not establish which
+boundary samples downstream routing repeats in the resulting objects.
 
 The model's independent append ceiling is 65535, as established in the
 [recording trace](stroke-recording-findings.md#repeated-coordinates-are-retained-by-the-model).

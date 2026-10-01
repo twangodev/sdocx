@@ -317,17 +317,9 @@ host runs. The browser metric now counts fills as well as stroke calls so
 native circular paths are included in drawing-work reports. Chromium and
 Firefox both pass the replay interaction checks for this fixture.
 
-The older dense `handwritten.sdocx` fixture resolves to FountainPen `14;`.
-It intentionally remains `Approximate`; V16 is not silently applied to that
-older drawing version. Its native renderer needs a separate port/reference
-check before it can use reconstructed geometry.
-
-The same APK already contains `FountainPenStrokeDrawableGLV14`, so another
-APK download is not currently necessary to investigate `14;`. Its saved
-redraw (`0x727dc`, inner loop `0x72c20`) differs from V16: it uses a single
-pass without the width-history smoothing, a simpler distance filter, and
-includes the final sample in the line loop before `endPen`. Its `drawPoint`
-(`0x731b0`) passes a tangent to `FountainPenStrokeDrawableRTV4::AddPoint`.
-That tangent-dependent backend still needs tracing before circular stamps
-can be assumed to reproduce V14 coverage. These are investigation findings,
-not enabled V14 support.
+The dense `handwritten.sdocx` fixture resolves to FountainPen `14;`.
+Its separate Rust reconstruction retains native positions, radii, tangent
+directions and sample boundaries. SVG/PDF use directional vector shading;
+Chromium appearance checks pass, while Firefox mask and blending checks remain
+expected failures. The [V14 findings](fountain-v14.md) describe its saved redraw;
+[vector parity](fountain-parity.md) records current coverage and measured limits.
