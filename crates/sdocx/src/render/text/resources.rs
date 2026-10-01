@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::{BTreeSet, HashMap, hash_map::Entry};
 use std::ops::Range;
 use std::rc::Rc;
 
@@ -12,7 +13,7 @@ use super::{
 use crate::render::vector::{EmbeddedFont, Scene};
 use crate::{LineSpacingType, ParagraphLineSpacing};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TextDiagnosticKind {
     UnavailableFamily,
@@ -36,7 +37,7 @@ pub struct TextDiagnostic {
     pub codepoints: Vec<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(in crate::render) enum SourceOwner {
     Text(Range<usize>),
     Object(Range<usize>),
@@ -54,6 +55,86 @@ pub(in crate::render) struct SourceObjectDiagnostic {
     pub diagnostic: ObjectDiagnostic,
 }
 
+#[derive(Default)]
+struct TextDiagnostics {
+    ordered: Vec<CollectedDiagnostic>,
+    positions: HashMap<DiagnosticKey, usize>,
+}
+
+#[derive(PartialEq, Eq, Hash)]
+struct DiagnosticKey {
+    owner: Option<SourceOwner>,
+    kind: TextDiagnosticKind,
+    family: String,
+}
+
+struct CollectedDiagnostic {
+    owner: Option<SourceOwner>,
+    kind: TextDiagnosticKind,
+    family: String,
+    codepoints: BTreeSet<u32>,
+}
+
+impl CollectedDiagnostic {
+    fn diagnostic(&self) -> TextDiagnostic {
+        TextDiagnostic {
+            kind: self.kind.clone(),
+            family: self.family.clone(),
+            codepoints: self.codepoints.iter().copied().collect(),
+        }
+    }
+}
+
+impl TextDiagnostics {
+    fn record(&mut self, issue: SourceTextDiagnostic) {
+        let key = DiagnosticKey {
+            owner: issue.owner.clone(),
+            kind: issue.diagnostic.kind.clone(),
+            family: issue.diagnostic.family.clone(),
+        };
+        match self.positions.entry(key) {
+            Entry::Occupied(position) => {
+                let existing = &mut self.ordered[*position.get()];
+                existing.codepoints.extend(issue.diagnostic.codepoints);
+            }
+            Entry::Vacant(position) => {
+                position.insert(self.ordered.len());
+                self.ordered.push(CollectedDiagnostic {
+                    owner: issue.owner,
+                    kind: issue.diagnostic.kind,
+                    family: issue.diagnostic.family,
+                    codepoints: issue.diagnostic.codepoints.into_iter().collect(),
+                });
+            }
+        }
+    }
+
+    fn public(&self) -> Vec<TextDiagnostic> {
+        let mut diagnostics = Self::default();
+        for issue in &self.ordered {
+            diagnostics.record(SourceTextDiagnostic {
+                owner: None,
+                diagnostic: issue.diagnostic(),
+            });
+        }
+        diagnostics
+            .ordered
+            .iter()
+            .map(CollectedDiagnostic::diagnostic)
+            .collect()
+    }
+
+    fn scoped(&self) -> Vec<SourceTextDiagnostic> {
+        self.ordered
+            .iter()
+            .map(|issue| SourceTextDiagnostic {
+                owner: issue.owner.clone(),
+                diagnostic: issue.diagnostic(),
+            })
+            .collect()
+    }
+}
+
 #[derive(Clone)]
 pub(in crate::render) struct TextRenderer<'a> {
     pub settings: TextSettings,
@@ -62,7 +143,7 @@ pub(in crate::render) struct TextRenderer<'a> {
     pub fonts: &'a FontBook,
     default_family: &'static str,
     faces: Rc<RefCell<Vec<ResolvedFace>>>,
-    diagnostics: Rc<RefCell<Vec<SourceTextDiagnostic>>>,
+    diagnostics: Rc<RefCell<TextDiagnostics>>,
     object_diagnostics: Rc<RefCell<Vec<SourceObjectDiagnostic>>>,
     page_exclusions: Option<Rc<PageExclusions>>,
     source_owner: Option<SourceOwner>,
@@ -294,15 +375,11 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn diagnostics(&self) -> Vec<TextDiagnostic> {
-        let mut diagnostics = Vec::new();
-        for issue in self.diagnostics.borrow().iter() {
-            merge_diagnostic(&mut diagnostics, issue.diagnostic.clone());
-        }
-        diagnostics
+        self.diagnostics.borrow().public()
     }
 
     pub fn scoped_diagnostics(&self) -> Vec<SourceTextDiagnostic> {
-        self.diagnostics.borrow().clone()
+        self.diagnostics.borrow().scoped()
     }
 
     pub fn report_text_issues(&self, issues: &[SourceTextDiagnostic]) {
@@ -350,6 +427,16 @@ impl<'a> TextRenderer<'a> {
     pub fn report_geometry_issues(&self, issues: &[TextDiagnostic]) {
         for issue in issues {
             self.record(issue.clone());
+        }
+    }
+
+    pub fn report_owned_geometry_issues(&self, issues: &[SourceTextDiagnostic]) {
+        for issue in issues {
+            let mut issue = issue.clone();
+            if self.source_owner_locked || issue.owner.is_none() {
+                issue.owner = self.source_owner.clone();
+            }
+            self.record_owned(issue);
         }
     }
 
@@ -424,37 +511,8 @@ impl<'a> TextRenderer<'a> {
         });
     }
 
-    fn record_owned(&self, mut issue: SourceTextDiagnostic) {
-        let mut diagnostics = self.diagnostics.borrow_mut();
-        if let Some(existing) = diagnostics.iter_mut().find(|existing| {
-            existing.owner == issue.owner
-                && existing.diagnostic.kind == issue.diagnostic.kind
-                && existing.diagnostic.family == issue.diagnostic.family
-        }) {
-            existing
-                .diagnostic
-                .codepoints
-                .append(&mut issue.diagnostic.codepoints);
-            existing.diagnostic.codepoints.sort_unstable();
-            existing.diagnostic.codepoints.dedup();
-        } else {
-            issue.diagnostic.codepoints.sort_unstable();
-            issue.diagnostic.codepoints.dedup();
-            diagnostics.push(issue);
-        }
-    }
-}
-
-fn merge_diagnostic(diagnostics: &mut Vec<TextDiagnostic>, mut diagnostic: TextDiagnostic) {
-    if let Some(existing) = diagnostics
-        .iter_mut()
-        .find(|existing| existing.kind == diagnostic.kind && existing.family == diagnostic.family)
-    {
-        existing.codepoints.append(&mut diagnostic.codepoints);
-        existing.codepoints.sort_unstable();
-        existing.codepoints.dedup();
-    } else {
-        diagnostics.push(diagnostic);
+    fn record_owned(&self, issue: SourceTextDiagnostic) {
+        self.diagnostics.borrow_mut().record(issue);
     }
 }
 
@@ -494,6 +552,150 @@ mod tests {
             strikethrough: false,
             link_target: None,
         }
+    }
+
+    #[test]
+    fn diagnostic_keys_preserve_owners_reasons_families_and_first_occurrence_order() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        let text = renderer.for_source(0..1);
+        let object = renderer.for_object_source(0..1);
+        text.missing_glyphs("Roboto", "😀中😀");
+        object.missing_glyphs("Roboto", "日");
+        text.glyph_positioning_unsupported("Roboto", "λ");
+        text.missing_glyphs("Roboto Mono", "語");
+        renderer.missing_glyphs("Roboto", "本");
+        text.missing_glyphs("Roboto", "中日");
+
+        let scoped = renderer.scoped_diagnostics();
+        assert_eq!(scoped.len(), 5);
+        assert_eq!(scoped[0].owner, Some(SourceOwner::Text(0..1)));
+        assert_eq!(scoped[1].owner, Some(SourceOwner::Object(0..1)));
+        assert_eq!(scoped[4].owner, None);
+        assert_eq!(scoped[0].diagnostic.codepoints, [0x4e2d, 0x65e5, 0x1f600]);
+        assert_eq!(scoped[1].diagnostic.codepoints, [0x65e5]);
+        assert_eq!(
+            renderer.diagnostics(),
+            [
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::MissingGlyphs,
+                    family: "Roboto".into(),
+                    codepoints: vec![0x4e2d, 0x65e5, 0x672c, 0x1f600],
+                },
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedGlyphPositioning,
+                    family: "Roboto".into(),
+                    codepoints: vec![0x3bb],
+                },
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::MissingGlyphs,
+                    family: "Roboto Mono".into(),
+                    codepoints: vec![0x8a9e],
+                },
+            ]
+        );
+        renderer.report_text_issues(&scoped);
+        assert_eq!(renderer.scoped_diagnostics(), scoped);
+    }
+
+    #[test]
+    fn large_diagnostic_stream_keeps_replay_order_and_sorted_codepoint_unions() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        const COUNT: usize = 20_000;
+        for index in 0..COUNT {
+            renderer
+                .for_source(index..index + 1)
+                .missing_glyphs("Roboto", "中");
+        }
+        for index in (0..COUNT).rev() {
+            let scalar = char::from_u32(0x4e00 + index as u32).unwrap();
+            renderer
+                .for_source(index..index + 1)
+                .missing_glyphs("Roboto", &format!("{scalar}中{scalar}"));
+        }
+        let scoped = renderer.scoped_diagnostics();
+        assert_eq!(scoped.len(), COUNT);
+        for (index, issue) in scoped.iter().enumerate() {
+            assert_eq!(issue.owner, Some(SourceOwner::Text(index..index + 1)));
+            assert!(
+                issue
+                    .diagnostic
+                    .codepoints
+                    .contains(&(0x4e00 + index as u32))
+            );
+            assert!(issue.diagnostic.codepoints.contains(&0x4e2d));
+        }
+        assert_eq!(
+            renderer.diagnostics()[0].codepoints,
+            (0x4e00..0x4e00 + COUNT as u32).collect::<Vec<_>>()
+        );
+        let page = self::renderer(&fonts);
+        page.report_text_issues(&scoped[COUNT - 2..]);
+        page.report_text_issues(&scoped[COUNT - 2..]);
+        assert_eq!(page.scoped_diagnostics(), scoped[COUNT - 2..]);
+    }
+
+    #[test]
+    fn repeated_diagnostic_key_collects_many_distinct_codepoints() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts).for_source(0..20_000);
+        for codepoint in (0x4e00..0x4e00 + 20_000).rev() {
+            let scalar = char::from_u32(codepoint).unwrap().to_string();
+            renderer.missing_glyphs("Roboto", &scalar);
+            renderer.missing_glyphs("Roboto", &scalar);
+        }
+        let scoped = renderer.scoped_diagnostics();
+        assert_eq!(scoped.len(), 1);
+        assert_eq!(scoped[0].owner, Some(SourceOwner::Text(0..20_000)));
+        assert_eq!(
+            scoped[0].diagnostic.codepoints,
+            (0x4e00..0x4e00 + 20_000).collect::<Vec<_>>()
+        );
+        assert_eq!(renderer.diagnostics(), [scoped[0].diagnostic.clone()]);
+    }
+
+    #[test]
+    fn owned_geometry_preserves_local_ranges_and_locks_nested_parent_ownership() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        let issues = [
+            SourceTextDiagnostic {
+                owner: Some(SourceOwner::Text(1..2)),
+                diagnostic: TextDiagnostic {
+                    kind: TextDiagnosticKind::InvalidGeometry,
+                    family: "Roboto".into(),
+                    codepoints: Vec::new(),
+                },
+            },
+            SourceTextDiagnostic {
+                owner: None,
+                diagnostic: TextDiagnostic {
+                    kind: TextDiagnosticKind::InvalidGeometry,
+                    family: "Roboto Mono".into(),
+                    codepoints: Vec::new(),
+                },
+            },
+        ];
+        renderer
+            .for_source(10..20)
+            .report_owned_geometry_issues(&issues);
+        let scoped = renderer.scoped_diagnostics();
+        assert_eq!(scoped[0].owner, Some(SourceOwner::Text(1..2)));
+        assert_eq!(scoped[1].owner, Some(SourceOwner::Text(10..20)));
+
+        let child = renderer
+            .planning_scope()
+            .for_object_source(30..31)
+            .for_resolved_text("sans-serif");
+        child.for_source(1..2).report_owned_geometry_issues(&issues);
+        assert!(
+            child
+                .scoped_diagnostics()
+                .iter()
+                .all(|issue| { issue.owner == Some(SourceOwner::Object(30..31)) })
+        );
+        assert_eq!(renderer.scoped_diagnostics(), scoped);
     }
 
     #[test]

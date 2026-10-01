@@ -854,7 +854,7 @@ fn layout_text_with_context(
     let text_box = styled.text_box;
     let settings = renderer.settings;
     renderer.report_object_issues(styled.object_issues());
-    renderer.report_geometry_issues(styled.geometry_issues());
+    renderer.report_owned_geometry_issues(styled.geometry_issues());
     let margins = text_box
         .margins
         .unwrap_or([0.0; 4])

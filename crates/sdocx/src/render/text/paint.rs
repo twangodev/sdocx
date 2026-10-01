@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{cell::OnceCell, ops::Range};
 
 use crate::fonts::{FontSynthesis, fontdb};
 use unicode_bidi::{BidiClass, bidi_class};
@@ -526,11 +526,11 @@ fn positioned_spans(
     renderer: &TextRenderer<'_>,
 ) -> Option<Vec<PositionedSpan>> {
     let contexts = if line.native_positioned {
-        Vec::new()
+        &[][..]
     } else {
         paragraph_bidi_contexts(styled, line.source.start)
     };
-    let mut context_index = 0;
+    let mut context_index = contexts.partition_point(|range| range.end <= line.source.start);
     let mut cluster_contexts = Vec::with_capacity(line.placements.len());
     let mut offsets = Vec::with_capacity(line.placements.len());
     if !x.is_finite() || !baseline.is_finite() {
@@ -678,21 +678,49 @@ fn positioned_spans(
     Some(result)
 }
 
-pub(in crate::render) fn paragraph_bidi_contexts(
-    styled: &StyledText<'_>,
-    source_start: usize,
-) -> Vec<Range<usize>> {
-    styled
-        .index
-        .paragraph_index(source_start)
-        .and_then(|ordinal| styled.index.native_paragraphs().nth(ordinal as usize))
-        .and_then(|paragraph| {
-            styled
-                .index
-                .slice(paragraph.content.clone())
-                .map(|text| bidi_contexts(text, paragraph.content.start))
+struct ParagraphContexts {
+    source: Range<usize>,
+    contexts: OnceCell<Vec<Range<usize>>>,
+}
+
+pub(super) struct ParagraphBidiContexts {
+    paragraphs: Vec<ParagraphContexts>,
+}
+
+impl ParagraphBidiContexts {
+    pub fn new(index: &crate::text_index::TextIndex<'_>) -> Self {
+        Self {
+            paragraphs: index
+                .native_paragraphs()
+                .map(|paragraph| ParagraphContexts {
+                    source: paragraph.content,
+                    contexts: OnceCell::new(),
+                })
+                .collect(),
+        }
+    }
+
+    fn at(&self, index: &crate::text_index::TextIndex<'_>, source_start: usize) -> &[Range<usize>] {
+        let Some(paragraph) = index
+            .paragraph_index(source_start)
+            .and_then(|ordinal| self.paragraphs.get(ordinal as usize))
+        else {
+            return &[];
+        };
+        paragraph.contexts.get_or_init(|| {
+            index
+                .slice(paragraph.source.clone())
+                .map(|text| bidi_contexts(text, paragraph.source.start))
+                .unwrap_or_default()
         })
-        .unwrap_or_default()
+    }
+}
+
+pub(in crate::render) fn paragraph_bidi_contexts<'styled>(
+    styled: &'styled StyledText<'_>,
+    source_start: usize,
+) -> &'styled [Range<usize>] {
+    styled.bidi_contexts.at(&styled.index, source_start)
 }
 
 fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
@@ -749,4 +777,77 @@ fn bidi_contexts(text: &str, source_start: usize) -> Vec<Range<usize>> {
         contexts.push(start..end);
     }
     contexts
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::text_index::TextIndex;
+
+    #[test]
+    fn paragraph_contexts_are_lazy_and_shared_across_wrapped_lines() {
+        let text = "😀A\u{2067}אב\u{202a}XYZ\u{202c}ג\u{2069}Z\n\u{202e}ab😀\n\u{2066}A\u{2069}Z";
+        let index = TextIndex::new(text);
+        let cache = ParagraphBidiContexts::new(&index);
+        assert!(
+            cache
+                .paragraphs
+                .iter()
+                .all(|paragraph| paragraph.contexts.get().is_none())
+        );
+        for paragraph in index.native_paragraphs() {
+            let expected = bidi_contexts(
+                index.slice(paragraph.content.clone()).unwrap(),
+                paragraph.content.start,
+            );
+            let first = cache.at(&index, paragraph.content.start);
+            assert_eq!(first, expected);
+            for line_start in paragraph.content.clone() {
+                let cached = cache.at(&index, line_start);
+                assert_eq!(cached, first);
+                assert_eq!(cached.as_ptr(), first.as_ptr());
+            }
+        }
+        assert!(
+            cache
+                .paragraphs
+                .iter()
+                .all(|paragraph| paragraph.contexts.get().is_some())
+        );
+        assert!(cache.at(&index, index.len() + 1).is_empty());
+    }
+
+    #[test]
+    fn long_fallback_paragraph_is_analyzed_once() {
+        let text = "中".repeat(80_000);
+        let index = TextIndex::new(&text);
+        let cache = ParagraphBidiContexts::new(&index);
+        for line_start in (0..index.len()).step_by(40) {
+            assert!(cache.at(&index, line_start).is_empty());
+            assert_eq!(
+                cache
+                    .paragraphs
+                    .iter()
+                    .filter(|paragraph| paragraph.contexts.get().is_some())
+                    .count(),
+                1
+            );
+        }
+        assert_eq!(cache.paragraphs.len(), 1);
+    }
+
+    #[test]
+    fn cached_context_ranges_preserve_unclosed_and_nested_controls() {
+        for (text, expected) in [
+            ("😀\u{2067}A\u{202a}B\u{2069}Z", vec![1..6]),
+            ("A\u{202e}😀B", vec![1..4]),
+            ("A\u{2067}B\u{202c}C", vec![1..5]),
+            ("\u{2069}A\u{202c}Z", vec![]),
+        ] {
+            let index = TextIndex::new(text);
+            let cache = ParagraphBidiContexts::new(&index);
+            assert_eq!(cache.at(&index, 0), expected);
+            assert_eq!(cache.at(&index, index.len()), expected);
+        }
+    }
 }

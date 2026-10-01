@@ -79,7 +79,7 @@ fn line_backgrounds_for_paint(
     let visual_positioned =
         line.line.native_positioned || (canonical && line.line.advance_for_paint(true).is_some());
     let contexts = if visual_positioned {
-        Vec::new()
+        &[][..]
     } else {
         super::paint::paragraph_bidi_contexts(styled, line.line.source.start)
     };
@@ -89,9 +89,9 @@ fn line_backgrounds_for_paint(
             .placements
             .iter()
             .any(|placement| placement.cluster.run.direction == Direction::RightToLeft)
-            || contexts.iter().any(|range| {
-                range.start < line.line.source.end && range.end > line.line.source.start
-            }));
+            || contexts
+                .get(contexts.partition_point(|range| range.end <= line.line.source.start))
+                .is_some_and(|range| range.start < line.line.source.end));
     if line.line.placements.is_empty() || reordered {
         if viewport.is_none_or(|viewport| viewport.background_visible(line)) {
             for range in ranges {

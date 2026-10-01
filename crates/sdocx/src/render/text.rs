@@ -19,6 +19,7 @@ mod objects;
 mod pagination;
 mod paint;
 mod resources;
+mod styles;
 mod wrapping;
 pub(super) use background::render_line_backgrounds;
 #[cfg(test)]
@@ -289,7 +290,9 @@ pub(super) struct StyledText<'a> {
     boundaries: Vec<usize>,
     foreground_boundaries: Vec<usize>,
     spans: Vec<(Range<usize>, &'a RichTextSpan)>,
-    geometry_issues: Vec<TextDiagnostic>,
+    styles: styles::StyleIndex<'a>,
+    bidi_contexts: paint::ParagraphBidiContexts,
+    geometry_issues: Vec<SourceTextDiagnostic>,
 }
 
 impl<'a> StyledText<'a> {
@@ -302,7 +305,7 @@ impl<'a> StyledText<'a> {
     pub fn object_issues(&self) -> &[ObjectDiagnostic] {
         self.objects.issues()
     }
-    pub fn geometry_issues(&self) -> &[TextDiagnostic] {
+    pub fn geometry_issues(&self) -> &[SourceTextDiagnostic] {
         &self.geometry_issues
     }
     pub fn new(text_box: &'a RichTextBox, context: TextContext, settings: TextSettings) -> Self {
@@ -331,6 +334,8 @@ impl<'a> StyledText<'a> {
         boundaries.dedup();
         foreground_boundaries.sort_unstable();
         foreground_boundaries.dedup();
+        let styles = styles::StyleIndex::new(&spans, &text_box.runs, index.len(), settings);
+        let bidi_contexts = paint::ParagraphBidiContexts::new(&index);
         let mut styled = Self {
             index,
             text_box,
@@ -340,6 +345,8 @@ impl<'a> StyledText<'a> {
             boundaries,
             foreground_boundaries,
             spans,
+            styles,
+            bidi_contexts,
             geometry_issues: Vec::new(),
         };
         styled.geometry_issues = styled.collect_geometry_issues();
@@ -428,44 +435,25 @@ impl<'a> StyledText<'a> {
             Some(PredefinedTextStyle::Heading3) => 17.0,
             _ => text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE),
         };
-        let mut invalid_override = false;
-        for (range, span) in &self.spans {
-            if span.kind == RichTextSpanType::FontSize
-                && range.contains(&character)
-                && let Some(value) = span.font_size_value()
-            {
-                if self.settings.checked_font_size(value).is_some() {
-                    size = value;
-                    invalid_override = false;
-                } else {
-                    invalid_override = true;
-                }
-            }
+        let selected = self.styles.at(character);
+        if let Some(value) = selected.font_size {
+            size = value;
         }
-        let invalid = invalid_override || self.settings.checked_font_size(size).is_none();
+        let invalid = selected.invalid_font || self.settings.checked_font_size(size).is_none();
         let mut style = TextStyle {
             font_size: self.settings.font_size(size),
             family: None,
             color: theme.foreground(Some(text_box.color.unwrap_or(DEFAULT_FONT_COLOR))),
             source_color: text_box.color.unwrap_or(DEFAULT_FONT_COLOR),
             background: None,
-            bold: false,
-            italic: false,
+            bold: selected.bold,
+            italic: selected.italic,
             underline: text_box.underline,
             strikethrough: false,
             link_target: None,
         };
-        for run in &text_box.runs {
-            if run.start <= character && character < run.end && run.end <= self.index.len() {
-                style.bold |= run.bold;
-                style.italic |= run.italic;
-            }
-        }
         let mut is_hyperlink = false;
-        for (range, span) in &self.spans {
-            if !range.contains(&character) {
-                continue;
-            }
+        for span in selected.spans.into_iter().flatten() {
             match span.kind {
                 RichTextSpanType::ForegroundColor => {
                     if let Some(color) = span.color_value() {
@@ -583,20 +571,18 @@ impl<'a> StyledText<'a> {
             .unwrap_or_else(|| self.style_at(range.start, theme, predefined).font_size)
     }
 
-    fn collect_geometry_issues(&self) -> Vec<TextDiagnostic> {
+    fn collect_geometry_issues(&self) -> Vec<SourceTextDiagnostic> {
         let mut issues = Vec::new();
-        let mut record = |style: &TextStyle| {
+        let mut record = |style: &TextStyle, owner| {
             let family = style.family.as_deref().unwrap_or("Roboto");
-            if !issues
-                .iter()
-                .any(|issue: &TextDiagnostic| issue.family == family)
-            {
-                issues.push(TextDiagnostic {
+            issues.push(SourceTextDiagnostic {
+                owner,
+                diagnostic: TextDiagnostic {
                     kind: TextDiagnosticKind::InvalidGeometry,
                     family: family.into(),
                     codepoints: Vec::new(),
-                });
-            }
+                },
+            });
         };
         let theme = RenderTheme::for_canvas(false);
         let invalid_margins = self.text_box.margins.is_some_and(|margins| {
@@ -604,11 +590,14 @@ impl<'a> StyledText<'a> {
                 .iter()
                 .any(|margin| self.settings.checked_pixels(*margin).is_none())
         });
+        if invalid_margins {
+            record(&self.style_at(0, theme, None), None);
+        }
         if self.index.is_empty() {
             let style = self.style_at(0, theme, None);
             let invalid = self.resolved_caret_font_size(0).1;
-            if invalid || invalid_margins {
-                record(&style);
+            if invalid {
+                record(&style, Some(SourceOwner::Text(0..0)));
             }
         }
         for paragraph in self.index.display_paragraphs() {
@@ -624,17 +613,8 @@ impl<'a> StyledText<'a> {
                 if range.is_empty() {
                     invalid_font = self.resolved_caret_font_size(range.start).1;
                 }
-                let objects = self.objects.in_range(range.clone());
-                let object_only = !range.is_empty() && objects.len() == range.len();
-                let inherits_separator = range.start == paragraph.content.start
-                    && range.start > 0
-                    && matches!(
-                        self.index.slice(range.start - 1..range.start),
-                        Some("\r" | "\n")
-                    );
-                let uses_font = !object_only || inherits_separator;
-                if (uses_font && invalid_font) || invalid_margins {
-                    record(&style);
+                if invalid_font {
+                    record(&style, Some(SourceOwner::Text(range)));
                 }
             }
         }
@@ -1030,8 +1010,8 @@ mod tests {
     }
 
     #[test]
-    fn object_anchor_fonts_only_report_when_used_by_native_separator_metrics() {
-        for (source, anchor, invalid) in [("\u{fffc}", 0, false), ("A\n\u{fffc}", 2, true)] {
+    fn object_anchor_fonts_report_invalid_line_metrics() {
+        for (source, anchor) in [("\u{fffc}", 0), ("A\n\u{fffc}", 2)] {
             let mut text = text_box();
             text.text = source.into();
             text.spans = vec![font_span(f32::MAX, anchor as u32, anchor as u32 + 1)];
@@ -1060,7 +1040,7 @@ mod tests {
                 layout_constraint: crate::ObjectSpanLayoutConstraint::Normal,
             }];
             let styled = StyledText::new(&text, TextContext::Flow, scaled_settings());
-            assert_eq!(!styled.geometry_issues().is_empty(), invalid);
+            assert_eq!(styled.geometry_issues().len(), 1);
             text.object_spans.clear();
             let styled = StyledText::new(&text, TextContext::Flow, scaled_settings());
             assert_eq!(styled.geometry_issues().len(), 1);
