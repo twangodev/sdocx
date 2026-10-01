@@ -87,8 +87,6 @@ plain Arabic spans.
 - Extreme frame/page geometry and unsupported glyph/effect combinations retain
   explicit validation and transport limits.
 
-Samsung output remains reference evidence. The implementation and regression
-contracts stay in Rust; no second authored Python layout engine is required.
 Exact native addresses, historical comparisons and evidence limits are in
 [Text layout findings](reverse-engineering/text-layout-findings.md).
 

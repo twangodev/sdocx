@@ -1,10 +1,9 @@
 # Marker4 V7 vector reconstruction
 
-The available corpus contains six Marker4 `7;` strokes in `quiz.sdocx`, and
-no InkPen/InkPen2 strokes. V7 previously used the generic pressure fallback:
-thin round-ended segments, capped width, and lost saved alpha. It now shares
-the Marker4 midpoint sampler and rounded-rectangle vector renderer, with its
-own fractional tip dimensions. SVG, PDF and replay use the same Rust geometry.
+The available corpus contains six Marker4 `7;` strokes in `quiz.sdocx`.
+V7 shares the Marker4 midpoint sampler and rounded-rectangle vector renderer,
+with its own fractional tip dimensions. SVG, PDF and replay use the same Rust
+geometry.
 
 ## Native contract
 

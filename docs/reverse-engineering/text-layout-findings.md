@@ -2126,12 +2126,11 @@ styles when overriding a coverage-fallback face. Browser SVG synthesis and
 generic serialized-SVG PDF conversion do not establish the retained PDF
 outline contract or the canvas emboldening policy.
 
-The closing SVG audit also reproduced style leakage on a regular-only
-DejaVu Sans face with source `لالا`: italic/bold on the first two scalars
-incorrectly made the plain second span italic. Fallback-run coalescing now
-requires equal retained synthesis metadata. The regression failed before
-that guard and passes for standalone, Flow, code and table text, preserving
-the existing complex-glyph positioning diagnostic and the complete source.
+Fallback-run coalescing requires equal retained synthesis metadata. Regressions
+use a regular-only DejaVu Sans face with source `لالا`, styling the first two
+scalars italic/bold and leaving the second span plain. Standalone, Flow, code
+and table text preserve those boundaries, the complete source and the
+complex-glyph positioning diagnostic.
 
 Decorations use anchor-entry X and advance endpoints (`0x66758`–`0x6678c`),
 not glyph ink bounds. Backgrounds use individual source-entry rectangles;
@@ -2155,10 +2154,9 @@ the structure tree can still expose paint order around inline objects.
 Independent regressions traverse `StructTreeRoot` children and resolve
 page-scoped marked-content IDs instead of assuming content-stream order. A
 hand-built PDF has declared reading order `BCA` while its streams paint `ABC`.
-Six behavioral regression failures on pristine `15fc41e` cover inline code,
-nested objects, title/body, RTL, table cells and repeated pages; the new scopes
-correct each order without changing the pinned glyph geometry. Numbered
-paragraphs also retain their original marker-before-content order. Glyph tests
+Regressions cover inline code, nested objects, title/body, RTL, table cells and
+repeated pages without changing the pinned glyph geometry. Numbered
+paragraphs retain marker-before-content order. Glyph tests
 pin DejaVu Sans bytes (SHA-256
 `57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e`), native
 HarfBuzz glyphs 5365/1399 and an isolated-run X of 58.173828125, then inspect
@@ -2168,11 +2166,9 @@ These transport checks do not establish complete visual parity.
 
 The synthesis regressions pin the same font and GIDs, verify per-glyph contours
 independently through `ttf-parser`, and normalize PDF matrices and strokes at
-72, 96 and 144 DPI. On pristine `d44d379`, the final public retained-PDF test file
-compiled and produced 22 passing tests plus four behavioral failures reporting
-unsupported synthesis; the implementation passes all 26. Additional contract
-checks cover regular-only fonts through shape preview/replay and native PDF
-export, and mixed styles through both native document PDF and generic SVG
+72, 96 and 144 DPI. Additional contract checks cover regular-only fonts through
+shape preview/replay and native PDF export, and mixed styles through both
+native document PDF and generic SVG
 conversion for placed text, Flow, code and table cells. Chromium exercises
 regular and synthesized bold-italic Arabic through actual WASM preview and PDF
 downloads, checking embedded font bytes, normalized shear, the physical pen,

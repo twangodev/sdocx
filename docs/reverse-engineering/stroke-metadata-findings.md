@@ -2,14 +2,13 @@
 
 ## Evidence and scope
 
-Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenModel.so`. This
-extends the earlier channel and style-prefix investigation. The native
+Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenModel.so`. The native
 property writer is `ObjectStrokeBinaryHandler::m_GetBinary_Property`,
 `0x2ec080`, and the reader is `m_ApplyBinary_Property`, `0x2ed138`.
 The flexible writer is `m_GetBinary_FlexibleData`, `0x2ec5dc`, and the reader
 is `m_ApplyBinary_FlexibleData`, `0x2ed720`.
 
-The SDK now exposes `StoredObject::stroke_metadata(page_bytes)` and
+The SDK exposes `StoredObject::stroke_metadata(page_bytes)` and
 `stroke_metadata_with_limits`. `StrokeMetadata` contains the common base,
 native property flags, point count, raw tool type, optional pen settings,
 original masks and trailing object data. It inspects the normal WDoc
@@ -136,13 +135,14 @@ Unknown enum values and negative integer values are retained. Absent fields,
 present zero values and present empty lists remain distinguishable.
 
 Ordinary `Stroke` decoding shares the style-prefix reader for pen references,
-color and width. It retains its existing RGB and width output and its
-bounded handling of later optional fields. Explicit metadata inspection
-provides the complete ARGB value, including transparent colors, and the
-additional pen properties. It does not yet apply these fields to SVG or PDF.
+color and width. Explicit metadata inspection provides the complete ARGB value,
+including transparent colors, and the additional pen properties. Rendering
+consumes the supported subset: [fountain geometry and opacity](fountain-parity.md)
+and [Marker4 geometry and opacity](marker4-rendering-findings.md) have separate
+evidence. Decoding a property does not establish its rendering support.
 Top-layer strokes require the separate capture selection and blend behavior
 documented in [capture composition findings](capture-composition-findings.md).
-The subsequent [pen opacity trace](pen-opacity-findings.md) confirms
+The [pen opacity trace](pen-opacity-findings.md) confirms
 alpha-preserving color conversion and Marker2 V1 mask/composite behavior.
 It also establishes that the fixed-opacity setting has no effect through
 the inspected DefaultPen and Marker bindings, while Marker2–4 expose no

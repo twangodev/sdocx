@@ -1,12 +1,9 @@
 # Marker4 V8 saved rendering
 
 Fixture `04-marker4-highlighter` contains 12 Marker4 strokes with settings
-`8;`, plus 29 FountainPen strokes. The old fallback discarded its ARGB alpha,
-scaled the width by 1/2.5, capped it at 12, and applied pressure to individual
-round-ended segments. Its 36.21-unit, 50%-alpha highlights became thin opaque
-lines.
+`8;`, plus 29 FountainPen strokes. Its highlights have width 36.21 and 50% alpha.
 
-The shared `ink/marker4.rs` path now preserves that alpha and reconstructs
+The shared `ink/marker4.rs` path preserves that alpha and reconstructs
 midpoint sampling at canonical inverse scale 1. SVG, PDF and replay consume the
 same centers, original-sample boundaries and rounded rectangular tip.
 The profile remains `Approximate`: the vector outline does not reproduce
@@ -41,8 +38,7 @@ channel exceeds 35. Colored-mask intersection over union improved from
 Mean absolute channel error within the shared colored mask fell from 35.18
 to 4.73. These measurements cover this fixture, not general native parity.
 
-Narrow ruled paper (template 1) is now supported by the shared background
-renderer. Remaining differences include native mask filtering,
-typed-text placement/size. Replay now shares the renderer's Darken highlighter
-batch. [V7 stylus support](marker4-v7.md) has since been added; other Marker4
-versions, rainbow effects and live prediction remain unsupported by this path.
+The comparison includes narrow ruled paper (template 1). Observed differences
+include native mask filtering and typed-text placement/size. Other Marker4
+versions, rainbow effects and live prediction remain unsupported by this path;
+[V7 stylus geometry](marker4-v7.md) has separate evidence.

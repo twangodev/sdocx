@@ -72,17 +72,14 @@ is documented in [object drawing findings](object-drawing-findings.md).
 Synthetic tests exercise every byte value with and without text, absent versus
 explicit zero, text slicing, the complete visible object path, and following
 shape fills. A truncated field cannot borrow its byte from the next frame.
-The workspace suite, Clippy with warnings denied, Rust 1.92, WASM checking and
-the existing locked formatting corpus pass with this field decoded.
 
 ## Implemented decoding
 
-`StoredPage` traversal now dispatches outer type 2 directly to a bounded frame
-reader. It no longer searches that payload for UUID-shaped strings, plausible
-rectangles or ASCII-looking text. It retains empty text, whitespace, a single
+`StoredPage` traversal dispatches outer type 2 directly to a bounded frame
+reader. It retains empty text, whitespace, a single
 character, Unicode, and small or negative placement coordinates.
 
-The existing note rich-text decoder now reads `TextCommon` inside frame 7's
+The note rich-text decoder reads `TextCommon` inside frame 7's
 flexible slice. A declared text length cannot borrow bytes from frame 2, the
 object hash or a sibling. The same bounded frame reader is used for note text,
 embedded tables and code blocks. Text/style/paragraph/object-span limits still

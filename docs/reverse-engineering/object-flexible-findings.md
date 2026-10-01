@@ -1,6 +1,6 @@
 # Optional common object fields
 
-## Evidence and status
+## Evidence
 
 Confirmed from Samsung Notes 4.4.45.37, `arm64-v8a/libSPenModel.so` and
 `libSPenBase.so`, without new SDOCX/PDF samples. The SDK exposes the mapped
@@ -54,8 +54,8 @@ it an empty field.
 `ReadString` at `0x2787d4`, used by bits 2, 4 and 19, treats the count as an
 unsigned number of UTF-16 units. It consumes `count * 2` bytes even for
 `0xffff`. A nullable-string helper would misalign these fields. The group-ID
-loader normalizes an empty string to a null pointer after reading it; a
-structural SDK should retain the distinction between absent and present-empty.
+loader normalizes an empty string to a null pointer after reading it. The SDK
+retains the distinction between absent and present-empty.
 
 Java `SpenObjectBase` names layout values normal (0), flow (1), block (2) and
 undefined (3). `ObjectBase_getLayoutType` at `0x30ae1c` directly calls the native
@@ -99,7 +99,7 @@ when `BelongsToSpan` and additional context checks pass (`0x2daecc`–`0x2daef0`
 
 `ObjectSpanSnapshot` exposes these stored values without applying the text
 layout's later transforms. The snapshot's relation to final page placement,
-and derived-object overrides of the update behavior, remain rendering work.
+and derived-object overrides of the update behavior, are unverified.
 
 ## A different static extraction format
 

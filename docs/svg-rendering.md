@@ -104,15 +104,9 @@ Font-name spans retain their native UTF-8 names. The typed family value uses
 stored comma or quote cannot introduce additional font families or XML nodes.
 Unknown names remain in the SVG and can use the declared generic fallback.
 
-Text remains selectable SVG text. Font measurement, wrapping, paragraph layout
-and embedded-object placement are still being consolidated; shared style
-resolution alone does not establish native typography parity.
-Wrapping retains spaces in selectable text. Hash-locked native text expectations
-cover ordinary body and heading origins on the first four visible pages and
-code lines on the last two pages. Tests retain a 0.25 SVG-unit tolerance;
-fresh ordinary baseline comparisons are within 0.0001 units after converting
-the PDF's actual viewport. These observations do not establish
-native kerning, fallback, justification, or recomputed pagination parity.
+Text remains selectable SVG text, including spaces retained by wrapping.
+The [text support table](text-vector-support.md) describes the shared Rust
+layout engine, font resources, diagnostics and SVG/PDF transport limits.
 
 Missing text styles use Samsung's `#262626` base color and logical font size 17,
 then apply the current theme and coordinate conversion. Font-size conversion
@@ -127,34 +121,10 @@ density conversion, including within local spans and headings. The device-defaul
 `i32::MIN` sentinel is retained but currently resolves to zero delta; Samsung's
 device configuration is unavailable. Margins and paragraph pixel spacing use
 that same document density. Stored object coordinates remain unchanged.
-Ordinary placed, shape, flow, table and code lines use their largest local font
-size, with a default 1.35 spacing multiplier. Pixel line spacing adds scaled
-pixels to that size; percentage spacing multiplies it. The shared native
-baseline is line advance minus 0.35 times that font size. The body starts at
-its scaled component margin and applies enabled paragraph spacing, without
-adding flow-page padding. Embedded objects have separate height/margin rules.
-Point and checkbox markers use typed vector artwork and an explicit
-mobile/tablet/UWP display target shared by preview and export. Numbered markers
-own a nested shared text layout using the first content span's resolved size
-and the default sans face. Their measured reservation precedes wrapping; the
-first line retains marker placement, including gravity. Fonts and diagnostics
-share scoped registries, and painting registers retained marker faces for
-embedding. Body flow uses the same layout loop with an explicit saved-slice
-continuation policy when native capture context is unavailable. Validated
-capture windows measure native paragraph and overlap context through that same
-Rust engine, then project the requested page. Retained line, glyph, marker and
-object bounds filter painting; code and table child text receives its translated
-viewport. Measurement registries are separate from painted fonts. Table-cell
-placement and post-code text origins match the locked five-page native reference;
-numeric text advance retains a font-dependent difference, and complete pagination
-remains unverified. Prepared tables retain cell layouts, split lists and pending
-row gaps for bounded dense unmerged/merged grids. Cold row growth and warm grow/shrink,
-first-line movement and trailing-space compression follow the native state
-ordering. Ordinary model-cell drawing and paged table layout remain separate
-paths; sparse grids, rotated/nested objects and partial horizontal obstacles
-remain outside the prepared subset.
 See [native text layout inputs](reverse-engineering/text-layout-findings.md)
-for context-dependent scale, spacing, margins and gravity contracts.
+for scale, spacing, margins, gravity, markers and embedded-object contracts,
+and [table findings](reverse-engineering/table-code-findings.md) for captured
+preparation and painting rules.
 
 Missing or malformed saved sections use validated full-source body reflow through
 the same engine and all physical page boundaries. Balanced slices remain useful

@@ -199,21 +199,17 @@ and calls writer slot 168 at `0x38317c`. PDF relocation `0xb00b0` identifies
 that slot as `PDFWriter::DrawImage`. This is a separate PDF insertion route
 from the `PdfImageAdapter` used by `NotePDFExporterVectorList`.
 
-## Consequences for SDK work
+## SDK composition and evidence limits
 
 Standard PDF evidence supports explicit base, top and masking passes,
 interleaving within the ordinary pass, and a Darken-composited top batch.
-The SDK now has an ordered typed representation with container boundaries and
+The SDK has an ordered typed representation with container boundaries and
 root pass selection, shared by SVG, vector PDF and replay. Rust regressions
 cover image/stroke and shape/stroke interleaving, vector PDF paint order and
 selectable text. The shared SVG top batch uses page-capture Lighten on dark
 paper rather than Standard PDF's unconditional Darken; that remains an explicit
 export policy. Native intersection selection and wider pen parity remain open.
 
-The native exporter name is also insufficient metadata for new fixtures.
-Record the actual UI choice, page mode and background kind for each pair.
-Useful comparisons include Standard and Notes-compatible exports of the
-same light/dark/PDF-background page, with interleaved text boxes, images,
-ordinary strokes, highlighters and masking objects. Single-page segmentation,
-editor changes to layer selection and pen-level blending remain open APK investigations;
-visual fidelity still requires new captured pairs.
+The exporter name alone does not identify the UI choice, page mode or background
+kind. Single-page segmentation, editor changes to layer selection and pen-level
+blending are not established by this trace.
