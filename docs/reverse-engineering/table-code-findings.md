@@ -195,8 +195,8 @@ Drawing's cold `TableLayout::init`, `0xaa6b4`, reads actual row heights at
 `0xaaa60` and column widths at `0xaaab8`. `extendRowBySplit`, `0xaaf2c`,
 measures cell height differences and grows the row for a strictly positive
 maximum difference (`0xab0ac`–`0xab0f0`). The warm
-`updatePositionFromRow`, `0xaecf4`, selects the largest measured visible-cell
-height. Only a result below the small-height threshold is replaced by
+`updatePositionFromRow`, `0xaecf4`, selects the largest measured frame-owner
+height across every column position. Only a result below the small-height threshold is replaced by
 `ObjectTable::GetMinRowHeight` (`0xaedfc`–`0xaee10`); the stored minimum is
 not an unconditional lower clamp on every nonempty row.
 
@@ -206,6 +206,49 @@ and `TableRow::GetMaxHeight`, `0x3c4244`, but its presence must not reject the
 export preparation path or introduce a maximum-height clamp. Rust accepts
 saved row maxima while retaining their parsed values. The table-wide
 maximum-height flag is separate and still outside the supported prepared path.
+
+### Warm row sizing from cached owner measurements
+
+For each row from the supplied start index onward, Drawing
+`updatePositionFromRow`, `0xaecf4`, calls `ObjectTable::GetFrameCell` for each
+column (`0xaed90`). It looks up the owner's cached text layout and skips null
+layouts. Widget `ObjectTextLayout::GetMeasuredHeight`, `0xd3b78`, reads the
+cached `f32` at offset 404; no text shaping occurs in this routine. An owner
+from an earlier row contributes its full measured height again. Covered raw
+cells' cached heights do not contribute, even when those cells appear in the
+separate paint-visible list.
+
+The maximum starts at zero. A result strictly below `0.001f` is replaced by
+the indexed saved row minimum. Heights at or above that threshold are not
+clamped to the minimum. The saved row maximum is ignored. Only an absolute
+`f32` difference strictly greater than `0.001f` changes geometry: `extendRow`
+changes the physical row height, then `offsetFromRow` moves subsequent rows.
+Rows before the start index retain their frames.
+
+[The warm-row capture](../../conformance/table-warm-rows.json), SHA-256
+`4a1b17063dadcf9d8d3ca819dbf92b6f75f689f87b3e1f38ab4369d3f215610e`,
+contains 142 inputs and 1,189 slot frames. It covers merged owners, covered-span
+chains, supplied/null layout measurements, threshold-adjacent heights, saved
+minima/maxima, start indices and pending gaps. Each input produces identical
+outputs with allocation fills `0x00`, `0xa5` and `0xff`. The
+[Rust capture module](../../conformance/native_table/rows.rs) checks Model,
+Drawing and Base hashes recorded below, plus Widget SHA-256
+`cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9`.
+
+The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_row_tests.rs)
+matches every coordinate and pending-gap bit using production row updates.
+Preparation caches the bounded `TableGrid` ownership map once and warm sizing
+reads owner measurements through that map. Export preparation still accepts
+only unmerged grids. The capture supplies measured heights directly and uses
+the isolated text initialization described below; it does not establish native
+text measurement, complete merged pagination or device appearance.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --warm-rows scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so
+```
 
 ### Cold frame cache and row updates
 

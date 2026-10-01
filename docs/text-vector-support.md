@@ -141,6 +141,10 @@ portable performance thresholds:
 - [Native background selection](../conformance/table-backgrounds.json) covers
   heading overrides and default inheritance. The same vector export regressions
   check fill alpha and text contrast in saved/prepared tables under both themes.
+- [Native warm row sizing](../conformance/table-warm-rows.json) matches Rust
+  coordinate and pending-gap bits across 142 inputs using supplied frame-owner
+  heights. Native text measurement and complete merged pagination remain outside
+  this evidence.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
