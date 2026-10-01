@@ -2174,18 +2174,76 @@ baseline (`0x380e28`–`0x380e44`); color emoji selects a different rectangle
 endpoint. The Rust PDF path preserves full XY from the canvas contract.
 Arbitrary combining-mark Y parity with captured Samsung PDFs is not established.
 
-Native synthesis also has distinct boundaries. `FontFakery`'s low byte selects
-fake bold and its high byte selects fake italic (`0x886bc`–`0x886e4`). The
-Skia adapter subtracts 0.25 from existing skew for fake italic
-(`0x887f0`–`0x88814`), while canvas logical italic sets skew to −0.25
-(`0x63c64`–`0x63c84`). Shaping already applies base skew to retained offsets
-through `x_offset − y_offset * skew` (`0x9cab0`). The active measurement helper
-unexpectedly reads span bit 2 for base skew and bit 1 for fake bold
-(`0x76b7c`–`0x76bb4`), unlike the canvas flag mapping; it copies that skew
-into MinikinPaint (`0x76c80`–`0x76c8c`). This anomaly needs captured evidence.
-The retained PDF adapter currently returns `UnsupportedText` for required
-synthetic italic/bold or variable-font instances instead of guessing their
-outline transform. Supported body faux bold retains its existing stroke policy.
+Native synthesis has separate measurement, canvas and PDF contracts. The
+logical drawing masks are bold `0x1`, italic `0x2` and underline `0x4`
+(`0x90f88`–`0x90f94`, `0x90f08`–`0x90f14`, `0x90f58`, `0x91088`).
+`FontFakery`'s low byte selects fake bold and its high byte selects fake italic
+(`0x886bc`–`0x886e4`). The matcher requires requested weight at least 600 and
+requested-minus-selected weight at least 200 for fake bold; fake italic requires
+requested italic and a nonitalic selected face (`0x91478`–`0x9149c`). Rust retains
+those decisions on the measured run after coverage fallback. Placed text requests
+bold faces, while Flow text retains its regular-face measurement policy.
+
+Canvas logical italic sets skew to −0.25 (`0x63c64`–`0x63c84`), after assigning
+the physical typeface. `TextPaintImplSkia::setTypeface(Font*)` at `0x7be84`
+only retrieves that physical typeface (`0x7bf38`–`0x7bf40`); it does not also
+apply cached fakery. The separate fakery adapter subtracts 0.25 from existing
+skew (`0x887f0`–`0x88814`), but the ordinary canvas call does not accumulate
+that additional skew. Canvas path emboldening in `libSPenSkia.so` uses
+`FT_MulFix(unitsPerEM, yScale) / 34` and skips already-bold FreeType faces
+(`0x27e9ac`–`0x27ea40`). This is distinct from the PDF stroke policy.
+
+Shaping applies base skew to retained offsets through
+`x_offset − y_offset * skew` (`0x9cab0`). The active measurement helper
+unexpectedly reads literal mask `0x4` for base skew and `0x2` for fake bold
+(`0x76b84`, `0x76ba0`), unlike the logical drawing flags. Its caller passes
+the same span buffer without shifting flags: `GetSpan` at `0x78d28`,
+`AddStyleRun` at `0x78d30`–`0x78d48`, and the helper at `0x76ad4` through
+`0x76800`/`0x76880`. `InitMinikinFontStyle` initializes weight 400 and
+italic false (`0x76c18`–`0x76c2c`). Runtime captures are needed before changing
+Rust's shaping metrics or face-selection policy to reproduce this anomaly.
+This milestone leaves retained shaping advances and offsets unchanged.
+
+In cached Samsung Notes 4.4.45.37 ARM64 `libSPenPdf.so`,
+`PdfiumTextHandler::DrawText` at `0xa2230` maps logical bold `0x1` to fill plus
+stroke mode 2 and a constant **0.25 PDF-point** stroke
+(`0xa2334`, `0xa2344`, `0xa2354`–`0xa235c`). Logical italic `0x2` adds
+**+0.25 to the PDF Y-up text-matrix c term** (`0xa2348`–`0xa234c`, `0xa24a8`),
+equivalent to −0.25 in unrotated Y-down geometry. This handler has no placed/Flow
+or selected-bold-face exemption. `appendTextBlock` copies logical flags
+(`0x68148`–`0x68158`), and Composer forwards those bits
+(`0x3836d0`–`0x3836f4`). The writer scales rectangles and glyph X coordinates
+before this handler (`0x380f80`, `0x380fac`–`0x380fb4`). A 1.8 world-to-point
+ratio explains the historical 0.45 world-unit stroke; it does not establish a
+fixed 0.45 stroke at arbitrary export DPI.
+
+The retained Rust PDF adapter now supports synthesized italic and logical bold.
+It converts the 0.25-point pen to document units using export DPI. Cached typed
+glyph-outline commands are sheared around each retained origin, then stroked
+under the unsheared ancestor transform. Embedded selectable fills compensate
+glyph origins and advances before applying the run shear, preserving physical
+XY placement, including combining marks and nonzero vertical advances. Stroke
+paths and font fills share one logical `ActualText` block. Fonts, paths and
+derived geometry are validated before mutating the surface; normal neighboring
+runs recover their original transform and paint state.
+
+Rust keeps physically italic/oblique selected faces without adding a second
+shear. That selected-face policy does not establish equivalence to the native
+PDF handler's unconditional logical-italic term or close native font selection.
+The 90-degree regression checks Rust's composition and pivot, not arbitrary
+Samsung rotation-matrix parity. Variable-font instances remain unsupported;
+bold glyphs with color, bitmap or SVG outlines also fail explicitly. SVG retains
+the existing Flow 0.45-world-unit stroke and preserves requested synthetic
+styles when overriding a coverage-fallback face. Browser SVG synthesis and
+generic serialized-SVG PDF conversion do not establish the retained PDF
+outline contract or the canvas emboldening policy.
+
+The closing SVG audit also reproduced style leakage on a regular-only
+DejaVu Sans face with source `لالا`: italic/bold on the first two scalars
+incorrectly made the plain second span italic. Fallback-run coalescing now
+requires equal retained synthesis metadata. The regression failed before
+that guard and passes for standalone, Flow, code and table text, preserving
+the existing complex-glyph positioning diagnostic and the complete source.
 
 Decorations use anchor-entry X and advance endpoints (`0x66758`–`0x6678c`),
 not glyph ink bounds. Backgrounds use individual source-entry rectangles;
@@ -2216,14 +2274,31 @@ paragraphs also retain their original marker-before-content order. Glyph tests
 pin DejaVu Sans bytes (SHA-256
 `57f73e11f51999432bf7ab22ce55b6f945d5eca1bf824404cfa9ec2e3718c84e`), native
 HarfBuzz glyphs 5365/1399 and an isolated-run X of 58.173828125, then inspect
-embedded outlines and PDF origins. The workspace suite passes, including 486
-core unit tests and 22 retained-PDF integration tests, as do render-only and
-minimal-feature checks, formatting and strict workspace Clippy. Five external
-native-reference checks pass. The final built WASM matches the served artifact;
-Chromium passes 57 tests with one WebKit-only test skipped, including the new
+embedded outlines and PDF origins. At the source-order milestone `d44d379`,
+the workspace suite passed, including 486 core unit tests and 22 retained-PDF
+integration tests, as did render-only and minimal-feature checks, formatting
+and strict workspace Clippy. Five external native-reference checks passed.
+The built WASM matched the served artifact; Chromium passed 57 tests with
+one WebKit-only test skipped, including the
 embedded-font and logical-source PDF download regression. These gates validate
 this transport milestone, not complete visual parity or the outstanding limits
 above.
+
+The synthesis regressions pin the same font and GIDs, verify per-glyph contours
+independently through `ttf-parser`, and normalize PDF matrices and strokes at
+72, 96 and 144 DPI. On pristine `d44d379`, the final public retained-PDF test file
+compiled and produced 22 passing tests plus four behavioral failures reporting
+unsupported synthesis; the implementation passes all 26. Additional contract
+checks cover regular-only fonts through shape preview/replay and native PDF
+export, and mixed styles through both native document PDF and generic SVG
+conversion for placed text, Flow, code and table cells. Chromium exercises
+regular and synthesized bold-italic Arabic through actual WASM preview and PDF
+downloads, checking embedded font bytes, normalized shear, the physical pen,
+exact logical source and absence of image resources or canvas.
+
+The bounded milestone and remaining work are listed in
+[Vector text support](../text-vector-support.md). That support statement
+separates implemented behavior, captured native evidence and transport limits.
 
 ## Evidence required before claiming visual parity
 

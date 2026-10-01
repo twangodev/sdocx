@@ -71,6 +71,7 @@ Use the detailed Rust parse APIs or CLI diagnostics to inspect unsupported featu
 
 ## Documentation
 
+- [Rust vector text support and remaining scope](docs/text-vector-support.md)
 - [Format and reverse-engineering notes](docs/reverse-engineering/README.md)
 - [Web app](web/README.md) and [debugger guide](docs/web-debugger.md)
 - [Conformance testing](conformance/README.md) and [compatibility dataset](https://huggingface.co/datasets/twangodev/sdocx-compatibility)
