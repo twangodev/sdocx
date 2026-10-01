@@ -230,7 +230,7 @@ fn paragraph_spacing_and_crlf_ordinals_are_applied_to_placed_text() {
     ];
     assert_eq!(
         lines(&render(content)),
-        vec![("ABC".into(), 26.0, 80.0), ("ABC".into(), 121.34, 161.75),]
+        vec![("ABC".into(), 26.0, 80.0), ("ABC".into(), 121.34, 222.5),]
     );
 }
 

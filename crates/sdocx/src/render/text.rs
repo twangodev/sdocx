@@ -130,6 +130,16 @@ impl TextSettings {
         finite_native_geometry(f64::from(pixels))
     }
 
+    fn checked_caret_default(self, size: f32) -> Option<f64> {
+        size.is_finite().then_some(())?;
+        let pixels = match self.font_size_units {
+            FontSizeUnits::Logical => size.mul_add(self.scale, self.font_size_delta * self.scale),
+            FontSizeUnits::Resolved => size,
+        };
+        (pixels > 0.0).then_some(())?;
+        finite_native_geometry(f64::from(pixels))
+    }
+
     fn checked_pixels(self, value: f32) -> Option<f64> {
         finite_native_geometry(f64::from(value * self.scale))
     }
@@ -341,6 +351,66 @@ impl<'a> StyledText<'a> {
         self.resolved_style_at(character, theme, predefined).0
     }
 
+    pub fn font_size_at_caret(&self, character: usize) -> f64 {
+        self.resolved_caret_font_size(character).0
+    }
+
+    pub fn caret_line_height(&self, character: usize) -> f64 {
+        let font_size = self.font_size_at_caret(character) as f32;
+        let spacing = self.index.paragraph_index(character).and_then(|ordinal| {
+            paragraph_layout(self.text_box, ordinal, self.settings).line_spacing
+        });
+        let height = match spacing {
+            Some(spacing) if spacing.value.is_finite() && spacing.value > 0.0 => match spacing.kind
+            {
+                LineSpacingType::Pixels => {
+                    let pixels = self.settings.pixels(spacing.value) as f32;
+                    if pixels != 0.0 {
+                        font_size + pixels
+                    } else {
+                        font_size * 1.35_f32
+                    }
+                }
+                LineSpacingType::Percent => font_size.mul_add(spacing.value - 1.0, font_size),
+                _ => font_size * 1.35_f32,
+            },
+            _ => font_size * 1.35_f32,
+        };
+        f64::from(height)
+    }
+
+    fn resolved_caret_font_size(&self, character: usize) -> (f64, bool) {
+        let default = self.text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE);
+        let resolved_default = self.settings.checked_caret_default(default);
+        let Some(utf16) = self.index.char_to_utf16(character) else {
+            return (
+                resolved_default.unwrap_or_else(|| self.settings.font_size(default)),
+                resolved_default.is_none(),
+            );
+        };
+        let mut invalid_override = false;
+        for span in self.text_box.spans.iter().rev() {
+            if span.kind != RichTextSpanType::FontSize
+                || span.start_utf16 > span.end_utf16
+                || self.index.utf16_to_char(span.start_utf16).is_none()
+                || self.index.utf16_to_char(span.end_utf16).is_none()
+                || !span.contains_caret(utf16)
+            {
+                continue;
+            }
+            if let Some(value) = span.font_size_value() {
+                if let Some(size) = self.settings.checked_font_size(value) {
+                    return (size, invalid_override);
+                }
+                invalid_override = true;
+            }
+        }
+        (
+            resolved_default.unwrap_or_else(|| self.settings.font_size(default)),
+            invalid_override || resolved_default.is_none(),
+        )
+    }
+
     fn resolved_style_at(
         &self,
         character: usize,
@@ -531,12 +601,13 @@ impl<'a> StyledText<'a> {
                 .any(|margin| self.settings.checked_pixels(*margin).is_none())
         });
         if self.index.is_empty() {
-            let (style, invalid) = self.resolved_style_at(0, theme, None);
+            let style = self.style_at(0, theme, None);
+            let invalid = self.resolved_caret_font_size(0).1;
             if invalid || invalid_margins {
                 record(&style);
             }
         }
-        for paragraph in self.index.paragraphs() {
+        for paragraph in self.index.display_paragraphs() {
             let ordinal = self.index.paragraph_index(paragraph.content.start).unwrap();
             let layout = paragraph_layout(self.text_box, ordinal, self.settings);
             let mut ranges = self.segments(paragraph.content.clone()).collect::<Vec<_>>();
@@ -544,8 +615,11 @@ impl<'a> StyledText<'a> {
                 ranges.push(paragraph.content.clone());
             }
             for range in ranges {
-                let (style, invalid_font) =
+                let (style, mut invalid_font) =
                     self.resolved_style_at(range.start, theme, layout.predefined_style);
+                if range.is_empty() {
+                    invalid_font = self.resolved_caret_font_size(range.start).1;
+                }
                 let objects = self.objects.in_range(range.clone());
                 let object_only = !range.is_empty() && objects.len() == range.len();
                 let inherits_separator = range.start == paragraph.content.start
@@ -675,6 +749,88 @@ mod tests {
             interval_type: crate::SpanIntervalType::from(0),
             payload: argb.to_le_bytes().to_vec(),
         }
+    }
+
+    #[test]
+    fn caret_font_sizes_use_native_intervals_without_changing_glyph_styles() {
+        let mut text = text_box();
+        text.text = "A\n".into();
+        text.font_size = Some(20.0);
+        let theme = RenderTheme::for_canvas(false);
+        for (raw, expected) in [(0, 20.0), (1, 40.0), (2, 20.0), (3, 40.0), (9, 40.0)] {
+            let mut span = font_span(40.0, 0, 2);
+            span.interval_type = crate::SpanIntervalType::from(raw);
+            text.spans = vec![span];
+            let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
+            assert_eq!(styled.font_size_at_caret(2), expected, "interval {raw}");
+            assert_eq!(styled.style_at(0, theme, None).font_size, 40.0);
+            assert_eq!(styled.style_at(1, theme, None).font_size, 40.0);
+        }
+    }
+
+    #[test]
+    fn caret_font_sizes_preserve_zero_length_priority_and_utf16_boundaries() {
+        let mut text = text_box();
+        text.text = "😀\n".into();
+        text.font_size = Some(20.0);
+        text.spans = vec![
+            font_span(25.0, 0, 3),
+            font_span(31.0, 2, 2),
+            font_span(37.0, 1, 1),
+            font_span(43.0, 4, 4),
+            font_span(49.0, 3, 2),
+        ];
+        let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
+        assert_eq!(styled.font_size_at_caret(1), 31.0);
+        assert_eq!(styled.font_size_at_caret(2), 20.0);
+        assert_eq!(styled.font_size_at_caret(3), 20.0);
+        assert_eq!(
+            styled
+                .style_at(1, RenderTheme::for_canvas(false), None)
+                .font_size,
+            25.0
+        );
+        text.spans.push(font_span(41.0, 2, 2));
+        let styled = StyledText::new(&text, TextContext::Flow, TextSettings::default());
+        assert_eq!(styled.font_size_at_caret(1), 41.0);
+    }
+
+    #[test]
+    fn caret_font_sizes_apply_native_scaling_once_and_report_invalid_overrides() {
+        let mut text = text_box();
+        text.spans = vec![font_span(13.0, 2, 2)];
+        let settings = TextSettings {
+            scale: 2.5,
+            font_size_delta: 1.0,
+            ..Default::default()
+        };
+        let styled = StyledText::new(&text, TextContext::Flow, settings);
+        assert_eq!(styled.font_size_at_caret(2), 35.0);
+        assert_eq!(styled.font_size_at_caret(0), 45.0);
+        let styled = StyledText::new(&text, TextContext::Placed, TextSettings::resolved());
+        assert_eq!(styled.font_size_at_caret(2), 13.0);
+        text.spans.push(font_span(f32::INFINITY, 2, 2));
+        let styled = StyledText::new(&text, TextContext::Flow, settings);
+        assert_eq!(styled.resolved_caret_font_size(2), (35.0, true));
+    }
+
+    #[test]
+    fn default_caret_font_preserves_native_fma_without_changing_glyph_scaling() {
+        let text = text_box();
+        let settings = TextSettings {
+            scale: 361.0 / 360.0,
+            font_size_delta: 14.0,
+            ..Default::default()
+        };
+        let styled = StyledText::new(&text, TextContext::Flow, settings);
+        assert_eq!((styled.font_size_at_caret(0) as f32).to_bits(), 0x41f8_b05b);
+        assert_eq!(
+            (styled
+                .style_at(0, RenderTheme::for_canvas(false), None)
+                .font_size as f32)
+                .to_bits(),
+            0x41f8_b05c,
+        );
     }
 
     #[test]

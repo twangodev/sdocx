@@ -560,8 +560,8 @@ impl TextLayout {
         }
     }
 
-    fn apply_gravity(&mut self, gravity: Option<u8>, outer_height: f64) {
-        let available_height = (outer_height - self.height()).max(0.0);
+    fn apply_gravity(&mut self, gravity: Option<u8>, outer_height: f64, content_height: f64) {
+        let available_height = (outer_height - content_height).max(0.0);
         let offset = match gravity {
             Some(1) => available_height / 2.0,
             Some(2) => available_height,
@@ -583,7 +583,7 @@ pub(in crate::render) fn measure_paragraph(
     if source.is_empty() {
         return vec![WrappedLine::unmeasured(
             source.clone(),
-            styled.line_font_size(source, theme, predefined),
+            styled.font_size_at_caret(source.start),
         )];
     }
     wrap_paragraph(styled, source.clone(), width, theme, predefined, renderer).unwrap_or_else(
@@ -667,6 +667,11 @@ impl LayoutContext {
     }
 }
 
+fn empty_gravity_height(styled: &StyledText<'_>, margins: [f64; 4]) -> f64 {
+    let height = styled.caret_line_height(0) as f32;
+    f64::from((height + margins[1] as f32) + margins[3] as f32)
+}
+
 fn layout_text_with_context(
     styled: &StyledText<'_>,
     frame: TextFrame<'_>,
@@ -694,18 +699,7 @@ fn layout_text_with_context(
     );
     let content_left = frame.bbox.x_min + margins[0];
     let content_width = outer_width - margins[0] - margins[2];
-    let paragraphs = styled
-        .index
-        .paragraphs()
-        .map(|mut paragraph| {
-            if matches!(context, LayoutContext::Flow | LayoutContext::Capture) {
-                let content = styled.index.slice(paragraph.content.clone()).unwrap();
-                paragraph.content.end =
-                    paragraph.content.start + content.trim_end_matches('\r').chars().count();
-            }
-            paragraph
-        })
-        .collect::<Vec<_>>();
+    let paragraphs = styled.index.display_paragraphs().collect::<Vec<_>>();
     let paragraph_layouts = paragraphs
         .iter()
         .map(|paragraph| {
@@ -844,15 +838,20 @@ fn layout_text_with_context(
         }
     }
     let content_height = if styled.index.is_empty() {
-        styled.style_at(0, theme, None).font_size + margins[1] + margins[3]
+        0.0
     } else {
         cursor.height_with_bottom(margins[3])
+    };
+    let gravity_height = if styled.index.is_empty() {
+        empty_gravity_height(styled, margins)
+    } else {
+        content_height
     };
     let mut layout = TextLayout {
         lines,
         content_height,
     };
-    layout.apply_gravity(frame.gravity, outer_height);
+    layout.apply_gravity(frame.gravity, outer_height, gravity_height);
     layout
 }
 
@@ -921,6 +920,133 @@ mod tests {
             context,
             None,
         )
+    }
+
+    #[test]
+    fn display_paragraphs_retain_each_native_separator_line() {
+        for (value, sources) in [
+            ("A\n", vec![0..1, 2..2]),
+            ("\nA", vec![0..0, 1..2]),
+            ("\n\n", vec![0..0, 1..1, 2..2]),
+            ("A\r\nB", vec![0..1, 2..2, 3..4]),
+        ] {
+            let mut content = text(value);
+            content.font_size = Some(20.0);
+            for context in [
+                LayoutContext::Frame,
+                LayoutContext::Flow,
+                LayoutContext::Capture,
+            ] {
+                let plan = measure_with_context(&content, &[], context);
+                assert_eq!(
+                    plan.lines
+                        .iter()
+                        .map(|line| line.line.source.clone())
+                        .collect::<Vec<_>>(),
+                    sources,
+                    "{value:?}",
+                );
+                assert_eq!(plan.height(), sources.len() as f64 * 27.0, "{value:?}");
+                for (index, line) in plan.lines.iter().enumerate() {
+                    assert_eq!(line.baseline, 120.0 + index as f64 * 27.0, "{value:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn separator_only_lines_use_caret_fonts_without_changing_content_prefix_fonts() {
+        let mut content = text("A\n");
+        content.font_size = Some(20.0);
+        content.spans.push(crate::RichTextSpan {
+            kind: crate::RichTextSpanType::FontSize,
+            start_utf16: 2,
+            end_utf16: 2,
+            interval_type: crate::SpanIntervalType::ClosedOpen,
+            payload: 60.0_f32.to_le_bytes().to_vec(),
+        });
+        let plan = measure(&content, &[]);
+        assert_eq!(plan.lines[0].line.font_size, 20.0);
+        assert_eq!(plan.lines[1].line.font_size, 60.0);
+        assert_eq!(plan.lines[1].baseline, 187.0);
+        assert_eq!(plan.height(), 108.0);
+
+        content.text.push('B');
+        let plan = measure(&content, &[]);
+        assert_eq!(plan.lines[1].line.font_size, 20.0);
+        assert_eq!(plan.lines[1].baseline, 147.0);
+        assert_eq!(plan.height(), 54.0);
+    }
+
+    #[test]
+    fn initial_empty_paragraph_uses_the_start_caret_font() {
+        let mut content = text("\nA");
+        content.font_size = Some(20.0);
+        content.spans.push(crate::RichTextSpan {
+            kind: crate::RichTextSpanType::FontSize,
+            start_utf16: 0,
+            end_utf16: 0,
+            interval_type: crate::SpanIntervalType::ClosedOpen,
+            payload: 40.0_f32.to_le_bytes().to_vec(),
+        });
+        let plan = measure(&content, &[]);
+        assert_eq!(plan.lines[0].line.font_size, 40.0);
+        assert_eq!(plan.lines[0].baseline, 140.0);
+        assert_eq!(plan.lines[1].baseline, 174.0);
+        assert_eq!(plan.height(), 81.0);
+    }
+
+    #[test]
+    fn entirely_empty_text_has_no_measured_lines_or_height() {
+        let mut content = text("");
+        content.font_size = Some(20.0);
+        content.margins = Some([2.0, 3.0, 5.0, 7.0]);
+        for gravity in [None, Some(1), Some(2)] {
+            content.gravity = gravity;
+            let plan = measure(&content, &[]);
+            assert!(plan.lines.is_empty());
+            assert_eq!(plan.height(), 0.0);
+        }
+    }
+
+    #[test]
+    fn empty_gravity_height_uses_native_spacing_and_f32_addition_order() {
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let mut content = text("");
+        content.font_size = Some(20.0);
+        let height = |content: &RichTextBox, margins| {
+            let styled = StyledText::new(content, TextContext::Placed, settings);
+            empty_gravity_height(&styled, margins)
+        };
+        assert_eq!(height(&content, [0.0; 4]), 27.0);
+        assert_eq!(height(&content, [0.0, 3.0, 0.0, 7.0]), 37.0);
+        content.paragraphs.push(RichTextParagraph {
+            kind: RichTextParagraphType::LineSpacing,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [1_u32.to_le_bytes(), 1.6_f32.to_le_bytes()].concat(),
+        });
+        assert_eq!(height(&content, [0.0; 4]), 32.0);
+        content.paragraphs[0].payload = [0_u32.to_le_bytes(), 7.0_f32.to_le_bytes()].concat();
+        assert_eq!(height(&content, [0.0; 4]), 27.0);
+
+        content.font_size = Some(16_777_216.0);
+        content.paragraphs[0].payload = [1_u32.to_le_bytes(), 1.0_f32.to_le_bytes()].concat();
+        assert_eq!(height(&content, [0.0, 1.0, 0.0, 1.0]), 16_777_216.0);
+
+        content.font_size = Some(20.0);
+        content.paragraphs[0].payload =
+            [0_u32.to_le_bytes(), f32::MIN_POSITIVE.to_le_bytes()].concat();
+        let settings = TextSettings {
+            scale: f32::MIN_POSITIVE,
+            ..TextSettings::resolved()
+        };
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        assert_eq!(empty_gravity_height(&styled, [0.0; 4]), 27.0);
     }
 
     #[test]
@@ -1061,9 +1187,9 @@ mod tests {
         empty.gravity = Some(1);
         let plan = measure(&empty, &bands);
         assert!(plan.lines.is_empty());
-        assert_eq!(plan.height(), 15.0);
+        assert_eq!(plan.height(), 0.0);
         empty.margins = Some([0.0, 2.0, 0.0, -3.0]);
-        assert_eq!(measure(&empty, &bands).height(), 9.0);
+        assert_eq!(measure(&empty, &bands).height(), 0.0);
 
         let mut centered = text("ABC");
         centered.gravity = Some(1);
@@ -1369,14 +1495,24 @@ mod tests {
     }
 
     #[test]
-    fn flow_trims_terminal_carriage_returns_without_changing_placed_source_ranges() {
-        for (source, placed_end) in [("A\r", 2), ("A\r\r\n", 2)] {
+    fn all_layout_contexts_keep_terminal_carriage_return_paragraphs() {
+        for (source, sources) in [
+            ("A\r", vec![0..1, 2..2]),
+            ("A\r\r\n", vec![0..1, 2..2, 3..3, 4..4]),
+        ] {
             let content = text(source);
             let placed = measure(&content, &[]);
             let flow = measure_with_context(&content, &[], LayoutContext::Flow);
-            assert_eq!(placed.lines[0].line.source, 0..placed_end);
-            assert_eq!(flow.lines[0].line.source, 0..1);
-            assert_eq!(placed.lines[0].baseline, flow.lines[0].baseline);
+            for plan in [placed, flow] {
+                assert_eq!(
+                    plan.lines
+                        .iter()
+                        .map(|line| line.line.source.clone())
+                        .collect::<Vec<_>>(),
+                    sources,
+                );
+                assert_eq!(plan.height(), sources.len() as f64 * 13.5);
+            }
         }
     }
 
@@ -1405,7 +1541,9 @@ mod tests {
         close(placed.lines[0].baseline, 110.0);
         close(flow.lines[0].baseline, 110.0);
         close(placed.lines[1].baseline, 123.5);
-        close(flow.lines[1].baseline, 128.5);
+        close(flow.lines[1].baseline, 123.5);
+        close(placed.lines[2].baseline, 142.0);
+        close(flow.lines[2].baseline, 142.0);
     }
 
     #[test]

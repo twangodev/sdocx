@@ -447,7 +447,7 @@ impl PreparedTable {
                 .unwrap_or(0.0)
         };
         let measured_height = if source.content.text.is_empty() {
-            native_measured_height(layout.height())?
+            empty_cell_height(&styled, source, width, &cell.bands, theme, renderer)?
         } else {
             native_add(
                 last_line_bottom,
@@ -536,6 +536,102 @@ impl PreparedTable {
             native_add(self.first_line_minimum(0, table, renderer)?, first.y_min)?;
         Ok(())
     }
+}
+
+fn empty_cell_height(
+    styled: &StyledText<'_>,
+    source: &RichTextTableCell,
+    width: i32,
+    bands: &BandList,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Result<f64, ObjectDiagnosticKind> {
+    let margins = source
+        .content
+        .margins
+        .unwrap_or([0.0; 4])
+        .map(|margin| renderer.settings.pixels(margin) as f32);
+    let paragraph = super::text::paragraph_layout(&source.content, 0, renderer.settings);
+    if paragraph.spacing_before_invalid {
+        return Err(ObjectDiagnosticKind::InvalidBounds);
+    }
+    let [left_indent, right_indent] = paragraph.indent_insets(renderer.settings);
+    let mut style = styled.style_at(0, theme, paragraph.predefined_style);
+    style.font_size = styled.font_size_at_caret(0);
+    let marker_width = paragraph
+        .bullet
+        .and_then(|bullet| {
+            super::marker::PreparedMarker::prepare(
+                bullet,
+                paragraph.indent_level,
+                &style,
+                theme,
+                renderer,
+            )
+        })
+        .map_or(0.0, |marker| marker.reserved_width()) as f32;
+    let cursor_height = styled.caret_line_height(0) as f32;
+    let mut sorted_bands = bands.rectangles.iter().collect::<Vec<_>>();
+    sorted_bands.sort_by(|left, right| left.y_min.total_cmp(&right.y_min));
+    let maximum_height = sorted_bands.get(1).map_or(f32::MAX, |second| {
+        second.y_min as f32 - sorted_bands[0].y_max as f32
+    });
+    let line_height = if cursor_height > maximum_height {
+        styled.font_size_at_caret(0) as f32
+    } else {
+        cursor_height
+    };
+    let original_left = margins[0] + left_indent as f32;
+    let original_right = (width as f32 - margins[2]) - right_indent as f32;
+    let mut left = original_left;
+    let mut right = original_right;
+    let mut top = margins[1] + paragraph.spacing_before as f32;
+    let mut bottom = top + line_height;
+    if [left, right, top, bottom, cursor_height, marker_width]
+        .into_iter()
+        .any(|value| !value.is_finite())
+    {
+        return Err(ObjectDiagnosticKind::InvalidBounds);
+    }
+    for _ in 0..sorted_bands.len() {
+        let Some(band) = sorted_bands.iter().find(|band| {
+            band.x_max > band.x_min
+                && band.y_max > band.y_min
+                && right - band.x_min as f32 > 0.0001_f32
+                && band.x_max as f32 - left > 0.0001_f32
+                && bottom - band.y_min as f32 > 0.0001_f32
+                && band.y_max as f32 - top > 0.0001_f32
+        }) else {
+            break;
+        };
+        if band.x_min as f32 > left || (band.x_max as f32) < right {
+            let minimum_width = marker_width + 5.0;
+            if band.x_min as f32 - left >= minimum_width {
+                right = band.x_min as f32;
+                continue;
+            }
+            if right - band.x_max as f32 >= minimum_width {
+                left = band.x_max as f32;
+                continue;
+            }
+        }
+        left = original_left;
+        right = original_right;
+        top = band.y_max as f32;
+        bottom = top + line_height;
+        if !bottom.is_finite() {
+            return Err(ObjectDiagnosticKind::InvalidBounds);
+        }
+    }
+    let centering = (bottom - top - cursor_height) * 0.5;
+    if !centering.is_finite()
+        || centering >= 2_147_483_648.0_f32
+        || centering < -2_147_483_648.0_f32
+    {
+        return Err(ObjectDiagnosticKind::InvalidBounds);
+    }
+    let cursor_bottom = (top + cursor_height) + (centering as i32) as f32;
+    native_measured_height(f64::from(cursor_bottom + margins[3]))
 }
 
 #[derive(Clone, Copy)]
@@ -1050,11 +1146,11 @@ mod tests {
             }
         }
         let plan = prepared(&table);
-        assert_eq!(plan.rows[0].cells[0].frame.y_max, 140.5);
-        assert_eq!(plan.rows[1].cells[0].frame.y_min, 140.5);
-        assert_eq!(plan.rows[1].cells[0].frame.y_max, 240.5);
-        assert_eq!(plan.measured_bbox.y_max, 241.0);
-        assert_eq!(plan.min_first_page_height, 140.5);
+        assert_eq!(plan.rows[0].cells[0].frame.y_max, 189.5);
+        assert_eq!(plan.rows[1].cells[0].frame.y_min, 189.5);
+        assert_eq!(plan.rows[1].cells[0].frame.y_max, 289.5);
+        assert_eq!(plan.measured_bbox.y_max, 290.0);
+        assert_eq!(plan.min_first_page_height, 189.5);
     }
 
     #[test]
@@ -1062,6 +1158,15 @@ mod tests {
         for saved_height in [45.0_f32 - 0.0005, 45.0_f32 - 0.002] {
             let mut table = grid(&[saved_height, 100.0], &[200.0]);
             table.rows[0].cells[0].content.font_size = Some(15.0);
+            table.rows[0].cells[0]
+                .content
+                .paragraphs
+                .push(crate::RichTextParagraph {
+                    kind: crate::RichTextParagraphType::LineSpacing,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: [1_u32.to_le_bytes(), 1.0_f32.to_le_bytes()].concat(),
+                });
             let plan = prepared(&table);
             assert_eq!(plan.rows[0].cells[0].metrics.measured_height, 45.0);
             assert_eq!(plan.rows[0].cells[0].frame.y_max, 45.5);
@@ -1118,11 +1223,12 @@ mod tests {
         )
         .unwrap()
         .unwrap();
-        assert_eq!(plan.rows[0].cells[0].metrics.measured_height, 15.0);
+        assert_eq!(plan.rows[0].cells[0].metrics.measured_height, 18.5);
+        assert_eq!(plan.rows[0].cells[0].layout.height(), 0.0);
         assert_eq!(plan.rows[0].cells[0].metrics.last_line_bottom, 0.0);
         plan.relayout(&table, 0.0, theme, &renderer).unwrap();
-        assert_eq!(plan.row_height(0).unwrap(), 15.0);
-        assert_eq!(plan.min_first_page_height, 15.5);
+        assert_eq!(plan.row_height(0).unwrap(), 18.5);
+        assert_eq!(plan.min_first_page_height, 19.0);
     }
 
     #[test]
@@ -1149,7 +1255,7 @@ mod tests {
                 y_max: 158.0
             }
         );
-        assert_eq!(plan.min_first_page_height, 55.0);
+        close(plan.min_first_page_height, 72.85);
         table.style.border = Some(border([2.0, 4.0, 6.0, 8.0], 0));
         let transparent = prepared(&table);
         assert_eq!(transparent.rows[0].cells[0].frame.x_min, 0.0);
@@ -1295,6 +1401,12 @@ mod tests {
         let content = &mut table.rows[0].cells[0].content;
         content.font_size = Some(1.0);
         content.margins = Some([0.0, -0.5, 0.0, -0.5]);
+        content.paragraphs.push(crate::RichTextParagraph {
+            kind: crate::RichTextParagraphType::LineSpacing,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [1_u32.to_le_bytes(), 1.0_f32.to_le_bytes()].concat(),
+        });
         let fonts = crate::fonts::FontBook::default();
         let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
         assert!(matches!(
@@ -1315,9 +1427,159 @@ mod tests {
         let content = &mut table.rows[0].cells[0].content;
         content.font_size = Some(1.0);
         content.margins = Some([0.0, -0.5, 0.0, -0.5]);
+        content.paragraphs.push(crate::RichTextParagraph {
+            kind: crate::RichTextParagraphType::LineSpacing,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [1_u32.to_le_bytes(), 1.0_f32.to_le_bytes()].concat(),
+        });
         let plan = prepared(&table);
         assert_eq!(plan.rows[0].cells[0].layout.height(), 0.0);
         assert_eq!(plan.min_first_page_height, 100.5);
+    }
+
+    fn empty_cursor_height(
+        font_size: f32,
+        margins: [f32; 4],
+        paragraphs: Vec<crate::RichTextParagraph>,
+        rectangles: &[[f64; 4]],
+    ) -> Result<f64, ObjectDiagnosticKind> {
+        let mut table = grid(&[100.0], &[200.0]);
+        let source = &mut table.rows[0].cells[0];
+        source.content.font_size = Some(font_size);
+        source.content.margins = Some(margins);
+        source.content.paragraphs = paragraphs;
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::default(), &fonts);
+        let styled = StyledText::new(&source.content, TextContext::Flow, renderer.settings);
+        let bands = BandList::new(
+            rectangles
+                .iter()
+                .map(|rect| BoundingBox {
+                    x_min: rect[0],
+                    y_min: rect[1],
+                    x_max: rect[2],
+                    y_max: rect[3],
+                })
+                .collect(),
+        )?;
+        empty_cell_height(
+            &styled,
+            source,
+            200,
+            &bands,
+            RenderTheme::for_canvas(false),
+            &renderer,
+        )
+    }
+
+    #[test]
+    fn empty_cursor_measurement_includes_spacing_before_and_both_margins() {
+        for (kind, value, expected) in [(1_u32, 1.6_f32, 26.0), (0, 7.0, 27.0)] {
+            let paragraphs = vec![
+                crate::RichTextParagraph {
+                    kind: crate::RichTextParagraphType::LineSpacing,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: [kind.to_le_bytes(), value.to_le_bytes()].concat(),
+                },
+                crate::RichTextParagraph {
+                    kind: crate::RichTextParagraphType::SpacingBefore,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: 5.0_f32.to_le_bytes().to_vec(),
+                },
+            ];
+            assert_eq!(
+                empty_cursor_height(10.0, [0.0, 2.0, 0.0, 3.0], paragraphs, &[]).unwrap(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn empty_cursor_bands_use_first_gap_clamping_and_integer_centering() {
+        assert_eq!(
+            empty_cursor_height(20.0, [0.0; 4], vec![], &[[0.0, 10.0, 200.0, 15.0]]).unwrap(),
+            42.0
+        );
+        assert_eq!(
+            empty_cursor_height(
+                20.0,
+                [0.0; 4],
+                vec![],
+                &[[0.0, 10.0, 200.0, 15.0], [0.0, 25.0, 200.0, 30.0]],
+            )
+            .unwrap(),
+            54.0
+        );
+        assert_eq!(
+            empty_cursor_height(
+                20.0,
+                [0.0; 4],
+                vec![],
+                &[[0.0, 10.0, 200.0, 15.0], [0.0, 55.0, 200.0, 60.0]],
+            )
+            .unwrap(),
+            42.0
+        );
+    }
+
+    #[test]
+    fn empty_cursor_band_intersection_uses_native_tolerance() {
+        for (band_top, expected) in [(13.5, 13.5), (13.49995, 13.5), (13.4998, 33.5)] {
+            assert_eq!(
+                empty_cursor_height(10.0, [0.0; 4], vec![], &[[0.0, band_top, 200.0, 20.0]],)
+                    .unwrap(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn empty_cursor_can_use_horizontal_room_outside_a_padding_band() {
+        assert_eq!(
+            empty_cursor_height(
+                10.0,
+                [-10.0, 0.0, -10.0, 0.0],
+                vec![],
+                &[[0.0, 0.0, 200.0, 20.0]],
+            )
+            .unwrap(),
+            13.5
+        );
+        let checkbox = crate::RichTextParagraph {
+            kind: crate::RichTextParagraphType::Bullet,
+            start_paragraph: 0,
+            end_paragraph: 1,
+            payload: [2_u32, 0, 0, 1]
+                .into_iter()
+                .flat_map(u32::to_le_bytes)
+                .collect(),
+        };
+        assert_eq!(
+            empty_cursor_height(
+                10.0,
+                [-10.0, 0.0, -10.0, 0.0],
+                vec![checkbox],
+                &[[0.0, 0.0, 200.0, 20.0]],
+            )
+            .unwrap(),
+            33.5
+        );
+    }
+
+    #[test]
+    fn empty_cursor_rejects_unrepresentable_integer_centering() {
+        assert!(matches!(
+            empty_cursor_height(
+                1e20,
+                [0.0; 4],
+                vec![],
+                &[[0.0, 10.0, 200.0, 15.0], [0.0, 25.0, 200.0, 30.0]],
+            ),
+            Err(ObjectDiagnosticKind::InvalidBounds)
+        ));
     }
 
     fn border(widths: [f32; 4], color: u32) -> TableBorder {

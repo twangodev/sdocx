@@ -74,20 +74,21 @@ impl<'a> TextIndex<'a> {
     }
 
     #[cfg(any(feature = "render", test))]
-    pub fn paragraphs(&self) -> impl Iterator<Item = Paragraph> + '_ {
-        self.text.split_inclusive('\n').scan(0, |start, text| {
-            let content = text
-                .strip_suffix("\r\n")
-                .or_else(|| text.strip_suffix('\n'))
-                .unwrap_or(text);
-            let physical_end = *start + text.chars().count();
-            let paragraph = Paragraph {
-                physical: *start..physical_end,
-                content: *start..*start + content.chars().count(),
-            };
-            *start = physical_end;
-            Some(paragraph)
-        })
+    pub fn display_paragraphs(&self) -> impl Iterator<Item = Paragraph> + '_ {
+        self.native_paragraph_starts
+            .iter()
+            .enumerate()
+            .filter(|_| !self.is_empty())
+            .map(|(ordinal, &content_start)| {
+                let end = self
+                    .native_paragraph_starts
+                    .get(ordinal + 1)
+                    .map_or(self.len(), |next| next - 1);
+                Paragraph {
+                    physical: content_start.saturating_sub(usize::from(ordinal != 0))..end,
+                    content: content_start..end,
+                }
+            })
     }
 
     pub fn paragraph_index(&self, character_index: usize) -> Option<u32> {
@@ -163,35 +164,47 @@ mod tests {
     }
 
     #[test]
-    fn paragraphs_keep_exact_newline_ranges_and_unicode_offsets() {
+    fn display_paragraphs_keep_leading_delimiters_and_unicode_offsets() {
         let index = TextIndex::new("A\r\n😀\n\r\nlast\r");
-        let paragraphs = index.paragraphs().collect::<Vec<_>>();
+        let paragraphs = index.display_paragraphs().collect::<Vec<_>>();
         assert_eq!(
             paragraphs,
             [
                 Paragraph {
-                    physical: 0..3,
+                    physical: 0..1,
                     content: 0..1
                 },
                 Paragraph {
-                    physical: 3..5,
+                    physical: 1..2,
+                    content: 2..2
+                },
+                Paragraph {
+                    physical: 2..4,
                     content: 3..4
                 },
                 Paragraph {
-                    physical: 5..7,
+                    physical: 4..5,
                     content: 5..5
                 },
                 Paragraph {
-                    physical: 7..12,
-                    content: 7..12
+                    physical: 5..6,
+                    content: 6..6
+                },
+                Paragraph {
+                    physical: 6..11,
+                    content: 7..11
+                },
+                Paragraph {
+                    physical: 11..12,
+                    content: 12..12
                 },
             ]
         );
-        assert_eq!(index.slice(paragraphs[1].physical.clone()), Some("😀\n"));
-        assert_eq!(index.slice(paragraphs[1].content.clone()), Some("😀"));
-        assert_eq!(index.slice(paragraphs[2].physical.clone()), Some("\r\n"));
-        assert_eq!(index.slice(paragraphs[2].content.clone()), Some(""));
-        assert_eq!(index.char_to_utf16(paragraphs[2].physical.start), Some(6));
+        assert_eq!(index.slice(paragraphs[2].physical.clone()), Some("\n😀"));
+        assert_eq!(index.slice(paragraphs[2].content.clone()), Some("😀"));
+        assert_eq!(index.slice(paragraphs[4].physical.clone()), Some("\r"));
+        assert_eq!(index.slice(paragraphs[4].content.clone()), Some(""));
+        assert_eq!(index.char_to_utf16(paragraphs[4].physical.start), Some(6));
     }
 
     #[test]
@@ -201,24 +214,38 @@ mod tests {
         assert_eq!(empty.slice(0..0), Some(""));
         assert_eq!(empty.char_to_utf16(0), Some(0));
         assert_eq!(empty.utf16_to_char(0), Some(0));
-        assert_eq!(empty.paragraphs().count(), 0);
+        assert_eq!(empty.display_paragraphs().count(), 0);
         assert_eq!(
-            TextIndex::new("x\n").paragraphs().collect::<Vec<_>>(),
-            [Paragraph {
-                physical: 0..2,
-                content: 0..1
-            }]
-        );
-        assert_eq!(
-            TextIndex::new("\n\n").paragraphs().collect::<Vec<_>>(),
+            TextIndex::new("x\n")
+                .display_paragraphs()
+                .collect::<Vec<_>>(),
             [
                 Paragraph {
                     physical: 0..1,
-                    content: 0..0
+                    content: 0..1
                 },
                 Paragraph {
                     physical: 1..2,
+                    content: 2..2
+                }
+            ]
+        );
+        assert_eq!(
+            TextIndex::new("\n\n")
+                .display_paragraphs()
+                .collect::<Vec<_>>(),
+            [
+                Paragraph {
+                    physical: 0..0,
+                    content: 0..0
+                },
+                Paragraph {
+                    physical: 0..1,
                     content: 1..1
+                },
+                Paragraph {
+                    physical: 1..2,
+                    content: 2..2
                 },
             ]
         );
@@ -253,7 +280,7 @@ mod tests {
         }
         assert_eq!(index.paragraph_index(6), None);
         assert_eq!(index.char_to_utf16(3), Some(4));
-        let visual = index.paragraphs().nth(1).unwrap();
+        let visual = index.display_paragraphs().nth(2).unwrap();
         assert_eq!(index.slice(visual.content.clone()), Some("b"));
         assert_eq!(index.paragraph_index(visual.content.start), Some(2));
     }

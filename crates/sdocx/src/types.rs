@@ -600,9 +600,7 @@ impl SpanIntervalType {
             Self::ClosedOpen => index == start || start < index && index < end,
             Self::ClosedClosed => start <= index && index <= end,
             Self::OpenOpen => start < index && index < end,
-            Self::OpenClosed | Self::Other(_) => {
-                index == end || start < index && index < end
-            }
+            Self::OpenClosed | Self::Other(_) => index == end || start < index && index < end,
         }
     }
 }

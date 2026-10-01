@@ -254,7 +254,7 @@ fn code_title_and_body_render_every_paragraph_inside_native_frames() {
             ("ABC".into(), 74.0, 90.001),
             ("DEF".into(), 74.0, 150.751),
             ("GHI".into(), 74.0, 186.001),
-            ("JKL".into(), 74.0, 261.751),
+            ("JKL".into(), 74.0, 322.501),
         ]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
