@@ -231,6 +231,118 @@ fn edge_border(edges: [(u32, f32, f32, f32); 4]) -> sdocx::TableBorder {
 
 #[cfg(feature = "serde")]
 #[test]
+fn table_fills_keep_native_heading_inheritance_and_alpha_in_vector_exports() {
+    for constraint in [
+        ObjectSpanLayoutConstraint::Normal,
+        ObjectSpanLayoutConstraint::OverPages,
+    ] {
+        let RichTextObjectContent::Table(mut table) = saved_grid(2, 3, &[]) else {
+            panic!()
+        };
+        table.style.heading_row_enabled = true;
+        table.style.heading_column_enabled = true;
+        table.style.heading_background_color = Some(0x80223344);
+        table.style.default_cell_background_color = Some(0x80445566);
+        for cell in table.rows.iter_mut().flat_map(|row| &mut row.cells) {
+            cell.background_color = 0xffff0000;
+            cell.has_own_background_color = true;
+        }
+        table.rows[1].cells[1].has_own_background_color = false;
+        table.rows[1].cells[2].background_color = 0;
+        let mut doc = document(RichTextObjectContent::Table(table));
+        let sdocx::PageObjectContent::Element(PageElement::TextBox(flow)) =
+            &mut doc.pages[0].objects[0].content
+        else {
+            panic!()
+        };
+        flow.object_spans[0].layout_constraint = constraint;
+        let layout = sdocx::layout_document(&doc);
+        for color_mode in [sdocx::RenderColorMode::Light, sdocx::RenderColorMode::Dark] {
+            let mut options = sdocx::RenderOptions::default();
+            options.color_mode = color_mode;
+            let preview = sdocx::render_layout_page_svg(&doc, &layout, 0, &options).unwrap();
+            let replay = sdocx::render_layout_page_replay_svg(&doc, &layout, 0, &options).unwrap();
+            assert_eq!(preview.svg, replay.svg);
+            assert!(
+                preview.object_diagnostics.is_empty(),
+                "{:?}",
+                preview.object_diagnostics
+            );
+            let xml = roxmltree::Document::parse(&preview.svg).unwrap();
+            let fills: Vec<_> = xml
+                .descendants()
+                .filter(|node| {
+                    node.has_tag_name("rect")
+                        && node.attribute("fill-opacity").is_some()
+                        && node.ancestors().any(|ancestor| {
+                            ancestor.attribute("data-sdocx-object") == Some("table")
+                        })
+                })
+                .collect();
+            assert_eq!(fills.len(), 6);
+            let colors: Vec<_> = fills
+                .iter()
+                .map(|node| node.attribute("fill").unwrap())
+                .collect();
+            let expected = if color_mode == sdocx::RenderColorMode::Light {
+                [
+                    "#223344", "#223344", "#223344", "#223344", "#445566", "#000000",
+                ]
+            } else {
+                [
+                    "#bbccdd", "#bbccdd", "#bbccdd", "#bbccdd", "#99aabb", "#ffffff",
+                ]
+            };
+            assert_eq!(colors, expected);
+            for (index, node) in fills.iter().enumerate() {
+                let opacity: f64 = node.attribute("fill-opacity").unwrap().parse().unwrap();
+                let expected = if index == 5 { 0.0 } else { 128.0 / 255.0 };
+                assert!((opacity - expected).abs() < 0.000001);
+            }
+            let transparent_text = xml
+                .descendants()
+                .find(|node| node.has_tag_name("tspan") && node.text() == Some("A5"))
+                .unwrap();
+            assert_eq!(
+                transparent_text.attribute("fill"),
+                Some(if color_mode == sdocx::RenderColorMode::Light {
+                    "#000000"
+                } else {
+                    "#ffffff"
+                })
+            );
+            let source = lines(&preview.svg)
+                .iter()
+                .map(|line| line.0.as_str())
+                .collect::<String>();
+            assert_eq!(source, "A0A1A2A3A4A5");
+            #[cfg(feature = "pdf")]
+            {
+                let bytes =
+                    sdocx::render_document_pdf(&doc, &options, &Default::default()).unwrap();
+                let geometry = pdf_geometry::read(&bytes, 96.0);
+                assert_eq!(geometry.source, source);
+                assert_eq!(geometry.image_resources, 0);
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                assert!(
+                    pdf.objects
+                        .values()
+                        .any(|object| object.as_dict().is_ok_and(|dict| dict
+                            .get(b"ca")
+                            .is_ok_and(|alpha| alpha.as_float().is_ok_and(|alpha| (f64::from(
+                                alpha
+                            ) - 128.0
+                                / 255.0)
+                                .abs()
+                                < 0.00001))))
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
 fn table_borders_keep_native_edge_precedence_alpha_and_vector_transport() {
     let RichTextObjectContent::Table(mut table) = saved_grid(2, 2, &[]) else {
         panic!()

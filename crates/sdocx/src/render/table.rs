@@ -9,10 +9,12 @@ use super::text::{
 };
 
 mod borders;
+mod fills;
 mod grid;
 mod pagination;
 
 pub(super) use borders::{BorderPath, TableBorderGeometry};
+pub(super) use fills::CellFill;
 pub(super) use grid::{CellPosition, TableGrid};
 
 use borders::Edge;
@@ -435,7 +437,8 @@ impl PreparedTable {
             .map(|rect| VerticalExclusion::obstacle(rect.y_min, rect.y_max))
             .collect::<Vec<_>>();
         let styled = StyledText::new(&source.content, TextContext::Flow, renderer.settings);
-        let theme = theme.on_background(super::table_cell_background(source, theme));
+        let theme = CellFill::resolve(&table.style, table.rows[row_index].index, source, theme)
+            .theme(theme);
         let mut layout = super::text::layout_text(
             &styled,
             TextFrame {
@@ -728,11 +731,11 @@ fn include_cell_edge(table: &RichTextTable, cell: &RichTextTableCell, edge: Edge
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use crate::{RichTextBox, RichTextTableRow, TableEdgeStyle, TableRecordMetadata, TableStyle};
 
-    pub(super) fn grid(heights: &[f32], widths: &[f32]) -> RichTextTable {
+    pub(in crate::render) fn grid(heights: &[f32], widths: &[f32]) -> RichTextTable {
         let mut table = table();
         table.column_widths = widths.to_vec();
         table.rows = heights

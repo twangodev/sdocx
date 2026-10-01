@@ -488,7 +488,13 @@ fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
         let plain_end = position("c");
         let decorations = xml
             .descendants()
-            .filter(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#000000"))
+            .filter(|node| {
+                node.has_tag_name("rect")
+                    && node.attribute("fill") == Some("#000000")
+                    && node
+                        .attribute("fill-opacity")
+                        .is_none_or(|opacity| opacity.parse::<f64>().unwrap() > 0.0)
+            })
             .collect::<Vec<_>>();
         assert_eq!(decorations.len(), 4, "{context:?}");
         let mut before_plain = 0;

@@ -51,6 +51,8 @@ const GET_VISIBLE_CELLS: u64 = 0x3c7784;
 const GET_CELL_BORDER_PATH: u64 = 0x3cad9c;
 const GET_BORDER_PATH: u64 = 0x3cb464;
 const GET_DRAWING_BORDER_STYLE: u64 = DRAWING_BASE + 0xa6fb4;
+const GET_CELL_BACKGROUND: u64 = 0x3c2384;
+const GET_TABLE_CELL_BACKGROUND: u64 = 0x3cbf7c;
 const NEW: u64 = 0x47ac90;
 const DELETE: u64 = 0x47ac00;
 const MEMSET: u64 = 0x48b3f0;
@@ -175,6 +177,7 @@ impl Machine {
             (0x4872b0, 0x3dc280),
             (0x4872c0, 0x3dc420),
             (0x486930, 0x3dc670),
+            (0x486810, GET_CELL_BACKGROUND),
         ] {
             bind_native(engine, plt, target);
         }
@@ -508,6 +511,71 @@ impl Machine {
         }
         expected
     }
+    fn background_fixture(
+        &mut self,
+        flags: u8,
+        heading: u32,
+        default: u32,
+        merged: bool,
+    ) -> String {
+        let mut spans = vec![[1, 1]; 9];
+        if merged {
+            spans[0] = [2, 2];
+        }
+        self.initialize_grid(3, 3, &spans);
+        write(self.engine, MODEL + 184, &[flags & 1, (flags >> 1) & 1]);
+        write(self.engine, MODEL + 188, &heading.to_le_bytes());
+        write(self.engine, MODEL + 192, &default.to_le_bytes());
+        let table_callback = MODEL + 0xb800;
+        let table_vtable = MODEL + 0xb900;
+        let row_vtable = MODEL + 0xba00;
+        write(self.engine, table_callback, &table_vtable.to_le_bytes());
+        write(self.engine, table_callback + 8, &0x3c8cfc_u64.to_le_bytes());
+        write(self.engine, table_callback + 24, &MODEL.to_le_bytes());
+        write(self.engine, table_vtable + 48, &0x3d19bc_u64.to_le_bytes());
+        write(self.engine, row_vtable + 48, &0x3c5aa0_u64.to_le_bytes());
+        let mut cells = Vec::new();
+        let mut colors = [Vec::new(), Vec::new()];
+        for position in 0..9 {
+            let row = position / 3;
+            let column = position % 3;
+            let row_pointer = MODEL + 0x1200 + row as u64 * 128;
+            let row_callback = MODEL + 0xb000 + row as u64 * 256;
+            write(self.engine, row_callback, &row_vtable.to_le_bytes());
+            write(self.engine, row_callback + 8, &0x3c3d3c_u64.to_le_bytes());
+            write(self.engine, row_callback + 24, &row_pointer.to_le_bytes());
+            write(self.engine, row_pointer + 48, &table_callback.to_le_bytes());
+            let pointer = CELL_BASE + position as u64 * CELL_STRIDE;
+            let owned = position % 2 == 0;
+            let color: u32 = [
+                0xff102030, 0, 0x80112233, 0x00123456, 0xffffffff, 0xff000000, 0x01000000,
+                0xff405060, 0,
+            ][position];
+            write(self.engine, pointer + 32, &row_callback.to_le_bytes());
+            write(self.engine, pointer + 60, &color.to_le_bytes());
+            write(self.engine, pointer + 128, &[u8::from(owned)]);
+            cells.push(format!("{{\"color\":{color},\"owned\":{owned}}}"));
+            for honor_heading in 0..2 {
+                let selected = self.call(GET_CELL_BACKGROUND, &[pointer, honor_heading]);
+                assert_eq!(
+                    selected,
+                    self.call(
+                        GET_TABLE_CELL_BACKGROUND,
+                        &[MODEL, row as u64, column as u64, honor_heading]
+                    )
+                );
+                colors[honor_heading as usize].push(selected.to_string());
+            }
+        }
+        format!(
+            "{{\"heading_row\":{},\"heading_column\":{},\"heading_color\":{heading},\"default_color\":{default},\"spans\":{spans:?},\"cells\":[{}],\"without_heading_override\":[{}],\"with_heading_override\":[{}]}}",
+            flags & 1 != 0,
+            flags & 2 != 0,
+            cells.join(","),
+            colors[0].join(","),
+            colors[1].join(",")
+        )
+    }
     fn read_border_paths(&self, limit: usize) -> String {
         let begin = read_u64(self.engine, RETURN_VECTOR);
         let end = read_u64(self.engine, RETURN_VECTOR + 8);
@@ -797,6 +865,27 @@ fn drawing_border_cases(machine: &mut Machine) {
     );
 }
 
+fn background_cases(machine: &mut Machine) {
+    let mut captures = Vec::new();
+    for flags in 0..4 {
+        for (heading, default) in [
+            (0xff223344, 0xff667788),
+            (0, 0xff667788),
+            (0xff223344, 0),
+            (0x80223344, 0x00667788),
+            (0, 0),
+        ] {
+            for merged in [false, true] {
+                captures.push(machine.background_fixture(flags, heading, default, merged));
+            }
+        }
+    }
+    println!(
+        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"library_sha256\":\"{LIBRARY_SHA256}\",\"cell_background_address\":\"0x3c2384\",\"table_background_address\":\"0x3cbf7c\",\"cases\":[\n{}\n]}}",
+        captures.join(",\n")
+    );
+}
+
 fn main() {
     let path = std::env::args_os()
         .nth(1)
@@ -816,8 +905,12 @@ fn main() {
             drawing_border_cases(&mut machine);
             return;
         }
+        Some("--backgrounds") => {
+            background_cases(&mut machine);
+            return;
+        }
         None => {}
-        _ => panic!("expected --border-paths, --drawing-borders or no capture mode"),
+        _ => panic!("expected --border-paths, --drawing-borders, --backgrounds or no capture mode"),
     }
     let mut cases = Vec::new();
     for (name, rows, columns, changes) in [

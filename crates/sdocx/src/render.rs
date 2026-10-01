@@ -2088,6 +2088,12 @@ fn render_table(
             for cell in &row.cells {
                 cells.push(TableCellPaint {
                     cell: &table.rows[row.row_index].cells[cell.column_index],
+                    fill: table::CellFill::resolve(
+                        &table.style,
+                        table.rows[row.row_index].index,
+                        &table.rows[row.row_index].cells[cell.column_index],
+                        theme,
+                    ),
                     frame: cell.frame,
                     layout: Some(&cell.layout),
                     position: table::CellPosition {
@@ -2106,6 +2112,7 @@ fn render_table(
             let cell = &table.rows[row].cells[column];
             cells.push(TableCellPaint {
                 cell,
+                fill: table::CellFill::resolve(&table.style, table.rows[row].index, cell, theme),
                 frame: cell.bbox,
                 layout: None,
                 position: table::CellPosition { row, column },
@@ -2144,14 +2151,7 @@ fn render_table(
         svg.scope(Group::new().clipped(&clip), |svg| {
             let shape = [table.rows.len(), table.column_widths.len()];
             for paint in &cells {
-                paint_table_cell_background(
-                    svg,
-                    paint,
-                    shape,
-                    [outline.rx, outline.ry],
-                    offset_y,
-                    theme,
-                );
+                paint_table_cell_background(svg, paint, shape, [outline.rx, outline.ry], offset_y);
                 if let Some(borders) = &borders {
                     for path in borders.cell_paths(paint.position) {
                         if path.selected(paint.position, shape, outline.active(), paint.gap) {
@@ -2187,7 +2187,7 @@ fn render_table(
         }
         svg.scope(Group::new().clipped(&clip), |svg| {
             for paint in &cells {
-                let cell_theme = theme.on_background(table_cell_background(paint.cell, theme));
+                let cell_theme = paint.fill.theme(theme);
                 if let Some(layout) = paint.layout {
                     let styled =
                         StyledText::new(&paint.cell.content, TextContext::Flow, renderer.settings);
@@ -2227,6 +2227,7 @@ fn render_table(
 
 struct TableCellPaint<'a> {
     cell: &'a crate::RichTextTableCell,
+    fill: table::CellFill,
     frame: BoundingBox,
     layout: Option<&'a text::TextLayout>,
     position: table::CellPosition,
@@ -2239,9 +2240,11 @@ fn paint_table_cell_background(
     shape: [usize; 2],
     radii: [f32; 2],
     offset_y: f64,
-    theme: RenderTheme,
 ) {
-    let fill = Paint::from_hex(&color_hex(&table_cell_background(paint.cell, theme)));
+    let fill = Paint::from_hex(&color_hex(&paint.fill.color));
+    let rectangle = |bounds, offset_y, places| {
+        rectangle(bounds, offset_y, places).fill_opacity(decimal(paint.fill.opacity, 6))
+    };
     let [rx, ry] = radii;
     let first_row = paint.position.row == 0;
     let first_column = paint.position.column == 0;
@@ -2409,16 +2412,6 @@ fn argb_color(argb: u32) -> Color {
         g: (argb >> 8) as u8,
         b: argb as u8,
     }
-}
-
-fn table_cell_background(cell: &crate::RichTextTableCell, theme: RenderTheme) -> Color {
-    if !cell.has_own_background_color {
-        return theme.background();
-    }
-    if cell.background_color == 0 {
-        return argb_color(if theme.is_dark() { 0x45413d } else { 0xeeebe7 });
-    }
-    argb_color(cell.background_color)
 }
 
 fn render_stroke(
@@ -3281,26 +3274,29 @@ mod tests {
             column_index: 0,
             row_span: 1,
             column_span: 1,
-            background_color: 0xffffffff,
+            background_color: 0xff000000,
             has_own_background_color: true,
             bbox: BoundingBox::default(),
             editable: false,
             content: theme_test_text(),
         };
-        let surface = super::table_cell_background(&cell, theme);
+        let table = super::table::tests::grid(&[10.0], &[20.0]);
+        let fill = super::table::CellFill::resolve(&table.style, 0, &cell, theme);
         assert_eq!(
             super::StyledText::new(
                 &cell.content,
                 super::TextContext::Flow,
                 super::TextSettings::from_document(&DocumentMetadata::default())
             )
-            .style_at(0, theme.on_background(surface), None)
+            .style_at(0, fill.theme(theme), None)
             .color,
             "#000000"
         );
         cell.has_own_background_color = false;
         assert_eq!(
-            super::table_cell_background(&cell, theme),
+            super::table::CellFill::resolve(&table.style, 0, &cell, theme)
+                .theme(theme)
+                .background(),
             page.background_color.unwrap()
         );
         assert_eq!(
