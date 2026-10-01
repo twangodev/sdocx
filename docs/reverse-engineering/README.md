@@ -214,14 +214,9 @@ and distinguishes recovered behavior from implementation and evidence limits.
 - [`note-metadata-findings.md`](note-metadata-findings.md) — optional application,
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
-  table styles, per-edge borders, bounded row/cell data and the nonnumerical
-  row-height field order; export sizing, native frame ownership and the
-  distinct paint-visible cell list; captured border styles, perimeter segments
-  and native coordinate rounding; captured Drawing outline aggregation across
-  canvas scales; native heading/owned/default background selection; edge
-  precedence, pending-gap selection, native column-minimum cache selection,
-  cold frame caches, row updates, warm frame-owner sizing, measured bounds,
-  first-page minima, row split caches, warm text selection and vector evidence limits.
+  bounded table/code records, frame ownership and paint visibility; captured
+  borders, fills, column minima, cold/warm sizing, bounds, split caches and
+  row-bottom compression; text-selection findings and vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

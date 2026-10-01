@@ -429,6 +429,64 @@ unmerged grids.
 cmp /tmp/table-row-splits.json conformance/table-row-splits.json
 ```
 
+### Row-bottom compression from owner caches
+
+Drawing `getLastIntersectSplitRect`, `0xb304c`, reads the first column's frame
+owner and that owner's cached split list. It traverses the list in stored order,
+retaining the last rectangle whose top is at most the physical row height. It
+stops at the first rectangle beyond that height; unsorted lists are not searched
+for later matches. The owner supplies local bands, while raw row frames supply
+the height. A covered row therefore does not reinterpret the bands relative to
+its own physical top. Missing or empty lists return an empty rectangle.
+
+`getRowOffsetForLastEmptyInPage`, `0xb294c`, requires a nonempty selected
+rectangle, then resolves frame owners across the requested row. For each owner
+with a cached `TextLayout`, it reads `GetLineCount` and `GetLineBottom` for the
+last line; missing text layouts are skipped. The maximum starts at zero, so
+negative line bottoms cannot lower it. Cached measured height and cell bottom
+margin do not participate in this comparison.
+
+If that maximum is strictly below the selected band's top, the returned offset
+is `(band.top - physical_row_height) - half_border_width`, with native `f32`
+rounding after each subtraction. Equality does not compress. Drawing
+`updatePositionForRowBottom`, `0xb28ec`, applies only negative offsets: it
+extends the current raw row and moves subsequent rows through `offsetFromRow`.
+That movement retains the existing pending-gap consumption rules. Split caches
+are unchanged by this operation, even when row movement makes them stale.
+
+[The compression capture](../../conformance/table-row-bottom.json), SHA-256
+`c2ea6ef80738b101c32d54e910275c3a7308916da286684f89ad4af1af9e3d50`,
+records 148 inputs, 1,216 initial slots, 425 updates and 4,368 updated slot
+snapshots. Inputs include first/other-column merges, covered-span chains,
+missing caches, missing text layouts, empty/unsorted bands, later pending gaps,
+and values immediately around line-bottom and physical-height boundaries.
+All outputs are identical with allocation fills `0x00`, `0xa5` and `0xff`.
+
+The [native Rust harness](../../conformance/native_table/bottom.rs) checks the
+Model, Drawing, Base, Widget and Text hashes recorded above. Compression,
+owner lookup, list traversal, native text getters and frame updates execute
+unchanged. Text initialization, host allocation/deletion, single-thread mutex
+operations and diagnostic interfaces are isolated. Present layouts receive two
+supplied line records: first-line height 10.25, top margin 12.5, measured height
+300, and the case's independent last-line bottom. The capture establishes
+control flow with these cached measurements, not native text shaping or full
+merged preparation.
+
+The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_bottom_tests.rs)
+matches selected-band, displacement, frame-coordinate and pending-gap bits.
+Production compression reads owner caches through the bounded `TableGrid`.
+Prepared exports still accept only unmerged grids; full merged shaping, nested
+objects, complete pagination and device appearance remain outside this evidence.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --row-bottom scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-row-bottom.json
+cmp /tmp/table-row-bottom.json conformance/table-row-bottom.json
+```
+
 ### Stored cells and frame owners
 
 Model `ObjectTableImpl::GetCell`, `0x3c7570`, indexes the stored row and column

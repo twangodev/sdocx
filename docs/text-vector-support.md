@@ -153,6 +153,10 @@ portable performance thresholds:
   changed flags, cache presence and coordinates across 1,068 updates. The capture
   verifies owner selection and stale-list retention with supplied bands; text
   layout, row movement decisions and complete merged pagination are outside it.
+- [Native row-bottom compression](../conformance/table-row-bottom.json) matches
+  Rust selected bands, offsets, frames and pending gaps across 425 updates.
+  Owner bands and last-line bottoms are supplied caches; full merged shaping,
+  nested content and complete pagination remain outside this evidence.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
