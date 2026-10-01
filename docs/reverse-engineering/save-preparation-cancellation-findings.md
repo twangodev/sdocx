@@ -129,10 +129,10 @@ member 2016.
 A populated member-1920 target and its registration site remain unresolved.
 The inspected constructor, ContentsView callback setup and writing-manager
 JNI initializer do not identify one. This is not proof that the field can
-never be assigned through another path. It must not be labeled a stroke
-finalizer or a queue-drain operation without further evidence.
+never be assigned through another path. Stroke-finalization or queue-drain
+semantics are unverified.
 
-## Validation and SDK implications
+## Validation and evidence limits
 
 The APK digest and all four native streams were verified against the
 archive. Constructor stores, callable captures, RTTI, vtable slots,
@@ -145,5 +145,4 @@ branch requests cancellation and releases a gesture-lock reference before
 the image-cache stage. It does not establish a rule for appending, replacing
 or dropping an unfinished stroke in an SDOCX decoder. Recognition-engine
 completion behavior, the optional save callback and cache serialization
-remain separate investigations. No device execution, SDK change or new
-SDOCX fixture was used.
+remain unverified by this static trace.

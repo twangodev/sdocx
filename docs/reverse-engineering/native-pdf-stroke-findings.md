@@ -5,8 +5,8 @@
 Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenComposer.so`,
 `libSPenDrawing.so` and `libSPenPdf.so`. Addresses below identify those
 libraries explicitly. The APK digest is recorded in the knowledge-base index.
-This investigation uses native instructions and vtable relocations; no new
-Samsung SDOCX/PDF pairs or runtime captures were available.
+Evidence consists of native instructions and vtable relocations, without
+runtime or device-export validation of this path.
 
 The native vector list exporter batches strokes between individual object
 exports, as described in [capture composition findings](capture-composition-findings.md).

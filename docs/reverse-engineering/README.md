@@ -3,6 +3,7 @@
 This directory records Samsung Notes SDOCX/WDoc findings from the APK, native
 serializers and compatibility fixtures. Each finding identifies its source
 and distinguishes recovered behavior from implementation and evidence limits.
+Planning, task lists and development progress are kept outside these documents.
 
 ## Documents
 

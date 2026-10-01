@@ -5,8 +5,8 @@
 Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenComposer.so`,
 `libSPenModel.so` and `libSPenGraphics.so`. Addresses below belong to Composer
 unless marked Model or Graphics.
-These are native capture-path findings. No new SDOCX or Samsung PDF captures
-were available to validate the resulting pixels.
+These are native capture-path findings; resulting pixels remain unverified
+against Samsung exports.
 
 ## Capture sequence
 
@@ -194,7 +194,7 @@ The subsequent [saved physical-layer investigation](page-layer-selection-finding
 traces the loader's assignment of the serialized current-layer index and
 Standard list-page export's reuse of the note's existing page pointers.
 Those inspected setup paths preserve the separate physical layers. The SDK
-now constructs semantic page objects from the saved current layer while
+constructs semantic page objects from the saved current layer while
 retaining all layers in its structural representation.
 
 The SDK retains ordered objects and stroke render properties. Captured parity
@@ -211,7 +211,7 @@ be assumed to describe every PDF export.
 
 The normal Java Standard PDF option passes native factory type 0 with
 different editable/system-font flags, selecting `NotePDFExporterRasterListX`
-for list-page notes. Its call chain and paint sequence are now mapped in
+for list-page notes. Its call chain and paint sequence are recorded in
 [Standard PDF composition findings](standard-pdf-composition-findings.md).
 The native `VectorList` implementation described below is a separate path.
 
@@ -251,7 +251,7 @@ strokes before its individual export. This establishes an export sequence
 that can interleave strokes with other content. The list-exporter factory
 creates `ObjectStrokePdfExporter`, which draws each exported batch into a
 bitmap and embeds it as a PDF image. The factory, coordinate scaling, PNG
-handoff and distinct opacity mechanisms are now traced in
+handoff and distinct opacity mechanisms are recorded in
 [native PDF stroke findings](native-pdf-stroke-findings.md). Pen-specific
 blending and higher-level export preparation remain separate questions.
 

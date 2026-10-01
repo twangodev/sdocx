@@ -222,11 +222,11 @@ removal between registry lookup and invocation. These are checks of the
 recovered operations, not execution of the Android queue or native code.
 
 The [writing-view teardown trace](writing-view-teardown-findings.md)
-now follows Java close through the native raster owner chain and separates
+follows Java close through the native raster owner chain and separates
 the writing view's own Handler cancellations. The separate
 [main-editor Composer trace](composer-close-findings.md) covers application
 release, capture callbacks and native Composer ownership. The
 [release preparation trace](editor-release-preparation-findings.md) identifies
 capture's first-draw post and the separate document-change initialization post.
 Prediction ordering inside other drawing and cleanup delegates remains
-unresolved. No device execution was used.
+unverified by device execution.

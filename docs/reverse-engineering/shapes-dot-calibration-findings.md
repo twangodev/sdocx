@@ -4,11 +4,9 @@ Investigated `hf/02-shapes-and-dot-calibration.{sdocx,pdf}` on 2026-09-21,
 against parent revision `b0b33d5`. The historical comparisons below identify
 that renderer revision; later sections describe the implemented native rules.
 
-Since that snapshot, built-in dot templates 7/8/9 are drawn, saved native
-shape paths (including pentagon 11 and hexagon 6) are rendered, and the
-corpus manifest locks zero diagnostics for this fixture. Its 77 handwriting
-strokes are FountainPen `18;0;100;` and now use reconstructed V16 stamps.
-The ink comparison after that geometry port is in
+The SDK renders built-in dot templates 7/8/9 and saved native shape paths,
+including pentagon 11 and hexagon 6. Its 77 handwriting strokes are FountainPen
+`18;0;100;`, rendered with reconstructed V16 stamps. The ink comparison is in
 [stroke rendering findings](stroke-rendering-findings.md#fountainpen-v16-saved-geometry-implementation).
 
 ## Fixture and reproduction
@@ -54,15 +52,11 @@ current property decoder stops at bit 9. The empty second page has mask `0x270`,
 the same four known values, and no trailing property bytes. This means bit 10 is
 not required to identify template 7 in this file.
 
-`parse_page_properties` retained the template ID. At that revision,
-`render_page_contents_svg` painted the background color and never used
-`page.template` to draw a pattern. The archive has no embedded PNG/JPEG/PDF
+At `b0b33d5`, the renderer painted the solid background without the template.
+The archive has no embedded PNG/JPEG/PDF
 background asset: its media consists of `mediaInfo.dat` and a page SPI stream.
 The pattern cannot be restored by exposing an overlooked image entry. That
 revision also had no template-specific unsupported-rendering diagnostic.
-The [dot renderer](#apk-backed-dot-renderer) below draws templates 7/8/9.
-Other templates now keep the solid background and report
-`UnsupportedPageTemplate`.
 
 The PDF contains a separate 1800 × 2545 JPEG for the dotted background, placed at
 `(0, 0, 600, 848.3766)` points. Measuring the gray-dot rows/columns in that image
@@ -101,7 +95,7 @@ bounds of roughly 10–13 × 9–16 pixels, versus 9–13 × 8–15 pixels in ou
 output. Several differed by 1–2 pixels. Rasterization, antialiasing, and the
 approximate pressure-width model used at that revision affect the comparison;
 it does not by itself prove a coordinate or pressure-decoding error. Those
-marks are now V16 stamps, so this width gap is not a measurement of the
+marks use V16 stamps, so this width gap is not a measurement of the
 current renderer.
 
 ## Other gaps exposed by this fixture
@@ -110,14 +104,14 @@ The five native shape types are rectangle (4), ellipse (1), triangle (2),
 pentagon (11), and hexagon (6). At `b0b33d5` the renderer handled the first
 three and returned without drawing types 11 and 6. Their handwritten labels
 rendered because they are separate strokes. The diagonal native line also
-rendered. Saved paths for all five shapes are now drawn; see
+rendered. The SDK draws saved paths for all five shapes; see
 [saved shape paths](shape-line-findings.md#saved-shape-paths-fixture-02).
 
 That revision emitted five `UnsupportedShapeFeature` warnings, one for each
 shape. The pentagon and hexagon warnings included `shape template`; the first
 three also carried geometry-extension/path warnings despite their visible
 fallback geometry. All five have retained path data, including 90 bytes for
-the pentagon and 107 for the hexagon. The corpus manifest now locks zero
+the pentagon and 107 for the hexagon. The corpus manifest locks zero
 diagnostics for this fixture.
 
 ## APK-backed implementation: page layout and native dimensions
@@ -129,7 +123,7 @@ only those preceding pages. This is list-mode compatibility storage, not a
 body-text-dependent blank-page heuristic. The 02 end tag explicitly records
 page mode 0 (LIST); its flow height is `2 * 2613 + 41 = 5267`.
 
-The SDK now exposes raw page mode and orientation from the already bounded end
+The SDK exposes raw page mode and orientation from the bounded end
 tag decoder. Layout recognizes list-mode compatibility only with a complete
 flow-height/padding match, at least two records, an empty decoded final page,
 and matching final/previous dimensions, template and background. Intermediate
@@ -148,11 +142,8 @@ the original trailing bytes and exposes the dimensions separately.
 landscape, then divides by 360. This supplies native template scaling without
 inferring a scale from the exported PDF.
 
-The manifest now locks the 02 hashes, two stored/one visible page, 77 strokes,
-five shapes, one line, and no diagnostics. The formerly unknown `0x04`
-property is [text editability](shape-line-findings.md#shape-orientation-and-text-editability-properties-0x01-0x02-0x04). All three
-locked corpus pairs passed structural and reference page-count checks at that
-revision.
+Shape property `0x04` is
+[text editability](shape-line-findings.md#shape-orientation-and-text-editability-properties-0x01-0x02-0x04).
 
 ## APK-backed dot renderer
 
@@ -177,7 +168,6 @@ It does not reproduce Samsung's bitmap antialiasing or zoom-dependent
 minimum-pixel widening. SVG size scales with rows, not dots or zoom; configurations
 above 10,000 rows are rejected with a diagnostic to bound rendering work. CLI SVG,
 PNG/PDF export, WASM viewing and replay backgrounds share this implementation.
-No separate web template renderer or cache is added.
 
 At density `1848 / 360`, the native formula gives pitches 91.7 × 83.160004,
 agreeing with the reference measurements above within rasterization rounding.
@@ -185,23 +175,23 @@ The supported IDs are only the three variants confirmed by the same native
 class. Other templates, custom URI/image/PDF backgrounds, rotated dots, or
 missing native dimensions/orientation retain metadata and produce
 `UnsupportedPageTemplate`; they keep the solid background. Raw background image
-ID, mode, width, rotation and template URI are now exposed rather than discarded.
+ID, mode, width, rotation and template URI are exposed as metadata.
 Mode/width belong to background-image handling and do not determine built-in dot
 spacing. Unknown template IDs retain the full `u32` value.
 
 `TemplatePDFWriter::writeDot` (`0x38425c`) uses different vector-export color,
-radius and spacing rules. The 02 PDF contains a JPEG background, so this change
-follows the native drawing/capture path; it does not conflate the two exporters.
+radius and spacing rules. The 02 PDF contains a JPEG background; the SDK template
+geometry follows the native drawing/capture path.
 
 Raster validation caught an exporter detail: resvg 0.47 rounds SVG pattern-tile
 sizes to integer pixels (`render_pattern_pixmap` in its `src/path.rs`). A
 91.7 × 83.16 repeating tile became 92 × 83, causing cumulative drift. Explicit
-row subpaths preserve fractional coordinates in browser, PNG and PDF rendering
-without adding a second renderer. At this dot-renderer revision, before V16
+row subpaths preserve fractional coordinates in browser, PNG and PDF rendering.
+At this dot-renderer revision, before V16
 stamps, the 02 visual comparison at 1848 × 2613 reported 0.85% changed pixels,
 1.25% missing ink and 0.72% extra ink (one-pixel matching tolerance). Remaining
 differences in that measurement included bitmap antialiasing and the
-pressure-width approximation. Calibration stroke coordinates were not changed.
+pressure-width approximation.
 
 The Samsung PDF MediaBox is 600 × 848 points while its captured background is
 848.3766 points tall. The comparison runner allows one raster pixel or half a
@@ -235,7 +225,7 @@ Native zoom-dependent minimum-pixel widening and bitmap filtering remain
 approximations.
 
 Fixture 04 uses narrow rules: 31 rows, with native pitch 83.160004 in
-1848-wide document coordinates. Both stored pages now pass template
+1848-wide document coordinates. Both stored pages pass template
 validation without `UnsupportedPageTemplate`. Medium/wide spacing and dark
 colors are covered by the existing template test suite; only narrow has
 been compared with this Samsung PDF.

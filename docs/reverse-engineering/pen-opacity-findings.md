@@ -8,10 +8,10 @@ The inspected copies of `libSPenDrawing.so`, `libSPenView.so`, `libSPenBase.so`,
 `libSPenPenCommon.so`, `libSPenRenderer.so`, `libSPenDefaultPen.so` and
 `libSPenMarker.so` through `libSPenMarker4.so` match their APK entries.
 
-This investigation follows the fixed-opacity dispatch for five plugins and
+The trace covers fixed-opacity dispatch for five plugins and
 the color/coverage path of `Marker2StrokeDrawableRTV1`. It does not establish
 identical behavior for every brush, every Marker2 version or every export
-mode. No new Samsung document or rendered comparison was used.
+mode. Device-rendered appearance is unverified.
 
 ## Fixed opacity depends on the pen interface
 

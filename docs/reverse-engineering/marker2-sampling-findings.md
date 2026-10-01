@@ -220,9 +220,7 @@ instructions were compared, the parameter constant was decoded directly,
 and the synthetic example's single-precision arithmetic was checked with
 assertions. That check does not establish visual parity with a Samsung PDF.
 
-[Touch-recording findings](stroke-recording-findings.md) now explain repeated
+[Touch-recording findings](stroke-recording-findings.md) explain repeated
 tap coordinates, Marker2's null replacement provider and replay source reset.
 Upstream event preprocessing, single-point imports, StrokeTip and other pen
-plugins remain open. New SDOCX/PDF pairs with short straight
-strokes, taps, bends and widely spaced final samples can test these findings
-against saved data and visible output.
+plugins remain unverified.

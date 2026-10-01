@@ -155,8 +155,8 @@ operations. The [Handler and queue trace](predictor-queue-findings.md)
 confirms main-looper dispatch and separate per-completion Handlers, whose
 destructors cancel by Handler ID. The synchronizer does not retain those
 Handlers, and no message-drain call was identified in this presenter/proxy
-sequence. The Java close and raster-owner deletion chain are now traced
-in [writing-view teardown](writing-view-teardown-findings.md); scheduling
+sequence. [Writing-view teardown](writing-view-teardown-findings.md) records
+the Java close and raster-owner deletion chain; scheduling
 at the application call sites remains unresolved.
 
 ## Validation and evidence limits
@@ -168,9 +168,6 @@ and relocations. Disposable state reconstruction covered unchanged
 selection, changed neural length, kind changes, disable/re-enable,
 getter overrides, creation failure, and the preserved requested selection.
 
-These findings narrow the earlier holder-replacement example to callers
-that change a live instance's model directly. They do not prove all such
-callers absent or establish the safety of pending work during destruction.
-Callback queue ownership, Java close and raster deletion are now traced
-separately. Application call-site ordering outside those paths remains
-unverified.
+Direct model changes on a live instance and the safety of pending work during
+destruction remain unverified, as does application call-site ordering outside
+the traced teardown paths.

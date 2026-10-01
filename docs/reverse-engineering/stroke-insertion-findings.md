@@ -193,8 +193,7 @@ The APK digest and all four library byte streams were verified. Adapter
 construction, RTTI, append and setter vtable bindings, the first-point
 load, integer-offset negation, float-coordinate addition and flag-only
 timestamp update were checked against their instructions and relocations.
-These are static results; no new device fixture or native execution was
-used.
+These are static results, not native execution or a device comparison.
 
 For decoding and page rendering, keep the stored coordinates authoritative:
 the mode-0 insertion path has already subtracted the selected page's origin.
@@ -204,7 +203,4 @@ existing stored stroke at every page boundary.
 
 The [view input trace](view-input-transform-findings.md) resolves child
 position and inverse-matrix application before recording. Runtime matrix
-configuration and its relationship to pen size remain open. New SDOCX/PDF
-pairs containing a stroke across a page boundary, a second-page stroke and
-zoomed drawing can test the recovered
-page assignment and distinguish input scaling from insertion translation.
+configuration and its relationship to pen size remain unverified.

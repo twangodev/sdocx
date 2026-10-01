@@ -4,7 +4,7 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-This work uses the APK and synthetic records; no new SDOCX exports were needed.
+Evidence consists of APK sources and synthetic records.
 
 | Source | Confirmed behavior |
 | --- | --- |

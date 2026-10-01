@@ -912,10 +912,6 @@ end-tag handling and optional integrity checks are documented in
   [SPI media findings](spi-media-findings.md).
 - Byte-exact protected/encrypted end-tag variant without an encrypted fixture.
 
-These gaps do not block fixing stroke geometry: the frame and stroke layouts
-needed for that are now source-backed and exhaustively boundary-validated on
-the historical fixture set.
-
 ## Separate legacy SDoc family
 
 Do not apply this WDoc/SDOCX map to Samsung's deprecated SDoc container. The

@@ -4,8 +4,8 @@
 
 Confirmed against Samsung Notes 4.4.45.37, ARM64 `libSPenDrawing.so` and
 `libSPenModel.so`. The APK digest is recorded in the knowledge-base index.
-These findings come from native control flow and vtable relocations; no new
-SDOCX or Samsung PDF captures were available.
+Evidence consists of native control flow and vtable relocations; device-export
+appearance remains unverified.
 
 ## Common object visibility
 
@@ -100,7 +100,7 @@ base-data offset 72. `ObjectMetadata::replay_timestamp_raw` must not be used
 as the key for this native collection sort.
 
 The alternate static base extractor's field bit 9 reads eight bytes and
-stores them at base-data offset 80 at `0x2dc4b0`–`0x2dc4c4`. The getter now
+stores them at base-data offset 80 at `0x2dc4b0`–`0x2dc4c4`. The getter
 identifies that alternate field as replay order. This does not make bit 9 a
 supported field in the modern typed base frame: its reader follows a
 different layout, as documented in [optional object findings](object-flexible-findings.md).
@@ -123,7 +123,7 @@ vtable relocation at `0x4922c8` resolves that slot to
 storage at offset 288 via `0x33f6f4`–`0x33f700`, and attached-data member 48
 into layer member 336 at `0x33f730`–`0x33f738`.
 
-The callback is now resolved. `LayerManagerBase::OnAttach`, `0x34b218`, loads
+`LayerManagerBase::OnAttach`, `0x34b218`, loads
 relocation `0x4a3df0` at `0x34b25c`. That relocation names
 `LayerManagerBase::sm_GetReplaceOrderForLayer(void*)`, `0x34b44c`; the native
 symbol uses the spelling `Replace`. The manager constructs the function at
@@ -186,8 +186,7 @@ children, visible containers with mixed children, unchanged stored payloads,
 unknown-parent fallback, malformed supported bases, and resource accounting
 across hidden subtrees. Separate image, text, shape and line cases exercise
 their semantic paths; SVG checks verify that hidden text and images stay out
-of exports. Existing rendering fixtures now set the native visible bit in
-their common frames.
+of exports.
 
 The locked `01-basic-formatting` parser/layout expectations do not establish
 visual parity for hidden objects/containers, hidden layers or overlapping

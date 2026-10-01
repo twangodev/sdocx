@@ -94,7 +94,7 @@ trailers and limits. A marker in a valid prefixed ZIP no longer triggers the
 legacy protected-document heuristic; that fallback only applies after ZIP
 opening fails. ZIP directory validation remains delegated to the ZIP library.
 The appended layout assumes a single-disk archive and a trailer ending at EOF.
-No new Samsung-exported or protected document has been used to validate it.
+The appended layout lacks Samsung-exported or protected-document validation.
 
 Native `SPen::EndTag::Append`
 at `0x2a9810` writes the saved 20-byte EOCD prefix, a zero comment length, then
@@ -111,5 +111,5 @@ normal metadata fallback behavior.
 
 Synthetic coverage includes a copied footer after an opaque payload, ZIP-like
 payload prefixes, inner and outer protection metadata, every truncated appendix,
-oversized blob counts and unknown extension bytes. A future protected Samsung
-export is still required for end-to-end cryptographic validation.
+oversized blob counts and unknown extension bytes. End-to-end cryptographic
+behavior remains unverified against a protected Samsung export.

@@ -102,7 +102,7 @@ within that physical layer, not a way to combine physical layer records.
 
 ## SDK behavior and validation
 
-The semantic page decoder now traverses the layer at `current_layer_index`.
+The semantic page decoder traverses the layer at `current_layer_index`.
 Strokes, text boxes, images and supported descendants in inactive physical
 layers remain available through `StoredPage`; they are not added to the
 high-level page or its SVG/PDF output. An empty selected layer produces
@@ -125,6 +125,5 @@ The locked corpus does not supply a captured multilayer comparison. Layer
 selection fidelity and editor operations that change the selected layer remain
 unverified by device exports.
 
-This change does not infer physical-layer opacity or visibility composition
-from the metadata. Ordered object rendering, pen behavior and single-page
-PDF segmentation remain separate APK investigations.
+Physical-layer opacity and visibility composition are not inferred from the
+metadata.

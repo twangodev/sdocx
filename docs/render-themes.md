@@ -37,7 +37,7 @@ Local APK sources are under `scratch/apk-analysis-decompiled/sources/`:
 
 Handwriting, text, foreground spans, links, shape fills and outlines share the
 same native lightness-reversal primitive. It preserves hue/chroma and the
-caller's alpha. The former RGB-sum threshold has been removed.
+caller's alpha.
 
 The renderer applies that candidate only when compatibility permits adaptation
 and it improves contrast against the resolved surface. Existing bright ink on

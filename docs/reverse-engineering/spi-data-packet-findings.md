@@ -207,7 +207,7 @@ errors.
 The APK digest, Base ELF bytes, cited instructions and `memcpy` import
 were checked. Native ARM64 execution covered:
 
-- 257 prefix encodes, each matching the proposed layout and decoding back
+- 257 prefix encodes, each matching the field layout and decoding back
   to its source fields.
 - 144 field-reader cases covering reserved bits, both flags, all selector
   values and the extrema of each unassigned byte and group index.

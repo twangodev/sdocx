@@ -49,7 +49,7 @@ to `showCaptureView`; that adapter's `onDone` first invokes
 `releaseComposerView(false, true)` through `ComposerView.a`, then forwards
 the result to the caller. This branch ties closing to the capture callback.
 The [capture scheduling trace](editor-release-preparation-findings.md#capture-release-is-posted-by-the-first-draw-callback)
-now follows that adapter through the capture view's first tree-observer draw
+follows that adapter through the capture view's first tree-observer draw
 notification and a posted Runnable. Prediction-completion ordering remains a
 separate constraint.
 
@@ -164,8 +164,6 @@ disabled to retain its `onDone` body.
 
 This trace connects the main editor's release entry to presenter destruction.
 The [release preparation trace](editor-release-preparation-findings.md)
-now follows capture scheduling and null-document detachment into the writing
+follows capture scheduling and null-document detachment into the writing
 adapter, raster and pen-action setters. Other delegates remain unresolved;
 neither trace establishes a device failure or prediction callback barrier.
-No SDK behavior or saved-stroke format rule follows from this lifetime trace
-alone.

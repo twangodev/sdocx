@@ -44,24 +44,16 @@ The writer independently agrees:
 - It loads member 16 at `0x2ec810`, writes four little-endian bytes at
   `0x2ec84c`–`0x2ec87c`, and sets field bit 7 at `0x2ec8e0`.
 
-The prior stroke metadata implementation had swapped the two reference
-names and consequently mislabeled the legacy field. The parser now matches
-this getter/reader/writer agreement. Each stored reference remains independent;
+Each stored reference remains independent;
 inspection does not overwrite field 7 with field 0 or resolve missing IDs by
 guessing a pen.
 
 The regression uses a normal-WDoc field mask `0x82` with distinct IDs:
 field 1 refers to `2;`, and field 7 refers to
-`com.samsung.android.sdk.pen.pen.preload.Marker2`. Before the correction,
-resolving `pen_name_id` returned `2;`. The corrected parser returns the
+`com.samsung.android.sdk.pen.pen.preload.Marker2`. The parser returns the
 Marker2 name and advanced settings separately. Additional cases retain
 legacy-only references, conflicting legacy/modern names, a modern -1
 sentinel and absent advanced settings.
-
-The change affects metadata field identities, including their Serde names.
-The previously introduced `legacy_advanced_pen_setting_id` is replaced by
-`legacy_pen_name_id`. Ordinary rendered stroke color and width do not use
-these IDs and retain their existing behavior.
 
 ## Built-in native registry
 
@@ -157,8 +149,6 @@ DefaultPen name.
 This fallback depends on manager state. It does not establish a single
 universal substitution for an unsupported saved pen, and a missing pen-name
 pointer does not take the same path as a nonnull name that fails lookup.
-The SDK should retain the requested identity even when a renderer needs a
-fallback or reports unsupported brush behavior.
 
 ## Advanced settings select Marker2's version
 

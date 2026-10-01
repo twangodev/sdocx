@@ -175,15 +175,14 @@ The APK digest and all six library byte streams were verified. Imported
 view-method and pen-getter bindings, sample-vector accesses, copy-constructor
 matrix preservation, coordinate stores and float arithmetic were checked
 against the ARM64 instructions. Disposable arithmetic reconstruction checked
-the scale/offset and precision examples. These are static results; no new
-device fixture or native execution was used.
+the scale/offset and precision examples. These are static results, not native
+execution or a device comparison.
 
-Keep decoded stroke points and widths authoritative for replay. Input
-coordinates can already include view conversion, filtering, optional
+Stored coordinates can already include view conversion, filtering, optional
 finalization and later page translation. Reapplying those editing-time
-operations to a saved stroke would introduce additional changes.
+operations during replay would change them again.
 
-The [zoom scale trace](zoom-scale-findings.md) now connects Composer's
+The [zoom scale trace](zoom-scale-findings.md) connects Composer's
 registered scroller callback to the contents-view scale and translation
 setters. It also resolves `NoteWritingView::SetScale`, `0x4284f0`, to
 cutter/eraser scale updates and the diagram transformer. The ordinary
