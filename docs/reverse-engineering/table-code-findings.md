@@ -306,6 +306,66 @@ these frame primitives does not establish complete merged-table support.
 cmp /tmp/table-cold-frames.json conformance/table-cold-frames.json
 ```
 
+### Measured bounds and first-page minima
+
+Drawing `updateMeasuredRect`, `0xab168`, resolves `(0,0)` and the last grid
+position through `GetFrameCell`. It reads their cached rectangles and unions
+those two frames with Base `RectF::ExtendRect`, `0xb1724`; it does not union
+every stored cell. The union is the content rectangle at layout offset 652.
+Model's four `GetDrawnBorder*Width` getters supply independent edge widths.
+Each width is the maximum of the outer edge and borders on the corresponding
+physical grid edge, including inherited default cell borders. The getters read
+stored widths without filtering transparent colors. Drawing expands each side
+by half its width, then offsets the measured rectangle to origin `(0,0)` using
+Base `RectF::OffSet`. The expanded rectangle is at layout offset 668.
+
+Drawing `getMinRowHeightInFirstPage`, `0xac9f0`, resolves every column in the
+requested row through its frame owner. An owner's nonempty text layout
+contributes its first-line height plus top margin. An absent text layout or
+empty text contributes the cached measured height. Widget `GetTextLayout`,
+`0xd39ac`, reads offset 368; `GetMeasuredHeight`, `0xd3b78`, reads offset 404.
+The virtual getters called at `0xaca98`, `0xacab4` and `0xacacc` are Text
+`GetTextLength`, `0x8b104`, `GetLineHeight`, `0x8b3ac`, and `GetTopMargin`,
+`0x8b90c`. The branch tests text length, not line count.
+
+The maximum starts at zero. If it remains zero, the routine uses the physical
+first row's height, even for a request concerning a later row. It does not
+substitute the requested row's saved minimum. When the origin flag is enabled,
+the result includes `content.top - measured.top`; after measured-origin
+normalization this is the content's top coordinate. `GetMinHeightInFirstPage`,
+`0xac9d4`, requests row zero with this flag enabled.
+
+[The geometry capture](../../conformance/table-measured-geometry.json), SHA-256
+`e877970b7966c5d10c9df478c4d608d9d56db26f288f7e1ec0d68adeffad09fa`,
+records 138 table states, 1,185 supplied/cold slot frames and 818 minimum-height
+queries with both origin-flag values. Cases include endpoint owners from earlier
+rows/columns, covered-span chains, endpoint-cache union, asymmetric edge widths,
+nonempty/empty text, absent text layouts and the first-row fallback. Every output
+is identical with fresh allocation fills `0x00`, `0xa5` and `0xff`.
+
+The [Rust capture module](../../conformance/native_table/geometry.rs) checks the
+Model, Drawing, Base and Widget hashes recorded above, plus Text SHA-256
+`5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b`.
+Bounds, border getters, rectangle arithmetic and text getters execute native
+code. Text initialization remains isolated; cached frames and text metrics are
+supplied inputs, with synthetic storage for the native getters. This establishes
+selection and arithmetic, not text shaping, final merged frames, pagination
+selection or device appearance.
+
+The [Rust regressions](../../crates/sdocx/src/render/table/native_geometry_tests.rs)
+match content/measured bounds, edge widths and every minimum-height query by
+`f32` bits. Production bounds and first-page sizing use the same owner lookup
+as warm row sizing. Export preparation remains restricted to unmerged grids.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --measured-geometry scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-measured-geometry.json
+cmp /tmp/table-measured-geometry.json conformance/table-measured-geometry.json
+```
+
 ### Stored cells and frame owners
 
 Model `ObjectTableImpl::GetCell`, `0x3c7570`, indexes the stored row and column
@@ -325,7 +385,7 @@ lays out text only when they return the same cell
 and last grid positions through `GetFrameCell` before reading cached frames
 (`0xab198`–`0xab238`). Merged layout therefore needs distinct stored slots,
 frame owners, paint-visible cells and cached frame geometry. Sparse records,
-frame union and rowspan growth are not established by these traces.
+final merged-frame construction and rowspan growth are not established by these traces.
 
 ### Native frame ownership and paint visibility
 

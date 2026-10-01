@@ -145,6 +145,10 @@ portable performance thresholds:
   coordinate and pending-gap bits across 142 inputs using supplied frame-owner
   heights. Native text measurement and complete merged pagination remain outside
   this evidence.
+- [Native bounds and first-page minima](../conformance/table-measured-geometry.json)
+  match Rust content/measured rectangles, edge widths and 818 minimum-height
+  queries using supplied caches. This verifies owner selection and arithmetic;
+  complete merged frames and pagination remain outside that evidence.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
