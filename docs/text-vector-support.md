@@ -76,7 +76,7 @@ plain Arabic spans.
 - Native font-selection and measurement-style anomalies, variable-font
   instances, and device-specific fallback selection are not established.
 - Standalone text modes, RTL justification, separator-only clipping, and
-  unusual page/composition behavior need additional captured evidence.
+  unusual page/composition behavior remain unverified against native captures.
 - Extreme frame/page geometry and unsupported glyph/effect combinations retain
   explicit validation and transport limits.
 
@@ -100,15 +100,7 @@ metrics contributing to inline-object leading.
 
 Document exports and browser sessions reuse compatible body plans across
 pages. Style boundary resolution avoids repeated full-span scans, and fallback
-lines reuse paragraph bidi contexts. Release measurements from the review
-machine showed the following changes; these are historical observations, not
-portable performance thresholds:
-
-| Probe | Before | After |
-| --- | ---: | ---: |
-| 80,000 missing glyphs | 2,233 ms | 142 ms |
-| 10,000 style boundaries | 259 ms | 32.5 ms |
-| 50-page full-source reflow | 153.76 ms | 11.29 ms |
+lines reuse paragraph bidi contexts.
 
 ## Regression evidence
 
@@ -125,57 +117,16 @@ portable performance thresholds:
   [text styles](../crates/sdocx/tests/text_styles.rs) and
   [shape text frames](../crates/sdocx/tests/shape_text_frame.rs) cover shared
   layout, synthesis, selectable source and vector transport.
-- [Native table ownership and visibility](../conformance/table-ownership.json)
-  and [saved-frame vector outputs](../crates/sdocx/tests/embedded_text_layout.rs)
-  distinguish frame owners from paint-visible cells; merged geometry remains
-  outside that evidence.
-- [Native table border paths](../conformance/table-border-paths.json) and
-  [Drawing outline aggregation](../conformance/table-border-drawing.json) match
-  the Rust border model.
-  [Border output regressions](../crates/sdocx/tests/embedded_text_layout.rs)
-  cover SVG/PDF style transport separately.
-- [Native merge construction](../conformance/table-merge-cells.json) produces
-  states whose owners, paint-visible lists and cold frames match Rust across
-  1,046 attempts. The capture has no attached document/history and does not
-  establish text transfer or complete merged preparation. Saved and prepared
-  paint selection share the same visible-cell list.
-- [Native cold frames and row updates](../conformance/table-cold-frames.json)
-  match Rust coordinate and pending-gap bits across 93 supplied inputs. This
-  isolates frame primitives from text measurement; final merged sizing remains
-  outside the supported prepared path.
-- [Native background selection](../conformance/table-backgrounds.json) covers
-  heading overrides and default inheritance. The same vector export regressions
-  check fill alpha and text contrast in saved/prepared tables under both themes.
-- [Native cold-row sizing](../conformance/table-cold-rows.json) matches Rust
-  measurement order/inputs, local split bands, frame growth and pending gaps
-  across 147 runs. Heights are supplied; the cold driver measures raw cells
-  including covered slots. Complete merged preparation and shaping remain
-  outside this evidence.
-- [Native warm row sizing](../conformance/table-warm-rows.json) matches Rust
-  coordinate and pending-gap bits across 142 inputs using supplied frame-owner
-  heights. Native text measurement and complete merged pagination remain outside
-  this evidence.
-- [Native bounds and first-page minima](../conformance/table-measured-geometry.json)
-  match Rust content/measured rectangles, edge widths and 818 minimum-height
-  queries using supplied caches. This verifies owner selection and arithmetic;
-  complete merged frames and pagination remain outside that evidence.
-- [Native row split caches](../conformance/table-row-splits.json) match Rust
-  changed flags, cache presence and coordinates across 1,068 updates. The capture
-  verifies owner selection and stale-list retention with supplied bands; text
-  layout, row movement decisions and complete merged pagination are outside it.
-- [Native row-bottom compression](../conformance/table-row-bottom.json) matches
-  Rust selected bands, offsets, frames and pending gaps across 425 updates.
-  Owner bands and last-line bottoms are supplied caches; full merged shaping,
-  nested content and complete pagination remain outside this evidence.
-- [Native warm-row control](../conformance/table-warm-control.json) matches Rust
-  movement flags, ordered cell selection, frames, pending gaps and split caches
-  across 1,089 actions. Metrics remain fixed across relayout calls; native
-  shaping, merged-frame construction and complete pagination are unverified.
-- [Native cell layout inputs](../conformance/table-cell-inputs.json) match Rust
-  cached frame dimensions, integer text bounds, local split bands and
-  height-difference bits across 850 calls. Drawing and Widget execute native
-  selection/conversion; shaping and obstacle assignment are intercepted.
-  Complete merged preparation and device appearance remain unverified.
+- [Embedded layout regressions](../crates/sdocx/tests/embedded_text_layout.rs)
+  check saved/prepared table painting, code panels, themes, selectable text and
+  vector transport. Saved and prepared table painting share native visible-cell
+  selection; this does not establish complete merged preparation.
+- The [native table capture matrix](../conformance/README.md#document-composition-regressions)
+  records each hash-pinned fixture's coverage and isolated dependencies. It
+  distinguishes ownership, merge construction, borders/fills, column minima,
+  cold/warm row sizing, bounds, split caches, compression and cell inputs from
+  shaping and complete pagination. Exact native contracts are in
+  [table/code findings](reverse-engineering/table-code-findings.md).
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression

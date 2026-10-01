@@ -1875,63 +1875,30 @@ circle radius 1.75 with 0.5 stroke; solid square 4×4; outline square
 3.5×3.5 inset 0.25 with 0.5 stroke. Current native size and placement contracts
 are recorded in the list-marker section above.
 
-## Current Rust implementation and remaining gaps
+## Rust layout contracts
 
-The shared Rust body-flow and placed-text pipeline now measures shaped runs with actual
-font faces and wraps using Unicode line-break opportunities. The
-`render/text/{layout,measurement,breaks,wrapping,paint}.rs` modules replace estimated
-ASCII/script widths and the URL-punctuation heuristic. Measurement accounts
-for bidi levels and script/extensions, uses native span-joining inputs
-(size, source color, family, bold and italic), and disables `liga`/`clig`
-for the inspected Latin policy. Paragraph runs are measured once and line
-widths use their retained advances; graphemes, spaces and source ranges
-are retained. Missing usable metrics report `MeasurementFailure`
-instead of estimating widths.
+The shared Rust engine measures shaped runs with actual font faces and wraps
+using Unicode line-break opportunities. Paragraph runs are measured once;
+line widths use retained advances. Missing usable metrics report
+`MeasurementFailure`. Span joining uses size, source color, family, bold and
+italic; the inspected Latin policy disables `liga`/`clig`.
 
-For covered static-font LTR clusters, explicit typed SVG positions
-now carry the retained glyph geometry through Chromium and usvg/PDF. This
-also reproduces the native Latin ligature policy without relying on usvg
-support for SVG font-feature properties. Multi-scalar combining clusters
-stay together, and independently reproduced glyph IDs/offsets are checked
-before positioning. Pinned Greek/Cyrillic regressions cover glyph positions,
-kerning, uniform backgrounds and selectable vector PDF text without a script
-whitelist. Paragraph bidi maps now also drive proven scalar RTL transports.
-Variable-font optical size, the uniform-direction ICU level shortcut,
-paired script punctuation, native emergency breaking and the reference
-device's ICU version/locale remain unverified. Placed and shape text now use
-the shared measured wrapper, scaled margins, paragraph spacing, integer
-outer-width ceiling, native indent conversion and measured alignment.
-Placed text now measures a complete plan before painting and applies
-top/center/bottom gravity to ordinary text using the native height contract
-above. Whitespace remains selectable, and empty boxes retain legacy
-author-supplied highlight summaries.
-Final paragraph after-spacing is excluded from gravity height; between-paragraph
-after-spacing remains. Glyph Y positions retain five decimal places, including
-gravity midpoints; the parent text coordinate keeps its older display precision.
-Table cells and code title/body now use the shared engine for every wrapped
-line, styles, scaled margins and measured heights. Code frames include the
-verified page-boundary exclusion rule above; cells retain native top gravity
-and explicit-spacing baseline handling. Mixed object/text paragraphs now use
-the same measured stream, including inline widths, block breaks, native
-symmetric margins, object alignment and object baseline increments. Validated
-anchors preserve neighboring text, and invalid or unsupported objects retain
-typed diagnostics. This has synthetic coverage but no captured mixed-inline
-reference. Code height feedback and table drawn bounds are implemented;
-unmerged table frames and validated full-source page context are implemented;
-merged grids and complex object composition remain incomplete. Paragraph-gap enable flags now
-follow the native bullet conversion and source-edge object rules, with
-synthetic regressions. Native display paragraphs now preserve leading and
-terminal separators, count CR/LF separately and resolve empty-line caret fonts
-through typed interval rules. Whole-empty measured height remains zero while
-gravity uses its separate spacing contract. These cases have synthetic metric
-coverage; captured separator-only clipping and empty-line selection remain
-unverified. Ordinary baselines share the native line-advance formula;
-object-margin lines retain their separate branch.
+The [support matrix](../text-vector-support.md) records supported adapters,
+glyph transport, diagnostics and reference coverage. Merged/sparse table
+preparation, arbitrary nested composition, native emergency breaking and
+device ICU/font selection remain unverified or unsupported.
 
-Shared style resolution now checks native scaling before using its result.
-A public-API probe with source `A\nB` and density 3 previously lost text
-when finite `f32::MAX` font sizes, pixel spacing or margins overflowed the
-f32 multiplication. Invalid summary sizes now use the configured default;
+Placed-text gravity excludes final paragraph after-spacing while retaining
+between-paragraph after-spacing. Glyph Y positions retain five decimal places,
+including gravity midpoints; the parent text coordinate uses its older display
+precision. Whole-empty measured height remains zero while gravity uses its
+separate spacing contract. Empty boxes retain author-supplied highlight summaries.
+Leading/terminal separators and empty-line caret metrics have synthetic
+coverage; separator-only clipping and empty-line selection remain unverified.
+
+Shared style resolution checks native scaling before using its result.
+Finite `f32::MAX` font sizes, pixel spacing or margins can overflow during
+f32 multiplication. Invalid summary sizes use the configured default;
 invalid local font overrides retain the preceding usable size. Invalid
 scaled margins and paragraph gaps resolve to zero. Unusable explicit line
 spacing uses the finite default line advance, with the finite font height
@@ -1944,18 +1911,18 @@ Only active font overrides are diagnosed; paragraph gaps are reported when
 consumed, and explicit spacing is checked against actual wrapped line metrics.
 Margin blocks skip the spacing they do not use. Regressions cover 336
 malformed preview/replay cases and 18 selectable, vector PDF exports across
-flow, placed, shape, table and both code text contexts. Arbitrary malformed
-frame rectangles and oversized aggregate page geometry still need their own
-validation policy.
+flow, placed, shape, table and both code text contexts. These probes do not
+establish recovery for arbitrary malformed frame rectangles or oversized
+aggregate page geometry.
 
-Code preparation now retains owned title and body layouts, copy and panel
+Code preparation retains owned title and body layouts, copy and panel
 rectangles. Parent lines prepare these plans before placement; constraints
 1/2 replace their reserved height when the measured height differs by more
 than 0.001. Other constraints retain their saved reservation. Split bands
 are selected using the live parent candidate. Final code/table drawing prepares
 its frames at the settled baseline and world X, including parent gravity;
 candidate feedback and final drawing both use the shared Rust layout engine.
-Validated native capture windows now replace individual page-slice painting.
+Validated native capture windows use a single viewport projection.
 They retain native source separators, prepare object feedback in group-local
 physical coordinates and project the selected viewport once. Typed glyph,
 marker and prepared-panel bounds filter painting independently; code child
@@ -1969,7 +1936,7 @@ inspection slices. Captured body/code/table origins are covered by the
 comparisons above; merged/sparse table preparation and arbitrary object
 composition remain outside those references.
 
-Shared line assembly now retains mutable object measurements and child plans
+Shared line assembly retains mutable object measurements and child plans
 for each paragraph. Body entries with constraints 1/2 apply staged width
 feedback before scanning following entries; retries retain the callback's
 changed dimensions and child state. Frame entries retain their established

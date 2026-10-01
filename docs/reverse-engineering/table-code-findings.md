@@ -74,13 +74,12 @@ value 3. The SDK represents absent optional fields as `None` and preserves
 unrecognized mode bytes as `TableAutoFit::Other`; it does not materialize
 native defaults into fields that were absent from the file.
 
-Bits 0/1 were previously mislabeled as cell padding. The reader stores them
-at members 12/8 (`0x3cfb38`–`0x3cfbd4`); the public getters establish their
-size-limit meanings independently. Rust fields and serialized inspection keys
-are now `min_column_width` and `min_row_height`; deserialization also accepts
-the old JSON keys. Rust field access and emitted inspection keys change, while
-the raw optional values and rendering behavior are unchanged. Cell text margins
-are separate: absent
+The reader stores bits 0/1 at members 12/8 (`0x3cfb38`–`0x3cfbd4`);
+the public getters establish their size-limit meanings independently. Rust
+fields and inspection keys are `min_column_width` and `min_row_height`;
+deserialization also accepts the legacy `vertical_cell_padding` and
+`horizontal_cell_padding` keys, respectively.
+Cell text margins are separate: absent
 margins default to zero in `TextCommonImpl` (`0x3e747c`–`0x3e7484`), and the
 table-cell constructor does not replace them.
 
@@ -90,7 +89,7 @@ through `fitTableRect` and `SetAutoFitOption` (`0x3c6b94`, `0x3cbaa0`), outside
 that cold measurement path. An absent mode still means native default 3;
 accepting its existing geometry does not interpret absence as mode 0.
 
-`RichTextTable.style` now exposes these properties alongside existing actual
+`RichTextTable.style` exposes these properties alongside existing actual
 column widths, rows and cells. `TableRecordMetadata` retains complete masks
 and separate fixed/flexible trailing bytes for table, row, cell and border
 records. The complete embedded object also remains available through
@@ -131,10 +130,9 @@ writer loads member 80 at `0x3c30a0` and writes it at `0x3c30ac`.
 editable, including 2 and 255. Rust exposes `editable: bool` with this
 normalization; the retained embedded object record preserves the original bytes.
 
-The SDK now bounds each fixed reader at the declared flexible offset. Previously
-it only rejected offsets beyond the record after parsing the fields, allowing
-a malformed fixed-field length to consume flexible bytes. Invalid offsets now
-fail before those reads. Offset zero remains valid with an empty field mask.
+The SDK bounds each fixed reader at the declared flexible offset, preventing
+fixed-field lengths from consuming flexible bytes. Invalid offsets fail before
+those reads. Offset zero remains valid with an empty field mask.
 The shared mask reader supports wider future masks without truncating the
 check for set bits. Unknown embedded bytes remain in the original object data.
 
@@ -145,7 +143,7 @@ place `f32` maximum height under bit 9 before `f32` minimum height under bit 1.
 `GetMaxHeight` at `0x3c4244` reads member offset 124; `GetMinHeight` at
 `0x3c4300` reads offset 128, matching the serialization accesses. Default maximum
 height is `f32::MAX`, and default minimum height is zero. `RichTextTableRow`
-now exposes both values when present. If any unknown row field bit is set,
+exposes both values when present. If any unknown row field bit is set,
 neither constraint is decoded, and the complete flexible payload is retained.
 The nonnumerical native order does not establish where an unknown field would
 appear, so decoding known fields past that uncertainty would be unsafe.
