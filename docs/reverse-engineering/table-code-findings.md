@@ -429,6 +429,73 @@ unmerged grids.
 cmp /tmp/table-row-splits.json conformance/table-row-splits.json
 ```
 
+### Warm-row movement and relayout decisions
+
+Drawing `layoutRow`, `0xb0420`, first updates the requested row's split caches.
+When that update changes a cache, it runs `updatePositionFromRowForFirstLineCut`
+and lays out only cells that own their frames. It returns true even when the
+requested row contains no self-owning cells. Distinct empty caches compare
+unequal, so repeated empty-list updates retain this relayout branch.
+
+When the split cache is unchanged, row zero returns false. Later rows use the
+current and previous first-column frame owners. With a pending gap greater than
+`0.001f`, an empty previous split list prevents movement. Otherwise the gap is
+removed only when the current first-line minimum is at most
+`pending_gap - previous_first_band_height`. Gap removal returns true without
+calling `layoutCell` or updating the cached split list.
+
+Without that pending-gap branch, movement requires
+`first_line_minimum - current_first_band.top > f32::EPSILON`. The displacement
+is the first band's bottom. Physical rows move through `offsetFromRow`, the
+current pending gap receives that displacement, and split caches are updated
+before self-owning cells are laid out. Equality at either comparison boundary
+does not select the greater-than branch.
+
+`updatePositionFromRowForFirstLineCut`, `0xb2360`, returns immediately for row
+zero or a missing/empty first-owner split cache. A pending gap above `0.001f`
+is removed, split caches are updated, and the routine retries against the new
+cache. Otherwise it uses the same first-line/first-band comparison and
+displacement as above. Earlier-row owners supply bands independently of the
+physical rows that move.
+
+Drawing `layoutFromRow`, `0xaa448`, calls `layoutRow`,
+`updatePositionFromRow` and `updatePositionForRowBottom` in that order for every
+remaining row (`0xaa480`–`0xaa4ac`). It does not use `layoutRow`'s return value
+to suppress sizing or compression.
+
+[The warm-control capture](../../conformance/table-warm-control.json), SHA-256
+`b78403ccecffe594cecf18eea48ba60c4c56808905049230589a9c9ab42c30ab`,
+records 148 inputs and 1,207 initial slots. Its 1,089 actions contain 354 direct
+first-line calls, 415 row-layout calls and 320 ordered layout/sizing/compression
+sequences, yielding 10,892 slot snapshots and 418 `layoutCell` calls. Inputs
+cover merged owners, rows without self owners, empty/missing caches, both
+comparison thresholds, gap removal, retries and supplied minima. Every output
+is identical with allocation fills `0x00`, `0xa5` and `0xff`.
+
+The [native Rust harness](../../conformance/native_table/control.rs) checks the
+same five library hashes as the compression capture. Native row control,
+owner lookup, list operations, metric getters, sizing and compression execute
+unchanged. The `layoutCell` boundary records cell selection without shaping;
+the supplied two-line measurements remain fixed. Initialization, host memory
+interfaces, single-thread mutex operations and diagnostics are isolated. The
+ordered sequences call the three native routines directly; final observer
+notifications from `layoutFromRow` are outside the capture.
+
+The [Rust regression](../../crates/sdocx/src/render/table/pagination/native_control_tests.rs)
+uses the production scheduler with a measurement callback and matches every
+changed flag, ordered cell selection, frame coordinate, pending gap and split
+cache bit. This establishes control flow with fixed caches, not native shaping,
+merged-frame construction, nested content or complete device pagination.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --warm-control scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-warm-control.json
+cmp /tmp/table-warm-control.json conformance/table-warm-control.json
+```
+
 ### Row-bottom compression from owner caches
 
 Drawing `getLastIntersectSplitRect`, `0xb304c`, reads the first column's frame

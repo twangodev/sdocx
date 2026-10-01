@@ -216,7 +216,7 @@ and distinguishes recovered behavior from implementation and evidence limits.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   bounded table/code records, frame ownership and paint visibility; captured
   borders, fills, column minima, cold/warm sizing, bounds, split caches and
-  row-bottom compression; text-selection findings and vector evidence limits.
+  row-bottom compression and warm-row control; vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

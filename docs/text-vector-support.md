@@ -157,6 +157,10 @@ portable performance thresholds:
   Rust selected bands, offsets, frames and pending gaps across 425 updates.
   Owner bands and last-line bottoms are supplied caches; full merged shaping,
   nested content and complete pagination remain outside this evidence.
+- [Native warm-row control](../conformance/table-warm-control.json) matches Rust
+  movement flags, ordered cell selection, frames, pending gaps and split caches
+  across 1,089 actions. Metrics remain fixed across relayout calls; native
+  shaping, merged-frame construction and complete pagination are unverified.
 
 The external reference tests require the local corpus described in
 [Conformance testing](../conformance/README.md). A passing synthetic regression
