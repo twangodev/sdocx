@@ -121,6 +121,7 @@ struct Run {
 struct Case {
     name: String,
     grid: BorderCase,
+    height_limit: Option<frames::HeightLimit>,
     minima: Vec<f32>,
     maxima: Vec<f32>,
     pending_gaps: Vec<f32>,
@@ -143,6 +144,7 @@ impl Case {
         );
         Self {
             name: name.to_owned(),
+            height_limit: None,
             grid,
             minima: vec![0.0; rows],
             maxima: vec![f32::MAX; rows],
@@ -158,7 +160,7 @@ impl Case {
     }
 
     fn fixture(&self, machine: &mut Machine, recorder: &mut Recorder) -> String {
-        frames::initialize(machine, &self.grid);
+        frames::initialize_with_height_limit(machine, &self.grid, self.height_limit);
         splits::initialize_cache(machine);
         let rows = self.grid.heights.len();
         let columns = self.grid.widths.len();
@@ -235,8 +237,11 @@ impl Case {
             let splits = splits::snapshot_json(machine, rows * columns);
             runs.push(format!("{{\"start\":{},\"rectangles\":{:?},\"measured_heights\":{:?},\"calls\":[{}],\"frames\":{:?},\"pending_gaps\":{:?},\"cell_splits\":[{splits}]}}", run.start, run.rectangles, run.measured_heights, calls.join(","), state.grid, state.pending_gaps));
         }
+        let limit = self
+            .height_limit
+            .map_or_else(String::new, frames::HeightLimit::json_field);
         format!(
-            "{{\"name\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"minima\":{:?},\"maxima\":{:?},\"pending_gaps\":{:?},\"initial_frames\":{:?},\"runs\":[{}]}}",
+            "{{{limit}\"name\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"minima\":{:?},\"maxima\":{:?},\"pending_gaps\":{:?},\"initial_frames\":{:?},\"runs\":[{}]}}",
             self.name,
             self.grid.heights,
             self.grid.widths,
@@ -305,6 +310,22 @@ pub(super) fn capture(machine: &mut Machine, base_path: &Path, widget_path: &Pat
         });
     }
     cases.push(repeated);
+    for maximum in [0.0, 1.0, 10.0, 1000.0] {
+        for enabled in [false, true] {
+            for merged in [false, true] {
+                let mut case = Case::new(
+                    &format!("saved-table-height-limit-{maximum}-{enabled}-{merged}"),
+                    3,
+                    2,
+                );
+                case.height_limit = Some(frames::HeightLimit { enabled, maximum });
+                if merged {
+                    case.grid.spans[0] = [3, 2];
+                }
+                cases.push(case);
+            }
+        }
+    }
     let mut random = 0x636f_6c64_726f_7773_u64;
     for index in 0..128 {
         let rows = 1 + index % 5;
@@ -336,6 +357,19 @@ pub(super) fn capture(machine: &mut Machine, base_path: &Path, widget_path: &Pat
             }
         }
         cases.push(case);
+    }
+    for case in &mut cases {
+        if let Some(limit) = case.height_limit.take() {
+            let baseline = case.fixture(machine, &mut recorder);
+            case.height_limit = Some(limit);
+            let limited = case.fixture(machine, &mut recorder);
+            assert_eq!(
+                limited.replacen(&limit.json_field(), "", 1),
+                baseline,
+                "{}",
+                case.name
+            );
+        }
     }
     let mut captured = Vec::new();
     for case in &cases {

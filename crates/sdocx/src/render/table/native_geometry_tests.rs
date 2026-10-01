@@ -22,6 +22,7 @@ struct Capture {
 #[derive(Deserialize)]
 struct Case {
     name: String,
+    height_limit: Option<HeightLimit>,
     heights: Vec<f32>,
     widths: Vec<f32>,
     spans: Vec<[u32; 2]>,
@@ -35,6 +36,19 @@ struct Case {
     content_bbox: [f32; 4],
     measured_bbox: [f32; 4],
     minimum_height_bits: Vec<[u32; 2]>,
+}
+
+#[derive(Deserialize)]
+pub(super) struct HeightLimit {
+    enabled: bool,
+    maximum: f32,
+}
+
+impl HeightLimit {
+    pub fn apply(&self, table: &mut RichTextTable) {
+        table.style.max_height_enabled = self.enabled;
+        table.style.max_height = Some(self.maximum);
+    }
 }
 
 #[derive(Clone, Copy, Deserialize)]
@@ -83,7 +97,7 @@ fn capture() -> Capture {
     ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "e877970b7966c5d10c9df478c4d608d9d56db26f288f7e1ec0d68adeffad09fa"
+        "6b210cfa59fa00971addb39da7d7576eeb3238214fa560d31a9dcdf7f4039ed4"
     );
     let capture: Capture = serde_json::from_slice(bytes).unwrap();
     assert_eq!(capture.apk_version, "4.4.45.37");
@@ -118,13 +132,16 @@ fn capture() -> Capture {
         capture.measurement_inputs,
         "supplied cached frames and text metrics, not native text shaping"
     );
-    assert_eq!(capture.cases.len(), 138);
+    assert_eq!(capture.cases.len(), 154);
     capture
 }
 
 impl Case {
     fn plan(&self) -> (RichTextTable, PreparedTable) {
         let mut source = tests::grid(&self.heights, &self.widths);
+        if let Some(limit) = &self.height_limit {
+            limit.apply(&mut source);
+        }
         source.style.border = if self.native_defaults {
             None
         } else {
@@ -218,7 +235,7 @@ fn native_measured_geometry_uses_endpoint_owner_frames() {
         );
         slots += case.frames.len();
     }
-    assert_eq!(slots, 1185);
+    assert_eq!(slots, 1281);
 }
 
 #[test]
@@ -244,5 +261,5 @@ fn native_first_page_minima_use_owner_metrics_and_first_row_fallback() {
             queries += 2;
         }
     }
-    assert_eq!(queries, 818);
+    assert_eq!(queries, 914);
 }

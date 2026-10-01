@@ -1,3 +1,4 @@
+use super::super::native_geometry_tests::HeightLimit;
 use super::super::{TableGrid, initialize_rows, tests::grid};
 use super::*;
 use crate::ObjectSpanLayoutConstraint;
@@ -23,6 +24,7 @@ struct Capture {
 #[derive(Deserialize)]
 struct Case {
     name: String,
+    height_limit: Option<HeightLimit>,
     heights: Vec<f32>,
     widths: Vec<f32>,
     spans: Vec<[u32; 2]>,
@@ -75,6 +77,9 @@ fn frame_bits(plan: &PreparedTable) -> Vec<[u32; 4]> {
 impl Case {
     fn plan(&self) -> PreparedTable {
         let mut source = grid(&self.heights, &self.widths);
+        if let Some(limit) = &self.height_limit {
+            limit.apply(&mut source);
+        }
         for (cell, span) in source
             .rows
             .iter_mut()
@@ -122,7 +127,7 @@ fn native_cold_rows_measure_raw_cells_and_only_grow_frames() {
     ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "bbdb16741d4e80d36a583cb16d792400968f2c49bf3757083915c57546dd6202"
+        "c807d89806b9696aa3708a873f9c8811873693f063b5c931c2d729dd17fa5f62"
     );
     let capture: Capture = serde_json::from_slice(bytes).unwrap();
     assert_eq!(capture.apk_version, "4.4.45.37");
@@ -154,7 +159,7 @@ fn native_cold_rows_measure_raw_cells_and_only_grow_frames() {
         capture.measurement_inputs,
         "supplied cached measured heights; native cold driver, cell frame inputs, measurement differences and row updates; text update, measurement, padding assignment and font selection intercepted"
     );
-    assert_eq!(capture.cases.len(), 144);
+    assert_eq!(capture.cases.len(), 160);
     let mut run_count = 0;
     let mut call_count = 0;
     let mut snapshots = 0;
@@ -255,5 +260,5 @@ fn native_cold_rows_measure_raw_cells_and_only_grow_frames() {
             );
         }
     }
-    assert_eq!((run_count, call_count, snapshots), (147, 608, 1260));
+    assert_eq!((run_count, call_count, snapshots), (163, 704, 1356));
 }

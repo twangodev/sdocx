@@ -133,7 +133,44 @@ fn initialize_adapter(machine: &Machine) {
 }
 
 pub(super) fn initialize(machine: &mut Machine, case: &BorderCase) {
+    initialize_with_height_limit(machine, case, None);
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct HeightLimit {
+    pub enabled: bool,
+    pub maximum: f32,
+}
+
+impl HeightLimit {
+    pub fn json_field(self) -> String {
+        format!(
+            "\"height_limit\":{{\"enabled\":{},\"maximum\":{:?}}},",
+            self.enabled, self.maximum
+        )
+    }
+}
+
+pub(super) fn initialize_with_height_limit(
+    machine: &mut Machine,
+    case: &BorderCase,
+    limit: Option<HeightLimit>,
+) {
     machine.initialize_borders(case);
+    if let Some(limit) = limit {
+        write(machine.engine, MODEL + 186, &[u8::from(limit.enabled)]);
+        write(machine.engine, MODEL + 176, &limit.maximum.to_le_bytes());
+        write(machine.engine, TABLE_OBJECT + 104, &MODEL.to_le_bytes());
+        assert_eq!(
+            machine.call(0x3db38c, &[TABLE_OBJECT]),
+            u64::from(limit.enabled)
+        );
+        machine.call(0x3dabcc, &[TABLE_OBJECT]);
+        assert_eq!(
+            read_register(machine.engine, 136) as u32,
+            limit.maximum.to_bits()
+        );
+    }
     initialize_layout(machine);
 }
 

@@ -12,6 +12,7 @@ const REGISTER_S0: i32 = 136;
 struct Case {
     name: String,
     grid: BorderCase,
+    height_limit: Option<frames::HeightLimit>,
     minima: Vec<f32>,
     maxima: Vec<f32>,
     measured: Vec<Option<f32>>,
@@ -34,6 +35,7 @@ impl Case {
         );
         Self {
             name: name.to_owned(),
+            height_limit: None,
             minima: vec![0.0; rows],
             maxima: vec![f32::MAX; rows],
             measured: (0..rows * columns)
@@ -46,7 +48,7 @@ impl Case {
     }
 
     fn fixture(&self, machine: &mut Machine) -> String {
-        frames::initialize(machine, &self.grid);
+        frames::initialize_with_height_limit(machine, &self.grid, self.height_limit);
         let rows = self.grid.heights.len();
         let columns = self.grid.widths.len();
         let initial = frames::snapshot(machine, rows, columns);
@@ -102,8 +104,11 @@ impl Case {
             .iter()
             .map(|height| height.map_or("null".to_owned(), |height| format!("{height:?}")))
             .collect();
+        let limit = self
+            .height_limit
+            .map_or_else(String::new, frames::HeightLimit::json_field);
         format!(
-            "{{\"name\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"frame_owners\":{owners:?},\"minima\":{:?},\"maxima\":{:?},\"measured_heights\":[{}],\"start\":{},\"pending_gaps\":{:?},\"initial_frames\":{:?},\"frames\":{:?},\"cached_frames\":{:?},\"final_pending_gaps\":{:?}}}",
+            "{{{limit}\"name\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"frame_owners\":{owners:?},\"minima\":{:?},\"maxima\":{:?},\"measured_heights\":[{}],\"start\":{},\"pending_gaps\":{:?},\"initial_frames\":{:?},\"frames\":{:?},\"cached_frames\":{:?},\"final_pending_gaps\":{:?}}}",
             self.name,
             self.grid.heights,
             self.grid.widths,
@@ -176,6 +181,22 @@ pub(super) fn capture(machine: &mut Machine, base_path: &Path, widget_path: &Pat
     let mut ignored_maximum = Case::new("saved-maximum-ignored", 3, 2);
     ignored_maximum.maxima = vec![1.0; 3];
     cases.push(ignored_maximum);
+    for maximum in [0.0, 1.0, 10.0, 1000.0] {
+        for enabled in [false, true] {
+            for merged in [false, true] {
+                let mut case = Case::new(
+                    &format!("saved-table-height-limit-{maximum}-{enabled}-{merged}"),
+                    3,
+                    2,
+                );
+                case.height_limit = Some(frames::HeightLimit { enabled, maximum });
+                if merged {
+                    case.grid.spans[0] = [3, 2];
+                }
+                cases.push(case);
+            }
+        }
+    }
     let mut random = 0x7761_726d_726f_7773_u64;
     for index in 0..128 {
         let rows = 1 + index % 5;
@@ -206,6 +227,19 @@ pub(super) fn capture(machine: &mut Machine, base_path: &Path, widget_path: &Pat
             }
         }
         cases.push(case);
+    }
+    for case in &mut cases {
+        if let Some(limit) = case.height_limit.take() {
+            let baseline = case.fixture(machine);
+            case.height_limit = Some(limit);
+            let limited = case.fixture(machine);
+            assert_eq!(
+                limited.replacen(&limit.json_field(), "", 1),
+                baseline,
+                "{}",
+                case.name
+            );
+        }
     }
     let mut captures = Vec::new();
     for case in cases {

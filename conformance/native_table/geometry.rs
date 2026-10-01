@@ -134,6 +134,7 @@ impl TextMetrics {
 struct Case {
     name: String,
     grid: BorderCase,
+    height_limit: Option<frames::HeightLimit>,
     metrics: Vec<TextMetrics>,
     replacements: Option<Vec<[f32; 4]>>,
 }
@@ -153,6 +154,7 @@ impl Case {
         );
         Self {
             name: name.to_owned(),
+            height_limit: None,
             grid,
             metrics: (0..rows * columns)
                 .map(|slot| TextMetrics {
@@ -168,7 +170,7 @@ impl Case {
     }
 
     fn fixture(&self, machine: &mut Machine) -> String {
-        frames::initialize(machine, &self.grid);
+        frames::initialize_with_height_limit(machine, &self.grid, self.height_limit);
         let rows = self.grid.heights.len();
         let columns = self.grid.widths.len();
         if let Some(replacements) = &self.replacements {
@@ -220,8 +222,11 @@ impl Case {
             minima[0][1]
         );
         let snapshot = frames::snapshot(machine, rows, columns);
+        let limit = self
+            .height_limit
+            .map_or_else(String::new, frames::HeightLimit::json_field);
         format!(
-            "{{\"name\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"native_defaults\":{},\"outer_border\":{},\"default_border\":{},\"borders\":[{}],\"frames\":{:?},\"metrics\":[{}],\"drawn_widths\":{widths:?},\"content_bbox\":{content:?},\"measured_bbox\":{measured:?},\"minimum_height_bits\":{minima:?}}}",
+            "{{{limit}\"name\":{:?},\"heights\":{:?},\"widths\":{:?},\"spans\":{:?},\"native_defaults\":{},\"outer_border\":{},\"default_border\":{},\"borders\":[{}],\"frames\":{:?},\"metrics\":[{}],\"drawn_widths\":{widths:?},\"content_bbox\":{content:?},\"measured_bbox\":{measured:?},\"minimum_height_bits\":{minima:?}}}",
             self.name,
             self.grid.heights,
             self.grid.widths,
@@ -316,6 +321,22 @@ pub(super) fn capture(
     asymmetric.grid.borders[0] = Some(distinct_border(14));
     asymmetric.grid.borders[5] = Some(distinct_border(17));
     cases.push(asymmetric);
+    for maximum in [0.0, 1.0, 10.0, 1000.0] {
+        for enabled in [false, true] {
+            for merged in [false, true] {
+                let mut case = Case::new(
+                    &format!("saved-table-height-limit-{maximum}-{enabled}-{merged}"),
+                    3,
+                    2,
+                );
+                case.height_limit = Some(frames::HeightLimit { enabled, maximum });
+                if merged {
+                    case.grid.spans[0] = [3, 2];
+                }
+                cases.push(case);
+            }
+        }
+    }
     let mut random = 0x6765_6f6d_6574_7279_u64;
     for index in 0..128 {
         let rows = 1 + index % 5;
@@ -344,6 +365,19 @@ pub(super) fn capture(
             };
         }
         cases.push(case);
+    }
+    for case in &mut cases {
+        if let Some(limit) = case.height_limit.take() {
+            let baseline = case.fixture(machine);
+            case.height_limit = Some(limit);
+            let limited = case.fixture(machine);
+            assert_eq!(
+                limited.replacen(&limit.json_field(), "", 1),
+                baseline,
+                "{}",
+                case.name
+            );
+        }
     }
     let mut captures = Vec::new();
     for case in cases {

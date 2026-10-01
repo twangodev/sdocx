@@ -1,3 +1,4 @@
+use super::super::native_geometry_tests::HeightLimit;
 use super::super::{CellPosition, TableGrid, initialize_rows, tests::grid};
 use super::*;
 use crate::ObjectSpanLayoutConstraint;
@@ -22,6 +23,7 @@ struct Capture {
 #[derive(Deserialize)]
 struct Case {
     name: String,
+    height_limit: Option<HeightLimit>,
     heights: Vec<f32>,
     widths: Vec<f32>,
     spans: Vec<[u32; 2]>,
@@ -56,7 +58,7 @@ fn native_warm_row_sizing_uses_owner_measurements() {
     ));
     assert_eq!(
         format!("{:x}", Sha256::digest(bytes)),
-        "4a1b17063dadcf9d8d3ca819dbf92b6f75f689f87b3e1f38ab4369d3f215610e"
+        "fc01a44d106fb82a4810c0ea78dff1411a28a7a41370387163055cdda9193c92"
     );
     let capture: Capture = serde_json::from_slice(bytes).unwrap();
     assert_eq!(capture.apk_version, "4.4.45.37");
@@ -87,10 +89,13 @@ fn native_warm_row_sizing_uses_owner_measurements() {
         capture.measurement_inputs,
         "supplied cached heights or null layouts, not native text shaping"
     );
-    assert_eq!(capture.cases.len(), 142);
+    assert_eq!(capture.cases.len(), 158);
     let mut cells = 0;
     for case in capture.cases {
         let mut source = grid(&case.heights, &case.widths);
+        if let Some(limit) = &case.height_limit {
+            limit.apply(&mut source);
+        }
         let columns = case.widths.len();
         for (cell, span) in source
             .rows
@@ -176,5 +181,5 @@ fn native_warm_row_sizing_uses_owner_measurements() {
         );
         cells += actual.len();
     }
-    assert_eq!(cells, 1189);
+    assert_eq!(cells, 1285);
 }
