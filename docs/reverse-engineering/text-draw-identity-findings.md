@@ -660,9 +660,8 @@ properties in source order. Its typed selections retain ordinary/composing
 ARGB separately. Glyph `TextStyle` projects the selected foreground and
 font/decorations; background painting reads the typed selection directly,
 rather than keeping another background copy in glyph style. This does not
-provide complete native draw identity: correction fields and native entry
-identity remain absent, and glyph foreground painting keeps RGB rather than
-the compared native ARGB value.
+provide complete native entry identity, and glyph foreground painting keeps
+RGB rather than the compared native ARGB value.
 
 `TextSpanProducer` explicitly distinguishes Widget conversion for body/capture/
 table text from Drawing conversion for placed/code text. This is separate from
@@ -675,9 +674,33 @@ conversion step. Rust applies type-15/type-17 object guards only for Widget
 source ranges backed by validated embedded objects; bare U+FFFC characters do
 not acquire an object guard. Type 18 stays unguarded in both producers.
 
-`ResolvedTextStyle` projects paint and measurement styles from the same typed
-selection. `TextMeasureStyle` retains resolved f32 size, native-theme-mapped
-foreground ARGB before hyperlink paint, and a nullable shared font name before
+`ResolvedTextStyle` projects paint and a typed
+[`NativeDrawSpan`](../../crates/sdocx/src/render/text/native_identity.rs) from the
+same selection. The available native projection retains f32 size, complete
+theme-mapped foreground ARGB before hyperlink paint, separately mapped ordinary
+and composing backgrounds, nullable semantic font name, source style bits,
+underline color, hyperlink/Widget object flags and inactive correction defaults.
+The native source style includes bold/italic/underline/strike/suggestion bits
+before hyperlink paint adds underline. Correction foreground defaults to
+`0xff000000` with its enable flag false only when no active correction is
+present. Widget/Drawing object guards remain part of that source projection.
+
+Active unsupported correction, malformed recognized payloads, invalid font
+metrics and recovery that differs from native produce an unavailable identity. This includes
+default-size arithmetic where Rust's paint recovery differs from the native
+unclamped f32 result. Those cases retain existing measurement recovery but do
+not fabricate comparable native draw fields.
+
+The hash-pinned projection regression classifies all 70 span fixture pairs:
+59 compare every supported member and native equality in both directions;
+ten require unavailable identity, comprising seven correction pairs, two
+native-null-getter cases without a valid persisted source payload and one
+default-size recovery mismatch. The remaining pair checks constructor defaults
+separately from object-text defaults. The correction pair with a supplied XOR
+theme stays unavailable; it does not establish actual theme conversion parity.
+
+`TextMeasureStyle` derives from the same native candidate and retains f32 size,
+native-theme-mapped foreground ARGB before hyperlink paint, and a nullable shared font name before
 empty-name lookup normalization. Its style mask retains the supported bold and
 italic bits under native mask `0xc3`; opaque native bits `0xc0` are outside
 the implemented source-style subset. Native span color mapping is separate
@@ -719,13 +742,32 @@ expected one versus two baselines. SVG source and PDF ToUnicode text retain
 `AV|` or `AV`, with no image replacements. These compare Rust layout/transport
 with independent font advances, rather than executing complete APK shaping.
 
-Retained PDF glyph runs also group by their actual `NativeTextPaint`, even
-when glyphs share one measured run. This preserves source and blue link colors
-across joined measurement while keeping one `NativeTextBlock` logical source.
+Retained PDF glyph runs require available, equal `NativeDrawSpan` identities
+and equal actual `NativeTextPaint` within the same measured run. This preserves
+native span distinctions even when rendered paints coincide, and source and
+blue link colors across joined measurement while keeping one `NativeTextBlock` logical source.
 Per-glyph PDF fill-color regressions verify both plain/link and two-link cases;
 removing the paint-equality guard makes the joined plain/link case lose the
-link glyph's blue color. Full native draw-run grouping and conditional clip
-selection remain separate, unimplemented contracts.
+link glyph's blue color.
+
+Six [retained-run regressions](../../crates/sdocx/src/render/text/paint/identity_tests.rs)
+exercise actual measurement, wrapping and retained painting. Ordinary/composing
+background, underline, strike, suggestion color and hyperlink identity split
+PDF glyph runs while preserving their shared measured `Arc`, glyph origins and
+source. Equal semantic font names with different reserved payload bytes and
+explicit false underline remain joined. Alpha-only foreground differences
+still split measurement. Unavailable correction identity prevents coalescing
+adjacent shaped clusters while preserving their shared kerning and source.
+An identity boundary inside `e` plus combining acute remains one shaped source
+cluster; this implementation does not subdivide intra-owner glyphs.
+
+PDF integration checks across four text contexts verify exact CID source and
+one complete `ActualText` block across these run boundaries. Extractor-inferred
+line breaks between runs are separate from stored source. These comparisons
+establish the supported span predicate and its retained consumer, without
+changing shaping or implementing full native draw-run grouping. UTF-16 entry
+ownership, f32 position adjacency, font source/language gates and conditional
+per-run clip selection remain separate contracts.
 
 Hyperlink styling follows the captured native type gate: types 1–9 enable
 hypertext styling; type 0, 10 and the maximum unknown value do not add blue

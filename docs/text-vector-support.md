@@ -97,6 +97,18 @@ retained PDF origins/colors, midpoint-width wrapping and stored selectable sourc
 Retained PDF paint groups preserve different link/plain colors within one
 measured run and logical text block.
 
+Available typed `NativeDrawSpan` identity also participates in retained PDF
+grouping. It preserves full foreground ARGB before link paint, separate mapped
+backgrounds, nullable font names, source style/underline fields and producer
+flags. Measurement derives from the same projection. Active unsupported
+correction, malformed recognized payloads and incompatible font-metric recovery
+leave identity unavailable; their adjacent shaped clusters do not coalesce.
+The [projection tests](../crates/sdocx/src/render/text/native_identity.rs)
+classify all 70 native fixture pairs, including 59 complete field/equality
+comparisons and explicit unavailable/control cases. Retained-run tests preserve
+shared shaping, glyph positions and exact logical source across supported
+identity boundaries; they do not subdivide a single shaped source cluster.
+
 ## Known limits
 
 - Dense merged preparation uses captured frame-owner sizing and native visibility.
@@ -131,8 +143,10 @@ measured run and logical text block.
   [Complete run emission](reverse-engineering/table-code-findings.md#complete-retained-text-run-emission)
   is captured with supplied glyph caches and font interfaces; native shaping,
   real nested objects and Rust per-run clipping remain unverified/unimplemented.
-- Rust measured runs do not retain the native raw Span equality fields or font
-  language metadata. Selected faces retain exact CBDT presence, but the native
+- The typed native Span projection covers ordinary/default fields and retained
+  PDF grouping; unsupported correction and malformed/recovered inputs have
+  unavailable identity. Native font language metadata is not retained.
+  Selected faces retain exact CBDT presence, but the native
   bitmap/language grouping gates remain unimplemented. Their f64 cluster positions
   also differ from native f32 entry adjacency.
   [Draw identity findings](reverse-engineering/text-draw-identity-findings.md)
