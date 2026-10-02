@@ -1267,10 +1267,9 @@ The [typed post-shaping geometry](../../crates/sdocx/src/render/fonts/paint_layo
 accepts native HarfBuzz integer output and raw Skia bounds as supplied inputs.
 Its [fixture comparisons](../../crates/sdocx/src/render/fonts/paint_layout/fixture_tests.rs)
 check exact f32 bits for full/owner positions, ink bounds, character advances
-and total advance: all 16 original cases and 16 single-chunk numeric cases,
-covering 224 glyph placements and 225 UTF-16 advance slots. The three-chunk
-`mixed_scripts` case is explicitly rejected, rather than compared as if it
-were one Latin chunk.
+and total advance: all 16 original cases and all 17 numeric cases,
+covering 230 glyph placements and 231 UTF-16 advance slots. The three-chunk
+`mixed_scripts` case retains the separate Latin, Greek and Cyrillic calls.
 The isolated vector advance conversion also matches all 230 raw-to-quantized
 callback samples across both fixtures; scalar callback rounding remains
 unexecuted.
@@ -1288,10 +1287,10 @@ skew), `0x9cb60`–`0x9cb70` (owner-relative subtraction then offset addition),
 advance), `0x9cda0` (cursor accumulation) and `0x9cdb0`–`0x9cdf4` (final
 half spacing).
 Other controls expose incorrect skew and UTF-8 ownership. Unsupported
-scripts, multiple chunks, nonzero word spacing, vertical advance, extra font
-slots/fakery, malformed owners/ranges and nonfinite geometry return typed
-unavailability. This is a bounded arithmetic model, not an alternate font
-shaper or the production paragraph measurement path.
+scripts, incompatible or noncontiguous chunks, nonzero word spacing, vertical
+advance, extra font slots/fakery, malformed owners/ranges and nonfinite geometry
+return typed unavailability. This is a bounded arithmetic model, not an
+alternate font shaper or the production paragraph measurement path.
 
 ### Captured horizontal GPOS scaling and fused skew
 
@@ -1331,7 +1330,7 @@ bits `0x423e7117`. Separately rounding the multiplication and subtraction
 produces `0x423e7118`. The [typed geometry controls](../../crates/sdocx/src/render/fonts/paint_layout/fixture_tests.rs)
 compare the local operation directly, since a later pen addition can erase
 that one-step difference. Across the three fixtures, the post-shaping model
-matches 36 supported cases, 236 glyph placements and 237 UTF-16 advance slots;
+matches 37 supported cases, 242 glyph placements and 243 UTF-16 advance slots;
 the vector conversion matches 242 callback samples. Native glyph output and
 raw bounds remain supplied inputs to these isolated arithmetic regressions.
 
@@ -1349,7 +1348,10 @@ composites retain the Skrifa scaler path. Unsupported transforms/fonts,
 invalid glyphs, scaler failures and out-of-range ink return typed errors.
 
 For zero-skew `Normal` below the normalization threshold, advances come from
-the hinted outline's adjusted metrics. Nonzero skew disables hinting.
+the hinted outline's adjusted metrics. The captured FreeType load flags
+`0x120208` select `FT_LOAD_TARGET_MONO`; the public paint mode's `Normal`
+name does not select FreeType's normal hint target. Rust uses Skrifa's
+`Target::Mono` for this captured profile. Nonzero skew disables hinting.
 Unhinted advances retain the linear 16.16 metric through the signed residual
 matrix product before converting to f32. `Linear` or either transform-column
 squared length above 4,194,304 measures at backend size 64, rounds ink outward
@@ -1359,9 +1361,9 @@ bounds are rounded outward. Reusing `PaintMetrics` retains the font's outline
 collection, linear metrics and hinting instance across glyphs.
 
 The [metric regressions](../../crates/sdocx/src/render/fonts/paint_metrics/tests.rs)
-match exact f32 bits for 350 native raw advances and 1400 ink coordinates
-across all 55 cases in the original, numeric, GPOS and Skia metric fixtures.
-Controls distinguish the unhinted `V` advance
+match exact f32 bits for 401 native raw advances and 1604 ink coordinates
+across 74 cases in the original, numeric, GPOS, Skia matrix, logical-entry and
+fractional hinting fixtures. Controls distinguish the unhinted `V` advance
 1081.591796875 from its unhinted outline advance 1081.59375 and the default
 hinted advance 1082; they also check the normalization threshold, inkless
 space, zero-advance marks and invalid/unsupported inputs.
@@ -1423,6 +1425,63 @@ Controls distinguish the signed half-product rounding, loss of low fixed
 advance bits in f32, and tiny nonzero skew that disables hinting even when
 the fixed off-diagonal is zero.
 
+### Captured fractional paint hinting
+
+[`table-text-shaping-entry-skia-metrics.json`](../../conformance/table-text-shaping-entry-skia-metrics.json),
+SHA-256
+`c7216fb3148f524a8e7cde5c0bb83a616c60ae81c3cedb7c7f2d266f1bd3800a`,
+records 11 cases, 11 shape calls, 26 glyphs/UTF-16 advances, 11 scaler
+configurations, 50 FreeType glyph loads and two fast advances. It reuses the
+Skia metric hooks and supplied-Roboto producer above. Three allocation fills,
+repeated zero-fill and independent replay agree.
+The loads retain 800 before/after point pairs; their identity matrices leave
+those points unchanged. These snapshots are separate from Rust design-point
+reconstruction and its comparisons in the matrix suite.
+
+Supplied raw f32 paint sizes include 1712, 1712.25, 1712.49, 1712.5,
+1712.51, 1712.75 and 1713, with combining-mark, RTL and unhinted controls.
+The captured Normal profile uses FreeType flags `0x120208`, selecting the
+Mono hint target. At size 1712.5, glyph 84 (`o`) has maximum outline X
+57602 / 64 = 900.03125, so its outward right bound is 901. Skrifa's smooth normal
+hint target produces 900 instead. The Rust provider uses the captured Mono target
+without altering the supplied font bytes.
+
+The configured Rust hinter also matches all 192 fixed-coordinate extrema from
+48 actual hinted FreeType loads, before outward bbox rounding. This compares
+the four bounds coordinates for each identity-transformed load, separately
+from complete ordered point-stream equality. Unhinted loads remain a separate
+profile control.
+
+Paint size is a supplied raw scaler input in this suite; the source-size field
+is informational. Source-size multiplication by 100 is established separately
+by the logical-entry capture. The metric suite does not extend that caller
+proof or establish device font selection, raster output or document composition.
+
+### Captured mixed-script chunk geometry
+
+[`table-text-shaping-mixed-scripts.json`](../../conformance/table-text-shaping-mixed-scripts.json),
+SHA-256
+`00d1634d29634fac146b42baa1e1a349bd66a2a74724ca7e7d5c539f116703ad`,
+records 33 cases, 380 actual HarfBuzz calls, 800 glyphs and 800 UTF-16
+advance entries. The same supplied-Roboto layout-piece producer and host
+boundaries capture Latin/Greek/Cyrillic chunk discovery, spacing, RTL,
+supplementary partial ranges, long accumulation, combining marks and script
+reentry. Three allocation fills, repeated runs and independent processes
+produce identical bytes; the four earlier fixtures replay unchanged.
+
+For these supplied RTL pieces, script calls remain in ascending source order;
+glyph owners reverse within each call. The native f32 pen continues across
+calls, while owner origin and leading/trailing half-spacing follow each call's
+boundary. The [Rust chunk regressions](../../crates/sdocx/src/render/fonts/paint_layout/fixture_tests.rs)
+match all 800 glyph placements and advance entries from captured shaping
+inputs. Public producer/layout comparisons derive the font metrics and also
+match those outputs. Negative controls detect flattening chunk origins,
+summing independent chunk totals and reversing the RTL call order.
+
+This establishes the captured single-face chunk arithmetic, separately from
+whole-paragraph bidi resolution, font fallback, full `SpanRunFunctor`, entry
+conversion, wrapping and document composition.
+
 ### Bounded Rust paint shaping
 
 [`ResolvedFace::paint_shaper`](../../crates/sdocx/src/render/fonts.rs) constructs
@@ -1450,26 +1509,27 @@ native 265416. These supplied-advance comparisons isolate font-table scaling;
 they do not prove the metric producer.
 
 The [producer regressions](../../crates/sdocx/src/render/fonts/paint_shaping/tests.rs)
-instead derive metrics from the Rust provider and match all 57 captured
-HarfBuzz calls across the four fixtures: 350 glyph IDs/UTF-16 owners, all
-integer positions, 350 raw advances and 1400 raw ink coordinates. Numeric
-`mixed_scripts` matches each of its three separate script calls; that does not
-establish multi-chunk layout assembly.
+instead derive metrics from the Rust provider and match all 456 HarfBuzz calls
+and 1201 glyphs across seven fixtures: six shaping suites and the logical-entry
+capture below. Glyph IDs/UTF-16 owners, integer positions, raw advances and raw
+ink coordinates match exactly.
 
-`PaintShapedRun::layout` applies the shared
+`PaintShapedRun::layout` and `PaintLayout::from_runs` apply the shared
 [post-shaping geometry](../../crates/sdocx/src/render/fonts/paint_layout.rs)
-to the immutable shaped result and supplied letter/word spacing. It returns
-full and owner-relative f32 glyph positions, shifted ink, request-relative
-UTF-16 owners, per-UTF-16 advances and total advance in paint units. The
-producer-derived comparisons match all 344 glyph placements in 54 supported
-single-Latin-chunk cases, including all 18 Skia metric cases. The original
-236-glyph supplied-integer comparisons remain independent arithmetic checks;
-they exercise the same runtime geometry implementation.
-Layout rejects non-Latin or multiple chunks, nonzero word spacing, font
-slots/fakery and vertical advances. It retains stepwise f32 accumulation,
-f64 spacing additions narrowed at each store and fused skew. The final
-`SpanRunFunctor` division by 100 and document-entry bridge remain outside
-this API.
+to immutable shaped results and supplied letter/word spacing. The result
+retains full and owner-relative f32 glyph positions, shifted ink, request-relative
+UTF-16 owners, per-UTF-16 advances and total advance in paint units, with
+read-only access to source/range and geometry. Producer-derived comparisons
+match all 1201 glyph placements across 107 supplied-Roboto cases, including
+mixed Latin/Greek/Cyrillic chunks. Supplied-integer comparisons remain
+independent arithmetic checks over the same runtime implementation.
+Chunks require the same source contents, font SHA-256/face index, paint,
+scale and direction, with adjacent ranges in ascending source order.
+The shared f32 pen continues across calls; the owner origin resets per call,
+and trailing/leading half-spacing stores remain separate. Unsupported scripts,
+font slots/fakery, nonzero word spacing and vertical advances return errors.
+F64 spacing additions narrow at each store, and skew remains fused.
+The logical-entry conversion below is a separate operation on this paint layout.
 
 The paint shaper rejects malformed source ownership and invalid properties,
 and bounds input to 262144 source bytes, 65536 UTF-16 entries, 16384 scalar
@@ -1490,13 +1550,73 @@ anchors and cumulative coordinates in the selected paint scale. Unsafe
 arithmetic, other scripts, contextual/chained/cursive GPOS and fonts containing
 legacy `kern`, `kerx` or `trak` tables return `UnsupportedPositioningDomain`.
 Font-table inspection is bounded to 100000 records. The guard preserves all
-350 captured producer glyphs; acceptance of another font remains distinct from
+1201 captured producer glyphs; acceptance of another font remains distinct from
 native metric or positioning parity for that font.
 
-This API does not select device fonts, itemize a paragraph, combine script or
-fallback-font chunks, wrap lines or populate the document's retained drawing
-caches. The production `ParagraphMeasurer`, Chromium text reproduction checks
+This API does not select device fonts, itemize a paragraph, combine fallback-font
+chunks, wrap lines or populate the document's retained drawing caches.
+The production `ParagraphMeasurer`, Chromium text reproduction checks
 and document SVG/PDF transport remain separate boundaries.
+
+### Captured logical-entry conversion and paint profiles
+
+[`table-text-entry-geometry.json`](../../conformance/table-text-entry-geometry.json),
+SHA-256
+`4615a8778c0a7b6301bd9efddbd591da2fd00278d4a3f0db06b04e4b1c923dc4`,
+records eight supplied-Roboto cases, eight shape calls, 25 glyphs, 30 source
+UTF-16 slots and 64 actual paint profiles. The
+[Rust capture](../../conformance/native_table/text_entry_geometry.rs)
+executes initialized file-font/family/collection and layout-piece production,
+then actual Text layout initialization `0x97c98` and complete append `0x9dbf0`.
+The appended 64-byte glyph record retains ID at +16, full XY at +20,
+owner-relative XY at +28, source UTF-16 owner at +40 and ink at +48.
+Three allocation fills, repeated zero-fill and independent replay agree.
+
+Bounded `SpanRunFunctor` instruction windows preserve the conversion into
+logical entry caches. Glyph owner positions divide by `100.0f` at
+`0x773e0`–`0x7741c`; glyph-cache insertion advances at
+`0x774e4`–`0x774e8`. Per-owner width divides separately by `100.0f` in
+`0x77640`–`0x77678`. Ink translation at `0x775fc`–`0x77610` adds the
+owner position to layout ink that already contains shaped offsets, then
+`0x77610`–`0x7761c` calls actual Base `RectF::Scale`, `0xb1510`, with
+`0.01f` (bits `0x3c23d70a`). The addition therefore applies an offset again;
+replacing it with one translation or replacing multiplication by division
+changes captured bits. Entry bounds use actual `RectF::SetEmpty`, `0xb10ec`,
+and `RectF::Union`, `0xb1538`, through `0x7761c`–`0x77640`, preserving
+empty/degenerate rectangle handling.
+
+The actual paint construction/setter window `0x76b14`–`0x76bb8` and native
+getters capture source styles 0–7 at each of eight sizes. In this window,
+mask 1 sets underline, mask 2 fake bold and mask 4 skew -0.25. Paint size is
+the source f32 size multiplied by 100 at `0x76b44`; encoding is glyph-ID 3,
+and packed Minikin flags are `0x20000` / fake-bold `0x20020`.
+These profile observations
+are separate from the supplied shaping paint and do not establish full face
+selection or Rust fake-bold metric parity.
+
+The capture supplies layout owner origin, zero extra advance, source/entry
+storage and preallocated glyph capacity. It does not execute the whole
+`SpanRunFunctor`, typeface/font-manager initialization, editing, entry
+classification, wrapping, fallback fonts or document composition. Production
+paragraph measurement remains separate from this captured cache conversion.
+
+`PaintLayout::entry_geometry` exposes the shared
+[Rust logical-entry conversion](../../crates/sdocx/src/render/fonts/paint_layout/entry_geometry.rs).
+The immutable result retains the source/range, one advance/ink/glyph interval
+per requested UTF-16 slot and glyph IDs with absolute UTF-16 owners,
+owner-relative logical XY and ink. It validates scalar-boundary ranges and
+owners through `TextIndex`, retaining continuation slots without assigning
+glyph ownership inside a surrogate. Noncontiguous owner groups, inconsistent
+advance counts, nonfinite geometry and resource-limit violations return typed
+errors.
+
+All eight native entry cases match public Rust metric production, shaping,
+layout and entry conversion for 25 glyphs. Independent replay from captured
+layout output also matches those 25 glyphs. Controls distinguish width division
+from reciprocal multiplication and detect missing or repeated owner translation
+in ink. This proves the captured geometry conversion; it does not populate the
+production paragraph's entry caches or implement native classification, fake
+bold, font selection or wrapping.
 
 ### Direction, break boundaries and tabs
 
@@ -2651,14 +2771,16 @@ that additional skew. Canvas path emboldening in `libSPenSkia.so` uses
 
 Shaping applies base skew to retained offsets through
 `x_offset − y_offset * skew` (`0x9cab0`). The active measurement helper
-unexpectedly reads literal mask `0x4` for base skew and `0x2` for fake bold
+reads literal mask `0x4` for base skew and `0x2` for fake bold
 (`0x76b84`, `0x76ba0`), unlike the logical drawing flags. Its caller passes
 the same span buffer without shifting flags: `GetSpan` at `0x78d28`,
 `AddStyleRun` at `0x78d30`–`0x78d48`, and the helper at `0x76ad4` through
 `0x76800`/`0x76880`. `InitMinikinFontStyle` initializes weight 400 and
-italic false (`0x76c18`–`0x76c2c`). The runtime effect of this anomaly is
-unverified. Rust retains its existing shaping advances, offsets and
-face-selection policy for this branch.
+italic false (`0x76c18`–`0x76c2c`). The
+[captured paint profiles](#captured-logical-entry-conversion-and-paint-profiles)
+confirm these setter effects. Full runtime face selection and fake-bold metric
+effects remain unverified. Rust paragraph measurement retains its existing
+shaping advances, offsets and face-selection policy for this branch.
 
 In cached Samsung Notes 4.4.45.37 ARM64 `libSPenPdf.so`,
 `PdfiumTextHandler::DrawText` at `0xa2230` maps logical bold `0x1` to fill plus

@@ -186,22 +186,30 @@ composition or horizontal f32 ownership/adjacency.
 - [Single-face shaping captures](reverse-engineering/text-layout-findings.md#captured-native-shaping)
   execute native HarfBuzz and Skia/FreeType with supplied Roboto and caller
   paint inputs. [Typed post-shaping geometry](reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry)
-  matches full/owner positions, ink and advances for 236 captured glyphs across
-  36 single-Latin-chunk cases with supplied native shaping output and bounds.
-  Multiple chunks and unsupported metric inputs remain explicit errors.
+  matches full/owner positions, ink and advances from supplied native shaping
+  output and bounds, including [mixed-script chunk arithmetic](reverse-engineering/text-layout-findings.md#captured-mixed-script-chunk-geometry).
+  Incompatible chunks and unsupported metric inputs remain explicit errors.
   A [bounded Rust paint-metric provider](reverse-engineering/text-layout-findings.md#bounded-rust-paint-metrics)
-  independently matches 350 raw advances and 1400 ink coordinates across
-  55 supplied-Roboto cases. It supports horizontal scale one, finite skew and
+  independently matches 401 raw advances and 1604 ink coordinates across
+  74 supplied-Roboto cases. It supports horizontal scale one, finite skew and
   static glyf fonts; skewed composite glyphs report an explicit error.
   [Skia metric captures](reverse-engineering/text-layout-findings.md#captured-skia-residual-matrices-and-outline-metrics)
   separately retain native matrices, cached fixed advances and raw outline
   points. The [paint-sized shaping API](reverse-engineering/text-layout-findings.md#bounded-rust-paint-shaping)
   uses Rust-derived metrics and the native GPOS floor policy, preserving typed
   UTF-16 ownership and signed integer positions. Producer regressions match
-  all 350 glyphs across 57 captured shape calls; public `PaintShapedRun::layout`
-  matches full/owner positions, shifted ink and advances for 344 glyphs across
-  54 single-Latin-chunk cases. That runtime geometry retains paint units; the
-  final logical-entry bridge remains separate.
+  all 1201 glyphs across 456 captured shape calls in 107 cases over seven
+  fixtures. Public `PaintShapedRun::layout` / `PaintLayout::from_runs` also
+  match all 1201 glyphs through full/owner positions, shifted ink and advances.
+  Chunk stitching requires the same source, font, paint, scale and direction
+  with adjacent source ranges. The [native logical-entry capture](reverse-engineering/text-layout-findings.md#captured-logical-entry-conversion-and-paint-profiles)
+  separately executes layout append, entry conversion and actual paint-profile
+  setters. Public `PaintLayout::entry_geometry` matches all eight entry cases
+  and 25 glyphs, including owner-position division, width division and native
+  ink translation/scale/union. [Fractional hinting controls](reverse-engineering/text-layout-findings.md#captured-fractional-paint-hinting)
+  separately pin the native Mono hint target and 192 fixed hinted extrema;
+  whole SpanRunFunctor, font-manager initialization and production paragraph
+  caches remain outside scope.
   The producer accepts Latin, Greek and Cyrillic chunks; unsafe positioning,
   contextual/chained/cursive GPOS and legacy kern/kerx/trak fonts report typed
   unavailability before positioning.
