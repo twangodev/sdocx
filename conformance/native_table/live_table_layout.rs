@@ -2,11 +2,22 @@ use super::super::widget_text_constructor::{self, CELL_DRAWING, CONTENT, CONTENT
 use super::cell_host::{install_host, reset_host};
 use super::*;
 
+#[path = "live_table_text_clipping.rs"]
+mod text_clipping;
+
 #[path = "live_table_padding.rs"]
 mod padding;
 
 pub(crate) fn capture_padding(machine: &mut Machine, paths: widget_text_constructor::Paths<'_>) {
     padding::capture(machine, paths);
+}
+
+pub(crate) fn capture_text_clipping(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+    composer: &Path,
+) {
+    text_clipping::capture(machine, paths, composer);
 }
 
 const TABLE: u64 = MODEL + 0x9000;
@@ -170,6 +181,18 @@ impl Case {
         observation: &mut Trace,
         fill: u8,
     ) -> String {
+        self.sample_observed(machine, environment, host, observation, fill, None)
+    }
+
+    fn sample_observed(
+        self,
+        machine: &mut Machine,
+        environment: &mut NativeFontEnvironment,
+        host: &mut Host,
+        observation: &mut Trace,
+        fill: u8,
+        after_warm: Option<&dyn Fn(&Machine) -> String>,
+    ) -> String {
         reset_host(machine, environment, &mut host.cell, fill);
         machine.heap.cursor = MODEL + 0x80000;
         machine.heap.limit = MODEL + 0xc0000;
@@ -285,8 +308,9 @@ impl Case {
                 observation.take(),
             ));
         }
+        let writer = after_warm.map(|observe| observe(machine));
         assert!(machine.heap.cursor < MODEL + 0xc0000);
-        format!(
+        let mut result = format!(
             "{{\"name\":{},\"bounds_bits\":{:?},\"texts_utf8\":[{}],\"texts_assigned_after_merge\":true,\"merge\":{},\"font_size_bits\":{},\"margin_bits\":{},\"text_scale_bits\":{},\"document_width\":1000,\"document_density_bits\":{},\"display_direction\":{},\"supplied_local_split_band_bits\":{:?},\"warm_first_column_width_bits\":{},\"math_calls\":[{}],\"icu_calls\":{:?},\"states\":[{}]}}",
             json_string(self.name),
             self.bounds.map(f32::to_bits),
@@ -315,7 +339,12 @@ impl Case {
                 .join(","),
             host.cell.paragraphs.calls,
             states.join(",")
-        )
+        );
+        if let Some(writer) = writer {
+            assert_eq!(result.pop(), Some('}'));
+            result.push_str(&format!(",\"writer\":{writer}}}"));
+        }
+        result
     }
 }
 
