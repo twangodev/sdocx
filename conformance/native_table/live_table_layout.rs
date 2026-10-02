@@ -35,6 +35,24 @@ pub(crate) fn capture_bodytext_placement(
     bodytext_placement::capture(machine, paths, bodytext, composer);
 }
 
+pub(crate) fn capture_bodytext_one_page_placement(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+    bodytext: &Path,
+    composer: &Path,
+) {
+    bodytext_placement::capture_one_page(machine, paths, bodytext, composer);
+}
+
+pub(crate) fn capture_bodytext_one_page_obstacle_placement(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+    bodytext: &Path,
+    composer: &Path,
+) {
+    bodytext_placement::capture_one_page_obstacles(machine, paths, bodytext, composer);
+}
+
 #[path = "live_table_text_clipping.rs"]
 mod text_clipping;
 
