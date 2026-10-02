@@ -2368,9 +2368,12 @@ cursor with the complete local origin. It retains that origin in `TextLine.x`
 and exact relative f64 position differences, checking that reconstruction
 recovers each local f32 position before committing it. Late alignment is
 suppressed for those retained lines. Admission requires the native table width
-profile, retained/native-positioned slots, a zero frame left, finite exact-f32
-local left/width, and no exclusions, indent or marker. The original world-frame addition remains
-separate. Outside this gate the existing positioning policy applies.
+profile, retained native slots, a zero frame left, finite exact-f32
+local left/width, and no exclusions, indent or marker. Dense native placement
+does not require the separate browser rigid-offset admission flag; stacked
+marks can therefore retain valid native geometry while SVG uses its diagnosed
+fallback. The original world-frame addition remains separate. Outside this
+gate the existing positioning policy applies.
 Comparisons reproduce 29 UTF-16 slots and all 28 admitted cluster-owner X
 positions across ten captured paragraphs; synthetic roundoff controls and
 vector/generic fallback regressions check the boundary. The native constructor
@@ -2658,6 +2661,20 @@ height larger than the first two sorted bands' gap falls back to plain font
 height. Cursor centering truncates `(rectangle_height - caret_height) / 2`
 to an integer. Rust derives this metric from shared caret inputs, including
 numeric-marker font at caret 0 (`0xd85c4`), while keeping raw layout height zero.
+
+The [live padding capture](table-code-findings.md#captured-live-table-padding)
+pins the height limit independently of obstacle collision. `SetPaddingRectList`,
+`0x70d24`, discards native-empty rectangles and sorts by bottom through
+`CompareRectBottom`, `0x70f50`. At `0x70ed4` it stores the f32 gap from the
+first sorted rectangle's bottom to the second's top in layout member 276;
+fewer than two rectangles retain `FLT_MAX`. This is not the minimum across
+all gaps. `CalculateParagraphLayout`, `0x73d08`, forwards the cap to paragraph
+data member 36. `GetRectFromBlock` (`0x6c77c`–`0x6c780`) and `GetBaseline`
+(`0x6cbb4`–`0x6cbbc`) fall back to base font height when the requested line
+height exceeds it, before obstacle collision and baseline arithmetic. The
+typed Rust cell adapter carries this captured cap; live table comparisons
+cover geometry and per-line vertical bounds without reproducing native warm
+cache lifetime or establishing an exemption from first-line collision.
 
 Bodytext `BodyTextDocument::convertPageList`, `0xa9384`, constructs
 `IBodyTextDocument::Page` records with cumulative integer Y at member 0,

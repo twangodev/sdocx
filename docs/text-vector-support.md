@@ -14,11 +14,11 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics, captured body/code/table origins and [native ordinary wrap arithmetic](reverse-engineering/text-layout-findings.md#captured-ordinary-wrap-arithmetic), consumed through retained UTF-16 advances for wholly native-measured ordinary paragraphs. A separate [native paragraph-loop capture](reverse-engineering/text-layout-findings.md#captured-paragraph-layout-loop) executes host ICU and wrapping over supplied measured entries. SDK UAX breaks/graphemes/heights, complete Rust/native wrap parity and all standalone native modes remain separate limits. |
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
-| Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. [Code chrome/minimum geometry](reverse-engineering/table-code-findings.md#code-block-chrome-and-split-inputs) matches 18 cold/cleared native cases with supplied child metrics. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
-| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection, [60 complete cell artwork cases](reverse-engineering/table-code-findings.md#complete-cell-artwork-pass) and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip. Native shaping and admitted pinned Regular metrics are verified separately; [14 actual cell-text producer cases](reverse-engineering/table-code-findings.md#captured-cell-text-measurement) separately connect Model text through native shaping/layout to cached runs and bounds. Rust consumption of that complete cell loop, metrics beyond admitted profiles, per-run clip selection and device appearance remain unverified. |
+| Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. [Code chrome/minimum geometry](reverse-engineering/table-code-findings.md#code-block-chrome-and-split-inputs) matches 18 cold/cleared native cases with supplied child metrics. Live native table/cell geometry and per-line vertical bounds match 18 cold/warm cases and [10 padding cases](reverse-engineering/table-code-findings.md#captured-live-table-padding); native cache lifetime, parent placement, sparse preparation and arbitrary nested composition remain unverified. |
+| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection, [60 complete cell artwork cases](reverse-engineering/table-code-findings.md#complete-cell-artwork-pass) and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip. Native shaping and admitted pinned Regular metrics are verified separately; [14 actual cell-text producer cases](reverse-engineering/table-code-findings.md#captured-cell-text-measurement) separately connect Model text through native shaping/layout to cached runs and bounds. A [certified whole-source paint plan](reverse-engineering/text-draw-identity-findings.md#certified-whole-source-paint-plans) matches 12 cell producer cases, 20 runs and 50 glyphs and feeds SVG/PDF. Eight source-input LTR profiles add 14 runs/33 glyphs; nonrepresentable SVG shaping or world translations retain explicit fallback. Complete cell-loop profiles outside that certificate, metrics beyond admitted profiles, per-run clip selection and device appearance remain unverified. |
 | Decorations | Underline, strikethrough, uniform cluster backgrounds, supported object line bands and vector list markers | [Native entry/retained-run geometry and caller policies](reverse-engineering/text-draw-identity-findings.md#captured-embedded-object-background-geometry), [SVG/PDF regressions](../crates/sdocx/tests/text_styles.rs); document PDF paints ordinary object backgrounds in standalone/table/code contexts and omits them in Body. Backgrounds changing inside a glyph cluster or lacking safe object positions remain conservative. |
 | SVG preview/replay | Typed SVG elements, embedded fonts with private physical-face identities, retained text positions where reproducible, source-preserving text fallback elsewhere | [Rust physical-face/usvg/PDF transport and standalone Chromium font identity](reverse-engineering/text-layout-findings.md#svg-physical-face-transport), with separate preview-image pixel tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
-| Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; combining-mark Y parity with Samsung's common-baseline PDF route remains unverified. |
+| Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; captured stacked-mark common-baseline transport is verified at sizes 17/50. Broader combining-mark Y parity remains unverified. |
 | Synthesized styles | Requested styles retained through fallback; native PDF bold pen of 0.25 points and fixed shear for synthesized italic | Regular-only font tests, independent outlines and DPI checks; canvas emboldening and native measurement/face-selection anomalies remain separate. |
 
 Use `render_document_pdf` for a whole document, or
@@ -162,31 +162,40 @@ composition or horizontal f32 ownership/adjacency.
   extends those inputs through 69 Pdfium clip paths, before installation;
   Rust PDF regressions separately verify supplied-clip geometry, selectable
   text and restoration of neighboring text's clip state.
+  [Actual cloned-cell writer capture](reverse-engineering/table-code-findings.md#captured-live-table-text-clipping)
+  additionally connects native measurement/cached runs to actual content Model
+  source rectangles and writer clip/intersection guards. Its source controls are
+  explicit, and upstream document-bound callbacks, parent writer placement and
+  final PDF backend clipping remain outside it. The isolated typed decision
+  kernel matches 132 supplied controls and all 47 actual runs; production still
+  retains its conservative table-wide clip because the native Model/source
+  context is not available to that adapter.
   [Cell/content rectangle setters](reverse-engineering/table-code-findings.md#cell-content-model-rectangles)
   are captured independently; equal cell frames can preserve different content
   bounds, and native Model/drawn rectangles can diverge.
   [Entry/run-bound captures](reverse-engineering/table-code-findings.md#retained-text-entry-and-run-bounds)
   execute native placement and union producers with supplied metrics.
   [Complete run emission](reverse-engineering/table-code-findings.md#complete-retained-text-run-emission)
-  is captured with supplied glyph caches and font interfaces; the bridge from
-  native shaping to these caches, real nested objects and Rust per-run clipping
-  remain unverified/unimplemented.
+  is captured with supplied glyph caches and font interfaces. A certified
+  whole-source cell paint plan also connects native measurement, dense UTF-16
+  entries and complete run grouping within the default-face 17/50 profile.
+  Real nested objects and Rust per-run clip selection remain outside it.
 - The typed native Span projection covers ordinary/default fields and retained
   PDF grouping; unsupported correction and malformed/recovered inputs have
   unavailable identity. Admitted default-family/default-book Regular runs retain a registry
   source token, empty language and false bitmap metadata; clones/PDF options
   preserve that instance while database/configuration replacement invalidates it.
   Explicit NAME selections have no certified token; retained entry classification
-  and height facts are limited to size 17. Other selected faces retain exact CBDT
-  presence. Production PDF grouping
-  still uses its partial span boundary; full native cached-entry emission remains
-  a separate tested kernel. Admitted
+  and height facts are limited to sizes 17 and 50. Other selected faces retain
+  exact CBDT presence. Certified cell painting invokes the complete emitter once
+  for the full source and shares its plan between selectable SVG and retained PDF;
+  compatibility grouping still uses a partial span boundary. Admitted
   native-measured ordinary paragraphs use captured f32 glyph geometry and
   retained UTF-16 entry slots. The bounded mixed path uses native text slots and
   f32 selection/cursor arithmetic around SDK object anchors. Compatibility
   positioning/ownership and object preparation/height/break policy remain SDK
-  behavior; complete native cached-run grouping,
-  including horizontal f32 adjacency, remains unverified.
+  behavior; native cached-run grouping, including horizontal f32 adjacency,
+  outside the certificate remains unverified.
   [Draw identity findings](reverse-engineering/text-draw-identity-findings.md)
   establish the native producers with supplied inputs and a separate Chromium
   clip regression. Chromium preserves joined shaping with full span clips, but
@@ -194,12 +203,22 @@ composition or horizontal f32 ownership/adjacency.
   ligature hides the entire glyph. Native per-run clip selection remains
   unimplemented, independently of the verified PDF clip transport.
   [Cached snapshots](reverse-engineering/text-draw-identity-findings.md#captured-cached-entry-snapshots)
-  preserve supplied codewords and shaping owners without establishing the
-  production font/UTF-16 bridge. Drawable kind-4/emoji emission remains unsupported;
+  preserve supplied codewords and shaping owners; the
+  [whole-source certificate](reverse-engineering/text-draw-identity-findings.md#certified-whole-source-paint-plans)
+  separately bounds the production font/UTF-16 bridge. Drawable kind-4/emoji emission remains unsupported;
   default-empty controls do not supply a legitimate first glyph word. Actual
   [cell emission](reverse-engineering/table-code-findings.md#captured-cell-text-emission)
   adds nondrawable newline flushing without empty output; drawable kind-4/emoji
   remains unsupported.
+  [Actual source-input capture](reverse-engineering/table-code-findings.md#captured-cell-source-inputs)
+  additionally records Model getters after producer outputs because paragraph-list
+  observation mutates owned ranges. The bounded adapter compares eight LTR
+  profiles, including nonzero mark offsets; five
+  RTL/`.notdef`/mixed profiles remain outside it. Stacked marks at 17/50 retain
+  native glyph IDs/source/origins in PDF while SVG reports unsupported
+  positioning. Table world translation retains the plan only when all retained
+  line fields exactly match local-plus-origin f64 addition after native f32
+  translation; nonrepresentable transforms use compatibility vectors.
   [Nonzero owner-base capture](reverse-engineering/text-draw-identity-findings.md#captured-nonzero-owner-bases)
   verifies native request-relative addition and separate source-vector lookup
   for supplied owners; Minikin/HarfBuzz and chunk normalization remain excluded.

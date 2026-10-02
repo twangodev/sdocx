@@ -420,7 +420,11 @@ update, font/shaping, paragraph placement and cached-emission chain shares the
 TLS boundaries. Complete TableLayout, merged preparation, source parsing,
 document pagination, Model callbacks, origin transport and final SVG/PDF writer
 consumption remain excluded. This records authoritative single-cell emission
-inputs and outputs without a production runtime-kernel activation claim.
+inputs and outputs. The bounded
+[whole-source Rust paint-plan adapter](text-draw-identity-findings.md#certified-whole-source-paint-plans)
+separately matches 12 admitted cases, 20 runs and 50 glyphs, plus newline-only
+source/maps, before shared SVG/PDF transport. Other captured profiles retain
+their explicit admission limits.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -434,6 +438,71 @@ inputs and outputs without a production runtime-kernel activation claim.
   scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-text-cell-emission.json
 cmp /tmp/table-text-cell-emission.json conformance/table-text-cell-emission.json
+```
+
+### Captured cell source inputs
+
+[`table-text-cell-source-inputs.json`](../../conformance/table-text-cell-source-inputs.json),
+SHA-256 `8529637cdcc67b8c5e4747f0dd6105d060ee58390809b9f252cccab35de7b9de`,
+records 13 cases, 76 dense UTF16 slots, 71 glyph-cache records, 34 emitted runs
+and 15 glyph records with nonzero offsets. The
+[source observer](../../conformance/native_table/cell_source_inputs.rs) extends
+the [actual cell producer](../../conformance/native_table/text_cell_measurement.rs):
+native Model construction, text/font/margin setters, Widget conversion,
+measurement, paragraph placement, bounds getters and complete cached emission
+execute. Source font/foreground spans, margins, gravity and the complete
+paragraph list are observed alongside the resulting dense entries and runs;
+these inputs are not reconstructed from expected outputs.
+
+Source getters run after all captured producer outputs. Model
+`GetParagraphList`, `0x3e380c`, calls `GetParaList`, `0x400f08`, which normalizes
+owned paragraph ranges through `0x400f90` and `0x400f9c`. Native Widget's
+original conversion route also normalizes those ranges at `0x40198c` and
+`0x401998`. The observer therefore executes a mutating getter, with temporary
+native vector allocation/deletion, but cannot change the already captured
+measurement, placement, bounds or emitted runs. These ranges index paragraphs,
+not UTF16 slots. The constructor's Centre alignment value 2 covers only
+paragraph range `[0,1)`; later kind-6 ParsingState records carry no alignment.
+The explicit size-17 and retained constructor-size-50 controls keep their
+actual source spans and foreground ARGB `0xff252525`.
+
+Cases include stacked and uncomposed marks, leading/negative ink, supplementary
+continuations, wrapped mixed Hebrew/Arabic, tabs/newlines, zero advances and
+fractional margins. Independent arithmetic checks reproduce all 76 placed
+slots' ink translation and layout endpoints with the native two-step f32
+translation order; combining the translations changes rounding. Positive and
+negative glyph-cache Y offsets remain recorded, while the cached emitter uses
+entry X plus glyph-cache X and does not apply those glyph Y offsets. The Arabic
+control records actual glyph 0 under the pinned font configuration; it does
+not establish general Arabic shaping or system fallback coverage.
+
+Fresh owned-memory fills `0x00`, `0x55`, `0xa5`, `0xff` and repeated zero agree;
+strict independent replay is byte identical. The original 14-case measurement
+and 17-case emission fixtures retain their frozen hashes. Library/font/XML and
+host ICU 76.1/Unicode 16 provenance, instruction limits, initializers and the
+shared supplied device, identity-color, UUID, allocation/file/libc and relocated
+TLS boundaries are recorded. Complete TableLayout, source parsing/cloning,
+Model callbacks, document pagination, origin transport, SVG/PDF writer
+consumption and pixels remain excluded. This capture and its arithmetic checks
+do not establish production adapter or export parity across all 13 cases.
+The [certified Rust adapter](text-draw-identity-findings.md#certified-whole-source-paint-plans)
+separately matches eight admitted LTR profiles, 14 runs, 33 glyphs and 33
+UTF-16 slots; five RTL, `.notdef` or mixed profiles retain typed fallback.
+Stacked-mark PDF transport preserves cached geometry, while SVG separately
+validates its rigid shaping projection and diagnoses unsupported positioning.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-cell-source-inputs scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-text-cell-source-inputs.json
+cmp /tmp/table-text-cell-source-inputs.json conformance/table-text-cell-source-inputs.json
 ```
 
 ## Cell layout frames and integer text dimensions
@@ -659,6 +728,68 @@ parent-producer or SDK runtime parity.
   scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-layout.json
 cmp /tmp/table-live-layout.json conformance/table-live-layout.json
+```
+
+### Captured live table padding
+
+[`table-live-padding.json`](../../conformance/table-live-padding.json), SHA-256
+`d9c2d969448ea5f2c517f9bdf47c91c68a9dae0866dca3b84897a9ccdd9907d5`,
+records ten cases, 20 states, 80 physical-child snapshots, 320 dense entries and
+40 after-warm native capacity-getter checks. The
+[capture module](../../conformance/native_table/live_table_padding.rs) reuses
+complete native Model/TableLayout/Widget/Text construction and cold/warm
+measurement from the 18-case fixture. It observes each child's sorted native
+padding vector at layout member 184 and checks `m_GetMaxCharHeight`, Text
+`0x70f64`, against the exact stored f32 bits at member 276. Four fresh owned
+allocation fills (`0x00`, `0x55`, `0xa5`, `0xff`) and a repeated zero run agree;
+strict independent full-driver replay is byte identical.
+
+Native `SetPaddingRectangles`, `0x70d24`, discards empty rectangles and sorts
+remaining rectangles by bottom. The capacity store at `0x70ed4` uses the first
+sorted pair's `second.top - first.bottom`; it is not a minimum across all gaps.
+Fewer than two nonempty rectangles retain `f32::MAX`. The three-band control
+returns 80 despite a later gap of 5; sorted/unsorted input controls produce
+identical placement. Other controls retain capacity 20, overlap −20, touching
+zero, or font-17 capacity 12. An empty-width second band is discarded.
+Per-child filtering remains visible: second-row children often retain no padding
+after warm layout, so their capacity stays `f32::MAX` rather than inheriting the
+caller's first gap.
+
+When requested line height with spacing exceeds capacity, native line-height
+selection (`0x8e100`) falls back to base font height before collision placement
+and paragraph baseline calculation (`0x6cb0c`). It does not clamp the font to
+the available gap. Captured controls include the first-line collision and
+asymmetric margins, retaining actual measured/placed entries, Text bounds and
+cached emission. The allocating cached-emitter observer runs between phases
+with null emoji slices under the same bounded route as the live-layout capture.
+
+Rust regressions match all 18 live-layout cases and ten padding cases for exact
+table/content/cell geometry, ownership, and each line's top, baseline and bottom.
+`BandList::spacing_capacity` matches all 40 stored/native-getter capacities.
+The resize checks compare fresh SDK reflow with the captured native resized
+states; they do not establish retained native warm-cache lifecycle parity.
+Horizontal Bidi/per-character placement, ink bounds and `GetTextBound` parity
+are outside these assertions.
+
+Source bounds/text and local split bands are caller inputs, with default device
+services, width 1000, density 1, identity color and null caller manager; the
+actual table TextManager executes. Host ICU/math/file/allocation/UUID boundaries
+and the observer's retained allocations remain explicit. Saved parsing/cloning,
+document pagination and split-band production, Bodytext source-rectangle
+callbacks, final SVG/PDF writer consumption and pixels do not execute here.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --live-table-padding scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-padding.json
+cmp /tmp/table-live-padding.json conformance/table-live-padding.json
 ```
 
 ## Export row sizing and merged-frame ownership
@@ -1692,8 +1823,9 @@ and PDF checks retain selectable text without image resources. Saved-frame
 fallback painting remains outside this prepared export contract.
 Text uses a separate pass with a conservative measured-table clip in the SDK.
 The native per-run clip decision and cached-entry run-rectangle production are
-captured below. Their combined export path and complete split-page/device
-appearance are not verified.
+captured below. The [live writer capture](#captured-live-table-text-clipping)
+executes their combined native path with actual cloned content sources;
+complete split-page/device appearance remains unverified.
 
 ### Export text clips
 
@@ -1751,6 +1883,83 @@ clip does not reproduce the conditional native contract.
   scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenPdf.so > /tmp/table-text-clipping.json
 cmp /tmp/table-text-clipping.json conformance/table-text-clipping.json
+```
+
+### Captured live table text clipping
+
+[`table-live-text-clipping.json`](../../conformance/table-live-text-clipping.json),
+SHA-256 `3106348e8271cc6ca15437c0daa792c8eca86097f5505ef3c5cf55d17d054503`,
+records 11 cases, 44 selected physical cells and 47 actual foreground runs.
+Eight runs select clips: three intersections succeed and five fail. The
+[capture module](../../conformance/native_table/live_table_text_clipping.rs)
+records 156 scaled position floats, 91 balanced Paint creations/releases and
+91 skipped sibling export calls. Two independently compiled native outputs
+agree on the captured results; the final 403,945-byte fixture additionally
+records metadata and callback observations. Four fresh fills `0x00`, `0x55`,
+`0xa5`, `0xff` and a repeated zero run agree, totaling 55 case samples.
+
+The actual Model table/content/text constructors and complete native
+TableLayout/Widget/Text preparation execute. Factory `0x36d6cc` and Copy
+virtual slot 184 create a real clone; a second native TableLayout constructor
+(`0xa9d58`), Measure (`0xaa530`), Layout (`0xaa3d4`) and
+`UpdateTextDrawingPosition` (`0xacc88`) prepare it. The writer's measured-world
+rounding window `[0x37e4ac,0x37e4f8)` executes, followed by complete
+`writeTextContent`, `0x37ec88`, and `writeTextBlock`, `0x37f508`. Actual
+`GetDrawnTextData`, `0x8c084`, and `GetDrawnText`, `0x68418`, consume native
+cached entries; real `GetTextBound`, `0x8afd4` / `0x7a4ac`, supplies observed
+bounds. The content pointer passed to each block is verified to be that selected
+clone cell's actual Model content object, whose `GetRect`, `0x2caa60`, supplies
+the clip-height and intersection rectangle.
+
+Default source rectangles derive from native construction/copy. The first
+default content retains `[0,0,80,100]` while the clone's rounded measured world
+rectangle is `[-1,-1,161,47]`. With genuinely short source cells of height 4,
+warm layout expands the rows while retaining saved source bounds; six runs
+select clips, with intersection results true/false/false/true/false/false.
+Named source-control cases explicitly call the actual source setter at virtual
+slot 40 after layout. They bracket the bottom/height comparison by adjacent f32
+values: below and equal skip clipping, above selects it. Horizontal overflow
+alone skips clipping. A disjoint source still selects a clip and retains the
+translated run bounds when native intersection returns false. Selection at
+`0x37f6e8`, intersection return at `0x37f724`, native scaling/paint translation
+and the final `DrawText` callsite at `0x37f8cc` are observed. These finite ordinary
+inputs complement the separate 132 supplied controls for touching, inverted and
+signed-zero dimensions.
+
+The caller selects all four physical slots, including merged covered cells;
+aggregate writer visibility selection does not execute. Clone child update-size
+callbacks are absent and editing callbacks present in all 44 observations.
+Source-control setters are supplied geometry controls, not callback-produced
+bounds. Parent Composer clone placement is excluded; the separate
+[clone-placement capture](#captured-table-clone-placement) executes that route.
+PDF factory/Paint methods and final `DrawText` are recording interfaces;
+bitmap-font, background and decoration exports are skipped. Native font getters,
+geometry, guards, intersections and scaling execute under the shared supplied
+context/device/color and pinned host ICU/math/allocation/UUID/libc/file
+boundaries, with APK/library/font provenance retained. Parent document bounds,
+Bodytext callback source production, source parsing, device ICU, final backend
+clipping and pixels remain excluded. The [isolated Rust clip kernel](../../crates/sdocx/src/render/text/native_cell_clip.rs)
+replays all 132 supplied controls and all 47 actual produced runs, including
+eight selected clips and three successful intersections. It rejects nonfinite
+or overflowing geometry without normalizing native dimensions. It is not
+activated for table export because the required actual Model/source context
+is not supplied by that adapter. The production table-wide clip remains
+separate. This establishes the native writer path for these controls and its
+bounded decision kernel, without complete document export parity.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --live-table-text-clipping scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-live-text-clipping.json
+cmp /tmp/table-live-text-clipping.json conformance/table-live-text-clipping.json
 ```
 
 ### Cell content model rectangles
@@ -1832,7 +2041,9 @@ Cold Drawing frame preparation (`0xaa6b4`, `0xab168`) leaves saved cell and
 content Model rectangles unchanged. The explicit bridge offsets each cached
 frame by the supplied caller rectangle's origin and invokes native cell/content
 setters. Warm native row extension and offset (`0xaff74`, `0xade0c`) change
-Drawing frames; Model rectangles remain stale until the bridge runs. The
+Drawing frames; the Model rectangles in these captured operations remain
+unchanged until the explicit bridge runs. This does not establish the behavior
+of other document rectangle-update routes. The
 separately recorded size gate is false for zero and `0.0005` growth and true for
 `0.002` growth. The harness explicitly calls the bridge even when that gate is
 false; those calls do not establish application dispatch in that state.
@@ -1941,7 +2152,9 @@ native span-list copy/traversal and Widget `GetTextLayout`, `0xd39ac`, execute.
 
 The callback clears the supplied nil page cache, resolves the span/index and
 calls the document rectangle getter before the size gate. A false gate leaves
-Model rectangles unchanged, including origin-only changes. Native assembly
+Model rectangles unchanged on this size-notification route, including
+origin-only changes. This is not a general lifecycle rule for document-driven
+rectangle updates. Native assembly
 compares absolute f32 width/height differences with `>= 0.001f32`; captured
 `0.0005` and `0.002` cases bracket that threshold without an exact-equality
 case. A true gate offsets each per-slot Drawing frame by the document bound's
@@ -1951,6 +2164,20 @@ cell rectangles restore content bounds, and clean unsaved flags remain clean.
 Missing owner/layout and view-callback guards prevent their corresponding route.
 Repeated warm notification calls the document getter twice but enters the
 bridge once after size convergence.
+
+A separate source-only document update route compares the complete rectangle.
+`BodyTextView::updateObjectSpanRect`, `0xd6fac`, and
+`updateObjectSpanRectBySpanList`, `0xd9618`, obtain native
+`PageViewGroup::GetObjectUpdateInfo`, `0xf80e8`. It reads the document text
+layout's virtual-slot-112 `GetTextBound` (`0xf8258`–`0xf8268`), removes the
+page origin and calls Widget `GetRectByDrawnRect` at `0xf82a4`.
+`updateObjectSpanRectList`, `0xd9320`, compares object virtual-slot-168 geometry
+with that complete update rectangle using the `0.001` tolerance
+(`0xd9410`–`0xd9434`). A changed rectangle calls `setOriginalRect`, object
+virtual slot 48 and, for type 22 tables, `setCellRectForTable` directly at
+`0xd949c`. This bypasses the size-notification width/height gate above.
+These instructions establish a distinct update path; that producer and its
+document-to-cell callback timing do not execute in the 18-case fixture.
 
 Document virtual slot 112 is `GetTextBound(index)`, not `GetTextRect`.
 The actual Text producer is `TextLayout::GetTextBound`, `0x8afd4`, forwarding

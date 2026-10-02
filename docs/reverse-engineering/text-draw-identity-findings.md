@@ -1111,25 +1111,27 @@ The [actual cell comparisons](../../crates/sdocx/src/render/text/native_runs/cel
 also replay all 17 emission cases, 78 entries, 67 cached glyph records and 27
 runs with native span/paragraph/gravity/logical-map inputs. Leading,
 consecutive and newline-only cases distinguish flushing from an empty append.
-These kernel comparisons do not activate the complete emitter in production.
+These comparisons cover the emitter independently of its bounded production
+paint-plan adapter below.
 
 Production [TextSource](../../crates/sdocx/src/text_index.rs) keeps sealed,
 consistent character, UTF-8 byte and UTF-16 ranges. One `TextIndex` constructs
 these ranges; checked `relative_to` retains all three through measured glyphs,
 retained glyphs and `NativeGlyph` block-relative source. The retained registry
 recomputes the expected ranges against the actual block text and rejects a
-mismatch before passing the validated byte range to Krilla. This is a checked
-projection of Rust shaping ownership, not proof of native UTF-16 owner parity.
+mismatch before passing the validated byte range to Krilla. Compatibility transport uses this checked projection of Rust shaping
+ownership. The certified paint-plan comparisons below separately verify native
+run UTF-16 source ranges and paragraph maps within their captured profile.
 
-Production PDF grouping calls the same `native_run_boundary` with its available
+Compatibility PDF grouping calls the same `native_run_boundary` with its available
 span projection. It does not supply native entry kind/direction, f32 horizontal
 adjacency or font source/bitmap/language metadata. A different or unavailable
 span splits; equal spans return an unavailable full native boundary, leaving
 the existing measured-`Arc` and actual-paint checks to govern coalescing.
 The cached-entry emitter is verified with supplied inputs and, separately, the
-actual cell producer above. The renderer uses its partial span boundary; complete
-Rust/native cached-run grouping and unsupported font/ownership profiles remain
-separate limits.
+actual cell producer above. Outside the paint-plan certificate, the renderer
+uses its partial span boundary; unsupported font/ownership profiles retain that
+separate compatibility contract.
 
 Measured runs retain a selected `ResolvedFace`, synthesis, direction and shaped
 glyphs. `ResolvedFace::is_bitmap_font()` retains the exact CBDT table-directory
@@ -1145,15 +1147,75 @@ configuration replacement invalidates it. PDF options preserve the supplied
 book's instance when its database/configuration still match. The source metadata
 checks 82 Regular requests from the actual live-registry capture. Other
 faces/configurations have no certified token. Retained entry classification and
-height facts are additionally limited to the captured size-17 profile. This
-metadata does not activate complete production native grouping. HarfBuzz
+height facts are additionally limited to captured sizes 17 and 50. The bounded
+paint-plan adapter consumes those facts for complete run grouping within its
+certificate. HarfBuzz
 byte clusters map to Rust character ranges in the compatibility path. Admitted
 native-measured ordinary paragraphs retain captured f32 geometry and UTF-16
 entry slots. A bounded mixed path also retains native text slots around SDK
 object anchors and uses native f32 selection/cursor arithmetic. Compatibility
 profiles and object classification/height/preparation/break policies remain SDK
-behavior. Complete native cached-run horizontal adjacency remains
-separate from those bounded producer comparisons.
+behavior. Native cached-run horizontal adjacency outside the paint-plan
+certificate remains separate from these bounded producer comparisons.
+
+## Certified whole-source paint plans
+
+[NativePaintPlan](../../crates/sdocx/src/render/text/native_paint_plan.rs)
+builds one dense UTF-16 entry array from the complete retained cell text layout
+and invokes `native_runs` once. It retains native entry kinds, f32 local
+positions and rectangles, span ARGB/style, registered source/language/bitmap
+identity, cached glyph IDs/offsets and paragraph inverse logical maps. Newline
+kind 4 belongs to the following display paragraph and flushes without an empty
+run. Cached glyph Y is ignored by the native emitter; every emitted glyph uses
+its run's common f32 baseline. Local geometry is retained before the separate
+f64 world translation.
+
+The [actual producer regressions](../../crates/sdocx/src/render/text/native_paint_plan/fixture_tests.rs)
+match captured run ranges and paragraph maps, glyph IDs/X/common baseline,
+rectangles, font size/paint and physical-font hash for 12 admitted cases,
+20 runs and 50 glyphs from the 17-case cell-emission capture. Native numeric
+font IDs and exact per-glyph source-owner values are not compared by these
+tests; registered-source identity and checked source containment remain
+separate contracts. A newline-only case independently retains two
+paragraph maps and zero runs. Unsupported font/tab/RTL controls return typed
+fallback; empty source retains the native rejection rather than inventing a
+run. This certificate admits default-family pinned Regular/index-zero,
+nonvariable nonsynthetic LTR text at sizes 17 or 50, opaque foreground and the
+captured local cell layout. Objects, bullets, predefined text styles,
+exclusions, nonzero gravity and Both justification are outside it.
+
+The [shared dispatcher](../../crates/sdocx/src/render/text/paint/native_plan_paint.rs)
+projects the completed plan onto visible source windows. SVG remains selectable
+text and validates a rigid browser shaping projection before using retained
+positions; internal mark displacement it cannot reproduce falls back with a
+positioning diagnostic. Retained PDF consumes the same projected run's exact
+font/glyph IDs and source ownership through
+[NativePaintBridge](../../crates/sdocx/src/render/text/native.rs), adding the
+world translation once and recording only projected source in `ActualText`.
+The [source-input comparisons](../../crates/sdocx/src/render/text/native_paint_plan/source_fixture_tests.rs)
+extend the producer proof to eight admitted LTR profiles, 14 runs, 33 glyphs
+and 33 UTF-16 slots, including nonzero cached offsets and stacked marks at sizes
+17/50. Five RTL, `.notdef` or mixed profiles remain outside the certificate.
+Preparation uses caller text/style/width controls and the separately proven
+constructor size 50, foreground `#252525` and initial Center paragraph;
+post-output Model getter observations are assertions, not reconstructed inputs.
+The compared run/geometry/paint/map fields retain the limits described above.
+Paired stacked-mark consumers preserve native glyph IDs, source and origins
+in retained PDF; SVG emits `UnsupportedGlyphPositioning` for the geometry its
+rigid shaping projection cannot represent.
+
+Table Drawing preserves the plan's world translation only when every line's
+f32-transformed X, baseline, top, background top, bottom and post-cursor equals
+its local value plus the f64 world origin exactly. Otherwise it clears the
+certificate and retains compatibility vector transport. This admits checked
+one-unit translations at sizes 17/50 and rejects nonrepresentable ordinary or
+large `2^24` controls. It adds the accepted world translation once, without
+reconstructing geometry or using a tolerance.
+
+These writer transports do not establish native per-run clip selection, legacy
+Table/Code opacity overrides, arbitrary font/script/gravity behavior or native
+warm wrapper-cache lifetime. Local producer geometry and checked SDK translation
+are separate from complete native writer world-positioning parity.
 
 The retained PDF path can transport supplied clips with selectable text, and
 Chromium can transport span clips without breaking the covered joined shaping.

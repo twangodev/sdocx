@@ -55,7 +55,8 @@ Planning, task lists and development progress are kept outside these documents.
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha
   transport, cached-entry snapshots, XML font language, file-font source instances,
-  live four-file registry source/language/copy identity and Chromium text clip
+  live four-file registry source/language/copy identity, certified whole-source
+  paint plans shared by SVG/PDF and Chromium text clip
   behavior.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
   references, authoritative media bindings and image regression coverage.
@@ -237,6 +238,8 @@ Planning, task lists and development progress are kept outside these documents.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   bounded table/code records, merge construction, frame ownership and paint
   visibility; captured borders, fills, column minima, saved height limits,
+  live child measurement, first-pair padding capacity and actual cloned
+  cell writer clip inputs,
   cold/warm measurement, bounds, split caches, row-bottom compression, warm-row
   control, cell text dimensions, public layout lifecycle, visible rectangles and
   canvas clip arguments, PDF artwork crops, conditional text clips, independent
@@ -245,7 +248,8 @@ Planning, task lists and development progress are kept outside these documents.
   bounds, complete cell artwork,
   constructed cell Model bridges, genuine cell text constructors and native
   text-to-measurement/layout/cache producers, parsed Common/span defaults,
-  captured pre-emission spans/maps and newline flushing, installed
+  captured pre-emission spans/maps, source getters with explicit normalization
+  side effects and newline flushing, installed
   live cold/warm table layout with real child text, callback/span lookup, cloned table
   placement, measured/cropped background Canvas/image transport, code
   chrome/cache/minimum geometry and vector
