@@ -1171,13 +1171,18 @@ fn main() {
             );
             return;
         }
-        Some("--text-span-font-name") => {
+        Some(mode @ ("--text-span-font-name" | "--text-shaping-named-faces")) => {
             let paths = [3, 4, 5, 6, 7, 8].map(|index| {
                 std::env::args_os()
                     .nth(index)
                     .expect("base, text, Skia, font, bundled XML and libc++ library paths required")
             });
-            text_span_font_name::capture(
+            let capture: fn(&mut Machine, &Path, &Path, &Path, &Path, &Path, &Path) = match mode {
+                "--text-span-font-name" => text_span_font_name::capture,
+                "--text-shaping-named-faces" => text_shaping::capture_named_faces,
+                _ => unreachable!(),
+            };
+            capture(
                 &mut machine,
                 Path::new(&paths[0]),
                 Path::new(&paths[1]),
@@ -1484,7 +1489,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

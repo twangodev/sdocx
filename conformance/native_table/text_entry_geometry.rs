@@ -10,8 +10,27 @@ const ENTRIES: u64 = MODEL + 0x1a000;
 const GLYPH_ENTRIES: u64 = MODEL + 0x1d000;
 const GLYPH_STORAGE: u64 = MODEL + 0x22000;
 
+unsafe extern "C" {
+    fn uc_emu_stop(engine: Engine) -> i32;
+}
+unsafe extern "C" fn stop_window(engine: Engine, _: u64, _: u32, _: *mut c_void) {
+    check(unsafe { uc_emu_stop(engine) });
+}
 fn window(machine: &Machine, begin: u64, end: u64) {
+    let mut hook = 0;
+    check(unsafe {
+        uc_hook_add(
+            machine.engine,
+            &mut hook,
+            4,
+            stop_window as *mut c_void,
+            ptr::null_mut::<c_void>(),
+            TEXT + end,
+            TEXT + end,
+        )
+    });
     let error = unsafe { uc_emu_start(machine.engine, TEXT + begin, TEXT + end, 0, 100_000) };
+    check(unsafe { uc_hook_del(machine.engine, hook) });
     assert_eq!(
         error,
         0,

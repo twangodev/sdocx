@@ -68,8 +68,8 @@ struct Descriptor {
     file: usize,
     position: usize,
 }
-struct Services {
-    icu: Box<HostIcu>,
+pub(super) struct Services {
+    pub(super) icu: Box<HostIcu>,
     files: Vec<File>,
     descriptors: BTreeMap<u64, Descriptor>,
     paths: Vec<String>,
@@ -228,7 +228,13 @@ fn import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Opti
         | "pthread_cond_init"
         | "pthread_cond_destroy"
         | "pthread_cond_signal"
+        | "pthread_cond_broadcast"
         | "pthread_key_delete" => 0,
+        "__stack_chk_fail" => panic!(
+            "native stack check failed LR={:x} SP={:x}",
+            read_register(engine, REGISTER_X30),
+            read_register(engine, REGISTER_SP)
+        ),
         "syscall" => {
             assert_eq!(a, 178);
             1
@@ -241,11 +247,12 @@ fn import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Opti
 }
 
 #[derive(Clone, Copy)]
-struct Case {
-    span_name: Option<&'static str>,
-    default_name: Option<&'static str>,
-    flags: u8,
-    direction: bool,
+pub(super) struct Case {
+    pub(super) span_name: Option<&'static str>,
+    pub(super) default_name: Option<&'static str>,
+    pub(super) flags: u8,
+    pub(super) direction: bool,
+    pub(super) size: f32,
 }
 
 #[derive(Default)]
@@ -333,13 +340,13 @@ unsafe extern "C" fn trace_call(engine: Engine, address: u64, _: u32, data: *mut
         _ => unreachable!(),
     }
 }
-struct TraceRecorder {
+pub(super) struct TraceRecorder {
     trace: Box<FactoryTrace>,
     hooks: Vec<usize>,
     engine: Engine,
 }
 impl TraceRecorder {
-    fn new(machine: &Machine) -> Self {
+    pub(super) fn new(machine: &Machine) -> Self {
         let mut result = Self {
             trace: Box::default(),
             hooks: Vec::new(),
@@ -380,7 +387,8 @@ fn window(machine: &Machine, begin: u64, end: u64) {
     );
     assert_eq!(read_register(machine.engine, 260), TEXT + end);
 }
-struct ResultProfile {
+pub(super) struct ResultProfile {
+    pub(super) paint: u64,
     selected_name: Option<String>,
     factory: FactoryTrace,
     typeface_style: u32,
@@ -389,7 +397,7 @@ struct ResultProfile {
     physical_digest: &'static str,
     physical_style: u32,
     physical_fakery: u64,
-    physical_source_id: u64,
+    pub(super) physical_source_id: u64,
     physical_face_index: u64,
     physical_data_size: u64,
     physical_mapping_is_pinned: bool,
@@ -405,13 +413,14 @@ fn optional_json(input: Option<&str>) -> String {
     input.map_or_else(|| "null".to_owned(), json_string)
 }
 impl ResultProfile {
-    fn json(&self, case: Case) -> String {
+    pub(super) fn json(&self, case: Case) -> String {
         format!(
-            "{{\"span_name\":{},\"default_name\":{},\"source_flags\":{},\"caller_direction\":{},\"source_size_bits\":1099497472,\"selected_name\":{},\"factory_name\":{},\"factory_direction\":{},\"parser_name\":{},\"parser_matched\":{},\"parser_style\":{},\"factory_family\":{},\"requested_weight\":{},\"requested_italic\":{},\"typeface_style\":{},\"resolved_family\":{},\"physical_font_path\":{},\"physical_font_sha256\":{},\"physical_font_style\":{},\"physical_fakery\":{},\"physical_source_id\":{},\"physical_face_index\":{},\"physical_data_size\":{},\"physical_mapping_is_pinned\":{},\"set_typeface_selects_same_physical_face\":{},\"paint_size_bits\":{},\"paint_scale_x_bits\":{},\"paint_skew_x_bits\":{},\"paint_flags\":{},\"paint_weight\":{},\"paint_italic\":{}}}",
+            "{{\"span_name\":{},\"default_name\":{},\"source_flags\":{},\"caller_direction\":{},\"source_size_bits\":{},\"selected_name\":{},\"factory_name\":{},\"factory_direction\":{},\"parser_name\":{},\"parser_matched\":{},\"parser_style\":{},\"factory_family\":{},\"requested_weight\":{},\"requested_italic\":{},\"typeface_style\":{},\"resolved_family\":{},\"physical_font_path\":{},\"physical_font_sha256\":{},\"physical_font_style\":{},\"physical_fakery\":{},\"physical_source_id\":{},\"physical_face_index\":{},\"physical_data_size\":{},\"physical_mapping_is_pinned\":{},\"set_typeface_selects_same_physical_face\":{},\"paint_size_bits\":{},\"paint_scale_x_bits\":{},\"paint_skew_x_bits\":{},\"paint_flags\":{},\"paint_weight\":{},\"paint_italic\":{}}}",
             optional_json(case.span_name),
             optional_json(case.default_name),
             case.flags,
             case.direction,
+            case.size.to_bits(),
             optional_json(self.selected_name.as_deref()),
             optional_json(self.factory.name.as_deref()),
             self.factory.direction,
@@ -441,7 +450,7 @@ impl ResultProfile {
         )
     }
 }
-fn execute(
+pub(super) fn execute(
     machine: &Machine,
     services: &Services,
     case: Case,
@@ -451,7 +460,7 @@ fn execute(
     let name = spen_string(machine, NAME, case.span_name);
     let default = spen_string(machine, DEFAULT_NAME, case.default_name);
     write(machine.engine, SPAN, &[0; 72]);
-    write(machine.engine, SPAN, &17.125_f32.to_bits().to_le_bytes());
+    write(machine.engine, SPAN, &case.size.to_bits().to_le_bytes());
     write(machine.engine, SPAN + 4, &0xff112233_u32.to_le_bytes());
     write(machine.engine, SPAN + 16, &[case.flags]);
     write(machine.engine, SPAN + 24, &name.to_le_bytes());
@@ -519,6 +528,7 @@ fn execute(
     assert_eq!(u32::from(paint_weight), typeface_style & 0xffff);
     assert_eq!(paint_italic, typeface_style & 0x10000 != 0);
     ResultProfile {
+        paint,
         selected_name,
         factory: std::mem::take(recorder.trace.as_mut()),
         typeface_style,
@@ -560,6 +570,7 @@ fn cases() -> Vec<Case> {
                     default_name: Some("Roboto-Bold"),
                     flags,
                     direction,
+                    size: 17.125,
                 });
             }
         }
@@ -579,6 +590,7 @@ fn cases() -> Vec<Case> {
                         default_name,
                         flags,
                         direction,
+                        size: 17.125,
                     });
                 }
             }
@@ -595,65 +607,11 @@ pub(super) fn capture(
     xml: &Path,
     cpp: &Path,
 ) {
-    for (path, digest) in [
-        (
-            "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
-            "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
-        ),
-        (
-            "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1",
-            "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24",
-        ),
-        (
-            "/usr/lib/x86_64-linux-gnu/libc.so.6",
-            "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
-        ),
-        (
-            "/usr/lib/x86_64-linux-gnu/libm.so.6",
-            "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
-        ),
-    ] {
-        pinned_host(path, digest);
-    }
-    machine.call_instruction_limit = 10_000_000;
-    machine.call_timeout_micros = 0;
-    let mut environment = NativeFontEnvironment::with_libraries(
-        machine,
-        base,
-        text,
-        skia,
-        font,
-        &[
-            (xml, XML, XML_SHA256),
-            (
-                cpp,
-                0x0b00_0000,
-                "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
-            ),
-        ],
-    );
-    let mut services = Box::new(Services::new(machine, font));
-    environment.set_host_import_handler(import, ptr::from_mut(services.as_mut()).cast());
+    let (mut environment, mut services) = setup(machine, base, text, skia, font, xml, cpp);
     let cases = cases();
     let mut canonical = None;
     for fill in [0, 0xa5, 0xff, 0] {
-        environment.reset(machine, fill, 0);
-        services.descriptors.clear();
-        services.paths.clear();
-        for initializer in INITIALIZERS {
-            machine.call(TEXT + initializer, &[]);
-        }
-        machine.call(TEXT + 0x849e8, &[]);
-        assert_eq!(
-            services.paths,
-            vec![
-                "/system/etc/fonts.xml",
-                "/system/fonts/Roboto-Regular.ttf",
-                "/system/fonts/Roboto-Bold.ttf",
-                "/system/fonts/Roboto-Italic.ttf",
-                "/system/fonts/Roboto-BoldItalic.ttf"
-            ]
-        );
+        reset(machine, &mut environment, &mut services, fill);
         let mut recorder = TraceRecorder::new(machine);
         let outputs: Vec<_> = cases
             .iter()
@@ -712,5 +670,80 @@ pub(super) fn capture(
         canonical.unwrap().join(",\n"),
         LIBRARY_SHA256 = LIBRARY_SHA256,
         XML_SHA256 = XML_SHA256,
+    );
+}
+
+pub(super) fn setup(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    xml: &Path,
+    cpp: &Path,
+) -> (NativeFontEnvironment, Box<Services>) {
+    for (path, digest) in [
+        (
+            "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
+            "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
+        ),
+        (
+            "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1",
+            "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24",
+        ),
+        (
+            "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
+        ),
+        (
+            "/usr/lib/x86_64-linux-gnu/libm.so.6",
+            "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+        ),
+    ] {
+        pinned_host(path, digest);
+    }
+    machine.call_instruction_limit = 10_000_000;
+    machine.call_timeout_micros = 0;
+    let mut environment = NativeFontEnvironment::with_libraries(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        &[
+            (xml, XML, XML_SHA256),
+            (
+                cpp,
+                0x0b00_0000,
+                "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+            ),
+        ],
+    );
+    let mut services = Box::new(Services::new(machine, font));
+    environment.set_host_import_handler(import, ptr::from_mut(services.as_mut()).cast());
+    (environment, services)
+}
+pub(super) fn reset(
+    machine: &Machine,
+    environment: &mut NativeFontEnvironment,
+    services: &mut Services,
+    fill: u8,
+) {
+    environment.reset(machine, fill, 0);
+    services.descriptors.clear();
+    services.paths.clear();
+    for initializer in INITIALIZERS {
+        machine.call(TEXT + initializer, &[]);
+    }
+    machine.call(TEXT + 0x849e8, &[]);
+    assert_eq!(
+        services.paths,
+        vec![
+            "/system/etc/fonts.xml",
+            "/system/fonts/Roboto-Regular.ttf",
+            "/system/fonts/Roboto-Bold.ttf",
+            "/system/fonts/Roboto-Italic.ttf",
+            "/system/fonts/Roboto-BoldItalic.ttf"
+        ]
     );
 }

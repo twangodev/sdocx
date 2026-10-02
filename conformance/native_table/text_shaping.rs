@@ -6,6 +6,9 @@ mod skia_metrics;
 #[path = "text_shaping/entry_skia_metrics.rs"]
 mod entry_skia_metrics;
 
+#[path = "text_shaping/named_faces.rs"]
+mod named_faces;
+
 #[path = "text_shaping/itemization.rs"]
 mod itemization;
 
@@ -1016,6 +1019,18 @@ impl Case {
         write(machine.engine, features + self.features.len() as u64, &[0]);
         machine.call(TEXT + 0x77e2c, &[PAINT + 40, features]);
         write(machine.engine, PAINT + 64, &COLLECTION.to_le_bytes());
+        self.execute_prepared(machine, trace, host, PAINT, source_id, Some("en-Latn"))
+    }
+    fn execute_prepared(
+        &self,
+        machine: &mut Machine,
+        trace: &mut TraceRecorder,
+        host: &mut HostIcu,
+        paint: u64,
+        source_id: u64,
+        family_locale: Option<&str>,
+    ) -> String {
+        let paint_size = read_u32(machine.engine, paint);
         let source: Vec<_> = self.text.encode_utf16().collect();
         assert!(source.len() <= 4096);
         let source_pointer = if source.len() <= 128 {
@@ -1041,7 +1056,7 @@ impl Case {
         write(machine.engine, RANGE + 4, &range[1].to_le_bytes());
         machine.call(
             TEXT + 0x9b150,
-            &[PIECE, VIEW, RANGE, u64::from(self.rtl), PAINT, 0, 0],
+            &[PIECE, VIEW, RANGE, u64::from(self.rtl), paint, 0, 0],
         );
         assert!(trace.state.pending.is_none());
         let read_vector = |offset: u64, width: usize| {
@@ -1095,17 +1110,23 @@ impl Case {
             .collect::<Vec<_>>()
             .join(",");
         let mut output = format!(
-            "{{\"name\":{},\"text_utf8\":{},\"range_utf16\":{:?},\"font_size_bits\":{},\"font_source\":{{\"id\":{},\"bitmap\":false,\"language\":\"\",\"face_index\":0}},\"family_locale\":\"en-Latn\",\"hyphen_edits\":[0,0],\"paint\":{{\"size_bits\":{},\"scale_x_bits\":{},\"skew_x_bits\":{},\"letter_spacing_bits\":{},\"word_spacing_bits\":0,\"packed_flags\":{},\"locale_list_id\":0,\"weight\":400,\"italic\":false,\"variant\":0,\"feature_settings\":{}}},\"hb_calls\":[{}],\"layout_piece\":{{\"font_indices\":{:?},\"glyph_ids\":{:?},\"full_positions_bits\":{:?},\"owner_positions_bits\":{:?},\"owners_utf16\":{:?},\"ink_bounds_bits\":{:?},\"character_advances_bits\":{:?},\"total_advance_bits\":{},\"extent_bits\":{:?},\"font_fakery_bits\":{:?}}},\"callbacks\":{{\"scalar_glyphs\":{:?},\"scalar_raw_bits\":{:?},\"scalar_quantized\":{:?},\"vector_glyphs\":{:?},\"vector_raw_bits\":{:?},\"vector_quantized\":{:?},\"raw_skia_bounds_bits\":{:?}}},\"host_calls\":{{\"icu\":{{{}}},\"qsort\":{:?}}}}}",
+            "{{\"name\":{},\"text_utf8\":{},\"range_utf16\":{:?},\"font_size_bits\":{},\"font_source\":{{\"id\":{},\"bitmap\":false,\"language\":\"\",\"face_index\":0}},\"family_locale\":{},\"hyphen_edits\":[0,0],\"paint\":{{\"size_bits\":{},\"scale_x_bits\":{},\"skew_x_bits\":{},\"letter_spacing_bits\":{},\"word_spacing_bits\":{},\"packed_flags\":{},\"locale_list_id\":{},\"weight\":{},\"italic\":{},\"variant\":{},\"feature_settings\":{}}},\"hb_calls\":[{}],\"layout_piece\":{{\"font_indices\":{:?},\"glyph_ids\":{:?},\"full_positions_bits\":{:?},\"owner_positions_bits\":{:?},\"owners_utf16\":{:?},\"ink_bounds_bits\":{:?},\"character_advances_bits\":{:?},\"total_advance_bits\":{},\"extent_bits\":{:?},\"font_fakery_bits\":{:?}}},\"callbacks\":{{\"scalar_glyphs\":{:?},\"scalar_raw_bits\":{:?},\"scalar_quantized\":{:?},\"vector_glyphs\":{:?},\"vector_raw_bits\":{:?},\"vector_quantized\":{:?},\"raw_skia_bounds_bits\":{:?}}},\"host_calls\":{{\"icu\":{{{}}},\"qsort\":{:?}}}}}",
             json_string(self.name),
             json_string(self.text),
             range,
             self.font_size.to_bits(),
             source_id,
-            paint_size.to_bits(),
-            1_f32.to_bits(),
-            self.skew.to_bits(),
-            self.letter_spacing.to_bits(),
-            self.flags,
+            family_locale.map_or_else(|| "null".into(), json_string),
+            paint_size,
+            read_u32(machine.engine, paint + 4),
+            read_u32(machine.engine, paint + 8),
+            read_u32(machine.engine, paint + 12),
+            read_u32(machine.engine, paint + 16),
+            read_u32(machine.engine, paint + 20),
+            read_u32(machine.engine, paint + 24),
+            u16::from_le_bytes(bytes(machine.engine, paint + 28, 2).try_into().unwrap()),
+            bytes(machine.engine, paint + 30, 1)[0] != 0,
+            bytes(machine.engine, paint + 32, 1)[0],
             json_string(self.features),
             trace.state.calls.join(","),
             read_vector(0, 1),
@@ -1451,6 +1472,18 @@ pub(super) fn capture_mixed_scripts(
         mixed_script_cases(),
         CaptureTrace::MixedScripts,
     );
+}
+
+pub(super) fn capture_named_faces(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    xml: &Path,
+    cpp: &Path,
+) {
+    named_faces::capture(machine, base, text, skia, font, xml, cpp);
 }
 
 pub(super) fn capture_itemization(
