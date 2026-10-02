@@ -1,5 +1,10 @@
 use std::ops::Range;
 
+mod native_object_bound;
+pub(in crate::render) use native_object_bound::NativeObjectEntryBounds;
+#[cfg(all(test, feature = "serde"))]
+pub(in crate::render) use native_object_bound::caller_capture_profile as native_object_capture_profile;
+
 use crate::render::RenderTheme;
 use crate::render::marker::{PreparedMarker, marker_center_y};
 use crate::{
@@ -621,6 +626,7 @@ pub(in crate::render) struct TextLayout {
     pub lines: Vec<TextLine>,
     content_height: f64,
     pub native_frame: Option<NativePaintFrame>,
+    pub native_object_entry: Option<NativeObjectEntryBounds>,
 }
 
 impl TextLayout {
@@ -629,6 +635,9 @@ impl TextLayout {
     }
 
     pub fn translate(&mut self, dx: f64, dy: f64) {
+        if dx != 0.0 || dy != 0.0 {
+            self.native_object_entry = None;
+        }
         if let Some(frame) = &mut self.native_frame {
             frame.translation[0] += dx;
             frame.translation[1] += dy;
@@ -952,19 +961,28 @@ impl LayoutContext {
         paragraph_number: usize,
         line_number: usize,
         line: &WrappedLine,
+        styled: &StyledText<'_>,
     ) -> Option<f64> {
         if matches!(self, Self::Flow)
             && paragraph_number == 0
             && line_number == 0
             && let [object] = line.objects.as_slice()
             && !object.object.inline
-            && object.object.bounds.y_min < 0.0
         {
-            Some(object.object.bounds.y_min)
+            saved_continuation_top(styled, &object.object)
         } else {
             None
         }
     }
+}
+
+fn saved_continuation_top(styled: &StyledText<'_>, object: &MeasuredObject) -> Option<f64> {
+    let raw_top = match styled.object_span(object.span_index)?.content.as_ref() {
+        Some(crate::RichTextObjectContent::Table(table)) => table.bbox.y_min,
+        Some(crate::RichTextObjectContent::CodeBlock(code)) => code.bbox.y_min,
+        _ => object.bounds.y_min,
+    };
+    (raw_top < 0.0).then_some(object.bounds.y_min)
 }
 
 fn empty_gravity_height(styled: &StyledText<'_>, margins: [f64; 4]) -> f64 {
@@ -1156,22 +1174,21 @@ fn try_layout_text_with_context(
                         theme,
                         layout.predefined_style,
                     );
-                    let continuation = matches!(context, LayoutContext::Flow)
+                    let continuation = (matches!(context, LayoutContext::Flow)
                         && paragraph_number == 0
                         && line_number == 0
                         && !placement.object.inline
-                        && placement.object.source.start == paragraph.content.start
-                        && placement.object.bounds.y_min < 0.0;
-                    let object_top = if continuation {
-                        placement.object.bounds.y_min
-                    } else {
+                        && placement.object.source.start == paragraph.content.start)
+                        .then(|| saved_continuation_top(styled, &placement.object))
+                        .flatten();
+                    let object_top = continuation.unwrap_or_else(|| {
                         candidate.object_top(
                             &placement.object,
                             style.font_size,
                             layout.line_spacing,
                             settings,
                         )
-                    };
+                    });
                     prepare_object(
                         placement,
                         styled,
@@ -1192,7 +1209,7 @@ fn try_layout_text_with_context(
                     cursor.height_limit,
                 );
                 if context
-                    .continuation_top(paragraph_number, line_number, &line)
+                    .continuation_top(paragraph_number, line_number, &line, styled)
                     .is_some()
                 {
                     for _ in 0..frame.exclusions.len() {
@@ -1218,7 +1235,8 @@ fn try_layout_text_with_context(
                 break;
             };
             paragraph_lines.commit(line.source.end);
-            let continuation_top = context.continuation_top(paragraph_number, line_number, &line);
+            let continuation_top =
+                context.continuation_top(paragraph_number, line_number, &line, styled);
             if !line.objects.is_empty() && line.position_native(styled).is_err() {
                 let style = styled.style_at(line.source.start, theme, layout.predefined_style);
                 renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
@@ -1311,7 +1329,10 @@ fn try_layout_text_with_context(
     } else {
         content_height
     };
+    let native_object_entry =
+        native_object_bound::native_object_entry_bounds(styled, &frame, &lines, renderer, context);
     let mut layout = TextLayout {
+        native_object_entry,
         native_frame: (native_cell_measurement.is_some()
             && frame.bbox.x_min == 0.0
             && frame.bbox.y_min == 0.0

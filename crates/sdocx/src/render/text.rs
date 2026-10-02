@@ -31,10 +31,12 @@ mod wrapping;
 pub(super) use background::render_line_backgrounds;
 #[cfg(test)]
 use layout::measure_paragraph;
+#[cfg(all(test, feature = "serde"))]
+pub(super) use layout::native_object_capture_profile;
 pub(super) use layout::{
-    NativeCellTextConstraints, PositionedMarker, TextFrame, TextLayout, TextLine,
-    VerticalExclusion, layout_capture_text, layout_flow_text, layout_table_cell_text, layout_text,
-    layout_text_with_size,
+    NativeCellTextConstraints, NativeObjectEntryBounds, PositionedMarker, TextFrame, TextLayout,
+    TextLine, VerticalExclusion, layout_capture_text, layout_flow_text, layout_table_cell_text,
+    layout_text, layout_text_with_size,
 };
 pub(in crate::render) use measurement::FontGeometry;
 pub(super) use native_identity::{NativeDrawSpan, NativeIdentityUnavailable};
