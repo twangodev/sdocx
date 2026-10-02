@@ -971,6 +971,9 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "render")]
+    mod table_measurement_width;
+
     use super::{
         ObjectMetadata, parse_code_block_object, parse_table_cell, parse_table_object,
         parse_table_row, parse_text_common,

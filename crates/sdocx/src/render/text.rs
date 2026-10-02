@@ -15,6 +15,7 @@ mod layout;
 mod measurement;
 #[cfg(feature = "pdf")]
 pub(crate) mod native;
+mod native_entry;
 mod native_identity;
 mod native_line;
 #[cfg(any(feature = "pdf", test))]
@@ -31,7 +32,7 @@ pub(super) use background::render_line_backgrounds;
 use layout::measure_paragraph;
 pub(super) use layout::{
     PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
-    layout_flow_text, layout_text, layout_text_with_size,
+    layout_flow_text, layout_table_cell_text, layout_text, layout_text_with_size,
 };
 pub(in crate::render) use measurement::FontGeometry;
 pub(super) use native_identity::{NativeDrawSpan, NativeIdentityUnavailable};

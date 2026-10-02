@@ -2,7 +2,9 @@ use std::collections::BTreeMap;
 use std::ops::Range;
 
 use super::super::TextDiagnosticKind;
+use super::super::native_entry::NativeEntryFacts;
 use super::{MeasuredGlyph, MeasurementError};
+use crate::fonts::RegisteredFontSource;
 use crate::fonts::{
     PaintEntryError, PaintEntryGeometry, PaintLayoutError, PaintMeasuredPiece, PaintPieceError,
     PaintShapeError, ResolvedFace,
@@ -53,6 +55,8 @@ pub(super) fn piece_error(error: PaintPieceError) -> TextDiagnosticKind {
 pub(in crate::render) struct NativeMeasuredEntries {
     source: TextSource,
     geometry: PaintEntryGeometry,
+    source_instance: Option<RegisteredFontSource>,
+    facts: Option<Vec<NativeEntryFacts>>,
 }
 
 impl NativeMeasuredEntries {
@@ -61,6 +65,16 @@ impl NativeMeasuredEntries {
     }
     pub fn geometry(&self) -> &PaintEntryGeometry {
         &self.geometry
+    }
+
+    pub fn source_instance(&self) -> Option<&RegisteredFontSource> {
+        self.source_instance.as_ref()
+    }
+
+    pub fn entry_facts_at_utf16(&self, owner: u32) -> Option<NativeEntryFacts> {
+        self.source_instance()?;
+        let offset = owner.checked_sub(self.geometry.source_range_utf16().start)?;
+        self.facts.as_ref()?.get(offset as usize).copied()
     }
 
     pub(super) fn advance(&self) -> f64 {
@@ -85,6 +99,8 @@ impl NativeGeometry {
         index: &crate::text_index::TextIndex<'_>,
         context: Range<usize>,
         source: Range<usize>,
+        font_size: f32,
+        source_instance: Option<RegisteredFontSource>,
     ) -> Result<Self, MeasurementError> {
         let context_source = index
             .source(context.clone())
@@ -95,9 +111,27 @@ impl NativeGeometry {
         let source_utf16 = index
             .source(source.clone())
             .ok_or(MeasurementError::InvalidRange)?;
+        let geometry = piece.entry_geometry().clone();
+        let facts = (font_size == 17.0
+            && source_instance
+                .as_ref()
+                .is_some_and(|source| source.language().is_empty() && !source.bitmap()))
+        .then(|| {
+            piece
+                .source()
+                .encode_utf16()
+                .skip(geometry.source_range_utf16().start as usize)
+                .zip(geometry.entries())
+                .map(|(unit, entry)| {
+                    NativeEntryFacts::measured(unit, font_size, !entry.glyphs().is_empty())
+                })
+                .collect()
+        });
         let entries = NativeMeasuredEntries {
             source: context_source,
-            geometry: piece.entry_geometry().clone(),
+            geometry,
+            source_instance,
+            facts,
         };
         let base = entries.source().utf16().start;
         let selected = source_utf16
@@ -216,6 +250,81 @@ mod tests {
     use crate::text_index::TextIndex;
 
     #[test]
+    fn measured_entry_facts_match_actual_regular_cell_production() {
+        use sha2::{Digest, Sha256};
+        let bytes = include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-cell-measurement.json"
+        ));
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "890c2f236d6cb6711f0821520a491079fa3304d2b64e108a2d3dfcc787549416"
+        );
+        let capture: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        let fonts = FontBook::default();
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        let paint = PaintSpanProfile::new(17.0, 0)
+            .unwrap()
+            .metric_input()
+            .unwrap();
+        let mut shaper = face.paint_shaper(paint).unwrap();
+        let mut checked_cases = 0;
+        let mut checked_entries = 0;
+        for case in capture["cases"].as_array().unwrap() {
+            if ![
+                "subpixel-auto",
+                "fractional-width",
+                "combining-auto",
+                "margin-auto",
+            ]
+            .contains(&case["name"].as_str().unwrap())
+            {
+                continue;
+            }
+            let text = case["native_text_utf8"].as_str().unwrap();
+            let index = TextIndex::new(text);
+            let itemization =
+                PaintItemization::new(text, 0..text.encode_utf16().count() as u32).unwrap();
+            let piece = shaper
+                .shape_text(PaintTextRequest::new(
+                    &itemization,
+                    PaintShapeDirection::LeftToRight,
+                ))
+                .unwrap();
+            let geometry = NativeGeometry::new(
+                &piece,
+                &index,
+                0..index.len(),
+                0..index.len(),
+                17.0,
+                fonts.registered_source(&face),
+            )
+            .unwrap();
+            assert_eq!(
+                geometry.entries.source_instance(),
+                fonts.registered_source(&face).as_ref()
+            );
+            for expected in case["measured_entries"].as_array().unwrap() {
+                let owner = expected["utf16_slot"].as_u64().unwrap() as u32;
+                let facts = geometry.entries.entry_facts_at_utf16(owner).unwrap();
+                assert_eq!(facts.kind as u32, expected["kind"].as_u64().unwrap() as u32);
+                assert_eq!(
+                    facts.font_size.to_bits(),
+                    expected["font_size_bits"].as_u64().unwrap() as u32
+                );
+                assert_eq!(
+                    facts.height.to_bits(),
+                    expected["font_height_bits"].as_u64().unwrap() as u32
+                );
+                assert_eq!(facts.drawable, expected["drawable"].as_bool().unwrap());
+                checked_entries += 1;
+            }
+            checked_cases += 1;
+        }
+        assert_eq!((checked_cases, checked_entries), (4, 17));
+    }
+
+    #[test]
     fn context_text_must_match_the_measured_source_before_owner_translation() {
         let face = FontBook::default().resolve("Roboto", false, false).unwrap();
         let paint = PaintSpanProfile::new(17.0, 0)
@@ -232,7 +341,7 @@ mod tests {
             .unwrap();
         let different = TextIndex::new("VA");
         assert!(matches!(
-            NativeGeometry::new(&piece, &different, 0..2, 0..2),
+            NativeGeometry::new(&piece, &different, 0..2, 0..2, 17.0, None),
             Err(MeasurementError::InvalidRange)
         ));
     }

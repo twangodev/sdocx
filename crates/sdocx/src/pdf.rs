@@ -35,6 +35,7 @@ pub struct PdfOptions {
     pub dpi: f32,
     pub font_database: Arc<fontdb::Database>,
     pub native_font_names: Option<NativeFontNameConfig>,
+    retained_fonts: Option<FontBook>,
 }
 
 impl PdfOptions {
@@ -43,6 +44,7 @@ impl PdfOptions {
             dpi: 96.0,
             font_database,
             native_font_names: None,
+            retained_fonts: None,
         }
     }
 
@@ -51,10 +53,17 @@ impl PdfOptions {
             dpi: 96.0,
             font_database: fonts.database(),
             native_font_names: fonts.native_name_config().cloned(),
+            retained_fonts: Some(fonts.clone()),
         }
     }
 
     fn font_book(&self) -> FontBook {
+        if let Some(fonts) = &self.retained_fonts
+            && Arc::ptr_eq(&self.font_database, &fonts.database())
+            && self.native_font_names.as_ref() == fonts.native_name_config()
+        {
+            return fonts.clone();
+        }
         let fonts = FontBook::new(self.font_database.clone());
         match &self.native_font_names {
             Some(configuration) => fonts.with_native_name_config(configuration.clone()),
@@ -177,6 +186,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache(
     let mut pdf_options = pdf_options.clone();
     pdf_options.font_database = fonts.database();
     pdf_options.native_font_names = fonts.native_name_config().cloned();
+    pdf_options.retained_fonts = Some(fonts.clone());
     let selected_pages = page_indices
         .iter()
         .map(|&page_index| {
@@ -421,6 +431,11 @@ mod tests {
             options.font_book().native_name_config(),
             fonts.native_name_config()
         );
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        assert_eq!(
+            options.font_book().registered_source(&face),
+            fonts.registered_source(&face)
+        );
     }
 
     #[test]
@@ -430,6 +445,9 @@ mod tests {
         assert!(Arc::ptr_eq(&options.font_database, &database));
         assert!(options.native_font_names.is_none());
         assert!(options.font_book().native_name_config().is_none());
+        let fonts = options.font_book();
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        assert!(fonts.registered_source(&face).is_none());
     }
 
     #[test]
@@ -448,5 +466,53 @@ mod tests {
         let restored = options.font_book();
         assert!(Arc::ptr_eq(&restored.database(), &database));
         assert_eq!(restored.native_name_config(), Some(&configuration));
+    }
+
+    #[test]
+    fn font_book_constructor_and_option_clones_retain_registered_sources() {
+        let fonts = FontBook::default();
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        let source = fonts.registered_source(&face).unwrap();
+        let options = PdfOptions::from_font_book(&fonts);
+        for options in [options.clone(), options] {
+            assert_eq!(
+                options.font_book().registered_source(&face),
+                Some(source.clone())
+            );
+        }
+    }
+
+    #[test]
+    fn changed_database_invalidates_retained_registered_sources() {
+        let mut options = PdfOptions::default();
+        options.font_database = Arc::new(options.font_database.as_ref().clone());
+        let fonts = options.font_book();
+        assert!(Arc::ptr_eq(&fonts.database(), &options.font_database));
+        assert_eq!(
+            fonts.native_name_config(),
+            options.native_font_names.as_ref()
+        );
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        assert!(fonts.registered_source(&face).is_none());
+    }
+
+    #[test]
+    fn changed_native_configuration_invalidates_retained_registered_sources() {
+        let options = PdfOptions {
+            native_font_names: Some(
+                NativeFontNameConfig::new("custom-family")
+                    .unwrap()
+                    .with_family_alias("custom-family", "Roboto")
+                    .unwrap(),
+            ),
+            ..Default::default()
+        };
+        let fonts = options.font_book();
+        assert_eq!(
+            fonts.native_name_config(),
+            options.native_font_names.as_ref()
+        );
+        let face = fonts.resolve("Roboto", false, false).unwrap();
+        assert!(fonts.registered_source(&face).is_none());
     }
 }

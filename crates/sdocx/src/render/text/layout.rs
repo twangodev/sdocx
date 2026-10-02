@@ -8,9 +8,10 @@ use crate::{
 };
 
 use super::native_line::NativeLineMetrics;
-use super::objects::{MeasuredObject, ObjectMeasurementContext};
+use super::objects::{MeasuredObject, ObjectDiagnosticKind, ObjectMeasurementContext};
 #[cfg(test)]
 use super::wrap_paragraph;
+use super::wrapping::ParagraphMeasurementWidth;
 use super::{
     StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
     paragraph_line_height, unmeasured_paragraph,
@@ -656,7 +657,7 @@ impl<'a, 'text, 'fonts> ParagraphLines<'a, 'text, 'fonts> {
     fn new(
         styled: &'a StyledText<'text>,
         source: Range<usize>,
-        width: f64,
+        width: impl Into<ParagraphMeasurementWidth>,
         theme: RenderTheme,
         predefined: Option<PredefinedTextStyle>,
         renderer: &'a TextRenderer<'fonts>,
@@ -691,6 +692,12 @@ impl<'a, 'text, 'fonts> ParagraphLines<'a, 'text, 'fonts> {
             }
         }
         lines
+    }
+
+    fn measurement_width(&self) -> Option<f64> {
+        self.measured
+            .as_ref()
+            .map(super::wrapping::ParagraphWrapper::measurement_width)
     }
 
     fn recover(&mut self, source: Range<usize>) {
@@ -829,6 +836,49 @@ pub(in crate::render) fn layout_text_with_size(
     )
 }
 
+#[derive(Clone, Copy)]
+enum NativeCellMeasurementWidth {
+    Fixed(i32),
+    Automatic,
+}
+
+impl NativeCellMeasurementWidth {
+    fn from_dimension(width: i32) -> Option<Self> {
+        match width {
+            0 => Some(Self::Automatic),
+            1.. => Some(Self::Fixed(width)),
+            _ => None,
+        }
+    }
+
+    fn requested_width(self) -> f64 {
+        match self {
+            Self::Fixed(width) => f64::from(width),
+            Self::Automatic => 0.0,
+        }
+    }
+}
+
+pub(in crate::render) fn layout_table_cell_text(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    width: i32,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Result<TextLayout, ObjectDiagnosticKind> {
+    let width = NativeCellMeasurementWidth::from_dimension(width)
+        .ok_or(ObjectDiagnosticKind::InvalidBounds)?;
+    try_layout_text_with_context(
+        styled,
+        frame,
+        theme,
+        renderer,
+        LayoutContext::Frame,
+        None,
+        Some(width),
+    )
+}
+
 pub(in crate::render) fn layout_flow_text(
     styled: &StyledText<'_>,
     frame: TextFrame<'_>,
@@ -895,6 +945,27 @@ fn layout_text_with_context(
     context: LayoutContext,
     measurement_size: Option<[i32; 2]>,
 ) -> TextLayout {
+    try_layout_text_with_context(
+        styled,
+        frame,
+        theme,
+        renderer,
+        context,
+        measurement_size,
+        None,
+    )
+    .expect("constrained text layout does not require native automatic measurement")
+}
+
+fn try_layout_text_with_context(
+    styled: &StyledText<'_>,
+    frame: TextFrame<'_>,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    context: LayoutContext,
+    measurement_size: Option<[i32; 2]>,
+    native_cell_width: Option<NativeCellMeasurementWidth>,
+) -> Result<TextLayout, ObjectDiagnosticKind> {
     let scoped_renderer = renderer.local_measurement_scope();
     let renderer = &scoped_renderer;
     let text_box = styled.text_box;
@@ -906,7 +977,7 @@ fn layout_text_with_context(
         .margins
         .unwrap_or([0.0; 4])
         .map(|margin| settings.pixels(margin));
-    let [outer_width, outer_height] = measurement_size.map_or_else(
+    let [frame_width, outer_height] = measurement_size.map_or_else(
         || {
             [
                 (frame.bbox.x_max - frame.bbox.x_min).ceil(),
@@ -915,6 +986,8 @@ fn layout_text_with_context(
         },
         |size| size.map(f64::from),
     );
+    let outer_width =
+        native_cell_width.map_or(frame_width, NativeCellMeasurementWidth::requested_width);
     let content_left = frame.bbox.x_min + margins[0];
     let content_width = outer_width - margins[0] - margins[2];
     let paragraphs = styled.index.display_paragraphs().collect::<Vec<_>>();
@@ -957,15 +1030,43 @@ fn layout_text_with_context(
         let marker_width = marker.as_ref().map_or(0.0, PreparedMarker::reserved_width);
         let x = marker_x + marker_width;
         let width = (content_width - left_indent - right_indent - marker_width).max(0.0);
+        let automatic = matches!(
+            native_cell_width,
+            Some(NativeCellMeasurementWidth::Automatic)
+        );
+        if automatic
+            && !styled.index.is_empty()
+            && (paragraph.content.is_empty()
+                || layout
+                    .bullet
+                    .is_some_and(|bullet| !matches!(bullet.kind, crate::BulletType::None))
+                || layout.indent_level != 0)
+        {
+            return Err(ObjectDiagnosticKind::UnsupportedContent);
+        }
+        let measurement_width = if automatic {
+            ParagraphMeasurementWidth::Automatic {
+                insets: [margins[0] as f32, margins[2] as f32],
+            }
+        } else {
+            ParagraphMeasurementWidth::Constrained(width)
+        };
         let mut paragraph_lines = ParagraphLines::new(
             styled,
             paragraph.content.clone(),
-            width,
+            measurement_width,
             theme,
             layout.predefined_style,
             renderer,
             context.object_measurement(),
         );
+        let width = if automatic && !paragraph.content.is_empty() {
+            paragraph_lines
+                .measurement_width()
+                .ok_or(ObjectDiagnosticKind::UnsupportedContent)?
+        } else {
+            width
+        };
         let previous = match context {
             LayoutContext::Flow | LayoutContext::Capture => styled
                 .index
@@ -1084,6 +1185,27 @@ fn layout_text_with_context(
                 let style = styled.style_at(line.source.start, theme, layout.predefined_style);
                 renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
             }
+            let mut line_x = x;
+            let mut line_alignment = layout.alignment;
+            if native_cell_width.is_some()
+                && frame.bbox.x_min == 0.0
+                && frame.exclusions.is_empty()
+                && layout.indent_level == 0
+                && marker_width == 0.0
+            {
+                match line.place_native_cell(x, width, layout.alignment) {
+                    Ok(Some(origin)) => {
+                        line_x = origin;
+                        line_alignment = None;
+                    }
+                    Ok(None) => {}
+                    Err(_) => {
+                        let style =
+                            styled.style_at(line.source.start, theme, layout.predefined_style);
+                        renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+                    }
+                }
+            }
             renderer.report_line_geometry(&line, layout.line_spacing);
             let mut placement =
                 cursor.place_at(&line, layout.line_spacing, &frame, settings, settled_top);
@@ -1112,14 +1234,14 @@ fn layout_text_with_context(
             });
             lines.push(TextLine {
                 line,
-                x,
+                x: line_x,
                 width,
                 baseline: placement.baseline,
                 top: placement.top,
                 background_top: placement.background_top,
                 bottom: placement.bottom,
                 post_cursor: placement.post_cursor,
-                alignment: layout.alignment,
+                alignment: line_alignment,
                 predefined: layout.predefined_style,
                 marker: positioned_marker,
             });
@@ -1149,11 +1271,13 @@ fn layout_text_with_context(
         content_height,
     };
     layout.apply_gravity(frame.gravity, outer_height, gravity_height);
-    layout
+    Ok(layout)
 }
 
 #[cfg(test)]
 mod tests {
+    mod measurement_width;
+
     use super::super::objects::MeasuredObject;
     use super::super::wrapping::PositionedObject;
     use super::super::{TextContext, TextSettings};

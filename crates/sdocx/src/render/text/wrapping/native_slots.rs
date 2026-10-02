@@ -1,8 +1,20 @@
+use super::super::native_entry::NativeEntryKind;
 use super::super::native_wrap::{
-    NativeBlock, NativeEntryCursor, NativeWrapEntry, NativeWrapKind, NativeWrapMetrics,
-    NativeWrapWidths, select_native_block,
+    NativeBlock, NativeEntryCursor, NativeHorizontalAlignment, NativeWrapEntry, NativeWrapKind,
+    NativeWrapMetrics, NativeWrapWidths, select_native_block,
 };
 use super::*;
+
+pub(in crate::render) enum ParagraphMeasurementWidth {
+    Constrained(f64),
+    Automatic { insets: [f32; 2] },
+}
+
+impl From<f64> for ParagraphMeasurementWidth {
+    fn from(width: f64) -> Self {
+        Self::Constrained(width)
+    }
+}
 
 pub(super) struct NativeParagraphSlots {
     entries: Vec<NativeWrapEntry>,
@@ -17,6 +29,12 @@ pub(super) struct NativeLineSlots {
     block: NativeBlock,
 }
 
+pub(super) struct NativeAlignedLine {
+    pub origin: f32,
+    pub positions: Vec<LinePosition>,
+    pub end: f64,
+}
+
 fn width(value: f64) -> Result<f32, MeasurementError> {
     if value == f64::INFINITY {
         Ok(f32::MAX)
@@ -26,6 +44,26 @@ fn width(value: f64) -> Result<f32, MeasurementError> {
 }
 
 impl NativeParagraphSlots {
+    pub fn automatic_width(&self, insets: [f32; 2]) -> Result<f64, MeasurementError> {
+        let outer = self
+            .entries
+            .iter()
+            .fold(insets[0] + insets[1], |width, entry| width + entry.advance);
+        let rounded = (outer + 0.001_f32).ceil();
+        if !rounded.is_finite() || rounded < 0.0 || rounded >= i32::MAX as f32 {
+            return Err(MeasurementError::InvalidCluster);
+        }
+        let available = (rounded - insets[0]) - insets[1];
+        if !available.is_finite() || available < 0.0 {
+            return Err(MeasurementError::InvalidCluster);
+        }
+        Ok(f64::from(available))
+    }
+
+    pub fn entries(&self) -> &[NativeWrapEntry] {
+        &self.entries
+    }
+
     pub fn new(
         styled: &StyledText<'_>,
         source: Range<usize>,
@@ -70,7 +108,6 @@ impl NativeParagraphSlots {
                 .char_to_utf16(cluster.source.start)
                 .ok_or(MeasurementError::InvalidRange)?;
             let mut offset = start;
-            // Break records and entry heights are SDK policy; advances retain native UTF16 slots.
             let size = native_geometry(cluster.run.style.font_size)?;
             for scalar in text.chars() {
                 for unit in 0..scalar.len_utf16() {
@@ -88,18 +125,30 @@ impl NativeParagraphSlots {
                     if local != entries.len() {
                         return Err(MeasurementError::InvalidCluster);
                     }
+                    let facts = native.entry_facts_at_utf16(producer);
                     entries.push(NativeWrapEntry {
                         advance: entry.advance(),
-                        kind: match (scalar, unit) {
-                            (' ', 0) => NativeWrapKind::Space,
-                            ('\t', 0) => NativeWrapKind::Tab,
-                            _ => NativeWrapKind::Ordinary,
+                        kind: match facts.map(|facts| facts.kind) {
+                            Some(NativeEntryKind::Space) => NativeWrapKind::Space,
+                            Some(NativeEntryKind::Tab) => NativeWrapKind::Tab,
+                            Some(_) => NativeWrapKind::Ordinary,
+                            None => match (scalar, unit) {
+                                (' ', 0) => NativeWrapKind::Space,
+                                ('\t', 0) => NativeWrapKind::Tab,
+                                _ => NativeWrapKind::Ordinary,
+                            },
                         },
                         break_end_utf16: ends.peek().copied(),
-                        metrics: NativeWrapMetrics {
-                            font_size: size,
-                            height: size,
-                        },
+                        metrics: facts.map_or(
+                            NativeWrapMetrics {
+                                font_size: size,
+                                height: size,
+                            },
+                            |facts| NativeWrapMetrics {
+                                font_size: facts.font_size,
+                                height: facts.height,
+                            },
+                        ),
                     });
                     offset += 1;
                 }
@@ -234,9 +283,45 @@ impl NativeLineSlots {
     }
 
     pub fn positions(&self, share: f32) -> Result<(Vec<LinePosition>, f64), MeasurementError> {
+        self.positions_at(0.0, share)
+    }
+
+    pub fn aligned_positions(
+        &self,
+        left: f32,
+        width: f32,
+        alignment: Option<crate::ParagraphAlignment>,
+    ) -> Result<NativeAlignedLine, MeasurementError> {
+        let native_alignment = match alignment {
+            Some(crate::ParagraphAlignment::Right) => NativeHorizontalAlignment::Right,
+            Some(crate::ParagraphAlignment::Center) => NativeHorizontalAlignment::Center,
+            _ => NativeHorizontalAlignment::Start,
+        };
+        let origin = self
+            .block
+            .aligned_origin(left, width, native_alignment)
+            .map_err(|_| MeasurementError::InvalidCluster)?;
+        let share = if alignment == Some(crate::ParagraphAlignment::Both) {
+            self.justification_share(f64::from(width))?
+        } else {
+            0.0
+        };
+        let (positions, end) = self.positions_at(origin, share)?;
+        Ok(NativeAlignedLine {
+            origin,
+            positions,
+            end,
+        })
+    }
+
+    fn positions_at(
+        &self,
+        origin: f32,
+        share: f32,
+    ) -> Result<(Vec<LinePosition>, f64), MeasurementError> {
         let mut slots = vec![None; self.entries.len()];
         let mut cursor =
-            NativeEntryCursor::new(0.0).map_err(|_| MeasurementError::InvalidCluster)?;
+            NativeEntryCursor::new(origin).map_err(|_| MeasurementError::InvalidCluster)?;
         let mut advance = 0.0;
         for &logical in &self.visual_to_logical {
             let entry = self
@@ -279,5 +364,7 @@ impl NativeLineSlots {
     }
 }
 
+#[cfg(all(test, feature = "serde"))]
+mod measurement_width_tests;
 #[cfg(test)]
 mod tests;

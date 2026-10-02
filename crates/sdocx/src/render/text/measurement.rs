@@ -721,6 +721,12 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 &self.styled.index,
                 context,
                 source.clone(),
+                native.font_size,
+                native
+                    .family
+                    .is_none()
+                    .then(|| self.renderer.fonts.registered_source(&face))
+                    .flatten(),
             )
             .map_err(|_| Kind::InvalidGeometry)?;
             let run = Arc::new(MeasuredRun {

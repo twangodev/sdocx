@@ -137,7 +137,9 @@ fn image_position(node: roxmltree::Node<'_, '_>) -> (f64, f64) {
 
 #[test]
 fn inline_image_uses_pinned_neighbor_advances_and_native_mixed_baseline() {
-    let a_advance = f64::from(1305.0_f32 / 100.0);
+    let a_advance = 1305.0_f32 / 100.0;
+    let image_left = 10.0 + f64::from(a_advance + 4.0_f32);
+    assert_ne!(image_left, 14.0 + f64::from(a_advance));
     for page in modes(&document(PageElement::TextBox(mixed()))) {
         assert!(page.object_diagnostics.is_empty());
         assert_eq!(selectable(&page.svg), "AB");
@@ -150,7 +152,7 @@ fn inline_image_uses_pinned_neighbor_advances_and_native_mixed_baseline() {
             .descendants()
             .find(|node| node.has_tag_name("image"))
             .unwrap();
-        assert_eq!(image_position(image), (14.0 + a_advance, 0.001));
+        assert_eq!(image_position(image), (image_left, 0.001));
         assert_eq!(image.attribute("width"), Some("30.00"));
         assert_eq!(image.attribute("height"), Some("100.00"));
     }

@@ -20,10 +20,12 @@ pub use paint_metrics::{
 };
 
 mod paint_font_name;
+mod registered_source;
 pub use paint_font_name::{
     NativeFontNameConfig, NativeFontNameError, NativeFontNameRequest, NativeFontNameResolution,
     NativeFontStyle,
 };
+pub(crate) use registered_source::RegisteredFontSource;
 
 mod paint_context;
 pub use paint_context::{PaintContextError, PaintContextWindow, PaintContextWindows};
@@ -65,12 +67,13 @@ mod native_named_face_tests;
 #[path = "fonts/native_consumer_metric_tests.rs"]
 mod native_consumer_metric_tests;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 /// A shared font database with cached faces. Defaults contain pinned Roboto families.
 pub struct FontBook {
     database: Arc<Database>,
     faces: Arc<Mutex<HashMap<ID, ResolvedFace>>>,
     native_names: Option<Arc<NativeFontNameConfig>>,
+    native_registry: Option<Arc<registered_source::RegisteredFontRegistry>>,
 }
 
 #[derive(Clone)]
@@ -182,11 +185,13 @@ impl FontBook {
             database,
             faces: Arc::new(Mutex::new(HashMap::new())),
             native_names: None,
+            native_registry: None,
         }
     }
 
     pub fn with_native_name_config(mut self, configuration: NativeFontNameConfig) -> Self {
         self.native_names = Some(Arc::new(configuration));
+        self.native_registry = None;
         self
     }
 
@@ -444,7 +449,9 @@ impl Default for FontBook {
                 ] {
                     native_names = native_names.with_font_file(filename, "sans-serif").unwrap();
                 }
-                Self::new(Arc::new(database)).with_native_name_config(native_names)
+                let mut fonts = Self::new(Arc::new(database)).with_native_name_config(native_names);
+                fonts.native_registry = Some(Arc::new(registered_source::RegisteredFontRegistry));
+                fonts
             })
             .clone()
     }

@@ -53,7 +53,47 @@ pub(super) struct NativeBlock {
     pub space_weight: u32,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(super) enum NativeHorizontalAlignment {
+    Start,
+    Right,
+    Center,
+}
+
+impl NativeHorizontalAlignment {
+    fn offset(self, available: f32, measured: f32) -> Result<f32, NativeWrapError> {
+        let remaining = finite(available - measured)?;
+        if remaining <= 0.0 {
+            return Ok(0.0);
+        }
+        Ok(match self {
+            Self::Start => 0.0,
+            Self::Right => remaining,
+            Self::Center => remaining * 0.5,
+        })
+    }
+}
+
 impl NativeBlock {
+    pub fn aligned_origin(
+        &self,
+        left: f32,
+        available: f32,
+        alignment: NativeHorizontalAlignment,
+    ) -> Result<f32, NativeWrapError> {
+        if ![left, available, self.width]
+            .into_iter()
+            .all(f32::is_finite)
+            || available < 0.0
+        {
+            return Err(NativeWrapError::InvalidGeometry);
+        }
+        let block_left = alignment.offset(available, self.width)?;
+        let block_right = finite(self.width + block_left)?;
+        let translated_width = finite(block_right - block_left)?;
+        finite(left + alignment.offset(available, translated_width)?)
+    }
+
     pub fn justification_share(&self, available: f32) -> Result<f32, NativeWrapError> {
         if !available.is_finite() || self.space_weight == 0 || self.space_weight > i32::MAX as u32 {
             return Err(NativeWrapError::InvalidGeometry);
@@ -115,9 +155,47 @@ fn select_with_operations(
     entries: &[NativeWrapEntry],
     requested: Range<usize>,
     widths: NativeWrapWidths,
+    observe: impl FnMut(NativeWrapOperation),
+) -> Result<Option<NativeBlock>, NativeWrapError> {
+    select_with_feedback(
+        entries,
+        requested,
+        widths,
+        None,
+        |_, _, advance| Ok(advance),
+        observe,
+    )
+}
+
+pub(super) fn select_native_block_with_objects(
+    entries: &[NativeWrapEntry],
+    requested: Range<usize>,
+    widths: NativeWrapWidths,
+    objects: &[bool],
+    mut prepare: impl FnMut(usize, f32) -> Result<f32, NativeWrapError>,
+) -> Result<Option<NativeBlock>, NativeWrapError> {
+    select_with_feedback(
+        entries,
+        requested,
+        widths,
+        Some(objects),
+        |index, base, _| prepare(index, base),
+        |_| {},
+    )
+}
+
+fn select_with_feedback(
+    entries: &[NativeWrapEntry],
+    requested: Range<usize>,
+    widths: NativeWrapWidths,
+    objects: Option<&[bool]>,
+    mut prepare: impl FnMut(usize, f32, f32) -> Result<f32, NativeWrapError>,
     mut observe: impl FnMut(NativeWrapOperation),
 ) -> Result<Option<NativeBlock>, NativeWrapError> {
     if requested.is_empty() || requested.end > entries.len() || entries.len() > i32::MAX as usize {
+        return Err(NativeWrapError::InvalidRange);
+    }
+    if objects.is_some_and(|objects| objects.len() != entries.len()) {
         return Err(NativeWrapError::InvalidRange);
     }
     if ![widths.available, widths.full]
@@ -127,7 +205,7 @@ fn select_with_operations(
     {
         return Err(NativeWrapError::InvalidGeometry);
     }
-    for (index, entry) in entries
+    for (index, &entry) in entries
         .iter()
         .enumerate()
         .take(requested.end)
@@ -135,6 +213,9 @@ fn select_with_operations(
     {
         if !entry.advance.is_finite() {
             return Err(NativeWrapError::InvalidAdvance);
+        }
+        if objects.is_some_and(|objects| objects[index]) && entry.kind != NativeWrapKind::Ordinary {
+            return Err(NativeWrapError::InvalidGeometry);
         }
         if ![entry.metrics.font_size, entry.metrics.height]
             .into_iter()
@@ -172,7 +253,14 @@ fn select_with_operations(
             candidate,
             available: widths.available,
         });
-        if candidate > widths.available {
+        let object = objects.is_some_and(|objects| objects[index]);
+        let first_object = object && index == requested.start && widths.available >= widths.full;
+        let advance = if object && (candidate <= widths.available || first_object) {
+            finite(prepare(index, base, entry.advance)?)?
+        } else {
+            entry.advance
+        };
+        if candidate > widths.available && !first_object {
             if let Some(end) = last_committed.filter(|end| *end >= 1) {
                 return Ok(Some(NativeBlock {
                     range_utf16_inclusive: requested.start..=end,
@@ -181,7 +269,8 @@ fn select_with_operations(
                     space_weight,
                 }));
             }
-            if index == requested.start && finite(pending + entry.advance)? > widths.full {
+            if !object && index == requested.start && finite(pending + entry.advance)? > widths.full
+            {
                 return Ok(Some(NativeBlock {
                     range_utf16_inclusive: requested.start..=index,
                     width: finite(pending + entry.advance)?,
@@ -197,7 +286,7 @@ fn select_with_operations(
             }));
         }
         pending_metrics = pending_metrics.merge(entry.metrics);
-        pending = finite(pending + entry.advance)?;
+        pending = finite(pending + advance)?;
         let mut commit = |reason| -> Result<(), NativeWrapError> {
             let committed_before = committed;
             committed = finite(committed + pending)?;
@@ -290,3 +379,7 @@ impl NativeEntryCursor {
 #[cfg(test)]
 #[path = "native_wrap/fixture_tests.rs"]
 mod fixture_tests;
+
+#[cfg(test)]
+#[path = "native_wrap/object_fixture_tests.rs"]
+mod object_fixture_tests;

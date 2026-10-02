@@ -520,16 +520,17 @@ impl PreparedTable {
         let styled = StyledText::new(&source.content, TextContext::Flow, renderer.settings);
         let theme = CellFill::resolve(&table.style, table.rows[row_index].index, source, theme)
             .theme(theme);
-        let mut layout = super::text::layout_text(
+        let mut layout = super::text::layout_table_cell_text(
             &styled,
             TextFrame {
                 bbox: bounds,
                 gravity: Some(0),
                 exclusions: &exclusions,
             },
+            width,
             theme,
             renderer,
-        );
+        )?;
         if !valid_cell_layout(&layout) {
             return Err(ObjectDiagnosticKind::InvalidBounds);
         }
@@ -1439,16 +1440,14 @@ pub(super) mod tests {
             line.x = 0.0;
             line.width = 200.0;
             line.line.advance = advance;
+            line.alignment = Some(alignment);
             translate_cell_drawing(layout, [16_777_216.0, 0.0]).unwrap();
             let line = &layout.lines[0];
             assert_eq!(line.x, expected_x);
             assert_eq!(line.alignment, None);
             assert_eq!(line.width, 200.0);
             assert_eq!(line.line.advance, advance);
-            assert_eq!(
-                callback.rows[0].cells[0].layout.lines[0].alignment,
-                Some(alignment)
-            );
+            assert_eq!(callback.rows[0].cells[0].layout.lines[0].alignment, None);
         }
     }
 

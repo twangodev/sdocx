@@ -196,6 +196,42 @@ fn native_grouped_alignment_uses_block_width_instead_of_cursor_extent() {
 }
 
 #[test]
+fn native_alignment_translates_the_block_then_seeds_the_entry_cursor() {
+    let entry = NativeWrapEntry {
+        advance: 30.17,
+        kind: NativeWrapKind::Ordinary,
+        break_end_utf16: Some(2),
+        metrics: NativeWrapMetrics::default(),
+    };
+    let entries = vec![entry; 2];
+    let block = select_native_block(
+        &entries,
+        0..2,
+        NativeWrapWidths {
+            available: 100.0,
+            full: 100.0,
+        },
+    )
+    .unwrap()
+    .unwrap();
+    let slots = NativeLineSlots {
+        entries,
+        visual_to_logical: vec![0, 1],
+        cluster_slots: vec![0..1, 1..2],
+        cluster_ranks: vec![0, 1],
+        block,
+    };
+    let aligned = slots
+        .aligned_positions(0.0, 100.0, Some(ParagraphAlignment::Center))
+        .unwrap();
+    let positions = aligned.positions;
+    assert_eq!(positions[0].x, f64::from(f32::from_bits(1_100_915_672)));
+    assert_eq!(positions[1].x, 50.0);
+    let (relative, _) = slots.positions(0.0).unwrap();
+    assert_ne!(positions[1].x, positions[0].x + relative[1].x);
+}
+
+#[test]
 fn captured_native_slot_widths_keep_mark_zeros_after_supplementary_prefix() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../../../conformance/table-text-entry-geometry.json"
@@ -431,7 +467,7 @@ fn narrowed_native_no_block_uses_diagnosed_policy_without_exhausting_source() {
 }
 
 #[test]
-fn default_native_glyph_entries_keep_mixed_object_policy_separate() {
+fn default_native_glyph_entries_use_native_mixed_numeric_stages() {
     let fixture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../../../conformance/table-text-entry-geometry.json"
     ))
@@ -471,16 +507,18 @@ fn default_native_glyph_entries_keep_mixed_object_policy_separate() {
     .unwrap();
     assert!(wrapper.native_slots.is_none());
     let line = wrapper.candidate(1000.0, |_| {}).unwrap().unwrap();
-    assert_eq!(line.objects[0].x, widths[0] + widths[1]);
-    assert_eq!(line.placements[2].x, widths[0] + widths[1] + 20.0);
-    assert_eq!(
-        line.advance,
-        (widths[0] + widths[1]) + 20.0 + widths[0] + widths[1]
-    );
+    let prefix = widths[0] as f32 + widths[1] as f32;
+    assert_eq!(line.objects[0].x, f64::from(prefix));
+    assert_eq!(line.placements[2].x, f64::from(prefix + 20.0));
+    let slots = NativeMixedSlots::new(&styled, 0..5, &wrapper.items, &wrapper.allowed)
+        .unwrap()
+        .unwrap();
+    assert_eq!(line.advance, slots.block_width(&styled, 0..5).unwrap());
     assert!(
         line.placements
             .iter()
             .all(|placement| placement.cluster.run.native_entries.is_some())
     );
     assert!(line.native_slots.is_none());
+    assert!(line.native_mixed);
 }
