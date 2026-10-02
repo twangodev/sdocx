@@ -31,6 +31,13 @@ CPU operation. Custom SDK regressions include a real GSUB expansion beyond the
 storage cap and contextual lookup exhaustion; they are separate from the
 disabled upstream tests.
 
+`hb/font_funcs.rs` and `hb/ot_shape.rs` provide an optional validation callback
+after substitution and default advance initialization, before positioning. Its
+default accepts the upstream result. SDK font callbacks inspect the actual
+glyphs and advances against the supported positioning domain; rejection skips
+positioning, marks shaping unsuccessful, and preserves the SDK's typed error.
+The callback supplies no alternative glyph positions or layout arithmetic.
+
 The floor policy matches the executed Samsung horizontal `ValueFormat4`
 `x_advance` path in
 [`table-text-shaping-gpos.json`](../../../../../conformance/table-text-shaping-gpos.json).

@@ -313,6 +313,16 @@ impl<'a> BuiltinFontFuncs<'a> {
 /// for example `font_size * 64` for FreeType-style 26.6 — then all returned
 /// values must already be in that scaled coordinate space.
 pub trait FontFuncs {
+    /// Rejects positioned numeric domains after substitution and initial advances.
+    /// Returning false aborts positioning; the default accepts every buffer.
+    fn validate_positioning(
+        &mut self,
+        _: &[GlyphInfo],
+        _: &[super::buffer::GlyphPosition],
+    ) -> bool {
+        true
+    }
+
     /// Nominal character-to-glyph mapping callback.
     fn nominal_glyph(&mut self, builtin: &BuiltinFontFuncs, c: u32) -> Option<GlyphId> {
         builtin.nominal_glyph(c)
@@ -443,6 +453,16 @@ impl<'a, 'u> FontFuncsDispatch<'a, 'u> {
     }
 
     #[inline(always)]
+    pub(crate) fn validate_positioning(
+        &mut self,
+        infos: &[GlyphInfo],
+        positions: &[super::buffer::GlyphPosition],
+    ) -> bool {
+        self.funcs
+            .as_mut()
+            .is_none_or(|funcs| funcs.validate_positioning(infos, positions))
+    }
+
     pub(crate) fn nominal_glyph(&mut self, c: u32) -> Option<GlyphId> {
         if let Some(funcs) = &mut self.funcs {
             funcs.nominal_glyph(&self.builtin, c)

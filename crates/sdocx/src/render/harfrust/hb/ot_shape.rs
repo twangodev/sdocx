@@ -429,6 +429,13 @@ impl OtShapeContext<'_, '_> {
         self.buffer.clear_positions();
 
         self.position_default();
+        if !self.font_funcs.validate_positioning(
+            &self.buffer.info[..self.buffer.len],
+            &self.buffer.pos[..self.buffer.len],
+        ) {
+            self.buffer.successful = false;
+            return;
+        }
         self.position_plan();
 
         if self.buffer.direction.is_backward() {

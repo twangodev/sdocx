@@ -132,8 +132,8 @@ fn gpos_capture() -> Capture {
 }
 
 impl Case {
-    fn paint(&self) -> NativeShapingPaint {
-        NativeShapingPaint {
+    fn paint(&self) -> PaintLayoutPaint {
+        PaintLayoutPaint {
             size: f32::from_bits(self.paint.size_bits),
             scale_x: f32::from_bits(self.paint.scale_x_bits),
             skew_x: f32::from_bits(self.paint.skew_x_bits),
@@ -142,7 +142,7 @@ impl Case {
         }
     }
 
-    fn glyphs(&self) -> Vec<NativeShapedGlyph> {
+    fn glyphs(&self) -> Vec<PaintLayoutGlyphInput> {
         let [call] = self.hb_calls.as_slice() else {
             panic!("{} must have one captured chunk", self.name)
         };
@@ -158,7 +158,7 @@ impl Case {
             .zip(&self.callbacks.raw_skia_bounds_bits)
             .map(
                 |((info, &[advance_x, advance_y, offset_x, offset_y]), &bounds)| {
-                    NativeShapedGlyph {
+                    PaintLayoutGlyphInput {
                         id: info.glyph_id,
                         cluster_utf16: info.cluster,
                         advance_x,
@@ -172,8 +172,8 @@ impl Case {
             .collect()
     }
 
-    fn chunk<'a>(&self, glyphs: &'a [NativeShapedGlyph]) -> NativeShapingChunk<'a> {
-        NativeShapingChunk {
+    fn chunk<'a>(&self, glyphs: &'a [PaintLayoutGlyphInput]) -> PaintLayoutChunk<'a> {
+        PaintLayoutChunk {
             source_utf16_length: self.text_utf8.encode_utf16().count() as u32,
             range_utf16: self.range_utf16[0]..self.range_utf16[1],
             direction: self.hb_calls[0].input.direction,
@@ -214,7 +214,7 @@ fn verify_case(case: &Case) -> (usize, usize) {
             .all(|&bits| bits == 0)
     );
     let inputs = case.glyphs();
-    let actual = native_shaping_geometry(case.paint(), &[case.chunk(&inputs)]).unwrap();
+    let actual = paint_layout(case.paint(), &[case.chunk(&inputs)]).unwrap();
     assert_eq!(
         actual
             .glyphs
@@ -301,8 +301,8 @@ fn numeric_capture_pins_large_coordinates_spacing_and_rejects_multiple_chunks() 
             let empty = [];
             let chunks = [case.chunk(&empty), case.chunk(&empty), case.chunk(&empty)];
             assert_eq!(
-                native_shaping_geometry(case.paint(), &chunks).unwrap_err(),
-                NativeShapingUnavailable::UnsupportedChunks
+                paint_layout(case.paint(), &chunks).unwrap_err(),
+                PaintLayoutError::UnsupportedChunks
             );
             continue;
         }
@@ -424,7 +424,7 @@ fn vector_metric_conversion_matches_native_callback_capture() {
             .zip(&case.callbacks.vector_quantized)
         {
             assert_eq!(
-                native_vector_advance(f32::from_bits(raw)),
+                super::super::paint_shaping::paint_advance(f32::from_bits(raw), false).ok(),
                 Some(expected),
                 "{} metric callback",
                 case.name
@@ -446,7 +446,7 @@ fn captured_skew_and_utf16_owner_controls_detect_wrong_geometry() {
     let mut paint = skew.paint();
     paint.skew_x = 0.0;
     let glyphs = skew.glyphs();
-    let changed = native_shaping_geometry(paint, &[skew.chunk(&glyphs)]).unwrap();
+    let changed = paint_layout(paint, &[skew.chunk(&glyphs)]).unwrap();
     assert_ne!(
         changed.glyphs[1].full_position.map(f32::to_bits),
         skew.layout_piece.full_positions_bits[1]
@@ -466,8 +466,7 @@ fn captured_skew_and_utf16_owner_controls_detect_wrong_geometry() {
             glyph.cluster_utf16 -= 1;
         }
     }
-    let changed =
-        native_shaping_geometry(supplementary.paint(), &[supplementary.chunk(&glyphs)]).unwrap();
+    let changed = paint_layout(supplementary.paint(), &[supplementary.chunk(&glyphs)]).unwrap();
     assert_ne!(
         changed
             .character_advances
@@ -488,103 +487,84 @@ fn unsupported_profiles_and_invalid_geometry_are_explicit() {
     let capture = capture();
     let case = &capture.cases[0];
     let glyphs = case.glyphs();
-    fn expect(
-        paint: NativeShapingPaint,
-        chunk: NativeShapingChunk<'_>,
-        error: NativeShapingUnavailable,
-    ) {
-        assert_eq!(native_shaping_geometry(paint, &[chunk]).unwrap_err(), error);
+    fn expect(paint: PaintLayoutPaint, chunk: PaintLayoutChunk<'_>, error: PaintLayoutError) {
+        assert_eq!(paint_layout(paint, &[chunk]).unwrap_err(), error);
     }
     let mut paint = case.paint();
     paint.word_spacing = 1.0;
     expect(
         paint,
         case.chunk(&glyphs),
-        NativeShapingUnavailable::UnsupportedPaint,
+        PaintLayoutError::UnsupportedPaint,
     );
     paint = case.paint();
     paint.skew_x = f32::NAN;
-    expect(
-        paint,
-        case.chunk(&glyphs),
-        NativeShapingUnavailable::NonFinitePaint,
-    );
+    expect(paint, case.chunk(&glyphs), PaintLayoutError::NonFinitePaint);
     let mut chunk = case.chunk(&glyphs);
     chunk.script = u32::from_be_bytes(*b"Arab");
-    expect(
-        case.paint(),
-        chunk,
-        NativeShapingUnavailable::UnsupportedScript,
-    );
+    expect(case.paint(), chunk, PaintLayoutError::UnsupportedScript);
     let mut chunk = case.chunk(&glyphs);
     chunk.direction = 6;
-    expect(
-        case.paint(),
-        chunk,
-        NativeShapingUnavailable::UnsupportedDirection,
-    );
+    expect(case.paint(), chunk, PaintLayoutError::UnsupportedDirection);
     let mut chunk = case.chunk(&glyphs);
     chunk.font_slot = 1;
-    expect(
-        case.paint(),
-        chunk,
-        NativeShapingUnavailable::UnsupportedFontSlot,
-    );
+    expect(case.paint(), chunk, PaintLayoutError::UnsupportedFontSlot);
     let mut chunk = case.chunk(&glyphs);
     chunk.font_fakery = 1;
-    expect(
-        case.paint(),
-        chunk,
-        NativeShapingUnavailable::UnsupportedFontFakery,
-    );
+    expect(case.paint(), chunk, PaintLayoutError::UnsupportedFontFakery);
     let mut chunk = case.chunk(&glyphs);
     chunk.source_utf16_length = 1;
     expect(
         case.paint(),
         chunk,
-        NativeShapingUnavailable::SourceRangeOutOfBounds,
+        PaintLayoutError::SourceRangeOutOfBounds,
     );
     let mut chunk = case.chunk(&glyphs);
     chunk.range_utf16 = Range { start: 2, end: 1 };
-    expect(case.paint(), chunk, NativeShapingUnavailable::InvalidRange);
+    expect(case.paint(), chunk, PaintLayoutError::InvalidRange);
     let mut chunk = case.chunk(&glyphs);
     chunk.range_utf16 = 0..MAX_UTF16_ENTRIES as u32 + 1;
-    expect(case.paint(), chunk, NativeShapingUnavailable::LimitExceeded);
+    expect(case.paint(), chunk, PaintLayoutError::LimitExceeded);
     let mut invalid = glyphs.clone();
     invalid[0].cluster_utf16 = case.range_utf16[1];
     expect(
         case.paint(),
         case.chunk(&invalid),
-        NativeShapingUnavailable::OwnerOutOfRange,
+        PaintLayoutError::OwnerOutOfRange,
     );
     invalid = glyphs.clone();
     invalid[0].advance_y = 1;
     expect(
         case.paint(),
         case.chunk(&invalid),
-        NativeShapingUnavailable::UnsupportedVerticalAdvance,
+        PaintLayoutError::UnsupportedVerticalAdvance,
     );
     invalid = glyphs.clone();
     invalid[0].ink_bounds[0] = f32::INFINITY;
     expect(
         case.paint(),
         case.chunk(&invalid),
-        NativeShapingUnavailable::NonFiniteInk,
+        PaintLayoutError::NonFiniteInk,
     );
     invalid = glyphs.clone();
     invalid.reverse();
     expect(
         case.paint(),
         case.chunk(&invalid),
-        NativeShapingUnavailable::NonMonotoneOwners,
+        PaintLayoutError::NonMonotoneOwners,
     );
     assert_eq!(
-        native_shaping_geometry(case.paint(), &[case.chunk(&glyphs), case.chunk(&glyphs)])
-            .unwrap_err(),
-        NativeShapingUnavailable::UnsupportedChunks
+        paint_layout(case.paint(), &[case.chunk(&glyphs), case.chunk(&glyphs)]).unwrap_err(),
+        PaintLayoutError::UnsupportedChunks
     );
     for raw in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, 8_388_608.0] {
-        assert_eq!(native_vector_advance(raw), None);
+        assert_eq!(
+            super::super::paint_shaping::paint_advance(raw, false).ok(),
+            None
+        );
     }
-    assert_eq!(native_vector_advance(-8_388_608.0), Some(i32::MIN));
+    assert_eq!(
+        super::super::paint_shaping::paint_advance(-8_388_608.0, false).ok(),
+        Some(i32::MIN)
+    );
 }

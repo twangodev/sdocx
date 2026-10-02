@@ -14,6 +14,16 @@ pub use paint_metrics::{
     PaintMetrics,
 };
 
+mod paint_layout;
+pub use paint_layout::{PaintGlyphPlacement, PaintLayout, PaintLayoutError};
+
+mod paint_shaping;
+pub use paint_shaping::{
+    PaintShapeClusterLevel, PaintShapeDirection, PaintShapeError, PaintShapeFeature,
+    PaintShapeRequest, PaintShapeScale, PaintShapedGlyph, PaintShapedRun, PaintShaper,
+    PaintSourceInfo,
+};
+
 #[cfg(test)]
 #[path = "fonts/native_shaping_tests.rs"]
 mod native_shaping_tests;
@@ -357,6 +367,13 @@ impl ResolvedFace {
         input: PaintMetricInput,
     ) -> Result<PaintMetrics<'_>, PaintMetricError> {
         PaintMetrics::new(self.bytes(), self.index, input)
+    }
+
+    pub fn paint_shaper(
+        &self,
+        input: PaintMetricInput,
+    ) -> Result<PaintShaper<'_>, PaintShapeError> {
+        PaintShaper::new(self.bytes(), self.index, input)
     }
 
     /// Matches the native bitmap-font gate: the selected face declares a CBDT table.
