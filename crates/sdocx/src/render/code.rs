@@ -62,7 +62,12 @@ fn layout_code_text(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> TextLayout {
-    let styled = StyledText::new(content, TextContext::Flow, renderer.settings);
+    let styled = StyledText::with_span_producer(
+        content,
+        TextContext::Flow,
+        renderer.settings,
+        super::text::TextSpanProducer::Drawing,
+    );
     super::text::layout_text(
         &styled,
         TextFrame {

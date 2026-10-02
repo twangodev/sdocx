@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, ops::Range, sync::Arc};
 
 use crate::{RichTextHyperlink, RichTextRun, RichTextSpan, RichTextSpanType};
 
-use super::TextSettings;
+use super::{TextSettings, TextSpanProducer};
 
 #[derive(Clone, Copy)]
 enum Property {
@@ -10,6 +10,7 @@ enum Property {
     ValidFontSize,
     Foreground,
     Background,
+    ObjectBackground,
     ComposingBackground,
     Family,
     Bold,
@@ -21,10 +22,11 @@ enum Property {
     UnderlineColor,
     RunBold,
     RunItalic,
+    Object,
 }
 
 const SPAN_PROPERTIES: usize = Property::RunBold as usize;
-const PROPERTIES: usize = Property::RunItalic as usize + 1;
+const PROPERTIES: usize = Property::Object as usize + 1;
 
 #[derive(Debug, PartialEq)]
 pub(super) struct SelectedHyperlink<'a> {
@@ -38,11 +40,17 @@ struct FontSize {
     valid: bool,
 }
 
+#[derive(Clone, Copy)]
+struct BackgroundPatch {
+    argb: u32,
+    includes_objects: bool,
+}
+
 #[derive(Default)]
 struct SpanPatch<'a> {
     font_size: Option<FontSize>,
     foreground: Option<u32>,
-    background: Option<u32>,
+    background: Option<BackgroundPatch>,
     composing_background: Option<u32>,
     family: Option<Arc<str>>,
     bold: Option<bool>,
@@ -65,7 +73,12 @@ impl<'a> SpanPatch<'a> {
                 });
             }
             RichTextSpanType::ForegroundColor => patch.foreground = span.argb_value(),
-            RichTextSpanType::BackgroundColor => patch.background = span.argb_value(),
+            RichTextSpanType::BackgroundColor => {
+                patch.background = span.argb_value().map(|argb| BackgroundPatch {
+                    argb,
+                    includes_objects: false,
+                });
+            }
             RichTextSpanType::ComposingBackgroundColor => {
                 patch.composing_background = span.composing_background_value();
             }
@@ -88,7 +101,12 @@ impl<'a> SpanPatch<'a> {
                 patch.underline = Some(true);
             }
             RichTextSpanType::ComposingTag => match span.composition_value() {
-                Some(true) => patch.background = Some(0x1925_2525),
+                Some(true) => {
+                    patch.background = Some(BackgroundPatch {
+                        argb: 0x1925_2525,
+                        includes_objects: true,
+                    });
+                }
                 Some(false) => {
                     patch.bold = Some(true);
                     patch.italic = Some(true);
@@ -117,6 +135,10 @@ impl<'a> SpanPatch<'a> {
             (Property::Foreground, self.foreground.is_some()),
             (Property::Background, self.background.is_some()),
             (
+                Property::ObjectBackground,
+                self.background.is_some_and(|patch| patch.includes_objects),
+            ),
+            (
                 Property::ComposingBackground,
                 self.composing_background.is_some(),
             ),
@@ -133,7 +155,7 @@ impl<'a> SpanPatch<'a> {
         .filter_map(|(property, written)| written.then_some(property))
     }
 
-    fn apply(&self, selection: &mut StyleSelection<'a>) {
+    fn apply(&self, selection: &mut StyleSelection<'a>, widget_object: bool) {
         if let Some(size) = self.font_size {
             selection.invalid_font = !size.valid;
             if size.valid {
@@ -141,9 +163,15 @@ impl<'a> SpanPatch<'a> {
             }
         }
         selection.foreground = self.foreground.or(selection.foreground);
-        selection.background = self.background.or(selection.background);
-        selection.composing_background =
-            self.composing_background.or(selection.composing_background);
+        selection.background = self
+            .background
+            .filter(|patch| !widget_object || patch.includes_objects)
+            .map(|patch| patch.argb)
+            .or(selection.background);
+        if !widget_object {
+            selection.composing_background =
+                self.composing_background.or(selection.composing_background);
+        }
         selection.family = self.family.clone().or_else(|| selection.family.take());
         selection.bold = self.bold.unwrap_or(selection.bold);
         selection.italic = self.italic.unwrap_or(selection.italic);
@@ -209,6 +237,17 @@ impl<'a> StyleIndex<'a> {
         length: usize,
         settings: TextSettings,
     ) -> Self {
+        Self::with_objects(spans, runs, length, settings, [], TextSpanProducer::Drawing)
+    }
+
+    pub fn with_objects(
+        spans: &[(Range<usize>, &'a RichTextSpan)],
+        runs: &[RichTextRun],
+        length: usize,
+        settings: TextSettings,
+        objects: impl IntoIterator<Item = Range<usize>>,
+        producer: TextSpanProducer,
+    ) -> Self {
         let patches = spans
             .iter()
             .map(|(_, span)| SpanPatch::decode(span, settings))
@@ -233,6 +272,11 @@ impl<'a> StyleIndex<'a> {
                     Property::RunItalic,
                     order,
                 );
+            }
+        }
+        if producer == TextSpanProducer::Widget {
+            for (order, range) in objects.into_iter().enumerate() {
+                events_for(&mut events, &range, Property::Object, order);
             }
         }
         events.sort_unstable_by_key(|event| event.position);
@@ -261,13 +305,23 @@ impl<'a> StyleIndex<'a> {
                 italic: !active[Property::RunItalic as usize].is_empty(),
                 ..Default::default()
             };
-            let mut writers: [Option<usize>; SPAN_PROPERTIES] =
-                std::array::from_fn(|property| active[property].last().copied());
+            let widget_object = !active[Property::Object as usize].is_empty();
+            let mut writers: [Option<usize>; SPAN_PROPERTIES] = std::array::from_fn(|property| {
+                if (widget_object
+                    && (property == Property::Background as usize
+                        || property == Property::ComposingBackground as usize))
+                    || (!widget_object && property == Property::ObjectBackground as usize)
+                {
+                    None
+                } else {
+                    active[property].last().copied()
+                }
+            });
             writers.sort_unstable();
             let mut previous = None;
             for writer in writers.into_iter().flatten() {
                 if previous != Some(writer) {
-                    patches[writer].apply(&mut selection);
+                    patches[writer].apply(&mut selection, widget_object);
                     previous = Some(writer);
                 }
             }
@@ -375,19 +429,128 @@ mod tests {
             },
         ];
         let settings = TextSettings::default();
-        let index = StyleIndex::new(&spans, &runs, 32, settings);
-        for character in 0..=33 {
-            let mut expected = StyleSelection {
-                bold: (4..12).contains(&character),
-                italic: (6..12).contains(&character),
-                ..Default::default()
-            };
-            for (range, span) in &spans {
-                if range.contains(&character) {
-                    SpanPatch::decode(span, settings).apply(&mut expected);
+        let objects = [1..3, 6..11, 10..12, 16..20];
+        for producer in [TextSpanProducer::Drawing, TextSpanProducer::Widget] {
+            let index =
+                StyleIndex::with_objects(&spans, &runs, 32, settings, objects.clone(), producer);
+            for character in 0..=33 {
+                let mut expected = StyleSelection {
+                    bold: (4..12).contains(&character),
+                    italic: (6..12).contains(&character),
+                    ..Default::default()
+                };
+                let widget_object = producer == TextSpanProducer::Widget
+                    && objects.iter().any(|range| range.contains(&character));
+                for (range, span) in &spans {
+                    if range.contains(&character) {
+                        SpanPatch::decode(span, settings).apply(&mut expected, widget_object);
+                    }
                 }
+                assert_eq!(index.at(character), &expected, "character {character}");
             }
-            assert_eq!(index.at(character), &expected, "character {character}");
+        }
+    }
+
+    #[test]
+    fn widget_objects_keep_eligible_background_writers_in_source_order() {
+        let owned = [
+            span(RichTextSpanType::ComposingTag, &[1, 0, 0, 0, 0, 0, 0, 0]),
+            span(
+                RichTextSpanType::BackgroundColor,
+                &0xffff_0000_u32.to_le_bytes(),
+            ),
+            span(
+                RichTextSpanType::ComposingBackgroundColor,
+                &[0xff00_00ff_u32.to_le_bytes(), [0; 4]].concat(),
+            ),
+            span(RichTextSpanType::BackgroundColor, &[0; 4]),
+            span(RichTextSpanType::ComposingTag, &[0; 8]),
+            span(RichTextSpanType::Underline, &[0; 2]),
+        ];
+        let spans = [0..5, 0..5, 0..5, 2..4, 1..4, 2..3]
+            .into_iter()
+            .zip(&owned)
+            .collect::<Vec<_>>();
+        for producer in [TextSpanProducer::Drawing, TextSpanProducer::Widget] {
+            let index = StyleIndex::with_objects(
+                &spans,
+                &[],
+                5,
+                TextSettings::default(),
+                [1..2, 3..4],
+                producer,
+            );
+            for character in 0..5 {
+                let widget_object =
+                    producer == TextSpanProducer::Widget && matches!(character, 1 | 3);
+                assert_eq!(
+                    index.at(character).background,
+                    Some(if widget_object {
+                        0x1925_2525
+                    } else if (2..4).contains(&character) {
+                        0
+                    } else {
+                        0xffff_0000
+                    })
+                );
+                assert_eq!(
+                    index.at(character).composing_background,
+                    (!widget_object).then_some(0xff00_00ff)
+                );
+                assert_eq!(index.at(character).bold, (1..4).contains(&character));
+                assert_eq!(index.at(character).italic, (1..4).contains(&character));
+                assert_eq!(
+                    index.at(character).underline,
+                    if character == 2 {
+                        Some(false)
+                    } else if (1..4).contains(&character) {
+                        Some(true)
+                    } else {
+                        None
+                    }
+                );
+            }
+            assert_eq!(index.at(5), &StyleSelection::default());
+        }
+    }
+
+    #[test]
+    fn widget_object_guards_match_captured_span_conversion() {
+        const FIXTURE: &str =
+            include_str!("../../../../../conformance/table-text-span-identity.json");
+        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let case = capture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["name"] == "object-skips-background")
+            .unwrap();
+        for side in ["left", "right"] {
+            let spans = case[format!("{side}_inputs")]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|input| input["kind"] != "object")
+                .map(|input| captured_attribute(input).unwrap())
+                .collect::<Vec<_>>();
+            let indexed = spans.iter().map(|span| (0..1, span)).collect::<Vec<_>>();
+            let index = StyleIndex::with_objects(
+                &indexed,
+                &[],
+                1,
+                TextSettings::default(),
+                std::iter::once(0..1),
+                TextSpanProducer::Widget,
+            );
+            let expected = &case[side];
+            assert_eq!(
+                index.at(0).background.unwrap_or(0),
+                u32::try_from(expected["background"].as_u64().unwrap()).unwrap()
+            );
+            assert_eq!(
+                index.at(0).composing_background.unwrap_or(0),
+                u32::try_from(expected["composing_background"].as_u64().unwrap()).unwrap()
+            );
         }
     }
 

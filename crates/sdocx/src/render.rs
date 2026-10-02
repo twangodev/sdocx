@@ -2421,7 +2421,12 @@ fn render_prepared_code(
                 .stroke_width(1),
         );
         if let (Some(title), Some(layout)) = (&code.title, &prepared.title_layout) {
-            let styled = StyledText::new(title, TextContext::Flow, settings);
+            let styled = StyledText::with_span_producer(
+                title,
+                TextContext::Flow,
+                settings,
+                text::TextSpanProducer::Drawing,
+            );
             paint_text_layout_in_viewport(
                 svg,
                 &styled,
@@ -2460,7 +2465,12 @@ fn render_prepared_code(
                 .add(Rectangle::new().x(15).y(23).width(31).height(38).rx(5)),
         );
         if let (Some(body), Some(layout)) = (&code.body, &prepared.body_layout) {
-            let styled = StyledText::new(body, TextContext::Flow, settings);
+            let styled = StyledText::with_span_producer(
+                body,
+                TextContext::Flow,
+                settings,
+                text::TextSpanProducer::Drawing,
+            );
             paint_text_layout_in_viewport(
                 svg,
                 &styled,

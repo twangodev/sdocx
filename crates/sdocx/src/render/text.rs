@@ -101,6 +101,12 @@ pub(super) enum TextContext {
     Placed,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum TextSpanProducer {
+    Widget,
+    Drawing,
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct TextSettings {
     pub scale: f32,
@@ -339,6 +345,19 @@ impl<'a> StyledText<'a> {
         &self.geometry_issues
     }
     pub fn new(text_box: &'a RichTextBox, context: TextContext, settings: TextSettings) -> Self {
+        let producer = match context {
+            TextContext::Flow => TextSpanProducer::Widget,
+            TextContext::Placed => TextSpanProducer::Drawing,
+        };
+        Self::with_span_producer(text_box, context, settings, producer)
+    }
+
+    pub fn with_span_producer(
+        text_box: &'a RichTextBox,
+        context: TextContext,
+        settings: TextSettings,
+        producer: TextSpanProducer,
+    ) -> Self {
         let index = TextIndex::new(&text_box.text);
         let objects = objects::TextObjectIndex::new(text_box, &index);
         let spans = text_box
@@ -367,7 +386,22 @@ impl<'a> StyledText<'a> {
         boundaries.dedup();
         foreground_boundaries.sort_unstable();
         foreground_boundaries.dedup();
-        let styles = styles::StyleIndex::new(&spans, &text_box.runs, index.len(), settings);
+        let styles = match producer {
+            TextSpanProducer::Drawing => {
+                styles::StyleIndex::new(&spans, &text_box.runs, index.len(), settings)
+            }
+            TextSpanProducer::Widget => styles::StyleIndex::with_objects(
+                &spans,
+                &text_box.runs,
+                index.len(),
+                settings,
+                objects
+                    .in_range(0..index.len())
+                    .iter()
+                    .map(|object| object.source.clone()),
+                producer,
+            ),
+        };
         let bidi_contexts = paint::ParagraphBidiContexts::new(&index);
         let mut styled = Self {
             index,
@@ -465,7 +499,7 @@ impl<'a> StyledText<'a> {
         let mut size = match predefined {
             Some(PredefinedTextStyle::Heading1) => 21.0,
             Some(PredefinedTextStyle::Heading2) => 19.0,
-            Some(PredefinedTextStyle::Heading3) => 17.0,
+            Some(PredefinedTextStyle::Heading3) => 15.0,
             _ => text_box.font_size.unwrap_or(DEFAULT_FONT_SIZE),
         };
         let selected = self.styles.at(character);
@@ -514,16 +548,6 @@ impl<'a> StyledText<'a> {
             };
             style.color = theme.foreground(Some(style.source_color));
             style.underline = true;
-        }
-        if matches!(
-            predefined,
-            Some(
-                PredefinedTextStyle::Heading1
-                    | PredefinedTextStyle::Heading2
-                    | PredefinedTextStyle::Heading3
-            )
-        ) {
-            style.bold = false;
         }
         let foreground = theme.span_color(source_color);
         let measurement = TextMeasureStyle {
@@ -778,6 +802,168 @@ mod tests {
             interval_type: crate::SpanIntervalType::from(0),
             payload: argb.to_le_bytes().to_vec(),
         }
+    }
+
+    #[test]
+    fn widget_background_guards_use_validated_utf16_object_anchors() {
+        use crate::{
+            BoundingBox, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, ObjectType,
+            PlacedImage, RichTextObjectContent, RichTextObjectSpan,
+        };
+
+        let mut content = text_box();
+        content.text = "😀\u{fffc}\u{fffc}A".into();
+        content.object_spans.push(RichTextObjectSpan {
+            object_type: ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(RichTextObjectContent::Image(Box::new(PlacedImage {
+                bbox: BoundingBox {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    x_max: 30.0,
+                    y_max: 40.0,
+                },
+                rotation_degrees: None,
+                media_id: None,
+                media_index: None,
+                crop_rect: None,
+                original_bbox: None,
+                border_media_id: None,
+                original_media_id: None,
+            }))),
+            text_index_utf16: 2,
+            layout_option: ObjectSpanLayoutOption::Inline,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        });
+        let mut tag = background_span(0, 0, 5);
+        tag.kind = RichTextSpanType::ComposingTag;
+        tag.payload = vec![1, 0, 0, 0, 0, 0, 0, 0];
+        let mut composing = background_span(0xff00_00ff, 0, 5);
+        composing.kind = RichTextSpanType::ComposingBackgroundColor;
+        composing.payload.resize(8, 0);
+        content.spans = vec![tag, background_span(0xffff_0000, 0, 5), composing];
+
+        for producer in [TextSpanProducer::Widget, TextSpanProducer::Drawing] {
+            let styled = StyledText::with_span_producer(
+                &content,
+                TextContext::Flow,
+                TextSettings::default(),
+                producer,
+            );
+            assert!(styled.object_issues().is_empty());
+            for character in 0..4 {
+                let widget_object = producer == TextSpanProducer::Widget && character == 1;
+                let selected = styled.styles.at(character);
+                assert_eq!(
+                    selected.background,
+                    Some(if widget_object {
+                        0x1925_2525
+                    } else {
+                        0xffff_0000
+                    })
+                );
+                assert_eq!(
+                    selected.composing_background,
+                    (!widget_object).then_some(0xff00_00ff)
+                );
+            }
+        }
+        assert_eq!(
+            StyledText::new(&content, TextContext::Flow, TextSettings::default())
+                .styles
+                .at(1)
+                .background,
+            Some(0x1925_2525)
+        );
+        assert_eq!(
+            StyledText::new(&content, TextContext::Placed, TextSettings::default())
+                .styles
+                .at(1)
+                .background,
+            Some(0xffff_0000)
+        );
+    }
+
+    #[test]
+    fn native_predefined_source_spans_remain_authoritative_for_heading_styles() {
+        use sha2::Digest;
+
+        const FIXTURE: &str =
+            include_str!("../../../../conformance/table-text-predefined-style.json");
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
+            "3cde41d9e6077133f7382310fa2229aafe168bbaf32d0b5a34d93212376ca030"
+        );
+        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let theme = RenderTheme::for_canvas(false);
+        let mut checked = 0;
+        for case in capture["factory_cases"].as_array().unwrap() {
+            if case["success"] != true {
+                continue;
+            }
+            let start = u32::try_from(case["range"][0].as_u64().unwrap()).unwrap();
+            let end = u32::try_from(case["range"][1].as_u64().unwrap()).unwrap();
+            let predefined = PredefinedTextStyle::from(case["style"].as_u64().unwrap() as u32);
+            let mut content = text_box();
+            content.text = "A".repeat(end as usize);
+            content.spans = case["after"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|span| {
+                    let kind = RichTextSpanType::from(span["kind"].as_u64().unwrap() as u32);
+                    let payload = match kind {
+                        RichTextSpanType::FontSize => (span["font_size"].as_f64().unwrap() as f32)
+                            .to_le_bytes()
+                            .to_vec(),
+                        RichTextSpanType::Bold => u32::from(span["bold"].as_bool().unwrap())
+                            .to_le_bytes()
+                            .to_vec(),
+                        _ => panic!("unexpected native predefined span"),
+                    };
+                    RichTextSpan {
+                        kind,
+                        start_utf16: span["range"][0].as_u64().unwrap() as u32,
+                        end_utf16: span["range"][1].as_u64().unwrap() as u32,
+                        interval_type: crate::SpanIntervalType::from(
+                            span["interval"].as_u64().unwrap() as u32,
+                        ),
+                        payload,
+                    }
+                })
+                .collect();
+            let outputs = case["after"].as_array().unwrap();
+            let native_size = outputs[outputs.len() - 2]["font_size"].as_f64().unwrap() as f32;
+            let native_bold = outputs.last().unwrap()["bold"].as_bool().unwrap();
+            for settings in [TextSettings::default(), scaled_settings()] {
+                let styled = StyledText::new(&content, TextContext::Flow, settings);
+                let resolved = styled.resolved_style_at(start as usize, theme, Some(predefined));
+                assert_eq!(resolved.paint.bold, native_bold);
+                assert_eq!(resolved.measurement.style_bits & 1 != 0, native_bold);
+                assert_eq!(
+                    resolved.paint.font_size,
+                    f64::from(native_size * settings.scale)
+                );
+                assert!(!resolved.invalid_font);
+            }
+
+            content.spans.push(font_span(12.0, start, end));
+            content.spans.push(RichTextSpan {
+                kind: RichTextSpanType::Bold,
+                start_utf16: start,
+                end_utf16: end,
+                interval_type: crate::SpanIntervalType::ClosedOpen,
+                payload: vec![0; 4],
+            });
+            let styled = StyledText::new(&content, TextContext::Flow, scaled_settings());
+            let resolved = styled.resolved_style_at(start as usize, theme, Some(predefined));
+            assert_eq!(resolved.paint.font_size, 36.0);
+            assert!(!resolved.paint.bold);
+            assert_eq!(resolved.measurement.style_bits & 1, 0);
+            assert!(!resolved.invalid_font);
+            checked += 1;
+        }
+        assert_eq!(checked, 8);
     }
 
     #[test]
