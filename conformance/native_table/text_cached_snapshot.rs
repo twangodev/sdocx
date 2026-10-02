@@ -1,5 +1,9 @@
 use super::*;
 
+fn rectangle(engine: Engine, address: u64) -> [f32; 4] {
+    std::array::from_fn(|axis| read_float(engine, address + axis as u64 * 4))
+}
+
 fn bytes(engine: Engine, address: u64, count: usize) -> Vec<u8> {
     assert!(count <= 256);
     let mut result = vec![0; count];

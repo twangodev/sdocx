@@ -345,7 +345,7 @@ pub(super) fn capture_cached(machine: &mut Machine) {
     capture_mode(machine, true);
 }
 
-fn capture_mode(machine: &mut Machine, cached: bool) {
+fn bind_ownership_native(machine: &Machine) {
     for (plt, target) in [
         (0xef290, TEXT + 0x78274),
         (0xef2a0, TEXT + 0x78074),
@@ -374,6 +374,10 @@ fn capture_mode(machine: &mut Machine, cached: bool) {
         word(machine.engine, address, instruction);
         word(machine.engine, address + 4, 0xd65f03c0);
     }
+}
+
+fn capture_mode(machine: &mut Machine, cached: bool) {
+    bind_ownership_native(machine);
     let _copy = CopyHook::new(machine);
     let mut captures = Vec::new();
     for (name, source, owners, rtl, continuation_style) in [
@@ -494,4 +498,274 @@ fn capture_case(
         }
         captures.push(expected);
     }
+}
+
+struct OwnerBaseCase {
+    name: &'static str,
+    prefix: &'static str,
+    text: &'static str,
+    source_start: usize,
+    relative_owners: &'static [usize],
+    rtl_positions: bool,
+}
+
+struct SuppliedOwnerGlyph {
+    relative_owner: usize,
+    glyph_id: u32,
+    position: [f32; 2],
+    ink: [f32; 4],
+}
+
+impl SuppliedOwnerGlyph {
+    fn json(&self) -> String {
+        format!(
+            "{{\"relative_owner_utf16\":{},\"glyph_id\":{},\"position\":{:?},\"ink_rect\":{:?}}}",
+            self.relative_owner, self.glyph_id, self.position, self.ink
+        )
+    }
+}
+
+impl OwnerBaseCase {
+    fn fixture(&self, machine: &mut Machine, fill: u8) -> String {
+        let source: Vec<_> = format!("{}{}Q", self.prefix, self.text)
+            .encode_utf16()
+            .collect();
+        let requested_start = self.prefix.encode_utf16().count();
+        let requested_length = self.text.encode_utf16().count();
+        let requested_end = requested_start + requested_length;
+        assert!(requested_start > 0 && self.source_start <= requested_start);
+        assert!(source.len() <= 24 && requested_length <= 12);
+        let shaped: Vec<_> = self
+            .relative_owners
+            .iter()
+            .enumerate()
+            .map(|(index, &relative_owner)| {
+                assert!(relative_owner < requested_length);
+                SuppliedOwnerGlyph {
+                    relative_owner,
+                    glyph_id: 71 + index as u32,
+                    position: [
+                        index as f32 * if self.rtl_positions { -225.0 } else { 225.0 },
+                        -75.0,
+                    ],
+                    ink: [0.0, -1200.0, 800.0, 600.0],
+                }
+            })
+            .collect();
+        let advances: Vec<_> = (0..requested_length)
+            .map(|index| 1000.0 + index as f32 * 200.0)
+            .collect();
+        let shaped_json = shaped
+            .iter()
+            .map(SuppliedOwnerGlyph::json)
+            .collect::<Vec<_>>()
+            .join(",");
+        write(machine.engine, MODEL, &vec![fill; 0x100000]);
+        machine.heap.cursor = HEAP;
+        machine.heap.allocation_fill = fill;
+        for (address, size) in [
+            (ENTRIES, source.len() * 80),
+            (GLYPH_CACHE, source.len() * 40),
+            (FONTS, 32),
+            (FONT_IMPLS, 64),
+            (FONT_VTABLE, 88),
+            (LANGUAGE, 24),
+            (SPANS, 72),
+            (FUNCTOR, 0x700),
+            (STACK, 0x600),
+        ] {
+            write(machine.engine, address, &vec![0; size]);
+        }
+        for (address, value) in [
+            (FUNCTOR, SOURCE_VECTOR),
+            (FUNCTOR + 16, DATA),
+            (DATA, ENTRY_VECTOR),
+            (DATA + 8, CACHE_VECTOR),
+            (ENTRY_VECTOR, ENTRIES),
+            (ENTRY_VECTOR + 8, ENTRIES + source.len() as u64 * 80),
+            (CACHE_VECTOR, GLYPH_CACHE),
+            (CACHE_VECTOR + 8, GLYPH_CACHE + source.len() as u64 * 40),
+            (SOURCE_VECTOR, CHARACTERS),
+            (STACK + 168, RECORDS),
+            (STACK + 176, RECORDS + shaped.len() as u64 * 64),
+            (STACK + 192, ADVANCES),
+            (HOLDER, WRAPPER),
+            (WRAPPER, 1),
+            (FONTS + 8, FONT_IMPLS),
+            (FONT_IMPLS, FONT_VTABLE),
+            (FONT_IMPLS + 16, LANGUAGE),
+            (FONT_VTABLE + 48, GET_ID),
+            (FONT_VTABLE + 56, GET_BITMAP),
+            (FONT_VTABLE + 80, GET_LANGUAGE),
+        ] {
+            pointer(machine.engine, address, value);
+        }
+        word(machine.engine, DATA + 16, self.source_start as u32);
+        word(
+            machine.engine,
+            SOURCE_VECTOR + 8,
+            (source.len() - self.source_start) as u32,
+        );
+        word(machine.engine, FONT_IMPLS + 8, 7);
+        write(machine.engine, LANGUAGE, &[4, b'e', b'n']);
+        float(machine.engine, SPANS, 20.0);
+        word(machine.engine, SPANS + 4, 0xff12_3456);
+        word(machine.engine, SPANS + 8, 0x8065_4321);
+        write(machine.engine, SPANS + 16, &[3]);
+        for index in 0..source.len() {
+            machine.call(TEXT + 0x65920, &[ENTRIES + index as u64 * 80]);
+            let info = GLYPH_CACHE + index as u64 * 40;
+            pointer(machine.engine, info + 24, FONTS);
+            let owned = shaped
+                .iter()
+                .any(|glyph| requested_start + glyph.relative_owner == index);
+            write(machine.engine, info + 34, &[u8::from(owned)]);
+        }
+        for (index, unit) in source[self.source_start..].iter().enumerate() {
+            write(
+                machine.engine,
+                CHARACTERS + index as u64 * 2,
+                &unit.to_le_bytes(),
+            );
+        }
+        for (index, advance) in advances.iter().enumerate() {
+            float(machine.engine, ADVANCES + index as u64 * 4, *advance);
+        }
+        for (index, glyph) in shaped.iter().enumerate() {
+            let record = RECORDS + index as u64 * 64;
+            pointer(machine.engine, record, HOLDER);
+            word(machine.engine, record + 16, glyph.glyph_id);
+            pointer(machine.engine, record + 40, glyph.relative_owner as u64);
+            float(machine.engine, record + 28, glyph.position[0]);
+            float(machine.engine, record + 32, glyph.position[1]);
+            set_rectangle(machine.engine, record + 48, glyph.ink);
+        }
+        register(machine.engine, REGISTER_SP, STACK);
+        register(machine.engine, REGISTER_X29, STACK + 0x400);
+        register(machine.engine, REGISTER_X0 + 20, STACK + 168);
+        register(machine.engine, REGISTER_X0 + 21, SPANS);
+        register(machine.engine, REGISTER_X0 + 23, FUNCTOR);
+        register(machine.engine, REGISTER_X0 + 24, 0);
+        register(machine.engine, REGISTER_X0 + 28, requested_start as u64);
+        check(unsafe {
+            uc_emu_start(
+                machine.engine,
+                PRODUCER_START,
+                PRODUCER_END,
+                1_000_000,
+                1_000_000,
+            )
+        });
+        assert_eq!(read_register(machine.engine, REGISTER_PC), PRODUCER_END);
+        let entries = (0..source.len())
+            .map(|index| {
+                let entry = ENTRIES + index as u64 * 80;
+                let info = GLYPH_CACHE + index as u64 * 40;
+                let glyphs: Vec<_> = vector(machine, info)
+                    .chunks_exact(3)
+                    .map(|glyph| {
+                        format!(
+                            "{{\"glyph_id\":{},\"offset\":{:?}}}",
+                            glyph[0],
+                            [f32::from_bits(glyph[1]), f32::from_bits(glyph[2])]
+                        )
+                    })
+                    .collect();
+                format!(
+                    "{{\"absolute_utf16\":{index},\"kind\":{},\"advance\":{:?},\"font_size\":{:?},\"ink_rect\":{:?},\"cache_drawable\":{},\"glyphs\":[{}]}}",
+                    read_u32(machine.engine, entry + 48),
+                    read_float(machine.engine, entry),
+                    read_float(machine.engine, entry + 60),
+                    rectangle(machine.engine, entry + 32),
+                    read_u32(machine.engine, info + 34) & 0xff != 0,
+                    glyphs.join(",")
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            "{{\"name\":{:?},\"document_utf16\":{source:?},\"source_vector_start_utf16\":{},\"source_vector_utf16\":{:?},\"requested_range_utf16\":[{requested_start},{requested_end}],\"supplied_rtl_positions\":{},\"supplied_font_id\":7,\"supplied_font_size\":20,\"supplied_shaped_advances\":{advances:?},\"supplied_shaped_glyphs\":[{shaped_json}],\"produced_entries\":[{entries}]}}",
+            self.name,
+            self.source_start,
+            &source[self.source_start..],
+            self.rtl_positions
+        )
+    }
+}
+
+pub(super) fn capture_owner_bases(machine: &mut Machine) {
+    bind_ownership_native(machine);
+    let _copy = CopyHook::new(machine);
+    let mut captures = Vec::new();
+    for (name, prefix, text, source_start, relative_owners, rtl_positions) in [
+        ("ascii-base", "ABC", "fiZ", 0, &[0, 2][..], false),
+        ("supplementary-prefix", "😀A", "😀Z", 0, &[0, 2][..], false),
+        (
+            "combining-paragraph-base",
+            "😀\nA",
+            "a\u{301}Z",
+            3,
+            &[0, 0, 2][..],
+            false,
+        ),
+        (
+            "ligature-paragraph-base",
+            "😀\nAB",
+            "ffiZ",
+            3,
+            &[0, 3][..],
+            false,
+        ),
+        (
+            "rtl-paragraph-base",
+            "😀\nA",
+            "א\u{5b7}ב",
+            3,
+            &[2, 0, 0][..],
+            true,
+        ),
+        (
+            "multiple-last-owner",
+            "A😀",
+            "ABZ",
+            0,
+            &[0, 2, 2][..],
+            false,
+        ),
+        (
+            "leading-continuation",
+            "😀\nA",
+            "ABZ",
+            3,
+            &[1, 2][..],
+            false,
+        ),
+        (
+            "trailing-continuation",
+            "😀\nA",
+            "ABZ",
+            3,
+            &[0, 1][..],
+            false,
+        ),
+        ("space-source-base", "😀\nA", " Z", 3, &[0, 1][..], false),
+    ] {
+        let case = OwnerBaseCase {
+            name,
+            prefix,
+            text,
+            source_start,
+            relative_owners,
+            rtl_positions,
+        };
+        let expected = case.fixture(machine, 0);
+        for fill in [0xa5, 0xff] {
+            assert_eq!(case.fixture(machine, fill), expected, "{name} memory fill");
+        }
+        captures.push(expected);
+    }
+    println!(
+        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"text_library_sha256\":\"{TEXT_SHA256}\",\"base_library_sha256\":\"{BASE_SHA256}\",\"memory_fills\":[0,165,255],\"entry_constructor\":\"0x65920\",\"producer_window\":[\"0x77324\",\"0x77894\"],\"range_convention\":\"half-open UTF-16\",\"measurement_inputs\":\"Document/source UTF-16 units, requested absolute start, source-vector base, relative glyph owners, glyph IDs/positions/ink and per-request-code-unit advances are supplied. Every entry executes the native constructor. Owned caches initially have drawable=true, an empty vector and supplied Font wrapper to bypass font creation; unowned caches have drawable=false. Actual SpanRunFunctor owner addition, glyph-cache append, advance/ink production and source-unit classification execute unchanged. Supplied RTL positions and owner order are inputs, not native bidi output. Font selection, Minikin/HarfBuzz shaping, layout-piece/chunk owner normalization, font creation, direction assignment, placement, wrapping, retained-run emission and painting do not execute. Host supplies allocation/deletion/memory copy and mutex operations. Produced entries are read from native memory; no glyphs or advances are assigned to output slots by the harness.\",\"cases\":[\n{}\n]}}",
+        captures.join(",\n")
+    );
 }

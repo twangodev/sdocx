@@ -79,6 +79,8 @@ mod text_object_runs;
 mod table_grid_admission;
 #[path = "native_table/text_font_language.rs"]
 mod text_font_language;
+#[path = "native_table/text_font_source.rs"]
+mod text_font_source;
 #[path = "native_table/text_object_export_policy.rs"]
 mod text_object_export_policy;
 #[path = "native_table/text_pdf_alpha.rs"]
@@ -1079,7 +1081,7 @@ fn main() {
             );
             return;
         }
-        Some(mode @ ("--text-cached-runs" | "--text-cached-ownership")) => {
+        Some(mode @ ("--text-cached-runs" | "--text-cached-ownership" | "--text-owner-bases")) => {
             let paths = [3, 4].map(|index| {
                 std::env::args_os()
                     .nth(index)
@@ -1087,6 +1089,12 @@ fn main() {
             });
             if mode == "--text-cached-runs" {
                 text_bounds::capture_cached_runs(
+                    &mut machine,
+                    Path::new(&paths[0]),
+                    Path::new(&paths[1]),
+                );
+            } else if mode == "--text-owner-bases" {
+                text_bounds::capture_owner_bases(
                     &mut machine,
                     Path::new(&paths[0]),
                     Path::new(&paths[1]),
@@ -1118,6 +1126,21 @@ fn main() {
                 Path::new(&paths[0]),
                 Path::new(&paths[1]),
                 Path::new(&paths[2]),
+            );
+            return;
+        }
+        Some("--font-source") => {
+            let paths = [3, 4, 5, 6].map(|index| {
+                std::env::args_os().nth(index).expect(
+                    "libSPenBase.so, libSPenText.so, libSPenSkia.so and font paths required",
+                )
+            });
+            text_font_source::capture(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+                Path::new(&paths[3]),
             );
             return;
         }
@@ -1159,13 +1182,21 @@ fn main() {
             text_pdf_alpha::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
             return;
         }
-        Some("--text-object-runs") => {
+        Some(mode @ ("--text-object-runs" | "--text-cached-object-runs")) => {
             let paths = [3, 4].map(|index| {
                 std::env::args_os()
                     .nth(index)
                     .expect("libSPenBase.so and libSPenText.so paths required")
             });
-            text_object_runs::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
+            if mode == "--text-cached-object-runs" {
+                text_object_runs::capture_cached(
+                    &mut machine,
+                    Path::new(&paths[0]),
+                    Path::new(&paths[1]),
+                );
+            } else {
+                text_object_runs::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
+            }
             return;
         }
         Some("--text-object-background") => {
@@ -1370,7 +1401,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --font-metadata, --font-language, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

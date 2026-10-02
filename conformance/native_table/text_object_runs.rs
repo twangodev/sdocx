@@ -2,6 +2,9 @@ use super::*;
 use frames::{BASE, BASE_SHA256};
 use geometry::TEXT_SHA256;
 
+#[path = "text_cached_snapshot.rs"]
+mod cached_snapshot;
+
 unsafe extern "C" {
     fn uc_mem_unmap(engine: Engine, address: u64, size: u64) -> i32;
 }
@@ -173,10 +176,12 @@ struct Case {
     offset: [f32; 2],
     public_api: bool,
     producer_glyph_count: usize,
+    cached_drawable_override: Option<bool>,
+    cached_font_missing_override: bool,
 }
 
 impl Case {
-    fn fixture(&self, machine: &mut Machine, fill: u8) -> String {
+    fn fixture(&self, machine: &mut Machine, fill: u8, cached: bool) -> String {
         write(machine.engine, MODEL, &vec![fill; 0x100000]);
         write(machine.engine, MEASURE, &vec![0; 0x2900]);
         machine.heap.cursor = HEAP;
@@ -261,6 +266,27 @@ impl Case {
             produced_glyph_words,
             glyph_words(machine.engine, RETURN_GLYPHS)
         );
+        if let Some(drawable) = self.cached_drawable_override {
+            write(machine.engine, cache + 34, &[u8::from(drawable)]);
+        }
+        if self.cached_font_missing_override {
+            pointer(machine.engine, cache + 24, 0);
+        }
+        let snapshot = cached.then(|| {
+            assert_eq!(read_u64(machine.engine, RICH_IMPL + 32), 0);
+            assert_eq!(read_u64(machine.engine, RICH_IMPL + 40), 0);
+            cached_snapshot::CachedInput {
+                entries,
+                caches: cache,
+                spans: SPAN,
+                source: CHARACTERS,
+                logical_map: MAP,
+                count: 1,
+                gravity: read_float(machine.engine, RICH_IMPL + 212),
+                paragraph_flag65: false,
+            }
+            .snapshot(machine)
+        });
         for (axis, value) in self.offset.into_iter().enumerate() {
             check(unsafe {
                 uc_reg_write(
@@ -309,7 +335,14 @@ impl Case {
                     .collect::<Vec<_>>()
             );
             assert_eq!(byte(machine.engine, record + 120), 1);
-            assert_eq!(read_u32(machine.engine, record + 124), 7);
+            assert_eq!(
+                read_u32(machine.engine, record + 124) as i32,
+                if self.cached_font_missing_override {
+                    -1
+                } else {
+                    7
+                },
+            );
             assert_eq!(read_u32(machine.engine, record + 144), self.background);
             let origin: [f32; 2] = std::array::from_fn(|axis| {
                 read_float(machine.engine, record + 80 + axis as u64 * 4)
@@ -333,7 +366,7 @@ impl Case {
             );
             ("producer-window-retained-record-published", vec![run])
         };
-        format!(
+        let mut fixture = format!(
             "{{\"name\":{:?},\"inline\":{},\"object\":{},\"dimension_bits\":{:?},\"background\":{},\"composing\":{},\"offset\":{:?},\"public_get_drawn_text\":{},\"supplied_shaped_records\":[{}],\"initialized_glyph_vector\":{before_glyphs:?},\"initialized_drawable\":{before_drawable},\"produced_entry\":{{\"kind\":{kind},\"object_mode\":{mode},\"advance\":{advance},\"height\":{height},\"ink\":{ink:?}}},\"produced_glyph_vector\":{produced_glyphs:?},\"produced_drawable\":{produced_drawable},\"produced_glyph_words\":{produced_glyph_words:?},\"placed_entry\":{placed},\"returned_glyph_vector\":{returned_glyphs:?},\"returned_drawable\":{returned_drawable},\"append_inputs\":[{}],\"incomplete_records\":[{}],\"terminal\":{terminal:?},\"native_terminal_pc\":{},\"unicorn_error\":{error},\"output_vector\":{output:?},\"runs\":[{}]}}",
             self.name,
             self.inline,
@@ -348,7 +381,24 @@ impl Case {
             recorder.observation.incomplete_records.join(","),
             if pc == STOP { 0 } else { pc - TEXT },
             runs.join(","),
-        )
+        );
+        if let Some(snapshot) = snapshot {
+            assert_eq!(fixture.pop(), Some('}'));
+            fixture.push_str(&format!(
+                ",\"kernel_case\":{},\"range_inclusive\":[0,0],\"cached_input\":{snapshot}",
+                self.producer_glyph_count != 0,
+            ));
+            if let Some(drawable) = self.cached_drawable_override {
+                fixture.push_str(&format!(
+                    ",\"supplied_cached_drawable_override\":{drawable}"
+                ));
+            }
+            if self.cached_font_missing_override {
+                fixture.push_str(",\"supplied_cached_font_wrapper_override\":null");
+            }
+            fixture.push('}');
+        }
+        fixture
     }
 
     fn produce_shaped_object(&self, machine: &Machine, cache: u64) -> Vec<String> {
@@ -483,6 +533,14 @@ impl Case {
 }
 
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
+    capture_mode(machine, base, text, false);
+}
+
+pub(super) fn capture_cached(machine: &mut Machine, base: &Path, text: &Path) {
+    capture_mode(machine, base, text, true);
+}
+
+fn capture_mode(machine: &mut Machine, base: &Path, text: &Path, cached: bool) {
     map_library(machine.engine, base, BASE, BASE_SHA256);
     map_library(machine.engine, text, TEXT, TEXT_SHA256);
     check(unsafe { uc_mem_map(machine.engine, COPY, 0x1000, 7) });
@@ -550,6 +608,8 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
                     offset: [4.25, 12.5],
                     public_api: false,
                     producer_glyph_count: 0,
+                    cached_drawable_override: None,
+                    cached_font_missing_override: false,
                 });
             }
         }
@@ -564,6 +624,8 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
         offset: [0.0; 2],
         public_api: false,
         producer_glyph_count: 0,
+        cached_drawable_override: None,
+        cached_font_missing_override: false,
     });
     cases.push(Case {
         name: "public-get-drawn-text-object".into(),
@@ -575,6 +637,8 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
         offset: [4.25, 12.5],
         public_api: true,
         producer_glyph_count: 0,
+        cached_drawable_override: None,
+        cached_font_missing_override: false,
     });
     for inline in [false, true] {
         for (name, dimensions) in [
@@ -593,6 +657,8 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
                         name: format!("producer-window-{name}-{color}-inline-{inline}-glyphs-{producer_glyph_count}"),
                         inline, object: true, dimensions, background, composing,
                         offset: [4.25, 12.5], public_api: true, producer_glyph_count,
+                        cached_drawable_override: None,
+                        cached_font_missing_override: false,
                     });
                 }
             }
@@ -614,17 +680,47 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
                 offset: [4.25, 12.5],
                 public_api: true,
                 producer_glyph_count: 1,
+                cached_drawable_override: None,
+                cached_font_missing_override: false,
             });
         }
+    }
+    if cached {
+        cases.push(Case {
+            name: "cached-kind5-nonempty-undrawable-supplied-override".into(),
+            inline: false,
+            object: true,
+            dimensions: [30.0_f32.to_bits(), 40.0_f32.to_bits()],
+            background: 0x8012_3456,
+            composing: 0,
+            offset: [4.25, 12.5],
+            public_api: true,
+            producer_glyph_count: 1,
+            cached_drawable_override: Some(false),
+            cached_font_missing_override: false,
+        });
+        cases.push(Case {
+            name: "cached-kind5-nonempty-null-font-supplied-override".into(),
+            inline: false,
+            object: true,
+            dimensions: [30.0_f32.to_bits(), 40.0_f32.to_bits()],
+            background: 0x8012_3456,
+            composing: 0,
+            offset: [4.25, 12.5],
+            public_api: true,
+            producer_glyph_count: 1,
+            cached_drawable_override: None,
+            cached_font_missing_override: true,
+        });
     }
     let captures: Vec<_> = cases
         .iter()
         .map(|case| {
-            let initial = case.fixture(machine, 0);
+            let initial = case.fixture(machine, 0, cached);
             for fill in [0xa5, 0xff] {
                 assert_eq!(
                     initial,
-                    case.fixture(machine, fill),
+                    case.fixture(machine, fill, cached),
                     "allocation fill changed {}",
                     case.name
                 );

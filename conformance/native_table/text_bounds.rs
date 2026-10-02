@@ -352,6 +352,11 @@ pub(super) fn capture_cached_ownership(machine: &mut Machine, base: &Path, text:
     ownership::capture_cached(machine);
 }
 
+pub(super) fn capture_owner_bases(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    ownership::capture_owner_bases(machine);
+}
+
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
     load(machine, base, text);
     let _copy = CopyHook::new(machine);
