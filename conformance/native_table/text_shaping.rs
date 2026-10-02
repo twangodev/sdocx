@@ -70,6 +70,7 @@ pub(super) struct HostIcu {
     library: *mut c_void,
     addresses: BTreeMap<String, u64>,
     names: BTreeMap<u64, String>,
+    normalizers: BTreeMap<u64, *const c_void>,
     hooks: Vec<usize>,
     calls: Vec<String>,
     sort_calls: Vec<[u64; 4]>,
@@ -85,6 +86,7 @@ impl HostIcu {
             library,
             addresses: BTreeMap::new(),
             names: BTreeMap::new(),
+            normalizers: BTreeMap::new(),
             hooks: Vec::new(),
             calls: Vec::new(),
             sort_calls: Vec::new(),
@@ -367,6 +369,58 @@ unsafe extern "C" fn icu_call(engine: Engine, address: u64, _: u32, data: *mut c
     let b = args[1] as i32;
     let result = unsafe {
         match name.as_str() {
+            "unorm2_getNFDInstance" => {
+                let call: unsafe extern "C" fn(*mut i32) -> *const c_void =
+                    std::mem::transmute(function);
+                let mut error = read_u32(engine, args[0]) as i32;
+                let normalizer = call(&mut error);
+                write(engine, args[0], &error.to_le_bytes());
+                if normalizer.is_null() {
+                    0
+                } else if let Some((&token, _)) = host
+                    .normalizers
+                    .iter()
+                    .find(|(_, pointer)| **pointer == normalizer)
+                {
+                    token
+                } else {
+                    assert!(host.normalizers.len() < 16);
+                    let token = 0x0710_0000 + host.normalizers.len() as u64 * 8;
+                    host.normalizers.insert(token, normalizer);
+                    token
+                }
+            }
+            "unorm2_getRawDecomposition" => {
+                let normalizer = *host.normalizers.get(&args[0]).unwrap();
+                let capacity = args[3] as i32;
+                assert!((0..=4096).contains(&capacity));
+                assert!(args[2] != 0 || capacity == 0);
+                let mut target: Vec<u16> = bytes(engine, args[2], capacity as usize * 2)
+                    .chunks_exact(2)
+                    .map(|unit| u16::from_le_bytes(unit.try_into().unwrap()))
+                    .collect();
+                let mut error = read_u32(engine, args[4]) as i32;
+                let call: unsafe extern "C" fn(*const c_void, i32, *mut u16, i32, *mut i32) -> i32 =
+                    std::mem::transmute(function);
+                let result = call(
+                    normalizer,
+                    args[1] as i32,
+                    if args[2] == 0 {
+                        ptr::null_mut()
+                    } else {
+                        target.as_mut_ptr()
+                    },
+                    capacity,
+                    &mut error,
+                );
+                if !target.is_empty() {
+                    let output: Vec<u8> =
+                        target.iter().flat_map(|unit| unit.to_le_bytes()).collect();
+                    write(engine, args[2], &output);
+                }
+                write(engine, args[4], &error.to_le_bytes());
+                result as i64 as u64
+            }
             "u_charType" => {
                 let call: unsafe extern "C" fn(i32) -> i8 = std::mem::transmute(function);
                 call(a) as i64 as u64

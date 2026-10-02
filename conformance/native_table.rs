@@ -297,6 +297,7 @@ fn bind_native(engine: Engine, plt: u64, target: u64) {
 
 struct Heap {
     cursor: u64,
+    limit: u64,
     allocation_fill: u8,
     allocations: usize,
     fills: usize,
@@ -310,7 +311,7 @@ unsafe extern "C" fn imported_call(engine: Engine, address: u64, _: u32, data: *
             let allocation = first.max(16).checked_add(15).unwrap() & !15;
             let pointer = heap.cursor;
             heap.cursor = pointer.checked_add(allocation).unwrap();
-            assert!(heap.cursor < TLS);
+            assert!(heap.cursor < heap.limit);
             write(
                 engine,
                 pointer,
@@ -364,6 +365,7 @@ impl Machine {
             call_instruction_limit: 1_000_000,
             heap: Box::new(Heap {
                 cursor: HEAP,
+                limit: TLS,
                 allocation_fill: 0,
                 allocations: 0,
                 fills: 0,

@@ -151,6 +151,8 @@ impl Binary {
                     .get(name)
                     .copied()
                     .unwrap_or_else(|| *imports.entry(name.into()).or_insert(next));
+                let addend = i64::from_le_bytes(relocation[16..24].try_into().unwrap());
+                let target = target.checked_add_signed(addend).unwrap();
                 let address = u64::from_le_bytes(relocation[..8].try_into().unwrap());
                 write(engine, base + address, &target.to_le_bytes());
             }
@@ -167,6 +169,7 @@ struct Observation {
     cursor: u64,
     fill: u8,
     once: BTreeSet<u64>,
+    next_thread_key: u32,
     thread_values: BTreeMap<u64, u64>,
     file_size: usize,
     opened_paths: Vec<String>,
@@ -337,7 +340,8 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, data: *mut c
             .unwrap_or(0) as i64 as u64,
         "pthread_once" => u64::from(state.once.insert(first)),
         "pthread_key_create" => {
-            write(engine, first, &1_u32.to_le_bytes());
+            state.next_thread_key = state.next_thread_key.checked_add(1).unwrap();
+            write(engine, first, &state.next_thread_key.to_le_bytes());
             0
         }
         "pthread_getspecific" => state.thread_values.get(&first).copied().unwrap_or(0),
@@ -529,6 +533,18 @@ impl NativeFontEnvironment {
         font: &Path,
         additional: &[(&Path, u64, &str)],
     ) -> Self {
+        Self::with_preloaded_libraries(machine, base, text, skia, font, additional, &[])
+    }
+
+    pub(super) fn with_preloaded_libraries(
+        machine: &Machine,
+        base: &Path,
+        text: &Path,
+        skia: &Path,
+        font: &Path,
+        additional: &[(&Path, u64, &str)],
+        preloaded: &[(&Path, u64, &str)],
+    ) -> Self {
         let digest = Command::new("sha256sum").arg(font).output().unwrap();
         assert!(digest.status.success());
         assert_eq!(
@@ -548,6 +564,10 @@ impl NativeFontEnvironment {
         for &(path, address, hash) in &libraries {
             map_library(machine.engine, path, address, hash);
         }
+        for &(path, _, hash) in preloaded {
+            verify_library(path, hash);
+        }
+        libraries.extend_from_slice(preloaded);
         check(unsafe { uc_mem_map(machine.engine, HOST, 0x10000, 7) });
         check(unsafe { uc_mem_map(machine.engine, SOURCE_HEAP, 0x800000, 7) });
         check(unsafe { uc_mem_map(machine.engine, FONT_BYTES, 0x100000, 7) });
@@ -596,6 +616,7 @@ impl NativeFontEnvironment {
         self.recorder.state.cursor = SOURCE_HEAP;
         self.recorder.state.fill = fill;
         self.recorder.state.once.clear();
+        self.recorder.state.next_thread_key = 0;
         self.recorder.state.thread_values.clear();
         self.recorder.state.opened_paths.clear();
         self.recorder.state.file_size = self.file_size;
