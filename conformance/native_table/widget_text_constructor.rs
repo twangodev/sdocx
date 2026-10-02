@@ -56,7 +56,7 @@ fn scalar_getter(machine: &Machine, address: u64, value: u64, float: bool) {
     write(machine.engine, address, &code);
 }
 
-pub(super) fn construct_cell(machine: &Machine, destination: u64, profile: DeviceProfile) {
+pub(super) fn configure_context(machine: &Machine, profile: DeviceProfile) -> (u64, u64) {
     for object in [CONTEXT, DISPLAY, MANAGER] {
         write(machine.engine, object, &(object + 8).to_le_bytes());
         write(machine.engine, object + 8, &[0; 248]);
@@ -101,7 +101,12 @@ pub(super) fn construct_cell(machine: &Machine, destination: u64, profile: Devic
         machine.call(THUNKS + 5 * 32, &[]),
         u64::from(profile.layout_direction)
     );
-    machine.call(CELL_DRAWING + 0x8bff8, &[destination, CONTEXT, manager]);
+    (CONTEXT, manager)
+}
+
+pub(super) fn construct_cell(machine: &Machine, destination: u64, profile: DeviceProfile) {
+    let (context, manager) = configure_context(machine, profile);
+    machine.call(CELL_DRAWING + 0x8bff8, &[destination, context, manager]);
     assert_eq!(
         machine.call(TEXT + 0x8bc38, &[text_wrapper(machine, destination)]),
         u64::from(profile.layout_direction)
@@ -214,12 +219,7 @@ pub(super) fn capture(machine: &mut Machine, paths: Paths<'_>) {
     for fill in [0, 165, 255, 0] {
         let mut output = Vec::new();
         for (name, profile) in cases {
-            text_span_font_name::cell_host::reset_host(
-                machine,
-                &mut environment,
-                &mut host,
-                fill,
-            );
+            text_span_font_name::cell_host::reset_host(machine, &mut environment, &mut host, fill);
             construct_cell(machine, CELL_LAYOUT, profile);
             let constructed = snapshot(machine, CELL_LAYOUT, "constructed");
             machine.call(WIDGET + 0xd3974, &[CELL_LAYOUT, 0]);

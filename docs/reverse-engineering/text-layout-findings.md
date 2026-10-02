@@ -2238,6 +2238,13 @@ break when its index is at least 1 (`0x6b014`–`0x6b028`), otherwise the
 preceding index (`0x6b03c`–`0x6b06c`). This is measured greedy wrapping,
 not a character-count estimate.
 
+The separate [cell-text producer capture](table-code-findings.md#captured-cell-text-measurement)
+executes Model/Widget text conversion, native shaping/measurement, paragraph
+placement and cached emission together for 14 bounded cases. It supplies text
+and caller controls rather than measured entries. The paragraph-loop fixture
+below isolates the layout algorithms with independently supplied entries;
+neither establishes complete table or document composition.
+
 ### Captured paragraph layout loop
 
 The [Rust capture](../../conformance/native_table/text_paragraph_layout.rs) and
@@ -2800,8 +2807,10 @@ adjusted object top margin at `0x6c344`–`0x6c374`. This path supplies no
 stored object Y input.
 
 Widget constructs the callback at `0xd3254`–`0xd326c` (vptr `0xf5578`);
-dispatcher `0xd9d88` forwards through callback member 288 to Bodytext
-`onUpdateObjectSize`, bound at `0xb01bc`–`0xb0220`. Bodytext updates child
+dispatcher `0xd9d88` forwards through owner callback member 288 when it is
+bound. The separate Bodytext `onUpdateObjectSize` registration is inspected at
+`0xb01bc`–`0xb0220`; the callback-kernel capture below does not execute this
+upstream binding. Bodytext updates child
 split offsets at `0xb0dd8`–`0xb0dec`, measures the child, and reads measured
 height through virtual slot 72 at `0xb0e30`–`0xb0e50`. The code child clears
 measurement through slot 64 and measures through slot 56; the table child
@@ -3068,6 +3077,51 @@ next candidate (`0xb0cac`–`0xb0e2c`). Applying a callback only after acceptanc
 to every rejected lookahead, or to regular constraints would lose these
 distinctions. Constraints 1/2 use this width-feedback route; ordinary
 constraints retain their separate top-of-page shrink branch.
+
+### Captured object feedback kernels
+
+[`table-text-object-feedback.json`](../../conformance/table-text-object-feedback.json),
+SHA-256 `3c0e26208b66a67c7b90d7941b5bebf3633af73a4eb53dfc50a643b818d15d19`,
+and its [capture module](../../conformance/native_table/text_object_feedback.rs)
+execute complete native `GetBlockInfo` (`0x6ab9c`), `m_CheckObjectChanged`
+(`0x6c2dc`) and callback thunk/virtual invocation (`0x6879c`). The 34 cases
+retain 102 cold/warm/repeated-warm stages, entry mutations, selected ranges,
+callback arguments and changed-source anchors. Three allocation fills and the
+repeated zero-fill run agree; independent strict replay is byte-identical.
+
+Dense entries, classifications, advances, breaks, object/over-page flags,
+source start, margins/leading and available rectangles are supplied. The host
+callback supplies rectangle/minimum results while recording native anchor,
+candidate and prior-entry arguments. Warm calls retain entries and changed
+anchors. Four controls construct a genuine single-leaf `RectFTree` (`0x6d980`)
+from one supplied rectangle: native intersection/minimum checks reject an
+update on overlap, allow disjoint updates, and bypass that rejection at page
+top or with zero minimum. General document/page obstacle production is not
+captured.
+
+For supplied advances `[3,4]` and budget 8, a callback changing object width
+to 20 still accepts `[0,1]` on the cold pass using the old-width sum 7, then
+returns block width 23. The warm pass returns `[0,0]` without another callback,
+retaining width 20 and changed anchor 101. A narrowed available width 5 with
+full paragraph width 30 can return empty `[0,-1]` without calling back; this
+kernel result does not establish full paragraph progress. Decimal and large
+advances are independent numeric inputs rather than font-produced widths.
+
+Native threshold/margin/leading arithmetic, rectangle mutation and vector
+operations execute. Upstream Widget/Bodytext callback installation or source
+callbacks, shaping/classification, general obstacle trees, the full paragraph
+loop, placement, cached glyph emission and SVG/PDF do not execute. The fixture
+does not establish Rust production parity across all 34 cases or complete
+object composition.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-object-feedback scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-text-object-feedback.json
+cmp /tmp/table-text-object-feedback.json conformance/table-text-object-feedback.json
+```
+
+### Body width feedback source path
 
 Body width feedback is the minimum of the child's measured width and the
 object's transformed width cap (`0xb0ed8`–`0xb0f1c`). Tables override the

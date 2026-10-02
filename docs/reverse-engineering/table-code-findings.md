@@ -237,6 +237,175 @@ These findings establish adapter inputs and editability semantics. They do
 not prove complete row sizing, merged-cell layout, page splitting or visual
 parity for arbitrary cells.
 
+### Captured cell text measurement
+
+[`table-text-cell-measurement.json`](../../conformance/table-text-cell-measurement.json),
+SHA-256 `890c2f236d6cb6711f0821520a491079fa3304d2b64e108a2d3dfcc787549416`,
+records 14 cases, 68 UTF16 slots, 61 glyph-cache records and 24 emitted runs.
+The [capture module](../../conformance/native_table/text_cell_measurement.rs)
+executes Model `TableCellContentObject` construction (`0x3c17f0`),
+`ComponentText::SetText` (`0x39c9d4`) and optional font-size/margin setters.
+Actual Drawing cell/Widget/Content/Text constructors, `SetObject` (`0xd3974`)
+and Widget `Update` (`0xd3e3c`) produce native spans and paragraphs. Widget
+measurement (`0xd73b0`), native NAME selection, bundled
+Minikin/HarfBuzz/Skia/FreeType, Drawing cell layout (`0x8c05c`) and native
+paragraph calculation/placement execute. Real caches feed complete
+`getDrawnTextRun`, Text `0x66c98`, and actual `TextLayout::GetTextBound`,
+`0x8afd4`; entries, classifications, glyphs, widths and font getters are not
+supplied. Strict independent replay matches the frozen bytes.
+
+Native owned memory repeats under fills `0x00`, `0xa5`, `0xff` and zero again.
+The fixture retains source text, native text, constructor slots, measured and
+placed entries, glyph/Fakery/font state, getter bounds and emitted-run fields.
+Cases cover narrow/wide/fractional and auto widths, combining/supplementary
+text, tabs/newlines, multiple paragraphs, margins, a raw direction-1 caller
+control and zero-advance text across lines. Constructor-selected font size 50
+and explicitly set size 17 are distinct controls; these do not establish a
+parsed document's absent-font default. The scoped
+[parsed-text capture](#captured-parsed-cell-text) records common-field and
+serialized-span admission separately.
+
+The actual float-to-integer width route preserves zero. Width `0.75` reaches
+measurement/layout as integer zero and selects effective width 22 for `AV` at
+size 17. Width `80.9` reaches integer width 80. `AV abc` at constructor size
+50 and width zero selects 157; multiple auto-width paragraphs at size 17 select
+22 and 39 independently, and zero-advance paragraphs select 1. Traces record
+`DoParagraphLayout`, Text `0x7278c`, with width in W2 and the separate raw W3
+control; Model shape type 4 is independently observed and is not that argument.
+
+Combining and supplementary continuation slots retain kind 3, height zero,
+no drawable glyph cache and no font wrapper, while shaped owners retain their
+actual metrics and glyph records. Native newline entries use kind 4 and flush
+cached runs; the zero-advance cross-line case emits two runs. Actual Font
+wrapper getters (`0x85d7c`, `0x85d98`, `0x85db0`) expose a native registry source
+token, bitmap flag and C++ language string. The captured Roboto language is the
+empty string, distinct from an absent font wrapper; a source token does not
+identify a fontdb entry or a global ID across fresh native registries.
+
+Caller services supply density/direction, a null text manager, identity ARGB
+conversion and deterministic opaque UUIDs. Pinned host ICU 76.1/Unicode 16
+replaces Android bidi/break/property/locale services; bundled HarfBuzz Unicode
+tables remain native. Allocation/file/libc/single-thread services retain the
+NAME capture's boundaries. The fixture records library/font/XML/host hashes,
+initializers and instruction limits; TLS storage is relocated away from the
+deep native stack. This establishes the single-cell producer chain for these
+inputs. Complete TableLayout allocation, merged preparation, table rectangle
+producers, document pagination, Model callbacks, source parsing/cloning,
+origin transport, device ICU, SVG/PDF writer consumption, pixels and arbitrary
+system font configuration remain outside it.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-cell-measurement scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-text-cell-measurement.json
+cmp /tmp/table-text-cell-measurement.json conformance/table-text-cell-measurement.json
+```
+
+### Captured parsed cell text
+
+[`table-parsed-cell-text.json`](../../conformance/table-parsed-cell-text.json),
+SHA-256 `5801413a28a251d1313aa5574bd5882c3b70c05aee123bd463e2df35a47f55a7`,
+records seven synthetic common-field/span inputs. The
+[capture module](../../conformance/native_table/parsed_cell_text.rs) executes
+native type-4 Model content construction (`0x3c17f0`),
+`ApplyBinary_TextData` (`0x3b21d4`), the TextCommon WDoc parser, native span
+factory/readers and source getters. Actual Widget `SetObject`, `Update` and
+bounded native font measurement consume that parsed Model state. The explicit
+parser caller version is 5500; native source `GetFormatVersion`, `0x3e6410`,
+reports required format 4000 for retained common data. These are separate
+caller and source properties.
+
+When serialized common data is present with raw span count zero, native parsing
+retains constructor font-size 50 and foreground ARGB `0xff252525` spans with
+`ClosedClosed` range `[0, UTF16 length]`. A nonzero serialized span count clears
+both constructor defaults before record admission. Thus a foreground-only
+input retains no font span and measures at fallback 17; a font-only input has
+black foreground. An empty-text `[0,0]` font-50 span is admitted, while that
+same caret record on `AV` is rejected: its positive raw count still clears the
+defaults and the text measures at 17. Absent serialized common data removes
+the common object and exposes fallback font size 17 and black foreground.
+Source getters, wrapper default/caret values and measured entry font sizes are
+recorded separately; the wrapper's default 17 does not override retained
+font-50 source spans on nonempty text.
+
+Serialized payloads and parser ABI controls are caller inputs. Font-size and
+foreground source spans are observed through native Model getters, not supplied
+as measurement state. Fresh native heap fills `0x00`, `0x55`, `0xa5`, `0xff`
+and a repeated zero run agree; strict independent replay matches the fixture.
+The shared pinned NAME/HarfBuzz/Skia/FreeType and host ICU services retain their
+existing boundaries, with supplied default device profile and identity color
+conversion. The parent TableCell binary caller, complete document parsing and
+layout, callback timing, clone drawing and final export do not execute. These
+findings establish scoped native parser behavior; they do not rewrite raw
+source metadata or establish a final SDK default-style correction.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --parsed-cell-text scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-parsed-cell-text.json
+cmp /tmp/table-parsed-cell-text.json conformance/table-parsed-cell-text.json
+```
+
+### Captured cell text emission
+
+[`table-text-cell-emission.json`](../../conformance/table-text-cell-emission.json),
+SHA-256 `0098cfcd93274b210892fd0653677fd4cef3a35ebc4f0419b4b661857cbfa4ce`,
+records 17 cases, 78 UTF16 slots, 67 glyph-cache records and 27 native runs.
+The [measurement module](../../conformance/native_table/text_cell_measurement.rs)
+and [emission input observer](../../conformance/native_table/text_cell_emission.rs)
+extend the actual cell producer chain above with native pre-emission state.
+Complete `getDrawnTextRun`, `0x66c98`, consumes real placed entries and caches.
+Native `GetSpan`, `0x61f3c`, returns the 72-byte effective span for each slot;
+`GetParagraphIndex`, `0x62344`, supplies its paragraph identity. Captured inputs
+also include paragraph flag at member 65, RichText gravity offset at member 212,
+inclusive source range, paint offset and native inverse logical maps. Raw span
+fields, source indexes and registry font tokens retain their separate meanings.
+
+The original 14 cases retain their exact frozen fixture. Three added controls
+exercise leading, consecutive and newline-only text. Kind-4 newline entries
+flush accumulated glyphs without creating an empty append: `\nAV` emits range
+`[1,2]`, `AV\n\nTo` emits `[0,1]` and `[4,5]`, and newline-only text emits no
+runs. Real kind-3 continuation slots, font-wrapper language and source-token
+identity remain part of the captured native input. Native measured/placed
+entries, span results and logical maps are observed rather than synthesized.
+
+Fresh owned-memory fills `0x00`, `0xa5`, `0xff` and repeated zero runs agree;
+strict independent replay is byte identical. The actual constructor, Widget
+update, font/shaping, paragraph placement and cached-emission chain shares the
+14-case capture's supplied device, identity color, UUID, host ICU/file/libc and
+TLS boundaries. Complete TableLayout, merged preparation, source parsing,
+document pagination, Model callbacks, origin transport and final SVG/PDF writer
+consumption remain excluded. This records authoritative single-cell emission
+inputs and outputs without a production runtime-kernel activation claim.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-cell-emission scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-text-cell-emission.json
+cmp /tmp/table-text-cell-emission.json conformance/table-text-cell-emission.json
+```
+
 ## Cell layout frames and integer text dimensions
 
 Drawing `TableLayout::layoutCell`, `0xb06d4`, looks up the text wrapper and
@@ -386,6 +555,80 @@ Reproduce with the compiled harness and the same hash-pinned libraries:
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-lifecycle.json
 cmp /tmp/table-lifecycle.json conformance/table-lifecycle.json
+```
+
+### Captured live table layout
+
+[`table-live-layout.json`](../../conformance/table-live-layout.json), SHA-256
+`cedaea603a3aa3c6e07ea8bdd09af7ec7c1186f35cba0e8c4282dd5fe8309b87`,
+records 18 cases, 38 states, 152 physical-child observations and 592 dense
+entries. The [capture module](../../conformance/native_table/live_table_layout.rs)
+executes actual Model table construction (`0x3d2690`) and 2×2
+`Construct` (`0x3d27d8`), including row/cell/content constructors and native
+merge where specified. Text is assigned through native
+setters to each physical content object **after** merging; covered-slot text is
+an explicit source control rather than a claim about ordinary editor merge
+transfer. Complete Drawing `TableLayout` construction (`0xa9d58`), its native
+TextManager, cold `Measure` (`0xaa530`) and `init` (`0xaa6b4`) execute with
+genuine Widget constructors, source binding/update, NAME font selection and
+bundled Minikin/HarfBuzz/Skia/FreeType measurement. Native cache frames,
+geometry, widths, entries and font getters are not supplied.
+
+Cold measurement constructs and measures all four physical child wrappers in
+every captured case, including whole-grid merges and an empty owner with
+nonempty covered text. Clean warm `Layout`, `0xaa3d4`, enters `layoutCell`,
+`0xb06d4`, then Widget `layout`, `0xd3b88`, and Text `Layout`, `0x8ac10`.
+Without split bands it visits four ordinary cells, three cells for the partial
+merges and one owner for the whole-grid merge. The supplied-band ordinary case
+visits two cells, while the whole-grid supplied-band case visits none. Those
+counts establish the captured phase selection rather than a universal merged
+text visibility rule.
+
+Cases independently vary source bounds, font size 17, asymmetric margins,
+text scale 0.75/1.5, document density 2, a raw direction-1 profile, local split
+bands and warm column growth/shrink. Native Model `SetColumnWidth`, `0x3d3b64`,
+and Drawing `resizeColumn`, `0xb0088`, execute in the two resize cases. Translated
+and zero-origin cases produce identical local frames. Each physical content's
+saved Model rectangle remains unchanged through warm layout and width resize
+under the captured callback state. Source and wrapper text are observed
+independently; the empty owner's Model empty string becomes a null Widget text
+pointer without replacing its covered-slot strings.
+
+Native `init` installs the editing callback at the child's `std::function`
+storage member 64. Its active callback is present in all 152 observations;
+update-size callback target at member 288 and table forwarding callbacks remain
+constructor-null. This does not establish Bodytext Model-rectangle notification
+timing. Snapshot observation itself executes native `getDrawnTextRun`, Text
+`0x66c98`, after each stage, including between cold measurement and warm layout.
+It allocates fresh DrawnText/glyph/output records retained until case reset, so
+the guest heap advances. Emoji slices are null; the reviewed nil route does not
+write dense entries, frames or source rectangles. This is a bounded observer
+route rather than a general claim that the emitter is a pure getter.
+
+Owned native allocations repeat under fresh fills `0x00`, `0x55`, `0xa5`,
+`0xff` and zero again; strict independent full-driver replay is byte identical.
+Caller context/display services supply document width 1000, density/direction,
+identity ARGB conversion and local split bands through the actual setter;
+native table TextManager construction executes. Host ICU 76.1/Unicode 16,
+allocation/files/libc/single-thread services, UUIDs, `pow`/`acosf` primitives and
+disabled ATrace remain explicit boundaries. Saved parsing/cloning, complete
+Bodytext callbacks and document-bound production, pagination/split-band
+production, device ICU, final writer consumption and pixels do not execute.
+This establishes live native table phases for the supplied cases without full
+parent-producer or SDK runtime parity.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --live-table-layout scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-layout.json
+cmp /tmp/table-live-layout.json conformance/table-live-layout.json
 ```
 
 ## Export row sizing and merged-frame ownership
@@ -1241,7 +1484,9 @@ parent measurement, the complete Composer writer, Bodytext callbacks and final
 PDF transport are outside this capture. Composer's canvas translation at
 `0x380018`–`0x38003c` uses rounded measured origin minus crop origin, with crop placement
 as a separate world-transport step; the supplied scroll does not prove that
-writer producer. Production direct virtual-origin subtraction and its f32
+writer producer. The separate [background transport capture](#captured-table-background-transport)
+executes the fresh constructor and selected writer geometry windows with scroll
+zero. Production direct virtual-origin subtraction and its f32
 arithmetic are tested separately. Inline Normal clone placement retains the
 existing SDK compatibility behavior without a full writer/Model-callback
 activation claim.
@@ -1255,6 +1500,63 @@ activation claim.
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-clone-origin.json
 cmp /tmp/table-clone-origin.json conformance/table-clone-origin.json
+```
+
+### Captured table background transport
+
+[`table-background-transport.json`](../../conformance/table-background-transport.json),
+SHA-256 `7c0ec937bcbc7c5e2c7475146ae5d4430a22d8eddb16606c09921b4a7e7a917c`,
+records 10 cases, 113 local paint commands, 76 selected paths and 50 Canvas
+events; 40 commands are marked as outer-border artwork. The
+[capture module](../../conformance/native_table/table_clone_origin.rs)
+`capture_transport` extends native source construction, clone/copy, Widget
+affine production, Composer placement and cold Drawing frames. Heap fills
+`0x00`, `0xa5` and `0xff` agree, strict independent replay is byte identical,
+and the separate 11-case clone and 60-case artwork fixtures remain unchanged.
+
+Composer `[0x37e4ac, 0x37e4f8)` reads the supplied local measured rectangle
+through Drawing `GetMeasuredRect`, `0xab494`, offsets it by the actual clone
+drawn origin and rounds outward. `[0x37e534, 0x37e56c)` computes the background
+crop from page size and scaled margins. `[0x380004, 0x380040)` records native
+Canvas save/translation, with translation equal to rounded measured origin
+minus crop origin. `[0x380098, 0x3800d8)` executes actual fresh
+`TableDrawing` construction, `0xa5634`, `SetTextSizeDelta(0)` and complete
+`DrawObjectWithoutText`, `0xa6738`, including cell and outer-border artwork.
+The constructor initializes horizontal scroll at member 112 to zero; no
+`SetScrollX` call occurs in this writer window. `[0x37e7c0, 0x37e7d8)` produces
+the density-scaled image target. Cases cover Normal/over-pages, merged cells,
+zero/negative origins, fractional measured bounds, page cropping and half/double
+density. Scroll and text-size delta remain zero in every captured case.
+
+The local commands and translation are observed separately. Inferring image
+placement algebra adds local coordinate, Canvas translation and crop placement,
+then applies density; the graphics backend matrix and final image placement do
+not execute. For `zero-source-inline-ten`, the saved source left is zero,
+the clone drawn left is 10, the first local background left is −10 and the
+rounded measured left is 10. Their algebraic sum predicts world left zero
+under that supplied immutable source state. It does not establish a universal
+world origin or the source state after upstream Model callbacks.
+
+Local measured/content layout rectangles, page dimensions, scaled margins,
+density and retained-run inputs are supplied. Warm parent text measurement
+does not produce those rectangles here. Host services cover allocation/free,
+bytes, mutex/C++ guards, UUIDs and constructor logging; the text-wrapper adapter
+omits native text binding/shaping. Paint/Canvas interfaces record local commands
+and events with identity theme; command positions retain the last raw cell
+lookup, while `outer_border` marks table-wide paths. Pixel factory, bitmap data,
+graphics backend matrices, upstream Bodytext callbacks, warm shaping and final
+PDF backend execution are excluded. The capture establishes these writer
+geometry windows without full world-transport or production activation parity.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --table-background-transport scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-background-transport.json
+cmp /tmp/table-background-transport.json conformance/table-background-transport.json
 ```
 
 ### Visible rectangles and canvas clipping
@@ -1572,7 +1874,9 @@ without an inferred RTL contract. Native constants, defaults and C++ algorithms
 execute; allocation, bytes/files, deterministic UUIDs, single-thread services
 and host ICU remain interfaces. Text copying/classification, font production,
 measurement/width conversion, paragraph placement and cached emission do not
-execute. These constructor findings do not establish full cell measurement.
+execute in this constructor fixture. The separate
+[cell measurement capture](#captured-cell-text-measurement) executes the native
+single-cell producer chain under its recorded text and font controls.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -1625,7 +1929,9 @@ and the RichTextImpl member-212 vertical gravity offset (`0x7a558`), computed
 by `UpdateGravityOffsetY`, `0x639dc`. That producer does not execute here.
 The fixture supplies its RectF result and checks the actual native ObjectSpan index, including signed
 `-1`; the negative-index case therefore does not establish the real getter's
-zero-return behavior.
+zero-return behavior. The [cell measurement capture](#captured-cell-text-measurement)
+executes that getter on real placed single-cell entries; document object-entry
+bound production and callback integration remain outside both captures.
 
 Drawing/Bodytext storage, owner association, ComponentText/TextCommon chain,
 one-element span vector and the document getter result are supplied. Native

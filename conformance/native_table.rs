@@ -24,6 +24,9 @@ mod drawn_bounds;
 #[path = "native_table/widget_text_constructor.rs"]
 mod widget_text_constructor;
 
+#[path = "native_table/parsed_cell_text.rs"]
+mod parsed_cell_text;
+
 #[path = "native_table/page_text_ranges.rs"]
 mod page_text_ranges;
 
@@ -1087,8 +1090,16 @@ fn main() {
     let mut machine = Machine::new(Path::new(&path));
     let mode = std::env::args_os().nth(2);
     match mode.as_deref().and_then(|mode| mode.to_str()) {
-        Some(mode @ ("--cell-model-callbacks" | "--table-clone-origin")) => {
-            let count = if mode == "--table-clone-origin" { 6 } else { 5 };
+        Some(
+            mode @ ("--cell-model-callbacks"
+            | "--table-clone-origin"
+            | "--table-background-transport"),
+        ) => {
+            let count = if mode == "--cell-model-callbacks" {
+                5
+            } else {
+                6
+            };
             let paths = (3..3 + count)
                 .map(|index| {
                     std::env::args_os().nth(index).expect(
@@ -1106,35 +1117,59 @@ fn main() {
             if mode == "--cell-model-callbacks" {
                 cell_model_callbacks::capture(lifecycle, Path::new(&paths[4]));
             } else {
-                table_clone_origin::capture(table_clone_origin::Paths {
+                let paths = table_clone_origin::Paths {
                     lifecycle,
                     widget: Path::new(&paths[4]),
                     composer: Path::new(&paths[5]),
-                });
+                };
+                if mode == "--table-background-transport" {
+                    table_clone_origin::capture_transport(paths);
+                } else {
+                    table_clone_origin::capture(paths);
+                }
             }
             return;
         }
-        Some("--widget-text-constructor") => {
-            let paths = [3, 4, 5, 6, 7, 8, 9, 10, 11].map(|index| {
+        Some(
+            mode @ ("--widget-text-constructor"
+            | "--text-cell-measurement"
+            | "--text-cell-emission"
+            | "--parsed-cell-text"
+            | "--live-table-layout"),
+        ) => {
+            let args = [3, 4, 5, 6, 7, 8, 9, 10, 11].map(|index| {
                 std::env::args_os().nth(index).expect(
                     "base, text, Skia, font, bundled XML/libc++, widget, content and drawing paths required",
                 )
             });
-            widget_text_constructor::capture(
-                &mut machine,
-                widget_text_constructor::Paths {
-                    model: Path::new(&path),
-                    base: Path::new(&paths[0]),
-                    text: Path::new(&paths[1]),
-                    skia: Path::new(&paths[2]),
-                    font: Path::new(&paths[3]),
-                    xml: Path::new(&paths[4]),
-                    cpp: Path::new(&paths[5]),
-                    widget: Path::new(&paths[6]),
-                    content: Path::new(&paths[7]),
-                    drawing: Path::new(&paths[8]),
-                },
-            );
+            let paths = widget_text_constructor::Paths {
+                model: Path::new(&path),
+                base: Path::new(&args[0]),
+                text: Path::new(&args[1]),
+                skia: Path::new(&args[2]),
+                font: Path::new(&args[3]),
+                xml: Path::new(&args[4]),
+                cpp: Path::new(&args[5]),
+                widget: Path::new(&args[6]),
+                content: Path::new(&args[7]),
+                drawing: Path::new(&args[8]),
+            };
+            match mode {
+                "--widget-text-constructor" => {
+                    widget_text_constructor::capture(&mut machine, paths)
+                }
+                "--text-cell-measurement" => {
+                    text_span_font_name::cell_measurement::capture(&mut machine, paths)
+                }
+                "--text-cell-emission" => {
+                    text_span_font_name::cell_measurement::capture_emission(&mut machine, paths)
+                }
+                "--parsed-cell-text" => parsed_cell_text::capture(&mut machine, paths),
+                "--live-table-layout" => {
+                    text_span_font_name::live_table_layout::capture(&mut machine, paths)
+                }
+                _ => unreachable!(),
+            }
             return;
         }
         Some(mode @ ("--cell-model-lifecycle" | "--table-drawn-bounds")) => {
@@ -1230,17 +1265,18 @@ fn main() {
             text_context_windows::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
             return;
         }
-        Some("--text-wrap-numeric") => {
+        Some(mode @ ("--text-wrap-numeric" | "--text-object-feedback")) => {
             let paths = [3, 4].map(|index| {
                 std::env::args_os()
                     .nth(index)
                     .expect("libSPenBase.so and libSPenText.so paths required")
             });
-            text_bounds::capture_wrap_numeric(
-                &mut machine,
-                Path::new(&paths[0]),
-                Path::new(&paths[1]),
-            );
+            let capture = if mode == "--text-object-feedback" {
+                text_bounds::capture_object_feedback
+            } else {
+                text_bounds::capture_wrap_numeric
+            };
+            capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
             return;
         }
         Some("--text-runs") => {
@@ -1638,7 +1674,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --widget-text-constructor, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --table-background-transport, --widget-text-constructor, --text-cell-measurement, --text-cell-emission, --parsed-cell-text, --live-table-layout, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-object-feedback, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

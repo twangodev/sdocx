@@ -18,6 +18,9 @@ const DRAW_CANVAS_LINE: u64 = HOST + 288;
 const COPY: u64 = HOST + 320;
 const GET_ALPHA: u64 = HOST + 352;
 const SET_ALPHA: u64 = HOST + 384;
+const SAVE_CANVAS: u64 = HOST + 416;
+const RESTORE_CANVAS: u64 = HOST + 448;
+const TRANSLATE_CANVAS: u64 = HOST + 480;
 const COMMON: u64 = MODEL + 0xa800;
 const TABLE_VTABLE: u64 = MODEL + 0xb400;
 const TABLE_RECT: u64 = MODEL + 0xb600;
@@ -40,6 +43,9 @@ struct Observation {
     constructors: usize,
     destructors: usize,
     theme_colors: Vec<u32>,
+    drawing: u64,
+    canvas_events: Vec<String>,
+    outer_border: bool,
 }
 
 fn rect(engine: Engine, address: u64) -> [f32; 4] {
@@ -124,13 +130,35 @@ unsafe extern "C" fn interface(engine: Engine, address: u64, _: u32, data: *mut 
                 read_float(engine, second + 4),
             ];
             observation.commands.push(format!(
-                "{{\"kind\":\"line\",\"position\":{:?},\"endpoints\":{endpoints:?},\"endpoint_bits\":{:?},\"color\":{},\"width\":{:?},\"width_bits\":{}}}",
+                "{{\"kind\":\"line\",\"position\":{:?},\"endpoints\":{endpoints:?},\"endpoint_bits\":{:?},\"color\":{},\"width\":{:?},\"width_bits\":{}{}}}",
                 observation.position,
                 endpoints.map(f32::to_bits),
                 paint.color,
                 paint.width,
                 paint.width.to_bits(),
+                if observation.drawing == 0 { String::new() } else { format!(",\"outer_border\":{}", observation.outer_border) },
             ));
+        }
+        SAVE_CANVAS | RESTORE_CANVAS | TRANSLATE_CANVAS => {
+            assert_eq!(object, CANVAS);
+            let event = if address == TRANSLATE_CANVAS {
+                let offset = [scalar(engine, 0), scalar(engine, 1)];
+                format!(
+                    "{{\"kind\":\"translate\",\"offset\":{offset:?},\"offset_bits\":{:?}}}",
+                    offset.map(f32::to_bits)
+                )
+            } else {
+                format!(
+                    "{{\"kind\":{:?},\"argument\":{}}}",
+                    if address == SAVE_CANVAS {
+                        "save"
+                    } else {
+                        "restore"
+                    },
+                    argument as i32
+                )
+            };
+            observation.canvas_events.push(event);
         }
         COPY => {
             let size = usize::try_from(read_register(engine, REGISTER_X0 + 2)).unwrap();
@@ -140,14 +168,22 @@ unsafe extern "C" fn interface(engine: Engine, address: u64, _: u32, data: *mut 
             write(engine, object, &bytes);
         }
         DRAW_LINE => {
-            assert_eq!(object, DRAWING_OBJECT);
+            assert_eq!(
+                object,
+                if observation.drawing == 0 {
+                    DRAWING_OBJECT
+                } else {
+                    observation.drawing
+                }
+            );
             assert_eq!(argument, CANVAS);
-            assert_eq!(read_register(engine, REGISTER_X0 + 5), 0);
+            assert!(read_register(engine, REGISTER_X0 + 5) <= u64::from(observation.drawing != 0));
+            observation.outer_border = read_register(engine, REGISTER_X0 + 5) != 0;
             let path = read_register(engine, REGISTER_X0 + 2);
             let endpoints = [20, 24, 28, 32].map(|offset| read_float(engine, path + offset));
             let equation = [36, 40, 44].map(|offset| read_float(engine, path + offset));
             observation.selected.push(format!(
-                "{{\"position\":{:?},\"edge\":{},\"color\":{},\"width\":{:?},\"radii\":{:?},\"endpoints\":{endpoints:?},\"endpoint_bits\":{:?},\"equation\":{equation:?},\"equation_bits\":{:?}}}",
+                "{{\"position\":{:?},\"edge\":{},\"color\":{},\"width\":{:?},\"radii\":{:?},\"endpoints\":{endpoints:?},\"endpoint_bits\":{:?},\"equation\":{equation:?},\"equation_bits\":{:?}{}}}",
                 observation.position,
                 read_u32(engine, path + 48),
                 read_u32(engine, path),
@@ -155,6 +191,7 @@ unsafe extern "C" fn interface(engine: Engine, address: u64, _: u32, data: *mut 
                 [read_float(engine, path + 8), read_float(engine, path + 12)],
                 endpoints.map(f32::to_bits),
                 equation.map(f32::to_bits),
+                if observation.drawing == 0 { String::new() } else { format!(",\"outer_border\":{}", observation.outer_border) },
             ));
         }
         address if address == DRAWING_BASE + 0xbcdb0 => {
@@ -222,6 +259,9 @@ impl Recorder {
             COPY,
             GET_ALPHA,
             SET_ALPHA,
+            SAVE_CANVAS,
+            RESTORE_CANVAS,
+            TRANSLATE_CANVAS,
             DRAW_LINE,
             DRAWING_BASE + 0xbcdb0,
         ] {
@@ -281,6 +321,9 @@ fn configure_canvas(
         (272, DRAW_RECT),
         (288, DRAW_ROUND_RECT),
         (80, MATRIX_GETTER),
+        (48, SAVE_CANVAS),
+        (56, RESTORE_CANVAS),
+        (152, TRANSLATE_CANVAS),
     ] {
         write(
             machine.engine,
@@ -322,6 +365,91 @@ pub(super) fn draw_prepared(machine: &Machine, table: u64, layout: u64, drawing_
     format!(
         "{{\"source_is_clone\":{},\"drawing_x\":{drawing_x:?},\"selected_paths\":[{}],\"commands\":[{}]}}",
         read_u64(machine.engine, DRAWING_OBJECT + 104) == table,
+        observation.selected.join(","),
+        observation.commands.join(",")
+    )
+}
+
+pub(super) fn draw_background_window(machine: &Machine, composer: u64, writer: u64) -> String {
+    let mut recorder = Recorder::new(machine);
+    configure_canvas(machine, 0.0, [0.0; 4], 1.0, [0.0; 3], 0);
+    write(machine.engine, writer, &THEME.to_le_bytes());
+    recorder.observation.drawing = STACK + 112;
+    write(
+        machine.engine,
+        DRAWING_BASE + 0xb8a30,
+        &0xd65f03c0_u32.to_le_bytes(),
+    );
+    for (plt, target) in [
+        (0x5535b0, DRAWING_BASE + 0xa5634),
+        (0x5535c0, DRAWING_BASE + 0xa84ec),
+        (0x5535d0, DRAWING_BASE + 0xa6738),
+    ] {
+        write(
+            machine.engine,
+            composer + plt,
+            &0x58000050_u32.to_le_bytes(),
+        );
+        write(
+            machine.engine,
+            composer + plt + 4,
+            &0xd61f0200_u32.to_le_bytes(),
+        );
+        write(machine.engine, composer + plt + 8, &target.to_le_bytes());
+    }
+    register(machine.engine, REGISTER_X0 + 19, writer);
+    register(machine.engine, REGISTER_X0 + 23, CANVAS);
+    register(machine.engine, REGISTER_SP, STACK);
+    register(machine.engine, REGISTER_X30, STOP);
+    let error = unsafe {
+        uc_emu_start(
+            machine.engine,
+            composer + 0x380004,
+            composer + 0x380040,
+            1_000_000,
+            1000,
+        )
+    };
+    assert_eq!(
+        error,
+        0,
+        "background window PC {:x}, LR {:x}",
+        read_register(machine.engine, 260),
+        read_register(machine.engine, REGISTER_X30)
+    );
+    assert_eq!(read_register(machine.engine, 260), composer + 0x380040);
+    register(machine.engine, 144, 0);
+    let error = unsafe {
+        uc_emu_start(
+            machine.engine,
+            composer + 0x380098,
+            composer + 0x3800d8,
+            1_000_000,
+            100000,
+        )
+    };
+    assert_eq!(
+        error,
+        0,
+        "background window PC {:x}, LR {:x}",
+        read_register(machine.engine, 260),
+        read_register(machine.engine, REGISTER_X30)
+    );
+    assert_eq!(read_register(machine.engine, 260), composer + 0x3800d8);
+    let drawing = recorder.observation.drawing;
+    let observation = &recorder.observation;
+    assert_eq!(observation.constructors, observation.destructors);
+    assert!(observation.paints.is_empty());
+    assert_eq!(read_float(machine.engine, drawing + 112), 0.0);
+    format!(
+        "{{\"source_is_clone\":{},\"scroll_x\":{:?},\"text_size_delta\":{:?},\"display_rect\":{:?},\"apply_scale\":{},\"paint_count\":{},\"canvas_events\":[{}],\"selected_paths\":[{}],\"commands\":[{}]}}",
+        read_u64(machine.engine, drawing + 104) == read_u64(machine.engine, writer + 40),
+        read_float(machine.engine, drawing + 112),
+        read_float(machine.engine, drawing + 116),
+        rect(machine.engine, drawing + 120),
+        read_u32(machine.engine, drawing + 156) & 255 != 0,
+        observation.constructors,
+        observation.canvas_events.join(","),
         observation.selected.join(","),
         observation.commands.join(",")
     )

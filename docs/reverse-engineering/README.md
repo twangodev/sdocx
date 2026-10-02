@@ -47,7 +47,8 @@ Planning, task lists and development progress are kept outside these documents.
   selection and four-face measurement under supplied XML, captured consumer
   string metrics, captured ordinary
   block-selection/placement arithmetic, supplied-metric paragraph layout with
-  host ICU, measured-line page range scans and horizontal
+  host ICU, measured-line page range scans, supplied object-feedback/obstacle
+  kernels and horizontal
   GPOS/fused-skew traces, with separate paragraph/vector
   transport boundaries and private physical-face SVG/usvg/PDF identities.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
@@ -242,9 +243,12 @@ Planning, task lists and development progress are kept outside these documents.
   cell/content Model rectangle setters and final native clip-path geometry, retained
   text entry/run bounds, complete cached-glyph run emission, actual Model drawn
   bounds, complete cell artwork,
-  constructed cell Model bridges, genuine cell text constructors, installed
-  callback/span lookup, cloned table
-  placement, code chrome/cache/minimum geometry and vector
+  constructed cell Model bridges, genuine cell text constructors and native
+  text-to-measurement/layout/cache producers, parsed Common/span defaults,
+  captured pre-emission spans/maps and newline flushing, installed
+  live cold/warm table layout with real child text, callback/span lookup, cloned table
+  placement, measured/cropped background Canvas/image transport, code
+  chrome/cache/minimum geometry and vector
   evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.

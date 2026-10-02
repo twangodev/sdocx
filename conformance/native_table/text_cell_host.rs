@@ -48,7 +48,7 @@ pub(crate) fn reset_host(
     }
 }
 
-fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Option<u64> {
+pub(super) fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Option<u64> {
     let host = unsafe { &mut *data.cast::<Host>() };
     if let Some(value) =
         text_paragraph_layout::paragraph_icu_import(engine, name, args, &mut host.paragraphs)

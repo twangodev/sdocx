@@ -16,6 +16,9 @@ mod ownership;
 #[path = "text_wrap_numeric.rs"]
 mod wrap_numeric;
 
+#[path = "text_object_feedback.rs"]
+mod object_feedback;
+
 const TEXT: u64 = 0x0500_0000;
 const PARAGRAPH: u64 = MODEL + 0x9000;
 const MEASURE: u64 = MODEL + 0x9200;
@@ -422,4 +425,9 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
 pub(super) fn capture_wrap_numeric(machine: &mut Machine, base: &Path, text: &Path) {
     load(machine, base, text);
     wrap_numeric::capture(machine);
+}
+
+pub(super) fn capture_object_feedback(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    object_feedback::capture(machine);
 }

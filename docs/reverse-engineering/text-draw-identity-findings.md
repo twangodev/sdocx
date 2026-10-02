@@ -874,6 +874,26 @@ are measurement output for this supplied-SVG transport check; product text
 remains SVG. The regression does not establish native ownership, font selection,
 clip selection or appearance, and does not claim Firefox/WebKit parity.
 
+### Captured cell producer identity
+
+The [14-case cell measurement capture](table-code-findings.md#captured-cell-text-measurement)
+connects actual Model text and Widget conversion to native NAME/shaping,
+measurement, placement and cached-run emission: 68 UTF-16 slots, 61 cached
+glyph records and 24 emitted runs. Its entries, kinds, Font wrappers and glyph
+caches are native-produced rather than supplied to the emitter. Continuations
+retain kind 3 and zero height; the actual newline kind 4 flushes emission.
+Actual Font language is a C++ empty string under the supplied XML, rather than
+an absent optional value; its source ID identifies the selected live registry
+instance. Complete table/merged lifecycle, Model callbacks, world origins and
+final writer consumption remain outside that capture. It does not activate a
+complete Rust cached-run producer. The separate
+[17-case emission capture](table-code-findings.md#captured-cell-text-emission)
+retains actual 72-byte `GetSpan` projections, paragraph state, gravity and
+inverse logical maps immediately before emission: 78 UTF-16 slots, 67 cached
+glyph records and 27 runs. Leading/consecutive/newline-only kind-4 controls
+flush without an empty append. This supplies actual producer evidence for that
+branch, independently of a final Rust kernel parity claim.
+
 ## Current Rust representation
 
 Rust retains raw serialized spans and decodes ordinary font/style properties.
@@ -1100,9 +1120,10 @@ span projection. It does not supply native entry kind/direction, f32 horizontal
 adjacency or font source/bitmap/language metadata. A different or unavailable
 span splits; equal spans return an unavailable full native boundary, leaving
 the existing measured-`Arc` and actual-paint checks to govern coalescing.
-The full cached-entry emitter is therefore verified for captured supplied inputs,
-while the renderer uses its partial span boundary. Production shaping ownership,
-font selection and glyph/codeword mapping remain separate, unestablished inputs.
+The cached-entry emitter is verified with supplied inputs and, separately, the
+actual cell producer above. The renderer uses its partial span boundary; complete
+Rust/native cached-run grouping and unsupported font/ownership profiles remain
+separate limits.
 
 Measured runs retain a selected `ResolvedFace`, synthesis, direction and shaped
 glyphs. `ResolvedFace::is_bitmap_font()` retains the exact CBDT table-directory
@@ -1111,9 +1132,11 @@ table tags, cached/cloned faces and both collection indexes. This metadata does
 not reproduce the native draw-run bitmap gate in production by itself.
 Production font language metadata is not retained. `ResolvedFace.id` is the current face identity, with
 no proven equivalence to Samsung's source instance/cache behavior. HarfBuzz
-byte clusters are mapped to Rust character ranges; they are not native
-per-UTF-16 entry slots. Rust's f64 cluster positions also differ from the native
-f32 adjacency predicate.
+byte clusters map to Rust character ranges in the compatibility path. Admitted
+native-measured ordinary paragraphs retain captured f32 geometry and UTF-16
+entry slots; compatibility and mixed/object profiles retain SDK ownership and
+positioning policies. Complete native cached-run horizontal adjacency remains
+separate from those bounded producer comparisons.
 
 The retained PDF path can transport supplied clips with selectable text, and
 Chromium can transport span clips without breaking the covered joined shaping.

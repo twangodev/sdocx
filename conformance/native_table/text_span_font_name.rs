@@ -2,6 +2,10 @@ use super::*;
 
 #[path = "text_cell_host.rs"]
 pub(super) mod cell_host;
+#[path = "text_cell_measurement.rs"]
+pub(super) mod cell_measurement;
+#[path = "live_table_layout.rs"]
+pub(super) mod live_table_layout;
 #[path = "text_font_registry.rs"]
 mod registry;
 use std::collections::BTreeMap;

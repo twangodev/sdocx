@@ -74,6 +74,10 @@ impl Case {
 }
 
 fn fixture(paths: &Paths<'_>, case: Case, fill: u8) -> String {
+    capture_case(paths, case, fill, None)
+}
+
+fn capture_case(paths: &Paths<'_>, case: Case, fill: u8, transport: Option<Transport>) -> String {
     let machine = cell_model_lifecycle::initialize(&paths.lifecycle, fill);
     map_library(machine.engine, paths.widget, WIDGET, WIDGET_SHA256);
     map_library(machine.engine, paths.composer, COMPOSER, COMPOSER_SHA256);
@@ -176,7 +180,11 @@ fn fixture(paths: &Paths<'_>, case: Case, fill: u8) -> String {
     machine.call(DRAWING_BASE + 0xaa6b4, &[frames::LAYOUT]);
     machine.call(DRAWING_BASE + 0xab168, &[frames::LAYOUT]);
     let prepared = snapshot(&machine, clone, "cold_frames", true);
-    let drawing = cell_drawing::draw_prepared(&machine, clone, frames::LAYOUT, clone_drawn[0]);
+    let drawing = if let Some(input) = transport {
+        capture_background(&machine, clone, input)
+    } else {
+        cell_drawing::draw_prepared(&machine, clone, frames::LAYOUT, clone_drawn[0])
+    };
     format!(
         "{{\"name\":{:?},\"spannable\":{},\"merged\":{},\"source_bounds\":{:?},\"drawn_run\":{:?},\"run_position\":{:?},\"writer_origin\":{:?},\"local_raw_rect\":{local_raw:?},\"stages\":[{source},{copied},{placed},{prepared}],\"drawing\":{drawing}}}",
         case.name,
@@ -269,6 +277,211 @@ pub(super) fn capture(paths: Paths<'_>) {
         .collect();
     println!(
         "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"model_library_sha256\":\"{LIBRARY_SHA256}\",\"base_library_sha256\":\"{}\",\"drawing_library_sha256\":\"{DRAWING_SHA256}\",\"widget_library_sha256\":\"{WIDGET_SHA256}\",\"composer_library_sha256\":\"{COMPOSER_SHA256}\",\"bodytext_library_sha256\":\"27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0\",\"cpp_library_sha256\":\"4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4\",\"allocation_fills\":[0,165,255],\"native_addresses\":{{\"create_object\":\"0x36d6cc\",\"table_copy\":\"0x3d9af4\",\"shape_set_rect\":\"0x397708\",\"get_rect_by_drawn_rect\":\"0xe1f88\",\"composer_placement_window\":[\"0x376418\",\"0x376478\"],\"composer_span_flag_window\":[\"0x376494\",\"0x3764a8\"],\"cold_initialize\":\"0xaa6b4\",\"cold_frames\":\"0xab168\",\"draw_cell_artwork\":\"0xa748c\"}},\"capture_boundary\":\"Native Model constructor/factory/copy, Widget affine producer, Composer clone-placement instruction window, cold Drawing frames, native cell artwork; supplied retained DrawnText rectangle/position and writer origin, zeroed source/table/retained-run/layout storage, zeroed text-wrapper adapter omitting SetObject/SetTextScale, deterministic UUIDs, allocator/free/memory/mutex/C++ guard/logging services, Paint/Canvas recording interfaces, identity theme, empty display clip, canvas-local commands with native literal zero Y offset; no shaping, parent measurement, full Composer writer, Bodytext callbacks, or final PDF transport\",\"cases\":[{}]}}",
+        frames::BASE_SHA256,
+        results.join(",\n")
+    );
+}
+
+#[derive(Clone, Copy)]
+struct Transport {
+    measured_local: [f32; 4],
+    page_size: [i32; 2],
+    scaled_margins: [f32; 2],
+    density: f32,
+}
+
+fn window(machine: &Machine, start: u64, end: u64) {
+    register(machine.engine, REGISTER_SP, STACK);
+    register(machine.engine, REGISTER_X30, STOP);
+    let error = unsafe {
+        uc_emu_start(
+            machine.engine,
+            COMPOSER + start,
+            COMPOSER + end,
+            1_000_000,
+            10000,
+        )
+    };
+    assert_eq!(
+        error,
+        0,
+        "writer window {start:x} PC {:x}, LR {:x}",
+        read_register(machine.engine, 260),
+        read_register(machine.engine, REGISTER_X30)
+    );
+    assert_eq!(read_register(machine.engine, 260), COMPOSER + end);
+}
+
+fn capture_background(machine: &Machine, clone: u64, input: Transport) -> String {
+    const WRITER: u64 = MODEL + 0x2a000;
+    const PAGE: u64 = MODEL + 0x2b000;
+    for (offset, values) in [(668, input.measured_local), (652, input.measured_local)] {
+        for (axis, value) in values.into_iter().enumerate() {
+            write(
+                machine.engine,
+                frames::LAYOUT + offset + axis as u64 * 4,
+                &value.to_le_bytes(),
+            );
+        }
+    }
+    for (offset, value) in [(40, clone), (48, frames::LAYOUT)] {
+        write(machine.engine, WRITER + offset, &value.to_le_bytes());
+    }
+    write(machine.engine, WRITER + 8, &input.density.to_le_bytes());
+    for (axis, dimension) in input.page_size.into_iter().enumerate() {
+        write(
+            machine.engine,
+            PAGE + axis as u64 * 4,
+            &dimension.to_le_bytes(),
+        );
+    }
+    for (plt, target) in [
+        (0x54f2e0, frames::BASE + 0xb11a4),
+        (0x54d7f0, frames::BASE + 0xb16cc),
+        (0x54f2d0, frames::BASE + 0xb1350),
+        (0x553570, frames::BASE + 0xb16e0),
+        (0x54f390, frames::BASE + 0xb1510),
+    ] {
+        bind_native(machine.engine, COMPOSER + plt, target);
+    }
+    register(machine.engine, REGISTER_X0 + 19, WRITER);
+    register(machine.engine, REGISTER_X0 + 20, clone);
+    window(machine, 0x37e4ac, 0x37e4f8);
+    let measured_world = rect(machine, WRITER + 96);
+    register(machine.engine, REGISTER_X0 + 22, PAGE);
+    register(
+        machine.engine,
+        136,
+        u64::from(input.scaled_margins[1].to_bits()),
+    );
+    register(
+        machine.engine,
+        145,
+        u64::from(input.scaled_margins[0].to_bits()),
+    );
+    window(machine, 0x37e534, 0x37e56c);
+    let crop = rect(machine, WRITER + 80);
+    let drawing = cell_drawing::draw_background_window(machine, COMPOSER, WRITER);
+    register(machine.engine, REGISTER_X0 + 19, WRITER);
+    window(machine, 0x37e7c0, 0x37e7d8);
+    let image_target = rect(machine, STACK + 16);
+    format!(
+        "{{\"supplied_measured_local\":{:?},\"page_size\":{:?},\"scaled_margins\":{:?},\"density\":{:?},\"rounded_measured_world\":{measured_world:?},\"background_crop\":{crop:?},\"image_target\":{image_target:?},\"drawing\":{drawing}}}",
+        input.measured_local, input.page_size, input.scaled_margins, input.density,
+    )
+}
+
+pub(super) fn capture_transport(paths: Paths<'_>) {
+    let standard = Case::standard;
+    let default = Transport {
+        measured_local: [0.0, 0.0, 161.0, 201.0],
+        page_size: [1080, 1527],
+        scaled_margins: [0.0; 2],
+        density: 1.0,
+    };
+    let cases = [
+        (standard("translated-normal"), default),
+        (
+            Case {
+                spannable: true,
+                name: "translated-over-pages",
+                ..standard("")
+            },
+            default,
+        ),
+        (
+            Case {
+                merged: true,
+                name: "translated-merged-normal",
+                ..standard("")
+            },
+            default,
+        ),
+        (
+            Case {
+                source: [0.0, 0.0, 160.0, 200.0],
+                writer_origin: [10.0, 210.0],
+                name: "zero-source-inline-ten",
+                ..standard("")
+            },
+            default,
+        ),
+        (
+            Case {
+                source: [0.0, 0.0, 160.0, 200.0],
+                writer_origin: [0.0, 200.0],
+                name: "zero-source-inline-zero",
+                ..standard("")
+            },
+            default,
+        ),
+        (
+            Case {
+                writer_origin: [-150.25, -37.5],
+                name: "negative-origin",
+                ..standard("")
+            },
+            default,
+        ),
+        (
+            Case {
+                name: "fractional-local-measured",
+                ..standard("")
+            },
+            Transport {
+                measured_local: [1.25, -2.75, 159.125, 197.875],
+                ..default
+            },
+        ),
+        (
+            Case {
+                name: "cropped-page",
+                ..standard("")
+            },
+            Transport {
+                page_size: [150, 180],
+                scaled_margins: [20.25, 30.75],
+                ..default
+            },
+        ),
+        (
+            Case {
+                name: "density-half",
+                ..standard("")
+            },
+            Transport {
+                density: 0.5,
+                ..default
+            },
+        ),
+        (
+            Case {
+                name: "density-double",
+                ..standard("")
+            },
+            Transport {
+                density: 2.0,
+                ..default
+            },
+        ),
+    ];
+    let results = cases
+        .into_iter()
+        .map(|(case, input)| {
+            let expected = capture_case(&paths, case, 0, Some(input));
+            for fill in [0xa5, 0xff] {
+                assert_eq!(
+                    expected,
+                    capture_case(&paths, case, fill, Some(input)),
+                    "{} allocation fill",
+                    case.name
+                );
+            }
+            expected
+        })
+        .collect::<Vec<_>>();
+    println!(
+        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"model_library_sha256\":\"{LIBRARY_SHA256}\",\"base_library_sha256\":\"{}\",\"drawing_library_sha256\":\"{DRAWING_SHA256}\",\"widget_library_sha256\":\"{WIDGET_SHA256}\",\"composer_library_sha256\":\"{COMPOSER_SHA256}\",\"bodytext_library_sha256\":\"27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0\",\"cpp_library_sha256\":\"4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4\",\"allocation_fills\":[0,165,255],\"native_addresses\":{{\"writer_measure_window\":[\"0x37e4ac\",\"0x37e4f8\"],\"writer_crop_window\":[\"0x37e534\",\"0x37e56c\"],\"canvas_origin_window\":[\"0x380004\",\"0x380040\"],\"background_drawing_window\":[\"0x380098\",\"0x3800d8\"],\"image_target_window\":[\"0x37e7c0\",\"0x37e7d8\"],\"drawing_constructor\":\"0xa5634\",\"draw_without_text\":\"0xa6738\",\"layout_get_measured_rect\":\"0xab494\"}},\"capture_boundary\":\"Native source constructor, factory clone/copy, Widget affine and Composer placement, cold native frames and saved source rectangles. Supplied local measured/content layout rectangles replace unexecuted warm parent text measurement. Native writer measured rounding/crop, Canvas translation, actual fresh TableDrawing constructor with unchanged ScrollX zero, SetTextSizeDelta zero, complete DrawObjectWithoutText including outer borders, and density-scaled image target run unchanged. Deterministic allocator/free/memory/mutex/C++ guard/UUID services, zeroed retained input/layout storage and text-wrapper adapter, constructor logging stub, identity theme and Paint/Canvas interfaces record local vector commands and Canvas events. Command position is the last GetCell observation; outer_border marks table-wide paths. No pixel factory, bitmap data, graphics backend matrix implementation, upstream Bodytext callback, warm text shaping, or final PDF backend runs.\",\"cases\":[{}]}}",
         frames::BASE_SHA256,
         results.join(",\n")
     );
