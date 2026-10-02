@@ -243,6 +243,10 @@ enum SourceControl {
     WideOnly,
 }
 
+pub(super) fn bodytext_writer(machine: &Machine) -> String {
+    writer(machine, 1., SourceControl::None)
+}
+
 fn writer(machine: &Machine, density: f32, control: SourceControl) -> String {
     let mut recorder = Recorder::new(machine);
     let clone = machine.call(0x36d6cc, &[22, 0]);

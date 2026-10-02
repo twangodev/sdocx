@@ -2,6 +2,18 @@ use super::super::widget_text_constructor::{self, CELL_DRAWING, CONTENT, CONTENT
 use super::cell_host::{install_host, reset_host};
 use super::*;
 
+#[path = "bodytext_table_placement.rs"]
+mod bodytext_placement;
+
+pub(crate) fn capture_bodytext_placement(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+    bodytext: &Path,
+    composer: &Path,
+) {
+    bodytext_placement::capture(machine, paths, bodytext, composer);
+}
+
 #[path = "live_table_text_clipping.rs"]
 mod text_clipping;
 
