@@ -462,6 +462,18 @@ impl<'a> TextRenderer<'a> {
 
     pub fn report_span_issues(&self, styled: &StyledText<'_>) {
         for (range, span) in &styled.spans {
+            if span.kind == RichTextSpanType::ComposingTag && span.composition_value() == Some(true)
+            {
+                for object in styled.objects.in_range(range.clone()) {
+                    self.for_object_source(object.source.clone())
+                        .report_span_issue(
+                            styled,
+                            &object.source,
+                            TextDiagnosticKind::UnsupportedCompositionStyle,
+                        );
+                }
+                continue;
+            }
             let kind = match span.kind {
                 RichTextSpanType::ComposingBackgroundColor
                     if span.composing_background_value().is_none() =>
@@ -477,31 +489,40 @@ impl<'a> TextRenderer<'a> {
                 RichTextSpanType::SpellCorrection => TextDiagnosticKind::UnsupportedCorrectionStyle,
                 _ => continue,
             };
-            let codepoints = styled
-                .index
-                .slice(range.clone())
-                .into_iter()
-                .flat_map(str::chars)
-                .filter(|character| !matches!(character, '\r' | '\n'))
-                .map(u32::from)
-                .collect::<Vec<_>>();
-            if codepoints.is_empty() {
-                continue;
-            }
-            let style = styled.style_at(range.start, super::RenderTheme::for_canvas(false), None);
-            self.record_owned(SourceTextDiagnostic {
-                owner: if self.source_owner_locked {
-                    self.source_owner.clone()
-                } else {
-                    Some(SourceOwner::Text(range.clone()))
-                },
-                diagnostic: TextDiagnostic {
-                    kind,
-                    family: style.family.unwrap_or_else(|| self.default_family.into()),
-                    codepoints,
-                },
-            });
+            self.report_span_issue(styled, range, kind);
         }
+    }
+
+    fn report_span_issue(
+        &self,
+        styled: &StyledText<'_>,
+        range: &Range<usize>,
+        kind: TextDiagnosticKind,
+    ) {
+        let codepoints = styled
+            .index
+            .slice(range.clone())
+            .into_iter()
+            .flat_map(str::chars)
+            .filter(|character| !matches!(character, '\r' | '\n'))
+            .map(u32::from)
+            .collect::<Vec<_>>();
+        if codepoints.is_empty() {
+            return;
+        }
+        let style = styled.style_at(range.start, super::RenderTheme::for_canvas(false), None);
+        self.record_owned(SourceTextDiagnostic {
+            owner: if self.source_owner_locked {
+                self.source_owner.clone()
+            } else {
+                Some(SourceOwner::Text(range.clone()))
+            },
+            diagnostic: TextDiagnostic {
+                kind,
+                family: style.family.unwrap_or_else(|| self.default_family.into()),
+                codepoints,
+            },
+        });
     }
 
     pub fn invalid_geometry(&self, family: &str) {

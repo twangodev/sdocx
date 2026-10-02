@@ -782,6 +782,161 @@ fn composing_background_is_preview_only_and_svg_pdf_preserves_supplied_appearanc
 }
 
 #[cfg(feature = "pdf")]
+#[test]
+fn dark_composing_background_selection_tests_the_mapped_argb() {
+    let fonts = FontBook::default();
+    let mut options = sdocx::RenderOptions::default();
+    options.color_mode = sdocx::RenderColorMode::Dark;
+    for composing in [0_u32, 0x00ff_ffff] {
+        let mut content = text("Mark");
+        content.spans = vec![
+            span(
+                RichTextSpanType::BackgroundColor,
+                0,
+                4,
+                &0xff34_6578_u32.to_le_bytes(),
+            ),
+            span(
+                RichTextSpanType::ComposingBackgroundColor,
+                0,
+                4,
+                &[composing.to_le_bytes(), [0; 4]].concat(),
+            ),
+        ];
+        for (context, document) in composition_documents(&content) {
+            assert!(
+                sdocx::RenderTheme::resolve(
+                    &document.pages[0],
+                    &document.metadata,
+                    options.color_mode
+                )
+                .is_dark(),
+                "{context}"
+            );
+            let layout = sdocx::layout_document(&document);
+            let rendered =
+                sdocx::render_layout_page_svg_with_fonts(&document, &layout, 0, &options, &fonts)
+                    .unwrap();
+            assert!(
+                rendered.text_diagnostics.is_empty(),
+                "{context}: {composing:#x}"
+            );
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            assert_eq!(
+                xml.descendants()
+                    .any(|node| node.has_tag_name("rect")
+                        && node.attribute("fill") == Some("#87b8cb")),
+                composing == 0x00ff_ffff,
+                "{context}: {composing:#x}"
+            );
+            let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                &document,
+                &layout,
+                &[0],
+                &options,
+                &Default::default(),
+                &fonts,
+            )
+            .unwrap();
+            assert!(retained.pages[0].text_diagnostics.is_empty(), "{context}");
+            let retained = PdfComposition::read(&retained.bytes);
+            retained.assert_source("Mark", &context);
+            assert!(
+                retained.fill_colors.contains(&[135, 184, 203]),
+                "{context}: {composing:#x}: {:?}",
+                retained.fill_colors
+            );
+            let supplied_svg =
+                sdocx::render_svg_pages_pdf(&[rendered], &Default::default()).unwrap();
+            let supplied_svg = PdfComposition::read(&supplied_svg);
+            supplied_svg.assert_source("Mark", &context);
+            assert_eq!(
+                supplied_svg.fill_colors.contains(&[135, 184, 203]),
+                composing == 0x00ff_ffff,
+                "{context}: {composing:#x}: {:?}",
+                supplied_svg.fill_colors
+            );
+        }
+    }
+}
+
+#[test]
+fn composing_tag_background_on_an_object_reports_only_the_anchor_source() {
+    let fonts = FontBook::default();
+    for layout_option in [
+        ObjectSpanLayoutOption::Inline,
+        ObjectSpanLayoutOption::Block,
+    ] {
+        for enabled in [false, true] {
+            let mut content = text("\u{fffc}");
+            content.spans = vec![modern_composition_flag(
+                RichTextSpanType::ComposingTag,
+                0,
+                enabled,
+            )];
+            content.object_spans.push(RichTextObjectSpan {
+                object_type: ObjectType::CodeBlock,
+                object_data: Vec::new(),
+                content: Some(RichTextObjectContent::CodeBlock(Box::new(
+                    RichTextCodeBlock {
+                        bbox: bounds(),
+                        rotation_degrees: None,
+                        title: None,
+                        body: Some(text("Inside")),
+                    },
+                ))),
+                text_index_utf16: 0,
+                layout_option,
+                layout_constraint: ObjectSpanLayoutConstraint::Normal,
+            });
+            for (context, document) in composition_documents(&content) {
+                let layout = sdocx::layout_document(&document);
+                let rendered = sdocx::render_layout_page_svg_with_fonts(
+                    &document,
+                    &layout,
+                    0,
+                    &Default::default(),
+                    &fonts,
+                )
+                .unwrap();
+                let composition_issues: Vec<_> = rendered
+                    .text_diagnostics
+                    .iter()
+                    .filter(|issue| {
+                        issue.kind == sdocx::TextDiagnosticKind::UnsupportedCompositionStyle
+                    })
+                    .collect();
+                assert_eq!(
+                    composition_issues.len(),
+                    usize::from(enabled),
+                    "{context}: {layout_option:?}: {enabled}: {:?}",
+                    rendered.text_diagnostics
+                );
+                for issue in composition_issues {
+                    assert_eq!(issue.codepoints, [0xfffc], "{context}: {layout_option:?}");
+                }
+                #[cfg(feature = "pdf")]
+                {
+                    let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                        &document,
+                        &layout,
+                        &[0],
+                        &Default::default(),
+                        &Default::default(),
+                        &fonts,
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        retained.pages[0].text_diagnostics, rendered.text_diagnostics,
+                        "{context}: {layout_option:?}: {enabled}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "pdf")]
 #[derive(Default)]
 struct PdfComposition {
     source: String,

@@ -75,6 +75,10 @@ impl TextBackground {
             alpha: (argb >> 24) as u8,
         }
     }
+
+    fn is_zero_argb(self) -> bool {
+        self.alpha | self.color.r | self.color.g | self.color.b == 0
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -517,15 +521,18 @@ impl<'a> StyledText<'a> {
         retained: bool,
     ) -> Option<TextBackground> {
         let selected = self.styles.at(character);
-        let argb = if retained {
-            selected.background
+        let ordinary = selected
+            .background
+            .map(|argb| TextBackground::from_argb(argb, theme));
+        if retained {
+            ordinary
         } else {
             selected
                 .composing_background
-                .filter(|argb| *argb != 0)
-                .or(selected.background)
-        };
-        argb.map(|argb| TextBackground::from_argb(argb, theme))
+                .map(|argb| TextBackground::from_argb(argb, theme))
+                .filter(|background| !background.is_zero_argb())
+                .or(ordinary)
+        }
     }
 
     pub fn segments(&self, range: Range<usize>) -> impl Iterator<Item = Range<usize>> + '_ {
@@ -742,6 +749,56 @@ mod tests {
             end_utf16: end,
             interval_type: crate::SpanIntervalType::from(0),
             payload: argb.to_le_bytes().to_vec(),
+        }
+    }
+
+    #[test]
+    fn composing_background_sentinel_matches_native_dark_theme_capture() {
+        use sha2::Digest;
+
+        const FIXTURE: &str =
+            include_str!("../../../../conformance/table-text-background-theme.json");
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
+            "77bacb34244a83f35e2b7aeea51ab6fc92fe6a71f18dabebb08163c29da7edb3"
+        );
+        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let theme = RenderTheme::for_canvas(true);
+        let ordinary = TextBackground::from_argb(0xff34_6578, theme);
+        let cases = capture["cases"].as_array().unwrap();
+        assert_eq!(cases.len(), 12);
+        for case in cases {
+            let input = case["input_argb"].as_u64().unwrap() as u32;
+            let mapped = case["mapped_argb"].as_u64().unwrap() as u32;
+            let native = TextBackground {
+                color: Color {
+                    r: (mapped >> 16) as u8,
+                    g: (mapped >> 8) as u8,
+                    b: mapped as u8,
+                },
+                alpha: (mapped >> 24) as u8,
+            };
+            assert_eq!(
+                TextBackground::from_argb(input, theme),
+                native,
+                "{input:08x}"
+            );
+            let mut content = text_box();
+            let mut composing = background_span(input, 0, 2);
+            composing.kind = RichTextSpanType::ComposingBackgroundColor;
+            composing.payload.extend_from_slice(&[0; 4]);
+            content.spans = vec![background_span(0xff34_6578, 0, 2), composing];
+            let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+            assert_eq!(
+                styled.background_at(0, theme, false),
+                Some(if mapped == 0 { ordinary } else { native }),
+                "{input:08x}"
+            );
+            assert_eq!(
+                styled.background_at(0, theme, true),
+                Some(ordinary),
+                "{input:08x}"
+            );
         }
     }
 
