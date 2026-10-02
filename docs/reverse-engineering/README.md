@@ -48,7 +48,7 @@ Planning, task lists and development progress are kept outside these documents.
   string metrics, captured ordinary
   block-selection/placement arithmetic and horizontal
   GPOS/fused-skew traces, with separate paragraph/vector
-  transport boundaries.
+  transport boundaries and private physical-face SVG/usvg/PDF identities.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha

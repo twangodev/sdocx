@@ -304,6 +304,19 @@ complete Samsung visual parity. Native intersection selection and captured
 mixed-container reference coverage are described in
 [object selection findings](../docs/reverse-engineering/object-selection-findings.md).
 
+The [physical-face transport regressions](../crates/sdocx/tests/svg_face_identity.rs)
+check selected Regular/Bold identities under synthetic styling through typed
+usvg resolution and retained/raw SVG PDF outlines. The
+[transport findings](../docs/reverse-engineering/text-layout-findings.md#svg-physical-face-transport)
+separate source-byte/collection identity from native measurement admission and
+Samsung appearance. A separate [standalone Chromium probe](../web/tests/e2e/svg-face-identity.spec.ts)
+observes actual Regular/Bold PostScript identities; it does not establish
+inline SVG in the application DOM:
+
+```sh
+cargo test -p sdocx --all-features --test svg_face_identity
+```
+
 ### Native wrapping numeric replay
 
 The [`--text-wrap-numeric` capture](native_table/text_wrap_numeric.rs) uses the

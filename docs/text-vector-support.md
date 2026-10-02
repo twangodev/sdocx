@@ -15,9 +15,9 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
-| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip. Single-face native shaping is captured separately; production metrics, per-run clip selection and device appearance remain unverified. |
+| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip. Native shaping and admitted pinned Regular metrics are verified separately; production metrics beyond those profiles, the full native cell measurement loop, per-run clip selection and device appearance remain unverified. |
 | Decorations | Underline, strikethrough, uniform cluster backgrounds, supported object line bands and vector list markers | [Native entry/retained-run geometry and caller policies](reverse-engineering/text-draw-identity-findings.md#captured-embedded-object-background-geometry), [SVG/PDF regressions](../crates/sdocx/tests/text_styles.rs); document PDF paints ordinary object backgrounds in standalone/table/code contexts and omits them in Body. Backgrounds changing inside a glyph cluster or lacking safe object positions remain conservative. |
-| SVG preview/replay | Typed SVG elements, embedded fonts, retained text positions where reproducible, source-preserving text fallback elsewhere | Chromium tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
+| SVG preview/replay | Typed SVG elements, embedded fonts with private physical-face identities, retained text positions where reproducible, source-preserving text fallback elsewhere | [Rust physical-face/usvg/PDF transport and standalone Chromium font identity](reverse-engineering/text-layout-findings.md#svg-physical-face-transport), with separate preview-image pixel tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
 | Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; combining-mark Y parity with Samsung's common-baseline PDF route remains unverified. |
 | Synthesized styles | Requested styles retained through fallback; native PDF bold pen of 0.25 points and fixed shear for synthesized italic | Regular-only font tests, independent outlines and DPI checks; canvas emboldening and native measurement/face-selection anomalies remain separate. |
 
@@ -36,6 +36,11 @@ explicit font files build a caller database and use compatibility measurement.
 Rust glyph registry and can reshape text. Its output remains a compatibility
 route; it does not carry the document exporter’s retained-glyph guarantee.
 SVG remains responsible for surrounding vector graphics in both routes.
+Generated SVG families identify source font bytes plus collection index.
+`svg_font_resolver` pairs those families with existing IDs in the same supplied
+usvg database; the CLI and PDF converter use that resolver. Raw SVG PDF
+conversion rejects a missing private physical alias. Retained PDF plans keep
+their original font bytes even when carrier parsing uses another database.
 
 PDF logical source is recorded through `ActualText` and structure-tree order,
 separately from paint order. Readers that ignore those structures may extract
@@ -307,7 +312,8 @@ zero-length font-span intervals. Empty list markers use caret formatting for
 their font size and reserved width. Native CopyText interval revision is a
 separate operation.
 
-SVG embeds the selected TTC/OTC face used for measurement. CLI exports report
+SVG embeds the selected TTC/OTC face used for measurement under its physical
+alias; logical source and diagnostic names remain unchanged. CLI exports report
 text and object diagnostics for the selected pages. Ordered diagnostics use
 indexed deduplication and retain source attribution; font validation includes
 metrics contributing to inline-object leading.
@@ -336,6 +342,12 @@ lines reuse paragraph bidi contexts.
 - [Collection-font SVG](../crates/sdocx/tests/font_collection_svg.rs) and
   [Chromium selected-face checks](../web/tests/e2e/font-collection.spec.ts)
   compare the embedded face with the face used for Rust measurement.
+- [Physical-face SVG/PDF](../crates/sdocx/tests/svg_face_identity.rs) compares
+  selected Regular/Bold outlines under synthetic styling; [missing-alias controls](../crates/sdocx/src/pdf/font_identity_tests.rs)
+  distinguish raw SVG failure from retained face preservation.
+  [Standalone Chromium identity](../web/tests/e2e/svg-face-identity.spec.ts)
+  observes the actual Regular/Bold PostScript faces under CSS weight 700;
+  this does not establish inline SVG in the application DOM.
 - [Retained PDF glyphs](../crates/sdocx/tests/pdf_retained_glyphs.rs),
   [text styles](../crates/sdocx/tests/text_styles.rs) and
   [shape text frames](../crates/sdocx/tests/shape_text_frame.rs) cover shared

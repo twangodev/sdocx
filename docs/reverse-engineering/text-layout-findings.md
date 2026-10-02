@@ -3101,6 +3101,44 @@ lines and diagnostics without asserting wall-clock thresholds:
 cargo test -p sdocx --all-features --test text_layout_scaling --release --offline -- --ignored --nocapture
 ```
 
+## SVG physical-face transport
+
+SVG text styles and embedded `@font-face` rules use a private family
+`sdocx-face-<digest>`, where the digest is SHA-256 of the original font source
+bytes followed by the big-endian collection-face index. Logical/source font
+names, native NAME requests and diagnostic families remain unchanged.
+[`ResolvedFace::svg_family`](../../crates/sdocx/src/render/fonts.rs) reuses its
+cached alias for the original index and recomputes it if the public index
+changes. Distinct TTC/OTC faces retain distinct identities; renaming a logical
+family does not change the physical alias.
+
+[`SvgFontFamilies` and `svg_font_resolver`](../../crates/sdocx/src/render/fonts/svg_identity.rs)
+map those aliases to existing database face IDs without mutating the database.
+The typed usvg resolver handles a generated carrier's first physical family
+and delegates logical/generic families and fallback to usvg. The resolver must
+be paired with the same database instance in `usvg::Options::fontdb`; the CLI
+uses that pairing. Alias identity preserves physical selection, separately
+from the bounded Regular-only native paragraph admission gate and browser
+glyph-position reproducibility.
+
+[Rust transport regressions](../../crates/sdocx/tests/svg_face_identity.rs)
+combine synthetic bold on a selected Regular face with a physically selected
+Bold neighbor. Both spans request bold; default usvg lookup picks Bold for
+both, while the physical resolver retains Regular/Bold. Retained and raw-SVG
+PDFs contain the independently compared source outlines without images or
+foreign objects. Unit controls cover collection indices, public index changes,
+logical-name changes and logical-family delegation. This establishes Rust
+selection/outline transport, separately from Samsung appearance parity.
+
+The [Chromium physical-font regression](../../web/tests/e2e/svg-face-identity.spec.ts)
+loads the generated SVG as a standalone artifact. DevTools reports actual
+PostScript faces `Roboto-Regular` and `Roboto-Bold` for the two `W` glyphs,
+both with CSS weight 700 and one custom-font glyph per span. The SVG retains
+source `WW`, two embedded aliases and no images/foreign objects. This proves
+standalone SVG physical selection. Application preview uses SVG image URLs,
+covered separately by existing embedding/pixel tests; inline SVG in the
+application DOM is not established by this probe.
+
 ## Retained glyph PDF transport
 
 Document PDF export consumes the shared Rust measurement and canonical
@@ -3133,6 +3171,11 @@ the generic compatibility conversion for arbitrary or serialized SVG; that
 round trip has no private glyph registry. The existing SVG text fallback and
 its positioning diagnostics remain unchanged. Canonical layout geometry is
 therefore separate from either transport's ability to reproduce it.
+Raw SVG conversion returns `PdfError::UnsupportedText` when a complete private
+physical alias is absent from the supplied database. Retained document plans
+continue to draw their original face bytes even if carrier parsing uses a
+different database. [Missing-font controls](../../crates/sdocx/src/pdf/font_identity_tests.rs)
+verify both outcomes and the retained outline/source.
 
 The native source supports this separation. HarfBuzz extraction stores the
 whole cluster advance at its UTF-16 anchor (`0x9cd60`–`0x9cd70`); other entries
