@@ -26,6 +26,7 @@ impl Fixture {
         }
     }
 
+    #[cfg(feature = "pdf")]
     fn font_size(&self) -> f64 {
         10.0 * f64::from(self.density)
     }

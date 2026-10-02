@@ -28,6 +28,7 @@ const CONTEXTS: &[Context] = &[
     Context::Table,
 ];
 
+#[cfg(feature = "pdf")]
 fn uses_prepared_table_drawing(context: Context) -> bool {
     match context {
         #[cfg(feature = "serde")]
