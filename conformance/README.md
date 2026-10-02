@@ -261,6 +261,7 @@ Native reference coverage is narrower than synthetic coverage:
 | [`table-text-shaping.json`](table-text-shaping.json) | Native file-font/family/collection construction, layout-piece production, bundled HarfBuzz and Skia/FreeType measurement for 16 cases: 16 shaping calls, 48 glyphs, 49 UTF-16 advances and 48 vector metric samples across three memory fills. Records pre/post shaping state, scale/ppem, owner positions, ink and profile-dependent advances. Rust matches all captured glyph IDs and UTF-16 owner starts with the recorded shaping inputs. | One supplied pinned Roboto face and caller paint/locale/range/direction; host ICU 76.1 property/locale services, libc/libm and allowlisted native comparators through host qsort. No scalar advance callback executes. Device selection/fallback, whole measurement producer, wrapping/composition, vector output and production Rust metric parity are excluded. See [native shaping capture](../docs/reverse-engineering/text-layout-findings.md#captured-native-shaping). |
 | [`table-text-shaping-numeric.json`](table-text-shaping-numeric.json) | Independent extension through the same native producer: 17 cases, 19 shaping calls, 182 glyphs, 182 UTF-16 advances and 182 vector metric samples. Captures large paint scales, a long pen accumulation, Latin/Greek/Cyrillic chunks, both directions, skew, positive/negative spacing and a nonzero UTF-16 request start after a supplementary scalar. Rust matches all captured glyph IDs and UTF-16 owners. | Shares the pinned font, native libraries and host service boundaries of the original fixture. The mixed-script case records three actual shaping chunks; glyph/owner equality does not establish a Rust implementation of native chunk geometry or complete metric/shaping parity. See [numeric geometry evidence](../docs/reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry). |
 | [`table-text-shaping-gpos.json`](table-text-shaping-gpos.json) | Four native shaping cases with 12 glyphs/UTF-16 advances, four actual horizontal GPOS adjustment traces and 12 local fused-skew operations. Rust regressions verify source bytes in the pinned font, signed multiplier/product/shift and destination advances; a local mark-offset witness distinguishes native fused skew from separately rounded arithmetic. | Same supplied-font producer and host boundaries. Captures only GPOS `ValueFormat=4` horizontal `x_advance`; other formats, anchors, device/variation corrections and full production shaping equality are excluded. See [GPOS and skew evidence](../docs/reverse-engineering/text-layout-findings.md#captured-horizontal-gpos-scaling-and-fused-skew). |
+| [`table-text-shaping-skia-metrics.json`](table-text-shaping-skia-metrics.json) | Eighteen native supplied-Roboto cases with 108 raw advances and 432 ink coordinates, plus actual residual/fixed matrices, hint/load flags, cached fixed-advance transitions and FreeType outline points before/after transformation. Covers both skew signs, fractional/tiny sizes and normalization boundaries across three memory fills. | Same supplied-font producer and host boundaries. First-use cached fields remain null until an executed store. No pixels, other fonts, variable/bitmap fonts or document composition parity. See [Skia metric evidence](../docs/reverse-engineering/text-layout-findings.md#captured-skia-residual-matrices-and-outline-metrics). |
 | [`table-text-ownership.json`](table-text-ownership.json) | Native entry initialization, supplied shaped-glyph ownership production, placement and complete retained-run emission for 38 cases, 124 UTF-16 entries, 94 glyphs and 40 runs across three memory fills. Continuation slots preserve source ranges without splitting real glyph runs; owned zero-advance/zero-ink glyphs and first-entry versus later-union degenerate bounds are captured separately. | Shaped source-to-owner maps, advances, glyph metrics, spans, font interfaces and bidi order are supplied. Leading unowned entries can produce a separate empty run. Native shaping, font selection, wrapping, embedded objects and final painting are outside this capture. See [UTF-16 entry ownership](../docs/reverse-engineering/text-draw-identity-findings.md#utf-16-entry-ownership). |
 | [`table-text-owner-bases.json`](table-text-owner-bases.json) | Native constructors and supplied shaped-owner producer for nine cases, 70 UTF-16 entries, 18 owned slots and 21 glyph records across three memory fills. Captures nonzero request starts separately from source-vector base, including source-space classification after subtracting base three. | Source/ranges, relative owners, glyph IDs/positions/ink, advances and font wrappers are supplied. Minikin/HarfBuzz and chunk owner normalization, font selection, native bidi assignment, placement, emission and painting do not execute. See [nonzero owner bases](../docs/reverse-engineering/text-draw-identity-findings.md#captured-nonzero-owner-bases). |
 
@@ -324,6 +325,12 @@ cmp /tmp/table-text-shaping-numeric.json conformance/table-text-shaping-numeric.
   scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
   crates/sdocx/assets/fonts/Roboto-Regular.ttf > /tmp/table-text-shaping-gpos.json
 cmp /tmp/table-text-shaping-gpos.json conformance/table-text-shaping-gpos.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-shaping-skia-metrics scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf > /tmp/table-text-shaping-skia-metrics.json
+cmp /tmp/table-text-shaping-skia-metrics.json conformance/table-text-shaping-skia-metrics.json
 ```
 
 The [shaping findings](../docs/reverse-engineering/text-layout-findings.md#captured-native-shaping)
@@ -332,11 +339,19 @@ This replay does not establish device font selection or production Rust shaped
 advance parity.
 The [post-shaping comparisons](../docs/reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry)
 use captured HarfBuzz output and Skia bounds to verify exact f32 geometry for
-36 single-chunk cases across the three fixtures. The separate
+36 single-chunk cases across the original, numeric and GPOS fixtures. The separate
 [paint-metric comparisons](../docs/reverse-engineering/text-layout-findings.md#bounded-rust-paint-metrics)
-generate 190 raw advances and 760 ink coordinates with Rust/Skrifa and match
-the captured bits for 23 supported cases. Neither test substitutes a production
-paragraph shaper or establishes complete native width/wrapping parity.
+generate 350 raw advances and 1400 ink coordinates with Rust/Skrifa and match
+the captured bits for all 55 cases across four fixtures. The
+[Skia trace comparisons](../docs/reverse-engineering/text-layout-findings.md#captured-skia-residual-matrices-and-outline-metrics)
+also check fixed cached advances and 4420 original/transformed point coordinates.
+The [paint-sized producer comparisons](../docs/reverse-engineering/text-layout-findings.md#bounded-rust-paint-shaping)
+derive metrics in Rust and match all 57 native shape calls/350 glyphs;
+public post-shaping layout matches 344 glyph placements across 54
+single-Latin-chunk cases. Mixed-script shaping calls compare separately from
+unsupported multi-chunk layout assembly.
+These comparisons remain separate from production paragraph measurement and
+do not establish complete native document width/wrapping parity.
 
 ## Stroke regressions
 

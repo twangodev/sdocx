@@ -40,8 +40,9 @@ Planning, task lists and development progress are kept outside these documents.
 - [`text-layout-findings.md`](text-layout-findings.md) — native paragraph metrics,
   wrapping, embedded-object placement, vector text transport and shaping numeric
   domains, including Skia hinting, HarfBuzz advance conversion and captured
-  post-shaping geometry, with bounded Rust paint-metric comparisons and actual
-  horizontal GPOS/fused-skew traces.
+  post-shaping geometry, bounded Rust paint metrics and paint-sized shaping,
+  actual horizontal GPOS/fused-skew traces, and the separate paragraph/vector
+  transport boundaries.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha

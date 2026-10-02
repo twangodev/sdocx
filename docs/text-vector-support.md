@@ -185,21 +185,32 @@ composition or horizontal f32 ownership/adjacency.
   crossing a style boundary.
 - [Single-face shaping captures](reverse-engineering/text-layout-findings.md#captured-native-shaping)
   execute native HarfBuzz and Skia/FreeType with supplied Roboto and caller
-  paint inputs. A [typed post-shaping model](reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry)
+  paint inputs. [Typed post-shaping geometry](reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry)
   matches full/owner positions, ink and advances for 236 captured glyphs across
-  36 single-Latin-chunk cases, using supplied native shaping output and bounds.
-  It rejects multiple chunks and unsupported metric inputs. The model is
-  test-only; production paragraph measurement still shapes in font units and
-  projects them in f64. Neither the exact arithmetic comparisons nor captured
-  glyph identities establish production width, wrapping or font fallback parity.
+  36 single-Latin-chunk cases with supplied native shaping output and bounds.
+  Multiple chunks and unsupported metric inputs remain explicit errors.
   A [bounded Rust paint-metric provider](reverse-engineering/text-layout-findings.md#bounded-rust-paint-metrics)
-  independently matches 190 native raw advances and 760 ink coordinates from
-  23 supplied-Roboto cases. It supports horizontal scale one and skew zero,
-  reports unsupported inputs explicitly, and remains separate from production
-  paragraph measurement and GPOS shaping.
+  independently matches 350 raw advances and 1400 ink coordinates across
+  55 supplied-Roboto cases. It supports horizontal scale one, finite skew and
+  static glyf fonts; skewed composite glyphs report an explicit error.
+  [Skia metric captures](reverse-engineering/text-layout-findings.md#captured-skia-residual-matrices-and-outline-metrics)
+  separately retain native matrices, cached fixed advances and raw outline
+  points. The [paint-sized shaping API](reverse-engineering/text-layout-findings.md#bounded-rust-paint-shaping)
+  uses Rust-derived metrics and the native GPOS floor policy, preserving typed
+  UTF-16 ownership and signed integer positions. Producer regressions match
+  all 350 glyphs across 57 captured shape calls; public `PaintShapedRun::layout`
+  matches full/owner positions, shifted ink and advances for 344 glyphs across
+  54 single-Latin-chunk cases. That runtime geometry retains paint units; the
+  final logical-entry bridge remains separate.
+  The producer accepts Latin, Greek and Cyrillic chunks; unsafe positioning,
+  contextual/chained/cursive GPOS and legacy kern/kerx/trak fonts report typed
+  unavailability before positioning.
   [Captured GPOS and fused-skew traces](reverse-engineering/text-layout-findings.md#captured-horizontal-gpos-scaling-and-fused-skew)
-  verify four horizontal pair-value updates and 12 local skew operations;
-  they establish bounded native arithmetic, not a complete GPOS backend.
+  verify four horizontal pair-value updates and 12 local skew operations.
+  Production paragraph measurement still shapes in font units and projects
+  them in f64. The bounded producer and exact arithmetic comparisons remain
+  separate from document widths, wrapping, fallback selection and Chromium
+  glyph reproduction.
 - Native preview background geometry for embedded objects is captured through
   measurement, placement and rectangle commands for 40 supplied cases. Inline
   backgrounds include margins; block backgrounds use visible width despite a
