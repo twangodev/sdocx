@@ -259,16 +259,13 @@ impl PreparedNumber {
                 let run = &cluster.run;
                 let geometry = run.geometry();
                 for glyph in run.glyphs.get(cluster.glyphs.clone())? {
-                    let Some(ink) = run.face.glyph_ink_bounds(glyph.raw.id).ok()? else {
+                    let Some(ink) = run.face.glyph_ink_bounds(glyph.id).ok()? else {
                         continue;
                     };
                     let ink = geometry.glyph_ink_bounds(
                         glyph,
                         ink,
-                        [
-                            x + line.x + placement.x - cluster.origin_x,
-                            top + line.baseline,
-                        ],
+                        [x + line.x + placement.x, top + line.baseline],
                     );
                     let ink = marker_bounds(ink.x_min, ink.y_min, ink.x_max, ink.y_max)?;
                     bounds.x_min = bounds.x_min.min(ink.x_min);

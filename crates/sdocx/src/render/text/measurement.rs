@@ -38,7 +38,6 @@ pub(in crate::render) struct MeasuredCluster {
     pub advance: f64,
     pub run: Arc<MeasuredRun>,
     pub glyphs: Range<usize>,
-    pub origin_x: f64,
 }
 
 pub(in crate::render) struct MeasuredRun {
@@ -51,14 +50,15 @@ pub(in crate::render) struct MeasuredRun {
     pub variable: bool,
     pub tab: bool,
     pub coverage_fallback: bool,
-    standalone: Mutex<HashMap<String, Arc<Vec<ShapedGlyph>>>>,
+    browser_shapes: Mutex<HashMap<String, Arc<Vec<ShapedGlyph>>>>,
 }
 
 pub(in crate::render) struct MeasuredGlyph {
     pub source: TextSource,
-    pub raw: ShapedGlyph,
-    pub pen_x: i64,
-    pub pen_y: i64,
+    pub id: u32,
+    pub owner_offset: [f64; 2],
+    #[cfg_attr(not(any(feature = "pdf", test)), allow(dead_code))]
+    pub transport_advance: [f64; 2],
 }
 
 #[derive(Clone, Copy)]
@@ -89,20 +89,43 @@ impl FontGeometry {
         self.position(units) * if tab { 4.0 } else { 1.0 }
     }
 
-    #[cfg(any(feature = "pdf", test))]
-    fn glyph_offset(self, glyph: &MeasuredGlyph, pen_origin: [i64; 2]) -> [f64; 2] {
-        [
-            self.position(glyph.pen_x - pen_origin[0] + i64::from(glyph.raw.x_offset)),
-            -self.position(glyph.pen_y - pen_origin[1] + i64::from(glyph.raw.y_offset)),
-        ]
-    }
-
-    #[cfg(any(feature = "pdf", test))]
     fn glyph_advance(self, glyph: &ShapedGlyph) -> [f64; 2] {
         [
             self.project(f64::from(glyph.x_advance)),
             -self.project(f64::from(glyph.y_advance)),
         ]
+    }
+
+    fn measured_glyphs(
+        self,
+        shaped: &[ShapedGlyph],
+        sources: &BTreeMap<usize, TextSource>,
+    ) -> Vec<MeasuredGlyph> {
+        let mut pen_x = 0;
+        let mut pen_y = 0;
+        let mut owner_pen = [0; 2];
+        let mut owner = None;
+        shaped
+            .iter()
+            .map(|glyph| {
+                if owner != Some(glyph.cluster) {
+                    owner = Some(glyph.cluster);
+                    owner_pen = [pen_x, pen_y];
+                }
+                let measured = MeasuredGlyph {
+                    source: sources[&(glyph.cluster as usize)].clone(),
+                    id: glyph.id,
+                    owner_offset: [
+                        self.position(pen_x - owner_pen[0] + i64::from(glyph.x_offset)),
+                        -self.position(pen_y - owner_pen[1] + i64::from(glyph.y_offset)),
+                    ],
+                    transport_advance: self.glyph_advance(glyph),
+                };
+                pen_x += i64::from(glyph.x_advance);
+                pen_y += i64::from(glyph.y_advance);
+                measured
+            })
+            .collect()
     }
 
     pub fn glyph_ink_bounds(
@@ -111,8 +134,8 @@ impl FontGeometry {
         ink: rustybuzz::ttf_parser::Rect,
         origin: [f64; 2],
     ) -> BoundingBox {
-        let x = origin[0] + self.position(glyph.pen_x + i64::from(glyph.raw.x_offset));
-        let baseline = origin[1] - self.position(glyph.pen_y + i64::from(glyph.raw.y_offset));
+        let x = origin[0] + glyph.owner_offset[0];
+        let baseline = origin[1] + glyph.owner_offset[1];
         BoundingBox {
             x_min: x + self.project(f64::from(ink.x_min)),
             y_min: baseline - self.project(f64::from(ink.y_max)),
@@ -128,10 +151,10 @@ impl FontGeometry {
         baseline: f64,
         stroke: f64,
     ) -> [f64; 2] {
-        let pen = glyph.pen_y as f64 + f64::from(glyph.raw.y_offset);
+        let baseline = baseline + glyph.owner_offset[1];
         [
-            baseline - self.project(pen + f64::from(ink.y_max)) - stroke,
-            baseline - self.project(pen + f64::from(ink.y_min)) + stroke,
+            baseline - self.project(f64::from(ink.y_max)) - stroke,
+            baseline - self.project(f64::from(ink.y_min)) + stroke,
         ]
     }
 
@@ -170,22 +193,22 @@ impl MeasuredCluster {
             .glyphs
             .get(self.glyphs.clone())
             .ok_or(MeasurementError::InvalidCluster)?;
-        let first = glyphs.first().ok_or(MeasurementError::InvalidCluster)?;
+        if glyphs.is_empty() {
+            return Err(MeasurementError::InvalidCluster);
+        }
         if glyphs
             .iter()
             .any(|glyph| glyph.source.characters() != &self.source)
         {
             return Err(MeasurementError::InvalidCluster);
         }
-        let geometry = self.run.geometry();
-        let pen_origin = [first.pen_x, first.pen_y];
         Ok(glyphs.iter().map(move |glyph| {
-            let [offset_x, offset_y] = geometry.glyph_offset(glyph, pen_origin);
-            let [advance_x, advance_y] = geometry.glyph_advance(&glyph.raw);
+            let [offset_x, offset_y] = glyph.owner_offset;
+            let [advance_x, advance_y] = glyph.transport_advance;
             RetainedGlyph {
                 face: &self.run.face,
                 source: &glyph.source,
-                glyph_id: glyph.raw.id,
+                glyph_id: glyph.id,
                 offset_x,
                 offset_y,
                 advance_x,
@@ -204,7 +227,7 @@ impl MeasuredCluster {
                 .run
                 .glyphs
                 .get(self.glyphs.clone())
-                .is_some_and(|glyphs| glyphs.iter().all(|glyph| glyph.raw.id != 0))
+                .is_some_and(|glyphs| glyphs.iter().all(|glyph| glyph.id != 0))
     }
 
     pub fn paint_offset(&self, text: &str) -> Result<Option<ClusterPaintOffset>, FontError> {
@@ -246,15 +269,16 @@ impl MeasuredCluster {
         } else {
             text
         };
-        let standalone = self.run.standalone(text)?;
+        let standalone = self.run.browser_shape(text)?;
         let original = &self.run.glyphs[self.glyphs.clone()];
         if original.len() != standalone.len() || original.is_empty() {
             return Ok(None);
         }
-        let translation_x = original[0].pen_x + i64::from(original[0].raw.x_offset)
-            - i64::from(standalone[0].x_offset);
-        let translation_y = original[0].pen_y + i64::from(original[0].raw.y_offset)
-            - i64::from(standalone[0].y_offset);
+        let geometry = self.run.geometry();
+        let translation = [
+            original[0].owner_offset[0] - geometry.position(i64::from(standalone[0].x_offset)),
+            original[0].owner_offset[1] + geometry.position(i64::from(standalone[0].y_offset)),
+        ];
         let mut pen_x = 0;
         let mut pen_y = 0;
         for (expected, glyph) in original.iter().zip(standalone.iter()) {
@@ -262,24 +286,43 @@ impl MeasuredCluster {
             let Some(prefix) = text.get(..byte) else {
                 return Ok(None);
             };
-            if glyph.id != expected.raw.id
+            let natural = [
+                geometry.position(pen_x + i64::from(glyph.x_offset)),
+                -geometry.position(pen_y + i64::from(glyph.y_offset)),
+            ];
+            if glyph.id != expected.id
                 || self.source.start + prefix.chars().count() != expected.source.characters().start
-                || expected.pen_x + i64::from(expected.raw.x_offset)
-                    != pen_x + i64::from(glyph.x_offset) + translation_x
-                || expected.pen_y + i64::from(expected.raw.y_offset)
-                    != pen_y + i64::from(glyph.y_offset) + translation_y
+                || !expected
+                    .owner_offset
+                    .into_iter()
+                    .zip(natural)
+                    .zip(translation)
+                    .all(|((target, natural), shift)| {
+                        translated_coordinate_matches(target, natural, shift)
+                    })
             {
                 return Ok(None);
             }
             pen_x += i64::from(glyph.x_advance);
             pen_y += i64::from(glyph.y_advance);
         }
-        let geometry = self.run.geometry();
         Ok(Some(ClusterPaintOffset {
-            x: geometry.position(translation_x) - self.origin_x,
-            y: -geometry.position(translation_y),
+            x: translation[0],
+            y: translation[1],
         }))
     }
+}
+
+fn translated_coordinate_matches(target: f64, natural: f64, shift: f64) -> bool {
+    let translated = natural + shift;
+    if ![target, natural, shift, translated]
+        .into_iter()
+        .all(f64::is_finite)
+    {
+        return false;
+    }
+    let magnitude = target.abs().max(natural.abs()).max(shift.abs());
+    (target - translated).abs() <= 8.0 * f64::EPSILON * magnitude
 }
 
 impl MeasuredRun {
@@ -287,11 +330,11 @@ impl MeasuredRun {
         FontGeometry::new(self.style.font_size, self.face.metrics.units_per_em)
     }
 
-    fn standalone(&self, text: &str) -> Result<Arc<Vec<ShapedGlyph>>, FontError> {
+    fn browser_shape(&self, text: &str) -> Result<Arc<Vec<ShapedGlyph>>, FontError> {
         let mut cache = self
-            .standalone
+            .browser_shapes
             .lock()
-            .expect("standalone shaping cache lock");
+            .expect("browser shaping cache lock");
         if let Some(glyphs) = cache.get(text) {
             return Ok(glyphs.clone());
         }
@@ -671,23 +714,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                     .ok_or(MeasurementError::InvalidCluster)?,
             );
         }
-        let mut pen_x = 0;
-        let mut pen_y = 0;
-        let glyphs = shaped
-            .glyphs
-            .iter()
-            .map(|glyph| {
-                let measured = MeasuredGlyph {
-                    source: sources[&(glyph.cluster as usize)].clone(),
-                    raw: glyph.clone(),
-                    pen_x,
-                    pen_y,
-                };
-                pen_x += i64::from(glyph.x_advance);
-                pen_y += i64::from(glyph.y_advance);
-                measured
-            })
-            .collect();
+        let glyphs = geometry.measured_glyphs(&shaped.glyphs, &sources);
         let requested_weight =
             if style.bold && matches!(self.styled.context(), super::TextContext::Placed) {
                 fontdb::Weight::BOLD
@@ -705,14 +732,13 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             variable,
             tab,
             coverage_fallback: selected.coverage_fallback,
-            standalone: Mutex::new(HashMap::new()),
+            browser_shapes: Mutex::new(HashMap::new()),
         });
         let mut clusters = Vec::new();
         for (&byte, (advance, glyphs)) in &cluster_glyphs {
             clusters.push(MeasuredCluster {
                 source: sources[&byte].characters().clone(),
                 advance: geometry.horizontal_advance(*advance, tab),
-                origin_x: geometry.position(run.glyphs[glyphs.start].pen_x),
                 run: run.clone(),
                 glyphs: glyphs.clone(),
             });
@@ -1208,18 +1234,16 @@ mod tests {
             run.glyphs
                 .iter()
                 .map(|glyph| (
-                    glyph.raw.id,
+                    glyph.id,
                     glyph.source.characters().clone(),
-                    glyph.raw.x_advance,
-                    glyph.pen_x,
-                    glyph.raw.x_offset,
-                    glyph.raw.y_offset,
+                    glyph.transport_advance,
+                    glyph.owner_offset,
                 ))
                 .collect::<Vec<_>>(),
             [
-                (38, 0..1, 1249, 0, 0, 0),
-                (59, 1..2, 1228, 1249, 0, 0),
-                (38, 2..3, 1336, 2477, 0, 0)
+                (38, 0..1, [27.44384765625, 0.0], [0.0, 0.0]),
+                (59, 1..2, [26.982421875, 0.0], [0.0, 0.0]),
+                (38, 2..3, [29.35546875, 0.0], [0.0, 0.0])
             ],
         );
         for (index, cluster) in measured.clusters.iter().enumerate() {
@@ -1246,23 +1270,24 @@ mod tests {
                 .glyphs
                 .iter()
                 .map(|glyph| (
-                    glyph.raw.id,
-                    glyph.raw.x_advance,
-                    glyph.raw.x_offset,
-                    glyph.raw.y_offset,
-                    glyph.pen_x,
+                    glyph.id,
+                    glyph.transport_advance,
+                    glyph.owner_offset,
                     glyph.source.characters().clone(),
                 ))
                 .collect::<Vec<_>>(),
-            [(93, 1015, 0, 0, 0, 0..2), (434, 0, 57, -10, 1015, 0..2)],
+            [
+                (93, [22.30224609375, 0.0], [0.0, 0.0], 0..2),
+                (434, [0.0, 0.0], [23.5546875, 0.2197265625], 0..2),
+            ],
         );
         let offset = cluster.paint_offset("x\u{301}").unwrap().unwrap();
         assert_eq!(offset.x, 0.0);
         assert_eq!(offset.y, 0.0);
         let decomposed = measure(&text_box("e\u{301}"), TextContext::Placed);
         let composed = measure(&text_box("é"), TextContext::Placed);
-        assert_eq!(decomposed.clusters[0].run.glyphs[0].raw.id, 2317);
-        assert_eq!(composed.clusters[0].run.glyphs[0].raw.id, 2317);
+        assert_eq!(decomposed.clusters[0].run.glyphs[0].id, 2317);
+        assert_eq!(composed.clusters[0].run.glyphs[0].id, 2317);
         assert_eq!(decomposed.advance, composed.advance);
         assert!(
             decomposed.clusters[0]
@@ -1278,10 +1303,7 @@ mod tests {
         let measured = measure(&text_box("office"), TextContext::Placed);
         let run = &measured.clusters[0].run;
         assert_eq!(
-            run.glyphs
-                .iter()
-                .map(|glyph| glyph.raw.id)
-                .collect::<Vec<_>>(),
+            run.glyphs.iter().map(|glyph| glyph.id).collect::<Vec<_>>(),
             [84, 75, 75, 78, 72, 74],
         );
         assert_eq!(measured.clusters.len(), 6);
@@ -1369,7 +1391,7 @@ mod tests {
                 .run
                 .glyphs
                 .iter()
-                .map(|glyph| (glyph.raw.id, glyph.source.characters().clone()))
+                .map(|glyph| (glyph.id, glyph.source.characters().clone()))
                 .collect::<Vec<_>>(),
             [(59, 2..3), (38, 1..2), (5, 0..1)]
         );
@@ -1406,9 +1428,9 @@ mod tests {
             assert_eq!(
                 run.glyphs
                     .iter()
-                    .map(|glyph| (glyph.raw.id, glyph.raw.x_advance, glyph.pen_x))
+                    .map(|glyph| (glyph.id, glyph.transport_advance[0], glyph.owner_offset))
                     .collect::<Vec<_>>(),
-                glyphs,
+                glyphs.map(|(id, advance, _)| (id, f64::from(advance) * 45.0 / 2048.0, [0.0, 0.0])),
             );
             for (index, (cluster, character)) in
                 measured.clusters.iter().zip(text.chars()).enumerate()
@@ -1416,7 +1438,6 @@ mod tests {
                 assert!(Arc::ptr_eq(run, &cluster.run));
                 assert_eq!(cluster.source, index..index + 1);
                 assert_eq!(cluster.glyphs, index..index + 1);
-                assert_eq!(cluster.origin_x, glyphs[index].2 as f64 * 45.0 / 2048.0);
                 assert!(cluster.supports_positioned_text());
                 let offset = cluster
                     .paint_offset(&character.to_string())
@@ -1442,7 +1463,7 @@ mod tests {
         assert!(cyrillic.paint_offset("Ж").unwrap().is_some());
         assert!(greek.paint_offset("Ω").unwrap().is_none());
         assert!(cyrillic.paint_offset("я").unwrap().is_none());
-        assert_eq!(missing.run.glyphs[missing.glyphs.start].raw.id, 0);
+        assert_eq!(missing.run.glyphs[missing.glyphs.start].id, 0);
         assert!(!missing.supports_positioned_text());
         assert!(missing.paint_offset("😀").unwrap().is_none());
         assert!(missing.native_paint_offset("😀").unwrap().is_none());
@@ -1705,5 +1726,122 @@ mod tests {
         let empty = paragraph.measure_line(0..0).unwrap();
         assert_eq!(empty.advance, 0.0);
         assert!(empty.clusters.is_empty());
+    }
+    #[test]
+    fn browser_reproduction_accepts_rigid_translation_and_rejects_tiny_internal_displacement() {
+        let mut content = text_box("x\u{301}");
+        content.font_size = Some(1.0e-12);
+        let fonts = FontBook::default();
+        let settings = TextSettings::resolved();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let mut measured = measure_text(
+            &styled,
+            0..styled.index.len(),
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        )
+        .unwrap();
+        assert_eq!(
+            measured.clusters[0].run.style.font_size,
+            f64::from(content.font_size.unwrap())
+        );
+        let cluster = &mut measured.clusters[0];
+        assert!(cluster.paint_offset("x\u{301}").unwrap().is_some());
+        let run = Arc::get_mut(&mut cluster.run).unwrap();
+        for glyph in &mut run.glyphs {
+            glyph.owner_offset[0] += 2.5e-13;
+            glyph.owner_offset[1] -= 1.5e-13;
+        }
+        let translated = cluster.paint_offset("x\u{301}").unwrap().unwrap();
+        assert_eq!(translated.x, 2.5e-13);
+        assert_eq!(translated.y, -1.5e-13);
+        Arc::get_mut(&mut cluster.run).unwrap().glyphs[1].owner_offset[0] += 1.0e-17;
+        assert!(cluster.paint_offset("x\u{301}").unwrap().is_none());
+        Arc::get_mut(&mut cluster.run).unwrap().glyphs[1].owner_offset[0] = f64::INFINITY;
+        assert!(cluster.paint_offset("x\u{301}").unwrap().is_none());
+    }
+
+    #[test]
+    fn prior_owner_vertical_advance_cannot_move_the_next_owners_paint_or_ink() {
+        let content = text_box("Ax\u{301}");
+        let measured = measure(&content, TextContext::Placed);
+        let original = &measured.clusters[0].run;
+        let index = crate::text_index::TextIndex::new(&content.text);
+        let sources = BTreeMap::from([
+            (0, index.source(0..1).unwrap()),
+            (1, index.source(1..3).unwrap()),
+        ]);
+        let shaped = [
+            ShapedGlyph {
+                id: 38,
+                cluster: 0,
+                x_advance: 1249,
+                y_advance: 1024,
+                x_offset: 0,
+                y_offset: 0,
+                unsafe_to_break: false,
+            },
+            ShapedGlyph {
+                id: 93,
+                cluster: 1,
+                x_advance: 1015,
+                y_advance: 512,
+                x_offset: 0,
+                y_offset: 0,
+                unsafe_to_break: false,
+            },
+            ShapedGlyph {
+                id: 434,
+                cluster: 1,
+                x_advance: 0,
+                y_advance: 0,
+                x_offset: 57,
+                y_offset: -10,
+                unsafe_to_break: false,
+            },
+        ];
+        let geometry = original.geometry();
+        let glyphs = geometry.measured_glyphs(&shaped, &sources);
+        assert_eq!(glyphs[0].transport_advance[1], -22.5);
+        assert_eq!(glyphs[1].owner_offset, [0.0, 0.0]);
+        assert_eq!(glyphs[2].owner_offset, [23.5546875, -11.0302734375]);
+        let run = Arc::new(MeasuredRun {
+            source: 0..3,
+            style: original.style.clone(),
+            face: original.face.clone(),
+            synthesis: original.synthesis,
+            direction: original.direction,
+            glyphs,
+            variable: false,
+            tab: false,
+            coverage_fallback: false,
+            browser_shapes: Mutex::new(HashMap::new()),
+        });
+        let cluster = MeasuredCluster {
+            source: 1..3,
+            advance: 22.30224609375,
+            run,
+            glyphs: 1..3,
+        };
+        let retained: Vec<_> = cluster.retained_glyphs().unwrap().collect();
+        assert_eq!(retained[0].offset_y, 0.0);
+        assert_eq!(retained[1].offset_y, -11.0302734375);
+        let ink = rustybuzz::ttf_parser::Rect {
+            x_min: 0,
+            y_min: -20,
+            x_max: 30,
+            y_max: 40,
+        };
+        for (glyph, painted) in cluster.run.glyphs[1..].iter().zip(retained) {
+            let bounds = geometry.glyph_ink_bounds(glyph, ink, [10.0, 100.0]);
+            assert_eq!(bounds.y_min, 100.0 + painted.offset_y - 0.87890625);
+            assert_eq!(bounds.y_max, 100.0 + painted.offset_y + 0.439453125);
+            assert_eq!(
+                geometry.vertical_ink_bounds(glyph, ink, 100.0, 0.0),
+                [bounds.y_min, bounds.y_max]
+            );
+        }
     }
 }

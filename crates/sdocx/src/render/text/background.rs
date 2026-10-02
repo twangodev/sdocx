@@ -614,7 +614,7 @@ mod tests {
                 placement.cluster.run.direction == Direction::LeftToRight
                     && placement.cluster.run.glyphs[placement.cluster.glyphs.clone()]
                         .iter()
-                        .all(|glyph| glyph.raw.id != 0)
+                        .all(|glyph| glyph.id != 0)
             }));
             let (rectangles, issues) =
                 line_backgrounds(&styled, line, RenderTheme::for_canvas(false), None);

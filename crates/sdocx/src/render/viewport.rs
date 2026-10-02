@@ -83,7 +83,7 @@ impl Viewport {
                 return true;
             };
             for glyph in glyphs {
-                match run.face.glyph_ink_bounds(glyph.raw.id) {
+                match run.face.glyph_ink_bounds(glyph.id) {
                     Ok(Some(ink)) => {
                         has_ink = true;
                         let stroke = if run.style.bold { 0.225 } else { 0.0 };
@@ -322,12 +322,12 @@ mod tests {
     }
 
     #[test]
-    fn glyph_pen_and_y_offset_use_font_y_up_coordinates() {
+    fn logical_owner_y_offset_preserves_vertical_ink_visibility() {
         let mut line = measured(&content("A"));
         assert!(!viewport(0.0, 35.0).body_visible(&line.line, 100.0));
         let run = Arc::get_mut(&mut line.line.placements[0].cluster.run).unwrap();
-        run.glyphs[0].pen_y = 1024;
-        run.glyphs[0].raw.y_offset = 512;
+        let font_scale = run.style.font_size / f64::from(run.face.metrics.units_per_em);
+        run.glyphs[0].owner_offset[1] = -1536.0 * font_scale;
         assert!(viewport(0.0, 35.0).body_visible(&line.line, 100.0));
         assert!(!viewport(66.25, 100.0).body_visible(&line.line, 100.0));
         assert!(viewport(66.24, 100.0).body_visible(&line.line, 100.0));
@@ -342,7 +342,7 @@ mod tests {
         assert!(viewport(0.0, 8.0).body_visible(&line.line, 40.0));
         let run = Arc::get_mut(&mut line.line.placements[0].cluster.run).unwrap();
         run.direction = crate::render::fonts::Direction::LeftToRight;
-        run.glyphs[0].raw.id = 0;
+        run.glyphs[0].id = 0;
         assert!(viewport(0.0, 8.0).body_visible(&line.line, 40.0));
         assert!(!viewport(0.0, 100.0).body_visible(&line.line, 400.0));
     }

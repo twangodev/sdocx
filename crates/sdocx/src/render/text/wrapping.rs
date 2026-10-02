@@ -1764,7 +1764,7 @@ mod tests {
         let run = &lines[0].placements[0].cluster.run;
         assert!(Arc::ptr_eq(run, &lines[0].placements[1].cluster.run));
         assert!(Arc::ptr_eq(run, &lines[1].placements[0].cluster.run));
-        assert_eq!(run.glyphs[1].raw.x_advance, 1228);
+        assert_eq!(run.glyphs[1].transport_advance[0], 26.982421875);
         for (placement, character) in lines
             .iter()
             .flat_map(|line| &line.placements)

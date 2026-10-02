@@ -587,7 +587,7 @@ fn positioned_spans(
         cluster_contexts.push(context);
         if cluster.run.glyphs[cluster.glyphs.clone()]
             .iter()
-            .any(|glyph| glyph.raw.id == 0)
+            .any(|glyph| glyph.id == 0)
         {
             renderer
                 .for_source(cluster.source.clone())
