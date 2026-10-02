@@ -534,6 +534,10 @@ fn positioned_glyphs(run: &NativeGlyphRun) -> Result<(Point, Vec<KrillaGlyph>), 
 }
 
 #[cfg(test)]
+#[path = "native_clip_tests.rs"]
+mod clip_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::fonts::FontBook;

@@ -1,6 +1,9 @@
 use super::*;
 use frames::{BASE, BASE_SHA256};
 
+#[path = "text_clip_paths.rs"]
+mod paths;
+
 const COMPOSER: u64 = 0x0600_0000;
 const COMPOSER_SHA256: &str = "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f";
 const PDF: u64 = 0x0700_0000;
@@ -190,7 +193,7 @@ impl Case {
     }
 }
 
-pub(super) fn capture(machine: &mut Machine, base: &Path, composer: &Path, pdf: &Path) {
+fn load(machine: &Machine, base: &Path, composer: &Path, pdf: &Path) {
     frames::load_base(machine, base);
     map_library(machine.engine, composer, COMPOSER, COMPOSER_SHA256);
     map_library(machine.engine, pdf, PDF, PDF_SHA256);
@@ -205,7 +208,9 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, composer: &Path, pdf: 
     ] {
         bind_native(machine.engine, plt, target);
     }
-    let mut recorder = Recorder::new(machine);
+}
+
+fn cases() -> Vec<Case> {
     let mut cases = Vec::new();
     for (name, run) in [
         ("inside", [2.0, 3.0, 12.0, 15.0]),
@@ -257,7 +262,13 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, composer: &Path, pdf: 
             scale: 0.75,
         });
     }
-    let captures = cases
+    cases
+}
+
+pub(super) fn capture(machine: &mut Machine, base: &Path, composer: &Path, pdf: &Path) {
+    load(machine, base, composer, pdf);
+    let mut recorder = Recorder::new(machine);
+    let captures = cases()
         .iter()
         .map(|case| {
             let expected = case.fixture(machine, &mut recorder, 0);
@@ -276,4 +287,15 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, composer: &Path, pdf: 
         "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"memory_fills\":[0,165,255],\"model_library_sha256\":\"{LIBRARY_SHA256}\",\"base_library_sha256\":\"{BASE_SHA256}\",\"composer_library_sha256\":\"{COMPOSER_SHA256}\",\"pdf_library_sha256\":\"{PDF_SHA256}\",\"clip_start\":\"0x37f6ac\",\"clip_end\":\"0x37f7b0\",\"pdf_gate\":\"0xa23d4\",\"measurement_inputs\":\"Supplied source object rectangles, DrawnText run rectangles, rounded cell origins and PDF scale. Unmodified Composer clip instructions, Model GetRect and Base rectangle/point helpers execute. The Pdfium text handler executes its empty-clip gate. PDF page bounds [0,0,600,800] and paint translation recording are host interfaces. Shaping, run-rectangle production, model rectangle producers, font objects and final PDF paths/pixels are not executed.\",\"cases\":[\n{}\n]}}",
         captures.join(",\n"),
     );
+}
+
+pub(super) fn capture_paths(
+    machine: &mut Machine,
+    base: &Path,
+    composer: &Path,
+    pdf: &Path,
+    pdfium: &Path,
+) {
+    load(machine, base, composer, pdf);
+    paths::capture(machine, pdfium);
 }

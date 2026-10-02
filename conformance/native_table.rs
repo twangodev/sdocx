@@ -45,6 +45,9 @@ mod text_clipping;
 #[path = "native_table/text_bounds.rs"]
 mod text_bounds;
 
+#[path = "native_table/cell_model_bounds.rs"]
+mod cell_model_bounds;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1041,6 +1044,28 @@ fn main() {
             );
             return;
         }
+        Some("--text-clip-paths") => {
+            let paths = [3, 4, 5, 6].map(|index| {
+                std::env::args_os().nth(index).expect(
+                    "libSPenBase.so, libSPenComposer.so, libSPenPdf.so and libSPenPdfiumB.so paths required",
+                )
+            });
+            text_clipping::capture_paths(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+                Path::new(&paths[3]),
+            );
+            return;
+        }
+        Some("--cell-model-bounds") => {
+            let base = std::env::args_os()
+                .nth(3)
+                .expect("libSPenBase.so path required");
+            cell_model_bounds::capture(&mut machine, Path::new(&base));
+            return;
+        }
         Some("--export-clipping") => {
             let drawing_path = std::env::args_os()
                 .nth(3)
@@ -1158,7 +1183,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-bounds, --text-runs or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs or no capture mode"
         ),
     }
     let mut cases = Vec::new();
