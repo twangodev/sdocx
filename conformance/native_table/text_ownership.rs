@@ -48,12 +48,36 @@ fn vector(machine: &Machine, address: u64) -> Vec<u32> {
         .collect()
 }
 
+enum AdvanceProfile {
+    PerCodeUnit,
+    ZeroLeading,
+    ZeroTrailing,
+    ZeroAll,
+}
+
+impl AdvanceProfile {
+    fn at(&self, index: usize, count: usize) -> f32 {
+        let zero = match self {
+            Self::PerCodeUnit => false,
+            Self::ZeroLeading => index == 0,
+            Self::ZeroTrailing => index + 1 == count,
+            Self::ZeroAll => true,
+        };
+        if zero {
+            0.0
+        } else {
+            1000.0 + index as f32 * 200.0
+        }
+    }
+}
+
 struct OwnershipCase {
     name: &'static str,
     source: &'static str,
     owners: &'static [u64],
     rtl: bool,
     continuation_style: bool,
+    advances: AdvanceProfile,
 }
 
 impl OwnershipCase {
@@ -140,7 +164,7 @@ impl OwnershipCase {
             pointer(machine.engine, implementation + 16, LANGUAGE);
         }
         let advances: Vec<_> = (0..count)
-            .map(|index| 1000.0 + index as f32 * 200.0)
+            .map(|index| self.advances.at(index, count))
             .collect();
         let logical_map: Vec<_> = (0..count)
             .map(|index| if self.rtl { count - 1 - index } else { index })
@@ -186,7 +210,11 @@ impl OwnershipCase {
             let record = RECORDS + index as u64 * 64;
             let codeword = 0x4101 + index as u32;
             let position = [index as f32 * 225.0, -75.0];
-            let bounds = [0.0, -1200.0, 800.0, 600.0];
+            let bounds = if advances[owner as usize] == 0.0 {
+                [0.0; 4]
+            } else {
+                [0.0, -1200.0, 800.0, 600.0]
+            };
             pointer(machine.engine, record, HOLDER);
             word(machine.engine, record + 16, codeword);
             pointer(machine.engine, record + 40, owner);
@@ -382,21 +410,57 @@ pub(super) fn capture(machine: &mut Machine) {
             owners,
             rtl,
             continuation_style,
+            advances: AdvanceProfile::PerCodeUnit,
         };
-        for offset in [[0.0, 0.0], [100.25, 200.75]] {
-            let expected = case.fixture(machine, 0, offset);
-            for fill in [0xa5, 0xff] {
-                assert_eq!(
-                    case.fixture(machine, fill, offset),
-                    expected,
-                    "{name} memory fill"
-                );
-            }
-            captures.push(expected);
-        }
+        capture_case(machine, &mut captures, &case);
+    }
+    for (name, source, owners, advances) in [
+        (
+            "zero-leading-owner",
+            "\u{2066}AZ",
+            &[0, 1, 2][..],
+            AdvanceProfile::ZeroLeading,
+        ),
+        (
+            "zero-trailing-owner",
+            "ZA\u{2069}",
+            &[0, 1, 2][..],
+            AdvanceProfile::ZeroTrailing,
+        ),
+        (
+            "zero-only-owners",
+            "\u{2066}\u{2069}",
+            &[0, 1][..],
+            AdvanceProfile::ZeroAll,
+        ),
+    ] {
+        let case = OwnershipCase {
+            name,
+            source,
+            owners,
+            rtl: false,
+            continuation_style: false,
+            advances,
+        };
+        capture_case(machine, &mut captures, &case);
     }
     println!(
         "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"text_library_sha256\":\"{TEXT_SHA256}\",\"base_library_sha256\":\"{BASE_SHA256}\",\"memory_fills\":[0,165,255],\"entry_constructor\":\"0x65920\",\"producer_span_index\":0,\"producer_window\":[\"0x77324\",\"0x77894\"],\"set_layout\":\"0x6b4a4\",\"get_drawn_text_run\":\"0x66c98\",\"append_text_block\":\"0x67ebc\",\"measurement_inputs\":\"UTF-16 source, shaped glyph codewords/cluster owners/positions/ink rectangles and per-code-unit advances are supplied. Owner GlyphInfo caches initially have drawable=true, an empty vector and supplied Font wrapper to bypass font creation. Unowned caches have drawable=false. Native entry constructor initializes each slot with kind=3 and empty metrics. Native entry initialization and SpanRunFunctor producer window, glyph-vector allocation, ownership indexing, advance/ink production, SetLayout, cached getters, complete retained-run grouping/union/emission execute unchanged. UTF-16 logical order, direction, spans, Font ID/bitmap/language getters and line/block metrics are supplied. Allocation/deletion/memory copy and mutex lock/unlock are host supplied. Native font selection, Minikin/HarfBuzz shaping, source-to-owner choice, bidi ordering, wrapping, paragraph direction, real embedded objects, emojis, Composer clipping and final PDF painting do not execute. Scenario labels describe supplied owner maps and source, not native shaping outputs.\",\"cases\":[\n{}\n]}}",
         captures.join(",\n")
     );
+}
+
+fn capture_case(machine: &mut Machine, captures: &mut Vec<String>, case: &OwnershipCase) {
+    for offset in [[0.0, 0.0], [100.25, 200.75]] {
+        let expected = case.fixture(machine, 0, offset);
+        for fill in [0xa5, 0xff] {
+            assert_eq!(
+                case.fixture(machine, fill, offset),
+                expected,
+                "{} memory fill",
+                case.name
+            );
+        }
+        captures.push(expected);
+    }
 }

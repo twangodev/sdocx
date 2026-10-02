@@ -54,6 +54,9 @@ mod text_font_metadata;
 #[path = "native_table/text_span_identity.rs"]
 mod text_span_identity;
 
+#[path = "native_table/text_span_binary.rs"]
+mod text_span_binary;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1070,6 +1073,13 @@ fn main() {
             );
             return;
         }
+        Some("--text-span-binary") => {
+            let path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenBase.so path required");
+            text_span_binary::capture(&mut machine, Path::new(&path));
+            return;
+        }
         Some("--text-clipping") => {
             let paths = [3, 4, 5].map(|index| {
                 std::env::args_os()
@@ -1223,7 +1233,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary or no capture mode"
         ),
     }
     let mut cases = Vec::new();
