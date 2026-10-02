@@ -376,7 +376,7 @@ fn render_retained_fragment(
                 svg.push(
                     crate::render::vector::TSpan::new(".")
                         .font_size(1)
-                        .family(FontFamily::Named(&face.family))
+                        .family(FontFamily::Named(&face.svg_family()))
                         .font_face(face.weight, face.style),
                 );
             }

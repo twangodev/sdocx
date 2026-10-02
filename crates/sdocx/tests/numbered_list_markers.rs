@@ -251,6 +251,9 @@ fn font_span(kind: RichTextSpanType, start: u32, end: u32, payload: Vec<u8>) -> 
 
 #[test]
 fn markers_use_first_content_size_with_one_delta_and_ignore_parent_face_styles() {
+    let fonts = sdocx::fonts::FontBook::default();
+    let marker_face = fonts.resolve("sans-serif", false, false).unwrap();
+    let body_face = fonts.resolve("Roboto Mono", false, false).unwrap();
     for (width, marker_size, body_size, marker_y) in [
         (360, 12.0, 22.0, 18.45),
         (720, 24.0, 44.0, 36.9),
@@ -320,9 +323,13 @@ fn markers_use_first_content_size_with_one_delta_and_ignore_parent_face_styles()
             let families = svgtypes::parse_font_families(family).unwrap();
             assert_eq!(
                 families.first(),
-                Some(&svgtypes::FontFamily::Named("Roboto".into()))
+                Some(&svgtypes::FontFamily::Named(
+                    marker_face.svg_family().to_string()
+                ))
             );
-            assert!(!families.contains(&svgtypes::FontFamily::Named("Roboto Mono".into())));
+            assert!(!families.contains(&svgtypes::FontFamily::Named(
+                body_face.svg_family().to_string()
+            )));
             assert!(span.ancestors().all(|node| {
                 node.attribute("font-style")
                     .is_none_or(|value| value == "normal")

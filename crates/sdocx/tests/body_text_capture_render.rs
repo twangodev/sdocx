@@ -214,7 +214,8 @@ fn offscreen_font_fallback_diagnostics_and_faces_do_not_leak_into_the_requested_
         let css = font_css(&second.svg);
         assert_eq!(css.len(), 1);
         assert_eq!(css[0].matches("@font-face").count(), 1);
-        assert!(css[0].contains("font-family:\"Roboto Mono\";"));
+        let selected = fonts.resolve("Roboto Mono", false, false).unwrap();
+        assert!(css[0].contains(&format!("font-family:\"{}\";", selected.svg_family())));
         let encoded = css[0]
             .split_once("data:font/ttf;base64,")
             .unwrap()
@@ -463,7 +464,8 @@ fn offscreen_code_title_does_not_leak_its_font_or_diagnostic_into_visible_body()
             let css = font_css(&page.svg);
             assert_eq!(css.len(), 1);
             assert_eq!(css[0].matches("@font-face").count(), 1);
-            assert!(css[0].contains("font-family:\"Roboto Mono\";"));
+            let selected = fonts.resolve("Roboto Mono", false, false).unwrap();
+            assert!(css[0].contains(&format!("font-family:\"{}\";", selected.svg_family())));
             let first = render(&doc, &layout, 0, replay, &fonts);
             assert!(first.text_diagnostics.iter().any(|diagnostic| {
                 diagnostic.kind == sdocx::TextDiagnosticKind::UnavailableFamily

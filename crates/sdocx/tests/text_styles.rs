@@ -2442,14 +2442,29 @@ fn font_name_spans_apply_locally_in_each_text_context() {
             assert_eq!(
                 svgtypes::parse_font_families(attribute).unwrap(),
                 [
-                    svgtypes::FontFamily::Named(family.into()),
+                    svgtypes::FontFamily::Named(
+                        FontBook::default()
+                            .resolve(family, false, false)
+                            .unwrap()
+                            .svg_family()
+                            .to_string()
+                    ),
                     svgtypes::FontFamily::SansSerif,
                 ],
                 "{context:?} {value}"
             );
         }
-        assert_eq!(tspan(&xml, "A").attribute("font-family"), None);
-        assert_eq!(tspan(&xml, " C").attribute("font-family"), None);
+        let regular = FontBook::default().resolve("Roboto", false, false).unwrap();
+        for value in ["A", " C"] {
+            assert_eq!(
+                svgtypes::parse_font_families(tspan(&xml, value).attribute("font-family").unwrap())
+                    .unwrap(),
+                [
+                    svgtypes::FontFamily::Named(regular.svg_family().to_string()),
+                    svgtypes::FontFamily::SansSerif
+                ],
+            );
+        }
     }
 }
 
@@ -2526,8 +2541,12 @@ fn font_names_are_one_css_family_and_preserve_raw_source() {
         let svg = page.svg;
         let xml = roxmltree::Document::parse(&svg).unwrap();
         let attribute = tspan(&xml, "safe").attribute("font-family").unwrap();
-        let expected = r#""ACME \"Ink\", Serif\\ <svg onload=\"boom\"> & 'quoted'", sans-serif"#;
-        assert_eq!(attribute, expected, "{context:?}");
+        let selected = fonts.resolve(family, false, false).unwrap();
+        assert_eq!(
+            attribute,
+            format!("\"{}\", sans-serif", selected.svg_family()),
+            "{context:?}"
+        );
         let families = svgtypes::parse_font_families(attribute).unwrap();
         assert!(
             matches!(
@@ -2586,7 +2605,10 @@ fn svg_embeds_only_used_pinned_faces_and_replay_has_the_same_font_css() {
         assert_eq!(css, font_css(&replay.svg), "{context:?}");
         assert_eq!(css.len(), 1, "{context:?}: unused faces must stay absent");
         assert_eq!(css[0].matches("@font-face").count(), 1);
-        assert!(css[0].contains("font-family:\"Roboto\";font-weight:400;font-style:normal;"));
+        assert!(css[0].contains(&format!(
+            "font-family:\"{}\";font-weight:400;font-style:normal;",
+            face.svg_family()
+        )));
         let bytes = embedded_font_bytes(&css[0]);
         assert_eq!(bytes, face.bytes(), "{context:?}");
         assert_eq!(
@@ -2791,7 +2813,16 @@ fn coverage_fallback_preserves_requested_synthetic_italic_and_bold() {
         let fallback = tspan(&xml, "∕");
         assert_eq!(
             fallback.attribute("font-family"),
-            Some("\"Roboto Mono\", sans-serif")
+            Some(
+                format!(
+                    "\"{}\", sans-serif",
+                    fonts
+                        .resolve("Roboto Mono", false, false)
+                        .unwrap()
+                        .svg_family()
+                )
+                .as_str()
+            )
         );
         assert_eq!(fallback.attribute("font-style"), Some("italic"));
         if matches!(context, Context::Standalone) {
@@ -2917,8 +2948,10 @@ fn caller_controlled_oblique_face_keeps_actual_weight_and_style_in_css() {
         let css = font_css(&page.svg);
         assert_eq!(css.len(), 1, "{context:?}");
         assert!(
-            css[0]
-                .contains("font-family:\"Caller Controlled\";font-weight:550;font-style:oblique;"),
+            css[0].contains(&format!(
+                "font-family:\"{}\";font-weight:550;font-style:oblique;",
+                fonts.resolve(family, false, true).unwrap().svg_family()
+            )),
             "{context:?}"
         );
         assert_eq!(embedded_font_bytes(&css[0]), italic.bytes(), "{context:?}");
@@ -2927,7 +2960,13 @@ fn caller_controlled_oblique_face_keeps_actual_weight_and_style_in_css() {
             svgtypes::parse_font_families(tspan(&xml, "oblique").attribute("font-family").unwrap())
                 .unwrap(),
             [
-                svgtypes::FontFamily::Named(family.into()),
+                svgtypes::FontFamily::Named(
+                    fonts
+                        .resolve(family, false, true)
+                        .unwrap()
+                        .svg_family()
+                        .to_string()
+                ),
                 svgtypes::FontFamily::SansSerif
             ]
         );
@@ -2987,7 +3026,13 @@ fn unavailable_font_family_uses_roboto_and_reports_the_original_request() {
             svgtypes::parse_font_families(tspan(&xml, "safe").attribute("font-family").unwrap())
                 .unwrap(),
             [
-                svgtypes::FontFamily::Named("Roboto".into()),
+                svgtypes::FontFamily::Named(
+                    FontBook::default()
+                        .resolve("Roboto", false, false)
+                        .unwrap()
+                        .svg_family()
+                        .to_string()
+                ),
                 svgtypes::FontFamily::SansSerif
             ],
             "{context:?}"

@@ -1,5 +1,8 @@
 #![cfg(all(feature = "render", feature = "serde"))]
 
+#[path = "support/svg_fonts.rs"]
+mod svg_fonts;
+
 use base64::Engine;
 use resvg::usvg;
 use sdocx::{
@@ -216,8 +219,10 @@ fn collect_glyphs(group: &usvg::Group, glyphs: &mut Vec<Glyph>) {
 }
 
 fn glyphs(page: &RenderedPage) -> Vec<Glyph> {
+    let database = sdocx::fonts::FontBook::default().database();
     let options = usvg::Options {
-        fontdb: sdocx::fonts::FontBook::default().database(),
+        font_resolver: svg_fonts::font_resolver(&database),
+        fontdb: database,
         ..Default::default()
     };
     let tree = usvg::Tree::from_str(&page.svg, &options).unwrap();

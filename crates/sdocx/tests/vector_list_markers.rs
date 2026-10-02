@@ -208,6 +208,7 @@ fn assert_embedded_face(
         .unwrap()
         .text()
         .unwrap();
+    assert!(css.contains(&format!("font-family:\"{}\";", selected.svg_family())));
     let encoded_fonts: Vec<_> = css.split("base64,").skip(1).collect();
     assert_eq!(encoded_fonts.len(), 1);
     let embedded = base64::engine::general_purpose::STANDARD

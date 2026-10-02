@@ -113,6 +113,7 @@ fn load_fonts(font_files: &[PathBuf]) -> Result<sdocx::fonts::FontBook, String> 
 
 fn svg_options(fonts: &sdocx::fonts::FontBook) -> resvg::usvg::Options<'static> {
     resvg::usvg::Options {
+        font_resolver: sdocx::fonts::svg_font_resolver(&fonts.database()),
         fontdb: fonts.database(),
         ..Default::default()
     }

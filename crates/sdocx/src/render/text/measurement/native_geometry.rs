@@ -10,13 +10,12 @@ use crate::fonts::{
 use crate::text_index::TextSource;
 
 pub(super) fn supported_face(face: &ResolvedFace) -> bool {
-    use sha2::{Digest, Sha256};
     const REGULAR_SHA256: [u8; 32] = [
         0x56, 0xa4, 0x52, 0x33, 0xd2, 0x9f, 0x11, 0xb4, 0xdf, 0xb8, 0x6d, 0x24, 0x8e, 0x92, 0x19,
         0x39, 0xd1, 0x15, 0x77, 0x8f, 0x87, 0x32, 0x5e, 0x7a, 0xe8, 0xcc, 0x10, 0x83, 0x83, 0xd6,
         0x66, 0x4d,
     ];
-    face.index == 0 && <[u8; 32]>::from(Sha256::digest(face.bytes())) == REGULAR_SHA256
+    face.index == 0 && face.font_digest() == &REGULAR_SHA256
 }
 
 pub(super) fn shape_error(error: PaintShapeError) -> TextDiagnosticKind {

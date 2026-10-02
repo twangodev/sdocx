@@ -1,5 +1,8 @@
 #![cfg(feature = "render")]
 
+#[path = "support/svg_fonts.rs"]
+mod svg_fonts;
+
 use resvg::usvg;
 use sdocx::fonts::FontBook;
 use sdocx::{
@@ -123,8 +126,10 @@ fn collect_glyphs(group: &usvg::Group, glyphs: &mut Vec<Glyph>) {
 }
 
 fn glyphs_with_fonts(page: &RenderedPage, fonts: &FontBook) -> Vec<Glyph> {
+    let database = fonts.database();
     let options = usvg::Options {
-        fontdb: fonts.database(),
+        font_resolver: svg_fonts::font_resolver(&database),
+        fontdb: database,
         ..Default::default()
     };
     let tree = usvg::Tree::from_str(&page.svg, &options).unwrap();

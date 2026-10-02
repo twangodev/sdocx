@@ -518,7 +518,8 @@ fn paginated_table_paints_only_visible_cell_fonts_and_diagnostics() {
                 .filter_map(|node| node.text())
                 .collect();
             assert_eq!(css.matches("@font-face").count(), 1);
-            assert!(css.contains("font-family:\"Roboto Mono\";"));
+            let selected = fonts.resolve("Roboto Mono", false, false).unwrap();
+            assert!(css.contains(&format!("font-family:\"{}\";", selected.svg_family())));
             let first = render_capture_page(&doc, &layout, 0, replay, &fonts);
             assert!(
                 first

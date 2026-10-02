@@ -327,8 +327,24 @@ mod tests {
         DocumentSession, MAX_BROWSER_ENTRY_SIZE, MAX_BROWSER_TOTAL_UNCOMPRESSED_SIZE,
         browser_parse_options, parse_render_color_mode,
     };
+    use base64::Engine as _;
     use sdocx::fonts::{FontBook, fontdb};
     use std::sync::Arc;
+
+    fn assert_embedded_face(svg: &str, face: &sdocx::fonts::ResolvedFace) {
+        let prefix = format!("@font-face{{font-family:\"{}\"", face.svg_family());
+        let rule = svg
+            .split_once(&prefix)
+            .unwrap()
+            .1
+            .split('}')
+            .next()
+            .unwrap();
+        assert!(rule.contains(&format!(
+            "data:font/ttf;base64,{}\"",
+            base64::engine::general_purpose::STANDARD.encode(face.bytes())
+        )));
+    }
 
     #[test]
     fn browser_options_bound_archive_expansion() {
@@ -408,7 +424,10 @@ mod tests {
         session.layout = Some(sdocx::layout_document(&parsed.document));
 
         let before = session.render_svg(0, "light").unwrap();
-        assert!(before.contains("@font-face{font-family:\"Roboto\""));
+        assert_embedded_face(
+            &before,
+            &session.fonts.resolve("Roboto", false, false).unwrap(),
+        );
         assert!(!before.contains("Roboto Mono"));
         session
             .add_pdf_font(include_bytes!(
@@ -428,7 +447,10 @@ mod tests {
         );
 
         let preview = session.render_svg(0, "light").unwrap();
-        assert!(preview.contains("@font-face{font-family:\"Roboto Mono\""));
+        assert_embedded_face(
+            &preview,
+            &session.fonts.resolve("Roboto Mono", false, false).unwrap(),
+        );
         assert_ne!(preview, before);
         for kind in ["replay-svg", "background"] {
             let response = session
@@ -562,7 +584,10 @@ mod tests {
         assert_eq!(Arc::strong_count(&original_database), 1);
         let after = first.render_svg(1, "light").unwrap();
         assert_ne!(after, before);
-        assert!(after.contains("@font-face{font-family:\"Roboto Mono\""));
+        assert_embedded_face(
+            &after,
+            &first.fonts.resolve("Roboto Mono", false, false).unwrap(),
+        );
         assert_eq!(second.render_svg(1, "light").unwrap(), before);
         let imported_database = first.fonts.database();
         first.dispose();

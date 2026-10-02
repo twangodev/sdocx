@@ -8,6 +8,11 @@ pub use fontdb;
 use fontdb::{Database, Family, ID, Query, Style, Weight};
 pub use rustybuzz::{Direction, Feature, UnicodeBuffer};
 
+mod svg_identity;
+pub use svg_identity::SvgFontFamilies;
+#[cfg(feature = "pdf")]
+pub use svg_identity::svg_font_resolver;
+
 mod paint_metrics;
 pub use paint_metrics::{
     PaintGlyphMetrics, PaintInkBounds, PaintMetricError, PaintMetricInput, PaintMetricMode,
@@ -75,6 +80,9 @@ pub struct ResolvedFace {
     pub weight: Weight,
     pub style: Style,
     data: Arc<dyn AsRef<[u8]> + Send + Sync>,
+    font_digest: [u8; 32],
+    svg_family: Arc<str>,
+    svg_face_index: u32,
     ink_bounds: Arc<Mutex<HashMap<u16, Option<rustybuzz::ttf_parser::Rect>>>>,
     has_cbdt_table: bool,
     pub index: u32,
@@ -392,6 +400,9 @@ impl FontBook {
                 .table_records
                 .into_iter()
                 .any(|record| record.tag == rustybuzz::ttf_parser::Tag::from_bytes(b"CBDT")),
+            font_digest: svg_identity::data_digest(data.as_ref().as_ref()),
+            svg_family: svg_identity::family(data.as_ref().as_ref(), index),
+            svg_face_index: index,
             data,
             ink_bounds: Arc::new(Mutex::new(HashMap::new())),
             index,
@@ -440,6 +451,18 @@ impl Default for FontBook {
 }
 
 impl ResolvedFace {
+    pub fn svg_family(&self) -> Arc<str> {
+        if self.index == self.svg_face_index {
+            self.svg_family.clone()
+        } else {
+            svg_identity::family(self.bytes(), self.index)
+        }
+    }
+
+    pub(crate) fn font_digest(&self) -> &[u8; 32] {
+        &self.font_digest
+    }
+
     pub fn paint_metrics(
         &self,
         input: PaintMetricInput,
@@ -451,7 +474,7 @@ impl ResolvedFace {
         &self,
         input: PaintMetricInput,
     ) -> Result<PaintShaper<'_>, PaintShapeError> {
-        PaintShaper::new(self.bytes(), self.index, input)
+        PaintShaper::with_font_digest(self.bytes(), self.index, input, self.font_digest)
     }
 
     /// Matches the native bitmap-font gate: the selected face declares a CBDT table.

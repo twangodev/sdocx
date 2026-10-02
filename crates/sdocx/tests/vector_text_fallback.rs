@@ -1,5 +1,8 @@
 #![cfg(feature = "render")]
 
+#[path = "support/svg_fonts.rs"]
+mod svg_fonts;
+
 use std::sync::Arc;
 
 use resvg::usvg;
@@ -89,8 +92,10 @@ fn collect_glyphs(group: &usvg::Group, output: &mut Vec<Glyph>) {
 }
 
 fn glyphs(page: &RenderedPage, fonts: &FontBook) -> Vec<Glyph> {
+    let database = fonts.database();
     let options = usvg::Options {
-        fontdb: fonts.database(),
+        font_resolver: svg_fonts::font_resolver(&database),
+        fontdb: database,
         ..Default::default()
     };
     let tree = usvg::Tree::from_str(&page.svg, &options).unwrap();

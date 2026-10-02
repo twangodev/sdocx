@@ -438,9 +438,7 @@ impl<'a> TextRenderer<'a> {
     pub fn output_style_with_face(&self, style: &TextStyle, face: &ResolvedFace) -> TextStyle {
         self.register_face(face);
         let mut output = style.clone();
-        if style.family.is_some() || face.family != "Roboto" {
-            output.family = Some(face.family.clone());
-        }
+        output.family = Some(face.svg_family().to_string());
         output
     }
 
@@ -451,7 +449,7 @@ impl<'a> TextRenderer<'a> {
     pub fn embed_fonts(&self, svg: &mut Scene) {
         for face in self.faces.borrow().iter() {
             match EmbeddedFont::new(
-                &face.family,
+                &face.svg_family(),
                 face.weight.0,
                 face.style,
                 face.bytes(),
@@ -1239,7 +1237,7 @@ mod tests {
             link_target: Some("https://example.com".into()),
         };
         let output = renderer.output_style_with_face(&style, &face);
-        assert_eq!(output.family.as_deref(), Some("Roboto Mono"));
+        assert_eq!(output.family.as_deref(), Some(face.svg_family().as_ref()));
         assert_eq!(output.font_size, style.font_size);
         assert_eq!(output.color, style.color);
         assert_eq!(output.source_color, style.source_color);

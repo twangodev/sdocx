@@ -287,17 +287,6 @@ fn nested_containers_keep_leaf_rotation_and_placement_in_page_coordinates() {
 }
 
 #[cfg(feature = "pdf")]
-fn pdf_fonts() -> std::sync::Arc<sdocx::pdf::fontdb::Database> {
-    let mut fonts = sdocx::pdf::fontdb::Database::new();
-    fonts.load_system_fonts();
-    let family = fonts.faces().next().expect("a system font").families[0]
-        .0
-        .clone();
-    fonts.set_sans_serif_family(&family);
-    std::sync::Arc::new(fonts)
-}
-
-#[cfg(feature = "pdf")]
 fn text(label: &str) -> PageObject {
     PageElement::TextBox(sdocx::RichTextBox {
         text_area_type: None,
@@ -387,8 +376,28 @@ fn mixed_vector_pdf_preserves_paint_order_and_selectable_text_without_image_obje
     document.pages[0]
         .objects
         .insert(2, text("selectable composition"));
-    let options = sdocx::PdfOptions::new(pdf_fonts());
-    for page in render_modes(&document) {
+    let fonts = sdocx::fonts::FontBook::default();
+    let options = sdocx::PdfOptions::from_font_book(&fonts);
+    let layout = sdocx::layout_document(&document);
+    let pages = [
+        sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &RenderOptions::default(),
+            &fonts,
+        )
+        .unwrap(),
+        sdocx::render_layout_page_replay_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &RenderOptions::default(),
+            &fonts,
+        )
+        .unwrap(),
+    ];
+    for page in pages {
         let bytes = sdocx::render_svg_pages_pdf(&[page], &options).unwrap();
         let pdf = lopdf::Document::load_mem(&bytes).unwrap();
         let page_id = pdf.get_pages()[&1];

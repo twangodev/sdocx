@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+#[cfg(test)]
 use sha2::{Digest, Sha256};
 
 use crate::render::harfrust;
@@ -210,10 +211,20 @@ pub struct PaintShaper<'font> {
 }
 
 impl<'font> PaintShaper<'font> {
+    #[cfg(test)]
     pub(super) fn new(
         bytes: &'font [u8],
         index: u32,
         input: PaintMetricInput,
+    ) -> Result<Self, PaintShapeError> {
+        Self::with_font_digest(bytes, index, input, Sha256::digest(bytes).into())
+    }
+
+    pub(super) fn with_font_digest(
+        bytes: &'font [u8],
+        index: u32,
+        input: PaintMetricInput,
+        font_digest: [u8; 32],
     ) -> Result<Self, PaintShapeError> {
         let metrics = PaintMetrics::new(bytes, index, input)?;
         let font = FontRef::from_index(bytes, index).map_err(|_| PaintMetricError::InvalidFont)?;
@@ -227,7 +238,7 @@ impl<'font> PaintShaper<'font> {
         let data = ShaperData::new(&font);
         Ok(Self {
             font_identity: PaintFontIdentity {
-                digest: Sha256::digest(bytes).into(),
+                digest: font_digest,
                 face_index: index,
             },
             last_source: None,

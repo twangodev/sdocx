@@ -13,10 +13,14 @@ use krilla::{
 
 mod svg;
 
+#[cfg(test)]
+#[path = "pdf/font_identity_tests.rs"]
+mod font_identity_tests;
+
 use crate::render::{DocumentTextCache, NativePdfPainter, NativeTextRegistry};
 use crate::{
     Document, LayoutDocument, ObjectDiagnostic, RenderOptions, RenderedPage, TextDiagnostic,
-    fonts::{FontBook, NativeFontNameConfig},
+    fonts::{FontBook, NativeFontNameConfig, SvgFontFamilies},
 };
 
 pub use usvg::fontdb;
@@ -232,9 +236,26 @@ fn render_pages_pdf<'a>(
         return Err(PdfError::InvalidDpi);
     }
     let image_error = Mutex::new(None);
+    let font_error = Mutex::new(false);
+    let physical_families = SvgFontFamilies::new(&options.font_database);
+    let usvg::FontResolver {
+        select_font,
+        select_fallback,
+    } = physical_families.usvg_resolver();
     let data_resolver = usvg::ImageHrefResolver::default_data_resolver();
     let svg_options = usvg::Options {
         fontdb: options.font_database.clone(),
+        font_resolver: usvg::FontResolver {
+            select_font: Box::new(|font, database| {
+                if let Some(usvg::FontFamily::Named(family)) = font.families().first()
+                    && physical_families.is_unavailable(family)
+                {
+                    *font_error.lock().unwrap() = true;
+                }
+                select_font(font, database)
+            }),
+            select_fallback,
+        },
         image_href_resolver: usvg::ImageHrefResolver {
             resolve_data: Box::new(|mime, data, options| {
                 let image = data_resolver(mime, data, options)?;
@@ -270,12 +291,20 @@ fn render_pages_pdf<'a>(
             return Err(PdfError::InvalidPageSize { page_index });
         }
         let size = Size::from_wh(width, height).ok_or(PdfError::InvalidPageSize { page_index })?;
+        *font_error.lock().unwrap() = false;
         let tree = usvg::Tree::from_str(&rendered.svg, &svg_options).map_err(|error| {
             PdfError::InvalidSvg {
                 page_index,
                 message: error.to_string(),
             }
         })?;
+        if source.text.is_none() && *font_error.lock().unwrap() {
+            return Err(PdfError::UnsupportedText {
+                page_index,
+                message: "the SVG's selected physical font is absent from the supplied database"
+                    .into(),
+            });
+        }
         if let Some(message) = image_error.lock().unwrap().take() {
             return Err(PdfError::InvalidImage {
                 page_index,
