@@ -702,6 +702,65 @@ impl RichTextSpan {
         })
     }
 
+    /// Decode a composing or composing-tag flag from its modern eight-byte payload.
+    pub fn composition_value(&self) -> Option<bool> {
+        if !matches!(
+            self.kind,
+            RichTextSpanType::Composing | RichTextSpanType::ComposingTag
+        ) {
+            return None;
+        }
+        Some(self.payload.get(..8)?[0] != 0)
+    }
+
+    /// Decode composing-background ARGB from its modern eight-byte payload.
+    pub fn composing_background_value(&self) -> Option<u32> {
+        if self.kind != RichTextSpanType::ComposingBackgroundColor {
+            return None;
+        }
+        payload_u32(self.payload.get(..8)?, 0)
+    }
+
+    /// Decode suggestion metadata, retaining raw identifiers and omitting empty entries.
+    /// Malformed UTF-16 or a truncated declared list has no decoded value.
+    pub fn suggestion_value(&self) -> Option<RichTextSuggestion> {
+        if self.kind != RichTextSpanType::Suggestion {
+            return None;
+        }
+        let suggestion_type = payload_u32(&self.payload, 0)?;
+        let underline_argb = payload_u32(&self.payload, 4)?;
+        let count = payload_u32(&self.payload, 8)? as i32;
+        let count = usize::try_from(count).unwrap_or(0);
+        if count > self.payload.len().saturating_sub(12) / 2 {
+            return None;
+        }
+        let mut cursor = 12;
+        let mut strings = Vec::new();
+        for _ in 0..count {
+            let length = usize::from(u16::from_le_bytes(
+                self.payload.get(cursor..cursor + 2)?.try_into().ok()?,
+            ));
+            cursor += 2;
+            let end = cursor.checked_add(length.checked_mul(2)?)?;
+            let bytes = self.payload.get(cursor..end)?;
+            if !bytes.is_empty() {
+                let units: Vec<_> = bytes
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|unit| u16::from_le_bytes(*unit))
+                    .collect();
+                strings.push(String::from_utf16(&units).ok()?);
+            }
+            cursor = end;
+        }
+        Some(RichTextSuggestion {
+            suggestion_type,
+            underline_argb,
+            strings,
+        })
+    }
+
     /// Decode a font-size span's floating-point payload.
     pub fn font_size_value(&self) -> Option<f32> {
         let bytes = self.payload.get(..4)?.try_into().ok()?;
@@ -760,6 +819,18 @@ impl RichTextSpan {
             custom_data,
         })
     }
+}
+
+/// Decoded suggestion metadata from a rich-text span.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct RichTextSuggestion {
+    /// Native suggestion category or flags, preserved without interpretation.
+    pub suggestion_type: u32,
+    /// Underline ARGB, before theme conversion.
+    pub underline_argb: u32,
+    /// Nonempty suggestions decoded from the stored UTF-16 list.
+    pub strings: Vec<String>,
 }
 
 /// Decoded hyperlink metadata from a rich-text span.
@@ -1374,6 +1445,170 @@ mod tests {
             span.payload = vec![0; length];
             assert_eq!(span.argb_value(), None);
             assert_eq!(span.color_value(), None);
+        }
+    }
+
+    fn span_payload(kind: RichTextSpanType, payload: &[u8]) -> RichTextSpan {
+        RichTextSpan {
+            kind,
+            start_utf16: 0,
+            end_utf16: 1,
+            interval_type: crate::SpanIntervalType::from(0),
+            payload: payload.to_vec(),
+        }
+    }
+
+    #[test]
+    fn composition_and_suggestion_values_match_native_binary_reader_and_writer() {
+        use sha2::Digest;
+
+        const FIXTURE: &str = include_str!("../../../conformance/table-text-span-binary.json");
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
+            "0e8437fead4285c0ead18349f8708309219c74c6aae8a2acc83bec9fdbbc1c7b"
+        );
+        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let bytes = |value: &serde_json::Value| {
+            value
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
+                .collect::<Vec<_>>()
+        };
+        let mut readers = 0;
+        let mut writers = 0;
+        for case in capture["cases"].as_array().unwrap() {
+            let kind = RichTextSpanType::from(case["kind"].as_u64().unwrap() as u32);
+            if case["version"].as_u64() == Some(8)
+                && matches!(
+                    kind,
+                    RichTextSpanType::ComposingBackgroundColor
+                        | RichTextSpanType::Composing
+                        | RichTextSpanType::ComposingTag
+                        | RichTextSpanType::Suggestion
+                )
+            {
+                let record = bytes(&case["record"]);
+                let available = case["available"].as_u64().unwrap() as usize;
+                let span = span_payload(kind, record.get(16..available).unwrap_or_default());
+                let original = span.payload.clone();
+                let applied = case["applied"].as_bool().unwrap();
+                match kind {
+                    RichTextSpanType::ComposingBackgroundColor => assert_eq!(
+                        span.composing_background_value(),
+                        applied.then(|| case["decoded"]["color"].as_u64().unwrap() as u32),
+                        "{}",
+                        case["name"]
+                    ),
+                    RichTextSpanType::Composing | RichTextSpanType::ComposingTag => assert_eq!(
+                        span.composition_value(),
+                        applied.then(|| case["decoded"]["enabled"].as_bool().unwrap()),
+                        "{}",
+                        case["name"]
+                    ),
+                    RichTextSpanType::Suggestion => {
+                        assert_native_suggestion(&span, case, applied);
+                    }
+                    _ => unreachable!(),
+                }
+                assert_eq!(span.payload, original);
+                readers += 1;
+            }
+            if kind == RichTextSpanType::Suggestion && case["written"].as_bool() == Some(true) {
+                let output = bytes(&case["output"]);
+                let span = span_payload(kind, &output[16..]);
+                assert_native_suggestion(&span, case, true);
+                writers += 1;
+            }
+        }
+        assert_eq!(readers, 132);
+        assert_eq!(writers, 60);
+    }
+
+    fn assert_native_suggestion(span: &RichTextSpan, case: &serde_json::Value, applied: bool) {
+        let expected = applied.then(|| super::RichTextSuggestion {
+            suggestion_type: case["decoded"]["suggestion_type"].as_u64().unwrap() as u32,
+            underline_argb: case["decoded"]["underline"].as_u64().unwrap() as u32,
+            strings: case["decoded"]["strings"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|text| text.as_str().unwrap().to_owned())
+                .collect(),
+        });
+        assert_eq!(span.suggestion_value(), expected, "{}", case["name"]);
+    }
+
+    #[test]
+    fn composition_requires_complete_modern_frames_and_matching_kinds() {
+        for kind in [RichTextSpanType::Composing, RichTextSpanType::ComposingTag] {
+            for length in 0..8 {
+                assert_eq!(
+                    span_payload(kind, &vec![0xff; length]).composition_value(),
+                    None
+                );
+            }
+            for value in [0, 1, 2, 0xff] {
+                let mut payload = vec![0x7b; 12];
+                payload[0] = value;
+                assert_eq!(
+                    span_payload(kind, &payload).composition_value(),
+                    Some(value != 0)
+                );
+            }
+        }
+        for length in 0..8 {
+            assert_eq!(
+                span_payload(
+                    RichTextSpanType::ComposingBackgroundColor,
+                    &vec![0xff; length]
+                )
+                .composing_background_value(),
+                None
+            );
+        }
+        let unrelated = span_payload(RichTextSpanType::SpellCorrection, &[0; 16]);
+        assert_eq!(unrelated.composition_value(), None);
+        assert_eq!(unrelated.composing_background_value(), None);
+        assert_eq!(unrelated.suggestion_value(), None);
+    }
+
+    #[test]
+    fn suggestions_bound_declared_lists_and_reject_malformed_utf16() {
+        let mut payload = vec![0; 12];
+        for length in 0..12 {
+            assert_eq!(
+                span_payload(RichTextSpanType::Suggestion, &payload[..length]).suggestion_value(),
+                None
+            );
+        }
+        payload[8..12].copy_from_slice(&i32::MAX.to_le_bytes());
+        assert_eq!(
+            span_payload(RichTextSpanType::Suggestion, &payload).suggestion_value(),
+            None
+        );
+        payload[8..12].copy_from_slice(&1_u32.to_le_bytes());
+        payload.extend_from_slice(&u16::MAX.to_le_bytes());
+        assert_eq!(
+            span_payload(RichTextSpanType::Suggestion, &payload).suggestion_value(),
+            None
+        );
+        payload[12..14].copy_from_slice(&1_u16.to_le_bytes());
+        payload.extend_from_slice(&0xd800_u16.to_le_bytes());
+        assert_eq!(
+            span_payload(RichTextSpanType::Suggestion, &payload).suggestion_value(),
+            None
+        );
+        for count in [i32::MIN, -1, 0] {
+            payload[8..12].copy_from_slice(&count.to_le_bytes());
+            assert_eq!(
+                span_payload(RichTextSpanType::Suggestion, &payload)
+                    .suggestion_value()
+                    .unwrap()
+                    .strings,
+                Vec::<String>::new()
+            );
         }
     }
 
