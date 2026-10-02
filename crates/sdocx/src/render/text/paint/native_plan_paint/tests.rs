@@ -288,3 +288,86 @@ fn svg_rejects_internal_mark_displacement_while_pdf_keeps_the_cached_group() {
     }
     assert!(renderer.diagnostics().is_empty());
 }
+
+#[cfg(feature = "pdf")]
+#[test]
+fn stacked_marks_keep_captured_pdf_glyphs_with_an_explicit_svg_projection_fallback() {
+    let bytes =
+        include_bytes!("../../../../../../../conformance/table-text-cell-source-inputs.json");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "8529637cdcc67b8c5e4747f0dd6105d060ee58390809b9f252cccab35de7b9de"
+    );
+    let capture: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+    let case = capture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "stacked-overline-dot")
+        .unwrap();
+    let fonts = FontBook::default();
+    let settings = TextSettings::resolved();
+    let theme = RenderTheme::for_canvas(false);
+    for size in [17.0, 50.0] {
+        let mut content = content(case);
+        content.font_size = Some(size);
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let renderer = TextRenderer::new(settings, &fonts);
+        let layout = layout(&styled, case, [0.0; 2], &renderer);
+        let plan = native_paint_plan(&styled, &layout, theme).unwrap();
+        assert_eq!(plan.runs.len(), 1);
+        let visible = vec![true; layout.lines.len()];
+        assert!(
+            NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, false, None)
+                .is_none()
+        );
+        assert_eq!(
+            renderer.diagnostics(),
+            [super::super::super::TextDiagnostic {
+                kind: super::super::super::TextDiagnosticKind::UnsupportedGlyphPositioning,
+                family: "native".into(),
+                codepoints: vec![65, 66, 773, 775],
+            }]
+        );
+        let renderer = TextRenderer::new(settings, &fonts);
+        let mut dispatcher =
+            NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, true, None)
+                .unwrap();
+        let mut scene = Scene::new(Svg::new());
+        scene.retain_text();
+        scene.text_source(|scene| {
+            dispatcher.paint_line(scene, &styled, 0, &layout.lines[0], theme, &renderer)
+        });
+        let registry = scene.take_native_text();
+        let block = registry.iter().next().unwrap().1;
+        assert_eq!(block.source.as_ref(), content.text);
+        let glyphs = &block.runs[0].glyphs;
+        assert_eq!(glyphs.len(), plan.runs[0].glyphs.len());
+        for (actual, cached) in glyphs.iter().zip(&plan.runs[0].glyphs) {
+            assert_eq!(actual.glyph_id, cached.glyph_id);
+            assert_eq!(actual.origin, cached.origin.map(f64::from));
+            assert_eq!(actual.source, cached.source);
+        }
+        if size == 17.0 {
+            let captured = &case["emitted_runs"]["runs"][0];
+            assert_eq!(
+                glyphs.len(),
+                captured["codewords"].as_array().unwrap().len()
+            );
+            for (index, actual) in glyphs.iter().enumerate() {
+                assert_eq!(
+                    actual.glyph_id as u64,
+                    captured["codewords"][index].as_u64().unwrap()
+                );
+                assert_eq!(
+                    actual.origin,
+                    [
+                        captured_float(&captured["position_bits"][index]),
+                        captured_float(&captured["origin_bits"][1])
+                    ]
+                );
+            }
+        }
+        assert!(renderer.diagnostics().is_empty());
+    }
+}

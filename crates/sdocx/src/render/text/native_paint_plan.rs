@@ -458,3 +458,6 @@ pub(in crate::render) fn native_paint_plan(
 
 #[cfg(all(test, feature = "serde"))]
 mod fixture_tests;
+
+#[cfg(all(test, feature = "serde"))]
+mod source_fixture_tests;

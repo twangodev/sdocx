@@ -177,8 +177,7 @@ impl WrappedLine {
         };
         let native_left = left as f32;
         let native_width = width as f32;
-        if !self.native_positioned
-            || ![native_left, native_width].into_iter().all(f32::is_finite)
+        if ![native_left, native_width].into_iter().all(f32::is_finite)
             || f64::from(native_left) != left
             || f64::from(native_width) != width
         {
