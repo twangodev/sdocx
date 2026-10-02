@@ -265,6 +265,8 @@ Native reference coverage is narrower than synthetic coverage:
 | [`table-text-shaping-mixed-scripts.json`](table-text-shaping-mixed-scripts.json) | Thirty-three native cases, 380 shape calls and 800 glyphs/UTF-16 advance entries with Latin/Greek/Cyrillic chunk discovery, shared f32 pen, per-call owner origins and half-spacing stores. RTL preserves ascending call ranges and reverses owners within each chunk. Three fills and independent replays agree. | Same supplied single-face producer and host boundaries. Full paragraph bidi resolution, fallback selection, whole SpanRunFunctor, entry conversion, wrapping and document composition do not execute. See [mixed-script evidence](../docs/reverse-engineering/text-layout-findings.md#captured-mixed-script-chunk-geometry). |
 | [`table-text-entry-geometry.json`](table-text-entry-geometry.json) | Eight native cases, eight shape calls, 25 glyphs, 30 source UTF-16 slots and 64 actual paint profiles. Executes complete layout append, bounded SpanRun glyph/width/ink conversion and actual RectF empty/scale/union calls across three fills. | Layout origin, zero extra advance and preallocated entry/glyph storage are supplied. Paint profile setters do not establish shaping-face selection. Whole SpanRunFunctor, manager initialization, editing, entry classification, wrapping, fallback and document composition remain excluded. See [logical-entry evidence](../docs/reverse-engineering/text-layout-findings.md#captured-logical-entry-conversion-and-paint-profiles). |
 | [`table-text-shaping-entry-skia-metrics.json`](table-text-shaping-entry-skia-metrics.json) | Eleven native cases, 11 shape calls, 26 glyphs/UTF-16 advances, 11 scaler configurations, 50 FreeType loads and two fast advances around supplied raw paint size 1712.5. Actual flags and outline points distinguish Mono hinting from normal-target hinting. | Raw paint size is supplied independently of the informational source size; source-size multiplication is proven in the separate entry fixture. Whole SpanRunFunctor, typeface selection, raster output and arbitrary-font equivalence remain excluded. See [fractional hinting evidence](../docs/reverse-engineering/text-layout-findings.md#captured-fractional-paint-hinting). |
+| [`table-text-shaping-itemization.json`](table-text-shaping-itemization.json) | Forty-four native cases, 314 plain-Script queries, 102 shape calls, 252 glyphs and 264 UTF-16 advances. Actual script-loop results retain Common/Inherited absorption, finalized chunk ranges and five-scalar full-source contexts, including partial ranges and neutral missing-glyph output. | Supplied pinned Roboto, direction and source range; same native/host boundaries. Script_Extensions, full bidi resolution, malformed UTF-16, device fallback and version-independent Unicode properties remain excluded. See [itemization findings](../docs/reverse-engineering/text-layout-findings.md#captured-script-itemization). |
+| [`table-text-span-paint.json`](table-text-span-paint.json) | Ninety-three profiles through complete native family registration, Typeface creation/getters and span paint helper. Captures source size/style setters, threshold/tiny sizes and final Typeface weight/italic overriding the initial 400/false; allocation fills and independent drivers agree. | One supplied regular Roboto family and requested metadata; consumed getter bits exclude unwritten padding. Font-name/XML/system-default resolution, physical style-face selection, synthesis metrics, whole SpanRunFunctor, shaping, fallback and composition remain excluded. See [complete span paint findings](../docs/reverse-engineering/text-layout-findings.md#captured-complete-span-paint-helper). |
 | [`table-text-ownership.json`](table-text-ownership.json) | Native entry initialization, supplied shaped-glyph ownership production, placement and complete retained-run emission for 38 cases, 124 UTF-16 entries, 94 glyphs and 40 runs across three memory fills. Continuation slots preserve source ranges without splitting real glyph runs; owned zero-advance/zero-ink glyphs and first-entry versus later-union degenerate bounds are captured separately. | Shaped source-to-owner maps, advances, glyph metrics, spans, font interfaces and bidi order are supplied. Leading unowned entries can produce a separate empty run. Native shaping, font selection, wrapping, embedded objects and final painting are outside this capture. See [UTF-16 entry ownership](../docs/reverse-engineering/text-draw-identity-findings.md#utf-16-entry-ownership). |
 | [`table-text-owner-bases.json`](table-text-owner-bases.json) | Native constructors and supplied shaped-owner producer for nine cases, 70 UTF-16 entries, 18 owned slots and 21 glyph records across three memory fills. Captures nonzero request starts separately from source-vector base, including source-space classification after subtracting base three. | Source/ranges, relative owners, glyph IDs/positions/ink, advances and font wrappers are supplied. Minikin/HarfBuzz and chunk owner normalization, font selection, native bidi assignment, placement, emission and painting do not execute. See [nonzero owner bases](../docs/reverse-engineering/text-draw-identity-findings.md#captured-nonzero-owner-bases). |
 
@@ -352,6 +354,18 @@ cmp /tmp/table-text-entry-geometry.json conformance/table-text-entry-geometry.js
   scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
   crates/sdocx/assets/fonts/Roboto-Regular.ttf > /tmp/table-text-shaping-entry-skia-metrics.json
 cmp /tmp/table-text-shaping-entry-skia-metrics.json conformance/table-text-shaping-entry-skia-metrics.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-shaping-itemization scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf > /tmp/table-text-shaping-itemization.json
+cmp /tmp/table-text-shaping-itemization.json conformance/table-text-shaping-itemization.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-span-paint scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf > /tmp/table-text-span-paint.json
+cmp /tmp/table-text-span-paint.json conformance/table-text-span-paint.json
 ```
 
 The [shaping findings](../docs/reverse-engineering/text-layout-findings.md#captured-native-shaping)
@@ -370,9 +384,9 @@ the captured bits for 74 cases across six metric fixtures. The
 [Skia trace comparisons](../docs/reverse-engineering/text-layout-findings.md#captured-skia-residual-matrices-and-outline-metrics)
 also check fixed cached advances and 4420 original/transformed point coordinates.
 The [paint-sized producer comparisons](../docs/reverse-engineering/text-layout-findings.md#bounded-rust-paint-shaping)
-derive metrics in Rust and match all 456 native shape calls/1201 glyphs across
-seven fixtures. Public post-shaping layout also matches all 1201 glyphs,
-including contiguous Latin/Greek/Cyrillic chunks in both directions.
+derive metrics in Rust and match all 558 native shape calls/1453 glyphs across
+eight fixtures. Public post-shaping layout also matches all 1453 glyphs,
+including contiguous Latin/Greek/Cyrillic/Common chunks in both directions.
 The [entry conversion capture](../docs/reverse-engineering/text-layout-findings.md#captured-logical-entry-conversion-and-paint-profiles)
 separately executes native layout append and bounded SpanRun instruction
 windows for 25 glyphs, 30 source UTF-16 slots and 64 actual paint profiles.
@@ -383,6 +397,14 @@ inputs are distinct from the entry fixture's source-size conversion.
 The configured runtime hinter also matches 192 fixed-coordinate extrema from
 48 hinted native glyph loads before outward bbox rounding; this is separate
 from ordered point-stream equality.
+The [itemization capture](../docs/reverse-engineering/text-layout-findings.md#captured-script-itemization)
+records 44 cases and 314 actual plain-Script queries; `PaintItemization`
+matches chunk ranges and capped full-source context. Public whole-piece
+measurement matches generated shape requests and shared layout/entry geometry
+for all 151 cases across the eight suites. The
+[complete span paint capture](../docs/reverse-engineering/text-layout-findings.md#captured-complete-span-paint-helper)
+separately establishes 93 final paint profiles and the later Typeface style
+override; it does not execute shaping or physical style synthesis.
 These comparisons remain separate from production paragraph measurement and
 do not establish complete native document width/wrapping parity.
 

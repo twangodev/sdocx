@@ -198,9 +198,9 @@ composition or horizontal f32 ownership/adjacency.
   points. The [paint-sized shaping API](reverse-engineering/text-layout-findings.md#bounded-rust-paint-shaping)
   uses Rust-derived metrics and the native GPOS floor policy, preserving typed
   UTF-16 ownership and signed integer positions. Producer regressions match
-  all 1201 glyphs across 456 captured shape calls in 107 cases over seven
+  all 1453 glyphs across 558 captured shape calls in 151 cases over eight
   fixtures. Public `PaintShapedRun::layout` / `PaintLayout::from_runs` also
-  match all 1201 glyphs through full/owner positions, shifted ink and advances.
+  match all 1453 glyphs through full/owner positions, shifted ink and advances.
   Chunk stitching requires the same source, font, paint, scale and direction
   with adjacent source ranges. The [native logical-entry capture](reverse-engineering/text-layout-findings.md#captured-logical-entry-conversion-and-paint-profiles)
   separately executes layout append, entry conversion and actual paint-profile
@@ -208,13 +208,23 @@ composition or horizontal f32 ownership/adjacency.
   and 25 glyphs, including owner-position division, width division and native
   ink translation/scale/union. [Fractional hinting controls](reverse-engineering/text-layout-findings.md#captured-fractional-paint-hinting)
   separately pin the native Mono hint target and 192 fixed hinted extrema;
-  whole SpanRunFunctor, font-manager initialization and production paragraph
+  whole SpanRunFunctor, device font-manager resolution and production paragraph
   caches remain outside scope.
-  The producer accepts Latin, Greek and Cyrillic chunks; unsafe positioning,
-  contextual/chained/cursive GPOS and legacy kern/kerx/trak fonts report typed
-  unavailability before positioning.
+  [Script itemization](reverse-engineering/text-layout-findings.md#captured-script-itemization)
+  matches native plain-Script chunks and full-source context for 44 cases,
+  including Common/Inherited absorption. `PaintShaper::shape_text` creates
+  exact requests, native feature recipes, shared layout and entry geometry
+  through one immutable measured piece across all eight suites.
+  The producer accepts Latin, Greek, Cyrillic and Common chunks; unsafe
+  positioning, contextual/chained/cursive GPOS and legacy kern/kerx/trak fonts
+  report typed unavailability before positioning.
   [Captured GPOS and fused-skew traces](reverse-engineering/text-layout-findings.md#captured-horizontal-gpos-scaling-and-fused-skew)
   verify four horizontal pair-value updates and 12 local skew operations.
+  The [complete span helper](reverse-engineering/text-layout-findings.md#captured-complete-span-paint-helper)
+  captures 93 paint profiles, including final Typeface weight/italic overriding
+  the initial 400/false. `PaintSpanProfile` reproduces scalar source-style
+  fields and rejects fake-bold metric inputs; device font resolution and
+  physical style-face synthesis remain outside its contract.
   Production paragraph measurement still shapes in font units and projects
   them in f64. The bounded producer and exact arithmetic comparisons remain
   separate from document widths, wrapping, fallback selection and Chromium

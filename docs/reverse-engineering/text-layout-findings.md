@@ -1482,18 +1482,51 @@ This establishes the captured single-face chunk arithmetic, separately from
 whole-paragraph bidi resolution, font fallback, full `SpanRunFunctor`, entry
 conversion, wrapping and document composition.
 
+### Captured script itemization
+
+[`table-text-shaping-itemization.json`](../../conformance/table-text-shaping-itemization.json),
+SHA-256
+`eddd4290eb75ab124b82c07814d4354debe5af8a167cb0535a83541238dff710`,
+records 44 cases, 314 native script queries, 102 shape calls, 252 glyphs and
+264 UTF-16 advance entries. The
+[capture](../../conformance/native_table/text_shaping/itemization.rs) observes
+the actual layout-piece inline script loop: first query/result at
+`0x9bfd0` / `0x9bfd4`, subsequent query/result at `0x9c048` / `0x9c04c`,
+and finalized chunk range/tag at `0x9c0c4`.
+
+Native uses the bundled HarfBuzz plain Script property. Common/Inherited
+characters join a neighboring strong-script chunk; a Common/Inherited prefix
+adopts the following strong script, and an entirely Inherited chunk becomes
+Common. This is separate from Script_Extensions, bracket-pair resolution or
+paragraph bidi analysis. Captures cover punctuation/digits/spaces, combining
+extension marks, emoji/variation/joiner, script reentry and scalar-aligned
+partial ranges in both supplied directions. Each HarfBuzz buffer receives up
+to five preceding/following scalars from the complete source, including
+outside the requested range.
+
+The bounded [Rust `PaintItemization`](../../crates/sdocx/src/render/fonts/paint_itemization.rs)
+uses the private HarfRust script table and the captured chunk loop, with checked
+UTF-16 boundaries through `TextIndex`. Its immutable chunks retain absolute
+byte/scalar/UTF-16 ranges, scalar infos and full-source context. The
+[itemization regressions](../../crates/sdocx/src/render/fonts/paint_itemization/tests.rs)
+compare native script-query results and exact chunk/context inputs. The API
+can identify other script tags; paint shaping supports only the bounded tags
+below. Version-independent Unicode properties, malformed UTF-16 behavior,
+device fallback and general font coverage remain outside this evidence.
+Observed all-neutral missing glyphs remain captured outputs.
+
 ### Bounded Rust paint shaping
 
 [`ResolvedFace::paint_shaper`](../../crates/sdocx/src/render/fonts.rs) constructs
 a reusable [paint-sized shaper](../../crates/sdocx/src/render/fonts/paint_shaping.rs)
-with the metric provider above. It shapes caller-supplied Latin, Greek or
-Cyrillic chunks at the native signed 24.8 paint scale. Requests retain the full
-source, contiguous UTF-16 scalar starts, direction, script, language, buffer
-flags, cluster level, features and bounded preceding/following context.
-Results retain glyph IDs,
-UTF-16 owners, all four integer positioning fields, unsafe-break flags, raw
-backend metrics, source range and paint/scale metadata. Glyph metrics are
-cached for the reusable font/paint instance.
+with the metric provider above. It shapes caller-supplied Latin, Greek,
+Cyrillic or Common chunks at the native signed 24.8 paint scale. Requests
+retain the full source, contiguous UTF-16 scalar starts, direction, script,
+language, buffer flags, cluster level, features and bounded preceding/following
+context.
+Results retain glyph IDs, UTF-16 owners, all four integer positioning fields,
+unsafe-break flags, raw backend metrics, source range and paint/scale metadata.
+Glyph metrics are cached for the reusable font/paint instance.
 
 The SDK packages a private copy of HarfRust 0.13.3 with its upstream license
 and [source provenance](../../crates/sdocx/src/render/harfrust/PROVENANCE.md).
@@ -1509,8 +1542,8 @@ native 265416. These supplied-advance comparisons isolate font-table scaling;
 they do not prove the metric producer.
 
 The [producer regressions](../../crates/sdocx/src/render/fonts/paint_shaping/tests.rs)
-instead derive metrics from the Rust provider and match all 456 HarfBuzz calls
-and 1201 glyphs across seven fixtures: six shaping suites and the logical-entry
+instead derive metrics from the Rust provider and match all 558 HarfBuzz calls
+and 1453 glyphs across eight fixtures: seven shaping suites and the logical-entry
 capture below. Glyph IDs/UTF-16 owners, integer positions, raw advances and raw
 ink coordinates match exactly.
 
@@ -1520,9 +1553,9 @@ to immutable shaped results and supplied letter/word spacing. The result
 retains full and owner-relative f32 glyph positions, shifted ink, request-relative
 UTF-16 owners, per-UTF-16 advances and total advance in paint units, with
 read-only access to source/range and geometry. Producer-derived comparisons
-match all 1201 glyph placements across 107 supplied-Roboto cases, including
-mixed Latin/Greek/Cyrillic chunks. Supplied-integer comparisons remain
-independent arithmetic checks over the same runtime implementation.
+match all 1453 glyph placements across 151 supplied-Roboto cases, including
+mixed Latin/Greek/Cyrillic and ten Common chunks. Supplied-integer comparisons
+remain independent arithmetic checks over the same runtime implementation.
 Chunks require the same source contents, font SHA-256/face index, paint,
 scale and direction, with adjacent ranges in ascending source order.
 The shared f32 pen continues across calls; the owner origin resets per call,
@@ -1550,13 +1583,48 @@ anchors and cumulative coordinates in the selected paint scale. Unsafe
 arithmetic, other scripts, contextual/chained/cursive GPOS and fonts containing
 legacy `kern`, `kerx` or `trak` tables return `UnsupportedPositioningDomain`.
 Font-table inspection is bounded to 100000 records. The guard preserves all
-1201 captured producer glyphs; acceptance of another font remains distinct from
+1453 captured producer glyphs; acceptance of another font remains distinct from
 native metric or positioning parity for that font.
 
-This API does not select device fonts, itemize a paragraph, combine fallback-font
-chunks, wrap lines or populate the document's retained drawing caches.
+This script-level API does not select device fonts, resolve paragraph bidi/font
+runs, combine fallback-font chunks, wrap lines or populate the document's
+retained drawing caches.
 The production `ParagraphMeasurer`, Chromium text reproduction checks
 and document SVG/PDF transport remain separate boundaries.
+
+### Whole-piece Rust measurement
+
+[`PaintShaper::shape_text`](../../crates/sdocx/src/render/fonts/paint_shaping/pieces.rs)
+accepts a checked `PaintItemization`, supplied horizontal direction, finite
+letter spacing, zero word spacing and typed caller features. It creates each
+chunk's native-shaped input, then applies the shared pen/layout and logical
+entry conversion once. The immutable `PaintMeasuredPiece` retains source/range,
+paint/scale/direction, shaped runs with font identity, paint layout and entry
+geometry. Empty ranges and unsupported scripts/paint/font inputs return typed
+errors.
+
+`PaintFeatureProfile` preserves the actual feature recipe. Latin chunks always
+append `liga=0` / `clig=0`; other supported chunks append them only when the
+absolute f32 letter spacing, promoted to f64, exceeds 0.03. The native double
+constant at `0x26858` has bits `0x3f9eb851eb851eb8`. Caller feature records
+precede these forced disables. The factory supplies no language, zero buffer
+flags and monotone-grapheme cluster level, with each chunk's recorded infos
+and full-source context.
+
+The [whole-piece regressions](../../crates/sdocx/src/render/fonts/paint_shaping/pieces/tests.rs)
+match all 151 cases, 558 generated shape requests and 1453 glyphs across eight
+fixtures. They compare generated source infos, script/direction/language,
+buffer properties, contexts and ordered features before checking Rust-derived
+metrics, integer shaping and shared layout. The eight entry-capture cases
+also compare native logical-entry geometry. Ten Common chunks use the bounded
+default shaping path.
+
+Source limits remain 262144 bytes and 65536 UTF-16 slots, with at most 16384
+selected scalars. A whole piece allows at most 128 chunks, 254 caller features
+so the final feature list stays within 256, and 65536 aggregate output glyphs.
+Per-chunk engine and numeric positioning limits remain in effect. This factory
+is separate from font/style selection, paragraph bidi resolution, wrapping
+and production `ParagraphMeasurer` consumption.
 
 ### Captured logical-entry conversion and paint profiles
 
@@ -1617,6 +1685,49 @@ from reciprocal multiplication and detect missing or repeated owner translation
 in ink. This proves the captured geometry conversion; it does not populate the
 production paragraph's entry caches or implement native classification, fake
 bold, font selection or wrapping.
+
+### Captured complete span paint helper
+
+[`table-text-span-paint.json`](../../conformance/table-text-span-paint.json),
+SHA-256
+`1d0479915ad0d602da2245b5a3767c7cd308229e0232b9fc544949989c790fdb`,
+records 93 profiles through actual file-font/family construction, complete
+`RegisterFallback` (`0x89410`) / `RegisterDefault` (`0x89978`),
+`CreateFromFamilyName` (`0x8a278`), family/style getters (`0x89ef8` /
+`0x89f40`) and complete span paint helper `0x76ad4`. The
+[Rust capture](../../conformance/native_table/text_span_paint.rs) supplies one
+regular Roboto family, locale, requested typeface weight/italic, source f32
+size/foreground/flags and a null feature string. Allocation fills, repeated
+zero-fill and independent drivers produce identical bytes.
+
+The helper initially creates Minikin style weight 400 / italic false at
+`0x76c18`–`0x76c2c`. Its later instructions at `0x76d18`–`0x76d24` copy
+the Typeface style into the final paint: low 16 bits become weight and bit 16
+becomes italic. Inferred requests `(-1,-1)` resolve the supplied physical
+font's 400/false metadata; explicit `(700,true)` controls retain 700/true in
+the final paint. The getter's consumed low 17 bits are compared; its fourth
+storage byte is unwritten allocation padding.
+
+Source styles 0–15 plus 64/128/192 confirm mask 1 underline, mask 2 fake bold
+and mask 4 skew -0.25. Underline changes transient TextPaint state while
+leaving final MinikinPaint fields unchanged. Source f32 size multiplies by 100
+at `0x76b44`; threshold controls straddle paint size 2048, with tiny positive
+profiles at paint sizes below one. Those tiny profiles establish constructor
+fields, separately from the supported metric domain.
+
+[`PaintSpanProfile`](../../crates/sdocx/src/render/fonts/paint_span.rs) retains
+the scalar size/scale/skew, underline/fake-bold bits and packed paint flags.
+Its [regressions](../../crates/sdocx/src/render/fonts/paint_span/tests.rs)
+match the captured scalar values and check final Typeface-style transport.
+`metric_input` returns the captured Normal profile for supported sizes, with
+typed rejection of fake-bold metrics and out-of-domain paint sizes. It does
+not resolve a Typeface or claim that explicit bold/italic metadata selects a
+different physical font.
+
+The supplied regular font remains the physical source even in 700/italic
+metadata controls. Native font-name/XML/system-default resolution, physical
+style-face selection, synthesis metrics, whole `SpanRunFunctor`, shaping,
+fallback, wrapping and document composition remain outside this capture.
 
 ### Direction, break boundaries and tabs
 
@@ -2776,11 +2887,12 @@ reads literal mask `0x4` for base skew and `0x2` for fake bold
 the same span buffer without shifting flags: `GetSpan` at `0x78d28`,
 `AddStyleRun` at `0x78d30`–`0x78d48`, and the helper at `0x76ad4` through
 `0x76800`/`0x76880`. `InitMinikinFontStyle` initializes weight 400 and
-italic false (`0x76c18`–`0x76c2c`). The
-[captured paint profiles](#captured-logical-entry-conversion-and-paint-profiles)
-confirm these setter effects. Full runtime face selection and fake-bold metric
-effects remain unverified. Rust paragraph measurement retains its existing
-shaping advances, offsets and face-selection policy for this branch.
+italic false (`0x76c18`–`0x76c2c`), then `0x76d18`–`0x76d24` copies the
+final Typeface weight/italic metadata. The
+[complete helper capture](#captured-complete-span-paint-helper) confirms this
+override and the source-style setter effects. Device face selection and
+fake-bold metric effects remain unverified. Rust paragraph measurement retains
+its existing shaping advances, offsets and face-selection policy for this branch.
 
 In cached Samsung Notes 4.4.45.37 ARM64 `libSPenPdf.so`,
 `PdfiumTextHandler::DrawText` at `0xa2230` maps logical bold `0x1` to fill plus
