@@ -37,6 +37,8 @@ Planning, task lists and development progress are kept outside these documents.
   fixture 02 measurements, dot-background spacing and saved shape paths.
 - [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
   bounded rich-text decoding, diagnostics, regressions and rendering limits.
+- [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
+  identity, font metadata, UTF-16 glyph ownership and Chromium text clip behavior.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
   references, authoritative media bindings and image regression coverage.
 - [`shape-line-findings.md`](shape-line-findings.md) — native geometry and effects,

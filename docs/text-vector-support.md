@@ -93,8 +93,12 @@ plain Arabic spans.
   real nested objects and Rust per-run clipping remain unverified/unimplemented.
 - Rust measured runs do not retain the native raw Span equality fields or font
   bitmap/language grouping gates. Their f64 cluster positions also differ from
-  native f32 entry adjacency. These inputs and joined SVG shaping boundaries
-  limit native per-run clip parity, independently of PDF clip transport.
+  native f32 entry adjacency. [Draw identity findings](reverse-engineering/text-draw-identity-findings.md)
+  establish the native producers with supplied inputs and a separate Chromium
+  clip regression. Chromium preserves joined shaping with full span clips, but
+  clips follow glyph ownership: clipping the first character of an `ffi`
+  ligature hides the entire glyph. Native per-run clip selection remains
+  unimplemented, independently of the verified PDF clip transport.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native font-selection and measurement-style anomalies, variable-font
