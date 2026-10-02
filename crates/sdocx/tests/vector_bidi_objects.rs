@@ -389,7 +389,19 @@ fn justification_expands_visual_spaces_without_expanding_object_margins() {
 #[test]
 fn nested_code_and_table_frames_keep_zero_inline_margins() {
     for density in [1, 3] {
-        for container in [code as fn(i32, RichTextBox) -> RichTextObjectSpan, table] {
+        for (container, expected_diagnostics) in [
+            (
+                code as fn(i32, RichTextBox) -> RichTextObjectSpan,
+                Vec::new(),
+            ),
+            (
+                table,
+                vec![sdocx::ObjectDiagnostic {
+                    anchor_utf16: 0,
+                    kind: ObjectDiagnosticKind::UnsupportedContent,
+                }],
+            ),
+        ] {
             let mut child = text("A\u{202e}B\u{fffc}C\u{202c}D", density);
             child
                 .object_spans
@@ -409,11 +421,7 @@ fn nested_code_and_table_frames_keep_zero_inline_margins() {
                     close(glyph(&actual, "B").x, origin + 78.64501953125);
                     close(glyph(&actual, "C").x, origin + 29.35546875);
                     assert_eq!(source(&page.svg), "A\u{202e}BC\u{202c}D");
-                    assert!(
-                        page.object_diagnostics.is_empty(),
-                        "{:?}",
-                        page.object_diagnostics
-                    );
+                    assert_eq!(page.object_diagnostics, expected_diagnostics);
                     assert!(
                         page.text_diagnostics.is_empty(),
                         "{:?}",

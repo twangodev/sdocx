@@ -243,25 +243,21 @@ fn offset_rounded_rect(
 }
 
 fn preparation_grid(table: &RichTextTable) -> Option<TableGrid> {
-    if table
-        .rotation_degrees
-        .is_some_and(|rotation| rotation != 0.0)
-    {
-        return None;
-    }
     let topology = TableGrid::new(table).ok()?;
+    supports_prepared_content(table).then_some(topology)
+}
+
+pub(super) fn supports_prepared_content(table: &RichTextTable) -> bool {
     table
-        .rows
-        .iter()
-        .flat_map(|row| &row.cells)
-        .all(|cell| {
+        .rotation_degrees
+        .is_none_or(|rotation| rotation == 0.0)
+        && table.rows.iter().flat_map(|row| &row.cells).all(|cell| {
             cell.content.object_spans.is_empty()
                 && cell
                     .content
                     .rotation_degrees
                     .is_none_or(|rotation| rotation == 0.0)
         })
-        .then_some(topology)
 }
 
 fn valid_grid_geometry(table: &RichTextTable, candidate_top: f64) -> bool {

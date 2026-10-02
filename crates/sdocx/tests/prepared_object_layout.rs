@@ -306,13 +306,17 @@ fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() 
                 for page in modes(&doc) {
                     assert_eq!(
                         page.object_diagnostics,
-                        if matches!(context, Context::Flow) {
-                            vec![sdocx::ObjectDiagnostic {
+                        match context {
+                            Context::Flow => vec![sdocx::ObjectDiagnostic {
                                 anchor_utf16: 0,
                                 kind: sdocx::ObjectDiagnosticKind::UnsupportedWidthLimitContext,
-                            }]
-                        } else {
-                            vec![]
+                            }],
+                            #[cfg(feature = "serde")]
+                            Context::Table => vec![sdocx::ObjectDiagnostic {
+                                anchor_utf16: 0,
+                                kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+                            }],
+                            _ => vec![],
                         }
                     );
                     let actual = geometry(&page.svg);

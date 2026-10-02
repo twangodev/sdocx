@@ -295,6 +295,178 @@ fn saved_table_fallbacks_preserve_source_and_report_unsupported_preparation() {
     }
 }
 
+#[test]
+fn dense_table_nested_content_fallback_is_diagnosed_at_the_outer_anchor() {
+    use base64::Engine;
+
+    for image in [false, true] {
+        let mut grid = table(&[&["\u{fffc}A", "B"]]);
+        grid.bbox = bounds(0.0, 0.0, 400.0, 180.0);
+        grid.column_widths = vec![200.0; 2];
+        grid.rows[0].height = 180.0;
+        for (index, cell) in grid.rows[0].cells.iter_mut().enumerate() {
+            cell.bbox = bounds(index as f64 * 200.0, 0.0, 200.0, 180.0);
+            cell.content.paragraphs.clear();
+            cell.content.margins = None;
+        }
+        let nested = if image {
+            RichTextObjectContent::Image(Box::new(
+                serde_json::from_value(serde_json::json!({
+                    "bbox": bounds(0.0, 0.0, 30.0, 40.0), "rotation_degrees": null,
+                    "media_id": null, "media_index": 0, "crop_rect": null,
+                    "original_bbox": null, "border_media_id": null, "original_media_id": null,
+                }))
+                .unwrap(),
+            ))
+        } else {
+            RichTextObjectContent::CodeBlock(Box::new(sdocx::RichTextCodeBlock {
+                bbox: bounds(0.0, 0.0, 140.0, 80.0),
+                rotation_degrees: None,
+                title: None,
+                body: Some(text("CODE")),
+            }))
+        };
+        grid.rows[0].cells[0]
+            .content
+            .object_spans
+            .push(RichTextObjectSpan {
+                object_type: if image {
+                    ObjectType::Image
+                } else {
+                    ObjectType::CodeBlock
+                },
+                object_data: Vec::new(),
+                content: Some(nested),
+                text_index_utf16: 0,
+                layout_option: ObjectSpanLayoutOption::Inline,
+                layout_constraint: ObjectSpanLayoutConstraint::Normal,
+            });
+        let mut doc = document(grid, ObjectSpanLayoutConstraint::OverPages);
+        let sdocx::PageObjectContent::Element(PageElement::TextBox(parent)) =
+            &mut doc.pages[0].objects[0].content
+        else {
+            panic!()
+        };
+        parent.text = "Head \u{fffc}".into();
+        parent.object_spans[0].text_index_utf16 = 5;
+        if image {
+            doc.metadata.media_assets.push(sdocx::MediaAsset {
+                name: "media/nested.png".into(),
+                archive_id: None,
+                mime_type: "image/png".into(),
+                data: base64::engine::general_purpose::STANDARD.decode(
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+                ).unwrap(),
+            });
+        }
+        let original = serde_json::to_value(&doc).unwrap();
+        let normal = render(&doc, false);
+        let replay = render(&doc, true);
+        assert_eq!(normal, replay);
+        let source: String = lines(&normal.svg).into_iter().map(|line| line.0).collect();
+        assert!(source.contains("Head"), "{source:?}");
+        assert!(source.contains('A') && source.contains('B'), "{source:?}");
+        if !image {
+            assert!(source.contains("CODE"), "{source:?}");
+        }
+        let xml = roxmltree::Document::parse(&normal.svg).unwrap();
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.has_tag_name("image"))
+                .count(),
+            usize::from(image)
+        );
+        assert!(
+            !xml.descendants()
+                .any(|node| node.has_tag_name("foreignObject"))
+        );
+        assert_eq!(
+            normal.object_diagnostics,
+            [sdocx::ObjectDiagnostic {
+                anchor_utf16: 5,
+                kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+            }]
+        );
+        #[cfg(feature = "pdf")]
+        if !image {
+            let bytes = sdocx::render_svg_pages_pdf(&[normal], &Default::default()).unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let selectable = pdf.extract_text(&[1]).unwrap();
+            assert_eq!(
+                selectable.split_whitespace().collect::<String>(),
+                "HeadACODEB"
+            );
+            assert!(pdf.objects.values().all(|object| {
+                object.as_stream().map_or(true, |stream| {
+                    !stream
+                        .dict
+                        .get(b"Subtype")
+                        .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+                })
+            }));
+        }
+        assert_eq!(serde_json::to_value(&doc).unwrap(), original);
+    }
+}
+
+#[test]
+fn hidden_rotated_table_fallback_does_not_emit_visible_diagnostics() {
+    let mut grid = table(&[&["A", "B"]]);
+    grid.rotation_degrees = Some(15.0);
+    let mut doc = paginated_grid_document(grid, ObjectSpanLayoutConstraint::OverPages);
+    doc.metadata.note_text.as_mut().unwrap().margins = Some([0.0, 250.0, 0.0, 0.0]);
+    let layout = sdocx::layout_document(&doc);
+    let fonts = sdocx::fonts::FontBook::default();
+    for replay in [false, true] {
+        for index in 0..2 {
+            let page = render_capture_page(&doc, &layout, index, replay, &fonts);
+            assert!(
+                page.object_diagnostics.is_empty(),
+                "{:?}",
+                page.object_diagnostics
+            );
+            assert!(lines(&page.svg).is_empty());
+            let xml = roxmltree::Document::parse(&page.svg).unwrap();
+            assert!(
+                !xml.descendants()
+                    .any(|node| node.attribute("data-sdocx-object") == Some("table"))
+            );
+        }
+    }
+}
+
+#[test]
+fn dense_table_rotation_fallback_is_diagnosed_without_rejecting_zero_rotation() {
+    for table_rotation in [false, true] {
+        for rotation in [None, Some(0.0), Some(15.0)] {
+            let mut grid = table(&[&["A", "B"]]);
+            if table_rotation {
+                grid.rotation_degrees = rotation;
+            } else {
+                grid.rows[0].cells[0].content.rotation_degrees = rotation;
+            }
+            let doc = document(grid, ObjectSpanLayoutConstraint::OverPages);
+            for replay in [false, true] {
+                let page = render(&doc, replay);
+                let source: String = lines(&page.svg).into_iter().map(|line| line.0).collect();
+                assert_eq!(source, "AB");
+                let expected = if rotation == Some(15.0) {
+                    vec![sdocx::ObjectDiagnostic {
+                        anchor_utf16: 0,
+                        kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+                    }]
+                } else {
+                    Vec::new()
+                };
+                assert_eq!(
+                    page.object_diagnostics, expected,
+                    "table rotation {table_rotation}, {rotation:?}"
+                );
+            }
+        }
+    }
+}
+
 #[cfg(feature = "pdf")]
 #[test]
 fn regenerated_table_text_stays_selectable_and_vector_in_pdf() {

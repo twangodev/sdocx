@@ -2100,9 +2100,10 @@ fn render_table(
         .map_or(table.bbox, |table| table.measured_bbox);
     let grid = table::TableGrid::new(table);
     if prepared.is_none()
-        && grid
+        && (grid
             .as_ref()
             .map_or(true, |grid| grid.requires_merged_layout())
+            || !table::supports_prepared_content(table))
     {
         renderer.report_object_issues(&[ObjectDiagnostic {
             anchor_utf16,

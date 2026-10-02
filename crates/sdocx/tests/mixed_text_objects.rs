@@ -496,10 +496,19 @@ fn shape_and_table_text_keep_mixed_source_and_images() {
         RichTextObjectContent::Table(Box::new(table)),
         ObjectType::Table,
     );
-    for element in [PageElement::Shape(shape), PageElement::TextBox(table)] {
+    for (element, expected_diagnostics) in [
+        (PageElement::Shape(shape), Vec::new()),
+        (
+            PageElement::TextBox(table),
+            vec![sdocx::ObjectDiagnostic {
+                anchor_utf16: 0,
+                kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
+            }],
+        ),
+    ] {
         for page in modes(&document(element)) {
             assert_eq!(selectable(&page.svg), "AB");
-            assert!(page.object_diagnostics.is_empty());
+            assert_eq!(page.object_diagnostics, expected_diagnostics);
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
             assert_eq!(
                 xml.descendants()
