@@ -14,6 +14,15 @@ pub use paint_metrics::{
     PaintMetrics,
 };
 
+mod paint_font_name;
+pub use paint_font_name::{
+    NativeFontNameConfig, NativeFontNameError, NativeFontNameRequest, NativeFontNameResolution,
+    NativeFontStyle,
+};
+
+mod paint_context;
+pub use paint_context::{PaintContextError, PaintContextWindow, PaintContextWindows};
+
 mod paint_itemization;
 mod paint_layout;
 pub use paint_itemization::{PaintItemization, PaintItemizationError, PaintScriptChunk};
@@ -48,6 +57,7 @@ mod native_scaling_tests;
 pub struct FontBook {
     database: Arc<Database>,
     faces: Arc<Mutex<HashMap<ID, ResolvedFace>>>,
+    native_names: Option<Arc<NativeFontNameConfig>>,
 }
 
 #[derive(Clone)]
@@ -155,7 +165,17 @@ impl FontBook {
         Self {
             database,
             faces: Arc::new(Mutex::new(HashMap::new())),
+            native_names: None,
         }
+    }
+
+    pub fn with_native_name_config(mut self, configuration: NativeFontNameConfig) -> Self {
+        self.native_names = Some(Arc::new(configuration));
+        self
+    }
+
+    pub fn native_name_config(&self) -> Option<&NativeFontNameConfig> {
+        self.native_names.as_deref()
     }
 
     pub fn database(&self) -> Arc<Database> {
@@ -278,6 +298,37 @@ impl FontBook {
         self.resolve_id(id, family)
     }
 
+    fn resolve_native_style(
+        &self,
+        family: &str,
+        style: NativeFontStyle,
+    ) -> Result<ResolvedFace, FontError> {
+        let query_family = match family {
+            "sans-serif" => Family::SansSerif,
+            "monospace" => Family::Monospace,
+            "serif" => Family::Serif,
+            name => Family::Name(name),
+        };
+        let id = self
+            .database
+            .query(&Query {
+                families: &[query_family],
+                weight: Weight(style.weight()),
+                style: if style.italic() {
+                    Style::Italic
+                } else {
+                    Style::Normal
+                },
+                ..Query::default()
+            })
+            .ok_or_else(|| FontError::MissingFont {
+                family: family.to_owned(),
+                bold: style.weight() >= 600,
+                italic: style.italic(),
+            })?;
+        self.resolve_id(id, family)
+    }
+
     fn resolve_id(&self, id: ID, family: &str) -> Result<ResolvedFace, FontError> {
         let mut faces = self.faces.lock().expect("font cache lock");
         if let Some(face) = faces.get(&id) {
@@ -362,7 +413,19 @@ impl Default for FontBook {
                 }
                 database.set_sans_serif_family("Roboto");
                 database.set_monospace_family("Roboto Mono");
-                Self::new(Arc::new(database))
+                let mut native_names = NativeFontNameConfig::new("sans-serif")
+                    .unwrap()
+                    .with_family_alias("sans-serif", "Roboto")
+                    .unwrap();
+                for filename in [
+                    "Roboto-Regular.ttf",
+                    "Roboto-Bold.ttf",
+                    "Roboto-Italic.ttf",
+                    "Roboto-BoldItalic.ttf",
+                ] {
+                    native_names = native_names.with_font_file(filename, "sans-serif").unwrap();
+                }
+                Self::new(Arc::new(database)).with_native_name_config(native_names)
             })
             .clone()
     }
