@@ -214,7 +214,9 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, data: *mut c
     }
     let state = unsafe { &mut *data.cast::<Observation>() };
     let result = match name.as_str() {
-        "malloc" | "_Znwm" | "_Znam" => state.allocate(engine, first as usize, false),
+        "malloc" | "_Znwm" | "_Znam" | "_ZnwmRKSt9nothrow_t" | "_ZnamRKSt9nothrow_t" => {
+            state.allocate(engine, first as usize, false)
+        }
         "calloc" => state.allocate(engine, first.checked_mul(second).unwrap() as usize, true),
         "realloc" => {
             let old = state.allocations.get(&first).copied().unwrap_or(0);

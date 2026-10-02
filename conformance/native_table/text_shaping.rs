@@ -6,6 +6,9 @@ mod skia_metrics;
 #[path = "text_shaping/entry_skia_metrics.rs"]
 mod entry_skia_metrics;
 
+#[path = "text_shaping/itemization.rs"]
+mod itemization;
+
 #[path = "text_entry_geometry.rs"]
 mod text_entry_geometry;
 
@@ -17,6 +20,7 @@ enum CaptureTrace {
     EntrySkiaMetrics,
     EntryGeometry,
     MixedScripts,
+    Itemization,
 }
 use text_font_source::{NativeFontEnvironment, TEXT, bytes, json_string};
 
@@ -33,7 +37,7 @@ const UTF16: u64 = MODEL + 0x18a00;
 const VIEW: u64 = MODEL + 0x18b00;
 const RANGE: u64 = MODEL + 0x18b20;
 const PIECE: u64 = MODEL + 0x18c00;
-const INITIALIZERS: [u64; 9] = [
+pub(super) const INITIALIZERS: [u64; 9] = [
     0x90e28, 0x90fa4, 0x961bc, 0x9a9b8, 0x9ae28, 0x9da58, 0x9de0c, 0x9f190, 0x9f30c,
 ];
 
@@ -56,7 +60,7 @@ unsafe extern "C" {
     fn ceilf(value: f32) -> f32;
 }
 
-struct HostIcu {
+pub(super) struct HostIcu {
     library: *mut c_void,
     addresses: BTreeMap<String, u64>,
     names: BTreeMap<u64, String>,
@@ -67,7 +71,7 @@ struct HostIcu {
     comparator: ComparatorEngine,
 }
 impl HostIcu {
-    fn new(machine: &Machine) -> Box<Self> {
+    pub(super) fn new(machine: &Machine) -> Box<Self> {
         let path = CString::new("/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1").unwrap();
         let library = unsafe { dlopen(path.as_ptr(), 2) };
         assert!(!library.is_null());
@@ -203,7 +207,12 @@ fn sort_guest(engine: Engine, args: [u64; 8], comparison_engine: Engine) -> u64 
     0
 }
 
-fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Option<u64> {
+pub(super) fn host_import(
+    engine: Engine,
+    name: &str,
+    args: [u64; 8],
+    data: *mut c_void,
+) -> Option<u64> {
     let first = args[0];
     match name {
         "_ZNSt6__ndk111__call_onceERVmPvPFvS2_E" => {
@@ -675,6 +684,7 @@ impl GposTrace {
 }
 #[derive(Default)]
 struct ShapeTrace {
+    itemization: Option<itemization::ItemizationTrace>,
     skia: Option<skia_metrics::SkiaTrace>,
     gpos: Option<GposTrace>,
     calls: Vec<String>,
@@ -844,13 +854,19 @@ struct TraceRecorder {
     state: Box<ShapeTrace>,
 }
 impl TraceRecorder {
-    fn new(machine: &Machine, gpos_font_range: Option<GposFontRange>, trace_skia: bool) -> Self {
+    fn new(
+        machine: &Machine,
+        gpos_font_range: Option<GposFontRange>,
+        trace_skia: bool,
+        trace_itemization: bool,
+    ) -> Self {
         let mut recorder = Self {
             engine: machine.engine,
             hooks: Vec::new(),
             state: Box::new(ShapeTrace {
                 gpos: gpos_font_range.map(GposTrace::new),
                 skia: trace_skia.then(skia_metrics::SkiaTrace::default),
+                itemization: trace_itemization.then(itemization::ItemizationTrace::default),
                 ..ShapeTrace::default()
             }),
         };
@@ -879,6 +895,9 @@ impl TraceRecorder {
         if trace_skia {
             skia_metrics::add_hooks(&mut recorder);
         }
+        if trace_itemization {
+            itemization::add_hooks(&mut recorder);
+        }
         recorder
     }
 }
@@ -890,7 +909,7 @@ impl Drop for TraceRecorder {
     }
 }
 
-fn vector(engine: Engine, address: u64, storage: u64, length: usize) {
+pub(super) fn vector(engine: Engine, address: u64, storage: u64, length: usize) {
     for (offset, value) in [
         (0, storage),
         (8, storage + length as u64),
@@ -940,9 +959,11 @@ impl Case {
         host.reset();
         let gpos_font_range = trace.state.gpos.as_ref().map(|gpos| gpos.font_range);
         let trace_skia = trace.state.skia.is_some();
+        let trace_itemization = trace.state.itemization.is_some();
         *trace.state = ShapeTrace {
             skia: trace_skia.then(skia_metrics::SkiaTrace::default),
             gpos: gpos_font_range.map(GposTrace::new),
+            itemization: trace_itemization.then(itemization::ItemizationTrace::default),
             ..ShapeTrace::default()
         };
         environment.reset(machine, fill, 0);
@@ -1141,10 +1162,14 @@ impl Case {
                 text_entry_geometry::capture(machine, self, &source, range),
             ));
         }
+        if let Some(itemization) = &trace.state.itemization {
+            output.pop();
+            output.push_str(&format!(",\"script_itemization\":{}}}", itemization.json()));
+        }
         output
     }
 }
-fn pinned_host(path: &str, expected: &str) {
+pub(super) fn pinned_host(path: &str, expected: &str) {
     let digest = Command::new("sha256sum").arg(path).output().unwrap();
     assert!(digest.status.success());
     assert_eq!(
@@ -1428,6 +1453,24 @@ pub(super) fn capture_mixed_scripts(
     );
 }
 
+pub(super) fn capture_itemization(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        itemization::cases(),
+        CaptureTrace::Itemization,
+    );
+}
+
 pub(super) fn capture_entry_geometry(
     machine: &mut Machine,
     base: &Path,
@@ -1483,6 +1526,7 @@ fn capture_cases(
         machine,
         trace_gpos.then(|| GposFontRange::from_font(font)),
         trace_skia,
+        matches!(trace_kind, CaptureTrace::Itemization),
     );
     let mut host = HostIcu::new(machine);
     let icu_version = host.version("u_getVersion");
@@ -1548,6 +1592,9 @@ fn capture_cases(
     if matches!(trace_kind, CaptureTrace::EntrySkiaMetrics) {
         output.pop();
         output.push_str(",\"entry_skia_metric_capture_boundary\":\"Actual native Skia scaler and bundled FreeType execute supplied Roboto To and combining-mark controls around paint1712.5. Normal packed Minikin flags0x20000 produce actual FT_LOAD flags0x120208, including FT_LOAD_TARGET_MONO; this is distinct from Normal paint profile naming. One unhinted packedflags0 case is a separate control. Actual backend size, residual/fixed matrices, ppem, scale and hinted outline points before/after outer transform are recorded through existing Skia metric hooks. Paint size is explicitly supplied as exact recorded f32 P, independently of the informational source-size field; source-size*100 executes only in the separate entry-geometry fixture. Direction and source are also caller inputs. Whole SpanRunFunctor, typeface selection, full interpreter tracing, raster pixels and general other-font equivalence are not established.\"}");
+    }
+    if matches!(trace_kind, CaptureTrace::Itemization) {
+        itemization::append_metadata(&mut output);
     }
     println!("{output}");
 }
