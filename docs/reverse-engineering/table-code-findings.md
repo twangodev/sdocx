@@ -1192,9 +1192,10 @@ rectangle producers, final PDF paths and device pixels are outside this capture.
 
 Text `getDrawnTextRun` offsets and unions retained entry rectangles
 (`0x67274`–`0x672ec`); `appendTextBlock` stores the second rectangle argument
-at `DrawnText` offsets 104–116 (`0x680e0`–`0x6810c`). These producer instructions
-have static evidence, but the capture supplies their output. The SDK's table-wide
-text clip does not reproduce the conditional native contract.
+at `DrawnText` offsets 104–116 (`0x680e0`–`0x6810c`). The
+[text-bound capture](#retained-text-entry-and-run-bounds) executes these producer
+windows separately from the Composer clip capture. The SDK's table-wide text
+clip does not reproduce the conditional native contract.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -1202,6 +1203,58 @@ text clip does not reproduce the conditional native contract.
   scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenPdf.so > /tmp/table-text-clipping.json
 cmp /tmp/table-text-clipping.json conformance/table-text-clipping.json
+```
+
+### Retained text entry and run bounds
+
+Text `ParagraphLayout::SetLayout`, `0x6b4a4`, adds the line's adjusted top
+margin to the supplied cursor before calling `GetBaseline`, `0x6cb0c`.
+For ordinary entries it writes rectangle member 16 as
+`[x, cursor_before_baseline, x + advance, cursor_after_baseline]`
+(`0x6b6e8`–`0x6b708`). That vertical extent includes line spacing and the
+object-metric epsilon. Member 32 instead retains the glyph ink rectangle,
+translated from its old entry position to the new X/baseline
+(`0x6b70c`–`0x6b734`). These are separate rectangles.
+
+`getDrawnTextRun` offsets both rectangles and maintains separate unions:
+member 16 supplies the union at stack offset 560; member 32 supplies the union
+at 576. `appendTextBlock` stores them at `DrawnText` members 104 and 88,
+respectively. Thus the table writer's overflow check uses layout height,
+independently of glyph ink. With font/base height 20, multiplier `1.35f` and
+cursor 0, the captured entry spans Y=0–27 with baseline 20; its supplied ink
+rectangle relocates to Y=5–23.
+
+`inSameDraw`, `0x65998`, requires nonnull Font wrappers, matching direction,
+exact f32 horizontal adjacency, selected span fields and native font IDs.
+Kind 5 prevents merging. LTR compares previous X plus advance with current X;
+RTL compares current X plus advance with previous X. One representable step
+to either side of adjacency fails. A changed baseline alone passes this
+predicate. Distinct wrappers with null FontImpl pointers both yield native
+ID -1 and pass; this does not establish equality for real resolved faces.
+Captured span mutations at members 0, 4, 8, 12, 16, 24, 32, 36, 40 and 66
+prevent merging; mutations at 44, 52 and 60 do not affect this predicate.
+
+[`table-text-bounds.json`](../../conformance/table-text-bounds.json), SHA-256
+`a3fd5eba3513c55bfbe3e3e14fe069592a384989700079ae0537ddbd1fbe1d8c`,
+contains 162 placement cases, 810 entries, 378 run unions and 22 isolated
+grouping probes. Native `SetLayout`/`GetBaseline`, alignment, spacing,
+`inSameDraw`/span comparison and rectangle union/storage instructions execute
+unchanged. Every output repeats with memory fills `0x00`, `0xa5` and `0xff`.
+The Rust line-placement regression matches native tops, bottoms, baselines
+and post-cursors within 0.0001 units; it does not assert f32 bit identity.
+
+Entry advances/ink bounds, logical maps, block metric flags, line metrics,
+spacing, offsets and ordinary span inputs are supplied. Memory copy is a host
+interface. Wrap selection, shaping, actual embedded objects, bullets,
+justification, emoji, real-font gates and the complete `getDrawnTextRun` loop
+are outside this capture. Full native run emission, Rust per-run clipping and
+device appearance remain unverified.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-bounds scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-text-bounds.json
+cmp /tmp/table-text-bounds.json conformance/table-text-bounds.json
 ```
 
 ### Cell background selection

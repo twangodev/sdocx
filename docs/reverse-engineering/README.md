@@ -219,8 +219,8 @@ Planning, task lists and development progress are kept outside these documents.
   visibility; captured borders, fills, column minima, saved height limits,
   cold/warm measurement, bounds, split caches, row-bottom compression, warm-row
   control, cell text dimensions, public layout lifecycle, visible rectangles and
-  canvas clip arguments, PDF artwork crops, conditional text clips and vector
-  evidence limits.
+  canvas clip arguments, PDF artwork crops, conditional text clips, retained
+  text entry/run bounds and vector evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,
