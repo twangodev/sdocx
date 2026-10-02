@@ -7,11 +7,11 @@ use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
 
 use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind, ObjectPageOwnership};
 use super::{
-    PageExclusions, TextContext, TextSettings, TextStyle, VerticalExclusion, WrappedLine,
-    explicit_line_height, finite_native_geometry,
+    PageExclusions, StyledText, TextContext, TextSettings, TextStyle, VerticalExclusion,
+    WrappedLine, explicit_line_height, finite_native_geometry,
 };
 use crate::render::vector::{EmbeddedFont, Scene};
-use crate::{LineSpacingType, ParagraphLineSpacing};
+use crate::{LineSpacingType, ParagraphLineSpacing, RichTextSpanType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -27,6 +27,9 @@ pub enum TextDiagnosticKind {
     UnsupportedGlyphPositioning,
     /// Retained text measurements do not provide the highlighted range's boundaries.
     UnsupportedBackgroundPositioning,
+    UnsupportedCompositionStyle,
+    UnsupportedSuggestionStyle,
+    UnsupportedCorrectionStyle,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -457,6 +460,43 @@ impl<'a> TextRenderer<'a> {
         }
     }
 
+    pub fn report_span_issues(&self, styled: &StyledText<'_>) {
+        for (range, span) in &styled.spans {
+            let kind = match span.kind {
+                RichTextSpanType::ComposingBackgroundColor
+                | RichTextSpanType::Composing
+                | RichTextSpanType::ComposingTag => TextDiagnosticKind::UnsupportedCompositionStyle,
+                RichTextSpanType::Suggestion => TextDiagnosticKind::UnsupportedSuggestionStyle,
+                RichTextSpanType::SpellCorrection => TextDiagnosticKind::UnsupportedCorrectionStyle,
+                _ => continue,
+            };
+            let codepoints = styled
+                .index
+                .slice(range.clone())
+                .into_iter()
+                .flat_map(str::chars)
+                .filter(|character| !matches!(character, '\r' | '\n'))
+                .map(u32::from)
+                .collect::<Vec<_>>();
+            if codepoints.is_empty() {
+                continue;
+            }
+            let style = styled.style_at(range.start, super::RenderTheme::for_canvas(false), None);
+            self.record_owned(SourceTextDiagnostic {
+                owner: if self.source_owner_locked {
+                    self.source_owner.clone()
+                } else {
+                    Some(SourceOwner::Text(range.clone()))
+                },
+                diagnostic: TextDiagnostic {
+                    kind,
+                    family: style.family.unwrap_or_else(|| self.default_family.into()),
+                    codepoints,
+                },
+            });
+        }
+    }
+
     pub fn invalid_geometry(&self, family: &str) {
         self.record(TextDiagnostic {
             kind: TextDiagnosticKind::InvalidGeometry,
@@ -764,6 +804,110 @@ mod tests {
         assert_eq!(second_page.diagnostics()[0].codepoints, [0x1f600]);
         assert_eq!(second_page.scoped_diagnostics(), owned[1..]);
         assert_eq!(planner.scoped_diagnostics(), owned);
+    }
+
+    fn unsupported_span_text() -> crate::RichTextBox {
+        use RichTextSpanType::{
+            Bold, Composing, ComposingBackgroundColor, ComposingTag, ForegroundColor,
+            SpellCorrection, Suggestion,
+        };
+        crate::RichTextBox {
+            text_area_type: None,
+            bbox: Default::default(),
+            rotation_degrees: None,
+            text: "A😀B\r\nC".into(),
+            color: None,
+            highlight_color: None,
+            underline: false,
+            font_size: None,
+            runs: Vec::new(),
+            spans: [
+                (ComposingBackgroundColor, 0, 1),
+                (Composing, 1, 3),
+                (ComposingTag, 3, 4),
+                (Suggestion, 0, 1),
+                (Suggestion, 6, 7),
+                (SpellCorrection, 3, 4),
+                (Bold, 0, 4),
+                (ForegroundColor, 0, 4),
+                (Suggestion, 6, 6),
+                (Suggestion, 7, 8),
+                (Suggestion, 4, 3),
+                (Suggestion, 2, 3),
+                (Composing, 4, 6),
+            ]
+            .into_iter()
+            .map(|(kind, start_utf16, end_utf16)| crate::RichTextSpan {
+                kind,
+                start_utf16,
+                end_utf16,
+                interval_type: crate::SpanIntervalType::ClosedOpen,
+                payload: vec![1, 0, 0, 255],
+            })
+            .collect(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        }
+    }
+
+    #[test]
+    fn unsupported_span_diagnostics_preserve_sources_before_page_deduplication() {
+        let fonts = FontBook::default();
+        let planner = renderer(&fonts);
+        let content = unsupported_span_text();
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        planner.report_span_issues(&styled);
+        let owned = planner.scoped_diagnostics();
+        planner.report_span_issues(&styled);
+        assert_eq!(planner.scoped_diagnostics(), owned);
+        assert_eq!(owned.len(), 6);
+        assert_eq!(owned[1].owner, Some(SourceOwner::Text(1..2)));
+        assert_eq!(owned[1].diagnostic.codepoints, [0x1f600]);
+        assert_eq!(owned[4].owner, Some(SourceOwner::Text(5..6)));
+        assert_eq!(planner.diagnostics().len(), 3);
+        assert_eq!(planner.diagnostics()[0].codepoints, [0x41, 0x42, 0x1f600]);
+        assert_eq!(
+            owned[3].diagnostic.kind,
+            TextDiagnosticKind::UnsupportedSuggestionStyle
+        );
+        assert_eq!(
+            owned[5].diagnostic.kind,
+            TextDiagnosticKind::UnsupportedCorrectionStyle
+        );
+        let page = renderer(&fonts);
+        page.report_text_issues(&owned[4..5]);
+        page.report_text_issues(&owned[4..5]);
+        assert_eq!(page.scoped_diagnostics(), owned[4..5]);
+        assert_eq!(page.diagnostics()[0].codepoints, [0x43]);
+    }
+
+    #[test]
+    fn unsupported_child_spans_keep_distinct_outer_object_owners() {
+        let fonts = FontBook::default();
+        let planner = renderer(&fonts);
+        let content = unsupported_span_text();
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        for anchor in [20, 30, 20] {
+            planner
+                .for_object_source(anchor..anchor + 1)
+                .for_resolved_text("sans-serif")
+                .for_source(0..6)
+                .for_object_source(3..4)
+                .report_span_issues(&styled);
+        }
+        let owned = planner.scoped_diagnostics();
+        assert_eq!(owned.len(), 6);
+        for (issues, anchor) in owned.as_chunks::<3>().0.iter().zip([20, 30]) {
+            assert!(
+                issues
+                    .iter()
+                    .all(|issue| issue.owner == Some(SourceOwner::Object(anchor..anchor + 1)))
+            );
+        }
+        assert_eq!(planner.diagnostics().len(), 3);
     }
 
     #[test]

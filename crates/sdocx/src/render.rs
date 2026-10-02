@@ -532,7 +532,7 @@ impl PreparedBodyText {
                 .text_issues
                 .iter()
                 .filter(|issue| {
-                    is_layout_issue(&issue.diagnostic)
+                    is_preparation_issue(&issue.diagnostic)
                         && sources.contains(
                             issue.owner.as_ref(),
                             issue.diagnostic.kind == TextDiagnosticKind::InvalidGeometry,
@@ -1732,7 +1732,7 @@ fn render_text_frame(
             .scoped_diagnostics()
             .into_iter()
             .filter(|issue| {
-                is_layout_issue(&issue.diagnostic)
+                is_preparation_issue(&issue.diagnostic)
                     && sources.as_ref().is_none_or(|sources| {
                         sources.contains(
                             issue.owner.as_ref(),
@@ -1758,10 +1758,14 @@ fn render_text_frame(
 
 const FLOW_HORIZONTAL_PADDING: f64 = 48.0;
 
-fn is_layout_issue(issue: &TextDiagnostic) -> bool {
+fn is_preparation_issue(issue: &TextDiagnostic) -> bool {
     matches!(
         issue.kind,
-        TextDiagnosticKind::MeasurementFailure | TextDiagnosticKind::InvalidGeometry
+        TextDiagnosticKind::MeasurementFailure
+            | TextDiagnosticKind::InvalidGeometry
+            | TextDiagnosticKind::UnsupportedCompositionStyle
+            | TextDiagnosticKind::UnsupportedSuggestionStyle
+            | TextDiagnosticKind::UnsupportedCorrectionStyle
     )
 }
 
@@ -2001,7 +2005,7 @@ fn report_drawing_layout_issues(renderer: &TextRenderer<'_>, drawing: &TextRende
         &drawing
             .scoped_diagnostics()
             .into_iter()
-            .filter(|issue| is_layout_issue(&issue.diagnostic))
+            .filter(|issue| is_preparation_issue(&issue.diagnostic))
             .collect::<Vec<_>>(),
     );
     renderer.report_owned_object_issues(&drawing.scoped_object_diagnostics());

@@ -855,6 +855,7 @@ fn layout_text_with_context(
     let settings = renderer.settings;
     renderer.report_object_issues(styled.object_issues());
     renderer.report_owned_geometry_issues(styled.geometry_issues());
+    renderer.report_span_issues(styled);
     let margins = text_box
         .margins
         .unwrap_or([0.0; 4])
@@ -1166,6 +1167,43 @@ mod tests {
             context,
             None,
         )
+    }
+
+    #[test]
+    fn layout_reports_unsupported_native_span_styles() {
+        let mut content = text("AB");
+        content.spans.push(crate::RichTextSpan {
+            kind: crate::RichTextSpanType::Suggestion,
+            start_utf16: 0,
+            end_utf16: 1,
+            interval_type: crate::SpanIntervalType::ClosedOpen,
+            payload: Vec::new(),
+        });
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(TextSettings::default(), &fonts);
+        let styled = StyledText::new(&content, TextContext::Placed, renderer.settings);
+        layout_text(
+            &styled,
+            TextFrame {
+                bbox: BoundingBox {
+                    x_max: 100.0,
+                    y_max: 100.0,
+                    ..Default::default()
+                },
+                gravity: None,
+                exclusions: &[],
+            },
+            RenderTheme::for_canvas(false),
+            &renderer,
+        );
+        assert_eq!(
+            renderer.diagnostics()[0].kind,
+            super::super::TextDiagnosticKind::UnsupportedSuggestionStyle
+        );
+        assert_eq!(
+            renderer.scoped_diagnostics()[0].owner,
+            Some(super::super::SourceOwner::Text(0..1))
+        );
     }
 
     #[test]

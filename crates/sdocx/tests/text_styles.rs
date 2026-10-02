@@ -475,6 +475,75 @@ fn hyperlink_actions_match_native_hypertext_flags_in_every_context() {
     assert_eq!(checked, 5);
 }
 
+#[cfg(feature = "pdf")]
+#[test]
+fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
+    use sdocx::TextDiagnosticKind::{
+        UnsupportedCompositionStyle, UnsupportedCorrectionStyle, UnsupportedSuggestionStyle,
+    };
+    let fonts = FontBook::default();
+    let mut content = text("ABCDE");
+    for (index, kind) in [
+        RichTextSpanType::ComposingBackgroundColor,
+        RichTextSpanType::Composing,
+        RichTextSpanType::ComposingTag,
+        RichTextSpanType::Suggestion,
+        RichTextSpanType::SpellCorrection,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        content
+            .spans
+            .push(span(kind, index as u32, index as u32 + 1, &[]));
+    }
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let layout = sdocx::layout_document(&document);
+        let svg = sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        let reasons = svg
+            .text_diagnostics
+            .iter()
+            .map(|issue| &issue.kind)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            reasons,
+            [
+                &UnsupportedCompositionStyle,
+                &UnsupportedSuggestionStyle,
+                &UnsupportedCorrectionStyle
+            ],
+            "{context:?}"
+        );
+        assert_eq!(svg.text_diagnostics[0].codepoints, [65, 66, 67]);
+        let pdf = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+            &document,
+            &layout,
+            &[0],
+            &Default::default(),
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        assert_eq!(
+            pdf.pages[0].text_diagnostics, svg.text_diagnostics,
+            "{context:?}"
+        );
+        let parsed = lopdf::Document::load_mem(&pdf.bytes).unwrap();
+        assert_eq!(
+            parsed.extract_text(&[1]).unwrap().trim(),
+            "ABCDE"
+        );
+    }
+}
+
 #[test]
 fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
     let mut content = text("abc");
