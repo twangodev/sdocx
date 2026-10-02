@@ -4,8 +4,9 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-Addresses are ARM64 virtual addresses in `libSPenModel.so` unless stated otherwise. This pass
-uses native serializers/readers and synthetic records without new SDOCX files.
+Addresses are ARM64 virtual addresses in `libSPenModel.so` unless stated otherwise.
+Evidence includes native serializers/readers and synthetic records, without new
+SDOCX source/reference pairs.
 
 | Symbol | Address | Confirmed behavior |
 | --- | --- | --- |
@@ -121,8 +122,8 @@ A row's fixed data is `f32` height, `u32` row index, `u32` cell count, then a
 coordinates; `u8` editability; and a sized rich-text object.
 Cell property bit 0 identifies an owned background color.
 
-The editability byte was previously mislabeled as vertical alignment. The
-writer loads member 80 at `0x3c30a0` and writes it at `0x3c30ac`.
+The byte following the cell rectangle is editability, not vertical alignment.
+The writer loads member 80 at `0x3c30a0` and writes it at `0x3c30ac`.
 `TableCell::SetEditable`, `0x3c24a0`, stores the same member at `0x3c24b0`;
 `IsEditable`, `0x3c24c4`, reads it directly. The reader loads the byte at
 `0x3c344c`, compares it with zero at `0x3c3458`, uses `cset ne` at
@@ -1147,9 +1148,10 @@ outer outlines share this artwork clip; page and parent paint translations
 retain its coordinate space. SVG/replay regressions check page mode and density,
 and PDF checks retain selectable text without image resources. Saved-frame
 fallback painting remains outside this prepared export contract.
-Text uses a separate pass: the SDK's measured-table text clip is still
-conservative. The native per-run clip decision is captured below; run-rectangle
-production and complete split-page/device appearance remain unverified.
+Text uses a separate pass with a conservative measured-table clip in the SDK.
+The native per-run clip decision and cached-entry run-rectangle production are
+captured below. Their combined export path and complete split-page/device
+appearance are not verified.
 
 ### Export text clips
 
@@ -1187,8 +1189,10 @@ origins, PDF scales, disjoint/touching bounds and degenerate dimensions. The Rus
 harness executes the unchanged Composer decision/transform window, Model getter,
 Base rectangle/point helpers and Pdfium empty-clip gate. Supplied object and
 stack memory prefilled with `0x00`, `0xa5` and `0xff` yields identical outputs.
-Page bounds and paint translation recording are host interfaces. Shaping, native
-rectangle producers, final PDF paths and device pixels are outside this capture.
+Page bounds and paint translation recording are host interfaces. Shaping, the
+content object's Model rectangle lifecycle, final PDF paths and device pixels
+are outside this capture. Cached-entry run-rectangle production is captured
+separately below.
 
 Text `getDrawnTextRun` offsets and unions retained entry rectangles
 (`0x67274`–`0x672ec`); `appendTextBlock` stores the second rectangle argument
@@ -1250,7 +1254,8 @@ spacing, offsets and ordinary span inputs are supplied. Memory copy is a host
 interface. Wrap selection, shaping, actual embedded objects, bullets,
 justification, emoji, real-font gates and the complete `getDrawnTextRun` loop
 are outside this capture. The complete cached-glyph emitter is captured separately
-below. Rust per-run clipping and device appearance remain unimplemented/unverified.
+below. Rust uses a table-wide text clip; conditional per-run clipping and device
+appearance parity are not established.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \

@@ -23,8 +23,7 @@ Debugger hit targets use `composed_objects()` in paint order, so picking and
 replay share the Rust root selection. Source records supply annotation bounds
 and types without selecting or ordering the objects again.
 
-Native root intersection filtering is not implemented. It requires per-object
-selection bounds and partial-content tests, rather than a stored-bbox overlap.
+Native root intersection filtering is not implemented.
 Saved container rotation has already changed each child's placement and angle;
 the native drawing branch applies no inherited parent transform. Existing leaf
 placement transforms remain in their converters. See

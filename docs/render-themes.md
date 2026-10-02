@@ -113,5 +113,5 @@ Native evidence limits:
   not been established; it is not claimed to be fixed by lightness reversal.
 
 The interface theme remains independent of document mode. Auto follows stored
-paper, not the browser color scheme. Firefox fountain-mask appearance parity is
-outside this Chromium/vector-export work.
+paper, not the browser color scheme. Firefox fails the fountain-mask visibility
+and maximum-blending checks; see [fountain vector parity](reverse-engineering/fountain-parity.md).

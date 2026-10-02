@@ -61,7 +61,7 @@ ARM64 entry points:
 
 See [object drawing findings](object-drawing-findings.md) and
 [capture composition findings](capture-composition-findings.md) for the
-call-site evidence and the remaining export setup questions.
+call-site evidence and export setup limits.
 
 [Native PDF stroke findings](native-pdf-stroke-findings.md) continue that
 trace through Composer `ObjectStrokePdfExporter::ExportObject`, `0x34f684`,
@@ -335,8 +335,8 @@ this method. Composer `NotePDFExporterRasterListX::initializeExport`,
 intersection collector at Model `0x35e670` restricts top-only queries to
 strokes at `0x35e6cc`–`0x35e6dc`; the layer matcher alone omits this condition.
 
-The structural stroke implementation also rechecked these arm64 locations in
-`libSPenModel.so` 4.4.45.37:
+The stroke format contracts use these arm64 locations in `libSPenModel.so`
+4.4.45.37:
 
 - `ObjectStrokeBinaryHandler::NewApplyBinary`, `0x2ee888`: zero-point compressed
   strokes skip their channel seeds.
@@ -359,7 +359,7 @@ against `ObjectStroke::GetPenName`, `0x2de974`, and `GetAdvancedPenSetting`,
 
 ## Standalone text frames
 
-The standalone-text implementation rechecked these arm64 locations in the same
+The standalone-text frame contracts use these arm64 locations in
 `libSPenModel.so` 4.4.45.37:
 
 | Symbol/address | Evidence |
@@ -375,8 +375,8 @@ contracts from synthetic coverage and the remaining real-fixture gap.
 
 ## Image frames and media resolution
 
-The image migration checked the following symbols in arm64 `libSPenModel.so`
-4.4.45.37 and the corresponding decompiled Java writers:
+Image frame and media contracts use the following symbols in arm64
+`libSPenModel.so` 4.4.45.37 and the corresponding decompiled Java writers:
 
 | Symbol/source | Evidence |
 | --- | --- |
@@ -394,8 +394,8 @@ separation between native evidence, synthetic tests and real manifest coverage.
 
 ## Shape and line geometry, styles and paths
 
-The shape/line migration checked Samsung Notes 4.4.45.37 arm64 writers and
-native setters/getters, plus the Java template and effect constants:
+Shape and line contracts use Samsung Notes 4.4.45.37 arm64 writers and native
+setters/getters, plus the Java template and effect constants:
 
 | Symbol/source | Evidence |
 | --- | --- |
