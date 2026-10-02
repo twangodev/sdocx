@@ -10,6 +10,7 @@ use crate::fonts::{
     Direction, Feature, FontError, FontSynthesis, ResolvedFace, ShapedGlyph, UnicodeBuffer, fontdb,
 };
 use crate::render::RenderTheme;
+use crate::text_index::TextSource;
 
 use super::bidi::{BidiError, ParagraphBidi};
 use super::{StyledText, TextMeasureStyle, TextRenderer, TextStyle};
@@ -53,7 +54,7 @@ pub(in crate::render) struct MeasuredRun {
 }
 
 pub(in crate::render) struct MeasuredGlyph {
-    pub source: Range<usize>,
+    pub source: TextSource,
     pub raw: ShapedGlyph,
     pub pen_x: i64,
     pub pen_y: i64,
@@ -68,8 +69,7 @@ pub(in crate::render) struct ClusterPaintOffset {
 #[cfg(any(feature = "pdf", test))]
 pub(in crate::render) struct RetainedGlyph<'a> {
     pub face: &'a ResolvedFace,
-    pub source: &'a Range<usize>,
-    pub source_bytes: Range<usize>,
+    pub source: &'a TextSource,
     pub glyph_id: u32,
     pub offset_x: f64,
     pub offset_y: f64,
@@ -79,23 +79,19 @@ pub(in crate::render) struct RetainedGlyph<'a> {
 
 impl MeasuredCluster {
     #[cfg(any(feature = "pdf", test))]
-    pub fn retained_glyphs<'a>(
-        &'a self,
-        index: &crate::text_index::TextIndex<'_>,
-    ) -> Result<impl Iterator<Item = RetainedGlyph<'a>> + 'a, MeasurementError> {
+    pub fn retained_glyphs(
+        &self,
+    ) -> Result<impl Iterator<Item = RetainedGlyph<'_>>, MeasurementError> {
         let glyphs = self
             .run
             .glyphs
             .get(self.glyphs.clone())
             .ok_or(MeasurementError::InvalidCluster)?;
         let first = glyphs.first().ok_or(MeasurementError::InvalidCluster)?;
-        let source_bytes = index
-            .char_to_byte(self.source.start)
-            .ok_or(MeasurementError::InvalidRange)?
-            ..index
-                .char_to_byte(self.source.end)
-                .ok_or(MeasurementError::InvalidRange)?;
-        if glyphs.iter().any(|glyph| glyph.source != self.source) {
+        if glyphs
+            .iter()
+            .any(|glyph| glyph.source.characters() != &self.source)
+        {
             return Err(MeasurementError::InvalidCluster);
         }
         let scale = self.run.style.font_size / f64::from(self.run.face.metrics.units_per_em);
@@ -104,7 +100,6 @@ impl MeasuredCluster {
         Ok(glyphs.iter().map(move |glyph| RetainedGlyph {
             face: &self.run.face,
             source: &glyph.source,
-            source_bytes: source_bytes.clone(),
             glyph_id: glyph.raw.id,
             offset_x: (glyph.pen_x - pen_x + i64::from(glyph.raw.x_offset)) as f64 * scale,
             offset_y: -((glyph.pen_y - pen_y + i64::from(glyph.raw.y_offset)) as f64 * scale),
@@ -182,7 +177,7 @@ impl MeasuredCluster {
                 return Ok(None);
             };
             if glyph.id != expected.raw.id
-                || self.source.start + prefix.chars().count() != expected.source.start
+                || self.source.start + prefix.chars().count() != expected.source.characters().start
                 || expected.pen_x + i64::from(expected.raw.x_offset)
                     != pen_x + i64::from(glyph.x_offset) + translation_x
                 || expected.pen_y + i64::from(expected.raw.y_offset)
@@ -579,7 +574,13 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                     .ok_or(MeasurementError::InvalidCluster)?;
                 start..end
             };
-            sources.insert(byte, source);
+            sources.insert(
+                byte,
+                self.styled
+                    .index
+                    .source(source)
+                    .ok_or(MeasurementError::InvalidCluster)?,
+            );
         }
         let mut pen_x = 0;
         let mut pen_y = 0;
@@ -620,7 +621,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         let mut clusters = Vec::new();
         for (&byte, (advance, glyphs)) in &cluster_glyphs {
             clusters.push(MeasuredCluster {
-                source: sources[&byte].clone(),
+                source: sources[&byte].characters().clone(),
                 advance: *advance as f64 * scale * multiplier,
                 origin_x: run.glyphs[glyphs.start].pen_x as f64 * scale,
                 run: run.clone(),
@@ -958,14 +959,14 @@ mod tests {
         assert_eq!(cluster.source, 1..5);
         assert_eq!(cluster.run.direction, Direction::RightToLeft);
         assert_eq!(cluster.advance, 25.6640625);
-        let index = crate::text_index::TextIndex::new(&content.text);
-        let glyphs: Vec<_> = cluster.retained_glyphs(&index).unwrap().collect();
+        let glyphs: Vec<_> = cluster.retained_glyphs().unwrap().collect();
         assert_eq!(glyphs.len(), 2);
         assert_eq!(glyphs[0].glyph_id, 6020);
         assert_eq!(glyphs[1].glyph_id, 5365);
         for glyph in &glyphs {
-            assert_eq!(glyph.source, &(1..5));
-            assert_eq!(glyph.source_bytes, 1..9);
+            assert_eq!(glyph.source.characters(), &(1..5));
+            assert_eq!(glyph.source.bytes(), &(1..9));
+            assert_eq!(glyph.source.utf16(), &(1..5));
             assert_eq!(glyph.face.family, "DejaVu Sans");
             assert_eq!(glyph.advance_y, 0.0);
         }
@@ -976,6 +977,90 @@ mod tests {
         assert_eq!(glyphs[1].offset_y, 0.0);
         assert_eq!(glyphs[1].advance_x, 25.6640625);
         assert!(cluster.native_paint_offset("لَّا").unwrap().is_none());
+    }
+
+    #[test]
+    fn retained_supplementary_and_combining_clusters_preserve_utf16_ownership() {
+        let measured = measure(&text_box("A😀e\u{301}"), TextContext::Placed);
+        assert_eq!(measured.clusters.len(), 3);
+        for (cluster, (characters, bytes, utf16)) in measured.clusters.iter().zip([
+            (0..1, 0..1, 0..1),
+            (1..2, 1..5, 1..3),
+            (2..4, 5..8, 3..5),
+        ]) {
+            let retained: Vec<_> = cluster.retained_glyphs().unwrap().collect();
+            assert!(!retained.is_empty());
+            for glyph in retained {
+                assert_eq!(glyph.source.characters(), &characters);
+                assert_eq!(glyph.source.bytes(), &bytes);
+                assert_eq!(glyph.source.utf16(), &utf16);
+            }
+        }
+    }
+
+    #[test]
+    fn retained_rtl_clusters_keep_absolute_utf16_owners_after_supplementary_prefix() {
+        let content = text_box("😀\nAאב");
+        let settings = TextSettings {
+            scale: 1.0,
+            font_size_delta: 0.0,
+            ..Default::default()
+        };
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let paragraph = ParagraphMeasurer::new(
+            &styled,
+            2..5,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+        )
+        .unwrap();
+        let measured = paragraph.measure_line(3..5).unwrap();
+        assert_eq!(measured.clusters.len(), 2);
+        let run = &measured.clusters[0].run;
+        assert_eq!(run.direction, Direction::RightToLeft);
+        assert_eq!(
+            run.glyphs
+                .iter()
+                .map(|glyph| glyph.source.utf16().start)
+                .collect::<Vec<_>>(),
+            [5, 4]
+        );
+        for (cluster, (characters, bytes, utf16)) in measured
+            .clusters
+            .iter()
+            .zip([(3..4, 6..8, 4..5), (4..5, 8..10, 5..6)])
+        {
+            let retained: Vec<_> = cluster.retained_glyphs().unwrap().collect();
+            assert_eq!(retained.len(), 1);
+            assert_eq!(retained[0].source.characters(), &characters);
+            assert_eq!(retained[0].source.bytes(), &bytes);
+            assert_eq!(retained[0].source.utf16(), &utf16);
+        }
+    }
+
+    #[test]
+    fn retained_glyphs_reject_mismatched_cluster_ownership_and_invalid_glyph_ranges() {
+        let measured = measure(&text_box("x\u{301}"), TextContext::Placed);
+        let mut cluster = measured.clusters[0].clone();
+        cluster.source = 0..1;
+        assert!(matches!(
+            cluster.retained_glyphs(),
+            Err(MeasurementError::InvalidCluster)
+        ));
+        cluster.source = 0..2;
+        cluster.glyphs = 0..0;
+        assert!(matches!(
+            cluster.retained_glyphs(),
+            Err(MeasurementError::InvalidCluster)
+        ));
+        cluster.glyphs = 0..usize::MAX;
+        assert!(matches!(
+            cluster.retained_glyphs(),
+            Err(MeasurementError::InvalidCluster)
+        ));
     }
 
     #[test]
@@ -1035,7 +1120,7 @@ mod tests {
                 .iter()
                 .map(|glyph| (
                     glyph.raw.id,
-                    glyph.source.clone(),
+                    glyph.source.characters().clone(),
                     glyph.raw.x_advance,
                     glyph.pen_x,
                     glyph.raw.x_offset,
@@ -1077,7 +1162,7 @@ mod tests {
                     glyph.raw.x_offset,
                     glyph.raw.y_offset,
                     glyph.pen_x,
-                    glyph.source.clone(),
+                    glyph.source.characters().clone(),
                 ))
                 .collect::<Vec<_>>(),
             [(93, 1015, 0, 0, 0, 0..2), (434, 0, 57, -10, 1015, 0..2)],
@@ -1168,7 +1253,7 @@ mod tests {
         assert_eq!(
             run.glyphs
                 .iter()
-                .map(|glyph| glyph.source.clone())
+                .map(|glyph| glyph.source.characters().clone())
                 .collect::<Vec<_>>(),
             [1..2, 0..1]
         );
@@ -1195,7 +1280,7 @@ mod tests {
                 .run
                 .glyphs
                 .iter()
-                .map(|glyph| (glyph.raw.id, glyph.source.clone()))
+                .map(|glyph| (glyph.raw.id, glyph.source.characters().clone()))
                 .collect::<Vec<_>>(),
             [(59, 2..3), (38, 1..2), (5, 0..1)]
         );

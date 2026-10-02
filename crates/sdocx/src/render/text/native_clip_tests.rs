@@ -57,7 +57,9 @@ fn text(face: &ResolvedFace, source: &str, origin: [f64; 2]) -> NativeTextBlock 
                 ),
                 origin,
                 advance: [8.0, 0.0],
-                source: 0..source.len(),
+                source: crate::text_index::TextIndex::new(source)
+                    .source(0..source.chars().count())
+                    .unwrap(),
             }],
             variable: false,
         }],

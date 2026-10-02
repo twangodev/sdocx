@@ -118,7 +118,7 @@ fn observe(content: &RichTextBox) -> RetainedLine {
                         id: glyph.glyph_id,
                         origin: glyph.origin,
                         advance: glyph.advance,
-                        source: glyph.source.clone(),
+                        source: glyph.source.bytes().clone(),
                     })
                     .collect()
             })

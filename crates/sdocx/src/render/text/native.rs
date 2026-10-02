@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::ops::Range;
 use std::sync::Arc;
 
 use krilla::color::rgb;
@@ -12,6 +11,7 @@ use rustybuzz::ttf_parser;
 
 use crate::Color;
 use crate::fonts::{ResolvedFace, fontdb};
+use crate::text_index::{TextIndex, TextSource};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct NativeTextId(usize);
@@ -27,7 +27,7 @@ pub(crate) struct NativeGlyph {
     pub glyph_id: u32,
     pub origin: [f64; 2],
     pub advance: [f64; 2],
-    pub source: Range<usize>,
+    pub source: TextSource,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -58,7 +58,7 @@ pub(crate) enum NativeTextError {
     Empty,
     #[error("retained text contains invalid geometry")]
     InvalidGeometry,
-    #[error("retained glyph has an invalid UTF-8 source range")]
+    #[error("retained glyph has an invalid text source range")]
     InvalidSource,
     #[error("retained variable-font text is unsupported")]
     VariableFont,
@@ -211,6 +211,7 @@ impl NativeTextBlock {
         if self.runs.is_empty() || self.runs.iter().all(|run| run.glyphs.is_empty()) {
             return Err(NativeTextError::Empty);
         }
+        let source_index = TextIndex::new(&self.source);
         for run in &self.runs {
             if run.variable {
                 return Err(NativeTextError::VariableFont);
@@ -227,7 +228,12 @@ impl NativeTextBlock {
                 {
                     return Err(NativeTextError::InvalidGeometry);
                 }
-                if glyph.source.is_empty() || self.source.get(glyph.source.clone()).is_none() {
+                if glyph.source.utf16().is_empty()
+                    || source_index
+                        .source(glyph.source.characters().clone())
+                        .as_ref()
+                        != Some(&glyph.source)
+                {
                     return Err(NativeTextError::InvalidSource);
                 }
             }
@@ -525,7 +531,7 @@ fn positioned_glyphs(run: &NativeGlyphRun) -> Result<(Point, Vec<KrillaGlyph>), 
                 offset_x,
                 offset_y,
                 advance_y,
-                glyph.source.clone(),
+                glyph.source.bytes().clone(),
                 None,
             ))
         })
@@ -544,6 +550,16 @@ mod tests {
     use krilla::tagging::TagTree;
     use krilla::{Document, geom::Size, page::PageSettings, text::Glyph};
     use lopdf::{Object, content::Content};
+    use std::ops::Range;
+
+    fn source_from_utf8(text: &str, bytes: Range<usize>) -> TextSource {
+        let index = TextIndex::new(text);
+        index
+            .source(
+                index.byte_to_char(bytes.start).unwrap()..index.byte_to_char(bytes.end).unwrap(),
+            )
+            .unwrap()
+    }
 
     fn run() -> NativeGlyphRun {
         NativeGlyphRun {
@@ -562,7 +578,7 @@ mod tests {
                 glyph_id: 38,
                 origin: [40.0, 80.0],
                 advance: [29.35546875, 0.0],
-                source: 0..1,
+                source: source_from_utf8("A", 0..1),
             }],
             variable: false,
         }
@@ -615,18 +631,36 @@ mod tests {
     fn registration_validates_utf8_and_does_not_retain_rejected_blocks() {
         let mut registry = NativeTextRegistry::default();
         let mut invalid = run();
-        invalid.glyphs[0].source = 1..2;
+        invalid.glyphs[0].source = source_from_utf8("AB", 1..2);
         assert_eq!(
             registry.register(0, block("é", invalid)),
             Err(NativeTextError::InvalidSource)
         );
         assert_eq!(registry.len(), 0);
         let mut valid = run();
-        valid.glyphs[0].source = 0..2;
+        valid.glyphs[0].source = source_from_utf8("é", 0..2);
         let id = registry.register(0, block("é", valid)).unwrap();
         assert_eq!(id.svg_id(), "sdocx-native-text-0");
         assert_eq!(&*registry.iter().next().unwrap().1.source, "é");
         assert_eq!(registry.iter().map(|(id, _)| id).collect::<Vec<_>>(), [id]);
+    }
+
+    #[test]
+    fn registration_checks_utf16_even_when_scalars_and_utf8_bytes_match() {
+        let mut registry = NativeTextRegistry::default();
+        let mut invalid = run();
+        invalid.glyphs[0].source = source_from_utf8("😀A", 0..5);
+        assert_eq!(invalid.glyphs[0].source.characters(), &(0..2));
+        assert_eq!(invalid.glyphs[0].source.bytes(), &(0..5));
+        assert_eq!(invalid.glyphs[0].source.utf16(), &(0..3));
+        assert_eq!(
+            registry.register(0, block("é€", invalid)),
+            Err(NativeTextError::InvalidSource)
+        );
+        assert_eq!(registry.len(), 0);
+        let mut valid = run();
+        valid.glyphs[0].source = source_from_utf8("é€", 0..5);
+        registry.register(0, block("é€", valid)).unwrap();
     }
 
     #[test]
@@ -795,19 +829,19 @@ mod tests {
                 glyph_id: 1399,
                 origin: [47.80029296875, 70.1123046875],
                 advance: [0., 0.],
-                source: 0..6,
+                source: source_from_utf8("لَاA", 0..6),
             },
             NativeGlyph {
                 glyph_id: 5365,
                 origin: [40., 80.],
                 advance: [25.6640625, 0.],
-                source: 0..6,
+                source: source_from_utf8("لَاA", 0..6),
             },
             NativeGlyph {
                 glyph_id: 38,
                 origin: [95., 82.],
                 advance: [29.35546875, 0.],
-                source: 6..7,
+                source: source_from_utf8("لَاA", 6..7),
             },
         ];
         let (start, glyphs) = positioned_glyphs(&run).unwrap();
@@ -820,7 +854,7 @@ mod tests {
             assert!((f64::from(origin[0]) - expected.origin[0]).abs() < 0.00001);
             assert!((f64::from(origin[1]) - expected.origin[1]).abs() < 0.00001);
             assert_eq!(glyph.glyph_id().to_u32(), expected.glyph_id);
-            assert_eq!(glyph.text_range(), expected.source);
+            assert_eq!(glyph.text_range(), *expected.source.bytes());
             cursor[0] += glyph.x_advance(45.);
             cursor[1] -= glyph.y_advance(45.);
         }
@@ -836,13 +870,13 @@ mod tests {
                 glyph_id: 1399,
                 origin: [47.80029296875, 70.1123046875],
                 advance: [0., 2.],
-                source: 0..6,
+                source: source_from_utf8("لَاA", 0..6),
             },
             NativeGlyph {
                 glyph_id: 5365,
                 origin: [40., 80.],
                 advance: [25.6640625, -1.],
-                source: 0..6,
+                source: source_from_utf8("لَاA", 0..6),
             },
         ];
         let (start, glyphs) = positioned_glyphs(&run).unwrap();
@@ -940,7 +974,7 @@ mod tests {
         let mut normal = run();
         normal.glyphs[0].glyph_id = 39;
         normal.glyphs[0].origin = [100.0, 80.0];
-        normal.glyphs[0].source = 1..2;
+        normal.glyphs[0].source = source_from_utf8("AB", 1..2);
         let pdf = pdf(&NativeTextBlock {
             source: Arc::from("AB"),
             runs: vec![italic, normal],
@@ -1053,13 +1087,13 @@ mod tests {
                 glyph_id: 1399,
                 origin: [47.80029296875, 70.1123046875],
                 advance: [0., 0.],
-                source: 0..6,
+                source: source_from_utf8("لَاA", 0..6),
             },
             NativeGlyph {
                 glyph_id: 5365,
                 origin: [40., 80.],
                 advance: [25.6640625, 0.],
-                source: 0..6,
+                source: source_from_utf8("لَاA", 0..6),
             },
         ];
         let pdf = pdf(&block("لَا", run));
@@ -1125,25 +1159,25 @@ mod tests {
                 glyph_id: 38,
                 origin: [40., 80.],
                 advance: [29.35546875, 0.],
-                source: 0..1,
+                source: source_from_utf8("A", 0..1),
             },
             NativeGlyph {
                 glyph_id: 5,
                 origin: [95., 80.],
                 advance: [0., 0.],
-                source: 5..8,
+                source: source_from_utf8("A\u{2066}A\u{2069}", 5..8),
             },
             NativeGlyph {
                 glyph_id: 38,
                 origin: [70., 80.],
                 advance: [29.35546875, 0.],
-                source: 4..5,
+                source: source_from_utf8("A\u{2066}A\u{2069}", 4..5),
             },
             NativeGlyph {
                 glyph_id: 5,
                 origin: [70., 80.],
                 advance: [0., 0.],
-                source: 1..4,
+                source: source_from_utf8("A\u{2066}A\u{2069}", 1..4),
             },
         ];
         let pdf = pdf(&block("A\u{2066}A\u{2069}", run));

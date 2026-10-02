@@ -236,9 +236,9 @@ fn render_retained_fragment(
     let last_cluster = line
         .placements
         .partition_point(|placement| placement.cluster.source.start < range.end);
-    let byte_start = styled
+    let source_range = styled
         .index
-        .char_to_byte(range.start)
+        .source(range.clone())
         .ok_or("invalid retained line source")?;
     let source_start = range.start;
     let source: Arc<str> = styled
@@ -286,14 +286,19 @@ fn render_retained_fragment(
                 .ok_or("missing canonical cluster position")?;
             for glyph in placement
                 .cluster
-                .retained_glyphs(&styled.index)
+                .retained_glyphs()
                 .map_err(|error| error.to_string())?
             {
                 if glyph.glyph_id == 0 {
-                    renderer.for_source(glyph.source.clone()).missing_glyphs(
-                        &glyph.face.family,
-                        styled.index.slice(glyph.source.clone()).unwrap_or(""),
-                    );
+                    renderer
+                        .for_source(glyph.source.characters().clone())
+                        .missing_glyphs(
+                            &glyph.face.family,
+                            styled
+                                .index
+                                .slice(glyph.source.characters().clone())
+                                .unwrap_or(""),
+                        );
                 }
                 glyphs.push(NativeGlyph {
                     glyph_id: glyph.glyph_id,
@@ -302,8 +307,10 @@ fn render_retained_fragment(
                         baseline + glyph.offset_y,
                     ],
                     advance: [glyph.advance_x, glyph.advance_y],
-                    source: glyph.source_bytes.start - byte_start
-                        ..glyph.source_bytes.end - byte_start,
+                    source: glyph
+                        .source
+                        .relative_to(&source_range)
+                        .ok_or("retained glyph source is outside its text block")?,
                 });
             }
         }

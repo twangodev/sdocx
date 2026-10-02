@@ -1,10 +1,57 @@
 use std::ops::Range;
 
+#[cfg(all(test, feature = "serde"))]
+mod fixture_tests;
+
 pub(crate) struct TextIndex<'a> {
     text: &'a str,
     byte_offsets: Vec<usize>,
     utf16_offsets: Vec<usize>,
     native_paragraph_starts: Vec<usize>,
+}
+
+#[cfg(any(feature = "render", test))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct TextSource {
+    characters: Range<usize>,
+    bytes: Range<usize>,
+    utf16: Range<u32>,
+}
+
+#[cfg(any(feature = "render", test))]
+impl TextSource {
+    pub fn characters(&self) -> &Range<usize> {
+        &self.characters
+    }
+
+    #[cfg(any(feature = "pdf", test))]
+    pub fn bytes(&self) -> &Range<usize> {
+        &self.bytes
+    }
+
+    #[cfg(any(feature = "pdf", test))]
+    pub fn utf16(&self) -> &Range<u32> {
+        &self.utf16
+    }
+
+    #[cfg(any(feature = "pdf", test))]
+    pub fn relative_to(&self, container: &Self) -> Option<Self> {
+        if self.characters.start < container.characters.start
+            || self.characters.end > container.characters.end
+            || self.bytes.start < container.bytes.start
+            || self.bytes.end > container.bytes.end
+            || self.utf16.start < container.utf16.start
+            || self.utf16.end > container.utf16.end
+        {
+            return None;
+        }
+        Some(Self {
+            characters: self.characters.start - container.characters.start
+                ..self.characters.end - container.characters.start,
+            bytes: self.bytes.start - container.bytes.start..self.bytes.end - container.bytes.start,
+            utf16: self.utf16.start - container.utf16.start..self.utf16.end - container.utf16.start,
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,6 +112,18 @@ impl<'a> TextIndex<'a> {
             .ok()
     }
 
+    #[cfg(any(feature = "render", test))]
+    pub fn source(&self, characters: Range<usize>) -> Option<TextSource> {
+        if characters.start > characters.end {
+            return None;
+        }
+        Some(TextSource {
+            bytes: self.char_to_byte(characters.start)?..self.char_to_byte(characters.end)?,
+            utf16: self.char_to_utf16(characters.start)?..self.char_to_utf16(characters.end)?,
+            characters,
+        })
+    }
+
     pub fn slice(&self, range: Range<usize>) -> Option<&'a str> {
         if range.start > range.end {
             return None;
@@ -117,6 +176,76 @@ impl<'a> TextIndex<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_projection_keeps_scalar_byte_and_utf16_ranges_together() {
+        let index = TextIndex::new("A😀e\u{301}中");
+        for (characters, bytes, utf16) in [
+            (0..5, 0..11, 0..6),
+            (1..2, 1..5, 1..3),
+            (2..4, 5..8, 3..5),
+            (5..5, 11..11, 6..6),
+        ] {
+            let source = index.source(characters.clone()).unwrap();
+            assert_eq!(source.characters(), &characters);
+            assert_eq!(source.bytes(), &bytes);
+            assert_eq!(source.utf16(), &utf16);
+        }
+        for invalid in [Range { start: 2, end: 1 }, 0..6, 6..6, 0..usize::MAX] {
+            assert_eq!(index.source(invalid), None);
+        }
+        let empty = TextIndex::new("").source(0..0).unwrap();
+        assert_eq!(empty.characters(), &(0..0));
+        assert_eq!(empty.bytes(), &(0..0));
+        assert_eq!(empty.utf16(), &(0..0));
+    }
+
+    #[test]
+    fn source_rebasing_preserves_distinct_coordinate_offsets_and_empty_endpoints() {
+        let index = TextIndex::new("A😀e\u{301}中");
+        let container = index.source(1..4).unwrap();
+        for (characters, relative_characters, relative_bytes, relative_utf16) in [
+            (1..2, 0..1, 0..4, 0..2),
+            (2..4, 1..3, 4..7, 2..4),
+            (4..4, 3..3, 7..7, 4..4),
+        ] {
+            let relative = index
+                .source(characters)
+                .unwrap()
+                .relative_to(&container)
+                .unwrap();
+            assert_eq!(relative.characters(), &relative_characters);
+            assert_eq!(relative.bytes(), &relative_bytes);
+            assert_eq!(relative.utf16(), &relative_utf16);
+        }
+        assert_eq!(index.source(0..2).unwrap().relative_to(&container), None);
+        assert_eq!(index.source(3..5).unwrap().relative_to(&container), None);
+        let other = TextIndex::new("abc").source(0..3).unwrap();
+        assert_eq!(index.source(1..2).unwrap().relative_to(&other), None);
+        let supplementary = TextIndex::new("😀a").source(0..2).unwrap();
+        let bmp = TextIndex::new("中中").source(0..2).unwrap();
+        assert_eq!(supplementary.relative_to(&bmp), None);
+        let two_scalars = TextIndex::new("😀😀").source(0..2).unwrap();
+        assert_eq!(other.relative_to(&two_scalars), None);
+    }
+
+    #[test]
+    fn source_projection_rejects_unrepresentable_utf16_endpoints() {
+        if let Some(overflow) = usize::try_from(u32::MAX)
+            .ok()
+            .and_then(|value| value.checked_add(1))
+        {
+            let index = TextIndex {
+                text: "a",
+                byte_offsets: vec![0, 1],
+                utf16_offsets: vec![0, overflow],
+                native_paragraph_starts: vec![0],
+            };
+            assert!(index.source(0..0).is_some());
+            assert_eq!(index.source(0..1), None);
+            assert_eq!(index.source(1..1), None);
+        }
+    }
 
     #[test]
     fn scalar_and_utf8_boundaries_round_trip_without_accepting_multibyte_interiors() {
