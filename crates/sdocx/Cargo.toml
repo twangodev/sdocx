@@ -9,8 +9,8 @@ repository = "https://github.com/twangodev/sdocx"
 readme = "../../README.md"
 
 [features]
-render = ["dep:base64", "dep:svg", "dep:fontdb", "dep:rustybuzz", "dep:write-fonts", "dep:cssparser", "dep:unicode-bidi", "dep:unicode-script", "dep:unicode-linebreak", "dep:unicode-segmentation"]
-pdf = ["render", "dep:krilla", "dep:usvg", "dep:png", "dep:flate2", "dep:resvg", "dep:skrifa", "dep:smallvec", "dep:tiny-skia"]
+render = ["dep:base64", "dep:svg", "dep:fontdb", "dep:rustybuzz", "dep:write-fonts", "dep:cssparser", "dep:unicode-bidi", "dep:unicode-script", "dep:unicode-linebreak", "dep:unicode-segmentation", "dep:skrifa"]
+pdf = ["render", "dep:krilla", "dep:usvg", "dep:png", "dep:flate2", "dep:resvg", "dep:smallvec", "dep:tiny-skia"]
 serde = ["dep:serde"]
 
 [dependencies]

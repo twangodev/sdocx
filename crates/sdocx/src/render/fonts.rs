@@ -8,6 +8,12 @@ pub use fontdb;
 use fontdb::{Database, Family, ID, Query, Style, Weight};
 pub use rustybuzz::{Direction, Feature, UnicodeBuffer};
 
+mod paint_metrics;
+pub use paint_metrics::{
+    PaintGlyphMetrics, PaintInkBounds, PaintMetricError, PaintMetricInput, PaintMetricMode,
+    PaintMetrics,
+};
+
 #[cfg(test)]
 #[path = "fonts/native_shaping_tests.rs"]
 mod native_shaping_tests;
@@ -338,6 +344,13 @@ impl Default for FontBook {
 }
 
 impl ResolvedFace {
+    pub fn paint_metrics(
+        &self,
+        input: PaintMetricInput,
+    ) -> Result<PaintMetrics<'_>, PaintMetricError> {
+        PaintMetrics::new(self.bytes(), self.index, input)
+    }
+
     /// Matches the native bitmap-font gate: the selected face declares a CBDT table.
     pub fn is_bitmap_font(&self) -> bool {
         self.has_cbdt_table
