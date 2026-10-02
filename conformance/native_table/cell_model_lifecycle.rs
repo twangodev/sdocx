@@ -183,7 +183,7 @@ unsafe extern "C" fn platform(engine: Engine, address: u64, _: u32, _: *mut c_vo
     };
     register(engine, REGISTER_X0, result);
 }
-fn initialize(paths: &Paths, fill: u8) -> Machine {
+pub(super) fn initialize(paths: &Paths, fill: u8) -> Machine {
     let model = paths.model;
     let base = paths.base;
     let body = paths.body;

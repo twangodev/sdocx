@@ -12,6 +12,12 @@ mod cell_drawing;
 #[path = "native_table/cell_model_lifecycle.rs"]
 mod cell_model_lifecycle;
 
+#[path = "native_table/cell_model_callbacks.rs"]
+mod cell_model_callbacks;
+
+#[path = "native_table/table_clone_origin.rs"]
+mod table_clone_origin;
+
 #[path = "native_table/page_text_ranges.rs"]
 mod page_text_ranges;
 
@@ -200,7 +206,7 @@ fn read_float(engine: Engine, address: u64) -> f32 {
     value
 }
 
-fn map_library(engine: Engine, path: &Path, base: u64, expected_sha256: &str) {
+fn verify_library(path: &Path, expected_sha256: &str) {
     let digest = Command::new("sha256sum").arg(path).output().unwrap();
     assert!(digest.status.success());
     assert_eq!(
@@ -210,6 +216,10 @@ fn map_library(engine: Engine, path: &Path, base: u64, expected_sha256: &str) {
             .next(),
         Some(expected_sha256)
     );
+}
+
+fn map_library(engine: Engine, path: &Path, base: u64, expected_sha256: &str) {
+    verify_library(path, expected_sha256);
     let binary = fs::read(path).unwrap();
     assert_eq!(&binary[..4], b"\x7fELF");
     let ph_offset = u64::from_le_bytes(binary[32..40].try_into().unwrap()) as usize;
@@ -1069,6 +1079,33 @@ fn main() {
     let mut machine = Machine::new(Path::new(&path));
     let mode = std::env::args_os().nth(2);
     match mode.as_deref().and_then(|mode| mode.to_str()) {
+        Some(mode @ ("--cell-model-callbacks" | "--table-clone-origin")) => {
+            let count = if mode == "--table-clone-origin" { 6 } else { 5 };
+            let paths = (3..3 + count)
+                .map(|index| {
+                    std::env::args_os().nth(index).expect(
+                        "base, drawing, bodytext, bundled libc++, widget and optional composer paths required",
+                    )
+                })
+                .collect::<Vec<_>>();
+            let lifecycle = cell_model_lifecycle::Paths {
+                model: Path::new(&path),
+                base: Path::new(&paths[0]),
+                drawing: Path::new(&paths[1]),
+                body: Path::new(&paths[2]),
+                cpp: Path::new(&paths[3]),
+            };
+            if mode == "--cell-model-callbacks" {
+                cell_model_callbacks::capture(lifecycle, Path::new(&paths[4]));
+            } else {
+                table_clone_origin::capture(table_clone_origin::Paths {
+                    lifecycle,
+                    widget: Path::new(&paths[4]),
+                    composer: Path::new(&paths[5]),
+                });
+            }
+            return;
+        }
         Some("--cell-model-lifecycle") => {
             let paths = [3, 4, 5, 6].map(|index| {
                 std::env::args_os()
@@ -1565,7 +1602,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --cell-model-callbacks, --table-clone-origin, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

@@ -1121,7 +1121,10 @@ translated coordinates, large origins, display-row filtering, rounded corners,
 pending gaps around `0.001f`, canvas scale and inactive edge styles.
 
 Constraint 0 takes background bounds from the saved cell rectangle, subtracts
-the source table origin, then adds the drawing offset. Saved border endpoints
+the virtual slot-160 rectangle's origin, then adds the drawing offset. In this
+60-case fixture a supplied table vtable routes slot 160 to `GetRect`,
+`0x3d48c0`, making source table bounds an explicit origin input. The real
+`GetDrawnRect` route is captured separately below. Saved border endpoints
 subtract the separately computed source-origin-minus-drawing-offset. These
 f32 operation orders differ at large origins. Constraints 1 and 2 take cached
 background frames and remap border endpoints to those frames. Recorded cell
@@ -1148,14 +1151,61 @@ bounds conservatively union the background frame with translated paintable
 perimeter extents, including stroke half-width and paths later suppressed by
 edge selection, before later SVG/PDF page clipping. This preserves
 visible emitted borders when the native display rectangle is empty; it does
-not establish native display-filter or complete producer parity. The upstream
-clone-to-Model source-origin producer remains outside this fixture.
+not establish native display-filter or complete producer parity. Clone placement
+and the actual virtual source-origin getter are captured separately below.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
   --cell-drawing scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-cell-drawing.json
 cmp /tmp/table-cell-drawing.json conformance/table-cell-drawing.json
+```
+
+### Captured table clone placement
+
+[`table-clone-origin.json`](../../conformance/table-clone-origin.json), SHA-256
+`78022f27f297e5b9accf5f58000f0da6c60b4e09fc809a2ffc5cf5cd885b8cc9`,
+records 11 cases, 44 stages, 176 cell snapshots and 154 paint commands. The
+[capture module](../../conformance/native_table/table_clone_origin.rs) executes
+native Model construction, factory `0x36d6cc`, and table copy through virtual
+slot 184, `ObjectTable::Copy`, `0x3d9af4`. Native Widget
+`GetRectByDrawnRect`, `0xe1f88`, computes the affine input; Composer windows
+`[0x376418, 0x376478)` and `[0x376494, 0x3764a8)` execute placement and the
+spannable flag update. Placement dispatches virtual slot 40 to
+`ObjectShape::SetRect`, `0x397708`, rather than the table-specific setter at
+slot 320. The detached route changes the clone's table rectangle while copied
+saved cell rectangles and content Model rectangles remain unchanged.
+
+The real table virtual slot 160 returns `GetDrawnRect`, including half-border
+inflation. Native Normal artwork subtracts that clone drawn origin from both
+saved background rectangles and Model border endpoints, retaining their distinct
+f32 translation stages. Neither the original source origin nor the clone's raw
+Model rectangle is interchangeable with this result. The capture distinguishes
+raw bounds, BaseData drawn bounds and the virtual drawn result through copy,
+placement and cold Drawing preparation. Cases include Normal/over-pages,
+merged cells, translated/negative/large origins, retained-run offsets and
+half/double scaling.
+
+All three native heap allocation fills (`0x00`, `0xa5`, `0xff`) agree. Retained
+DrawnText rectangle/position and writer origin are supplied, and only the named
+Composer instruction windows execute. Cold layout storage and a text-wrapper
+adapter are supplied; `SetObject`, `SetTextScale` and shaping are omitted.
+Paint/Canvas calls are recorded with identity theme and an empty display clip.
+Drawing X is explicitly supplied from the clone drawn left; commands remain
+canvas-local with native literal zero Y offset. Canvas world-Y production,
+parent measurement, the complete Composer writer, Bodytext callbacks and final
+PDF transport are outside this capture. It establishes clone and origin
+selection without production activation or complete export parity.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --table-clone-origin scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-clone-origin.json
+cmp /tmp/table-clone-origin.json conformance/table-clone-origin.json
 ```
 
 ### Visible rectangles and canvas clipping
@@ -1373,9 +1423,9 @@ preserves the cell rectangle and dispatches content copying to
 derive from saved row heights and column widths; `updateCell`, `0xae914`,
 supplies their local dimensions to Widget layout width/height setters.
 `UpdateTextDrawingPosition`, `0xacc88`, is a single return instruction.
-These isolated routes omit the explicit Bodytext bridge captured below; they
-do not establish content Model updates with a measured frame or clone origin.
-Widget update callbacks are outside the setter capture.
+The [clone capture](#captured-table-clone-placement) executes this detached
+placement route and preserves copied cell/content Model rectangles. These
+isolated setter routes omit the Bodytext bridge and notification captured below.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -1433,6 +1483,66 @@ a full application lifecycle parity claim.
   scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
   scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-cell-model-lifecycle.json
 cmp /tmp/table-cell-model-lifecycle.json conformance/table-cell-model-lifecycle.json
+```
+
+### Captured cell model callbacks
+
+[`table-cell-model-callbacks.json`](../../conformance/table-cell-model-callbacks.json),
+SHA-256 `d57a73b6845f293acf318b6cfcc1b23eb1fdd1529578fb1fdaac4e17c63bae05`,
+records 18 cases with 37 state snapshots and 148 cell snapshots. Each runs
+in a fresh native machine under heap fills `0x00`, `0x55`, `0xa5` and `0xff`,
+then repeats fill zero. The
+[capture module](../../conformance/native_table/cell_model_callbacks.rs)
+executes complete Drawing notification `0xb1bf0`, native `std::function`
+clone/invoke/destroy, Bodytext forwarding `0xb59d0`, view callback `0xdce8c`,
+runtime owner lookup, span lookup `0xd6d78`, size gate `0xd76e0` and bridge
+`0xd78ec`. Native registration `[0xb3228, 0xb3314)` and view installation
+`[0xd080c, 0xd085c)` instruction windows allocate/balance the listener node
+and install both closures; the rest of those setup functions is excluded.
+Model ObjectSpan construction/setters (`0x417440`, `0x417fc4`, `0x417598`),
+native span-list copy/traversal and Widget `GetTextLayout`, `0xd39ac`, execute.
+
+The callback clears the supplied nil page cache, resolves the span/index and
+calls the document rectangle getter before the size gate. A false gate leaves
+Model rectangles unchanged, including origin-only changes. Native assembly
+compares absolute f32 width/height differences with `>= 0.001f32`; captured
+`0.0005` and `0.002` cases bracket that threshold without an exact-equality
+case. A true gate offsets each per-slot Drawing frame by the document bound's
+origin and invokes the Model setters; supplied bound extent does not alter
+that offset. Equal cell rectangles retain divergent content rectangles, changed
+cell rectangles restore content bounds, and clean unsaved flags remain clean.
+Missing owner/layout and view-callback guards prevent their corresponding route.
+Repeated warm notification calls the document getter twice but enters the
+bridge once after size convergence.
+
+Document virtual slot 112 is `GetTextBound(index)`, not `GetTextRect`.
+The actual Text producer is `TextLayout::GetTextBound`, `0x8afd4`, forwarding
+to `RichTextMeasure::GetTextBound`, `0x7a4ac`. It consumes placed entry bounds
+and the RichTextImpl member-212 vertical gravity offset (`0x7a558`), computed
+by `UpdateGravityOffsetY`, `0x639dc`. That producer does not execute here.
+The fixture supplies its RectF result and checks the actual native ObjectSpan index, including signed
+`-1`; the negative-index case therefore does not establish the real getter's
+zero-return behavior.
+
+Drawing/Bodytext storage, owner association, ComponentText/TextCommon chain,
+one-element span vector and the document getter result are supplied. Native
+heap allocations vary while supplied storage starts zeroed. Shared allocator,
+UUID, byte, mutex/guard, destructor-registration and logging services retain the
+previous capture's host boundaries. The text-wrapper adapter omits `SetObject`
+and `SetTextScale`. Document parsing, shaping/placement that produces the
+document bound, complete listener setup outside the named windows, first cell
+measurement, Composer cloning and final export clipping do not execute.
+This establishes conditional native notification/model mutation without a
+production callback activation or complete document lifecycle claim.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-model-callbacks scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so > /tmp/table-cell-model-callbacks.json
+cmp /tmp/table-cell-model-callbacks.json conformance/table-cell-model-callbacks.json
 ```
 
 ### Final PDF text clip paths

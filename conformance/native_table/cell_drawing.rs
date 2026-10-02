@@ -254,6 +254,79 @@ impl Drop for Recorder {
     }
 }
 
+fn configure_canvas(
+    machine: &Machine,
+    drawing_x: f32,
+    display: [f32; 4],
+    canvas_scale: f32,
+    outline: [f32; 3],
+    outline_color: u32,
+) {
+    write(machine.engine, DRAWING_OBJECT + 96, &THEME.to_le_bytes());
+    write(
+        machine.engine,
+        DRAWING_OBJECT + 112,
+        &drawing_x.to_le_bytes(),
+    );
+    write_rect(machine.engine, DRAWING_OBJECT + 120, display);
+    write(machine.engine, THEME, &THEME_VTABLE.to_le_bytes());
+    write(
+        machine.engine,
+        THEME_VTABLE + 80,
+        &IDENTITY_COLOR.to_le_bytes(),
+    );
+    write(machine.engine, CANVAS, &CANVAS_VTABLE.to_le_bytes());
+    for (offset, target) in [
+        (232, DRAW_CANVAS_LINE),
+        (272, DRAW_RECT),
+        (288, DRAW_ROUND_RECT),
+        (80, MATRIX_GETTER),
+    ] {
+        write(
+            machine.engine,
+            CANVAS_VTABLE + offset,
+            &target.to_le_bytes(),
+        );
+    }
+    write(machine.engine, CANVAS_MATRIX, &canvas_scale.to_le_bytes());
+    write(machine.engine, MATRIX_GETTER, &0x58000040_u32.to_le_bytes());
+    write(
+        machine.engine,
+        MATRIX_GETTER + 4,
+        &0xd65f03c0_u32.to_le_bytes(),
+    );
+    write(
+        machine.engine,
+        MATRIX_GETTER + 8,
+        &CANVAS_MATRIX.to_le_bytes(),
+    );
+    write(machine.engine, RETURN_STYLE, &outline_color.to_le_bytes());
+    for (axis, value) in outline.into_iter().enumerate() {
+        write(
+            machine.engine,
+            RETURN_STYLE + 4 + axis as u64 * 4,
+            &value.to_le_bytes(),
+        );
+    }
+}
+
+pub(super) fn draw_prepared(machine: &Machine, table: u64, layout: u64, drawing_x: f32) -> String {
+    let recorder = Recorder::new(machine);
+    write(machine.engine, DRAWING_OBJECT + 104, &table.to_le_bytes());
+    configure_canvas(machine, drawing_x, [0.0; 4], 1.0, [0.0; 3], 0);
+    machine.call(DRAW_CELLS, &[DRAWING_OBJECT, CANVAS, layout, RETURN_STYLE]);
+    let observation = &recorder.observation;
+    assert_eq!(observation.constructors, 2);
+    assert_eq!(observation.destructors, 2);
+    assert!(observation.paints.is_empty());
+    format!(
+        "{{\"source_is_clone\":{},\"drawing_x\":{drawing_x:?},\"selected_paths\":[{}],\"commands\":[{}]}}",
+        read_u64(machine.engine, DRAWING_OBJECT + 104) == table,
+        observation.selected.join(","),
+        observation.commands.join(",")
+    )
+}
+
 struct Case {
     name: String,
     grid: BorderCase,
@@ -358,60 +431,14 @@ impl Case {
             DRAWING_OBJECT + 104,
             &TABLE_OBJECT.to_le_bytes(),
         );
-        write(machine.engine, DRAWING_OBJECT + 96, &THEME.to_le_bytes());
-        write(
-            machine.engine,
-            DRAWING_OBJECT + 112,
-            &self.drawing_x.to_le_bytes(),
+        configure_canvas(
+            machine,
+            self.drawing_x,
+            self.display,
+            self.canvas_scale,
+            self.outline,
+            self.outline_color,
         );
-        write_rect(machine.engine, DRAWING_OBJECT + 120, self.display);
-        write(machine.engine, THEME, &THEME_VTABLE.to_le_bytes());
-        write(
-            machine.engine,
-            THEME_VTABLE + 80,
-            &IDENTITY_COLOR.to_le_bytes(),
-        );
-        write(machine.engine, CANVAS, &CANVAS_VTABLE.to_le_bytes());
-        for (offset, target) in [
-            (232, DRAW_CANVAS_LINE),
-            (272, DRAW_RECT),
-            (288, DRAW_ROUND_RECT),
-            (80, MATRIX_GETTER),
-        ] {
-            write(
-                machine.engine,
-                CANVAS_VTABLE + offset,
-                &target.to_le_bytes(),
-            );
-        }
-        write(
-            machine.engine,
-            CANVAS_MATRIX,
-            &self.canvas_scale.to_le_bytes(),
-        );
-        write(machine.engine, MATRIX_GETTER, &0x58000040_u32.to_le_bytes());
-        write(
-            machine.engine,
-            MATRIX_GETTER + 4,
-            &0xd65f03c0_u32.to_le_bytes(),
-        );
-        write(
-            machine.engine,
-            MATRIX_GETTER + 8,
-            &CANVAS_MATRIX.to_le_bytes(),
-        );
-        write(
-            machine.engine,
-            RETURN_STYLE,
-            &self.outline_color.to_le_bytes(),
-        );
-        for (axis, value) in self.outline.into_iter().enumerate() {
-            write(
-                machine.engine,
-                RETURN_STYLE + 4 + axis as u64 * 4,
-                &value.to_le_bytes(),
-            );
-        }
         *recorder.observation = Observation::default();
         machine.call(DRAW_CELLS, &[DRAWING_OBJECT, CANVAS, LAYOUT, RETURN_STYLE]);
         let observation = &recorder.observation;
