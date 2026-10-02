@@ -2,6 +2,17 @@ use super::super::widget_text_constructor::{self, CELL_DRAWING, CONTENT, CONTENT
 use super::cell_host::{install_host, reset_host};
 use super::*;
 
+#[path = "bodytext_page_ranges.rs"]
+mod bodytext_page_ranges;
+
+pub(crate) fn capture_bodytext_page_ranges(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+    bodytext: &Path,
+) {
+    bodytext_page_ranges::capture(machine, paths, bodytext);
+}
+
 #[path = "bodytext_table_placement.rs"]
 mod bodytext_placement;
 
