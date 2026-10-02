@@ -539,7 +539,7 @@ fn cases() -> Vec<Case> {
         Case::ordinary("whitespace_only", "   ", &[2.0, 2.0, 2.0], 5),
         Case::ordinary("empty_forced", "", &[], 30),
     ];
-    for (name, alignment) in [("margins", 0), ("center", 1), ("right", 2)] {
+    for (name, alignment) in [("margins", 0), ("right", 1), ("center", 2)] {
         let mut case = Case::ordinary(name, "ABC", &[10.0, 12.0, 8.0], 50);
         case.margins = [3.25, 4.5];
         case.alignment = alignment;
