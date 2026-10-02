@@ -1101,6 +1101,45 @@ axis radii, selectable source and zero image resources. Native device appearance
 merged shaping and complete border clipping across split pages remain
 outside this evidence.
 
+### Captured table drawn bounds
+
+[`table-drawn-bounds.json`](../../conformance/table-drawn-bounds.json), SHA-256
+`f610b86467e0be9b1ddcd18d2265c08ac4e7810a600115061948c3fc38efebae`,
+records 13 cases across four native allocation fills and a repeated zero fill.
+The [capture module](../../conformance/native_table/drawn_bounds.rs) executes
+actual Model table/row/cell/content and default-border construction, border
+setters, merging, complete `GetDrawnRect` (`0x3d48c4` → `0x3c6cac`) and the
+four drawn-width getters (`0x3dbba4`–`0x3dbd48`). Raw table bounds and explicit
+border color/width controls are supplied; bounded input storage starts zeroed
+while native owned allocations receive the selected fill.
+
+The default constructor creates nonnull black one-unit outer and default-cell
+borders. Missing saved style fields therefore cannot be represented by the
+capture's explicitly injected null pointers. With an outer border present,
+each drawn edge width includes the corresponding physical perimeter cells,
+whose own border replaces their default border; a zero own width also replaces
+it. Merged frame owners do not replace physical edge slots, and interior slots
+do not enlarge the perimeter. Zero or partial alpha does not suppress drawn
+widths. Native `f32` half-width subtraction/addition expands the raw rectangle;
+fractional and large-origin controls preserve those rounding steps.
+
+An injected nil outer pointer makes `GetDrawnRect` return raw bounds even
+with wide cell borders; direct width getter calls are excluded for that state.
+The capture uses actual constructors and getters, not the earlier artwork
+fixture's supplied virtual-slot origin. Saved parsing, allocation failure,
+Drawing/text layout, Composer cloning and final export do not execute. This
+establishes the bounded Model drawn-origin producer, without complete document
+or export parity.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --table-drawn-bounds scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-drawn-bounds.json
+cmp /tmp/table-drawn-bounds.json conformance/table-drawn-bounds.json
+```
+
 ### Complete cell artwork pass
 
 [`table-cell-drawing.json`](../../conformance/table-cell-drawing.json), SHA-256

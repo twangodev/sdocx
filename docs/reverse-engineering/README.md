@@ -240,7 +240,8 @@ Planning, task lists and development progress are kept outside these documents.
   control, cell text dimensions, public layout lifecycle, visible rectangles and
   canvas clip arguments, PDF artwork crops, conditional text clips, independent
   cell/content Model rectangle setters and final native clip-path geometry, retained
-  text entry/run bounds, complete cached-glyph run emission, complete cell artwork,
+  text entry/run bounds, complete cached-glyph run emission, actual Model drawn
+  bounds, complete cell artwork,
   constructed cell Model bridges, installed callback/span lookup, cloned table
   placement, code chrome/cache/minimum geometry and vector
   evidence limits.
