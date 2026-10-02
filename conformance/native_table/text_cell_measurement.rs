@@ -4,18 +4,80 @@ use super::*;
 
 #[path = "text_cell_emission.rs"]
 mod emission;
+#[path = "cell_source_inputs.rs"]
+mod source_inputs;
 
 pub(crate) use super::super::widget_text_constructor::Paths;
 
 pub(crate) fn capture(machine: &mut Machine, paths: Paths<'_>) {
-    capture_mode(machine, paths, false);
+    capture_mode(machine, paths, CaptureMode::Measurement);
 }
 
 pub(crate) fn capture_emission(machine: &mut Machine, paths: Paths<'_>) {
-    capture_mode(machine, paths, true);
+    capture_mode(machine, paths, CaptureMode::CachedEmission);
 }
 
-fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) {
+pub(crate) fn capture_source_inputs(machine: &mut Machine, paths: Paths<'_>) {
+    capture_mode(machine, paths, CaptureMode::SourceInputs);
+}
+
+#[derive(Clone, Copy)]
+enum CaptureMode {
+    Measurement,
+    CachedEmission,
+    SourceInputs,
+}
+
+type SourceObserver = fn(&Machine, u64) -> String;
+
+impl CaptureMode {
+    fn controls(self) -> Vec<Case> {
+        match self {
+            Self::Measurement => cases(),
+            Self::CachedEmission => {
+                let mut controls = cases();
+                controls.extend(emission::newline_cases());
+                controls
+            }
+            Self::SourceInputs => source_inputs::cases(),
+        }
+    }
+
+    fn captures_emission_input(self) -> bool {
+        !matches!(self, Self::Measurement)
+    }
+
+    fn source_observer(self) -> Option<SourceObserver> {
+        matches!(self, Self::SourceInputs).then_some(source_inputs::snapshot)
+    }
+
+    fn memory_fills(self) -> &'static [u8] {
+        match self {
+            Self::SourceInputs => &[0, 85, 165, 255, 0],
+            Self::Measurement | Self::CachedEmission => &[0, 165, 255, 0],
+        }
+    }
+
+    fn memory_fill_header(self) -> &'static str {
+        match self {
+            Self::SourceInputs => "[0,85,165,255]",
+            Self::Measurement | Self::CachedEmission => "[0,165,255]",
+        }
+    }
+
+    fn header(self) -> String {
+        const CACHED_INPUT: &str = "\"cached_emission_input_capture\":true,\"span_getter\":\"0x61f3c\",\"paragraph_index_getter\":\"0x62344\",\"gravity_state_offset\":212,\"paragraph_flag_offset\":65,";
+        match self {
+            Self::Measurement => String::new(),
+            Self::CachedEmission => CACHED_INPUT.into(),
+            Self::SourceInputs => format!(
+                "\"actual_source_input_capture\":true,\"source_model_getter_observation_after_cached_emission\":true,{CACHED_INPUT}"
+            ),
+        }
+    }
+}
+
+fn capture_mode(machine: &mut Machine, paths: Paths<'_>, mode: CaptureMode) {
     use widget_text_constructor::{CELL_DRAWING, CELL_LAYOUT, CONTENT, CONTENT_SHA256, WIDGET};
     let (mut environment, fonts) = setup_with_preloaded_libraries(
         machine,
@@ -35,16 +97,13 @@ fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) 
     let mut host = install_host(machine, &mut environment, fonts);
     let mut recorder = Recorder::new(machine);
     let mut outputs = Vec::new();
-    let mut controls = cases();
-    if emission_inputs {
-        controls.extend(emission::newline_cases());
-    }
-    for case in controls {
+    for case in mode.controls() {
         let mut canonical = None;
-        for fill in [0, 165, 255, 0] {
+        for &fill in mode.memory_fills() {
             reset_host(machine, &mut environment, &mut host, fill);
             *recorder.trace = Trace::default();
-            let (wrapper, rich) = prepare_cell(machine, case);
+            let prepared = prepare_cell(machine, case);
+            let (wrapper, rich) = (prepared.wrapper, prepared.rich);
             recorder.trace.rich = rich;
             let implementation = read_u64(machine.engine, rich);
             let flags = bytes(machine.engine, implementation + 112, 4);
@@ -64,7 +123,8 @@ fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) 
                 CELL_DRAWING + 0x8c05c,
                 &[CELL_LAYOUT, 0, u32::MAX as u64, u32::MAX as u64],
             );
-            let metadata = emission_inputs
+            let metadata = mode
+                .captures_emission_input()
                 .then(|| emission::Input::capture(machine, rich, &recorder.trace.paragraphs));
             let placed = metadata.as_ref().map_or_else(
                 || snapshot(machine, rich),
@@ -72,6 +132,9 @@ fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) 
             );
             let placed_bounds = text_bounds(machine, wrapper, rich);
             let emitted = emit(machine, rich);
+            let source_input = mode
+                .source_observer()
+                .map(|observe| observe(machine, prepared.source_object));
             assert!(machine.heap.cursor < MODEL + 0x50000);
             let trace = &recorder.trace;
             let observed_text =
@@ -97,9 +160,11 @@ fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) 
                 trace.calls,
                 host.paragraphs.calls
             );
+            if let Some(input) = source_input {
+                append_object_field(&mut output, "source_input", &input);
+            }
             if let Some(input) = metadata {
-                assert_eq!(output.pop(), Some('}'));
-                output.push_str(&format!(",\"emission_input\":{}}}", input.context));
+                append_object_field(&mut output, "emission_input", &input.context);
             }
             if let Some(expected) = &canonical {
                 assert_eq!(&output, expected, "case {} fill {fill}", case.name);
@@ -110,13 +175,10 @@ fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) 
         outputs.push(canonical.unwrap());
     }
     println!(
-        "{{{}\"dependencies\":{},\"memory_fills\":[0,165,255],\"repeat_zero_fill\":true,\"model_library_sha256\":{},\"base_library_sha256\":{},\"text_library_sha256\":{},\"skia_library_sha256\":{},\"widget_library_sha256\":{},\"content_library_sha256\":{},\"drawing_library_sha256\":{},\"font_config_sha256\":{},\"capture_boundary\":{},\"cases\":[{}]}}",
-        if emission_inputs {
-            "\"cached_emission_input_capture\":true,\"span_getter\":\"0x61f3c\",\"paragraph_index_getter\":\"0x62344\",\"gravity_state_offset\":212,\"paragraph_flag_offset\":65,"
-        } else {
-            ""
-        },
+        "{{{}\"dependencies\":{},\"memory_fills\":{},\"repeat_zero_fill\":true,\"model_library_sha256\":{},\"base_library_sha256\":{},\"text_library_sha256\":{},\"skia_library_sha256\":{},\"widget_library_sha256\":{},\"content_library_sha256\":{},\"drawing_library_sha256\":{},\"font_config_sha256\":{},\"capture_boundary\":{},\"cases\":[{}]}}",
+        mode.header(),
         dependency_metadata(),
+        mode.memory_fill_header(),
         json_string(LIBRARY_SHA256),
         json_string(frames::BASE_SHA256),
         json_string(geometry::TEXT_SHA256),
@@ -130,6 +192,11 @@ fn capture_mode(machine: &mut Machine, paths: Paths<'_>, emission_inputs: bool) 
         ),
         outputs.join(",")
     );
+}
+
+fn append_object_field(object: &mut String, key: &str, value: &str) {
+    assert_eq!(object.pop(), Some('}'));
+    object.push_str(&format!(",{}:{value}}}", json_string(key)));
 }
 
 #[derive(Clone, Copy)]
@@ -191,7 +258,13 @@ fn cases() -> Vec<Case> {
     });
     cases
 }
-fn prepare_cell(machine: &Machine, case: Case) -> (u64, u64) {
+struct PreparedCell {
+    source_object: u64,
+    wrapper: u64,
+    rich: u64,
+}
+
+fn prepare_cell(machine: &Machine, case: Case) -> PreparedCell {
     use widget_text_constructor::{CELL_LAYOUT, WIDGET};
     let object = MODEL + 0x71000;
     write(machine.engine, object, &[0; 240]);
@@ -239,7 +312,11 @@ fn prepare_cell(machine: &Machine, case: Case) -> (u64, u64) {
     machine.call(WIDGET + 0xd3974, &[CELL_LAYOUT, object]);
     machine.call(WIDGET + 0xd3e3c, &[CELL_LAYOUT]);
     let wrapper = widget_text_constructor::text_wrapper(machine, CELL_LAYOUT);
-    (wrapper, read_u64(machine.engine, wrapper + 64))
+    PreparedCell {
+        source_object: object,
+        wrapper,
+        rich: read_u64(machine.engine, wrapper + 64),
+    }
 }
 
 #[derive(Default)]
