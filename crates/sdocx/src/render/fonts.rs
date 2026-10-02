@@ -14,7 +14,9 @@ pub use paint_metrics::{
     PaintMetrics,
 };
 
+mod paint_itemization;
 mod paint_layout;
+pub use paint_itemization::{PaintItemization, PaintItemizationError, PaintScriptChunk};
 pub use paint_layout::{
     PaintEntryError, PaintEntryGeometry, PaintEntryGlyph, PaintGlyphPlacement, PaintLayout,
     PaintLayoutError, PaintLogicalEntry,

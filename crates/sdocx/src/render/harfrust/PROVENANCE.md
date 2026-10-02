@@ -38,6 +38,11 @@ glyphs and advances against the supported positioning domain; rejection skips
 positioning, marks shaping unsuccessful, and preserves the SDK's typed error.
 The callback supplies no alternative glyph positions or layout arithmetic.
 
+`mod.rs` exposes the existing `unicode::CharExt` plain script query to the SDK
+itemizer through a crate-private `script_for(char)` bridge. Unicode properties
+remain the upstream tables; the bridge adds no alternate property data or
+Script_Extensions processing.
+
 The floor policy matches the executed Samsung horizontal `ValueFormat4`
 `x_advance` path in
 [`table-text-shaping-gpos.json`](../../../../../conformance/table-text-shaping-gpos.json).

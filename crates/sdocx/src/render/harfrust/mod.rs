@@ -14,6 +14,11 @@ mod algs;
 mod hb;
 mod unicode;
 
+pub(crate) fn script_for(character: char) -> [u8; 4] {
+    use unicode::CharExt;
+    (character as u32).script().tag().to_be_bytes()
+}
+
 #[cfg(test)]
 pub(crate) use hb::buffer::shaping_limit_tests::expansion_font as shaping_expansion_test_font;
 
