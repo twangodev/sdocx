@@ -99,7 +99,7 @@ fn compare_layout(
 ) {
     assert_eq!(
         layout
-            .glyphs
+            .glyphs()
             .iter()
             .map(|glyph| glyph.id)
             .collect::<Vec<_>>(),
@@ -108,7 +108,7 @@ fn compare_layout(
     );
     assert_eq!(
         layout
-            .glyphs
+            .glyphs()
             .iter()
             .map(|glyph| glyph.owner_utf16)
             .collect::<Vec<_>>(),
@@ -117,7 +117,7 @@ fn compare_layout(
     );
     assert_eq!(
         layout
-            .glyphs
+            .glyphs()
             .iter()
             .map(|glyph| glyph.full_position.map(f32::to_bits))
             .collect::<Vec<_>>(),
@@ -126,7 +126,7 @@ fn compare_layout(
     );
     assert_eq!(
         layout
-            .glyphs
+            .glyphs()
             .iter()
             .map(|glyph| glyph.owner_position.map(f32::to_bits))
             .collect::<Vec<_>>(),
@@ -135,7 +135,7 @@ fn compare_layout(
     );
     assert_eq!(
         layout
-            .glyphs
+            .glyphs()
             .iter()
             .map(|glyph| glyph.ink_bounds.map(f32::to_bits))
             .collect::<Vec<_>>(),
@@ -144,7 +144,7 @@ fn compare_layout(
     );
     assert_eq!(
         layout
-            .character_advances
+            .character_advances()
             .iter()
             .copied()
             .map(f32::to_bits)
@@ -153,7 +153,7 @@ fn compare_layout(
         "{name} character advances"
     );
     assert_eq!(
-        layout.total_advance.to_bits(),
+        layout.total_advance().to_bits(),
         expected.total_advance_bits,
         "{name} total advance"
     );
@@ -250,6 +250,7 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
         let mut shaper = face.paint_shaper(input).unwrap();
         let mut callback_index = 0;
         let single_chunk = case.hb_calls.len() == 1;
+        let mut runs = Vec::new();
         for call in case.hb_calls {
             assert_eq!(call.input.content_type, 1);
             assert_eq!([shaper.scale().x, shaper.scale().y], call.nativefont_scale);
@@ -315,12 +316,7 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
                     )
                     .unwrap();
                 compare_layout(&layout, &case.layout_piece, &case.name);
-                counts[2] += layout.glyphs.len();
-            } else if run.script != *b"Latn" {
-                assert_eq!(
-                    run.layout(0.0, 0.0).unwrap_err(),
-                    crate::render::fonts::PaintLayoutError::UnsupportedScript
-                );
+                counts[2] += layout.glyphs().len();
             }
             assert_eq!(run.glyphs.len(), call.output.infos.len());
             for ((glyph, info), position) in run
@@ -366,6 +362,18 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
                 counts[1] += 1;
             }
             counts[0] += 1;
+            runs.push(run);
+        }
+        if !single_chunk {
+            let run_refs: Vec<_> = runs.iter().collect();
+            let layout = crate::render::fonts::PaintLayout::from_runs(
+                &run_refs,
+                f32::from_bits(case.paint.letter_spacing_bits),
+                f32::from_bits(case.paint.word_spacing_bits),
+            )
+            .unwrap();
+            compare_layout(&layout, &case.layout_piece, &case.name);
+            counts[2] += layout.glyphs().len();
         }
         assert_eq!(callback_index, case.callbacks.vector_raw_bits.len());
     }
@@ -392,7 +400,7 @@ fn provider_derived_high_scale_shaping_matches_native_gpos_and_script_chunks() {
             "/../../conformance/table-text-shaping-numeric.json"
         )),
         "1e476f7fc8254b2a6c7316c6ff18b9c436f8ab57707d536daa07e11eca2af455",
-        [19, 182, 176],
+        [19, 182, 182],
     );
     compare_capture(
         include_bytes!(concat!(
@@ -709,4 +717,97 @@ fn measured_callback_advances_cannot_escape_the_font_positioning_bound() {
         error,
         PaintShapeError::UnsupportedPositioningDomain
     ));
+}
+
+#[test]
+fn stitched_runs_require_semantically_identical_sources_fonts_and_paint() {
+    use crate::render::fonts::{PaintLayout, PaintLayoutError};
+
+    let face = face();
+    let mut shaper = face.paint_shaper(paint()).unwrap();
+    let source = String::from("AV");
+    let first_infos = [PaintSourceInfo {
+        character: 'A',
+        owner_utf16: 0,
+    }];
+    let last_infos = [PaintSourceInfo {
+        character: 'V',
+        owner_utf16: 1,
+    }];
+    let first = shaper.shape(simple_request(&source, &first_infos)).unwrap();
+    let same_text = String::from("AV");
+    let last = shaper
+        .shape(simple_request(&same_text, &last_infos))
+        .unwrap();
+    assert!(Arc::ptr_eq(&first.source, &last.source));
+    let layout = PaintLayout::from_runs(&[&first, &last], 0.0, 0.0).unwrap();
+    assert_eq!(
+        PaintLayout::from_runs(&[&last, &first], 0.0, 0.0).unwrap_err(),
+        PaintLayoutError::UnsupportedChunks
+    );
+    assert_eq!(layout.source(), "AV");
+    assert_eq!(layout.source_range_utf16(), 0..2);
+
+    let mut independent = face.paint_shaper(paint()).unwrap();
+    let independent_last = independent
+        .shape(simple_request(&same_text, &last_infos))
+        .unwrap();
+    assert!(!Arc::ptr_eq(&first.source, &independent_last.source));
+    assert_eq!(
+        PaintLayout::from_runs(&[&first, &independent_last], 0.0, 0.0).unwrap(),
+        layout
+    );
+
+    let different_infos = [PaintSourceInfo {
+        character: 'B',
+        owner_utf16: 1,
+    }];
+    let different_source = shaper
+        .shape(simple_request("AB", &different_infos))
+        .unwrap();
+    assert_eq!(
+        PaintLayout::from_runs(&[&first, &different_source], 0.0, 0.0).unwrap_err(),
+        PaintLayoutError::IncompatibleChunks
+    );
+
+    let mut font_bytes = face.bytes().to_vec();
+    font_bytes.push(0);
+    let mut different_font = PaintShaper::new(&font_bytes, face.index, paint()).unwrap();
+    let font_last = different_font
+        .shape(simple_request("AV", &last_infos))
+        .unwrap();
+    assert_eq!(
+        PaintLayout::from_runs(&[&first, &font_last], 0.0, 0.0).unwrap_err(),
+        PaintLayoutError::IncompatibleChunks
+    );
+
+    let mut different_paint = face
+        .paint_shaper(PaintMetricInput {
+            size: 1600.0,
+            ..paint()
+        })
+        .unwrap();
+    let paint_last = different_paint
+        .shape(simple_request("AV", &last_infos))
+        .unwrap();
+    assert_eq!(
+        PaintLayout::from_runs(&[&first, &paint_last], 0.0, 0.0).unwrap_err(),
+        PaintLayoutError::IncompatibleChunks
+    );
+    assert_eq!(
+        PaintLayout::from_runs(&[&first, &first], 0.0, 0.0).unwrap_err(),
+        PaintLayoutError::UnsupportedChunks
+    );
+}
+
+#[test]
+fn provider_derived_multi_chunk_layout_matches_native_scripts_spacing_and_owners() {
+    compare_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-shaping-mixed-scripts.json"
+        )),
+        "00d1634d29634fac146b42baa1e1a349bd66a2a74724ca7e7d5c539f116703ad",
+        [380, 800, 800],
+    );
 }

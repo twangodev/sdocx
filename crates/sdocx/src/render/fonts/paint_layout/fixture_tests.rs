@@ -48,8 +48,15 @@ struct HarfBuzzCall {
 
 #[derive(Deserialize)]
 struct Input {
+    infos: Vec<SourceInfo>,
     direction: u32,
     script: u32,
+}
+
+#[derive(Deserialize)]
+struct SourceInfo {
+    codepoint: u32,
+    cluster: u32,
 }
 
 #[derive(Deserialize)]
@@ -142,38 +149,71 @@ impl Case {
         }
     }
 
-    fn glyphs(&self) -> Vec<PaintLayoutGlyphInput> {
-        let [call] = self.hb_calls.as_slice() else {
-            panic!("{} must have one captured chunk", self.name)
-        };
-        assert_eq!(call.output.infos.len(), call.output.positions.len());
-        assert_eq!(
-            call.output.infos.len(),
-            self.callbacks.raw_skia_bounds_bits.len()
-        );
-        call.output
-            .infos
+    fn chunk_glyphs(&self) -> Vec<Vec<PaintLayoutGlyphInput>> {
+        let mut bounds = self.callbacks.raw_skia_bounds_bits.iter();
+        let glyphs = self
+            .hb_calls
             .iter()
-            .zip(&call.output.positions)
-            .zip(&self.callbacks.raw_skia_bounds_bits)
-            .map(
-                |((info, &[advance_x, advance_y, offset_x, offset_y]), &bounds)| {
-                    PaintLayoutGlyphInput {
-                        id: info.glyph_id,
-                        cluster_utf16: info.cluster,
-                        advance_x,
-                        advance_y,
-                        offset_x,
-                        offset_y,
-                        ink_bounds: bounds.map(f32::from_bits),
-                    }
-                },
-            )
+            .map(|call| {
+                assert_eq!(call.output.infos.len(), call.output.positions.len());
+                call.output
+                    .infos
+                    .iter()
+                    .zip(&call.output.positions)
+                    .map(|(info, &[advance_x, advance_y, offset_x, offset_y])| {
+                        PaintLayoutGlyphInput {
+                            id: info.glyph_id,
+                            cluster_utf16: info.cluster,
+                            advance_x,
+                            advance_y,
+                            offset_x,
+                            offset_y,
+                            ink_bounds: bounds.next().unwrap().map(f32::from_bits),
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
+        assert!(bounds.next().is_none());
+        glyphs
+    }
+
+    fn glyphs(&self) -> Vec<PaintLayoutGlyphInput> {
+        let mut chunks = self.chunk_glyphs();
+        assert_eq!(
+            chunks.len(),
+            1,
+            "{} must have one captured chunk",
+            self.name
+        );
+        chunks.pop().unwrap()
+    }
+
+    fn chunks<'a>(&self, glyphs: &'a [Vec<PaintLayoutGlyphInput>]) -> Vec<PaintLayoutChunk<'a>> {
+        self.hb_calls
+            .iter()
+            .zip(glyphs)
+            .map(|(call, glyphs)| {
+                let first = call.input.infos.first().unwrap();
+                let last = call.input.infos.last().unwrap();
+                PaintLayoutChunk {
+                    source: Arc::from(self.text_utf8.as_str()),
+                    source_utf16_length: self.text_utf8.encode_utf16().count() as u32,
+                    range_utf16: first.cluster
+                        ..last.cluster + char::from_u32(last.codepoint).unwrap().len_utf16() as u32,
+                    direction: call.input.direction,
+                    script: call.input.script,
+                    font_slot: 0,
+                    font_fakery: 0,
+                    glyphs,
+                }
+            })
             .collect()
     }
 
     fn chunk<'a>(&self, glyphs: &'a [PaintLayoutGlyphInput]) -> PaintLayoutChunk<'a> {
         PaintLayoutChunk {
+            source: Arc::from(self.text_utf8.as_str()),
             source_utf16_length: self.text_utf8.encode_utf16().count() as u32,
             range_utf16: self.range_utf16[0]..self.range_utf16[1],
             direction: self.hb_calls[0].input.direction,
@@ -213,8 +253,8 @@ fn verify_case(case: &Case) -> (usize, usize) {
             .iter()
             .all(|&bits| bits == 0)
     );
-    let inputs = case.glyphs();
-    let actual = paint_layout(case.paint(), &[case.chunk(&inputs)]).unwrap();
+    let inputs = case.chunk_glyphs();
+    let actual = paint_layout(case.paint(), &case.chunks(&inputs)).unwrap();
     assert_eq!(
         actual
             .glyphs
@@ -288,33 +328,17 @@ fn verify_case(case: &Case) -> (usize, usize) {
 }
 
 #[test]
-fn numeric_capture_pins_large_coordinates_spacing_and_rejects_multiple_chunks() {
+fn numeric_capture_pins_large_coordinates_spacing_and_multiple_chunks() {
     let capture = numeric_capture();
     assert_eq!(capture.cases.len(), 17);
-    let mut matched_cases = 0;
     let mut glyph_count = 0;
     let mut character_count = 0;
     for case in &capture.cases {
-        if case.hb_calls.len() != 1 {
-            assert_eq!(case.name, "mixed_scripts");
-            assert_eq!(case.hb_calls.len(), 3);
-            let empty = [];
-            let chunks = [case.chunk(&empty), case.chunk(&empty), case.chunk(&empty)];
-            assert_eq!(
-                paint_layout(case.paint(), &chunks).unwrap_err(),
-                PaintLayoutError::UnsupportedChunks
-            );
-            continue;
-        }
         let (glyphs, characters) = verify_case(case);
         glyph_count += glyphs;
         character_count += characters;
-        matched_cases += 1;
     }
-    assert_eq!(
-        (matched_cases, glyph_count, character_count),
-        (16, 176, 176)
-    );
+    assert_eq!((glyph_count, character_count), (182, 182));
 }
 
 #[test]
@@ -566,5 +590,78 @@ fn unsupported_profiles_and_invalid_geometry_are_explicit() {
     assert_eq!(
         super::super::paint_shaping::paint_advance(-8_388_608.0, false).ok(),
         Some(i32::MIN)
+    );
+}
+
+fn mixed_capture() -> Capture {
+    parse_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-shaping-mixed-scripts.json"
+        )),
+        "00d1634d29634fac146b42baa1e1a349bd66a2a74724ca7e7d5c539f116703ad",
+    )
+}
+
+#[test]
+fn mixed_script_chunks_match_all_native_geometry_bits() {
+    let capture = mixed_capture();
+    assert_eq!(capture.cases.len(), 33);
+    let mut glyph_count = 0;
+    let mut character_count = 0;
+    for case in &capture.cases {
+        let (glyphs, characters) = verify_case(case);
+        glyph_count += glyphs;
+        character_count += characters;
+    }
+    assert_eq!((glyph_count, character_count), (800, 800));
+}
+
+#[test]
+fn mixed_capture_detects_flattened_chunks_and_independent_pen_accumulation() {
+    let capture = mixed_capture();
+    let spaced = capture
+        .cases
+        .iter()
+        .find(|case| case.name == "mixed_positive_spacing")
+        .unwrap();
+    let glyphs = spaced.chunk_glyphs().concat();
+    let flattened = paint_layout(spaced.paint(), &[spaced.chunk(&glyphs)]).unwrap();
+    assert_ne!(
+        flattened
+            .glyphs
+            .iter()
+            .map(|glyph| glyph.owner_position.map(f32::to_bits))
+            .collect::<Vec<_>>(),
+        spaced.layout_piece.owner_positions_bits
+    );
+
+    let long = capture
+        .cases
+        .iter()
+        .find(|case| case.name == "mixed_long_pen_spaced")
+        .unwrap();
+    let inputs = long.chunk_glyphs();
+    let chunks = long.chunks(&inputs);
+    let separate_total: f32 = chunks
+        .into_iter()
+        .map(|chunk| paint_layout(long.paint(), &[chunk]).unwrap().total_advance)
+        .sum();
+    assert_ne!(
+        separate_total.to_bits(),
+        long.layout_piece.total_advance_bits
+    );
+
+    let rtl = capture
+        .cases
+        .iter()
+        .find(|case| case.name == "mixed_rtl")
+        .unwrap();
+    let inputs = rtl.chunk_glyphs();
+    let mut chunks = rtl.chunks(&inputs);
+    chunks.reverse();
+    assert_eq!(
+        paint_layout(rtl.paint(), &chunks).unwrap_err(),
+        PaintLayoutError::UnsupportedChunks
     );
 }

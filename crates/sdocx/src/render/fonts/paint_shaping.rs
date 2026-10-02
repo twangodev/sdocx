@@ -1,4 +1,7 @@
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+
+use sha2::{Digest, Sha256};
 
 use crate::render::harfrust;
 
@@ -102,6 +105,8 @@ pub struct PaintShapedGlyph {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PaintShapedRun {
+    pub(super) source: Arc<str>,
+    pub(super) font_identity: PaintFontIdentity,
     pub(super) source_utf16_length: u32,
     pub(super) source_range_utf16: std::ops::Range<u32>,
     pub(super) script: [u8; 4],
@@ -112,7 +117,24 @@ pub struct PaintShapedRun {
     pub(super) glyphs: Vec<PaintShapedGlyph>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct PaintFontIdentity {
+    digest: [u8; 32],
+    face_index: u32,
+}
+
+#[derive(Debug, PartialEq)]
+struct PaintShapedData {
+    source_utf16_length: u32,
+    source_range_utf16: std::ops::Range<u32>,
+    glyphs: Vec<PaintShapedGlyph>,
+}
+
 impl PaintShapedRun {
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
     pub fn source_utf16_length(&self) -> u32 {
         self.source_utf16_length
     }
@@ -173,6 +195,8 @@ pub enum PaintShapeError {
 /// This backend shapes explicit script chunks. It does not select fonts, itemize
 /// text, apply layout-piece spacing, or implement ppem-dependent device tables.
 pub struct PaintShaper<'font> {
+    font_identity: PaintFontIdentity,
+    last_source: Option<Arc<str>>,
     font: FontRef<'font>,
     data: ShaperData,
     metrics: PaintMetrics<'font>,
@@ -199,6 +223,11 @@ impl<'font> PaintShaper<'font> {
         let domain = PositioningDomain::new(&font, input, scale)?;
         let data = ShaperData::new(&font);
         Ok(Self {
+            font_identity: PaintFontIdentity {
+                digest: Sha256::digest(bytes).into(),
+                face_index: index,
+            },
+            last_source: None,
             font,
             data,
             metrics,
@@ -217,7 +246,7 @@ impl<'font> PaintShaper<'font> {
         &mut self,
         request: PaintShapeRequest<'_>,
     ) -> Result<PaintShapedRun, PaintShapeError> {
-        shape_with_metrics(
+        let shaped = shape_with_metrics(
             (&self.font, &self.data),
             self.paint,
             request,
@@ -225,7 +254,23 @@ impl<'font> PaintShaper<'font> {
             &mut |glyph| self.metrics.glyph(glyph).map_err(Into::into),
             IntegerScalingRounding::Floor,
             &self.domain,
-        )
+        )?;
+        let source = match &self.last_source {
+            Some(source) if source.as_ref() == request.source => Arc::clone(source),
+            _ => Arc::from(request.source),
+        };
+        self.last_source = Some(Arc::clone(&source));
+        Ok(PaintShapedRun {
+            source,
+            font_identity: self.font_identity,
+            source_utf16_length: shaped.source_utf16_length,
+            source_range_utf16: shaped.source_range_utf16,
+            script: request.script,
+            paint: self.paint,
+            scale: self.scale,
+            direction: request.direction,
+            glyphs: shaped.glyphs,
+        })
     }
 }
 
@@ -237,7 +282,7 @@ fn shape_with_metrics(
     measure: &mut dyn FnMut(u32) -> Result<PaintGlyphMetrics, PaintShapeError>,
     rounding: IntegerScalingRounding,
     domain: &PositioningDomain,
-) -> Result<PaintShapedRun, PaintShapeError> {
+) -> Result<PaintShapedData, PaintShapeError> {
     let (font, data) = engine;
     let scale = PaintShapeScale::new(paint)?;
     let mut buffer = request.buffer()?;
@@ -300,13 +345,9 @@ fn shape_with_metrics(
         }
         _ => 0..0,
     };
-    Ok(PaintShapedRun {
+    Ok(PaintShapedData {
         source_utf16_length: request.source.encode_utf16().count() as u32,
         source_range_utf16,
-        script: request.script,
-        paint,
-        scale,
-        direction: request.direction,
         glyphs,
     })
 }

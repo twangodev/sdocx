@@ -1,13 +1,18 @@
 use super::{PaintShapeDirection, PaintShapedRun};
 
 use std::ops::Range;
+use std::sync::Arc;
 
 #[cfg(test)]
 mod fixture_tests;
 
 const MAX_UTF16_ENTRIES: usize = 250_000;
 const MAX_GLYPHS: usize = 1_000_000;
-const LATIN_SCRIPT: u32 = u32::from_be_bytes(*b"Latn");
+const SUPPORTED_SCRIPTS: [u32; 3] = [
+    u32::from_be_bytes(*b"Latn"),
+    u32::from_be_bytes(*b"Grek"),
+    u32::from_be_bytes(*b"Cyrl"),
+];
 
 #[derive(Debug, Clone, Copy)]
 pub(super) struct PaintLayoutPaint {
@@ -31,6 +36,7 @@ pub(super) struct PaintLayoutGlyphInput {
 
 #[derive(Debug)]
 pub(super) struct PaintLayoutChunk<'a> {
+    pub source: Arc<str>,
     pub source_utf16_length: u32,
     pub range_utf16: Range<u32>,
     pub direction: u32,
@@ -54,9 +60,11 @@ pub struct PaintGlyphPlacement {
 /// Full and owner-relative glyph positions, ink, and advances in native paint units.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PaintLayout {
-    pub glyphs: Vec<PaintGlyphPlacement>,
-    pub character_advances: Vec<f32>,
-    pub total_advance: f32,
+    source: Arc<str>,
+    source_range_utf16: Range<u32>,
+    glyphs: Vec<PaintGlyphPlacement>,
+    character_advances: Vec<f32>,
+    total_advance: f32,
 }
 
 #[derive(Debug, thiserror::Error, Clone, Copy, PartialEq, Eq)]
@@ -71,11 +79,13 @@ pub enum PaintLayoutError {
     NonFinitePaint,
     #[error("paint layout requires positive size and scale and zero word spacing")]
     UnsupportedPaint,
-    #[error("paint layout supports one script chunk")]
+    #[error("paint layout requires nonempty contiguous script chunks")]
     UnsupportedChunks,
+    #[error("paint layout chunks require the same source, font, paint, scale, and direction")]
+    IncompatibleChunks,
     #[error("paint layout supports horizontal directions")]
     UnsupportedDirection,
-    #[error("paint layout currently supports Latin script chunks")]
+    #[error("paint layout supports Latin, Greek, and Cyrillic script chunks")]
     UnsupportedScript,
     #[error("paint layout supports font slot zero")]
     UnsupportedFontSlot,
@@ -94,57 +104,118 @@ pub enum PaintLayoutError {
 }
 
 impl PaintShapedRun {
-    /// Places a single Latin chunk in native paint units without re-shaping it.
+    /// Places this script chunk in native paint units without re-shaping it.
     pub fn layout(
         &self,
         letter_spacing: f32,
         word_spacing: f32,
     ) -> Result<PaintLayout, PaintLayoutError> {
-        validate_source_range(
-            self.source_utf16_length,
-            &self.source_range_utf16,
-            self.glyphs.len(),
-        )?;
-        let glyphs: Vec<_> = self
-            .glyphs
+        PaintLayout::from_runs(&[self], letter_spacing, word_spacing)
+    }
+}
+
+impl PaintLayout {
+    /// Stitches contiguous chunks in source order, including right-to-left chunks.
+    pub fn from_runs(
+        runs: &[&PaintShapedRun],
+        letter_spacing: f32,
+        word_spacing: f32,
+    ) -> Result<Self, PaintLayoutError> {
+        let Some(first) = runs.first() else {
+            return Err(PaintLayoutError::UnsupportedChunks);
+        };
+        if runs
+            .windows(2)
+            .any(|pair| pair[0].source_range_utf16.end != pair[1].source_range_utf16.start)
+        {
+            return Err(PaintLayoutError::UnsupportedChunks);
+        }
+        let mut glyph_count = 0_usize;
+        for run in runs {
+            if run.source != first.source
+                || run.font_identity != first.font_identity
+                || run.paint != first.paint
+                || run.scale != first.scale
+                || run.direction != first.direction
+            {
+                return Err(PaintLayoutError::IncompatibleChunks);
+            }
+            validate_source_range(
+                run.source_utf16_length,
+                &run.source_range_utf16,
+                run.glyphs.len(),
+            )?;
+            glyph_count = glyph_count
+                .checked_add(run.glyphs.len())
+                .ok_or(PaintLayoutError::LimitExceeded)?;
+            if glyph_count > MAX_GLYPHS || runs.len() > MAX_UTF16_ENTRIES {
+                return Err(PaintLayoutError::LimitExceeded);
+            }
+        }
+        let paint = PaintLayoutPaint {
+            size: first.paint.size,
+            scale_x: first.paint.scale_x,
+            skew_x: first.paint.skew_x,
+            letter_spacing,
+            word_spacing,
+        };
+        paint.spacing()?;
+        let inputs: Vec<Vec<_>> = runs
             .iter()
-            .map(|glyph| PaintLayoutGlyphInput {
-                id: glyph.id,
-                cluster_utf16: glyph.owner_utf16,
-                advance_x: glyph.x_advance,
-                advance_y: glyph.y_advance,
-                offset_x: glyph.x_offset,
-                offset_y: glyph.y_offset,
-                ink_bounds: [
-                    glyph.backend.ink.left,
-                    glyph.backend.ink.top,
-                    glyph.backend.ink.right,
-                    glyph.backend.ink.bottom,
-                ],
+            .map(|run| {
+                run.glyphs
+                    .iter()
+                    .map(|glyph| PaintLayoutGlyphInput {
+                        id: glyph.id,
+                        cluster_utf16: glyph.owner_utf16,
+                        advance_x: glyph.x_advance,
+                        advance_y: glyph.y_advance,
+                        offset_x: glyph.x_offset,
+                        offset_y: glyph.y_offset,
+                        ink_bounds: [
+                            glyph.backend.ink.left,
+                            glyph.backend.ink.top,
+                            glyph.backend.ink.right,
+                            glyph.backend.ink.bottom,
+                        ],
+                    })
+                    .collect()
             })
             .collect();
-        let chunk = PaintLayoutChunk {
-            source_utf16_length: self.source_utf16_length,
-            range_utf16: self.source_range_utf16.clone(),
-            direction: match self.direction {
-                PaintShapeDirection::LeftToRight => 4,
-                PaintShapeDirection::RightToLeft => 5,
-            },
-            script: u32::from_be_bytes(self.script),
-            font_slot: 0,
-            font_fakery: 0,
-            glyphs: &glyphs,
-        };
-        paint_layout(
-            PaintLayoutPaint {
-                size: self.paint.size,
-                scale_x: self.paint.scale_x,
-                skew_x: self.paint.skew_x,
-                letter_spacing,
-                word_spacing,
-            },
-            &[chunk],
-        )
+        let chunks: Vec<_> = runs
+            .iter()
+            .zip(&inputs)
+            .map(|(run, glyphs)| PaintLayoutChunk {
+                source: Arc::clone(&run.source),
+                source_utf16_length: run.source_utf16_length,
+                range_utf16: run.source_range_utf16.clone(),
+                direction: match run.direction {
+                    PaintShapeDirection::LeftToRight => 4,
+                    PaintShapeDirection::RightToLeft => 5,
+                },
+                script: u32::from_be_bytes(run.script),
+                font_slot: 0,
+                font_fakery: 0,
+                glyphs,
+            })
+            .collect();
+        paint_layout(paint, &chunks)
+    }
+
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+    pub fn source_range_utf16(&self) -> Range<u32> {
+        self.source_range_utf16.clone()
+    }
+    pub fn glyphs(&self) -> &[PaintGlyphPlacement] {
+        &self.glyphs
+    }
+    pub fn character_advances(&self) -> &[f32] {
+        &self.character_advances
+    }
+    pub fn total_advance(&self) -> f32 {
+        self.total_advance
     }
 }
 
@@ -205,107 +276,137 @@ pub(super) fn paint_layout(
     chunks: &[PaintLayoutChunk<'_>],
 ) -> Result<PaintLayout, PaintLayoutError> {
     let (spacing, half_spacing) = paint.spacing()?;
-    let [chunk] = chunks else {
+    let Some(first) = chunks.first() else {
         return Err(PaintLayoutError::UnsupportedChunks);
     };
-    let start = chunk.range_utf16.start;
-    let length = validate_source_range(
-        chunk.source_utf16_length,
-        &chunk.range_utf16,
-        chunk.glyphs.len(),
-    )?;
-    if !matches!(chunk.direction, 4 | 5) {
-        return Err(PaintLayoutError::UnsupportedDirection);
+    if chunks.len() > MAX_UTF16_ENTRIES {
+        return Err(PaintLayoutError::LimitExceeded);
     }
-    if chunk.script != LATIN_SCRIPT {
-        return Err(PaintLayoutError::UnsupportedScript);
+    if chunks
+        .windows(2)
+        .any(|pair| pair[0].range_utf16.end != pair[1].range_utf16.start)
+    {
+        return Err(PaintLayoutError::UnsupportedChunks);
     }
-    if chunk.font_slot != 0 {
-        return Err(PaintLayoutError::UnsupportedFontSlot);
+    let range = first.range_utf16.start..chunks.last().unwrap().range_utf16.end;
+    let mut glyph_count = 0_usize;
+    for chunk in chunks {
+        if chunk.source != first.source
+            || chunk.source_utf16_length != first.source_utf16_length
+            || chunk.direction != first.direction
+        {
+            return Err(PaintLayoutError::IncompatibleChunks);
+        }
+        validate_source_range(
+            chunk.source_utf16_length,
+            &chunk.range_utf16,
+            chunk.glyphs.len(),
+        )?;
+        glyph_count = glyph_count
+            .checked_add(chunk.glyphs.len())
+            .ok_or(PaintLayoutError::LimitExceeded)?;
+        if !matches!(chunk.direction, 4 | 5) {
+            return Err(PaintLayoutError::UnsupportedDirection);
+        }
+        if !SUPPORTED_SCRIPTS.contains(&chunk.script) {
+            return Err(PaintLayoutError::UnsupportedScript);
+        }
+        if chunk.font_slot != 0 {
+            return Err(PaintLayoutError::UnsupportedFontSlot);
+        }
+        if chunk.font_fakery != 0 {
+            return Err(PaintLayoutError::UnsupportedFontFakery);
+        }
     }
-    if chunk.font_fakery != 0 {
-        return Err(PaintLayoutError::UnsupportedFontFakery);
-    }
+    let start = range.start;
+    let length = validate_source_range(first.source_utf16_length, &range, glyph_count)?;
     let mut character_advances = vec![0.0; length];
-    let mut glyphs = Vec::with_capacity(chunk.glyphs.len());
+    let mut glyphs = Vec::with_capacity(glyph_count);
     let mut cursor = 0.0;
-    let mut cluster_origin = 0.0;
-    let mut previous_owner = None;
-    for glyph in chunk.glyphs {
-        if glyph.advance_y != 0 {
-            return Err(PaintLayoutError::UnsupportedVerticalAdvance);
-        }
-        if !glyph.ink_bounds.into_iter().all(f32::is_finite) {
-            return Err(PaintLayoutError::NonFiniteInk);
-        }
-        let Some(owner) = glyph.cluster_utf16.checked_sub(start) else {
-            return Err(PaintLayoutError::OwnerOutOfRange);
-        };
-        let Some(owner_advance) = character_advances.get_mut(owner as usize) else {
-            return Err(PaintLayoutError::OwnerOutOfRange);
-        };
-        if let Some(previous) = previous_owner {
-            if (chunk.direction == 4 && owner < previous)
-                || (chunk.direction == 5 && owner > previous)
-            {
-                return Err(PaintLayoutError::NonMonotoneOwners);
+    for chunk in chunks {
+        let mut cluster_origin = 0.0;
+        let mut previous_owner = None;
+        for glyph in chunk.glyphs {
+            if glyph.advance_y != 0 {
+                return Err(PaintLayoutError::UnsupportedVerticalAdvance);
             }
-            if owner != previous {
+            if !glyph.ink_bounds.into_iter().all(f32::is_finite) {
+                return Err(PaintLayoutError::NonFiniteInk);
+            }
+            if !chunk.range_utf16.contains(&glyph.cluster_utf16) {
+                return Err(PaintLayoutError::OwnerOutOfRange);
+            }
+            let Some(owner) = glyph.cluster_utf16.checked_sub(start) else {
+                return Err(PaintLayoutError::OwnerOutOfRange);
+            };
+            let Some(owner_advance) = character_advances.get_mut(owner as usize) else {
+                return Err(PaintLayoutError::OwnerOutOfRange);
+            };
+            if let Some(previous) = previous_owner {
+                if (chunk.direction == 4 && owner < previous)
+                    || (chunk.direction == 5 && owner > previous)
+                {
+                    return Err(PaintLayoutError::NonMonotoneOwners);
+                }
+                if owner != previous {
+                    add_spacing(owner_advance, half_spacing);
+                    add_spacing(&mut character_advances[previous as usize], half_spacing);
+                    cluster_origin = cursor;
+                    add_spacing(&mut cursor, spacing);
+                }
+            } else {
                 add_spacing(owner_advance, half_spacing);
-                add_spacing(&mut character_advances[previous as usize], half_spacing);
+                add_spacing(&mut cursor, half_spacing);
                 cluster_origin = cursor;
-                add_spacing(&mut cursor, spacing);
             }
-        } else {
-            add_spacing(owner_advance, half_spacing);
+            let offset_x = paint_units(glyph.offset_x);
+            let offset_y = paint_units(glyph.offset_y);
+            let sheared_x = (-offset_y).mul_add(paint.skew_x, offset_x);
+            let y = 0.0 - offset_y;
+            let full_position = [cursor + sheared_x, y];
+            let owner_position = [(cursor - cluster_origin) + sheared_x, y];
+            let [left, top, right, bottom] = glyph.ink_bounds;
+            let ink_bounds = [
+                left + sheared_x,
+                top - offset_y,
+                right + sheared_x,
+                bottom - offset_y,
+            ];
+            let advance = paint_units(glyph.advance_x);
+            character_advances[owner as usize] += advance;
+            cursor += advance;
+            if !full_position
+                .into_iter()
+                .chain(owner_position)
+                .chain(ink_bounds)
+                .chain([cursor, character_advances[owner as usize]])
+                .all(f32::is_finite)
+            {
+                return Err(PaintLayoutError::NonFiniteGeometry);
+            }
+            glyphs.push(PaintGlyphPlacement {
+                id: glyph.id,
+                owner_utf16: owner,
+                full_position,
+                owner_position,
+                ink_bounds,
+            });
+            previous_owner = Some(owner);
+        }
+        if let Some(owner) = previous_owner {
             add_spacing(&mut cursor, half_spacing);
-            cluster_origin = cursor;
-        }
-        let offset_x = paint_units(glyph.offset_x);
-        let offset_y = paint_units(glyph.offset_y);
-        let sheared_x = (-offset_y).mul_add(paint.skew_x, offset_x);
-        let y = 0.0 - offset_y;
-        let full_position = [cursor + sheared_x, y];
-        let owner_position = [(cursor - cluster_origin) + sheared_x, y];
-        let [left, top, right, bottom] = glyph.ink_bounds;
-        let ink_bounds = [
-            left + sheared_x,
-            top - offset_y,
-            right + sheared_x,
-            bottom - offset_y,
-        ];
-        let advance = paint_units(glyph.advance_x);
-        character_advances[owner as usize] += advance;
-        cursor += advance;
-        if !full_position
-            .into_iter()
-            .chain(owner_position)
-            .chain(ink_bounds)
-            .chain([cursor, character_advances[owner as usize]])
-            .all(f32::is_finite)
-        {
-            return Err(PaintLayoutError::NonFiniteGeometry);
-        }
-        glyphs.push(PaintGlyphPlacement {
-            id: glyph.id,
-            owner_utf16: owner,
-            full_position,
-            owner_position,
-            ink_bounds,
-        });
-        previous_owner = Some(owner);
-    }
-    if let Some(owner) = previous_owner {
-        add_spacing(&mut cursor, half_spacing);
-        add_spacing(&mut character_advances[owner as usize], half_spacing);
-        if ![cursor, character_advances[owner as usize]]
-            .into_iter()
-            .all(f32::is_finite)
-        {
-            return Err(PaintLayoutError::NonFiniteGeometry);
+            add_spacing(&mut character_advances[owner as usize], half_spacing);
+            if ![cursor, character_advances[owner as usize]]
+                .into_iter()
+                .all(f32::is_finite)
+            {
+                return Err(PaintLayoutError::NonFiniteGeometry);
+            }
         }
     }
     Ok(PaintLayout {
+        source: Arc::clone(&first.source),
+        source_range_utf16: range,
         glyphs,
         character_advances,
         total_advance: cursor,
