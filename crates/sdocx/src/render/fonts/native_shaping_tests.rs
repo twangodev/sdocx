@@ -167,14 +167,27 @@ fn glyph_identities(run: &ShapedRun) -> Vec<GlyphInfo> {
 }
 
 fn capture() -> Capture {
-    let bytes = include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../conformance/table-text-shaping.json"
-    ));
-    assert_eq!(
-        format!("{:x}", Sha256::digest(bytes)),
-        "a4c58481cb1e36bb7de8783bea49a800b10b4227177684c48f5b5c356d7a425b"
-    );
+    pinned_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-shaping.json"
+        )),
+        "a4c58481cb1e36bb7de8783bea49a800b10b4227177684c48f5b5c356d7a425b",
+    )
+}
+
+fn numeric_capture() -> Capture {
+    pinned_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-shaping-numeric.json"
+        )),
+        "1e476f7fc8254b2a6c7316c6ff18b9c436f8ab57707d536daa07e11eca2af455",
+    )
+}
+
+fn pinned_capture(bytes: &[u8], expected_sha256: &str) -> Capture {
+    assert_eq!(format!("{:x}", Sha256::digest(bytes)), expected_sha256);
     serde_json::from_slice(bytes).unwrap()
 }
 
@@ -193,16 +206,24 @@ fn captured_face(capture: &Capture) -> ResolvedFace {
 
 #[test]
 fn actual_native_harfbuzz_glyph_ids_and_utf16_ownership_match_rust_shaping() {
-    let capture = capture();
+    compare_identities(capture(), [16, 16, 48, 49]);
+}
+
+#[test]
+fn numeric_native_glyph_ids_and_utf16_ownership_match_across_script_chunks() {
+    compare_identities(numeric_capture(), [17, 19, 182, 182]);
+}
+
+fn compare_identities(capture: Capture, counts: [usize; 4]) {
     let face = captured_face(&capture);
-    assert_eq!(capture.cases.len(), 16);
+    assert_eq!(capture.cases.len(), counts[0]);
     assert_eq!(
         capture
             .cases
             .iter()
             .map(|case| case.hb_calls.len())
             .sum::<usize>(),
-        16
+        counts[1]
     );
     assert_eq!(
         capture
@@ -211,7 +232,7 @@ fn actual_native_harfbuzz_glyph_ids_and_utf16_ownership_match_rust_shaping() {
             .flat_map(|case| &case.hb_calls)
             .map(|call| call.output.infos.len())
             .sum::<usize>(),
-        48
+        counts[2]
     );
     assert_eq!(
         capture
@@ -219,7 +240,7 @@ fn actual_native_harfbuzz_glyph_ids_and_utf16_ownership_match_rust_shaping() {
             .iter()
             .map(|case| case.range_utf16[1] - case.range_utf16[0])
             .sum::<usize>(),
-        49
+        counts[3]
     );
     for case in &capture.cases {
         assert!(case.range_utf16[0] < case.range_utf16[1], "{}", case.name);

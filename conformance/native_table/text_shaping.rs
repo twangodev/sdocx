@@ -880,35 +880,7 @@ fn pinned_host(path: &str, expected: &str) {
         Some(expected)
     );
 }
-pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Path, font: &Path) {
-    pinned_host(
-        "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
-        "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
-    );
-    pinned_host(
-        "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1",
-        "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24",
-    );
-    pinned_host(
-        "/usr/lib/x86_64-linux-gnu/libc.so.6",
-        "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
-    );
-    pinned_host(
-        "/usr/lib/x86_64-linux-gnu/libm.so.6",
-        "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
-    );
-    machine.call_timeout_micros = 0;
-    machine.call_instruction_limit = 10_000_000;
-    let mut environment = NativeFontEnvironment::new(machine, base, text, skia, font);
-    let mut trace = TraceRecorder::new(machine);
-    let mut host = HostIcu::new(machine);
-    let icu_version = host.version("u_getVersion");
-    let unicode_version = host.version("u_getUnicodeVersion");
-    assert_eq!(icu_version, [76, 1, 0, 0]);
-    let libc_version = unsafe { std::ffi::CStr::from_ptr(gnu_get_libc_version()) }
-        .to_str()
-        .unwrap();
-    environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
+fn reference_cases() -> Vec<Case> {
     let mut cases = vec![
         Case::regular("av_default", "AV", 17.0),
         Case::regular("to_default", "To", 17.0),
@@ -941,6 +913,97 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Pa
     let mut spaced = Case::regular("letter_spacing", "AV", 17.0);
     spaced.letter_spacing = 0.04;
     cases.push(spaced);
+    cases
+}
+
+fn numeric_cases() -> Vec<Case> {
+    let mut cases = vec![
+        Case::regular("large_av", "AV", 1000.125),
+        Case::regular("large_wa", "WA", 1000.125),
+        Case::regular("large_to", "To", 1000.125),
+        Case::regular("large_av_fractional", "AV", 1234.567),
+        Case::regular("large_av_1337", "AV", 1337.125),
+        Case::regular("large_to_2000", "To", 2000.125),
+        Case::regular(
+            "long_pen",
+            "AVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAVAV",
+            100.0,
+        ),
+        Case::regular("mixed_scripts", "AVΑΒАВ", 17.125),
+    ];
+    for (name, rtl, spacing) in [
+        ("combining_skew", false, 0.0),
+        ("combining_rtl_skew", true, 0.0),
+        ("positive_spacing", false, 0.04),
+        ("negative_spacing", false, -0.04),
+        ("positive_spacing_rtl", true, 0.04),
+        ("negative_spacing_rtl", true, -0.04),
+        ("small_positive_spacing", false, 0.025),
+        ("small_negative_spacing", false, -0.025),
+    ] {
+        let mut case = Case::regular(name, "x\u{327}\u{301}y", 17.125);
+        case.skew = -0.1234567;
+        case.rtl = rtl;
+        case.letter_spacing = spacing;
+        cases.push(case);
+    }
+    let mut partial = Case::regular("supplementary_partial", "😀x\u{327}\u{301}y😀", 17.125);
+    partial.range = Some([2, 6]);
+    partial.skew = -0.1234567;
+    cases.push(partial);
+    cases
+}
+
+pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Path, font: &Path) {
+    capture_cases(machine, base, text, skia, font, reference_cases());
+}
+
+pub(super) fn capture_numeric(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    capture_cases(machine, base, text, skia, font, numeric_cases());
+}
+
+fn capture_cases(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    cases: Vec<Case>,
+) {
+    pinned_host(
+        "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
+        "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
+    );
+    pinned_host(
+        "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1",
+        "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24",
+    );
+    pinned_host(
+        "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
+    );
+    pinned_host(
+        "/usr/lib/x86_64-linux-gnu/libm.so.6",
+        "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+    );
+    machine.call_timeout_micros = 0;
+    machine.call_instruction_limit = 10_000_000;
+    let mut environment = NativeFontEnvironment::new(machine, base, text, skia, font);
+    let mut trace = TraceRecorder::new(machine);
+    let mut host = HostIcu::new(machine);
+    let icu_version = host.version("u_getVersion");
+    let unicode_version = host.version("u_getUnicodeVersion");
+    assert_eq!(icu_version, [76, 1, 0, 0]);
+    let libc_version = unsafe { std::ffi::CStr::from_ptr(gnu_get_libc_version()) }
+        .to_str()
+        .unwrap();
+    environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
     let outputs = cases
         .iter()
         .map(|case| {
