@@ -2384,7 +2384,9 @@ mod tests {
             &renderer,
         )
         .unwrap();
-        close(initial.panel_bbox.y_max - initial.panel_bbox.y_min, 556.5);
+        close(initial.copy.y_min, 506.0);
+        close(initial.copy.y_max, 578.0);
+        close(initial.panel_bbox.y_max - initial.panel_bbox.y_min, 606.5);
         let mut content = text("\u{fffc}\nZ");
         content.font_size = Some(15.0);
         content.margins = Some([0.0, 140.0, 0.0, 0.0]);
@@ -2458,25 +2460,25 @@ mod tests {
             (
                 ObjectSpanLayoutConstraint::OverPages,
                 false,
-                18.0,
-                f64::from(270.751_f32),
+                7.0,
+                f64::from(259.751_f32),
             ),
             (
                 ObjectSpanLayoutConstraint::OverPages,
                 false,
-                18.25,
+                7.25,
                 f64::from(512.751_f32),
             ),
             (
                 ObjectSpanLayoutConstraint::OverPages,
                 true,
-                18.0,
+                7.0,
                 f64::from(512.751_f32),
             ),
             (
                 ObjectSpanLayoutConstraint::Normal,
                 false,
-                18.0,
+                7.0,
                 f64::from(512.751_f32),
             ),
         ] {
@@ -2488,7 +2490,7 @@ mod tests {
                 &renderer,
             )
             .unwrap();
-            assert_eq!(prepared.min_first_page_height, 181.5);
+            assert_eq!(prepared.min_first_page_height, 192.75);
             let mut line = object_line(0.0, false, [0.0; 2]);
             line.objects[0].object.height = prepared.panel_bbox.y_max - prepared.panel_bbox.y_min;
             line.objects[0].prepared = Some(Ok(crate::render::embedded::PreparedObject::Code(
