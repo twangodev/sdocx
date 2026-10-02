@@ -1,9 +1,9 @@
 use std::ops::Range;
 
+use crate::BoundingBox;
 use crate::render::RenderTheme;
 use crate::render::vector::{Paint, Rectangle, Scene, Styled, color_hex, decimal};
 use crate::render::viewport::Viewport;
-use crate::{BoundingBox, RichTextSpanType};
 use rustybuzz::Direction;
 
 use super::{StyledText, TextBackground, TextLine};
@@ -61,21 +61,18 @@ fn line_backgrounds_for_paint(
 ) -> (Vec<BackgroundRectangle>, Vec<TextBackgroundIssue>) {
     let mut rectangles: Vec<BackgroundRectangle> = Vec::new();
     let mut issues = Vec::new();
-    if !styled.spans.iter().any(|(range, span)| {
-        range.start < line.line.source.end
-            && range.end > line.line.source.start
-            && span.kind == RichTextSpanType::BackgroundColor
-            && span.argb_value().is_some_and(|argb| argb >> 24 != 0)
-    }) {
+    let background_at = |source| {
+        styled
+            .background_at(source, theme, canonical)
+            .filter(|background| background.alpha != 0)
+    };
+    if !styled
+        .segments(line.line.source.clone())
+        .any(|segment| background_at(segment.start).is_some())
+    {
         return (rectangles, issues);
     }
     let ranges = super::paint::text_ranges(&line.line);
-    let background_at = |source| {
-        styled
-            .style_at(source, theme, line.predefined)
-            .background
-            .filter(|background| background.alpha != 0)
-    };
     let visual_positioned =
         line.line.native_positioned || (canonical && line.line.advance_for_paint(true).is_some());
     let contexts = if visual_positioned {
@@ -212,7 +209,7 @@ mod tests {
     use crate::render::fonts::FontBook;
     use crate::render::text::{TextContext, TextFrame, TextLayout, TextRenderer, TextSettings};
     use crate::render::vector::Svg;
-    use crate::{RichTextBox, RichTextSpan};
+    use crate::{RichTextBox, RichTextSpan, RichTextSpanType};
 
     fn span(kind: RichTextSpanType, argb: u32, start: u32, end: u32) -> RichTextSpan {
         RichTextSpan {

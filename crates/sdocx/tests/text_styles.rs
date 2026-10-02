@@ -541,6 +541,391 @@ fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
     }
 }
 
+fn composition_documents(content: &RichTextBox) -> Vec<(String, Document)> {
+    let documents: Vec<_> = CONTEXTS
+        .iter()
+        .map(|&context| (format!("{context:?}"), document(context, content.clone())))
+        .collect();
+    #[cfg(feature = "serde")]
+    let documents = {
+        let mut documents = documents;
+        let mut cell = text("\u{fffc}");
+        cell.object_spans.push(RichTextObjectSpan {
+            object_type: ObjectType::CodeBlock,
+            object_data: Vec::new(),
+            content: Some(RichTextObjectContent::CodeBlock(Box::new(
+                RichTextCodeBlock {
+                    bbox: bounds(),
+                    rotation_degrees: None,
+                    title: None,
+                    body: Some(content.clone()),
+                },
+            ))),
+            text_index_utf16: 0,
+            layout_option: ObjectSpanLayoutOption::Block,
+            layout_constraint: ObjectSpanLayoutConstraint::Normal,
+        });
+        documents.push(("NestedTableCode".into(), document(Context::Table, cell)));
+        documents
+    };
+    documents
+}
+
+fn modern_composition_flag(kind: RichTextSpanType, start: u32, enabled: bool) -> RichTextSpan {
+    span(
+        kind,
+        start,
+        start + 1,
+        &[u8::from(enabled), 0xab, 0xcd, 0xef, 0x12, 0x34, 0x56, 0x78],
+    )
+}
+
+#[test]
+fn modern_composition_flags_preserve_native_styling_in_every_text_context() {
+    let mut content = text("A B C D");
+    content.spans = vec![
+        span(
+            RichTextSpanType::BackgroundColor,
+            6,
+            7,
+            &0xff34_6578_u32.to_le_bytes(),
+        ),
+        modern_composition_flag(RichTextSpanType::Composing, 0, false),
+        modern_composition_flag(RichTextSpanType::Composing, 2, true),
+        modern_composition_flag(RichTextSpanType::ComposingTag, 4, true),
+        modern_composition_flag(RichTextSpanType::ComposingTag, 6, false),
+    ];
+    let fonts = FontBook::default();
+    for (context, document) in composition_documents(&content) {
+        let layout = sdocx::layout_document(&document);
+        let rendered = sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        assert!(
+            rendered.text_diagnostics.is_empty(),
+            "{context}: {:?}",
+            rendered.text_diagnostics
+        );
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        for value in ["A", "B", "D"] {
+            assert_decoration(&xml, tspan(&xml, value), Some("underline"));
+        }
+        let tag_false = tspan(&xml, "D");
+        assert_eq!(
+            tag_false.attribute("font-style"),
+            Some("italic"),
+            "{context}"
+        );
+        assert!(
+            tag_false.attribute("font-weight") == Some("bold")
+                || tag_false.attribute("stroke").is_some(),
+            "{context}: tag=false lost bold"
+        );
+        let backgrounds: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("rect"))
+            .collect();
+        let tag_background = backgrounds
+            .iter()
+            .find(|node| node.attribute("fill") == Some("#252525"))
+            .unwrap_or_else(|| panic!("{context}: tag=true lost background"));
+        let opacity: f64 = tag_background
+            .attribute("fill-opacity")
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert!(
+            (opacity - 25.0 / 255.0).abs() < 0.00001,
+            "{context}: {opacity}"
+        );
+        assert!(
+            backgrounds
+                .iter()
+                .any(|node| node.attribute("fill") == Some("#346578")),
+            "{context}: tag=false erased prior background"
+        );
+        assert_eq!(tspan(&xml, "C").attribute("font-style"), None, "{context}");
+        #[cfg(feature = "pdf")]
+        {
+            let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                &document,
+                &layout,
+                &[0],
+                &Default::default(),
+                &Default::default(),
+                &fonts,
+            )
+            .unwrap();
+            assert!(retained.pages[0].text_diagnostics.is_empty(), "{context}");
+            let inspected = PdfComposition::read(&retained.bytes);
+            inspected.assert_source("A B C D", &context);
+            let colors = inspected.fill_colors;
+            for expected in [[37, 37, 37], [52, 101, 120]] {
+                assert!(
+                    colors.contains(&expected),
+                    "{context}: retained PDF lost {expected:?}: {colors:?}"
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn composing_background_is_preview_only_and_svg_pdf_preserves_supplied_appearance() {
+    let fonts = FontBook::default();
+    for composing in [0_u32, 0x0012_3456, 0x8012_3456] {
+        let mut content = text("Mark");
+        content.spans = vec![
+            span(
+                RichTextSpanType::BackgroundColor,
+                0,
+                4,
+                &0xff34_6578_u32.to_le_bytes(),
+            ),
+            span(
+                RichTextSpanType::ComposingBackgroundColor,
+                0,
+                4,
+                &[composing.to_le_bytes(), 0xdead_beef_u32.to_le_bytes()].concat(),
+            ),
+        ];
+        for (context, document) in composition_documents(&content) {
+            let layout = sdocx::layout_document(&document);
+            let rendered = sdocx::render_layout_page_svg_with_fonts(
+                &document,
+                &layout,
+                0,
+                &Default::default(),
+                &fonts,
+            )
+            .unwrap();
+            assert!(
+                rendered.text_diagnostics.is_empty(),
+                "{context}: {composing:#x}"
+            );
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            let has_color = |color| {
+                xml.descendants()
+                    .any(|node| node.has_tag_name("rect") && node.attribute("fill") == Some(color))
+            };
+            assert_eq!(
+                has_color("#346578"),
+                composing == 0,
+                "{context}: {composing:#x}"
+            );
+            assert_eq!(
+                has_color("#123456"),
+                composing >> 24 != 0,
+                "{context}: {composing:#x}"
+            );
+            if composing >> 24 != 0 {
+                let rectangle = xml
+                    .descendants()
+                    .find(|node| {
+                        node.has_tag_name("rect") && node.attribute("fill") == Some("#123456")
+                    })
+                    .unwrap();
+                let opacity: f64 = rectangle
+                    .attribute("fill-opacity")
+                    .unwrap()
+                    .parse()
+                    .unwrap();
+                assert!(
+                    (opacity - 128.0 / 255.0).abs() < 0.00001,
+                    "{context}: {opacity}"
+                );
+            }
+            let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                &document,
+                &layout,
+                &[0],
+                &Default::default(),
+                &Default::default(),
+                &fonts,
+            )
+            .unwrap();
+            assert!(retained.pages[0].text_diagnostics.is_empty(), "{context}");
+            let inspected = PdfComposition::read(&retained.bytes);
+            inspected.assert_source("Mark", &context);
+            let retained_colors = inspected.fill_colors;
+            assert!(
+                retained_colors.contains(&[52, 101, 120]),
+                "{context}: {retained_colors:?}"
+            );
+            assert!(
+                !retained_colors.contains(&[18, 52, 86]),
+                "{context}: {retained_colors:?}"
+            );
+            let supplied_svg =
+                sdocx::render_svg_pages_pdf(&[rendered], &Default::default()).unwrap();
+            let inspected = PdfComposition::read(&supplied_svg);
+            inspected.assert_source("Mark", &context);
+            let svg_colors = inspected.fill_colors;
+            assert_eq!(
+                svg_colors.contains(&[52, 101, 120]),
+                composing == 0,
+                "{context}: {composing:#x}: {svg_colors:?}"
+            );
+            assert_eq!(
+                svg_colors.contains(&[18, 52, 86]),
+                composing >> 24 != 0,
+                "{context}: {composing:#x}: {svg_colors:?}"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[derive(Default)]
+struct PdfComposition {
+    source: String,
+    fill_colors: Vec<[u8; 3]>,
+    image_resources: usize,
+}
+
+#[cfg(feature = "pdf")]
+impl PdfComposition {
+    fn assert_source(&self, expected: &str, context: &str) {
+        assert_eq!(self.source, expected, "{context}");
+        assert_eq!(
+            self.image_resources, 0,
+            "{context}: text exported as an image"
+        );
+    }
+
+    fn read(bytes: &[u8]) -> Self {
+        #[derive(Clone, Default)]
+        struct PaintState {
+            fill: [u8; 3],
+            font: Vec<u8>,
+        }
+        fn dictionary<'a>(
+            pdf: &'a lopdf::Document,
+            value: &'a lopdf::Object,
+        ) -> &'a lopdf::Dictionary {
+            value
+                .as_reference()
+                .map(|reference| pdf.get_dictionary(reference).unwrap())
+                .unwrap_or_else(|_| value.as_dict().unwrap())
+        }
+        fn visit(
+            pdf: &lopdf::Document,
+            data: &[u8],
+            resources: &lopdf::Dictionary,
+            mut state: PaintState,
+            result: &mut PdfComposition,
+        ) {
+            let mut stack = Vec::new();
+            for operation in lopdf::content::Content::decode(data).unwrap().operations {
+                match operation.operator.as_str() {
+                    "q" => stack.push(state.clone()),
+                    "Q" => state = stack.pop().unwrap(),
+                    "rg" | "scn" | "g" => {
+                        let values: Vec<_> = operation
+                            .operands
+                            .iter()
+                            .filter_map(|value| value.as_float().ok())
+                            .collect();
+                        match values.as_slice() {
+                            [gray] => state.fill = [(*gray * 255.0).round() as u8; 3],
+                            [red, green, blue] => {
+                                state.fill =
+                                    [*red, *green, *blue].map(|value| (value * 255.0).round() as u8)
+                            }
+                            _ => {}
+                        }
+                    }
+                    "f" | "F" | "f*" | "B" | "B*" | "b" | "b*" => {
+                        result.fill_colors.push(state.fill)
+                    }
+                    "Tf" => state.font = operation.operands[0].as_name().unwrap().to_vec(),
+                    "Tj" | "TJ" => {
+                        let fonts = dictionary(pdf, resources.get(b"Font").unwrap());
+                        let encoding = dictionary(pdf, fonts.get(&state.font).unwrap())
+                            .get_font_encoding(pdf)
+                            .unwrap();
+                        let values = operation.operands[0]
+                            .as_array()
+                            .map(Vec::as_slice)
+                            .unwrap_or(&operation.operands);
+                        for value in values {
+                            if let lopdf::Object::String(bytes, _) = value {
+                                result.source.push_str(
+                                    &lopdf::Document::decode_text(&encoding, bytes).unwrap(),
+                                );
+                            }
+                        }
+                    }
+                    "Do" => {
+                        let objects = dictionary(pdf, resources.get(b"XObject").unwrap());
+                        let stream = pdf
+                            .get_object(
+                                objects
+                                    .get(operation.operands[0].as_name().unwrap())
+                                    .unwrap()
+                                    .as_reference()
+                                    .unwrap(),
+                            )
+                            .unwrap()
+                            .as_stream()
+                            .unwrap();
+                        if stream.dict.get(b"Subtype").unwrap().as_name().unwrap() == b"Form" {
+                            let child_resources = stream
+                                .dict
+                                .get(b"Resources")
+                                .map(|value| dictionary(pdf, value))
+                                .unwrap_or(resources);
+                            visit(
+                                pdf,
+                                &stream.decompressed_content().unwrap(),
+                                child_resources,
+                                state.clone(),
+                                result,
+                            );
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let pdf = lopdf::Document::load_mem(bytes).unwrap();
+        let mut result = Self {
+            image_resources: pdf
+                .objects
+                .values()
+                .filter(|object| {
+                    object.as_stream().is_ok_and(|stream| {
+                        stream
+                            .dict
+                            .get(b"Subtype")
+                            .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+                    })
+                })
+                .count(),
+            ..Self::default()
+        };
+        let page = pdf.get_pages()[&1];
+        let resources = dictionary(
+            &pdf,
+            pdf.get_dictionary(page).unwrap().get(b"Resources").unwrap(),
+        );
+        visit(
+            &pdf,
+            &pdf.get_page_content(page).unwrap(),
+            resources,
+            PaintState::default(),
+            &mut result,
+        );
+        result
+    }
+}
+
 #[test]
 fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
     let mut content = text("abc");

@@ -51,7 +51,6 @@ pub(super) struct TextStyle {
     pub family: Option<String>,
     pub color: String,
     pub source_color: Color,
-    pub background: Option<TextBackground>,
     pub bold: bool,
     pub italic: bool,
     pub underline: bool,
@@ -63,6 +62,19 @@ pub(super) struct TextStyle {
 pub(super) struct TextBackground {
     pub color: Color,
     pub alpha: u8,
+}
+
+impl TextBackground {
+    fn from_argb(argb: u32, theme: RenderTheme) -> Self {
+        Self {
+            color: theme.span_background_color(Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            }),
+            alpha: (argb >> 24) as u8,
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -320,7 +332,10 @@ impl<'a> StyledText<'a> {
         let mut foreground_boundaries = boundaries.clone();
         for (range, span) in &spans {
             boundaries.extend([range.start, range.end]);
-            if span.kind != RichTextSpanType::BackgroundColor {
+            if !matches!(
+                span.kind,
+                RichTextSpanType::BackgroundColor | RichTextSpanType::ComposingBackgroundColor
+            ) {
                 foreground_boundaries.extend([range.start, range.end]);
             }
         }
@@ -440,76 +455,39 @@ impl<'a> StyledText<'a> {
             size = value;
         }
         let invalid = selected.invalid_font || self.settings.checked_font_size(size).is_none();
+        let source_color = selected.foreground.map_or_else(
+            || text_box.color.unwrap_or(DEFAULT_FONT_COLOR),
+            |argb| Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            },
+        );
         let mut style = TextStyle {
             font_size: self.settings.font_size(size),
-            family: None,
-            color: theme.foreground(Some(text_box.color.unwrap_or(DEFAULT_FONT_COLOR))),
-            source_color: text_box.color.unwrap_or(DEFAULT_FONT_COLOR),
-            background: None,
+            family: selected
+                .family
+                .as_deref()
+                .filter(|name| !name.is_empty())
+                .map(str::to_owned),
+            color: theme.foreground(Some(source_color)),
+            source_color,
             bold: selected.bold,
             italic: selected.italic,
-            underline: text_box.underline,
-            strikethrough: false,
-            link_target: None,
+            underline: selected.underline.unwrap_or(text_box.underline),
+            strikethrough: selected.strikethrough.unwrap_or(false),
+            link_target: selected.hyperlink.as_ref().and_then(|selected| {
+                selected
+                    .value
+                    .as_ref()
+                    .and_then(|value| hyperlink_target(&self.index, selected.span, value))
+            }),
         };
-        let mut is_hyperlink = false;
-        for span in selected.spans.into_iter().flatten() {
-            match span.kind {
-                RichTextSpanType::ForegroundColor => {
-                    if let Some(color) = span.color_value() {
-                        style.source_color = color;
-                        style.color = theme.foreground(Some(color));
-                    }
-                }
-                RichTextSpanType::BackgroundColor => {
-                    if let Some(argb) = span.argb_value() {
-                        style.background = Some(TextBackground {
-                            color: theme.span_background_color(Color {
-                                r: (argb >> 16) as u8,
-                                g: (argb >> 8) as u8,
-                                b: argb as u8,
-                            }),
-                            alpha: (argb >> 24) as u8,
-                        });
-                    }
-                }
-                RichTextSpanType::FontSize => {}
-                RichTextSpanType::FontName => {
-                    if let Some(name) = span.decoded_font_name_value() {
-                        style.family = (!name.is_empty()).then(|| name.into_owned());
-                    }
-                }
-                RichTextSpanType::Bold => {
-                    if let Some(value) = span.boolean_value() {
-                        style.bold = value;
-                    }
-                }
-                RichTextSpanType::Italic => {
-                    if let Some(value) = span.boolean_value() {
-                        style.italic = value;
-                    }
-                }
-                RichTextSpanType::Underline => {
-                    if let Some(value) = span.boolean_value() {
-                        style.underline = value;
-                    }
-                }
-                RichTextSpanType::Strikethrough => {
-                    if let Some(value) = span.boolean_value() {
-                        style.strikethrough = value;
-                    }
-                }
-                RichTextSpanType::Hyperlink => {
-                    let hyperlink = span.hyperlink_value();
-                    is_hyperlink = hyperlink
-                        .as_ref()
-                        .is_some_and(|hyperlink| hyperlink.kind.is_hypertext());
-                    style.link_target = hyperlink
-                        .and_then(|hyperlink| hyperlink_target(&self.index, span, hyperlink));
-                }
-                _ => {}
-            }
-        }
+        let is_hyperlink = selected
+            .hyperlink
+            .as_ref()
+            .and_then(|selected| selected.value.as_ref())
+            .is_some_and(|value| value.kind.is_hypertext());
         if is_hyperlink {
             style.source_color = Color {
                 r: 0,
@@ -530,6 +508,24 @@ impl<'a> StyledText<'a> {
             style.bold = false;
         }
         (style, invalid)
+    }
+
+    fn background_at(
+        &self,
+        character: usize,
+        theme: RenderTheme,
+        retained: bool,
+    ) -> Option<TextBackground> {
+        let selected = self.styles.at(character);
+        let argb = if retained {
+            selected.background
+        } else {
+            selected
+                .composing_background
+                .filter(|argb| *argb != 0)
+                .or(selected.background)
+        };
+        argb.map(|argb| TextBackground::from_argb(argb, theme))
     }
 
     pub fn segments(&self, range: Range<usize>) -> impl Iterator<Item = Range<usize>> + '_ {
@@ -635,13 +631,17 @@ fn span_range(index: &TextIndex<'_>, span: &RichTextSpan) -> Option<Range<usize>
 fn hyperlink_target(
     index: &TextIndex<'_>,
     span: &RichTextSpan,
-    hyperlink: crate::RichTextHyperlink,
+    hyperlink: &crate::RichTextHyperlink,
 ) -> Option<String> {
     if !hyperlink.kind.is_hypertext() {
         return None;
     }
-    if let Some(target) = hyperlink.custom_data.filter(|target| !target.is_empty()) {
-        return sanitize_hyperlink_target(target);
+    if let Some(target) = hyperlink
+        .custom_data
+        .as_ref()
+        .filter(|target| !target.is_empty())
+    {
+        return sanitize_hyperlink_target(target.clone());
     }
     let visible_text = index.slice(span_range(index, span)?)?;
     let target = match hyperlink.kind {
@@ -846,10 +846,10 @@ mod tests {
         ];
         let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
         let light = RenderTheme::for_canvas(false);
-        assert_eq!(styled.style_at(0, light, None).background, None);
-        assert_eq!(styled.style_at(2, light, None).background, None);
+        assert_eq!(styled.background_at(0, light, false), None);
+        assert_eq!(styled.background_at(2, light, false), None);
         assert_eq!(
-            styled.style_at(1, light, None).background,
+            styled.background_at(1, light, false),
             Some(TextBackground {
                 color: Color {
                     r: 0x12,
@@ -868,9 +868,7 @@ mod tests {
         let styled = StyledText::new(&text, TextContext::Placed, TextSettings::default());
         for (dark, value) in [(false, 244), (true, 11)] {
             assert_eq!(
-                styled
-                    .style_at(1, RenderTheme::for_canvas(dark), None)
-                    .background,
+                styled.background_at(1, RenderTheme::for_canvas(dark), false),
                 Some(TextBackground {
                     color: Color {
                         r: value,

@@ -464,8 +464,15 @@ impl<'a> TextRenderer<'a> {
         for (range, span) in &styled.spans {
             let kind = match span.kind {
                 RichTextSpanType::ComposingBackgroundColor
-                | RichTextSpanType::Composing
-                | RichTextSpanType::ComposingTag => TextDiagnosticKind::UnsupportedCompositionStyle,
+                    if span.composing_background_value().is_none() =>
+                {
+                    TextDiagnosticKind::UnsupportedCompositionStyle
+                }
+                RichTextSpanType::Composing | RichTextSpanType::ComposingTag
+                    if span.composition_value().is_none() =>
+                {
+                    TextDiagnosticKind::UnsupportedCompositionStyle
+                }
                 RichTextSpanType::Suggestion => TextDiagnosticKind::UnsupportedSuggestionStyle,
                 RichTextSpanType::SpellCorrection => TextDiagnosticKind::UnsupportedCorrectionStyle,
                 _ => continue,
@@ -597,7 +604,6 @@ mod tests {
             font_size: 19.0,
             family: Some(family.into()),
             color: "#262626".into(),
-            background: None,
             source_color: Color {
                 r: 38,
                 g: 38,
@@ -1026,7 +1032,6 @@ mod tests {
             font_size: 19.0,
             family: Some("Unavailable".into()),
             color: "#123456".into(),
-            background: None,
             source_color: Color {
                 r: 18,
                 g: 52,
