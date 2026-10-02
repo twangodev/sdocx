@@ -29,7 +29,6 @@ impl TextSource {
         &self.bytes
     }
 
-    #[cfg(any(feature = "pdf", test))]
     pub fn utf16(&self) -> &Range<u32> {
         &self.utf16
     }

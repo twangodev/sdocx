@@ -64,8 +64,12 @@ fn span(kind: RichTextSpanType, range: Range<u32>, payload: Vec<u8>) -> RichText
 
 fn observe(content: &RichTextBox) -> RetainedLine {
     let fonts = FontBook::default();
+    observe_with_fonts(content, &fonts)
+}
+
+fn observe_with_fonts(content: &RichTextBox, fonts: &FontBook) -> RetainedLine {
     let settings = TextSettings::default();
-    let renderer = TextRenderer::new(settings, &fonts);
+    let renderer = TextRenderer::new(settings, fonts);
     let styled = StyledText::new(content, TextContext::Placed, settings);
     let theme = RenderTheme::for_canvas(false);
     let lines = wrap_paragraph(
@@ -257,7 +261,8 @@ fn equivalent_font_names_and_no_op_decorations_keep_one_retained_run() {
 #[test]
 fn unavailable_correction_identity_does_not_coalesce_adjacent_clusters() {
     let mut content = text_box("AVX");
-    let baseline = observe(&content);
+    let compatibility_fonts = FontBook::new(FontBook::default().database());
+    let baseline = observe_with_fonts(&content, &compatibility_fonts);
     content
         .spans
         .push(span(RichTextSpanType::SpellCorrection, 0..3, Vec::new()));

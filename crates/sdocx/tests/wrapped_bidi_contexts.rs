@@ -147,8 +147,8 @@ fn wrapped_even_override_and_isolate_keep_proven_positions_and_backgrounds() {
                         .unwrap()
                         .parse::<f64>()
                         .unwrap()
-                        - 1333.0 / 2048.0 * 20.0)
-                        .abs()
+                        - f64::from(1302.0_f32 / 100.0))
+                    .abs()
                         < 0.0001
                 );
                 assert!(

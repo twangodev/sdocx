@@ -58,7 +58,14 @@ fn synthesized_shape_text_keeps_its_frame_and_selectable_vector_pdf() {
             };
             let page = render(&doc, &layout, 0, &Default::default(), &fonts).unwrap();
             assert_lines(&page, &[("A", x, y)]);
-            assert!(page.text_diagnostics.is_empty());
+            assert_eq!(
+                page.text_diagnostics,
+                [sdocx::TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedMeasurementStyle,
+                    family: "Roboto".into(),
+                    codepoints: vec![u32::from('A')],
+                }]
+            );
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
             let span = xml
                 .descendants()
@@ -120,13 +127,14 @@ fn margins_scale_with_density_and_gravity_uses_the_inset_height() {
 
 #[test]
 fn alignment_uses_the_pinned_advance_and_the_native_inset_width() {
-    // Canonical Roboto ABC advance is 3944/2048 * F10 = 19.2578125.
-    for (kind, baseline, right) in [
-        (1, 25.0, 150.7421875),
-        (4, 10.0, 180.7421875),
-        (8, 36.0, 128.7421875),
+    const ABC_ADVANCE: f32 = (652.0_f32 / 100.0 + 623.0 / 100.0) + 651.0 / 100.0;
+    for (kind, left, width, baseline) in [
+        (1, 30.0, 140.0, 25.0),
+        (4, 0.0, 200.0, 10.0),
+        (8, 52.0, 96.0, 36.0),
     ] {
-        for (alignment, x) in [(2_u32, 90.37109375), (1, right)] {
+        let remaining = width - f64::from(ABC_ADVANCE);
+        for (alignment, x) in [(2_u32, left + remaining / 2.0), (1, left + remaining)] {
             let mut content = text("ABC");
             content.paragraphs.push(RichTextParagraph {
                 kind: RichTextParagraphType::Alignment,
@@ -147,7 +155,7 @@ fn alignment_uses_the_pinned_advance_and_the_native_inset_width() {
 #[test]
 fn wrapping_ceils_the_inset_width_instead_of_the_outer_shape_width() {
     // Ellipse outer widths 28/27 yield inset widths 19.6/18.9, ceiled to 20/19.
-    // ABC's 19.2578125px fits only the first; each default F10 line adds 13.5.
+    // ABC's painted 19.26px fits only the first; each default F10 line adds 13.5.
     for (width, expected) in [
         (28.0, vec![("ABC", 4.2, 25.0)]),
         (27.0, vec![("AB", 4.05, 25.0), ("C", 4.05, 38.5)]),

@@ -9,6 +9,9 @@ use super::measurement::{MeasuredCluster, MeasurementError, ParagraphMeasurer};
 use super::objects::{MeasuredObject, ObjectMeasurementContext};
 use super::{StyledText, TextRenderer};
 
+mod native_slots;
+use native_slots::{NativeLineSlots, NativeParagraphSlots};
+
 pub(in crate::render) struct WrappedLine {
     pub source: Range<usize>,
     pub font_size: f64,
@@ -19,6 +22,9 @@ pub(in crate::render) struct WrappedLine {
     pub visual_order: Vec<LineEntry>,
     pub native_positioned: bool,
     pub geometry: LineGeometry,
+    native_slots: Option<NativeLineSlots>,
+    unsupported_native_wrapping: bool,
+    fallback_measurement_issues: Vec<super::SourceTextDiagnostic>,
 }
 
 #[derive(Debug)]
@@ -112,11 +118,22 @@ impl WrappedLine {
             visual_order: Vec::new(),
             native_positioned: false,
             geometry: LineGeometry::Unmeasured,
+            native_slots: None,
+            unsupported_native_wrapping: false,
+            fallback_measurement_issues: Vec::new(),
         }
     }
 
+    pub fn unsupported_native_wrapping(&self) -> bool {
+        self.unsupported_native_wrapping
+    }
+
+    pub fn fallback_measurement_issues(&self) -> &[super::SourceTextDiagnostic] {
+        &self.fallback_measurement_issues
+    }
+
     pub fn advance_for_paint(&self, canonical: bool) -> Option<f64> {
-        if !canonical {
+        if !canonical || self.native_slots.is_some() {
             return Some(self.advance);
         }
         match &self.geometry {
@@ -258,6 +275,24 @@ impl WrappedLine {
     }
 
     pub fn justify(&mut self, styled: &StyledText<'_>, width: f64) -> Result<(), MeasurementError> {
+        if let Some(slots) = &self.native_slots
+            && self.native_positioned
+        {
+            let share = slots.justification_share(width)?;
+            let (text, advance) = slots.positions(share)?;
+            for (placement, position) in self.placements.iter_mut().zip(&text) {
+                placement.x = position.x;
+                placement.extra_advance = position.extra_advance;
+                placement.visual_rank = position.visual_rank;
+            }
+            self.advance = advance;
+            self.geometry = LineGeometry::Positioned {
+                advance,
+                text,
+                objects: Vec::new(),
+            };
+            return Ok(());
+        }
         let width = native_geometry(width)?;
         let advance = native_geometry(self.advance)?;
         let mut weights = Vec::with_capacity(self.placements.len());
@@ -293,7 +328,18 @@ impl WrappedLine {
         let extra = native_geometry(f64::from((width - advance) / total_weight as f32))?;
         let compatibility = self.justification_entries(&weights, false)?;
         let (compatibility, advance) = justify_entries(compatibility, extra, advance, false)?;
-        let canonical = if let LineGeometry::Positioned { advance, .. } = &self.geometry {
+        let canonical = if let Some(slots) = &self.native_slots {
+            let share = slots.justification_share(width.into())?;
+            let (positions, advance) = slots.positions(share)?;
+            Some((
+                positions
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, position)| (LineEntry::Text(index), position))
+                    .collect(),
+                native_geometry(advance)?,
+            ))
+        } else if let LineGeometry::Positioned { advance, .. } = &self.geometry {
             let entries = self.justification_entries(&weights, true)?;
             Some(justify_entries(
                 entries,
@@ -551,10 +597,12 @@ pub(in crate::render) fn unmeasured_paragraph(
 ) -> Vec<WrappedLine> {
     let objects = styled.objects.in_range(source.clone());
     if objects.is_empty() {
-        return vec![WrappedLine::unmeasured(
+        let mut line = WrappedLine::unmeasured(
             source.clone(),
-            styled.line_font_size(source, theme, predefined),
-        )];
+            styled.line_font_size(source.clone(), theme, predefined),
+        );
+        line.fallback_measurement_issues = renderer.local_measurement_issues(source);
+        return vec![line];
     }
     let mut lines = Vec::with_capacity(2 * objects.len() + 1);
     let mut start = source.start;
@@ -594,6 +642,9 @@ pub(in crate::render) fn unmeasured_paragraph(
         let prefix_font_size = paragraph_prefix_font_size(styled, &source, theme, predefined);
         line.font_size = line.font_size.max(prefix_font_size);
     }
+    for line in &mut lines {
+        line.fallback_measurement_issues = renderer.local_measurement_issues(line.source.clone());
+    }
     lines
 }
 
@@ -609,6 +660,9 @@ pub(in crate::render) struct ParagraphWrapper<'a, 'text, 'fonts> {
     font_size: f64,
     full_width: f64,
     start_item: usize,
+    native_slots: Option<NativeParagraphSlots>,
+    renderer: &'a TextRenderer<'fonts>,
+    native_slots_rejected: bool,
 }
 
 impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
@@ -667,6 +721,20 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         for end in breaks.emergency {
             emergency[end] = cluster_ends[end];
         }
+        let mut native_slots_rejected = false;
+        let native_slots =
+            match NativeParagraphSlots::new(styled, range.clone(), &measured.items, &allowed) {
+                Ok(slots) => slots,
+                Err(_) => {
+                    native_slots_rejected = true;
+                    renderer.for_source(range.clone()).measurement_unsupported(
+                        super::TextDiagnosticKind::UnsupportedNativeWrapping,
+                        "native",
+                        text,
+                    );
+                    None
+                }
+            };
         Ok(Self {
             styled,
             measurer,
@@ -679,6 +747,9 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             font_size: measured.font_size,
             full_width: normalized_width(width),
             start_item: 0,
+            native_slots,
+            renderer,
+            native_slots_rejected,
         })
     }
 
@@ -705,6 +776,30 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             return Ok(None);
         }
         let width = normalized_width(width);
+        let mut unsupported_native_wrapping = self.native_slots_rejected;
+        if let Some(slots) = &self.native_slots {
+            let start = self.items[self.start_item].source().start;
+            let limit = self
+                .mandatory
+                .iter()
+                .enumerate()
+                .skip(start - self.range.start + 1)
+                .find(|(_, mandatory)| **mandatory)
+                .map_or(self.range.end, |(end, _)| self.range.start + end);
+            if let Ok(Some(end)) = slots.select(self.styled, start..limit, width, self.full_width) {
+                let end_item = self.items.partition_point(|item| item.source().end <= end);
+                if end_item > self.start_item
+                    && self.items[end_item - 1].source().end == end
+                    && self.emergency[end - self.range.start]
+                {
+                    return self
+                        .make_line(end_item, unsupported_native_wrapping)
+                        .map(Some);
+                }
+            }
+            self.report_native_wrap_policy(start..limit);
+            unsupported_native_wrapping = true;
+        }
         let mut advance = 0.0;
         let mut last_allowed = None;
         let mut last_emergency = None;
@@ -744,7 +839,8 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             .or(last_allowed)
             .or(last_emergency)
             .ok_or(MeasurementError::InvalidCluster)?;
-        self.make_line(end_item).map(Some)
+        self.make_line(end_item, unsupported_native_wrapping)
+            .map(Some)
     }
 
     pub fn restore(&mut self, line: WrappedLine) {
@@ -762,13 +858,26 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         }
     }
 
+    fn report_native_wrap_policy(&self, source: Range<usize>) {
+        let text = self.styled.index.slice(source.clone()).unwrap_or_default();
+        self.renderer.for_source(source).measurement_unsupported(
+            super::TextDiagnosticKind::UnsupportedNativeWrapping,
+            "native",
+            text,
+        );
+    }
+
     pub fn commit(&mut self, source_end: usize) {
         self.start_item = self
             .items
             .partition_point(|item| item.source().end <= source_end);
     }
 
-    fn make_line(&mut self, end_item: usize) -> Result<WrappedLine, MeasurementError> {
+    fn make_line(
+        &mut self,
+        end_item: usize,
+        unsupported_native_wrapping: bool,
+    ) -> Result<WrappedLine, MeasurementError> {
         let source =
             self.items[self.start_item].source().start..self.items[end_item - 1].source().end;
         let mut placements = Vec::new();
@@ -830,11 +939,50 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 .unwrap_or_default(),
             native_positioned: false,
             geometry: LineGeometry::Unmeasured,
+            native_slots: None,
+            unsupported_native_wrapping,
+            fallback_measurement_issues: Vec::new(),
         };
         line.geometry = match visual_order {
             Ok(_) => line.canonical_geometry()?,
             Err(error) => LineGeometry::Unavailable(error),
         };
+        if let Some(slots) = &self.native_slots {
+            let scalars = line
+                .source
+                .clone()
+                .map(|scalar| scalar..scalar + 1)
+                .collect::<Vec<_>>();
+            let positioned = self
+                .measurer
+                .visual_order(line.source.clone(), &scalars)
+                .map_err(|_| MeasurementError::InvalidCluster)
+                .and_then(|order| {
+                    slots.line(
+                        self.styled,
+                        line.source.clone(),
+                        &line.placements,
+                        &line.visual_order,
+                        &order,
+                    )
+                })
+                .and_then(|slots| slots.positions(0.0).map(|positions| (slots, positions)));
+            match positioned {
+                Ok((slots, (text, advance))) => {
+                    line.advance = slots.block_width();
+                    line.geometry = LineGeometry::Positioned {
+                        advance,
+                        text,
+                        objects: Vec::new(),
+                    };
+                    line.native_slots = Some(slots);
+                }
+                Err(_) => {
+                    line.unsupported_native_wrapping = true;
+                    self.report_native_wrap_policy(line.source.clone());
+                }
+            }
+        }
         if matches!(line.geometry, LineGeometry::Positioned { .. }) && line.objects.is_empty() {
             line.position_native(self.styled)?;
         }
@@ -882,7 +1030,7 @@ mod tests {
     };
     use std::sync::Arc;
 
-    fn text(value: &str) -> RichTextBox {
+    pub(super) fn text(value: &str) -> RichTextBox {
         RichTextBox {
             text_area_type: None,
             bbox: BoundingBox::default(),
@@ -912,7 +1060,11 @@ mod tests {
         }
     }
 
-    fn image(anchor: i32, width: f64, option: ObjectSpanLayoutOption) -> RichTextObjectSpan {
+    pub(super) fn image(
+        anchor: i32,
+        width: f64,
+        option: ObjectSpanLayoutOption,
+    ) -> RichTextObjectSpan {
         RichTextObjectSpan {
             object_type: ObjectType::Image,
             object_data: Vec::new(),
@@ -967,6 +1119,20 @@ mod tests {
             0..content.text.chars().count(),
             width,
             &FontBook::default(),
+        )
+        .unwrap()
+    }
+
+    fn legacy_fonts() -> FontBook {
+        FontBook::new(FontBook::default().database())
+    }
+
+    fn wrap_legacy(content: &RichTextBox, width: f64) -> Vec<WrappedLine> {
+        wrap_with_fonts(
+            content,
+            0..content.text.chars().count(),
+            width,
+            &legacy_fonts(),
         )
         .unwrap()
     }
@@ -1125,7 +1291,7 @@ mod tests {
         content.object_spans = vec![image(2, 21.0, ObjectSpanLayoutOption::Inline)];
         let settings = TextSettings::default();
         let styled = StyledText::new(&content, TextContext::Flow, settings);
-        let fonts = FontBook::default();
+        let fonts = legacy_fonts();
         let renderer = TextRenderer::new(settings, &fonts);
         let mut paragraph = paragraph_with_object(&styled, &renderer, 70.0);
         let mut calls = 0;
@@ -1218,7 +1384,7 @@ mod tests {
         content.object_spans = vec![image(1, 40.0, ObjectSpanLayoutOption::Inline)];
         let settings = TextSettings::default();
         let styled = StyledText::new(&content, TextContext::Flow, settings);
-        let fonts = FontBook::default();
+        let fonts = legacy_fonts();
         let renderer = TextRenderer::new(settings, &fonts);
         let mut paragraph = paragraph_with_object(&styled, &renderer, 55.0);
         let line = paragraph
@@ -1349,7 +1515,7 @@ mod tests {
         content
             .object_spans
             .push(image(3, 20.0, ObjectSpanLayoutOption::Inline));
-        let mut line = wrap(&content, f64::INFINITY).remove(0);
+        let mut line = wrap_legacy(&content, f64::INFINITY).remove(0);
         assert!(!line.native_positioned);
         assert_eq!(line.objects[0].object.source, 3..4);
         assert_eq!(
@@ -1387,7 +1553,7 @@ mod tests {
         content
             .object_spans
             .push(image(3, 20.0, ObjectSpanLayoutOption::Inline));
-        let mut line = wrap(&content, f64::INFINITY).remove(0);
+        let mut line = wrap_legacy(&content, f64::INFINITY).remove(0);
         let positions = line.placements.iter().map(|p| p.x).collect::<Vec<_>>();
         let object_x = line.objects[0].x;
         line.objects[0].prepared = Some(Err(super::super::ObjectDiagnosticKind::InvalidBounds));
@@ -1431,7 +1597,7 @@ mod tests {
             ..Default::default()
         };
         let styled = StyledText::new(&content, TextContext::Placed, settings);
-        let mut lines = wrap(&content, 1000.0);
+        let mut lines = wrap_legacy(&content, 1000.0);
         lines[0].justify(&styled, 50.0).unwrap();
         assert_eq!(lines[0].advance, 50.0);
         assert_eq!(lines[0].placements[1].extra_advance, -50.45703125);
@@ -1448,7 +1614,7 @@ mod tests {
             ..Default::default()
         };
         let styled = StyledText::new(&content, TextContext::Placed, settings);
-        let mut lines = wrap(&content, 1000.0);
+        let mut lines = wrap_legacy(&content, 1000.0);
         lines[0].justify(&styled, 200.0).unwrap();
         assert_eq!(lines[0].advance, 200.0);
         assert_eq!(lines[0].objects[0].x, 80.670166015625);
@@ -1677,7 +1843,7 @@ mod tests {
     fn text_on_each_side_of_objects_retains_cached_cross_line_kerning() {
         let mut content = text("AVA\u{fffc}AVA");
         content.object_spans = vec![image(3, 20.0, ObjectSpanLayoutOption::Block)];
-        let lines = wrap(&content, 55.0);
+        let lines = wrap_legacy(&content, 55.0);
         assert_eq!(ranges(&lines), [0..2, 2..3, 3..4, 4..6, 6..7]);
         for (first, second) in [(&lines[0], &lines[1]), (&lines[3], &lines[4])] {
             assert_eq!(first.advance, 54.42626953125);
@@ -1752,7 +1918,7 @@ mod tests {
 
     #[test]
     fn wrapped_placements_keep_shared_paragraph_glyphs_and_kerning_positions() {
-        let lines = wrap(&text("AVA"), 55.0);
+        let lines = wrap_legacy(&text("AVA"), 55.0);
         assert_eq!(ranges(&lines), [0..2, 2..3]);
         assert_eq!(lines[0].advance, 54.42626953125);
         assert_eq!(lines[1].advance, 29.35546875);
@@ -1781,15 +1947,61 @@ mod tests {
     }
 
     #[test]
-    fn pinned_abc_fits_exact_advance_but_wraps_below_it() {
+    fn raw_font_abc_fits_exact_f64_advance_but_wraps_below_it() {
         let content = text("ABC");
-        let exact = wrap(&content, 86.66015625);
+        let exact = wrap_legacy(&content, 86.66015625);
         assert_single_line(&exact, 0..3);
         assert_eq!(exact[0].font_size, 45.0);
+        assert!(!exact[0].unsupported_native_wrapping());
         assert_eq!(
-            ranges(&wrap(&content, 86.66015625 - 0.00000001)),
+            ranges(&wrap_legacy(&content, 86.66015625 - 0.00000001)),
             [0..2, 2..3]
         );
+    }
+
+    #[test]
+    fn unmeasured_lines_keep_only_their_local_measurement_rejections() {
+        let mut content = text("A\u{fffc}B");
+        content.object_spans = vec![image(1, 20.0, ObjectSpanLayoutOption::Inline)];
+        let settings = TextSettings::resolved();
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts).local_measurement_scope();
+        renderer.for_source(0..1).measurement_unsupported(
+            super::super::TextDiagnosticKind::UnsupportedMeasurementFont,
+            "missing-A",
+            "A",
+        );
+        renderer.for_source(2..3).measurement_unsupported(
+            super::super::TextDiagnosticKind::UnsupportedMeasurementStyle,
+            "missing-B",
+            "B",
+        );
+        let lines = unmeasured_paragraph(
+            &styled,
+            0..3,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+            ObjectMeasurementContext::Frame,
+        );
+        assert_eq!(ranges(&lines), [0..1, 1..2, 2..3]);
+        let first = lines[0].fallback_measurement_issues();
+        assert_eq!(first.len(), 1);
+        assert_eq!(first[0].owner, Some(super::super::SourceOwner::Text(0..1)));
+        assert_eq!(first[0].diagnostic.family, "missing-A");
+        assert!(lines[1].fallback_measurement_issues().is_empty());
+        let last = lines[2].fallback_measurement_issues();
+        assert_eq!(last.len(), 1);
+        assert_eq!(last[0].owner, Some(super::super::SourceOwner::Text(2..3)));
+        assert_eq!(last[0].diagnostic.family, "missing-B");
+        renderer.for_source(0..3).measurement_unsupported(
+            super::super::TextDiagnosticKind::UnsupportedMeasurementBudget,
+            "later",
+            "AB",
+        );
+        assert_eq!(lines[0].fallback_measurement_issues().len(), 1);
+        assert_eq!(lines[2].fallback_measurement_issues().len(), 1);
     }
 
     #[test]
@@ -1863,7 +2075,7 @@ mod tests {
     #[test]
     fn local_font_size_and_selected_styles_change_breaks() {
         let content = text("ABC");
-        assert_single_line(&wrap(&content, 87.0), 0..3);
+        assert_single_line(&wrap_legacy(&content, 87.0), 0..3);
         let mut larger = content.clone();
         larger.spans = vec![span(
             RichTextSpanType::FontSize,
@@ -1871,7 +2083,7 @@ mod tests {
             2,
             &90.0_f32.to_le_bytes(),
         )];
-        let lines = wrap(&larger, 87.0);
+        let lines = wrap_legacy(&larger, 87.0);
         assert_eq!(ranges(&lines), [0..2, 2..3]);
         assert_eq!(
             lines.iter().map(|line| line.font_size).collect::<Vec<_>>(),
@@ -1879,11 +2091,11 @@ mod tests {
         );
         let mut bold = content.clone();
         bold.spans = vec![span(RichTextSpanType::Bold, 0, 3, &[1, 0])];
-        assert_eq!(ranges(&wrap(&bold, 87.0)), [0..2, 2..3]);
+        assert_eq!(ranges(&wrap_legacy(&bold, 87.0)), [0..2, 2..3]);
         let mut italic = content.clone();
         italic.spans = vec![span(RichTextSpanType::Italic, 0, 3, &[1, 0])];
-        assert_eq!(ranges(&wrap(&content, 85.0)), [0..2, 2..3]);
-        assert_single_line(&wrap(&italic, 85.0), 0..3);
+        assert_eq!(ranges(&wrap_legacy(&content, 85.0)), [0..2, 2..3]);
+        assert_single_line(&wrap_legacy(&italic, 85.0), 0..3);
     }
 
     #[test]

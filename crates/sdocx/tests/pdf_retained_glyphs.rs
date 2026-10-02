@@ -1113,6 +1113,83 @@ fn selected_layout_pages_keep_requested_order_and_explicit_font_book() {
 }
 
 #[test]
+fn default_native_paint_geometry_reaches_svg_and_pdf_exports() {
+    let mut content = text("AV");
+    content.font_size = Some(17.0);
+    content.spans.clear();
+    let doc = document(content);
+    let layout = sdocx::layout_document(&doc);
+    let fonts = sdocx::fonts::FontBook::default();
+    let svg =
+        sdocx::render_layout_page_svg_with_fonts(&doc, &layout, 0, &Default::default(), &fonts)
+            .unwrap();
+    assert!(
+        svg.text_diagnostics.is_empty(),
+        "{:?}",
+        svg.text_diagnostics
+    );
+    let xml = roxmltree::Document::parse(&svg.svg).unwrap();
+    let spans = xml
+        .descendants()
+        .filter(|node| node.has_tag_name("tspan"))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        spans
+            .iter()
+            .filter_map(|node| node.text())
+            .collect::<String>(),
+        "AV"
+    );
+    let expected_positions = [10.0_f32, 10.0 + 265416.0_f32 / 256.0 / 100.0];
+    let svg_positions = spans
+        .iter()
+        .flat_map(|span| span.attribute("x").unwrap().split_whitespace())
+        .map(|value| value.parse::<f64>().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(svg_positions.len(), expected_positions.len());
+    for (actual, expected) in svg_positions.iter().zip(expected_positions) {
+        assert!((actual - f64::from(expected)).abs() < 0.00001);
+    }
+    let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+        &doc,
+        &layout,
+        &[0],
+        &Default::default(),
+        &PdfOptions::default(),
+        &fonts,
+    )
+    .unwrap();
+    assert!(output.pages[0].text_diagnostics.is_empty());
+    let face = Face::parse(include_bytes!("../assets/fonts/Roboto-Regular.ttf"), 0).unwrap();
+    let direct_default =
+        sdocx::render_document_pdf(&doc, &Default::default(), &PdfOptions::default()).unwrap();
+    let direct_font_book = sdocx::render_document_pdf(
+        &doc,
+        &Default::default(),
+        &PdfOptions::from_font_book(&fonts),
+    )
+    .unwrap();
+    for bytes in [&output.bytes, &direct_default, &direct_font_book] {
+        let actual = glyphs(bytes);
+        assert_eq!(actual.len(), 2);
+        for ((glyph, (id, advance)), expected_x) in actual
+            .iter()
+            .zip([(38, 1336), (59, 1303)])
+            .zip(expected_positions)
+        {
+            assert_eq!(glyph.outline, outline(&face, id));
+            assert_eq!(glyph.advance, advance);
+            assert!((glyph.x - f64::from(expected_x)).abs() < 0.00001);
+            assert!((glyph.y - 37.0).abs() < 0.00001);
+        }
+        let geometry = pdf_geometry::read(bytes, 96.0);
+        assert_eq!(geometry.source, "AV");
+        assert_eq!(geometry.image_resources, 0);
+        assert_eq!(pdf_geometry::tagged_source(bytes), "AV");
+    }
+}
+
+#[test]
 fn zero_ink_native_text_keeps_exact_selection_without_painting_a_carrier_glyph() {
     let fonts = [
         (false, sdocx::fonts::FontBook::default()),

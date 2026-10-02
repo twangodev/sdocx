@@ -260,6 +260,8 @@ fn selected_page_render_warnings_are_reported_without_failing_export() {
         ("two2", &[text_object("אא")]),
     ]);
     let expected = "Warning [MissingGlyphs] visible page 2: font \"Roboto\"; codepoints U+05D0";
+    let native_fallback =
+        "Warning [UnsupportedMeasurementFont] visible page 2: font \"Roboto\"; codepoints U+05D0";
     for format in ["svg", "png", "pdf"] {
         let noisy_output = format!("noisy.{format}");
         let result = fixture.run(&["--pages", "2,2", "-o", &noisy_output]);
@@ -268,6 +270,17 @@ fn selected_page_render_warnings_are_reported_without_failing_export() {
         assert!(result.stdout.is_empty());
         assert_eq!(diagnostics.matches(expected).count(), 1, "{diagnostics}");
         assert_eq!(diagnostics.matches("Warning [MissingGlyphs]").count(), 1);
+        assert_eq!(
+            diagnostics.matches(native_fallback).count(),
+            1,
+            "{diagnostics}"
+        );
+        assert_eq!(
+            diagnostics
+                .matches("Warning [UnsupportedMeasurementFont]")
+                .count(),
+            1,
+        );
         let bytes = std::fs::read(fixture.0.join(&noisy_output)).unwrap();
         match format {
             "svg" => assert!(String::from_utf8(bytes).unwrap().contains("אא")),

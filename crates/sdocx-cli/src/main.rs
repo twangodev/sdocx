@@ -88,9 +88,12 @@ impl Format {
     }
 }
 
-fn svg_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, String> {
-    let mut opt = resvg::usvg::Options::default();
-    let fontdb = opt.fontdb_mut();
+fn load_fonts(font_files: &[PathBuf]) -> Result<sdocx::fonts::FontBook, String> {
+    let bundled = sdocx::fonts::FontBook::default();
+    if font_files.is_empty() {
+        return Ok(bundled);
+    }
+    let mut fontdb = resvg::usvg::fontdb::Database::new();
     for path in font_files {
         let before = fontdb.faces().count();
         fontdb
@@ -100,13 +103,19 @@ fn svg_options(font_files: &[PathBuf]) -> Result<resvg::usvg::Options<'static>, 
             return Err(format!("no usable font faces in {}", path.display()));
         }
     }
-    let bundled = sdocx::fonts::FontBook::default().database();
-    for face in bundled.faces() {
+    for face in bundled.database().faces() {
         fontdb.load_font_source(face.source.clone());
     }
     fontdb.set_sans_serif_family("Roboto");
     fontdb.set_monospace_family("Roboto Mono");
-    Ok(opt)
+    Ok(sdocx::fonts::FontBook::new(std::sync::Arc::new(fontdb)))
+}
+
+fn svg_options(fonts: &sdocx::fonts::FontBook) -> resvg::usvg::Options<'static> {
+    resvg::usvg::Options {
+        fontdb: fonts.database(),
+        ..Default::default()
+    }
 }
 
 fn parse_pdf_dpi(value: &str) -> Result<f32, String> {
@@ -321,11 +330,11 @@ fn main() {
         eprintln!("Error: --pdf-dpi applies to PDF output; use -f pdf or a .pdf output path");
         std::process::exit(1);
     }
-    let svg_options = svg_options(&cli.font_files).unwrap_or_else(|error| {
+    let fonts = load_fonts(&cli.font_files).unwrap_or_else(|error| {
         eprintln!("Error: {error}");
         std::process::exit(1);
     });
-    let fonts = sdocx::fonts::FontBook::new(svg_options.fontdb.clone());
+    let svg_options = svg_options(&fonts);
 
     let output_base = cli
         .output
@@ -341,7 +350,7 @@ fn main() {
     let mut render_warnings = RenderWarnings::default();
 
     if format == Format::Pdf {
-        let mut options = sdocx::PdfOptions::new(fonts.database());
+        let mut options = sdocx::PdfOptions::from_font_book(&fonts);
         if let Some(dpi) = cli.pdf_dpi {
             options.dpi = dpi;
         }
@@ -412,8 +421,22 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{Format, resolve_format, svg_options};
+    use super::{Format, resolve_format};
     use std::path::Path;
+
+    fn svg_options(
+        font_files: &[std::path::PathBuf],
+    ) -> Result<resvg::usvg::Options<'static>, String> {
+        Ok(super::svg_options(&super::load_fonts(font_files)?))
+    }
+
+    #[test]
+    fn default_font_resources_keep_native_names_and_one_database() {
+        let fonts = super::load_fonts(&[]).unwrap();
+        assert!(fonts.native_name_config().is_some());
+        let options = super::svg_options(&fonts);
+        assert!(std::sync::Arc::ptr_eq(&options.fontdb, &fonts.database()));
+    }
 
     fn svg_to_png(svg: &str) -> Result<Vec<u8>, String> {
         super::svg_to_png(svg, &svg_options(&[])?)
@@ -457,7 +480,9 @@ mod tests {
             .with_face_data(face.id, |data, _| data.to_vec())
             .unwrap();
         let file = FontFile::new(&data);
-        let explicit = svg_options(std::slice::from_ref(&file.0)).unwrap();
+        let explicit_fonts = super::load_fonts(std::slice::from_ref(&file.0)).unwrap();
+        assert!(explicit_fonts.native_name_config().is_none());
+        let explicit = super::svg_options(&explicit_fonts);
         let selected = explicit
             .fontdb
             .query(&Query {

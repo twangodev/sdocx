@@ -8,6 +8,7 @@ use sdocx::{
 };
 
 const SIZE: f64 = 20.0;
+#[cfg(feature = "pdf")]
 const UNITS: f64 = 2048.0;
 
 #[derive(Clone, Copy, Debug)]
@@ -157,7 +158,7 @@ fn assert_geometry(
     context: Context,
     source: &str,
     ids: &[u16],
-    advances: &[f64],
+    advances: &[f32],
 ) {
     let actual = glyphs(page);
     assert_eq!(actual.iter().map(|glyph| glyph.id).collect::<Vec<_>>(), ids);
@@ -173,7 +174,7 @@ fn assert_geometry(
     for (glyph, advance) in actual.iter().zip(advances) {
         close(glyph.x, x);
         close(glyph.y, baseline);
-        x += advance / UNITS * SIZE;
+        x = f64::from(x as f32 + advance);
     }
     let xml = roxmltree::Document::parse(&page.svg).unwrap();
     let spans: Vec<_> = xml
@@ -204,10 +205,16 @@ fn covered_greek_and_cyrillic_keep_pinned_glyph_positions_in_normal_and_replay_s
                 context,
                 "λΩЖя",
                 &[579, 569, 624, 663],
-                &[1134.0, 1362.0, 1859.0, 1124.0],
+                &[11.07, 13.30, 18.15, 10.98],
             );
             #[cfg(feature = "pdf")]
-            assert_pdf(&page, context, "λΩЖя", &[1134.0, 1362.0, 1859.0, 1124.0]);
+            assert_pdf(
+                &page,
+                context,
+                "λΩЖя",
+                &[11.07, 13.30, 18.15, 10.98],
+                &[1134.0, 1362.0, 1859.0, 1124.0],
+            );
         }
     }
 }
@@ -216,7 +223,7 @@ fn covered_greek_and_cyrillic_keep_pinned_glyph_positions_in_normal_and_replay_s
 fn greek_kerning_survives_positioned_paint_but_color_runs_shape_independently() {
     for context in CONTEXTS {
         let page = render(context, text("λλ"), false);
-        assert_geometry(&page, context, "λλ", &[579, 579], &[1150.0, 1134.0]);
+        assert_geometry(&page, context, "λλ", &[579, 579], &[11.22625, 11.07]);
         let mut colored = text("λλ");
         colored.spans.push(color_span(
             RichTextSpanType::ForegroundColor,
@@ -225,7 +232,7 @@ fn greek_kerning_survives_positioned_paint_but_color_runs_shape_independently() 
             0xffff0000,
         ));
         let page = render(context, colored, false);
-        assert_geometry(&page, context, "λλ", &[579, 579], &[1134.0, 1134.0]);
+        assert_geometry(&page, context, "λλ", &[579, 579], &[11.07, 11.07]);
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(
             xml.descendants()
@@ -235,7 +242,7 @@ fn greek_kerning_survives_positioned_paint_but_color_runs_shape_independently() 
             ["#000000", "#ff0000"]
         );
         #[cfg(feature = "pdf")]
-        assert_pdf(&page, context, "λλ", &[1134.0, 1134.0]);
+        assert_pdf(&page, context, "λλ", &[11.07, 11.07], &[1134.0, 1134.0]);
     }
 }
 
@@ -243,8 +250,8 @@ fn greek_kerning_survives_positioned_paint_but_color_runs_shape_independently() 
 fn uniform_non_latin_background_preserves_shaping_and_measured_width() {
     for context in CONTEXTS {
         for (source, ids, advances) in [
-            ("λλ", vec![579, 579], vec![1150.0, 1134.0]),
-            ("Жя", vec![624, 663], vec![1859.0, 1124.0]),
+            ("λλ", vec![579, 579], vec![11.22625_f32, 11.07]),
+            ("Жя", vec![624, 663], vec![18.15_f32, 10.98]),
         ] {
             let plain = render(context, text(source), false);
             let mut highlighted = text(source);
@@ -283,19 +290,25 @@ fn uniform_non_latin_background_preserves_shaping_and_measured_width() {
             );
             close(
                 rect.attribute("width").unwrap().parse().unwrap(),
-                advances.iter().sum::<f64>() / UNITS * SIZE,
+                f64::from(advances.iter().sum::<f32>()),
             );
             close(rect.attribute("height").unwrap().parse().unwrap(), 27.0);
             #[cfg(feature = "pdf")]
             if source == "Жя" {
-                assert_pdf(&page, context, source, &advances);
+                assert_pdf(&page, context, source, &advances, &[1859.0, 1124.0]);
             }
         }
     }
 }
 
 #[cfg(feature = "pdf")]
-fn assert_pdf(page: &RenderedPage, context: Context, source: &str, advances: &[f64]) {
+fn assert_pdf(
+    page: &RenderedPage,
+    context: Context,
+    source: &str,
+    advances: &[f32],
+    font_advances: &[f64],
+) {
     let bytes =
         sdocx::render_svg_pages_pdf(std::slice::from_ref(page), &Default::default()).unwrap();
     let pdf = lopdf::Document::load_mem(&bytes).unwrap();
@@ -321,7 +334,7 @@ fn assert_pdf(page: &RenderedPage, context: Context, source: &str, advances: &[f
         .flat_map(|object| object.as_array().unwrap().as_chunks::<3>().0)
         .map(|group| f64::from(group[2].as_float().unwrap()))
         .collect();
-    for advance in advances {
+    for advance in font_advances {
         assert!(
             widths
                 .iter()
@@ -375,6 +388,6 @@ fn assert_pdf(page: &RenderedPage, context: Context, source: &str, advances: &[f
                     .all(|(actual, expected)| (actual - expected).abs() < 0.0001)),
             "{context:?}: missing glyph transform {matrix:?}"
         );
-        x += advance / UNITS * SIZE;
+        x = f64::from(x as f32 + advance);
     }
 }

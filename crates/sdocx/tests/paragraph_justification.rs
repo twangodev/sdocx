@@ -4,7 +4,7 @@ use resvg::usvg;
 use sdocx::fonts::FontBook;
 use sdocx::{
     BoundingBox, Document, DocumentMetadata, Page, PageElement, RenderedPage, RichTextBox,
-    RichTextParagraph, RichTextParagraphType, TextDiagnosticKind,
+    RichTextParagraph, RichTextParagraphType, TextDiagnostic, TextDiagnosticKind,
 };
 
 fn text(value: &str, width: f64) -> RichTextBox {
@@ -152,7 +152,14 @@ fn tab_receives_four_shares_while_a_space_receives_one() {
     for flow in [false, true] {
         let page = render(text("A\t B", 200.0), 200, flow);
         assert_eq!(source(&page), "A\t B");
-        assert!(page.text_diagnostics.is_empty());
+        assert_eq!(
+            page.text_diagnostics,
+            [TextDiagnostic {
+                kind: TextDiagnosticKind::UnsupportedTabMeasurement,
+                family: "Roboto".into(),
+                codepoints: vec![u32::from('\t')],
+            }],
+        );
         let glyphs = glyphs(&page);
         let origin = if flow { 48.0 } else { 10.0 };
         close(glyphs[1].x, origin + 29.35546875);

@@ -4,7 +4,7 @@ use sdocx::{
     BoundingBox, Document, DocumentMetadata, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption,
     ObjectType, Page, PageElement, PlacedImage, RichTextBox, RichTextObjectContent,
     RichTextObjectSpan, RichTextSection, RichTextSpan, RichTextSpanType, SpanIntervalType,
-    TextDiagnosticKind,
+    TextDiagnostic, TextDiagnosticKind,
 };
 
 fn bounds(width: f64, height: f64) -> BoundingBox {
@@ -108,10 +108,20 @@ fn capture_reports_invalid_font_only_on_its_visible_page() {
         let second = render(1);
         assert_eq!(visible_source(&first.svg), "First");
         assert_eq!(visible_source(&second.svg), "Second");
-        assert_eq!(first.text_diagnostics.len(), 1);
         assert_eq!(
-            first.text_diagnostics[0].kind,
-            TextDiagnosticKind::InvalidGeometry
+            first.text_diagnostics,
+            [
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedMeasurementStyle,
+                    family: "Roboto".into(),
+                    codepoints: vec![70, 105, 114, 115, 116],
+                },
+                TextDiagnostic {
+                    kind: TextDiagnosticKind::InvalidGeometry,
+                    family: "Roboto".into(),
+                    codepoints: Vec::new(),
+                },
+            ],
         );
         assert!(
             second.text_diagnostics.is_empty(),

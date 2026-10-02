@@ -895,6 +895,8 @@ fn layout_text_with_context(
     context: LayoutContext,
     measurement_size: Option<[i32; 2]>,
 ) -> TextLayout {
+    let scoped_renderer = renderer.local_measurement_scope();
+    let renderer = &scoped_renderer;
     let text_box = styled.text_box;
     let settings = renderer.settings;
     renderer.report_object_issues(styled.object_issues());

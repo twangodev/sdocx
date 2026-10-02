@@ -2,7 +2,8 @@
 
 use sdocx::{
     BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, RenderColorMode,
-    RenderOptions, RichTextBox, RichTextSpan, RichTextSpanType, SpanIntervalType, render_page_svg,
+    RenderOptions, RichTextBox, RichTextSpan, RichTextSpanType, SpanIntervalType, TextDiagnostic,
+    TextDiagnosticKind, render_page_svg,
 };
 
 fn text_box(spans: Vec<RichTextSpan>) -> RichTextBox {
@@ -95,7 +96,14 @@ fn ten_thousand_style_boundaries_preserve_rendered_output_in_both_themes() {
         assert_eq!(actual_glyphs, expected_glyphs);
         assert_eq!(actual.text_diagnostics, expected.text_diagnostics);
         assert_eq!(actual.object_diagnostics, expected.object_diagnostics);
-        assert!(actual.text_diagnostics.is_empty());
+        assert_eq!(
+            actual.text_diagnostics,
+            [TextDiagnostic {
+                kind: TextDiagnosticKind::UnsupportedMeasurementShaping,
+                family: "Roboto".into(),
+                codepoints: vec![65],
+            }],
+        );
         let tree = roxmltree::Document::parse(&actual.svg).unwrap();
         let source = tree
             .descendants()

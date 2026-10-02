@@ -231,13 +231,19 @@ fn signed_polygon_insets_expand_the_retained_frame_without_fallback() {
 
 #[test]
 fn rounded_gravity_alignment_and_wrap_use_native_ceiled_inset_dimensions() {
+    const ABC_ADVANCE: f32 = (652.0_f32 / 100.0 + 623.0 / 100.0) + 651.0 / 100.0;
     // R10 gives inset width 194.1421/height 94.1421; native measurement is 195x95.
     for (gravity, y) in [(1, 53.678_932_189_941_406), (2, 94.428_932_189_941_4)] {
         let mut shape = rounded(200.0, "A");
         shape.text.as_mut().unwrap().gravity = Some(gravity);
         assert_shape(shape, &[("A", 2.9289321899414062, y)]);
     }
-    for (alignment, x) in [(2_u32, 90.800_025_939_941_4), (1, 178.671_119_689_941_4)] {
+    let inset_left = 2.9289321899414062;
+    let remaining = 195.0 - f64::from(ABC_ADVANCE);
+    for (alignment, x) in [
+        (2_u32, inset_left + remaining / 2.0),
+        (1, inset_left + remaining),
+    ] {
         let mut shape = rounded(200.0, "ABC");
         shape
             .text

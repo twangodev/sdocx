@@ -348,6 +348,13 @@ mod tests {
         assert!((actual - expected).abs() < 1e-8, "{actual} != {expected}");
     }
 
+    fn regular_entry_advance(design_advance: i32, positioning_adjustment: i32) -> f32 {
+        // Pinned Roboto at size 45: 4500 paint units / 2048 units per em, in 24.8.
+        let advance = (design_advance as f32 * 562.5).trunc();
+        let adjustment = (positioning_adjustment as f32 * 562.5).floor();
+        (advance + adjustment) / 256.0 / 100.0
+    }
+
     #[test]
     fn background_uses_retained_kerning_and_merges_across_foreground_changes() {
         let theme = RenderTheme::for_canvas(false);
@@ -362,7 +369,10 @@ mod tests {
         assert!(issues.is_empty());
         assert_eq!(rectangles.len(), 1);
         assert_eq!(rectangles[0].source, 0..2);
-        close(rectangles[0].bounds.x_max, 56.07421875);
+        close(
+            rectangles[0].bounds.x_max,
+            f64::from(regular_entry_advance(1336, -87)) + f64::from(regular_entry_advance(1303, 0)),
+        );
         close(rectangles[0].bounds.y_max, 60.75);
         let mut scene = Scene::new(Svg::new());
         assert!(render_line_backgrounds(&mut scene, &styled, line, theme, None).is_empty());
@@ -381,7 +391,10 @@ mod tests {
         let (rectangles, issues) = line_backgrounds(&styled, &layout.lines[0], theme, None);
         assert!(issues.is_empty());
         assert_eq!(rectangles.len(), 1);
-        close(rectangles[0].bounds.x_max, 57.98583984375);
+        close(
+            rectangles[0].bounds.x_max,
+            f64::from(regular_entry_advance(1336, 0)) + f64::from(regular_entry_advance(1303, 0)),
+        );
     }
 
     #[test]
@@ -405,9 +418,16 @@ mod tests {
         assert_eq!(rectangles.len(), 2);
         assert_eq!(rectangles[0].source, 0..1);
         assert_eq!(rectangles[1].source, 2..3);
-        close(rectangles[0].bounds.x_max, 29.35546875);
-        close(rectangles[1].bounds.x_min, 57.37060546875);
-        close(rectangles[1].bounds.x_max, 86.66015625);
+        let prefix = regular_entry_advance(1336, 0) + regular_entry_advance(1275, 0);
+        close(
+            rectangles[0].bounds.x_max,
+            f64::from(regular_entry_advance(1336, 0)),
+        );
+        close(rectangles[1].bounds.x_min, f64::from(prefix));
+        close(
+            rectangles[1].bounds.x_max,
+            f64::from(prefix) + f64::from(regular_entry_advance(1333, 0)),
+        );
     }
 
     #[test]
@@ -434,7 +454,10 @@ mod tests {
             assert_eq!(rectangles.len(), expected_rectangles);
             assert_eq!(issues.len(), expected_issues);
             if let Some(rectangle) = rectangles.first() {
-                close(rectangle.bounds.x_max, 23.84033203125);
+                close(
+                    rectangle.bounds.x_max,
+                    f64::from(regular_entry_advance(1085, 0)),
+                );
             }
             if let Some(issue) = issues.first() {
                 assert_eq!(issue, &SourceOwner::Text(0..2));
@@ -602,7 +625,7 @@ mod tests {
 
     #[test]
     fn covered_greek_and_cyrillic_use_retained_native_advances() {
-        for (source, expected_advance) in [("λΩ", 54.84375), ("Жя", 65.54443359375)] {
+        for (source, advances) in [("λΩ", [1134, 1362]), ("Жя", [1859, 1124])] {
             let text = text(
                 source,
                 vec![span(RichTextSpanType::BackgroundColor, 0x80ffff00, 0, 2)],
@@ -621,7 +644,13 @@ mod tests {
             assert!(issues.is_empty());
             assert_eq!(rectangles.len(), 1);
             assert_eq!(rectangles[0].source, 0..2);
-            close(rectangles[0].bounds.x_max, expected_advance);
+            close(
+                rectangles[0].bounds.x_max,
+                advances
+                    .map(|advance| f64::from(regular_entry_advance(advance, 0)))
+                    .into_iter()
+                    .sum(),
+            );
         }
         let text = text(
             "λλ",
@@ -637,8 +666,14 @@ mod tests {
         );
         assert!(issues.is_empty());
         assert_eq!(rectangles.len(), 1);
-        close(rectangles[0].bounds.x_min, 25.2685546875);
-        close(rectangles[0].bounds.x_max, 50.185546875);
+        close(
+            rectangles[0].bounds.x_min,
+            f64::from(regular_entry_advance(1134, 16)),
+        );
+        close(
+            rectangles[0].bounds.x_max,
+            f64::from(regular_entry_advance(1134, 16)) + f64::from(regular_entry_advance(1134, 0)),
+        );
     }
 
     #[test]

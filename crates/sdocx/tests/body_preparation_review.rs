@@ -258,7 +258,34 @@ fn preparation_does_not_reuse_different_font_books() {
     let resolved = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &custom);
     assert_ne!(fallback[0].svg, resolved[0].svg);
     assert!(!fallback[0].text_diagnostics.is_empty());
-    assert!(resolved.iter().all(|page| page.text_diagnostics.is_empty()));
+    assert_eq!(
+        resolved
+            .iter()
+            .map(|page| source(&page.svg))
+            .collect::<String>(),
+        "iiiiMMMMWWWWmmmm"
+    );
+    for page in &resolved {
+        let visible = source(&page.svg);
+        let expected = if visible.is_empty() {
+            Vec::new()
+        } else {
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: "DejaVu Sans".into(),
+                codepoints: visible
+                    .chars()
+                    .map(u32::from)
+                    .collect::<std::collections::BTreeSet<_>>()
+                    .into_iter()
+                    .collect(),
+            }]
+        };
+        assert_eq!(
+            page.text_diagnostics, expected,
+            "visible source {visible:?}"
+        );
+    }
 }
 
 #[test]

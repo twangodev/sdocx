@@ -108,6 +108,20 @@ fn source(page: &RenderedPage) -> String {
         .collect()
 }
 
+fn diagnostics(page: &RenderedPage, family: &str, expected: &[(TextDiagnosticKind, &[u32])]) {
+    assert_eq!(
+        page.text_diagnostics.len(),
+        expected.len(),
+        "{:?}",
+        page.text_diagnostics
+    );
+    for (actual, (kind, codepoints)) in page.text_diagnostics.iter().zip(expected) {
+        assert_eq!(&actual.kind, kind);
+        assert_eq!(actual.family, family);
+        assert_eq!(actual.codepoints, *codepoints);
+    }
+}
+
 #[test]
 fn a_missing_cluster_does_not_change_supported_latin_glyphs_or_positions() {
     let fonts = FontBook::default();
@@ -122,17 +136,19 @@ fn a_missing_cluster_does_not_change_supported_latin_glyphs_or_positions() {
         );
         assert_eq!(&actual[..6], expected.as_slice());
         assert_eq!(source(&mixed), "office \u{10ffff}");
-        assert_eq!(mixed.text_diagnostics.len(), 1);
-        assert_eq!(
-            mixed.text_diagnostics[0].kind,
-            TextDiagnosticKind::MissingGlyphs
+        diagnostics(
+            &mixed,
+            "Roboto",
+            &[
+                (TextDiagnosticKind::UnsupportedMeasurementFont, &[0x10ffff]),
+                (TextDiagnosticKind::MissingGlyphs, &[0x10ffff]),
+            ],
         );
-        assert_eq!(mixed.text_diagnostics[0].codepoints, [0x10ffff]);
     }
 }
 
 #[test]
-fn tab_preserves_source_and_the_native_four_space_advance() {
+fn tab_preserves_source_and_reports_compatibility_measurement() {
     let fonts = FontBook::default();
     for flow in [false, true] {
         let tab = render(text("A\tB"), flow, &fonts);
@@ -140,10 +156,25 @@ fn tab_preserves_source_and_the_native_four_space_advance() {
         let actual = glyphs(&tab, &fonts);
         let expected = glyphs(&spaces, &fonts);
         assert_eq!(source(&tab), "A\tB");
-        assert!(tab.text_diagnostics.is_empty());
-        assert_eq!(actual.last(), expected.last());
+        diagnostics(
+            &tab,
+            "Roboto",
+            &[(TextDiagnosticKind::UnsupportedTabMeasurement, &[9])],
+        );
+        assert!(spaces.text_diagnostics.is_empty());
+        let actual_last = actual.last().unwrap();
+        let expected_last = expected.last().unwrap();
+        assert_eq!(actual_last.id, expected_last.id);
+        assert_eq!(actual_last.font, expected_last.font);
+        assert_eq!(actual_last.text, expected_last.text);
         let origin = if flow { 48.0 } else { 10.0 };
-        assert!((f64::from(actual.last().unwrap().x) - origin - 73.916015625).abs() < 0.00001);
+        assert!((f64::from(actual_last.x) - origin - 73.916015625).abs() < 0.00001);
+        let native_space = 285187.0_f32 / 256.0 / 100.0;
+        let native_a_advance = 751500.0_f32 / 256.0 / 100.0;
+        let native_b_position = (0..4).fold(native_a_advance, |x, _| x + native_space);
+        assert!(
+            (f64::from(expected_last.x) - origin - f64::from(native_b_position)).abs() < 0.00001
+        );
     }
 }
 
@@ -155,7 +186,11 @@ fn a_covered_cluster_uses_its_retained_face_without_changing_its_neighbors() {
     for flow in [false, true] {
         let page = render(text("A∕B"), flow, &fonts);
         let actual = glyphs(&page, &fonts);
-        assert!(page.text_diagnostics.is_empty());
+        diagnostics(
+            &page,
+            "Roboto",
+            &[(TextDiagnosticKind::UnsupportedMeasurementFont, &[0x2215])],
+        );
         assert_eq!(source(&page), "A∕B");
         assert_eq!(
             actual.iter().map(|glyph| glyph.id).collect::<Vec<_>>(),
@@ -212,7 +247,14 @@ fn coverage_fallback_to_another_style_of_the_same_family_keeps_that_face() {
         content.spans.push(family_span(family));
         let page = render(content, flow, &fonts);
         let actual = glyphs(&page, &fonts);
-        assert!(page.text_diagnostics.is_empty());
+        diagnostics(
+            &page,
+            family,
+            &[(
+                TextDiagnosticKind::UnsupportedMeasurementFont,
+                &[65, 66, 0x2215],
+            )],
+        );
         assert_eq!(
             actual.iter().map(|glyph| glyph.font).collect::<Vec<_>>(),
             [regular.id, bold.id, regular.id]

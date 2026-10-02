@@ -114,19 +114,27 @@ fn svg_decimal(value: f64) -> f64 {
     (value * 100_000.0).round() / 100_000.0
 }
 
-fn pinned_marker_advances(value: &str, size: f64) -> Vec<f64> {
-    let face = rustybuzz::Face::from_slice(include_bytes!("../assets/fonts/Roboto-Regular.ttf"), 0)
-        .unwrap();
-    assert_eq!(face.units_per_em(), 2048);
-    let mut buffer = rustybuzz::UnicodeBuffer::new();
-    buffer.push_str(value);
-    buffer.guess_segment_properties();
-    let shaped = rustybuzz::shape(&face, &[], buffer);
-    assert!(shaped.glyph_infos().iter().all(|glyph| glyph.glyph_id != 0));
-    shaped
-        .glyph_positions()
-        .iter()
-        .map(|glyph| f64::from(glyph.x_advance) * size / 2048.0)
+fn native_marker_advances(value: &str, size: f64) -> Vec<f32> {
+    let (digit, period, a) = match size {
+        12.0 => (1087876628, 1078607217, 1087436227),
+        15.0 => (1090959442, 1081920717, 1090686812),
+        20.0 => (1093905940, 1084772844, 1093538939),
+        24.0 => (1096261632, 1086988288, 1095819264),
+        30.0 => (1099351040, 1090299904, 1099074560),
+        36.0 => (1101117440, 1092065280, 1100785664),
+        45.0 => (1103767040, 1094548972, 1103352320),
+        _ => panic!("no native marker capture for F{size}"),
+    };
+    value
+        .chars()
+        .map(|character| {
+            f32::from_bits(match character {
+                '0' | '1' | '9' => digit,
+                '.' => period,
+                'a' => a,
+                _ => panic!("no native marker capture for {character}"),
+            })
+        })
         .collect()
 }
 
@@ -176,9 +184,10 @@ fn numeric_reservations_and_retained_glyphs_use_pinned_default_face_metrics() {
             (4, 2, 9, "10.", 6.0),
             (6, 27, 1, "aa.", 6.0),
         ] {
-            let advances = pinned_marker_advances(marker, size);
-            let expected_body_x =
-                svg_decimal(10.0 + advances.iter().sum::<f64>() + logical_gap * gap_scale);
+            let advances = native_marker_advances(marker, size);
+            let expected_body_x = svg_decimal(
+                10.0 + f64::from(advances.iter().sum::<f32>()) + logical_gap * gap_scale,
+            );
             for page in modes(&document(kind, number, initial, width)) {
                 let xml = roxmltree::Document::parse(&page.svg).unwrap();
                 let marker_node = xml
@@ -206,7 +215,7 @@ fn numeric_reservations_and_retained_glyphs_use_pinned_default_face_metrics() {
                     .map(|x| x.parse().unwrap())
                     .collect();
                 assert_eq!(xs.len(), marker.chars().count());
-                let mut pen = 0.0;
+                let mut pen = 0.0_f32;
                 for (x, advance) in xs.into_iter().zip(&advances) {
                     let local_origin = span
                         .attribute("x")
@@ -216,7 +225,7 @@ fn numeric_reservations_and_retained_glyphs_use_pinned_default_face_metrics() {
                         .unwrap()
                         .parse::<f64>()
                         .unwrap();
-                    assert_coordinate(x - local_origin, svg_decimal(pen));
+                    assert_coordinate(x - local_origin, svg_decimal(f64::from(pen)));
                     pen += advance;
                 }
                 let body = xml
@@ -279,10 +288,11 @@ fn markers_use_first_content_size_with_one_delta_and_ignore_parent_face_styles()
             font_span(RichTextSpanType::Italic, 0, 2, vec![1, 0]),
         ];
         let expected_body_x = svg_decimal(
-            10.0 + pinned_marker_advances("1.", marker_size)
-                .iter()
-                .sum::<f64>()
-                + 9.0 * f64::from(width / 360),
+            10.0 + f64::from(
+                native_marker_advances("1.", marker_size)
+                    .iter()
+                    .sum::<f32>(),
+            ) + 9.0 * f64::from(width / 360),
         );
         for page in modes(&doc) {
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
@@ -401,7 +411,7 @@ fn fractional_marker_width_is_ceiled_for_its_child_and_reserved_before_body_wrap
     doc.pages[0].width = 82;
     content(&mut doc).text = "AAAA".into();
     content(&mut doc).font_size = Some(20.0);
-    let advance = pinned_marker_advances("1.", 20.0).iter().sum::<f64>();
+    let advance = f64::from(native_marker_advances("1.", 20.0).iter().sum::<f32>());
     assert_ne!(advance, advance.floor());
     let body_x = svg_decimal(10.0 + advance + 9.0);
     for page in modes(&doc) {

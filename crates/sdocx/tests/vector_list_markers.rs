@@ -151,6 +151,7 @@ fn assert_mixed_marker_y(
     expected_center: f64,
     expected_baseline: f64,
     fonts: &sdocx::fonts::FontBook,
+    unsupported_family: Option<&str>,
 ) {
     for page in modes_with_fonts(doc, RenderColorMode::Light, fonts) {
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
@@ -173,19 +174,58 @@ fn assert_mixed_marker_y(
         for span in spans {
             assert_eq!(number(span, "y"), expected_baseline);
         }
+        assert_embedded_face(&xml, fonts, unsupported_family.unwrap_or("Roboto"));
         assert_eq!(
             xml.descendants()
                 .filter(|node| node.has_tag_name("image"))
                 .count(),
             1
         );
-        assert!(
-            page.text_diagnostics.is_empty(),
-            "{:?}",
-            page.text_diagnostics
-        );
+        if let Some(family) = unsupported_family {
+            assert_unsupported_font(&page, family, 1);
+        } else {
+            assert!(
+                page.text_diagnostics.is_empty(),
+                "{:?}",
+                page.text_diagnostics
+            );
+        }
         assert!(page.object_diagnostics.is_empty());
     }
+}
+
+#[cfg(feature = "serde")]
+fn assert_embedded_face(
+    svg: &roxmltree::Document<'_>,
+    fonts: &sdocx::fonts::FontBook,
+    family: &str,
+) {
+    use base64::Engine;
+    let selected = fonts.resolve(family, false, false).unwrap();
+    let css = svg
+        .descendants()
+        .find(|node| node.has_tag_name("style"))
+        .unwrap()
+        .text()
+        .unwrap();
+    let encoded_fonts: Vec<_> = css.split("base64,").skip(1).collect();
+    assert_eq!(encoded_fonts.len(), 1);
+    let embedded = base64::engine::general_purpose::STANDARD
+        .decode(encoded_fonts[0].split('"').next().unwrap())
+        .unwrap();
+    assert_eq!(embedded, selected.bytes());
+}
+
+#[cfg(feature = "serde")]
+fn assert_unsupported_font(page: &sdocx::RenderedPage, family: &str, diagnostic_count: usize) {
+    assert_eq!(page.text_diagnostics.len(), diagnostic_count);
+    let unsupported = page
+        .text_diagnostics
+        .iter()
+        .find(|diagnostic| diagnostic.kind == sdocx::TextDiagnosticKind::UnsupportedMeasurementFont)
+        .unwrap();
+    assert_eq!(unsupported.family, family);
+    assert_eq!(unsupported.codepoints, [u32::from('A'), u32::from('B')]);
 }
 
 #[cfg(feature = "serde")]
@@ -198,6 +238,7 @@ fn zero_pixel_spacing_centers_points_from_the_post_line_cursor_and_object_height
         39.501,
         100.001,
         &sdocx::fonts::FontBook::default(),
+        None,
     );
 }
 
@@ -218,6 +259,7 @@ fn nonzero_pixel_spacing_uses_default_face_caps_even_for_an_alternate_span_famil
             svg_decimal(center),
             svg_decimal(baseline),
             &controlled_fonts(1456, 1024),
+            alternate_family.then_some("Roboto Mono"),
         );
     }
 }
@@ -256,7 +298,13 @@ fn controlled_fonts(default_caps: i16, span_caps: i16) -> sdocx::fonts::FontBook
         span_caps,
     ));
     db.set_sans_serif_family("Roboto");
-    sdocx::fonts::FontBook::new(std::sync::Arc::new(db))
+    let native_names = sdocx::fonts::NativeFontNameConfig::new("Roboto")
+        .unwrap()
+        .with_family_alias("Roboto", "Roboto")
+        .unwrap()
+        .with_family_alias("Roboto Mono", "Roboto Mono")
+        .unwrap();
+    sdocx::fonts::FontBook::new(std::sync::Arc::new(db)).with_native_name_config(native_names)
 }
 
 #[cfg(feature = "serde")]
@@ -283,14 +331,24 @@ fn unusable_default_caps_omit_only_pixel_markers_while_zero_spacing_keeps_artwor
                 .count(),
             1
         );
-        assert_eq!(page.text_diagnostics.len(), 1);
-        assert_eq!(
-            page.text_diagnostics[0].kind,
-            sdocx::TextDiagnosticKind::MeasurementFailure
-        );
+        assert_unsupported_font(&page, "Roboto Mono", 2);
+        let marker_failure = page
+            .text_diagnostics
+            .iter()
+            .find(|diagnostic| diagnostic.kind == sdocx::TextDiagnosticKind::MeasurementFailure)
+            .unwrap();
+        assert_eq!(marker_failure.family, "sans-serif");
+        assert!(marker_failure.codepoints.is_empty());
+        assert_embedded_face(&xml, &fonts, "Roboto Mono");
         assert!(page.object_diagnostics.is_empty());
     }
-    assert_mixed_marker_y(&mixed_object_document(0.0, true), 39.501, 100.001, &fonts);
+    assert_mixed_marker_y(
+        &mixed_object_document(0.0, true),
+        39.501,
+        100.001,
+        &fonts,
+        Some("Roboto Mono"),
+    );
 }
 
 #[test]

@@ -6,15 +6,22 @@ use unicode_script::{Script, ScriptExtension, UnicodeScript};
 use unicode_segmentation::UnicodeSegmentation;
 
 use crate::fonts::{
-    Direction, Feature, FontError, FontMetrics, FontSynthesis, ResolvedFace, ShapedGlyph,
-    UnicodeBuffer, fontdb,
+    Direction, Feature, FontError, FontMetrics, FontSynthesis, PaintContextError,
+    PaintContextWindows, PaintItemization, PaintItemizationError, PaintShapeDirection,
+    PaintSpanProfile, PaintTextRequest, ResolvedFace, ShapedGlyph, UnicodeBuffer, fontdb,
 };
 use crate::render::RenderTheme;
 use crate::text_index::TextSource;
 use crate::{BoundingBox, PredefinedTextStyle};
 
 use super::bidi::{BidiError, ParagraphBidi};
-use super::{StyledText, TextMeasureStyle, TextRenderer, TextStyle};
+use super::{
+    NativeDrawSpan, NativeIdentityUnavailable, StyledText, TextDiagnosticKind, TextMeasureStyle,
+    TextRenderer, TextStyle,
+};
+
+mod native_geometry;
+use native_geometry::NativeMeasuredEntries;
 
 pub(in crate::render) struct MeasuredText {
     pub advance: f64,
@@ -30,6 +37,7 @@ struct MeasuredSegment {
 struct RunFace {
     face: ResolvedFace,
     coverage_fallback: bool,
+    measurement_issue: TextDiagnosticKind,
 }
 
 #[derive(Clone)]
@@ -50,6 +58,8 @@ pub(in crate::render) struct MeasuredRun {
     pub variable: bool,
     pub tab: bool,
     pub coverage_fallback: bool,
+    pub native_entries: Option<NativeMeasuredEntries>,
+    measurement_issue: Option<TextDiagnosticKind>,
     browser_shapes: Mutex<HashMap<String, Arc<Vec<ShapedGlyph>>>>,
 }
 
@@ -193,9 +203,6 @@ impl MeasuredCluster {
             .glyphs
             .get(self.glyphs.clone())
             .ok_or(MeasurementError::InvalidCluster)?;
-        if glyphs.is_empty() {
-            return Err(MeasurementError::InvalidCluster);
-        }
         if glyphs
             .iter()
             .any(|glyph| glyph.source.characters() != &self.source)
@@ -326,6 +333,10 @@ fn translated_coordinate_matches(target: f64, natural: f64, shift: f64) -> bool 
 }
 
 impl MeasuredRun {
+    pub fn measurement_issue(&self) -> Option<&TextDiagnosticKind> {
+        self.measurement_issue.as_ref()
+    }
+
     pub fn geometry(&self) -> FontGeometry {
         FontGeometry::new(self.style.font_size, self.face.metrics.units_per_em)
     }
@@ -374,6 +385,7 @@ struct MeasureSpan {
     source: Range<usize>,
     style: TextStyle,
     measurement: TextMeasureStyle,
+    native: Result<NativeDrawSpan, NativeIdentityUnavailable>,
 }
 
 impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
@@ -414,6 +426,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                     source: segment,
                     style: resolved.paint,
                     measurement: resolved.measurement,
+                    native: resolved.native_draw,
                 });
             }
         }
@@ -453,19 +466,17 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                     .bidi()
                     .direction_at(start)
                     .ok_or(MeasurementError::InvalidRange)?;
-                let script = self.scripts[start];
                 let tab = self.character(start) == Some('\t');
                 let mut stop = start + 1;
                 if !tab {
                     while stop < end
                         && self.bidi().direction_at(stop) == Some(direction)
-                        && self.scripts[stop] == script
                         && self.character(stop) != Some('\t')
                     {
                         stop += 1;
                     }
                 }
-                runs.push(self.shape(start..stop, &span.style, direction, script, tab)?);
+                runs.push(self.shape_piece(start..stop, span, direction, tab)?);
                 start = stop;
             }
         }
@@ -512,6 +523,237 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         self.styled.index.slice(start..start + 1)?.chars().next()
     }
 
+    fn shape_piece(
+        &self,
+        range: Range<usize>,
+        span: &MeasureSpan,
+        direction: Direction,
+        tab: bool,
+    ) -> Result<MeasuredSegment, MeasurementError> {
+        let source = self.range.start + range.start..self.range.start + range.end;
+        let text = self
+            .styled
+            .index
+            .slice(source.clone())
+            .ok_or(MeasurementError::InvalidRange)?;
+        if !tab
+            && let Ok(native) = &span.native
+            && let Some(face) = self
+                .renderer
+                .for_source(source.clone())
+                .resolve_native(native.family.as_deref(), direction)
+            && native_geometry::supported_face(&face)
+            && !face.covers(text)?
+        {
+            let mut coverage = Vec::<(Range<usize>, bool)>::new();
+            let mut cursor = range.start;
+            for grapheme in text.graphemes(true) {
+                let end = cursor + grapheme.chars().count();
+                let covered = face.covers(grapheme)?;
+                if let Some((previous, previous_covered)) = coverage.last_mut()
+                    && *previous_covered == covered
+                {
+                    previous.end = end;
+                } else {
+                    coverage.push((cursor..end, covered));
+                }
+                cursor = end;
+            }
+            if coverage.len() > 1 {
+                let mut measured = MeasuredSegment {
+                    advance: 0.0,
+                    clusters: Vec::new(),
+                };
+                for (range, _) in coverage {
+                    let piece = self.shape_piece(range, span, direction, false)?;
+                    measured.advance += piece.advance;
+                    measured.clusters.extend(piece.clusters);
+                }
+                return Ok(measured);
+            }
+        }
+        let measurement_issue = match self.shape_native(range.clone(), span, direction, tab) {
+            Ok(measured) => return Ok(measured),
+            Err(kind) => {
+                self.renderer.for_source(source).measurement_unsupported(
+                    kind.clone(),
+                    span.style.family.as_deref().unwrap_or("Roboto"),
+                    text,
+                );
+                kind
+            }
+        };
+        let mut measured = MeasuredSegment {
+            advance: 0.0,
+            clusters: Vec::new(),
+        };
+        let mut start = range.start;
+        while start < range.end {
+            let script = self.scripts[start];
+            let mut stop = start + 1;
+            while stop < range.end && self.scripts[stop] == script {
+                stop += 1;
+            }
+            let piece = self.shape(
+                start..stop,
+                &span.style,
+                direction,
+                script,
+                tab,
+                measurement_issue.clone(),
+            )?;
+            measured.advance += piece.advance;
+            measured.clusters.extend(piece.clusters);
+            start = stop;
+        }
+        Ok(measured)
+    }
+
+    fn shape_native(
+        &self,
+        range: Range<usize>,
+        span: &MeasureSpan,
+        direction: Direction,
+        tab: bool,
+    ) -> Result<MeasuredSegment, TextDiagnosticKind> {
+        use TextDiagnosticKind as Kind;
+        if tab {
+            return Err(Kind::UnsupportedTabMeasurement);
+        }
+        let native = span
+            .native
+            .as_ref()
+            .map_err(|_| Kind::UnsupportedMeasurementStyle)?;
+        let profile = PaintSpanProfile::new(native.font_size, native.style_bits)
+            .and_then(|profile| profile.metric_input())
+            .map_err(|_| Kind::UnsupportedMeasurementStyle)?;
+        let source = self.range.start + range.start..self.range.start + range.end;
+        let face = self
+            .renderer
+            .for_source(source.clone())
+            .resolve_native(native.family.as_deref(), direction)
+            .ok_or(Kind::UnsupportedMeasurementFont)?;
+        if !native_geometry::supported_face(&face) {
+            return Err(Kind::UnsupportedMeasurementFont);
+        }
+        let selected_text = self
+            .styled
+            .index
+            .slice(source.clone())
+            .ok_or(Kind::UnsupportedMeasurementShaping)?;
+        if !face
+            .covers(selected_text)
+            .map_err(|_| Kind::UnsupportedMeasurementFont)?
+        {
+            return Err(Kind::UnsupportedMeasurementFont);
+        }
+        let context = self.range.clone();
+        let text = self
+            .styled
+            .index
+            .slice(context.clone())
+            .ok_or(Kind::UnsupportedMeasurementShaping)?;
+        let base = self
+            .styled
+            .index
+            .char_to_utf16(context.start)
+            .ok_or(Kind::UnsupportedMeasurementShaping)?;
+        let start = self
+            .styled
+            .index
+            .char_to_utf16(source.start)
+            .and_then(|v| v.checked_sub(base))
+            .ok_or(Kind::UnsupportedMeasurementShaping)?;
+        let end = self
+            .styled
+            .index
+            .char_to_utf16(source.end)
+            .and_then(|v| v.checked_sub(base))
+            .ok_or(Kind::UnsupportedMeasurementShaping)?;
+        let windows = PaintContextWindows::new(text, start..end).map_err(|error| match error {
+            PaintContextError::InputBudget => Kind::UnsupportedMeasurementBudget,
+            PaintContextError::InvalidRange => Kind::InvalidGeometry,
+        })?;
+        let paint_direction = match direction {
+            Direction::LeftToRight => PaintShapeDirection::LeftToRight,
+            Direction::RightToLeft => PaintShapeDirection::RightToLeft,
+            _ => return Err(Kind::UnsupportedMeasurementShaping),
+        };
+        let requested_weight =
+            if span.style.bold && matches!(self.styled.context(), super::TextContext::Placed) {
+                fontdb::Weight::BOLD
+            } else {
+                fontdb::Weight::NORMAL
+            };
+        let synthesis = face.synthesis(requested_weight, span.style.italic);
+        let mut shaper = face
+            .paint_shaper(profile)
+            .map_err(native_geometry::shape_error)?;
+        let mut measured = MeasuredSegment {
+            advance: 0.0,
+            clusters: Vec::new(),
+        };
+        for window in windows.windows() {
+            let local_context = window.context_scalar_range();
+            let context =
+                self.range.start + local_context.start..self.range.start + local_context.end;
+            let local_source = window.selected_scalar_range();
+            let source = self.range.start + local_source.start..self.range.start + local_source.end;
+            let itemization =
+                PaintItemization::new(window.source(), window.selected_range_in_window_utf16())
+                    .map_err(|error| match error {
+                        PaintItemizationError::InputBudget => Kind::UnsupportedMeasurementBudget,
+                        PaintItemizationError::InvalidRange => Kind::InvalidGeometry,
+                    })?;
+            let piece = shaper
+                .shape_text(PaintTextRequest::new(&itemization, paint_direction))
+                .map_err(native_geometry::piece_error)?;
+            if piece
+                .entry_geometry()
+                .glyphs()
+                .iter()
+                .any(|glyph| glyph.id() == 0)
+            {
+                return Err(Kind::UnsupportedMeasurementFont);
+            }
+            let geometry = native_geometry::NativeGeometry::new(
+                &piece,
+                &self.styled.index,
+                context,
+                source.clone(),
+            )
+            .map_err(|_| Kind::InvalidGeometry)?;
+            let run = Arc::new(MeasuredRun {
+                source,
+                style: span.style.clone(),
+                face: face.clone(),
+                synthesis,
+                direction,
+                glyphs: geometry.glyphs,
+                variable: false,
+                tab: false,
+                coverage_fallback: false,
+                native_entries: Some(geometry.entries),
+                measurement_issue: None,
+                browser_shapes: Mutex::new(HashMap::new()),
+            });
+            measured.advance += run
+                .native_entries
+                .as_ref()
+                .ok_or(Kind::InvalidGeometry)?
+                .advance();
+            measured.clusters.extend(geometry.clusters.into_iter().map(
+                |(source, advance, glyphs)| MeasuredCluster {
+                    source,
+                    advance,
+                    glyphs,
+                    run: run.clone(),
+                },
+            ));
+        }
+        Ok(measured)
+    }
+
     fn shape(
         &self,
         range: Range<usize>,
@@ -519,6 +761,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         direction: Direction,
         script: Script,
         tab: bool,
+        measurement_issue: TextDiagnosticKind,
     ) -> Result<MeasuredSegment, MeasurementError> {
         let source = self.range.start + range.start..self.range.start + range.end;
         let face = self
@@ -548,6 +791,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 RunFace {
                     face,
                     coverage_fallback: false,
+                    measurement_issue,
                 },
             );
         }
@@ -570,6 +814,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 RunFace {
                     face: selected,
                     coverage_fallback,
+                    measurement_issue,
                 },
             );
         }
@@ -620,6 +865,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 RunFace {
                     face: selected,
                     coverage_fallback,
+                    measurement_issue: measurement_issue.clone(),
                 },
             )?;
             measured.advance += part.advance;
@@ -732,6 +978,8 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             variable,
             tab,
             coverage_fallback: selected.coverage_fallback,
+            native_entries: None,
+            measurement_issue: Some(selected.measurement_issue),
             browser_shapes: Mutex::new(HashMap::new()),
         });
         let mut clusters = Vec::new();
@@ -797,6 +1045,228 @@ mod tests {
     use crate::fonts::FontBook;
     use crate::{BoundingBox, RichTextBox, RichTextRun, RichTextSpan, RichTextSpanType};
 
+    #[test]
+    fn paragraph_measurement_uses_captured_native_entries_and_owner_positions() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-entry-geometry.json"
+        )))
+        .unwrap();
+        let fonts = FontBook::default();
+        let settings = TextSettings::resolved();
+        for name in [
+            "av_default",
+            "fractional_size",
+            "large_size",
+            "marks",
+            "partial_marks",
+            "italic_marks",
+        ] {
+            let case = fixture["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|case| case["name"] == name)
+                .unwrap();
+            for prefix in ["", "😀\n"] {
+                let paragraph_start = prefix.chars().count();
+                let utf16_base = prefix.encode_utf16().count() as u32;
+                let mut content =
+                    text_box(&format!("{prefix}{}", case["text_utf8"].as_str().unwrap()));
+                content.font_size = Some(f32::from_bits(
+                    case["font_size_bits"].as_u64().unwrap() as u32
+                ));
+                if name == "italic_marks" {
+                    content.spans.push(source_span(
+                        RichTextSpanType::Underline,
+                        utf16_base..utf16_base + 1,
+                        vec![1, 0],
+                    ));
+                }
+                let renderer = TextRenderer::new(settings, &fonts);
+                let styled = StyledText::new(&content, TextContext::Flow, settings);
+                let bounds = case["range_utf16"].as_array().unwrap();
+                let range = styled
+                    .index
+                    .utf16_to_char(utf16_base + bounds[0].as_u64().unwrap() as u32)
+                    .unwrap()
+                    ..styled
+                        .index
+                        .utf16_to_char(utf16_base + bounds[1].as_u64().unwrap() as u32)
+                        .unwrap();
+                let measured = ParagraphMeasurer::new(
+                    &styled,
+                    paragraph_start..styled.index.len(),
+                    RenderTheme::for_canvas(false),
+                    None,
+                    &renderer,
+                )
+                .unwrap()
+                .measure_line(range)
+                .unwrap();
+                let run = &measured.clusters[0].run;
+                assert!(run.measurement_issue().is_none());
+                let native = run
+                    .native_entries
+                    .as_ref()
+                    .expect("default pinned regular uses native producer");
+                assert_eq!(
+                    native.source().characters(),
+                    &(paragraph_start..styled.index.len())
+                );
+                let expected = &case["entry_geometry"];
+                let widths = expected["entry_widths_bits"].as_array().unwrap();
+                let selected = native.geometry().source_range_utf16();
+                for (slot, entry) in native.geometry().entries().iter().enumerate() {
+                    assert_eq!(
+                        entry.advance().to_bits(),
+                        widths[selected.start as usize + slot].as_u64().unwrap() as u32,
+                        "{name} UTF16 slot {slot}"
+                    );
+                }
+                let captured = expected["glyphs"].as_array().unwrap();
+                assert_eq!(run.glyphs.len(), captured.len(), "{name}");
+                for (glyph, captured) in run.glyphs.iter().zip(captured) {
+                    assert_eq!(
+                        glyph.id,
+                        captured["glyph_id"].as_u64().unwrap() as u32,
+                        "{name}"
+                    );
+                    assert_eq!(
+                        glyph.source.utf16().start,
+                        utf16_base + captured["owner_utf16"].as_u64().unwrap() as u32,
+                        "{name}"
+                    );
+                    let position = captured["entry_position_bits"].as_array().unwrap();
+                    assert_eq!(
+                        glyph.owner_offset,
+                        [
+                            f64::from(f32::from_bits(position[0].as_u64().unwrap() as u32)),
+                            f64::from(f32::from_bits(position[1].as_u64().unwrap() as u32))
+                        ],
+                        "{name}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn unsupported_native_profiles_report_the_source_before_compatibility_measurement() {
+        use super::super::resources::SourceOwner;
+        let mut italic = text_box("A");
+        italic.runs.push(RichTextRun {
+            start: 0,
+            end: 1,
+            bold: false,
+            italic: true,
+        });
+        let mut skewed_composite = text_box("é");
+        skewed_composite.underline = true;
+        let fonts = FontBook::default();
+        let settings = TextSettings::resolved();
+        for (content, expected) in [
+            (italic, TextDiagnosticKind::UnsupportedMeasurementStyle),
+            (
+                skewed_composite,
+                TextDiagnosticKind::UnsupportedMeasurementShaping,
+            ),
+            (
+                text_box("\t"),
+                TextDiagnosticKind::UnsupportedTabMeasurement,
+            ),
+            (
+                text_box(&"A".repeat(65_537)),
+                TextDiagnosticKind::UnsupportedMeasurementBudget,
+            ),
+        ] {
+            let styled = StyledText::new(&content, TextContext::Placed, settings);
+            let renderer = TextRenderer::new(settings, &fonts);
+            let measured = ParagraphMeasurer::new(
+                &styled,
+                0..styled.index.len(),
+                RenderTheme::for_canvas(false),
+                None,
+                &renderer,
+            )
+            .unwrap()
+            .measure_line(0..1)
+            .unwrap();
+            assert!(measured.advance.is_finite());
+            assert!(measured.clusters[0].run.native_entries.is_none());
+            assert!(
+                measured
+                    .clusters
+                    .iter()
+                    .all(|cluster| cluster.run.measurement_issue() == Some(&expected))
+            );
+            let diagnostics = renderer.scoped_diagnostics();
+            assert!(diagnostics.iter().any(|diagnostic| diagnostic.owner
+                == Some(SourceOwner::Text(0..1))
+                && diagnostic.diagnostic.kind == expected));
+        }
+    }
+
+    #[test]
+    fn named_style_metadata_cannot_activate_regular_font_fakery() {
+        use super::super::resources::SourceOwner;
+        use crate::fonts::NativeFontNameConfig;
+        let mut database = fontdb::Database::new();
+        database
+            .load_font_data(include_bytes!("../../../assets/fonts/Roboto-Regular.ttf").to_vec());
+        let names = NativeFontNameConfig::new("sans-serif")
+            .unwrap()
+            .with_family_alias("sans-serif", "Roboto")
+            .unwrap()
+            .with_font_file("Roboto-Regular.ttf", "sans-serif")
+            .unwrap()
+            .with_font_file("Roboto-Bold.ttf", "sans-serif")
+            .unwrap()
+            .with_font_file("Roboto-Italic.ttf", "sans-serif")
+            .unwrap();
+        let fonts = FontBook::new(Arc::new(database)).with_native_name_config(names);
+        let settings = TextSettings::resolved();
+        for family in ["Roboto-Bold", "Roboto-Italic"] {
+            let mut content = text_box("A");
+            let name = format!("{family}\0");
+            content.spans.push(source_span(
+                RichTextSpanType::FontName,
+                0..1,
+                [
+                    vec![0; 8],
+                    (name.len() as u16).to_le_bytes().to_vec(),
+                    name.into_bytes(),
+                ]
+                .concat(),
+            ));
+            let renderer = TextRenderer::new(settings, &fonts);
+            let styled = StyledText::new(&content, TextContext::Placed, settings);
+            let measured = measure_text(
+                &styled,
+                0..1,
+                RenderTheme::for_canvas(false),
+                None,
+                &renderer,
+            )
+            .unwrap();
+            assert!(measured.clusters[0].run.native_entries.is_none());
+            assert_eq!(
+                measured.clusters[0].run.measurement_issue(),
+                Some(&TextDiagnosticKind::UnsupportedMeasurementFont)
+            );
+            assert!(
+                renderer
+                    .scoped_diagnostics()
+                    .iter()
+                    .any(
+                        |diagnostic| diagnostic.owner == Some(SourceOwner::Text(0..1))
+                            && diagnostic.diagnostic.kind
+                                == TextDiagnosticKind::UnsupportedMeasurementFont
+                    )
+            );
+        }
+    }
+
     fn text_box(text: &str) -> RichTextBox {
         RichTextBox {
             text_area_type: None,
@@ -819,6 +1289,21 @@ mod tests {
 
     fn measure(text_box: &RichTextBox, context: TextContext) -> MeasuredText {
         measure_with_fonts(text_box, context, &FontBook::default())
+    }
+
+    fn measure_compatibility(text_box: &RichTextBox, context: TextContext) -> MeasuredText {
+        let mut database = fontdb::Database::new();
+        database
+            .load_font_data(include_bytes!("../../../assets/fonts/Roboto-Regular.ttf").to_vec());
+        let fonts = FontBook::new(Arc::new(database));
+        let measured = measure_with_fonts(text_box, context, &fonts);
+        assert!(
+            measured
+                .clusters
+                .iter()
+                .all(|cluster| cluster.run.native_entries.is_none())
+        );
+        measured
     }
 
     fn measure_with_fonts(
@@ -862,7 +1347,7 @@ mod tests {
             joined
         );
         let expected = if joined {
-            2552.0 / 2048.0 * 45.0
+            measure(&text_box("AV"), TextContext::Placed).advance
         } else {
             measure(&text_box("A"), TextContext::Placed).advance
                 + measure(&text_box("V"), TextContext::Placed).advance
@@ -1167,10 +1652,7 @@ mod tests {
         ));
         cluster.source = 0..2;
         cluster.glyphs = 0..0;
-        assert!(matches!(
-            cluster.retained_glyphs(),
-            Err(MeasurementError::InvalidCluster)
-        ));
+        assert_eq!(cluster.retained_glyphs().unwrap().count(), 0);
         cluster.glyphs = 0..usize::MAX;
         assert!(matches!(
             cluster.retained_glyphs(),
@@ -1222,8 +1704,8 @@ mod tests {
     }
 
     #[test]
-    fn retained_glyph_geometry_matches_independent_ava_positions() {
-        let measured = measure(&text_box("AVA"), TextContext::Placed);
+    fn compatibility_glyph_geometry_matches_independent_ava_positions() {
+        let measured = measure_compatibility(&text_box("AVA"), TextContext::Placed);
         let run = &measured.clusters[0].run;
         assert_eq!(run.source, 0..3);
         assert_eq!(run.face.family, "Roboto");
@@ -1258,8 +1740,8 @@ mod tests {
     }
 
     #[test]
-    fn combining_mark_offsets_and_nfc_glyphs_reproduce_with_the_selected_face() {
-        let marked = measure(&text_box("x\u{301}"), TextContext::Placed);
+    fn compatibility_combining_offsets_and_nfc_glyphs_reproduce_with_the_selected_face() {
+        let marked = measure_compatibility(&text_box("x\u{301}"), TextContext::Placed);
         assert_eq!(marked.clusters.len(), 1);
         let cluster = &marked.clusters[0];
         assert_eq!(cluster.source, 0..2);
@@ -1284,8 +1766,8 @@ mod tests {
         let offset = cluster.paint_offset("x\u{301}").unwrap().unwrap();
         assert_eq!(offset.x, 0.0);
         assert_eq!(offset.y, 0.0);
-        let decomposed = measure(&text_box("e\u{301}"), TextContext::Placed);
-        let composed = measure(&text_box("é"), TextContext::Placed);
+        let decomposed = measure_compatibility(&text_box("e\u{301}"), TextContext::Placed);
+        let composed = measure_compatibility(&text_box("é"), TextContext::Placed);
         assert_eq!(decomposed.clusters[0].run.glyphs[0].id, 2317);
         assert_eq!(composed.clusters[0].run.glyphs[0].id, 2317);
         assert_eq!(decomposed.advance, composed.advance);
@@ -1346,7 +1828,10 @@ mod tests {
             payload: vec![1, 0],
         });
         let measured = measure(&content, TextContext::Placed);
-        assert_eq!(measured.advance, 56.07421875);
+        assert_eq!(
+            measured.advance,
+            measure(&text_box("AV"), TextContext::Placed).advance
+        );
         assert!(Arc::ptr_eq(
             &measured.clusters[0].run,
             &measured.clusters[1].run
@@ -1393,7 +1878,7 @@ mod tests {
                 .iter()
                 .map(|glyph| (glyph.id, glyph.source.characters().clone()))
                 .collect::<Vec<_>>(),
-            [(59, 2..3), (38, 1..2), (5, 0..1)]
+            [(59, 2..3), (38, 1..2)]
         );
         for (cluster, character) in letters.iter().zip(["A", "V"]) {
             assert_eq!(cluster.run.direction, Direction::RightToLeft);
@@ -1413,13 +1898,13 @@ mod tests {
     }
 
     #[test]
-    fn covered_greek_and_cyrillic_reproduce_pinned_glyph_positions() {
+    fn compatibility_greek_and_cyrillic_reproduce_pinned_glyph_positions() {
         for (text, glyphs, advance) in [
             ("λΩ", [(579, 1134, 0), (569, 1362, 1134)], 54.84375),
             ("Жя", [(624, 1859, 0), (663, 1124, 1859)], 65.54443359375),
             ("λλ", [(579, 1150, 0), (579, 1134, 1150)], 50.185546875),
         ] {
-            let measured = measure(&text_box(text), TextContext::Placed);
+            let measured = measure_compatibility(&text_box(text), TextContext::Placed);
             assert_eq!(measured.advance, advance);
             assert_eq!(measured.clusters.len(), 2);
             let run = &measured.clusters[0].run;
@@ -1470,14 +1955,14 @@ mod tests {
     }
 
     #[test]
-    fn pinned_regular_advance_uses_font_units_and_local_size() {
-        let measured = measure(&text_box("ABC"), TextContext::Placed);
+    fn compatibility_regular_advance_uses_font_units_and_local_size() {
+        let measured = measure_compatibility(&text_box("ABC"), TextContext::Placed);
         assert_eq!(measured.advance, 86.66015625);
         assert_eq!(measured.font_size, 45.0);
         let mut smaller = text_box("ABC");
         smaller.font_size = Some(22.5);
         assert_eq!(
-            measure(&smaller, TextContext::Placed).advance,
+            measure_compatibility(&smaller, TextContext::Placed).advance,
             measured.advance / 2.0
         );
     }
@@ -1487,7 +1972,7 @@ mod tests {
         let office = measure(&text_box("office"), TextContext::Placed);
         assert_eq!(office.clusters.len(), 6);
         let av = measure(&text_box("AV"), TextContext::Placed);
-        assert_eq!(av.advance, 2552.0 / 2048.0 * 45.0);
+        assert!(av.clusters[0].run.native_entries.is_some());
         let separate = measure(&text_box("A"), TextContext::Placed).advance
             + measure(&text_box("V"), TextContext::Placed).advance;
         assert!(av.advance < separate);
@@ -1504,7 +1989,7 @@ mod tests {
         });
         assert_eq!(
             measure(&same, TextContext::Placed).advance,
-            2552.0 / 2048.0 * 45.0
+            measure(&text_box("AV"), TextContext::Placed).advance
         );
         same.spans.push(RichTextSpan {
             kind: RichTextSpanType::ForegroundColor,
@@ -1615,9 +2100,9 @@ mod tests {
     }
 
     #[test]
-    fn tabs_use_four_measured_spaces() {
+    fn unsupported_tabs_keep_four_compatibility_spaces() {
         let tab = measure(&text_box("\t"), TextContext::Placed);
-        let space = measure(&text_box(" "), TextContext::Placed);
+        let space = measure_compatibility(&text_box(" "), TextContext::Placed);
         assert_eq!(tab.advance, space.advance * 4.0);
         assert_eq!(tab.clusters[0].source, 0..1);
         assert!(tab.clusters[0].run.tab);
@@ -1627,7 +2112,9 @@ mod tests {
     #[test]
     fn coverage_segments_keep_adjacent_latin_kerning_and_cluster_sources() {
         let measured = measure(&text_box("AV∕AV"), TextContext::Placed);
-        assert_eq!(measured.advance, (2552.0 * 2.0 + 1229.0) / 2048.0 * 45.0);
+        let covered = measure(&text_box("AV"), TextContext::Placed);
+        let fallback = measure(&text_box("∕"), TextContext::Placed);
+        assert_eq!(measured.advance, covered.advance * 2.0 + fallback.advance);
         assert_eq!(measured.clusters.len(), 5);
         assert!(Arc::ptr_eq(
             &measured.clusters[0].run,
@@ -1642,10 +2129,16 @@ mod tests {
         assert!(measured.clusters[2].run.coverage_fallback);
         assert!(!measured.clusters[0].run.coverage_fallback);
         assert!(!measured.clusters[3].run.coverage_fallback);
+        assert!(measured.clusters[0].run.measurement_issue().is_none());
+        assert!(measured.clusters[3].run.measurement_issue().is_none());
+        assert_eq!(
+            measured.clusters[2].run.measurement_issue(),
+            Some(&TextDiagnosticKind::UnsupportedMeasurementFont)
+        );
     }
 
     #[test]
-    fn flow_faux_bold_uses_regular_metrics_and_placed_bold_uses_bold_face() {
+    fn logical_bold_preserves_native_name_selected_face_and_draw_synthesis() {
         let mut bold = text_box("ABC");
         bold.runs.push(RichTextRun {
             start: 0,
@@ -1653,8 +2146,17 @@ mod tests {
             bold: true,
             italic: false,
         });
-        assert_eq!(measure(&bold, TextContext::Flow).advance, 86.66015625);
-        assert_eq!(measure(&bold, TextContext::Placed).advance, 88.43994140625);
+        let regular = measure(&text_box("ABC"), TextContext::Placed);
+        for context in [TextContext::Flow, TextContext::Placed] {
+            let measured = measure(&bold, context);
+            assert_eq!(measured.advance, regular.advance);
+            assert!(measured.clusters[0].run.native_entries.is_some());
+            assert_eq!(measured.clusters[0].run.face.weight, fontdb::Weight::NORMAL);
+            assert_eq!(
+                measured.clusters[0].run.synthesis.bold,
+                matches!(context, TextContext::Placed)
+            );
+        }
     }
 
     #[test]
@@ -1817,6 +2319,8 @@ mod tests {
             variable: false,
             tab: false,
             coverage_fallback: false,
+            native_entries: None,
+            measurement_issue: None,
             browser_shapes: Mutex::new(HashMap::new()),
         });
         let cluster = MeasuredCluster {

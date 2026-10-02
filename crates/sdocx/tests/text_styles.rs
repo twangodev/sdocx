@@ -28,6 +28,14 @@ const CONTEXTS: &[Context] = &[
     Context::Table,
 ];
 
+fn uses_prepared_table_drawing(context: Context) -> bool {
+    match context {
+        #[cfg(feature = "serde")]
+        Context::Table => true,
+        _ => false,
+    }
+}
+
 fn bounds() -> BoundingBox {
     BoundingBox {
         x_min: 20.0,
@@ -479,7 +487,8 @@ fn hyperlink_actions_match_native_hypertext_flags_in_every_context() {
 #[test]
 fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
     use sdocx::TextDiagnosticKind::{
-        UnsupportedCompositionStyle, UnsupportedCorrectionStyle, UnsupportedSuggestionStyle,
+        UnsupportedCompositionStyle, UnsupportedCorrectionStyle, UnsupportedMeasurementStyle,
+        UnsupportedSuggestionStyle,
     };
     let fonts = FontBook::default();
     let mut content = text("ABCDE");
@@ -508,21 +517,32 @@ fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
             &fonts,
         )
         .unwrap();
-        let reasons = svg
-            .text_diagnostics
-            .iter()
-            .map(|issue| &issue.kind)
-            .collect::<Vec<_>>();
-        assert_eq!(
-            reasons,
-            [
-                &UnsupportedCompositionStyle,
-                &UnsupportedSuggestionStyle,
-                &UnsupportedCorrectionStyle
-            ],
-            "{context:?}"
-        );
-        assert_eq!(svg.text_diagnostics[0].codepoints, [65, 66, 67]);
+        let mut expected = vec![
+            sdocx::TextDiagnostic {
+                kind: UnsupportedCompositionStyle,
+                family: "Roboto".into(),
+                codepoints: vec![65, 66, 67],
+            },
+            sdocx::TextDiagnostic {
+                kind: UnsupportedSuggestionStyle,
+                family: "Roboto".into(),
+                codepoints: vec![68],
+            },
+            sdocx::TextDiagnostic {
+                kind: UnsupportedCorrectionStyle,
+                family: "Roboto".into(),
+                codepoints: vec![69],
+            },
+            sdocx::TextDiagnostic {
+                kind: UnsupportedMeasurementStyle,
+                family: "Roboto".into(),
+                codepoints: vec![65, 66, 67, 68, 69],
+            },
+        ];
+        if uses_prepared_table_drawing(context) {
+            expected.rotate_right(1);
+        }
+        assert_eq!(svg.text_diagnostics, expected, "{context:?}");
         let pdf = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
             &document,
             &layout,
@@ -617,10 +637,14 @@ fn modern_composition_flags_preserve_native_styling_in_every_text_context() {
             &fonts,
         )
         .unwrap();
-        assert!(
-            rendered.text_diagnostics.is_empty(),
-            "{context}: {:?}",
-            rendered.text_diagnostics
+        assert_eq!(
+            rendered.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementStyle,
+                family: "Roboto".into(),
+                codepoints: vec![u32::from('D')],
+            }],
+            "{context}",
         );
         let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
         for value in ["A", "B", "D"] {
@@ -672,7 +696,10 @@ fn modern_composition_flags_preserve_native_styling_in_every_text_context() {
                 &fonts,
             )
             .unwrap();
-            assert!(retained.pages[0].text_diagnostics.is_empty(), "{context}");
+            assert_eq!(
+                retained.pages[0].text_diagnostics, rendered.text_diagnostics,
+                "{context}"
+            );
             let inspected = PdfComposition::read(&retained.bytes);
             inspected.assert_source("A B C D", &context);
             let colors = inspected.fill_colors;
@@ -2487,7 +2514,15 @@ fn font_names_are_one_css_family_and_preserve_raw_source() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
-        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: family.into(),
+                codepoints: vec![97, 101, 102, 115],
+            }],
+            "{context:?}",
+        );
         let svg = page.svg;
         let xml = roxmltree::Document::parse(&svg).unwrap();
         let attribute = tspan(&xml, "safe").attribute("font-family").unwrap();
@@ -2583,6 +2618,11 @@ fn empty_caller_database_reports_unavailable_family_and_keeps_text() {
         .unwrap();
         let expected = vec![
             sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: family.into(),
+                codepoints: vec![101, 109, 112, 116, 121],
+            },
+            sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::UnavailableFamily,
                 family: family.into(),
                 codepoints: Vec::new(),
@@ -2635,6 +2675,11 @@ fn invalid_caller_font_data_is_not_silently_replaced_with_fallback_font() {
         .unwrap();
         let expected = vec![
             sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: family.into(),
+                codepoints: vec![97, 100, 101, 103, 109],
+            },
+            sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::UnusableFontData,
                 family: family.into(),
                 codepoints: Vec::new(),
@@ -2668,10 +2713,18 @@ fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
     for &context in CONTEXTS {
         let document = document(context, content.clone());
         let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
-        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementStyle,
+                family: "Roboto".into(),
+                codepoints: vec![99, 100],
+            }],
+            "{context:?}",
+        );
         let css = font_css(&page.svg);
         let placed = matches!(context, Context::Standalone);
-        assert_eq!(css.len(), if placed { 4 } else { 2 }, "{context:?}");
+        assert_eq!(css.len(), if placed { 3 } else { 2 }, "{context:?}");
         for (weight, slant, hash) in [
             (
                 400,
@@ -2696,7 +2749,7 @@ fn embedded_faces_match_mixed_native_weight_and_slant_selection() {
         ] {
             let descriptor = format!("font-weight:{weight};font-style:{slant};");
             let selected = css.iter().find(|style| style.contains(&descriptor));
-            if weight == 700 && !placed {
+            if weight == 700 && (!placed || slant == "normal") {
                 assert!(
                     selected.is_none(),
                     "{context:?}: synthetic bold keeps regular faces"
@@ -2747,7 +2800,15 @@ fn coverage_fallback_preserves_requested_synthetic_italic_and_bold() {
             assert_eq!(fallback.attribute("font-weight"), Some("400"));
             assert_eq!(fallback.attribute("stroke-width"), Some("0.45"));
         }
-        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementStyle,
+                family: "Roboto".into(),
+                codepoints: vec![65, 66, 8725],
+            }],
+            "{context:?}",
+        );
         assert_eq!(
             xml.descendants()
                 .filter(|node| node.has_tag_name("tspan"))
@@ -2798,11 +2859,24 @@ fn complex_svg_fallback_keeps_synthesis_local_to_the_requested_span() {
             Some("bold"),
             "{context:?}"
         );
-        assert!(
-            page.text_diagnostics
-                .iter()
-                .all(|issue| issue.kind == sdocx::TextDiagnosticKind::UnsupportedGlyphPositioning)
-        );
+        let expected = vec![
+            sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementStyle,
+                family: "DejaVu Sans".into(),
+                codepoints: vec![0x627, 0x644],
+            },
+            sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: "DejaVu Sans".into(),
+                codepoints: vec![0x627, 0x644],
+            },
+            sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedGlyphPositioning,
+                family: "DejaVu Sans".into(),
+                codepoints: vec![0x627, 0x644],
+            },
+        ];
+        assert_eq!(page.text_diagnostics, expected, "{context:?}");
     }
 }
 
@@ -2831,7 +2905,15 @@ fn caller_controlled_oblique_face_keeps_actual_weight_and_style_in_css() {
         let page = sdocx::render_document_svg_with_fonts(&document, &Default::default(), &fonts)
             .pop()
             .unwrap();
-        assert!(page.text_diagnostics.is_empty(), "{context:?}");
+        assert_eq!(
+            page.text_diagnostics,
+            vec![sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementStyle,
+                family: family.into(),
+                codepoints: vec![98, 101, 105, 108, 111, 113, 117],
+            }],
+            "{context:?}",
+        );
         let css = font_css(&page.svg);
         assert_eq!(css.len(), 1, "{context:?}");
         assert!(
@@ -2920,15 +3002,19 @@ fn missing_cjk_and_emoji_glyphs_are_reported_without_losing_text() {
     for &context in CONTEXTS {
         let document = document(context, text("中😀中😀"));
         let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
-        assert_eq!(
-            page.text_diagnostics,
-            vec![sdocx::TextDiagnostic {
+        let expected = vec![
+            sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: "Roboto".into(),
+                codepoints: vec![0x4e2d, 0x1f600],
+            },
+            sdocx::TextDiagnostic {
                 kind: sdocx::TextDiagnosticKind::MissingGlyphs,
                 family: "Roboto".into(),
                 codepoints: vec![0x4e2d, 0x1f600],
-            }],
-            "{context:?}"
-        );
+            },
+        ];
+        assert_eq!(page.text_diagnostics, expected, "{context:?}");
         let xml = roxmltree::Document::parse(&page.svg).unwrap();
         assert_eq!(tspan(&xml, "中😀中😀").text(), Some("中😀中😀"));
     }

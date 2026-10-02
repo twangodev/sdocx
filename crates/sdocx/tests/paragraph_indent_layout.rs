@@ -81,7 +81,7 @@ fn lines(doc: &Document) -> Vec<(String, f64)> {
 
 #[test]
 fn native_indent_masks_choose_physical_insets_independently_of_text_direction() {
-    // ABC hmtx = 3944/2048 at 10px; indent level one = 16px at density one.
+    // Native paint entries for ABC at F10 total 19.26; indent level one is 16px.
     for (alignment, direction, expected_x) in [
         (0, 1, 36.0),
         (0, 2, 20.0),
@@ -120,7 +120,7 @@ fn right_indent_reduces_wrap_width_without_reordering_latin_source() {
 
 #[test]
 fn aligned_markers_and_text_share_the_native_offset() {
-    let abc = 3944.0 / 2048.0 * 10.0;
+    let abc = f64::from(6.52_f32 + 6.23_f32 + 6.51_f32);
     for (alignment, direction, marker_left) in [
         (1, 2, 204.0 - 26.0 - abc),
         (2, 2, 20.0 + (184.0 - 26.0 - abc) / 2.0),
@@ -159,7 +159,7 @@ fn aligned_markers_and_text_share_the_native_offset() {
                 .find(|node| node.has_tag_name("text"))
                 .unwrap();
             let left = text.attribute("x").unwrap().parse::<f64>().unwrap();
-            assert!((left - marker_left - 26.0).abs() <= 0.005);
+            assert!((left - marker_left - 26.0).abs() <= 0.00001);
         }
     }
 }

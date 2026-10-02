@@ -4,7 +4,7 @@ use resvg::usvg;
 use sdocx::fonts::FontBook;
 use sdocx::{
     BoundingBox, Color, Document, DocumentMetadata, Page, PageElement, RenderedPage, RichTextBox,
-    RichTextSpan, RichTextSpanType, SpanIntervalType, TextDiagnosticKind,
+    RichTextSpan, RichTextSpanType, SpanIntervalType, TextDiagnostic, TextDiagnosticKind,
 };
 
 fn text(source: &str) -> RichTextBox {
@@ -417,6 +417,22 @@ fn covered_text(source: &str) -> RichTextBox {
     content
 }
 
+fn assert_custom_font_measurement_diagnostic(page: &RenderedPage, source: &str) {
+    assert_eq!(
+        page.text_diagnostics,
+        vec![TextDiagnostic {
+            kind: TextDiagnosticKind::UnsupportedMeasurementFont,
+            family: "DejaVu Sans".into(),
+            codepoints: source
+                .chars()
+                .map(u32::from)
+                .collect::<std::collections::BTreeSet<_>>()
+                .into_iter()
+                .collect(),
+        }]
+    );
+}
+
 #[test]
 fn covered_hebrew_scalars_and_numbers_keep_pinned_visual_positions() {
     let fonts = covered_test_font();
@@ -425,11 +441,7 @@ fn covered_hebrew_scalars_and_numbers_keep_pinned_visual_positions() {
         for replay in [false, true] {
             let page = render_with_fonts(covered_text(source), 500, flow, replay, &fonts);
             assert_source(&page, source);
-            assert!(
-                page.text_diagnostics.is_empty(),
-                "{:?}",
-                page.text_diagnostics
-            );
+            assert_custom_font_measurement_diagnostic(&page, source);
             let actual = glyphs_with_fonts(&page, &fonts);
             let expected = [
                 ("א", 1319, 126.2109375),
@@ -520,11 +532,7 @@ fn native_isolate_base_direction_moves_outer_numbers_but_not_strong_latin() {
             for replay in [false, true] {
                 let page = render_with_fonts(covered_text(source), 500, flow, replay, &fonts);
                 assert_source(&page, source);
-                assert!(
-                    page.text_diagnostics.is_empty(),
-                    "{:?}",
-                    page.text_diagnostics
-                );
+                assert_custom_font_measurement_diagnostic(&page, source);
                 let actual = glyphs_with_fonts(&page, &fonts);
                 assert_eq!(actual.len(), expected.len());
                 let origin = if flow { 48.0 } else { 10.0 };

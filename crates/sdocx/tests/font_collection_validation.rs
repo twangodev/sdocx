@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use rustybuzz::ttf_parser::{RawFace, Tag};
 use sdocx::fonts::{FontBook, fontdb};
-use sdocx::{BoundingBox, Document, Page, PageElement, RichTextBox, TextDiagnosticKind};
+use sdocx::{
+    BoundingBox, Document, Page, PageElement, RichTextBox, TextDiagnostic, TextDiagnosticKind,
+};
 
 const FONT: &[u8] = include_bytes!("../assets/fonts/Roboto-Regular.ttf");
 
@@ -102,12 +104,15 @@ fn assert_rejected(bytes: Vec<u8>) {
 }
 
 #[test]
-fn valid_collection_is_embedded_without_diagnostics() {
+fn valid_collection_is_embedded_with_native_measurement_configuration_diagnostic() {
     let page = render(collection(&[]));
-    assert!(
-        page.text_diagnostics.is_empty(),
-        "{:?}",
-        page.text_diagnostics
+    assert_eq!(
+        page.text_diagnostics,
+        vec![TextDiagnostic {
+            kind: TextDiagnosticKind::UnsupportedMeasurementFont,
+            family: "Roboto".into(),
+            codepoints: " Fadilnotv".chars().map(u32::from).collect(),
+        }]
     );
     assert!(page.svg.contains("@font-face"));
 }

@@ -503,10 +503,13 @@ fn paginated_table_paints_only_visible_cell_fonts_and_diagnostics() {
                     .collect::<String>(),
                 expected_source
             );
-            assert!(
-                second.text_diagnostics.is_empty(),
-                "{:?}",
-                second.text_diagnostics
+            assert_eq!(
+                second.text_diagnostics,
+                [sdocx::TextDiagnostic {
+                    kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                    family: "Roboto Mono".into(),
+                    codepoints: expected_source.chars().map(u32::from).collect(),
+                }],
             );
             let xml = roxmltree::Document::parse(&second.svg).unwrap();
             let css: String = xml

@@ -320,7 +320,7 @@ fn foreground_nodes(svg: &str) -> Vec<String> {
 
 #[test]
 fn partial_background_uses_retained_glyph_advance_and_full_line_height_in_every_context() {
-    // Roboto A/B hmtx = 1336/1275 units, UPEM 2048. F10 line height is 13.5.
+    // Native MONO paint at size 1000 gives A/B advances 652/623 before division by 100.
     for context in CONTEXTS {
         let (left, top) = match context {
             Context::CodeTitle => (36.0, 32.001),
@@ -334,11 +334,7 @@ fn partial_background_uses_retained_glyph_advance_and_full_line_height_in_every_
         for replay in [false, true] {
             let page = render(&doc, 0, replay);
             assert_eq!(source(&page.svg), "ABC");
-            assert_rectangles(
-                &page.svg,
-                "#ff0011",
-                &[[left + 6.5234375, top, 6.2255859375, 13.5, 1.0]],
-            );
+            assert_rectangles(&page.svg, "#ff0011", &[[left + 6.52, top, 6.23, 13.5, 1.0]]);
             assert!(
                 page.text_diagnostics.is_empty(),
                 "{context:?}: {:?}",
@@ -360,11 +356,11 @@ fn last_background_span_wins_even_when_it_clears_color_with_zero_alpha() {
     ];
     for replay in [false, true] {
         let page = render(&document(Context::Placed, content.clone()), 0, replay);
-        assert_rectangles(&page.svg, "#ff0011", &[[20.0, 20.0, 6.5234375, 13.5, 1.0]]);
+        assert_rectangles(&page.svg, "#ff0011", &[[20.0, 20.0, 6.52, 13.5, 1.0]]);
         assert_rectangles(
             &page.svg,
             "#0011ff",
-            &[[32.7490234375, 20.0, 6.5087890625, 13.5, 128.0 / 255.0]],
+            &[[32.75, 20.0, 6.51, 13.5, 128.0 / 255.0]],
         );
         assert_eq!(source(&page.svg), "ABC");
     }
@@ -390,8 +386,8 @@ fn multiline_background_follows_each_line_maximum_size_without_changing_layout()
             &page.svg,
             "#ff0011",
             &[
-                [20.0, 20.0, 18.974609375, 27.0, 1.0],
-                [20.0, 47.0, 6.5087890625, 13.5, 1.0],
+                [20.0, 20.0, 18.97, 27.0, 1.0],
+                [20.0, 47.0, 6.51, 13.5, 1.0],
             ],
         );
     }
@@ -409,8 +405,8 @@ fn background_does_not_split_kerning_or_change_resolved_font_selection() {
             let page = render(&document(Context::Placed, highlighted.clone()), 0, replay);
             assert_eq!(glyph_geometry(&page.svg), glyph_geometry(&control.svg));
             let expected = if plain.text == "AV" {
-                // Direct pinned rustybuzz AV: A 1249, V 1303, total 2552 units.
-                [26.0986328125, 20.0, 6.3623046875, 13.5, 1.0]
+                // Native hinted A/V advances are 652/636; AV kerning subtracts 42.48046875 paint units.
+                [26.0952, 20.0, 6.36, 13.5, 1.0]
             } else {
                 let font = rustybuzz::ttf_parser::Face::parse(
                     include_bytes!("../assets/fonts/RobotoMono-Regular.ttf"),
@@ -420,10 +416,21 @@ fn background_does_not_split_kerning_or_change_resolved_font_selection() {
                 let glyph = font.glyph_index('B').unwrap();
                 let width = f64::from(font.glyph_hor_advance(glyph).unwrap()) * 10.0
                     / f64::from(font.units_per_em());
-                [26.5234375, 20.0, width, 13.5, 1.0]
+                [26.52, 20.0, width, 13.5, 1.0]
             };
             assert_rectangles(&page.svg, "#ff0011", &[expected]);
-            assert!(page.text_diagnostics.is_empty());
+            assert_eq!(
+                page.text_diagnostics,
+                if plain.text == "AV" {
+                    Vec::new()
+                } else {
+                    vec![sdocx::TextDiagnostic {
+                        kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                        family: "Roboto Mono".into(),
+                        codepoints: vec![u32::from('B')],
+                    }]
+                },
+            );
         }
     }
 }
@@ -452,7 +459,7 @@ fn invalid_utf16_ranges_and_carets_never_paint_but_an_aligned_span_after_emoji_d
         assert_eq!(source(&page.svg), "A😀B");
         let backgrounds = rectangles(&page.svg, "#ff0011");
         assert_eq!(backgrounds.len(), 1);
-        assert!((backgrounds[0][2] - 6.2255859375).abs() <= 1e-4);
+        assert!((backgrounds[0][2] - 6.23).abs() <= 1e-4);
         assert_eq!(glyph_geometry(&page.svg), glyph_geometry(&control.svg));
     }
 }
@@ -533,7 +540,9 @@ fn object_backgrounds_follow_widget_and_drawing_converter_guards() {
                             .unwrap();
                         let glyph_x = point(glyph).0;
                         let size: f64 = glyph.attribute("font-size").unwrap().parse().unwrap();
-                        let expected_width = units / 2048.0 * size;
+                        let paint_size = size as f32 * 100.0;
+                        let expected_width =
+                            f64::from((units as f32 * paint_size / 2048.0).round() / 100.0);
                         assert!(
                             highlights
                                 .iter()
@@ -569,7 +578,7 @@ fn native_whole_span_suppresses_the_summary_box_but_author_only_highlight_remain
         assert_rectangles(
             &native_page.svg,
             "#ff0011",
-            &[[20.0, 20.0, 19.2578125, 13.5, 1.0]],
+            &[[20.0, 20.0, 19.26, 13.5, 1.0]],
         );
         assert_eq!(
             glyph_geometry(&native_page.svg),
@@ -630,10 +639,7 @@ fn placed_background_clips_to_fractional_original_bounds_without_shortening_line
         assert_rectangles(
             &page.svg,
             "#ff0011",
-            &[
-                [20.0, 20.0, 6.5234375, 13.5, 1.0],
-                [20.0, 33.5, 6.2255859375, 13.5, 1.0],
-            ],
+            &[[20.0, 20.0, 6.52, 13.5, 1.0], [20.0, 33.5, 6.23, 13.5, 1.0]],
         );
         assert_background_clip(&page.svg, [20.0, 20.0, 200.0, 20.2]);
         assert_eq!(source(&page.svg), "AB");
@@ -753,18 +759,10 @@ fn whitespace_background_is_visible_only_inside_its_capture_viewport() {
     // Each physical page has one F10 line at top 10, baseline 20. Space hmtx 507.
     for replay in [false, true] {
         let second = render(&doc, 1, replay);
-        assert_rectangles(
-            &second.svg,
-            "#ff0011",
-            &[[0.0, 10.0, 2.4755859375, 13.5, 1.0]],
-        );
+        assert_rectangles(&second.svg, "#ff0011", &[[0.0, 10.0, 2.48, 13.5, 1.0]]);
         assert_eq!(source(&second.svg), " ");
         let first = render(&doc, 0, replay);
-        assert_rectangles(
-            &first.svg,
-            "#ff0011",
-            &[[0.0, 10.0, 2.4755859375, 13.5, 1.0]],
-        );
+        assert_rectangles(&first.svg, "#ff0011", &[[0.0, 10.0, 2.48, 13.5, 1.0]]);
         assert_eq!(source(&first.svg), " ");
         assert_eq!(render(&doc, 1, replay), second);
     }

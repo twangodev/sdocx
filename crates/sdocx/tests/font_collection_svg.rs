@@ -5,7 +5,7 @@ use std::sync::Arc;
 use base64::Engine;
 use sdocx::{
     BoundingBox, Document, Page, PageElement, RichTextBox, RichTextSpan, RichTextSpanType,
-    SpanIntervalType,
+    SpanIntervalType, TextDiagnostic, TextDiagnosticKind,
     fonts::{FontBook, UnicodeBuffer, fontdb},
 };
 use sha2::{Digest, Sha256};
@@ -115,7 +115,14 @@ fn svg_and_replay_embed_the_selected_collection_face_with_identical_glyphs() {
             )
             .unwrap(),
         ] {
-            assert!(page.text_diagnostics.is_empty());
+            assert_eq!(
+                page.text_diagnostics,
+                vec![TextDiagnostic {
+                    kind: TextDiagnosticKind::UnsupportedMeasurementFont,
+                    family: family.into(),
+                    codepoints: vec![u32::from('W'), u32::from('i')],
+                }]
+            );
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
             let css = xml
                 .descendants()

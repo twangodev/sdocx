@@ -7,10 +7,6 @@ use sdocx::{
     RichTextTableRow,
 };
 
-const A_UNITS: f64 = 1336.0;
-const B_UNITS: f64 = 1275.0;
-const ROBOTO_UNITS_PER_EM: f64 = 2048.0;
-
 struct Fixture {
     constraint: ObjectSpanLayoutConstraint,
     density: u32,
@@ -35,11 +31,19 @@ impl Fixture {
     }
 
     fn a_advance(&self) -> f64 {
-        A_UNITS * self.font_size() / ROBOTO_UNITS_PER_EM
+        f64::from(match self.density {
+            1 => 652.0_f32 / 100.0,
+            3 => 501000.0_f32 / 256.0 / 100.0,
+            _ => panic!("unsupported fixture density"),
+        })
     }
 
     fn b_advance(&self) -> f64 {
-        B_UNITS * self.font_size() / ROBOTO_UNITS_PER_EM
+        f64::from(match self.density {
+            1 => 623.0_f32 / 100.0,
+            3 => 478125.0_f32 / 256.0 / 100.0,
+            _ => panic!("unsupported fixture density"),
+        })
     }
 
     fn initial_advance(&self) -> f64 {
@@ -289,9 +293,9 @@ fn current_object_admission_uses_the_width_from_before_its_callback() {
     let pair = face.shape(buffer, &[]).unwrap();
     assert_eq!(pair.advance_x(), 2672);
     assert_eq!(pair.metrics.units_per_em, 2048);
-    let prefix_advance = pair.advance_x() as f64 * 10.0 / 2048.0;
     for constraint in overpage_constraints() {
         let fixture = Fixture::new(constraint, 1, 70);
+        let prefix_advance = f64::from(fixture.a_advance() as f32 * 2.0);
         assert!(prefix_advance + fixture.initial_advance() < 70.0);
         assert!(prefix_advance + fixture.callback_width() > 70.0);
         let mut document = fixture.document();
@@ -515,11 +519,7 @@ fn absent_table_maximum_uses_global_content_width_without_paragraph_or_object_in
                     close(actual.a.0, -6.0 * f64::from(density));
                     close(
                         actual.b.0,
-                        if density == 1 {
-                            53.0234375
-                        } else {
-                            154.0703125
-                        },
+                        fixture.a_advance() + if density == 1 { 46.5 } else { 134.5 },
                     );
                     close(actual.b.1, actual.a.1);
                     close(actual.table_x, if density == 1 { 5.0 } else { 14.0 });

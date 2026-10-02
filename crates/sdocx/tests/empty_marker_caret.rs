@@ -119,18 +119,12 @@ fn marker(page: &RenderedPage) -> (f64, Vec<f64>, (f64, f64)) {
     (size, xs, position)
 }
 
-fn advances(size: f64) -> Vec<f64> {
-    let face = rustybuzz::Face::from_slice(include_bytes!("../assets/fonts/Roboto-Regular.ttf"), 0)
-        .unwrap();
-    assert_eq!(face.units_per_em(), 2048);
-    let mut buffer = rustybuzz::UnicodeBuffer::new();
-    buffer.push_str("1.");
-    buffer.guess_segment_properties();
-    rustybuzz::shape(&face, &[], buffer)
-        .glyph_positions()
-        .iter()
-        .map(|position| f64::from(position.x_advance) * size / 2048.0)
-        .collect()
+fn native_marker_advances(size: f64) -> [f32; 2] {
+    match size {
+        17.0 => [9.55, 4.47],
+        100.0 => [56.152344, 26.31836],
+        _ => panic!("no native marker capture for F{size}"),
+    }
 }
 
 fn close(actual: f64, expected: f64, tolerance: f64) {
@@ -158,7 +152,11 @@ fn terminal_empty_numeric_markers_follow_caret_endpoint_policies() {
                 size, expected_size,
                 "span [{start},{end}] raw interval {interval}"
             );
-            close(xs[1] - xs[0], advances(size)[0], 0.00001);
+            close(
+                xs[1] - xs[0],
+                f64::from(native_marker_advances(size)[0]),
+                0.00001,
+            );
             assert_eq!(position.0, 20.0);
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
             let first = xml
@@ -178,7 +176,8 @@ fn empty_numeric_marker_reservation_uses_the_caret_font_advance_and_native_gap()
             for page in modes(&document(source, caret, caret, interval, true)) {
                 let (size, _, position) = marker(&page);
                 assert_eq!(size, expected_size);
-                let reserved_width = advances(size).iter().sum::<f64>() + 9.0;
+                let reserved_width =
+                    f64::from(native_marker_advances(size).into_iter().sum::<f32>()) + 9.0;
                 close(position.0, 300.0 - reserved_width, 0.00001);
             }
         }

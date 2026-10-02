@@ -684,7 +684,10 @@ mod tests {
             &fonts,
         );
         let default_face = fonts.resolve("sans-serif", false, false).unwrap();
-        for (number, gap) in [(9, 27.0), (10, 18.0)] {
+        for (number, gap, native_paint_advances) in [
+            (9, 27.0, &[1123.0_f32, 526.0][..]),
+            (10, 18.0, &[1123.0_f32, 1123.0, 526.0][..]),
+        ] {
             let prepared = PreparedMarker::prepare(
                 numbered_bullet(BulletType::Digit, number, 1),
                 0,
@@ -704,15 +707,22 @@ mod tests {
             assert_eq!(line.line.font_size, 20.0);
             assert!((prepared.layout.height() - 26.0).abs() < 0.00001);
             assert!((line.baseline - 19.0).abs() < 0.00001);
-            let mut buffer = crate::fonts::UnicodeBuffer::new();
-            buffer.push_str(&prepared.source.text);
-            let shaped = default_face.shape(buffer, &[]).unwrap();
-            let expected_advance =
-                shaped.advance_x() as f64 * 20.0 / f64::from(shaped.metrics.units_per_em);
+            let expected_entries = native_paint_advances
+                .iter()
+                .map(|advance| advance / 100.0)
+                .collect::<Vec<_>>();
+            let expected_advance = f64::from(
+                expected_entries
+                    .iter()
+                    .copied()
+                    .fold(0.0_f32, |width, advance| width + advance),
+            );
             assert_eq!(line.line.advance, expected_advance);
             assert_eq!(prepared.source.bbox.x_max, expected_advance.ceil());
             assert_eq!(prepared.reserved_width, expected_advance + gap);
-            for placement in &line.line.placements {
+            assert_eq!(line.line.placements.len(), expected_entries.len());
+            for (placement, expected_entry) in line.line.placements.iter().zip(expected_entries) {
+                assert_eq!(placement.cluster.advance, f64::from(expected_entry));
                 assert_eq!(placement.cluster.run.face.id, default_face.id);
                 let style = &placement.cluster.run.style;
                 assert!(!style.bold && !style.italic && !style.underline && !style.strikethrough);

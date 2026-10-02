@@ -6,7 +6,7 @@ use sdocx::{
     RichTextObjectSpan, RichTextSection,
 };
 
-const A_ADVANCE: f64 = 1336.0 * 10.0 / 2048.0;
+const A_ADVANCE: f64 = (652.0_f32 / 100.0) as f64;
 const CODE_BODY: &str = "AAAAAAAAAAAAAAAAAAAAAA";
 
 fn bounds(width: f64, height: f64) -> BoundingBox {
@@ -233,9 +233,10 @@ fn assert_geometry(page: &RenderedPage, panel_width: f64, normal: bool) {
 
 #[test]
 fn detached_code_cap_updates_inline_advance_and_drawing_without_replacing_parent_height() {
-    // Roboto A is 1336/2048 em: 18 fit in 150-32; 19 do not. The original
-    // body measures one 13.5 line, so parent height stays 64+13.5 after cloning.
-    // The detached page starts with native padding -10..10, moving its first line to 10.
+    const {
+        assert!(18.0 * A_ADVANCE <= 150.0 - 32.0);
+        assert!(19.0 * A_ADVANCE > 150.0 - 32.0);
+    }
     let face = sdocx::fonts::FontBook::default()
         .resolve("Roboto", false, false)
         .unwrap();

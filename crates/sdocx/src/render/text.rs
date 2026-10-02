@@ -19,6 +19,7 @@ mod native_identity;
 mod native_line;
 #[cfg(any(feature = "pdf", test))]
 mod native_runs;
+mod native_wrap;
 mod objects;
 mod pagination;
 mod paint;
@@ -76,7 +77,6 @@ struct ResolvedTextStyle {
     paint: TextStyle,
     measurement: TextMeasureStyle,
     invalid_font: bool,
-    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
     native_draw: Result<NativeDrawSpan, NativeIdentityUnavailable>,
 }
 
@@ -1301,9 +1301,16 @@ mod tests {
             objects::ObjectMeasurementContext::Frame,
         );
         renderer.report_line_geometry(&lines[0], None);
-        assert_eq!(
-            renderer.diagnostics()[0].kind,
-            TextDiagnosticKind::InvalidGeometry
+        let issues = renderer.diagnostics();
+        assert!(
+            issues
+                .iter()
+                .any(|issue| issue.kind == TextDiagnosticKind::UnsupportedMeasurementStyle)
+        );
+        assert!(
+            issues
+                .iter()
+                .any(|issue| issue.kind == TextDiagnosticKind::InvalidGeometry)
         );
     }
 

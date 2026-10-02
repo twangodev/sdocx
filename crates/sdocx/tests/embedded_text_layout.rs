@@ -844,6 +844,14 @@ fn table_cells_render_all_lines_with_margins_and_force_top_gravity() {
 #[cfg(feature = "serde")]
 #[test]
 fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
+    // Roboto hmtx [1336,1275,1333], paint size 4500, truncated vector 24.8 advances.
+    const ABC_PAINT_ADVANCES: [i32; 3] = [751500, 717187, 749812];
+    let abc_advance = ABC_PAINT_ADVANCES
+        .into_iter()
+        .fold(0.0_f32, |width, advance| {
+            width + advance as f32 / 256.0 / 100.0
+        });
+    let centered_x = 38.0 + (182.0 - f64::from(abc_advance)) / 2.0;
     let mut content = text("ABC");
     content.paragraphs.push(RichTextParagraph {
         kind: RichTextParagraphType::Alignment,
@@ -860,7 +868,7 @@ fn table_cell_wrap_and_alignment_use_the_measured_inner_frame() {
         .unwrap();
     assert_eq!(
         positioned.attribute("x").unwrap().split_whitespace().next(),
-        Some("85.66992")
+        Some(format!("{centered_x:.5}").as_str())
     );
     content.paragraphs.clear();
     assert_eq!(

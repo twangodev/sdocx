@@ -16,6 +16,7 @@ mod svg;
 use crate::render::{DocumentTextCache, NativePdfPainter, NativeTextRegistry};
 use crate::{
     Document, LayoutDocument, ObjectDiagnostic, RenderOptions, RenderedPage, TextDiagnostic,
+    fonts::{FontBook, NativeFontNameConfig},
 };
 
 pub use usvg::fontdb;
@@ -29,6 +30,7 @@ const MAX_PNG_DECODED_BYTES: usize = 64 * 1024 * 1024;
 pub struct PdfOptions {
     pub dpi: f32,
     pub font_database: Arc<fontdb::Database>,
+    pub native_font_names: Option<NativeFontNameConfig>,
 }
 
 impl PdfOptions {
@@ -36,13 +38,30 @@ impl PdfOptions {
         Self {
             dpi: 96.0,
             font_database,
+            native_font_names: None,
+        }
+    }
+
+    pub fn from_font_book(fonts: &FontBook) -> Self {
+        Self {
+            dpi: 96.0,
+            font_database: fonts.database(),
+            native_font_names: fonts.native_name_config().cloned(),
+        }
+    }
+
+    fn font_book(&self) -> FontBook {
+        let fonts = FontBook::new(self.font_database.clone());
+        match &self.native_font_names {
+            Some(configuration) => fonts.with_native_name_config(configuration.clone()),
+            None => fonts,
         }
     }
 }
 
 impl Default for PdfOptions {
     fn default() -> Self {
-        Self::new(crate::fonts::FontBook::default().database())
+        Self::from_font_book(&FontBook::default())
     }
 }
 
@@ -87,7 +106,7 @@ pub fn render_document_pdf(
     render_options: &RenderOptions,
     pdf_options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
-    let fonts = crate::fonts::FontBook::new(pdf_options.font_database.clone());
+    let fonts = pdf_options.font_book();
     let layout = crate::layout_document(document);
     let indices = (0..layout.pages.len()).collect::<Vec<_>>();
     render_layout_pages_pdf_with_fonts(
@@ -153,6 +172,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache(
 ) -> Result<PdfOutput, PdfError> {
     let mut pdf_options = pdf_options.clone();
     pdf_options.font_database = fonts.database();
+    pdf_options.native_font_names = fonts.native_name_config().cloned();
     let selected_pages = page_indices
         .iter()
         .map(|&page_index| {
@@ -353,4 +373,51 @@ fn validate_png(bytes: &[u8]) -> Result<(), String> {
         .next_frame(&mut buffer)
         .map_err(|error| error.to_string())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_options_preserve_native_font_configuration() {
+        let fonts = FontBook::default();
+        let options = PdfOptions::default();
+        assert!(options.native_font_names.is_some());
+        assert_eq!(
+            options.native_font_names.as_ref(),
+            fonts.native_name_config()
+        );
+        assert_eq!(
+            options.font_book().native_name_config(),
+            fonts.native_name_config()
+        );
+    }
+
+    #[test]
+    fn database_constructor_keeps_native_font_configuration_explicit() {
+        let database = FontBook::default().database();
+        let options = PdfOptions::new(database.clone());
+        assert!(Arc::ptr_eq(&options.font_database, &database));
+        assert!(options.native_font_names.is_none());
+        assert!(options.font_book().native_name_config().is_none());
+    }
+
+    #[test]
+    fn font_book_constructor_preserves_caller_configuration() {
+        let configuration = NativeFontNameConfig::new("custom-family")
+            .unwrap()
+            .with_family_alias("custom-family", "Roboto")
+            .unwrap()
+            .with_font_file("Custom-Regular.ttf", "custom-family")
+            .unwrap();
+        let database = FontBook::default().database();
+        let fonts = FontBook::new(database.clone()).with_native_name_config(configuration.clone());
+        let options = PdfOptions::from_font_book(&fonts);
+        assert!(Arc::ptr_eq(&options.font_database, &database));
+        assert_eq!(options.native_font_names.as_ref(), Some(&configuration));
+        let restored = options.font_book();
+        assert!(Arc::ptr_eq(&restored.database(), &database));
+        assert_eq!(restored.native_name_config(), Some(&configuration));
+    }
 }

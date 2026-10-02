@@ -110,6 +110,7 @@ struct BodyPreparationContext {
     source: Option<RichTextBox>,
     metrics: BodyPreparationMetrics,
     fonts: Arc<fonts::fontdb::Database>,
+    native_names: Option<fonts::NativeFontNameConfig>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -176,6 +177,7 @@ impl DocumentTextCache {
         let compatible = self.context.as_ref().is_some_and(|context| {
             context.metrics == metrics
                 && Arc::ptr_eq(&context.fonts, &database)
+                && context.native_names.as_ref() == fonts.native_name_config()
                 && match (&context.source, &document.metadata.note_text) {
                     (Some(previous), Some(current)) => {
                         crate::layout::same_text_source(previous, current)
@@ -190,6 +192,7 @@ impl DocumentTextCache {
                 source: document.metadata.note_text.clone(),
                 metrics,
                 fonts: database,
+                native_names: fonts.native_name_config().cloned(),
             });
         }
     }
@@ -533,14 +536,11 @@ impl PreparedBodyText {
             &plan
                 .text_issues
                 .iter()
-                .filter(|issue| {
+                .filter_map(|issue| {
                     is_preparation_issue(&issue.diagnostic)
-                        && sources.contains(
-                            issue.owner.as_ref(),
-                            issue.diagnostic.kind == TextDiagnosticKind::InvalidGeometry,
-                        )
+                        .then(|| sources.project_issue(&styled, issue))
+                        .flatten()
                 })
-                .cloned()
                 .collect::<Vec<_>>(),
         );
     }
@@ -668,6 +668,43 @@ impl VisibleTextSources {
                 source.start < visible.end && visible.start < source.end
             }
         })
+    }
+
+    fn project_issue(
+        &self,
+        styled: &StyledText<'_>,
+        issue: &text::SourceTextDiagnostic,
+    ) -> Option<text::SourceTextDiagnostic> {
+        let geometry = issue.diagnostic.kind == TextDiagnosticKind::InvalidGeometry;
+        if !self.contains(issue.owner.as_ref(), geometry) {
+            return None;
+        }
+        let mut issue = issue.clone();
+        if let Some(text::SourceOwner::Text(source)) = &issue.owner
+            && !issue.diagnostic.codepoints.is_empty()
+        {
+            let ranges = if geometry { &self.layout } else { &self.text };
+            let visible = ranges
+                .iter()
+                .filter_map(|range| {
+                    let start = range.start.max(source.start);
+                    let end = range.end.min(source.end);
+                    (start < end)
+                        .then(|| styled.index.slice(start..end))
+                        .flatten()
+                })
+                .flat_map(str::chars)
+                .map(u32::from)
+                .collect::<std::collections::BTreeSet<_>>();
+            issue
+                .diagnostic
+                .codepoints
+                .retain(|codepoint| visible.contains(codepoint));
+            if issue.diagnostic.codepoints.is_empty() {
+                return None;
+            }
+        }
+        Some(issue)
     }
 }
 
@@ -1383,6 +1420,7 @@ fn paint_text_foreground(
                 });
             }
             if viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)) {
+                renderer.report_visible_line_issues(styled, &line.line);
                 render_measured_line(
                     svg,
                     styled,
@@ -1735,14 +1773,15 @@ fn render_text_frame(
         &planner
             .scoped_diagnostics()
             .into_iter()
-            .filter(|issue| {
+            .filter_map(|issue| {
                 is_preparation_issue(&issue.diagnostic)
-                    && sources.as_ref().is_none_or(|sources| {
-                        sources.contains(
-                            issue.owner.as_ref(),
-                            issue.diagnostic.kind == TextDiagnosticKind::InvalidGeometry,
+                    .then(|| {
+                        sources.as_ref().map_or_else(
+                            || Some(issue.clone()),
+                            |sources| sources.project_issue(&styled, &issue),
                         )
                     })
+                    .flatten()
             })
             .collect::<Vec<_>>(),
     );
@@ -3064,6 +3103,62 @@ mod tests {
             assert!(scenes.iter().all(|scene| scene.text_error.is_none()));
             assert!(super::Rc::ptr_eq(&plan, &cache.plans[0].1));
         }
+    }
+
+    #[test]
+    fn body_preparation_invalidates_native_name_configuration_with_shared_database() {
+        let mut document = preparation_document();
+        let body = document.metadata.note_text.as_mut().unwrap();
+        body.text = "AV To office".into();
+        body.font_size = Some(17.0);
+        let layout = layout_document(&document);
+        let native_fonts = super::fonts::FontBook::default();
+        let compatibility_fonts = super::fonts::FontBook::new(native_fonts.database());
+        let equivalent_fonts = super::fonts::FontBook::new(native_fonts.database())
+            .with_native_name_config(native_fonts.native_name_config().unwrap().clone());
+        let options = RenderOptions::default();
+        let cold = |fonts: &super::fonts::FontBook| {
+            super::DocumentTextCache::default()
+                .render_layout_page_svg(&document, &layout, 0, &options, fonts)
+                .unwrap()
+        };
+        let native_page = cold(&native_fonts);
+        let compatibility_page = cold(&compatibility_fonts);
+        let positions = |svg: &str| {
+            roxmltree::Document::parse(svg)
+                .unwrap()
+                .descendants()
+                .filter(|node| node.has_tag_name("tspan"))
+                .map(|node| node.attribute("x").map(str::to_owned))
+                .collect::<Vec<_>>()
+        };
+        assert_ne!(
+            positions(&native_page.svg),
+            positions(&compatibility_page.svg)
+        );
+
+        let mut cache = super::DocumentTextCache::default();
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &native_fonts);
+        let native_plan = super::Rc::clone(&cache.plans[0].1);
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &equivalent_fonts);
+        assert!(super::Rc::ptr_eq(&native_plan, &cache.plans[0].1));
+
+        let compatibility_warm = cache
+            .render_layout_page_svg(&document, &layout, 0, &options, &compatibility_fonts)
+            .unwrap();
+        assert!(!super::Rc::ptr_eq(&native_plan, &cache.plans[0].1));
+        assert_eq!(compatibility_warm.svg, compatibility_page.svg);
+        assert_eq!(
+            compatibility_warm.text_diagnostics,
+            compatibility_page.text_diagnostics
+        );
+        let compatibility_plan = super::Rc::clone(&cache.plans[0].1);
+        let native_warm = cache
+            .render_layout_page_svg(&document, &layout, 0, &options, &native_fonts)
+            .unwrap();
+        assert!(!super::Rc::ptr_eq(&compatibility_plan, &cache.plans[0].1));
+        assert_eq!(native_warm.svg, native_page.svg);
+        assert_eq!(native_warm.text_diagnostics, native_page.text_diagnostics);
     }
 
     #[test]

@@ -202,10 +202,13 @@ fn offscreen_font_fallback_diagnostics_and_faces_do_not_leak_into_the_requested_
     for replay in [false, true] {
         let second = render(&doc, &layout, 1, replay, &fonts);
         assert_visible_line(&second, "Second", 1);
-        assert!(
-            second.text_diagnostics.is_empty(),
-            "{:?}",
-            second.text_diagnostics
+        assert_eq!(
+            second.text_diagnostics,
+            [sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                family: "Roboto Mono".into(),
+                codepoints: vec![83, 99, 100, 101, 110, 111],
+            }],
         );
         assert!(second.object_diagnostics.is_empty());
         let css = font_css(&second.svg);
@@ -428,26 +431,164 @@ fn visible_prepared_code_bounds_survive_an_offscreen_saved_reservation() {
 
 #[test]
 fn offscreen_code_title_does_not_leak_its_font_or_diagnostic_into_visible_body() {
-    let doc = code_capture_document(true);
+    for title_source in ["Hidden title", "CD"] {
+        let mut doc = code_capture_document(true);
+        let Some(RichTextObjectContent::CodeBlock(code)) =
+            doc.metadata.note_text.as_mut().unwrap().object_spans[0]
+                .content
+                .as_mut()
+        else {
+            panic!("code block")
+        };
+        let title = code.title.as_mut().unwrap();
+        title.text = title_source.into();
+        title.spans = vec![family(
+            0,
+            title_source.len() as u32,
+            "Unavailable Code Title",
+        )];
+        let layout = sdocx::layout_document(&doc);
+        let fonts = sdocx::fonts::FontBook::default();
+        for replay in [false, true] {
+            let page = render(&doc, &layout, 1, replay, &fonts);
+            assert_visible_code_body(&page);
+            assert_eq!(
+                page.text_diagnostics,
+                [sdocx::TextDiagnostic {
+                    kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                    family: "Roboto Mono".into(),
+                    codepoints: vec![67, 68],
+                }],
+            );
+            let css = font_css(&page.svg);
+            assert_eq!(css.len(), 1);
+            assert_eq!(css[0].matches("@font-face").count(), 1);
+            assert!(css[0].contains("font-family:\"Roboto Mono\";"));
+            let first = render(&doc, &layout, 0, replay, &fonts);
+            assert!(first.text_diagnostics.iter().any(|diagnostic| {
+                diagnostic.kind == sdocx::TextDiagnosticKind::UnavailableFamily
+                    && diagnostic.family == "Unavailable Code Title"
+            }));
+            assert_eq!(render(&doc, &layout, 1, replay, &fonts), page);
+        }
+    }
+}
+
+#[test]
+fn native_wrap_diagnostics_follow_only_visible_child_lines() {
+    let expected_issue = sdocx::TextDiagnostic {
+        kind: sdocx::TextDiagnosticKind::UnsupportedNativeWrapping,
+        family: "native".into(),
+        codepoints: vec![101, 769],
+    };
+    let fonts = sdocx::fonts::FontBook::default();
+    for (body_source, visible_sources, warned_page) in [
+        ("A\nB\ne\u{301}\nQ", ["XAB", "e\u{301}Q"], 1),
+        ("e\u{301}\nB\nC\nQ", ["Xe\u{301}B", "CQ"], 0),
+    ] {
+        let mut doc = code_capture_document(false);
+        let Some(RichTextObjectContent::CodeBlock(code)) =
+            doc.metadata.note_text.as_mut().unwrap().object_spans[0]
+                .content
+                .as_mut()
+        else {
+            panic!("code block");
+        };
+        code.bbox.x_max = 33.0;
+        let title = code.title.as_mut().unwrap();
+        title.text = "X".into();
+        title.font_size = Some(1.0);
+        code.body.as_mut().unwrap().text = body_source.into();
+        let layout = sdocx::layout_document(&doc);
+        for replay in [false, true] {
+            for (index, expected_source) in visible_sources.iter().enumerate() {
+                let page = render(&doc, &layout, index, replay, &fonts);
+                assert_eq!(source(&page.svg), *expected_source);
+                let expected = if index == warned_page {
+                    vec![expected_issue.clone()]
+                } else {
+                    Vec::new()
+                };
+                assert_eq!(page.text_diagnostics, expected);
+                assert!(page.object_diagnostics.is_empty());
+            }
+        }
+    }
+}
+
+#[test]
+fn native_measurement_diagnostics_preserve_visible_whitespace_only_child_lines() {
+    let fonts = sdocx::fonts::FontBook::default();
+    for (body_source, whitespace_index, visible_sources, warned_page) in [
+        ("A\nB\n \nQ", 4, ["XAB", " Q"], 1),
+        (" \nB\nC\nQ", 0, ["X B", "CQ"], 0),
+    ] {
+        let mut doc = code_capture_document(false);
+        let Some(RichTextObjectContent::CodeBlock(code)) =
+            doc.metadata.note_text.as_mut().unwrap().object_spans[0]
+                .content
+                .as_mut()
+        else {
+            panic!("code block");
+        };
+        let title = code.title.as_mut().unwrap();
+        title.text = "X".into();
+        title.font_size = Some(1.0);
+        let body = code.body.as_mut().unwrap();
+        body.text = body_source.into();
+        body.spans = vec![family(
+            whitespace_index,
+            whitespace_index + 1,
+            "Roboto Mono",
+        )];
+        let layout = sdocx::layout_document(&doc);
+        for replay in [false, true] {
+            for (index, expected_source) in visible_sources.iter().enumerate() {
+                let page = render(&doc, &layout, index, replay, &fonts);
+                assert_eq!(source(&page.svg), *expected_source);
+                let expected = if index == warned_page {
+                    vec![sdocx::TextDiagnostic {
+                        kind: sdocx::TextDiagnosticKind::UnsupportedMeasurementFont,
+                        family: "Roboto Mono".into(),
+                        codepoints: vec![32],
+                    }]
+                } else {
+                    Vec::new()
+                };
+                assert_eq!(page.text_diagnostics, expected);
+                assert!(page.object_diagnostics.is_empty());
+            }
+        }
+    }
+}
+
+#[test]
+fn native_wrap_fallback_retains_a_complete_combining_cluster_in_a_narrow_root_frame() {
+    let mut doc = document(false);
+    let mut content = doc.metadata.note_text.take().unwrap();
+    content.text = "e\u{301}".into();
+    content.text_sections.clear();
+    content.bbox = BoundingBox {
+        x_min: 0.0,
+        y_min: 0.0,
+        x_max: 1.0,
+        y_max: 40.0,
+    };
+    doc.metadata = DocumentMetadata::default();
+    doc.pages.truncate(1);
+    doc.pages[0].objects = vec![PageElement::TextBox(content).into()];
     let layout = sdocx::layout_document(&doc);
     let fonts = sdocx::fonts::FontBook::default();
     for replay in [false, true] {
-        let page = render(&doc, &layout, 1, replay, &fonts);
-        assert_visible_code_body(&page);
-        assert!(
-            page.text_diagnostics.is_empty(),
-            "{:?}",
-            page.text_diagnostics
+        let page = render(&doc, &layout, 0, replay, &fonts);
+        assert_eq!(source(&page.svg), "e\u{301}");
+        assert_eq!(
+            page.text_diagnostics,
+            [sdocx::TextDiagnostic {
+                kind: sdocx::TextDiagnosticKind::UnsupportedNativeWrapping,
+                family: "native".into(),
+                codepoints: vec![101, 769],
+            }],
         );
-        let css = font_css(&page.svg);
-        assert_eq!(css.len(), 1);
-        assert_eq!(css[0].matches("@font-face").count(), 1);
-        assert!(css[0].contains("font-family:\"Roboto Mono\";"));
-        let first = render(&doc, &layout, 0, replay, &fonts);
-        assert!(first.text_diagnostics.iter().any(|diagnostic| {
-            diagnostic.kind == sdocx::TextDiagnosticKind::UnavailableFamily
-                && diagnostic.family == "Unavailable Code Title"
-        }));
-        assert_eq!(render(&doc, &layout, 1, replay, &fonts), page);
     }
 }

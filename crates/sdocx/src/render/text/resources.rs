@@ -3,7 +3,10 @@ use std::collections::{BTreeSet, HashMap, hash_map::Entry};
 use std::ops::Range;
 use std::rc::Rc;
 
-use crate::fonts::{FontBook, FontError, ResolvedFace, UnicodeBuffer};
+use crate::fonts::{
+    Direction, FontBook, FontError, NativeFontNameRequest, PaintShapeDirection, ResolvedFace,
+    UnicodeBuffer,
+};
 
 use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind, ObjectPageOwnership};
 use super::{
@@ -20,6 +23,12 @@ pub enum TextDiagnosticKind {
     UnusableFontData,
     MissingGlyphs,
     MeasurementFailure,
+    UnsupportedMeasurementStyle,
+    UnsupportedMeasurementFont,
+    UnsupportedMeasurementShaping,
+    UnsupportedMeasurementBudget,
+    UnsupportedTabMeasurement,
+    UnsupportedNativeWrapping,
     InvalidGeometry,
     /// The saved text frame is retained because its native template geometry is unsupported.
     UnsupportedTextFrame,
@@ -148,10 +157,12 @@ pub(in crate::render) struct TextRenderer<'a> {
     default_family: &'static str,
     faces: Rc<RefCell<Vec<ResolvedFace>>>,
     diagnostics: Rc<RefCell<TextDiagnostics>>,
+    local_measurement_issues: Rc<RefCell<TextDiagnostics>>,
     object_diagnostics: Rc<RefCell<Vec<SourceObjectDiagnostic>>>,
     page_exclusions: Option<Rc<PageExclusions>>,
     source_owner: Option<SourceOwner>,
     source_owner_locked: bool,
+    local_source: Option<Range<usize>>,
 }
 
 impl<'a> TextRenderer<'a> {
@@ -165,10 +176,12 @@ impl<'a> TextRenderer<'a> {
             default_family: "Roboto",
             faces: Default::default(),
             diagnostics: Default::default(),
+            local_measurement_issues: Default::default(),
             object_diagnostics: Default::default(),
             page_exclusions: None,
             source_owner: None,
             source_owner_locked: false,
+            local_source: None,
         }
     }
 
@@ -219,15 +232,18 @@ impl<'a> TextRenderer<'a> {
             default_family,
             faces: Rc::clone(&self.faces),
             diagnostics: Rc::clone(&self.diagnostics),
+            local_measurement_issues: Default::default(),
             object_diagnostics: Rc::clone(&self.object_diagnostics),
             page_exclusions: None,
             source_owner: self.source_owner.clone(),
             source_owner_locked: self.source_owner.is_some(),
+            local_source: None,
         }
     }
 
     pub fn for_source(&self, source: Range<usize>) -> Self {
         let mut renderer = self.clone();
+        renderer.local_source = Some(source.clone());
         if !renderer.source_owner_locked {
             renderer.source_owner = Some(SourceOwner::Text(source));
         }
@@ -244,11 +260,30 @@ impl<'a> TextRenderer<'a> {
     }
 
     pub fn planning_scope(&self) -> Self {
-        let mut renderer = self.clone();
+        let mut renderer = self.local_measurement_scope();
         renderer.faces = Default::default();
         renderer.diagnostics = Default::default();
         renderer.object_diagnostics = Default::default();
         renderer
+    }
+
+    pub fn local_measurement_scope(&self) -> Self {
+        let mut renderer = self.clone();
+        renderer.local_measurement_issues = Default::default();
+        renderer.local_source = None;
+        renderer
+    }
+
+    pub fn local_measurement_issues(&self, source: Range<usize>) -> Vec<SourceTextDiagnostic> {
+        self.local_measurement_issues
+            .borrow()
+            .scoped()
+            .into_iter()
+            .filter(|issue| {
+                matches!(&issue.owner, Some(SourceOwner::Text(range))
+                    if range.start < source.end && source.start < range.end)
+            })
+            .collect()
     }
 
     fn register_face(&self, face: &ResolvedFace) {
@@ -287,6 +322,44 @@ impl<'a> TextRenderer<'a> {
             .map_or_else(Vec::new, |pages| {
                 pages.table_split_rects(constraint, candidate_top)
             })
+    }
+
+    pub fn resolve_native(
+        &self,
+        family: Option<&str>,
+        direction: Direction,
+    ) -> Option<ResolvedFace> {
+        let direction = match direction {
+            Direction::LeftToRight => PaintShapeDirection::LeftToRight,
+            Direction::RightToLeft => PaintShapeDirection::RightToLeft,
+            _ => return None,
+        };
+        let request =
+            NativeFontNameRequest::new(family, Some(self.default_family), direction).ok()?;
+        let selection = self.fonts.resolve_native_name(&request).ok()?;
+        let native_style = selection.typeface_style();
+        if native_style.weight() != 400 || native_style.italic() {
+            return None;
+        }
+        if selection.used_default_family()
+            && let Some(family) = family.filter(|family| !family.is_empty())
+            && self
+                .fonts
+                .resolve(family, false, false)
+                .is_ok_and(|available| available.id != selection.face().id)
+        {
+            return None;
+        }
+        if selection.used_default_family()
+            && let Some(family) = family.filter(|family| !family.is_empty())
+        {
+            self.record(TextDiagnostic {
+                kind: TextDiagnosticKind::UnavailableFamily,
+                family: family.into(),
+                codepoints: Vec::new(),
+            });
+        }
+        Some(selection.face().clone())
     }
 
     pub fn resolve(&self, style: &TextStyle, context: TextContext) -> Option<ResolvedFace> {
@@ -559,6 +632,72 @@ impl<'a> TextRenderer<'a> {
             family: family.into(),
             codepoints: Vec::new(),
         });
+    }
+
+    pub fn measurement_unsupported(&self, kind: TextDiagnosticKind, family: &str, text: &str) {
+        let diagnostic = TextDiagnostic {
+            kind,
+            family: family.into(),
+            codepoints: text.chars().map(u32::from).collect(),
+        };
+        if let Some(source) = &self.local_source
+            && matches!(
+                diagnostic.kind,
+                TextDiagnosticKind::UnsupportedMeasurementStyle
+                    | TextDiagnosticKind::UnsupportedMeasurementFont
+                    | TextDiagnosticKind::UnsupportedMeasurementShaping
+                    | TextDiagnosticKind::UnsupportedMeasurementBudget
+                    | TextDiagnosticKind::UnsupportedTabMeasurement
+            )
+        {
+            self.local_measurement_issues
+                .borrow_mut()
+                .record(SourceTextDiagnostic {
+                    owner: Some(SourceOwner::Text(source.clone())),
+                    diagnostic: diagnostic.clone(),
+                });
+        }
+        self.record(diagnostic);
+    }
+
+    pub fn report_visible_line_issues(&self, styled: &StyledText<'_>, line: &WrappedLine) {
+        for issue in line.fallback_measurement_issues() {
+            if let Some(SourceOwner::Text(source)) = &issue.owner {
+                let source = source.start.max(line.source.start)..source.end.min(line.source.end);
+                if !source.is_empty()
+                    && let Some(text) = styled.index.slice(source.clone())
+                {
+                    self.for_source(source).measurement_unsupported(
+                        issue.diagnostic.kind.clone(),
+                        &issue.diagnostic.family,
+                        text,
+                    );
+                }
+            }
+        }
+        for placement in &line.placements {
+            let run = &placement.cluster.run;
+            if let Some(kind) = run.measurement_issue()
+                && let Some(text) = styled.index.slice(placement.cluster.source.clone())
+            {
+                self.for_source(placement.cluster.source.clone())
+                    .measurement_unsupported(
+                        kind.clone(),
+                        run.style.family.as_deref().unwrap_or("Roboto"),
+                        text,
+                    );
+            }
+        }
+        if line.unsupported_native_wrapping()
+            && let Some(text) = styled.index.slice(line.source.clone())
+        {
+            self.for_source(line.source.clone())
+                .measurement_unsupported(
+                    TextDiagnosticKind::UnsupportedNativeWrapping,
+                    "native",
+                    text,
+                );
+        }
     }
 
     pub fn glyph_positioning_unsupported(&self, family: &str, text: &str) {
@@ -944,6 +1083,53 @@ mod tests {
     }
 
     #[test]
+    fn local_measurement_failures_keep_child_ranges_and_isolate_identical_sources() {
+        let fonts = FontBook::default();
+        let planner = renderer(&fonts).for_object_source(20..21);
+        let title = planner.local_measurement_scope();
+        let body = planner.local_measurement_scope();
+        for _ in 0..2 {
+            title.for_source(0..2).measurement_unsupported(
+                TextDiagnosticKind::UnsupportedMeasurementFont,
+                "title font",
+                "CD",
+            );
+        }
+        body.for_source(0..2).measurement_unsupported(
+            TextDiagnosticKind::UnsupportedMeasurementStyle,
+            "body font",
+            "CD",
+        );
+        let title_issues = title.local_measurement_issues(1..2);
+        assert_eq!(title_issues.len(), 1);
+        assert_eq!(title_issues[0].owner, Some(SourceOwner::Text(0..2)));
+        assert_eq!(title_issues[0].diagnostic.family, "title font");
+        assert_eq!(body.local_measurement_issues(0..1).len(), 1);
+        assert_eq!(
+            body.local_measurement_issues(0..1)[0].diagnostic.family,
+            "body font"
+        );
+        assert!(body.local_measurement_issues(2..3).is_empty());
+        assert!(
+            body.planning_scope()
+                .local_measurement_issues(0..2)
+                .is_empty()
+        );
+        assert!(
+            body.for_resolved_text("sans-serif")
+                .local_measurement_issues(0..2)
+                .is_empty()
+        );
+        assert_eq!(planner.scoped_diagnostics().len(), 2);
+        assert!(
+            planner
+                .scoped_diagnostics()
+                .iter()
+                .all(|issue| { issue.owner == Some(SourceOwner::Object(20..21)) })
+        );
+    }
+
+    #[test]
     fn numeric_child_local_runs_keep_the_parent_marker_anchor() {
         let fonts = FontBook::default();
         let planner = renderer(&fonts);
@@ -1149,6 +1335,39 @@ mod tests {
                     codepoints: vec![0x4e2d, 0x1f600],
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn native_configuration_preserves_available_unregistered_families() {
+        let fonts = FontBook::default();
+        let renderer = renderer(&fonts);
+        assert!(
+            renderer
+                .resolve_native(Some("Roboto Mono"), Direction::LeftToRight)
+                .is_none()
+        );
+        assert_eq!(
+            renderer
+                .resolve(&style("Roboto Mono"), TextContext::Placed)
+                .unwrap()
+                .family,
+            "Roboto Mono"
+        );
+        assert_eq!(
+            renderer
+                .resolve_native(Some("missing source family"), Direction::LeftToRight)
+                .unwrap()
+                .family,
+            "Roboto"
+        );
+        assert_eq!(
+            renderer
+                .diagnostics()
+                .iter()
+                .map(|issue| &issue.kind)
+                .collect::<Vec<_>>(),
+            [&TextDiagnosticKind::UnavailableFamily]
         );
     }
 
