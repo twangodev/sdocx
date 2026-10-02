@@ -362,8 +362,13 @@ and transparent white `0x00ffffff` to zero. Checking raw zero or alpha before
 mapping therefore does not reproduce the native fallback decision. Enabled
 composing tags can also background-paint native object entries: their converter
 and the native entry background painter have no object guard. Rust's text
-background geometry excludes inline-object anchors; this native object case
-has a separate unsupported appearance boundary.
+background geometry excludes inline/block object anchors; this native object
+case has a separate unsupported appearance boundary. The
+[object background capture](text-draw-identity-findings.md#captured-embedded-object-background-geometry)
+executes native measurement, placement and preview rectangle painting for 40
+supplied cases. It establishes margin-inclusive inline bands and visible-width
+block bands, separately from Widget conversion, full line-metric production
+and Composer/PDF object-background selection.
 
 The hash-checked HF corpus contains one kind-17 span: `04-marker4-highlighter`
 body range `[2,6)`, selecting `Text`, with an eight-byte all-zero payload.
@@ -375,7 +380,7 @@ not opaque background geometry or color parity. No captured nonzero-alpha
 background span exists in these four fixtures.
 
 Terminal LF/control behavior, complex-script character-to-cluster background
-mapping, cross-context object-span painting, and captured opaque/semitransparent
+mapping, complete cross-context object-span painting, and captured opaque/semitransparent
 backgrounds remain unverified. Native object opacity is also separate from
 the span alpha currently represented by the SDK. Proportional per-character
 subdivisions and fitted rectangles have no native proof.
@@ -956,9 +961,31 @@ Ordinary text is measured as runs, not by summing independent character
 `0x76e28`, joins adjacent spans with `RichTextSpan::JoinableForMeasureTo`
 at `0x76fac`, then invokes `SpanRunFunctor` at `0x76fe0` / `0x77030`.
 The joining predicate, `0x8dc28`, compares resolved font size, foreground
-color, style bits under mask `0xc3`, and font-name string equality; either
+ARGB including alpha, style bits under mask `0xc3`, and nullable font-name
+string equality; either
 object span prevents joining. A color-only transition can therefore change
-the native shaping boundary.
+the native shaping boundary. Null and a nonnull empty name do not join, even
+when a font resolver might choose the same face. Background/decorations and
+hyperlink identity do not split this predicate. The
+[measurement-identity capture](text-draw-identity-findings.md#measurement-identity)
+executes the complete native kernel for 291 supplied cases, separately from
+the full measurement producer and actual shaping.
+
+Rust's ordinary measurement key now retains f32 resolved size, native-theme
+mapped ARGB, nullable font name and supported bold/italic bits under that mask.
+It is projected separately from glyph paint: hyperlink blue, display contrast,
+backgrounds and decorations do not become accidental measurement identity.
+Typed key regressions match 89 finite supported native predicate cases;
+independent `AV` advances check the resulting shaping boundaries. Native font
+selection and complete run shaping remain separate evidence limits.
+
+Paragraph-heading style phases are also separate. Model
+`CreateSpanList`, `0x419f3c`, and paragraph application at
+`0x3eff64`–`0x3eff84` can create stored FontSize/Bold spans before runtime
+measurement. The traced Widget predefined-style type 10 affects spacing.
+Rust retains its existing heading size fallback and bold normalization; the
+ordinary measurement-key regression does not establish equivalence to those
+native Model producers or their flag initialization.
 
 `SpanRunFunctor` creates the Minikin paint through `0x76ad4` and obtains
 a shaped layout through `0x97b34` at `0x77304`. The style-run virtual

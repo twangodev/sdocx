@@ -190,7 +190,62 @@ interfaces; diagnostic logging is isolated. Whole-document parsing, native
 span traversal, Widget conversion, shaping, grouping and rendering do not
 execute in this binary capture.
 
-### Preview and Composer backgrounds
+## Measurement identity
+
+Native measurement joining is a different predicate from retained draw
+identity. Text `RichTextSpan::JoinableForMeasureTo`, `0x8dc28`, rejects an
+object-span flag on either side, then compares:
+
+| Member | Equality used for measurement |
+| --- | --- |
+| Font size, offset 0 | Native f32 comparison |
+| Foreground ARGB, offset 4 | Complete `u32` equality, including alpha |
+| Style bits, offset 16 | Difference masked by `0xc3` |
+| Font name, offset 24 | Nullable pointer identity, or semantic native String comparison |
+
+Equal positive and negative zero sizes join. A quiet NaN does not join,
+including a self comparison; equal positive infinities join in this isolated
+predicate. This does not establish that document producers admit such values.
+Foreground transitions that differ only in alpha split measurement even when
+the painted RGB is unchanged. The predicate ignores both backgrounds,
+underline/correction colors, hyperlink bit 0, other nonobject flag bits,
+link metadata and inline/over-pages/correction/math-answer flags. Underline,
+strike, suggestion and correction style bits below `0x40` do not split it.
+Draw identity separately compares those paint fields.
+
+Widget foreground conversion at `0xd7c04`–`0xd7c20` passes the complete source
+color through context usage 3 and stores mapped ARGB in span member 4, without
+a raw-zero or alpha-zero guard. Color type is queried afterward at
+`0xd7c28`–`0xd7c34` and sets only the ignored math-answer byte 67.
+Hyperlink blue is applied later to retained draw output at
+`0x68164`–`0x68178`; correction foreground is applied later in text-paint
+setup at `0x63cd0`–`0x63ce8`. The measurement predicate therefore compares
+mapped span foreground before those display overrides. Equal rendered link
+or contrast colors do not establish equal native measurement identities.
+
+Two null font names join, and a shared nonnull pointer joins immediately.
+One null name and one nonnull empty name do not join. Independently allocated
+equal or empty names join through Base `String::CompareTo`, `0xc49e4`, and
+native UTF-16 comparison at `0xc204c`; different case or length can split them.
+UTF-8 and CESU-8 inputs that construct the same UTF-16 surrogate pairs join.
+Embedded-NUL constructor inputs retain their native prefix; the capture does
+not establish preservation or comparison of trailing data after the NUL.
+
+[`table-text-measurement-join.json`](../../conformance/table-text-measurement-join.json),
+SHA-256 `45cfbe69af0ba5a931c5a06a93b289af44e3723f68790bb82c0c6da59b218e2b`,
+contains 291 cases, including all 256 right-hand style values, f32 boundary
+cases, full-ARGB transitions, object flags, ignored members and nullable/string
+variants. The
+[Rust capture module](../../conformance/native_table/text_measurement_join.rs)
+executes complete native joining and String comparison, with native Base
+construction from UTF-8/CESU-8 or explicit UTF-16 units. Forward, reverse and
+both self comparisons repeat with memory fills `0x00`, `0xa5` and `0xff`.
+Span members and bounded string inputs are supplied; allocation, deletion,
+initialization, string length and memory copy are host interfaces. Widget
+conversion, document parsing, shaping, font resolution, the producer's
+measurement-run loop and painting do not execute.
+
+## Preview and Composer backgrounds
 
 Native ordinary and composing backgrounds have different consumers. Their
 separate raw span members cannot be replaced by one resolved paint color.
@@ -257,6 +312,47 @@ The native background painter has no object-span exclusion. At `0x65004`–
 write ordinary background on an object slot and reach that rectangle path.
 This is a source-traced converter/painter contract, without a complete
 embedded-object preview capture.
+
+### Captured embedded-object background geometry
+
+[`table-text-object-background.json`](../../conformance/table-text-object-background.json),
+SHA-256 `adc0d81004f5b372cf3f6cddc6c34aade8d9728339bc25056a5494cf71b0e076`,
+contains 40 cases and 37 rectangle commands. The
+[Rust capture module](../../conformance/native_table/text_object_background.rs)
+executes native entry initialization, `0x65920`, complete object-span
+measurement, `0x779d0`, placement through `SetLayout`, `0x6b4a4`, and
+`GetBaseline`, `0x6cb0c`, followed by `GetSpan`, `0x61f3c`, and complete
+`drawBackgroundColor`, `0x64f18`. Actual Base rectangle helpers supply setting,
+width/height, offset and union. Results repeat across memory fills `0x00`,
+`0xa5` and `0xff`.
+
+Native preview background geometry uses the placed entry's line band, rather
+than only the embedded object's visible rectangle. Its X is entry X plus draw
+offset X; its Y is layout top plus draw offset Y; width and height come from
+the actual entry layout rectangle at `0x65030`–`0x65070`. A 30-unit inline
+object with left/right margins 4 and 4 measures and paints 38 units wide.
+A block object reserves 100 units of advance in the supplied 120-unit context
+with 10-unit side margins, but its background paints the visible 30-unit
+width. With object height 40, font metric 17 and line-spacing multiplier 1.35,
+the captured default layout band is about 45.951 units high, including leading
+and the object-metric epsilon. Stored/supplied top margins use a separate
+placement branch.
+
+NaN width and height independently fall back to the supplied font metric.
+A zero-width entry still dispatches a zero-width rectangle. Background selection
+uses nonzero mapped composing ARGB ahead of ordinary ARGB and skips a zero
+selected word; it has no alpha-only gate or object-kind exclusion. Transparent
+nonzero colors therefore still produce recorded rectangle commands.
+
+Dimensions, margins, font metric 17, context width/margins, mapped span colors,
+offsets and a single-entry logical map are supplied. Line/block metrics are
+explicitly supplied using the native measured advance/height plus that font
+metric and margins. `GetBlockInfo`, wrapping and obstacle selection do not
+execute. Paint construction/style/color/destruction, memory copy and rectangle
+recording are host interfaces. Native font resolution, shaping, Widget object
+conversion, theme mapping, glyphless retained-run emission, Composer/PDF
+background policy and pixels are outside this capture. It establishes preview
+entry geometry independently of the export route.
 
 Composer table `GetDrawnTextData`, `0x37ef00`, reaches Text drawing through
 the Widget cell wrapper at `0x8c098`. Text `appendTextBlock`, `0x67ebc`, stores
@@ -424,6 +520,51 @@ provide complete native draw identity: correction fields and native entry
 identity remain absent, and glyph foreground painting keeps RGB rather than
 the compared native ARGB value.
 
+`ResolvedTextStyle` projects paint and measurement styles from the same typed
+selection. `TextMeasureStyle` retains resolved f32 size, native-theme-mapped
+foreground ARGB before hyperlink paint, and a nullable shared font name before
+empty-name lookup normalization. Its style mask retains the supported bold and
+italic bits under native mask `0xc3`; opaque native bits `0xc0` are outside
+the implemented source-style subset. Native span color mapping is separate
+from the export policy's contrast-aware paint color. Different source colors
+can produce identical dark paint while retaining different measurement keys.
+Parsed whole-text foreground spans remain in `RichTextBox.spans` alongside
+their RGB summary, so their original alpha still reaches the typed measurement
+selection. A manually supplied box with only the RGB summary has an opaque
+measurement fallback; that summary does not contain a recoverable alpha value.
+
+`ParagraphMeasurer` coalesces adjacent segments by measurement identity,
+keeping paint separately. Script, bidi and tab boundaries still split shaping;
+inline objects are measured in separate text chunks. The ordinary measurement
+regression compares typed StyleIndex/key projection against 89 finite,
+supported native cases, including forward/reverse/self results. Independent
+Roboto `AV` advances verify retained kerning or separate shaping at alpha and
+null/empty-name boundaries; hyperlink paint and background/decorations do not
+introduce measurement splits. Those comparisons do not cover nonfinite sizes,
+object flags, opaque style bits, native font resolution or paragraph-heading
+style phases.
+
+Integration regressions cover six `AV` identity cases across body, standalone,
+code, table and nested table/code contexts: native join baseline, alpha-only
+foreground, null/empty family, hyperlink-only paint, differing source colors
+under two blue links, and different native dark keys with identical dark paint.
+The 30 unwrapped and 30 midpoint-width observations compare SVG background
+width/suffix origin and retained PDF glyph origins with independent Roboto
+shaping. The font is the bundled regular face, SHA-256
+`56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d`.
+A width strictly between kerned and separately shaped advances produces the
+expected one versus two baselines. SVG source and PDF ToUnicode text retain
+`AV|` or `AV`, with no image replacements. These compare Rust layout/transport
+with independent font advances, rather than executing complete APK shaping.
+
+Retained PDF glyph runs also group by their actual `NativeTextPaint`, even
+when glyphs share one measured run. This preserves source and blue link colors
+across joined measurement while keeping one `NativeTextBlock` logical source.
+Per-glyph PDF fill-color regressions verify both plain/link and two-link cases;
+removing the paint-equality guard makes the joined plain/link case lose the
+link glyph's blue color. Full native draw-run grouping and conditional clip
+selection remain separate, unimplemented contracts.
+
 Hyperlink styling follows the captured native type gate: types 1–9 enable
 hypertext styling; type 0, 10 and the maximum unknown value do not add blue
 foreground, underline or an anchor. Rust regressions cover these five captured
@@ -443,7 +584,7 @@ SVG/replay, retained PDF and supplied-SVG PDF. PDF source assertions decode
 stored text through its ToUnicode map, separately from extractor-inferred
 spacing, and the generated files retain text without image replacements.
 
-Enabled composing-tag backgrounds on inline-object entries remain unsupported:
+Enabled composing-tag backgrounds on inline/block object entries remain unsupported:
 native entry background painting includes those slots, while Rust's text
 background path excludes them. Rust reports `UnsupportedCompositionStyle` for
 the affected object's source range and owner; supported ordinary text in the
