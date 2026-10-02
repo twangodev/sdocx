@@ -5,12 +5,13 @@ use std::sync::{Arc, Mutex};
 use unicode_script::{Script, ScriptExtension, UnicodeScript};
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::PredefinedTextStyle;
 use crate::fonts::{
-    Direction, Feature, FontError, FontSynthesis, ResolvedFace, ShapedGlyph, UnicodeBuffer, fontdb,
+    Direction, Feature, FontError, FontMetrics, FontSynthesis, ResolvedFace, ShapedGlyph,
+    UnicodeBuffer, fontdb,
 };
 use crate::render::RenderTheme;
 use crate::text_index::TextSource;
+use crate::{BoundingBox, PredefinedTextStyle};
 
 use super::bidi::{BidiError, ParagraphBidi};
 use super::{StyledText, TextMeasureStyle, TextRenderer, TextStyle};
@@ -60,6 +61,88 @@ pub(in crate::render) struct MeasuredGlyph {
     pub pen_y: i64,
 }
 
+#[derive(Clone, Copy)]
+pub(in crate::render) struct FontGeometry {
+    scale: f64,
+}
+
+impl FontGeometry {
+    pub fn new(font_size: f64, units_per_em: u16) -> Self {
+        Self {
+            scale: font_size / f64::from(units_per_em),
+        }
+    }
+
+    pub fn is_valid(self) -> bool {
+        self.scale.is_finite() && self.scale > 0.0
+    }
+
+    fn project(self, units: f64) -> f64 {
+        units * self.scale
+    }
+
+    fn position(self, units: i64) -> f64 {
+        self.project(units as f64)
+    }
+
+    fn horizontal_advance(self, units: i64, tab: bool) -> f64 {
+        self.position(units) * if tab { 4.0 } else { 1.0 }
+    }
+
+    #[cfg(any(feature = "pdf", test))]
+    fn glyph_offset(self, glyph: &MeasuredGlyph, pen_origin: [i64; 2]) -> [f64; 2] {
+        [
+            self.position(glyph.pen_x - pen_origin[0] + i64::from(glyph.raw.x_offset)),
+            -self.position(glyph.pen_y - pen_origin[1] + i64::from(glyph.raw.y_offset)),
+        ]
+    }
+
+    #[cfg(any(feature = "pdf", test))]
+    fn glyph_advance(self, glyph: &ShapedGlyph) -> [f64; 2] {
+        [
+            self.project(f64::from(glyph.x_advance)),
+            -self.project(f64::from(glyph.y_advance)),
+        ]
+    }
+
+    pub fn glyph_ink_bounds(
+        self,
+        glyph: &MeasuredGlyph,
+        ink: rustybuzz::ttf_parser::Rect,
+        origin: [f64; 2],
+    ) -> BoundingBox {
+        let x = origin[0] + self.position(glyph.pen_x + i64::from(glyph.raw.x_offset));
+        let baseline = origin[1] - self.position(glyph.pen_y + i64::from(glyph.raw.y_offset));
+        BoundingBox {
+            x_min: x + self.project(f64::from(ink.x_min)),
+            y_min: baseline - self.project(f64::from(ink.y_max)),
+            x_max: x + self.project(f64::from(ink.x_max)),
+            y_max: baseline - self.project(f64::from(ink.y_min)),
+        }
+    }
+
+    pub fn vertical_ink_bounds(
+        self,
+        glyph: &MeasuredGlyph,
+        ink: rustybuzz::ttf_parser::Rect,
+        baseline: f64,
+        stroke: f64,
+    ) -> [f64; 2] {
+        let pen = glyph.pen_y as f64 + f64::from(glyph.raw.y_offset);
+        [
+            baseline - self.project(pen + f64::from(ink.y_max)) - stroke,
+            baseline - self.project(pen + f64::from(ink.y_min)) + stroke,
+        ]
+    }
+
+    pub fn vertical_metrics(self, metrics: FontMetrics, baseline: f64) -> [f64; 2] {
+        [
+            baseline - self.project(f64::from(metrics.ascent)),
+            baseline - self.project(f64::from(metrics.descent)),
+        ]
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(in crate::render) struct ClusterPaintOffset {
     pub x: f64,
@@ -94,17 +177,20 @@ impl MeasuredCluster {
         {
             return Err(MeasurementError::InvalidCluster);
         }
-        let scale = self.run.style.font_size / f64::from(self.run.face.metrics.units_per_em);
-        let pen_x = first.pen_x;
-        let pen_y = first.pen_y;
-        Ok(glyphs.iter().map(move |glyph| RetainedGlyph {
-            face: &self.run.face,
-            source: &glyph.source,
-            glyph_id: glyph.raw.id,
-            offset_x: (glyph.pen_x - pen_x + i64::from(glyph.raw.x_offset)) as f64 * scale,
-            offset_y: -((glyph.pen_y - pen_y + i64::from(glyph.raw.y_offset)) as f64 * scale),
-            advance_x: f64::from(glyph.raw.x_advance) * scale,
-            advance_y: -(f64::from(glyph.raw.y_advance) * scale),
+        let geometry = self.run.geometry();
+        let pen_origin = [first.pen_x, first.pen_y];
+        Ok(glyphs.iter().map(move |glyph| {
+            let [offset_x, offset_y] = geometry.glyph_offset(glyph, pen_origin);
+            let [advance_x, advance_y] = geometry.glyph_advance(&glyph.raw);
+            RetainedGlyph {
+                face: &self.run.face,
+                source: &glyph.source,
+                glyph_id: glyph.raw.id,
+                offset_x,
+                offset_y,
+                advance_x,
+                advance_y,
+            }
         }))
     }
 
@@ -188,15 +274,19 @@ impl MeasuredCluster {
             pen_x += i64::from(glyph.x_advance);
             pen_y += i64::from(glyph.y_advance);
         }
-        let scale = self.run.style.font_size / f64::from(self.run.face.metrics.units_per_em);
+        let geometry = self.run.geometry();
         Ok(Some(ClusterPaintOffset {
-            x: translation_x as f64 * scale - self.origin_x,
-            y: -(translation_y as f64 * scale),
+            x: geometry.position(translation_x) - self.origin_x,
+            y: -geometry.position(translation_y),
         }))
     }
 }
 
 impl MeasuredRun {
+    pub fn geometry(&self) -> FontGeometry {
+        FontGeometry::new(self.style.font_size, self.face.metrics.units_per_em)
+    }
+
     fn standalone(&self, text: &str) -> Result<Arc<Vec<ShapedGlyph>>, FontError> {
         let mut cache = self
             .standalone
@@ -540,8 +630,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                 family: face.family.clone(),
             })?
             .is_variable();
-        let scale = style.font_size / f64::from(shaped.metrics.units_per_em);
-        let multiplier = if tab { 4.0 } else { 1.0 };
+        let geometry = FontGeometry::new(style.font_size, shaped.metrics.units_per_em);
         let mut cluster_glyphs = BTreeMap::<usize, (i64, Range<usize>)>::new();
         for (index, glyph) in shaped.glyphs.iter().enumerate() {
             let byte = glyph.cluster as usize;
@@ -622,14 +711,14 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         for (&byte, (advance, glyphs)) in &cluster_glyphs {
             clusters.push(MeasuredCluster {
                 source: sources[&byte].characters().clone(),
-                advance: *advance as f64 * scale * multiplier,
-                origin_x: run.glyphs[glyphs.start].pen_x as f64 * scale,
+                advance: geometry.horizontal_advance(*advance, tab),
+                origin_x: geometry.position(run.glyphs[glyphs.start].pen_x),
                 run: run.clone(),
                 glyphs: glyphs.clone(),
             });
         }
         Ok(MeasuredSegment {
-            advance: shaped.advance_x() as f64 * scale * multiplier,
+            advance: geometry.horizontal_advance(shaped.advance_x(), tab),
             clusters,
         })
     }

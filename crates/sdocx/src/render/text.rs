@@ -32,6 +32,7 @@ pub(super) use layout::{
     PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
     layout_flow_text, layout_text, layout_text_with_size,
 };
+pub(in crate::render) use measurement::FontGeometry;
 pub(super) use native_identity::{NativeDrawSpan, NativeIdentityUnavailable};
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use objects::{ObjectMeasurementContext, ObjectPageOwnership};

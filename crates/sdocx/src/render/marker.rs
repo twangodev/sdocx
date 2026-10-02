@@ -257,21 +257,20 @@ impl PreparedNumber {
             for placement in &line.line.placements {
                 let cluster = &placement.cluster;
                 let run = &cluster.run;
-                let scale = run.style.font_size / f64::from(run.face.metrics.units_per_em);
+                let geometry = run.geometry();
                 for glyph in run.glyphs.get(cluster.glyphs.clone())? {
                     let Some(ink) = run.face.glyph_ink_bounds(glyph.raw.id).ok()? else {
                         continue;
                     };
-                    let glyph_x = x + line.x + placement.x - cluster.origin_x
-                        + (glyph.pen_x + i64::from(glyph.raw.x_offset)) as f64 * scale;
-                    let baseline = top + line.baseline
-                        - (glyph.pen_y + i64::from(glyph.raw.y_offset)) as f64 * scale;
-                    let ink = marker_bounds(
-                        glyph_x + f64::from(ink.x_min) * scale,
-                        baseline - f64::from(ink.y_max) * scale,
-                        glyph_x + f64::from(ink.x_max) * scale,
-                        baseline - f64::from(ink.y_min) * scale,
-                    )?;
+                    let ink = geometry.glyph_ink_bounds(
+                        glyph,
+                        ink,
+                        [
+                            x + line.x + placement.x - cluster.origin_x,
+                            top + line.baseline,
+                        ],
+                    );
+                    let ink = marker_bounds(ink.x_min, ink.y_min, ink.x_max, ink.y_max)?;
                     bounds.x_min = bounds.x_min.min(ink.x_min);
                     bounds.y_min = bounds.y_min.min(ink.y_min);
                     bounds.x_max = bounds.x_max.max(ink.x_max);

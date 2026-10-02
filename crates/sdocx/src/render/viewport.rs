@@ -2,7 +2,7 @@ use crate::BoundingBox;
 
 use super::RenderTheme;
 use super::fonts::ResolvedFace;
-use super::text::{StyledText, TextLine, WrappedLine, body_text_ranges};
+use super::text::{FontGeometry, StyledText, TextLine, WrappedLine, body_text_ranges};
 
 #[derive(Clone, Copy)]
 pub(super) struct Viewport {
@@ -70,8 +70,8 @@ impl Viewport {
             let cluster = &placement.cluster;
             let run = &cluster.run;
             let size = run.style.font_size;
-            let scale = size / f64::from(run.face.metrics.units_per_em);
-            if !scale.is_finite() || scale <= 0.0 {
+            let geometry = run.geometry();
+            if !geometry.is_valid() {
                 return true;
             }
             if !cluster.supports_positioned_text()
@@ -86,10 +86,9 @@ impl Viewport {
                 match run.face.glyph_ink_bounds(glyph.raw.id) {
                     Ok(Some(ink)) => {
                         has_ink = true;
-                        let pen = glyph.pen_y as f64 + f64::from(glyph.raw.y_offset);
                         let stroke = if run.style.bold { 0.225 } else { 0.0 };
-                        let top = baseline - (pen + f64::from(ink.y_max)) * scale - stroke;
-                        let bottom = baseline - (pen + f64::from(ink.y_min)) * scale + stroke;
+                        let [top, bottom] =
+                            geometry.vertical_ink_bounds(glyph, ink, baseline, stroke);
                         if !top.is_finite() || !bottom.is_finite() {
                             return true;
                         }
@@ -148,9 +147,8 @@ impl Viewport {
     }
 
     fn metrics_visible(self, face: &ResolvedFace, size: f64, baseline: f64) -> bool {
-        let scale = size / f64::from(face.metrics.units_per_em);
-        let top = baseline - f64::from(face.metrics.ascent) * scale;
-        let bottom = baseline - f64::from(face.metrics.descent) * scale;
+        let [top, bottom] = FontGeometry::new(size, face.metrics.units_per_em)
+            .vertical_metrics(face.metrics, baseline);
         self.overlaps_height(top.min(bottom), top.max(bottom))
     }
 
