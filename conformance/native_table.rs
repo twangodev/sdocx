@@ -75,6 +75,8 @@ mod text_predefined_style;
 #[path = "native_table/text_object_runs.rs"]
 mod text_object_runs;
 
+#[path = "native_table/table_grid_admission.rs"]
+mod table_grid_admission;
 #[path = "native_table/text_object_export_policy.rs"]
 mod text_object_export_policy;
 #[path = "native_table/text_pdf_alpha.rs"]
@@ -1100,6 +1102,10 @@ fn main() {
             text_predefined_style::capture(&mut machine);
             return;
         }
+        Some("--grid-admission") => {
+            table_grid_admission::capture(&mut machine);
+            return;
+        }
         Some("--text-object-export-policy") => {
             let path = std::env::args_os()
                 .nth(3)
@@ -1327,7 +1333,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy, --text-pdf-alpha or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

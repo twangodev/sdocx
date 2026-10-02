@@ -116,7 +116,7 @@ giving a nine-byte header. It writes offset zero when no flexible fields are
 present; otherwise it records the end of the fixed data. Parent size prefixes
 are excluded from this relative offset.
 
-A row's fixed data is `f32` height, `u32` row index, `u32` cell count, then a
+A nonempty row's fixed data is `f32` height, `u32` row index, `u32` cell count, then a
 `u32` payload size and cell record per cell. A cell's fixed data contains
 `u32` column index, row span, column span and ARGB background; four `f64`
 coordinates; `u8` editability; and a sized rich-text object.
@@ -136,6 +136,60 @@ fixed-field lengths from consuming flexible bytes. Invalid offsets fail before
 those reads. Offset zero remains valid with an empty field mask.
 The shared mask reader supports wider future masks without truncating the
 check for set bits. Unknown embedded bytes remain in the original object data.
+
+### Dense editor construction and sparse transport
+
+Native editor construction produces dense rows. `ObjectTableImpl::Construct`,
+`0x3c5f60`, clamps nonpositive row/column counts to one, and
+`TableRow::TableRow`, `0x3c3abc`, creates a nonnull cell for each physical
+column with its matching column index.
+
+Binary transport stores column widths independently from each row's cell
+count. The row parser at `0x3c5598` preserves stored row index and cell count;
+the cell parser at `0x3c3360` preserves column index. These parsers do not
+validate the cross-count/index relationship. The enclosing
+`ObjectTable::NewApplyBinary`, `0x3da00c`, ends with `ClearChanged`,
+`0x3d96b8` through vtable relocation `0x495298`, which clears flags without
+normalizing topology.
+
+Zero-cell rows have a separate source-level writer/parser asymmetry. The
+fixed-data writer, `0x3c5230`, omits the cell-count word for an empty vector;
+with default bounds, the size getter reports a 17-byte record. The row parser
+still expects a cell-count word. Native writer output and an explicitly encoded
+zero-count input are therefore different transport cases; neither empty-row
+round trip is established by the supplied topology probes below.
+
+That transport flexibility does not establish a supported sparse renderable
+document. `ObjectTableImpl::GetCell`, `0x3c7570`, checks the global column
+count, then indexes the selected row's cell vector without checking its
+length. Null cell holes have no binary representation: serialization
+dereferences each stored cell pointer. Existing sparse algorithm probes
+therefore establish behavior for supplied kernel inputs, independently of
+native editor construction or valid document admission.
+
+[`table-grid-admission.json`](../../conformance/table-grid-admission.json),
+SHA-256 `826c7ec115166289fe3be59c2bae8fb754b07a54a35b2a7fbbd0d6705147c45f`,
+captures 25 synthetic cases and 117 queries through native `GetCell`,
+`0x3c7570`, public `GetCell`, `0x3d2be0`, and `GetFrameCell`, `0x3c75c0`.
+The [capture module](../../conformance/native_table/table_grid_admission.rs)
+executes 351 native calls per fill, repeated at `0x00`, `0xa5` and `0xff`.
+Memory hooks record the actual instruction address and physical cell slot;
+the fixture contains 76 pointer reads beyond a row's declared vector length.
+Twenty-six frame-owner queries stop before the null candidate's span load at
+`0x3c7678`; the null dereference itself does not execute.
+
+Inputs supply one or two three-column rows, declared row lengths 0–3,
+nonnull backing capacity beyond short declared lengths, null-slot masks and
+two merged-owner-hole cases. This deliberately keeps out-of-length pointer
+reads inside initialized host-supplied backing memory. Native constructors,
+binary loading/writing and device execution do not occur. Those reads and
+stopped null candidates explain the dense Rust admission boundary; they are
+not evidence that native documents admit or safely render these topologies.
+
+Rust's prepared grid requires nonempty dense rows, matching stored row/column
+origins and positive in-bounds spans. Sparse or invalid topology retains usable
+saved-frame painting with `UnsupportedContent`; it does not enter dense native
+measurement preparation.
 
 ## Row height and cell-border findings
 

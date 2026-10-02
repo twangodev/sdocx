@@ -103,6 +103,9 @@ measured run and logical text block.
   Sparse/invalid grids retain saved-frame painting with `UnsupportedContent`.
   Rotated/nested preparation and native merged shaping/parent pagination remain
   incomplete or unverified.
+  [Native editor construction](reverse-engineering/table-code-findings.md#dense-editor-construction-and-sparse-transport)
+  creates dense rows; separate serialized counts do not establish safe sparse
+  document topology or native rendering admission.
 - Table border paths match the [native capture](../conformance/table-border-paths.json).
   Outline color, thickness and axis radii also match
   [native Drawing aggregation](../conformance/table-border-drawing.json) at seven
@@ -157,6 +160,13 @@ measured run and logical text block.
   verifies Body object exclusion, Frame caller requests and the separate
   foreground/background-alpha decisions; it does not execute native PDF painting
   or establish complete output for newer foreground-alpha edge cases.
+- Foreground painting retains RGB rather than complete native span ARGB.
+  Measurement preserves source alpha, but that does not implement glyph alpha.
+  The [60-case native PDF alpha capture](reverse-engineering/text-draw-identity-findings.md#captured-pdf-alpha-transport)
+  establishes distinct legacy Table, Code and background setter behavior;
+  the Rust renderer does not reproduce those route-specific alpha rules.
+  Public Standard export also batches ordinary Table/Code page objects, so
+  standalone writer evidence does not establish their public-route appearance.
 - Native font selection, complete heading editing/runtime lifecycle, opaque native style
   bits, variable-font instances and device-specific fallback selection are not
   established by ordinary measurement-identity coverage.
