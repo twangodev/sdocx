@@ -2771,10 +2771,15 @@ geometry and immutable failure paths are separate regression controls. Its
 measured-layout adapter accepts a bounded ordinary ASCII/newline, LTR, native
 17/50/default-size profile with zero translation, exact integer width and no
 object/style/gravity/rotation variants. These comparisons establish the
-indexing kernel and admitted measured inputs; they do not establish production
-body routing, native page-bound conversion, obstacle production, document
-repagination or Composer/PDF output. The capture uses pinned host
-ICU 76.1/Unicode 16 services rather than device locale behavior.
+indexing kernel and admitted measured inputs. The
+[parsed-body adapter](../../crates/sdocx/src/render/native_body_pages.rs) consumes
+these typed sections for admitted complete-source layouts, retaining line and
+UTF-16 ranges separately from viewport ink. Its
+[parsed-source regressions](../../crates/sdocx/src/render/native_body_pages/tests.rs)
+cover source-owned routing and conservative saved-section/style/padding limits.
+General native page-bound conversion, obstacle production, document
+repagination and Composer/PDF appearance remain outside these comparisons.
+The capture uses pinned host ICU 76.1/Unicode 16 services rather than device locale behavior.
 
 Text `TextPaintImplSkia::getFontMetrics`, `0x7c16c`, calls
 `SkPaint::getFontMetrics` at `0x7c1ac`; `getFontSpacing`, `0x7c290`, delegates
@@ -2887,8 +2892,10 @@ The companion obstacle capture executes `updateObstacle`, `0xb2cfc`,
 `[0,-10,240,10]` and `[0,590,240,610]` at density one before object feedback.
 Its supplied page record has null `WPage`; equivalence to a genuine empty page
 object list is source evidence, not a nonnull-page execution control. These
-captures do not establish full document setup, page conversion or public
-clipping admission.
+captures do not establish full document setup or page conversion. A separate
+[public Rust one-page certificate](table-code-findings.md#certified-ordinary-one-page-cell-clipping)
+connects parsed source ownership, callback/cell geometry and shared vector clips;
+its supplied source record and finite-domain gates remain explicit.
 
 The split-band origin is a live parent-layout candidate, not the object's
 stored top. Text `GetBlockInfo` calls `m_CheckObjectChanged` only for entries

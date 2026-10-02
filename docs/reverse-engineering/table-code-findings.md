@@ -541,8 +541,23 @@ loading, decoded pixels and image painting. Strict independent replay matches
 the frozen 221,717 bytes across four fills `0x00`, `0x55`, `0xa5`, `0xff` and
 repeat zero. Recorded library/font/ICU/runtime provenance and supplied default
 width 1000/density 1 retain the shared live-table boundaries. Bodytext placement,
-document pagination, raster rendering and final writers do not execute. This
-capture adds no SDK image-admission or production painting claim.
+document pagination, raster rendering and final writers do not execute.
+
+Production preparation admits typed Image content at a valid source anchor,
+with absent/zero rotation and finite f32-projected positive dimensions. The
+[shared-engine regression](../../crates/sdocx/src/render/table/native_cell_image_tests.rs)
+matches six genuine image profiles through cold/warm preparation and one fresh
+resize: 13 states and 52 cells, including ordinary `AV` X positions and image
+X/baseline/height/ink coordinates by exact bits. Block available-width advance,
+encountered-object metrics and the native two-stage f32 alignment feed the same
+engine; entry layout top retains background-top semantics rather than raw line
+cursor semantics. Seven malformed-input guards preserve the admission boundary.
+Public SVG/replay/PDF controls check image geometry and selectable surrounding
+text. Source models remain unchanged. The resized SDK plan is freshly prepared
+and compares with the final native manual-notification state; retained cache
+lifetime and automatic observer dispatch are not reproduced. Native image
+pixels/media behavior and general saved-parser admission remain outside this
+proof.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -1950,7 +1965,8 @@ outer outlines share this artwork clip; page and parent paint translations
 retain its coordinate space. SVG/replay regressions check page mode and density,
 and PDF checks retain selectable text without image resources. Saved-frame
 fallback painting remains outside this prepared export contract.
-Text uses a separate pass with a conservative measured-table clip in the SDK.
+Text uses a separate pass. SDK tables without certified native source/placement
+context retain the conservative measured-table clip.
 The native per-run clip decision and cached-entry run-rectangle production are
 captured below. The [live writer capture](#captured-live-table-text-clipping)
 executes their combined native path with actual cloned content sources;
@@ -2003,8 +2019,10 @@ at `DrawnText` offsets 104–116 (`0x680e0`–`0x6810c`). The
 [text-bound capture](#retained-text-entry-and-run-bounds) executes these producer
 windows, and the [complete emitter capture](#complete-retained-text-run-emission)
 executes the ordinary cached-glyph run path separately from the Composer clip
-capture. The SDK's table-wide text
-clip does not reproduce the conditional native contract.
+capture. The SDK's compatibility table-wide clip does not reproduce the
+conditional native contract; the
+[bounded one-page adapter](#captured-ordinary-one-page-padding) now supplies
+the required source and placement context for its admitted profile.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -2070,11 +2088,12 @@ Bodytext callback source production, source parsing, device ICU, final backend
 clipping and pixels remain excluded. The [isolated Rust clip kernel](../../crates/sdocx/src/render/text/native_cell_clip.rs)
 replays all 132 supplied controls and all 47 actual produced runs, including
 eight selected clips and three successful intersections. It rejects nonfinite
-or overflowing geometry without normalizing native dimensions. It is not
-activated for table export because the required actual Model/source context
-is not supplied by that adapter. The production table-wide clip remains
-separate. This establishes the native writer path for these controls and its
-bounded decision kernel, without complete document export parity.
+or overflowing geometry without normalizing native dimensions. Production
+table export uses this decision only when retained source/placement context is
+certified, including the [ordinary one-page profile](#captured-ordinary-one-page-padding)
+below. Other contexts retain the compatibility table-wide clip. This establishes
+the native writer path for these controls and its bounded decision kernel,
+without complete document export parity.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -2485,7 +2504,8 @@ Full `SetDocument`/page-list conversion, page-indexer/group-range production,
 saved parsing, complete view setup, device ICU, aggregate cell visibility and
 PDF backend/pixels remain excluded. Shared pinned libraries/fonts/host services
 and recorded PDF/Paint foreground interfaces retain the previous capture's
-limits. This does not activate public SDK per-run clipping.
+limits. The [bounded one-page SDK composition](#captured-ordinary-one-page-padding)
+below separately verifies public per-run clipping for its admitted source.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -2533,8 +2553,36 @@ null-pointer boundary. Supplied document dimensions, selected page width,
 owner associations/page origins and text-derived group range remain inputs;
 full document setup/page conversion, page indexing, nonnull WPage selection,
 saved parsing, device ICU, aggregate visibility and final PDF backend/pixels
-remain excluded. No production image, pagination or public clipping activation
-claim follows from these captures.
+remain excluded from native execution.
+
+### Certified ordinary one-page cell clipping
+
+The bounded Rust composition now carries the actual source Model/placement
+context into table text export. The parsed regression
+[`parsed_document_exports_preserve_the_captured_parent_clips`](../../crates/sdocx/src/render/native_table_clip_tests.rs)
+matches this fixture's parent entry and callback bounds, four cell frames,
+six exported run origins and glyph X positions, and two conditional clip
+rectangles. Cached and fresh normal SVG agree; direct PDF retains selectable
+text, and parsed source models remain immutable. The serialized source must
+explicitly retain `TableContentBBox [0,0,160,8]`; absent content bounds are not
+normalized into that value. This parsed Rust control is separate from the
+native fixture's explicit constructor route, which bypasses saved parsing.
+
+Admission requires the retained ordinary U+FFFC source profile and supported
+cell/parent geometry, one page in mode 0 at density 1 with zero flow padding,
+and an empty original `Page.objects` list. The original Model source bounding
+box is authoritative through `BodyTextSlice`; positive physical page bounds
+and measured height zero remain separate. Page-padding and callback bands must
+match the native producer before the parent-entry certificate can supply
+per-cell Model/clip provenance. Changes from empty to nonempty to empty original
+page objects withdraw and restore that certificate and invalidate cached `Rc`
+plans; unchanged repeated renders reuse the plan. The
+[cache regression](../../crates/sdocx/src/render/native_table_cache_tests.rs)
+compares fresh/cached output at each transition. With nonempty page objects,
+the source lies outside this certificate and keeps compatibility clipping
+around its six source carriers. These checks establish the admitted public
+composition, not general pagination, native cache lifecycle, browser newline
+behavior or device pixels.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \

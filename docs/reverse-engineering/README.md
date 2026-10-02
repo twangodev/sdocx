@@ -243,7 +243,8 @@ Planning, task lists and development progress are kept outside these documents.
   measurement and native page-padding production, actual cold/warm column-width
   and source-change
   producers with opaque host UText, first-pair padding capacity and actual cloned
-  cell writer clip inputs, genuine document object feedback and Bodytext
+  cell writer clip inputs and a bounded public Rust ordinary-page clip certificate,
+  genuine document object feedback and Bodytext
   source-bound placement callbacks,
   cold/warm measurement, bounds, split caches, row-bottom compression, warm-row
   control, cell text dimensions, public layout lifecycle, visible rectangles and
