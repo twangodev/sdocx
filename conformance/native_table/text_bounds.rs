@@ -8,6 +8,8 @@ mod grouping;
 #[path = "text_runs.rs"]
 mod runs;
 
+#[path = "text_cached_snapshot.rs"]
+mod cached_snapshot;
 #[path = "text_ownership.rs"]
 mod ownership;
 
@@ -338,6 +340,16 @@ pub(super) fn capture_runs(machine: &mut Machine, base: &Path, text: &Path) {
 pub(super) fn capture_ownership(machine: &mut Machine, base: &Path, text: &Path) {
     load(machine, base, text);
     ownership::capture(machine);
+}
+
+pub(super) fn capture_cached_runs(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    runs::capture_cached(machine);
+}
+
+pub(super) fn capture_cached_ownership(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    ownership::capture_cached(machine);
 }
 
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {

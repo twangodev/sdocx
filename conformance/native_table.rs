@@ -77,6 +77,8 @@ mod text_object_runs;
 
 #[path = "native_table/table_grid_admission.rs"]
 mod table_grid_admission;
+#[path = "native_table/text_font_language.rs"]
+mod text_font_language;
 #[path = "native_table/text_object_export_policy.rs"]
 mod text_object_export_policy;
 #[path = "native_table/text_pdf_alpha.rs"]
@@ -1077,11 +1079,46 @@ fn main() {
             );
             return;
         }
+        Some(mode @ ("--text-cached-runs" | "--text-cached-ownership")) => {
+            let paths = [3, 4].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so and libSPenText.so paths required")
+            });
+            if mode == "--text-cached-runs" {
+                text_bounds::capture_cached_runs(
+                    &mut machine,
+                    Path::new(&paths[0]),
+                    Path::new(&paths[1]),
+                );
+            } else {
+                text_bounds::capture_cached_ownership(
+                    &mut machine,
+                    Path::new(&paths[0]),
+                    Path::new(&paths[1]),
+                );
+            }
+            return;
+        }
         Some("--font-metadata") => {
             let path = std::env::args_os()
                 .nth(3)
                 .expect("libSPenText.so path required");
             text_font_metadata::capture(&mut machine, Path::new(&path));
+            return;
+        }
+        Some("--font-language") => {
+            let paths = [3, 4, 5].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so, libSPenText.so and libSPenLibxml2.so paths required")
+            });
+            text_font_language::capture(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+            );
             return;
         }
         Some("--text-span-identity") => {
@@ -1333,7 +1370,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --font-metadata, --font-language, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

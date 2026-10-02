@@ -52,7 +52,7 @@ struct RunCase {
 }
 
 impl RunCase {
-    fn fixture(&self, machine: &mut Machine, fill: u8) -> String {
+    fn fixture(&self, machine: &mut Machine, fill: u8, cached: bool) -> String {
         let placements = self.placement.place_entries(machine, fill);
         machine.heap.cursor = HEAP;
         machine.heap.allocation_fill = fill;
@@ -220,6 +220,19 @@ impl RunCase {
                 OUTPUT_POINTERS + count as u64 * 8,
             );
         }
+        let snapshot = cached.then(|| {
+            cached_snapshot::CachedInput {
+                entries: ENTRIES,
+                caches: GLYPH_CACHE,
+                spans: SPANS,
+                source: CHARACTERS,
+                logical_map: LOGICAL_MAP,
+                count,
+                gravity: self.gravity,
+                paragraph_flag65: self.paragraph_flag65,
+            }
+            .snapshot(machine)
+        });
         scalar(machine.engine, 0, self.placement.offset[0]);
         scalar(machine.engine, 1, self.placement.offset[1]);
         let range = if self.subrange {
@@ -241,7 +254,7 @@ impl RunCase {
             .step_by(8)
             .map(|address| record(machine, read_u64(machine.engine, address)))
             .collect();
-        format!(
+        let mut fixture = format!(
             "{{\"name\":{:?},\"cursor\":{:?},\"margin\":{:?},\"font_size\":{:?},\"base_height\":{:?},\"pixels\":{:?},\"multiplier\":{:?},\"object_metric\":{},\"line_count\":{},\"offset\":{:?},\"gravity\":{:?},\"language\":{:?},\"long_language\":{},\"paragraph_flag65\":{},\"bitmap_font\":{},\"rtl\":{},\"span_flags\":{},\"preallocated_output\":{},\"range_inclusive\":{range:?},\"perturbation\":{:?},\"post_cursors\":{placements:?},\"entries\":[{}],\"runs\":[{}]}}",
             self.placement.name,
             self.placement.cursor,
@@ -264,7 +277,12 @@ impl RunCase {
             self.perturbation,
             inputs.join(","),
             runs.join(",")
-        )
+        );
+        if let Some(snapshot) = snapshot {
+            assert_eq!(fixture.pop(), Some('}'));
+            fixture.push_str(&format!(",\"cached_input\":{snapshot}}}"));
+        }
+        fixture
     }
 }
 
@@ -307,6 +325,14 @@ fn record(machine: &Machine, address: u64) -> String {
 }
 
 pub(super) fn capture(machine: &mut Machine) {
+    capture_mode(machine, false);
+}
+
+pub(super) fn capture_cached(machine: &mut Machine) {
+    capture_mode(machine, true);
+}
+
+fn capture_mode(machine: &mut Machine, cached: bool) {
     for (plt, target) in [
         (0xef290, TEXT + 0x78274),
         (0xef2a0, TEXT + 0x78074),
@@ -364,7 +390,7 @@ pub(super) fn capture(machine: &mut Machine) {
                         gravity,
                         ..ordinary()
                     };
-                    capture_case(machine, &mut captures, case);
+                    capture_case(machine, &mut captures, case, cached);
                 }
             }
         }
@@ -427,7 +453,7 @@ pub(super) fn capture(machine: &mut Machine) {
                     "x-gap" | "baseline" => case.perturbation = name,
                     _ => unreachable!(),
                 }
-                capture_case(machine, &mut captures, case);
+                capture_case(machine, &mut captures, case, cached);
             }
         }
     }
@@ -469,11 +495,11 @@ fn ordinary() -> RunCase {
     }
 }
 
-fn capture_case(machine: &mut Machine, captures: &mut Vec<String>, case: RunCase) {
-    let expected = case.fixture(machine, 0);
+fn capture_case(machine: &mut Machine, captures: &mut Vec<String>, case: RunCase, cached: bool) {
+    let expected = case.fixture(machine, 0, cached);
     for fill in [0xa5, 0xff] {
         assert_eq!(
-            case.fixture(machine, fill),
+            case.fixture(machine, fill, cached),
             expected,
             "{} memory fill",
             case.placement.name
