@@ -1,4 +1,14 @@
 use super::*;
+
+#[path = "text_shaping/skia_metrics.rs"]
+mod skia_metrics;
+
+#[derive(Clone, Copy)]
+enum CaptureTrace {
+    ShapeOnly,
+    Gpos,
+    SkiaMetrics,
+}
 use text_font_source::{NativeFontEnvironment, TEXT, bytes, json_string};
 
 const FONT: u64 = MODEL + 0x18000;
@@ -656,6 +666,7 @@ impl GposTrace {
 }
 #[derive(Default)]
 struct ShapeTrace {
+    skia: Option<skia_metrics::SkiaTrace>,
     gpos: Option<GposTrace>,
     calls: Vec<String>,
     pending: Option<String>,
@@ -824,12 +835,13 @@ struct TraceRecorder {
     state: Box<ShapeTrace>,
 }
 impl TraceRecorder {
-    fn new(machine: &Machine, gpos_font_range: Option<GposFontRange>) -> Self {
+    fn new(machine: &Machine, gpos_font_range: Option<GposFontRange>, trace_skia: bool) -> Self {
         let mut recorder = Self {
             engine: machine.engine,
             hooks: Vec::new(),
             state: Box::new(ShapeTrace {
                 gpos: gpos_font_range.map(GposTrace::new),
+                skia: trace_skia.then(skia_metrics::SkiaTrace::default),
                 ..ShapeTrace::default()
             }),
         };
@@ -854,6 +866,9 @@ impl TraceRecorder {
                 )
             });
             recorder.hooks.push(hook);
+        }
+        if trace_skia {
+            skia_metrics::add_hooks(&mut recorder);
         }
         recorder
     }
@@ -911,7 +926,9 @@ impl Case {
     ) -> String {
         host.reset();
         let gpos_font_range = trace.state.gpos.as_ref().map(|gpos| gpos.font_range);
+        let trace_skia = trace.state.skia.is_some();
         *trace.state = ShapeTrace {
+            skia: trace_skia.then(skia_metrics::SkiaTrace::default),
             gpos: gpos_font_range.map(GposTrace::new),
             ..ShapeTrace::default()
         };
@@ -1091,6 +1108,10 @@ impl Case {
                     .join(",")
             ));
         }
+        if let Some(skia) = &trace.state.skia {
+            output.pop();
+            output.push_str(&format!(",\"skia_metrics\":{}}}", skia.json()));
+        }
         output
     }
 }
@@ -1180,7 +1201,15 @@ fn numeric_cases() -> Vec<Case> {
 }
 
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Path, font: &Path) {
-    capture_cases(machine, base, text, skia, font, reference_cases(), false);
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        reference_cases(),
+        CaptureTrace::ShapeOnly,
+    );
 }
 
 pub(super) fn capture_numeric(
@@ -1190,7 +1219,15 @@ pub(super) fn capture_numeric(
     skia: &Path,
     font: &Path,
 ) {
-    capture_cases(machine, base, text, skia, font, numeric_cases(), false);
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        numeric_cases(),
+        CaptureTrace::ShapeOnly,
+    );
 }
 
 pub(super) fn capture_gpos(
@@ -1208,7 +1245,25 @@ pub(super) fn capture_gpos(
     let mut fused = Case::regular("pair_combining_fma", "AVx\u{327}\u{301}y", 17.125);
     fused.skew = f32::from_bits(0xbc0000f5);
     cases.push(fused);
-    capture_cases(machine, base, text, skia, font, cases, true);
+    capture_cases(machine, base, text, skia, font, cases, CaptureTrace::Gpos);
+}
+
+pub(super) fn capture_skia_metrics(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        skia_metrics::cases(),
+        CaptureTrace::SkiaMetrics,
+    );
 }
 
 fn capture_cases(
@@ -1218,8 +1273,10 @@ fn capture_cases(
     skia: &Path,
     font: &Path,
     cases: Vec<Case>,
-    trace_gpos: bool,
+    trace_kind: CaptureTrace,
 ) {
+    let trace_gpos = matches!(trace_kind, CaptureTrace::Gpos);
+    let trace_skia = matches!(trace_kind, CaptureTrace::SkiaMetrics);
     pinned_host(
         "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
         "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
@@ -1239,7 +1296,11 @@ fn capture_cases(
     machine.call_timeout_micros = 0;
     machine.call_instruction_limit = 10_000_000;
     let mut environment = NativeFontEnvironment::new(machine, base, text, skia, font);
-    let mut trace = TraceRecorder::new(machine, trace_gpos.then(|| GposFontRange::from_font(font)));
+    let mut trace = TraceRecorder::new(
+        machine,
+        trace_gpos.then(|| GposFontRange::from_font(font)),
+        trace_skia,
+    );
     let mut host = HostIcu::new(machine);
     let icu_version = host.version("u_getVersion");
     let unicode_version = host.version("u_getUnicodeVersion");
@@ -1285,6 +1346,10 @@ fn capture_cases(
     if trace_gpos {
         output.pop();
         output.push_str(",\"gpos_capture_boundary\":\"Actual bundled HarfBuzz ValueFormat4 horizontal x_advance path only: source signed16-bit GPOS value, nativefont signed16.16 multiplier, executed product/shift and destination positions before/after. Source offsets index the pinned supplied font bytes. Actual local skew fmsub operands/result are captured separately before horizontal pen addition. Other ValueFormats, anchors, device/variation adjustments and general GPOS parity are not established.\",\"gpos_hook_addresses\":[852284,852300,852304,852316],\"shear_hook_addresses\":[641712,641716]}");
+    }
+    if trace_skia {
+        output.pop();
+        output.push_str(",\"skia_metric_capture_boundary\":\"Actual Skia scaler constructor captures backend size, residual float matrix, FT fixed matrix, filtered hint/bitmap flags, FT load flags, FT size/scale. Actual FT_Get_Advance cached advance stores and full FT_Load_Glyph outline points before/after its outer transform execute on the pinned supplied Roboto. First-use cached fields are null until an executed native store; subsequent before fields are read and checked against that store. No raster pixels, other fonts, bitmap/variable fonts or general text composition parity is established.\",\"skia_metric_hook_addresses\":[2610356,2612020,2612024,2612076,2613224,2613228,2614108,2614144,1043632]}");
     }
     println!("{output}");
 }
