@@ -239,7 +239,9 @@ Planning, task lists and development progress are kept outside these documents.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   bounded table/code records, merge construction, frame ownership and paint
   visibility; captured borders, fills, column minima, saved height limits,
-  live child measurement, actual cold/warm column-width and source-change
+  live child/image measurement and resize, ordinary one-page zero-height
+  measurement and native page-padding production, actual cold/warm column-width
+  and source-change
   producers with opaque host UText, first-pair padding capacity and actual cloned
   cell writer clip inputs, genuine document object feedback and Bodytext
   source-bound placement callbacks,

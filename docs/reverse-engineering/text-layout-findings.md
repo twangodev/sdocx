@@ -2875,6 +2875,21 @@ constraint 2, `OverPages`, preserves the full band.
 `onUpdateObjectSize`, `0xb0b9c`, passes this choice at `0xb0dd8` and supplies
 the resulting vector to object-layout virtual slot 16 at `0xb0de4`.
 
+The [ordinary one-page capture](table-code-findings.md#captured-ordinary-one-page-measurement)
+executes `BodyTextDocument(false)`, `GetPageTotalHeight(false)` and complete
+`BodyTextLayout::measureText`, `0xb2e54`. A single supplied physical page and
+Model document rectangle have height 600, while the last-page offset is zero:
+measurement therefore passes Widget layout height zero. Default ordinary Model
+text retains effective size 17 and empty raw font/foreground span lists;
+an explicit size-50 control is separate from constructed cell defaults.
+The companion obstacle capture executes `updateObstacle`, `0xb2cfc`,
+`MakeObstacle`, `0xb8964`, and `updatePagePaddingRect`, `0xb8dfc`, producing
+`[0,-10,240,10]` and `[0,590,240,610]` at density one before object feedback.
+Its supplied page record has null `WPage`; equivalence to a genuine empty page
+object list is source evidence, not a nonnull-page execution control. These
+captures do not establish full document setup, page conversion or public
+clipping admission.
+
 The split-band origin is a live parent-layout candidate, not the object's
 stored top. Text `GetBlockInfo` calls `m_CheckObjectChanged` only for entries
 whose `IsObjectOverPages` flag is set (`0x6ae10`–`0x6ae7c`); Widget conversion

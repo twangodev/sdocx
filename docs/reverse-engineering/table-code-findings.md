@@ -505,6 +505,59 @@ validates its rigid shaping projection and diagnoses unsupported positioning.
 cmp /tmp/table-text-cell-source-inputs.json conformance/table-text-cell-source-inputs.json
 ```
 
+### Captured live cell images
+
+[`table-live-cell-images.json`](../../conformance/table-live-cell-images.json),
+SHA-256 `88351ebe30102d23f31ec96a12a757d632068d00e5fba5d8b90d700e3d5bc00f`,
+records eight cases, 16 cold/warm states, 64 physical-child observations and
+188 dense entries, plus one actual warm image-size notification. The
+[capture module](../../conformance/native_table/live_cell_images.rs) executes
+genuine Model Image constructor/Construct (`0x420328`, `0x420450`), source
+`SetRect` (`0x397708`), ObjectSpan setters and public cell `AppendObjectSpan`
+(`0x3c26e8`). Accepted Image type 3 inserts U+FFFC into `AV`; genuinely
+constructed Table type 22 and Code type 23 are rejected by this public insertion
+API without changing source text/count. This does not establish saved-parser
+admission rules.
+
+Actual TableLayout cold Measure/warm Layout and Widget conversion, shaping and
+placement consume the object source. Inline width/height derive from native
+image bounds; block controls retain visible image width 30.5 while their dense
+advance is 80, with object margins 10/10 or 20/20. Source review of
+`measureObjectSpan`, Text `0x779d0`, distinguishes inline byte 64 from the block
+route: `0x77a94`–`0x77ab0` subtracts MeasureParams left and right from available
+width in two f32 steps and stores that advance. The visible width used for ink
+is separate. `GetBlockInfo`, `0x6ad54`, sets its object-encounter flag before
+fit selection, so an excluded object can retain that flag; this is not a claim
+that every encountered object belongs to the selected block. Selected block
+width and alignment later use the visible ink width (`0x6b15c`–`0x6b1ac`,
+`0x6c61c`–`0x6c678`).
+
+The tall-image control changes source size from 30×150.25 to 55.5×205.75 and
+executes native `onObjectSpanChanged`, Drawing `0xb0d6c`, and Widget's actual
+size-change/conversion route while retaining the warm cache. Image bounds,
+options/constraints and that resize are caller controls; measured dimensions,
+dense entries and callback outputs are native. Nil media/bitmap data excludes
+loading, decoded pixels and image painting. Strict independent replay matches
+the frozen 221,717 bytes across four fills `0x00`, `0x55`, `0xa5`, `0xff` and
+repeat zero. Recorded library/font/ICU/runtime provenance and supplied default
+width 1000/density 1 retain the shared live-table boundaries. Bodytext placement,
+document pagination, raster rendering and final writers do not execute. This
+capture adds no SDK image-admission or production painting claim.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --live-cell-images scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-cell-images.json
+cmp /tmp/table-live-cell-images.json conformance/table-live-cell-images.json
+```
+
 ## Cell layout frames and integer text dimensions
 
 Drawing `TableLayout::layoutCell`, `0xb06d4`, looks up the text wrapper and
@@ -2384,6 +2437,119 @@ SVG/PDF writer behavior, and does not extend `NativePaintPlan` to kind 5.
   scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-placement.json
 cmp /tmp/table-bodytext-placement.json conformance/table-bodytext-placement.json
+```
+
+### Captured ordinary one-page measurement
+
+[`table-bodytext-one-page-placement.json`](../../conformance/table-bodytext-one-page-placement.json),
+SHA-256 `cc0810421dceddffaa3454e8010ece57d7afddcce1f67dba1b662eeea4acd15a`,
+records three controls: one table object and two ordinary text sources. The
+[Bodytext capture](../../conformance/native_table/bodytext_table_placement.rs)
+and [ordinary text observer](../../conformance/native_table/bodytext_one_page_text.rs)
+execute genuine `BodyTextDocument(false)`, `0xa8c3c`, its actual infinite-scroll
+getter (`0xa98a8`) and complete `BodyTextLayout::measureText`, `0xb2e54`.
+Native page max-width (`0xa98c8`) and total-height (`0xa98e0`) getters consume
+the supplied one-page record. `GetPageTotalHeight(false)` returns last-page
+offset 0 and supplies Widget layout height zero; including the last page returns
+600. The physical page record and Model document rectangle retain positive
+height 600. Thus the measured Widget height is not the supplied physical height.
+
+Actual Model document/Widget conversion, NAME/font measurement, paragraph
+placement, text bounds and cached emission execute. The object U+FFFC and
+ordinary `AV abc` source retain common data with empty raw font-size and
+foreground span lists; effective font size is 17. The separate explicit-font-50
+control has a real size-50 span and wraps `AV abc AV` at native width 40.
+Source styles are observed after producer outputs. The table-object control
+executes ordinary `GetObjectUpdateInfo` page-range lookup, `0xf2480`, Bodytext
+placement/notifications and three real cloned-writer stages: 18 foreground
+runs, ten selected clips, six successful and four failed intersections.
+The text-only controls retain six/nine dense entries and one/eight emitted runs;
+they do not execute table-object callbacks or Composer writers.
+
+Six passive Model state observations follow first `SetRect` entry/completion,
+`SetContentSize` entry/completion and moved-origin `SetRect` entry/completion.
+The observed implementation windows are `0x3c6f78` / `0x3c7058` and
+`0x3c6ae4` / `0x3c6b50`. They retain raw/content rectangles, column widths,
+row heights and maxima. The first `SetRect` retains saved row heights while
+moving the raw/content bounds; `SetContentSize` then expands those bounds.
+Both columns remain 80, both saved rows remain 4 and row maxima remain
+`f32::MAX` throughout these controls. These transitions distinguish saved
+dimensions from later content-size feedback.
+
+Strict independent replay matches all 167,494 bytes across fills `0x00`,
+`0x55`, `0xa5`, `0xff` and repeat zero. Supplied one-page integer records,
+selected maximum widths, owner/document/Widget associations, page-view origins
+and group range from actual native text length bound the experiment.
+`IsInfiniteScrollDocument=false` is native; it is not an interface override.
+Full `SetDocument`/page-list conversion, page-indexer/group-range production,
+saved parsing, complete view setup, device ICU, aggregate cell visibility and
+PDF backend/pixels remain excluded. Shared pinned libraries/fonts/host services
+and recorded PDF/Paint foreground interfaces retain the previous capture's
+limits. This does not activate public SDK per-run clipping.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --bodytext-table-placement-one-page-zero-height scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-one-page-placement.json
+cmp /tmp/table-bodytext-one-page-placement.json conformance/table-bodytext-one-page-placement.json
+```
+
+### Captured ordinary one-page padding
+
+[`table-bodytext-one-page-obstacles.json`](../../conformance/table-bodytext-one-page-obstacles.json),
+SHA-256 `0a919c37edba851e952c112a8d0ac4f1c4a58f6856b5d118fd26ad75098d5da5`,
+records one ordinary table-object control with actual page-padding production.
+Genuine Widget TextManager (`0xaeea0`, configured width 360/density 1),
+BodyTextPageObstacle (`0xb869c`) and complete `updateObstacle`, `0xb2cfc`,
+execute `MakeObstacle`, `0xb8964`, and `updatePagePaddingRect`, `0xb8dfc`.
+Native Constants 63/64/65/66, document page-list/max-width/height getters and
+actual list traversal produce padding `[0,-10,240,10]` and `[0,590,240,610]`;
+these rectangles are not seeded. Two genuine object-size callbacks pass the
+first pair and then relative `[0,580,240,600]` into Drawing split handling at
+`0xad040`. The actual document bound is
+`[0,10.000999450683594,161,102.8010025024414]`.
+
+Native document measurement, ordinary page-range lookup, source cell feedback,
+placement/notifications, six passive Model transitions and three cloned-writer
+stages retain the ordinary capture's execution. The writer records 18 runs,
+ten selected clips, six successful intersections, 48 position floats and
+30 balanced Paint creations/releases. Strict independent replay matches all
+81,555 bytes under four fills and repeat zero.
+
+The supplied page record has a null WPage pointer, so native nontext obstacle
+selection returns an empty list. Source review of a genuine empty page-object
+list supports the same empty-selection result, but no nonnull WPage runtime
+control executes. The native padding producer is established for this explicit
+null-pointer boundary. Supplied document dimensions, selected page width,
+owner associations/page origins and text-derived group range remain inputs;
+full document setup/page conversion, page indexing, nonnull WPage selection,
+saved parsing, device ICU, aggregate visibility and final PDF backend/pixels
+remain excluded. No production image, pagination or public clipping activation
+claim follows from these captures.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --bodytext-table-placement-one-page-native-obstacles scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-one-page-obstacles.json
+cmp /tmp/table-bodytext-one-page-obstacles.json conformance/table-bodytext-one-page-obstacles.json
 ```
 
 ### Final PDF text clip paths

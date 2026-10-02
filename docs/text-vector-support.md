@@ -175,8 +175,9 @@ and compatibility ownership/adjacency remain unverified.
   explicit, and upstream document-bound callbacks, parent writer placement and
   final PDF backend clipping remain outside it. The isolated typed decision
   kernel matches 132 supplied controls and all 47 actual runs; production still
-  retains its conservative table-wide clip because the native Model/source
-  context is not available to that adapter.
+  retains a conservative table-wide scope outside certified Model/source
+  contexts. Native helper transport evidence remains separate from public
+  document clipping admission.
   [Genuine Bodytext placement](reverse-engineering/table-code-findings.md#captured-bodytext-table-placement)
   separately executes document object feedback, real GetTextBound/affine Model
   placement and cell-source updates before cloned writing for three supplied
@@ -185,6 +186,13 @@ and compatibility ownership/adjacency remain unverified.
   it. A geometry-only `NativeObjectEntryBounds` adapter matches the three profiles
   in Flow/Capture; kind-5 cached glyph/run/font/style and parent writer parity
   are outside that adapter and the full-source text paint certificate.
+  [Ordinary one-page captures](reverse-engineering/table-code-findings.md#captured-ordinary-one-page-measurement)
+  additionally execute real `BodyTextDocument(false)` measurement at height zero
+  despite a positive physical page rectangle, then native ±10 page-padding
+  production, source feedback and cloned writing. The supplied page has null
+  `WPage`; an empty parsed object list has source-only equivalence, without
+  a nonnull runtime control. Public clipping admission is separate from these
+  native producer and recording-writer results.
   [Cell/content rectangle setters](reverse-engineering/table-code-findings.md#cell-content-model-rectangles)
   are captured independently; equal cell frames can preserve different content
   bounds, and native Model/drawn rectangles can diverge.

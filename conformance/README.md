@@ -228,6 +228,7 @@ Native reference coverage is narrower than synthetic coverage:
 | [`table-backgrounds.json`](table-backgrounds.json) | Native cell/table getters agree on 720 selected colors across 40 synthetic grids; Rust matches heading overrides, owned colors and default inheritance. | Model selection only; light/dark SVG/replay/PDF tests check fill alpha and composited text surfaces separately. See [background findings](../docs/reverse-engineering/table-code-findings.md#cell-background-selection). |
 | [`table-column-minima.json`](table-column-minima.json) | Native Drawing selects the smallest present cached width, clamps it to the saved per-column minimum, and returns that saved minimum immediately if any layout is missing. Covers 179 synthetic inputs and 182 column queries. | Supplied optional cache widths; no native text shaping, column resizing or merged-frame construction. Rust export retains saved column widths. See [column findings](../docs/reverse-engineering/table-code-findings.md#column-minimum-cache-selection). |
 | [`table-live-column-widths.json`](table-live-column-widths.json) | Actual cold/warm cell measurement, optional minimum widths and source-edit OnCellChanged/Model setter/resize: 10 profiles, 101 width producer observations and five allocation-fill samples, with independent byte-exact replay. | Caller source, widths/margins and replacement-event fields are supplied; measured widths and caches are native-produced. Host ICU uses opaque real UText with guarded guest access. No editing-event producer, SDK source-edit callback or cold-export autosizing claim. See [live column widths](../docs/reverse-engineering/table-code-findings.md#captured-live-column-widths). |
+| [`table-live-cell-images.json`](table-live-cell-images.json) | Genuine Image/source construction, public cell ObjectSpan insertion and native cold/warm TableLayout/Widget measurement: eight cases, 16 states and 64 child observations, with a native source-resize notification. Independent five-fill replay agrees. | Image bounds/options are supplied; measured dimensions are native-produced. Nil media data excludes pixels/loading. Constructed Table/Code insertion rejects without source mutation; serialized parser policy is separate. No Bodytext placement or final writer. See [cell images](../docs/reverse-engineering/table-code-findings.md#captured-live-cell-images). |
 | [`table-cold-frames.json`](table-cold-frames.json) | Native initialization and supplied row updates for 93 inputs, 1,082 slot frames and 532 explicit changes; Rust matches coordinate and pending-gap bits. Includes merged grids and covered-span chains. | Text initialization is isolated; growth decisions, final merged sizing and pagination selection are outside this capture. See [frame-cache findings](../docs/reverse-engineering/table-code-findings.md#cold-frame-cache-and-row-updates). |
 | [`table-cold-rows.json`](table-cold-rows.json) | Native cold sizing for 160 inputs and 163 runs; Rust matches 704 raw-cell measurement selections/inputs, split caches, pending gaps and 1,356 resulting slot frames. | Supplied heights with native frame/difference/row routines; text initialization, measurement, update, padding assignment, font selection, synchronization and diagnostics are isolated. Complete merged preparation and device pagination remain unverified. See [cold-sizing findings](../docs/reverse-engineering/table-code-findings.md#cold-row-sizing-from-raw-cell-measurements). |
 | [`table-warm-rows.json`](table-warm-rows.json) | Native warm sizing reads frame-owner measurements for 158 inputs and 1,285 slot frames; Rust matches coordinate and pending-gap bits, including small-height thresholds, null layouts and merged owners. | Measured heights are supplied; text initialization is isolated. Native text measurement, complete merged pagination and device appearance are outside this capture. See [warm-sizing findings](../docs/reverse-engineering/table-code-findings.md#warm-row-sizing-from-cached-owner-measurements). |
@@ -240,6 +241,8 @@ Native reference coverage is narrower than synthetic coverage:
 | [`table-live-padding.json`](table-live-padding.json) | Actual live TableLayout and child producers with nonempty padding filtering, bottom sorting and native capacity getters: 10 cases, 20 states, 80 child observations and 40 getter checks. Rust matches table/cell geometry and per-line vertical bounds. | Source/device/document inputs and local split bands are supplied. Capacity is the first sorted pair's gap, not the minimum across all gaps; requested line height above it falls back to base font height before collision. No band producer, warm-cache lifecycle, horizontal bidi/ink or final writer parity. See [live padding](../docs/reverse-engineering/table-code-findings.md#captured-live-table-padding). |
 | [`table-live-text-clipping.json`](table-live-text-clipping.json) | Genuine native factory clone, second TableLayout measurement/placement, cached emission and complete Table writer text functions: 11 cases, 44 physical cells, 47 runs, eight clip selections (three successful/five failed intersections) and 156 position floats. Independent replay agrees across five allocation-fill samples. | Caller selects every physical cell; parent retained placement, aggregate writer visibility and upstream document source-bound callbacks are excluded. Default source rectangles come from native construction/copy; named controls use explicit native setters. PDF paint/draw are recording interfaces. Horizontal overflow alone does not select a clip; The isolated Rust kernel matches all 47 runs and 132 supplied controls; production clip activation remains excluded. See [live text clipping](../docs/reverse-engineering/table-code-findings.md#captured-live-table-text-clipping). |
 | [`table-bodytext-placement.json`](table-bodytext-placement.json) | Actual Model document U+FFFC insertion, Widget object feedback, document GetTextBound, Bodytext affine placement/cell bridge and cloned cell writer before/after source updates: three cases, nine writer stages, 54 runs and 30 clip selections. Two independent strict five-fill replays are byte exact. | Document/Widget bounds, owner associations, finite one-page interface and page origins are supplied; no source cell setters or host object dimensions. Full document setup, page-bound production, aggregate writer visibility and final PDF backend are excluded. Source context does not establish a general Rust parent/object certificate. See [Bodytext placement](../docs/reverse-engineering/table-code-findings.md#captured-bodytext-table-placement). |
+| [`table-bodytext-one-page-placement.json`](table-bodytext-one-page-placement.json) | Complete ordinary BodyTextDocument(false) and measureText feed Widget layout height zero while physical page/model height remains 600. Three cases cover actual table feedback/writing plus default-size 17 and size-50 plain-text sources; six observed Model SetRect/SetContentSize transitions. Independent five-fill replay agrees. | Page integer record, width, owner associations and group range are supplied. No full SetDocument/page conversion, page-indexer/group-range producer or public clipping admission claim. See [ordinary one-page measurement](../docs/reverse-engineering/table-code-findings.md#captured-ordinary-one-page-measurement). |
+| [`table-bodytext-one-page-obstacles.json`](table-bodytext-one-page-obstacles.json) | Complete native obstacle/page-padding production installs genuine ±10 bands at the two page boundaries, then actual measurement/feedback/placement and three cloned writer stages execute for one ordinary-page profile. Independent five-fill replay agrees. | Supplied page record has null WPage; genuine empty Page.objects equivalence is source evidence, without a nonnull WPage runtime control. Full setup/page/group producers, aggregate writer visibility and final PDF backend remain excluded. See [one-page padding](../docs/reverse-engineering/table-code-findings.md#captured-ordinary-one-page-measurement). |
 | [`table-lifecycle.json`](table-lifecycle.json) | Public native `Measure`/`Layout` calls for 69 dense unmerged/merged grids; Rust matches 839 cell selections, 1,665 frame snapshots, split caches, gaps, content/measured bounds and warm first-page minima. Dirty `Layout` and repeated clean `Measure` are checked. | Fixed text caches; text initialization/update/measurement, padding/font selection, diagnostics and final observers are isolated. Native shaping, complete merged preparation and device pagination remain unverified. See [lifecycle findings](../docs/reverse-engineering/table-code-findings.md#public-table-measurement-and-layout-lifecycle). |
 | [`table-clipping.json`](table-clipping.json) | Native visible rectangles and actual canvas clip arguments for 55 states, 1,690 queries and 1,240 clip calls; covers merged endpoints, boundary comparisons, band order, signed offsets and outward rounding. | Empty text caches; allocation/fill/move and canvas recording are host supplied. Caller display-rectangle selection, text-pass clipping, Rust clip parity and device appearance remain unverified. See [clipping findings](../docs/reverse-engineering/table-code-findings.md#visible-rectangles-and-canvas-clipping). |
 | [`table-export-clipping.json`](table-export-clipping.json) | Native Composer artwork crop and fresh Drawing display defaults for 78 inputs; Rust matches every crop coordinate bit. Covers page/body margins, intersection misses, edge neighbors and outward rounding. | Supplied bounds/page sizes/scaled margins; constructor logging and canvas recording are isolated. No bitmap factory or pixels execute. Text clipping is separate; complete device appearance remains unverified. See [export crop findings](../docs/reverse-engineering/table-code-findings.md#export-artwork-crop). |
@@ -627,6 +630,17 @@ cmp /tmp/table-live-padding.json conformance/table-live-padding.json
   scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-column-widths.json
 cmp /tmp/table-live-column-widths.json conformance/table-live-column-widths.json
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --live-cell-images scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-cell-images.json
+cmp /tmp/table-live-cell-images.json conformance/table-live-cell-images.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
   --bodytext-page-ranges scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
@@ -663,6 +677,32 @@ cmp /tmp/table-live-text-clipping.json conformance/table-live-text-clipping.json
   scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-placement.json
 cmp /tmp/table-bodytext-placement.json conformance/table-bodytext-placement.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --bodytext-table-placement-one-page-zero-height scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-one-page-placement.json
+cmp /tmp/table-bodytext-one-page-placement.json conformance/table-bodytext-one-page-placement.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --bodytext-table-placement-one-page-native-obstacles scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-one-page-obstacles.json
+cmp /tmp/table-bodytext-one-page-obstacles.json conformance/table-bodytext-one-page-obstacles.json
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
   --code-layout scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-code-layout.json
