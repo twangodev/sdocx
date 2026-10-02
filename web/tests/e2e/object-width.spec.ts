@@ -11,11 +11,13 @@ interface WidthCase {
 	wrapped: boolean;
 }
 
-// Independent native expectations in crates/sdocx/tests/object_width_feedback.rs.
+// conformance/table-text-shaping-consumer-metrics.json: native_AB_F10 A = 652 paint units.
+const nativeAAdvance = Math.fround(652 / 100);
+
 const cases: WidthCase[] = [
-	{ width: 260, constraint: 0, bX: 35.5234375, wrapped: false },
-	{ width: 260, constraint: 1, bX: 67.5234375, wrapped: false },
-	{ width: 260, constraint: 2, bX: 67.5234375, wrapped: false },
+	{ width: 260, constraint: 0, bX: Math.fround(nativeAAdvance + 29), wrapped: false },
+	{ width: 260, constraint: 1, bX: Math.fround(nativeAAdvance + 61), wrapped: false },
+	{ width: 260, constraint: 2, bX: Math.fround(nativeAAdvance + 61), wrapped: false },
 	{ width: 70, constraint: 1, bX: 0, wrapped: true },
 	{ width: 70, constraint: 2, bX: 0, wrapped: true }
 ];
