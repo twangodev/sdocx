@@ -46,8 +46,8 @@ default absent name and differs from a nonnull empty name. Font size uses
 native floating-point comparison: positive and negative zero compare equal,
 while NaN does not compare equal. The captured semantic comparison also covers equal names
 containing Chinese characters and a surrogate pair. Padding is not identity:
-bytes 17–23, 41–43 and 68–71 are
-not initialized by the captured constructor. Members 44, 52 and 60 are ignored
+bytes 17–23, 41–43 and 68–71 are not initialized by the captured constructor.
+Members 44, 52 and 60 are ignored
 by this predicate. Inline byte 64, over-pages byte 65 and math-answer byte 67
 also do not participate in this span comparison.
 
@@ -119,6 +119,74 @@ it does not implement Samsung theme behavior. Allocation, deletion and memory
 initialization are host interfaces. Serialized span decoding, range/caret
 selection, shaping, font selection, run emission, clipping and rendering do
 not execute in this capture.
+
+### Native binary boundaries
+
+[`table-text-span-binary.json`](../../conformance/table-text-span-binary.json),
+SHA-256 `0e8437fead4285c0ead18349f8708309219c74c6aae8a2acc83bec9fdbbc1c7b`,
+contains 237 cases: 17 full version-7 records, 20 full version-8 records and
+200 truncated version-8 records, using document type 2. The
+[capture module](../../conformance/native_table/text_span_binary.rs) executes
+`TextStyleFactory::CreateSpan`, `0x415db4`, complete native
+`ApplyBinary`/`GetBinary`/`GetBinarySize`, property getters, Base String
+conversion and native List operations. Native WDoc header reading at `0x40cfb4`
+and buffer checks at `0x2784a4` execute unchanged. Every serialized result
+repeats with memory fills `0x00`, `0xa5` and `0xff`.
+
+| Span | ApplyBinary | GetBinary | GetBinarySize | Captured binary contract |
+| --- | --- | --- | --- | --- |
+| Foreground, type 1 | `0x40a858` | `0x40a78c` | `0x40a728` | ARGB `u32`; version 8 adds color-type `u32`, and the writer emits both |
+| Font name, type 4 | `0x4097fc` | `0x40974c` | `0x4096d0` | Reserved bytes, `u16` byte length including NUL, then string bytes |
+| Composing background, type 15 | `0x415684` | `0x41567c` | `0x415674` | Reads ARGB and skips the version-8 tail; size is -1 and writing returns false |
+| Composing, type 16 | `0x4150a8` | `0x4150a0` | `0x415098` | Reads one nonzero-normalized boolean, skips three padding bytes and the version-8 tail; size is -1 and writing returns false |
+| Composing tag, type 18 | `0x415c0c` | `0x415c04` | `0x415bfc` | Same boolean/padding/tail layout; size is -1 and writing returns false |
+| Suggestion, type 21 | `0x418bf8` | `0x418a30` | `0x418908` | Suggestion type, underline ARGB and string count as `u32`, followed by `u16` UTF-16 unit count and units per string |
+| Spell correction, type 22 | `0x419770` | `0x419768` | `0x419760` | Applying and writing return false; size is -1 |
+
+These methods distinguish an in-memory span from a writable persisted span.
+In particular, the successful Widget correction conversion above does not
+establish a persisted correction payload. The native correction binary methods
+reject the operation before consuming even the supplied header.
+
+Font-name version 7 skips four reserved bytes; version 8 skips eight. The writer
+always reserves eight bytes without initializing them. Capture output buffers
+are explicitly zeroed, so their zeros are capture initialization rather than
+native serialization of a meaningful zero field. Factory construction creates
+a nonnull empty String; the captured binary format has no null-name marker.
+
+Base `String::Set(char*)`, `0xc3934`, reads the supplied NUL-terminated name.
+Native decoding accepts both UTF-8 and CESU-8 for `字体𝄞`. Native writing emits
+the supplementary character as two encoded surrogates
+`ed a0 b4 ed b4 9e`, increasing the byte count relative to UTF-8.
+An embedded NUL in `Ro\0boto` truncates the native String to `Ro`, while the
+reader's consumed count advances through the complete declared field. The
+writer then emits only the canonicalized name. Missing terminators and
+zero-length fields are outside this capture because their native C-string
+read is not bounded by the declared field. Rust's bounded rejection of those
+inputs is a separate safety policy.
+
+Suggestion strings use UTF-16 unit counts, including surrogate pairs. Empty
+entries are omitted from the decoded list and subsequent serialization. A
+count of `0xffffffff` produces an empty list through the native signed loop
+condition. The native consumed-byte counter adds each string's unit count
+rather than twice that count, even though its read pointer advances through
+the correct UTF-16 bytes. The fixture records this discrepancy: the two-string
+48-byte case reports 40 bytes consumed. It does not normalize the native
+counter into a correct byte offset.
+
+Truncated records can leave partial header or property mutations after failure;
+the capture records those states. They retain the complete initialized backing
+record and reduce only the native available-count argument; they do not place
+an unmapped-memory boundary at that offset. Every source record is at most 256
+bytes, names at most 64 bytes, and suggestion strings at most 64 UTF-16 units.
+Supplied suggestion lists contain at most four entries apart from the explicit
+negative-count case. All records use the 16-byte WDoc header; the legacy
+12-byte document header path is outside this capture.
+Allocation, deletion, memory copy/move,
+initialization, string-length and single-thread mutex operations are host
+interfaces; diagnostic logging is isolated. Whole-document parsing, native
+span traversal, Widget conversion, shaping, grouping and rendering do not
+execute in this binary capture.
 
 ## Font metadata
 
@@ -193,10 +261,22 @@ the captured emitter produces an initial empty `[0, 0]` run, default size 17
 and font ID `0xffffffff`, followed by the real glyph run. Empty ranges/records
 cannot be inferred solely from the set of glyph-owner indices.
 
+Owned zero-advance glyphs are a separate case. The first run entry directly
+initializes its layout rectangle, preserving a zero-width rectangle such as
+`[4.25, 8, 4.25, 35]`. Text `0x672a4`–`0x672b0` compares the current source
+index with the run start; the equal branch copies both rectangles directly at
+`0x672c8`. Later entries call Base `Rect::Union` at Text `0x672e0` for ink
+and `0x672ec` for layout. Base `0xb1538` skips an incoming rectangle when
+left is greater than or equal to right (`0xb1540`–`0xb1544`), or top is
+greater than or equal to bottom (`0xb1550`–`0xb1554`). An empty accumulator
+instead accepts the next nonempty rectangle at `0xb15ac`–`0xb15b8`.
+A drawable owner's zero advance or zero ink therefore does not make it an
+unowned continuation; it can still contribute glyphs and identity.
+
 [`table-text-ownership.json`](../../conformance/table-text-ownership.json),
-SHA-256 `2773117ab2a4e36bd30348de23f47960ae51cdb3ec2b37b1ad61ca4fd8a253c0`,
-contains 32 cases, 108 UTF-16 entries, 78 supplied glyphs, 34 emitted runs and
-78 output glyphs. The
+SHA-256 `a06f8c07d2167aa2dead23d220870da8dec664fa3f32147b4b51bce796b5f683`,
+contains 38 cases, 124 UTF-16 entries, 94 supplied glyphs, 40 emitted runs and
+94 output glyphs. The
 [capture module](../../conformance/native_table/text_ownership.rs) executes
 the native entry constructor, the `SpanRunFunctor` window
 `0x77324`–`0x77894`, `ParagraphLayout::SetLayout`, `0x6b4a4`, complete
@@ -235,16 +315,37 @@ clip selection or appearance, and does not claim Firefox/WebKit parity.
 ## Current Rust representation
 
 Rust retains raw serialized spans and decodes ordinary font/style properties.
+`decoded_font_name_value()` accepts valid native UTF-8/CESU-8 names, borrowing
+UTF-8 or converting encoded surrogate pairs to Unicode. Style selection and
+painting use that decoded value while the original span payload stays intact.
+The accessor uses the modern eight-reserved-byte framing. Version-7 input
+framing remains unsupported, and bounded Rust decoding rejects embedded NUL
+fields rather than reproducing native prefix truncation.
 Its paint `TextStyle` does not carry the complete native span comparison
 members, including both raw background colors and correction fields. Foreground
 painting keeps RGB rather than the compared native ARGB value.
 
+Hyperlink styling follows the captured native type gate: types 1–9 enable
+hypertext styling; type 0, 10 and the maximum unknown value do not add blue
+foreground, underline or an anchor. Rust regressions cover these five captured
+type values across body text, placed text, table cells and code text.
+Composition, suggestion and correction span appearance remains unimplemented.
+The Rust engine reports `UnsupportedCompositionStyle`,
+`UnsupportedSuggestionStyle` and `UnsupportedCorrectionStyle` for valid source
+ranges with rendered characters. Diagnostics retain source ownership, including
+nested objects; empty, invalid, surrogate-interior and separator-only ranges do
+not report those appearance diagnostics.
+
 Measured runs retain a selected `ResolvedFace`, synthesis, direction and shaped
-glyphs; they do not retain native bitmap/language metadata. `ResolvedFace.id`
-is the current face identity, with no proven equivalence to Samsung's source
-instance/cache behavior. HarfBuzz byte clusters are mapped to Rust character
-ranges; they are not native per-UTF-16 entry slots. Rust's f64 cluster positions
-also differ from the native f32 adjacency predicate.
+glyphs. `ResolvedFace::is_bitmap_font()` retains the exact CBDT table-directory
+presence of the selected SFNT/TTC face. Its 21 font tests include other color
+table tags, cached/cloned faces and both collection indexes. This metadata does
+not reproduce the native draw-run bitmap gate by itself. Native language
+metadata is not retained. `ResolvedFace.id` is the current face identity, with
+no proven equivalence to Samsung's source instance/cache behavior. HarfBuzz
+byte clusters are mapped to Rust character ranges; they are not native
+per-UTF-16 entry slots. Rust's f64 cluster positions also differ from the native
+f32 adjacency predicate.
 
 The retained PDF path can transport supplied clips with selectable text, and
 Chromium can transport span clips without breaking the covered joined shaping.
