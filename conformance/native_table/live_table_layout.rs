@@ -2,6 +2,13 @@ use super::super::widget_text_constructor::{self, CELL_DRAWING, CONTENT, CONTENT
 use super::cell_host::{install_host, reset_host};
 use super::*;
 
+#[path = "live_table_padding.rs"]
+mod padding;
+
+pub(crate) fn capture_padding(machine: &mut Machine, paths: widget_text_constructor::Paths<'_>) {
+    padding::capture(machine, paths);
+}
+
 const TABLE: u64 = MODEL + 0x9000;
 const LAYOUT: u64 = MODEL + 0x74000;
 const CONTEXT: u64 = MODEL + 0x50000;
