@@ -317,16 +317,20 @@ without glyph data. Dividing a cluster's width equally among source characters
 has no native proof. Rust's shared `render_line_backgrounds` instead uses
 retained cluster positions and advances, including justification, with
 `background_top` preserved independently from the pre-margin line top.
-The SDK excludes object anchors, applies frame/gravity/table translations, and
-paints typed vector rectangles before glyphs with span alpha divided by 255.
+The SDK separates text-cluster rectangles from supported SVG object bands,
+applies frame/gravity/table translations, and paints typed vector rectangles
+before glyphs with span alpha divided by 255.
 Background and glyph visibility are evaluated independently. A background
 change inside a retained cluster or unavailable measured positions reports
 `UnsupportedBackgroundPositioning`; highlighted bidi, complex-script and
 variable-font lines also retain that diagnostic. Their visual mapping is not
 verified. Selectable text remains available. Widget's native converter skips
 ordinary backgrounds on object spans (`0xd7e20`–`0xd7e50`); Drawing's converter
-does not share that exclusion, so the SDK rule is not a universal PDF parity
-claim.
+does not share that exclusion. Rust distinguishes those producers:
+Widget body/capture/table conversion guards ordinary/composing backgrounds on
+validated object slots, while placed/code Drawing conversion permits them.
+Composing tags remain unguarded. Geometry flow mode alone does not select the
+span producer.
 
 Composing background, kind 15, occupies a separate raw member from ordinary
 background. The native table preview selects its complete theme-mapped ARGB
@@ -362,13 +366,23 @@ and transparent white `0x00ffffff` to zero. Checking raw zero or alpha before
 mapping therefore does not reproduce the native fallback decision. Enabled
 composing tags can also background-paint native object entries: their converter
 and the native entry background painter have no object guard. Rust's text
-background geometry excludes inline/block object anchors; this native object
-case has a separate unsupported appearance boundary. The
+background geometry includes supported SVG/replay inline/block object bands,
+with ordinary backgrounds also retained in document PDF Frame contexts
+(standalone, table and code). Body document PDF excludes object backgrounds,
+matching its native outer caller. Missing or ambiguous reordered placements
+report object-owned `UnsupportedBackgroundPositioning`; valid composing tags
+on supported objects have no unsupported-style diagnostic. The
 [object background capture](text-draw-identity-findings.md#captured-embedded-object-background-geometry)
 executes native measurement, placement and preview rectangle painting for 40
 supplied cases. It establishes margin-inclusive inline bands and visible-width
-block bands, separately from Widget conversion, full line-metric production
-and Composer/PDF object-background selection.
+block bands, separately from Widget conversion and full line-metric production.
+The [retained object-run capture](text-draw-identity-findings.md#captured-retained-object-runs)
+connects native object measurement and placement to ordinary-background/layout
+fields with supplied upstream shaped glyphs. It does not execute native font
+selection, shaping, complete Drawing object conversion or PDF painting.
+The [export caller capture](text-draw-identity-findings.md#captured-object-export-caller-policy)
+separately verifies Body object exclusion, Table/Code/Placed background calls
+and foreground-versus-background alpha gates with supplied retained records.
 
 The hash-checked HF corpus contains one kind-17 span: `04-marker4-highlighter`
 body range `[2,6)`, selecting `Text`, with an eight-byte all-zero payload.
@@ -983,9 +997,52 @@ Paragraph-heading style phases are also separate. Model
 `CreateSpanList`, `0x419f3c`, and paragraph application at
 `0x3eff64`–`0x3eff84` can create stored FontSize/Bold spans before runtime
 measurement. The traced Widget predefined-style type 10 affects spacing.
-Rust retains its existing heading size fallback and bold normalization; the
-ordinary measurement-key regression does not establish equivalence to those
-native Model producers or their flag initialization.
+The native factory capture below establishes those ordinary size/bold values;
+the measurement-key regression itself does not execute Model editing.
+
+### Predefined-style span factory
+
+[`table-text-predefined-style.json`](../../conformance/table-text-predefined-style.json),
+SHA-256 `3cde41d9e6077133f7382310fa2229aafe168bbaf32d0b5a34d93212376ca030`,
+contains ten factory cases and five paragraph-application cases, repeated with
+memory fills `0x00`, `0xa5` and `0xff`. Native `CreateSpanList`, `0x419f3c`,
+produces an ordinary FontSize span followed by Bold, with interval type 3:
+
+| Predefined value | Style | Font size | Bold |
+| ---: | --- | ---: | --- |
+| 0 | Heading 1 | 21 | true |
+| 1 | Heading 2 | 19 | true |
+| 2 | Heading 3 | 15 | true |
+| 3 | Body | 15 | false |
+
+Factory value 4 fails without appending spans. Seeded vectors preserve their
+existing prefix and append new records; this tests construction order rather
+than final overlapping style precedence. These are explicit predefined-style
+source spans, not replacements for native ordinary default font size 17.
+
+The [capture module](../../conformance/native_table/text_predefined_style.rs)
+executes the actual global assignment window `0x41a54c`–`0x41a5ac`, reached
+from native initialization at `0x41a4e0`, then complete factory construction and
+range/interval/property getters. Size and bold values are read from the pinned
+ELF's globals, rather than supplied by the harness.
+
+Complete `m_ApplyPredefinedStyle`, `0x3efe7c`, uses actual paragraph construction
+and getters with supplied paragraph-to-text index mapping and string length.
+The first source paragraph retains the mapped start; later source paragraphs
+advance that start by one. The end is the smaller of mapped end plus one and
+text length. `AppendSpan` is intercepted at the call boundary to record these
+ordinary span inputs before destruction. Paragraph-list generation is also
+intercepted with an empty successful result. Model editing/history/storage,
+native paragraph-list generation, Widget conversion, measurement and rendering
+do not execute.
+
+Rust preserves parsed size/bold spans, permits later explicit overrides, and
+uses Heading 3 size fallback 15. It does not force heading bold off or create
+Model editing spans while rendering paragraph metadata. Tests exercise native
+factory span outputs at scales 1 and 3 and later explicit size 12/bold false.
+Complete native editing or rendered heading appearance is not established.
+
+### Shaped measurement output
 
 `SpanRunFunctor` creates the Minikin paint through `0x76ad4` and obtains
 a shaped layout through `0x97b34` at `0x77304`. The style-run virtual

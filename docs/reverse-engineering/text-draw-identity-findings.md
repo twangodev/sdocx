@@ -266,13 +266,13 @@ object-background guard. Drawing's `convertTextSpanImpl`, `0x90de8`, has no
 type-15/type-17 object guards in its handlers at `0x9102c`–`0x91050` and
 `0x91058`–`0x9107c`.
 
-Tables use the Widget producer: `ObjectTableCellLayout` construction at
-`0x8c008` creates `ObjectTextLayout`, and Drawing table initialization supplies
+Tables use the Widget producer: Drawing `ObjectTableCellLayout` construction at
+`0x8c008` creates Widget `ObjectTextLayout`, and Drawing table initialization supplies
 its content through `SetObject` at `0xaad30`. Widget copies effective
 backgrounds to a separate vector at `0xd5080`; Drawing performs the same
 nonmutating selection in `moveTextBackgroundColor`, `0x8da30`.
 
-Widget `ObjectTableCellLayout::DrawTextContent`, `0x8c0c0`, reaches Text
+Drawing `ObjectTableCellLayout::DrawTextContent`, `0x8c0c0`, reaches Text
 `DrawRect`, `0x8b578`, `RichTextDrawing::drawRect`, `0x64bec`, and its background
 painter at `0x64f18`. The painter obtains the raw span at `0x64fdc`, reads
 ordinary/composing colors at `0x64fe0` and selects composing when its complete
@@ -355,7 +355,8 @@ background policy and pixels are outside this capture. It establishes preview
 entry geometry independently of the export route.
 
 Composer table `GetDrawnTextData`, `0x37ef00`, reaches Text drawing through
-the Widget cell wrapper at `0x8c098`. Text `appendTextBlock`, `0x67ebc`, stores
+Drawing `ObjectTableCellLayout::GetDrawnTextData`, `0x8c084`, whose dispatch at
+`0x8c098` reaches Text `TextLayout::GetDrawnText`. Text `appendTextBlock`, `0x67ebc`, stores
 ordinary span member 8 into `DrawnText` member 144 at `0x68140`/`0x68160`; it
 does not copy composing member 12. Composer's table background writer,
 `0x37f308`, reads member 144 at `0x37f480`; ordinary text's writer,
@@ -363,10 +364,109 @@ does not copy composing member 12. Composer's table background writer,
 `0x68148`/`0x68158`; Composer tests the table underline bit at
 `0x37ef84`–`0x37ef88` and dispatches its paint at `0x37ef9c`.
 
+Composer table glyph writing skips object records at `0x37f55c`–`0x37f560`;
+the table background writer at `0x37f308` instead gates background alpha byte
+147 and has no object exclusion. Current Body export instead checks member
+120 at `0x349e00`–`0x349e04` and skips the background call at `0x349e30` for
+objects. Its following loop dispatches objects separately at
+`0x349e54`–`0x349e6c`. The legacy Body caller makes the same exclusion at
+`0x375ef0`–`0x375ef4`. Table callers at `0x3507d0`–`0x3507e4` and
+`0x37ef38`–`0x37ef50`, code title/body callers at
+`0x378b28`–`0x378b40`/`0x378ff0`–`0x379008`, and the placed caller at
+`0x380790`–`0x3807a4` have no such object exclusion.
+
+The shared newer `TextPdfExporterUtil::CreateTextBackgroundPath`, `0x355120`,
+gates foreground alpha byte 139 at `0x355150` and reads layout member 104 at
+`0x355184`, without its own object exclusion. Legacy background writers gate
+background alpha byte 147 instead. The caller's object policy and the helper's
+alpha policy are therefore separate contracts; the direct newer helper does
+not establish that Body callers paint object backgrounds.
+
 This producer/consumer trace establishes the different selected background
 inputs. Supplied span-conversion and retained-emitter captures separately
 exercise raw members and copied `DrawnText` values. They do not capture a
 complete table preview image or native PDF for these composition spans.
+
+### Captured retained object runs
+
+[`table-text-object-runs.json`](../../conformance/table-text-object-runs.json),
+SHA-256 `23d9bc46664c98c445f7f08c42c9a0d64f41c7827f3df77bc8fbc21c472b7985`,
+contains 80 cases repeated across three memory fills: 54 published retained
+object records and 26 isolated-helper controls. The
+[capture module](../../conformance/native_table/text_object_runs.rs) executes
+native measurement construction, `0x78090`, initialization, `0x790d0`, the
+`SpanRunFunctor` window `0x77324`–`0x77894`, object measurement, `0x779d0`,
+`SetLayout`, `0x6b4a4`, cached `GetGlyphInfo`, `0x78274`, and complete public
+`GetDrawnText`, `0x68418`, retained emission and `appendTextBlock`, `0x67ebc`.
+
+Producer-window cases supply one or two shaped records owned by UTF-16 index
+zero, codewords/positions/ink, advance 1000 and a cached Font interface with
+ID 7, bitmap false, language `en` and drawable true. The real native window
+appends those records at `0x773e0`–`0x774e4`, then object measurement at
+`0x77844` overrides their dimensions. Supplied single-line/block metrics
+propagate captured object advance/height with font metric 17, spacing 1.35,
+cursor 3.25 and block bounds. Native placement and emission publish object
+flag member 120, layout band member 104 and ordinary background member 144.
+Composing background is not copied, including composing-only cases; alpha-zero
+nonzero ordinary ARGB is retained. This connects actual native object
+dimension override and line placement to the retained fields consumed by
+the table background writer, independently of that writer's alpha gate.
+
+The isolated-helper controls omit upstream glyph accumulation and call object
+measurement directly on the native-initialized empty cache. That helper does
+not populate it; this does not establish empty object caches in production.
+The full upstream operator normally assigns font/drawable state at
+`0x77590`/`0x775d4` before its object-helper call.
+
+With the isolated empty cache, retained emission reaches `appendTextBlock`,
+`0x67ebc`, whose unconditional first-codeword load at `0x68144` reads a null
+glyph-vector pointer. Guest address zero is explicitly unmapped, preventing
+the Model ELF header from supplying accidental glyph bytes. The capture
+records the terminal read and incomplete allocated fields; no retained text
+record is published. The default-entry control reaches the same precondition.
+This is evidence for an omitted producer input, rather than an application
+crash or a valid empty retained object record.
+
+Retained span/context geometry, mapped colors, a single U+FFFC source and
+offsets are supplied. Producer records and cached font interfaces bypass
+actual font construction/selection and shaping. Allocation, deletion, bounded
+copy/move, mutex operations and font getters are host interfaces. Full Widget
+conversion, upstream span dispatch, line/block metric production/wrapping,
+outer `GetDrawnTextData` dispatch, Composer background policy/painting,
+clipping and final output remain outside the capture. Body export has separate
+object filtering; published table-consumer inputs do not establish universal
+native object composition parity.
+
+### Captured object export caller policy
+
+[`table-text-object-export-policy.json`](../../conformance/table-text-object-export-policy.json),
+SHA-256 `63bca0a1f43a8a828c5127c4899d5ac63837e59d78ced56da34cedaf0520134c`,
+contains 204 cases across 14 native instruction windows. The
+[capture module](../../conformance/native_table/text_object_export_policy.rs)
+executes seven background-caller iterations, five alpha gates and two Body
+object/text dispatch iterations. Each case repeats across fills `0x00`,
+`0xa5` and `0xff`; independent captures are byte-identical.
+
+Both Body background callers skip nonzero object member 120 and subsequently
+dispatch those records to object export. Table, code title/body and placed
+background callers request background export for non-null object records.
+The captured legacy gates read background alpha byte 147: Body
+`0x376230`–`0x376254`, table `0x37f354`–`0x37f374`, code
+`0x37978c`–`0x3797ac` and placed `0x380ba0`–`0x380bc0`. The shared newer
+gate at `0x355150`–`0x355184` instead accepts nonzero foreground alpha byte
+139. These observations establish caller filtering and helper branch decisions
+separately from retained object-field production.
+
+Inputs supply a zero-initialized 160-byte `DrawnText`, layout rectangle at
+member 104, object flag 0/1/255 at member 120, foreground/background ARGB at
+members 136/144, a pointer or null, and bounded stack/register state. Four
+foreground/background pairs distinguish alpha 0, 1 and 255. Native call targets
+are intercepted to record the requested background/object/text dispatch and
+return. Caller windows stop before advancing their vectors; gate windows stop
+before allocation or rectangle access. Full callers, object/font producers,
+PDF allocation, clipping, paths, painting, pixels and native SVG consumption
+do not execute. In particular, the newer foreground-alpha rule is captured,
+but complete native output for those alpha-edge cases is not.
 
 ## Font metadata
 
@@ -520,6 +620,17 @@ provide complete native draw identity: correction fields and native entry
 identity remain absent, and glyph foreground painting keeps RGB rather than
 the compared native ARGB value.
 
+`TextSpanProducer` explicitly distinguishes Widget conversion for body/capture/
+table text from Drawing conversion for placed/code text. This is separate from
+flow versus placed geometry: code flows through the text engine with Drawing
+span rules. Drawing body construction/update at `0xafed0`/`0xb1a54` reaches
+Widget `ObjectTextLayout`; code measurement at `0x73694` updates Drawing
+`ObjectTextDrawing` at `0x73728`. Drawing's span update initializes ordinary
+styles and calls text conversion at `0x8d0e4`, without Widget's object-span
+conversion step. Rust applies type-15/type-17 object guards only for Widget
+source ranges backed by validated embedded objects; bare U+FFFC characters do
+not acquire an object guard. Type 18 stays unguarded in both producers.
+
 `ResolvedTextStyle` projects paint and measurement styles from the same typed
 selection. `TextMeasureStyle` retains resolved f32 size, native-theme-mapped
 foreground ARGB before hyperlink paint, and a nullable shared font name before
@@ -543,6 +654,13 @@ null/empty-name boundaries; hyperlink paint and background/decorations do not
 introduce measurement splits. Those comparisons do not cover nonfinite sizes,
 object flags, opaque style bits, native font resolution or paragraph-heading
 style phases.
+
+The [native predefined-style factory capture](text-layout-findings.md#predefined-style-span-factory)
+establishes ordinary source spans for heading/body styles. Rust retains their
+authoritative size/bold values and uses 15 for its Heading 3 size fallback.
+Later explicit spans still override those
+source properties. Rendering paragraph metadata alone does not append native
+Model editing spans or synthesize their bold flags.
 
 Integration regressions cover six `AV` identity cases across body, standalone,
 code, table and nested table/code contexts: native join baseline, alpha-only
@@ -582,14 +700,39 @@ table/code contexts. They check composition flags, overlapping background
 selection, mapped transparent sentinels and object-only diagnostics across
 SVG/replay, retained PDF and supplied-SVG PDF. PDF source assertions decode
 stored text through its ToUnicode map, separately from extractor-inferred
-spacing, and the generated files retain text without image replacements.
+spacing. Text-only cases retain text without image replacements.
 
-Enabled composing-tag backgrounds on inline/block object entries remain unsupported:
-native entry background painting includes those slots, while Rust's text
-background path excludes them. Rust reports `UnsupportedCompositionStyle` for
-the affected object's source range and owner; supported ordinary text in the
-same tag span retains its background. Disabled composing tags retain their
-implemented bold/italic/underline behavior on text.
+SVG/replay object backgrounds use measured line bands for supported inline/block
+placements, including inline margins and block visible width. Rectangle paint
+order follows source order. Retained document PDF uses ordinary object
+backgrounds in Frame contexts: standalone, table and code text. Body context
+omits object backgrounds, matching the native caller's object exclusion.
+Preview uses the mapped composing override in both contexts. Missing or
+ambiguous reordered object positions report `UnsupportedBackgroundPositioning`
+with the object's source/owner. Valid enabled composing tags do not report
+an unsupported style merely because their source includes an object. Disabled
+composing tags retain bold/italic/underline on text.
+
+The [integration tests](../../crates/sdocx/tests/text_styles.rs) cover 20 object-band combinations across the five text
+contexts, plus 30 producer/source-order observations. They distinguish Widget
+type-15/type-17 object guards from Drawing conversion, unguarded composing tags,
+and before/after overlap order. SVG/replay bands and surrounding text positions
+are checked. Retained PDF assertions verify gray composing-tag bands with
+alpha 25 in standalone, code, table and nested table/code contexts, their
+absence in Body, band bounds, source and per-glyph colors. Source-order cases
+separately verify ordinary retained backgrounds versus preview-only composing
+backgrounds. Resolved image objects preserve `AB` or empty parent source and
+one embedded image; these are Rust output checks against the captured fields
+and caller policy, rather than complete native PDF executions.
+
+Validated object anchors participate in background segment boundaries. A whole-line
+composing tag followed by a transparent ordinary background leaves only the Widget
+object band visible; Drawing clears the band. The mixed `A\uFFFCB` regression
+checks all five preview/PDF contexts. Removing the object boundaries makes its
+Body preview assertion fail. The
+[background unit regressions](../../crates/sdocx/src/render/text/background.rs)
+also compare 36 native placed-entry rectangles and 40 supported legacy
+export-caller cases, and preserve object ownership for unsafe positions.
 
 Legacy/incomplete composition payloads also report
 `UnsupportedCompositionStyle`;

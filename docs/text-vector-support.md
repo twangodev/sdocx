@@ -10,13 +10,13 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 
 | Area | Implemented scope | Evidence and limits |
 | --- | --- | --- |
-| Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, typed paint/measurement style projections, per-span families/sizes/colors/styles, modern composition spans on text, selected-face CBDT metadata and native hyperlink type gating | Rust font/Unicode regressions and browser embedded-font checks; enabled composing-tag backgrounds on inline/block objects, legacy/incomplete composition and suggestion/correction appearance report source-owned diagnostics. Device fallback selection and variable fonts remain outside scope. |
+| Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, typed paint/measurement projections and explicit Widget/Drawing span producers, authoritative parsed heading spans, modern composition, selected-face CBDT metadata and native hyperlink gating | Rust font/Unicode regressions and browser embedded-font checks. Legacy/incomplete composition and suggestion/correction remain unsupported. Device fallback selection and variable fonts remain outside scope. |
 | Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics and captured body/code/table origins; emergency breaking, RTL justification and all standalone native modes are not established. |
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
 | Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip; native shaping and device appearance remain unverified. |
-| Decorations | Underline, strikethrough, uniform cluster backgrounds and vector list markers | Retained layout and native endpoint contracts; backgrounds changing inside a glyph cluster remain conservative. |
+| Decorations | Underline, strikethrough, uniform cluster backgrounds, supported object line bands and vector list markers | [Native entry/retained-run geometry and caller policies](reverse-engineering/text-draw-identity-findings.md#captured-embedded-object-background-geometry), [SVG/PDF regressions](../crates/sdocx/tests/text_styles.rs); document PDF paints ordinary object backgrounds in standalone/table/code contexts and omits them in Body. Backgrounds changing inside a glyph cluster or lacking safe object positions remain conservative. |
 | SVG preview/replay | Typed SVG elements, embedded fonts, retained text positions where reproducible, source-preserving text fallback elsewhere | Chromium tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
 | Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; combining-mark Y parity with Samsung's common-baseline PDF route remains unverified. |
 | Synthesized styles | Requested styles retained through fallback; native PDF bold pen of 0.25 points and fixed shear for synthesized italic | Regular-only font tests, independent outlines and DPI checks; canvas emboldening and native measurement/face-selection anomalies remain separate. |
@@ -45,8 +45,8 @@ fidelity; successful parsing or a generated file is not a parity certificate.
 | --- | --- |
 | `MissingGlyphs` / `MeasurementFailure` | Available fonts cannot cover or measure the requested source. |
 | `UnsupportedGlyphPositioning` | SVG text cannot reproduce the retained geometry; source is preserved through its fallback. |
-| `UnsupportedBackgroundPositioning` | A background cannot be placed safely at the retained cluster boundaries. |
-| `UnsupportedCompositionStyle` / `UnsupportedSuggestionStyle` / `UnsupportedCorrectionStyle` | An appearance-affecting source range contains legacy/incomplete composition, an enabled composing-tag background on an inline/block object, or unsupported suggestion/correction style. Diagnostics retain the source range or enclosing object owner. |
+| `UnsupportedBackgroundPositioning` | A background cannot be placed safely at retained cluster boundaries or measured object positions. Object failures retain the object's source and owner. |
+| `UnsupportedCompositionStyle` / `UnsupportedSuggestionStyle` / `UnsupportedCorrectionStyle` | An appearance-affecting source range contains legacy/incomplete composition or unsupported suggestion/correction style. Diagnostics retain the source range or enclosing object owner. |
 | `UnsupportedTextFrame` | A shape lacks a supported native text frame. |
 | `UnsupportedContent` / `UnsupportedWidthLimitContext` | Embedded composition or a required runtime width context is unsupported. |
 | `InvalidGeometry` / `InvalidBounds` | Geometry is unusable; the relevant adapter rejects it or uses its documented recovery. |
@@ -68,14 +68,23 @@ Valid modern composition spans resolve typed backgrounds and underline/bold/
 italic flags. Preview and replay select nonzero composing ARGB after theme
 mapping before ordinary background; retained document PDF selects ordinary
 background, matching the traced native consumer distinction. Generic SVG-to-PDF conversion preserves
-the supplied SVG's preview background. Enabled composing-tag backgrounds on
-inline/block objects report an object-owned diagnostic because the text background
-path excludes their native entry rectangles. Legacy/incomplete composition and
+the supplied SVG's preview background. Supported inline/block objects paint
+SVG/replay line bands. Document PDF paints their ordinary backgrounds in Frame
+contexts (standalone/table/code), while Body omits them according to its native
+caller policy. Valid composing tags on supported objects have no unsupported-style
+diagnostic. Legacy/incomplete composition and
 suggestion/correction appearance remain unsupported. Typed suggestion metadata
 decoding does not implement its special decoration. Native binary methods do
 not make every in-memory span writable; the
 [binary capture](reverse-engineering/text-draw-identity-findings.md#native-binary-boundaries)
 records those distinct contracts.
+
+Body/capture/table text uses Widget span rules; placed/code text uses Drawing
+rules, independently of flow versus placed geometry. Only Widget excludes
+ordinary/composing backgrounds from validated object slots; composing tags
+remain unguarded in both producers. Parsed heading size/bold spans remain
+authoritative, Heading 3 fallback is 15, and rendering does not synthesize the
+native Model's editing spans from paragraph metadata alone.
 
 Ordinary measurement identity retains resolved f32 size, native-theme-mapped
 foreground ARGB, nullable font name and supported bold/italic bits, separately
@@ -134,11 +143,21 @@ measured run and logical text block.
 - Native preview background geometry for embedded objects is captured through
   measurement, placement and rectangle commands for 40 supplied cases. Inline
   backgrounds include margins; block backgrounds use visible width despite a
-  wider reservation. Rust background painting still excludes these object
-  entries and diagnoses enabled composing tags on them. Native Widget conversion,
-  full line-metric production and Composer/PDF object-background behavior remain
-  outside the [capture](reverse-engineering/text-draw-identity-findings.md#captured-embedded-object-background-geometry).
-- Native font selection, paragraph-heading style phases, opaque native style
+  wider reservation. SVG/replay paints supported bands in source order;
+  missing or ambiguous reordered placements report object-owned positioning
+  diagnostics. Document PDF paints ordinary object backgrounds for standalone,
+  table and code text, while Body omits them. Native Widget conversion and
+  full line-metric production remain outside the
+  [preview capture](reverse-engineering/text-draw-identity-findings.md#captured-embedded-object-background-geometry).
+  The [80-case retained-run capture](reverse-engineering/text-draw-identity-findings.md#captured-retained-object-runs)
+  supplies shaped owner records and cached fonts; it does not establish actual
+  native object shaping, complete Drawing object conversion or PDF pixels.
+  Native table Composer and newer body PDF background writers use different
+  alpha gates. The [204-case export policy capture](reverse-engineering/text-draw-identity-findings.md#captured-object-export-caller-policy)
+  verifies Body object exclusion, Frame caller requests and the separate
+  foreground/background-alpha decisions; it does not execute native PDF painting
+  or establish complete output for newer foreground-alpha edge cases.
+- Native font selection, complete heading editing/runtime lifecycle, opaque native style
   bits, variable-font instances and device-specific fallback selection are not
   established by ordinary measurement-identity coverage.
 - Standalone text modes, RTL justification, separator-only clipping, and
