@@ -545,14 +545,47 @@ fn saved_inspection_ranges(
         .text_sections
         .get(..page_count)?
         .iter()
-        .map(|section| section_char_range(index, *section))
+        .map(|section| saved_text_section(index, *section).map(SavedTextSection::into_range))
         .collect::<Option<Vec<_>>>()?;
-    if (!body.text.is_empty() && ranges.iter().all(Range::is_empty))
-        || ranges.windows(2).any(|pair| pair[0].start > pair[1].start)
+    let exhausted = ranges
+        .iter()
+        .position(Option::is_none)
+        .unwrap_or(ranges.len());
+    if ranges[exhausted..].iter().any(Option::is_some) {
+        return None;
+    }
+    let present = ranges.iter().flatten().collect::<Vec<_>>();
+    if (!body.text.is_empty() && present.iter().all(|range| range.is_empty()))
+        || present.windows(2).any(|pair| pair[0].start > pair[1].start)
     {
         return None;
     }
-    Some(ranges.into_iter().map(Some).collect())
+    Some(ranges)
+}
+
+enum SavedTextSection {
+    Absent,
+    Range(Range<usize>),
+}
+
+impl SavedTextSection {
+    fn into_range(self) -> Option<Range<usize>> {
+        match self {
+            Self::Absent => None,
+            Self::Range(range) => Some(range),
+        }
+    }
+}
+
+fn saved_text_section(
+    index: &TextIndex<'_>,
+    section: crate::types::RichTextSection,
+) -> Option<SavedTextSection> {
+    if section.start_utf16 == -1 && section.length_utf16 == 0 {
+        Some(SavedTextSection::Absent)
+    } else {
+        section_char_range(index, section).map(SavedTextSection::Range)
+    }
 }
 
 fn trim_inspection_lf(index: &TextIndex<'_>, range: &mut Range<usize>, page: usize) {
@@ -1164,6 +1197,57 @@ mod tests {
             let mut document = capture_document("body", &[(0, 4)]);
             document.metadata.page_mode = mode;
             assert!(capture(&document, 0).is_none());
+        }
+    }
+
+    #[test]
+    fn native_exhausted_page_sentinel_preserves_preceding_saved_capture() {
+        let document = capture_document("abcdef", &[(0, 6), (6, 0), (-1, 0)]);
+        let layout = layout_document(&document);
+        assert_eq!(layout.pages.len(), 3);
+        let first = &layout.pages[0];
+        let body = first.body_text_slice().unwrap();
+        assert_eq!(body.source_range, 0..6);
+        assert!(body.reflow.is_none());
+        assert!(body.capture_window.is_some());
+        assert_eq!(first.body_text_capture(&document).unwrap().text, "abcdef");
+        for page in &layout.pages[1..] {
+            assert!(page.body_text_slice().is_none());
+            assert!(page.page.objects.is_empty());
+        }
+        assert_eq!(
+            document.metadata.note_text.as_ref().unwrap().text_sections[2],
+            RichTextSection {
+                start_utf16: -1,
+                length_utf16: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn malformed_negative_saved_sections_still_require_full_source_reflow() {
+        for section in [(-1, 1), (-2, 0), (0, -1)] {
+            let document = capture_document("abcdef", &[(0, 6), (6, 0), section]);
+            let layout = layout_document(&document);
+            for page in &layout.pages {
+                let body = page.body_text_slice().unwrap();
+                assert!(body.capture_window.is_none());
+                assert!(body.reflow.is_some());
+                assert_eq!(page.body_text_reflow(&document).unwrap().text, "abcdef");
+            }
+        }
+    }
+
+    #[test]
+    fn saved_sections_after_absent_pages_do_not_bypass_capture_validation() {
+        for sections in [[(-1, 0), (0, 6), (6, 0)], [(0, 3), (-1, 0), (3, 3)]] {
+            let document = capture_document("abcdef", &sections);
+            let layout = layout_document(&document);
+            for page in &layout.pages {
+                let body = page.body_text_slice().unwrap();
+                assert!(body.capture_window.is_none());
+                assert!(body.reflow.is_some());
+            }
         }
     }
 
