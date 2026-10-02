@@ -79,12 +79,12 @@ fn document() -> Document {
     ];
     Document {
         pages: (0..2).map(|index| Page {
-            uuid: format!("code-origin-{index}"), width: 360, height: 80,
-            content_bbox: bounds(360.0, 80.0), background_color: None, template: None,
+            uuid: format!("code-origin-{index}"), width: 360, height: 100,
+            content_bbox: bounds(360.0, 100.0), background_color: None, template: None,
             background: Default::default(), objects: Vec::new(),
         }).collect(),
         metadata: DocumentMetadata {
-            note_text: Some(body), default_page_dimensions: Some((360, 80)), orientation: Some(0),
+            note_text: Some(body), default_page_dimensions: Some((360, 100)), orientation: Some(0),
             page_mode: Some(0), flow_page_padding: Some((0, 10)),
             media_assets: vec![MediaAsset {
                 name: "media/code-origin.png".into(), archive_id: None, mime_type: "image/png".into(),
@@ -182,13 +182,12 @@ fn assert_page(page: &sdocx::RenderedPage, index: usize, expected: &[(&str, f64,
         .descendants()
         .find(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#efefef"))
         .unwrap();
-    // Native chrome is 64. The fresh body height 33.998 gives panel height
-    // 97.998, exported with two decimals as 98.00.
+    // Native chrome 64 plus fresh body height 40.498 rounds to 104.50.
     assert_eq!(
         panel.attribute("height").unwrap().parse::<f64>().unwrap(),
-        98.0
+        104.5
     );
-    assert!((point(panel).1 - (30.002 - index as f64 * 80.0)).abs() <= 1e-4);
+    assert!((point(panel).1 - (30.002 - index as f64 * 100.0)).abs() <= 1e-4);
     let images: Vec<_> = xml
         .descendants()
         .filter(|node| node.has_tag_name("image"))
@@ -206,20 +205,13 @@ fn code_drawing_origin_is_remeasured_without_replacing_the_callback_parent_heigh
     let doc = document();
     let layout = sdocx::layout_document(&doc);
     let fonts = sdocx::fonts::FontBook::default();
-    // Native body top is origin + 44. Callback origin 20.001 gives A at
-    // 74.001, B at 91, and cursor 94.5: body 30.499 + chrome 64 = 94.499.
-    // Drawing origin 30.002 moves A past stripe 80..81 to 91, B to 104.5,
-    // and cursor to 108. Parent retains callback height: End is at 138.001.
-    // Title font 1 gives minimum 34.85 (ceil 35), fitting the 39.999 gap.
+    // Copy-height minimum 57.5 fits the 59.999-unit gap. Callback body height
+    // 27 reserves 91; drawing at 30.002 moves B past 100..101 and measures 104.498.
     for replay in [false, true] {
         let second = render(&doc, &layout, 1, replay, &fonts);
-        assert_page(
-            &second,
-            1,
-            &[("A", 16.0, 11.0), ("B", 16.0, 24.5), ("End", 0.0, 58.001)],
-        );
+        assert_page(&second, 1, &[("B", 16.0, 11.0), ("End", 0.0, 34.502)]);
         let first = render(&doc, &layout, 0, replay, &fonts);
-        assert_page(&first, 0, &[("T", 16.0, 43.002)]);
+        assert_page(&first, 0, &[("T", 16.0, 43.002), ("A", 16.0, 84.002)]);
         assert_eq!(render(&doc, &layout, 1, replay, &fonts), second);
         assert_eq!(render(&doc, &layout, 0, replay, &fonts), first);
     }
@@ -236,21 +228,17 @@ fn drawing_origin_pdf_keeps_only_visible_selectable_text_and_the_original_tiny_i
             render(&doc, &layout, 0, replay, &fonts),
             render(&doc, &layout, 1, replay, &fonts),
         ];
-        assert_page(&pages[0], 0, &[("T", 16.0, 43.002)]);
-        assert_page(
-            &pages[1],
-            1,
-            &[("A", 16.0, 11.0), ("B", 16.0, 24.5), ("End", 0.0, 58.001)],
-        );
+        assert_page(&pages[0], 0, &[("T", 16.0, 43.002), ("A", 16.0, 84.002)]);
+        assert_page(&pages[1], 1, &[("B", 16.0, 11.0), ("End", 0.0, 34.502)]);
         let bytes = sdocx::render_svg_pages_pdf(&pages, &Default::default()).unwrap();
         let pdf = lopdf::Document::load_mem(&bytes).unwrap();
         assert_eq!(
             pdf.extract_text(&[1]).unwrap().replace(['\n', ' '], ""),
-            "T"
+            "TA"
         );
         assert_eq!(
             pdf.extract_text(&[2]).unwrap().replace(['\n', ' '], ""),
-            "ABEnd"
+            "BEnd"
         );
         let images: Vec<_> = pdf
             .objects
@@ -271,5 +259,52 @@ fn drawing_origin_pdf_keeps_only_visible_selectable_text_and_the_original_tiny_i
                 .as_dict()
                 .is_ok_and(|dict| dict.has(b"FontFile2") || dict.has(b"FontFile3"))
         }));
+    }
+}
+
+#[test]
+fn copy_height_reserves_the_header_when_the_title_is_tiny_or_absent() {
+    let fonts = sdocx::fonts::FontBook::default();
+    for title_size in [Some(1.0), Some(10.0), None] {
+        let mut doc = document();
+        doc.metadata.default_page_dimensions = Some((360, 80));
+        for page in &mut doc.pages {
+            page.height = 80;
+            page.content_bbox = bounds(360.0, 80.0);
+        }
+        let body = doc.metadata.note_text.as_mut().unwrap();
+        let Some(RichTextObjectContent::CodeBlock(code)) = body.object_spans[1].content.as_mut()
+        else {
+            panic!("expected code object");
+        };
+        if let Some(size) = title_size {
+            code.title.as_mut().unwrap().font_size = Some(size);
+        } else {
+            code.title = None;
+        }
+        let layout = sdocx::layout_document(&doc);
+        for replay in [false, true] {
+            let first = render(&doc, &layout, 0, replay, &fonts);
+            let first_xml = roxmltree::Document::parse(&first.svg).unwrap();
+            assert!(
+                first_xml
+                    .descendants()
+                    .all(|node| node.attribute("data-sdocx-object") != Some("code-block"))
+            );
+            let second = render(&doc, &layout, 1, replay, &fonts);
+            let second_xml = roxmltree::Document::parse(&second.svg).unwrap();
+            let panel = second_xml
+                .descendants()
+                .find(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#efefef"))
+                .unwrap();
+            assert!((point(panel).1 - 10.001).abs() <= 1e-4);
+            assert_eq!(
+                second_xml
+                    .descendants()
+                    .filter(|node| node.has_tag_name("image"))
+                    .count(),
+                0
+            );
+        }
     }
 }

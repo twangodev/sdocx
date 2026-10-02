@@ -1,5 +1,12 @@
 use crate::{BoundingBox, ObjectSpanLayoutConstraint, RichTextBox, RichTextCodeBlock};
 
+mod native_geometry;
+
+#[cfg(test)]
+mod native_geometry_tests;
+
+use native_geometry::NativeCodeGeometry;
+
 use super::RenderTheme;
 use super::text::{
     ObjectDiagnosticKind, StyledText, TextContext, TextFrame, TextLayout, TextRenderer,
@@ -101,34 +108,36 @@ fn prepare_code_frame(
     let settings = renderer.settings;
     let background = super::argb_color(if theme.is_dark() { 0x333333 } else { 0xefefef });
     let theme = theme.on_background(background);
-    let object_top = candidate_top;
-    let left = settings.pixels(16.0);
-    let top = settings.pixels(12.0);
-    let right = settings.pixels(16.0);
-    let bottom = settings.pixels(12.0);
-    let title_copy_gap = settings.pixels(12.0);
-    let body_gap = settings.pixels(8.0);
-    let copy_size = settings.pixels(24.0);
-    let copy = BoundingBox {
-        x_min: bbox.x_max - right - copy_size,
-        y_min: object_top + top,
-        x_max: bbox.x_max - right,
-        y_max: object_top + top + copy_size,
-    };
-    let title_bbox = BoundingBox {
-        x_min: bbox.x_min + left,
-        y_min: copy.y_min,
-        x_max: copy.x_min - title_copy_gap,
-        y_max: copy.y_max,
-    };
-    let body_top = copy.y_max + body_gap;
-    let body_bbox = BoundingBox {
-        x_min: bbox.x_min + left,
-        y_min: body_top,
-        x_max: bbox.x_max - right,
-        y_max: body_top,
-    };
-    let exclusions = renderer.object_exclusions(constraint, candidate_top, 0.0);
+    let split_rectangles = renderer.table_split_rects(constraint, candidate_top);
+    let geometry = NativeCodeGeometry::new(
+        BoundingBox {
+            y_min: candidate_top,
+            ..bbox
+        },
+        settings.scale,
+        split_rectangles.first().copied(),
+    )
+    .ok_or(ObjectDiagnosticKind::InvalidBounds)?;
+    let copy = geometry
+        .absolute_frame(geometry.copy)
+        .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+    let title_bbox = geometry
+        .absolute_frame(geometry.title)
+        .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+    let body_bbox = geometry
+        .absolute_frame(geometry.body)
+        .ok_or(ObjectDiagnosticKind::UnsupportedContent)?;
+    let exclusions = geometry
+        .body_padding(&split_rectangles)
+        .ok_or(ObjectDiagnosticKind::InvalidBounds)?
+        .into_iter()
+        .map(|rectangle| {
+            VerticalExclusion::obstacle(
+                rectangle.y_min + body_bbox.y_min,
+                rectangle.y_max + body_bbox.y_min,
+            )
+        })
+        .collect::<Vec<_>>();
     let title_layout = code
         .title
         .as_ref()
@@ -138,17 +147,16 @@ fn prepare_code_frame(
         .as_ref()
         .map(|body| layout_code_text(body, body_bbox, &exclusions, theme, renderer));
     let body_height = body_layout.as_ref().map_or(0.0, TextLayout::height);
-    let title_height = title_layout.as_ref().map_or(0.0, TextLayout::height);
     let first_body_line_height = body_layout
         .as_ref()
         .and_then(|layout| layout.lines.first())
         .map_or(0.0, |line| line.bottom - line.top);
-    let min_first_page_height = top + title_height + body_gap + first_body_line_height;
-    let panel_bbox = BoundingBox {
-        y_min: object_top,
-        y_max: body_top + body_height + body_gap + bottom,
-        ..bbox
-    };
+    let min_first_page_height = geometry
+        .minimum_first_page_height(first_body_line_height as f32)
+        .ok_or(ObjectDiagnosticKind::InvalidBounds)?;
+    let panel_bbox = geometry
+        .measured_bounds(body_height as f32)
+        .ok_or(ObjectDiagnosticKind::InvalidBounds)?;
     if !valid_box(panel_bbox)
         || !valid_box(copy)
         || !title_layout
@@ -274,14 +282,14 @@ mod tests {
     }
 
     #[test]
-    fn minimum_first_page_height_uses_measured_title_and_first_line_only() {
+    fn minimum_first_page_height_uses_copy_height_and_first_body_line() {
         let mut content = code();
         let mut title = content.body.clone().unwrap();
         title.text = "language".into();
         title.gravity = Some(1);
         content.title = Some(title);
         let plain = prepare(&content, 200.0);
-        assert_eq!(plain.min_first_page_height, 181.5);
+        assert_eq!(plain.min_first_page_height, 192.75);
         assert!((plain.title_layout.as_ref().unwrap().height() - 60.75).abs() < 1e-10);
         assert_eq!(plain.copy.y_max - plain.copy.y_min, 72.0);
 
@@ -299,8 +307,13 @@ mod tests {
         })
         .collect();
         let spaced = prepare(&content, 200.0);
-        assert_eq!(spaced.min_first_page_height, 181.5);
+        assert_eq!(spaced.min_first_page_height, 192.75);
         assert_eq!(spaced.panel_bbox.y_max - plain.panel_bbox.y_max, 48.0);
+
+        for font_size in [1.0, 40.0] {
+            content.title.as_mut().unwrap().font_size = Some(font_size);
+            assert_eq!(prepare(&content, 200.0).min_first_page_height, 192.75);
+        }
     }
 
     #[test]
@@ -339,14 +352,15 @@ mod tests {
         let line = &prepared.body_layout.as_ref().unwrap().lines[0];
         let native_body_height = f64::from(130.001_f32);
         assert!((line.bottom - line.top - native_body_height).abs() < 1e-10);
-        assert!((prepared.min_first_page_height - (120.75 + native_body_height)).abs() < 1e-10);
+        let minimum = f64::from(132.0 + native_body_height as f32);
+        assert_eq!(prepared.min_first_page_height, minimum);
     }
 
     #[test]
-    fn absent_title_has_no_measured_title_height_in_the_sdk_minimum() {
+    fn absent_title_retains_copy_height_in_the_native_minimum() {
         let prepared = prepare(&code(), 200.0);
         assert!(prepared.title_layout.is_none());
-        assert_eq!(prepared.min_first_page_height, 120.75);
+        assert_eq!(prepared.min_first_page_height, 192.75);
     }
 
     #[test]
@@ -499,6 +513,22 @@ mod tests {
                     .map(|line| line.baseline)
                     .collect::<Vec<_>>(),
                 baselines
+            );
+        }
+    }
+
+    #[test]
+    fn first_split_header_shift_updates_chrome_without_changing_minimum() {
+        let content = code();
+        for candidate in [460.0, 490.0] {
+            let prepared = prepare_at_page_boundary(&content, candidate);
+            assert_eq!(prepared.copy.y_min, 506.0);
+            assert_eq!(prepared.copy.y_max, 578.0);
+            assert_eq!(prepared.panel_bbox.y_max, 783.5);
+            assert_eq!(prepared.min_first_page_height, 192.75);
+            assert_eq!(
+                prepared.body_layout.as_ref().unwrap().lines[0].baseline,
+                647.0
             );
         }
     }

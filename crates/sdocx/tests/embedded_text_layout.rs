@@ -1014,23 +1014,29 @@ fn code_panel_height(svg: &str) -> f64 {
 #[test]
 fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap() {
     // Page boundary300; density3 padding bands270..330. Font45 advances60.75.
-    // Body origin141 yields candidates141..201.75,201.75..262.5,262.5..323.25.
-    for (constraint, second, third, panel_height) in [
+    // The first OverPages split at -30 also shifts the native chrome up30.
+    for (constraint, title, first, second, third, panel_height) in [
         (
             ObjectSpanLayoutConstraint::Normal,
+            90.00101,
+            186.00101,
             246.75101,
             307.50101,
             398.25,
         ),
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            246.75101,
+            90.0,
+            186.0,
+            246.75,
             346.0,
             436.75,
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
-            246.75101,
+            60.0,
+            156.0,
+            216.75,
             375.0,
             465.75,
         ),
@@ -1042,8 +1048,8 @@ fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap()
         assert_eq!(
             lines(&svg),
             vec![
-                ("Title".into(), 86.0, 90.00101),
-                ("A".into(), 86.0, 186.00101),
+                ("Title".into(), 86.0, title),
+                ("A".into(), 86.0, first),
                 ("B".into(), 86.0, second),
                 ("C".into(), 86.0, third),
             ]
@@ -1079,9 +1085,9 @@ fn vertical_page_padding_does_not_replace_native_body_text_margins() {
             assert_eq!(
                 lines(&page.svg),
                 [
-                    ("Title".into(), 86.0, 90.00101),
-                    ("A".into(), 86.0, 186.00101),
-                    ("B".into(), 86.0, 246.75101),
+                    ("Title".into(), 86.0, 60.0),
+                    ("A".into(), 86.0, 156.0),
+                    ("B".into(), 86.0, 216.75),
                     ("C".into(), 86.0, 375.0),
                 ]
             );
@@ -1136,14 +1142,14 @@ fn continuation_code_uses_page_local_exclusions_with_its_negative_stored_top() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("Title".into(), 74.0, -10.0),
-            ("A".into(), 74.0, 86.0),
-            ("B".into(), 74.0, 146.75),
-            ("C".into(), 74.0, 207.5),
-            ("D".into(), 74.0, 375.0),
+            ("Title".into(), 74.0, 60.0),
+            ("A".into(), 74.0, 156.0),
+            ("B".into(), 74.0, 216.75),
+            ("C".into(), 74.0, 375.0),
+            ("D".into(), 74.0, 435.75),
         ]
     );
-    assert_eq!(code_panel_height(&svg), 565.75);
+    assert_eq!(code_panel_height(&svg), 626.5);
 }
 
 #[test]
@@ -1174,10 +1180,10 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("Title".into(), 80.0, 81.00098),
-            ("A".into(), 80.0, 177.00098),
-            ("B".into(), 80.0, 237.75098),
-            ("C".into(), 80.0, 298.50098),
+            ("Title".into(), 80.0, 81.0),
+            ("A".into(), 80.0, 177.0),
+            ("B".into(), 80.0, 237.75),
+            ("C".into(), 80.0, 298.5),
         ]
     );
     assert_eq!(code_panel_height(&svg), 374.25);
@@ -1206,11 +1212,13 @@ fn placed_live_code_candidate_reproduces_the_captured_page_gap() {
     let native_object_offset = f64::from(panel_height + 0.001_f32) - f64::from(panel_height);
     assert_eq!(native_object_offset, 0.001007080078125);
     let serialized_coordinate = |value: f64| format!("{value:.5}").parse::<f64>().unwrap();
+    let drawing_top = native_top + native_object_offset;
+    let parent_translation = drawing_top - f64::from(drawing_top as f32);
     let expected_baselines = [
-        native_top + native_object_offset + 81.0,
-        native_top + native_object_offset + 177.0,
-        page_boundary + 1.0 + 45.0,
-        page_boundary + 1.0 + 45.0 + 60.75,
+        drawing_top + 81.0,
+        drawing_top + 177.0,
+        page_boundary + 1.0 + 45.0 + parent_translation,
+        page_boundary + 1.0 + 45.0 + 60.75 + parent_translation,
     ]
     .map(serialized_coordinate);
     let reference_baselines = [1378.75295, 1474.75295, 1573.0, 1633.75];

@@ -10,8 +10,8 @@ use crate::fonts::{
 
 use super::objects::{ObjectDiagnostic, ObjectDiagnosticKind, ObjectPageOwnership};
 use super::{
-    PageExclusions, StyledText, TextContext, TextSettings, TextStyle, VerticalExclusion,
-    WrappedLine, explicit_line_height, finite_native_geometry,
+    PageExclusions, StyledText, TextContext, TextSettings, TextStyle, WrappedLine,
+    explicit_line_height, finite_native_geometry,
 };
 use crate::render::vector::{EmbeddedFont, Scene};
 use crate::{LineSpacingType, ParagraphLineSpacing, RichTextSpanType};
@@ -291,25 +291,6 @@ impl<'a> TextRenderer<'a> {
         if !faces.iter().any(|registered| registered.id == face.id) {
             faces.push(face.clone());
         }
-    }
-
-    pub fn object_exclusions(
-        &self,
-        constraint: crate::ObjectSpanLayoutConstraint,
-        stored_top: f64,
-        offset_y: f64,
-    ) -> Vec<VerticalExclusion> {
-        self.page_exclusions
-            .as_ref()
-            .map_or_else(Vec::new, |pages| {
-                pages
-                    .for_object(constraint, stored_top)
-                    .into_iter()
-                    .map(|band| {
-                        VerticalExclusion::obstacle(band.top + offset_y, band.bottom + offset_y)
-                    })
-                    .collect()
-            })
     }
 
     pub fn table_split_rects(

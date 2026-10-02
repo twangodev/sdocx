@@ -286,20 +286,36 @@ fn assert_baselines(actual: [f64; 3], expected: [f64; 3]) {
 
 #[test]
 fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() {
-    // Density1 native chrome44+20 and two ordinary27px lines give height118.
-    for (context, expected) in [
-        (Context::Flow, [64.001, 91.001, 145.00101]),
-        (Context::Placed, [64.001, 91.001, 145.00101]),
-        (Context::CodeBody, [108.00198, 135.00198, 189.00198]),
+    // Native Measure shifts chrome by the first split top, including negative tops.
+    for context in [
+        Context::Flow,
+        Context::Placed,
+        Context::CodeBody,
         #[cfg(feature = "serde")]
-        (Context::Shape, [64.001, 91.001, 145.00101]),
+        Context::Shape,
         #[cfg(feature = "serde")]
-        (Context::Table, [64.50198, 91.50198, 145.50198]),
+        Context::Table,
     ] {
         for constraint in [
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             ObjectSpanLayoutConstraint::OverPages,
         ] {
+            let (panel_height, expected) = match (context, constraint) {
+                (Context::CodeBody, _) => (118.0, [108.00198, 135.00198, 189.00198]),
+                #[cfg(feature = "serde")]
+                (Context::Table, ObjectSpanLayoutConstraint::OverPagesOverlapPadding) => {
+                    (117.5, [64.0, 91.0, 145.00101])
+                }
+                #[cfg(feature = "serde")]
+                (Context::Table, ObjectSpanLayoutConstraint::OverPages) => {
+                    (107.5, [54.0, 81.0, 135.00101])
+                }
+                (_, ObjectSpanLayoutConstraint::OverPagesOverlapPadding) => {
+                    (118.0, [64.0, 91.0, 145.00101])
+                }
+                (_, ObjectSpanLayoutConstraint::OverPages) => (108.0, [54.0, 81.0, 135.00101]),
+                _ => unreachable!(),
+            };
             let mut previous = None;
             for saved_height in [50.0, 300.0] {
                 let doc = document(context, code_text(0.0, saved_height, constraint), 800, 0);
@@ -320,7 +336,7 @@ fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() 
                         }
                     );
                     let actual = geometry(&page.svg);
-                    assert_eq!(actual.panel_height, 118.0, "{context:?}");
+                    assert_eq!(actual.panel_height, panel_height, "{context:?}");
                     assert_baselines(actual.baselines, expected);
                     if let Some(previous) = &previous {
                         assert_eq!(&actual, previous, "{context:?}");
@@ -334,7 +350,6 @@ fn cross_page_constraints_use_the_measured_child_height_in_every_text_context() 
 
 #[test]
 fn placed_gravity_translates_the_retained_child_plan_with_its_parent_line() {
-    // Native f32 cursor 152.00100708 leaves 547.99899292px for bottom gravity.
     for (gravity, panel_top, expected) in [
         (1, 274.0005, [338.0005, 365.0005, 419.0005]),
         (2, 547.99999, [611.99999, 638.99999, 693.0]),
@@ -343,6 +358,15 @@ fn placed_gravity_translates_the_retained_child_plan_with_its_parent_line() {
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             ObjectSpanLayoutConstraint::OverPages,
         ] {
+            let (panel_top, expected) = match (gravity, constraint) {
+                (1, ObjectSpanLayoutConstraint::OverPages) => {
+                    (279.0005, [343.0005, 370.0005, 414.0005])
+                }
+                (2, ObjectSpanLayoutConstraint::OverPages) => {
+                    (557.99999, [621.99999, 648.99999, 693.0])
+                }
+                _ => (panel_top, expected),
+            };
             for saved_height in [50.0, 300.0] {
                 let mut content = code_text(200.0, saved_height, constraint);
                 content.gravity = Some(gravity);
@@ -365,7 +389,7 @@ fn child_page_exclusions_use_the_actual_candidate_top_instead_of_saved_y() {
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
             0,
             128.0,
-            [64.00101, 101.0, 155.00101],
+            [64.0, 101.0, 155.00101],
         ),
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
@@ -376,8 +400,8 @@ fn child_page_exclusions_use_the_actual_candidate_top_instead_of_saved_y() {
         (
             ObjectSpanLayoutConstraint::OverPages,
             0,
-            164.0,
-            [110.0, 137.0, 191.00101],
+            137.0,
+            [54.0, 110.0, 164.00101],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
@@ -489,7 +513,6 @@ fn invalid_derived_panels_preserve_the_anchor_and_neighbors_in_every_constraint(
 
 #[test]
 fn nested_child_height_feedback_reaches_the_following_outer_text() {
-    // Native clone FMA maps saved Y=200 to 0.00097656 for height 50 and 0.00100708 for 300.
     for constraint in [
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
         ObjectSpanLayoutConstraint::OverPages,
@@ -520,10 +543,14 @@ fn nested_child_height_feedback_reaches_the_following_outer_text() {
                             .collect::<String>(),
                         "ABCD"
                     );
-                    let expected = if outer_height == 50.0 {
-                        [108.00198, 135.00198, 189.00198, 243.00201]
-                    } else {
-                        [108.00201, 135.00201, 189.00201, 243.00201]
+                    let (expected, outer_panel_height) = match constraint {
+                        ObjectSpanLayoutConstraint::OverPagesOverlapPadding => {
+                            ([108.001, 135.001, 189.00101, 243.00201], "216.00")
+                        }
+                        ObjectSpanLayoutConstraint::OverPages => {
+                            ([98.001, 125.001, 179.00101, 233.00201], "206.00")
+                        }
+                        _ => unreachable!(),
                     };
                     for (span, expected) in spans.into_iter().zip(expected) {
                         assert!(
@@ -543,7 +570,7 @@ fn nested_child_height_feedback_reaches_the_following_outer_text() {
                                 .unwrap()
                         })
                         .collect();
-                    assert_eq!(heights, ["216.00", "118.00"]);
+                    assert_eq!(heights, [outer_panel_height, "118.00"]);
                     assert_eq!(
                         page.object_diagnostics,
                         [sdocx::ObjectDiagnostic {
@@ -610,10 +637,12 @@ fn remeasured_code_and_following_text_stay_selectable_in_vector_pdf() {
     ] {
         let doc = document(Context::Flow, code_text(200.0, 50.0, constraint), 800, 0);
         let page = modes(&doc).into_iter().next().unwrap();
-        assert_eq!(
-            geometry(&page.svg).baselines,
-            [64.00101, 91.00101, 145.00101]
-        );
+        let expected = match constraint {
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding => [64.0, 91.0, 145.00101],
+            ObjectSpanLayoutConstraint::OverPages => [54.0, 81.0, 135.00101],
+            _ => unreachable!(),
+        };
+        assert_eq!(geometry(&page.svg).baselines, expected);
         let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
         let pdf = lopdf::Document::load_mem(&bytes).unwrap();
         assert_eq!(
