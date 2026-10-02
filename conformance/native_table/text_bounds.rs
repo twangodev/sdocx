@@ -5,6 +5,9 @@ use geometry::TEXT_SHA256;
 #[path = "text_bounds_grouping.rs"]
 mod grouping;
 
+#[path = "text_runs.rs"]
+mod runs;
+
 const TEXT: u64 = 0x0500_0000;
 const PARAGRAPH: u64 = MODEL + 0x9000;
 const MEASURE: u64 = MODEL + 0x9200;
@@ -109,7 +112,7 @@ struct Case {
 }
 
 impl Case {
-    fn fixture(&self, machine: &Machine, fill: u8) -> String {
+    fn place_entries(&self, machine: &Machine, fill: u8) -> Vec<f32> {
         write(machine.engine, MODEL, &vec![fill; 0x100000]);
         for (address, size) in [
             (PARAGRAPH, 216),
@@ -195,6 +198,11 @@ impl Case {
             read_u64(machine.engine, PARAGRAPH + 112),
             PLACED_LINES + self.line_count as u64 * 56
         );
+        placements
+    }
+
+    fn fixture(&self, machine: &Machine, fill: u8) -> String {
+        let placements = self.place_entries(machine, fill);
         let mut entries = Vec::new();
         let mut groups = Vec::new();
         let mut first = 0;
@@ -300,7 +308,7 @@ impl Case {
     }
 }
 
-pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
+fn load(machine: &Machine, base: &Path, text: &Path) {
     frames::load_base(machine, base);
     map_library(machine.engine, text, TEXT, TEXT_SHA256);
     for (plt, target) in [
@@ -317,6 +325,15 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
     ] {
         bind_native(machine.engine, TEXT + plt, target);
     }
+}
+
+pub(super) fn capture_runs(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    runs::capture(machine);
+}
+
+pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
     let _copy = CopyHook::new(machine);
     let mut captures = Vec::new();
     for (name, font_size, height, pixels, multiplier, object_metric) in [

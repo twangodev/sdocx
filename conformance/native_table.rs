@@ -1018,6 +1018,15 @@ fn main() {
             text_bounds::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
             return;
         }
+        Some("--text-runs") => {
+            let paths = [3, 4].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so and libSPenText.so paths required")
+            });
+            text_bounds::capture_runs(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
+            return;
+        }
         Some("--text-clipping") => {
             let paths = [3, 4, 5].map(|index| {
                 std::env::args_os()
@@ -1149,7 +1158,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-bounds or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-bounds, --text-runs or no capture mode"
         ),
     }
     let mut cases = Vec::new();

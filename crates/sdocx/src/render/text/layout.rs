@@ -1504,7 +1504,7 @@ mod tests {
     }
 
     #[test]
-    fn line_bounds_match_native_entry_placement_captures() {
+    fn line_bounds_match_native_entry_and_emitted_run_captures() {
         use serde::Deserialize;
         use sha2::{Digest, Sha256};
 
@@ -1530,6 +1530,12 @@ mod tests {
             line_count: usize,
             post_cursors: Vec<f32>,
             entries: Vec<Entry>,
+            #[serde(default)]
+            runs: Vec<Run>,
+            #[serde(default)]
+            offset: [f32; 2],
+            #[serde(default)]
+            gravity: f32,
         }
 
         #[derive(Deserialize)]
@@ -1538,80 +1544,153 @@ mod tests {
             layout_rect: [f32; 4],
         }
 
-        let bytes = include_bytes!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../conformance/table-text-bounds.json"
-        ));
-        assert_eq!(
-            format!("{:x}", Sha256::digest(bytes)),
-            "a3fd5eba3513c55bfbe3e3e14fe069592a384989700079ae0537ddbd1fbe1d8c"
-        );
-        let capture: Capture = serde_json::from_slice(bytes).unwrap();
-        assert_eq!(
-            capture.apk_sha256,
-            "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
-        );
-        assert_eq!(
-            capture.text_library_sha256,
-            "5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b"
-        );
-        assert_eq!(
-            capture.base_library_sha256,
-            "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
-        );
-        assert_eq!(capture.memory_fills, [0, 165, 255]);
-        assert_eq!(capture.cases.len(), 162);
-        let frame = TextFrame {
-            bbox: BoundingBox::default(),
-            gravity: None,
-            exclusions: &[],
-        };
-        for case in capture.cases {
-            let font_size = f64::from(case.font_size);
-            let mut line = if case.object_metric {
-                object_line(font_size, true, [0.0; 2])
-            } else {
-                WrappedLine::unmeasured(0..3, font_size)
-            };
-            line.text_height = f64::from(case.base_height);
-            let spacing = Some(ParagraphLineSpacing {
-                kind: if case.pixels == 0.0 {
-                    crate::LineSpacingType::Percent
-                } else {
-                    crate::LineSpacingType::Pixels
-                },
-                value: if case.pixels == 0.0 {
-                    case.multiplier
-                } else {
-                    case.pixels
-                },
-            });
-            let mut cursor = TextCursor::new(f64::from(case.cursor));
-            assert_eq!(case.entries.len(), case.line_count * 3);
-            assert_eq!(case.post_cursors.len(), case.line_count);
-            for index in 0..case.line_count {
-                let placement = cursor.place_at(
-                    &line,
-                    spacing,
-                    &frame,
-                    TextSettings::default(),
-                    LineCandidate {
-                        raw_top: cursor.position(),
-                        margin_top: f64::from(case.margin),
-                    },
+        #[derive(Deserialize)]
+        struct Run {
+            range_inclusive: Option<[usize; 2]>,
+            layout_rect: [f32; 4],
+            #[serde(default)]
+            origin: [f32; 2],
+        }
+
+        for (bytes, digest, count) in [
+            (
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../conformance/table-text-bounds.json"
+                ))
+                .as_slice(),
+                "a3fd5eba3513c55bfbe3e3e14fe069592a384989700079ae0537ddbd1fbe1d8c",
+                162,
+            ),
+            (
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../conformance/table-text-runs.json"
+                ))
+                .as_slice(),
+                "dae6b6929ce1349eefdcb9202bffd4ac9393c3b731511ccf1f493d38cdba0792",
+                230,
+            ),
+        ] {
+            assert_eq!(format!("{:x}", Sha256::digest(bytes)), digest);
+            let capture: Capture = serde_json::from_slice(bytes).unwrap();
+            assert_eq!(
+                capture.apk_sha256,
+                "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
+            );
+            assert_eq!(
+                capture.text_library_sha256,
+                "5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b"
+            );
+            assert_eq!(
+                capture.base_library_sha256,
+                "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+            );
+            assert_eq!(capture.memory_fills, [0, 165, 255]);
+            assert_eq!(capture.cases.len(), count);
+            if count == 230 {
+                assert_eq!(
+                    capture
+                        .cases
+                        .iter()
+                        .map(|case| case.runs.len())
+                        .sum::<usize>(),
+                    528
                 );
-                let entry = &case.entries[index * 3];
-                for (field, actual, expected) in [
-                    ("top", placement.background_top, entry.layout_rect[1]),
-                    ("bottom", placement.bottom, entry.layout_rect[3]),
-                    ("baseline", placement.baseline, entry.position[1]),
-                    ("cursor", placement.post_cursor, case.post_cursors[index]),
-                ] {
-                    assert!(
-                        (actual - f64::from(expected)).abs() < 0.0001,
-                        "{} line {index} {field}: {actual} != {expected}",
-                        case.name
+                assert!(
+                    capture
+                        .cases
+                        .iter()
+                        .flat_map(|case| &case.runs)
+                        .all(|run| run.range_inclusive.is_some())
+                );
+            }
+            let frame = TextFrame {
+                bbox: BoundingBox::default(),
+                gravity: None,
+                exclusions: &[],
+            };
+            for case in capture.cases {
+                let font_size = f64::from(case.font_size);
+                let mut line = if case.object_metric {
+                    object_line(font_size, true, [0.0; 2])
+                } else {
+                    WrappedLine::unmeasured(0..3, font_size)
+                };
+                line.text_height = f64::from(case.base_height);
+                let spacing = Some(ParagraphLineSpacing {
+                    kind: if case.pixels == 0.0 {
+                        crate::LineSpacingType::Percent
+                    } else {
+                        crate::LineSpacingType::Pixels
+                    },
+                    value: if case.pixels == 0.0 {
+                        case.multiplier
+                    } else {
+                        case.pixels
+                    },
+                });
+                let mut cursor = TextCursor::new(f64::from(case.cursor));
+                assert_eq!(case.entries.len(), case.line_count * 3);
+                assert_eq!(case.post_cursors.len(), case.line_count);
+                let mut placements = Vec::new();
+                for index in 0..case.line_count {
+                    let placement = cursor.place_at(
+                        &line,
+                        spacing,
+                        &frame,
+                        TextSettings::default(),
+                        LineCandidate {
+                            raw_top: cursor.position(),
+                            margin_top: f64::from(case.margin),
+                        },
                     );
+                    let entry = &case.entries[index * 3];
+                    for (field, actual, expected) in [
+                        ("top", placement.background_top, entry.layout_rect[1]),
+                        ("bottom", placement.bottom, entry.layout_rect[3]),
+                        ("baseline", placement.baseline, entry.position[1]),
+                        ("cursor", placement.post_cursor, case.post_cursors[index]),
+                    ] {
+                        assert!(
+                            (actual - f64::from(expected)).abs() < 0.0001,
+                            "{} line {index} {field}: {actual} != {expected}",
+                            case.name
+                        );
+                    }
+                    placements.push(placement);
+                }
+                let dy = f64::from(case.offset[1] + case.gravity);
+                for run in case.runs {
+                    let Some(range) = run.range_inclusive else {
+                        continue;
+                    };
+                    let [first, last] = range.map(|index| index / 3);
+                    let covered = &placements[first..=last];
+                    let top = covered
+                        .iter()
+                        .map(|line| line.background_top)
+                        .fold(f64::INFINITY, f64::min);
+                    let bottom = covered
+                        .iter()
+                        .map(|line| line.bottom)
+                        .fold(f64::NEG_INFINITY, f64::max);
+                    for (field, actual, expected) in [
+                        ("run top", top + dy, run.layout_rect[1]),
+                        ("run bottom", bottom + dy, run.layout_rect[3]),
+                        (
+                            "run baseline",
+                            placements[first].baseline + dy,
+                            run.origin[1],
+                        ),
+                    ] {
+                        assert!(
+                            (actual - f64::from(expected)).abs() < 0.0001,
+                            "{} {} {field}: {actual} != {expected}",
+                            case.name,
+                            range[0]
+                        );
+                    }
                 }
             }
         }
