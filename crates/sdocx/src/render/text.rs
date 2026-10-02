@@ -15,6 +15,7 @@ mod layout;
 mod measurement;
 #[cfg(feature = "pdf")]
 pub(crate) mod native;
+pub(in crate::render) mod native_cell_clip;
 mod native_entry;
 mod native_identity;
 mod native_line;
