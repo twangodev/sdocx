@@ -109,12 +109,17 @@ comparisons and explicit unavailable/control cases. Retained-run tests preserve
 shared shaping, glyph positions and exact logical source across supported
 identity boundaries; they do not subdivide a single shaped source cluster.
 The [cached-entry kernel](../crates/sdocx/src/render/text/native_runs.rs) matches
-268 supplied snapshot cases and 568 native output records with exact f32
+324 supplied snapshot cases and 624 native output records with exact f32
 geometry. Its opaque payload references are not font glyph IDs. Production
 uses the same boundary predicate with known span fields only, retaining its
 measured-run and paint checks when full native identity is unavailable.
-The snapshots cover entry kinds 0/3; the kind-5 branch is source-derived and
-has not been compared through the typed kernel with the separate object captures.
+The comparisons cover kinds 0/3 and 56 published kind-5 object records,
+including nonempty false-drawable/null-font cases. Twenty-six glyphless
+precondition controls remain separate from valid emitted records.
+Typed source ranges carry consistent character/UTF-8/UTF-16 boundaries from
+Rust shaping through retained glyphs. The registry validates all three against
+the block text before PDF transport; this does not establish native shaping
+ownership or glyph/codeword mapping.
 Local vertical line bands use native f32 operation order and match all 162
 entry/run-bound and 230 cached-run cases exactly. Frame origins are added
 separately in f64; this does not establish complete native world-frame
@@ -172,6 +177,9 @@ composition or horizontal f32 ownership/adjacency.
   preserve supplied codewords and shaping owners without establishing the
   production font/UTF-16 bridge. Kind-4/emoji emission remains unsupported;
   default-empty controls do not supply a legitimate first glyph word.
+  [Nonzero owner-base capture](reverse-engineering/text-draw-identity-findings.md#captured-nonzero-owner-bases)
+  verifies native request-relative addition and separate source-vector lookup
+  for supplied owners; Minikin/HarfBuzz and chunk normalization remain excluded.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native preview background geometry for embedded objects is captured through
@@ -206,6 +214,10 @@ composition or horizontal f32 ownership/adjacency.
   It does not recover device font configuration or turn shaping script into
   native language metadata; source IDs identify created typeface instances,
   rather than hashes of font-file bytes.
+  [Native file-font construction](reverse-engineering/text-draw-identity-findings.md#captured-file-font-source-instances)
+  confirms distinct same-file source instances and reference-copy identity with
+  pinned test font bytes; it does not establish manager reuse or device font
+  selection.
 - Standalone text modes, RTL justification, separator-only clipping, and
   unusual page/composition behavior remain unverified against native captures.
 - Extreme frame/page geometry and unsupported glyph/effect combinations retain

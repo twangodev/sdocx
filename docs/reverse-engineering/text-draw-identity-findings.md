@@ -593,6 +593,43 @@ at `0x219848`–`0x219868`; Text copies the created typeface ID into source
 member 120 at `0x880d4`. This identifies each created instance, rather than
 font-file bytes. It does not establish arbitrary font-manager cache reuse.
 
+### Captured file-font source instances
+
+[`table-text-font-source.json`](../../conformance/table-text-font-source.json),
+SHA-256 `10056b7117f979ba9e8bf846e4eb2b7f38aba4737191fdd66a1b4d5e0d0ea485`,
+contains 24 cases and 48 independently created native sources. The
+[capture module](../../conformance/native_table/text_font_source.rs) executes
+Text's file-font constructor, `0x85604`, its load path at `0x88214`, Skia
+`CreateFromStream`, `0x2197b8`, and bundled FreeType initialization/open-face
+at `0x107eb4`/`0xff684`. The supplied font is the crate's 515,100-byte
+Roboto Regular, SHA-256
+`56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d`.
+This is a pinned test input, not a recovered device font choice.
+
+Constructing the same file twice creates distinct source IDs. Counter seeds
+0/41 and an intervening actual `NewFontID` call, `0x21a85c`, bound the
+process-history dependency. Native Font source IDs equal their actual created
+Skia typeface member-16 IDs. Actual `Font::GetImpl`, `0x85dd0`, and the
+implementation getter, `0x87850`, preserve existing implementation/source
+pointers and IDs when copying their shared references. This establishes
+instance creation and aliasing for these calls, rather than font-byte identity
+or arbitrary manager-cache reuse.
+
+Native table-tag parsing at `0x21a05c` supplies 19 actual SFNT tags for each
+created source; the complete bitmap predicate at `0x88ae4` returns false
+because that file lacks CBDT. Directly supplied language values include empty,
+`und`, exact `und-Deva`, different casing, UTF-8 and allocated long strings;
+native constructors/getters retain them without inferring script. Requested
+weight/italic metadata does not establish synthesized style or shaping.
+
+Every case repeats at allocation fills `0x00`, `0xa5`, `0xff` and a second
+zero fill; independent full captures are byte-identical. Host file adapters
+supply fixed descriptor/stat/mapping of the pinned bytes; allocation, standard
+byte operations, single-thread bookkeeping and a successful setjmp path are
+host interfaces. Device XML, family selection, font-manager reuse, missing-file
+or parser-error paths, actual bitmap fonts, shaping, rendering and cross-process
+ID equivalence are excluded.
+
 ## UTF-16 entry ownership
 
 Text `RichTextMeasure::createMeasureData`, `0x788f0`, obtains source length
@@ -606,6 +643,21 @@ contains a codeword and XY offsets; several records can append to one owner's
 cache (`0x7740c`–`0x774e4`). Native production unions glyph ink at `0x7763c`,
 stores the owner's supplied advance divided by 100 at `0x77644`–`0x77668`,
 and assigns font size at `0x7766c`–`0x77674`.
+
+The ordinary codeword is the complete shaped glyph ID, not a packed source
+character. Text `0x9c908` reads HarfBuzz glyph-info `codepoint` after shaping;
+`0x9ca0c`/`0x9ca78` append it unchanged to the layout-piece glyph vector.
+Aggregation copies it into record member 16 at `0x9dc8c`, and
+`0x773f0`–`0x7740c` copies that u32 unchanged into the owner cache. Synthesis
+flags travel separately from shaping record member 8 into cache bytes 32/33
+at `0x775a8`–`0x775cc`. The retained first-codeword-high-bits field is therefore
+glyph ID shifted right by eight, not a Unicode character.
+
+Native UTF-16 decoding at `0xa05a4` anchors a decoded surrogate pair at its
+leading code unit (`0xa070c`–`0xa0714`, `0xa0740`–`0xa0760`). Aggregation
+owners are relative to the shaping request; the producer adds the request's
+global base at `0x773a4`. These source findings do not establish that Rust and
+native shaping select identical glyphs or cluster owners.
 
 Unowned code units retain empty caches and kind 3. A surrogate continuation,
 ligature continuation or combining character therefore need not own an
@@ -654,15 +706,51 @@ source and supplied owner maps, rather than native shaping outputs. Native
 source-to-owner selection, font selection, bidi ordering, wrapping, real objects,
 emoji rendering, Composer clipping and final PDF painting do not execute.
 
+### Captured nonzero owner bases
+
+[`table-text-owner-bases.json`](../../conformance/table-text-owner-bases.json),
+SHA-256 `504bbe262a6bde8f9db3ecd1f5162039f6ed644cc9d85fe7c766e2e941a390ed`,
+contains nine cases, 70 UTF-16 entries, 18 owned slots and 21 supplied glyph
+records. The [capture module](../../conformance/native_table/text_ownership.rs)
+executes each native entry constructor, `0x65920`, then the actual producer
+window `0x77324`–`0x77894`. Native output slots are read from memory after
+request-relative owner indices are added to supplied nonzero absolute starts
+3, 4 or 5. Three memory fills and independent captures match byte-for-byte;
+the original 38-case ownership fixtures remain unchanged.
+
+The source-vector base is a separate input, zero or three in these cases.
+With base three and requested half-open range `[4,6)`, native source-unit
+lookup subtracts the base and classifies the space at absolute index four as
+kind 1. Supplementary prefixes/continuations, combining multiple-owner inputs,
+ligature gaps, leading/trailing unowned slots and supplied RTL glyph order
+exercise those source-index relationships without deriving shaping owners.
+
+Inputs supply document/source UTF-16 units, requested ranges, source-vector
+base, relative owners, glyph IDs/XY/ink, per-code-unit advances and font
+wrappers. Owned caches are preset drawable with empty vectors and font
+wrappers to bypass font creation. Allocation, copy and mutex operations are
+host interfaces. HarfBuzz/Minikin shaping, layout-piece/chunk owner normalization,
+font selection/creation, native bidi/direction assignment, placement, retained
+emission and painting do not execute. These cases establish the producer's
+supplied-owner base arithmetic, not full Rust/native shaping equivalence.
+
+The [Rust source-index comparison](../../crates/sdocx/src/text_index/fixture_tests.rs)
+projects supplied request-relative UTF-16 owners through substring scalar
+indexes and back to global source ranges. Across all nine cases, it matches
+the 21 supplied glyph IDs at their actual native owner entries and checks
+rebasing. This verifies owner starts and checked source-index projection;
+it does not establish native cluster extents, shaping or layout parity.
+
 ### Captured cached-entry snapshots
 
-Two fixtures retain the actual pre-emission cached inputs alongside the native
+Three fixtures retain the actual pre-emission cached inputs alongside the native
 outputs:
 
 | Fixture | SHA-256 | Cases | UTF-16 entries | Output records | Output codewords |
 | --- | --- | ---: | ---: | ---: | ---: |
 | [`table-text-cached-runs.json`](../../conformance/table-text-cached-runs.json) | `e0f60a1216fc515c800a368e60279fab9b209f3ee883588987fa2246a96665bb` | 230 | 1,116 | 528 | 1,180 |
 | [`table-text-cached-ownership.json`](../../conformance/table-text-cached-ownership.json) | `44b7fd9d1c4de0f803aca18782c281b6971d0ef4c5360afc4969f36dbfef63c0` | 38 | 124 | 40 | 94 |
+| [`table-text-cached-object-runs.json`](../../conformance/table-text-cached-object-runs.json) | `de3b95b24e236c14ef8af01af89c1e58478599a260aa8c09f7f2e3db8b084b45` | 82 | 82 | 56 | 80 |
 
 The shared [snapshot reader](../../conformance/native_table/text_cached_snapshot.rs)
 records source UTF-16, logical map, compared span fields, cached glyphs/font
@@ -670,13 +758,26 @@ metadata and native f32 entry geometry immediately before emission. Native
 `SetLayout`/`GetBaseline`, cached `GetGlyphInfo`/`GetSpan`, complete
 `getDrawnTextRun` and `appendTextBlock` execute as in their existing captures.
 Ownership cases additionally execute entry construction and the supplied
-`SpanRunFunctor` producer window. Removing the new `cached_input` member
-reproduces the original fixtures exactly. Both expanded fixtures repeat across
+`SpanRunFunctor` producer window. Removing `cached_input` from the run and
+ownership snapshots reproduces their original fixtures exactly. The first 80
+object scenarios reproduce the original object cases after removing the new
+snapshot and kernel-admission fields. The expanded fixtures repeat across
 three memory fills and independent captures.
+
+The object snapshot capture extends the original 80 object scenarios with two
+supplied cache overrides after `GetGlyphInfo` and before public emission.
+Native kind 5 with a nonempty cache publishes a record when drawable is false,
+and also when the font wrapper is null, in which case font ID is `-1`.
+Fifty-six cases publish records, including the original 54; 26 missing-upstream-
+glyph controls remain excluded from positive kernel comparisons. Those controls
+use an explicitly unmapped guest-zero page and fault on the attempted null
+first-word load at `0x68144`. They do not describe production empty caches or
+application crashes.
 
 Codewords, shaped source owners, positions/advances, spans, font interfaces and
 line/block metrics remain supplied inputs. The recorded codewords are opaque
-native cache values, not proven SFNT glyph IDs. Captured directions are 0/1
+test cache values; they do not identify glyphs from actual selected fonts.
+The ordinary glyph-ID transport proof above is source-derived. Captured directions are 0/1
 and cache auxiliary flags are zero. Cached Y offsets are captured
 even though the retained native output records store X positions only. These
 snapshots do not establish a Rust-character-to-native-UTF-16 ownership bridge,
@@ -906,7 +1007,7 @@ The [typed cached-entry emitter](../../crates/sdocx/src/render/text/native_runs.
 accepts supplied UTF-16 entries, native f32 geometry, span/font metadata and
 cached glyph payload references. Its
 [fixture comparisons](../../crates/sdocx/src/render/text/native_runs/fixture_tests.rs)
-match all 268 snapshot cases and 568 output records, including source ranges,
+match 324 snapshot cases, 1,296 entries and 624 output records, including source ranges,
 glyph order/owner/stored X, origin, ink/layout rectangles, font ID/size,
 foreground/style/ordinary background and object flag. Geometry comparisons
 use exact f32 values. The adapter maps opaque payload indices back to captured
@@ -919,10 +1020,17 @@ records carry an explicit classification without inventing first-codeword bits.
 Kind 4/emoji and unknown kinds, drawable owners with empty caches, unavailable
 font state and nonfinite/overflowing geometry fail explicitly. Bounded inputs
 permit at most 250,000 UTF-16 entries and 1,000,000 cached glyphs.
-The 268 snapshot comparisons cover entry kinds 0/3. The kind-5 generic-owner
-branch follows the native source audit; the separate 54 published object records
-have not been adapted into this typed kernel comparison. Full kind-5 kernel
-capture validation is therefore distinct from the native object producer capture.
+The comparisons cover the original 268 kind-0/3 cases and 56 published kind-5
+object records. They include kind 5's nonempty false-drawable and null-font
+branches, while keeping 26 glyphless precondition controls separate.
+
+Production [TextSource](../../crates/sdocx/src/text_index.rs) keeps sealed,
+consistent character, UTF-8 byte and UTF-16 ranges. One `TextIndex` constructs
+these ranges; checked `relative_to` retains all three through measured glyphs,
+retained glyphs and `NativeGlyph` block-relative source. The retained registry
+recomputes the expected ranges against the actual block text and rejects a
+mismatch before passing the validated byte range to Krilla. This is a checked
+projection of Rust shaping ownership, not proof of native UTF-16 owner parity.
 
 Production PDF grouping calls the same `native_run_boundary` with its available
 span projection. It does not supply native entry kind/direction, f32 horizontal
