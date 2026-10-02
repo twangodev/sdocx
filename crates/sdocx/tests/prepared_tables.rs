@@ -1,5 +1,9 @@
 #![cfg(all(feature = "render", feature = "serde"))]
 
+#[cfg(feature = "pdf")]
+#[path = "support/pdf_geometry.rs"]
+mod pdf_geometry;
+
 use sdocx::{
     BoundingBox, Document, DocumentMetadata, ObjectSpanLayoutConstraint, ObjectSpanLayoutOption,
     ObjectType, Page, PageElement, RichTextBox, RichTextObjectContent, RichTextObjectSpan,
@@ -133,6 +137,161 @@ fn render(doc: &Document, replay: bool) -> sdocx::RenderedPage {
         sdocx::render_layout_page_replay_svg(doc, &layout, 0, &Default::default()).unwrap()
     } else {
         sdocx::render_layout_page_svg(doc, &layout, 0, &Default::default()).unwrap()
+    }
+}
+
+#[test]
+fn translated_public_cell_exports_keep_the_captured_native_plan() {
+    use sha2::{Digest, Sha256};
+
+    let bytes = include_bytes!("../../../conformance/table-text-cell-emission.json");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "0098cfcd93274b210892fd0653677fd4cef3a35ebc4f0419b4b661857cbfa4ce"
+    );
+    let capture: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+    let native_float =
+        |value: &serde_json::Value| f64::from(f32::from_bits(value.as_u64().unwrap() as u32));
+    for name in ["default-narrow", "fractional-width", "consecutive-newlines"] {
+        let case = capture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["name"] == name)
+            .unwrap();
+        let source = case["text_utf8"].as_str().unwrap();
+        let width = case["measure_widths"][0].as_f64().unwrap();
+        let expected = case["emitted_runs"]["runs"].as_array().unwrap();
+        let mut original: Option<Vec<(Vec<f64>, f64)>> = None;
+        for offset in [0.0, 1.0] {
+            let mut table = table(&[&[source]]);
+            table.bbox = bounds(0.0, 0.0, width, 1000.0);
+            table.column_widths = vec![width as f32];
+            table.rows[0].height = 1000.0;
+            let cell = &mut table.rows[0].cells[0];
+            cell.bbox = table.bbox;
+            cell.content = text(source);
+            cell.content.font_size = Some(
+                case["requested_font_size_bits"]
+                    .as_u64()
+                    .map_or(50.0, |bits| f32::from_bits(bits as u32)),
+            );
+            cell.content.paragraphs = vec![RichTextParagraph {
+                kind: RichTextParagraphType::Alignment,
+                start_paragraph: 0,
+                end_paragraph: 1,
+                payload: 2_u32.to_le_bytes().to_vec(),
+            }];
+            cell.content.margins = None;
+            let mut doc = document(table, ObjectSpanLayoutConstraint::Normal);
+            doc.metadata.default_page_dimensions = Some((360, 1600));
+            let sdocx::PageObjectContent::Element(PageElement::TextBox(body)) =
+                &mut doc.pages[0].objects[0].content
+            else {
+                unreachable!()
+            };
+            body.margins = Some([offset as f32, 0.0, 0.0, 0.0]);
+            let rendered = render(&doc, false);
+            assert!(
+                rendered.text_diagnostics.is_empty(),
+                "{name}: {:?}",
+                rendered.text_diagnostics
+            );
+            assert!(
+                rendered.object_diagnostics.is_empty(),
+                "{name}: {:?}",
+                rendered.object_diagnostics
+            );
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            let groups = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("text"))
+                .collect::<Vec<_>>();
+            assert_eq!(groups.len(), expected.len(), "{name}");
+            let coordinates = groups
+                .iter()
+                .map(|group| {
+                    let spans = group
+                        .descendants()
+                        .filter(|node| node.has_tag_name("tspan"))
+                        .collect::<Vec<_>>();
+                    let positions = spans
+                        .iter()
+                        .flat_map(|span| span.attribute("x").unwrap().split_whitespace())
+                        .map(|position| position.parse::<f64>().unwrap())
+                        .collect::<Vec<_>>();
+                    let baseline = spans[0].attribute("y").unwrap().parse::<f64>().unwrap();
+                    (positions, baseline)
+                })
+                .collect::<Vec<_>>();
+            let translation = [
+                coordinates[0].0[0] - native_float(&expected[0]["position_bits"][0]),
+                coordinates[0].1 - native_float(&expected[0]["origin_bits"][1]),
+            ];
+            for ((positions, baseline), captured) in coordinates.iter().zip(expected) {
+                let expected_positions = captured["position_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| native_float(value) + translation[0])
+                    .collect::<Vec<_>>();
+                assert_eq!(positions, &expected_positions, "{name}");
+                assert_eq!(
+                    *baseline,
+                    native_float(&captured["origin_bits"][1]) + translation[1],
+                    "{name}"
+                );
+            }
+            if let Some(original) = &original {
+                for ((positions, baseline), (previous, previous_baseline)) in
+                    coordinates.iter().zip(original)
+                {
+                    assert_eq!(
+                        positions,
+                        &previous.iter().map(|x| x + offset).collect::<Vec<_>>(),
+                        "{name}"
+                    );
+                    assert_eq!(baseline, previous_baseline, "{name}");
+                }
+            } else {
+                original = Some(coordinates);
+            }
+            #[cfg(feature = "pdf")]
+            {
+                let pdf =
+                    sdocx::render_document_pdf(&doc, &Default::default(), &Default::default())
+                        .unwrap();
+                let geometry = pdf_geometry::read(&pdf, 96.0);
+                let expected_source = expected
+                    .iter()
+                    .map(|run| {
+                        let range = run["range_inclusive"].as_array().unwrap();
+                        let start = range[0].as_u64().unwrap() as usize;
+                        let end = range[1].as_u64().unwrap() as usize;
+                        source
+                            .chars()
+                            .skip(start)
+                            .take(end + 1 - start)
+                            .collect::<String>()
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(geometry.actual_text, expected_source, "{name}");
+                assert_eq!(geometry.source, source.replace('\n', ""), "{name}");
+                assert_eq!(
+                    geometry
+                        .extracted_text
+                        .chars()
+                        .filter(|character| !character.is_whitespace())
+                        .collect::<String>(),
+                    source
+                        .chars()
+                        .filter(|character| !character.is_whitespace())
+                        .collect::<String>(),
+                    "{name}"
+                );
+                assert_eq!(geometry.image_resources, 0);
+            }
+        }
     }
 }
 

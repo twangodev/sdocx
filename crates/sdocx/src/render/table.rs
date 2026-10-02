@@ -253,22 +253,46 @@ fn translate_cell_drawing(
     layout: &mut TextLayout,
     origin: [f64; 2],
 ) -> Result<(), ObjectDiagnosticKind> {
+    let mut preserves_native_frame = layout.native_frame.is_some();
     for line in &mut layout.lines {
         if !line.line.placements.is_empty() {
             line.x +=
                 super::text::line_alignment_offset(line.line.advance, line.width, line.alignment);
             line.alignment = None;
         }
+        let expected = [
+            line.x + origin[0],
+            line.baseline + origin[1],
+            line.top + origin[1],
+            line.background_top + origin[1],
+            line.bottom + origin[1],
+            line.post_cursor + origin[1],
+        ];
         line.x = native_add(line.x, origin[0])?;
         line.baseline = native_add(line.baseline, origin[1])?;
         line.top = native_add(line.top, origin[1])?;
         line.background_top = native_add(line.background_top, origin[1])?;
         line.bottom = native_add(line.bottom, origin[1])?;
         line.post_cursor = native_add(line.post_cursor, origin[1])?;
+        preserves_native_frame &= expected
+            == [
+                line.x,
+                line.baseline,
+                line.top,
+                line.background_top,
+                line.bottom,
+                line.post_cursor,
+            ];
         if let Some(marker) = &mut line.marker {
             marker.x = native_add(marker.x, origin[0])?;
             marker.center_y = native_add(marker.center_y, origin[1])?;
         }
+    }
+    if preserves_native_frame && let Some(frame) = &mut layout.native_frame {
+        frame.translation[0] += origin[0];
+        frame.translation[1] += origin[1];
+    } else {
+        layout.native_frame = None;
     }
     Ok(())
 }
@@ -1418,6 +1442,86 @@ pub(super) mod tests {
         assert_eq!(line.width, callback.rows[0].cells[0].layout.lines[0].width);
         assert_eq!(line.line.source, 0..1);
         assert_eq!(callback.rows[0].cells[0].layout.lines[0].x, 3.5);
+    }
+
+    #[test]
+    fn drawing_preserves_the_native_cached_plan_world_translation() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::resolved(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        for size in [17.0, 50.0] {
+            let mut table = grid(&[1000.0], &[40.0]);
+            let content = &mut table.rows[0].cells[0].content;
+            content.text = "AV abc".into();
+            content.font_size = Some(size);
+            content.paragraphs.clear();
+            content.margins = None;
+            for origin in [[0.0, 0.0], [1.0, 0.0]] {
+                let drawing = prepare_table_drawing(
+                    &table,
+                    ObjectSpanLayoutConstraint::Normal,
+                    origin,
+                    theme,
+                    &renderer,
+                )
+                .unwrap()
+                .unwrap();
+                let cell = &drawing.rows[0].cells[0];
+                let styled = StyledText::new(
+                    &table.rows[0].cells[0].content,
+                    TextContext::Flow,
+                    renderer.settings,
+                );
+                let plan = super::super::text::native_paint_plan::native_paint_plan(
+                    &styled,
+                    &cell.layout,
+                    theme,
+                )
+                .unwrap();
+                assert_eq!(plan.translation, [cell.frame.x_min, cell.frame.y_min]);
+            }
+        }
+    }
+
+    #[test]
+    fn rounded_world_positions_reject_the_cached_plan_without_changing_layout() {
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(super::super::text::TextSettings::resolved(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        for size in [17.0, 50.0] {
+            let mut table = grid(&[1000.0], &[40.0]);
+            let content = &mut table.rows[0].cells[0].content;
+            content.text = "A".into();
+            content.font_size = Some(size);
+            content.paragraphs.clear();
+            content.margins = Some([3.0, 3.0, 0.0, 0.0]);
+            let drawing = prepare_table_drawing(
+                &table,
+                ObjectSpanLayoutConstraint::Normal,
+                [16_777_216.0; 2],
+                theme,
+                &renderer,
+            )
+            .unwrap()
+            .unwrap();
+            let cell = &drawing.rows[0].cells[0];
+            assert!(valid_cell_layout(&cell.layout));
+            assert!(cell.layout.native_frame.is_none());
+            assert_eq!(cell.layout.lines[0].x, 16_777_220.0);
+            let styled = StyledText::new(
+                &table.rows[0].cells[0].content,
+                TextContext::Flow,
+                renderer.settings,
+            );
+            assert!(matches!(
+                super::super::text::native_paint_plan::native_paint_plan(
+                    &styled,
+                    &cell.layout,
+                    theme,
+                ),
+                Err(super::super::text::native_paint_plan::NativePaintPlanUnavailable::OutsideCertificate("layout"))
+            ));
+        }
     }
 
     #[test]
