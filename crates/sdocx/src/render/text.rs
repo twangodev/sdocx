@@ -16,6 +16,8 @@ mod measurement;
 #[cfg(feature = "pdf")]
 pub(crate) mod native;
 mod native_identity;
+#[cfg(any(feature = "pdf", test))]
+mod native_runs;
 mod objects;
 mod pagination;
 mod paint;

@@ -9,6 +9,8 @@ use crate::render::vector::{
 use crate::render::{RenderTheme, push_text_span, render_flow_line, styled_tspan};
 use crate::{ParagraphAlignment, PredefinedTextStyle};
 
+#[cfg(feature = "pdf")]
+use super::native_runs::{NativeBoundaryEntry, NativeRunBoundary, native_run_boundary};
 use super::{StyledText, TextRenderer, TextStyle, WrappedLine};
 
 #[cfg(all(test, feature = "pdf"))]
@@ -264,10 +266,11 @@ fn render_retained_fragment(
             if index > start_index {
                 let next =
                     styled.resolved_style_at(placement.cluster.source.start, theme, predefined);
-                if !matches!(
-                    (&resolved.native_draw, &next.native_draw),
-                    (Ok(left), Ok(right)) if left == right
-                ) || retained_paint(&next.paint, measured.synthesis.skew_x())? != paint
+                if native_run_boundary(
+                    NativeBoundaryEntry::from_span(&resolved.native_draw),
+                    NativeBoundaryEntry::from_span(&next.native_draw),
+                ) == NativeRunBoundary::Split
+                    || retained_paint(&next.paint, measured.synthesis.skew_x())? != paint
                 {
                     break;
                 }
