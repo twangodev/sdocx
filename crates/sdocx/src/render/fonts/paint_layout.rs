@@ -3,6 +3,9 @@ use super::{PaintShapeDirection, PaintShapedRun};
 use std::ops::Range;
 use std::sync::Arc;
 
+mod entry_geometry;
+pub use entry_geometry::{PaintEntryError, PaintEntryGeometry, PaintEntryGlyph, PaintLogicalEntry};
+
 #[cfg(test)]
 mod fixture_tests;
 

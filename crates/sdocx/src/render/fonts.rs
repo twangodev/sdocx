@@ -15,7 +15,10 @@ pub use paint_metrics::{
 };
 
 mod paint_layout;
-pub use paint_layout::{PaintGlyphPlacement, PaintLayout, PaintLayoutError};
+pub use paint_layout::{
+    PaintEntryError, PaintEntryGeometry, PaintEntryGlyph, PaintGlyphPlacement, PaintLayout,
+    PaintLayoutError, PaintLogicalEntry,
+};
 
 mod paint_shaping;
 pub use paint_shaping::{

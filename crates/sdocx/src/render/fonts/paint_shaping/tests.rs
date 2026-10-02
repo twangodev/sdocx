@@ -15,6 +15,9 @@ struct Capture {
 struct Case {
     name: String,
     text_utf8: String,
+    range_utf16: [u32; 2],
+    #[serde(default)]
+    entry_geometry: Option<ExpectedEntryGeometry>,
     paint: Paint,
     hb_calls: Vec<Call>,
     callbacks: Callbacks,
@@ -249,9 +252,8 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
         };
         let mut shaper = face.paint_shaper(input).unwrap();
         let mut callback_index = 0;
-        let single_chunk = case.hb_calls.len() == 1;
         let mut runs = Vec::new();
-        for call in case.hb_calls {
+        for call in &case.hb_calls {
             assert_eq!(call.input.content_type, 1);
             assert_eq!([shaper.scale().x, shaper.scale().y], call.nativefont_scale);
             assert_eq!(shaper.scale().ppem, call.nativefont_ppem);
@@ -276,7 +278,7 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
                 })
                 .collect();
             let pre = string(call.input.pre_context.iter().rev().copied());
-            let post = string(call.input.post_context);
+            let post = string(call.input.post_context.iter().copied());
             let request = PaintShapeRequest {
                 source: &case.text_utf8,
                 infos: &source_infos,
@@ -301,29 +303,12 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
             let run = shaper
                 .shape(request)
                 .unwrap_or_else(|error| panic!("{}: {error}", case.name));
-            if single_chunk {
-                assert!(case.layout_piece.font_indices.iter().all(|&slot| slot == 0));
-                assert!(
-                    case.layout_piece
-                        .font_fakery_bits
-                        .iter()
-                        .all(|&fakery| fakery == 0)
-                );
-                let layout = run
-                    .layout(
-                        f32::from_bits(case.paint.letter_spacing_bits),
-                        f32::from_bits(case.paint.word_spacing_bits),
-                    )
-                    .unwrap();
-                compare_layout(&layout, &case.layout_piece, &case.name);
-                counts[2] += layout.glyphs().len();
-            }
             assert_eq!(run.glyphs.len(), call.output.infos.len());
             for ((glyph, info), position) in run
                 .glyphs
                 .iter()
-                .zip(call.output.infos)
-                .zip(call.output.positions)
+                .zip(&call.output.infos)
+                .zip(&call.output.positions)
             {
                 assert_eq!(
                     glyph.id, info.glyph_id,
@@ -342,7 +327,7 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
                         glyph.x_offset,
                         glyph.y_offset
                     ],
-                    position,
+                    *position,
                     "{} position {callback_index}",
                     case.name
                 );
@@ -364,17 +349,29 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
             counts[0] += 1;
             runs.push(run);
         }
-        if !single_chunk {
-            let run_refs: Vec<_> = runs.iter().collect();
-            let layout = crate::render::fonts::PaintLayout::from_runs(
-                &run_refs,
-                f32::from_bits(case.paint.letter_spacing_bits),
-                f32::from_bits(case.paint.word_spacing_bits),
-            )
-            .unwrap();
-            compare_layout(&layout, &case.layout_piece, &case.name);
-            counts[2] += layout.glyphs().len();
+        assert!(case.layout_piece.font_indices.iter().all(|&slot| slot == 0));
+        assert!(
+            case.layout_piece
+                .font_fakery_bits
+                .iter()
+                .all(|&fakery| fakery == 0)
+        );
+        let letter_spacing = f32::from_bits(case.paint.letter_spacing_bits);
+        let word_spacing = f32::from_bits(case.paint.word_spacing_bits);
+        let layout = match runs.as_slice() {
+            [run] => run.layout(letter_spacing, word_spacing),
+            _ => crate::render::fonts::PaintLayout::from_runs(
+                &runs.iter().collect::<Vec<_>>(),
+                letter_spacing,
+                word_spacing,
+            ),
         }
+        .unwrap();
+        compare_layout(&layout, &case.layout_piece, &case.name);
+        if let Some(expected_entries) = &case.entry_geometry {
+            compare_entry_geometry(&layout, &case, expected_entries);
+        }
+        counts[2] += layout.glyphs().len();
         assert_eq!(callback_index, case.callbacks.vector_raw_bits.len());
     }
     assert_eq!(counts, expected);
@@ -809,5 +806,256 @@ fn provider_derived_multi_chunk_layout_matches_native_scripts_spacing_and_owners
         )),
         "00d1634d29634fac146b42baa1e1a349bd66a2a74724ca7e7d5c539f116703ad",
         [380, 800, 800],
+    );
+}
+
+#[derive(Deserialize)]
+struct ExpectedEntryGeometry {
+    source_utf16: Vec<u16>,
+    glyphs: Vec<ExpectedEntryGlyph>,
+    entry_widths_bits: Vec<u32>,
+    entry_ink_bits: Vec<[u32; 4]>,
+}
+
+#[derive(Deserialize)]
+struct ExpectedEntryGlyph {
+    glyph_id: u32,
+    owner_utf16: u32,
+    entry_position_bits: [u32; 2],
+    entry_ink_bits: [u32; 4],
+}
+
+fn compare_entry_geometry(
+    layout: &crate::render::fonts::PaintLayout,
+    case: &Case,
+    expected: &ExpectedEntryGeometry,
+) {
+    let actual = layout.entry_geometry().unwrap();
+    assert_eq!(
+        actual.source(),
+        case.text_utf8,
+        "{} entry source",
+        case.name
+    );
+    assert_eq!(
+        actual.source_range_utf16(),
+        case.range_utf16[0]..case.range_utf16[1],
+        "{} entry range",
+        case.name
+    );
+    assert_eq!(
+        actual.source().encode_utf16().collect::<Vec<_>>(),
+        expected.source_utf16,
+        "{} entry source scalars",
+        case.name
+    );
+    assert_eq!(actual.glyphs().len(), expected.glyphs.len());
+    for (index, (glyph, expected_glyph)) in actual.glyphs().iter().zip(&expected.glyphs).enumerate()
+    {
+        assert_eq!(
+            glyph.id(),
+            expected_glyph.glyph_id,
+            "{} entry glyph ID",
+            case.name
+        );
+        assert_eq!(
+            glyph.owner_utf16(),
+            expected_glyph.owner_utf16,
+            "{} absolute entry owner",
+            case.name
+        );
+        assert_eq!(
+            glyph.position().map(f32::to_bits),
+            expected_glyph.entry_position_bits,
+            "{} entry glyph position",
+            case.name
+        );
+        assert_eq!(
+            glyph.ink_bounds().map(f32::to_bits),
+            expected_glyph.entry_ink_bits,
+            "{} entry glyph ink",
+            case.name
+        );
+        assert!(
+            actual
+                .entry_at_utf16(glyph.owner_utf16())
+                .unwrap()
+                .glyphs()
+                .contains(&index)
+        );
+    }
+    let mut widths = vec![0; expected.source_utf16.len()];
+    let mut inks = vec![[0; 4]; expected.source_utf16.len()];
+    let mut entry_count = 0;
+    for owner in 0..expected.source_utf16.len() as u32 {
+        if let Some(entry) = actual.entry_at_utf16(owner) {
+            entry_count += 1;
+            widths[owner as usize] = entry.advance().to_bits();
+            inks[owner as usize] = entry.ink_bounds().map(f32::to_bits);
+            for glyph in &actual.glyphs()[entry.glyphs()] {
+                assert_eq!(
+                    glyph.owner_utf16(),
+                    owner,
+                    "{} entry glyph range",
+                    case.name
+                );
+            }
+        }
+    }
+    assert_eq!(entry_count, actual.entries().len());
+    assert_eq!(
+        widths, expected.entry_widths_bits,
+        "{} entry widths and zero padding",
+        case.name
+    );
+    assert_eq!(
+        inks, expected.entry_ink_bits,
+        "{} owner ink unions and zero padding",
+        case.name
+    );
+}
+
+#[test]
+fn provider_derived_logical_entries_match_native_append_and_owner_bounds() {
+    compare_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-entry-geometry.json"
+        )),
+        "4615a8778c0a7b6301bd9efddbd591da2fd00278d4a3f0db06b04e4b1c923dc4",
+        [8, 25, 25],
+    );
+}
+
+fn entry_capture() -> Capture {
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../conformance/table-text-entry-geometry.json"
+    ));
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "4615a8778c0a7b6301bd9efddbd591da2fd00278d4a3f0db06b04e4b1c923dc4"
+    );
+    serde_json::from_slice(bytes).unwrap()
+}
+
+#[test]
+fn captured_layout_geometry_converts_to_exact_native_logical_entries() {
+    use crate::render::fonts::paint_layout::{
+        PaintLayoutChunk, PaintLayoutGlyphInput, PaintLayoutPaint, paint_layout,
+    };
+    let capture = entry_capture();
+    assert_eq!(capture.cases.len(), 8);
+    let mut glyph_count = 0;
+    for case in &capture.cases {
+        let source: Arc<str> = Arc::from(case.text_utf8.as_str());
+        let mut bounds = case.callbacks.raw_skia_bounds_bits.iter();
+        let inputs: Vec<Vec<_>> = case
+            .hb_calls
+            .iter()
+            .map(|call| {
+                call.output
+                    .infos
+                    .iter()
+                    .zip(&call.output.positions)
+                    .map(|(info, &[advance_x, advance_y, offset_x, offset_y])| {
+                        PaintLayoutGlyphInput {
+                            id: info.glyph_id,
+                            cluster_utf16: info.cluster,
+                            advance_x,
+                            advance_y,
+                            offset_x,
+                            offset_y,
+                            ink_bounds: bounds.next().unwrap().map(f32::from_bits),
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
+        assert!(bounds.next().is_none());
+        let chunks: Vec<_> = case
+            .hb_calls
+            .iter()
+            .zip(&inputs)
+            .map(|(call, glyphs)| {
+                let first = call.input.infos.first().unwrap();
+                let last = call.input.infos.last().unwrap();
+                PaintLayoutChunk {
+                    source: Arc::clone(&source),
+                    source_utf16_length: source.encode_utf16().count() as u32,
+                    range_utf16: first.cluster
+                        ..last.cluster + char::from_u32(last.codepoint).unwrap().len_utf16() as u32,
+                    direction: call.input.direction,
+                    script: call.input.script,
+                    font_slot: 0,
+                    font_fakery: 0,
+                    glyphs,
+                }
+            })
+            .collect();
+        let layout = paint_layout(
+            PaintLayoutPaint {
+                size: f32::from_bits(case.paint.size_bits),
+                scale_x: f32::from_bits(case.paint.scale_x_bits),
+                skew_x: f32::from_bits(case.paint.skew_x_bits),
+                letter_spacing: f32::from_bits(case.paint.letter_spacing_bits),
+                word_spacing: f32::from_bits(case.paint.word_spacing_bits),
+            },
+            &chunks,
+        )
+        .unwrap();
+        compare_layout(&layout, &case.layout_piece, &case.name);
+        compare_entry_geometry(&layout, case, case.entry_geometry.as_ref().unwrap());
+        glyph_count += layout.glyphs().len();
+    }
+    assert_eq!(glyph_count, 25);
+}
+
+#[test]
+fn entry_capture_distinguishes_advance_division_and_owner_ink_translation() {
+    let capture = entry_capture();
+    let mut multiplication_mismatches = 0;
+    let mut missing_translation_mismatches = 0;
+    let mut repeated_translation_mismatches = 0;
+    for case in &capture.cases {
+        let expected = case.entry_geometry.as_ref().unwrap();
+        for (relative_owner, &advance) in
+            case.layout_piece.character_advances_bits.iter().enumerate()
+        {
+            let absolute_owner = case.range_utf16[0] as usize + relative_owner;
+            let multiplied = f32::from_bits(advance) * 0.01_f32;
+            multiplication_mismatches +=
+                usize::from(multiplied.to_bits() != expected.entry_widths_bits[absolute_owner]);
+        }
+        for ((&ink, &position), glyph) in case
+            .layout_piece
+            .ink_bounds_bits
+            .iter()
+            .zip(&case.layout_piece.owner_positions_bits)
+            .zip(&expected.glyphs)
+        {
+            let ink = ink.map(f32::from_bits);
+            let [x, y] = position.map(f32::from_bits);
+            let no_translation = ink.map(|coordinate| coordinate * 0.01_f32);
+            let repeated = [
+                (ink[0] + x) + x,
+                (ink[1] + y) + y,
+                (ink[2] + x) + x,
+                (ink[3] + y) + y,
+            ]
+            .map(|coordinate| coordinate * 0.01_f32);
+            missing_translation_mismatches +=
+                usize::from(no_translation.map(f32::to_bits) != glyph.entry_ink_bits);
+            repeated_translation_mismatches +=
+                usize::from(repeated.map(f32::to_bits) != glyph.entry_ink_bits);
+        }
+    }
+    assert_eq!(
+        (
+            multiplication_mismatches,
+            missing_translation_mismatches,
+            repeated_translation_mismatches,
+        ),
+        (4, 8, 8),
     );
 }
