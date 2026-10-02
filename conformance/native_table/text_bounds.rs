@@ -13,6 +13,9 @@ mod cached_snapshot;
 #[path = "text_ownership.rs"]
 mod ownership;
 
+#[path = "text_wrap_numeric.rs"]
+mod wrap_numeric;
+
 const TEXT: u64 = 0x0500_0000;
 const PARAGRAPH: u64 = MODEL + 0x9000;
 const MEASURE: u64 = MODEL + 0x9200;
@@ -116,37 +119,41 @@ struct Case {
     style_change: bool,
 }
 
+fn initialize_layout_shell(machine: &Machine, fill: u8) {
+    write(machine.engine, MODEL, &vec![fill; 0x100000]);
+    for (address, size) in [
+        (PARAGRAPH, 216),
+        (MEASURE, 80),
+        (RICH_PARAGRAPH, 88),
+        (LINES, 128),
+        (BLOCKS, 160),
+        (SPANS, 144),
+        (FONT, 16),
+    ] {
+        write(machine.engine, address, &vec![0; size]);
+    }
+    for (address, value) in [
+        (PARAGRAPH + 96, MEASURE),
+        (PARAGRAPH + 104, PLACED_LINES),
+        (PARAGRAPH + 112, PLACED_LINES),
+        (PARAGRAPH + 120, PLACED_LINES + 112),
+        (PARAGRAPH + 152, LOGICAL_MAP),
+        (PARAGRAPH + 184, BLOCK_POINTERS),
+        (MEASURE, ENTRIES),
+        (MEASURE + 8, RICH_PARAGRAPH),
+    ] {
+        write(machine.engine, address, &value.to_le_bytes());
+    }
+    write(machine.engine, MEASURE + 72, &[1]);
+    float(machine.engine, MEASURE + 36, 1_000_000.0);
+    write(machine.engine, PARAGRAPH + 132, &1_u32.to_le_bytes());
+}
+
 impl Case {
     fn place_entries(&self, machine: &Machine, fill: u8) -> Vec<f32> {
-        write(machine.engine, MODEL, &vec![fill; 0x100000]);
-        for (address, size) in [
-            (PARAGRAPH, 216),
-            (MEASURE, 80),
-            (RICH_PARAGRAPH, 88),
-            (LINES, 128),
-            (BLOCKS, 160),
-            (SPANS, 144),
-            (FONT, 16),
-        ] {
-            write(machine.engine, address, &vec![0; size]);
-        }
-        for (address, value) in [
-            (PARAGRAPH + 96, MEASURE),
-            (PARAGRAPH + 104, PLACED_LINES),
-            (PARAGRAPH + 112, PLACED_LINES),
-            (PARAGRAPH + 120, PLACED_LINES + 112),
-            (PARAGRAPH + 152, LOGICAL_MAP),
-            (PARAGRAPH + 184, BLOCK_POINTERS),
-            (MEASURE, ENTRIES),
-            (MEASURE + 8, RICH_PARAGRAPH),
-        ] {
-            write(machine.engine, address, &value.to_le_bytes());
-        }
-        write(machine.engine, MEASURE + 72, &[1]);
-        float(machine.engine, MEASURE + 36, 1_000_000.0);
+        initialize_layout_shell(machine, fill);
         float(machine.engine, RICH_PARAGRAPH + 32, self.pixels);
         float(machine.engine, RICH_PARAGRAPH + 36, self.multiplier);
-        write(machine.engine, PARAGRAPH + 132, &1_u32.to_le_bytes());
         float(machine.engine, SPANS, 20.0);
         float(
             machine.engine,
@@ -410,4 +417,9 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {
         captures.join(",\n"),
         grouping.join(",\n")
     );
+}
+
+pub(super) fn capture_wrap_numeric(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    wrap_numeric::capture(machine);
 }

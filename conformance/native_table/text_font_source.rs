@@ -519,6 +519,16 @@ impl NativeFontEnvironment {
         skia: &Path,
         font: &Path,
     ) -> Self {
+        Self::with_libraries(machine, base, text, skia, font, &[])
+    }
+    pub(super) fn with_libraries(
+        machine: &Machine,
+        base: &Path,
+        text: &Path,
+        skia: &Path,
+        font: &Path,
+        additional: &[(&Path, u64, &str)],
+    ) -> Self {
         let digest = Command::new("sha256sum").arg(font).output().unwrap();
         assert!(digest.status.success());
         assert_eq!(
@@ -529,12 +539,13 @@ impl NativeFontEnvironment {
                 .unwrap(),
             FONT_SHA256
         );
-        let libraries = [
+        let mut libraries = vec![
             (base, BASE, BASE_SHA256),
             (text, TEXT, TEXT_SHA256),
             (skia, SKIA, SKIA_SHA256),
         ];
-        for (path, address, hash) in libraries {
+        libraries.extend_from_slice(additional);
+        for &(path, address, hash) in &libraries {
             map_library(machine.engine, path, address, hash);
         }
         check(unsafe { uc_mem_map(machine.engine, HOST, 0x10000, 7) });
