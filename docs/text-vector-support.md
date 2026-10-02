@@ -108,6 +108,17 @@ classify all 70 native fixture pairs, including 59 complete field/equality
 comparisons and explicit unavailable/control cases. Retained-run tests preserve
 shared shaping, glyph positions and exact logical source across supported
 identity boundaries; they do not subdivide a single shaped source cluster.
+The [cached-entry kernel](../crates/sdocx/src/render/text/native_runs.rs) matches
+268 supplied snapshot cases and 568 native output records with exact f32
+geometry. Its opaque payload references are not font glyph IDs. Production
+uses the same boundary predicate with known span fields only, retaining its
+measured-run and paint checks when full native identity is unavailable.
+The snapshots cover entry kinds 0/3; the kind-5 branch is source-derived and
+has not been compared through the typed kernel with the separate object captures.
+Local vertical line bands use native f32 operation order and match all 162
+entry/run-bound and 230 cached-run cases exactly. Frame origins are added
+separately in f64; this does not establish complete native world-frame
+composition or horizontal f32 ownership/adjacency.
 
 ## Known limits
 
@@ -145,16 +156,22 @@ identity boundaries; they do not subdivide a single shaped source cluster.
   real nested objects and Rust per-run clipping remain unverified/unimplemented.
 - The typed native Span projection covers ordinary/default fields and retained
   PDF grouping; unsupported correction and malformed/recovered inputs have
-  unavailable identity. Native font language metadata is not retained.
-  Selected faces retain exact CBDT presence, but the native
-  bitmap/language grouping gates remain unimplemented. Their f64 cluster positions
-  also differ from native f32 entry adjacency.
+  unavailable identity. Production font language metadata is not retained.
+  Selected faces retain exact CBDT presence, but production does not supply
+  native source/language/bitmap gates to the cached-entry kernel. Its tested
+  supplied-input gates do not establish native font-cache identity. Production
+  horizontal cluster positions and ownership also differ from native f32
+  adjacency and UTF-16 cached entry slots.
   [Draw identity findings](reverse-engineering/text-draw-identity-findings.md)
   establish the native producers with supplied inputs and a separate Chromium
   clip regression. Chromium preserves joined shaping with full span clips, but
   clips follow glyph ownership: clipping the first character of an `ffi`
   ligature hides the entire glyph. Native per-run clip selection remains
   unimplemented, independently of the verified PDF clip transport.
+  [Cached snapshots](reverse-engineering/text-draw-identity-findings.md#captured-cached-entry-snapshots)
+  preserve supplied codewords and shaping owners without establishing the
+  production font/UTF-16 bridge. Kind-4/emoji emission remains unsupported;
+  default-empty controls do not supply a legitimate first glyph word.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native preview background geometry for embedded objects is captured through
@@ -184,6 +201,11 @@ identity boundaries; they do not subdivide a single shaped source cluster.
 - Native font selection, complete heading editing/runtime lifecycle, opaque native style
   bits, variable-font instances and device-specific fallback selection are not
   established by ordinary measurement-identity coverage.
+  [Native XML language capture](reverse-engineering/text-draw-identity-findings.md#captured-font-family-language)
+  preserves raw family language, including missing-as-empty, before font loading.
+  It does not recover device font configuration or turn shaping script into
+  native language metadata; source IDs identify created typeface instances,
+  rather than hashes of font-file bytes.
 - Standalone text modes, RTL justification, separator-only clipping, and
   unusual page/composition behavior remain unverified against native captures.
 - Extreme frame/page geometry and unsupported glyph/effect combinations retain

@@ -788,6 +788,35 @@ Rust consequently uses line advance minus `0.35 * max_font_size` across
 ordinary placed, shape, body, table and code text; object-margin lines retain
 their separate native branch.
 
+### Rust f32 local line bands
+
+[`NativeLineMetrics`](../../crates/sdocx/src/render/text/native_line.rs) retains
+f32 maximum font size, base height, pixel/percentage spacing and object-line
+flags. Percentage spacing uses the native FMA order; pixel spacing uses its
+separate addition. Placement adds top margin, computes the ordinary baseline
+with FMA by `-0.35`, and adds the object `0.001f` epsilon afterward as separate
+operations. Object-margin lines preserve their separate baseline branch.
+
+Rust comparisons against all 162
+[entry/run-bound cases](table-code-findings.md#retained-text-entry-and-run-bounds)
+and 230 [cached-run cases](table-code-findings.md#complete-retained-text-run-emission)
+check local top, bottom, baseline and post-cursor as exact f32 values. The
+independent audit found 63 post-cursor differences between native execution and
+the former formula that folded additions before narrowing; that count is an
+audit observation, not a fixture JSON field. Separate native operations match
+all compared local values. A focused object-leading second-cursor check
+distinguishes folded `214.0019989` from native `214.0020142`.
+
+The production cursor keeps line placement local to the text frame, then adds
+the Model/frame Y origin in f64. This preserves successive local line advances
+even when an extreme frame origin makes world f64 endpoints coincide. Gravity,
+exclusions, paragraph/flow policy and frame-origin production remain separate.
+Nonfinite native inputs/results retain bounded finite recovery and geometry
+diagnostics. Production supplies an unbounded height limit; the finite-limit
+kernel test is source-derived synthetic evidence, not a captured runtime limit
+context. Native horizontal shaping, wrapping/ownership and complete world-frame
+composition are not established by these local vertical-band comparisons.
+
 The body origin is the scaled component top margin, without adding the stored
 flow-page padding: Widget `updateBound`, `0xd71b0`–`0xd7220`, supplies these
 margins directly, and Text starts its cursor from the top margin at

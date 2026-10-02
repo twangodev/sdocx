@@ -1414,8 +1414,9 @@ contains 162 placement cases, 810 entries, 378 run unions and 22 isolated
 grouping probes. Native `SetLayout`/`GetBaseline`, alignment, spacing,
 `inSameDraw`/span comparison and rectangle union/storage instructions execute
 unchanged. Every output repeats with memory fills `0x00`, `0xa5` and `0xff`.
-The Rust line-placement regression matches native tops, bottoms, baselines
-and post-cursors within 0.0001 units; it does not assert f32 bit identity.
+The Rust line-placement regression matches local tops, bottoms, baselines
+and post-cursors as exact f32 bits. Frame-origin composition remains separate
+from these local comparisons; see [local line bands](text-layout-findings.md#rust-f32-local-line-bands).
 
 Entry advances/ink bounds, logical maps, block metric flags, line metrics,
 spacing, offsets and ordinary span inputs are supplied. Memory copy is a host
@@ -1477,9 +1478,12 @@ foreground alpha to `0x66` and adds style bit 3 (`0x681bc`–`0x681dc`), retaini
 the link override's RGB when both apply. These are storage contracts; the
 capture does not establish final decoration or theme appearance.
 
-The Rust line-placement regression checks all 230 cases and the emitted run
-tops, bottoms and baselines within 0.0001 units. It does not assert native
-glyph grouping, horizontal bounds, f32 bit identity or visual parity in Rust.
+The Rust line-placement regression checks all 230 cases and the emitted local
+run tops, bottoms and baselines as exact f32 bits. The expanded
+[cached-entry snapshots](text-draw-identity-findings.md#captured-cached-entry-snapshots)
+also verify the typed emitter's grouping and geometry for supplied cache inputs.
+Those comparisons do not establish production shaping, horizontal adjacency,
+complete world-frame composition or visual parity.
 Inputs include supplied metrics, logical maps, cached codewords/offsets, spans,
 font getters and empty or single-record paragraph vectors. Allocation, deletion
 and memory copy/move are host interfaces. Emoji slices are null. Native shaping,

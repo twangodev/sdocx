@@ -40,7 +40,7 @@ Planning, task lists and development progress are kept outside these documents.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha
-  transport and Chromium text clip behavior.
+  transport, cached-entry snapshots, XML font language and Chromium text clip behavior.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
   references, authoritative media bindings and image regression coverage.
 - [`shape-line-findings.md`](shape-line-findings.md) — native geometry and effects,

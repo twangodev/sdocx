@@ -16,6 +16,7 @@ Addresses are virtual addresses in the named ELF, before harness relocation.
 | `libSPenText.so` | `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b` |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenPdf.so` | `cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04` |
+| `libSPenLibxml2.so` | `46753f76c8c007e78777e8fe7de7b57202f966f9494d4fba2b675c3540e35dbd` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 
 The [entry/run-bound capture](table-code-findings.md#retained-text-entry-and-run-bounds)
@@ -556,6 +557,42 @@ the cases perform 132 table scans per fill. Font factories, native XML parsing,
 constructor chains, source reuse, font selection and shaping do not execute in
 this capture.
 
+### Captured font-family language
+
+[`table-text-font-language.json`](../../conformance/table-text-font-language.json),
+SHA-256 `e1e50b79052bf8fd6f3501ff91f8b8fa41258c511c795385a295755b48364149`,
+contains 26 supplied XML cases and 39 intercepted font records. The
+[capture module](../../conformance/native_table/text_font_language.rs) executes
+actual native libxml parsing at `0x75890`, root/property access at
+`0x7cfdc`/`0x7dacc`, and Text `FontListParser` construction/readFamily at
+`0x7c8e0`/`0x7ce7c`. Native `readFont` is intercepted at its PLT entry,
+`0xeffb0`, before execution. It records the supplied family language/name and
+parsed font filename, then returns false without creating a font record;
+`readFamily` consequently returns false.
+
+The captured producer preserves absent language as the literal empty string,
+not `und` or a guessed script. It also preserves explicit empty, `und`,
+`und-Deva`, casing, spaces, comma lists, allocated UTF-8 strings, supplementary
+characters, XML entities/newline references and duplicate records. A supplied
+family named Roboto and its filenames are inputs, not evidence of Samsung's
+selected Roboto font or language. Three memory fills and independent repeats
+produce identical observations.
+
+Host interfaces provide allocation, byte operations, single-thread bookkeeping
+and fixed time/random state. Font loading, Skia typeface creation, numeric
+source IDs, bitmap metadata, shaping, selection and rendering do not execute.
+Text `DeviceFontManager`, `0x84684`, reads device `/system/etc/fonts.xml` and
+`/system/fonts/`, with conditional additional configuration. The inspected APK
+has no `fonts.xml`, `fonts_additional.xml`, `fallback_fonts.xml` assets or Roboto
+font bytes. The fixture does not recover those device inputs.
+
+Separately, the source-traced file-font creation chain at
+`0x87930`/`0x87a94`/`0x87ef0` reaches Skia's fresh typeface allocation and
+process counter. The successful branch increments global counter `0x2ac318`
+at `0x219848`–`0x219868`; Text copies the created typeface ID into source
+member 120 at `0x880d4`. This identifies each created instance, rather than
+font-file bytes. It does not establish arbitrary font-manager cache reuse.
+
 ## UTF-16 entry ownership
 
 Text `RichTextMeasure::createMeasureData`, `0x788f0`, obtains source length
@@ -616,6 +653,43 @@ Scenario labels such as ligature, surrogate, combining and emoji ZWJ describe
 source and supplied owner maps, rather than native shaping outputs. Native
 source-to-owner selection, font selection, bidi ordering, wrapping, real objects,
 emoji rendering, Composer clipping and final PDF painting do not execute.
+
+### Captured cached-entry snapshots
+
+Two fixtures retain the actual pre-emission cached inputs alongside the native
+outputs:
+
+| Fixture | SHA-256 | Cases | UTF-16 entries | Output records | Output codewords |
+| --- | --- | ---: | ---: | ---: | ---: |
+| [`table-text-cached-runs.json`](../../conformance/table-text-cached-runs.json) | `e0f60a1216fc515c800a368e60279fab9b209f3ee883588987fa2246a96665bb` | 230 | 1,116 | 528 | 1,180 |
+| [`table-text-cached-ownership.json`](../../conformance/table-text-cached-ownership.json) | `44b7fd9d1c4de0f803aca18782c281b6971d0ef4c5360afc4969f36dbfef63c0` | 38 | 124 | 40 | 94 |
+
+The shared [snapshot reader](../../conformance/native_table/text_cached_snapshot.rs)
+records source UTF-16, logical map, compared span fields, cached glyphs/font
+metadata and native f32 entry geometry immediately before emission. Native
+`SetLayout`/`GetBaseline`, cached `GetGlyphInfo`/`GetSpan`, complete
+`getDrawnTextRun` and `appendTextBlock` execute as in their existing captures.
+Ownership cases additionally execute entry construction and the supplied
+`SpanRunFunctor` producer window. Removing the new `cached_input` member
+reproduces the original fixtures exactly. Both expanded fixtures repeat across
+three memory fills and independent captures.
+
+Codewords, shaped source owners, positions/advances, spans, font interfaces and
+line/block metrics remain supplied inputs. The recorded codewords are opaque
+native cache values, not proven SFNT glyph IDs. Captured directions are 0/1
+and cache auxiliary flags are zero. Cached Y offsets are captured
+even though the retained native output records store X positions only. These
+snapshots do not establish a Rust-character-to-native-UTF-16 ownership bridge,
+actual font selection/shaping, bidi/wrap selection, object/emoji rendering,
+Composer clipping or final PDF painting.
+
+The ownership fixture includes two leading-unowned default-empty records.
+Their stable range/default fields can be compared, but they have no observed
+first-codeword-high-bits field. Native append still performs an unsafe first-word
+read with an empty cache; this capture supplies mapped guest-zero memory.
+That supplied word is not a legitimate glyph or evidence of an application
+crash. It is separate from the object fixture's deliberately unmapped-zero
+precondition controls.
 
 ## Chromium span-clip transport
 
@@ -828,12 +902,43 @@ decoding is distinct from its decoration rendering. Diagnostics retain source
 ownership, including nested objects; empty, invalid, surrogate-interior and
 separator-only ranges do not report those appearance diagnostics.
 
+The [typed cached-entry emitter](../../crates/sdocx/src/render/text/native_runs.rs)
+accepts supplied UTF-16 entries, native f32 geometry, span/font metadata and
+cached glyph payload references. Its
+[fixture comparisons](../../crates/sdocx/src/render/text/native_runs/fixture_tests.rs)
+match all 268 snapshot cases and 568 output records, including source ranges,
+glyph order/owner/stored X, origin, ink/layout rectangles, font ID/size,
+foreground/style/ordinary background and object flag. Geometry comparisons
+use exact f32 values. The adapter maps opaque payload indices back to captured
+codewords; it does not interpret those indices as real font glyph IDs.
+
+The kernel implements nondrawable-slot skipping, native boundary decisions,
+first-entry rectangle initialization, later native rectangle unions and whole-run
+RTL reversal. Cached Y does not enter the native retained output. Default-empty
+records carry an explicit classification without inventing first-codeword bits.
+Kind 4/emoji and unknown kinds, drawable owners with empty caches, unavailable
+font state and nonfinite/overflowing geometry fail explicitly. Bounded inputs
+permit at most 250,000 UTF-16 entries and 1,000,000 cached glyphs.
+The 268 snapshot comparisons cover entry kinds 0/3. The kind-5 generic-owner
+branch follows the native source audit; the separate 54 published object records
+have not been adapted into this typed kernel comparison. Full kind-5 kernel
+capture validation is therefore distinct from the native object producer capture.
+
+Production PDF grouping calls the same `native_run_boundary` with its available
+span projection. It does not supply native entry kind/direction, f32 horizontal
+adjacency or font source/bitmap/language metadata. A different or unavailable
+span splits; equal spans return an unavailable full native boundary, leaving
+the existing measured-`Arc` and actual-paint checks to govern coalescing.
+The full cached-entry emitter is therefore verified for captured supplied inputs,
+while the renderer uses its partial span boundary. Production shaping ownership,
+font selection and glyph/codeword mapping remain separate, unestablished inputs.
+
 Measured runs retain a selected `ResolvedFace`, synthesis, direction and shaped
 glyphs. `ResolvedFace::is_bitmap_font()` retains the exact CBDT table-directory
 presence of the selected SFNT/TTC face. Its 21 font tests include other color
 table tags, cached/cloned faces and both collection indexes. This metadata does
-not reproduce the native draw-run bitmap gate by itself. Native language
-metadata is not retained. `ResolvedFace.id` is the current face identity, with
+not reproduce the native draw-run bitmap gate in production by itself.
+Production font language metadata is not retained. `ResolvedFace.id` is the current face identity, with
 no proven equivalence to Samsung's source instance/cache behavior. HarfBuzz
 byte clusters are mapped to Rust character ranges; they are not native
 per-UTF-16 entry slots. Rust's f64 cluster positions also differ from the native
@@ -842,7 +947,7 @@ f32 adjacency predicate.
 The retained PDF path can transport supplied clips with selectable text, and
 Chromium can transport span clips without breaking the covered joined shaping.
 The production table text path still uses its conservative table-wide clip.
-Those transport results do not establish native per-run identity or conditional
+Those transport results do not establish complete production native per-run identity or conditional
 clipping in the Rust engine. The
 [vector support contract](../text-vector-support.md) records the implemented
 scope and these independent evidence limits.
