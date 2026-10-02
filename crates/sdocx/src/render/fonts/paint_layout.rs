@@ -11,10 +11,11 @@ mod fixture_tests;
 
 const MAX_UTF16_ENTRIES: usize = 250_000;
 const MAX_GLYPHS: usize = 1_000_000;
-const SUPPORTED_SCRIPTS: [u32; 3] = [
+const SUPPORTED_SCRIPTS: [u32; 4] = [
     u32::from_be_bytes(*b"Latn"),
     u32::from_be_bytes(*b"Grek"),
     u32::from_be_bytes(*b"Cyrl"),
+    u32::from_be_bytes(*b"Zyyy"),
 ];
 
 #[derive(Debug, Clone, Copy)]
@@ -88,7 +89,7 @@ pub enum PaintLayoutError {
     IncompatibleChunks,
     #[error("paint layout supports horizontal directions")]
     UnsupportedDirection,
-    #[error("paint layout supports Latin, Greek, and Cyrillic script chunks")]
+    #[error("paint layout supports Latin, Greek, Cyrillic, and Common script chunks")]
     UnsupportedScript,
     #[error("paint layout supports font slot zero")]
     UnsupportedFontSlot,

@@ -32,6 +32,8 @@ struct Paint {
     packed_flags: u32,
     letter_spacing_bits: u32,
     word_spacing_bits: u32,
+    #[serde(default)]
+    feature_settings: String,
 }
 
 #[derive(Deserialize)]
@@ -164,6 +166,7 @@ fn compare_layout(
 
 #[derive(Deserialize)]
 struct Callbacks {
+    vector_glyphs: Vec<Vec<u32>>,
     vector_raw_bits: Vec<u32>,
     raw_skia_bounds_bits: Vec<[u32; 4]>,
 }
@@ -229,6 +232,14 @@ fn ink_bits(ink: PaintInkBounds) -> [u32; 4] {
 }
 
 fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
+    compare_capture_mode(bytes, hash, expected, false);
+}
+
+pub(super) fn compare_factory_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
+    compare_capture_mode(bytes, hash, expected, true);
+}
+
+fn compare_capture_mode(bytes: &[u8], hash: &str, expected: [usize; 3], factory: bool) {
     assert_eq!(format!("{:x}", Sha256::digest(bytes)), hash);
     let capture: Capture = serde_json::from_slice(bytes).unwrap();
     let face = face();
@@ -251,9 +262,60 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
             },
         };
         let mut shaper = face.paint_shaper(input).unwrap();
+        let itemization = factory.then(|| {
+            crate::render::fonts::PaintItemization::new(
+                &case.text_utf8,
+                case.range_utf16[0]..case.range_utf16[1],
+            )
+            .unwrap()
+        });
+        let caller_features = match case.paint.feature_settings.as_str() {
+            "" => Vec::new(),
+            "liga=1,clig=1" => [*b"liga", *b"clig"]
+                .map(|tag| PaintShapeFeature {
+                    tag,
+                    value: 1,
+                    start: 0,
+                    end: u32::MAX,
+                })
+                .to_vec(),
+            other => panic!("unverified captured caller feature settings {other}"),
+        };
+        let factory_request = itemization.as_ref().map(|itemization| PaintTextRequest {
+            itemization,
+            direction: match case.hb_calls[0].input.direction {
+                4 => PaintShapeDirection::LeftToRight,
+                5 => PaintShapeDirection::RightToLeft,
+                other => panic!("unverified native direction {other}"),
+            },
+            letter_spacing: f32::from_bits(case.paint.letter_spacing_bits),
+            word_spacing: f32::from_bits(case.paint.word_spacing_bits),
+            features: &caller_features,
+        });
+        if let Some(request) = &factory_request {
+            assert_eq!(
+                request.itemization.chunks().len(),
+                case.hb_calls.len(),
+                "{} chunk count",
+                case.name
+            );
+        }
+        let factory_piece = factory_request.map(|request| {
+            shaper
+                .shape_text(request)
+                .unwrap_or_else(|error| panic!("{} factory: {error}", case.name))
+        });
         let mut callback_index = 0;
+        let callback_glyphs: Vec<_> = case
+            .callbacks
+            .vector_glyphs
+            .iter()
+            .flatten()
+            .copied()
+            .collect();
+        assert_eq!(callback_glyphs.len(), case.callbacks.vector_raw_bits.len());
         let mut runs = Vec::new();
-        for call in &case.hb_calls {
+        for (call_index, call) in case.hb_calls.iter().enumerate() {
             assert_eq!(call.input.content_type, 1);
             assert_eq!([shaper.scale().x, shaper.scale().y], call.nativefont_scale);
             assert_eq!(shaper.scale().ppem, call.nativefont_ppem);
@@ -300,9 +362,67 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
                 post_context: &post,
                 features: &features,
             };
-            let run = shaper
-                .shape(request)
-                .unwrap_or_else(|error| panic!("{}: {error}", case.name));
+            let run = if let Some(piece) = &factory_piece {
+                let factory_request = factory_request.as_ref().unwrap();
+                let chunk = &factory_request.itemization.chunks()[call_index];
+                let features = factory_request.chunk_features(chunk).unwrap();
+                let actual_request = factory_request.chunk_request(chunk, &features);
+                assert_eq!(
+                    actual_request.source, request.source,
+                    "{} source",
+                    case.name
+                );
+                assert_eq!(actual_request.infos, request.infos, "{} infos", case.name);
+                assert_eq!(
+                    actual_request.script, request.script,
+                    "{} script",
+                    case.name
+                );
+                assert_eq!(
+                    actual_request.direction, request.direction,
+                    "{} direction",
+                    case.name
+                );
+                assert_eq!(
+                    actual_request.language, request.language,
+                    "{} language",
+                    case.name
+                );
+                assert_eq!(actual_request.flags, request.flags, "{} flags", case.name);
+                assert_eq!(
+                    actual_request.cluster_level, request.cluster_level,
+                    "{} cluster level",
+                    case.name
+                );
+                assert_eq!(
+                    actual_request.pre_context, request.pre_context,
+                    "{} pre context",
+                    case.name
+                );
+                assert_eq!(
+                    actual_request.post_context, request.post_context,
+                    "{} post context",
+                    case.name
+                );
+                assert_eq!(
+                    actual_request.features, request.features,
+                    "{} features",
+                    case.name
+                );
+                assert_eq!(piece.source(), case.text_utf8);
+                assert_eq!(
+                    piece.source_range_utf16(),
+                    case.range_utf16[0]..case.range_utf16[1]
+                );
+                assert_eq!(piece.paint(), input);
+                assert_eq!(piece.scale(), shaper.scale());
+                assert_eq!(piece.direction(), request.direction);
+                piece.shaped_runs()[call_index].clone()
+            } else {
+                shaper
+                    .shape(request)
+                    .unwrap_or_else(|error| panic!("{}: {error}", case.name))
+            };
             assert_eq!(run.glyphs.len(), call.output.infos.len());
             for ((glyph, info), position) in run
                 .glyphs
@@ -332,7 +452,12 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
                     case.name
                 );
                 assert_eq!(
-                    glyph.backend.advance.to_bits(),
+                    shaper
+                        .metrics
+                        .glyph(callback_glyphs[callback_index])
+                        .unwrap()
+                        .advance
+                        .to_bits(),
                     case.callbacks.vector_raw_bits[callback_index],
                     "{} raw advance {callback_index}",
                     case.name
@@ -358,18 +483,26 @@ fn compare_capture(bytes: &[u8], hash: &str, expected: [usize; 3]) {
         );
         let letter_spacing = f32::from_bits(case.paint.letter_spacing_bits);
         let word_spacing = f32::from_bits(case.paint.word_spacing_bits);
-        let layout = match runs.as_slice() {
-            [run] => run.layout(letter_spacing, word_spacing),
-            _ => crate::render::fonts::PaintLayout::from_runs(
-                &runs.iter().collect::<Vec<_>>(),
-                letter_spacing,
-                word_spacing,
-            ),
-        }
-        .unwrap();
+        let layout = if let Some(piece) = &factory_piece {
+            piece.layout().clone()
+        } else {
+            match runs.as_slice() {
+                [run] => run.layout(letter_spacing, word_spacing),
+                _ => crate::render::fonts::PaintLayout::from_runs(
+                    &runs.iter().collect::<Vec<_>>(),
+                    letter_spacing,
+                    word_spacing,
+                ),
+            }
+            .unwrap()
+        };
         compare_layout(&layout, &case.layout_piece, &case.name);
         if let Some(expected_entries) = &case.entry_geometry {
-            compare_entry_geometry(&layout, &case, expected_entries);
+            if let Some(piece) = &factory_piece {
+                compare_actual_entry_geometry(piece.entry_geometry(), &case, expected_entries);
+            } else {
+                compare_entry_geometry(&layout, &case, expected_entries);
+            }
         }
         counts[2] += layout.glyphs().len();
         assert_eq!(callback_index, case.callbacks.vector_raw_bits.len());
@@ -831,6 +964,14 @@ fn compare_entry_geometry(
     expected: &ExpectedEntryGeometry,
 ) {
     let actual = layout.entry_geometry().unwrap();
+    compare_actual_entry_geometry(&actual, case, expected);
+}
+
+fn compare_actual_entry_geometry(
+    actual: &crate::render::fonts::PaintEntryGeometry,
+    case: &Case,
+    expected: &ExpectedEntryGeometry,
+) {
     assert_eq!(
         actual.source(),
         case.text_utf8,

@@ -11,7 +11,10 @@ use harfrust::{FontRef, GlyphId, IntegerScalingRounding, ShapeOptions, ShaperDat
 use super::{PaintGlyphMetrics, PaintMetricError, PaintMetricInput, PaintMetrics};
 
 mod device_tables;
+mod pieces;
 mod positioning_domain;
+
+pub use pieces::{PaintFeatureProfile, PaintMeasuredPiece, PaintPieceError, PaintTextRequest};
 
 use positioning_domain::PositioningDomain;
 

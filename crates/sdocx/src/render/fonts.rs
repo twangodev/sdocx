@@ -26,9 +26,9 @@ pub use paint_span::{PaintSpanError, PaintSpanProfile};
 
 mod paint_shaping;
 pub use paint_shaping::{
-    PaintShapeClusterLevel, PaintShapeDirection, PaintShapeError, PaintShapeFeature,
-    PaintShapeRequest, PaintShapeScale, PaintShapedGlyph, PaintShapedRun, PaintShaper,
-    PaintSourceInfo,
+    PaintFeatureProfile, PaintMeasuredPiece, PaintPieceError, PaintShapeClusterLevel,
+    PaintShapeDirection, PaintShapeError, PaintShapeFeature, PaintShapeRequest, PaintShapeScale,
+    PaintShapedGlyph, PaintShapedRun, PaintShaper, PaintSourceInfo, PaintTextRequest,
 };
 
 #[cfg(test)]

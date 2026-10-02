@@ -54,7 +54,7 @@ impl PositioningDomain {
         &self,
         request: &PaintShapeRequest<'_>,
     ) -> Result<usize, PaintShapeError> {
-        if !matches!(&request.script, b"Latn" | b"Grek" | b"Cyrl") {
+        if !matches!(&request.script, b"Latn" | b"Grek" | b"Cyrl" | b"Zyyy") {
             return Err(PaintShapeError::UnsupportedPositioningDomain);
         }
         Ok(request
