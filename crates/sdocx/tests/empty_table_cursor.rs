@@ -113,7 +113,7 @@ fn empty_table_cells_reserve_default_cursor_height_without_emitting_text() {
         ObjectSpanLayoutConstraint::OverPages,
         ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
     ] {
-        for (percent, baseline) in [(1.0, 129.501), (1.6, 189.501)] {
+        for (percent, baseline) in [(1.0, 129.50101), (1.6, 189.50101)] {
             let doc = document(constraint, percent);
             let layout = sdocx::layout_document(&doc);
             for replay in [false, true] {

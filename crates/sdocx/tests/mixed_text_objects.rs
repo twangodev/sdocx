@@ -158,7 +158,7 @@ fn inline_image_uses_pinned_neighbor_advances_and_native_mixed_baseline() {
 
 #[test]
 fn wrapping_accounts_for_the_object_width_and_preserves_text_neighbors() {
-    for (page_width, suffix_baseline) in [(84, 100.001), (83, 127.001)] {
+    for (page_width, suffix_baseline) in [(84, 100.001), (83, 127.00101)] {
         let mut doc = document(PageElement::TextBox(mixed()));
         doc.pages[0].width = page_width;
         for page in modes(&doc) {
@@ -247,7 +247,7 @@ fn anchor_only_styles_do_not_inflate_text_or_draw_spurious_decorations() {
         for value in ["A", "B"] {
             let node = span(&xml, value);
             assert_eq!(node.attribute("font-size"), Some("20.00"));
-            assert_eq!(position(node, "y"), 100.001);
+            assert_eq!(position(node, "y"), 100.00104);
         }
         assert_eq!(span(&xml, "B").attribute("fill"), Some("#ff0000"));
         assert!(
@@ -355,7 +355,7 @@ fn local_styles_remain_on_both_sides_of_the_object_and_end_at_the_next_line() {
         assert_eq!(span(&xml, "B").attribute("font-style"), Some("italic"));
         assert_eq!(span(&xml, "C").attribute("font-style"), None);
         assert_eq!(position(span(&xml, "B"), "x"), 59.74219);
-        assert_eq!(position(span(&xml, "C"), "y"), 127.701);
+        assert_eq!(position(span(&xml, "C"), "y"), 127.70099);
     }
 }
 

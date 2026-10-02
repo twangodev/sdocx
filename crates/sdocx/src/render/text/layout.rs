@@ -7,6 +7,7 @@ use crate::{
     ParagraphLineSpacing, PredefinedTextStyle,
 };
 
+use super::native_line::NativeLineMetrics;
 use super::objects::{MeasuredObject, ObjectMeasurementContext};
 #[cfg(test)]
 use super::wrap_paragraph;
@@ -232,6 +233,7 @@ pub(in crate::render) struct LinePlacement {
     pub baseline: f64,
     pub bottom: f64,
     pub post_cursor: f64,
+    invalid_native_geometry: bool,
 }
 
 impl LinePlacement {
@@ -246,8 +248,7 @@ impl LinePlacement {
 
 struct LineMetrics {
     advance: f64,
-    baseline_offset: f64,
-    epsilon: f64,
+    native: NativeLineMetrics,
 }
 
 impl LineMetrics {
@@ -256,25 +257,40 @@ impl LineMetrics {
         spacing: Option<ParagraphLineSpacing>,
         settings: super::TextSettings,
     ) -> Self {
-        let has_objects = !line.objects.is_empty();
-        let block = line.has_block_margins();
-        let base_height = line.base_height();
-        let advance = if block {
-            base_height
-        } else {
-            base_height + paragraph_line_height(line.font_size, spacing, settings) - line.font_size
+        let mut native = NativeLineMetrics {
+            max_font: line.font_size as f32,
+            base_height: line.base_height() as f32,
+            extra_pixels: 0.0,
+            multiplier: if super::finite_native_geometry(line.font_size * 1.35).is_some() {
+                1.35
+            } else {
+                1.0
+            },
+            height_limit: f32::INFINITY,
+            object_margin_line: line.has_block_margins(),
+            has_object_metric: !line.objects.is_empty(),
         };
-        let epsilon = if has_objects { 0.001 } else { 0.0 };
-        let baseline_offset = if block {
-            base_height + epsilon
-        } else {
-            advance - 0.35 * line.font_size + epsilon
-        };
-        Self {
-            advance,
-            baseline_offset,
-            epsilon,
+        if let Some(spacing) = spacing
+            .filter(|spacing| explicit_line_height(line.font_size, *spacing, settings).is_some())
+        {
+            match spacing.kind {
+                LineSpacingType::Pixels => {
+                    native.extra_pixels = settings.pixels(spacing.value) as f32
+                }
+                LineSpacingType::Percent => native.multiplier = spacing.value,
+                LineSpacingType::Other(_) => {}
+            }
         }
+        let height = native.height().0;
+        let advance = if height.is_finite() {
+            f64::from(height)
+        } else if line.has_block_margins() {
+            line.base_height()
+        } else {
+            line.base_height() + paragraph_line_height(line.font_size, spacing, settings)
+                - line.font_size
+        };
+        Self { advance, native }
     }
 }
 
@@ -359,15 +375,43 @@ impl TextCursor {
         candidate: LineCandidate,
     ) -> LinePlacement {
         let metrics = LineMetrics::for_line(line, spacing, settings);
-        let top = candidate.top();
-        self.position = top - frame.bbox.y_min + metrics.advance + metrics.epsilon;
+        let cursor = self.position + (candidate.raw_top - (frame.bbox.y_min + self.position));
+        let bands = metrics
+            .native
+            .place(cursor as f32, candidate.margin_top as f32);
+        let Some(bands) = bands else {
+            let top = candidate.top();
+            let epsilon = if metrics.native.has_object_metric {
+                0.001
+            } else {
+                0.0
+            };
+            self.position = top - frame.bbox.y_min + metrics.advance + epsilon;
+            self.pending_bottom = line.object_margins()[1];
+            let baseline_offset = if metrics.native.object_margin_line {
+                metrics.advance + epsilon
+            } else {
+                metrics.advance - 0.35 * line.font_size + epsilon
+            };
+            return LinePlacement {
+                top: candidate.raw_top,
+                background_top: top,
+                baseline: top + baseline_offset,
+                bottom: frame.bbox.y_min + self.position,
+                post_cursor: frame.bbox.y_min + self.position,
+                invalid_native_geometry: true,
+            };
+        };
+        debug_assert!(!bands.overflow);
+        self.position = f64::from(bands.bottom);
         self.pending_bottom = line.object_margins()[1];
         LinePlacement {
             top: candidate.raw_top,
-            background_top: top,
-            baseline: top + metrics.baseline_offset,
+            background_top: frame.bbox.y_min + f64::from(bands.top),
+            baseline: frame.bbox.y_min + f64::from(bands.baseline),
             bottom: frame.bbox.y_min + self.position,
             post_cursor: frame.bbox.y_min + self.position,
+            invalid_native_geometry: false,
         }
     }
 }
@@ -1041,6 +1085,10 @@ fn layout_text_with_context(
             renderer.report_line_geometry(&line, layout.line_spacing);
             let mut placement =
                 cursor.place_at(&line, layout.line_spacing, &frame, settings, settled_top);
+            if placement.invalid_native_geometry {
+                let style = styled.style_at(line.source.start, theme, layout.predefined_style);
+                renderer.invalid_geometry(style.family.as_deref().unwrap_or("Roboto"));
+            }
             if let Some(top) = continuation_top
                 && let [object] = line.objects.as_slice()
             {
@@ -1648,7 +1696,17 @@ mod tests {
                 gravity: None,
                 exclusions: &[],
             };
+            let mut rounding_negative_control = false;
             for case in capture.cases {
+                if case.name == "object-leading-109" {
+                    let folded = f64::from(case.post_cursors[0])
+                        + f64::from(case.margin)
+                        + f64::from(case.base_height)
+                        + (f64::from(case.multiplier) - 1.0) * f64::from(case.font_size)
+                        + 0.001;
+                    assert_ne!((folded as f32).to_bits(), case.post_cursors[1].to_bits(),);
+                    rounding_negative_control = true;
+                }
                 let font_size = f64::from(case.font_size);
                 let mut line = if case.object_metric {
                     object_line(font_size, true, [0.0; 2])
@@ -1690,15 +1748,16 @@ mod tests {
                         ("baseline", placement.baseline, entry.position[1]),
                         ("cursor", placement.post_cursor, case.post_cursors[index]),
                     ] {
-                        assert!(
-                            (actual - f64::from(expected)).abs() < 0.0001,
+                        assert_eq!(
+                            (actual as f32).to_bits(),
+                            expected.to_bits(),
                             "{} line {index} {field}: {actual} != {expected}",
                             case.name
                         );
                     }
                     placements.push(placement);
                 }
-                let dy = f64::from(case.offset[1] + case.gravity);
+                let dy = case.gravity + case.offset[1];
                 for run in case.runs {
                     let Some(range) = run.range_inclusive else {
                         continue;
@@ -1714,16 +1773,17 @@ mod tests {
                         .map(|line| line.bottom)
                         .fold(f64::NEG_INFINITY, f64::max);
                     for (field, actual, expected) in [
-                        ("run top", top + dy, run.layout_rect[1]),
-                        ("run bottom", bottom + dy, run.layout_rect[3]),
+                        ("run top", top as f32 + dy, run.layout_rect[1]),
+                        ("run bottom", bottom as f32 + dy, run.layout_rect[3]),
                         (
                             "run baseline",
-                            placements[first].baseline + dy,
+                            placements[first].baseline as f32 + dy,
                             run.origin[1],
                         ),
                     ] {
-                        assert!(
-                            (actual - f64::from(expected)).abs() < 0.0001,
+                        assert_eq!(
+                            actual.to_bits(),
+                            expected.to_bits(),
                             "{} {} {field}: {actual} != {expected}",
                             case.name,
                             range[0]
@@ -1731,6 +1791,55 @@ mod tests {
                     }
                 }
             }
+            assert!(rounding_negative_control);
+        }
+    }
+
+    #[test]
+    fn rejected_native_line_bands_preserve_finite_recovery_and_geometry_status() {
+        let mut line = WrappedLine::unmeasured(0..1, 1e38);
+        line.text_height = 3e38;
+        let mut cursor = TextCursor::new(0.0);
+        let placement = cursor.place_at(
+            &line,
+            Some(ParagraphLineSpacing {
+                kind: LineSpacingType::Pixels,
+                value: 1e38,
+            }),
+            &TextFrame {
+                bbox: BoundingBox::default(),
+                gravity: None,
+                exclusions: &[],
+            },
+            TextSettings::default(),
+            LineCandidate {
+                raw_top: 0.0,
+                margin_top: 0.0,
+            },
+        );
+        assert!(placement.invalid_native_geometry);
+        assert!(placement.baseline.is_finite());
+        assert!(placement.bottom.is_finite());
+        assert!(placement.post_cursor.is_finite());
+    }
+
+    #[test]
+    fn native_line_cursor_is_independent_of_a_large_world_origin() {
+        let frame = TextFrame {
+            bbox: BoundingBox {
+                y_min: 1e30,
+                y_max: 1e30,
+                ..BoundingBox::default()
+            },
+            gravity: None,
+            exclusions: &[],
+        };
+        let line = WrappedLine::unmeasured(0..1, 20.0);
+        let mut cursor = TextCursor::new(0.0);
+        for expected in [27.0, 54.0, 81.0] {
+            let placement = cursor.place(&line, None, &frame, TextSettings::default());
+            assert!(!placement.invalid_native_geometry);
+            assert_eq!(cursor.position(), expected);
         }
     }
 
@@ -2163,12 +2272,12 @@ mod tests {
                 assert_eq!(placed.baseline, capture.baseline);
             }
             if continues {
-                close(placed.lines[0].baseline, 100.001);
+                close(placed.lines[0].baseline, f64::from(100.001_f32));
                 close(flow.lines[0].baseline, 80.0);
-                close(flow.lines[0].top, -20.001);
+                close(flow.lines[0].top, f64::from(-20.001_f32));
                 close(flow.lines[0].bottom, 83.5);
                 close(flow.lines[0].post_cursor, 83.5);
-                close(placed.lines[1].baseline, 113.501);
+                close(placed.lines[1].baseline, f64::from(113.501_f32));
                 close(flow.lines[1].baseline, 93.5);
                 close(flow.height(), 97.0);
             } else {
@@ -2183,8 +2292,8 @@ mod tests {
     #[test]
     fn full_source_object_layout_preserves_inherited_separator_font_metrics() {
         for (source, anchor, object_line_index, expected_font, next_baseline) in [
-            ("A\n\u{fffc}\nB", 2, 1, 45.0, 321.501),
-            ("\u{fffc}\nB", 0, 0, 45.0, 260.751),
+            ("A\n\u{fffc}\nB", 2, 1, 45.0, f64::from(321.501_f32)),
+            ("\u{fffc}\nB", 0, 0, 45.0, f64::from(260.751_f32)),
         ] {
             let mut content = text(source);
             content.font_size = Some(45.0);
@@ -2314,12 +2423,12 @@ mod tests {
         close(line.top, 530.0);
         close(prepared.panel_bbox.y_min, 530.0);
         close(prepared.panel_bbox.y_max, 1150.75);
-        close(line.baseline, 1150.751);
+        close(line.baseline, f64::from(1150.751_f32));
         close(line.line.objects[0].object.height, 620.75);
         let body = prepared.body_layout.as_ref().unwrap();
         close(body.lines[0].baseline, 707.0);
         close(body.lines[5].baseline, 1075.0);
-        close(plan.lines[1].baseline, 1211.501);
+        close(plan.lines[1].baseline, f64::from(1211.501_f32));
     }
 
     #[test]
@@ -2344,10 +2453,30 @@ mod tests {
             body: Some(child_text),
         };
         for (constraint, obstacle, candidate, expected_baseline) in [
-            (ObjectSpanLayoutConstraint::OverPages, false, 18.0, 270.751),
-            (ObjectSpanLayoutConstraint::OverPages, false, 18.25, 512.751),
-            (ObjectSpanLayoutConstraint::OverPages, true, 18.0, 512.751),
-            (ObjectSpanLayoutConstraint::Normal, false, 18.0, 512.751),
+            (
+                ObjectSpanLayoutConstraint::OverPages,
+                false,
+                18.0,
+                f64::from(270.751_f32),
+            ),
+            (
+                ObjectSpanLayoutConstraint::OverPages,
+                false,
+                18.25,
+                f64::from(512.751_f32),
+            ),
+            (
+                ObjectSpanLayoutConstraint::OverPages,
+                true,
+                18.0,
+                f64::from(512.751_f32),
+            ),
+            (
+                ObjectSpanLayoutConstraint::Normal,
+                false,
+                18.0,
+                f64::from(512.751_f32),
+            ),
         ] {
             let prepared = crate::render::code::prepare_code(
                 &code,
@@ -2385,10 +2514,10 @@ mod tests {
         let mut cursor = TextCursor::new(0.0);
         close(
             place_object(&mut cursor, &object_line(20.0, true, [0.0; 2])),
-            100.001,
+            f64::from(100.001_f32),
         );
-        close(cursor.position(), 107.001);
-        close(cursor.height(), 107.001);
+        close(cursor.position(), f64::from(107.001_f32));
+        close(cursor.height(), f64::from(107.001_f32));
     }
 
     #[test]
@@ -2535,19 +2664,19 @@ mod tests {
         let mut cursor = TextCursor::new(0.0);
         close(
             place_object(&mut cursor, &object_line(20.0, false, [30.0; 2])),
-            130.001,
+            f64::from(130.001_f32),
         );
-        close(cursor.position(), 130.001);
-        close(cursor.height(), 160.001);
+        close(cursor.position(), f64::from(130.001_f32));
+        close(cursor.height(), f64::from(160.001_f32));
     }
 
     #[test]
     fn adjacent_block_margins_collapse_instead_of_accumulating() {
         let mut cursor = TextCursor::new(0.0);
         let line = object_line(20.0, false, [30.0; 2]);
-        close(place_object(&mut cursor, &line), 130.001);
-        close(place_object(&mut cursor, &line), 260.002);
-        close(cursor.height(), 290.002);
+        close(place_object(&mut cursor, &line), f64::from(130.001_f32));
+        close(place_object(&mut cursor, &line), f64::from(260.002_f32));
+        close(cursor.height(), f64::from(290.002_f32));
     }
 
     #[test]
@@ -2609,9 +2738,9 @@ mod tests {
         let line = object_line(20.0, false, [60.0; 2]);
         let placement = cursor.place(&line, None, &frame, TextSettings::default());
         close(placement.top, 1557.0);
-        close(placement.baseline, 1687.001);
-        close(placement.post_cursor, 1687.001);
-        close(cursor.height(), 1747.001);
+        close(placement.baseline, f64::from(1687.001_f32));
+        close(placement.post_cursor, f64::from(1687.001_f32));
+        close(cursor.height(), f64::from(1747.001_f32));
     }
 
     #[test]
@@ -2627,10 +2756,10 @@ mod tests {
         let line = object_line(20.0, false, [60.0; 2]);
         let first = cursor.place(&line, None, &frame, TextSettings::default());
         close(first.top, 1557.0);
-        close(first.baseline, 1717.001);
+        close(first.baseline, f64::from(1717.001_f32));
         let second = cursor.place(&line, None, &frame, TextSettings::default());
-        close(second.top, 1717.001);
-        close(second.baseline, 1847.002);
+        close(second.top, f64::from(1717.001_f32));
+        close(second.baseline, f64::from(1847.002_f32));
     }
 
     #[test]
@@ -2654,9 +2783,9 @@ mod tests {
     fn final_text_box_bottom_collapses_with_the_pending_object_margin() {
         let mut cursor = TextCursor::new(0.0);
         place_object(&mut cursor, &object_line(20.0, false, [30.0; 2]));
-        close(cursor.height_with_bottom(10.0), 160.001);
-        close(cursor.height_with_bottom(40.0), 170.001);
-        close(cursor.height_with_bottom(-10.0), 160.001);
+        close(cursor.height_with_bottom(10.0), f64::from(160.001_f32));
+        close(cursor.height_with_bottom(40.0), f64::from(170.001_f32));
+        close(cursor.height_with_bottom(-10.0), f64::from(160.001_f32));
     }
 
     #[test]
@@ -2664,10 +2793,10 @@ mod tests {
         let mut cursor = TextCursor::new(0.0);
         place_object(&mut cursor, &object_line(20.0, false, [30.0; 2]));
         let text = WrappedLine::unmeasured(1..2, 20.0);
-        close(place_object(&mut cursor, &text), 180.001);
-        close(cursor.height(), 187.001);
-        close(place_object(&mut cursor, &text), 207.001);
-        close(cursor.height(), 214.001);
+        close(place_object(&mut cursor, &text), f64::from(180.001_f32));
+        close(cursor.height(), f64::from(187.001_f32));
+        close(place_object(&mut cursor, &text), f64::from(207.001_f32));
+        close(cursor.height(), f64::from(214.001_f32));
     }
 
     #[test]
@@ -2682,17 +2811,17 @@ mod tests {
         let placement = cursor.place(&object, None, &frame, TextSettings::default());
         close(placement.top, 0.0);
         close(placement.background_top, 30.0);
-        close(placement.bottom, 130.001);
+        close(placement.bottom, f64::from(130.001_f32));
 
         let text = WrappedLine::unmeasured(1..2, 20.0);
         let mut placement = cursor.place(&text, None, &frame, TextSettings::default());
-        close(placement.top, 130.001);
-        close(placement.background_top, 160.001);
-        close(placement.bottom, 187.001);
+        close(placement.top, f64::from(130.001_f32));
+        close(placement.background_top, f64::from(160.001_f32));
+        close(placement.bottom, f64::from(187.001_f32));
         placement.translate(5.0);
-        close(placement.top, 135.001);
-        close(placement.background_top, 165.001);
-        close(placement.bottom, 192.001);
+        close(placement.top, f64::from(135.001_f32));
+        close(placement.background_top, f64::from(165.001_f32));
+        close(placement.bottom, f64::from(192.001_f32));
     }
 
     #[test]
@@ -2700,8 +2829,8 @@ mod tests {
         let mut cursor = TextCursor::new(0.0);
         close(
             place_object(&mut cursor, &object_line(0.0, true, [0.0; 2])),
-            100.001,
+            f64::from(100.001_f32),
         );
-        close(cursor.height(), 100.001);
+        close(cursor.height(), f64::from(100.001_f32));
     }
 }

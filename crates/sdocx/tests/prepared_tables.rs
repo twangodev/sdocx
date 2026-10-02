@@ -698,7 +698,7 @@ fn fresh_warm_drawing_compresses_rows_while_the_cold_callback_reservation_is_ret
         for replay in [false, true] {
             assert_lines(
                 &render_capture_page(&doc, &layout, 1, replay, &fonts),
-                &[("End", 0.0, 52.501)],
+                &[("End", 0.0, 52.50101)],
             );
             assert_lines(
                 &render_capture_page(&doc, &layout, 0, replay, &fonts),
@@ -747,7 +747,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
                 ("D", 4.0, 60.5),
                 ("E", 4.0, 74.0),
             ],
-            vec![("F", 4.0, 10.48071), ("End", 0.0, 28.501)],
+            vec![("F", 4.0, 10.48070), ("End", 0.0, 28.50101)],
         ),
         ObjectSpanLayoutConstraint::OverPages => (
             108.0,
@@ -760,7 +760,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
             vec![
                 ("E", 4.0, 19.34351),
                 ("F", 4.0, 32.84351),
-                ("End", 0.0, 51.001),
+                ("End", 0.0, 51.00101),
             ],
         ),
         _ => panic!(),
@@ -773,7 +773,7 @@ fn assert_warm_candidate_retry(constraint: ObjectSpanLayoutConstraint) {
     // At 70 the raw1/raw2 cold row grows to 104/113; the parent minimum
     // moves it to 90. Warm layout shrinks to 84/106.5 plus unit outer border.
     // Native inverse maps saved drawn height82 to85/107.5, giving fresh
-    // origins90.01929473876953/90.15648651123047 for the last-page bands.
+    // origins90.01930236816406/90.156494140625 for the last-page bands.
     // Its cell source is reused after frame rounding; callback reservation
     // remains85/107.5 plus anchor-font leading3.5+.001, then End adds10.
     for replay in [false, true] {
@@ -896,14 +896,14 @@ fn preceding_lf_seeds_the_native_inline_object_text_metric() {
     for (constraint, expected) in [
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            vec![("F", 4.0, 10.48071), ("End", 0.0, 28.501)],
+            vec![("F", 4.0, 10.48070), ("End", 0.0, 28.50101)],
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
             vec![
                 ("E", 4.0, 19.34351),
                 ("F", 4.0, 32.84351),
-                ("End", 0.0, 51.001),
+                ("End", 0.0, 51.00101),
             ],
         ),
     ] {

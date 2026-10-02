@@ -883,10 +883,10 @@ fn code_title_and_body_render_every_paragraph_inside_native_frames() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("ABC".into(), 86.0, 90.001),
-            ("DEF".into(), 86.0, 150.751),
-            ("GHI".into(), 86.0, 186.001),
-            ("JKL".into(), 86.0, 322.501),
+            ("ABC".into(), 86.0, 90.00101),
+            ("DEF".into(), 86.0, 150.75101),
+            ("GHI".into(), 86.0, 186.00101),
+            ("JKL".into(), 86.0, 322.50101),
         ]
     );
     let xml = roxmltree::Document::parse(&svg).unwrap();
@@ -904,10 +904,10 @@ fn code_title_and_body_wrap_using_their_separate_native_frame_widths() {
     assert_eq!(
         lines(&svg),
         vec![
-            ("ABCABC".into(), 86.0, 90.001),
-            ("ABC".into(), 86.0, 150.751),
-            ("ABCABCABC".into(), 86.0, 186.001),
-            ("ABC".into(), 86.0, 246.751),
+            ("ABCABC".into(), 86.0, 90.00101),
+            ("ABC".into(), 86.0, 150.75101),
+            ("ABCABCABC".into(), 86.0, 186.00101),
+            ("ABC".into(), 86.0, 246.75101),
         ]
     );
 }
@@ -927,7 +927,7 @@ fn code_text_preserves_spaces_combining_source_and_positioned_glyphs() {
             .collect::<String>(),
         source
     );
-    assert_eq!(output[1].2, 177.001);
+    assert_eq!(output[1].2, 177.00101);
     let xml = roxmltree::Document::parse(&svg).unwrap();
     let combined = xml
         .descendants()
@@ -1008,16 +1008,21 @@ fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap()
     // Page boundary300; density3 padding bands270..330. Font45 advances60.75.
     // Body origin141 yields candidates141..201.75,201.75..262.5,262.5..323.25.
     for (constraint, second, third, panel_height) in [
-        (ObjectSpanLayoutConstraint::Normal, 246.751, 307.501, 398.25),
+        (
+            ObjectSpanLayoutConstraint::Normal,
+            246.75101,
+            307.50101,
+            398.25,
+        ),
         (
             ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
-            246.751,
+            246.75101,
             346.0,
             436.75,
         ),
         (
             ObjectSpanLayoutConstraint::OverPages,
-            246.751,
+            246.75101,
             375.0,
             465.75,
         ),
@@ -1029,8 +1034,8 @@ fn list_page_constraints_shift_code_lines_and_panel_height_by_the_observed_gap()
         assert_eq!(
             lines(&svg),
             vec![
-                ("Title".into(), 86.0, 90.001),
-                ("A".into(), 86.0, 186.001),
+                ("Title".into(), 86.0, 90.00101),
+                ("A".into(), 86.0, 186.00101),
                 ("B".into(), 86.0, second),
                 ("C".into(), 86.0, third),
             ]
@@ -1066,9 +1071,9 @@ fn vertical_page_padding_does_not_replace_native_body_text_margins() {
             assert_eq!(
                 lines(&page.svg),
                 [
-                    ("Title".into(), 86.0, 90.001),
-                    ("A".into(), 86.0, 186.001),
-                    ("B".into(), 86.0, 246.751),
+                    ("Title".into(), 86.0, 90.00101),
+                    ("A".into(), 86.0, 186.00101),
+                    ("B".into(), 86.0, 246.75101),
                     ("C".into(), 86.0, 375.0),
                 ]
             );
@@ -1091,10 +1096,10 @@ fn continuous_and_unknown_page_modes_do_not_invent_exclusion_bands() {
             assert_eq!(
                 lines(&svg),
                 vec![
-                    ("Title".into(), 86.0, 90.001),
-                    ("A".into(), 86.0, 186.001),
-                    ("B".into(), 86.0, 246.751),
-                    ("C".into(), 86.0, 307.501),
+                    ("Title".into(), 86.0, 90.00101),
+                    ("A".into(), 86.0, 186.00101),
+                    ("B".into(), 86.0, 246.75101),
+                    ("C".into(), 86.0, 307.50101),
                 ]
             );
             assert_eq!(code_panel_height(&svg), 398.25);
@@ -1185,6 +1190,22 @@ fn positive_saved_code_y_does_not_move_the_actual_candidate_exclusions() {
 
 #[test]
 fn placed_live_code_candidate_reproduces_the_captured_page_gap() {
+    let native_top = 1297.751953125;
+    let page_boundary = 1527.0;
+    let second_body_candidate = native_top + 132.0 + 60.75;
+    assert_eq!(page_boundary + 1.0 - second_body_candidate, 37.498046875);
+    let panel_height = 411.75_f32;
+    let native_object_offset = f64::from(panel_height + 0.001_f32) - f64::from(panel_height);
+    assert_eq!(native_object_offset, 0.001007080078125);
+    let serialized_coordinate = |value: f64| format!("{value:.5}").parse::<f64>().unwrap();
+    let expected_baselines = [
+        native_top + native_object_offset + 81.0,
+        native_top + native_object_offset + 177.0,
+        page_boundary + 1.0 + 45.0,
+        page_boundary + 1.0 + 45.0 + 60.75,
+    ]
+    .map(serialized_coordinate);
+    let reference_baselines = [1378.75295, 1474.75295, 1573.0, 1633.75];
     let mut title = text("Title");
     title.margins = None;
     let mut body = text("A\nB\nC");
@@ -1198,7 +1219,7 @@ fn placed_live_code_candidate_reproduces_the_captured_page_gap() {
     };
     parent.bbox = BoundingBox {
         x_min: 20.0,
-        y_min: 1297.751953125,
+        y_min: native_top,
         x_max: 420.0,
         y_max: 1997.751953125,
     };
@@ -1218,11 +1239,13 @@ fn placed_live_code_candidate_reproduces_the_captured_page_gap() {
                 .collect::<Vec<_>>(),
             ["Title", "A", "B", "C"]
         );
-        for ((_, x, y), expected_y) in output
+        for (((_, x, y), expected_y), reference_y) in output
             .into_iter()
-            .zip([1378.75295, 1474.75295, 1573.0, 1633.75])
+            .zip(expected_baselines)
+            .zip(reference_baselines)
         {
             assert_eq!(x, 68.0);
+            assert_eq!((y as f32).to_bits(), (reference_y as f32).to_bits());
             assert!(
                 (y - expected_y).abs() < 1e-8,
                 "actual {y}, expected {expected_y}"

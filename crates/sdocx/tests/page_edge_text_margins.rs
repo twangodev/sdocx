@@ -209,7 +209,7 @@ fn assert_modes(doc: &Document, lines: &[(&str, f64)], image_y: f64) {
 fn flagged_band_end_reduces_block_margin_but_touching_the_outside_does_not() {
     // AdjustedBlockTopMargin probes [Q-1,Q]. The 70..90 band reduces the
     // native Small margin 10 to 0 at Q90; Q91 only touches its outside edge.
-    for (top, image_y, after_y) in [(90.0, 10.001, 40.001), (91.0, 21.001, 51.001)] {
+    for (top, image_y, after_y) in [(90.0, 10.001, 40.001), (91.0, 21.001, 51.00101)] {
         let doc = document(
             "\u{fffc}\nAfter",
             0,
@@ -250,5 +250,5 @@ fn paragraph_before_stays_enabled_for_margin_probes_on_wrapped_lines() {
         ObjectSpanLayoutConstraint::Normal,
         Some(13.5),
     );
-    assert_modes(&doc, &[("AAAA", 20.0), ("B", 53.501)], 23.501);
+    assert_modes(&doc, &[("AAAA", 20.0), ("B", 53.50101)], 23.501);
 }

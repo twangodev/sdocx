@@ -82,6 +82,11 @@ fn number(node: roxmltree::Node<'_, '_>, attribute: &str) -> f64 {
 }
 
 #[cfg(feature = "serde")]
+fn svg_decimal(value: f32) -> f64 {
+    (f64::from(value) * 100_000.0).round() / 100_000.0
+}
+
+#[cfg(feature = "serde")]
 fn mixed_object_document(pixel_spacing: f32, alternate_family: bool) -> Document {
     use base64::Engine;
     let mut doc = document(360, 8, 0);
@@ -204,13 +209,14 @@ fn nonzero_pixel_spacing_uses_default_face_caps_even_for_an_alternate_span_famil
             .unwrap();
     assert_eq!(regular.units_per_em(), 2048);
     assert_eq!(regular.capital_height(), Some(1456));
-    // Pixel4 mixed advance104 gives baseline97.001. The pinned OS/2
-    // cap ratio1456/2048 applied to object height100 yields center61.454125.
+    let baseline = 20.0_f32.mul_add(-0.35, 100.0 + 4.0) + 0.001;
+    let cap_ratio = 1456.0_f32 / 2048.0;
+    let center = baseline - (cap_ratio * 100.0) * 0.5;
     for alternate_family in [false, true] {
         assert_mixed_marker_y(
             &mixed_object_document(4.0, alternate_family),
-            61.45413,
-            97.001,
+            svg_decimal(center),
+            svg_decimal(baseline),
             &controlled_fonts(1456, 1024),
         );
     }

@@ -337,8 +337,9 @@ mod tests {
         });
         let prepared = prepare(&content, 200.0);
         let line = &prepared.body_layout.as_ref().unwrap().lines[0];
-        assert!((line.bottom - line.top - 130.001).abs() < 1e-10);
-        assert!((prepared.min_first_page_height - 250.751).abs() < 1e-10);
+        let native_body_height = f64::from(130.001_f32);
+        assert!((line.bottom - line.top - native_body_height).abs() < 1e-10);
+        assert!((prepared.min_first_page_height - (120.75 + native_body_height)).abs() < 1e-10);
     }
 
     #[test]

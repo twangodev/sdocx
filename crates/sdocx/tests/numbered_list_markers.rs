@@ -426,7 +426,27 @@ fn fractional_marker_width_is_ceiled_for_its_child_and_reserved_before_body_wrap
 
 #[test]
 fn numeric_children_center_on_mixed_object_lines_and_explicit_pixel_spacing() {
-    for (pixels, body_y, marker_y) in [(0.0_f32, 100.001, 45.501), (4.0, 97.001, 67.45413)] {
+    let face = rustybuzz::Face::from_slice(include_bytes!("../assets/fonts/Roboto-Regular.ttf"), 0)
+        .unwrap();
+    assert_eq!(face.units_per_em(), 2048);
+    assert_eq!(face.capital_height(), Some(1456));
+    let cap_ratio = 1456.0_f32 / 2048.0;
+    let child_height = 20.0_f32.mul_add(1.3_f32 - 1.0, 20.0);
+    let child_baseline = 20.0_f32.mul_add(-0.35, child_height);
+    for pixels in [0.0_f32, 4.0] {
+        let line_bottom = if pixels == 0.0 {
+            20.0_f32.mul_add(1.35_f32 - 1.0, 100.0)
+        } else {
+            100.0 + pixels
+        };
+        let baseline = 20.0_f32.mul_add(-0.35, line_bottom) + 0.001;
+        let center = if pixels == 0.0 {
+            (line_bottom + 0.001) - (1.35_f32 * 100.0) * 0.5
+        } else {
+            baseline - (cap_ratio * 100.0) * 0.5
+        };
+        let body_y = svg_decimal(f64::from(baseline));
+        let marker_y = svg_decimal(f64::from(center - child_height * 0.5 + child_baseline));
         let mut doc = document(4, 1, 1, 360);
         let text = content(&mut doc);
         text.text = "A\u{fffc}B".into();
