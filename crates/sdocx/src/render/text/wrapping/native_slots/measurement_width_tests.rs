@@ -154,7 +154,7 @@ fn live_cell_measurement_widths_reuse_native_entries_and_block_selection() {
             while let Some(mut line) = wrapper.candidate(available, |_| {}).unwrap() {
                 let alignment = (ordinal == 0).then_some(crate::ParagraphAlignment::Center);
                 let line_origin = line
-                    .place_native_cell(f64::from(margins[0]), available, alignment)
+                    .place_native_cell(&styled, f64::from(margins[0]), available, alignment)
                     .unwrap()
                     .unwrap();
                 let mut captured_top = None;

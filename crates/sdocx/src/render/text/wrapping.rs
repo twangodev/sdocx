@@ -11,10 +11,10 @@ use super::{StyledText, TextRenderer};
 
 mod native_slots;
 pub(in crate::render::text) use native_slots::NativePlacedLine;
-pub(in crate::render) use native_slots::ParagraphMeasurementWidth;
 use native_slots::{NativeLineSlots, NativeParagraphSlots};
+pub(in crate::render) use native_slots::{NativeObjectMeasurementWidth, ParagraphMeasurementWidth};
 mod native_mixed;
-use native_mixed::NativeMixedSlots;
+use native_mixed::{NativeMixedLine, NativeMixedSlots};
 
 pub(in crate::render) struct WrappedLine {
     pub source: Range<usize>,
@@ -25,10 +25,11 @@ pub(in crate::render) struct WrappedLine {
     pub objects: Vec<PositionedObject>,
     pub visual_order: Vec<LineEntry>,
     pub native_positioned: bool,
+    pub encountered_object_metric: bool,
     pub geometry: LineGeometry,
     native_slots: Option<NativeLineSlots>,
     pub(super) native_placed: Option<NativePlacedLine>,
-    native_mixed: bool,
+    native_mixed: Option<NativeMixedLine>,
     unsupported_native_wrapping: bool,
     fallback_measurement_issues: Vec<super::SourceTextDiagnostic>,
 }
@@ -123,10 +124,11 @@ impl WrappedLine {
             objects: Vec::new(),
             visual_order: Vec::new(),
             native_positioned: false,
+            encountered_object_metric: false,
             geometry: LineGeometry::Unmeasured,
             native_slots: None,
             native_placed: None,
-            native_mixed: false,
+            native_mixed: None,
             unsupported_native_wrapping: false,
             fallback_measurement_issues: Vec::new(),
         }
@@ -141,7 +143,7 @@ impl WrappedLine {
     }
 
     pub fn advance_for_paint(&self, canonical: bool) -> Option<f64> {
-        if !canonical || self.native_slots.is_some() || self.native_mixed {
+        if !canonical || self.native_slots.is_some() || self.native_mixed.is_some() {
             return Some(self.advance);
         }
         match &self.geometry {
@@ -168,13 +170,11 @@ impl WrappedLine {
 
     pub fn place_native_cell(
         &mut self,
+        styled: &StyledText<'_>,
         left: f64,
         width: f64,
         alignment: Option<crate::ParagraphAlignment>,
     ) -> Result<Option<f64>, MeasurementError> {
-        let Some(slots) = &self.native_slots else {
-            return Ok(None);
-        };
         let native_left = left as f32;
         let native_width = width as f32;
         if ![native_left, native_width].into_iter().all(f32::is_finite)
@@ -183,6 +183,40 @@ impl WrappedLine {
         {
             return Ok(None);
         }
+        if let Some(mixed) = &self.native_mixed {
+            if alignment == Some(crate::ParagraphAlignment::Both) {
+                return Ok(None);
+            }
+            let (origin, geometry) =
+                mixed.aligned_positions(styled, self, native_left, native_width, alignment)?;
+            let LineGeometry::Positioned {
+                advance,
+                mut text,
+                mut objects,
+            } = geometry
+            else {
+                return Err(MeasurementError::InvalidCluster);
+            };
+            let origin = f64::from(origin);
+            for position in text.iter_mut().chain(&mut objects) {
+                position.x -= origin;
+            }
+            for (placement, position) in self.placements.iter_mut().zip(&text) {
+                placement.x = position.x;
+            }
+            for (placement, position) in self.objects.iter_mut().zip(&objects) {
+                placement.x = position.x;
+            }
+            self.geometry = LineGeometry::Positioned {
+                advance: advance - origin,
+                text,
+                objects,
+            };
+            return Ok(Some(origin));
+        }
+        let Some(slots) = &self.native_slots else {
+            return Ok(None);
+        };
         let aligned = slots.aligned_positions(native_left, native_width, alignment)?;
         let origin = f64::from(aligned.origin);
         self.native_placed = Some(aligned.dense);
@@ -704,6 +738,7 @@ pub(in crate::render) struct ParagraphWrapper<'a, 'text, 'fonts> {
     items: Vec<MeasuredItem>,
     allowed: Vec<bool>,
     mandatory: Vec<bool>,
+    source_mandatory: Vec<bool>,
     emergency: Vec<bool>,
     first_font_size: f64,
     font_size: f64,
@@ -729,8 +764,12 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             .slice(range.clone())
             .ok_or(MeasurementError::InvalidRange)?;
         let mut breaks = break_candidates(text);
+        let mut source_mandatory = vec![false; range.len() + 1];
+        for candidate in &breaks.candidates {
+            source_mandatory[candidate.end] = candidate.kind == BreakKind::Mandatory;
+        }
         let measurer = ParagraphMeasurer::new(styled, range.clone(), theme, predefined, renderer)?;
-        let measured = measured_items(
+        let mut measured = measured_items(
             styled,
             range.clone(),
             &measurer,
@@ -784,13 +823,34 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                     None
                 }
             };
-        let full_width = match width.into() {
-            ParagraphMeasurementWidth::Constrained(width) => normalized_width(width),
+        let (full_width, object_width) = match width.into() {
+            ParagraphMeasurementWidth::Constrained(width) => (
+                normalized_width(width),
+                Some(NativeObjectMeasurementWidth {
+                    layout_width: width as f32,
+                    margins: [0.0; 2],
+                }),
+            ),
+            ParagraphMeasurementWidth::ConstrainedWithObjects {
+                wrap_width,
+                object_width,
+            } => (normalized_width(wrap_width), Some(object_width)),
             ParagraphMeasurementWidth::Automatic { insets } => native_slots
                 .as_ref()
                 .ok_or(MeasurementError::InvalidCluster)?
-                .automatic_width(insets)?,
+                .automatic_width(insets)
+                .map(|width| (width, None))?,
         };
+        for item in &mut measured.items {
+            if let MeasuredItem::Object { placement, .. } = item
+                && !placement.object.inline
+            {
+                placement.object.advance = object_width
+                    .as_ref()
+                    .ok_or(MeasurementError::InvalidCluster)?
+                    .advance()?;
+            }
+        }
         Ok(Self {
             styled,
             measurer,
@@ -798,6 +858,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             items: measured.items,
             allowed,
             mandatory,
+            source_mandatory,
             emergency,
             first_font_size: paragraph_prefix_font_size(styled, &range, theme, predefined),
             font_size: measured.font_size,
@@ -827,6 +888,30 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         ]
     }
 
+    fn mixed_selection_limit(&self, start: usize) -> usize {
+        let limit = self
+            .mandatory
+            .iter()
+            .enumerate()
+            .skip(start - self.range.start + 1)
+            .find(|(_, mandatory)| **mandatory)
+            .map_or(self.range.end, |(end, _)| self.range.start + end);
+        if self.source_mandatory[limit - self.range.start] {
+            return limit;
+        }
+        self.items
+            .iter()
+            .find_map(|item| match item {
+                MeasuredItem::Object { placement, .. }
+                    if !placement.object.inline && placement.object.source.start == limit =>
+                {
+                    Some(placement.object.source.end)
+                }
+                _ => None,
+            })
+            .unwrap_or(limit)
+    }
+
     pub fn candidate(
         &mut self,
         width: f64,
@@ -847,27 +932,26 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         match NativeMixedSlots::new(self.styled, self.range.clone(), &self.items, &self.allowed) {
             Ok(Some(slots)) => {
                 let start = self.items[self.start_item].source().start;
-                let limit = self
-                    .mandatory
-                    .iter()
-                    .enumerate()
-                    .skip(start - self.range.start + 1)
-                    .find(|(_, mandatory)| **mandatory)
-                    .map_or(self.range.end, |(end, _)| self.range.start + end);
-                if let Ok(Some(end)) = slots.select(
+                let limit = self.mixed_selection_limit(start);
+                if let Ok(Some(selection)) = slots.select(
                     self.styled,
                     start..limit,
                     [width, self.full_width],
                     &mut self.items,
                     &mut prepare_once,
                 ) {
+                    let end = selection.end;
                     let end_item = self.items.partition_point(|item| item.source().end <= end);
                     if end_item > self.start_item
                         && self.items[end_item - 1].source().end == end
                         && self.emergency[end - self.range.start]
                     {
                         return self
-                            .make_line(end_item, unsupported_native_wrapping)
+                            .make_line(
+                                end_item,
+                                unsupported_native_wrapping,
+                                selection.encountered_object_metric,
+                            )
                             .map(Some);
                     }
                 }
@@ -898,7 +982,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                     && self.emergency[end - self.range.start]
                 {
                     return self
-                        .make_line(end_item, unsupported_native_wrapping)
+                        .make_line(end_item, unsupported_native_wrapping, false)
                         .map(Some);
                 }
             }
@@ -944,7 +1028,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             .or(last_allowed)
             .or(last_emergency)
             .ok_or(MeasurementError::InvalidCluster)?;
-        self.make_line(end_item, unsupported_native_wrapping)
+        self.make_line(end_item, unsupported_native_wrapping, false)
             .map(Some)
     }
 
@@ -982,6 +1066,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         &mut self,
         end_item: usize,
         unsupported_native_wrapping: bool,
+        encountered_object_metric: bool,
     ) -> Result<WrappedLine, MeasurementError> {
         let source =
             self.items[self.start_item].source().start..self.items[end_item - 1].source().end;
@@ -1031,6 +1116,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
         if source == self.range {
             font_size = font_size.max(self.font_size);
         }
+        let encountered_object_metric = encountered_object_metric || !objects.is_empty();
         let mut line = WrappedLine {
             source,
             font_size,
@@ -1043,10 +1129,11 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 .map(|order| order.iter().map(|&index| logical_entries[index]).collect())
                 .unwrap_or_default(),
             native_positioned: false,
+            encountered_object_metric,
             geometry: LineGeometry::Unmeasured,
             native_slots: None,
             native_placed: None,
-            native_mixed: false,
+            native_mixed: None,
             unsupported_native_wrapping,
             fallback_measurement_issues: Vec::new(),
         };
@@ -1102,9 +1189,13 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                 .measurer
                 .visual_order(line.source.clone(), &scalars)
                 .map_err(|_| MeasurementError::InvalidCluster)
-                .and_then(|order| slots.positions(self.styled, &line, &order, &line.visual_order));
+                .and_then(|order| {
+                    slots
+                        .positions(self.styled, &line, &order, &line.visual_order)
+                        .map(|geometry| (order, geometry))
+                });
             match positioned {
-                Ok(geometry) => {
+                Ok((order, geometry)) => {
                     line.advance = slots.block_width(self.styled, line.source.clone())?;
                     let logical_scalars = (0..line.source.len()).collect::<Vec<_>>();
                     let logical =
@@ -1118,7 +1209,12 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
                         }
                     }
                     line.geometry = geometry;
-                    line.native_mixed = true;
+                    line.native_mixed = Some(NativeMixedLine::new(
+                        slots,
+                        self.styled,
+                        line.source.clone(),
+                        order,
+                    )?);
                 }
                 Err(_) => {
                     line.unsupported_native_wrapping = true;
@@ -1858,7 +1954,7 @@ mod tests {
     }
 
     #[test]
-    fn block_objects_force_own_lines_with_actual_alignment_width() {
+    fn block_objects_keep_selector_width_separate_from_visible_width() {
         for (option, margin) in [
             (ObjectSpanLayoutOption::Block, 0.0),
             (ObjectSpanLayoutOption::BlockWithSmallMargin, 10.0),
@@ -1872,12 +1968,26 @@ mod tests {
             assert!(lines[0].objects.is_empty());
             assert!(lines[2].objects.is_empty());
             assert_eq!(lines[1].advance, 20.0);
+            assert_eq!(lines[1].objects[0].object.advance(), 1000.0);
+            assert_eq!(lines[1].objects[0].object.width(), 20.0);
+            assert!(lines[0].encountered_object_metric);
+            assert!(!lines[2].encountered_object_metric);
             assert_eq!(lines[1].font_size, 45.0);
             assert_eq!(lines[1].text_height, 0.0);
             assert!(lines[1].placements.is_empty());
             assert_eq!(lines[1].objects[0].x, 0.0);
             assert_eq!(lines[1].object_margins(), [margin, margin]);
         }
+    }
+
+    #[test]
+    fn mandatory_source_break_prevents_encountering_the_following_block_object() {
+        let mut content = text("A\n\u{fffc}");
+        content.object_spans = vec![image(2, 20.0, ObjectSpanLayoutOption::BlockWithSmallMargin)];
+        let lines = wrap(&content, 1000.0);
+        assert_eq!(ranges(&lines), [0..2, 2..3]);
+        assert!(!lines[0].encountered_object_metric);
+        assert!(lines[1].encountered_object_metric);
     }
 
     #[test]

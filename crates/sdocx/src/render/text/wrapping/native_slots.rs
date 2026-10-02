@@ -7,7 +7,29 @@ use super::*;
 
 pub(in crate::render) enum ParagraphMeasurementWidth {
     Constrained(f64),
-    Automatic { insets: [f32; 2] },
+    ConstrainedWithObjects {
+        wrap_width: f64,
+        object_width: NativeObjectMeasurementWidth,
+    },
+    Automatic {
+        insets: [f32; 2],
+    },
+}
+
+pub(in crate::render) struct NativeObjectMeasurementWidth {
+    pub layout_width: f32,
+    pub margins: [f32; 2],
+}
+
+impl NativeObjectMeasurementWidth {
+    pub fn advance(&self) -> Result<f64, MeasurementError> {
+        let advance = (self.layout_width - self.margins[0]) - self.margins[1];
+        if advance.is_finite() && advance >= 0.0 {
+            Ok(f64::from(advance))
+        } else {
+            Err(MeasurementError::InvalidCluster)
+        }
+    }
 }
 
 impl From<f64> for ParagraphMeasurementWidth {

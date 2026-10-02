@@ -5,6 +5,80 @@ use crate::ObjectSpanLayoutOption;
 use crate::fonts::FontBook;
 
 #[test]
+fn long_mixed_paragraph_retains_only_each_selected_line_and_later_source_offsets() {
+    for repeats in [32, 128] {
+        let prefix = "😀\n";
+        let paragraph = "AV\u{fffc}x ".repeat(repeats);
+        let mut content = text(&format!("{prefix}{paragraph}"));
+        content.font_size = Some(17.0);
+        for index in 0..repeats {
+            content.object_spans.push(image(
+                (prefix.encode_utf16().count() + index * 5 + 2) as i32,
+                4.0,
+                ObjectSpanLayoutOption::Inline,
+            ));
+        }
+        let settings = TextSettings::resolved();
+        let styled = StyledText::new(&content, TextContext::Flow, settings);
+        let fonts = FontBook::default();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let start = prefix.chars().count();
+        let mut wrapper = ParagraphWrapper::new(
+            &styled,
+            start..styled.index.len(),
+            35.0,
+            RenderTheme::for_canvas(false),
+            None,
+            &renderer,
+            ObjectMeasurementContext::Frame,
+        )
+        .unwrap();
+        let mut next = start;
+        let mut retained_entries = 0;
+        let mut retained_capacity = 0;
+        let mut lines = 0;
+        while let Some(mut line) = wrapper.candidate(35.0, |_| {}).unwrap() {
+            assert_eq!(line.source.start, next);
+            let mixed = line.native_mixed.as_ref().unwrap();
+            let source = styled.index.source(line.source.clone()).unwrap();
+            let units = (source.utf16().end - source.utf16().start) as usize;
+            assert_eq!(mixed.slots.origin_utf16, source.utf16().start);
+            assert_eq!(mixed.slots.entries.len(), units);
+            assert_eq!(mixed.slots.objects.len(), units);
+            assert_eq!(mixed.slots.block_objects.len(), units);
+            assert_eq!(mixed.visual_scalars.len(), line.source.len());
+            retained_entries += units;
+            retained_capacity += mixed.slots.entries.capacity();
+            let logical = line.source.clone();
+            let origin = line
+                .place_native_cell(&styled, 2.0, 35.0, Some(crate::ParagraphAlignment::Center))
+                .unwrap()
+                .unwrap();
+            assert!(origin >= 2.0);
+            assert_eq!(line.source, logical);
+            for index in 0..line.objects.len() {
+                let position = line.object_position(index, true).unwrap();
+                assert!(origin + position.x >= origin);
+                assert_eq!(line.objects[index].object.source.len(), 1);
+                assert_eq!(
+                    styled
+                        .index
+                        .slice(line.objects[index].object.source.clone()),
+                    Some("\u{fffc}")
+                );
+            }
+            next = line.source.end;
+            wrapper.commit(next);
+            lines += 1;
+        }
+        assert!(lines >= repeats);
+        assert_eq!(next, styled.index.len());
+        assert_eq!(retained_entries, paragraph.encode_utf16().count());
+        assert!(retained_capacity <= 2 * retained_entries);
+    }
+}
+
+#[test]
 fn supplied_feedback_capture_drives_sdk_objects_with_exact_source_translation() {
     let capture: serde_json::Value = serde_json::from_str(include_str!(
         "../../../../../../../conformance/table-text-object-feedback.json"
@@ -99,12 +173,21 @@ fn supplied_feedback_capture_drives_sdk_objects_with_exact_source_translation() 
                     .as_i64()
                     .unwrap();
                 assert_eq!(
-                    selected,
+                    selected.as_ref().map(|selection| selection.end),
                     (captured_end >= 0).then(|| start + captured_end as usize + 1),
                     "{} {} {prefix:?}",
                     case["name"],
                     stage["stage"]
                 );
+                if let Some(selection) = &selected {
+                    assert_eq!(
+                        selection.encountered_object_metric,
+                        stage["selection"]["flags"][1] == 1,
+                        "{} {} {prefix:?}",
+                        case["name"],
+                        stage["stage"]
+                    );
+                }
                 assert_eq!(
                     calls.len(),
                     stage["callback_calls"].as_u64().unwrap() as usize
@@ -113,7 +196,7 @@ fn supplied_feedback_capture_drives_sdk_objects_with_exact_source_translation() 
                 slots.entries[object].advance = new;
                 if let Some(selected) = selected {
                     assert_eq!(
-                        (slots.block_width(&styled, start..selected).unwrap() as f32).to_bits(),
+                        (slots.block_width(&styled, start..selected.end).unwrap() as f32).to_bits(),
                         stage["selection"]["layout_bits"][2].as_u64().unwrap() as u32
                     );
                 }
@@ -161,7 +244,7 @@ fn production_mixed_slots_retain_combining_zeros_and_sdk_callback_state() {
         .unwrap();
     assert_eq!(calls, 1);
     assert_eq!(line.source, 0..5);
-    assert!(line.native_mixed);
+    assert!(line.native_mixed.is_some());
     assert_eq!(line.objects[0].x, f64::from(slots.entries[0].advance));
     assert_eq!(
         line.placements[1].x,
@@ -276,7 +359,7 @@ fn two_sdk_objects_keep_warm_mutations_and_separate_grouped_width_from_cursor() 
                 },
             )
             .unwrap();
-        assert_eq!(selected, Some(end));
+        assert_eq!(selected.map(|selection| selection.end), Some(end));
         assert_eq!(
             callbacks,
             [
@@ -330,7 +413,10 @@ fn two_sdk_objects_keep_warm_mutations_and_separate_grouped_width_from_cursor() 
         assert_ne!(grouped, advance);
         line.advance = grouped;
         line.geometry = geometry;
-        line.native_mixed = true;
+        line.native_mixed = Some(
+            NativeMixedLine::new(prepared, &styled, line.source.clone(), vec![0, 1, 2, 3, 4])
+                .unwrap(),
+        );
         assert_eq!(line.advance_for_paint(true), Some(grouped));
 
         let warm = supplied_slots(&wrapper.items);
@@ -345,7 +431,8 @@ fn two_sdk_objects_keep_warm_mutations_and_separate_grouped_width_from_cursor() 
                     warm_callbacks.push(placement.object.span_index);
                 }
             )
-            .unwrap(),
+            .unwrap()
+            .map(|selection| selection.end),
             Some(start + 4)
         );
         assert_eq!(warm_callbacks, [0]);

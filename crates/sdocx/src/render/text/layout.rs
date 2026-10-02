@@ -16,7 +16,7 @@ use super::native_line::{NativeLineBands, NativeLineMetrics};
 use super::objects::{MeasuredObject, ObjectDiagnosticKind, ObjectMeasurementContext};
 #[cfg(test)]
 use super::wrap_paragraph;
-use super::wrapping::ParagraphMeasurementWidth;
+use super::wrapping::{NativeObjectMeasurementWidth, ParagraphMeasurementWidth};
 use super::{
     StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
     paragraph_line_height, unmeasured_paragraph,
@@ -276,7 +276,7 @@ impl LineMetrics {
             },
             height_limit,
             object_margin_line: line.has_block_margins(),
-            has_object_metric: !line.objects.is_empty(),
+            has_object_metric: line.encountered_object_metric || !line.objects.is_empty(),
         };
         if let Some(spacing) = spacing
             .filter(|spacing| explicit_line_height(line.font_size, *spacing, settings).is_some())
@@ -1106,7 +1106,13 @@ fn try_layout_text_with_context(
                 insets: [margins[0] as f32, margins[2] as f32],
             }
         } else {
-            ParagraphMeasurementWidth::Constrained(width)
+            ParagraphMeasurementWidth::ConstrainedWithObjects {
+                wrap_width: width,
+                object_width: NativeObjectMeasurementWidth {
+                    layout_width: outer_width as f32,
+                    margins: [margins[0] as f32, margins[2] as f32],
+                },
+            }
         };
         let mut paragraph_lines = ParagraphLines::new(
             styled,
@@ -1255,7 +1261,7 @@ fn try_layout_text_with_context(
                 && layout.indent_level == 0
                 && marker_width == 0.0
             {
-                match line.place_native_cell(x, width, layout.alignment) {
+                match line.place_native_cell(styled, x, width, layout.alignment) {
                     Ok(Some(origin)) => {
                         line_x = origin;
                         line_alignment = None;

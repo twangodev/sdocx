@@ -40,6 +40,7 @@ struct Stage {
 struct Selection {
     range_utf16_inclusive: [i32; 2],
     layout_bits: [u32; 4],
+    flags: [u8; 3],
 }
 #[derive(Deserialize)]
 struct Event {
@@ -114,6 +115,15 @@ fn captured_object_admission_retains_old_candidate_and_reloads_prepared_width() 
             )
             .unwrap();
             let selection = stage.selection.as_ref().unwrap();
+            if let Some(block) = &block {
+                assert_eq!(
+                    block.encountered_object_metric,
+                    selection.flags[1] != 0,
+                    "{} {} encountered object metric",
+                    case.name,
+                    stage.stage
+                );
+            }
             assert_eq!(
                 block
                     .as_ref()

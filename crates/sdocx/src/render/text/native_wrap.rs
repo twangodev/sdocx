@@ -51,6 +51,7 @@ pub(super) struct NativeBlock {
     pub width: f32,
     pub metrics: NativeWrapMetrics,
     pub space_weight: u32,
+    pub encountered_object_metric: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -236,6 +237,7 @@ fn select_with_feedback(
     let mut pending_metrics = NativeWrapMetrics::default();
     let mut last_committed = None;
     let mut space_weight = 0_u32;
+    let mut encountered_object_metric = false;
     for (index, entry) in entries
         .iter()
         .enumerate()
@@ -254,6 +256,7 @@ fn select_with_feedback(
             available: widths.available,
         });
         let object = objects.is_some_and(|objects| objects[index]);
+        encountered_object_metric |= object;
         let first_object = object && index == requested.start && widths.available >= widths.full;
         let advance = if object && (candidate <= widths.available || first_object) {
             finite(prepare(index, base, entry.advance)?)?
@@ -267,6 +270,7 @@ fn select_with_feedback(
                     width: committed,
                     metrics: committed_metrics,
                     space_weight,
+                    encountered_object_metric,
                 }));
             }
             if !object && index == requested.start && finite(pending + entry.advance)? > widths.full
@@ -276,6 +280,7 @@ fn select_with_feedback(
                     width: finite(pending + entry.advance)?,
                     metrics: entry.metrics,
                     space_weight,
+                    encountered_object_metric,
                 }));
             }
             return Ok((index > requested.start).then(|| NativeBlock {
@@ -283,6 +288,7 @@ fn select_with_feedback(
                 width: base,
                 metrics: committed_metrics.merge(pending_metrics),
                 space_weight,
+                encountered_object_metric,
             }));
         }
         pending_metrics = pending_metrics.merge(entry.metrics);
@@ -321,6 +327,7 @@ fn select_with_feedback(
         width: finite(pending + committed)?,
         metrics: committed_metrics.merge(pending_metrics),
         space_weight,
+        encountered_object_metric,
     }))
 }
 

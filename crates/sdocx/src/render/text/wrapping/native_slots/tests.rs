@@ -520,5 +520,5 @@ fn default_native_glyph_entries_use_native_mixed_numeric_stages() {
             .all(|placement| placement.cluster.run.native_entries.is_some())
     );
     assert!(line.native_slots.is_none());
-    assert!(line.native_mixed);
+    assert!(line.native_mixed.is_some());
 }
