@@ -8,6 +8,10 @@ pub use fontdb;
 use fontdb::{Database, Family, ID, Query, Style, Weight};
 pub use rustybuzz::{Direction, Feature, UnicodeBuffer};
 
+#[cfg(test)]
+#[path = "fonts/native_shaping_tests.rs"]
+mod native_shaping_tests;
+
 #[derive(Clone)]
 /// A shared font database with cached faces. Defaults contain pinned Roboto families.
 pub struct FontBook {
