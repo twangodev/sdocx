@@ -99,7 +99,7 @@ impl RenderTheme {
         }
     }
 
-    pub(super) fn span_background_color(self, color: Color) -> Color {
+    pub(super) fn span_color(self, color: Color) -> Color {
         if self.dark_span_colors {
             reverse_color(color)
         } else {
@@ -211,7 +211,7 @@ mod tests {
             };
             let theme = RenderTheme::resolve(&page, &metadata, mode);
             assert_eq!(
-                theme.span_background_color(color),
+                theme.span_color(color),
                 if reversed {
                     reverse_color(color)
                 } else {
@@ -246,22 +246,22 @@ mod tests {
             },
             Color { r: 255, g: 0, b: 0 },
         ] {
-            assert_eq!(dark.span_background_color(color), reverse_color(color));
-            assert_eq!(light.span_background_color(color), color);
-            assert_eq!(incompatible.span_background_color(color), color);
+            assert_eq!(dark.span_color(color), reverse_color(color));
+            assert_eq!(light.span_color(color), color);
+            assert_eq!(incompatible.span_color(color), color);
             assert_eq!(
                 dark.on_background(Color {
                     r: 255,
                     g: 255,
                     b: 255
                 })
-                .span_background_color(color),
+                .span_color(color),
                 reverse_color(color)
             );
             assert_eq!(
                 light
                     .on_background(Color { r: 0, g: 0, b: 0 })
-                    .span_background_color(color),
+                    .span_color(color),
                 color
             );
             assert_eq!(
@@ -273,19 +273,19 @@ mod tests {
                     },
                     1.0
                 )
-                .span_background_color(color),
+                .span_color(color),
                 reverse_color(color)
             );
             assert_eq!(
                 light
                     .on_surface(Color { r: 0, g: 0, b: 0 }, 1.0)
-                    .span_background_color(color),
+                    .span_color(color),
                 color
             );
             assert_eq!(
                 incompatible
                     .on_background(Color { r: 0, g: 0, b: 0 })
-                    .span_background_color(color),
+                    .span_color(color),
                 color
             );
         }

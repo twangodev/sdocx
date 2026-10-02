@@ -17,7 +17,7 @@ impl CellFill {
     ) -> Self {
         let argb = selected_argb(style, row_index, cell, true);
         Self {
-            color: theme.span_background_color(super::super::argb_color(argb)),
+            color: theme.span_color(super::super::argb_color(argb)),
             opacity: f64::from(argb >> 24) / 255.0,
         }
     }

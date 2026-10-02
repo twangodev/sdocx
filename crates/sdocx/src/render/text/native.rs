@@ -30,7 +30,7 @@ pub(crate) struct NativeGlyph {
     pub source: Range<usize>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct NativeTextPaint {
     pub color: Color,
     pub bold: bool,

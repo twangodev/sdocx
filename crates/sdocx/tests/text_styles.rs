@@ -541,7 +541,7 @@ fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
     }
 }
 
-fn composition_documents(content: &RichTextBox) -> Vec<(String, Document)> {
+fn style_documents(content: &RichTextBox) -> Vec<(String, Document)> {
     let documents: Vec<_> = CONTEXTS
         .iter()
         .map(|&context| (format!("{context:?}"), document(context, content.clone())))
@@ -596,7 +596,7 @@ fn modern_composition_flags_preserve_native_styling_in_every_text_context() {
         modern_composition_flag(RichTextSpanType::ComposingTag, 6, false),
     ];
     let fonts = FontBook::default();
-    for (context, document) in composition_documents(&content) {
+    for (context, document) in style_documents(&content) {
         let layout = sdocx::layout_document(&document);
         let rendered = sdocx::render_layout_page_svg_with_fonts(
             &document,
@@ -695,7 +695,7 @@ fn composing_background_is_preview_only_and_svg_pdf_preserves_supplied_appearanc
                 &[composing.to_le_bytes(), 0xdead_beef_u32.to_le_bytes()].concat(),
             ),
         ];
-        for (context, document) in composition_documents(&content) {
+        for (context, document) in style_documents(&content) {
             let layout = sdocx::layout_document(&document);
             let rendered = sdocx::render_layout_page_svg_with_fonts(
                 &document,
@@ -803,7 +803,7 @@ fn dark_composing_background_selection_tests_the_mapped_argb() {
                 &[composing.to_le_bytes(), [0; 4]].concat(),
             ),
         ];
-        for (context, document) in composition_documents(&content) {
+        for (context, document) in style_documents(&content) {
             assert!(
                 sdocx::RenderTheme::resolve(
                     &document.pages[0],
@@ -889,7 +889,7 @@ fn composing_tag_background_on_an_object_reports_only_the_anchor_source() {
                 layout_option,
                 layout_constraint: ObjectSpanLayoutConstraint::Normal,
             });
-            for (context, document) in composition_documents(&content) {
+            for (context, document) in style_documents(&content) {
                 let layout = sdocx::layout_document(&document);
                 let rendered = sdocx::render_layout_page_svg_with_fonts(
                     &document,
@@ -936,12 +936,426 @@ fn composing_tag_background_on_an_object_reports_only_the_anchor_source() {
     }
 }
 
+struct MeasureJoinCase {
+    name: &'static str,
+    spans: Vec<RichTextSpan>,
+    joined: bool,
+    dark: bool,
+    paint_colors: [&'static str; 2],
+}
+
+fn measure_join_cases() -> Vec<MeasureJoinCase> {
+    vec![
+        MeasureJoinCase {
+            name: "unchanged source",
+            spans: vec![],
+            joined: true,
+            dark: false,
+            paint_colors: ["#334455"; 2],
+        },
+        MeasureJoinCase {
+            name: "alpha-only foreground",
+            spans: vec![span(
+                RichTextSpanType::ForegroundColor,
+                1,
+                2,
+                &0x8033_4455_u32.to_le_bytes(),
+            )],
+            joined: false,
+            dark: false,
+            paint_colors: ["#334455"; 2],
+        },
+        MeasureJoinCase {
+            name: "null versus empty family",
+            spans: vec![font_name(1, 2, "")],
+            joined: false,
+            dark: false,
+            paint_colors: ["#334455"; 2],
+        },
+        MeasureJoinCase {
+            name: "hyperlink paint only",
+            spans: vec![hyperlink(1, 2)],
+            joined: true,
+            dark: false,
+            paint_colors: ["#334455", "#0054ff"],
+        },
+        MeasureJoinCase {
+            name: "source foreground beneath hyperlink",
+            spans: vec![
+                hyperlink(0, 2),
+                span(
+                    RichTextSpanType::ForegroundColor,
+                    1,
+                    2,
+                    &0xff77_8899_u32.to_le_bytes(),
+                ),
+            ],
+            joined: false,
+            dark: false,
+            paint_colors: ["#0054ff"; 2],
+        },
+        MeasureJoinCase {
+            name: "native mapped foreground versus display contrast",
+            spans: vec![
+                span(
+                    RichTextSpanType::ForegroundColor,
+                    0,
+                    1,
+                    &0xff26_2626_u32.to_le_bytes(),
+                ),
+                span(
+                    RichTextSpanType::ForegroundColor,
+                    1,
+                    2,
+                    &0xffd9_d9d9_u32.to_le_bytes(),
+                ),
+            ],
+            joined: false,
+            dark: true,
+            paint_colors: ["#d9d9d9"; 2],
+        },
+    ]
+}
+
+fn measure_join_text(source: &str, case: &MeasureJoinCase) -> RichTextBox {
+    let mut content = text(source);
+    let length = source.encode_utf16().count() as u32;
+    content.spans = vec![
+        span(
+            RichTextSpanType::FontSize,
+            0,
+            length,
+            &20.0_f32.to_le_bytes(),
+        ),
+        span(
+            RichTextSpanType::ForegroundColor,
+            0,
+            length,
+            &0xff33_4455_u32.to_le_bytes(),
+        ),
+        span(
+            RichTextSpanType::BackgroundColor,
+            0,
+            2,
+            &0xff12_3456_u32.to_le_bytes(),
+        ),
+    ];
+    if source.ends_with('|') {
+        content.spans.push(span(
+            RichTextSpanType::Underline,
+            length - 1,
+            length,
+            &[1, 0],
+        ));
+    }
+    content.spans.extend(case.spans.clone());
+    content
+}
+
+fn roboto_advance(source: &str) -> f64 {
+    const FONT: &[u8] = include_bytes!("../assets/fonts/Roboto-Regular.ttf");
+    assert_eq!(
+        format!("{:x}", Sha256::digest(FONT)),
+        "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d"
+    );
+    let face = rustybuzz::Face::from_slice(FONT, 0).unwrap();
+    let mut buffer = rustybuzz::UnicodeBuffer::new();
+    buffer.push_str(source);
+    buffer.guess_segment_properties();
+    let shaped = rustybuzz::shape(&face, &[], buffer);
+    let units: i32 = shaped
+        .glyph_positions()
+        .iter()
+        .map(|glyph| glyph.x_advance)
+        .sum();
+    f64::from(units) * 60.0 / f64::from(face.units_per_em())
+}
+
+#[test]
+fn native_measure_join_identity_preserves_font_advances_across_text_contexts() {
+    let fonts = FontBook::default();
+    let joined = roboto_advance("AV");
+    let separated = roboto_advance("A") + roboto_advance("V");
+    assert!(
+        separated - joined > 1.0,
+        "font must distinguish joined and split AV"
+    );
+    assert!((roboto_advance("AV|") - roboto_advance("|") - joined).abs() < 0.0001);
+    for case in measure_join_cases() {
+        let expected = if case.joined { joined } else { separated };
+        let mut options = sdocx::RenderOptions::default();
+        if case.dark {
+            options.color_mode = sdocx::RenderColorMode::Dark;
+        }
+        for (context, document) in style_documents(&measure_join_text("AV|", &case)) {
+            let layout = sdocx::layout_document(&document);
+            let rendered =
+                sdocx::render_layout_page_svg_with_fonts(&document, &layout, 0, &options, &fonts)
+                    .unwrap();
+            assert!(
+                rendered.text_diagnostics.is_empty(),
+                "{context}: {}: {:?}",
+                case.name,
+                rendered.text_diagnostics
+            );
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            assert_eq!(
+                xml.descendants()
+                    .filter(|node| node.has_tag_name("tspan"))
+                    .filter_map(|node| node.text())
+                    .collect::<String>(),
+                "AV|",
+                "{context}: {}",
+                case.name
+            );
+            let background_color = if case.dark { "#a9cbed" } else { "#123456" };
+            let background = xml
+                .descendants()
+                .find(|node| {
+                    node.has_tag_name("rect") && node.attribute("fill") == Some(background_color)
+                })
+                .unwrap();
+            let width: f64 = background.attribute("width").unwrap().parse().unwrap();
+            assert!(
+                (width - expected).abs() < 0.0001,
+                "{context}: {}: background width {width} != {expected}",
+                case.name
+            );
+            let first = xml
+                .descendants()
+                .find(|node| {
+                    node.has_tag_name("tspan")
+                        && node.text().is_some_and(|text| text.starts_with('A'))
+                })
+                .unwrap();
+            let paint_colors: Vec<_> = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("tspan"))
+                .flat_map(|node| {
+                    node.text()
+                        .unwrap_or_default()
+                        .chars()
+                        .filter(|character| matches!(character, 'A' | 'V'))
+                        .map(move |_| node.attribute("fill").unwrap())
+                })
+                .collect();
+            assert_eq!(paint_colors, case.paint_colors, "{context}: {}", case.name);
+            let x = |node: roxmltree::Node<'_, '_>| {
+                node.attribute("x")
+                    .unwrap()
+                    .split_whitespace()
+                    .next()
+                    .unwrap()
+                    .parse::<f64>()
+                    .unwrap()
+            };
+            assert!(
+                (x(tspan(&xml, "|")) - x(first) - expected).abs() < 0.0001,
+                "{context}: {}: SVG retained advance",
+                case.name
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                    &document,
+                    &layout,
+                    &[0],
+                    &options,
+                    &Default::default(),
+                    &fonts,
+                )
+                .unwrap();
+                let pdf = PdfComposition::read(&retained.bytes);
+                pdf.assert_source("AV|", &context);
+                let origin = pdf
+                    .text_positions
+                    .iter()
+                    .find(|glyph| glyph.source.starts_with('A'))
+                    .unwrap()
+                    .x;
+                let suffix = pdf
+                    .text_positions
+                    .iter()
+                    .find(|glyph| glyph.source == "|")
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "{context}: {}: missing suffix position: {:?}",
+                            case.name, pdf.text_positions
+                        )
+                    })
+                    .x;
+                assert!(
+                    (suffix - origin - expected).abs() < 0.001,
+                    "{context}: {}: PDF retained advance {} != {expected}",
+                    case.name,
+                    suffix - origin
+                );
+                let actual_colors: Vec<_> = pdf
+                    .text_positions
+                    .iter()
+                    .flat_map(|glyph| {
+                        glyph
+                            .source
+                            .chars()
+                            .filter(|character| matches!(character, 'A' | 'V'))
+                            .map(move |_| glyph.fill_color)
+                    })
+                    .collect();
+                let expected_colors = case.paint_colors.map(|color| {
+                    std::array::from_fn(|channel| {
+                        u8::from_str_radix(&color[1 + channel * 2..3 + channel * 2], 16).unwrap()
+                    })
+                });
+                assert_eq!(
+                    actual_colors, expected_colors,
+                    "{context}: {}: PDF glyph colors",
+                    case.name
+                );
+            }
+        }
+    }
+}
+
+fn narrow_measure_document(document: &mut Document, width: f64) {
+    fn narrow_text(content: &mut RichTextBox, width: f64) {
+        if content.bbox != BoundingBox::default() {
+            content.bbox.x_max = content.bbox.x_min + width;
+        }
+        for object in &mut content.object_spans {
+            match object.content.as_mut() {
+                Some(RichTextObjectContent::CodeBlock(code)) => {
+                    code.bbox.x_max = code.bbox.x_min + width + 96.0;
+                    if let Some(body) = &mut code.body {
+                        narrow_text(body, width);
+                    }
+                }
+                Some(RichTextObjectContent::Table(table)) => {
+                    let nested_code = table.rows[0].cells[0]
+                        .content
+                        .object_spans
+                        .iter()
+                        .any(|object| object.object_type == ObjectType::CodeBlock);
+                    let cell_width = width + if nested_code { 96.0 } else { 0.0 };
+                    table.bbox.x_max = table.bbox.x_min + cell_width;
+                    table.column_widths = vec![cell_width as f32];
+                    table.rows[0].cells[0].bbox.x_max =
+                        table.rows[0].cells[0].bbox.x_min + cell_width;
+                    narrow_text(&mut table.rows[0].cells[0].content, width);
+                }
+                _ => {}
+            }
+        }
+    }
+    let page = &mut document.pages[0];
+    for object in &mut page.objects {
+        if let sdocx::PageObjectContent::Element(PageElement::TextBox(content)) =
+            &mut object.content
+        {
+            if content.bbox == BoundingBox::default() && content.object_spans.is_empty() {
+                page.width = width as u32 + 96;
+            }
+            narrow_text(content, width);
+        }
+    }
+}
+
+#[test]
+fn native_measure_join_identity_changes_wraps_at_the_actual_font_width() {
+    let fonts = FontBook::default();
+    let joined = roboto_advance("AV");
+    let separated = roboto_advance("A") + roboto_advance("V");
+    let width = ((joined + separated) * 0.5).round();
+    assert!(joined < width && width < separated);
+    for case in measure_join_cases() {
+        let mut options = sdocx::RenderOptions::default();
+        if case.dark {
+            options.color_mode = sdocx::RenderColorMode::Dark;
+        }
+        for (context, mut document) in style_documents(&measure_join_text("AV", &case)) {
+            narrow_measure_document(&mut document, width);
+            let layout = sdocx::layout_document(&document);
+            let rendered =
+                sdocx::render_layout_page_svg_with_fonts(&document, &layout, 0, &options, &fonts)
+                    .unwrap();
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            let spans: Vec<_> = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("tspan"))
+                .collect();
+            assert_eq!(
+                spans
+                    .iter()
+                    .filter_map(|node| node.text())
+                    .collect::<String>(),
+                "AV",
+                "{context}: {}",
+                case.name
+            );
+            let baselines: std::collections::HashSet<_> = spans
+                .iter()
+                .map(|node| {
+                    node.ancestors()
+                        .find_map(|node| node.attribute("y"))
+                        .unwrap()
+                        .split_whitespace()
+                        .next()
+                        .unwrap()
+                        .parse::<f64>()
+                        .unwrap()
+                        .to_bits()
+                })
+                .collect();
+            assert_eq!(
+                baselines.len(),
+                if case.joined { 1 } else { 2 },
+                "{context}: {}: width{width} between {joined}/{separated}",
+                case.name
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                    &document,
+                    &layout,
+                    &[0],
+                    &options,
+                    &Default::default(),
+                    &fonts,
+                )
+                .unwrap();
+                let pdf = PdfComposition::read(&retained.bytes);
+                pdf.assert_source("AV", &context);
+                let baselines: std::collections::HashSet<_> = pdf
+                    .text_positions
+                    .iter()
+                    .map(|glyph| (glyph.y * 1000.0).round() as i64)
+                    .collect();
+                assert_eq!(
+                    baselines.len(),
+                    if case.joined { 1 } else { 2 },
+                    "{context}: {}: PDF wrapping",
+                    case.name
+                );
+            }
+        }
+    }
+}
+
 #[cfg(feature = "pdf")]
 #[derive(Default)]
 struct PdfComposition {
     source: String,
+    text_positions: Vec<PdfTextGlyph>,
     fill_colors: Vec<[u8; 3]>,
     image_resources: usize,
+}
+
+#[cfg(feature = "pdf")]
+#[derive(Debug)]
+struct PdfTextGlyph {
+    source: String,
+    x: f64,
+    y: f64,
+    fill_color: [u8; 3],
 }
 
 #[cfg(feature = "pdf")]
@@ -959,6 +1373,55 @@ impl PdfComposition {
         struct PaintState {
             fill: [u8; 3],
             font: Vec<u8>,
+            transform: svgtypes::Transform,
+            text_matrix: svgtypes::Transform,
+            font_size: f64,
+            text_cursor: f64,
+        }
+        fn cid_width(font: &lopdf::Dictionary, cid: u16) -> f64 {
+            if let Ok(widths) = font.get(b"W") {
+                let widths = widths.as_array().unwrap();
+                let mut index = 0;
+                while index < widths.len() {
+                    let first = widths[index].as_i64().unwrap() as u16;
+                    if let Ok(values) = widths[index + 1].as_array() {
+                        if let Some(value) = cid
+                            .checked_sub(first)
+                            .and_then(|index| values.get(usize::from(index)))
+                        {
+                            return f64::from(value.as_float().unwrap());
+                        }
+                        index += 2;
+                    } else {
+                        let last = widths[index + 1].as_i64().unwrap() as u16;
+                        if (first..=last).contains(&cid) {
+                            return f64::from(widths[index + 2].as_float().unwrap());
+                        }
+                        index += 3;
+                    }
+                }
+            }
+            font.get(b"DW")
+                .map_or(1000.0, |value| f64::from(value.as_float().unwrap()))
+        }
+        fn transform(operands: &[lopdf::Object]) -> svgtypes::Transform {
+            let values: Vec<_> = operands
+                .iter()
+                .map(|value| f64::from(value.as_float().unwrap()))
+                .collect();
+            svgtypes::Transform::new(
+                values[0], values[1], values[2], values[3], values[4], values[5],
+            )
+        }
+        fn compose(left: svgtypes::Transform, right: svgtypes::Transform) -> svgtypes::Transform {
+            svgtypes::Transform::new(
+                left.a * right.a + left.c * right.b,
+                left.b * right.a + left.d * right.b,
+                left.a * right.c + left.c * right.d,
+                left.b * right.c + left.d * right.d,
+                left.a * right.e + left.c * right.f + left.e,
+                left.b * right.e + left.d * right.f + left.f,
+            )
         }
         fn dictionary<'a>(
             pdf: &'a lopdf::Document,
@@ -981,6 +1444,13 @@ impl PdfComposition {
                 match operation.operator.as_str() {
                     "q" => stack.push(state.clone()),
                     "Q" => state = stack.pop().unwrap(),
+                    "cm" => {
+                        state.transform = compose(state.transform, transform(&operation.operands))
+                    }
+                    "Tm" => {
+                        state.text_matrix = transform(&operation.operands);
+                        state.text_cursor = 0.0;
+                    }
                     "rg" | "scn" | "g" => {
                         let values: Vec<_> = operation
                             .operands
@@ -999,21 +1469,45 @@ impl PdfComposition {
                     "f" | "F" | "f*" | "B" | "B*" | "b" | "b*" => {
                         result.fill_colors.push(state.fill)
                     }
-                    "Tf" => state.font = operation.operands[0].as_name().unwrap().to_vec(),
+                    "Tf" => {
+                        state.font = operation.operands[0].as_name().unwrap().to_vec();
+                        state.font_size = f64::from(operation.operands[1].as_float().unwrap());
+                    }
                     "Tj" | "TJ" => {
                         let fonts = dictionary(pdf, resources.get(b"Font").unwrap());
-                        let encoding = dictionary(pdf, fonts.get(&state.font).unwrap())
-                            .get_font_encoding(pdf)
-                            .unwrap();
+                        let font = dictionary(pdf, fonts.get(&state.font).unwrap());
+                        let encoding = font.get_font_encoding(pdf).unwrap();
+                        let descendant = dictionary(
+                            pdf,
+                            &font.get(b"DescendantFonts").unwrap().as_array().unwrap()[0],
+                        );
                         let values = operation.operands[0]
                             .as_array()
                             .map(Vec::as_slice)
                             .unwrap_or(&operation.operands);
                         for value in values {
                             if let lopdf::Object::String(bytes, _) = value {
-                                result.source.push_str(
-                                    &lopdf::Document::decode_text(&encoding, bytes).unwrap(),
-                                );
+                                let (cids, remainder) = bytes.as_chunks::<2>();
+                                assert!(remainder.is_empty());
+                                for bytes in cids {
+                                    let source =
+                                        lopdf::Document::decode_text(&encoding, bytes).unwrap();
+                                    let matrix = compose(state.transform, state.text_matrix);
+                                    result.text_positions.push(PdfTextGlyph {
+                                        source: source.clone(),
+                                        x: (matrix.e + matrix.a * state.text_cursor) * 96.0 / 72.0,
+                                        y: (matrix.f + matrix.b * state.text_cursor) * 96.0 / 72.0,
+                                        fill_color: state.fill,
+                                    });
+                                    result.source.push_str(&source);
+                                    state.text_cursor +=
+                                        cid_width(descendant, u16::from_be_bytes(*bytes))
+                                            * state.font_size
+                                            / 1000.0;
+                                }
+                            } else {
+                                state.text_cursor -=
+                                    f64::from(value.as_float().unwrap()) * state.font_size / 1000.0;
                             }
                         }
                     }

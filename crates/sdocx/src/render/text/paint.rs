@@ -194,6 +194,23 @@ fn render_retained_line(
 }
 
 #[cfg(feature = "pdf")]
+fn retained_paint(
+    style: &TextStyle,
+    skew_x: f32,
+) -> Result<super::native::NativeTextPaint, String> {
+    let Some(crate::render::vector::ColorValue::Rgb(color)) =
+        crate::render::vector::ColorValue::from_hex(&style.color)
+    else {
+        return Err("invalid retained text color".into());
+    };
+    Ok(super::native::NativeTextPaint {
+        color,
+        bold: style.bold,
+        skew_x,
+    })
+}
+
+#[cfg(feature = "pdf")]
 #[allow(clippy::too_many_arguments)]
 fn render_retained_fragment(
     svg: &mut Scene,
@@ -205,7 +222,7 @@ fn render_retained_fragment(
     predefined: Option<PredefinedTextStyle>,
     renderer: &TextRenderer<'_>,
 ) -> Result<(), String> {
-    use super::native::{NativeGlyph, NativeGlyphRun, NativeTextBlock, NativeTextPaint};
+    use super::native::{NativeGlyph, NativeGlyphRun, NativeTextBlock};
     use std::sync::Arc;
     let [x, baseline] = origin;
     let first_cluster = line
@@ -233,10 +250,15 @@ fn render_retained_fragment(
         renderer
             .for_source(first.cluster.source.clone())
             .report_resolution(&style, styled.context());
+        let paint = retained_paint(&style, measured.synthesis.skew_x())?;
         let mut clusters = Vec::new();
         while index < last_cluster
             && let Some(placement) = line.placements.get(index)
             && Arc::ptr_eq(&placement.cluster.run, measured)
+            && retained_paint(
+                &styled.style_at(placement.cluster.source.start, theme, predefined),
+                measured.synthesis.skew_x(),
+            )? == paint
         {
             clusters.push((index, placement));
             index += 1;
@@ -270,19 +292,10 @@ fn render_retained_fragment(
                 });
             }
         }
-        let Some(crate::render::vector::ColorValue::Rgb(color)) =
-            crate::render::vector::ColorValue::from_hex(&style.color)
-        else {
-            return Err("invalid retained text color".into());
-        };
         runs.push(NativeGlyphRun {
             face: measured.face.clone(),
             font_size: measured.style.font_size,
-            paint: NativeTextPaint {
-                color,
-                bold: style.bold,
-                skew_x: measured.synthesis.skew_x(),
-            },
+            paint,
             glyphs,
             variable: measured.variable,
         });

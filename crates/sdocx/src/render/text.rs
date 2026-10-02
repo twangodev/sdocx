@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::{ops::Range, sync::Arc};
 
 use crate::{
     Color, HyperlinkType, LineSpacingType, ParagraphAlignment, ParagraphBullet, ParagraphDirection,
@@ -58,6 +58,20 @@ pub(super) struct TextStyle {
     pub link_target: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+struct TextMeasureStyle {
+    font_size: f32,
+    foreground: u32,
+    family: Option<Arc<str>>,
+    style_bits: u8,
+}
+
+struct ResolvedTextStyle {
+    paint: TextStyle,
+    measurement: TextMeasureStyle,
+    invalid_font: bool,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct TextBackground {
     pub color: Color,
@@ -67,7 +81,7 @@ pub(super) struct TextBackground {
 impl TextBackground {
     fn from_argb(argb: u32, theme: RenderTheme) -> Self {
         Self {
-            color: theme.span_background_color(Color {
+            color: theme.span_color(Color {
                 r: (argb >> 16) as u8,
                 g: (argb >> 8) as u8,
                 b: argb as u8,
@@ -378,7 +392,7 @@ impl<'a> StyledText<'a> {
         theme: RenderTheme,
         predefined: Option<PredefinedTextStyle>,
     ) -> TextStyle {
-        self.resolved_style_at(character, theme, predefined).0
+        self.resolved_style_at(character, theme, predefined).paint
     }
 
     pub fn font_size_at_caret(&self, character: usize) -> f64 {
@@ -446,7 +460,7 @@ impl<'a> StyledText<'a> {
         character: usize,
         theme: RenderTheme,
         predefined: Option<PredefinedTextStyle>,
-    ) -> (TextStyle, bool) {
+    ) -> ResolvedTextStyle {
         let text_box = self.text_box;
         let mut size = match predefined {
             Some(PredefinedTextStyle::Heading1) => 21.0,
@@ -511,7 +525,21 @@ impl<'a> StyledText<'a> {
         ) {
             style.bold = false;
         }
-        (style, invalid)
+        let foreground = theme.span_color(source_color);
+        let measurement = TextMeasureStyle {
+            font_size: style.font_size as f32,
+            foreground: selected.foreground.unwrap_or(0xff00_0000) & 0xff00_0000
+                | u32::from(foreground.r) << 16
+                | u32::from(foreground.g) << 8
+                | u32::from(foreground.b),
+            family: selected.family.clone(),
+            style_bits: (u8::from(style.bold) | u8::from(style.italic) << 1) & 0xc3,
+        };
+        ResolvedTextStyle {
+            paint: style,
+            measurement,
+            invalid_font: invalid,
+        }
     }
 
     fn background_at(
@@ -615,13 +643,13 @@ impl<'a> StyledText<'a> {
                 ranges.push(paragraph.content.clone());
             }
             for range in ranges {
-                let (style, mut invalid_font) =
-                    self.resolved_style_at(range.start, theme, layout.predefined_style);
+                let resolved = self.resolved_style_at(range.start, theme, layout.predefined_style);
+                let mut invalid_font = resolved.invalid_font;
                 if range.is_empty() {
                     invalid_font = self.resolved_caret_font_size(range.start).1;
                 }
                 if invalid_font {
-                    record(&style, Some(SourceOwner::Text(range)));
+                    record(&resolved.paint, Some(SourceOwner::Text(range)));
                 }
             }
         }

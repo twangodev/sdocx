@@ -12,7 +12,7 @@ use crate::fonts::{
 use crate::render::RenderTheme;
 
 use super::bidi::{BidiError, ParagraphBidi};
-use super::{StyledText, TextRenderer, TextStyle};
+use super::{StyledText, TextMeasureStyle, TextRenderer, TextStyle};
 
 pub(in crate::render) struct MeasuredText {
     pub advance: f64,
@@ -237,9 +237,15 @@ pub(in crate::render) struct ParagraphMeasurer<'a, 'text, 'fonts> {
     range: Range<usize>,
     bidi: ParagraphBidi<'text>,
     scripts: Vec<Script>,
-    styles: Vec<(Range<usize>, TextStyle)>,
+    styles: Vec<MeasureSpan>,
     theme: RenderTheme,
     predefined: Option<PredefinedTextStyle>,
+}
+
+struct MeasureSpan {
+    source: Range<usize>,
+    style: TextStyle,
+    measurement: TextMeasureStyle,
 }
 
 impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
@@ -267,16 +273,20 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
             extensions.push(character.script_extension());
         }
         let scripts = resolve_scripts(&extensions, &directions);
-        let mut styles = Vec::<(Range<usize>, TextStyle)>::new();
+        let mut styles = Vec::<MeasureSpan>::new();
         for segment in styled.segments(range.clone()) {
-            let style = styled.style_at(segment.start, theme, predefined);
-            if let Some((previous, previous_style)) = styles.last_mut()
-                && previous.end == segment.start
-                && joinable(previous_style, &style)
+            let resolved = styled.resolved_style_at(segment.start, theme, predefined);
+            if let Some(previous) = styles.last_mut()
+                && previous.source.end == segment.start
+                && previous.measurement == resolved.measurement
             {
-                previous.end = segment.end;
+                previous.source.end = segment.end;
             } else {
-                styles.push((segment, style));
+                styles.push(MeasureSpan {
+                    source: segment,
+                    style: resolved.paint,
+                    measurement: resolved.measurement,
+                });
             }
         }
         Ok(Self {
@@ -298,13 +308,13 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         let mut runs = Vec::new();
         let first = self
             .styles
-            .partition_point(|(segment, _)| segment.end <= range.start);
-        for (segment, style) in self.styles[first..]
+            .partition_point(|span| span.source.end <= range.start);
+        for span in self.styles[first..]
             .iter()
-            .take_while(|(segment, _)| segment.start < range.end)
+            .take_while(|span| span.source.start < range.end)
         {
-            let start = segment.start.max(range.start);
-            let end = segment.end.min(range.end);
+            let start = span.source.start.max(range.start);
+            let end = span.source.end.min(range.end);
             if start >= end {
                 continue;
             }
@@ -327,7 +337,7 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
                         stop += 1;
                     }
                 }
-                runs.push(self.shape(start..stop, style, direction, script, tab)?);
+                runs.push(self.shape(start..stop, &span.style, direction, script, tab)?);
                 start = stop;
             }
         }
@@ -356,11 +366,11 @@ impl<'a, 'text, 'fonts> ParagraphMeasurer<'a, 'text, 'fonts> {
         }
         let first = self
             .styles
-            .partition_point(|(segment, _)| segment.end <= range.start);
+            .partition_point(|span| span.source.end <= range.start);
         Ok(self.styles[first..]
             .iter()
-            .take_while(|(segment, _)| segment.start < range.end)
-            .map(|(_, style)| style.font_size)
+            .take_while(|span| span.source.start < range.end)
+            .map(|span| span.style.font_size)
             .reduce(f64::max)
             .unwrap_or_else(|| {
                 self.styled
@@ -642,14 +652,6 @@ fn native_features() -> [Feature; 2] {
     ]
 }
 
-fn joinable(left: &TextStyle, right: &TextStyle) -> bool {
-    left.font_size == right.font_size
-        && left.source_color == right.source_color
-        && left.family == right.family
-        && left.bold == right.bold
-        && left.italic == right.italic
-}
-
 fn resolve_scripts(extensions: &[ScriptExtension], directions: &[Direction]) -> Vec<Script> {
     let mut scripts = vec![Script::Common; extensions.len()];
     let mut start = 0;
@@ -708,6 +710,15 @@ mod tests {
         context: TextContext,
         fonts: &FontBook,
     ) -> MeasuredText {
+        measure_with_theme(text_box, context, fonts, RenderTheme::for_canvas(false))
+    }
+
+    fn measure_with_theme(
+        text_box: &RichTextBox,
+        context: TextContext,
+        fonts: &FontBook,
+        theme: RenderTheme,
+    ) -> MeasuredText {
         let settings = TextSettings {
             scale: 1.0,
             font_size_delta: 0.0,
@@ -715,14 +726,222 @@ mod tests {
         };
         let renderer = TextRenderer::new(settings, fonts);
         let styled = StyledText::new(text_box, context, settings);
-        measure_text(
-            &styled,
-            0..styled.index.len(),
-            RenderTheme::for_canvas(false),
-            None,
-            &renderer,
-        )
-        .unwrap()
+        measure_text(&styled, 0..styled.index.len(), theme, None, &renderer).unwrap()
+    }
+
+    fn source_span(kind: RichTextSpanType, range: Range<u32>, payload: Vec<u8>) -> RichTextSpan {
+        RichTextSpan {
+            kind,
+            start_utf16: range.start,
+            end_utf16: range.end,
+            interval_type: crate::SpanIntervalType::ClosedOpen,
+            payload,
+        }
+    }
+
+    fn assert_av_grouping(measured: &MeasuredText, joined: bool) {
+        assert_eq!(measured.clusters.len(), 2);
+        assert_eq!(
+            Arc::ptr_eq(&measured.clusters[0].run, &measured.clusters[1].run),
+            joined
+        );
+        let expected = if joined {
+            2552.0 / 2048.0 * 45.0
+        } else {
+            measure(&text_box("A"), TextContext::Placed).advance
+                + measure(&text_box("V"), TextContext::Placed).advance
+        };
+        assert_eq!(measured.advance, expected);
+    }
+
+    #[test]
+    fn differing_foreground_alpha_splits_runs_with_identical_paint_colors() {
+        let mut content = text_box("AV");
+        content.spans.push(source_span(
+            RichTextSpanType::ForegroundColor,
+            0..1,
+            0x0026_2626_u32.to_le_bytes().to_vec(),
+        ));
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        let theme = RenderTheme::for_canvas(false);
+        assert_eq!(
+            styled.style_at(0, theme, None).color,
+            styled.style_at(1, theme, None).color
+        );
+        assert_av_grouping(&measure(&content, TextContext::Placed), false);
+    }
+
+    #[test]
+    fn absent_and_explicit_empty_font_names_split_runs_with_the_same_face() {
+        let mut content = text_box("AV");
+        let payload = [vec![0; 8], 1_u16.to_le_bytes().to_vec(), vec![0]].concat();
+        content
+            .spans
+            .push(source_span(RichTextSpanType::FontName, 1..2, payload));
+        let measured = measure(&content, TextContext::Placed);
+        assert_av_grouping(&measured, false);
+        for cluster in &measured.clusters {
+            assert!(cluster.run.style.family.is_none());
+            assert_eq!(cluster.run.face.family, "Roboto");
+        }
+    }
+
+    #[test]
+    fn hyperlink_paint_color_does_not_replace_measurement_foreground() {
+        let hyperlink = [9_u32.to_le_bytes(), [0; 4], [0; 4]].concat();
+        let mut content = text_box("AV");
+        content.spans.push(source_span(
+            RichTextSpanType::Hyperlink,
+            1..2,
+            hyperlink.clone(),
+        ));
+        let theme = RenderTheme::for_canvas(false);
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        assert_ne!(
+            styled.style_at(0, theme, None).color,
+            styled.style_at(1, theme, None).color
+        );
+        assert_av_grouping(&measure(&content, TextContext::Placed), true);
+
+        content.spans[0] = source_span(RichTextSpanType::Hyperlink, 0..2, hyperlink);
+        content.spans.push(source_span(
+            RichTextSpanType::ForegroundColor,
+            1..2,
+            0xffff_0000_u32.to_le_bytes().to_vec(),
+        ));
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        assert_eq!(
+            styled.style_at(0, theme, None).color,
+            styled.style_at(1, theme, None).color
+        );
+        assert_av_grouping(&measure(&content, TextContext::Placed), false);
+    }
+
+    #[test]
+    fn equal_dark_paint_colors_preserve_different_native_measurement_foregrounds() {
+        let mut content = text_box("AV");
+        content.spans.push(source_span(
+            RichTextSpanType::ForegroundColor,
+            1..2,
+            0xffd9_d9d9_u32.to_le_bytes().to_vec(),
+        ));
+        let fonts = FontBook::default();
+        let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+        let dark_theme = RenderTheme::for_canvas(true);
+        assert_eq!(
+            styled.style_at(0, dark_theme, None).color,
+            styled.style_at(1, dark_theme, None).color
+        );
+        for dark in [false, true] {
+            let measured = measure_with_theme(
+                &content,
+                TextContext::Placed,
+                &fonts,
+                RenderTheme::for_canvas(dark),
+            );
+            assert_av_grouping(&measured, false);
+        }
+    }
+
+    #[test]
+    fn source_span_projection_matches_supported_native_measurement_join_cases() {
+        use sha2::Digest;
+
+        const FIXTURE: &str =
+            include_str!("../../../../../conformance/table-text-measurement-join.json");
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
+            "45cfbe69af0ba5a931c5a06a93b289af44e3723f68790bb82c0c6da59b218e2b"
+        );
+        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let mut checked = 0;
+        for case in capture["cases"].as_array().unwrap() {
+            let word = |side: &str, field: &str| {
+                u32::try_from(case[side][field].as_u64().unwrap()).unwrap()
+            };
+            if ["left", "right"].iter().any(|side| {
+                let size = f32::from_bits(word(side, "font_size_bits"));
+                word(side, "style") & 0xc0 != 0
+                    || word(side, "flags") & 2 != 0
+                    || !size.is_finite()
+                    || size < 1.0
+            }) {
+                continue;
+            }
+            let mut content = text_box("AV");
+            for (start, side) in [(0, "left"), (1, "right")] {
+                let mut append = |kind, payload| {
+                    content
+                        .spans
+                        .push(source_span(kind, start..start + 1, payload));
+                };
+                append(
+                    RichTextSpanType::FontSize,
+                    word(side, "font_size_bits").to_le_bytes().to_vec(),
+                );
+                append(
+                    RichTextSpanType::ForegroundColor,
+                    [word(side, "foreground").to_le_bytes(), [0; 4]].concat(),
+                );
+                for (kind, bit) in [
+                    (RichTextSpanType::Bold, 1),
+                    (RichTextSpanType::Italic, 2),
+                    (RichTextSpanType::Underline, 4),
+                    (RichTextSpanType::Strikethrough, 8),
+                ] {
+                    append(
+                        kind,
+                        u32::from(word(side, "style") & bit != 0)
+                            .to_le_bytes()
+                            .to_vec(),
+                    );
+                }
+                if word(side, "style") & 0x10 != 0 {
+                    append(RichTextSpanType::Suggestion, vec![0; 12]);
+                }
+                if word(side, "flags") & 1 != 0 {
+                    append(
+                        RichTextSpanType::Hyperlink,
+                        [1_u32.to_le_bytes(), [0; 4], [0; 4]].concat(),
+                    );
+                }
+                if let Some(units) = case[format!("{side}_font_utf16")].as_array() {
+                    let units = units
+                        .iter()
+                        .map(|unit| u16::try_from(unit.as_u64().unwrap()).unwrap())
+                        .collect::<Vec<_>>();
+                    let name = String::from_utf16(&units).unwrap();
+                    let encoded = cesu8::to_cesu8(&name);
+                    let mut payload = vec![0; 8];
+                    payload.extend_from_slice(
+                        &u16::try_from(encoded.len() + 1).unwrap().to_le_bytes(),
+                    );
+                    payload.extend_from_slice(&encoded);
+                    payload.push(0);
+                    append(RichTextSpanType::FontName, payload);
+                }
+            }
+            let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+            let theme = RenderTheme::for_canvas(false);
+            let left = styled.resolved_style_at(0, theme, None).measurement;
+            let right = styled.resolved_style_at(1, theme, None).measurement;
+            let expected = case["join_forward_reverse_self_left_self_right"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_bool().unwrap())
+                .collect::<Vec<_>>();
+            let comparisons = [
+                (&left, &right),
+                (&right, &left),
+                (&left, &left),
+                (&right, &right),
+            ]
+            .map(|(left, right)| left == right);
+            assert_eq!(comparisons.as_slice(), expected, "{}", case["name"]);
+            checked += 1;
+        }
+        assert_eq!(checked, 89);
     }
 
     #[test]
@@ -1108,17 +1327,31 @@ mod tests {
     #[test]
     fn decoration_boundaries_preserve_shaping_context_but_font_styles_split() {
         let baseline = measure(&text_box("AV"), TextContext::Placed).advance;
-        for kind in [RichTextSpanType::Underline, RichTextSpanType::Strikethrough] {
+        for (kind, payload) in [
+            (RichTextSpanType::Underline, vec![1, 0]),
+            (RichTextSpanType::Strikethrough, vec![1, 0]),
+            (RichTextSpanType::Composing, vec![0; 8]),
+            (
+                RichTextSpanType::BackgroundColor,
+                0xffff_0000_u32.to_le_bytes().to_vec(),
+            ),
+            (
+                RichTextSpanType::ComposingBackgroundColor,
+                [0xffff_0000_u32.to_le_bytes(), [0; 4]].concat(),
+            ),
+            (RichTextSpanType::Suggestion, vec![0; 12]),
+        ] {
             let mut decorated = text_box("AV");
             decorated.spans.push(RichTextSpan {
                 kind,
                 start_utf16: 0,
                 end_utf16: 1,
                 interval_type: crate::SpanIntervalType::from(0),
-                payload: vec![1, 0],
+                payload,
             });
             let measured = measure(&decorated, TextContext::Placed);
             assert_eq!(measured.advance, baseline);
+            assert_av_grouping(&measured, true);
         }
         for kind in [RichTextSpanType::Bold, RichTextSpanType::Italic] {
             let mut changed = text_box("AV");
