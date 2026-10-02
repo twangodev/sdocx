@@ -1233,6 +1233,97 @@ complete library initialization, the whole `SpanRunFunctor`, wrapping,
 document composition, pixels and vector output. Rust's production horizontal
 metrics remain unchanged; this capture does not establish their native parity.
 
+### Captured post-shaping numeric geometry
+
+[`table-text-shaping-numeric.json`](../../conformance/table-text-shaping-numeric.json)
+extends the same native producer without changing the original 16-case fixture.
+Its SHA-256 is
+`1e476f7fc8254b2a6c7316c6ff18b9c436f8ab57707d536daa07e11eca2af455`.
+The 17 cases produce 19 HarfBuzz calls, 182 glyphs, 182 UTF-16 advances,
+182 raw Skia bounds and 182 vector advance samples. It uses the same supplied
+Roboto face, native library hashes, host services, three allocation fills and
+repeated zero-fill check described above.
+The public raw-font-unit shaping comparison also matches all 182 captured
+glyph IDs and normalized UTF-16 owners across the 19 calls, including the
+three separate script chunks. This identity check does not compare advances.
+
+Six cases exercise large paint scales; `long_pen` captures repeated `AV` pairs
+at paint size 10000. `mixed_scripts` executes separate Latin, Greek and Cyrillic
+chunks rather than treating the source as one Latin call. Eight combining-mark
+cases isolate LTR/RTL ordering, skew `-0.1234567`, positive/negative spacing
+`0.04` and the smaller `0.025` spacing profile. `supplementary_partial` starts
+the UTF-16 request at two, after an emoji, and records context outside the
+requested range. The emoji is context, not a captured fallback glyph.
+
+The callback still uses only the vector metric path. Host `qsort` makes
+57 calls and executes 2,662 allowlisted native comparator invocations. This
+extension captures numerical sensitivity and additional producer inputs;
+it does not establish device font selection, the complete paragraph producer,
+wrapping or production Rust metric equality.
+
+The test-only [typed post-shaping model](../../crates/sdocx/src/render/text/native_shaping.rs)
+accepts native HarfBuzz integer output and raw Skia bounds as supplied inputs.
+Its [fixture comparisons](../../crates/sdocx/src/render/text/native_shaping/fixture_tests.rs)
+check exact f32 bits for full/owner positions, ink bounds, character advances
+and total advance: all 16 original cases and 16 single-chunk numeric cases,
+covering 224 glyph placements and 225 UTF-16 advance slots. The three-chunk
+`mixed_scripts` case is explicitly rejected, rather than compared as if it
+were one Latin chunk.
+The isolated vector advance conversion also matches all 230 raw-to-quantized
+callback samples across both fixtures; scalar callback rounding remains
+unexecuted.
+
+The model preserves integer-to-f32 narrowing before division by 256,
+step-by-step f32 pen and owner accumulation, f64 spacing additions narrowed
+at each native store, and fused skew offset calculation. In `large_to_2000`,
+advance integer 28076755 narrows to 28076756 before scaling; computing the
+division in f64 gives a different result. In `long_pen`, accumulating scaled
+advances in f64 and narrowing only the final sum changes the captured total.
+The corresponding native stores occur at `0x9c780`–`0x9c7cc` (initial half
+spacing), `0x9c8bc`–`0x9c8fc` (cluster transition spacing), `0x9cab0` (fused
+skew), `0x9cb60`–`0x9cb70` (owner-relative subtraction then offset addition),
+`0x9cc5c`–`0x9cc88` (ink offsets), `0x9cd48`–`0x9cd70` (converted owner
+advance), `0x9cda0` (cursor accumulation) and `0x9cdb0`–`0x9cdf4` (final
+half spacing).
+Other controls expose incorrect skew and UTF-8 ownership. Unsupported
+scripts, multiple chunks, nonzero word spacing, vertical advance, extra font
+slots/fakery, malformed owners/ranges and nonfinite geometry return typed
+unavailability. This is a bounded arithmetic model, not an alternate font
+shaper or the production paragraph measurement path.
+
+### Bounded Rust paint metrics
+
+[`ResolvedFace::paint_metrics`](../../crates/sdocx/src/render/fonts.rs) exposes a
+reusable [Skrifa-based metric provider](../../crates/sdocx/src/render/fonts/paint_metrics.rs)
+for raw glyph advances and ink bounds in paint units, before HarfBuzz
+positioning. `PaintMetricInput` selects `Normal`, `Unhinted` or `Linear`,
+paint size, horizontal scale and skew. The provider accepts finite paint sizes
+in `[1, 8388608)`, horizontal scale one, skew zero and static `glyf` faces
+without `fvar`, `CBDT` or `VARC` tables. Unsupported transforms/fonts, invalid
+glyphs, scaler failures and out-of-range ink return typed errors.
+
+For `Normal` at size at most 2048, advances come from the hinted outline's
+adjusted metrics. Unhinted advances instead use Skrifa's linear metric domain,
+separately from the outline coordinates used for ink. `Linear` or size above
+2048 measures at backend size 64, rounds ink outward there and applies the
+f32 normalization factor `P / 64` afterward. Reusing `PaintMetrics` retains the
+font's outline collection, linear metrics and hinting instance across glyphs.
+
+The [metric regressions](../../crates/sdocx/src/render/fonts/paint_metrics/tests.rs)
+match exact f32 bits for 190 native raw advances and all 760 ink coordinates
+across 23 supported cases: 15 cases/44 glyphs in the original fixture and
+eight cases/146 glyphs in the numeric extension. Ten captured skew cases are
+explicitly rejected. Controls distinguish the unhinted `V` advance
+1081.591796875 from its unhinted outline advance 1081.59375 and the default
+hinted advance 1082; they also check the normalization threshold, inkless
+space, zero-advance marks and invalid/unsupported inputs.
+
+This validates the supplied Roboto backend metric boundary for those profiles.
+The provider does not shape glyphs, reproduce GPOS, select device fallback or
+replace `ParagraphMeasurer`. Its acceptance of other static `glyf` fonts is
+an API domain, not captured native equality for those fonts. Production widths
+and wrapping continue to use the font-unit shaping path.
+
 ### Direction, break boundaries and tabs
 
 `RichTextMeasure::measureParagraph`, `0x78a0c`, calls ICU

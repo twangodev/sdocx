@@ -15,7 +15,7 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
-| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip; native shaping and device appearance remain unverified. |
+| Table painting | Native perimeter styles, heading/default/owned fills, alpha, axis radii, prepared artwork crops and composited text surfaces | Hash-pinned Model/Drawing style selection and 78 Composer export-crop cases; SVG/replay/PDF transport tests. Native captures cover 132 per-run clip decisions/transforms, 162 entry/run-bound cases, 22 grouping probes and 230 complete cached-glyph emission cases. Rust line/run vertical bounds match within 0.0001 units. Rust retains a table-wide text clip. Single-face native shaping is captured separately; production metrics, per-run clip selection and device appearance remain unverified. |
 | Decorations | Underline, strikethrough, uniform cluster backgrounds, supported object line bands and vector list markers | [Native entry/retained-run geometry and caller policies](reverse-engineering/text-draw-identity-findings.md#captured-embedded-object-background-geometry), [SVG/PDF regressions](../crates/sdocx/tests/text_styles.rs); document PDF paints ordinary object backgrounds in standalone/table/code contexts and omits them in Body. Backgrounds changing inside a glyph cluster or lacking safe object positions remain conservative. |
 | SVG preview/replay | Typed SVG elements, embedded fonts, retained text positions where reproducible, source-preserving text fallback elsewhere | Chromium tests; a complex-script fallback can preserve text without reproducing native glyph geometry. |
 | Document PDF | Retained selected faces, glyph IDs, full XY origins/advances, scoped clipping/transforms, selectable text and logical tagged reading order | Independent PDF/font-outline tests and real WASM downloads; combining-mark Y parity with Samsung's common-baseline PDF route remains unverified. |
@@ -157,8 +157,9 @@ composition or horizontal f32 ownership/adjacency.
   [Entry/run-bound captures](reverse-engineering/table-code-findings.md#retained-text-entry-and-run-bounds)
   execute native placement and union producers with supplied metrics.
   [Complete run emission](reverse-engineering/table-code-findings.md#complete-retained-text-run-emission)
-  is captured with supplied glyph caches and font interfaces; native shaping,
-  real nested objects and Rust per-run clipping remain unverified/unimplemented.
+  is captured with supplied glyph caches and font interfaces; the bridge from
+  native shaping to these caches, real nested objects and Rust per-run clipping
+  remain unverified/unimplemented.
 - The typed native Span projection covers ordinary/default fields and retained
   PDF grouping; unsupported correction and malformed/recovered inputs have
   unavailable identity. Production font language metadata is not retained.
@@ -182,6 +183,20 @@ composition or horizontal f32 ownership/adjacency.
   for supplied owners; Minikin/HarfBuzz and chunk normalization remain excluded.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
+- [Single-face shaping captures](reverse-engineering/text-layout-findings.md#captured-native-shaping)
+  execute native HarfBuzz and Skia/FreeType with supplied Roboto and caller
+  paint inputs. A [typed post-shaping model](reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry)
+  matches full/owner positions, ink and advances for 224 captured glyphs across
+  32 single-Latin-chunk cases, using supplied native shaping output and bounds.
+  It rejects multiple chunks and unsupported metric inputs. The model is
+  test-only; production paragraph measurement still shapes in font units and
+  projects them in f64. Neither the exact arithmetic comparisons nor captured
+  glyph identities establish production width, wrapping or font fallback parity.
+  A [bounded Rust paint-metric provider](reverse-engineering/text-layout-findings.md#bounded-rust-paint-metrics)
+  independently matches 190 native raw advances and 760 ink coordinates from
+  23 supplied-Roboto cases. It supports horizontal scale one and skew zero,
+  reports unsupported inputs explicitly, and remains separate from production
+  paragraph measurement and GPOS shaping.
 - Native preview background geometry for embedded objects is captured through
   measurement, placement and rectangle commands for 40 supplied cases. Inline
   backgrounds include margins; block backgrounds use visible width despite a
