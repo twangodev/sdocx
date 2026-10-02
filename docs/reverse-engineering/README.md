@@ -46,14 +46,16 @@ Planning, task lists and development progress are kept outside these documents.
   logical-entry cache conversion, complete span paint profiles, native NAME/default
   selection and four-face measurement under supplied XML, captured consumer
   string metrics, captured ordinary
-  block-selection/placement arithmetic and horizontal
+  block-selection/placement arithmetic, supplied-metric paragraph layout with
+  host ICU, measured-line page range scans and horizontal
   GPOS/fused-skew traces, with separate paragraph/vector
   transport boundaries and private physical-face SVG/usvg/PDF identities.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha
-  transport, cached-entry snapshots, XML font language, file-font source instances
-  and Chromium text clip behavior.
+  transport, cached-entry snapshots, XML font language, file-font source instances,
+  live four-file registry source/language/copy identity and Chromium text clip
+  behavior.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
   references, authoritative media bindings and image regression coverage.
 - [`shape-line-findings.md`](shape-line-findings.md) — native geometry and effects,
@@ -238,7 +240,9 @@ Planning, task lists and development progress are kept outside these documents.
   control, cell text dimensions, public layout lifecycle, visible rectangles and
   canvas clip arguments, PDF artwork crops, conditional text clips, independent
   cell/content Model rectangle setters and final native clip-path geometry, retained
-  text entry/run bounds, complete cached-glyph run emission and vector evidence limits.
+  text entry/run bounds, complete cached-glyph run emission, complete cell artwork,
+  constructed cell Model bridges, code chrome/cache/minimum geometry and vector
+  evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
 - [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,

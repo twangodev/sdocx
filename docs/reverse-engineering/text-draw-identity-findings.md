@@ -522,8 +522,9 @@ The source constructor reads the created SkTypeface's member 16 at
 `0x880d4`–`0x880d8`. Skia `CreateFromStream`, `0x2197b8`, allocates a fresh
 typeface; `0x219848`, `0x219860` and `0x219868` obtain the counter, increment
 it and store the instance ID. This is source-instance identity, rather than a
-family/style pair or hash of font bytes. Font-manager reuse of those source
-instances is not established by the getter capture.
+family/style pair or hash of font bytes. The getter capture alone does not
+establish font-manager reuse; the live-registry capture below bounds reuse to
+its initialized registrations.
 
 `Font::IsBitmapFont`, `0x85d98`, forwards through
 `FontImplMinikin::IsBitmapFont`, `0x87814`, to the source predicate at
@@ -629,6 +630,68 @@ byte operations, single-thread bookkeeping and a successful setjmp path are
 host interfaces. Device XML, family selection, font-manager reuse, missing-file
 or parser-error paths, actual bitmap fonts, shaping, rendering and cross-process
 ID equivalence are excluded.
+
+### Captured live font registry
+
+[`table-text-font-registry.json`](../../conformance/table-text-font-registry.json),
+SHA-256 `41d5adbc3de53576d298b052395a22842be356308d186340513d7c891a983a30`,
+contains 154 requests across four separately initialized native registries.
+The [capture module](../../conformance/native_table/text_font_registry.rs)
+uses the initialized FontManager, supplied family XML and four pinned Roboto
+files from the
+[NAME evidence](text-layout-findings.md#captured-span-font-name-and-default-selection),
+whose fixture SHA-256 is
+`20ca51223fa1b5a010786586a12ab4d4c5937cd5ba4e1362ff661d6fab069754`.
+Native NAME/default resolution and the complete span paint helper execute;
+all requests in each configuration share that live registry without a reset.
+
+The 130-request omitted-language baseline has four source-instance equality
+classes:
+
+| Registered file | Native source ID | Requests | First request index |
+| --- | ---: | ---: | ---: |
+| Roboto Regular | 1 | 82 | 0 |
+| Roboto Bold | 2 | 20 | 20 |
+| Roboto Italic | 3 | 14 | 40 |
+| Roboto Bold Italic | 4 | 14 | 50 |
+
+Each request records its class's first request index. Actual selected-source,
+parent Font and implementation pointers equal those from that first request;
+the implementation's source member also equals the selected physical source.
+Raw pointers are omitted from the fixture. The numeric IDs come from the
+native source getter with the supplied process counter seed 0. They identify
+these native instances while the registry remains alive, rather than font
+bytes, caller database IDs or identities comparable across separately
+initialized registries or processes.
+
+`GetParentFont`, `0x88b78`, copies the selected source's `std::any`; the capture
+uses the actual cast handler and type information used by `SpanRunFunctor` at
+`0x77524`–`0x77590`. Actual Font and FontImpl source-ID, bitmap and language
+getters execute and agree. The copied `std::any` is cleaned up natively at
+`0x6a278` after each observation; the initialized registry remains alive
+throughout the request sequence. This establishes reuse across these temporary
+copies, without establishing identity or validity after registry teardown or
+cache invalidation.
+
+The other three supplied XML configurations use explicit empty, `und` and
+`und-Deva` family language. Each makes eight requests, partitioned 4/2/1/1
+across Regular/Bold/Italic/Bold Italic. Actual Font/FontImpl language getters
+return exact empty strings for both omitted and explicit-empty language, and
+retain exact `und` and `und-Deva`. No host language result is supplied. The
+complete native CBDT predicate returns false for all four pinned fonts;
+this capture contains no bitmap font file.
+
+Three memory fills, a repeated zero fill and independent full captures produce
+identical output. The pinned NAME fixture specifies the library/font hashes
+and host XML/file/ICU/libc/libm/allocation and single-thread interfaces; the
+host one-C-string `snprintf` service also accepts the native `und%s` format
+reached by these explicit-language controls. XML, files and counter seed are
+supplied inputs, not recovered device configuration. Equality is bounded to
+four unique registrations in one family per registry: duplicate family/font
+registration, arbitrary cache invalidation and teardown lifetime are excluded.
+The capture does not construct later UTF-16 glyph/cache entries, perform glyph
+fallback/itemization or shaping, emit retained runs, or establish full device
+font selection, grouping or clipping parity.
 
 ## UTF-16 entry ownership
 

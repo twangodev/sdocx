@@ -1902,8 +1902,9 @@ covering pairs, marks, ligatures, context, RTL and sizes around the 2048-paint
 normalization threshold. Layout font-slot source ID is checked against the
 NAME-selected physical file, with no additional slot/fallback. Actual append
 and bounded SpanRun entry conversion consume the produced geometry. The
-XML omits family language, recorded as null. Two Regular controls at source
-size 20 capture `9.` and `10.` paint advances 1123/526 and 1123/1123/526.
+XML omits family language: the HarfBuzz input language is null, while the
+actual Font metadata getter returns an empty string. Two Regular controls at
+source size 20 capture `9.` and `10.` paint advances 1123/526 and 1123/1123/526.
 Hinted configurations use native `0x120208` flags; unhinted/skew/normalized
 configurations use `0x10020a`.
 
@@ -2176,14 +2177,18 @@ existing vector pointer at `0x707ec`.
 
 `DoParagraphLayout` reads each stored float advance from member 0 of an
 80-byte `MeasureData` entry (`0x72cf4`–`0x72d00`), annotates bidi/break
-fields, and separately computes the natural paragraph width. That width
+fields, and conditionally computes the natural paragraph width. That width
 starts with the `f32` sum of left/right margins (`0x72ca4`–`0x72cb0`),
 folds the entry advances with `f32` additions (`0x72d88`), then adds the
 `f32` constant `0.001` at rodata `0x26684` (bits `0x3a83126f`).
 `frintp`, signed 32-bit conversion and conversion back to `f32` produce
 the value stored at paragraph record member 20 (`0x72dd0`–`0x72dfc`).
-This rounded natural width is separate from the unrounded candidate
-comparisons in `GetBlockInfo`. The function passes the same entries into
+Width-zero and single-line controls store integer natural width in layout member
+128 and expand the available maximum width; explicit-width, non-single-line
+word-wrap-disabled controls store the rounded width in paragraph member 20
+without expanding layout member 128. Default wrapping executes neither width
+fold. These conditional natural widths are separate from the unrounded candidate comparisons in
+`GetBlockInfo`. The function passes the same entries into
 `CalculateParagraphLayout` (`0x72e14`–`0x72e50`). The latter calls
 `ParagraphLayout::DoLayTextOut` at `0x73ee0`. `SetLayout` places ordinary
 entries with an independent `f32` addition of X and member 0 for the
@@ -2193,10 +2198,9 @@ member 32 by removing the old entry point and adding the new X/baseline
 member 24 (`0x6b8a8`–`0x6b940`). The ink is not the ordinary wrapping
 width. These inspected line
 selection and placement functions do not call the Minikin measurement
-producer again when a line boundary is chosen. The natural paragraph-width
-ceiling above remains instruction evidence without a runtime capture;
-the bounded ordinary block selection and placement capture below does not
-establish complete Rust wrapping parity.
+producer again when a line boundary is chosen. The paragraph-loop capture
+below executes these conditional width folds; it does not establish complete
+Rust wrapping parity.
 
 Rust retains the paragraph's measured source/cluster mappings and advances,
 then selects and positions lines from those results. Native
@@ -2233,6 +2237,41 @@ overflow it uses the last committed
 break when its index is at least 1 (`0x6b014`–`0x6b028`), otherwise the
 preceding index (`0x6b03c`–`0x6b06c`). This is measured greedy wrapping,
 not a character-count estimate.
+
+### Captured paragraph layout loop
+
+The [Rust capture](../../conformance/native_table/text_paragraph_layout.rs) and
+[`table-text-paragraph-layout.json`](../../conformance/table-text-paragraph-layout.json),
+SHA-256
+`d381922f40a06ef49ff43794aa01ae2546676e42f765c22e9512fff4fb948bf4`,
+execute the native RichText/default-paragraph constructors and complete
+`DoParagraphLayout` → `CalculateParagraphLayout` → `DoLayTextOut` →
+`GetBlockInfo`/`SetLayout` chain. Its 25 cases retain 38 lines and 81 placed
+UTF-16 entries, with direction/break annotations, pre/post logical maps,
+logical/ink rectangles, line metrics and conditional natural-width results.
+Actual constructor defaults are single-line false and word-wrap true; actual
+setters select the recorded controls. Alignment value 1 is Right and 2 is
+Center. Three memory fills and the repeated zero-fill run agree; strict
+master-driver replay reproduces the fixture.
+
+The native ICU loader resolves suffix 76 and the pinned host ICU 76.1/Unicode
+16 libraries execute bidi and line breaking over retained source buffers.
+The break iterator uses type 2 and an empty locale. Source UTF-16, dense
+80-byte measured advances, entry kinds, size/metrics 17.125, spacing 1.35,
+old points and ink are supplied. Kind classification is a harness input.
+The width-zero/single-line controls exercise layout member 128 and expand
+maximum width; explicit-width, non-single-line word-wrap false exercises
+paragraph member 20 without that expansion. Default wrapping leaves both
+conditional folds inactive.
+
+The oversized surrogate control selects inclusive ranges `[0,0]`, `[1,1]`,
+`[2,2]`, splitting the supplied surrogate pair. This establishes a UTF-16
+emergency result, not scalar/grapheme safety. Empty source is forced through
+layout; a newline inside the supplied single paragraph does not establish
+paragraph splitting. Font/entry measurement, source classification, spans,
+objects/bullets, obstacles/padding, pagination, draw clipping, vector export
+and Android device ICU do not execute. The production ordinary slot bridge
+below retains SDK break/grapheme/height policy rather than this full loop.
 
 ### Captured ordinary wrap arithmetic
 
@@ -2551,14 +2590,15 @@ over-page flag and minimum first-page height to the obstacle tree. For padding
 obstacles, the tree skips a band only when that minimum is effectively zero
 or `band.top - candidate.top >= ceil(minimum_height)` (`0x6e7fc`–`0x6e820`).
 Otherwise the parent can move past the obstacle (`0x6a830`–`0x6a894`).
-Code's minimum includes title padding, measured title height, title/body gap
-and first body-line height (`0x738f4`–`0x73948`, Drawing). The pinned code
-minimum is `36 + 60.75 + 24 + 60.75 = 181.5`, although the copy-button frame
-makes its actual body top 132. Rust retains that minimum beside measured
-height and settles parent movement before remeasuring child splits at the
-final candidate. Ordinary obstacles always apply. An absent title contributes
-zero to the SDK minimum; native construction always creates a title drawing,
-so that synthetic absent-title policy is not established native parity.
+Code's minimum adds top padding, the retained title rectangle height,
+title/body gap and first body-line height (`0x738f4`–`0x73948`, Drawing).
+The title rectangle shares the copy-button height; measured title text height
+does not replace it. The [code-layout capture](table-code-findings.md#code-block-chrome-and-split-inputs)
+and Rust kernel preserve that arithmetic. Rust retains the minimum beside
+measured height and settles parent movement before remeasuring child splits
+at the final candidate. Ordinary obstacles always apply. The SDK absent-title
+control also retains copy height in this reservation; it does not establish
+native absent-title construction.
 
 Table `GetMinHeightInFirstPage` (`0xac9d4`, Drawing) instead measures its first
 cached row (`0xac9f0`–`0xacb48`). Nonempty cells contribute first-line background
@@ -2625,6 +2665,31 @@ the next page scan with the preceding page's last line
 forcing disjoint string chunks. This proves page indexing of an already
 measured layout. It does not establish moving/resizing objects or document
 repagination.
+
+### Captured page text ranges
+
+The [Rust capture](../../conformance/native_table/page_text_ranges.rs) and
+[`table-page-text-ranges.json`](../../conformance/table-page-text-ranges.json),
+SHA-256
+`768293b00e5f880166add1683c12cf76fe9c5ebf293e1b522803ca69b395b05c`,
+execute complete native boundary predicates, page scans, inclusive UTF-16
+conversion, vector resize and Base `Rect::Height`. Its 47 cases include 251
+boundary queries across three allocation fills; independent replay agrees
+byte for byte. Page records, measured-line getters, default cursor and
+first-empty rectangle values are supplied.
+
+Crossing lines belong to adjacent sections. Exact page-end starts and exact
+page-start bottoms are excluded, while a zero-height line at the page start
+can qualify. First-line fallback and empty-text cursor controls use distinct
+getters. Page-end arithmetic adds integers before conversion to `f32`.
+Rescans preserve overlap; exhausted `[count,0]` and absent `[-1,0]` sections
+remain distinct. Paragraph shaping, cursor/first-empty producers and document
+repagination do not execute. Rust saved-section handling accepts exact
+`[-1,0]` only in exhausted suffixes, preserving earlier saved captures and
+leaving absent pages blank. Malformed negatives, absent prefixes/interior
+sections and wholly empty sections for nonempty bodies retain compatibility
+reflow. These results do not establish an authoritative production measured-line
+indexer or replace SDK viewport ink visibility.
 
 Text `TextPaintImplSkia::getFontMetrics`, `0x7c16c`, calls
 `SkPaint::getFontMetrics` at `0x7c1ac`; `getFontSpacing`, `0x7c290`, delegates

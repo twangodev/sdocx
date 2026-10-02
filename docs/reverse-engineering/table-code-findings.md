@@ -1041,7 +1041,7 @@ zero alpha still participates in selection, although its paint is transparent.
 Shared boundaries generally select the later cell's left/top edge. With an
 active outer border, Drawing suppresses the first-column left edge, first-row
 top edge and all right edges (`0xa7c98`–`0xa7cd0`). A bottom edge is retained
-when the next row's pending gap exceeds `0.001f`. Without an active outer
+when the next row's pending-gap magnitude exceeds `0.001f`. Without an active outer
 border, the right edge is retained only for a cell originating in the last
 column, and bottom edges are retained on the last row or before a pending gap
 (`0xa7cdc`–`0xa7d0c`). This uses the layout's pending-gap cache at member 856,
@@ -1093,13 +1093,70 @@ stored edge colors/alpha, shared theme conversion and metadata-derived radii.
 Its width policy is the native unit-canvas policy. Native `drawLinePath`,
 `0xa8008`, also enforces a one-pixel minimum using the canvas X scale;
 zoom-dependent screen coverage is not reproduced by the document-space vectors.
-The outline aggregation has captured Drawing execution; edge selection,
-background corner squaring and paint-pass ordering have assembly evidence.
-The capture does not execute the canvas's line/rectangle painting or clipping.
+The outline aggregation and the cell pass below have captured Drawing execution.
+Canvas line/rectangle calls are recorded at their interfaces; canvas painting
+and clipping do not execute.
 Public SVG/replay and PDF regressions check edge precedence, widths, opacity,
 axis radii, selectable source and zero image resources. Native device appearance,
 merged shaping and complete border clipping across split pages remain
 outside this evidence.
+
+### Complete cell artwork pass
+
+[`table-cell-drawing.json`](../../conformance/table-cell-drawing.json), SHA-256
+`cee7c9dd9d06c5ce623c474183e058ada95af6de0d5a2c2834ea32cdc73a0b3d`,
+records 60 synthetic 2×2 inputs, 501 selected Model border paths and 738
+canvas commands. The [capture module](../../conformance/native_table/cell_drawing.rs)
+executes complete Drawing `drawTableCellWithoutText`, `0xa748c`, and
+`drawLinePath`, `0xa8008`, with native Model path/background getters and Base
+rectangle operations. Heap allocation fills `0x00`, `0xa5` and `0xff` agree.
+
+Inputs distinguish saved cell rectangles, source table bounds and prepared
+cache frames under constraints 0, 1 and 2. Native cold initialization and
+`offsetRows`, `0xade0c`, produce the ordinary cache frames. Named
+`supplied-*-merged-frame` cases replace only the owner's cached rectangle and
+saved rectangle with separate literal inputs; they do not execute merged text
+measurement or pagination feedback. Cases cover retained covered spans,
+translated coordinates, large origins, display-row filtering, rounded corners,
+pending gaps around `0.001f`, canvas scale and inactive edge styles.
+
+Constraint 0 takes background bounds from the saved cell rectangle, subtracts
+the source table origin, then adds the drawing offset. Saved border endpoints
+subtract the separately computed source-origin-minus-drawing-offset. These
+f32 operation orders differ at large origins. Constraints 1 and 2 take cached
+background frames and remap border endpoints to those frames. Recorded cell
+positions come from raw Drawing lookup and can differ from Model frame owners.
+The selected paths and commands also establish native edge filtering, corner
+squaring and background/border command order under these supplied inputs.
+
+Allocation, deletion and memory operations are host services. Paint setters
+record host state; global alpha is disabled, theme conversion is identity and
+the outer outline style is supplied independently of `getTableBorderStyle`.
+Canvas line, rectangle and rounded-rectangle interfaces record commands without
+rasterization or clipping. The capture does not establish device pixels,
+application theme conversion or complete merged preparation.
+
+The production artwork geometry and command builders match all 60 cases,
+including exact f32 coordinates, selected paths, corner patches, visibility,
+command order and fixture canvas-width scaling. Normal artwork uses the saved
+coordinate route even when text preparation has cached frames; constraints 1
+and 2 retain prepared background frames and border remapping. Document vectors
+use unit canvas scale. Native Drawing's display rectangle tests the background
+frame and can skip both background and all borders (`0xa79d8`–`0xa79f0` →
+`0xa7e5c`). SDK page-viewport visibility is a separate producer: saved artwork
+bounds conservatively union the background frame with translated paintable
+perimeter extents, including stroke half-width and paths later suppressed by
+edge selection, before later SVG/PDF page clipping. This preserves
+visible emitted borders when the native display rectangle is empty; it does
+not establish native display-filter or complete producer parity. The upstream
+clone-to-Model source-origin producer remains outside this fixture.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-drawing scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-cell-drawing.json
+cmp /tmp/table-cell-drawing.json conformance/table-cell-drawing.json
+```
 
 ### Visible rectangles and canvas clipping
 
@@ -1316,15 +1373,66 @@ preserves the cell rectangle and dispatches content copying to
 derive from saved row heights and column widths; `updateCell`, `0xae914`,
 supplies their local dimensions to Widget layout width/height setters.
 `UpdateTextDrawingPosition`, `0xacc88`, is a single return instruction.
-These traces do not establish that the content Model rectangle changes with
-the measured frame or clone origin. Widget update callbacks are outside the
-setter capture.
+These isolated routes omit the explicit Bodytext bridge captured below; they
+do not establish content Model updates with a measured frame or clone origin.
+Widget update callbacks are outside the setter capture.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
   --cell-model-bounds scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
   > /tmp/table-cell-model-bounds.json
 cmp /tmp/table-cell-model-bounds.json conformance/table-cell-model-bounds.json
+```
+
+### Cell model bridge after frame preparation
+
+[`table-cell-model-lifecycle.json`](../../conformance/table-cell-model-lifecycle.json),
+SHA-256 `e2807875de0d6462b601318a352cbda482f692689b72fafafc916336e8f16aa7`,
+records 17 cases, 88 stage snapshots and 327 cell snapshots. The
+[capture module](../../conformance/native_table/cell_model_lifecycle.rs)
+executes native Model table construction (`0x3d2690`, `0x3d27d8`), cell and
+content constructors (`0x3c1cac`, `0x3c17f0`), and registry initializers
+`0x2a2ed0`, `0x2863a0`, `0x3c35ec` and `0x3c5918`. Contents have final shape
+type 4. Native Bodytext size gate `0xd76e0` and complete cell-model bridge
+`0xd78ec` execute through native runtime-handle lookup and bundled C++
+`dynamic_cast`. Library hashes are retained in the fixture.
+
+Cold Drawing frame preparation (`0xaa6b4`, `0xab168`) leaves saved cell and
+content Model rectangles unchanged. The explicit bridge offsets each cached
+frame by the supplied caller rectangle's origin and invokes native cell/content
+setters. Warm native row extension and offset (`0xaff74`, `0xade0c`) change
+Drawing frames; Model rectangles remain stale until the bridge runs. The
+separately recorded size gate is false for zero and `0.0005` growth and true for
+`0.002` growth. The harness explicitly calls the bridge even when that gate is
+false; those calls do not establish application dispatch in that state.
+
+Equal cell rectangles retain divergent content rectangles through the setter's
+equality skip; a changed warm frame updates both. Clean variants retain clean
+unsaved flags. Native whole-grid merge cases retain per-slot frames and source
+rectangles, with owners recorded separately. Source clip extents cannot be
+inferred from owner spans. Raw table `t_SetRectOnlyData`, `0x2d2b18`, changes
+the table Model/drawn rectangles while preserving implementation content bounds
+and all cell/content rectangles; a translated bridge origin remains explicit
+input rather than a measured document origin.
+
+Native heap allocations throughout Model construction and container execution
+are repeated with fills `0x00`, `0xa5` and `0xff`. Supplied table storage,
+Drawing layout/vtable and one-element Bodytext owner/view association start
+zeroed. Host boundaries include allocation/free, byte operations, deterministic
+UUIDs, mutex/C++ guard services, destructor registration, logging/errors and a
+zeroed text-wrapper adapter omitting `SetObject` and `SetTextScale`. Native text
+shaping, first measurement, complete Drawing/Bodytext construction, listeners,
+document ObjectSpan rectangle production, parsing/cloning and final PDF run
+clipping do not execute. These are bounded construction/bridge captures, without
+a full application lifecycle parity claim.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-model-lifecycle scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-cell-model-lifecycle.json
+cmp /tmp/table-cell-model-lifecycle.json conformance/table-cell-model-lifecycle.json
 ```
 
 ### Final PDF text clip paths
@@ -1579,12 +1687,58 @@ The body starts at `copy.bottom + verticalGap`, with width
 `bottom = input.top + TextLayout::GetHeight(false)` at `0x73764`–`0x73770`.
 The final object bottom is `original.top + measuredBody.bottom + verticalGap
 + bottomPadding` at `0x73584`–`0x735a0`: the vertical gap is reserved both
-above and below the body. Split-page padding rectangles can shift these frames;
-their full behavior remains unverified.
+above and below the body. The split-input behavior is captured below.
 
 The adapter supplies frames and padding, not fixed text baselines or line
 advances. Paragraph styling, wrapping, margins and text metrics belong in the
 same text engine used for other rich-text objects.
+
+### Code-block chrome and split inputs
+
+[`table-code-layout.json`](../../conformance/table-code-layout.json), SHA-256
+`cf98c08c0a67850b3db1bf044b5056161742c7853456cdcc9f7b4c2c044f6f0f`,
+records 18 cases with cold, warm and cleared measurements, repeated under
+heap allocation fills `0x00`, `0xa5` and `0xff`. The
+[capture module](../../conformance/native_table/code_layout.rs) executes complete
+Drawing `Measure`, `0x732fc`, `measuredObject`, `0x73694`, `ClearMeasure`,
+`0x737d0`, and `GetMinHeightInFirstPage`, `0x738f4`. Native Base RectF, Matrix
+and List operations execute, as does Model `ObjectCodeBlock::GetBody`,
+`0x474570`, on supplied implementation fields.
+
+Only the first split rectangle's top affects the header. If it is strictly
+less than the original copy-button bottom, that top is added to the header's
+vertical coordinates; equality does not shift it. Later rectangles and
+horizontal intersection do not enter this decision. Split lists retain input
+order and are translated to body-local vertical coordinates. Cases cover
+touching and adjacent-float boundaries, negative/zero tops, unsorted lists,
+fractional/double density, translated/narrow bounds, differing title heights
+and empty/absent bodies. Title measurement does not resize the title frame.
+The first-page minimum adds top padding, retained title rectangle height
+(the copy-button height), vertical gap and first body-line height. It does
+not use the measured title text height; changing a header origin does not
+change this retained height.
+Warm `Measure` ignores mutated bounds and child heights until `ClearMeasure`;
+the cleared call consumes those inputs.
+
+Source bounds, child frame/update/measurement interfaces, child text heights
+and density-scaled constants are supplied. Native instructions compute output
+geometry; child interfaces record frames and padding without shaping, wrapping
+or margin layout. Native object/layout construction and constant resolution,
+upstream constraint-specific frame selection, compositor split production,
+complete nested code/table pagination and final drawing do not execute.
+
+The production `NativeCodeGeometry` kernel matches all 18 cold and 18 cleared
+chrome outputs at exact f32 precision. `prepare_code_frame` uses it for callback
+preparation and fresh drawing; translated code-block SVG/replay/PDF regressions
+pass. This establishes the captured chrome geometry, without warm-cache parity,
+native child-placement parity, large-origin or nested-callback claims.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --code-layout scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-code-layout.json
+cmp /tmp/table-code-layout.json conformance/table-code-layout.json
+```
 
 ## Border records
 

@@ -240,6 +240,12 @@ Native reference coverage is narrower than synthetic coverage:
 | [`table-export-clipping.json`](table-export-clipping.json) | Native Composer artwork crop and fresh Drawing display defaults for 78 inputs; Rust matches every crop coordinate bit. Covers page/body margins, intersection misses, edge neighbors and outward rounding. | Supplied bounds/page sizes/scaled margins; constructor logging and canvas recording are isolated. No bitmap factory or pixels execute. Text clipping is separate; complete device appearance remains unverified. See [export crop findings](../docs/reverse-engineering/table-code-findings.md#export-artwork-crop). |
 | [`table-text-clipping.json`](table-text-clipping.json) | Native Composer per-run clip decisions, world/PDF rectangles and paint translations for 132 inputs, plus the Pdfium empty-clip gate. Exact/adjacent height boundaries, origins/scales, missed intersections and degenerate dimensions repeat across three memory fills. | Supplied Model rectangles, run rectangles and cell origins; host page getter/translation recorder. Native rectangle producers, final PDF paths/pixels and Rust per-run clipping are outside this capture. See [text clip findings](../docs/reverse-engineering/table-code-findings.md#export-text-clips). |
 | [`table-text-clip-paths.json`](table-text-clip-paths.json) | Extends all 132 clip cases through actual native Pdfium path construction, rectangle append, matrix transform and shared-path retention: 69 nonempty paths and 345 points, identical across three memory fills. Rust PDF tests separately check supplied clip geometry and selectable text. | Supplied zero rotation and 800-point page height; allocation/memory copy, clip-holder initialization and final append sink are host interfaces. Captures paths before installation; complete native PDF output and Rust per-run clip selection are outside this capture. See [final clip paths](../docs/reverse-engineering/table-code-findings.md#final-pdf-text-clip-paths). |
+| [`table-cell-drawing.json`](table-cell-drawing.json) | Complete native artwork pass for 60 cases, 738 Canvas commands and 501 selected paths; Rust matches captured path/translation fields, including normal versus constrained edges. | Theme/paint/outline and measured inputs are supplied; no text shaping, native pixels or complete composition. See [cell artwork](../docs/reverse-engineering/table-code-findings.md#complete-cell-artwork-pass). |
+| [`table-cell-model-lifecycle.json`](table-cell-model-lifecycle.json) | Actual Model table/row/cell/content construction, Drawing frame preparation and Bodytext Model bridge for 17 cases across three allocation fills. Independent replay agrees. | Drawing/Bodytext storage and text adapter are supplied. Full listener callbacks, ObjectSpan origins, first text measurement, parsing/cloning and PDF run clipping are excluded. See [cell Model bridge](../docs/reverse-engineering/table-code-findings.md#cell-model-bridge-after-frame-preparation). |
+| [`table-code-layout.json`](table-code-layout.json) | Complete native Measure/measured-bounds/minimum/ClearMeasure for 18 cold/warm/cleared cases; Rust matches all cold and cleared geometry bits with supplied child metrics. | Source bounds, child layout/height/first-line interfaces and density-scaled constants are supplied. Warm native cache retention is captured separately; complete Rust warm-cache/child-placement/pagination parity is not established. See [code chrome](../docs/reverse-engineering/table-code-findings.md#code-block-chrome-and-split-inputs). |
+| [`table-page-text-ranges.json`](table-page-text-ranges.json) | Complete native boundary predicates and page range scan for 47 cases and 251 queries; inclusive UTF-16 ranges, overlap and exhausted/absent sections repeat across three allocation fills. | Page/line/cursor/first-empty getter values are supplied. No measured paragraph producer, document repagination or production measured-line indexer. See [page ranges](../docs/reverse-engineering/text-layout-findings.md#captured-page-text-ranges). |
+| [`table-text-paragraph-layout.json`](table-text-paragraph-layout.json) | Complete native paragraph layout chain with actual constructors, host ICU76.1/Unicode16 bidi/breaking, 25 cases, 38 lines and 81 placed UTF-16 entries; captures conditional natural widths and surrogate-cut emergency ranges. | Source, measured advances, kinds, metrics, spacing and ink are supplied. No font measurement/classification, objects/bullets, obstacles, pagination, clips, vector export or Android device ICU parity. Production retains separate SDK break/grapheme/height policy. See [paragraph loop](../docs/reverse-engineering/text-layout-findings.md#captured-paragraph-layout-loop). |
+| [`table-text-font-registry.json`](table-text-font-registry.json) | Actual initialized XML/four-file registries and NAME resolution for 154 requests; records source/parent/implementation reuse classes, native language/CBDT getters and copy cleanup. | Four supplied XML configurations and process-local counter seed; no generic device registry, arbitrary registration/invalidation, glyph/cache records or full retained-run grouping. See [live registry](../docs/reverse-engineering/text-draw-identity-findings.md#captured-live-font-registry). |
 | [`table-cell-model-bounds.json`](table-cell-model-bounds.json) | Complete native cell/content rectangle setters for 60 cases; captures equal-frame short circuit, independent content bounds, normalization, Model/drawn divergence and dirty flags. Native template/fill/list construction and geometry setters execute unchanged, with three allocation fills. | Zero-seeded supplied objects, nil context/observer, disabled followers and absent images; allocation, mutex construction and diagnostics are host interfaces. Document history, callback mutation and Drawing layout are outside this capture. See [content Model rectangles](../docs/reverse-engineering/table-code-findings.md#cell-content-model-rectangles). |
 | [`table-text-bounds.json`](table-text-bounds.json) | Native entry placement and run-bound producers for 162 cases, 810 entries and 378 unions, plus 22 native grouping probes across three memory fills. Rust local vertical bounds/baselines match exact f32 bits. | Supplied entry/block/line metrics, logical maps and ordinary spans; host memory copy. Font wrappers use native null-implementation ID -1. Shaping, wrap selection, actual objects, complete run emission, font-specific gates and Rust per-run clipping are outside this capture. See [retained text bounds](../docs/reverse-engineering/table-code-findings.md#retained-text-entry-and-run-bounds). |
 | [`table-text-wrap-numeric.json`](table-text-wrap-numeric.json) | Complete native `GetBlockInfo` and `SetLayout` for 17 cases, 59 supplied UTF-16 slots, 55 candidate operand/result pairs, 16 commits and 45 selected/placed slots. Rust matches numeric selection/width/cursor fields, including through the production slot bridge; three fills and independent replay agree. | Advances/kinds/break ends, rectangles, old positions, ink, visual map and single-line shell are supplied. Shaping, ICU break/bidi production, automatic native paragraph wrapping, natural-width ceiling, draw clipping, full composition and output do not execute. Rust UAX/grapheme/height policy remains separate. See [ordinary wrap arithmetic](../docs/reverse-engineering/text-layout-findings.md#captured-ordinary-wrap-arithmetic). |
@@ -466,6 +472,51 @@ separately establishes 93 final paint profiles and the later Typeface style
 override; it does not execute shaping or physical style synthesis.
 These comparisons remain separate from production paragraph measurement and
 do not establish complete native document width/wrapping parity.
+
+### Native composition and registry replay
+
+After building `/tmp/sdocx-native-table` as above, replay these supplied-input
+captures with the extracted libraries:
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-drawing scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-cell-drawing.json
+cmp /tmp/table-cell-drawing.json conformance/table-cell-drawing.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-model-lifecycle scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-cell-model-lifecycle.json
+cmp /tmp/table-cell-model-lifecycle.json conformance/table-cell-model-lifecycle.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --code-layout scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBase.so > /tmp/table-code-layout.json
+cmp /tmp/table-code-layout.json conformance/table-code-layout.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --page-text-ranges scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so > /tmp/table-page-text-ranges.json
+cmp /tmp/table-page-text-ranges.json conformance/table-page-text-ranges.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-paragraph-layout scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-text-paragraph-layout.json
+cmp /tmp/table-text-paragraph-layout.json conformance/table-text-paragraph-layout.json
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --font-registry scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-text-font-registry.json
+cmp /tmp/table-text-font-registry.json conformance/table-text-font-registry.json
+```
+
+The fixture rows and linked findings distinguish executed native routines from
+supplied storage, metrics and host interfaces. These replays do not establish
+complete document composition or device appearance.
 
 ## Stroke regressions
 
