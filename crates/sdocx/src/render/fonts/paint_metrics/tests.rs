@@ -183,6 +183,66 @@ fn native_entry_paints_preserve_fractional_hinted_ink() {
 }
 
 #[test]
+fn native_fractional_hinting_boundary_preserves_mono_advances_and_ink() {
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../conformance/table-text-shaping-entry-skia-metrics.json"
+    ));
+    compare_capture(
+        bytes,
+        "c7216fb3148f524a8e7cde5c0bb83a616c60ae81c3cedb7c7f2d266f1bd3800a",
+        [11, 26, 0],
+    );
+    let capture: Capture = serde_json::from_slice(bytes).unwrap();
+    let face = FontBook::default().resolve("Roboto", false, false).unwrap();
+    let mut hinted_loads = 0;
+    for case in capture.cases {
+        let input = captured_input(&case.paint);
+        if input.mode != PaintMetricMode::Normal {
+            continue;
+        }
+        let metrics = face.paint_metrics(input).unwrap();
+        let trace = case.skia_metrics.unwrap();
+        for load in trace.loads {
+            let config = &trace.configs[load.config];
+            assert_eq!((config.load_flags >> 16) & 15, 2);
+            assert_eq!(load.flags, config.load_flags);
+            assert_eq!(config.matrix, [65536, 0, 0, 65536]);
+            assert_eq!(load.before_outline.points, load.after_outline.points);
+            let points = &load.after_outline.points;
+            let extrema = [
+                points.iter().map(|point| point[0]).min().unwrap(),
+                points.iter().map(|point| point[1]).min().unwrap(),
+                points.iter().map(|point| point[0]).max().unwrap(),
+                points.iter().map(|point| point[1]).max().unwrap(),
+            ];
+            let mut pen = ControlBoundsPen::new();
+            metrics
+                .outlines
+                .get(GlyphId::new(load.glyph))
+                .unwrap()
+                .draw(
+                    DrawSettings::hinted(metrics.hinting.as_ref().unwrap(), false),
+                    &mut pen,
+                )
+                .unwrap();
+            let bounds = pen.bounding_box().unwrap();
+            let measured = [bounds.x_min, bounds.y_min, bounds.x_max, bounds.y_max];
+            let expected = extrema.map(|coordinate| coordinate as f32 / 64.0_f32);
+            assert_eq!(
+                measured.map(f32::to_bits),
+                expected.map(f32::to_bits),
+                "{} glyph {}",
+                case.name,
+                load.glyph
+            );
+            hinted_loads += 1;
+        }
+    }
+    assert_eq!(hinted_loads, 48);
+}
+
+#[test]
 fn hinted_and_linear_advances_preserve_distinct_fixed_metric_domains() {
     let face = FontBook::default().resolve("Roboto", false, false).unwrap();
     let hinted = face

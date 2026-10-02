@@ -3,6 +3,9 @@ use super::*;
 #[path = "text_shaping/skia_metrics.rs"]
 mod skia_metrics;
 
+#[path = "text_shaping/entry_skia_metrics.rs"]
+mod entry_skia_metrics;
+
 #[path = "text_entry_geometry.rs"]
 mod text_entry_geometry;
 
@@ -11,6 +14,7 @@ enum CaptureTrace {
     ShapeOnly,
     Gpos,
     SkiaMetrics,
+    EntrySkiaMetrics,
     EntryGeometry,
     MixedScripts,
 }
@@ -907,6 +911,7 @@ struct Case {
     letter_spacing: f32,
     features: &'static str,
     entry_geometry: bool,
+    supplied_paint_size: Option<f32>,
 }
 impl Case {
     fn regular(name: &'static str, text: &'static str, size: f32) -> Self {
@@ -921,6 +926,7 @@ impl Case {
             letter_spacing: 0.0,
             features: "",
             entry_geometry: false,
+            supplied_paint_size: None,
         }
     }
     fn execute(
@@ -968,7 +974,7 @@ impl Case {
         let paint_size = if self.entry_geometry {
             text_entry_geometry::paint_size(machine, self.font_size)
         } else {
-            self.font_size * 100.0
+            self.supplied_paint_size.unwrap_or(self.font_size * 100.0)
         };
         write(machine.engine, PAINT, &paint_size.to_bits().to_le_bytes());
         write(machine.engine, PAINT + 4, &1_f32.to_bits().to_le_bytes());
@@ -1289,6 +1295,24 @@ pub(super) fn capture_skia_metrics(
     );
 }
 
+pub(super) fn capture_entry_skia_metrics(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        entry_skia_metrics::cases(),
+        CaptureTrace::EntrySkiaMetrics,
+    );
+}
+
 fn mixed_script_cases() -> Vec<Case> {
     const MIXED: &str = "AVΑΒАВ";
     const COMBINING: &str = "x\u{327}\u{301}χ\u{327}\u{301}Х\u{327}\u{301}";
@@ -1432,7 +1456,10 @@ fn capture_cases(
     trace_kind: CaptureTrace,
 ) {
     let trace_gpos = matches!(trace_kind, CaptureTrace::Gpos);
-    let trace_skia = matches!(trace_kind, CaptureTrace::SkiaMetrics);
+    let trace_skia = matches!(
+        trace_kind,
+        CaptureTrace::SkiaMetrics | CaptureTrace::EntrySkiaMetrics
+    );
     pinned_host(
         "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
         "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
@@ -1517,6 +1544,10 @@ fn capture_cases(
     if matches!(trace_kind, CaptureTrace::MixedScripts) {
         output.pop();
         output.push_str(",\"mixed_script_capture_boundary\":\"Actual single-face LayoutPiece executes Latin/Greek/Cyrillic script chunk discovery, recorded HarfBuzz calls, shared f32 horizontal cursor, per-call owner origin, leading/trailing half-spacing and per-UTF16 advances on supplied pinned Roboto. Paint, locale, text range, whole-piece direction and spacing remain supplied caller inputs. For these captures RTL preserves source-ascending script chunk calls and reverses glyph order inside each chunk. Full bidi resolution, font selection/fallback, whole SpanRunFunctor, wrapping, entry conversion and document composition do not execute.\"}");
+    }
+    if matches!(trace_kind, CaptureTrace::EntrySkiaMetrics) {
+        output.pop();
+        output.push_str(",\"entry_skia_metric_capture_boundary\":\"Actual native Skia scaler and bundled FreeType execute supplied Roboto To and combining-mark controls around paint1712.5. Normal packed Minikin flags0x20000 produce actual FT_LOAD flags0x120208, including FT_LOAD_TARGET_MONO; this is distinct from Normal paint profile naming. One unhinted packedflags0 case is a separate control. Actual backend size, residual/fixed matrices, ppem, scale and hinted outline points before/after outer transform are recorded through existing Skia metric hooks. Paint size is explicitly supplied as exact recorded f32 P, independently of the informational source-size field; source-size*100 executes only in the separate entry-geometry fixture. Direction and source are also caller inputs. Whole SpanRunFunctor, typeface selection, full interpreter tracing, raster pixels and general other-font equivalence are not established.\"}");
     }
     println!("{output}");
 }

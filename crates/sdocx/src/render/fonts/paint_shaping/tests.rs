@@ -1059,3 +1059,15 @@ fn entry_capture_distinguishes_advance_division_and_owner_ink_translation() {
         (4, 8, 8),
     );
 }
+
+#[test]
+fn provider_derived_fractional_hinting_matches_native_raw_scaler_controls() {
+    compare_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-shaping-entry-skia-metrics.json"
+        )),
+        "c7216fb3148f524a8e7cde5c0bb83a616c60ae81c3cedb7c7f2d266f1bd3800a",
+        [11, 26, 26],
+    );
+}
