@@ -21,6 +21,9 @@ mod table_clone_origin;
 #[path = "native_table/drawn_bounds.rs"]
 mod drawn_bounds;
 
+#[path = "native_table/widget_text_constructor.rs"]
+mod widget_text_constructor;
+
 #[path = "native_table/page_text_ranges.rs"]
 mod page_text_ranges;
 
@@ -1111,6 +1114,29 @@ fn main() {
             }
             return;
         }
+        Some("--widget-text-constructor") => {
+            let paths = [3, 4, 5, 6, 7, 8, 9, 10, 11].map(|index| {
+                std::env::args_os().nth(index).expect(
+                    "base, text, Skia, font, bundled XML/libc++, widget, content and drawing paths required",
+                )
+            });
+            widget_text_constructor::capture(
+                &mut machine,
+                widget_text_constructor::Paths {
+                    model: Path::new(&path),
+                    base: Path::new(&paths[0]),
+                    text: Path::new(&paths[1]),
+                    skia: Path::new(&paths[2]),
+                    font: Path::new(&paths[3]),
+                    xml: Path::new(&paths[4]),
+                    cpp: Path::new(&paths[5]),
+                    widget: Path::new(&paths[6]),
+                    content: Path::new(&paths[7]),
+                    drawing: Path::new(&paths[8]),
+                },
+            );
+            return;
+        }
         Some(mode @ ("--cell-model-lifecycle" | "--table-drawn-bounds")) => {
             let paths = [3, 4, 5, 6].map(|index| {
                 std::env::args_os()
@@ -1612,7 +1638,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --widget-text-constructor, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

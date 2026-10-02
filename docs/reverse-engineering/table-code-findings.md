@@ -1160,7 +1160,8 @@ translated coordinates, large origins, display-row filtering, rounded corners,
 pending gaps around `0.001f`, canvas scale and inactive edge styles.
 
 Constraint 0 takes background bounds from the saved cell rectangle, subtracts
-the virtual slot-160 rectangle's origin, then adds the drawing offset. In this
+the virtual slot-160 rectangle's origin, then adds the supplied horizontal
+scroll and Y-offset inputs. In this
 60-case fixture a supplied table vtable routes slot 160 to `GetRect`,
 `0x3d48c0`, making source table bounds an explicit origin input. The real
 `GetDrawnRect` route is captured separately below. Saved border endpoints
@@ -1218,7 +1219,8 @@ saved cell rectangles and content Model rectangles remain unchanged.
 The real table virtual slot 160 returns `GetDrawnRect`, including half-border
 inflation. Native Normal artwork subtracts that clone drawn origin from both
 saved background rectangles and Model border endpoints, retaining their distinct
-f32 translation stages. Neither the original source origin nor the clone's raw
+f32 translation stages under the supplied scroll control. Neither the original
+source origin nor the clone's raw
 Model rectangle is interchangeable with this result. The capture distinguishes
 raw bounds, BaseData drawn bounds and the virtual drawn result through copy,
 placement and cold Drawing preparation. Cases include Normal/over-pages,
@@ -1230,11 +1232,19 @@ DrawnText rectangle/position and writer origin are supplied, and only the named
 Composer instruction windows execute. Cold layout storage and a text-wrapper
 adapter are supplied; `SetObject`, `SetTextScale` and shaping are omitted.
 Paint/Canvas calls are recorded with identity theme and an empty display clip.
-Drawing X is explicitly supplied from the clone drawn left; commands remain
-canvas-local with native literal zero Y offset. Canvas world-Y production,
+The fixture's `drawing_x` is the supplied Drawing member-112 horizontal scroll,
+seeded from the clone drawn left. `SetScrollX`, `0xa5824`, writes that field;
+the actual constructor at `0xa5634` initializes it to zero (`0xa5684`). It is
+not a world origin. Commands remain canvas-local with native literal zero Y
+offset. Canvas world translation,
 parent measurement, the complete Composer writer, Bodytext callbacks and final
-PDF transport are outside this capture. It establishes clone and origin
-selection without production activation or complete export parity.
+PDF transport are outside this capture. Composer's canvas translation at
+`0x380018`–`0x38003c` uses rounded measured origin minus crop origin, with crop placement
+as a separate world-transport step; the supplied scroll does not prove that
+writer producer. Production direct virtual-origin subtraction and its f32
+arithmetic are tested separately. Inline Normal clone placement retains the
+existing SDK compatibility behavior without a full writer/Model-callback
+activation claim.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
@@ -1522,6 +1532,60 @@ a full application lifecycle parity claim.
   scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
   scratch/apk-analysis-native/arm64-v8a/libc++_shared.so > /tmp/table-cell-model-lifecycle.json
 cmp /tmp/table-cell-model-lifecycle.json conformance/table-cell-model-lifecycle.json
+```
+
+### Captured cell text constructors
+
+[`table-widget-text-constructor.json`](../../conformance/table-widget-text-constructor.json),
+SHA-256 `284bb1d14fc3b8be45462cdb3ba6309e2b071a8f0f69f0db48f8e7da58d8c37d`,
+records three device profiles and 24 semantic states. Native owned allocations
+repeat under fills `0x00`, `0xa5`, `0xff` and zero again; strict master-driver
+replay agrees byte for byte. The
+[capture module](../../conformance/native_table/widget_text_constructor.rs)
+uses the shared [cell host](../../conformance/native_table/text_cell_host.rs)
+and the fixture's pinned NAME/XML/four-font, libc++, host ICU/file and library
+dependencies.
+
+Actual Drawing cell layout construction (`0x8bff8`) runs Widget ObjectTextLayout
+(`0xd2fb4`), Content constants (`0x133e0`), Text wrapper construction
+(`0x8a820`, `0x8a8e8`), RichText construction (`0x61d7c`) and bullet setup.
+Native Model content construction and actual getters establish ObjectTextBox
+shape type 4 and table membership. This Model type is not a MeasureData entry
+classification; no copied type-4 field in the Text wrapper is established.
+Native class identity and virtual update-bound targets are checked.
+
+Single-line remains false and word-wrap true. RichText bytes 112–115 are
+`[0,0,1,1]`, including Widget's enabled system-font flag. Complete `SetObject`
+(`0xd3974`) binds the Model pointer and updates bounds, changing default font
+size from 17 to the absent-text branch's 50 while retaining cell gravity zero.
+The actual Model default text getter returns null; `SetObject` does not copy
+Model text into the wrapper. Its constructor-default text length remains zero
+because `updateText` does not execute.
+
+Caller context/display/manager inputs supply density, raw direction/profile,
+document width/pixel and font delta. Margins are set through the actual
+ComponentText setter and retain native `f32` grouping
+`(document_pixel * source_margin) * text_scale`. Complete `SetTextScale`
+(`0xd948c`) applies positive controls 0.75 and 1.5; zero, negative and repeated
+1.5 controls preserve the prior state. Direction 1 is a raw caller control,
+without an inferred RTL contract. Native constants, defaults and C++ algorithms
+execute; allocation, bytes/files, deterministic UUIDs, single-thread services
+and host ICU remain interfaces. Text copying/classification, font production,
+measurement/width conversion, paragraph placement and cached emission do not
+execute. These constructor findings do not establish full cell measurement.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --widget-text-constructor scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-widget-text-constructor.json
+cmp /tmp/table-widget-text-constructor.json conformance/table-widget-text-constructor.json
 ```
 
 ### Captured cell model callbacks

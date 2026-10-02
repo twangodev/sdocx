@@ -1,5 +1,7 @@
 use super::*;
 
+#[path = "text_cell_host.rs"]
+pub(super) mod cell_host;
 #[path = "text_font_registry.rs"]
 mod registry;
 use std::collections::BTreeMap;
@@ -34,6 +36,25 @@ const FONTS: [(&str, &str); 4] = [
     (
         "Roboto-BoldItalic.ttf",
         "40083ed54338397cf49d2c49f59eddcd963a30fdb301813d4bd3abbb37a13d12",
+    ),
+];
+
+const HOST_PINS: [(&str, &str); 4] = [
+    (
+        "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
+        "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
+    ),
+    (
+        "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1",
+        "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24",
+    ),
+    (
+        "/usr/lib/x86_64-linux-gnu/libc.so.6",
+        "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
+    ),
+    (
+        "/usr/lib/x86_64-linux-gnu/libm.so.6",
+        "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
     ),
 ];
 
@@ -689,42 +710,49 @@ pub(super) fn setup(
     xml: &Path,
     cpp: &Path,
 ) -> (NativeFontEnvironment, Box<Services>) {
-    for (path, digest) in [
-        (
-            "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
-            "a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151",
-        ),
-        (
-            "/usr/lib/x86_64-linux-gnu/libicudata.so.76.1",
-            "a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24",
-        ),
-        (
-            "/usr/lib/x86_64-linux-gnu/libc.so.6",
-            "fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826",
-        ),
-        (
-            "/usr/lib/x86_64-linux-gnu/libm.so.6",
-            "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
-        ),
-    ] {
+    setup_with_libraries(machine, base, text, skia, font, xml, cpp, &[])
+}
+
+pub(super) fn setup_with_libraries(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    xml: &Path,
+    cpp: &Path,
+    additional: &[(&Path, u64, &str)],
+) -> (NativeFontEnvironment, Box<Services>) {
+    setup_with_preloaded_libraries(machine, base, text, skia, font, xml, cpp, additional, &[])
+}
+
+pub(super) fn setup_with_preloaded_libraries(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    xml: &Path,
+    cpp: &Path,
+    additional: &[(&Path, u64, &str)],
+    preloaded: &[(&Path, u64, &str)],
+) -> (NativeFontEnvironment, Box<Services>) {
+    for (path, digest) in HOST_PINS {
         pinned_host(path, digest);
     }
     machine.call_instruction_limit = 10_000_000;
     machine.call_timeout_micros = 0;
-    let mut environment = NativeFontEnvironment::with_libraries(
-        machine,
-        base,
-        text,
-        skia,
-        font,
-        &[
-            (xml, XML, XML_SHA256),
-            (
-                cpp,
-                0x0b00_0000,
-                "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
-            ),
-        ],
+    let mut libraries = vec![
+        (xml, XML, XML_SHA256),
+        (
+            cpp,
+            0x0b00_0000,
+            "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        ),
+    ];
+    libraries.extend_from_slice(additional);
+    let mut environment = NativeFontEnvironment::with_preloaded_libraries(
+        machine, base, text, skia, font, &libraries, preloaded,
     );
     let mut services = Box::new(Services::new(machine, font));
     environment.set_host_import_handler(import, ptr::from_mut(services.as_mut()).cast());
@@ -765,4 +793,36 @@ pub(super) fn capture_registry(
     cpp: &Path,
 ) {
     registry::capture(machine, base, text, skia, font, xml, cpp);
+}
+
+pub(super) fn dependency_metadata() -> String {
+    let fonts = FONTS
+        .iter()
+        .map(|(name, digest)| {
+            format!(
+                "{{\"file\":{},\"sha256\":{}}}",
+                json_string(name),
+                json_string(digest)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    let host = HOST_PINS
+        .iter()
+        .map(|(path, digest)| {
+            format!(
+                "{{\"path\":{},\"sha256\":{}}}",
+                json_string(path),
+                json_string(digest)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    format!(
+        "{{\"caller_font_xml\":{},\"caller_font_xml_sha256\":{},\"font_files\":[{fonts}],\"xml_library_sha256\":{},\"cpp_library_sha256\":{},\"host_libraries\":[{host}],\"icu_version\":[76,1,0,0],\"unicode_version\":[16,0,0,0],\"text_initializers\":{INITIALIZERS:?},\"per_native_call_instruction_limit\":10000000,\"wall_timeout_micros\":0}}",
+        json_string(CONFIG),
+        json_string("9864ad4db5012ad4b63f82fcd0375b4f6a02a92d762147805ebdc02de0f4ed22"),
+        json_string(XML_SHA256),
+        json_string("4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4")
+    )
 }

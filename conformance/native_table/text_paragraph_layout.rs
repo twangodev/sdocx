@@ -95,18 +95,18 @@ unsafe extern "C" {
     fn dlclose(handle: *mut c_void) -> i32;
 }
 
-struct ParagraphIcu {
+pub(super) struct ParagraphIcu {
     library: *mut c_void,
     fallback: Box<text_shaping::HostIcu>,
     names: BTreeMap<u64, String>,
     hooks: Vec<usize>,
     texts: BTreeMap<u64, Vec<u16>>,
-    calls: Vec<String>,
+    pub(super) calls: Vec<String>,
     engine: Engine,
 }
 
 impl ParagraphIcu {
-    fn new(machine: &Machine) -> Box<Self> {
+    pub(super) fn new(machine: &Machine) -> Box<Self> {
         let path = CString::new("/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1").unwrap();
         let library = unsafe { dlopen(path.as_ptr(), 2) };
         assert!(!library.is_null());
@@ -128,7 +128,7 @@ impl ParagraphIcu {
         symbol
     }
 
-    fn version(&self, name: &str) -> [u8; 4] {
+    pub(super) fn version(&self, name: &str) -> [u8; 4] {
         let call: unsafe extern "C" fn(*mut u8) = unsafe { std::mem::transmute(self.symbol(name)) };
         let mut version = [0; 4];
         unsafe { call(version.as_mut_ptr()) };
@@ -156,6 +156,9 @@ fn c_string(engine: Engine, address: u64) -> String {
 
 fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Option<u64> {
     let host = unsafe { &mut *data.cast::<ParagraphIcu>() };
+    if let Some(result) = paragraph_icu_import(engine, name, args, host) {
+        return Some(result);
+    }
     if matches!(
         name,
         "pthread_mutexattr_init" | "pthread_mutexattr_destroy" | "pthread_mutexattr_settype"
@@ -173,6 +176,20 @@ fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) ->
         assert_eq!(args[0], 178);
         return Some(1);
     }
+    text_shaping::host_import(
+        engine,
+        name,
+        args,
+        ptr::from_mut(host.fallback.as_mut()).cast(),
+    )
+}
+
+pub(super) fn paragraph_icu_import(
+    engine: Engine,
+    name: &str,
+    args: [u64; 8],
+    host: &mut ParagraphIcu,
+) -> Option<u64> {
     if name == "dlsym" {
         let name = c_string(engine, args[1]);
         if let Some(name) = name
@@ -195,7 +212,7 @@ fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) ->
                     &mut hook,
                     4,
                     icu_call as *mut c_void,
-                    data,
+                    ptr::from_mut(host).cast(),
                     address,
                     address,
                 )
@@ -204,12 +221,7 @@ fn host_import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) ->
             return Some(address);
         }
     }
-    text_shaping::host_import(
-        engine,
-        name,
-        args,
-        ptr::from_mut(host.fallback.as_mut()).cast(),
-    )
+    None
 }
 
 fn utf16(engine: Engine, address: u64, length: u64) -> Vec<u16> {

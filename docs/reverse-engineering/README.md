@@ -242,7 +242,8 @@ Planning, task lists and development progress are kept outside these documents.
   cell/content Model rectangle setters and final native clip-path geometry, retained
   text entry/run bounds, complete cached-glyph run emission, actual Model drawn
   bounds, complete cell artwork,
-  constructed cell Model bridges, installed callback/span lookup, cloned table
+  constructed cell Model bridges, genuine cell text constructors, installed
+  callback/span lookup, cloned table
   placement, code chrome/cache/minimum geometry and vector
   evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
