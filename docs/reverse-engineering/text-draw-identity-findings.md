@@ -12,7 +12,9 @@ Addresses are virtual addresses in the named ELF, before harness relocation.
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libSPenWidget.so` | `cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9` |
+| `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenText.so` | `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b` |
+| `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 
 The [entry/run-bound capture](table-code-findings.md#retained-text-entry-and-run-bounds)
@@ -188,6 +190,55 @@ interfaces; diagnostic logging is isolated. Whole-document parsing, native
 span traversal, Widget conversion, shaping, grouping and rendering do not
 execute in this binary capture.
 
+### Preview and Composer backgrounds
+
+Native ordinary and composing backgrounds have different consumers. Their
+separate raw span members cannot be replaced by one resolved paint color.
+
+| Span | Object conversion | Native table preview | Native Composer vector export |
+| --- | --- | --- | --- |
+| Composing background, type 15 | Theme-mapped ARGB into member 12, unless the Widget slot is an object | Nonzero composing ARGB overrides ordinary background | Composing background is not copied to retained `DrawnText`; ordinary background remains |
+| Composing underline, type 16 | Sets underline bit 4 regardless of the source boolean value | Underline flag | Underline flag retained and painted |
+| Composing tag enabled, type 18 | Theme-mapped `0x19252525` into ordinary background member 8 | Ordinary background, unless composing overrides it | Ordinary background retained |
+| Composing tag disabled, type 18 | Sets bold, italic and underline bits 7 | These style flags | These style flags retained |
+
+Widget's object update establishes object identity before ordinary spans:
+`updateSpan`, `0xd4e80`, calls `convertObjectSpan` at `0xd5014`, then text
+conversion at `0xd502c`; object conversion marks the slot at `0xd54f4`.
+Its type-15 and type-17 handlers test that identity at
+`0xd7de8`–`0xd7df0` and `0xd7e20`–`0xd7e28`. Type 18 has no corresponding
+object-background guard. Drawing's `convertTextSpanImpl`, `0x90de8`, has no
+type-15/type-17 object guards in its handlers at `0x9102c`–`0x91050` and
+`0x91058`–`0x9107c`.
+
+Tables use the Widget producer: `ObjectTableCellLayout` construction at
+`0x8c008` creates `ObjectTextLayout`, and Drawing table initialization supplies
+its content through `SetObject` at `0xaad30`. Widget copies effective
+backgrounds to a separate vector at `0xd5080`; Drawing performs the same
+nonmutating selection in `moveTextBackgroundColor`, `0x8da30`.
+
+Widget `ObjectTableCellLayout::DrawTextContent`, `0x8c0c0`, reaches Text
+`DrawRect`, `0x8b578`, `RichTextDrawing::drawRect`, `0x64bec`, and its background
+painter at `0x64f18`. The painter obtains the raw span at `0x64fdc`, reads
+ordinary/composing colors at `0x64fe0` and selects composing when its complete
+ARGB value is nonzero at `0x64fe4`–`0x64fe8`. This tests the complete color
+word, not alpha alone: an alpha-zero color with nonzero RGB still overrides
+ordinary background selection.
+
+Composer table `GetDrawnTextData`, `0x37ef00`, reaches Text drawing through
+the Widget cell wrapper at `0x8c098`. Text `appendTextBlock`, `0x67ebc`, stores
+ordinary span member 8 into `DrawnText` member 144 at `0x68140`/`0x68160`; it
+does not copy composing member 12. Composer's table background writer,
+`0x37f308`, reads member 144 at `0x37f480`; ordinary text's writer,
+`0x380b58`, reads it at `0x380ce0`. Text retains the style byte at
+`0x68148`/`0x68158`; Composer tests the table underline bit at
+`0x37ef84`–`0x37ef88` and dispatches its paint at `0x37ef9c`.
+
+This producer/consumer trace establishes the different selected background
+inputs. Supplied span-conversion and retained-emitter captures separately
+exercise raw members and copied `DrawnText` values. They do not capture a
+complete table preview image or native PDF for these composition spans.
+
 ## Font metadata
 
 Text `Font::GetSourceId`, `0x85d7c`, forwards through implementation virtual
@@ -321,20 +372,43 @@ painting use that decoded value while the original span payload stays intact.
 The accessor uses the modern eight-reserved-byte framing. Version-7 input
 framing remains unsupported, and bounded Rust decoding rejects embedded NUL
 fields rather than reproducing native prefix truncation.
-Its paint `TextStyle` does not carry the complete native span comparison
-members, including both raw background colors and correction fields. Foreground
-painting keeps RGB rather than the compared native ARGB value.
+Typed modern composition decoders require complete eight-byte payloads and
+preserve nonzero boolean normalization and ARGB. `RichTextSuggestion` decodes
+raw type/underline ARGB and bounded UTF-16 strings, discarding empty entries
+and treating signed nonpositive counts as empty. It advances actual byte
+lengths rather than reproducing the native consumed-counter discrepancy;
+truncated lists and malformed UTF-16 return no decoded value. Decoder
+regressions compare 132 native modern reader inputs and 60 native suggestion
+writer outputs. No spell-correction or legacy-version-7 composition decoder
+contract is claimed.
+
+`StyleIndex` decodes source span patches once and resolves their overlapping
+properties in source order. Its typed selections retain ordinary/composing
+ARGB separately. Glyph `TextStyle` projects the selected foreground and
+font/decorations; background painting reads the typed selection directly,
+rather than keeping another background copy in glyph style. This does not
+provide complete native draw identity: correction fields and native entry
+identity remain absent, and glyph foreground painting keeps RGB rather than
+the compared native ARGB value.
 
 Hyperlink styling follows the captured native type gate: types 1–9 enable
 hypertext styling; type 0, 10 and the maximum unknown value do not add blue
 foreground, underline or an anchor. Rust regressions cover these five captured
 type values across body text, placed text, table cells and code text.
-Composition, suggestion and correction span appearance remains unimplemented.
-The Rust engine reports `UnsupportedCompositionStyle`,
-`UnsupportedSuggestionStyle` and `UnsupportedCorrectionStyle` for valid source
-ranges with rendered characters. Diagnostics retain source ownership, including
-nested objects; empty, invalid, surrogate-interior and separator-only ranges do
-not report those appearance diagnostics.
+Valid modern composition spans are implemented: type 16 sets underline
+regardless of its boolean, and type 18 selects its background or bold/italic/
+underline branch. Preview and replay backgrounds choose nonzero composing
+ARGB ahead of ordinary; retained document PDF chooses ordinary. Generic
+SVG-to-PDF conversion retains the supplied SVG's preview background rather
+than resolving source spans again. These preserve the traced consumer
+distinction without claiming complete native visual parity.
+
+Legacy/incomplete composition payloads report `UnsupportedCompositionStyle`;
+suggestion and correction appearance remains unimplemented and reports
+`UnsupportedSuggestionStyle` or `UnsupportedCorrectionStyle`. Typed suggestion
+decoding is distinct from its decoration rendering. Diagnostics retain source
+ownership, including nested objects; empty, invalid, surrogate-interior and
+separator-only ranges do not report those appearance diagnostics.
 
 Measured runs retain a selected `ResolvedFace`, synthesis, direction and shaped
 glyphs. `ResolvedFace::is_bitmap_font()` retains the exact CBDT table-directory

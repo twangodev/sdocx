@@ -328,6 +328,16 @@ ordinary backgrounds on object spans (`0xd7e20`–`0xd7e50`); Drawing's converte
 does not share that exclusion, so the SDK rule is not a universal PDF parity
 claim.
 
+Composing background, kind 15, occupies a separate raw member from ordinary
+background. The native table preview selects its complete ARGB word when
+nonzero, while Composer retained text copies only ordinary background.
+Widget applies object identity first and excludes kind-15 and kind-17
+background assignments on those slots; composing-tag kind 18 has no such
+guard. [Draw identity findings](text-draw-identity-findings.md#preview-and-composer-backgrounds)
+record the exact producer/consumer routes and the separate behavior of
+composing underline and composing-tag style flags. This native selection
+trace does not establish complete composition-span preview/PDF appearance.
+
 Composer clips backgrounds at `0x380bf0`–`0x380c0c` through object virtual slot
 168, resolved to `GetRect`, `0x37aa94`: the original geometry. The inset text
 frame instead lives at stack offset 48 (`0x3805bc`–`0x380608`). Rust clips
@@ -358,8 +368,8 @@ background span exists in these four fixtures.
 Terminal LF/control behavior, complex-script character-to-cluster background
 mapping, cross-context object-span painting, and captured opaque/semitransparent
 backgrounds remain unverified. Native object opacity is also separate from
-the span alpha currently represented by the SDK. These limits must not be
-closed by inferred per-character subdivisions or fitted rectangles.
+the span alpha currently represented by the SDK. Proportional per-character
+subdivisions and fitted rectangles have no native proof.
 
 ## Font-name payload and measured fallback
 
@@ -1115,10 +1125,69 @@ filled-rectangle call at `0x6a028`–`0x6a07c`.
 Suggestion/spell-correction flags take another thickness branch
 (`0x668ac`–`0x668e4`), and hypertext has separately gated forced underline
 and color in `setTextPaint` (`0x63c88`–`0x63ccc`). The ordinary constants
-do not establish those cases or RTL endpoint ordering. Drawing also joins
+do not establish complete native shaping or RTL endpoint ordering. Drawing also joins
 only fully equal spans with matching font IDs, direction and adjacency
 (`inSameDraw`, `0x65998`); measurement's narrower join mask does not imply
 that decoration changes can be discarded during paint.
+
+### Captured decoration commands and paint inputs
+
+[`table-text-decorations.json`](../../conformance/table-text-decorations.json),
+SHA-256 `2aa3eaff8c540215ae798596372875c9f978442157a4fb1f622103644389ac2c`,
+contains 368 cases and 438 rectangle commands. The
+[Rust capture module](../../conformance/native_table/text_decorations.rs)
+executes complete native Text `setTextPaint`, `0x63b98`,
+`drawTextDecorations`, `0x666d4`, `GetSpan`, `0x61f3c`, and entry initialization,
+`0x65920`, plus Base `RectF::Set`, `0xb10e0`. Every serialized result repeats
+with memory fills `0x00`, `0xa5` and `0xff`.
+
+The first endpoint is `offset_x + first_entry_x`. The second is calculated as
+`first_endpoint + (last_advance + last_entry_x - first_entry_x)` with f32
+operations in that order. The baseline is `offset_y + first_entry_y`.
+The routine does not inspect entry direction: supplied RTL direction, reversed
+X order and negative advances can retain reversed rectangle endpoints. It
+does not normalize those endpoints using a separate RTL branch.
+Underline top uses `size.mul_add(1/9, baseline)`; ordinary thickness is
+`size * f32(1/18)`. Strikethrough top uses
+`size.mul_add(-2/7, baseline)`. These capture the native f32/FMA operations,
+independently of the Rust vector transport's arithmetic.
+
+Suggestion style bit `0x10` and correction style bit `0x20` share the special
+thickness branch at `0x668ac`–`0x668e4`. Both `size` and `converted_17` are
+multiplied by the same f32 reciprocal `1/18`; comparison selects the smaller
+result. The bottom is then calculated as `selected.mul_add(2, underline_top)`
+at `0x668d0`, rather than adding an independently rounded thickness.
+Here `converted_17` is `17.mul_add(unit_scale, font_size_delta)`.
+RichTextImpl screen-unit member
+188 selects density member 196 for mode 1, scaled density member 200 for mode
+2, document-pixel member 192 for mode 3, and unit scale 1 otherwise; size
+delta is member 172. These are supplied runtime font-unit inputs, rather than
+a universal document-density multiplier.
+
+`SetSuggestionSpanEnabled`, `0x6863c`, controls Drawing byte 512.
+When enabled, `setTextPaint` uses underline style mask `0x34`; otherwise it
+uses only ordinary underline bit 4. Special underline paint reads its color
+from raw span member 32. Correction foreground-enable byte 66 selects main
+foreground member 36 independently of correction style bit `0x20`.
+Hypertext flag bit 0 and RichTextImpl link-enabled byte 112 force underline
+and color `0xff0054ff`, after which enabled correction foreground can replace
+that color.
+
+Paint alpha arguments use truncation of `255 * opacity`. The forced-strike
+argument also multiplies opacity by 0.4. Recorded ARGB color and separate alpha
+setter values are native interface arguments; this capture does not prove how
+actual SkPaint combines their alpha. A null RichText implementation produces
+the real `GetSpan` fallback of size 17 and style zero.
+
+Cases cover all style values 0–63, suggestion/link/correction gates, five font
+sizes including negative and zero, screen-unit modes 0–4, four opacity values,
+three color alpha values, supplied RTL/reversed endpoints, negative advances,
+fractional origins, differing baselines, forced strike and null implementation.
+Retained spans, configuration, entry positions/advances/direction and opacity
+are supplied. Paint setters/getters, paint copy/destruction, memory copy and
+canvas rectangle recording are host interfaces. Native font selection, shaping,
+theme conversion, complete `drawTextRun`, SkCanvas pixels and Composer decoration
+painting do not execute.
 
 ## Final wrapping, alignment and object runs
 

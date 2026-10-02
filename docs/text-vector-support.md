@@ -10,7 +10,7 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 
 | Area | Implemented scope | Evidence and limits |
 | --- | --- | --- |
-| Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, per-span families, sizes, colors and styles, selected-face CBDT metadata and native hyperlink type gating | Rust font/Unicode regressions and browser embedded-font checks; composition, suggestion and correction appearance report source-owned diagnostics. Device fallback selection and variable fonts remain outside scope. |
+| Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, typed span resolution, per-span families/sizes/colors/styles, modern composition spans, selected-face CBDT metadata and native hyperlink type gating | Rust font/Unicode regressions and browser embedded-font checks; legacy/incomplete composition and suggestion/correction appearance report source-owned diagnostics. Device fallback selection and variable fonts remain outside scope. |
 | Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics and captured body/code/table origins; emergency breaking, RTL justification and all standalone native modes are not established. |
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
@@ -46,7 +46,7 @@ fidelity; successful parsing or a generated file is not a parity certificate.
 | `MissingGlyphs` / `MeasurementFailure` | Available fonts cannot cover or measure the requested source. |
 | `UnsupportedGlyphPositioning` | SVG text cannot reproduce the retained geometry; source is preserved through its fallback. |
 | `UnsupportedBackgroundPositioning` | A background cannot be placed safely at the retained cluster boundaries. |
-| `UnsupportedCompositionStyle` / `UnsupportedSuggestionStyle` / `UnsupportedCorrectionStyle` | The source includes a valid composition, suggestion or correction span whose appearance the engine does not implement. Diagnostics retain the source range or enclosing object owner. |
+| `UnsupportedCompositionStyle` / `UnsupportedSuggestionStyle` / `UnsupportedCorrectionStyle` | An appearance-affecting source range contains legacy/incomplete composition or unsupported suggestion/correction style. Diagnostics retain the source range or enclosing object owner. |
 | `UnsupportedTextFrame` | A shape lacks a supported native text frame. |
 | `UnsupportedContent` / `UnsupportedWidthLimitContext` | Embedded composition or a required runtime width context is unsupported. |
 | `InvalidGeometry` / `InvalidBounds` | Geometry is unusable; the relevant adapter rejects it or uses its documented recovery. |
@@ -64,9 +64,14 @@ plain Arabic spans.
 Font names accept native UTF-8 and CESU-8 without changing retained raw span
 payloads. Hyperlink action types 1–9 enable native hypertext styling; unknown
 types outside that gate do not add link color, underline or an anchor.
-Composition, suggestion and correction appearance remains unimplemented,
-including legacy records and transient in-memory attributes. Native binary
-methods do not make every in-memory span writable; the
+Valid modern composition spans resolve typed backgrounds and underline/bold/
+italic flags. Preview and replay select nonzero composing ARGB before ordinary
+background; retained document PDF selects ordinary background, matching the
+traced native consumer distinction. Generic SVG-to-PDF conversion preserves
+the supplied SVG's preview background. Legacy/incomplete composition and
+suggestion/correction appearance remain unsupported. Typed suggestion metadata
+decoding does not implement its special decoration. Native binary methods do
+not make every in-memory span writable; the
 [binary capture](reverse-engineering/text-draw-identity-findings.md#native-binary-boundaries)
 records those distinct contracts.
 
