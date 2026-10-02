@@ -329,8 +329,8 @@ does not share that exclusion, so the SDK rule is not a universal PDF parity
 claim.
 
 Composing background, kind 15, occupies a separate raw member from ordinary
-background. The native table preview selects its complete ARGB word when
-nonzero, while Composer retained text copies only ordinary background.
+background. The native table preview selects its complete theme-mapped ARGB
+word when nonzero, while Composer retained text copies only ordinary background.
 Widget applies object identity first and excludes kind-15 and kind-17
 background assignments on those slots; composing-tag kind 18 has no such
 guard. [Draw identity findings](text-draw-identity-findings.md#preview-and-composer-backgrounds)
@@ -355,6 +355,15 @@ interval (constants at `0x41734`/`0x41724`). Rust uses that primitive and select
 its dark-background flag once from the resolved page, preserving it through
 local table/code/shape surfaces. The exact native caller policy for selecting
 the theme remains unproven.
+
+Composing-background fallback tests the mapped ARGB after that conversion.
+Native dark conversion maps transparent black `0x00000000` to `0x00ffffff`,
+and transparent white `0x00ffffff` to zero. Checking raw zero or alpha before
+mapping therefore does not reproduce the native fallback decision. Enabled
+composing tags can also background-paint native object entries: their converter
+and the native entry background painter have no object guard. Rust's text
+background geometry excludes inline-object anchors; this native object case
+has a separate unsupported appearance boundary.
 
 The hash-checked HF corpus contains one kind-17 span: `04-marker4-highlighter`
 body range `[2,6)`, selecting `Text`, with an eight-byte all-zero payload.

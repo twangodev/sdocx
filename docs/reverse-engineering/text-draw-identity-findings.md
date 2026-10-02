@@ -197,7 +197,7 @@ separate raw span members cannot be replaced by one resolved paint color.
 
 | Span | Object conversion | Native table preview | Native Composer vector export |
 | --- | --- | --- | --- |
-| Composing background, type 15 | Theme-mapped ARGB into member 12, unless the Widget slot is an object | Nonzero composing ARGB overrides ordinary background | Composing background is not copied to retained `DrawnText`; ordinary background remains |
+| Composing background, type 15 | Theme-mapped ARGB into member 12, unless the Widget slot is an object | Nonzero mapped composing ARGB overrides ordinary background | Composing background is not copied to retained `DrawnText`; ordinary background remains |
 | Composing underline, type 16 | Sets underline bit 4 regardless of the source boolean value | Underline flag | Underline flag retained and painted |
 | Composing tag enabled, type 18 | Theme-mapped `0x19252525` into ordinary background member 8 | Ordinary background, unless composing overrides it | Ordinary background retained |
 | Composing tag disabled, type 18 | Sets bold, italic and underline bits 7 | These style flags | These style flags retained |
@@ -222,8 +222,41 @@ Widget `ObjectTableCellLayout::DrawTextContent`, `0x8c0c0`, reaches Text
 painter at `0x64f18`. The painter obtains the raw span at `0x64fdc`, reads
 ordinary/composing colors at `0x64fe0` and selects composing when its complete
 ARGB value is nonzero at `0x64fe4`–`0x64fe8`. This tests the complete color
-word, not alpha alone: an alpha-zero color with nonzero RGB still overrides
-ordinary background selection.
+word after theme mapping, not alpha or the raw source value alone. Widget
+type 15 calls the theme interface at `0xd7dfc`–`0xd7e14`, with usage 3,
+before storing mapped member 12 at `0xd7e18`. Base `ViewContext::GetColor`,
+`0x6c39c`, selects the active theme at `0x6c3a4`–`0x6c3c4`, without a zero
+or alpha guard. Base dark-theme conversion at `0xe51a4` temporarily forces
+opaque alpha at `0xe51b4` for HSL conversion and restores source alpha at
+`0xe51bc`. It maps transparent black `0x00000000` to `0x00ffffff`, and
+transparent white `0x00ffffff` to zero. Consequently, transparent black can
+override ordinary background in dark preview, while transparent white can
+fall back to ordinary. An alpha-zero color with nonzero mapped RGB still
+overrides ordinary background selection.
+
+[`table-text-background-theme.json`](../../conformance/table-text-background-theme.json),
+SHA-256 `77bacb34244a83f35e2b7aeea51ab6fc92fe6a71f18dabebb08163c29da7edb3`,
+records 12 dark-theme color cases, repeated with memory fills `0x00`, `0xa5`
+and `0xff`. The
+[Rust capture module](../../conformance/native_table/text_background_theme.rs)
+executes Base's complete theme constructor at `0xe5168`, `GetColor` at
+`0xe51a4`, `getColorByLightControl` at `0xe51d0`, `ColorToHSL` at `0xe48f8`,
+`RGBToHSL` at `0xe4964` and `HSLToColor` at `0xe4b34`. Only libc `fmod` is
+host supplied; its two calls per case retain double argument/result bits.
+Cases cover black, near-black, white and a colored sentinel at alpha zero,
+their alpha-one counterparts, and black/white at alpha 128 and 255. Nonzero
+alpha-one sentinels remain nonzero after mapping. Recorded input/output
+nonzero predicates describe those integers, rather than executing Widget
+background selection. This color-only capture has no density or geometry
+inputs and no span conversion, painting or pixels; it does not establish
+general bit-exact Rust/native RGB rounding.
+
+The native background painter has no object-span exclusion. At `0x65004`–
+`0x65018` it reads an 80-byte retained entry, derives its rectangle at
+`0x65030`–`0x6505c` and paints at `0x6507c`. An enabled composing tag can
+write ordinary background on an object slot and reach that rectangle path.
+This is a source-traced converter/painter contract, without a complete
+embedded-object preview capture.
 
 Composer table `GetDrawnTextData`, `0x37ef00`, reaches Text drawing through
 the Widget cell wrapper at `0x8c098`. Text `appendTextBlock`, `0x67ebc`, stores
@@ -398,12 +431,27 @@ type values across body text, placed text, table cells and code text.
 Valid modern composition spans are implemented: type 16 sets underline
 regardless of its boolean, and type 18 selects its background or bold/italic/
 underline branch. Preview and replay backgrounds choose nonzero composing
-ARGB ahead of ordinary; retained document PDF chooses ordinary. Generic
-SVG-to-PDF conversion retains the supplied SVG's preview background rather
+ARGB after theme mapping ahead of ordinary; retained document PDF chooses
+ordinary. Generic SVG-to-PDF conversion retains the supplied SVG's preview background rather
 than resolving source spans again. These preserve the traced consumer
 distinction without claiming complete native visual parity.
 
-Legacy/incomplete composition payloads report `UnsupportedCompositionStyle`;
+Rust integration regressions cover body, standalone, code, table and nested
+table/code contexts. They check composition flags, overlapping background
+selection, mapped transparent sentinels and object-only diagnostics across
+SVG/replay, retained PDF and supplied-SVG PDF. PDF source assertions decode
+stored text through its ToUnicode map, separately from extractor-inferred
+spacing, and the generated files retain text without image replacements.
+
+Enabled composing-tag backgrounds on inline-object entries remain unsupported:
+native entry background painting includes those slots, while Rust's text
+background path excludes them. Rust reports `UnsupportedCompositionStyle` for
+the affected object's source range and owner; supported ordinary text in the
+same tag span retains its background. Disabled composing tags retain their
+implemented bold/italic/underline behavior on text.
+
+Legacy/incomplete composition payloads also report
+`UnsupportedCompositionStyle`;
 suggestion and correction appearance remains unimplemented and reports
 `UnsupportedSuggestionStyle` or `UnsupportedCorrectionStyle`. Typed suggestion
 decoding is distinct from its decoration rendering. Diagnostics retain source
