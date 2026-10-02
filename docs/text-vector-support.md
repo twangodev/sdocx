@@ -10,8 +10,8 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 
 | Area | Implemented scope | Evidence and limits |
 | --- | --- | --- |
-| Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, typed paint/measurement projections and explicit Widget/Drawing span producers, authoritative parsed heading spans, modern composition, selected-face CBDT metadata and native hyperlink gating | Rust font/Unicode regressions and browser embedded-font checks. Legacy/incomplete composition and suggestion/correction remain unsupported. Device fallback selection and variable fonts remain outside scope. |
-| Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics and captured body/code/table origins; emergency breaking, RTL justification and all standalone native modes are not established. |
+| Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, typed paint/measurement projections and explicit Widget/Drawing span producers, authoritative parsed heading spans, modern composition, selected-face CBDT metadata and native hyperlink gating | Rust font/Unicode regressions, browser embedded-font checks and [native NAME/default selection](reverse-engineering/text-layout-findings.md#captured-span-font-name-and-default-selection) under supplied XML/four pinned faces. Legacy/incomplete composition and suggestion/correction remain unsupported. Device fallback selection and variable fonts remain outside scope. |
+| Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics, captured body/code/table origins and [native ordinary wrap arithmetic](reverse-engineering/text-layout-findings.md#captured-ordinary-wrap-arithmetic) for supplied entries. Complete Rust/native wrap parity, emergency breaking, RTL justification and all standalone native modes are not established. |
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
@@ -225,8 +225,14 @@ composition or horizontal f32 ownership/adjacency.
   the initial 400/false. `PaintSpanProfile` reproduces scalar source-style
   fields and rejects fake-bold metric inputs; device font resolution and
   physical style-face synthesis remain outside its contract.
+  A separate [NAME/default capture](reverse-engineering/text-layout-findings.md#captured-span-font-name-and-default-selection)
+  observes 130 native profiles with actual XML parsing and four physical
+  Roboto styles; nullable versus empty names and suffix selection are verified
+  under that supplied configuration, separately from Rust/device font selection.
   Production paragraph measurement still shapes in font units and projects
-  them in f64. The bounded producer and exact arithmetic comparisons remain
+  them in f64; retained logical owner offsets and transport advances serve
+  PDF, SVG, viewport ink and markers. The bounded producer and exact arithmetic
+  comparisons remain
   separate from document widths, wrapping, fallback selection and Chromium
   glyph reproduction.
 - Native preview background geometry for embedded objects is captured through

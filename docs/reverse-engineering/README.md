@@ -42,7 +42,9 @@ Planning, task lists and development progress are kept outside these documents.
   domains, including Skia hinting, HarfBuzz advance conversion and captured
   post-shaping geometry, bounded Rust paint metrics and paint-sized shaping,
   mixed-script chunk arithmetic and itemization, whole-piece Rust measurement,
-  logical-entry cache conversion, complete span paint profiles and horizontal
+  logical-entry cache conversion, complete span paint profiles, native NAME/default
+  selection under supplied XML, captured ordinary
+  block-selection/placement arithmetic and horizontal
   GPOS/fused-skew traces, with separate paragraph/vector
   transport boundaries.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span

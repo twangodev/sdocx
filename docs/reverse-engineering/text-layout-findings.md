@@ -1163,9 +1163,12 @@ at `0x76b28` selects glyph-ID encoding through
 
 These instruction findings establish the conversion sequence and defaults.
 They do not capture actual native glyph advances or establish a universal
-width correction. Rust's production paragraph measurer still retains integer
-font-unit shaping results, integer pen accumulation and f64
-font-size/units-per-em scaling. The bounded paint-shaping API below is a
+width correction. Rust's production paragraph measurer still shapes in
+font units, accumulates the producer pen as integers and projects geometry
+with f64 font-size/units-per-em scaling. It retains logical owner offsets
+and transport advances in `MeasuredGlyph`, shared by PDF, SVG, viewport ink
+and marker consumers; browser reproduction independently compares raw
+font-unit shaping. The bounded paint-shaping API below is a
 separate producer; local f32 line-band parity does not reproduce these native
 horizontal numeric stages in document layout.
 
@@ -1729,6 +1732,41 @@ metadata controls. Native font-name/XML/system-default resolution, physical
 style-face selection, synthesis metrics, whole `SpanRunFunctor`, shaping,
 fallback, wrapping and document composition remain outside this capture.
 
+### Captured span font-name and default selection
+
+The [Rust capture](../../conformance/native_table/text_span_font_name.rs) and
+[`table-text-span-font-name.json`](../../conformance/table-text-span-font-name.json),
+SHA-256
+`20ca51223fa1b5a010786586a12ab4d4c5937cd5ba4e1362ff661d6fab069754`,
+record 130 profiles through actual `FontManager` initialization and
+`FontListParser`, bundled libxml2/libc++, native file-font construction and
+the `SpanRunFunctor` name/default-selection window (`0x7710c`–`0x7719c`).
+The virtual factory call at `0x77184` returns a Typeface consumed by the
+complete paint helper (`0x76ad4`) and actual `TextPaint::setTypeface`
+(`0x7b8bc`). Three allocation fills, repeated zero-fill and an independent
+driver agree byte for byte.
+
+The supplied XML defines one `sans-serif` family with pinned Roboto Regular,
+Bold, Italic and BoldItalic files. A null span NAME uses the supplied default;
+a nonnull empty NAME suppresses it. `Roboto-Regular`, `Roboto-Bold`,
+`Roboto-Italic` and `Roboto-BoldItalic` resolve through the native suffix
+parser (`0x8a42c`) to matching physical files and style metadata. `Roboto`,
+`Roboto Bold`, empty and missing names select the supplied regular face.
+The factory receives the caller direction unchanged. With both names null,
+direction false yields `sans-serif` family metadata and true yields empty
+family metadata, while both select the same physical regular file.
+
+The capture observes physical best-match (`0x913d4`), source getters
+(`0x88ab4`–`0x88b68`), face index, file length/hash and retained typeface
+pointer. It also captures final Typeface weight/italic copied into paint,
+independently of fake-bold/skew source flags. Style comparisons exclude
+unwritten getter padding. XML, files, source size/style and direction are
+caller inputs; source IDs are process-local with a fixed seed/file order.
+This is a fixture font configuration, not Samsung device font configuration.
+Alternate XML/schema/error paths, fallback glyph selection, shaping/metrics,
+fake-bold metric support, later whole-span execution, wrapping, composition
+and SVG output remain outside the capture.
+
 ### Direction, break boundaries and tabs
 
 `RichTextMeasure::measureParagraph`, `0x78a0c`, calls ICU
@@ -1958,14 +1996,27 @@ existing vector pointer at `0x707ec`.
 
 `DoParagraphLayout` reads each stored float advance from member 0 of an
 80-byte `MeasureData` entry (`0x72cf4`–`0x72d00`), annotates bidi/break
-fields, and passes the same paragraph entries into
+fields, and separately computes the natural paragraph width. That width
+starts with the `f32` sum of left/right margins (`0x72ca4`–`0x72cb0`),
+folds the entry advances with `f32` additions (`0x72d88`), then adds the
+`f32` constant `0.001` at rodata `0x26684` (bits `0x3a83126f`).
+`frintp`, signed 32-bit conversion and conversion back to `f32` produce
+the value stored at paragraph record member 20 (`0x72dd0`–`0x72dfc`).
+This rounded natural width is separate from the unrounded candidate
+comparisons in `GetBlockInfo`. The function passes the same entries into
 `CalculateParagraphLayout` (`0x72e14`–`0x72e50`). The latter calls
-`ParagraphLayout::DoLayTextOut` at `0x73ee0`. `GetBlockInfo` adds stored
-advances when testing/committing candidates (`0x6ada4`, `0x6ae04`–
-`0x6ae18`, `0x6af08`–`0x6af0c`); `SetLayout` places ordinary entries by
-advancing X with member 0 (`0x6b6e8`, `0x6b73c`). These inspected line
+`ParagraphLayout::DoLayTextOut` at `0x73ee0`. `SetLayout` places ordinary
+entries with an independent `f32` addition of X and member 0 for the
+right edge and next cursor (`0x6b6fc`, `0x6b73c`). It moves cached ink at
+member 32 by removing the old entry point and adding the new X/baseline
+(`0x6b70c`–`0x6b734`), then unions that placed ink into line record
+member 24 (`0x6b8a8`–`0x6b940`). The ink is not the ordinary wrapping
+width. These inspected line
 selection and placement functions do not call the Minikin measurement
-producer again when a line boundary is chosen.
+producer again when a line boundary is chosen. The natural paragraph-width
+ceiling above remains instruction evidence without a runtime capture;
+the bounded ordinary block selection and placement capture below does not
+establish complete Rust wrapping parity.
 
 The corresponding Rust contract is to shape the paragraph's joined runs
 once, retain source/cluster mappings and advances, then select and position
@@ -1986,16 +2037,51 @@ The native contract retains selected glyphs, face choices and cluster positions
 from the same measurement result, including clusters spanning several UTF-16
 entries. Matching line advance alone does not establish this placement contract.
 
-`ParagraphLayout::GetBlockInfo`, `0x6ab9c`, accumulates measured advances
-and tests candidate width against the current available rectangle with a
-strict `>` comparison (`0x6ae80`–`0x6ae84`): an exactly fitting candidate
-fits. A committed break is tracked when the current paragraph-relative
-index equals the stored break end minus one (`0x6af18`–`0x6af38`). Spaces
-and tabs also commit a break; their space counts increase by 1 and 4
-respectively (`0x6af4c`–`0x6af98`). On overflow it uses the last committed
+`ParagraphLayout::GetBlockInfo`, `0x6ab9c`, keeps committed width in
+`s10` and pending word width in `s8`. Its candidate is
+`f32(f32(committed + pending) + entry_advance)` (`0x6ae04`, `0x6ae18`),
+and each entry separately adds to pending width (`0x6af08`–`0x6af0c`).
+This grouping is not one continuous fold of all entry advances. It tests
+the candidate against the current available rectangle with a strict `>`
+comparison (`0x6ae80`–`0x6ae84`): an exactly fitting candidate fits. A
+committed break is tracked when the current paragraph-relative index
+equals the stored break end minus one (`0x6af18`–`0x6af38`). That break,
+spaces and tabs add pending width to committed width and reset pending
+(`0x6af34`, `0x6af64`, `0x6af80`); space counts increase by 1 and 4 for
+spaces and tabs respectively. The final block width at member 16 is the
+`f32` sum of pending and committed widths (`0x6afd0`–`0x6aff8`). On
+overflow it uses the last committed
 break when its index is at least 1 (`0x6b014`–`0x6b028`), otherwise the
 preceding index (`0x6b03c`–`0x6b06c`). This is measured greedy wrapping,
 not a character-count estimate.
+
+### Captured ordinary wrap arithmetic
+
+The [Rust capture](../../conformance/native_table/text_wrap_numeric.rs) and
+[`table-text-wrap-numeric.json`](../../conformance/table-text-wrap-numeric.json)
+execute complete native `GetBlockInfo` (`0x6ab9c`) and `SetLayout`
+(`0x6b4a4`) against supplied advances, entry kinds, break ends, rectangles,
+old positions, ink and visual maps. The fixture SHA-256 is
+`b3380614708e4a16712f2bdfa9d9a80ed3610b733f4ff274d50d09da962e09b8`.
+Its 17 cases supply 59 UTF-16 slots and capture 55 candidate operand/result
+pairs, 16 commit operations and 45 selected/placed slots. Three memory fills,
+the repeated zero-fill run and an independent process agree byte for byte.
+
+For supplied advances `[2^24, 1, 1]`, grouped breaks produce block width
+16777218 and a continuous pending word produces 16777216. Independent
+`SetLayout` cursor additions end at 16777216 in both cases. Controls cover
+adjacent `f32` budgets around 30, zero-width continuation, oversized first
+entries, negative advances, index-zero breaks, committed versus pending
+words, spaces, tabs and justification. Changed supplied ink/old points alter
+retained line ink while selected range, block width and new points remain
+equal.
+
+This capture supplies the single-line shell, maxima copied from the actual
+block, baseline spacing, visual-to-logical map and ordinary cached entry data.
+Synthetic large/negative advances are numeric controls, not font-produced
+metrics. Native shaping, font selection, ICU break/bidi production, the
+automatic paragraph wrapping loop, natural-width ceiling, draw clip gates,
+full composition and raster/vector output do not execute.
 
 An oversized first ordinary entry can still be included. The helper
 `isCharacterOverflowWidth`, `0x6c5b0`, requires the candidate to be the
