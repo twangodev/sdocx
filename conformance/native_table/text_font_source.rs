@@ -3,16 +3,17 @@ use frames::{BASE, BASE_SHA256};
 use geometry::TEXT_SHA256;
 use std::collections::{BTreeMap, BTreeSet};
 
-const TEXT: u64 = 0x0500_0000;
+pub(super) const TEXT: u64 = 0x0500_0000;
 const SKIA: u64 = 0x0600_0000;
 const SOURCE_HEAP: u64 = 0x0800_0000;
 const FONT_BYTES: u64 = 0x0900_0000;
 const HOST: u64 = 0x0700_0000;
-const SKIA_SHA256: &str = "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d";
+pub(super) const SKIA_SHA256: &str =
+    "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d";
 const FONT: u64 = MODEL + 0x10000;
 const INPUT: u64 = MODEL + 0x11000;
 
-fn bytes(engine: Engine, address: u64, length: usize) -> Vec<u8> {
+pub(super) fn bytes(engine: Engine, address: u64, length: usize) -> Vec<u8> {
     assert!(length <= 0x400000);
     let mut result = vec![0; length];
     if length != 0 {
@@ -42,7 +43,7 @@ fn string(engine: Engine, address: u64) -> String {
     String::from_utf8(bytes(engine, pointer, length)).unwrap()
 }
 
-fn json_string(value: &str) -> String {
+pub(super) fn json_string(value: &str) -> String {
     use std::fmt::Write;
     let mut output = String::from("\"");
     for character in value.chars() {
@@ -483,50 +484,113 @@ fn font_output(machine: &Machine, font: u64, expected_language: &str) -> String 
     )
 }
 
+pub(super) const FONT_SHA256: &str =
+    "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d";
+pub(super) struct NativeFontEnvironment {
+    recorder: Recorder,
+    snapshots: Vec<(u64, Vec<u8>)>,
+    file_size: usize,
+}
+impl NativeFontEnvironment {
+    pub(super) fn new(
+        machine: &Machine,
+        base: &Path,
+        text: &Path,
+        skia: &Path,
+        font: &Path,
+    ) -> Self {
+        let digest = Command::new("sha256sum").arg(font).output().unwrap();
+        assert!(digest.status.success());
+        assert_eq!(
+            std::str::from_utf8(&digest.stdout)
+                .unwrap()
+                .split_whitespace()
+                .next()
+                .unwrap(),
+            FONT_SHA256
+        );
+        let libraries = [
+            (base, BASE, BASE_SHA256),
+            (text, TEXT, TEXT_SHA256),
+            (skia, SKIA, SKIA_SHA256),
+        ];
+        for (path, address, hash) in libraries {
+            map_library(machine.engine, path, address, hash);
+        }
+        check(unsafe { uc_mem_map(machine.engine, HOST, 0x10000, 7) });
+        check(unsafe { uc_mem_map(machine.engine, SOURCE_HEAP, 0x800000, 7) });
+        check(unsafe { uc_mem_map(machine.engine, FONT_BYTES, 0x100000, 7) });
+        let data = fs::read(font).unwrap();
+        assert_eq!(data.len(), 515100);
+        write(machine.engine, FONT_BYTES, &data);
+        let binaries: Vec<_> = libraries
+            .iter()
+            .map(|(path, address, _)| (Binary::new(path), *address))
+            .collect();
+        let mut exports = BTreeMap::new();
+        for (binary, address) in &binaries {
+            binary.exports(*address, &mut exports);
+        }
+        let mut imports = BTreeMap::new();
+        for (binary, address) in &binaries {
+            binary.bind(machine.engine, *address, &exports, &mut imports);
+        }
+        assert!(imports.len() < 2048);
+        let recorder = Recorder::new(machine, imports);
+        let snapshots: Vec<_> = binaries
+            .iter()
+            .flat_map(|(binary, address)| writable_snapshots(binary, machine.engine, *address))
+            .collect();
+        Self {
+            recorder,
+            snapshots,
+            file_size: data.len(),
+        }
+    }
+    pub(super) fn reset(&mut self, machine: &Machine, fill: u8, seed: u32) {
+        for (address, snapshot) in &self.snapshots {
+            write(machine.engine, *address, snapshot);
+        }
+        write(machine.engine, MODEL, &vec![fill; 0x100000]);
+        write(machine.engine, FONT, &[0; 0x1000]);
+        write(machine.engine, SKIA + 0x2ac318, &seed.to_le_bytes());
+        self.recorder.state.allocations.clear();
+        self.recorder.state.cursor = SOURCE_HEAP;
+        self.recorder.state.fill = fill;
+        self.recorder.state.once.clear();
+        self.recorder.state.thread_values.clear();
+        self.recorder.state.opened_paths.clear();
+        self.recorder.state.file_size = self.file_size;
+    }
+    pub(super) fn construct_font(
+        &mut self,
+        machine: &Machine,
+        destination: u64,
+        language: &str,
+        weight: u64,
+        italic: bool,
+    ) {
+        write(machine.engine, destination, &[0; 24]);
+        native_string(machine, FONT + 0x100, "supplied/Roboto-Regular.ttf");
+        native_string(machine, FONT + 0x120, language);
+        write(machine.engine, FONT + 0x140, &[0; 24]);
+        machine.call(
+            TEXT + 0x85604,
+            &[
+                destination,
+                FONT + 0x100,
+                0,
+                FONT + 0x140,
+                weight,
+                u64::from(italic),
+                FONT + 0x120,
+            ],
+        );
+    }
+}
+
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Path, font: &Path) {
-    const FONT_SHA256: &str = "56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d";
-    let digest = Command::new("sha256sum").arg(font).output().unwrap();
-    assert!(digest.status.success());
-    assert_eq!(
-        std::str::from_utf8(&digest.stdout)
-            .unwrap()
-            .split_whitespace()
-            .next()
-            .unwrap(),
-        FONT_SHA256
-    );
-    let libraries = [
-        (base, BASE, BASE_SHA256),
-        (text, TEXT, TEXT_SHA256),
-        (skia, SKIA, SKIA_SHA256),
-    ];
-    for (path, address, hash) in libraries {
-        map_library(machine.engine, path, address, hash);
-    }
-    check(unsafe { uc_mem_map(machine.engine, HOST, 0x10000, 7) });
-    check(unsafe { uc_mem_map(machine.engine, SOURCE_HEAP, 0x800000, 7) });
-    check(unsafe { uc_mem_map(machine.engine, FONT_BYTES, 0x100000, 7) });
-    let data = fs::read(font).unwrap();
-    assert_eq!(data.len(), 515100);
-    write(machine.engine, FONT_BYTES, &data);
-    let binaries: Vec<_> = libraries
-        .iter()
-        .map(|(path, address, _)| (Binary::new(path), *address))
-        .collect();
-    let mut exports = BTreeMap::new();
-    for (binary, address) in &binaries {
-        binary.exports(*address, &mut exports);
-    }
-    let mut imports = BTreeMap::new();
-    for (binary, address) in &binaries {
-        binary.bind(machine.engine, *address, &exports, &mut imports);
-    }
-    assert!(imports.len() < 2048);
-    let mut recorder = Recorder::new(machine, imports);
-    let snapshots: Vec<_> = binaries
-        .iter()
-        .flat_map(|(binary, address)| writable_snapshots(binary, machine.engine, *address))
-        .collect();
+    let mut environment = NativeFontEnvironment::new(machine, base, text, skia, font);
     let languages = [
         "",
         "und",
@@ -541,51 +605,13 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Pa
             for seed in [0_u32, 41] {
                 let mut canonical = None;
                 for fill in [0, 0xa5, 0xff, 0] {
-                    for (address, snapshot) in &snapshots {
-                        write(machine.engine, *address, snapshot);
-                    }
-                    write(machine.engine, MODEL, &vec![fill; 0x100000]);
-                    write(machine.engine, FONT, &[0; 0x1000]);
-                    write(machine.engine, SKIA + 0x2ac318, &seed.to_le_bytes());
-                    recorder.state.allocations.clear();
-                    recorder.state.cursor = SOURCE_HEAP;
-                    recorder.state.fill = fill;
-                    recorder.state.once.clear();
-                    recorder.state.thread_values.clear();
-                    recorder.state.opened_paths.clear();
-                    recorder.state.file_size = data.len();
-                    native_string(machine, FONT + 0x100, "supplied/Roboto-Regular.ttf");
-                    native_string(machine, FONT + 0x120, language);
-                    machine.call(
-                        TEXT + 0x85604,
-                        &[
-                            FONT,
-                            FONT + 0x100,
-                            0,
-                            FONT + 0x140,
-                            weight,
-                            u64::from(italic),
-                            FONT + 0x120,
-                        ],
-                    );
+                    environment.reset(machine, fill, seed);
+                    environment.construct_font(machine, FONT, language, weight, italic);
                     let first = font_output(machine, FONT, language);
                     assert_eq!(machine.call(TEXT + 0x85d7c, &[FONT]), u64::from(seed + 1));
                     let reserved = machine.call(SKIA + 0x21a85c, &[]);
                     assert_eq!(reserved, u64::from(seed + 2));
-                    native_string(machine, FONT + 0x100, "supplied/Roboto-Regular.ttf");
-                    native_string(machine, FONT + 0x120, language);
-                    machine.call(
-                        TEXT + 0x85604,
-                        &[
-                            FONT + 0x20,
-                            FONT + 0x100,
-                            0,
-                            FONT + 0x140,
-                            weight,
-                            u64::from(italic),
-                            FONT + 0x120,
-                        ],
-                    );
+                    environment.construct_font(machine, FONT + 0x20, language, weight, italic);
                     let second = font_output(machine, FONT + 0x20, language);
                     assert_eq!(
                         machine.call(TEXT + 0x85d7c, &[FONT + 0x20]),
@@ -599,13 +625,13 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Pa
                         read_u64(machine.engine, second_impl + 8)
                     );
                     assert_eq!(
-                        recorder.state.opened_paths,
+                        environment.recorder.state.opened_paths,
                         vec!["supplied/Roboto-Regular.ttf"; 2]
                     );
                     let output = format!(
                         "{{\"language_input\":{},\"requested_weight\":{weight},\"requested_italic\":{italic},\"source_counter_seed\":{seed},\"interleaved_reserved_id\":{reserved},\"opened_paths\":{},\"independent_instances_have_distinct_sources\":true,\"instances\":[{first},{second}]}}",
                         json_string(language),
-                        json_strings(&recorder.state.opened_paths)
+                        json_strings(&environment.recorder.state.opened_paths)
                     );
                     if let Some(previous) = &canonical {
                         assert_eq!(&output, previous);
