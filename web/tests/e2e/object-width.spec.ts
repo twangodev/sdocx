@@ -122,8 +122,8 @@ test('native Flow uses prepared table width for following text and wrapping', as
 		expect(result.b.x, `width ${example.width}, constraint ${example.constraint}`).toBeCloseTo(example.bX, 4);
 		if (example.wrapped) expect(result.b.y).toBeGreaterThan(result.a.y);
 		else expect(result.b.y).toBe(result.a.y);
-		expect(result.table.x).toBe(example.constraint === 0 ? 10 : 11);
-		expect(result.table.width).toBe(61);
+		expect(result.table.x).toBeCloseTo(example.constraint === 0 ? Math.fround(nativeAAdvance + 4) : 11, 4);
+		expect(result.table.width).toBe(example.constraint === 0 ? 20 : 61);
 		expect(result.text).toBe(example.wrapped ? 'ATB' : 'ABT');
 		expect(result.imageCount).toBe(0);
 		const pdf = await PDFDocument.load(new Uint8Array(result.pdf));
