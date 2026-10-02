@@ -186,8 +186,8 @@ composition or horizontal f32 ownership/adjacency.
 - [Single-face shaping captures](reverse-engineering/text-layout-findings.md#captured-native-shaping)
   execute native HarfBuzz and Skia/FreeType with supplied Roboto and caller
   paint inputs. A [typed post-shaping model](reverse-engineering/text-layout-findings.md#captured-post-shaping-numeric-geometry)
-  matches full/owner positions, ink and advances for 224 captured glyphs across
-  32 single-Latin-chunk cases, using supplied native shaping output and bounds.
+  matches full/owner positions, ink and advances for 236 captured glyphs across
+  36 single-Latin-chunk cases, using supplied native shaping output and bounds.
   It rejects multiple chunks and unsupported metric inputs. The model is
   test-only; production paragraph measurement still shapes in font units and
   projects them in f64. Neither the exact arithmetic comparisons nor captured
@@ -197,6 +197,9 @@ composition or horizontal f32 ownership/adjacency.
   23 supplied-Roboto cases. It supports horizontal scale one and skew zero,
   reports unsupported inputs explicitly, and remains separate from production
   paragraph measurement and GPOS shaping.
+  [Captured GPOS and fused-skew traces](reverse-engineering/text-layout-findings.md#captured-horizontal-gpos-scaling-and-fused-skew)
+  verify four horizontal pair-value updates and 12 local skew operations;
+  they establish bounded native arithmetic, not a complete GPOS backend.
 - Native preview background geometry for embedded objects is captured through
   measurement, placement and rectangle commands for 40 supplied cases. Inline
   backgrounds include margins; block backgrounds use visible width despite a

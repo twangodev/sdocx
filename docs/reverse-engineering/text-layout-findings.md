@@ -1291,6 +1291,48 @@ slots/fakery, malformed owners/ranges and nonfinite geometry return typed
 unavailability. This is a bounded arithmetic model, not an alternate font
 shaper or the production paragraph measurement path.
 
+### Captured horizontal GPOS scaling and fused skew
+
+[`table-text-shaping-gpos.json`](../../conformance/table-text-shaping-gpos.json),
+SHA-256
+`9280953ac5de0b6b745baedcda73cf4d88a95a7b52cbfbc99188e0b66a71efb2`,
+records four cases through the same supplied-font producer and host boundaries.
+It contains four HarfBuzz calls, 12 glyphs, 12 UTF-16 advance slots, 12 raw
+metric/bounds samples, four horizontal GPOS adjustment events and 12 local
+fused-skew traces. The original and numeric fixtures remain separate.
+
+The capture observes the actual `ValueFormat=4` horizontal `x_advance` path:
+`0xd013c` multiplies the signed 16-bit table value by the font's signed 16.16
+multiplier; `0xd014c` logically shifts the 64-bit product register right 16;
+`0xd0150` exposes the low 32-bit delta; `0xd015c` follows the destination update.
+Source byte offsets
+identify values inside the supplied font's GPOS table, which starts at
+`0x71bf0`. The `AV` value at `0x79464` is `-87`; `To` at `0x79760` is `-99`.
+For default `AV`, multiplier 13926400 gives product `-1211596800`, adjustment
+`-18488` and first-glyph advance `283904 -> 265416`. Interpreting the low 32
+bits as a signed delta equals flooring the negative fractional adjustment for
+these captured products. Adding 32768 before shifting changes every one of
+the four captured deltas.
+
+The [GPOS regressions](../../crates/sdocx/src/render/fonts/native_gpos_tests.rs)
+verify the fixture/font hashes, source bytes and GPOS table bounds, glyph/owner
+identity, scale-derived multiplier, executed product, shifted delta and stored
+position. The pre-adjustment advance also equals the actual recorded vector
+callback result. These tests establish this horizontal value path for the
+captured pairs, not every GPOS value format, anchor, device/variation correction
+or a production shaping implementation.
+
+The skew trace reads operands at `0x9cab0` and the actual fused result at
+`0x9cab4`, before adding the horizontal pen. In `pair_combining_fma`, offsets
+47.67578125 and -8.36328125 with skew bits `0xbc0000f5` produce native result
+bits `0x423e7117`. Separately rounding the multiplication and subtraction
+produces `0x423e7118`. The [typed geometry controls](../../crates/sdocx/src/render/text/native_shaping/fixture_tests.rs)
+compare the local operation directly, since a later pen addition can erase
+that one-step difference. Across the three fixtures, the post-shaping model
+matches 36 supported cases, 236 glyph placements and 237 UTF-16 advance slots;
+the vector conversion matches 242 callback samples. Native glyph output and
+raw bounds remain supplied inputs to that test-only model.
+
 ### Bounded Rust paint metrics
 
 [`ResolvedFace::paint_metrics`](../../crates/sdocx/src/render/fonts.rs) exposes a
