@@ -23,6 +23,7 @@ pub struct ResolvedFace {
     pub style: Style,
     data: Arc<dyn AsRef<[u8]> + Send + Sync>,
     ink_bounds: Arc<Mutex<HashMap<u16, Option<rustybuzz::ttf_parser::Rect>>>>,
+    has_cbdt_table: bool,
     pub index: u32,
     pub metrics: FontMetrics,
 }
@@ -49,6 +50,7 @@ impl fmt::Debug for ResolvedFace {
             .field("style", &self.style)
             .field("index", &self.index)
             .field("metrics", &self.metrics)
+            .field("has_cbdt_table", &self.has_cbdt_table)
             .finish_non_exhaustive()
     }
 }
@@ -290,6 +292,12 @@ impl FontBook {
                 line_gap: face.line_gap(),
                 cap_height: face.as_ref().capital_height(),
             },
+            has_cbdt_table: face
+                .as_ref()
+                .raw_face()
+                .table_records
+                .into_iter()
+                .any(|record| record.tag == rustybuzz::ttf_parser::Tag::from_bytes(b"CBDT")),
             data,
             ink_bounds: Arc::new(Mutex::new(HashMap::new())),
             index,
@@ -326,6 +334,11 @@ impl Default for FontBook {
 }
 
 impl ResolvedFace {
+    /// Matches the native bitmap-font gate: the selected face declares a CBDT table.
+    pub fn is_bitmap_font(&self) -> bool {
+        self.has_cbdt_table
+    }
+
     pub(crate) fn synthesis(
         &self,
         requested_weight: Weight,
@@ -444,6 +457,79 @@ mod tests {
         let mut buffer = UnicodeBuffer::new();
         buffer.push_str(text);
         buffer
+    }
+
+    fn retag_optional_table(bytes: &mut [u8], index: usize, tag: [u8; 4]) {
+        let offset = if bytes.starts_with(b"ttcf") {
+            u32::from_be_bytes(bytes[12 + index * 4..16 + index * 4].try_into().unwrap()) as usize
+        } else {
+            assert_eq!(index, 0);
+            0
+        };
+        let count = usize::from(u16::from_be_bytes(
+            bytes[offset + 4..offset + 6].try_into().unwrap(),
+        ));
+        let directory = &mut bytes[offset + 12..offset + 12 + count * 16];
+        let (records, remainder) = directory.as_chunks_mut::<16>();
+        assert!(remainder.is_empty());
+        let record = records
+            .iter_mut()
+            .find(|record| &record[..4] == b"gasp")
+            .unwrap();
+        record[..4].copy_from_slice(&tag);
+        records.sort_unstable_by_key(|record| <[u8; 4]>::try_from(&record[..4]).unwrap());
+    }
+
+    fn font_book(bytes: Vec<u8>) -> FontBook {
+        let mut database = Database::new();
+        database.load_font_data(bytes);
+        FontBook::new(Arc::new(database))
+    }
+
+    #[test]
+    fn bitmap_gate_retains_cbdt_directory_presence_without_requiring_bitmap_payloads() {
+        let roboto = include_bytes!("../../assets/fonts/Roboto-Regular.ttf");
+        assert!(
+            !FontBook::default()
+                .resolve("Roboto", false, false)
+                .unwrap()
+                .is_bitmap_font()
+        );
+        for tag in [*b"CBDT", *b"COLR", *b"SVG ", *b"sbix", *b"EBDT"] {
+            let mut bytes = roboto.to_vec();
+            retag_optional_table(&mut bytes, 0, tag);
+            let raw = rustybuzz::ttf_parser::RawFace::parse(&bytes, 0).unwrap();
+            assert!(
+                raw.table_records
+                    .into_iter()
+                    .any(|record| record.tag == rustybuzz::ttf_parser::Tag::from_bytes(&tag))
+            );
+            let book = font_book(bytes);
+            let face = book.resolve("Roboto", false, false).unwrap();
+            assert_eq!(face.is_bitmap_font(), tag == *b"CBDT");
+            assert_eq!(
+                book.resolve("Roboto", false, false)
+                    .unwrap()
+                    .is_bitmap_font(),
+                face.is_bitmap_font()
+            );
+            assert_eq!(face.clone().is_bitmap_font(), face.is_bitmap_font());
+        }
+    }
+
+    #[test]
+    fn bitmap_gate_uses_selected_collection_face() {
+        let collection = include_bytes!("../../tests/assets/fonts/Roboto-DejaVuSans.ttc");
+        for selected in [0, 1] {
+            let mut bytes = collection.to_vec();
+            retag_optional_table(&mut bytes, selected, *b"CBDT");
+            let book = font_book(bytes);
+            for (index, family) in ["Roboto", "DejaVu Sans"].into_iter().enumerate() {
+                let face = book.resolve(family, false, false).unwrap();
+                assert_eq!(face.index as usize, index);
+                assert_eq!(face.is_bitmap_font(), index == selected);
+            }
+        }
     }
 
     #[test]
