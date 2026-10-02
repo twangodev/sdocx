@@ -146,6 +146,43 @@ fn native_large_and_mixed_script_paint_metrics_match_captured_advances_and_ink()
 }
 
 #[test]
+fn native_entry_paints_preserve_fractional_hinted_ink() {
+    compare_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-entry-geometry.json"
+        )),
+        "4615a8778c0a7b6301bd9efddbd591da2fd00278d4a3f0db06b04e4b1c923dc4",
+        [8, 25, 0],
+    );
+    let face = FontBook::default().resolve("Roboto", false, false).unwrap();
+    let metrics = face
+        .paint_metrics(input(1712.5, PaintMetricMode::Normal))
+        .unwrap();
+    assert_eq!(metrics.glyph(84).unwrap().ink.right, 901.0);
+
+    let font = FontRef::from_index(face.bytes(), face.index).unwrap();
+    let outlines = font.outline_glyphs();
+    let hinting = HintingInstance::new(
+        &outlines,
+        Size::new(1712.5),
+        LocationRef::default(),
+        HintingOptions {
+            engine: Engine::AutoFallback,
+            target: skrifa::outline::SmoothMode::Normal.into(),
+        },
+    )
+    .unwrap();
+    let mut smooth = ControlBoundsPen::new();
+    outlines
+        .get(GlyphId::new(84))
+        .unwrap()
+        .draw(DrawSettings::hinted(&hinting, false), &mut smooth)
+        .unwrap();
+    assert_eq!(smooth.bounding_box().unwrap().x_max.ceil(), 900.0);
+}
+
+#[test]
 fn hinted_and_linear_advances_preserve_distinct_fixed_metric_domains() {
     let face = FontBook::default().resolve("Roboto", false, false).unwrap();
     let hinted = face

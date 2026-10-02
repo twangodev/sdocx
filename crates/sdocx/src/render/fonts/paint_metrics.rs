@@ -3,7 +3,7 @@ use skrifa::metrics::GlyphMetrics;
 use skrifa::outline::pen::{ControlBoundsPen, OutlinePen};
 use skrifa::outline::{
     DrawSettings, Engine, HintingInstance, HintingOptions, OutlineGlyphCollection,
-    OutlineGlyphFormat, SmoothMode,
+    OutlineGlyphFormat, Target,
 };
 use skrifa::raw::{TableProvider, tables::glyf::Glyph};
 use skrifa::{FontRef, GlyphId, MetadataProvider, Tag};
@@ -106,7 +106,7 @@ impl<'font> PaintMetrics<'font> {
                 LocationRef::default(),
                 HintingOptions {
                     engine: Engine::AutoFallback,
-                    target: SmoothMode::Normal.into(),
+                    target: Target::Mono,
                 },
             )?)
         } else {
