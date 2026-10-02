@@ -63,6 +63,172 @@ function cellNote(source: CapturedCell, offset: number) {
 	});
 }
 
+interface PlacedTableCapture {
+	name: string;
+	bounds_bits: number[];
+	texts_utf8: string[];
+	font_size_bits: number;
+	states: { cells: { emitted: { runs: CapturedRun[] } }[] }[];
+	writer: {
+		supplied_document_size_bits: number[];
+		writer_after: { cells: { slot: number; runs: {
+			range_inclusive: [number, number];
+			clip_selected: boolean;
+			world_clip_bits: number[] | null;
+			caller_origin_bits: [number, number];
+		}[] }[] };
+	};
+}
+
+interface ParsedTableCell {
+	content: {
+		text: string;
+		font_size: number;
+		gravity: number;
+		color: { r: number; g: number; b: number };
+	};
+}
+
+interface ParsedTable {
+	column_widths: number[];
+	rows: { height: number; cells: ParsedTableCell[] }[];
+	style: { content_bbox: { x_min: number; y_min: number; x_max: number; y_max: number } };
+}
+
+function placedTableNote(source: PlacedTableCapture, parentFontSizeBits?: number) {
+	const [width, height] = source.writer.supplied_document_size_bits.map(float);
+	const bounds = source.bounds_bits.map(float);
+	const base = (bbox: number[]) => frame(0, 1, join(u32(5500), u16(2), Buffer.from('tx'), zero(8), ...bbox.map(f64), zero(5)), f32(0));
+	const text = (value: string, bbox: number[], cell: boolean, objects = zero(8)) => {
+		const fontSizeBits = cell ? source.font_size_bits : parentFontSizeBits;
+		const spans = fontSizeBits === undefined ? [] : [
+			join(u16(20), ...[3, 0, value.length, 1].map(u32), u32(fontSizeBits)),
+			...(cell ? [join(u16(20), ...[1, 0, value.length, 1, 0xff252525].map(u32))] : [])
+		];
+		const paragraphs = cell ? join(u32(1), u16(16), ...[3, 0, 1, 2].map(u32)) : u32(0);
+		const common = join(u32(value.length), Buffer.from(value, 'utf16le'), u32(spans.length), ...spans, paragraphs, zero(16), Buffer.from([cell ? 1 : 0]), u16(0), objects);
+		return join(base(bbox), frame(6, 0), frame(7, 1, zero(0), join(u32(common.length), common)));
+	};
+	const record = (fixed: Buffer) => join(u32(0), Buffer.from([1, 0, 1, 0]), fixed);
+	const columnWidth = (bounds[2] - bounds[0]) / 2;
+	const rowHeight = (bounds[3] - bounds[1]) / 2;
+	const rows = [0, 1].map(row => {
+		const cells = [0, 1].map(column => {
+			const bbox = [column * columnWidth, row * rowHeight, (column + 1) * columnWidth, (row + 1) * rowHeight];
+			const content = text(source.texts_utf8[row * 2 + column], bbox, true);
+			return record(join(...[column, 1, 1, 0].map(u32), ...bbox.map(f64), zero(1), u32(content.length), content));
+		});
+		return record(join(f32(rowHeight), u32(row), u32(2), ...cells.flatMap(cell => [u32(cell.length), cell])));
+	});
+	const table = join(base(bounds), frame(22, 28, zero(0), join(u32(2), f32(columnWidth), f32(columnWidth), u32(2), ...rows.flatMap(row => [u32(row.length), row]), ...bounds.map(f64)), 4));
+	const objects = join(u32(1), u32(0), u32(1), u32(table.length + 20), u32(table.length), u32(22), table, u32(0), u32(0), u32(2));
+	const body = text('\ufffc', [0, 0, width, height], false, objects);
+	const title = text('', [0, 0, 0, 0], false);
+	const utf16 = (value: string) => join(u16(value.length), Buffer.from(value, 'utf16le'));
+	const note = join(zero(4), Buffer.from([1, 0, 1, 0]), u32(5500), utf16('placed'), u32(12), zero(16), ...[width, height, 0, 0, 4000].map(u32), u32(title.length), title, u32(body.length), body, u32(360), u32(height));
+	note.writeUInt32LE(note.length, 0);
+	const completeNote = join(note, utf16('Samsung Notes'));
+	const header = join(zero(8), Buffer.from([1, 0, 5]), zero(5), ...[0, width, height, 0, 0].map(u32), utf16('placed'), zero(8), u32(5500), u32(4000));
+	header.writeUInt32LE(header.length, 0);
+	header.writeUInt32LE(header.length, 4);
+	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(0), zero(32));
+	const tag = join(u32(5500), utf16('placed'), zero(8), u32(0), utf16(''), u32(width), f32(height), utf16('Samsung Notes'), u32(4), u32(4), utf16(''), u32(4000), zero(8), u32(0), u16(0), Buffer.from('Document for S-Pen SDK'));
+	return zipSync({
+		'note.note': join(completeNote, createHash('sha256').update(completeNote).digest()),
+		'placed.page': join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK')),
+		'end_tag.bin': join(u16(tag.length), tag)
+	}, { mtime: new Date(2000, 0, 1) });
+}
+
+test('public block table preview and PDF retain captured per-run native clips', async ({ page, browserName }) => {
+	test.skip(browserName !== 'chromium', 'Chromium preview and vector exports are the immediate target.');
+	const bytes = await readFile(resolve('../conformance/table-bodytext-one-page-obstacles.json'));
+	expect(createHash('sha256').update(bytes).digest('hex')).toBe('0a919c37edba851e952c112a8d0ac4f1c4a58f6856b5d118fd26ad75098d5da5');
+	const source = (JSON.parse(bytes.toString()) as { cases: PlacedTableCapture[] }).cases.find(value => value.name === 'ordinary-one-page-native-page-padding')!;
+	await page.route('https://rybbit.twango.dev/api/script.js', route => route.fulfill({ body: '' }));
+	await page.goto('/');
+	const result = await page.evaluate(async note => {
+		const module = await import(`${location.origin}/wasm/sdocx_wasm.js`);
+		await module.default();
+		const session = new module.DocumentSession(new Uint8Array(note));
+		try {
+			const parsed = session.inspection().document.metadata.note_text;
+			const svg = session.render_svg(0, 'light');
+			const document = new DOMParser().parseFromString(svg, 'image/svg+xml');
+			const groups = [...document.querySelectorAll('text')].map(text => {
+				const clips: number[][] = [];
+				for (let ancestor: Element | null = text; ancestor; ancestor = ancestor.parentElement) {
+					const clip = ancestor.getAttribute('clip-path');
+					if (!clip) continue;
+					const rect = document.getElementById(clip.slice(5, -1))!.querySelector('rect')!;
+					clips.push(['x', 'y', 'width', 'height'].map(attribute => Number(rect.getAttribute(attribute))));
+				}
+				return {
+					source: text.textContent,
+					origin: ['x', 'y'].map(attribute => Number(text.getAttribute(attribute))),
+					positions: [...text.querySelectorAll('tspan')].flatMap(span => span.getAttribute('x')!.trim().split(/\s+/).map(Number)),
+					clips
+				};
+			});
+			const metadata = session.inspection().document.metadata;
+			return { parsed, dimensions: metadata.default_page_dimensions, padding: metadata.flow_page_padding, pageMode: metadata.page_mode, groups, images: document.querySelectorAll('image, foreignObject').length, pdf: Array.from(session.render_pdf(0, 'light')) as number[] };
+		} finally { session.free(); }
+	}, [...placedTableNote(source)]);
+	expect(result.parsed.text).toBe('\ufffc');
+	expect(result.parsed.font_size ?? null).toBeNull();
+	expect(result.parsed.spans).toEqual([]);
+	expect(result.parsed.object_spans[0].layout_option).toBe('Block');
+	expect(result.parsed.object_spans[0].layout_constraint).toBe('OverPages');
+	expect(result.dimensions).toEqual([360, 600]);
+	expect(result.padding).toEqual([0, 0]);
+	expect(result.pageMode ?? 0).toBe(0);
+	const [width, height] = source.writer.supplied_document_size_bits.map(float);
+	expect(result.parsed.bbox).toEqual({ x_min: 0, y_min: 0, x_max: width, y_max: height });
+	const table = result.parsed.object_spans[0].content.Table as ParsedTable;
+	const [left, top, right, bottom] = source.bounds_bits.map(float);
+	expect(table.style.content_bbox).toEqual({ x_min: left, y_min: top, x_max: right, y_max: bottom });
+	expect(table.column_widths).toEqual([80, 80]);
+	expect(table.rows.map(row => row.height)).toEqual([4, 4]);
+	const cells = table.rows.flatMap(row => row.cells);
+	for (const [index, cell] of cells.entries()) {
+		expect(cell.content.text).toBe(source.texts_utf8[index]);
+		expect(cell.content.font_size).toBe(17);
+		expect(cell.content.gravity).toBe(1);
+		expect(cell.content.color).toEqual({ r: 37, g: 37, b: 37 });
+	}
+	const expected = source.writer.writer_after.cells.flatMap(cell => cell.runs.map(run => ({ ...run, slot: cell.slot })));
+	expect(result.groups).toHaveLength(expected.length);
+	for (const [index, group] of result.groups.entries()) {
+		const run = expected[index];
+		const local = source.states.at(-1)!.cells[run.slot].emitted.runs.find(value => value.range_inclusive[0] === run.range_inclusive[0] && value.range_inclusive[1] === run.range_inclusive[1])!;
+		const caller = run.caller_origin_bits.map(float);
+		expect(group.origin).toEqual(local.origin_bits.map((bits, axis) => float(bits) + caller[axis]));
+		expect(group.positions).toEqual(local.position_bits.map(bits => float(bits) + caller[0]));
+		expect(group.source).toBe(source.texts_utf8[run.slot].slice(run.range_inclusive[0], run.range_inclusive[1] + 1));
+		expect(group.clips.at(-1)).toEqual([0, 0, width, height]);
+		expect(group.clips).toHaveLength(run.clip_selected ? 2 : 1);
+		if (run.clip_selected) {
+			const [left, top, right, bottom] = run.world_clip_bits!.map(float);
+			expect(group.clips[0]).toEqual([left, top, right - left, bottom - top]);
+		}
+	}
+	expect(result.groups.flatMap(group => group.clips.slice(0, -1))).toHaveLength(2);
+	expect(result.images).toBe(0);
+	const pdf = await PDFDocument.load(new Uint8Array(result.pdf));
+	const objects = pdf.context.enumerateIndirectObjects().map(([, value]) => value);
+	const dictionaries = objects.map(value => value instanceof PDFRawStream ? value.dict.toString() : value.toString()).join('\n');
+	const contents = objects.filter((value): value is PDFRawStream => value instanceof PDFRawStream).map(stream => Buffer.from(decodePDFRawStream(stream).decode()).toString('latin1')).join('\n');
+	expect(dictionaries).toContain('/ToUnicode');
+	expect(dictionaries).toContain('/FontFile2');
+	expect(dictionaries).not.toMatch(/\/Subtype \/Image\b/);
+	const actualText = [...contents.matchAll(/\/ActualText\b/g)].map(match => {
+		const value = PDFObjectParser.forBytes(Buffer.from(contents.slice(match.index! + match[0].length), 'latin1'), pdf.context).parseObject();
+		if (!(value instanceof PDFHexString || value instanceof PDFString)) throw new Error('PDF ActualText must be a string.');
+		return value.decodeText();
+	});
+	expect(actualText).toEqual(result.groups.map(group => group.source));
+});
+
 test('certified cell text preserves captured runs, wrapping and translated selectable vector exports', async ({ page, browserName }) => {
 	test.skip(browserName !== 'chromium', 'Chromium preview and vector exports are the immediate target.');
 	const bytes = await readFile(resolve('../conformance/table-text-cell-emission.json'));
