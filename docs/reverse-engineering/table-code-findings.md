@@ -1211,6 +1211,120 @@ clip does not reproduce the conditional native contract.
 cmp /tmp/table-text-clipping.json conformance/table-text-clipping.json
 ```
 
+### Cell content model rectangles
+
+The cell rectangle and its content object's Model rectangle are independent
+stored values. `TableCell::SetRect`, `0x3c2008` / `0x3c2024`, and
+`SetRectDataOnly`, `0x3c20cc`, compare the requested rectangle with the cell's
+four f32 coordinates at member 64. Equality skips the content setter, even
+when the content rectangle differs; signed zero compares equal. A changed
+rectangle is stored in the cell, dispatched to the content object at member
+88, and marks cell bytes 81/82 as 1.
+
+`TableCellContentObject` has vtable address point `0x494bf0`. Its ordinary
+rectangle setter at slot 40 resolves to `ObjectShape::SetRect`, `0x397708`;
+slot 480 resolves to `SetRectDataOnly`, `0x399954`. The native shape and base
+setters execute through `ObjectShapeImpl::SetRect`, `0x3a6a60`,
+`ObjectBase::t_SetRectOnlyData`, `0x2d2b18`, and
+`ObjectBaseImpl::SetRect`, `0x2d7324`. The Model rectangle at BaseData member
+8 normalizes inverted axes; the cell's own rectangle retains the requested
+orientation.
+
+Drawn bounds at BaseData member 24 have a separate update gate.
+`ObjectBaseImpl::setDrawnRect`, `0x2d740c`, compares integer truncations of
+old/new width and height plus f32 epsilon bits `0x36a7c5ac`
+(`0x2d7468`, `0x2d7494`). Matching dimensions offset the existing drawn
+rectangle; differing dimensions replace it. A one-ULP width increase in the
+capture updates the Model rectangle but leaves the drawn width unchanged.
+
+[`table-cell-model-bounds.json`](../../conformance/table-cell-model-bounds.json),
+SHA-256 `898739ecada7c4a2b66f71a4893e712fbd484eb715d96dfdd51cbc882a2210fd`,
+records 60 cases: 15 initial/requested geometries through all four public
+setter variants. It covers equality, divergent cell/content bounds, translation,
+resizing, adjacent float coordinates, signed zero, degenerate and inverted
+dimensions. All methods return 1 and agree on geometry under the supplied
+detached-object conditions. Native type-0 template, fill and list constructors
+execute; geometry getters/setters are not replaced. Native allocation fills
+`0x00`, `0xa5`, and `0xff` produce identical results. Manually supplied objects
+are zero-initialized, with independent cell/content rectangles and initially
+matching Model/drawn content rectangles. Context and observer are nil, followers
+are disabled, and images are absent. Allocation, memory operations, mutex
+construction, Android logging and error reporting are host interfaces.
+Document history, observer/follower callbacks and Drawing layout are outside
+this capture.
+
+Embedded cloning uses a separate rectangle route. Composer `0x376464` dispatches
+slot 40 on the table to the inherited shape setter, through relocation
+`0x495200`. Its detached-context branch calls slot 480; it does not enter
+`ObjectTableImpl::SetRect` or its grid fitting loop. Cell copying at `0x3c29f4`
+preserves the cell rectangle and dispatches content copying to
+`ObjectShape::Copy`, `0x39841c`, without a target affine. Fresh Drawing frames
+derive from saved row heights and column widths; `updateCell`, `0xae914`,
+supplies their local dimensions to Widget layout width/height setters.
+`UpdateTextDrawingPosition`, `0xacc88`, is a single return instruction.
+These traces do not establish that the content Model rectangle changes with
+the measured frame or clone origin. Widget update callbacks are outside the
+setter capture.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --cell-model-bounds scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  > /tmp/table-cell-model-bounds.json
+cmp /tmp/table-cell-model-bounds.json conformance/table-cell-model-bounds.json
+```
+
+### Final PDF text clip paths
+
+The Pdfium text handler consumes the explicit clip in
+`0xa23e4`–`0xa2460` of `libSPenPdf.so`. It builds the rectangle with
+`CPDF_Path::AppendRect` after converting Y from the supplied page height:
+`[left, page_height - bottom, right, page_height - top]`. Each subtraction
+widens the rectangle coordinate to f64 and narrows the result back to f32
+(`0xa23f4`–`0xa2408`). The path is transformed with the paint's rotation and
+translation, then supplied to `CPDF_ClipPath::AppendPath` with fill type 1.
+
+The linked `libSPenPdfiumB.so` supplies the actual path constructor at
+`0x47957c`, rectangle append at `0x479768`, matrix conversion at `0x56efd8`,
+path transform at `0x4796e4`, and copy constructor at `0x479584`.
+`CFX_Path::Transform`, `0x5247dc`, uses f32 multiplication, fused multiply-add
+and a separate translation addition for each point. Copy construction retains
+the same backing path and increases its reference count to two; it does not
+copy the point array.
+
+[`table-text-clip-paths.json`](../../conformance/table-text-clip-paths.json),
+SHA-256 `e5f6d442e39aedf995d807a276d86ab7ff877c31d044a5597b620adb4eaa6bdc`,
+extends all 132 clip cases through native path construction and transformation.
+Of 105 Composer-selected clips, 69 pass the nonempty gate and produce 345
+retained path points. Each rectangle has an initial move, four line points,
+and a close flag on the repeated first point. Allocation and supplied memory
+fills `0x00`, `0xa5`, and `0xff` produce identical serialized results.
+
+The capture supplies page height 800 and zero rotation. Composer's center-relative
+clip and paint translation reconstruct the world clip in PDF coordinates,
+within intermediate f32 rounding; direct world scaling is not bit-identical.
+The Rust retained-PDF transport regression consumes the supplied world clips,
+compares decoded PDF clipping bounds with the native path points, and verifies
+selectable `ActualText`, embedded fonts, no image resources, closed winding
+clips and restored clipping for neighboring text. Its 132 pages include all
+69 nonempty paths; bounding rectangles compare within the test's tolerance of
+two f32 steps at the 800-point page height. This checks transport of supplied
+clips, independently of production run grouping and conditional clip selection.
+Allocation/deletion, memory copy, page bounds, paint translation recording,
+clip-holder initialization and the final append sink are host interfaces.
+The sink records the real retained path before installing it; installed clipping,
+destruction, shaping, the complete `DrawText` call, PDF serialization and device
+pixels are outside this capture. The Pdfium library digest was checked against
+the APK entry as well as the extracted ELF.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-clip-paths scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenPdf.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenPdfiumB.so > /tmp/table-text-clip-paths.json
+cmp /tmp/table-text-clip-paths.json conformance/table-text-clip-paths.json
+```
+
 ### Retained text entry and run bounds
 
 Text `ParagraphLayout::SetLayout`, `0x6b4a4`, adds the line's adjusted top

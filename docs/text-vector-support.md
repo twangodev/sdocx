@@ -79,11 +79,22 @@ plain Arabic spans.
   The SDK's measured-table text clip remains conservative. The
   [native per-run clip capture](reverse-engineering/table-code-findings.md#export-text-clips)
   establishes decisions and transforms with supplied run rectangles.
+  [Final native path capture](reverse-engineering/table-code-findings.md#final-pdf-text-clip-paths)
+  extends those inputs through 69 Pdfium clip paths, before installation;
+  Rust PDF regressions separately verify supplied-clip geometry, selectable
+  text and restoration of neighboring text's clip state.
+  [Cell/content rectangle setters](reverse-engineering/table-code-findings.md#cell-content-model-rectangles)
+  are captured independently; equal cell frames can preserve different content
+  bounds, and native Model/drawn rectangles can diverge.
   [Entry/run-bound captures](reverse-engineering/table-code-findings.md#retained-text-entry-and-run-bounds)
   execute native placement and union producers with supplied metrics.
   [Complete run emission](reverse-engineering/table-code-findings.md#complete-retained-text-run-emission)
   is captured with supplied glyph caches and font interfaces; native shaping,
   real nested objects and Rust per-run clipping remain unverified/unimplemented.
+- Rust measured runs do not retain the native raw Span equality fields or font
+  bitmap/language grouping gates. Their f64 cluster positions also differ from
+  native f32 entry adjacency. These inputs and joined SVG shaping boundaries
+  limit native per-run clip parity, independently of PDF clip transport.
 - SVG transport does not reproduce every complex joined script or cluster
   crossing a style boundary.
 - Native font-selection and measurement-style anomalies, variable-font
