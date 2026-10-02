@@ -1143,7 +1143,12 @@ fn main() {
             );
             return;
         }
-        Some(mode @ ("--font-source" | "--text-shaping" | "--text-shaping-numeric")) => {
+        Some(
+            mode @ ("--font-source"
+            | "--text-shaping"
+            | "--text-shaping-numeric"
+            | "--text-shaping-gpos"),
+        ) => {
             let paths = [3, 4, 5, 6].map(|index| {
                 std::env::args_os().nth(index).expect(
                     "libSPenBase.so, libSPenText.so, libSPenSkia.so and font paths required",
@@ -1153,6 +1158,7 @@ fn main() {
                 "--font-source" => text_font_source::capture,
                 "--text-shaping" => text_shaping::capture,
                 "--text-shaping-numeric" => text_shaping::capture_numeric,
+                "--text-shaping-gpos" => text_shaping::capture_gpos,
                 _ => unreachable!(),
             };
             capture(
@@ -1421,7 +1427,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-shaping, --text-shaping-numeric, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

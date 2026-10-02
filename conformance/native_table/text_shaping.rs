@@ -508,8 +508,155 @@ fn context(engine: Engine, buffer: u64, offset: u64, count_offset: u64) -> Vec<u
         .map(|i| read_u32(engine, buffer + offset + i as u64 * 4))
         .collect()
 }
+#[derive(Clone, Copy)]
+struct GposFontRange {
+    start: u64,
+    end: u64,
+}
+impl GposFontRange {
+    fn from_font(path: &Path) -> Self {
+        let font = std::fs::read(path).unwrap();
+        let count = u16::from_be_bytes(font[4..6].try_into().unwrap()) as usize;
+        let record = font[12..12 + count * 16]
+            .chunks_exact(16)
+            .find(|record| &record[..4] == b"GPOS")
+            .unwrap();
+        let start = u32::from_be_bytes(record[8..12].try_into().unwrap()) as u64;
+        let length = u32::from_be_bytes(record[12..16].try_into().unwrap()) as u64;
+        assert!(start + length <= font.len() as u64);
+        Self {
+            start,
+            end: start + length,
+        }
+    }
+}
+struct GposValueTrace {
+    source_font_offset: u64,
+    source_bytes: [u8; 2],
+    value: i16,
+    multiplier: i64,
+    product: i64,
+    adjustment: i32,
+    glyph_index: usize,
+    glyph_id: u32,
+    cluster: u32,
+    before: [i32; 4],
+    after: [i32; 4],
+}
+impl GposValueTrace {
+    fn json(&self) -> String {
+        format!(
+            "{{\"source_font_offset\":{},\"source_bytes\":{:?},\"value_i16\":{},\"multiplier_i64\":{},\"product_i64\":{},\"adjustment_i32\":{},\"value_format\":4,\"destination\":\"x_advance\",\"glyph_index\":{},\"glyph_id\":{},\"cluster_utf16\":{},\"position_before\":{:?},\"position_after\":{:?}}}",
+            self.source_font_offset,
+            self.source_bytes,
+            self.value,
+            self.multiplier,
+            self.product,
+            self.adjustment,
+            self.glyph_index,
+            self.glyph_id,
+            self.cluster,
+            self.before,
+            self.after
+        )
+    }
+}
+struct PendingGposValue {
+    destination: u64,
+    trace: GposValueTrace,
+}
+struct ShearOperation {
+    offset_x_bits: u32,
+    offset_y_bits: u32,
+    skew_bits: u32,
+    result_bits: u32,
+}
+impl ShearOperation {
+    fn json(&self) -> String {
+        format!(
+            "{{\"offset_x_bits\":{},\"offset_y_bits\":{},\"skew_bits\":{},\"result_bits\":{}}}",
+            self.offset_x_bits, self.offset_y_bits, self.skew_bits, self.result_bits
+        )
+    }
+}
+struct GposTrace {
+    font_range: GposFontRange,
+    buffer: u64,
+    pending: Option<PendingGposValue>,
+    values: Vec<GposValueTrace>,
+    shear_pending: Option<ShearOperation>,
+    shear_operations: Vec<ShearOperation>,
+}
+impl GposTrace {
+    fn new(font_range: GposFontRange) -> Self {
+        Self {
+            font_range,
+            buffer: 0,
+            pending: None,
+            values: Vec::new(),
+            shear_pending: None,
+            shear_operations: Vec::new(),
+        }
+    }
+    fn positions(engine: Engine, destination: u64) -> [i32; 4] {
+        std::array::from_fn(|i| read_u32(engine, destination + i as u64 * 4) as i32)
+    }
+    fn before_scale(&mut self, engine: Engine) {
+        assert!(self.pending.is_none() && self.buffer != 0 && self.values.len() < 4096);
+        assert_eq!(read_register(engine, REGISTER_X0 + 25), 4);
+        let format: [u8; 2] = bytes(engine, read_register(engine, REGISTER_X0), 2)
+            .try_into()
+            .unwrap();
+        assert_eq!(u16::from_be_bytes(format), 4);
+        let source = read_register(engine, REGISTER_X0 + 23);
+        let offset = source.checked_sub(text_font_source::FONT_BYTES).unwrap();
+        assert!(offset >= self.font_range.start && offset + 2 <= self.font_range.end);
+        let source_bytes: [u8; 2] = bytes(engine, source, 2).try_into().unwrap();
+        let value = i16::from_be_bytes(source_bytes);
+        assert_eq!(
+            read_register(engine, REGISTER_X0 + 9) as i64,
+            i64::from(value)
+        );
+        let font = read_register(engine, REGISTER_X0 + 21);
+        let multiplier = read_u64(engine, font + 40) as i64;
+        assert_eq!(read_register(engine, REGISTER_X0 + 11) as i64, multiplier);
+        let destination = read_register(engine, REGISTER_X0 + 19);
+        let base = read_u64(engine, self.buffer + 128);
+        let relative = destination.checked_sub(base).unwrap();
+        assert_eq!(relative % 20, 0);
+        let glyph_index = (relative / 20) as usize;
+        assert!(glyph_index < read_u32(engine, self.buffer + 96) as usize);
+        let info = read_u64(engine, self.buffer + 112) + glyph_index as u64 * 20;
+        self.pending = Some(PendingGposValue {
+            destination,
+            trace: GposValueTrace {
+                source_font_offset: offset,
+                source_bytes,
+                value,
+                multiplier,
+                product: 0,
+                adjustment: 0,
+                glyph_index,
+                glyph_id: read_u32(engine, info),
+                cluster: read_u32(engine, info + 8),
+                before: Self::positions(engine, destination),
+                after: [0; 4],
+            },
+        });
+    }
+    fn after_store(&mut self, engine: Engine) {
+        let mut pending = self.pending.take().unwrap();
+        assert_eq!(read_register(engine, REGISTER_X0 + 19), pending.destination);
+        pending.trace.after = Self::positions(engine, pending.destination);
+        let mut expected = pending.trace.before;
+        expected[0] = expected[0].wrapping_add(pending.trace.adjustment);
+        assert_eq!(pending.trace.after, expected);
+        self.values.push(pending.trace);
+    }
+}
 #[derive(Default)]
 struct ShapeTrace {
+    gpos: Option<GposTrace>,
     calls: Vec<String>,
     pending: Option<String>,
     scalar_glyphs: Vec<u32>,
@@ -523,6 +670,49 @@ struct ShapeTrace {
 unsafe extern "C" fn trace_shape(engine: Engine, address: u64, _: u32, data: *mut c_void) {
     let trace = unsafe { &mut *data.cast::<ShapeTrace>() };
     match address - TEXT {
+        0x9cab0 => {
+            let gpos = trace.gpos.as_mut().unwrap();
+            assert!(gpos.shear_pending.is_none() && gpos.shear_operations.len() < 4096);
+            gpos.shear_pending = Some(ShearOperation {
+                offset_x_bits: read_register(engine, 146) as u32,
+                offset_y_bits: read_register(engine, 136) as u32,
+                skew_bits: read_register(engine, 147) as u32,
+                result_bits: 0,
+            });
+        }
+        0x9cab4 => {
+            let gpos = trace.gpos.as_mut().unwrap();
+            let mut operation = gpos.shear_pending.take().unwrap();
+            operation.result_bits = read_register(engine, 137) as u32;
+            assert_eq!(
+                operation.result_bits,
+                (-f32::from_bits(operation.offset_y_bits))
+                    .mul_add(
+                        f32::from_bits(operation.skew_bits),
+                        f32::from_bits(operation.offset_x_bits)
+                    )
+                    .to_bits()
+            );
+            gpos.shear_operations.push(operation);
+        }
+        0xd013c => trace.gpos.as_mut().unwrap().before_scale(engine),
+        0xd014c => {
+            let pending = trace.gpos.as_mut().unwrap().pending.as_mut().unwrap();
+            pending.trace.product = read_register(engine, REGISTER_X0 + 9) as i64;
+            assert_eq!(
+                pending.trace.product,
+                i64::from(pending.trace.value) * pending.trace.multiplier
+            );
+        }
+        0xd0150 => {
+            let pending = trace.gpos.as_mut().unwrap().pending.as_mut().unwrap();
+            pending.trace.adjustment = read_register(engine, REGISTER_X0 + 8) as i32;
+            assert_eq!(
+                pending.trace.adjustment,
+                (pending.trace.product >> 16) as i32
+            );
+        }
+        0xd015c => trace.gpos.as_mut().unwrap().after_store(engine),
         0xecdcc => {
             assert!(trace.pending.is_none());
             let font = read_register(engine, REGISTER_X0);
@@ -531,6 +721,9 @@ unsafe extern "C" fn trace_shape(engine: Engine, address: u64, _: u32, data: *mu
                 1
             );
             let buffer = read_register(engine, REGISTER_X0 + 1);
+            if let Some(gpos) = &mut trace.gpos {
+                gpos.buffer = buffer;
+            }
             let feature = read_register(engine, REGISTER_X0 + 2);
             let count = read_register(engine, REGISTER_X0 + 3) as usize;
             assert!(count <= 256);
@@ -631,15 +824,22 @@ struct TraceRecorder {
     state: Box<ShapeTrace>,
 }
 impl TraceRecorder {
-    fn new(machine: &Machine) -> Self {
+    fn new(machine: &Machine, gpos_font_range: Option<GposFontRange>) -> Self {
         let mut recorder = Self {
             engine: machine.engine,
             hooks: Vec::new(),
-            state: Box::default(),
+            state: Box::new(ShapeTrace {
+                gpos: gpos_font_range.map(GposTrace::new),
+                ..ShapeTrace::default()
+            }),
         };
-        for offset in [
+        let mut offsets = vec![
             0xecdcc, 0x9c764, 0x9d728, 0x9d74c, 0x9d768, 0x9d770, 0x9d858, 0x9d86c, 0x9cc5c,
-        ] {
+        ];
+        if gpos_font_range.is_some() {
+            offsets.extend([0xd013c, 0xd014c, 0xd0150, 0xd015c, 0x9cab0, 0x9cab4]);
+        }
+        for offset in offsets {
             let address = TEXT + offset;
             let mut hook = 0;
             check(unsafe {
@@ -710,7 +910,11 @@ impl Case {
         fill: u8,
     ) -> String {
         host.reset();
-        *trace.state = ShapeTrace::default();
+        let gpos_font_range = trace.state.gpos.as_ref().map(|gpos| gpos.font_range);
+        *trace.state = ShapeTrace {
+            gpos: gpos_font_range.map(GposTrace::new),
+            ..ShapeTrace::default()
+        };
         environment.reset(machine, fill, 0);
         write(machine.engine, FONT, &[0; 0x1000]);
         environment.construct_font(machine, FONT, "", 400, false);
@@ -830,7 +1034,7 @@ impl Case {
             .map(|(name, count)| format!("{}:{count}", json_string(name)))
             .collect::<Vec<_>>()
             .join(",");
-        format!(
+        let mut output = format!(
             "{{\"name\":{},\"text_utf8\":{},\"range_utf16\":{:?},\"font_size_bits\":{},\"font_source\":{{\"id\":{},\"bitmap\":false,\"language\":\"\",\"face_index\":0}},\"family_locale\":\"en-Latn\",\"hyphen_edits\":[0,0],\"paint\":{{\"size_bits\":{},\"scale_x_bits\":{},\"skew_x_bits\":{},\"letter_spacing_bits\":{},\"word_spacing_bits\":0,\"packed_flags\":{},\"locale_list_id\":0,\"weight\":400,\"italic\":false,\"variant\":0,\"feature_settings\":{}}},\"hb_calls\":[{}],\"layout_piece\":{{\"font_indices\":{:?},\"glyph_ids\":{:?},\"full_positions_bits\":{:?},\"owner_positions_bits\":{:?},\"owners_utf16\":{:?},\"ink_bounds_bits\":{:?},\"character_advances_bits\":{:?},\"total_advance_bits\":{},\"extent_bits\":{:?},\"font_fakery_bits\":{:?}}},\"callbacks\":{{\"scalar_glyphs\":{:?},\"scalar_raw_bits\":{:?},\"scalar_quantized\":{:?},\"vector_glyphs\":{:?},\"vector_raw_bits\":{:?},\"vector_quantized\":{:?},\"raw_skia_bounds_bits\":{:?}}},\"host_calls\":{{\"icu\":{{{}}},\"qsort\":{:?}}}}}",
             json_string(self.name),
             json_string(self.text),
@@ -866,7 +1070,28 @@ impl Case {
             trace.state.bounds,
             counts,
             host.sort_calls
-        )
+        );
+        if let Some(gpos) = &trace.state.gpos {
+            assert!(
+                gpos.pending.is_none() && !gpos.values.is_empty() && gpos.shear_pending.is_none()
+            );
+            assert_eq!(gpos.shear_operations.len(), words(24).len());
+            output.pop();
+            output.push_str(&format!(
+                ",\"gpos_apply_values\":[{}],\"shear_operations\":[{}]}}",
+                gpos.values
+                    .iter()
+                    .map(GposValueTrace::json)
+                    .collect::<Vec<_>>()
+                    .join(","),
+                gpos.shear_operations
+                    .iter()
+                    .map(ShearOperation::json)
+                    .collect::<Vec<_>>()
+                    .join(",")
+            ));
+        }
+        output
     }
 }
 fn pinned_host(path: &str, expected: &str) {
@@ -955,7 +1180,7 @@ fn numeric_cases() -> Vec<Case> {
 }
 
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, skia: &Path, font: &Path) {
-    capture_cases(machine, base, text, skia, font, reference_cases());
+    capture_cases(machine, base, text, skia, font, reference_cases(), false);
 }
 
 pub(super) fn capture_numeric(
@@ -965,7 +1190,25 @@ pub(super) fn capture_numeric(
     skia: &Path,
     font: &Path,
 ) {
-    capture_cases(machine, base, text, skia, font, numeric_cases());
+    capture_cases(machine, base, text, skia, font, numeric_cases(), false);
+}
+
+pub(super) fn capture_gpos(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    let mut cases = vec![
+        Case::regular("av_default", "AV", 17.0),
+        Case::regular("to_default", "To", 17.0),
+        Case::regular("large_default", "AV", 23.0),
+    ];
+    let mut fused = Case::regular("pair_combining_fma", "AVx\u{327}\u{301}y", 17.125);
+    fused.skew = f32::from_bits(0xbc0000f5);
+    cases.push(fused);
+    capture_cases(machine, base, text, skia, font, cases, true);
 }
 
 fn capture_cases(
@@ -975,6 +1218,7 @@ fn capture_cases(
     skia: &Path,
     font: &Path,
     cases: Vec<Case>,
+    trace_gpos: bool,
 ) {
     pinned_host(
         "/usr/lib/x86_64-linux-gnu/libicuuc.so.76.1",
@@ -995,7 +1239,7 @@ fn capture_cases(
     machine.call_timeout_micros = 0;
     machine.call_instruction_limit = 10_000_000;
     let mut environment = NativeFontEnvironment::new(machine, base, text, skia, font);
-    let mut trace = TraceRecorder::new(machine);
+    let mut trace = TraceRecorder::new(machine, trace_gpos.then(|| GposFontRange::from_font(font)));
     let mut host = HostIcu::new(machine);
     let icu_version = host.version("u_getVersion");
     let unicode_version = host.version("u_getUnicodeVersion");
@@ -1020,7 +1264,7 @@ fn capture_cases(
             expected
         })
         .collect::<Vec<_>>();
-    println!(
+    let mut output = format!(
         "{{\"font_sha256\":\"{}\",\"font_face_index\":0,\"memory_fills\":[0,165,255],\"repeat_zero_fill\":true,\"context_order\":{{\"pre\":\"nearest_first\",\"post\":\"source_order\"}},\"model_library_sha256\":\"{}\",\"base_library_sha256\":\"{}\",\"text_library_sha256\":\"{}\",\"skia_library_sha256\":\"{}\",\"host_icu_uc_sha256\":\"a8e433e81075732faf255b17d4a25ce28632e41fef1a75e727ee7f4ed73ab151\",\"host_icu_data_sha256\":\"a04b2b906193fa1e40f968a3d16d7d6c844a1fafbdd5bce6e9f67b01c124ff24\",\"host_libm_sha256\":\"6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3\",\"host_icu_version\":{:?},\"host_unicode_version\":{:?},\"host_libc_version\":{},\"resolved_icu_symbols\":[{}],\"native_initializers\":{:?},\"layout_piece_address\":\"0x9b150\",\"hb_shape_address\":\"0xecdcc\",\"instruction_limit\":10000000,\"native_icu_resolved_suffix\":76,\"host_libc_sha256\":\"fa430b8f298f817a266046af84a77533185ad6fc4406c7d3787b5a0a0c207826\",\"capture_boundary\":\"Actual file Font, FontFamily, FontCollection, LayoutPiece, bundled HarfBuzz Unicode tables and shaping, Skia and bundled FreeType execute on supplied pinned Roboto. Supplied MinikinPaint, locale en-Latn, range/direction and zero hyphen edits are caller inputs. Actual Android ICU dynamic loader resolves version 76 through its fallback search; dlopen routes to pinned host ICU76.1 code/data for property and locale calls, not bundled HB Unicode functions. Host libc qsort uses exact allowlisted leaf ARM64 comparators in a separate emulator. Host allocation/file/memory, single-thread synchronization, libc numeric feature parsing, formatter and libm calls are service boundaries. No Android device ICU/fontconfig selection, system fallback, whole SpanRunFunctor, all-library static initialization, bitmap/fallback fonts, wrapping/composition, canvas pixels, vector output or general Rust metric parity is established.\",\"cases\":[\n{}\n]}}",
         text_font_source::FONT_SHA256,
         LIBRARY_SHA256,
@@ -1038,4 +1282,9 @@ fn capture_cases(
         INITIALIZERS,
         outputs.join(",\n")
     );
+    if trace_gpos {
+        output.pop();
+        output.push_str(",\"gpos_capture_boundary\":\"Actual bundled HarfBuzz ValueFormat4 horizontal x_advance path only: source signed16-bit GPOS value, nativefont signed16.16 multiplier, executed product/shift and destination positions before/after. Source offsets index the pinned supplied font bytes. Actual local skew fmsub operands/result are captured separately before horizontal pen addition. Other ValueFormats, anchors, device/variation adjustments and general GPOS parity are not established.\",\"gpos_hook_addresses\":[852284,852300,852304,852316],\"shear_hook_addresses\":[641712,641716]}");
+    }
+    println!("{output}");
 }

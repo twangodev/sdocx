@@ -18,6 +18,10 @@ pub use paint_metrics::{
 #[path = "fonts/native_shaping_tests.rs"]
 mod native_shaping_tests;
 
+#[cfg(test)]
+#[path = "fonts/native_gpos_tests.rs"]
+mod native_gpos_tests;
+
 #[derive(Clone)]
 /// A shared font database with cached faces. Defaults contain pinned Roboto families.
 pub struct FontBook {

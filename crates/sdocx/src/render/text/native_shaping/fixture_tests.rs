@@ -19,6 +19,16 @@ struct Case {
     hb_calls: Vec<HarfBuzzCall>,
     layout_piece: LayoutPiece,
     callbacks: Callbacks,
+    #[serde(default)]
+    shear_operations: Vec<ShearOperation>,
+}
+
+#[derive(Deserialize)]
+struct ShearOperation {
+    offset_x_bits: u32,
+    offset_y_bits: u32,
+    skew_bits: u32,
+    result_bits: u32,
 }
 
 #[derive(Deserialize)]
@@ -108,6 +118,16 @@ fn numeric_capture() -> Capture {
             "/../../conformance/table-text-shaping-numeric.json"
         )),
         "1e476f7fc8254b2a6c7316c6ff18b9c436f8ab57707d536daa07e11eca2af455",
+    )
+}
+
+fn gpos_capture() -> Capture {
+    parse_capture(
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../conformance/table-text-shaping-gpos.json"
+        )),
+        "9280953ac5de0b6b745baedcda73cf4d88a95a7b52cbfbc99188e0b66a71efb2",
     )
 }
 
@@ -328,9 +348,70 @@ fn numeric_capture_detects_integer_narrowing_and_step_accumulation() {
 }
 
 #[test]
+fn gpos_capture_preserves_post_shaping_geometry() {
+    let capture = gpos_capture();
+    assert_eq!(capture.cases.len(), 4);
+    let mut glyph_count = 0;
+    let mut character_count = 0;
+    for case in &capture.cases {
+        let (glyphs, characters) = verify_case(case);
+        glyph_count += glyphs;
+        character_count += characters;
+    }
+    assert_eq!((glyph_count, character_count), (12, 12));
+}
+
+#[test]
+fn native_shear_capture_distinguishes_fused_and_separate_rounding() {
+    let capture = gpos_capture();
+    let mut count = 0;
+    let mut separate_rounding_differences = 0;
+    for case in capture.cases {
+        let glyphs = case.glyphs();
+        assert_eq!(glyphs.len(), case.shear_operations.len());
+        for (glyph, operation) in glyphs.iter().zip(&case.shear_operations) {
+            assert_eq!(
+                paint_units(glyph.offset_x).to_bits(),
+                operation.offset_x_bits,
+                "{} native shear X input",
+                case.name
+            );
+            assert_eq!(
+                paint_units(glyph.offset_y).to_bits(),
+                operation.offset_y_bits,
+                "{} native shear Y input",
+                case.name
+            );
+            assert_eq!(operation.skew_bits, case.paint.skew_x_bits);
+            let offset_x = f32::from_bits(operation.offset_x_bits);
+            let offset_y = f32::from_bits(operation.offset_y_bits);
+            let skew = f32::from_bits(operation.skew_bits);
+            let fused = (-offset_y).mul_add(skew, offset_x);
+            assert_eq!(
+                fused.to_bits(),
+                operation.result_bits,
+                "{} actual native FMSUB result",
+                case.name
+            );
+            let separately_rounded = offset_x - offset_y * skew;
+            separate_rounding_differences +=
+                usize::from(separately_rounded.to_bits() != operation.result_bits);
+            count += 1;
+        }
+    }
+    assert_eq!(count, 12);
+    assert_eq!(separate_rounding_differences, 1);
+}
+
+#[test]
 fn vector_metric_conversion_matches_native_callback_capture() {
     let mut count = 0;
-    for case in capture().cases.into_iter().chain(numeric_capture().cases) {
+    for case in capture()
+        .cases
+        .into_iter()
+        .chain(numeric_capture().cases)
+        .chain(gpos_capture().cases)
+    {
         assert!(case.callbacks.scalar_quantized.is_empty());
         assert_eq!(
             case.callbacks.vector_raw_bits.len(),
@@ -351,7 +432,7 @@ fn vector_metric_conversion_matches_native_callback_capture() {
             count += 1;
         }
     }
-    assert_eq!(count, 230);
+    assert_eq!(count, 242);
 }
 
 #[test]

@@ -6,7 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(super) const TEXT: u64 = 0x0500_0000;
 const SKIA: u64 = 0x0600_0000;
 const SOURCE_HEAP: u64 = 0x0800_0000;
-const FONT_BYTES: u64 = 0x0900_0000;
+pub(super) const FONT_BYTES: u64 = 0x0900_0000;
 const HOST: u64 = 0x0700_0000;
 pub(super) const SKIA_SHA256: &str =
     "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d";
