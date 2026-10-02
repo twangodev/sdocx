@@ -129,8 +129,7 @@ fn complete_native_cell_artwork_matches_all_frozen_drawing_cases() {
             _ => panic!("uncaptured constraint"),
         };
         let artwork =
-            TableArtworkGeometry::drawing(mode, table.bbox, [f64::from(case.drawing_x), 0.0])
-                .unwrap();
+            TableArtworkGeometry::native_drawing(mode, table.bbox, case.drawing_x).unwrap();
         let mut commands = Vec::new();
         let mut paths = Vec::new();
         for &position in grid.visible_cells() {

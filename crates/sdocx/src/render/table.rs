@@ -18,6 +18,9 @@ mod pagination;
 #[cfg(test)]
 mod native_geometry_tests;
 
+#[cfg(test)]
+mod native_drawn_bounds_tests;
+
 pub(super) use artwork::{CellBackgroundGeometry, TableArtworkGeometry, finite_artwork_rect};
 pub(super) use borders::{BorderPath, TableBorderGeometry};
 pub(super) use export::{TableExportPage, artwork_bounds};
@@ -132,6 +135,24 @@ pub(super) fn prepare_table_drawing(
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
+    prepare_table_drawing_with_artwork_source(
+        table,
+        constraint,
+        table_drawn_bounds(table),
+        drawing_origin,
+        theme,
+        renderer,
+    )
+}
+
+fn prepare_table_drawing_with_artwork_source(
+    table: &RichTextTable,
+    constraint: ObjectSpanLayoutConstraint,
+    artwork_source_bounds: BoundingBox,
+    drawing_origin: [f64; 2],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
     if !matches!(
         constraint,
         ObjectSpanLayoutConstraint::Normal
@@ -151,7 +172,11 @@ pub(super) fn prepare_table_drawing(
         return Some(Err(ObjectDiagnosticKind::InvalidBounds));
     }
     Some((|| {
-        let artwork = TableArtworkGeometry::drawing(constraint, table.bbox, drawing_origin)?;
+        let artwork = TableArtworkGeometry::compatibility_export(
+            constraint,
+            artwork_source_bounds,
+            drawing_origin,
+        )?;
         if !artwork.cached()
             && topology.visible_cells().iter().any(|position| {
                 let saved = table.rows[position.row].cells[position.column].bbox;
@@ -207,9 +232,14 @@ pub(super) fn prepare_table_clone_drawing(
             Err(kind) => return Some(Err(kind)),
         };
     let drawn = drawn_bounds_for_rect(table, bbox);
-    prepare_table_drawing(
+    prepare_table_drawing_with_artwork_source(
         table,
         constraint,
+        if constraint == ObjectSpanLayoutConstraint::Normal {
+            table.bbox
+        } else {
+            drawn
+        },
         [drawn.x_min, drawn.y_min],
         theme,
         renderer,
@@ -780,10 +810,10 @@ pub(super) fn table_drawn_bounds(table: &RichTextTable) -> BoundingBox {
 fn drawn_bounds_for_rect(table: &RichTextTable, rect: BoundingBox) -> BoundingBox {
     let [left, top, right, bottom] = table_border_widths(table);
     BoundingBox {
-        x_min: rect.x_min - left / 2.0,
-        y_min: rect.y_min - top / 2.0,
-        x_max: rect.x_max + right / 2.0,
-        y_max: rect.y_max + bottom / 2.0,
+        x_min: f64::from(rect.x_min as f32 - left as f32 * 0.5),
+        y_min: f64::from(rect.y_min as f32 - top as f32 * 0.5),
+        x_max: f64::from(rect.x_max as f32 + right as f32 * 0.5),
+        y_max: f64::from(rect.y_max as f32 + bottom as f32 * 0.5),
     }
 }
 

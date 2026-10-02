@@ -7,37 +7,46 @@ pub(in crate::render) enum TableArtworkGeometry {
     Unprepared,
     Saved {
         source_origin: [f32; 2],
-        drawing_origin: [f32; 2],
+        paint_offset: [f32; 2],
     },
     Cached,
 }
 
 impl TableArtworkGeometry {
-    pub fn drawing(
+    pub fn compatibility_export(
         constraint: ObjectSpanLayoutConstraint,
-        source: BoundingBox,
-        origin: [f64; 2],
+        source_bounds: BoundingBox,
+        offset: [f64; 2],
     ) -> Result<Self, ObjectDiagnosticKind> {
         match constraint {
             ObjectSpanLayoutConstraint::Normal => {
-                let source_origin = [source.x_min as f32, source.y_min as f32];
-                let drawing_origin = origin.map(|coordinate| coordinate as f32);
+                let source_origin = [source_bounds.x_min as f32, source_bounds.y_min as f32];
+                let paint_offset = offset.map(|coordinate| coordinate as f32);
                 if !source_origin
                     .into_iter()
-                    .chain(drawing_origin)
+                    .chain(paint_offset)
                     .all(f32::is_finite)
                 {
                     return Err(ObjectDiagnosticKind::InvalidBounds);
                 }
                 Ok(Self::Saved {
                     source_origin,
-                    drawing_origin,
+                    paint_offset,
                 })
             }
             ObjectSpanLayoutConstraint::OverPages
             | ObjectSpanLayoutConstraint::OverPagesOverlapPadding => Ok(Self::Cached),
             _ => Err(ObjectDiagnosticKind::UnsupportedContent),
         }
+    }
+
+    #[cfg(test)]
+    fn native_drawing(
+        constraint: ObjectSpanLayoutConstraint,
+        source_drawn_bounds: BoundingBox,
+        scroll_x: f32,
+    ) -> Result<Self, ObjectDiagnosticKind> {
+        Self::compatibility_export(constraint, source_drawn_bounds, [f64::from(scroll_x), 0.0])
     }
 
     pub fn cached(self) -> bool {
@@ -49,14 +58,14 @@ impl TableArtworkGeometry {
             Self::Unprepared => saved,
             Self::Saved {
                 source_origin,
-                drawing_origin,
+                paint_offset,
             } => {
                 let [left, top, right, bottom] = native_rect(saved);
                 rect([
-                    (left - source_origin[0]) + drawing_origin[0],
-                    (top - source_origin[1]) + drawing_origin[1],
-                    (right - source_origin[0]) + drawing_origin[0],
-                    (bottom - source_origin[1]) + drawing_origin[1],
+                    (left - source_origin[0]) + paint_offset[0],
+                    (top - source_origin[1]) + paint_offset[1],
+                    (right - source_origin[0]) + paint_offset[0],
+                    (bottom - source_origin[1]) + paint_offset[1],
                 ])
             }
             Self::Cached => cached,
@@ -68,12 +77,12 @@ impl TableArtworkGeometry {
             Self::Unprepared => path,
             Self::Saved {
                 source_origin,
-                drawing_origin,
+                paint_offset,
             } => {
                 let [x1, y1, x2, y2] = path.endpoints;
                 let offset = [
-                    source_origin[0] - drawing_origin[0],
-                    source_origin[1] - drawing_origin[1],
+                    source_origin[0] - paint_offset[0],
+                    source_origin[1] - paint_offset[1],
                 ];
                 BorderPath {
                     endpoints: [
@@ -169,3 +178,6 @@ fn rect([x_min, y_min, x_max, y_max]: [f32; 4]) -> BoundingBox {
 
 #[cfg(test)]
 mod native_tests;
+
+#[cfg(test)]
+mod clone_origin_tests;

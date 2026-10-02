@@ -819,7 +819,7 @@ mod tests {
     }
 
     #[test]
-    fn table_border_expansion_keeps_double_precision_and_invalid_originals_do_not_expand() {
+    fn table_border_expansion_uses_native_float_precision_and_rejects_invalid_originals() {
         let bounds = BoundingBox {
             x_min: 0.1234567890123456,
             y_min: 0.9876543210987654,
@@ -829,12 +829,13 @@ mod tests {
         let content = text("\u{fffc}", vec![table_object(0, bounds)]);
         let index = TextObjectIndex::new(&content, &TextIndex::new(&content.text));
         let selected = &index.in_range(0..1)[0];
-        assert_eq!(selected.bounds.x_min, bounds.x_min - 0.5);
-        assert_eq!(selected.bounds.y_max, bounds.y_max + 0.5);
-        assert_ne!(
+        assert_eq!(selected.bounds.x_min, f64::from(bounds.x_min as f32 - 0.5));
+        assert_eq!(selected.bounds.y_max, f64::from(bounds.y_max as f32 + 0.5));
+        assert_eq!(
             selected.bounds.x_min,
             f64::from(selected.bounds.x_min as f32)
         );
+        assert_ne!(selected.bounds.x_min, bounds.x_min - 0.5);
         for invalid in [
             BoundingBox {
                 x_max: bounds.x_min,

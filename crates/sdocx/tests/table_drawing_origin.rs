@@ -229,7 +229,7 @@ fn fresh_table_drawing_rounds_world_bounds_without_changing_parent_reservation()
                 [("A", -1.0, 8.0), ("B", -1.0, 21.5), ("End", -0.25, 66.75)],
                 [-1.0, -2.0, 101.0, 27.0],
                 [-1.0, -2.0, 100.0, 26.0],
-                [694.5, 690.5, 794.5, 744.5],
+                [695.0, 691.0, 795.0, 745.0],
             ),
             (
                 20.25,
@@ -237,7 +237,7 @@ fn fresh_table_drawing_rounds_world_bounds_without_changing_parent_reservation()
                 [("A", 20.0, 30.0), ("B", 20.0, 43.5), ("End", 20.25, 88.75)],
                 [20.0, 20.0, 122.0, 49.0],
                 [20.0, 20.0, 121.0, 48.0],
-                [715.0, 712.5, 815.0, 766.5],
+                [715.5, 713.0, 815.5, 767.0],
             ),
         ] {
             let doc = document(left, top, constraint);
@@ -262,10 +262,10 @@ fn fresh_table_drawing_rounds_world_bounds_without_changing_parent_reservation()
 #[test]
 fn normal_artwork_retains_saved_rectangles_and_model_border_segments() {
     for (saved_cell, normal_background) in [
-        (bounds(10.5, 16.25, 80.0, 40.0), [5.25, 8.501, 80.0, 40.0]),
+        (bounds(10.5, 16.25, 80.0, 40.0), [5.75, 9.001, 80.0, 40.0]),
         (
             bounds(700.0, 700.0, 80.0, 40.0),
-            [694.75, 692.25098, 80.0, 40.0],
+            [695.25, 692.75098, 80.0, 40.0],
         ),
     ] {
         for constraint in [
@@ -325,7 +325,7 @@ fn normal_artwork_retains_saved_rectangles_and_model_border_segments() {
                     })
                     .collect();
                 let origin_y = (54.0_f32 + 0.001) - 54.0;
-                let offset_y = 7.75_f32 - origin_y;
+                let offset_y = 7.25_f32 - origin_y;
                 let (top, bottom) = if normal {
                     (
                         f64::from(7.75_f32 - offset_y),
@@ -334,13 +334,14 @@ fn normal_artwork_retains_saved_rectangles_and_model_border_segments() {
                 } else {
                     (0.0, 27.0)
                 };
+                let (left, right) = if normal { (0.5, 100.5) } else { (0.0, 100.0) };
                 assert_eq!(
                     lines,
                     [
-                        [0.0, top, 0.0, bottom],
-                        [0.0, top, 100.0, top],
-                        [100.0, top, 100.0, bottom],
-                        [0.0, bottom, 100.0, bottom]
+                        [left, top, left, bottom],
+                        [left, top, right, top],
+                        [right, top, right, bottom],
+                        [left, bottom, right, bottom]
                     ]
                 );
                 assert!(!xml.descendants().any(|node| node.has_tag_name("image")));
