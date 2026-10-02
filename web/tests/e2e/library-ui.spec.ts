@@ -79,6 +79,7 @@ test('mobile drawer traps focus, closes with Escape, and returns focus to its tr
 		await page.keyboard.press('Tab');
 		expect(await drawer.evaluate((el) => el.contains(document.activeElement))).toBe(true);
 	}
+	await drawer.getByRole('button', { name: 'Close library navigation', exact: true }).focus();
 	await page.keyboard.press('Escape');
 	await expect(drawer).toHaveCount(0);
 	await expect(trigger).toBeFocused();
