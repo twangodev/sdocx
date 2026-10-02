@@ -27,10 +27,17 @@ const isolate: BidiCase = {
 	x: [85.89111328125, 0, 28.63037109375, 57.2607421875], line: [0, 0, 0, 0]
 };
 
+// Independent bodyABC source-size 45 capture in conformance/table-text-shaping-consumer-metrics.json.
+const [nativeA45, nativeB45, nativeC45] = [751500, 717187, 749812]
+	.map(advance => Math.fround(Math.fround(advance / 256) / 100));
+const inlineImageX = Math.fround(nativeA45 + nativeC45);
+const inlineBX = Math.fround(inlineImageX + 20);
+const inlineDX = Math.fround(inlineBX + nativeB45);
+
 const inlineImage: BidiCase = {
 	source: 'A\u202eB\ufffcC\u202cD', width: 500, characters: ['A', 'B', 'C', 'D'],
-	x: [0, 78.64501953125, 29.35546875, 106.66015625], line: [0, 0, 0, 0],
-	image: { anchor: 3, x: 58.64501953125, width: 20, height: 20 }
+	x: [0, inlineBX, nativeA45, inlineDX], line: [0, 0, 0, 0],
+	image: { anchor: 3, x: inlineImageX, width: 20, height: 20 }
 };
 
 const suites = [
@@ -90,7 +97,7 @@ for (const suite of suites) {
 			if (/^https?:/.test(request.url()) && /\.(?:ttf|otf|woff2?)(?:\?|$)/.test(request.url())) fontRequests.push(request.url());
 		});
 		const font = await readFile(resolve(suite.font));
-		const results = await page.evaluate(async ({ examples, font, family, injectFont }) => {
+		const results = await page.evaluate(async ({ examples, font, injectFont }) => {
 			const module = await import(`${location.origin}/wasm/sdocx_wasm.js`);
 			await module.default();
 			const reference = new FontFace('Sdocx Bidi Reference', new Uint8Array(font));
@@ -170,6 +177,17 @@ for (const suite of suites) {
 					});
 					attached.remove();
 					const styles = [...document.querySelectorAll('style')];
+					const carrierFamilies = [...document.querySelectorAll('tspan')].map(span => {
+						const selected = span.closest('[font-family]')?.getAttribute('font-family');
+						const alias = /^"?(sdocx-face-[a-f0-9]{64})"?(?:,|$)/.exec(selected ?? '')?.[1];
+						if (!alias) throw new Error('Each bidi glyph must select an embedded physical face.');
+						return alias;
+					});
+					if (new Set(carrierFamilies).size !== 1) throw new Error('The bidi fixture must use one physical face.');
+					const carrierFamily = carrierFamilies[0];
+					const embeddedFaces = [...styles.map(style => style.textContent).join('\n').matchAll(/font-family:"(sdocx-face-[a-f0-9]{64})"[^}]*url\("data:font\/ttf;base64,([A-Za-z0-9+/=]+)"\)/g)];
+					if (embeddedFaces.length !== 1 || embeddedFaces[0][1] !== carrierFamily) throw new Error('The selected bidi carrier must match its embedded face rule.');
+					const embeddedFont = embeddedFaces[0][2];
 					const isolated = document.documentElement;
 					const painting = [...isolated.children].filter(node => node.localName === 'g' || node.localName === 'text');
 					isolated.replaceChildren(...styles.map(style => style.cloneNode(true)), ...painting.map(node => node.cloneNode(true)));
@@ -195,7 +213,7 @@ for (const suite of suites) {
 						const glyph = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 						glyph.setAttribute('x', (10 + example.x[index]).toFixed(5));
 						glyph.setAttribute('y', (baseline + 60.75 * example.line[index]).toFixed(5));
-						glyph.setAttribute('font-family', family);
+						glyph.setAttribute('font-family', carrierFamily);
 						glyph.setAttribute('font-size', '45');
 						glyph.setAttribute('fill', '#000000');
 						glyph.textContent = character;
@@ -204,27 +222,27 @@ for (const suite of suites) {
 					if (example.image) {
 						const image = isolated.querySelector('image')!.cloneNode(true) as Element;
 						image.removeAttribute('transform');
-						image.setAttribute('x', (10 + example.image.x).toFixed(5));
+						image.setAttribute('x', String(10 + example.image.x));
 						image.setAttribute('y', (baseline - example.image.height).toFixed(5));
 						canonical.append(image);
 					}
 					const expectedPixels = await raster(canonical);
 					const probe = isolated.cloneNode(true) as Element;
 					for (const style of probe.querySelectorAll('style')) {
-						style.textContent = style.textContent!.replace(`font-family:"${family}"`, 'font-family:"SdocxBidiEmbeddedProbe"');
+						style.textContent = style.textContent!.replace(`font-family:"${carrierFamily}"`, 'font-family:"SdocxBidiEmbeddedProbe"');
 					}
 					for (const node of probe.querySelectorAll('[font-family]')) {
-						node.setAttribute('font-family', node.getAttribute('font-family')!.replace(family, 'SdocxBidiEmbeddedProbe'));
+						node.setAttribute('font-family', node.getAttribute('font-family')!.replace(carrierFamily, 'SdocxBidiEmbeddedProbe'));
 					}
 					const renamed = await raster(probe);
 					for (const style of probe.querySelectorAll('style')) style.remove();
 					for (const node of probe.querySelectorAll('[font-family]')) node.setAttribute('font-family', 'SdocxBidiEmbeddedProbe, monospace');
 					const fallback = await raster(probe);
-					output.push({ source, storedSource, glyphs, images, original, expected, expectedPixels, renamed, fallback, embedded: styles.length === 1 && styles[0].textContent!.includes('data:font/ttf;base64,'), pdf });
+					output.push({ source, storedSource, glyphs, images, original, expected, expectedPixels, renamed, fallback, embeddedFont, embedded: styles.length === 1 && styles[0].textContent!.includes('data:font/ttf;base64,'), pdf });
 				}
 				return output;
 			} finally { document.fonts.delete(reference); }
-		}, { examples: suite.examples.map(example => ({ ...example, note: [...bidiNote(example, suite.family)] })), font: [...font], family: suite.family, injectFont: suite.injectFont });
+		}, { examples: suite.examples.map(example => ({ ...example, note: [...bidiNote(example, suite.family)] })), font: [...font], injectFont: suite.injectFont });
 		for (const [index, result] of results.entries()) {
 			const example = suite.examples[index];
 			expect(result.storedSource).toBe(example.source);
@@ -243,6 +261,7 @@ for (const suite of suites) {
 				expect(result.images[0].height).toBe(example.image.height);
 			}
 			expect(result.embedded).toBe(true);
+			expect(Buffer.from(result.embeddedFont, 'base64')).toEqual(font);
 			expect(result.original.hash).toBe(result.expectedPixels.hash);
 			expect(result.original.hash).toBe(result.renamed.hash);
 			expect(result.original.hash).not.toBe(result.fallback.hash);

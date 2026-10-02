@@ -28,7 +28,7 @@ for (const styled of [false, true]) {
 				const svg = session.render_svg(0, 'light');
 				const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml');
 				const styles = [...parsed.querySelectorAll('style')].map(style => style.textContent).join('\n');
-				const embeddedFont = /font-family:"DejaVu Sans"[^}]*url\("data:font\/ttf;base64,([A-Za-z0-9+/=]+)"\)/.exec(styles)?.[1];
+				const embeddedFont = /font-family:"sdocx-face-[a-f0-9]{64}"[^}]*url\("data:font\/ttf;base64,([A-Za-z0-9+/=]+)"\)/.exec(styles)?.[1];
 				const preview = document.createElement('img');
 				preview.alt = 'Retained Arabic vector preview';
 				preview.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));

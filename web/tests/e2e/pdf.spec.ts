@@ -29,12 +29,14 @@ async function inspectPdf(bytes: Buffer) {
 }
 
 for (const scope of ['current', 'all'] as const) {
-	test(`PDF exports ${scope} pages with vector paths and original dimensions`, async ({ page }) => {
+	test(`PDF exports ${scope} pages with vector paths and original dimensions`, async ({ page, baseURL }) => {
+		const localOrigin = new URL(baseURL!).origin;
 		const remote: string[] = [];
 		const fontRequests: string[] = [];
 		page.on('request', (request) => {
-			if (request.url().startsWith('http') && !request.url().startsWith('http://127.0.0.1:4173') && !request.url().includes('rybbit.twango.dev')) remote.push(request.url());
-			if (new URL(request.url()).pathname.startsWith('/pdf-fonts/')) fontRequests.push(request.url());
+			const url = new URL(request.url());
+			if (/^https?:$/.test(url.protocol) && url.origin !== localOrigin && url.hostname !== 'rybbit.twango.dev') remote.push(url.href);
+			if (url.pathname.startsWith('/pdf-fonts/')) fontRequests.push(url.href);
 		});
 		await openDocument(page);
 		await page.getByRole('radio', { name: 'Dark document mode' }).click();
@@ -233,10 +235,10 @@ test('standalone SVG images use the pinned Rust font without network requests', 
 			const original = await raster(isolated);
 			const probe = isolated.cloneNode(true) as Element;
 			for (const style of probe.querySelectorAll('style')) {
-				style.textContent = style.textContent!.replace('font-family:"Roboto"', 'font-family:"SdocxEmbeddedFontProbe"');
+				style.textContent = style.textContent!.replace(/font-family:"sdocx-face-[a-f0-9]{64}"/, 'font-family:"SdocxEmbeddedFontProbe"');
 			}
 			for (const node of probe.querySelectorAll('[font-family]')) {
-				node.setAttribute('font-family', node.getAttribute('font-family')!.replace(/^("?)Roboto\1(?=,|$)/, '"SdocxEmbeddedFontProbe"'));
+				node.setAttribute('font-family', node.getAttribute('font-family')!.replace(/^("?)sdocx-face-[a-f0-9]{64}\1(?=,|$)/, '"SdocxEmbeddedFontProbe"'));
 			}
 			const renamed = await raster(probe);
 			for (const style of probe.querySelectorAll('style')) style.remove();
