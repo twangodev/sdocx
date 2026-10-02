@@ -41,6 +41,16 @@ mod text_clipping;
 #[path = "live_table_padding.rs"]
 mod padding;
 
+#[path = "live_cell_images.rs"]
+mod cell_images;
+
+pub(crate) fn capture_cell_images(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+) {
+    cell_images::capture(machine, paths);
+}
+
 pub(crate) fn capture_padding(machine: &mut Machine, paths: widget_text_constructor::Paths<'_>) {
     padding::capture(machine, paths);
 }
@@ -226,6 +236,27 @@ impl Case {
         fill: u8,
         after_warm: Option<&dyn Fn(&Machine) -> String>,
     ) -> String {
+        self.sample_customized(
+            machine,
+            environment,
+            host,
+            observation,
+            fill,
+            None,
+            after_warm,
+        )
+    }
+
+    fn sample_customized(
+        self,
+        machine: &mut Machine,
+        environment: &mut NativeFontEnvironment,
+        host: &mut Host,
+        observation: &mut Trace,
+        fill: u8,
+        after_source: Option<&dyn Fn(&Machine) -> String>,
+        after_warm: Option<&dyn Fn(&Machine) -> String>,
+    ) -> String {
         reset_host(machine, environment, &mut host.cell, fill);
         machine.heap.cursor = MODEL + 0x80000;
         machine.heap.limit = MODEL + 0xc0000;
@@ -297,6 +328,7 @@ impl Case {
                 machine.call(0x3c2554, &[cell]);
             }
         }
+        let source_setup = after_source.map(|observe| observe(machine));
         write(machine.engine, LAYOUT, &[0; 1120]);
         float_arguments(machine, [self.density, 0., 0., 0.]);
         machine.call(CELL_DRAWING + 0xa9d58, &[LAYOUT, CONTEXT, TABLE, 1000]);
@@ -373,6 +405,10 @@ impl Case {
             host.cell.paragraphs.calls,
             states.join(",")
         );
+        if let Some(source_setup) = source_setup {
+            assert_eq!(result.pop(), Some('}'));
+            result.push_str(&format!(",\"source_setup\":{source_setup}}}"));
+        }
         if let Some(writer) = writer {
             assert_eq!(result.pop(), Some('}'));
             result.push_str(&format!(",\"writer\":{writer}}}"));
