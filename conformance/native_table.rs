@@ -69,6 +69,9 @@ mod text_measurement_join;
 #[path = "native_table/text_object_background.rs"]
 mod text_object_background;
 
+#[path = "native_table/text_predefined_style.rs"]
+mod text_predefined_style;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1085,6 +1088,10 @@ fn main() {
             );
             return;
         }
+        Some("--text-predefined-style") => {
+            text_predefined_style::capture(&mut machine);
+            return;
+        }
         Some("--text-object-background") => {
             let paths = [3, 4].map(|index| {
                 std::env::args_os()
@@ -1287,7 +1294,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style or no capture mode"
         ),
     }
     let mut cases = Vec::new();
