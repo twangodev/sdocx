@@ -17,10 +17,12 @@ pub use paint_metrics::{
 mod paint_itemization;
 mod paint_layout;
 pub use paint_itemization::{PaintItemization, PaintItemizationError, PaintScriptChunk};
+mod paint_span;
 pub use paint_layout::{
     PaintEntryError, PaintEntryGeometry, PaintEntryGlyph, PaintGlyphPlacement, PaintLayout,
     PaintLayoutError, PaintLogicalEntry,
 };
+pub use paint_span::{PaintSpanError, PaintSpanProfile};
 
 mod paint_shaping;
 pub use paint_shaping::{

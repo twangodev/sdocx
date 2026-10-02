@@ -8,6 +8,8 @@ use skrifa::outline::{
 use skrifa::raw::{TableProvider, tables::glyf::Glyph};
 use skrifa::{FontRef, GlyphId, MetadataProvider, Tag};
 
+pub(super) const SUPPORTED_SIZE: std::ops::Range<f32> = 1.0..8_388_608.0;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PaintMetricMode {
     Unhinted,
@@ -76,7 +78,7 @@ impl<'font> PaintMetrics<'font> {
         index: u32,
         input: PaintMetricInput,
     ) -> Result<Self, PaintMetricError> {
-        if !input.size.is_finite() || !(1.0..8_388_608.0).contains(&input.size) {
+        if !SUPPORTED_SIZE.contains(&input.size) {
             return Err(PaintMetricError::InvalidSize);
         }
         if input.scale_x != 1.0 || !input.skew_x.is_finite() {
