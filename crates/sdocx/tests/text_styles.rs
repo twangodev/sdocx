@@ -437,6 +437,45 @@ fn all_text_contexts_preserve_mixed_unicode_styles_and_hyperlinks() {
 }
 
 #[test]
+fn hyperlink_actions_match_native_hypertext_flags_in_every_context() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/table-text-span-identity.json"
+    ))
+    .unwrap();
+    let mut checked = 0;
+    for case in fixture["cases"].as_array().unwrap() {
+        if !case["name"]
+            .as_str()
+            .unwrap()
+            .starts_with("hyperlink-type-")
+        {
+            continue;
+        }
+        let kind = case["right_inputs"][0]["type"].as_u64().unwrap() as u32;
+        let enabled = case["right"]["flags"].as_u64().unwrap() & 1 != 0;
+        for &context in CONTEXTS {
+            let mut content = text("Link");
+            let mut link = hyperlink(0, 4);
+            link.payload[..4].copy_from_slice(&kind.to_le_bytes());
+            content.spans.push(link);
+            let svg = render(context, content);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            let node = tspan(&xml, "Link");
+            if enabled {
+                assert_eq!(node.attribute("fill"), Some("#0054ff"));
+                assert_decoration(&xml, node, Some("underline"));
+                assert!(node.parent().unwrap().has_tag_name("a"));
+            } else {
+                assert_eq!(svg, render(context, text("Link")), "{context:?}/{kind}");
+                assert!(!xml.descendants().any(|node| node.has_tag_name("a")));
+            }
+        }
+        checked += 1;
+    }
+    assert_eq!(checked, 5);
+}
+
+#[test]
 fn explicit_false_spans_override_legacy_runs_and_prior_true_spans() {
     let mut content = text("abc");
     content.runs = vec![RichTextRun {

@@ -500,7 +500,9 @@ impl<'a> StyledText<'a> {
                     }
                 }
                 RichTextSpanType::Hyperlink => {
-                    is_hyperlink = true;
+                    is_hyperlink = span
+                        .hyperlink_value()
+                        .is_some_and(|hyperlink| hyperlink.kind.is_hypertext());
                     style.link_target = hyperlink_target(&self.index, span);
                 }
                 _ => {}
@@ -630,6 +632,9 @@ fn span_range(index: &TextIndex<'_>, span: &RichTextSpan) -> Option<Range<usize>
 
 fn hyperlink_target(index: &TextIndex<'_>, span: &RichTextSpan) -> Option<String> {
     let hyperlink = span.hyperlink_value()?;
+    if !hyperlink.kind.is_hypertext() {
+        return None;
+    }
     if let Some(target) = hyperlink.custom_data.filter(|target| !target.is_empty()) {
         return sanitize_hyperlink_target(target);
     }

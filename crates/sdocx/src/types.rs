@@ -783,6 +783,13 @@ pub enum HyperlinkType {
     Other(u32),
 }
 
+#[cfg(feature = "render")]
+impl HyperlinkType {
+    pub(crate) const fn is_hypertext(self) -> bool {
+        !matches!(self, Self::Unknown | Self::Other(_))
+    }
+}
+
 impl From<u32> for HyperlinkType {
     fn from(raw: u32) -> Self {
         match raw {
