@@ -4,16 +4,16 @@
 
 Confirmed by static inspection of Samsung Notes 4.4.45.37 from the
 [identified APK](README.md#sources-and-validation). `FlashViewManager`
-and its nested draw listener/Runnable were freshly decompiled from
+and its nested draw listener/Runnable were decompiled from
 `classes11.dex`, with anonymous-class inlining disabled. The synthetic
-`com.samsung.android.sdk.composer.a` Runnable was freshly decompiled from
-`classes7.dex`. The freshly extracted Composer and writing-manager classes
+`com.samsung.android.sdk.composer.a` Runnable was decompiled from
+`classes7.dex`. The Composer and writing-manager classes
 used in the [close trace](composer-close-findings.md) supply the other Java
 methods. Native addresses below are in ARM64 `libSPenComposer.so` unless
 explicitly prefixed with View for `libSPenView.so`.
 
-This extends the close trace through capture scheduling and the null-document
-branch. A draw callback and a document-change post have different purposes;
+The capture scheduling and null-document branches use separate callbacks.
+A draw callback and a document-change post have different purposes;
 neither Java callback inspects pending prediction completions.
 
 ## Capture release is posted by the first draw callback
@@ -184,7 +184,7 @@ Composer's return value is whether member 744 is non-null, computed at
 false after these updates. `releaseComposerView` discards that result and
 continues to close; false alone does not identify failed detachment.
 
-## Prediction ordering remains a separate constraint
+## Prediction completion ordering
 
 The [prediction queue trace](predictor-queue-findings.md) gives each
 completion its own Handler and copied consumer pointer. The capture draw
@@ -199,12 +199,12 @@ Reversing those two posts permits completion before close. This is a static
 ordering example conditional on other delegates adding no cancellation or
 wait, not an observed Android failure.
 
-Unresolved behavior includes other document-change actions, SmartWritingView
-recognition cleanup, and drawing/backend delegates. Those require their own
-traces before claiming either safe completion ordering or stale delivery
-for the full application lifecycle.
+Other document-change actions, SmartWritingView recognition cleanup, and
+drawing/backend delegates are not established by this trace. It does not
+establish either safe completion ordering or stale delivery for the full
+application lifecycle.
 
-The APK digest, fresh DEX definitions and both native streams were verified.
+The APK digest, DEX definitions and both native streams were verified.
 JNI bindings, relocations, vtable targets and cited instructions were checked
 against the binary bytes. Disposable state reconstruction checked one-post
 capture behavior and the two completion/close orderings. No device execution,

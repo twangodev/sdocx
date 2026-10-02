@@ -84,8 +84,8 @@ real record at predictor offset 136. `Run` copies it at
 `0x2c6b4`–`0x2c6c0`; the deviation function loads its XY at
 `0x2d550`. The copied real vector's final record remains the anchor
 passed to `GetPenEvent` through `0x2d580` and `0x2d654`–`0x2d658`.
-These two input records must not be assumed to have identical XY after
-filtering.
+These records are separate copies; the trace does not establish identical
+XY after filtering.
 
 For reconstructed output coordinates `Q[i]` and configured horizons
 `H[i]` in microseconds:
@@ -228,7 +228,9 @@ horizon differences, both deviation rules, equality boundaries, zero-time
 cap bypass and the wider squared-norm fallback. These are independent
 arithmetic checks, not execution of the bundled model or device validation.
 
-The [acceleration estimator](predictor-acceleration-findings.md) and
-[low-speed admission](predictor-speed-findings.md) are now traced.
-Readiness/chronology checks and application configuration/runtime evidence
-remain relevant to the [unmarked-vector reachability question](neural-admission-findings.md#member-112-is-the-discarded-output-count).
+The [acceleration estimator](predictor-acceleration-findings.md),
+[low-speed admission](predictor-speed-findings.md) and
+[pacing gate](predictor-chrono-findings.md) describe earlier rejection stages.
+Application reachability of the
+[unmarked-vector configuration](neural-admission-findings.md#member-112-is-the-discarded-output-count)
+is unverified.

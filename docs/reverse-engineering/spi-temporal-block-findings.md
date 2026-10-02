@@ -5,7 +5,7 @@
 Recovered from Samsung Notes 4.4.45.37 ARM64 `libSPenBase.so` in the
 [identified APK](README.md#sources-and-validation). Primary and alpha
 mode 3 can copy from a previous image or add residuals to a motion-shifted
-reference block. An independent scratch decoder now reconstructs those
+reference block. An independent scratch decoder reconstructs those
 paths across complete constructed image sequences.
 
 The tested configuration uses wire color index 4, API output color 500,

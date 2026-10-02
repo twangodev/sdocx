@@ -105,8 +105,8 @@ for an optional provider through slot 88 at Drawing `0xb7f48`. On action 1,
 if that provider exists, its slot 40 returns a coordinate vector at
 `0xb7fa0`. A nonempty vector is passed to `ObjectStroke::ReplacePoint` at
 `0xb7fe8`, after which provider slot 16 is called with false at `0xb7ffc`.
-That is a real post-append replacement path; its provider semantics need
-separate investigation for pens that implement it.
+This establishes a post-append replacement path. The provider semantics
+for other pens are not established by this trace.
 
 Marker2 V1/V2 do not enter it:
 

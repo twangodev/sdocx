@@ -109,8 +109,8 @@ value back into the budget itself.
 
 `OnPredictTouch` supplies this boolean at `0x4d9a70`. It is the negated
 `RectF::IsEmpty` result for the bounds returned by helper `0x4da0b8`,
-through `0x4d989c` or `0x4d9a50`. It should not be described as a timer
-that advances unconditionally on every input event or display frame.
+through `0x4d989c` or `0x4d9a50`. Advancement therefore depends on drawable
+bounds, rather than unconditionally on every input event or display frame.
 
 For a synthetic fixed working list with X values `[10, 20, 30, 40]`,
 constructor period 5, and one true update after each selection:

@@ -5,7 +5,7 @@
 Recovered from Samsung Notes 4.4.45.37 ARM64 `libSPenBase.so` in the
 [identified APK](README.md#sources-and-validation). The independent
 [payload](spi-alpha-payload-findings.md) and
-[pixel](spi-alpha-pixel-findings.md) readers now initialize and advance
+[pixel](spi-alpha-pixel-findings.md) readers initialize and advance
 their own alpha neighbor state. Complete synthetic images decode without
 native parsing or native state as an input.
 
@@ -102,7 +102,7 @@ selector = left + 16*above + 256*above_right + 4096*above_left
 
 This selects the native edge-completion branch. The rules below cover
 the neighbor patterns reached by modes 0/1/3 in the tested configuration.
-The later [mixed-prediction trace](spi-mixed-prediction-findings.md)
+The [mixed-prediction trace](spi-mixed-prediction-findings.md)
 recovers all sixteen binary availability patterns and combines intra and
 temporal blocks in retained-reference sequences.
 
@@ -165,7 +165,7 @@ direct codec calls under Unicorn with recorded allocation sizes and
 memory writes; no host-memory overrun or device reproduction is claimed.
 Pixel agreement alone did not validate auxiliary marker writes.
 
-The decoder used for this trace rejects alpha mode 5. The subsequent
+The decoder used for this trace rejects alpha mode 5. The
 [literal-state trace](spi-alpha-literal-state-findings.md) recovers its
 exact write footprint, independently decodes cases that fit the buffer,
 and demonstrates changed prediction even without an overrun. Separate
@@ -205,7 +205,7 @@ state is observed for comparison, not passed into reconstruction.
 
 ## Evidence limits
 
-Subsequent [palette work](spi-palette-block-findings.md) adds primary mode 4
+The [palette trace](spi-palette-block-findings.md) adds primary mode 4
 and independent decoding of the 30 original native-generated images.
 The [differential trace](spi-differential-block-findings.md) also adds primary
 mode 2. The [mode-3 color trace](spi-color-intra-findings.md) adds full-size
@@ -217,5 +217,5 @@ literal offsets and their prediction effects. Other packet/header variants,
 malformed-input handling and portable behavior for literal writes beyond the
 marker buffer remain unestablished. Synthetic cases do not establish
 device-export compatibility. The selected
-configuration now has complete independent decoding for its supported
+configuration has complete independent decoding for its supported
 color and alpha mode combinations.

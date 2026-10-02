@@ -98,7 +98,7 @@ it does not by itself prove a coordinate or pressure-decoding error. Those
 marks use V16 stamps, so this width gap is not a measurement of the
 current renderer.
 
-## Other gaps exposed by this fixture
+## Saved shape and line geometry
 
 The five native shape types are rectangle (4), ellipse (1), triangle (2),
 pentagon (11), and hexagon (6). At `b0b33d5` the renderer handled the first
@@ -183,7 +183,7 @@ spacing. Unknown template IDs retain the full `u32` value.
 radius and spacing rules. The 02 PDF contains a JPEG background; the SDK template
 geometry follows the native drawing/capture path.
 
-Raster validation caught an exporter detail: resvg 0.47 rounds SVG pattern-tile
+resvg 0.47 rounds SVG pattern-tile
 sizes to integer pixels (`render_pattern_pixmap` in its `src/path.rs`). A
 91.7 × 83.16 repeating tile became 92 × 83, causing cumulative drift. Explicit
 row subpaths preserve fractional coordinates in browser, PNG and PDF rendering.

@@ -6,8 +6,7 @@ Inspected Samsung Notes 4.4.45.37 ARM64 `libSPenModel.so`, `libSPenBase.so`,
 `libSPenDrawing.so` and `libSPenComposer.so` from the local APK extraction.
 The APK identity is recorded in the knowledge-base index. These are native
 control-flow and vtable findings, without new Samsung SDOCX/PDF captures.
-Addresses below identify their library explicitly. No Python oracle is needed
-for this investigation.
+Addresses below identify their library explicitly.
 
 ## Query rectangles and root selection
 

@@ -12,7 +12,7 @@ of its reconstructed Java control flow.
 The public Standard PDF choice reaches `NotePDFExporterRasterListX` for
 list-page notes. It does not select the native class named
 `NotePDFExporterVectorList`. These implementations have different collectors,
-bitmap writers and batch-finalization behavior. The earlier
+bitmap writers and batch-finalization behavior. The
 [native vector stroke findings](native-pdf-stroke-findings.md) describe a
 real native implementation, but its class name alone does not connect it to
 the public Standard option.
@@ -52,13 +52,13 @@ into the eight-byte `PDFExporterOption` at `0x314a1c`–`0x314a3c`:
 | 7 | Inverse of editable |
 
 The factory call at `0x314a48` reaches `CreateNotePDFExporter`, `0x360610`.
-As previously established, native type 0 constructs `NotePDFExporterRaster`
+Native type 0 constructs `NotePDFExporterRaster`
 and native type 1 constructs `NotePDFExporterVector`. The normal Java
 constructor above requests only the former. This does not prove that the
 latter has no other caller.
 
 `NotePDFExporterRaster` saves the option at member 120 at `0x355bd0`.
-Its `ExportFile`, `0x355d68`, reads page mode and option byte 6, now member
+Its `ExportFile`, `0x355d68`, reads page mode and option byte 6 at member
 126, to choose the delegate:
 
 | Page mode | Option byte 6 false | Option byte 6 true |
@@ -67,8 +67,8 @@ Its `ExportFile`, `0x355d68`, reads page mode and option byte 6, now member
 | 1 | `NotePDFExporterRasterSingle`, call `0x355ef4` | `NotePDFExporterRasterSingleX`, call `0x355ea0` |
 
 Consequently Standard uses the X implementation for both page modes. The
-composition below traces the list-page variant; single-page segmentation
-must be checked separately before claiming the same complete behavior there.
+composition below traces the list-page variant. Single-page segmentation
+is not established by this trace.
 
 ## Note preparation and layer scope
 
@@ -91,8 +91,8 @@ and updates its page text ranges through `SetTextSectionData(int,int,int)`
 at `0x3a26bc`. Its inspected body performs text-section preparation, without
 an explicit physical-layer merge.
 
-The [saved physical-layer investigation](page-layer-selection-findings.md)
-traces the remaining load and list setup. Model `PageImplBase::LoadLayer`
+The [saved physical-layer trace](page-layer-selection-findings.md)
+establishes the load and list setup. Model `PageImplBase::LoadLayer`
 assigns the serialized current-layer index to the page's object handler at
 `0x346c78`–`0x346c8c`. X list initialization obtains the note's existing
 page pointers at `0x35a488`; WDoc `WNote::GetPageList` and Base
@@ -103,11 +103,10 @@ The inspected capture setup preserves those pointers and the layer selection.
 the exporter's array, builds its full-page rectangle and calls
 `WPage::FindObjectInRectIntersect` at `0x35adbc`. It passes object-type mask
 `0x00ffffff` and the supplied render-layer filter. The
-[previously traced WPage/Model path](capture-composition-findings.md#clone-state-and-collection-boundaries)
+[WPage/Model path](capture-composition-findings.md#clone-state-and-collection-boundaries)
 uses the currently assigned physical layer's object manager and existing
-list order. It does not call the replay-sorted all-layer collector. Together
-with the loader and setup evidence, this supports selecting the saved current
-physical layer when constructing the SDK's semantic page.
+list order. It does not call the replay-sorted all-layer collector. The
+loader and capture setup preserve the saved current physical layer.
 
 ## Standard list-page paint sequence
 
@@ -139,7 +138,7 @@ at Model `0x35e6cc`–`0x35e6dc`. The highlighter pass therefore collects
 strokes only. Filter 4 retains the full caller-supplied type mask for the
 masking pass. Neither path tests a specific pen name. The
 [complete selection table](object-order-findings.md#top-only-selection-restricts-the-object-type-mask)
-supersedes the earlier conclusion drawn from the render-layer helper alone.
+records the object-type restriction in addition to render-layer matching.
 
 ## Ordinary objects retain interleaving and flush the tail
 
@@ -159,8 +158,8 @@ without drawing. Visible entries are handled in source-list order:
 All three bitmap-flush call sites pass PDF blend value 0. The bitmap helper
 returns without writing an empty list. Thus an ordinary list containing
 stroke, image, stroke has an explicit final flush in this implementation.
-The unresolved stroke-counter tail in `NotePDFExporterVectorList` is a
-different loop and must not be used to infer a Standard PDF defect.
+The unresolved stroke-counter tail in `NotePDFExporterVectorList` belongs
+to a different loop.
 
 ## Highlighter blend reaches the PDF image object
 
@@ -208,7 +207,8 @@ root pass selection, shared by SVG, vector PDF and replay. Rust regressions
 cover image/stroke and shape/stroke interleaving, vector PDF paint order and
 selectable text. The shared SVG top batch uses page-capture Lighten on dark
 paper rather than Standard PDF's unconditional Darken; that remains an explicit
-export policy. Native intersection selection and wider pen parity remain open.
+export policy. These regressions do not establish native intersection selection
+or complete pen parity.
 
 The exporter name alone does not identify the UI choice, page mode or background
 kind. Single-page segmentation, editor changes to layer selection and pen-level

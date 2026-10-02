@@ -185,7 +185,7 @@ The optional replay-recording helper is distinct from the millisecond
 setter and recorded timestamp array. For example, its stroke branch reads
 the first and last timestamps at `0x363838`–`0x36384c` to calculate
 replay metadata; this read does not rewrite those samples. Full downstream
-notifications and callback-driven edits remain separate investigations.
+notifications and callback-driven edits are outside this trace.
 
 ## Validation and SDK implications
 

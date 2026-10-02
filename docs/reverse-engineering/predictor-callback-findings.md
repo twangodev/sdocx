@@ -154,9 +154,9 @@ registered consumer, `0x4dadd0`–`0x4dade8` instead constructs an
 all-zero 40-byte entity and invokes consumer slot 16 with the original
 event argument.
 
-That fallback must not be confused with a completed prediction carrying
-measured frame timing. Its zero fields come from explicit stores in the
-proxy. This function does not delete that input event.
+Its zero timing fields come from explicit stores in the proxy, rather
+than measurements from a completed prediction. This function does not
+delete that input event.
 
 ## Validation and evidence limits
 

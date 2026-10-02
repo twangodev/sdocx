@@ -10,7 +10,7 @@ The [SPI wrapper trace](spi-media-findings.md) identified two outer
 length-prefixed blocks. This trace resolves the selected codec's header
 packet, including dimensions, color indices and flags. Isolated ARM64
 reader and writer routines were also executed under Unicorn with synthetic
-inputs. Those header checks did not decode complete images. Subsequent
+inputs. Those header checks did not decode complete images. The
 [native codec tests](spi-codec-validation.md) round-trip synthetic
 bitmaps; device behavior remains unvalidated.
 
@@ -166,7 +166,7 @@ Accepted dispatch cases stopped at that reader's entry. These checks
 executed 427 distinct APK instructions, without running the full decoder.
 
 The routines used the APK's bit-reading and writing helpers without host
-replacements. The subsequent [data-packet trace](spi-data-packet-findings.md)
+replacements. The [data-packet trace](spi-data-packet-findings.md)
 recovers kind-2 prefixes and block coordinates. Complete native
 reconstruction of synthetic bitmaps is covered by the
 [codec tests](spi-codec-validation.md), and the

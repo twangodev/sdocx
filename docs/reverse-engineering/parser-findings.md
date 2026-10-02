@@ -19,8 +19,7 @@ SDOCX bytes
 `StoredPage` drives traversal. Page and layer masks are length-prefixed;
 typed object frames use declared sizes, relative flexible offsets and
 variable-length masks. Stroke decoding handles compressed and uncompressed
-channels, color and pen size. The legacy magic-offset walker and shifted
-fallback have been removed.
+channels, color and pen size.
 
 ## Object decoding
 
@@ -36,7 +35,7 @@ Regression cases cover reordered, missing, repeated and ambiguous IDs. See
 
 Shapes and lines use `0 + 6 + 7` and `0 + 6 + 8` for geometry, styles, native
 pen references and embedded shape text. Supported templates and curves render
-to SVG. Page parsing no longer uses UUID/text heuristics. See
+to SVG. See
 [shape/line findings](shape-line-findings.md).
 
 Type-4 containers retain ordered children and root selection. Unreadable common
@@ -63,7 +62,7 @@ Note headers use declared mask lengths and flexible-data boundaries. All 20
 mapped flexible fields have explicit bounded decoders. Common object metadata
 retains visibility/editing flags, replay/resize values, full masks and frame
 extensions; 17 mapped flexible fields include SOR/extra-data bundles. A separate
-static extraction format must not be interpreted as a modern frame layout.
+static extraction format uses a different layout from modern frames.
 See [note headers](note-header-findings.md), [note metadata](note-metadata-findings.md),
 [object base](object-base-findings.md) and [object flexible](object-flexible-findings.md).
 

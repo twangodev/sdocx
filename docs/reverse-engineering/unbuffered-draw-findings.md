@@ -9,7 +9,7 @@ Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 Composer's `UBDDrawChrono` controls separate real-bitmap and fallback
 presentation paths. It uses time/VSync equations equivalent to the
 [neural pacing backends](predictor-chrono-findings.md), but owns different
-state and resets after drawing calls. It must not be modeled as the neural
+state and resets after drawing calls. It is separate from the neural
 predictor's task chronometer.
 
 ## The presenter owns a separate chronometer and receiver
@@ -75,8 +75,8 @@ the owned object's deleting-destructor slot at `0x4d7680`.
 The traced construction, installation, pacing and teardown functions do
 not identify the initial registration invocation. This remains an unresolved
 caller edge, not evidence that frame delivery occurs or never occurs.
-The neural predictor's action-based registration sequence must not be
-assigned to this distinct receiver.
+The neural predictor's action-based registration sequence does not establish
+registration of this distinct receiver.
 
 ## A drawing check selects its backend before sampling time
 
@@ -193,10 +193,10 @@ vtables and RTTI, callable installation/removal, configuration getter,
 clock imports, float/double constants, alignment, phase/interval tests and
 the two post-call reset sites were checked against ARM64 instructions.
 
-The already reconstructed time/VSync boundary cases apply after verifying
-the matching arithmetic here: strict 5 ms equality, negative sub-microsecond
-age truncation, phase equality, and one/two-frame boundaries at rates 60,
-90 and 120. Separate state checks distinguish saving a due time from
+Reconstruction of the matching time/VSync arithmetic covers strict 5 ms
+equality, negative sub-microsecond age truncation, phase equality, and
+one/two-frame boundaries at rates 60, 90 and 120. Separate state checks
+distinguish saving a due time from
 committing it, and a null fallback call from the predictor's null-event
 completion condition. None of these checks executes the native library.
 

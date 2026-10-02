@@ -12,7 +12,7 @@ integer deltas into the contents view's transform. Its separate
 view. That writing-view setter updates cutter and eraser components and
 an optional diagram transformer; it does not set the ordinary pen size.
 
-This connects runtime zoom configuration to the previously recovered
+This connects runtime zoom configuration to the
 [inverse view transform](view-input-transform-findings.md). It does not
 establish every ancestor transform, every callback's effects or the entire
 upstream pen-setting path. No device fixture or native execution was used.
@@ -174,7 +174,7 @@ construction, callback registration, vtable relocations, view setter
 imports, scale arithmetic and remover RTTI were checked against the
 ARM64 binaries.
 
-The [pen size trace](pen-size-findings.md) now resolves the note-writing
+The [pen size trace](pen-size-findings.md) identifies the note-writing
 manager's document-relative conversion and native size assignment, plus
 the alternative density conversion, ordinary down-event pen assignment
 and the stroke view's separate recording-pen copy. Other zoom listeners,

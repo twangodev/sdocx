@@ -10,7 +10,7 @@ Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 interval before another prediction has elapsed. A true result allows the
 base predictor to enter `DoPredict`. This precedes the separate
 [neural expiry checks](neural-admission-findings.md), where true means
-that work is too late and should be rejected. These predicates have
+that the prediction exceeds its time budget. These predicates have
 different roles despite their similar names.
 
 ## Neural pacing selects one of two persistent backends
@@ -180,8 +180,8 @@ For the VSync backend, completion does not change the origin saved earlier.
 
 Linear virtual slot 248 is `LinearPredictor::CheckExpiredAndReset`,
 `0x24d50`, which returns true unconditionally. It does not run either
-backend's expiry predicate. The neural pacing formulas must not be assigned
-to the linear implementation merely because both inherit the same wrapper.
+backend's expiry predicate, despite inheriting the same wrapper as the
+neural implementation.
 
 Base `SetPenLocationInScreenCoef`, `0x301c8`, forwards its float through
 wrapper slot 56. The wrapper at `0x39348` forwards only to the backend

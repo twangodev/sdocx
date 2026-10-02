@@ -168,8 +168,8 @@ copies the final vector record, including an unmarked one, to base member
 
 An all-unmarked nonempty vector leaves the backward scan index at -1.
 There is no separate rejection between that scan and the address calculation
-at `0x314f4`. This establishes an edge requiring a caller-invariant audit.
-The Composer creation/configuration sequence above preserves the invariant;
+at `0x314f4`. The Composer creation/configuration sequence above preserves
+the invariant that a nonempty vector has a marked record;
 normal application reachability of an unmarked vector is not established.
 
 ## Event builders restore the millisecond time base
@@ -230,5 +230,5 @@ The [admission trace](neural-admission-findings.md) recovers task expiry
 and acceleration-based output discarding. It also supplies a static
 single-output configuration whose processed prefix and selected range do
 not intersect; the Composer sequence above instead enables multiple outputs.
-The [motion trace](neural-motion-findings.md) recovers candidate rejection;
-application reachability of that configuration remains to be checked.
+The [motion trace](neural-motion-findings.md) recovers candidate rejection.
+Application reachability of that single-output configuration is unverified.

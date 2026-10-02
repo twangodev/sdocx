@@ -113,9 +113,8 @@ The registry critical section also ends before delivery. Dispatch releases
 it at `0x97244`, then reads the located node at `0x97250`. The called
 `AutoCriticalSection` destructor, `0x99cc8`, invokes mutex unlock at
 `0x99cdc`. No retained ownership or second lookup occurs between unlock
-and invocation. Concurrent deregistration would therefore need an outer
-lifetime rule; this map lock alone does not keep the node or Handler alive
-through callback delivery.
+and invocation. This map lock alone does not keep the node or Handler
+alive through callback delivery. Outer lifetime synchronization is unverified.
 
 ## Normal callback completion releases its own resources
 
@@ -188,10 +187,9 @@ main-looper message resolves H and callback reads P's unchanged C pointer
 ```
 
 The callback checks whether the copied pointer is null, not whether its
-consumer is still registered or allocated. Establishing whether the
-application actually permits this sequence requires the outer teardown
-callers and thread ordering, or a device reproduction. The local trace
-does not establish a reproduced use-after-free.
+consumer is still registered or allocated. Application reachability of
+this ordering is unverified; the local trace does not establish a
+reproduced use-after-free.
 
 ## A true return does not confirm enqueue success
 
@@ -205,8 +203,7 @@ checks an enqueue result nor releases the Handler/payload after a normal
 send return. Under the missing-bridge condition, the local sequence leaves
 registered native resources without a queued completion to release them.
 Whether that condition is reachable after successful application startup
-remains unresolved. This Boolean must not be interpreted as proof of
-delivery or cleanup.
+remains unresolved. This Boolean does not confirm delivery or cleanup.
 
 ## Validation and evidence limits
 

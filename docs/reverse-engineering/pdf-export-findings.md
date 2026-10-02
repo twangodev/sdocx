@@ -115,8 +115,8 @@ as PDF features. CLI and browser WASM export use the retained document path.
 The APK's own vector list exporter rasterizes stroke batches before PDF
 insertion, as documented in [native PDF stroke findings](native-pdf-stroke-findings.md).
 Its output is not an all-vector ground truth for pen geometry. The SDK's
-SVG-based architecture can preserve supported paths while pen appearance
-and opacity are investigated independently.
+SVG-based architecture preserves supported paths. Pen appearance and opacity
+have separate evidence limits.
 
 Public export option names also differ from the native factory types.
 [Standard PDF composition findings](standard-pdf-composition-findings.md)

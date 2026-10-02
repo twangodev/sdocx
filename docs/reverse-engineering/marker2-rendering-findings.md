@@ -157,7 +157,7 @@ next segment at `0x22d88`–`0x22da0`. The matching V1 routine at `0x21a54`
 has the same operations; its differing literal identifies V1 in the log.
 
 These steps explain why connecting raw input coordinates directly is not
-the complete native point-generation model. The subsequent
+the complete native point-generation model. The
 [sampling and completion trace](marker2-sampling-findings.md) resolves
 `SmPath`'s bounded distance approximation and confirms that normal redraw
 and end routines add no separate stamp at the final input coordinate.
@@ -165,8 +165,7 @@ and end routines add no separate stamp at the final input coordinate.
 ## The standalone alpha setter has no identified static callers
 
 PenCommon exports `PenDrawableRT::SetAlpha(float)` at `0x4a5a0`, which
-overwrites drawable member 56. The existence of that setter previously
-left an open question about the ARGB-to-draw path.
+overwrites drawable member 56.
 
 An APK-wide scan of all 107 ARM64 libraries found its mangled symbol only
 in PenCommon. That library has no relocation to the setter, including
@@ -183,7 +182,7 @@ operations or higher-level object-alpha composition.
 
 ## SDK implications and validation
 
-`ink/marker2.rs` now reconstructs that saved model for V1 and V2: one stamp
+`ink/marker2.rs` reconstructs that saved model for V1 and V2: one stamp
 radius, one path opacity, and midpoint sampling. Overlapping stamps in one
 stroke are a single filled path, so coverage is a union rather than stacked
 transparency. Top-layer strokes, whichever pen produced them, are painted

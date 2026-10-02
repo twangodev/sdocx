@@ -57,8 +57,7 @@ Other base branches call `OnPredictionComplete` directly. For example,
 `0x2ed00`–`0x2ed0c` supplies the incoming event's nanosecond timestamp
 at entity offset 8, the same earlier clock sample at offset 16, and
 zeros at 0/24/32. The paths at `0x2ed7c`–`0x2eda4` instead use the
-retained-record reference. A complete callback schema must therefore
-preserve the reference's branch-dependent origin.
+retained-record reference. The reference has a branch-dependent origin.
 
 The [base dispatch trace](predictor-dispatch-findings.md) identifies which
 status, speed, pacing and history conditions select those completion paths.
@@ -98,8 +97,8 @@ Construction clears it at `0x24fa4`; the action-zero path in
 `NNPredictor::Predict` clears it again at `0x25314`.
 
 Consequently a neural `DoPredict` call can supply zero alignment and
-a nonzero period before receiving a VSync update. Those two fields
-must not be treated as a single present/absent flag.
+a nonzero period before receiving a VSync update. The fields have
+independent initialization and update paths.
 
 The base branches that bypass `DoPredict` retain their zero fields.
 The linear implementation forwards its entity to completion at
@@ -120,9 +119,8 @@ The [presentation helper](presentation-time-findings.md) divides in
 float and converts to signed 32-bit before widening. The neural entity
 uses double division and converts directly to signed 64-bit. Its rate
 also comes from predictor configuration, whereas presentation setup can
-prefer the separately configured hardware refresh rate. Neither the
-rate nor its resulting period should be forced to match across these
-two paths.
+prefer the separately configured hardware refresh rate. Matching rates
+do not guarantee identical periods across these two paths.
 
 ## The neural task's later time remains separate
 
@@ -194,5 +192,5 @@ The [VSync delivery trace](vsync-delivery-findings.md) identifies the
 `OnVSync` argument as the unchanged Java frame-callback timestamp and
 recovers subscription/removal. Active device configuration and neural
 model behavior remain unvalidated. No device execution or SDOCX fixture
-was used. The callback timing must
-not be reapplied to stored timestamps during export.
+was used. These callback fields describe live prediction timing, not
+stored timestamps used during export.

@@ -5,9 +5,9 @@
 Confirmed by static inspection of Samsung Notes 4.4.45.37's
 `com.samsung.android.sdk.pen.view.SpenMotionEvent`, ARM64 `libSPenBase.so`
 and `libSPenDrawing.so` from the APK identified in the
-[knowledge base](README.md#sources-and-validation). The Java constructor
-was freshly decoded in fallback mode because ordinary decompilation had
-omitted its body. Labels below refer to that constructor's DEX offsets.
+[knowledge base](README.md#sources-and-validation). The Java constructor's
+body comes from fallback-mode decompilation. Labels below refer to its DEX
+offsets.
 
 This adapter copies pressure and the two pen axes without normalization,
 promotes Java float coordinates to native doubles, and carries two time
@@ -136,8 +136,8 @@ Native conversion applies a further check at `0xe2608` and `0xe282c`.
 When the unsigned value at Base `0xf6c34` is at least 35, it stores the
 Java boolean as 0 or 1; otherwise it stores -1. `System::SetSDKVersion`,
 `0xc757c`, and `GetSDKVersion`, `0xc7588`, identify this global as the
-native configured SDK version. Its initialization remains a separate
-research target. The [prediction-length controller](stroke-prediction-findings.md#prediction-length-control-selects-a-non-resampled-anchor)
+native configured SDK version. Its initialization is unverified. The
+[prediction-length controller](stroke-prediction-findings.md#prediction-length-control-selects-a-non-resampled-anchor)
 uses -1 as a fallback case, accepts 0 directly and searches history when
 the current sample has another state. This does not remove event samples
 from the ordinary recorder's append loop.
@@ -169,16 +169,16 @@ in these append loops. The separate
 [insertion-time millisecond flag](stroke-insertion-findings.md) changes
 metadata without rescaling the array.
 
-## SDK implications and validation
+## Stored-stroke interpretation and evidence limits
 
-For stored-stroke replay, retain the decoded time channel and its mode.
-This live-input adapter is not evidence for multiplying a saved timestamp
-by 1000000, subtracting the first point again, or normalizing pressure and
-axes during decoding. Device input, event transformation, model recording
+This live-input adapter does not establish a conversion of the decoded
+stored-stroke time channel or its mode. It is not evidence for multiplying a
+saved timestamp by 1000000, subtracting the first point again, or normalizing
+pressure and axes during decoding. Device input, event transformation, model recording
 and binary channel encoding are separate boundaries.
 
 The APK digest and both native library byte streams were verified.
-Fresh constructor output, JNI field names, record stores, getter arithmetic
+Constructor DEX output, JNI field names, record stores, getter arithmetic
 and recorder imports were checked against the APK and ARM64 instructions.
 Disposable reconstruction checked pointer-major ordering and the timestamp
 example. No native execution or SDOCX fixture was used. Resampled-state

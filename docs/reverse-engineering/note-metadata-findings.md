@@ -54,9 +54,8 @@ UTF-16 code units followed by those units.
 | 21 | `i32` | `stroke_group_size` |
 | 22 | String with `u32` code-unit count | `app_custom_data` |
 
-The earlier format map described bit 2 as account/user data and bit 3 as two
-unidentified doubles. Native names and the JNI bridge establish that these are
-author contact information with an image reference, and latitude/longitude.
+Native names and the JNI bridge identify bit 2 as author contact information
+with an image reference, and bit 3 as latitude/longitude.
 The decoder preserves scalar values rather than applying UI defaults or
 guessing meanings for text-direction/background-theme enum values.
 

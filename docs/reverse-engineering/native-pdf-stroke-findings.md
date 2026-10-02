@@ -17,8 +17,8 @@ The normal Java Standard PDF option actually selects the separate
 `NotePDFExporterRasterListX` implementation. Its confirmed selection,
 highlighter Darken blend and final object-batch flush are documented in
 [Standard PDF composition findings](standard-pdf-composition-findings.md).
-The native `VectorList` behavior below must not be attributed to that public
-option solely from the class name.
+The class name alone does not establish that the public option uses the
+native `VectorList` behavior below.
 
 ## Batch factory and bitmap coordinates
 
@@ -157,6 +157,6 @@ image differences alone do not isolate a geometry error. Pen settings,
 coverage and opacity have the limits recorded in the linked rendering findings.
 
 The mixed-list final-batch condition remains unresolved as documented in
-the capture findings. Rechecking the iterator tail confirmed no additional
-flush between iterator exhaustion and list destruction. The static trace does
+the capture findings. The iterator tail has no additional flush between
+iterator exhaustion and list destruction. The static trace does
 not establish the practical effect after list preparation or runtime batching.

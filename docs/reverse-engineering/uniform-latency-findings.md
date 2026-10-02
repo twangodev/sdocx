@@ -42,10 +42,11 @@ to a signed 32-bit integer, and stores it at controller offset 140 and
 helper offset 40, at `0x4d6860`–`0x4d6870`.
 
 This helper duration is distinct from the period supplied in the
-prediction callback's timing structure below. Their runtime relationship
-must be established at the producers rather than assumed from similar
-names. Constructor state alone also does not prove the stage is enabled
-for any device or pen configuration.
+prediction callback's timing structure below. The
+[timing producer trace](predictor-timing-findings.md#the-predictor-and-display-helper-use-different-period-calculations)
+identifies their separate rate sources and float/double calculations.
+Constructor state alone does not prove the stage is enabled for any
+device or pen configuration.
 
 ## Working records preserve axes but replace other metadata
 
@@ -128,8 +129,7 @@ at `0x4d5b14`, with an equivalent path through `0x4d5aac` when logging
 is enabled.
 
 There is no lower clamp of `requested_ns` to zero here. The denominator
-also has no explicit zero guard in this recovered calculation. Those
-facts should not be replaced by an assumed generic clamp to `[0, 1]`.
+also has no explicit zero guard in this recovered calculation.
 
 The timing reference comes from entity offset 8, rather than the saved
 anchor record's nanosecond field. One local presenter producer supplies
@@ -138,7 +138,9 @@ historical nanosecond time when history exists, otherwise current time,
 at `0x4d7a74`–`0x4d7a88`. That local producer stores `GetNano()` at
 offset 16 and zero at offsets 24/32. The external callback at `0x4da4bc`
 instead copies all 40 bytes of its supplied entity before forwarding it.
-Its upstream timing source remains a separate trace target.
+The [timing producer trace](predictor-timing-findings.md) identifies the
+external entity's branch-dependent real-event reference, sampled clock,
+VSync origin and refresh period.
 
 ## The cutoff uses time fractions, not fractions of path length
 

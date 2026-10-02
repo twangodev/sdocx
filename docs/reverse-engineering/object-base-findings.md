@@ -49,12 +49,11 @@ The ordinary drawing dispatcher also skips hidden objects before traversing
 container children. Page decoding follows that confirmed gate while
 preserving their physical records; see [object drawing findings](object-drawing-findings.md).
 
-Earlier notes called bits 5 and 8 clippable and ATT. Bit 5's getter confirms
-the more specific meaning of enabling placement outside the canvas. Java's
+Bit 5's getter identifies permission for placement outside the canvas. Java's
 `SpenObjectBase.getOutOfViewEnabled` calls `ObjectBase_isClippable`; its native
 bridge at `0x307a98` directly calls `IsOutOfCanvasEnabled`. Bit 8's getter
 identifies floating drawn bounds. These names describe the native API;
-automatic clipping and float-layout behavior still require drawing research.
+automatic clipping and float-layout behavior are not established by these getters.
 In particular,
 `HasSavedAttValue` at `0x2d22f0` reads implementation offset 135, a different
 location from base-data offset 192. It is a separate state.
@@ -104,7 +103,7 @@ flexible fields are available through a separate `flexible_metadata` call.
 Their native map, bounded bundle decoding and remaining unknowns are recorded
 in [optional object findings](object-flexible-findings.md).
 
-## Implementation and verification
+## SDK behavior and validation
 
 `ObjectMetadata` exposes the eleven confirmed properties, replay timestamp,
 resize byte, masks and bounded extensions. Page decoding excludes hidden

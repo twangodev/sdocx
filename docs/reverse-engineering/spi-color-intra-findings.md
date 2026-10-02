@@ -16,7 +16,7 @@ modes. The constructed corpus contains 329 primary mode-3 blocks and
 exercises all 18 prediction modes and all partition-mask codes.
 
 The complete reader supports primary modes 0/1/2/3/4/5 and alpha modes
-0/1/3 within these limits. Later [quantized color work](spi-quantized-color-findings.md)
+0/1/3 within these limits. The [quantized color trace](spi-quantized-color-findings.md)
 adds nonzero quantization for the same full-size submode. The
 [reduced-plane trace](spi-reduced-color-findings.md) adds header flags `0xf0`
 with separate secondary-plane sizing and quantization. Other submodes
@@ -69,7 +69,7 @@ can use different subdivision and prediction choices.
 Q nonzero instead calls coefficient reader `0x6b8a8` at `0x6a890` and
 adds the transform stage `0x6abec`, called for the three planes at
 `0x69760`, `0x69b40` and `0x69d98`. The subsequent
-[quantized color findings](spi-quantized-color-findings.md) recover those paths.
+[quantized color trace](spi-quantized-color-findings.md) recover those paths.
 
 ## Color planes have separate prediction-marker state
 
@@ -122,7 +122,7 @@ D = d + 256
 The stored plane order is Y, E, D. Valid byte inputs produce Y in 0–255
 and E/D in 1–511. Negative halves round down. Scalar instructions at
 `0x5ed34`–`0x5ed78` and the vector path beginning at `0x5eba0` implement
-this transform. External color edges must be converted together before
+this transform. The decoder converts external color edges together before
 predicting any of the three signed planes.
 
 ## Prediction and residual addition retain 16-bit samples
@@ -262,7 +262,7 @@ harnesses and generated artifacts are local experimental evidence.
 
 ## Evidence limits
 
-The [quantized color trace](spi-quantized-color-findings.md) now recovers
+The [quantized color trace](spi-quantized-color-findings.md) recovers
 nonzero-Q coefficients, scaling, inverse transforms and reconstruction.
 The [reduced-plane trace](spi-reduced-color-findings.md) adds submode 1 with
 reduced secondary planes. The [temporal trace](spi-temporal-block-findings.md)

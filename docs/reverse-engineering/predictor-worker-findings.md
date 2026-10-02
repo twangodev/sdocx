@@ -204,9 +204,8 @@ visit that member.
 If a task already holds the mutex, the stop request waits for its normal
 completion. If stop changes pending state 2 to state 3 before the worker
 executes it, the worker can exit with the task still stored. The traced
-destructor path supplies no deletion for that pending task. This is a
-second ownership boundary to test against caller lifecycle constraints,
-not a demonstrated device failure. `CleanSession`, `0x36100`, is a
+destructor path supplies no deletion for that pending task. The isolated
+sequence does not establish a device failure. `CleanSession`, `0x36100`, is a
 single return instruction and provides no additional cleanup.
 
 `PredictorThread::SetModel`, `0x36104`, calls `Wait(true)` before
@@ -232,5 +231,5 @@ native execution or the absence of additional application synchronization.
 
 The model lifecycle trace establishes that replacement destroys resources
 referenced by earlier task bindings. Which outer callers serialize model
-changes and teardown remains unresolved. Saved SDOCX/PDF pairs alone cannot
-resolve these scheduling questions; they need runtime input and lifecycle traces.
+changes and teardown remains unresolved. The evidence is static and does
+not include runtime input or lifecycle captures.

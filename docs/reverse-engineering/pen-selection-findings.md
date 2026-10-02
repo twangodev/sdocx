@@ -176,8 +176,8 @@ Relevant input distinctions are confirmed by the branches:
 
 The comparison at `0x46250` is unsigned. Other negative parsed values are
 retained by this base setter; it is not a signed clamp to at least 1.
-Token conversion follows the native C routine, so these observations are
-not a recommendation to parse arbitrary future settings as an integer.
+Token conversion follows the native C routine. These observations cover
+Marker2's version token, not arbitrary advanced settings.
 
 Marker2's constructor builds `2;` and passes it to slot 120 at
 `0x1ed64`–`0x1ed88`. `GetStrokeDrawableGL`, `0x1f050`, obtains the current
@@ -191,7 +191,7 @@ otherwise it is destroyed at `0x1f0ac` and recreated.
 Consequently, null advanced settings select V1 for Marker2, while a stored
 `2;` selects V2. Empty settings and the -1 token can retain the constructor's
 version or a previously applied version on a cached pen. The
-[subsequent V1/V2 comparison](marker2-rendering-findings.md) confirms their
+[V1/V2 comparison](marker2-rendering-findings.md) confirms their
 shared alpha composition and identifies a thin-stroke smoothing difference;
 the pen name alone still does not establish the renderer version.
 

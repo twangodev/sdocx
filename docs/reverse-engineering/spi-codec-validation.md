@@ -9,22 +9,22 @@ native codec with exact recovery of every input pixel byte.
 
 This establishes a way to generate and check compressed SPI samples
 without SDOCX files. The native codec performed the pixel work in these
-tests. Subsequent [literal-block work](spi-literal-block-findings.md)
+tests. The [literal-block trace](spi-literal-block-findings.md)
 independently reconstructs mode 5, and
-[copy-block work](spi-copy-block-findings.md) adds modes 0 and 1 for the
-tested configuration. [Alpha residual work](spi-alpha-residual-findings.md)
+[copy-block trace](spi-copy-block-findings.md) adds modes 0 and 1 for the
+tested configuration. [Alpha residual trace](spi-alpha-residual-findings.md)
 also reproduces intermediate mode-3 coefficient arrays, and
-[payload-field work](spi-alpha-payload-findings.md) adds prediction modes
+[payload-field trace](spi-alpha-payload-findings.md) adds prediction modes
 and partition masks given starting neighbor state.
-[Alpha pixel work](spi-alpha-pixel-findings.md) reconstructs those blocks,
-and [neighbor-state work](spi-alpha-state-findings.md) supports complete
+[Alpha pixel trace](spi-alpha-pixel-findings.md) reconstructs those blocks,
+and [neighbor-state trace](spi-alpha-state-findings.md) supports complete
 independent images using primary modes 0/1/5 and alpha modes 0/1/3.
-[Palette work](spi-palette-block-findings.md) adds primary mode 4 and
+[Palette trace](spi-palette-block-findings.md) adds primary mode 4 and
 independently recovers every original input byte from all 30 native-generated
-streams. [Differential-color work](spi-differential-block-findings.md)
+streams. [Differential-color trace](spi-differential-block-findings.md)
 also recovers primary mode 2 using separately constructed images.
-[Mode-3 color work](spi-color-intra-findings.md) adds full-size planes with
-zero quantization, including new native-generated inputs. The
+[Mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
+zero quantization, including native-generated inputs. The
 [quantized color decoder](spi-quantized-color-findings.md) extends the same
 submode to nonzero quantization. The
 [reduced-plane decoder](spi-reduced-color-findings.md) adds header flags
@@ -196,7 +196,7 @@ contract.
 The APK digest, extracted ELF, cited instruction bytes, import bindings,
 mode-dispatch tables and output digests were checked.
 
-The [mode-5 trace](spi-literal-block-findings.md) now specifies literal
+The [mode-5 trace](spi-literal-block-findings.md) specifies literal
 planes and validates independently constructed multiple-packet images.
 The [copy-block trace](spi-copy-block-findings.md) adds independently
 constructed images combining modes 0, 1 and 5. The

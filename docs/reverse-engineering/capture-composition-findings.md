@@ -94,8 +94,8 @@ for the complete decision table.
 
 The same collector selects root objects without traversing container children.
 The draw dispatcher later visits those children in their stored order on the
-existing canvas, without repeating page render-pass selection. An ordered
-renderer must retain these container boundaries.
+existing canvas, without repeating page render-pass selection. Container
+boundaries therefore affect native selection and draw order.
 
 ## Top-pass composition
 
@@ -190,8 +190,8 @@ member 144. `LayerManagerBase::m_SetCurrentLayer`, `0x3476dc`, stores the
 same layer pointer in manager member 40 and handler member 0 at
 `0x3476e8`–`0x3476ec`. Thus this intersection query is scoped to the current
 physical layer, while its filter chooses a render pass within that layer.
-The subsequent [saved physical-layer investigation](page-layer-selection-findings.md)
-traces the loader's assignment of the serialized current-layer index and
+The [saved physical-layer findings](page-layer-selection-findings.md)
+identify the loader's assignment of the serialized current-layer index and
 Standard list-page export's reuse of the note's existing page pointers.
 Those inspected setup paths preserve the separate physical layers. The SDK
 constructs semantic page objects from the saved current layer while
@@ -232,7 +232,8 @@ manager's existing list at `0x33e954`–`0x33e960`.
 This path does not call the replay-sorted all-layer collector or the
 intersection collector used by `NoteCapturePage`. It obtains the current
 physical layer's whole object list through a separate API. Higher-level
-note preparation and any mutation of list order remain separate questions.
+note preparation and any mutation of list order are outside this collection
+trace.
 
 Within the vector export loop:
 
@@ -253,15 +254,14 @@ creates `ObjectStrokePdfExporter`, which draws each exported batch into a
 bitmap and embeds it as a PDF image. The factory, coordinate scaling, PNG
 handoff and distinct opacity mechanisms are recorded in
 [native PDF stroke findings](native-pdf-stroke-findings.md). Pen-specific
-blending and higher-level export preparation remain separate questions.
+blending and higher-level export preparation are outside this loop trace.
 
-The tail condition also needs separate treatment. At `0x361ebc`–`0x361ecc`,
-the loop increments its stroke counter and compares it against the original
-total object count. The ordinary iterator-end path reaches list destruction
+At `0x361ebc`–`0x361ecc`, the loop increments its stroke counter and compares
+it against the original total object count. The ordinary iterator-end path reaches list destruction
 at `0x3621bc`–`0x3621c0`. These instructions alone do not establish correct
-flushing for every mixed list ending in strokes. Do not generalize the
-observed non-stroke-triggered flush into an unconditional final flush without
-checking list preparation or runtime behavior.
+flushing for every mixed list ending in strokes. The observed
+non-stroke-triggered flush does not establish an unconditional final flush;
+list preparation and runtime behavior are unverified.
 
 The Standard X implementation has its own explicit final bitmap flush at
 `0x35b99c`. The unresolved condition above does not establish a defect in
@@ -273,5 +273,5 @@ The raster list exporter reaches capture directly: `capturePage`,
 calls `NoteCapturePage::CapturePage` at `0x356e5c` with the supplied layer
 mode. `SetPageContents`, `0x330758`, assigns the page and body-text inputs
 and updates document width/density; it does not itself merge physical layers.
-This narrows where any flattening or current-layer changes must occur, but
-does not establish how every raster or vector export variant is prepared.
+Other preparation paths are not covered by this trace, so it does not
+establish how every raster or vector export variant is prepared.

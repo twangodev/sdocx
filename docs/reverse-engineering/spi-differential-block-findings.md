@@ -10,12 +10,12 @@ earlier rows. It does not use the mode-4 palette or alpha coefficient syntax.
 An independent scratch implementation matched 104 complete synthetic
 images against the native decoder, including intermediate symbols,
 prediction prefixes, reconstructed planes and every output pixel. The
-complete reader now supports primary modes 0/1/2/4/5 and alpha modes 0/1/3
+complete reader supports primary modes 0/1/2/4/5 and alpha modes 0/1/3
 for wire color index 4, header flags `0xe0` and packet byte B zero.
 Mode-2 images exercised all four values of the packet's two-bit selector.
 
 These were constructed codec inputs. The original 30 native-generated
-images contain no mode-2 blocks. Later [mode-3 color work](spi-color-intra-findings.md)
+images contain no mode-2 blocks. The [mode-3 color trace](spi-color-intra-findings.md)
 adds native-generated mode-2 cases and primary mode 3 with zero quantization.
 Device exports, other configurations and SDK integration remain open.
 
@@ -231,13 +231,13 @@ and generated artifacts are not part of the SDK decoder.
 
 ## Evidence limits
 
-The [mode-3 color trace](spi-color-intra-findings.md) now recovers full-size
+The [mode-3 color trace](spi-color-intra-findings.md) recovers full-size
 planes with zero quantization; the [quantized color trace](spi-quantized-color-findings.md)
 adds nonzero quantization for the same submode. The
 [reduced-plane trace](spi-reduced-color-findings.md) adds mode-3 submode 1
 with reduced secondary planes, reusing the mode-2 output expansion.
 Other submodes, other header/packet paths and reference-buffer behavior remain open.
 Alpha literal marker behavior and general malformed-input policy
-also remain open. Mode 2 now has independent decoding in the tested
+also remain open. Mode 2 has independent decoding in the tested
 configuration, but these synthetic comparisons do not establish arbitrary
 SPI compatibility or validate the device document-saving wrapper.

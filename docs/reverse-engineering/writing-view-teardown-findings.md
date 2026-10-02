@@ -5,7 +5,7 @@
 Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 `libSPenEngine.so`, `libSPenComposer.so` and `libSPenView.so` from the
 [identified APK](README.md#sources-and-validation). `SpenWritingView` and
-`SpenWritingViewImpl` were freshly decompiled in fallback mode from that
+`SpenWritingViewImpl` were decompiled in fallback mode from that
 APK's `classes8.dex`. Addresses below are in Composer unless prefixed.
 
 The Java close methods invoke native finalization directly. The native
@@ -22,7 +22,7 @@ application call site permits stale delivery.
 
 ## Java closes the native view before the draw loop
 
-Fresh `SpenWritingView.close()` decompilation gives this order, with null
+`SpenWritingView.close()` has this order, with null
 checks around optional components:
 
 1. For a non-HWUI draw loop, detach the TextureView listener and remove
@@ -145,7 +145,7 @@ It is not a request to drain every Handler associated with the view.
 These three constructor allocations are separate from the Handler
 allocated inside each Predictor `OnTouchAsync` call.
 
-The earlier wait at `0x5453e0`, through relocation `0x5ab960`, names
+The wait at `0x5453e0`, through relocation `0x5ab960`, names
 `NNBaseGrouping::WaitForIdle`. Its receiver is the embedded grouping
 object at view offset 1144. That is a separate synchronization call from
 joining the neural prediction worker or delivering its Java messages.
@@ -162,23 +162,21 @@ through slot 8 at `0x4d5558`.
 The non-deleting controller destructor, `0x4d5508`, deletes its member-144
 scratch allocation through `0x4d5524`; deleting destructor `0x4d552c`
 then releases the controller object. It does not visit the predictor,
-touch synchronizer, Handler registry or Java queue. This resolves the
-previously unnamed controller cleanup operation without treating it as
-a callback barrier.
+touch synchronizer, Handler registry or Java queue.
 
-## What remains unresolved
+## Evidence limits
 
 The traced close methods do not demonstrate a wait for queued prediction
 callbacks. Main-thread execution alone would not establish that wait:
 if native deletion runs while a completion is pending, the completion
 still needs to be delivered or cancelled before its consumer is freed.
-The [main-editor release trace](composer-close-findings.md) now identifies
+The [main-editor release trace](composer-close-findings.md) identifies
 the Composer call site and its optional capture callback. Whether its
 scheduling ensures prediction completion before consumer destruction remains
 unresolved. The helper delegates called during close also remain possible
 sources of additional constraints.
 
-The APK digest, fresh DEX and three native streams were verified. JNI
+The APK digest, DEX definitions and three native streams were verified. JNI
 registration, import targets, constructor stores, vtable slots and
 destructor calls were checked against their bytes. Disposable ownership
 reconstruction checked the raster deletion chain, separate cancellation

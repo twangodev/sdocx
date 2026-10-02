@@ -4,7 +4,7 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-The following ARM64 traces establish drawing decisions without new documents.
+The following ARM64 traces establish drawing decisions.
 Addresses in the first two sections are in `libSPenDrawing.so`.
 
 ## Image and stroke precedence
@@ -58,12 +58,11 @@ paths or versions use the field.
 
 Transient preview state changes alpha to 76/255 in the resized bitmap at
 `0x841ac`–`0x841b4`. The state is time-dependent (`isPreviewState`, `0x83e2c`)
-and is not a persisted formula appearance flag. Reproducing it in static export
-would require separate justification.
+and is not a persisted formula appearance flag.
 
-The enclosing object/canvas transform and exact pen-dependent drawn bounds
-remain necessary to place these images faithfully. The stored base rectangle
-alone is not a proven substitute for the native drawn rectangle.
+Image placement depends on the enclosing object/canvas transform and
+pen-dependent drawn bounds. The stored base rectangle alone is not a proven
+substitute for the native drawn rectangle.
 
 ## Visible-stroke bounds
 
@@ -112,7 +111,7 @@ different 32-bit calculation-type member at offset 372 (`0x3a9d8`). Neither
 establishes the persisted formula enum's names. No mapping between these enums
 has been confirmed.
 
-## Implementation status
+## SDK behavior and evidence limits
 
 Formula inspection decodes both stroke lists, image media ID and result
 rectangle. Automatic formula rendering is absent. Final placement and

@@ -195,8 +195,8 @@ frames rotate destination/reference descriptors, the visible color
 alternates between the initialized 128-valued image and the original
 literal image. An alpha submode-0 pass retains the initial alpha pixels.
 
-These observed successful calls should not be interpreted as a fourth
-supported color selector. The bounded independent sequence decoder
+These successful calls do not establish a fourth supported color selector.
+The bounded independent sequence decoder
 accepts selectors 0–2 and rejects selector 3.
 
 ## Validation and evidence limits
@@ -261,7 +261,7 @@ APK/ELF identity, 59 cited instruction words, nine coefficient-reader
 calls, two scan pointers, two combination callbacks and 372 mask/class
 table bytes were verified against the native binary.
 
-[Multiple-cache selection](spi-reference-cache-findings.md) is now covered
+[Multiple-cache selection](spi-reference-cache-findings.md) is covered
 for capacities 1–5. The [mixed-prediction trace](spi-mixed-prediction-findings.md)
 adds intra/temporal edge completion and marker transitions, including
 selected-plane blocks. Broader malformed-input handling and device-export

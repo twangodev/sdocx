@@ -159,7 +159,7 @@ ARM64 code. Disposable reconstruction checked admission equality, the
 finite pressure examples and queue trimming. No device fixture or native
 execution was used.
 
-The [prediction trace](inkpen2-prediction-findings.md) now recovers
+The [prediction trace](inkpen2-prediction-findings.md) recovers
 `doPredict`'s linear fits, horizon, distance rejection and timestamp
 retention. The [Kalman trace](inkpen2-kalman-findings.md) recovers channel
 defaults and correction equations. The

@@ -22,7 +22,7 @@ Confirmed from Samsung Notes 4.4.45.37, arm64 `libSPenModel.so`:
   selected by bit 0, is `f32` rotation.
 
 See [`source-map.md`](source-map.md) for the disassembly addresses. These are
-serializer findings; the available real-document corpus does not yet contain
+serializer findings; the available real-document corpus does not contain
 a Samsung-exported standalone-text-box case.
 
 ## Text-area mode and separate visibility state
@@ -66,14 +66,14 @@ implementation byte 68. The `ObjectShapeText` constructor initializes byte 20
 to true at `0x3af0b8` and the text-area member to zero at `0x3af0c4`.
 `GetShapeBinary_PropertyFlag` at `0x3a7f84` reads byte 21 for property bit 2;
 it does not serialize byte 20 through that flag. A text-area byte or the
-editable flag must not be used as a visibility substitute. The drawing check
+editable flag does not establish text visibility. The drawing check
 is documented in [object drawing findings](object-drawing-findings.md).
 
 Synthetic tests exercise every byte value with and without text, absent versus
 explicit zero, text slicing, the complete visible object path, and following
 shape fills. A truncated field cannot borrow its byte from the next frame.
 
-## Implemented decoding
+## SDK decoding
 
 `StoredPage` traversal dispatches outer type 2 directly to a bounded frame
 reader. It retains empty text, whitespace, a single
@@ -120,9 +120,9 @@ regression fails against `d52d2b8`: a five-level embedded chain is accepted with
 a limit of four. Both pass with the current implementation. These comparisons
 used isolated archive checkouts and separate Cargo target directories.
 
-The external `01-basic-formatting.sdocx` conformance check passed during the
-migration, alongside the [historical fixture audit](fixture-validation.md)
-(7,182 strokes and 924,442 points). Those three audit inputs are retired.
+The historical `01-basic-formatting.sdocx` conformance check passed against
+the shared decoder. The separate [fixture audit](fixture-validation.md)
+recorded 7,182 strokes and 924,442 points across three retired audit inputs.
 
 A disposable synthetic archive was converted to SVG and PNG through the CLI.
 Its text, rotation and stroke appeared, and the stored border generated the

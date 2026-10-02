@@ -4,7 +4,7 @@
 
 Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 `libSPenComposer.so` from the [identified APK](README.md#sources-and-validation).
-Java classes were freshly decompiled in fallback mode from that APK:
+Java classes were decompiled in fallback mode from that APK:
 
 | DEX | Classes |
 | --- | --- |
@@ -21,8 +21,8 @@ its `writing` package. Native addresses below are in Composer.
 The main editor uses `SpenComposerWrapper`, which extends `SpenComposer`.
 Its close entry differs from the generic
 [`SpenWritingView` close path](writing-view-teardown-findings.md).
-Both reach the native raster owner chain, but the generic JNI finalizer's
-root/view destruction order must not be applied to Composer.
+Both reach the native raster owner chain, with different JNI finalizer
+root/view destruction orders.
 
 ## Application release clears the document before closing
 
@@ -79,7 +79,7 @@ finalizer. Neither clearing that manager field nor subsequently clearing
 [queued prediction payload](predictor-queue-findings.md#each-completion-registers-a-separate-native-handler).
 
 These close methods contain no direct Java message drain or deferred native
-deletion. Effects inside their cleanup delegates require separate tracing.
+deletion. Effects inside their cleanup delegates are not established here.
 
 ## Composer deletes its contents before removing the native root
 
@@ -154,7 +154,7 @@ cache state machine and optional member-1920 callback remain unresolved.
 The name `requestReadyForSave` alone is not evidence that queued predictor
 callbacks have been delivered or cancelled.
 
-## Validation and remaining boundary
+## Validation and evidence limits
 
 The APK digest, defining DEX files and native stream were verified against
 the archive. JNI entries, destructor and ready-for-save vtable targets,

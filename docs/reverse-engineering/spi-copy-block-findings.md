@@ -10,7 +10,7 @@ with independent scratch bit readers, writers and image reconstruction.
 For the tested packet configuration, mode 0 copies the block to the left
 or above; mode 1 selects the block above or supplies a displacement.
 Together with [mode-5 literals](spi-literal-block-findings.md), these
-operations now support independently constructed images containing three
+operations support independently constructed images containing three
 different block modes.
 
 This specification covers packet byte B = 0, stored at worker offset 8,

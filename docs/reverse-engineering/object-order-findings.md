@@ -13,7 +13,6 @@ The native paths retain file order within the current physical layer and
 retain child order within a container. Standard list-page PDF export then
 selects separate render passes. Its top-only intersection query additionally
 restricts object types to strokes before applying the render-layer matcher.
-This condition was missing from the earlier composition notes.
 
 ## Loading preserves the stored sequence
 

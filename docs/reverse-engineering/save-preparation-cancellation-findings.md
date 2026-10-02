@@ -118,7 +118,7 @@ The notification chain contains no ordinary stroke append or explicit
 delivery of neural prediction completions. Its terminal operation manages
 gesture locking.
 
-## The other save callback still has no identified target
+## Optional save callback
 
 NoteWritingView construction explicitly initializes the callable target at
 member 1920 to null at `0x424ae0`. `RequestReadyForSave` checks that
@@ -140,9 +140,8 @@ relocations and cited instructions were checked against the binary bytes.
 Disposable state reconstruction checked mode-dependent cancellation, flag
 reset and the notification's captured-owner routing.
 
-The result narrows what save preparation guarantees: its recovered shape
-branch requests cancellation and releases a gesture-lock reference before
-the image-cache stage. It does not establish a rule for appending, replacing
+The recovered shape branch requests cancellation and releases a gesture-lock
+reference before the image-cache stage. It does not establish a rule for appending, replacing
 or dropping an unfinished stroke in an SDOCX decoder. Recognition-engine
 completion behavior, the optional save callback and cache serialization
 remain unverified by this static trace.

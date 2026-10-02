@@ -49,7 +49,7 @@ states `[0, 1]` and current state 0, it still chooses the last historical
 sample, whose state is 1. In contrast, the
 [saved-anchor method](stroke-prediction-findings.md#prediction-length-control-selects-a-non-resampled-anchor)
 uses the current sample for state 0 and has additional historical-state
-rules. The two inputs must not be merged into one selection policy.
+rules. The two methods implement different selection policies.
 
 The delay method obtains `MotionEvent::GetTransforms` at `0x4d6db8`,
 computes `Matrix3<float>::inverse` at `0x4d6dc0` and applies it to the

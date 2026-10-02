@@ -172,7 +172,7 @@ blend operation to the resulting highlighter batch. That later Darken or
 Lighten operation is separate from the pen's mask and alpha calculation.
 
 The [pen selection trace](pen-selection-findings.md) resolves stored name
-and setting IDs and Marker2's choice between GL V1 and V2. The subsequent
+and setting IDs and Marker2's choice between GL V1 and V2. The
 [V1/V2 comparison](marker2-rendering-findings.md) confirms shared color-alpha
 composition and identifies V2's thin-stroke smoothing change. Its static
 call-site audit finds no identified callers of `PenDrawableRT::SetAlpha`

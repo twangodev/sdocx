@@ -9,7 +9,7 @@ refer to that ELF.
 The [SPI header trace](spi-header-findings.md) resolves packet kind 1.
 This trace resolves the kind-2 prefix and its connection to decoder block
 coordinates. Isolated native routines were executed under Unicorn with
-synthetic inputs. Subsequent [native codec tests](spi-codec-validation.md)
+synthetic inputs. The [native codec tests](spi-codec-validation.md)
 round-trip complete synthetic images, and the
 [literal-block trace](spi-literal-block-findings.md) independently
 reconstructs mode 5. The [copy-block trace](spi-copy-block-findings.md)
@@ -19,8 +19,8 @@ combines with alpha reconstruction to decode all 30 native-generated images
 independently. The [differential trace](spi-differential-block-findings.md)
 also adds primary mode 2 with constructed images. The
 [mode-3 color trace](spi-color-intra-findings.md) adds full-size planes with
-zero quantization. Later [quantized color work](spi-quantized-color-findings.md)
-and [reduced-plane work](spi-reduced-color-findings.md) extend submode 1.
+zero quantization. The [quantized color trace](spi-quantized-color-findings.md)
+and [reduced-plane trace](spi-reduced-color-findings.md) extend submode 1.
 The [temporal trace](spi-temporal-block-findings.md) adds explicit
 submodes 0 and 2 in packet-B-one image sequences.
 Other pixel syntax and general SPI compatibility remain open.
@@ -140,7 +140,7 @@ findings.
 The loop performs one pass, plus another when context byte 1025 is 1;
 `0x5c5ec` through `0x5c604` controls repetition and clears buffered bits
 between passes. The header consumer sets this byte for API color values
-43 and 500–503 at `0x5cbfc` through `0x5cc34`. The later
+43 and 500–503 at `0x5cbfc` through `0x5cc34`. The
 [input/output trace](spi-codec-validation.md#the-fourth-byte-connects-to-alpha-handling)
 identifies the additional pass as alpha for API value 500.
 
@@ -219,7 +219,7 @@ were checked. Native ARM64 execution covered:
 
 These checks executed 450 distinct APK instructions without replacing
 native helpers. They did not execute the buffer-copy shortcut, complete
-block traversal, pixel callbacks, allocation or worker threads. Later
+block traversal, pixel callbacks, allocation or worker threads. The
 [native codec tests](spi-codec-validation.md) execute complete synthetic
-bitmap round trips. Device SPI payloads and rendered references remain
-needed for compatibility validation.
+bitmap round trips. These synthetic checks do not establish compatibility
+with device SPI payloads or rendered references.

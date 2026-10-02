@@ -148,8 +148,8 @@ Tip-based ordinary pens have additional behavior: `PresentTouch` can
 clone real events into a presenter list at member 16, and
 `OnPredictTouch` can drain that list through `DrawStroke`. One such call
 at `0x4d9844` supplies the prediction event as the secondary argument,
-then clears the queue at `0x4d986c`. This is why the recorder's two event
-arguments must be distinguished. It is not evidence that the prediction
+then clears the queue at `0x4d986c`. The recorder receives two distinct event
+arguments. This call is not evidence that the prediction
 event itself is directly appended to the stored point array.
 
 ## Prediction length control selects a non-resampled anchor
@@ -219,8 +219,8 @@ that flag have not been established here.
 The conditional mutation matters to the
 [source-specific recorder behavior](stroke-recording-findings.md#replay-resets-the-input-source):
 an incoming source `0x1002` becomes `0x5002`, which no longer equals the
-recorder's special source constant `0x1002`. Source tests at the recorder
-must use the value reaching it, not an assumed untouched platform source.
+recorder's special source constant `0x1002`. The recorder's comparison is
+against the transformed source value.
 
 There is also a retained-event reprojection branch. When stroke-view byte
 248 is set, the method first transforms each retained event by the inverse

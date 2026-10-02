@@ -155,7 +155,7 @@ uploads and draws the supplied point instances.
 
 The constructor itself adds no duplicated or extrapolated terminal point.
 This does not resolve whether the stored array already contains synthetic
-points. A single-point array also needs separate producer investigation:
+points. Single-point array production is unverified:
 this constructor creates no history for it, while the normal Marker2 redraw
 starts from historical index 0 without a count check. That is not sufficient
 evidence that a normal saved Samsung dot reaches this path with one point.

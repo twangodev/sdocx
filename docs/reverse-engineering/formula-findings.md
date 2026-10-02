@@ -63,7 +63,7 @@ Bit 9 uses a different representation. The call at `0x42ffa4` reaches
 `ReadString2`: `0x2788e0` reads the unsigned 16-bit length, `0x2788e8` doubles it,
 and `0x278904` passes those UTF-16 units to `String::Set`. There is no sentinel
 branch: `0xffff` means 65,535 units. Other native string readers have nullable
-lengths; their behavior must not be applied to this field.
+lengths; this field has no equivalent null representation.
 
 The writer omits angle mode zero, font size zero and answer color
 `0xff000000`. The SDK preserves absence separately from stored values. Angle
@@ -221,6 +221,6 @@ Expression enum semantics, recognition-stroke index resolution, image
 resolution and native layout/evaluation are not established by these parser
 cases. Real writer variants and visual output remain unverified.
 
-The drawing path now has a separate trace covering image/ink precedence,
+The separate drawing trace covers image/ink precedence,
 placement dependencies and the expression setter's accepted range; see
 [formula rendering findings](formula-rendering-findings.md).

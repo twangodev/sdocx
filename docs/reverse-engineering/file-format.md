@@ -23,9 +23,9 @@ ZIP end-of-central-directory
 └── appended end-tag record           quickly readable without inflating ZIP
 ```
 
-The important structural rule is that almost every extensible record starts
-with offsets and variable-length bit masks. A reader should obey sizes, offsets
-and masks rather than hard-coded absolute positions.
+Almost every extensible record starts with offsets and variable-length bit
+masks. Declared sizes, offsets and masks define field boundaries; absolute
+positions depend on the preceding variable-length data.
 
 All scalar values observed in these structures are little-endian.
 
@@ -195,7 +195,7 @@ EOF-32:
 
 The existing Rust name `integrity_offset` is misleading: offset 0 is the start
 of the document-level flexible field area, not the final hash offset.
-The SDK exposes its meaning through `flexible_data_offset()` and now retains
+The SDK exposes its meaning through `flexible_data_offset()` and retains
 both complete masks; see [note-header findings](note-header-findings.md).
 
 ### Document flexible-field mask
@@ -354,8 +354,8 @@ For current writer output both masks occupy four bytes, making the fixed fields
 start at offset `0x12`: orientation at `0x12`, width at `0x16`, height at
 `0x1a`, offsets at `0x1e`/`0x22`, UUID at `0x26`, modified time at `0x70`,
 format version at `0x78`, minimum version at `0x7c`, and flexible fields at
-`0x80`. They are nevertheless length-prefixed and must not be read as
-permanently fixed `u32`s.
+`0x80`. The masks are length-prefixed; these positions describe the current
+writer's four-byte masks.
 
 The page property mask bit 0 marks a text-only page.
 
@@ -437,8 +437,7 @@ repeat child_count:
 ```
 
 The parent `declared_size` does not include recursively serialized child
-records. Children immediately follow their parent and must be walked before the
-next sibling.
+records. Children immediately follow their parent, before the next sibling.
 
 Known outer object type IDs:
 
@@ -468,7 +467,7 @@ Known outer object type IDs:
 | 24 | attached file |
 | 100 | stroke group (logical/container type; skipped by this Java page writer) |
 
-Unknown future IDs must be retained rather than treated as corruption.
+The Rust stored-object model retains unrecognized type IDs and their payloads.
 
 Recognized outer object types without semantic decoders produce
 `UnsupportedObjectType` diagnostics with the page entry, raw type and payload
@@ -578,7 +577,7 @@ attached     0 + 24
 
 Frame type 6 is a shared shape-base component, not an outer object type.
 
-Standalone text boxes now follow the `0 + 6 + 7 + 2` chain in the Rust parser.
+Standalone text boxes follow the `0 + 6 + 7 + 2` chain in the Rust parser.
 Frame 7 field bit 0 contains a sized `TextCommon` payload shared with note text;
 frame 2 carries text-box settings, including masked border fields. See
 [`text-box-findings.md`](text-box-findings.md) for the confirmed native layout,
@@ -742,7 +741,7 @@ declares its presence regardless of alpha; bit 3 independently declares pen
 size. A color-looking byte sequence or an `0xff` alpha byte is not a field
 delimiter. The current Rust `Stroke` exposes RGB only, so alpha fidelity remains
 a rendering limitation. Explicit `StoredObject::stroke_metadata` inspection
-now preserves the full ARGB value, native properties and 25 mapped optional
+preserves the full ARGB value, native properties and 25 mapped optional
 fields. See [stroke metadata findings](stroke-metadata-findings.md) for exact
 types, native call sites, unknown-field boundaries and parser validation.
 
@@ -771,14 +770,14 @@ then uses the older S Pen end-of-file tag instead of `EOFX`.
 Media names are resolved as `media/<file_name>`. Media payloads are not one
 format: objects may reference PNG/JPEG/PDF/audio/video or Samsung-specific
 formats. Fixture A contains `0@page_0000000.spi`; its pixels remain
-undecoded. The [native SPI trace](spi-media-findings.md) now identifies
+undecoded. The [native SPI trace](spi-media-findings.md) identifies
 Maetel codec dispatch and two length-prefixed blocks, with an encoded-header
 marker after the first length. This framing has not been validated against
 that fixture in this investigation. Its manifest's
 64-character hash exactly equals the lowercase hexadecimal SHA-256 of that
 payload.
 
-The SDK now parses modern manifest records and resolves displayed-image IDs
+The SDK parses modern manifest records and resolves displayed-image IDs
 through this mapping. A filename's numeric prefix is only a warned fallback
 when the manifest is absent. In native image objects (`0 + 6 + 7 + 3`), the main
 ID is inside type 7's bit-5 image fill; type 3's border/original IDs are separate.
@@ -828,9 +827,9 @@ ASCII "Document for S-Pen SDK"         # exactly 22 bytes
 The end tag in fixture A is 144 bytes: its first `u16` is 142 and its last 22
 bytes are the signature. Its two variable blobs are empty and it predates the
 app-custom-data field. The tags in fixtures B and C include a zero-length `u32`
-for that optional string and are 148 bytes. A reader must therefore walk the
-length-prefixed strings/blobs and use the declared size; fixed offsets such as
-`0x48` and `0x50` only work when all preceding strings are empty.
+for that optional string and are 148 bytes. Length-prefixed strings/blobs and
+the declared size determine the boundaries; fixed offsets such as `0x48` and
+`0x50` apply only when all preceding strings are empty.
 
 When `encryption_blob_length != 0`, that blob is:
 
@@ -896,7 +895,7 @@ ZIP directory
 ```
 
 Structural traversal and channel decoding are implemented in
-`storage.rs`, `frame.rs`, `page.rs` and `decode.rs`. Page/layer masks are now
+`storage.rs`, `frame.rs`, `page.rs` and `decode.rs`. Page/layer masks are
 length-prefixed; existing public header field names are retained for API
 compatibility. Color and pen size are read in field-mask order, with later
 unexposed style bytes safely left inside their frame. Current object decoding,

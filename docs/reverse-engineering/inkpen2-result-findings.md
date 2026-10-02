@@ -46,7 +46,7 @@ Down admission copies the admitted current record into the saved anchor
 at `0x5c610`–`0x5c618`. Successful result construction later replaces that
 anchor with its selected current candidate. These are coordinates before
 the subsequent Kalman correction and output transforms. The saved anchor
-should not be equated with the final filtered coordinate sent to drawing.
+is a pre-filter coordinate, not the final drawing-stage coordinate.
 
 ## Current selection scans backward using original adjacency
 

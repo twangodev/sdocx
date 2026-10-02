@@ -8,7 +8,7 @@ Recovered from Samsung Notes 4.4.45.37 ARM64 `libSPenBase.so` in the
 quantization for primary mode 3, submode 1 and full-size color planes.
 The independent scratch reader reproduces native pixels for the complete
 seven-quality sweep, including its quality-24 gradient.
-It also matches 240 new native-generated images and 768 constructed images,
+It also matches 240 native-generated images and 768 constructed images,
 including intermediate signed planes and every final output byte.
 
 The supported configuration remains wire color index 4, header flags
@@ -19,8 +19,8 @@ and final inverse color conversion follow the earlier findings.
 
 Q zero retains the earlier residual path. Q nonzero changes the side-4
 mask table, coefficient escape representation, coefficient scan, scaling,
-inverse transform and prediction/residual combination. Later
-[reduced-plane work](spi-reduced-color-findings.md) recovers the same submode
+inverse transform and prediction/residual combination. The
+[reduced-plane trace](spi-reduced-color-findings.md) recovers the same submode
 with header flags `0xf0`, including its distinct Q-zero behavior. Other
 submodes, broader configurations and device-export validation remain open.
 
@@ -407,12 +407,12 @@ Eight additional native repeats with fresh allocation fills `0xa5` and
 `0xff` check state and pixels for a mask image, mixed images across packet
 groups, and a native-generated quality-51 image. The 477 earlier original,
 alpha, palette, differential and zero-quantizer image cases retain their
-recorded output, and all seven quality-sweep outputs now match independently.
+recorded output, and all seven quality-sweep outputs match independently.
 Scratch code and generated artifacts remain disposable.
 
 ## Evidence limits
 
-The [reduced-plane trace](spi-reduced-color-findings.md) now recovers mode-3
+The [reduced-plane trace](spi-reduced-color-findings.md) recovers mode-3
 submode 1 with reduced secondary planes. The
 [temporal trace](spi-temporal-block-findings.md) adds submodes 0 and 2;
 its full-size quantized residuals reuse the transforms recovered here.

@@ -73,8 +73,7 @@ filename prefix; use `PlacedImage::media_id` for the authoritative object bind I
 The SVG renderer embeds the resolved PNG/JPEG/WebP bytes and applies placement
 and stored rotation. Unsupported image features generate
 `UnsupportedImageFeature` diagnostics. CLI conversion and WASM inspection use
-the existing shared report plumbing. The image marker scanner and encounter
-counter have been removed; only the native image decoder produces placed images.
+the shared report plumbing. Only the native image decoder produces placed images.
 
 ## Validation
 
@@ -88,9 +87,8 @@ counter have been removed; only the native image decoder produces placed images.
   empty/full hashes, extensions and count limits.
 - The previous parser at `3dd8f52` returns zero images for the three-image
   synthetic regression; the new parser returns all three with the intended
-  blue/red/blue asset references. The comparison used an isolated archived
-  checkout and its own Cargo target directory.
-- The rich-text conformance fixture passed during the migration. The
+  blue/red/blue asset references.
+- The rich-text conformance fixture passed validation. The
   [historical fixture audit](fixture-validation.md) also retained 7,182 strokes
   and 924,442 points and verified all 21 media hashes at versions 5202/5400
   against the actual PNG/PDF/SPI bytes. Those three audit inputs are retired.
@@ -109,9 +107,8 @@ inherited properties remain incomplete. Alternative fill encodings and unknown
 fields before a fill are reported without guessing a reference. `.spi`, PDF,
 audio and video assets are not raster image render inputs.
 
-The subsequent [shape/line migration](shape-line-findings.md) removes the
-remaining UUID/text heuristics. Native setters also confirm that type-7 fields
-2/4 reference pen-name/settings strings, correcting the provisional color label.
+The [shape/line decoder](shape-line-findings.md) uses declared frame boundaries.
+Native setters confirm that type-7 fields 2/4 reference pen-name/settings strings.
 The [locked image fixture](../../conformance/README.md#image-and-media-regressions)
 contains seven text-flow images and no standalone page images. Standalone
 image placement and style fidelity remain unverified by a Samsung reference pair.
@@ -150,21 +147,18 @@ Both report no missing foreground at the runner's one-pixel tolerance.
 The executable and input hashes are recorded by the
 conformance runner; these figures describe this pair and its raster settings.
 
-The initial implementation emitted seven conservative `UnsupportedImageFeature`
-warnings for inherited shape/style/path/fill settings. The bounded handling
-below removes these warnings for this fixture. Inline, alternate-margin,
-cross-page and nested text-object image
-layouts are also explicitly reported as incomplete. The corpus now locks both
+The bounded handling below accepts the fixture's inherited shape/style/path/fill
+settings without `UnsupportedImageFeature` warnings. Inline, alternate-margin,
+cross-page and nested text-object image layouts are explicitly reported as
+incomplete. The corpus locks both
 decoded and resolved embedded-image counts, and a rendering regression checks
 the per-page placement counts. Synthetic regressions cover UTF-16 anchors,
 media binding, hidden images, truncation, limits, crops and page slicing.
-At that revision, the existing five formatting SVG pages were byte-identical
-to the pre-change SDK output.
 
 ## Standard image settings and diagnostic precision
 
 The seven images use type-6 magnetic points with no connections, explicit
-no-outline color kind 2 and zero line width. Images now reuse the bounded
+no-outline color kind 2 and zero line width. Images reuse the bounded
 shape-outline reader. Magnetic points do not change the displayed image;
 no-outline paint, transparent solid paint and zero-width outlines require
 no additional rendering. Visible outlines and unrecognized inherited settings
@@ -189,10 +183,10 @@ without reporting an unsupported effect when the rectangle is all zero.
 Nonzero rectangles, stretch/tiling changes, transparency and alternate fill
 flags remain diagnostic conditions.
 
-The locked image fixture now expects zero diagnostics while retaining all
-seven resolved images and the three/two/two page distribution. New synthetic
+The locked image fixture expects zero diagnostics while retaining all
+seven resolved images and the three/two/two page distribution. Synthetic
 cases cover both standalone and embedded images, rotated rectangles, inactive
 outline variants, dormant nine-patch width, active effects, custom paths,
-unknown properties and malformed path/outline lengths. All three image SVG
-pages and all five formatting SVG pages remain byte-identical to the output
-before this diagnostic correction.
+unknown properties and malformed path/outline lengths. The diagnostic-only
+correction left all three image SVG pages and all five formatting SVG pages
+byte-identical to the preceding output.

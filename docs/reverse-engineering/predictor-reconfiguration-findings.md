@@ -67,8 +67,8 @@ well as a change of kind. It does not invoke the old neural predictor's
 
 The destructor is called before the proxy pointer is cleared. The local
 code does not publish a null pointer first or acquire a mutex around
-the sequence. This observation does not establish a concurrently reading
-caller; it identifies where external coordination would be needed.
+the sequence. Concurrent callers and external synchronization are not
+established by this local trace.
 
 Proxy kind getter `0x4daf00` reports zero if proxy byte 32 is set,
 even when a concrete predictor exists. Otherwise it forwards the concrete
@@ -100,8 +100,8 @@ example is not established by this ordinary selection path.
 
 The old predictor's destructor still reaches its worker's stop/join
 sequence, so the [pending-stop ownership case](predictor-worker-findings.md#stop-and-model-changes-do-not-inherently-drain-pending-work)
-remains relevant to changed selection. Whether a task is pending when
-this happens requires runtime or further caller evidence.
+also applies to changed selection. The trace does not establish that a
+task is pending during an application selection change.
 
 ## Disabling preserves the selection for later re-enabling
 

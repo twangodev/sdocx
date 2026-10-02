@@ -90,9 +90,8 @@ stroke regressions run in `structural_strokes.rs` without these documents.
 
 ## Media manifest regressions
 
-The image migration extended that historical fixture runner to parse
-`media/mediaInfo.dat` and verify every manifest digest against the referenced
-asset bytes:
+The historical fixture runner parsed `media/mediaInfo.dat` and verified every
+manifest digest against the referenced asset bytes:
 
 | Fixture | Manifest version | Media entries | Hash mismatches |
 | --- | ---: | ---: | ---: |

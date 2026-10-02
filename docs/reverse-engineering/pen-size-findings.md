@@ -291,9 +291,9 @@ Fresh fallback Java output confirmed the manager conversion
 branches and the density source, and disposable float reconstruction
 checked both utilities' example widths and level boundaries.
 
-The ordinary raster assignment is now resolved. Other drawing factory
+The traced assignment covers ordinary raster drawing. Other drawing factory
 branches, specialized actions, setting changes during an active stroke
-and application decisions that choose `isDpSize` remain separate targets.
+and application decisions that choose `isDpSize` are outside this trace.
 Existing decoded widths remain the authority for saved-file rendering:
 size-level conversion, setter clamping and live view zoom are
 creation-time concerns.

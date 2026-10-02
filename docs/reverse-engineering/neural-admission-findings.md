@@ -98,8 +98,8 @@ the application supplies this combination or that a device crashes.
 The [Composer configuration trace](neural-selection-findings.md#composer-enables-multiple-outputs-after-predictor-selection)
 shows that its presenter enables multiple outputs and clamps the maximum
 after creating a predictor. That sequence marks all configured horizons
-and prevents this discard-only example. Other callers or subsequent
-configuration changes still require a combined reachability check.
+and prevents this discard-only example. Reachability through other callers
+or subsequent configuration changes is unverified.
 
 ## Two expiry checks use a shared aligned origin
 
@@ -176,5 +176,6 @@ The [motion trace](neural-motion-findings.md) recovers post-inference
 displacement, deviation and candidate-distance gates. The
 [estimator trace](predictor-acceleration-findings.md) supplies the acceleration
 fields. The [input-speed trace](predictor-speed-findings.md) recovers earlier
-low-speed admission. Readiness/chronology checks and application-level
-configuration/runtime reachability remain.
+low-speed admission. The [pacing trace](predictor-chrono-findings.md)
+identifies the elapsed-time gate before `DoPredict`. Application-level
+configuration and runtime reachability are unverified.

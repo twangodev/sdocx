@@ -5,7 +5,7 @@
 Recovered from Samsung Notes 4.4.45.37 ARM64 `libSPenBase.so` in the
 [identified APK](README.md#sources-and-validation). Primary mode 4 stores
 three color planes using a cached palette and runs of palette indices.
-Its independent scratch reader now combines with
+Its independent scratch reader combines with
 [copies](spi-copy-block-findings.md), [literals](spi-literal-block-findings.md)
 and [alpha reconstruction](spi-alpha-state-findings.md) to decode all 30
 original [native-generated images](spi-codec-validation.md) byte for byte.
@@ -182,7 +182,7 @@ remain disposable.
 
 ## Evidence limits
 
-The [differential trace](spi-differential-block-findings.md) now adds primary
+The [differential trace](spi-differential-block-findings.md) adds primary
 mode 2. The [mode-3 color trace](spi-color-intra-findings.md) adds full-size
 planes with zero quantization. Other mode-3 paths, packet/header configurations,
 reference buffers, alpha literal marker behavior and broader malformed-input handling

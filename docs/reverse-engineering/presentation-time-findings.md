@@ -39,7 +39,7 @@ receives `Display.getRotation()`, then `DisplayMetrics.widthPixels` and
 
 The constructor supplies `getHwRotation()` and `getHwRefreshRate()` to
 the hardware setters. These methods include device-specific configuration
-and fallback behavior, so hardware rate must not be equated with the
+and fallback behavior, so hardware rate is not necessarily equal to the
 current `getRefreshRate()` result. The native constructor initializes
 hardware rotation/rate and screen orientation/dimensions to zero, while
 its separate refresh-rate member 112 starts at 60.

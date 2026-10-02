@@ -13,9 +13,9 @@ note's existing page pointers and queries that handler. The inspected
 loading and export setup paths preserve the separate physical layers;
 they do not create a page containing the combined objects of every layer.
 
-This closes the physical-layer setup question left by the
+These loading and export setup paths precede the
 [capture collector](capture-composition-findings.md#clone-state-and-collection-boundaries)
-and [Standard PDF investigation](standard-pdf-composition-findings.md#note-preparation-and-layer-scope).
+and [Standard PDF collection path](standard-pdf-composition-findings.md#note-preparation-and-layer-scope).
 It does not establish every editor operation or export variant. A caller
 can change the current layer in memory before invoking these APIs.
 
@@ -66,7 +66,7 @@ implementation slot 24 at `0xd503c`; relocation `0x103b48` resolves that
 slot to `WPageImpl::LoadLayer`, `0xd07f8`. Its call at `0xd0810` reaches
 the Model loader above. The successful wrapper clears changed flags.
 
-The already traced `WPage::FindObjectInRectIntersect` loads page objects
+`WPage::FindObjectInRectIntersect` loads page objects
 at `0xc5090` before dispatching into the manager and object handler.
 The handler uses its assigned layer at Model `0x3659b0`. Consequently,
 lazy loading and object collection agree on the saved layer selection.
@@ -95,7 +95,7 @@ stores it at member 272 at `0x35a6fc`. Its `captureBackground` reaches
 the supplied pointer. Finally, `getPageObjectList` queries the array's
 page through `WPage::FindObjectInRectIntersect` at `0x35adbc`.
 
-Together with the previously inspected Java task and body-text setup,
+Together with the Java task and body-text setup,
 these paths support using the saved current physical layer for a freshly
 parsed page. The three Base, Top and Masking render passes are filters
 within that physical layer, not a way to combine physical layer records.

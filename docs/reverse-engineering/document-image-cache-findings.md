@@ -8,7 +8,7 @@ Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 Composer unless prefixed with Graphics or Base.
 
 The [save-preparation trace](composer-close-findings.md#ready-for-save-reaches-the-document-image-cache)
-reaches `DocumentImageCache::SaveCache`, `0x53c61c`. This investigation
+reaches `DocumentImageCache::SaveCache`, `0x53c61c`. This trace
 connects that cache to `.spi` bitmap files and page canvas-cache metadata.
 It does not establish the final archive packaging or ordinary stroke
 serialization.
@@ -131,15 +131,14 @@ establish canvas-cache persistence, not insertion of stroke point data.
 The metadata's serialized record layout and the complete callback/state
 machine remain unresolved.
 
-## Validation and SDK implications
+## Validation and evidence limits
 
 The APK digest and all three ELF streams were checked against the archive.
 Cited instructions, slot bindings, extension strings and imported methods
 were checked against their binary bytes. Disposable arithmetic checks
 covered cache-key construction, signed splitting and filename padding.
 
-The SDK can keep page-cache discovery distinct from editable object
-decoding. Native code provides a concrete `.spi` producer and canvas-cache
-association, but this trace alone does not justify replacing a page's
-objects with its cache image. No device execution, new SDOCX fixture or SDK
+The recovered `.spi` producer persists a canvas-cache association separately
+from editable objects. This trace does not establish that a cache image
+replaces those objects. No device execution, new SDOCX fixture or SDK
 implementation was used.

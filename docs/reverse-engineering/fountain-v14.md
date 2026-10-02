@@ -8,7 +8,7 @@
 > describes the retained native checks.
 
 The existing Samsung Notes 4.4.45.37 APK includes GLV14, selected by saved
-settings `14;`. No additional APK is needed for this version. This is a
+settings `14;`. This is a
 different drawing implementation from GLV16 (`18;0;100;`), not a settings alias.
 
 `conformance/fountain_v14_native.py` executes the complete native
@@ -45,8 +45,7 @@ native comparisons are recorded in [vector parity](fountain-parity.md).
   five-unit alternating short-movement threshold. The initial width is
   half pen size times the first capped pressure.
 - Initial time is loaded from the last sample (`0x72d58`), unlike V16's saved
-  initialization. The oracle runs that native behavior rather than correcting
-  what might look like a mistake.
+  initialization. The oracle retains that native initialization.
 - SmPath receives a tangent output pointer. drawPoint forwards that tangent
   to RTV4's direction-dependent shader. A zero tangent becomes `(0, 1)`.
 

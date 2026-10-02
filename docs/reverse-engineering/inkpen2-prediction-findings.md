@@ -70,8 +70,8 @@ intercept = (sum_tt * sum_v - sum_t * sum_tv) / determinant
 The implementation obtains time powers through `pow` at `0x5da30` and
 `0x5dab8`. It uses double sums and fused multiply-add for the weighted
 sums and coefficient combinations. The output pair at `0x5db00` is
-`[slope, intercept]`. The equations above should not replace that operation
-order when investigating exact rounding.
+`[slope, intercept]`. The equations above describe the algebra; they do not
+capture that operation order's exact rounding.
 
 At `0x5da64`–`0x5da68`, a determinant below the double constant `1e-7`
 at `0x2c370` returns without changing the zeroed coefficients. This is a

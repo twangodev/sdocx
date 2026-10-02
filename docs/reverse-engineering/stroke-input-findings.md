@@ -52,7 +52,7 @@ The filter therefore operates after undoing the event's accumulated
 transform and restores that transform before dispatching its result.
 The [view input trace](view-input-transform-findings.md) identifies shared
 child-view operations that accumulate this matrix. Its runtime configuration
-and the numerical filter remain separate investigation targets.
+and the numerical filter are not established by this trace.
 
 If no result exists, actions 0 and 1 take a fallback: `ApplyFilter` receives
 the copy at `0x422ee0`, then the drawing interface receives the original
@@ -62,7 +62,7 @@ the caller does not subsequently dispatch the ordinary input. The fallback
 argument identities are confirmed, but this trace does not infer the
 effects of `ApplyFilter` or event-copy ownership from their names.
 
-The [InkPen2 queue trace](inkpen2-input-findings.md) now resolves sample
+The [InkPen2 queue trace](inkpen2-input-findings.md) resolves sample
 admission, the finite pressure cap and the Kalman result/fallback calls.
 The no-result fallback discards the filter's returned temporary event;
 the numerical prediction and smoothing remain separate targets.

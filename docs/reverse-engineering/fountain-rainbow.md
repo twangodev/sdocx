@@ -99,7 +99,7 @@ separate vector allocation using the AArch64 indirect return pointer in
 `x8`. Tests mutate caller input after setting and returned data after
 getting, and confirm neither mutation changes the stored palette.
 
-## Evidence and remaining scope
+## Evidence and scope limits
 
 The native test checks 1,854 direct interpolation cases, 5,457 cyclic
 palette cases across the three paths, and 240 distance-phase cases against
@@ -183,8 +183,7 @@ opacity, inner_edge, subpixel_alpha, red, green, blue
 The stride is 40 bytes. RGB is copied as float32 without premultiplication
 or clamping at this stage. Either zero inverse-scale component causes an
 early return with no instance. Shared `attributes` and `native_attributes`
-helpers in `fountain_raster.py` support RTV6; the existing RTV4/RTV5/tip
-models retain their previous behavior. The shared GPU export also
+helpers in `fountain_raster.py` support RTV6. The shared GPU export also
 includes RTV6 cases and its native shaders.
 
 `conformance/fountain_v17_raster.py` compares 3,807 native attribute cases
@@ -386,8 +385,7 @@ check uses native R8 alpha/RGBA8 color masks with linear clamp sampling,
 64×64 dimensions, and identity texture coordinates. This establishes the extracted shader
 equations and their composition under this SwiftShader configuration. It
 does not establish the Android driver's precision, multi-tile sampling, color space, or framebuffer parity
-for a complete app-rendered document. Those remain required evidence for
-native-level rendering parity.
+for a complete app-rendered document.
 
 ## Native texture descriptor and sampler allocation
 
@@ -402,9 +400,11 @@ observed interfaces; no graphics driver executes in this test.
 For the color mask's `(TextureMemoryLayout=6, TextureTargetLayout=2)` pair,
 the native allocation is `GL_TEXTURE_2D`, internal `GL_RGBA8`, external
 `GL_RGBA`, type `GL_UNSIGNED_BYTE`. The `(0,0)` pair maps to `GL_R8`,
-`GL_RED`, `GL_UNSIGNED_BYTE`. The latter is a candidate alpha-mask format:
-RTV6 requests `(0,0)` from the manager, but the complete manager cache and
-bitmap-to-subbitmap creation chain has not yet been executed in this test.
+`GL_RED`, `GL_UNSIGNED_BYTE`. RTV6 requests `(0,0)` for the alpha mask from
+the manager. This allocation fixture supplies that request directly;
+the [manager capture](#native-alpha-mask-manager-forwarding-and-cache-lifetime)
+and [bitmap capture](#bitmap-factory-native-vertical-tiling-and-texture-allocation)
+separately establish its forwarding and bitmap-to-subbitmap chain.
 
 The subbitmap factory explicitly supplies parameter pairs `(4,1),(5,1)`.
 The sampler backend resolves these to `GL_LINEAR` for both magnification
@@ -414,10 +414,8 @@ those exact overrides; an empty map produces identical native defaults.
 The test checks 12 combinations: three dimensions, two format pairs, and
 explicit/default filter parameters. No texel payload is supplied.
 
-This shows why the preceding nearest-filter RGBA8 shader experiment is not
-yet a complete native texture reproduction. Subsequent GPU checks need
-linear sampling and the confirmed alpha allocation path, especially for
-fractional texture coordinates and tile edges. The test does not establish
+The nearest-filter RGBA8 shader experiment does not reproduce these native
+allocation and sampler settings. The test does not establish
 sampler-backend selection on a real device, the legacy backend, resource
 cache reuse, later parameter changes, or Android framebuffer precision.
 
@@ -428,9 +426,9 @@ RTV6 canvas fixture with native `PenGLDataManager::GetPenCanvas`
 (`0x486d8`) and `CreatePenCanvas` (`0x49260`). Native map lookup, insertion,
 erasure, same-size selection, `SetMsgQueue`, and forwarding to the bitmap
 factory execute. String conversion, managed-object registration, graphics
-factories and canvas interfaces remain supplied boundaries. This extends
-the previous lifecycle test; its Python manager cache was only a fixture,
-not evidence for the application's cache policy.
+factories and canvas interfaces remain supplied boundaries. The supplied
+Python manager cache in the separate lifecycle fixture is not evidence for
+the application's cache policy.
 
 The alpha request reaches `SPGraphicsFactory::CreateBitmap` unchanged with
 memory/target layouts `(0,0)` and a tag ending in `;0;RED_UINT8;`. The native
@@ -541,8 +539,7 @@ portable precision bound for every GLES driver.
 
 The varied-height fixtures verify shader sampling semantics. They do not
 claim to reproduce the app's multi-tile matrices or its selection of color
-versus alpha tiles in a complete frame. A native tiled draw linked to pixel
-readback and an Android rendering comparison remain required.
+versus alpha tiles in a complete frame or Android rendering parity.
 
 ## Native tile projection and dirty-copy geometry
 
@@ -758,8 +755,8 @@ bound. This model explicitly requires positive axis-aligned affine
 projections, as used by the current identity-transform frame capture, and
 rejects a fixture sample on the shader's undefined circle boundary. Rotated
 or sheared whole-frame rasterization, native scheduling, real-document
-frames and Android-device comparison remain required evidence. Native
-rotation/shear matrix and dirty-region command tests remain separate.
+frames and Android-device comparison are outside this model. Native
+rotation/shear matrix and dirty-region command tests are separate captures.
 
 ## Affine whole-frame rasterization
 
@@ -1111,8 +1108,8 @@ lookup, callback ownership and queued-task factories remain host interfaces.
 The real callback does not perform the upload in this fixture: handoff and
 Update are explicitly invoked after the native outer call by the shared
 verification path. This is joined native CPU geometry/orchestration evidence,
-not end-to-end worker execution or Android framebuffer parity. Cache-hit
-execution and native cache insertion remain separate policy/lifetime work.
+not end-to-end worker execution or Android framebuffer parity. This fixture
+does not execute cache hits or native cache insertion.
 
 ## V17 inverse scale and cache comparison at zoom boundaries
 

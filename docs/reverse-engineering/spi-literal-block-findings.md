@@ -10,7 +10,7 @@ Mode 5 carries literal byte planes. An independent scratch implementation
 reconstructed these payloads in native-generated samples and assembled
 complete images accepted by Samsung's decoder under Unicorn. This extends the
 [native codec validation](spi-codec-validation.md) to an independently
-specified block format. Subsequent [copy-block work](spi-copy-block-findings.md)
+specified block format. The [copy-block trace](spi-copy-block-findings.md)
 adds modes 0 and 1 in the tested frame-copy configuration. General SDK
 decoding remains open.
 
@@ -39,8 +39,8 @@ payload_byte_offset = ceil((mode_prefix_bit_offset + 4) / 8)
 The skipped bits have no zero check. All 16 alignment nibbles after a
 byte-aligned mode prefix were accepted in complete native image tests.
 Prefixes may themselves cross byte boundaries: two native-generated
-mode-5 blocks started at bit 7 of a byte. An independent reader must align
-after consuming the complete prefix, rather than skipping a fixed byte.
+mode-5 blocks started at bit 7 of a byte. The payload alignment follows the
+complete prefix, rather than a fixed byte skip.
 
 ## A literal plane is 256 bytes in row order
 
@@ -182,20 +182,20 @@ local tooling.
 
 ## Evidence limits
 
-The later [alpha neighbor-state trace](spi-alpha-state-findings.md#alpha-literal-marker-writes-need-separate-treatment)
+The [alpha neighbor-state trace](spi-alpha-state-findings.md#alpha-literal-marker-writes-need-separate-treatment)
 found that native alpha literals pass pixel X directly to a marker helper
 expecting cell offsets. Selected writes crossed the requested marker
 allocation even while literal pixel output remained exact. The
-[literal-state trace](spi-alpha-literal-state-findings.md) now establishes
+[literal-state trace](spi-alpha-literal-state-findings.md) establishes
 the exact write footprint, mixed prediction effects within the allocation,
 and allocation-dependent native output for selected overruns. Portable
 handling of cases outside its bounded model remains open.
 
-The [copy-block trace](spi-copy-block-findings.md) now validates modes 0
+The [copy-block trace](spi-copy-block-findings.md) validates modes 0
 and 1 alongside literals, and the [palette trace](spi-palette-block-findings.md)
 adds primary mode 4. The [differential trace](spi-differential-block-findings.md)
 adds primary mode 2. The [mode-3 color trace](spi-color-intra-findings.md)
-adds full-size planes with zero quantization. Later
+adds full-size planes with zero quantization. The
 [quantized color](spi-quantized-color-findings.md),
 [temporal](spi-temporal-block-findings.md),
 [reference-cache](spi-reference-cache-findings.md) and

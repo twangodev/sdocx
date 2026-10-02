@@ -38,10 +38,9 @@ pen-name ID at bit 2, advanced-pen-settings ID at bit 4 and a sized fill at bit 
 size excludes both the size prefix and the following one-byte effect kind.
 Color fills use effect kind 1; image fills use kind 2.
 
-The rotation field corrects the earlier image note's provisional "radius"
-interpretation: `0x399bb8–0x399be8` stores `GetRotation()` and temporarily
-clears the common rotation only for shape objects. Render shape geometry from
-the first type-7 rectangle and this angle, not from the drawn type-0 bounds.
+At `0x399bb8–0x399be8`, the writer stores `GetRotation()` and temporarily
+clears the common rotation only for shape objects. Shape geometry uses the
+first type-7 rectangle and this angle, rather than the drawn type-0 bounds.
 
 Type 8 fixed data starts with one-byte line type, one routing byte, one-byte
 control-point count and pairs of `f64`. Two endpoint pairs, two four-`f64`
@@ -68,9 +67,8 @@ rectangle or straight line.
 
 `PageElement::Shape(NativeShape)` and `PageElement::Line(NativeLine)` expose
 bounded geometry, outline/fill effects and native pen references. Shape text
-reuses the rich-text decoder and its text/span/nesting limits. The remaining
-UUID, bounding-box and UTF-16 scanners have been removed from page parsing;
-object type and declared frame boundaries determine decoding.
+reuses the rich-text decoder and its text/span/nesting limits. Object type and
+declared frame boundaries determine decoding.
 
 SVG rendering supports ovals, triangles, right triangles, rectangles and
 diamonds, using the unrotated geometry rectangle and its type-7 rotation.
@@ -105,11 +103,10 @@ Eighteen synthetic archive tests in `structural_shapes.rs` cover:
 
 The two-object preservation regression fails at `3c78cd2`: the old parser
 returns zero elements. The updated parser returns both native objects. The
-comparison used an isolated archived checkout and a separate Cargo target.
-An image regression also verifies that the inherited shape angle is not
+image regression also verifies that the inherited shape angle is not
 mistaken for a corner radius when it matches the image rotation.
 
-The external rich-text fixture passed during the migration. The
+The external rich-text fixture passed validation. The
 [historical fixture audit](fixture-validation.md) retained all 7,182 strokes
 and 924,442 points, with all 21 media hashes verified; those inputs are retired.
 A disposable synthetic archive was converted through the CLI to SVG and PNG
@@ -130,7 +127,7 @@ text-renderer limitations. An empty report does not certify a lossless render.
 ## Saved shape paths (fixture 02)
 
 The 02 fixture contains explicit drawing paths for all five shapes, including
-pentagon 11 and hexagon 6. The shared SVG converter now uses those paths before
+pentagon 11 and hexagon 6. The shared SVG converter uses those paths before
 falling back to the basic templates. Adjustment control points are retained;
 a complete saved path already expresses their effect. Unsupported verbs or
 trailing bytes reject the entire path rather than substitute a basic shape.
@@ -172,7 +169,7 @@ That setter (`0x3b3108`) reads the same member at `0x3b3138`.
 
 The decoder exposes this as `NativeShape::text_editable`. It controls editing
 permission; saved geometry rendering does not depend on it. Fixture 02 sets
-this bit on all five shapes, so these properties no longer cause unsupported
+this bit on all five shapes; the decoder accepts it without unsupported
 geometry warnings. Other unknown property bits and trailing geometry bytes
 still produce separate diagnostics. Synthetic tests cover both editability
 values, unknown bits alone and combined with `0x04`, and unchanged SVG output.

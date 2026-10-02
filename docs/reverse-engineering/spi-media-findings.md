@@ -9,13 +9,13 @@ All addresses below are in Base.
 The [document image-cache trace](document-image-cache-findings.md) follows
 page-cache bitmap saving into `BitmapFactory::SaveBitmap`. Its extension
 dispatch identifies SPI as input to Samsung's Maetel codec wrapper.
-This investigation recovers the outer framing and native entry points.
+This trace identifies the outer framing and native entry points.
 The [header trace](spi-header-findings.md) resolves the selected codec's
 20-byte header packet, and the [data-packet trace](spi-data-packet-findings.md)
-recovers kind-2 prefixes and block-row groups. Subsequent
+recovers kind-2 prefixes and block-row groups. The
 [native codec tests](spi-codec-validation.md) round-trip synthetic
-bitmaps, and [literal-block work](spi-literal-block-findings.md)
-independently reconstructs mode 5. The later
+bitmaps, and [literal-block trace](spi-literal-block-findings.md)
+independently reconstructs mode 5. The
 [palette trace](spi-palette-block-findings.md) combines color and alpha
 reconstruction to decode all 30 native-generated images independently.
 SDK pixel decoding remains unimplemented.
@@ -79,7 +79,7 @@ ceil(width / 16) * ceil(height / 16) * 1026 + 60
 
 This is an allocation formula for the native output buffer, not a decoded
 tile schema or a safe allocation rule for arbitrary untrusted dimensions.
-The later [capacity experiment](spi-codec-validation.md#a-wrapper-derived-capacity-failed-in-the-single-worker-experiment)
+The [capacity experiment](spi-codec-validation.md#a-wrapper-derived-capacity-failed-in-the-single-worker-experiment)
 also found it insufficient for a synthetic bitmap in the single-worker
 codec configuration.
 

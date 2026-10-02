@@ -47,9 +47,8 @@ index back through `ImageCommon::GetMediaId` at `0x2daf08`.
 through `ImageCommon::GetImagePath` at `0x2d7eec`.
 
 The current writer does not emit bit 1, although `GetOwnBinarySize` includes
-its `2 + count * 16` contribution at `0x2da8b4`–`0x2da8e4`. Retain its raw
-records when decoding older data; its omission from this writer does not make
-it an empty field.
+its `2 + count * 16` contribution at `0x2da8b4`–`0x2da8e4`. The SDK retains
+its raw records; its omission from this writer does not make it an empty field.
 
 `ReadString` at `0x2787d4`, used by bits 2, 4 and 19, treats the count as an
 unsigned number of UTF-16 units. It consumes `count * 2` bytes even for
@@ -60,7 +59,7 @@ retains the distinction between absent and present-empty.
 Java `SpenObjectBase` names layout values normal (0), flow (1), block (2) and
 undefined (3). `ObjectBase_getLayoutType` at `0x30ae1c` directly calls the native
 getter at `0x30ae30`. The getter returns normal for values >= 4, but the binary
-reader stores the raw byte. Preserve unknown values in inspection APIs.
+reader stores the raw byte. The inspection API preserves unknown values.
 
 Native minimum-size getters clamp values below 10. Maximum-size getters can
 substitute twice a context dimension for nonpositive or oversized values.
@@ -119,10 +118,9 @@ four-byte field. That differs from the modern size/type/offset header and
 UUID/timestamp/double-rectangle fixed area. It calls the shared static flexible
 extractor at `0x2da794` with document type 2.
 
-Before supporting this alternate encoding, trace the format dispatch and add
-separate bounded parsing. Do not fill the modern mask's gaps from a similarly
-named native function. Until historical behavior is established, retain an
-unknown modern field and the later flexible tail without guessing its width.
+The format dispatch for this alternate encoding is not established. Its field
+map does not establish the meaning or width of unknown modern fields; the SDK
+retains those fields and the later flexible tail without decoding them.
 
 ## Bundle boundaries
 
@@ -193,4 +191,4 @@ Thirteen synthetic integration tests cover every mapped field and every truncate
 prefix, unknown masks, both bundles, duplicate/reserved keys, signed null lengths,
 unsigned 65,535-unit strings, 70,000-byte arrays, old-version gates, empty values,
 aggregate limits, malformed encodings and the five-float saved span snapshot.
-Rendering still requires further native tracing and real-file visual conformance.
+These cases do not establish rendering behavior or real-file visual conformance.

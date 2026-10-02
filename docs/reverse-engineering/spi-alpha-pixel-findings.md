@@ -4,7 +4,7 @@
 
 Recovered from Samsung Notes 4.4.45.37 ARM64 `libSPenBase.so` in the
 [identified APK](README.md#sources-and-validation). The independent
-[alpha payload reader](spi-alpha-payload-findings.md) now feeds scratch
+[alpha payload reader](spi-alpha-payload-findings.md) feeds scratch
 pixel reconstruction that matches Samsung's native mode-3 alpha output.
 
 Comparisons covered 518 partitions from the 30 native-generated images
@@ -15,8 +15,8 @@ pixels were compared separately, not just the final bitmap.
 Scope remains wire color index 4, header flags `0xe0`, packet byte B zero,
 implicit alpha submode 1 and worker selector byte 56 zero. Each block's
 starting prediction-marker state and two external pixel-edge arrays were
-supplied by native neighbor preparation in these tests. Subsequent
-[neighbor-state work](spi-alpha-state-findings.md) reproduces that
+supplied by native neighbor preparation in these tests. The
+[neighbor-state trace](spi-alpha-state-findings.md) reproduces that
 initialization and supports independent complete images in the selected
 configuration. Other passes and configurations remain outside this result.
 
@@ -260,7 +260,7 @@ The 98 constructed images exercised 4639 distinct native instructions.
 
 ## Evidence limits
 
-The [neighbor-state trace](spi-alpha-state-findings.md) now initializes
+The [neighbor-state trace](spi-alpha-state-findings.md) initializes
 markers and external edges independently and combines alpha reconstruction
 with the recovered copy/literal color modes. The
 [mixed-prediction trace](spi-mixed-prediction-findings.md) adds every binary

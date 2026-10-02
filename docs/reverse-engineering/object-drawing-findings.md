@@ -42,8 +42,7 @@ path at `0x7f488`. The last path therefore does not override `IsVisible`.
 
 ## Separate drawing conditions
 
-There are additional conditions whose serialized or runtime inputs need
-separate treatment:
+The dispatcher also has separate conditions:
 
 - Types 2 and 7 first call `ComponentText::IsTextVisible` at `0x7fa88`.
   False branches through a log message at `0x7fb44` and reaches the same
@@ -58,8 +57,8 @@ separate treatment:
   branches do not establish a serialized opacity field.
 - Type 21 resolves to `0x7fe18`, obtains `ObjectMath::GetFormulaList`, and
   calls `drawObjectFormula` directly at `0x7fe80`. The embedded formula loop
-  does not recursively call the common dispatcher. Do not generalize the
-  container-child rule to every embedded formula or stroke list.
+  does not recursively call the common dispatcher. The container-child rule
+  therefore does not describe every embedded formula or stroke list.
 
 The last distinction supplements [formula drawing findings](formula-rendering-findings.md).
 The math object's own common visibility is checked before its formula loop.
@@ -82,7 +81,7 @@ without calling this sort.
 Layer visibility has its own inverted property bit, documented in
 [layer findings](layer-findings.md). This collection method alone does not
 prove how layer visibility is applied to a final page export. Layer compositing,
-transparency, alpha lock and shadows remain separate rendering work.
+transparency, alpha lock and shadows are outside this collection trace.
 
 ## Replay order is a distinct 64-bit value
 
@@ -145,7 +144,7 @@ independent per-layer indices.
 argument is true, or zeros it at `0x34ca2c` otherwise. `SaveNextReplayOrder`,
 `0x34ca48`, writes eight bytes and sets the caller-supplied mask bit. These
 helpers do not independently establish the field's location or use in modern
-WDoc page headers; their caller and format dispatch must be checked first.
+WDoc page headers. Their caller and format dispatch are outside this trace.
 
 The SDK stores supported page content in one ordered typed object tree.
 The native page-capture path has separate base, top and masking passes,

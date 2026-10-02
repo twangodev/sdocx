@@ -15,12 +15,12 @@ the separate location-offset operation adds doubles. Neither operation
 changes the other pointer-coordinate channels.
 
 These findings establish the shared dispatch mechanics and their bindings
-in the note views. They do not yet identify every ancestor matrix, zoom
+in the note views. They do not identify every ancestor matrix, zoom
 configuration or special input path needed for an exact screen-to-note
 conversion. They precede the separate
 [page-local insertion translation](stroke-insertion-findings.md).
 
-The preceding [Android event adapter](motion-event-adapter-findings.md)
+The [Android event adapter](motion-event-adapter-findings.md)
 already supplies float-derived coordinates and copies pressure and pen
 axes without normalization. It gives current samples independent raw X/Y,
 but initializes historical raw X/Y from the corresponding ordinary X/Y.
@@ -136,7 +136,7 @@ multiply-add for the X terms at `0xc0e2c` and `0xc0e34`. Translation
 addition and division follow at `0xc0e3c`–`0xc0e48`. The two output floats
 are promoted to doubles at `0xc0e4c` and stored at offset 40.
 There is no zero-denominator guard in this method; behavior of a singular
-matrix's earlier inverse is a separate question.
+matrix's inverse is not established by this primitive.
 
 Only the X/Y pair is written. The method does not rotate orientation,
 rescale pressure or tilt, or modify timestamps and pointer counts.
@@ -160,7 +160,7 @@ at `0xb76c4` and passes the returned float directly to
 For Marker2, primary-vtable relocation `0x2eae0` binds this getter to
 PenCommon `Pen::GetSize`, `0x4600c`, which returns pen member 24.
 No event transformation matrix is supplied to this getter or to the
-object-size setter at this call site. The previously recovered
+object-size setter at this call site. The
 [size clamp and drawable conversion](marker2-rendering-findings.md#size-clamping-and-stamp-geometry)
 are separate pen operations.
 
@@ -185,5 +185,8 @@ operations during replay would change them again.
 The [zoom scale trace](zoom-scale-findings.md) connects Composer's
 registered scroller callback to the contents-view scale and translation
 setters. It also resolves `NoteWritingView::SetScale`, `0x4284f0`, to
-cutter/eraser scale updates and the diagram transformer. The ordinary
-upstream pen-setting path remains a separate investigation.
+cutter/eraser scale updates and the diagram transformer. The
+[pen-size trace](pen-size-findings.md) connects ordinary pen settings to
+recorded width through document-relative or density-based conversion,
+direct size assignment and the low-latency recording-pen copy. It supplies
+no inverse event-matrix scaling of width.

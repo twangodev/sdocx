@@ -16,10 +16,10 @@ the unsplit 16×16 path absent from that original sample set.
 
 Scope remains wire color index 4, header flags `0xe0`, packet byte B zero,
 implicit alpha submode 1 and worker selector byte 56 zero. The initial
-neighbor-state setup still runs in Samsung's decoder. Subsequent
+neighbor-state setup still runs in Samsung's decoder. The
 [pixel reconstruction](spi-alpha-pixel-findings.md) independently converts
 these payloads into alpha pixels given the block's external edge arrays.
-The later [neighbor-state trace](spi-alpha-state-findings.md) removes
+The [neighbor-state trace](spi-alpha-state-findings.md) removes
 those native-state inputs for the selected mode combinations. General
 independent image decoding and device-file validation remain open.
 
@@ -177,13 +177,13 @@ whole payload without taking subsequent prediction, mask or coefficient
 values from native execution; those native values were comparison targets.
 Final pixels remained native-produced in these field checks. The original
 30 images retained exact pixel round trips; the 98 new images established
-payload acceptance and field agreement. The subsequent pixel findings add
+payload acceptance and field agreement. The pixel findings cover
 independent reconstruction and intermediate-buffer comparisons.
 
 ## Evidence limits
 
 Marker initialization, block-row transitions and external edge preparation
-are now covered by the [neighbor-state findings](spi-alpha-state-findings.md).
+are covered by the [neighbor-state trace](spi-alpha-state-findings.md).
 Prediction pixels and residual combination in `0x6ce0c` are covered by
 the pixel findings. Other submodes, selector values, invalid neighbor
 states and general truncated-payload behavior remain unresolved.

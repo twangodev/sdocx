@@ -8,7 +8,7 @@ follow temporal blocks within the same image. Their external prediction
 edges depend on four block-availability bytes, independently of the
 prediction-mode marker grids used to read partition modes.
 
-The independent sequence decoder now combines primary mode-3 submodes
+The independent sequence decoder combines primary mode-3 submodes
 0–3, alpha submodes 0–2, literals and temporal/spatial copy blocks. Tests
 use wire color index 4, API output color 500, retained references, header
 flags `0xa0`/`0xb0`, and cache capacities one or three. An initial
@@ -119,7 +119,7 @@ the equations rather than indexing native tables.
 An unavailable above-left block does not always remove its gathered
 corner. For `0x0001`, L[0] remains the raw corner while A is filled
 from L[1]. For `0x0010`, A[0] remains raw while L is filled from A[1].
-These asymmetries match the earlier single-image edge rules and now
+These asymmetries match the earlier single-image edge rules and
 also occur beside temporal blocks. Uniformly replacing both corners
 would change directional prediction.
 
@@ -139,8 +139,8 @@ The initial origin check uses absolute block row r, not `r-g`.
 In valid constructed groups, the first column's left sentinel is zero.
 Consequently the first block of a later group has 128-valued edges and
 mask `0x1110`, even though decoded pixels exist in the preceding group.
-These first-row mask values also have motion-prediction meanings; they
-must not be interpreted as four independently available spatial neighbors.
+These first-row mask values also encode motion-prediction state, rather than
+four independently available spatial neighbors.
 
 ## Edge completion precedes color conversion or reduction
 

@@ -12,7 +12,7 @@ reproduce PointTipManager's live state machine.
 This document records configuration and event-processing findings from
 Samsung Notes 4.4.45.37's hash-pinned libraries.
 
-## Applicability correction
+## Component applicability
 
 The cubic StrokeSmoother and PointBeautifier/Kalman sections below reconstruct
 shared PenCommon components explored while tracing the live pipeline. They
@@ -101,7 +101,7 @@ The verified partition rules are:
   predicted extension, against the configured distance limit. Input positions
   are inverse-transformed, converted with horizontal/vertical DPI and 25.4,
   then accumulated with float32 arithmetic. The current model verifies the
-  identity-transform, 375-DPI case; other transforms remain to be tested.
+  identity-transform, 375-DPI case; other transforms are unverified by this model.
 - Unit 3 commits all real samples. Committed samples accumulate in the
   non-tip array until the caller clears it; these sequences deliberately do
   not invoke that clearing operation.
@@ -582,11 +582,11 @@ these tests do not establish which flag values a physical device chooses.
 String comparison supplies FountainPen metadata while checking the actual
 native LaserPen/InkPen2 query constants. Uniform-latency-enabled resampling,
 runtime interval configuration, prediction generation and other tools remain
-outside this model. The complete presenter calls have no pending main-event
-batch: their tip draws consume the previously populated PointTipManager.
-Connecting the shortened prediction to that manager through the pending
-TouchStrokeDrawing batch still requires integration evidence. These results
-must not be used to apply prediction-prefix trimming to saved stroke samples.
+outside this model. These presenter calls have no pending main-event batch:
+their tip draws consume the previously populated PointTipManager. The
+[pending-event integration capture](#pending-real-events-and-shortened-prediction-integration)
+separately checks the shortened prediction's handoff to that manager.
+Neither fixture establishes prediction-prefix trimming for saved stroke samples.
 
 ## V16 committed-state snapshot and temporary tip replay
 
@@ -660,7 +660,6 @@ captured run. Every emitted attribute record is additionally checked against
 the independent float32 stamp-attribute reconstruction used for RTV5, with
 the tip's extra distance and RGB channels. The checked reference records
 input hashes, return/error codes, stamp counts/hashes and buffer sizes/hashes.
-Update it explicitly with `--write-reference` after reviewing a change.
 
 This harness supplies an identity canvas matrix, pen size 8, opaque color
 `0xff112233`, variable width, no rainbow mode, tool 2, and source 0. It
@@ -680,8 +679,8 @@ the callback on the stack. No drawable geometry entry is replaced.
 This establishes executable live geometry and renderer-attribute evidence
 for the stated configuration. It does not execute the asynchronous render
 messages, EGL/GL, fragment shaders, canvas clearing/compositing, or an actual
-Android input/prediction source. An independent model of the entire live
-geometry state machine and those additional configurations remain unfinished.
+Android input/prediction source. The fixture does not independently model
+the entire live geometry state machine or cover other configurations.
 
 ### Tip distance attribute is not evidence of a visible fade
 
@@ -703,8 +702,8 @@ justifies adding distance fading to the reconstructed visible tip. The GPU
 suite verifies this with 2,516 byte-identical renders while changing the
 distance attribute. The intermediate shader stages, blend selection and
 copy-quad construction also have checks in the linked raster findings.
-Alternate configurations and the full native surface lifecycle remain
-separate checks.
+Alternate configurations and the full native surface lifecycle are outside
+these attribute and shader checks.
 
 ### TouchStrokeDrawing dispatch and stored sample boundary
 
@@ -894,8 +893,8 @@ the harness, without claiming native worker scheduling or final GL pixels.
 
 ### Native tip resource initialization with supplied shader-cache hits
 
-`conformance/fountain_tip_init.py` replaces the previous initialization
-callback with the complete native `FountainPenStrokeTipDrawableRT::Init`
+`conformance/fountain_tip_init.py` executes the complete native
+`FountainPenStrokeTipDrawableRT::Init`
 (`0xa5dac`), reached through the captured canvas-initialization task. GPU
 factories and shader-cache lookup are explicit host boundaries; descriptor
 construction and the Init control flow execute natively.
@@ -1002,9 +1001,8 @@ The harness explicitly sequences captured buffer handoff, Update, Draw and
 Clear; it does not execute the complete draw-task scheduler or buffer-delete
 tasks. Renderer properties such as color/mode and target interfaces are
 supplied by the fixture. The host upload/draw interfaces observe real bytes
-and arguments but do not rasterize them. This closes the supplied-vector gap
-in the previous complete-call test, while leaving asynchronous ordering and
-final framebuffer parity open.
+and arguments but do not rasterize them. These calls use generated native
+vectors; asynchronous ordering and final framebuffer parity are unverified.
 
 ### Captured native render-message execution
 

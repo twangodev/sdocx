@@ -66,10 +66,10 @@ in [`fixture-validation.md`](fixture-validation.md).
 
 ## Drawing-time curves and width interpolation
 
-Fresh static inspection of the Samsung Notes 4.4.45.37 ARM64 libraries
-confirms a rendering gap independent of the historical parser issue above.
+Static inspection of the Samsung Notes 4.4.45.37 ARM64 libraries
+identifies drawing-time curves independent of the historical parser issue above.
 This is instruction-level evidence, not a native runtime or pixel-equivalence
-comparison. Fixture 02's rough strokes were later identified as FountainPen
+comparison. Fixture 02's rough strokes use FountainPen
 `18;0;100;`. The DefaultPen trace below does not describe that fixture.
 
 ### Current SDK behavior
@@ -148,12 +148,13 @@ PenCommon `WidthSmoothManager::getSmoothedWidth`, `0x593ec`, computes
 `second + factor * (first - second)`. However, the base
 `PenStrokeTipDrawableGL::CalculateSmoothedWidths`, `0x525dc`, is just a
 return instruction. Symbol names alone therefore cannot prove a selected
-pen actually applies smoothing. Callers and overrides must be traced.
+pen actually applies smoothing. This base-method trace does not establish
+the behavior of pen-specific callers or overrides.
 
 The optional post-input coordinate smoother is a separate mechanism:
 [stroke finalization](stroke-finalization-findings.md) documents that the
-ordinary constructor selects no transformer. Do not rerun input prediction
-or optional beautification blindly on samples already saved by the app.
+ordinary constructor selects no transformer. Input prediction and optional
+beautification are distinct from saved-stroke redraw.
 
 ## Saved rendering inputs
 
@@ -168,8 +169,8 @@ rendering metadata default to `None`.
 All 77 strokes in fixture 02 resolve to
 `com.samsung.android.sdk.pen.pen.preload.FountainPen`, settings `18;0;100;`.
 DefaultPen curve findings alone therefore cannot establish parity for this
-fixture. FountainPen has separate renderer versions, pressure/speed width
-calculation, width smoothing and tip handling requiring their own trace.
+fixture. The [FountainPen findings](fountain-parity.md) cover its separate
+renderer versions, pressure/speed width calculation, width smoothing and tips.
 
 ## Shared preparation and replay
 
