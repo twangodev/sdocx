@@ -7,7 +7,10 @@ pub(super) const TEXT: u64 = 0x0500_0000;
 const SKIA: u64 = 0x0600_0000;
 const SOURCE_HEAP: u64 = 0x0800_0000;
 pub(super) const FONT_BYTES: u64 = 0x0900_0000;
-const HOST: u64 = 0x0700_0000;
+use super::host_thunks::{
+    HOST_IMPORT_CAPACITY, HOST_IMPORT_OVERFLOW, HOST_IMPORT_PRIMARY, host_import_address,
+};
+const HOST_REGION_BYTES: u64 = 0x10000;
 pub(super) const SKIA_SHA256: &str =
     "42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d";
 const FONT: u64 = MODEL + 0x10000;
@@ -146,11 +149,12 @@ impl Binary {
                 if defined || name.is_empty() {
                     continue;
                 }
-                let next = HOST + imports.len() as u64 * 32;
-                let target = exports
-                    .get(name)
-                    .copied()
-                    .unwrap_or_else(|| *imports.entry(name.into()).or_insert(next));
+                let thunk_index = imports.len();
+                let target = exports.get(name).copied().unwrap_or_else(|| {
+                    *imports
+                        .entry(name.into())
+                        .or_insert_with(|| host_import_address(thunk_index))
+                });
                 let addend = i64::from_le_bytes(relocation[16..24].try_into().unwrap());
                 let target = target.checked_add_signed(addend).unwrap();
                 let address = u64::from_le_bytes(relocation[..8].try_into().unwrap());
@@ -568,7 +572,22 @@ impl NativeFontEnvironment {
             verify_library(path, hash);
         }
         libraries.extend_from_slice(preloaded);
-        check(unsafe { uc_mem_map(machine.engine, HOST, 0x10000, 7) });
+        check(unsafe {
+            uc_mem_map(
+                machine.engine,
+                HOST_IMPORT_PRIMARY.start(),
+                HOST_REGION_BYTES,
+                7,
+            )
+        });
+        check(unsafe {
+            uc_mem_map(
+                machine.engine,
+                HOST_IMPORT_OVERFLOW.start(),
+                HOST_IMPORT_OVERFLOW.byte_len(),
+                7,
+            )
+        });
         check(unsafe { uc_mem_map(machine.engine, SOURCE_HEAP, 0x800000, 7) });
         check(unsafe { uc_mem_map(machine.engine, FONT_BYTES, 0x100000, 7) });
         let data = fs::read(font).unwrap();
@@ -586,7 +605,7 @@ impl NativeFontEnvironment {
         for (binary, address) in &binaries {
             binary.bind(machine.engine, *address, &exports, &mut imports);
         }
-        assert!(imports.len() < 1024);
+        assert!(imports.len() <= HOST_IMPORT_CAPACITY);
         let recorder = Recorder::new(machine, imports);
         let snapshots: Vec<_> = binaries
             .iter()

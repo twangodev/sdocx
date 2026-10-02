@@ -322,8 +322,7 @@ pub(super) fn host_import(
             if let Some(address) = host.addresses.get(&name) {
                 return Some(*address);
             }
-            assert!(host.addresses.len() < 1024);
-            let address = 0x07008000 + host.addresses.len() as u64 * 32;
+            let address = super::host_thunks::DYNAMIC_ICU.address(host.addresses.len());
             host.addresses.insert(name.clone(), address);
             host.names.insert(address, name);
             write(engine, address, &0xd65f03c0_u32.to_le_bytes());

@@ -201,8 +201,7 @@ pub(super) fn paragraph_icu_import(
             {
                 return Some(address);
             }
-            assert!(host.names.len() < 64);
-            let address = 0x0700_f000 + host.names.len() as u64 * 32;
+            let address = super::host_thunks::PARAGRAPH_ICU.address(host.names.len());
             host.names.insert(address, name.into());
             write(engine, address, &0xd65f03c0_u32.to_le_bytes());
             let mut hook = 0;

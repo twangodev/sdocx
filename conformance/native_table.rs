@@ -1,5 +1,8 @@
 use std::{ffi::c_void, fs, path::Path, process::Command, ptr};
 
+#[path = "native_table/host_thunks.rs"]
+mod host_thunks;
+
 #[path = "native_table/columns.rs"]
 mod columns;
 
