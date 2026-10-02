@@ -3,6 +3,21 @@ use std::{ffi::c_void, fs, path::Path, process::Command, ptr};
 #[path = "native_table/columns.rs"]
 mod columns;
 
+#[path = "native_table/code_layout.rs"]
+mod code_layout;
+
+#[path = "native_table/cell_drawing.rs"]
+mod cell_drawing;
+
+#[path = "native_table/cell_model_lifecycle.rs"]
+mod cell_model_lifecycle;
+
+#[path = "native_table/page_text_ranges.rs"]
+mod page_text_ranges;
+
+#[path = "native_table/text_paragraph_layout.rs"]
+mod text_paragraph_layout;
+
 #[path = "native_table/frames.rs"]
 mod frames;
 
@@ -1054,6 +1069,60 @@ fn main() {
     let mut machine = Machine::new(Path::new(&path));
     let mode = std::env::args_os().nth(2);
     match mode.as_deref().and_then(|mode| mode.to_str()) {
+        Some("--cell-model-lifecycle") => {
+            let paths = [3, 4, 5, 6].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("base, drawing, bodytext and bundled libc++ library paths required")
+            });
+            cell_model_lifecycle::capture(cell_model_lifecycle::Paths {
+                model: Path::new(&path),
+                base: Path::new(&paths[0]),
+                drawing: Path::new(&paths[1]),
+                body: Path::new(&paths[2]),
+                cpp: Path::new(&paths[3]),
+            });
+            return;
+        }
+        Some(mode @ ("--code-layout" | "--cell-drawing")) => {
+            let paths = [3, 4].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenDrawing.so and libSPenBase.so paths required")
+            });
+            machine.load_drawing(Path::new(&paths[0]));
+            match mode {
+                "--code-layout" => code_layout::capture(&mut machine, Path::new(&paths[1])),
+                "--cell-drawing" => cell_drawing::capture(&mut machine, Path::new(&paths[1])),
+                _ => unreachable!(),
+            }
+            return;
+        }
+        Some("--page-text-ranges") => {
+            let paths = [3, 4].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so and libSPenBodytext.so paths required")
+            });
+            page_text_ranges::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
+            return;
+        }
+        Some("--text-paragraph-layout") => {
+            let paths = [3, 4, 5, 6, 7].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("base, text, Skia, font and bundled libc++ library paths required")
+            });
+            text_paragraph_layout::capture(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+                Path::new(&paths[3]),
+                Path::new(&paths[4]),
+            );
+            return;
+        }
         Some("--border-paths") => {
             border_cases(&mut machine);
             return;
@@ -1173,6 +1242,7 @@ fn main() {
         }
         Some(
             mode @ ("--text-span-font-name"
+            | "--font-registry"
             | "--text-shaping-named-faces"
             | "--text-shaping-consumer-metrics"),
         ) => {
@@ -1183,6 +1253,7 @@ fn main() {
             });
             let capture: fn(&mut Machine, &Path, &Path, &Path, &Path, &Path, &Path) = match mode {
                 "--text-span-font-name" => text_span_font_name::capture,
+                "--font-registry" => text_span_font_name::capture_registry,
                 "--text-shaping-named-faces" => text_shaping::capture_named_faces,
                 "--text-shaping-consumer-metrics" => text_shaping::capture_consumer_metrics,
                 _ => unreachable!(),
@@ -1494,7 +1565,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

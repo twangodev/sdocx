@@ -1,4 +1,7 @@
 use super::*;
+
+#[path = "text_font_registry.rs"]
+mod registry;
 use std::collections::BTreeMap;
 use text_font_source::{FONT_BYTES, NativeFontEnvironment, TEXT, bytes, json_string};
 use text_shaping::{HostIcu, INITIALIZERS, host_import, pinned_host};
@@ -37,8 +40,10 @@ const FONTS: [(&str, &str); 4] = [
 unsafe extern "C" {
     fn snprintf(output: *mut u8, size: usize, format: *const std::ffi::c_char, ...) -> i32;
 }
-fn format_path(engine: Engine, args: [u64; 8]) -> u64 {
-    assert_eq!(c_string(engine, args[2]), "%s/fonts.xml");
+fn format_one_string(engine: Engine, args: [u64; 8]) -> u64 {
+    let format = c_string(engine, args[2]);
+    assert!(matches!(format.as_str(), "%s/fonts.xml" | "und%s"));
+    let format = std::ffi::CString::new(format).unwrap();
     assert!(args[1] <= 4096);
     let top = read_u64(engine, args[3] + 8);
     let offset = read_u32(engine, args[3] + 24) as i32;
@@ -50,7 +55,7 @@ fn format_path(engine: Engine, args: [u64; 8]) -> u64 {
         snprintf(
             output.as_mut_ptr(),
             output.len(),
-            c"%s/fonts.xml".as_ptr(),
+            format.as_ptr(),
             argument.as_ptr(),
         )
     };
@@ -216,7 +221,7 @@ fn import(engine: Engine, name: &str, args: [u64; 8], data: *mut c_void) -> Opti
             write(engine, b, &[0; 16]);
             0
         }
-        "vsnprintf" => format_path(engine, args),
+        "vsnprintf" => format_one_string(engine, args),
         "__errno" => ERRNO,
         "pthread_mutexattr_init"
         | "pthread_mutexattr_settype"
@@ -398,6 +403,7 @@ pub(super) struct ResultProfile {
     physical_style: u32,
     physical_fakery: u64,
     pub(super) physical_source_id: u64,
+    physical_source: u64,
     physical_face_index: u64,
     physical_data_size: u64,
     physical_mapping_is_pinned: bool,
@@ -538,6 +544,7 @@ pub(super) fn execute(
         physical_style,
         physical_fakery,
         physical_source_id,
+        physical_source: physical,
         physical_face_index,
         physical_data_size,
         physical_mapping_is_pinned,
@@ -746,4 +753,16 @@ pub(super) fn reset(
             "/system/fonts/Roboto-BoldItalic.ttf"
         ]
     );
+}
+
+pub(super) fn capture_registry(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    xml: &Path,
+    cpp: &Path,
+) {
+    registry::capture(machine, base, text, skia, font, xml, cpp);
 }
