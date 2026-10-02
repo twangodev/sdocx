@@ -9,6 +9,9 @@ mod entry_skia_metrics;
 #[path = "text_shaping/named_faces.rs"]
 mod named_faces;
 
+#[path = "text_shaping/consumer_metrics.rs"]
+mod consumer_metrics;
+
 #[path = "text_shaping/itemization.rs"]
 mod itemization;
 
@@ -1484,6 +1487,18 @@ pub(super) fn capture_named_faces(
     cpp: &Path,
 ) {
     named_faces::capture(machine, base, text, skia, font, xml, cpp);
+}
+
+pub(super) fn capture_consumer_metrics(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+    xml: &Path,
+    cpp: &Path,
+) {
+    consumer_metrics::capture(machine, base, text, skia, font, xml, cpp);
 }
 
 pub(super) fn capture_itemization(

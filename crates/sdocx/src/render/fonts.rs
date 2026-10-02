@@ -56,6 +56,10 @@ mod native_scaling_tests;
 #[path = "fonts/native_named_face_tests.rs"]
 mod native_named_face_tests;
 
+#[cfg(test)]
+#[path = "fonts/native_consumer_metric_tests.rs"]
+mod native_consumer_metric_tests;
+
 #[derive(Clone)]
 /// A shared font database with cached faces. Defaults contain pinned Roboto families.
 pub struct FontBook {
