@@ -75,6 +75,9 @@ mod text_predefined_style;
 #[path = "native_table/text_object_runs.rs"]
 mod text_object_runs;
 
+#[path = "native_table/text_object_export_policy.rs"]
+mod text_object_export_policy;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1095,6 +1098,13 @@ fn main() {
             text_predefined_style::capture(&mut machine);
             return;
         }
+        Some("--text-object-export-policy") => {
+            let path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenComposer.so path required");
+            text_object_export_policy::capture(&mut machine, Path::new(&path));
+            return;
+        }
         Some("--text-object-runs") => {
             let paths = [3, 4].map(|index| {
                 std::env::args_os()
@@ -1306,7 +1316,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy or no capture mode"
         ),
     }
     let mut cases = Vec::new();
