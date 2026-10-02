@@ -247,11 +247,7 @@ impl LayoutPage {
         let PageObjectContent::Element(PageElement::TextBox(inspection)) = &object.content else {
             return None;
         };
-        if object.render_layer != crate::ObjectRenderLayer::Base
-            || object.source_offset.is_some()
-            || !(inspection.bbox.x_max <= inspection.bbox.x_min
-                || inspection.bbox.y_max <= inspection.bbox.y_min)
-        {
+        if object.render_layer != crate::ObjectRenderLayer::Base || object.source_offset.is_some() {
             return None;
         }
         let body = document.metadata.note_text.as_ref()?;
@@ -1055,6 +1051,82 @@ mod tests {
         let mut top = page.clone();
         top.page.objects[0].render_layer = crate::ObjectRenderLayer::Top;
         assert!(top.body_text_capture(&document).is_none());
+    }
+
+    #[test]
+    fn positive_body_source_bounds_preserve_capture_and_reflow_ownership() {
+        let bounds = BoundingBox {
+            x_min: 0.0,
+            y_min: 0.0,
+            x_max: 240.0,
+            y_max: 600.0,
+        };
+        for sections in [Vec::new(), vec![(0, 6)]] {
+            let mut document = capture_document("AV abc", &sections);
+            document.pages[0].width = 240;
+            document.pages[0].height = 600;
+            let source = document.metadata.note_text.as_mut().unwrap();
+            source.bbox = bounds;
+            let original = source.clone();
+            let page = layout_document(&document).pages.remove(0);
+            let is_reflow = sections.is_empty();
+            let owned = if is_reflow {
+                page.body_text_reflow(&document)
+            } else {
+                page.body_text_capture(&document)
+            }
+            .unwrap();
+            assert_eq!(owned.bbox, bounds);
+            assert_eq!(owned.text, original.text);
+            for coordinate in 0..4 {
+                let mut altered = page.clone();
+                let PageObjectContent::Element(PageElement::TextBox(inspection)) =
+                    &mut altered.page.objects[0].content
+                else {
+                    unreachable!()
+                };
+                match coordinate {
+                    0 => inspection.bbox.x_min += 1.0,
+                    1 => inspection.bbox.y_min += 1.0,
+                    2 => inspection.bbox.x_max += 1.0,
+                    3 => inspection.bbox.y_max += 1.0,
+                    _ => unreachable!(),
+                }
+                assert!(altered.body_text_capture(&document).is_none());
+                assert!(altered.body_text_reflow(&document).is_none());
+            }
+            assert_eq!(document.metadata.note_text.as_ref().unwrap(), &original);
+        }
+    }
+
+    #[test]
+    fn parsed_positive_body_bounds_keep_the_authoritative_inspection_bridge() {
+        let document =
+            crate::parse_bytes(include_bytes!("../tests/fixtures/native_body_table.sdocx"))
+                .unwrap();
+        let source = document.metadata.note_text.as_ref().unwrap();
+        assert_eq!(
+            source.bbox,
+            BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 240.0,
+                y_max: 600.0,
+            }
+        );
+        let original = source.clone();
+        let page = layout_document(&document).pages.remove(0);
+        let body = page.body_text_reflow(&document).unwrap();
+        assert_eq!(body, original);
+        let mut altered = page;
+        let PageObjectContent::Element(PageElement::TextBox(inspection)) =
+            &mut altered.page.objects[0].content
+        else {
+            unreachable!()
+        };
+        inspection.bbox = BoundingBox::default();
+        assert!(altered.body_text_reflow(&document).is_none());
+        assert_eq!(document.metadata.note_text.as_ref().unwrap(), &original);
     }
 
     #[test]
