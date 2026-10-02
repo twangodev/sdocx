@@ -8,6 +8,9 @@ mod grouping;
 #[path = "text_runs.rs"]
 mod runs;
 
+#[path = "text_ownership.rs"]
+mod ownership;
+
 const TEXT: u64 = 0x0500_0000;
 const PARAGRAPH: u64 = MODEL + 0x9000;
 const MEASURE: u64 = MODEL + 0x9200;
@@ -330,6 +333,11 @@ fn load(machine: &Machine, base: &Path, text: &Path) {
 pub(super) fn capture_runs(machine: &mut Machine, base: &Path, text: &Path) {
     load(machine, base, text);
     runs::capture(machine);
+}
+
+pub(super) fn capture_ownership(machine: &mut Machine, base: &Path, text: &Path) {
+    load(machine, base, text);
+    ownership::capture(machine);
 }
 
 pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path) {

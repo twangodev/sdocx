@@ -48,6 +48,12 @@ mod text_bounds;
 #[path = "native_table/cell_model_bounds.rs"]
 mod cell_model_bounds;
 
+#[path = "native_table/text_font_metadata.rs"]
+mod text_font_metadata;
+
+#[path = "native_table/text_span_identity.rs"]
+mod text_span_identity;
+
 type Engine = *mut c_void;
 
 #[link(name = "unicorn")]
@@ -1030,6 +1036,40 @@ fn main() {
             text_bounds::capture_runs(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
             return;
         }
+        Some("--text-ownership") => {
+            let paths = [3, 4].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so and libSPenText.so paths required")
+            });
+            text_bounds::capture_ownership(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+            );
+            return;
+        }
+        Some("--font-metadata") => {
+            let path = std::env::args_os()
+                .nth(3)
+                .expect("libSPenText.so path required");
+            text_font_metadata::capture(&mut machine, Path::new(&path));
+            return;
+        }
+        Some("--text-span-identity") => {
+            let paths = [3, 4, 5].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenBase.so, libSPenWidget.so and libSPenText.so paths required")
+            });
+            text_span_identity::capture(
+                &mut machine,
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+            );
+            return;
+        }
         Some("--text-clipping") => {
             let paths = [3, 4, 5].map(|index| {
                 std::env::args_os()
@@ -1183,7 +1223,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity or no capture mode"
         ),
     }
     let mut cases = Vec::new();
