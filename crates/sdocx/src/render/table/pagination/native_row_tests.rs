@@ -140,6 +140,7 @@ fn native_warm_row_sizing_uses_owner_measurements() {
             cell.metrics.measured_height = f64::from(height.unwrap_or(0.0));
         }
         let mut plan = PreparedTable {
+            callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology,
             measured_bbox: BoundingBox {

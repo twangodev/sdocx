@@ -513,3 +513,40 @@ fn producer_certificate_rejects_unsupported_source_without_mutating_it() {
         Err(NativePageIndexUnavailable::OutsideCertificate)
     ));
 }
+
+#[test]
+fn measured_line_selection_preserves_absent_and_exhausted_sections() {
+    let absent = NativePageLineRange::new(NativePageSection::ABSENT, 3).unwrap();
+    let exhausted = NativePageLineRange::new(NativePageSection { start: 3, count: 0 }, 3).unwrap();
+    let overlapping =
+        NativePageLineRange::new(NativePageSection { start: 1, count: 2 }, 3).unwrap();
+    for line in 0..4 {
+        assert!(!absent.contains(line));
+        assert!(!exhausted.contains(line));
+        assert_eq!(overlapping.contains(line), (1..3).contains(&line));
+    }
+    for invalid in [
+        [-2, 0],
+        [-1, 1],
+        [0, -1],
+        [2, 2],
+        [4, 0],
+        [i32::MAX, i32::MAX],
+    ] {
+        assert_eq!(
+            NativePageLineRange::new(
+                NativePageSection {
+                    start: invalid[0],
+                    count: invalid[1]
+                },
+                3
+            ),
+            Err(NativePageIndexUnavailable::InvalidLines)
+        );
+    }
+    assert_eq!(
+        NativePageLineRange::new(NativePageSection { start: 0, count: 1 }, 0),
+        Err(NativePageIndexUnavailable::InvalidLines)
+    );
+    assert!(!NativePageLineRange::EMPTY.contains(0));
+}

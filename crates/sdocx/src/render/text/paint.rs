@@ -14,7 +14,7 @@ use super::native_runs::{NativeBoundaryEntry, NativeRunBoundary, native_run_boun
 use super::{StyledText, TextRenderer, TextStyle, WrappedLine};
 
 mod native_plan_paint;
-pub(in crate::render) use native_plan_paint::NativePaintDispatcher;
+pub(in crate::render) use native_plan_paint::{NativePaintDispatcher, NativePaintTarget};
 
 #[cfg(all(test, feature = "pdf"))]
 mod identity_tests;

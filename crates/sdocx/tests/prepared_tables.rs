@@ -197,10 +197,13 @@ fn translated_public_cell_exports_keep_the_captured_native_plan() {
                 "{name}: {:?}",
                 rendered.text_diagnostics
             );
-            assert!(
-                rendered.object_diagnostics.is_empty(),
-                "{name}: {:?}",
-                rendered.object_diagnostics
+            assert_eq!(
+                rendered.object_diagnostics,
+                [sdocx::ObjectDiagnostic {
+                    anchor_utf16: 0,
+                    kind: sdocx::ObjectDiagnosticKind::UnsupportedCellClipping,
+                }],
+                "{name}"
             );
             let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
             let groups = xml

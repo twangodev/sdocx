@@ -154,6 +154,8 @@ pub(in crate::render) struct TextRenderer<'a> {
     pub object_page_ownership: ObjectPageOwnership,
     pub table_export_page: Option<crate::render::table::TableExportPage>,
     pub fonts: &'a FontBook,
+    pub native_object_page_obstacles: Option<super::NativeObjectPageObstacles>,
+    pub native_cell_page_obstacles: Option<super::NativeCellPageObstacles>,
     default_family: &'static str,
     faces: Rc<RefCell<Vec<ResolvedFace>>>,
     diagnostics: Rc<RefCell<TextDiagnostics>>,
@@ -179,6 +181,8 @@ impl<'a> TextRenderer<'a> {
             local_measurement_issues: Default::default(),
             object_diagnostics: Default::default(),
             page_exclusions: None,
+            native_object_page_obstacles: None,
+            native_cell_page_obstacles: None,
             source_owner: None,
             source_owner_locked: false,
             local_source: None,
@@ -187,6 +191,22 @@ impl<'a> TextRenderer<'a> {
 
     pub fn with_page_exclusions(mut self, exclusions: Option<PageExclusions>) -> Self {
         self.page_exclusions = exclusions.map(Rc::new);
+        self
+    }
+
+    pub fn with_native_object_page_obstacles(
+        mut self,
+        source: Option<super::NativeObjectPageObstacles>,
+    ) -> Self {
+        self.native_object_page_obstacles = source;
+        self
+    }
+
+    pub fn with_native_cell_page_obstacles(
+        mut self,
+        source: Option<super::NativeCellPageObstacles>,
+    ) -> Self {
+        self.native_cell_page_obstacles = source;
         self
     }
 
@@ -235,6 +255,8 @@ impl<'a> TextRenderer<'a> {
             local_measurement_issues: Default::default(),
             object_diagnostics: Rc::clone(&self.object_diagnostics),
             page_exclusions: None,
+            native_object_page_obstacles: self.native_object_page_obstacles,
+            native_cell_page_obstacles: self.native_cell_page_obstacles,
             source_owner: self.source_owner.clone(),
             source_owner_locked: self.source_owner.is_some(),
             local_source: None,

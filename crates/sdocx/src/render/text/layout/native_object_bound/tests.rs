@@ -134,7 +134,7 @@ fn source(case: &Case) -> RichTextBox {
         color: None,
         highlight_color: None,
         underline: false,
-        font_size: Some(17.0),
+        font_size: None,
         runs: Vec::new(),
         spans: Vec::new(),
         paragraphs: Vec::new(),
@@ -199,11 +199,15 @@ fn layout_in_context(
     }
 }
 
+pub(in crate::render) fn caller_capture_source(value: &serde_json::Value) -> RichTextBox {
+    source(&serde_json::from_value(value.clone()).unwrap())
+}
+
 pub(in crate::render) fn caller_capture_profile(
     value: &serde_json::Value,
 ) -> (RichTextTable, super::super::TextLayout) {
     let case: Case = serde_json::from_value(value.clone()).unwrap();
-    let source = source(&case);
+    let source = caller_capture_source(value);
     let Some(RichTextObjectContent::Table(table)) = &source.object_spans[0].content else {
         panic!("expected source table");
     };
@@ -329,6 +333,103 @@ fn caller_source_produces_native_parent_entry_and_table_callback_bounds() {
 }
 
 #[test]
+fn native_zero_height_parent_retains_full_kind5_geometry_without_a_vertical_cap() {
+    let bytes = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../conformance/table-bodytext-one-page-placement.json"
+    ));
+    assert_eq!(
+        format!("{:x}", Sha256::digest(bytes)),
+        "cc0810421dceddffaa3454e8010ece57d7afddcce1f67dba1b662eeea4acd15a"
+    );
+    let capture: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+    let value = &capture["cases"][0];
+    assert_eq!(value["name"], "ordinary-one-page-zero-widget-height");
+    let model = &value["writer"]["document_model_source"];
+    assert_eq!(model["text_utf8"], "\u{fffc}");
+    assert_eq!(model["font_size_spans"], serde_json::json!([]));
+    assert_eq!(model["foreground_spans"], serde_json::json!([]));
+    assert_eq!(
+        model["font_size_at_utf16_including_end_bits"],
+        serde_json::json!([17.0_f32.to_bits(), 17.0_f32.to_bits()])
+    );
+    let measurement = &value["writer"]["native_page_measurement"];
+    assert_eq!(measurement["is_infinite_scroll"], false);
+    assert_eq!(measurement["height_without_last_page"], 0);
+    assert_eq!(measurement["height_including_last_page"], 600);
+    assert_eq!(measurement["widget_layout_height_bits"], 0);
+    let page_record: [i32; 5] =
+        serde_json::from_value(measurement["supplied_page_record"].clone()).unwrap();
+    assert_eq!(page_record, [0, 0, 0, 240, 600]);
+    let case: Case = serde_json::from_value(value.clone()).unwrap();
+    let source = source(&case);
+    let original = source.clone();
+    assert_eq!(source.font_size, None);
+    assert!(source.spans.is_empty());
+    assert_eq!(source.bbox.y_max, 600.0);
+    let fonts = FontBook::default();
+    let renderer = renderer(&case, &fonts);
+    let styled = StyledText::new(&source, TextContext::Flow, renderer.settings);
+    for context in [LayoutContext::Flow, LayoutContext::Capture] {
+        let mut frame = frame(&source);
+        frame.bbox.y_max = f64::from(page_record[0]);
+        assert_eq!(
+            (frame.bbox.y_max as f32).to_bits(),
+            measurement["widget_layout_height_bits"].as_u64().unwrap() as u32
+        );
+        let outer_height = frame.bbox.y_max as f32;
+        let layout = match context {
+            LayoutContext::Flow => super::super::layout_flow_text(
+                &styled,
+                frame,
+                RenderTheme::for_canvas(false),
+                &renderer,
+            ),
+            LayoutContext::Capture => super::super::layout_capture_text(
+                &styled,
+                frame,
+                RenderTheme::for_canvas(false),
+                &renderer,
+            ),
+            LayoutContext::Frame => unreachable!(),
+        };
+        let entry = layout.native_object_entry.unwrap();
+        let [expected] = case.writer.entries.as_slice() else {
+            panic!("expected one object")
+        };
+        assert_eq!(entry.advance.to_bits(), expected.advance_bits);
+        assert_eq!(entry.height.to_bits(), expected.font_height_bits);
+        assert_eq!(entry.font_size.to_bits(), expected.font_size_bits);
+        assert_eq!(entry.position.map(f32::to_bits), expected.position_bits);
+        assert_eq!(entry.layout.map(f32::to_bits), expected.layout_rect_bits);
+        assert_eq!(entry.ink.map(f32::to_bits), expected.ink_rect_bits);
+        assert_eq!(
+            entry.text_bound().map(f32::to_bits),
+            case.writer.document_bound_bits
+        );
+        let [object] = layout.lines[0].line.objects.as_slice() else {
+            panic!("expected one object")
+        };
+        let [callback] = case.writer.object_size_updates.as_slice() else {
+            panic!("expected one callback")
+        };
+        assert_eq!(callback.utf16_anchor, 0);
+        assert_eq!(
+            [
+                0.0,
+                0.0,
+                object.object.width as f32,
+                object.object.height as f32
+            ]
+            .map(f32::to_bits),
+            callback.output_rect_bits
+        );
+        assert!(entry.layout[3] > outer_height);
+        assert_eq!(source, original);
+    }
+}
+
+#[test]
 fn unchanged_prepared_geometry_cannot_certify_unsupported_parent_controls() {
     let fonts = FontBook::default();
     let case = capture().cases.remove(0);
@@ -409,7 +510,14 @@ fn unchanged_prepared_geometry_cannot_certify_unsupported_parent_controls() {
         None
     );
     assert_eq!(layout.native_object_entry, Some(certified));
-    for height in [f64::NAN, -1.0, 50.0, 1000.0000001] {
+    for height in [
+        f64::NAN,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        -1.0,
+        50.0,
+        1000.0000001,
+    ] {
         let mut unsupported = frame(&source);
         unsupported.bbox.y_max = height;
         assert_eq!(

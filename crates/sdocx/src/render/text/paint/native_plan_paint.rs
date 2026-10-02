@@ -4,14 +4,20 @@ use std::ops::Range;
 use crate::Color;
 use crate::render::Viewport;
 use crate::render::color_hex;
-use crate::render::vector::{FontFamily, Scene, Text, TextAnchor};
+use crate::render::table::native_placement::NativeCellTextPlacement;
+use crate::render::vector::{Clip, Definition, FontFamily, Group, Scene, Styled, Text, TextAnchor};
 
 use super::super::layout::{TextLayout, TextLine};
 use super::super::measurement::MeasuredCluster;
+use super::super::native_page_index::NativePageLineRange;
 use super::super::native_paint_plan::{
     NativePaintPlan, NativePaintPlanUnavailable, NativePaintRun, native_paint_plan,
 };
 use super::*;
+
+mod clip_transport;
+use super::super::native_cell_clip::NativeCellClipError;
+use clip_transport::NativeRunClip;
 
 struct NativeSvgSpan {
     source: Range<usize>,
@@ -22,6 +28,7 @@ struct NativeSvgSpan {
 
 struct NativePaintGroup {
     run: NativePaintRun,
+    clip: Option<NativeRunClip>,
     spans: Vec<NativeSvgSpan>,
     #[cfg(feature = "pdf")]
     retained: Option<super::super::native::NativeTextBlock>,
@@ -32,6 +39,63 @@ struct NativePaintGroup {
 pub(in crate::render) struct NativePaintDispatcher {
     plan: NativePaintPlan,
     groups: Vec<NativePaintGroup>,
+    target: NativePaintTarget,
+}
+
+#[derive(Clone, Copy)]
+pub(in crate::render) struct NativePaintTarget {
+    pub retain_text: bool,
+    pub viewport: Option<Viewport>,
+    pub conservative_clip: Option<Definition<Clip>>,
+    native_lines: Option<NativePageLineRange>,
+    cell: Option<NativeCellPaintRequest>,
+}
+
+#[derive(Clone, Copy)]
+pub(in crate::render) struct NativeCellPaintRequest {
+    pub anchor_utf16: i32,
+    pub placement: Result<NativeCellTextPlacement, NativeCellClipError>,
+}
+
+impl NativePaintTarget {
+    pub fn new(retain_text: bool, viewport: Option<Viewport>) -> Self {
+        Self {
+            retain_text,
+            viewport,
+            conservative_clip: None,
+            native_lines: None,
+            cell: None,
+        }
+    }
+
+    pub fn paint_conservative(self, scene: &mut Scene, draw: impl FnOnce(&mut Scene)) {
+        if let Some(clip) = self.conservative_clip {
+            scene.scope(Group::new().clipped(&clip), draw);
+        } else {
+            draw(scene);
+        }
+    }
+
+    pub fn with_native_lines(mut self, lines: NativePageLineRange) -> Self {
+        self.native_lines = Some(lines);
+        self
+    }
+
+    pub fn includes_line(self, index: usize) -> bool {
+        self.native_lines.is_none_or(|lines| lines.contains(index))
+    }
+
+    pub fn with_cell(
+        mut self,
+        anchor_utf16: i32,
+        placement: Result<NativeCellTextPlacement, NativeCellClipError>,
+    ) -> Self {
+        self.cell = Some(NativeCellPaintRequest {
+            anchor_utf16,
+            placement,
+        });
+        self
+    }
 }
 
 impl NativePaintDispatcher {
@@ -41,8 +105,7 @@ impl NativePaintDispatcher {
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
         visible_lines: &[bool],
-        retain_text: bool,
-        viewport: Option<Viewport>,
+        target: NativePaintTarget,
     ) -> Option<Self> {
         let plan = match native_paint_plan(styled, layout, theme) {
             Ok(plan) => plan,
@@ -50,6 +113,67 @@ impl NativePaintDispatcher {
             Err(_) => {
                 report_unavailable(styled, layout, visible_lines, renderer);
                 return None;
+            }
+        };
+        let transport = if let Some(cell) = target.cell {
+            match cell.placement {
+                Ok(placement) => match placement.transport() {
+                    Some(transport) => Some(transport),
+                    None => {
+                        report_cell_unavailable(
+                            renderer,
+                            cell.anchor_utf16,
+                            false,
+                            &plan,
+                            layout,
+                            visible_lines,
+                        );
+                        None
+                    }
+                },
+                Err(_) => {
+                    report_cell_unavailable(
+                        renderer,
+                        cell.anchor_utf16,
+                        true,
+                        &plan,
+                        layout,
+                        visible_lines,
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let clips = plan
+            .runs
+            .iter()
+            .map(|run| {
+                transport
+                    .map(|transport| {
+                        NativeRunClip::new(
+                            transport.native_context().decide(run.layout.0)?,
+                            transport.output_translation(),
+                        )
+                    })
+                    .transpose()
+            })
+            .collect::<Result<Vec<_>, _>>();
+        let clips = match clips {
+            Ok(clips) => clips,
+            Err(_) => {
+                if let Some(cell) = target.cell {
+                    report_cell_unavailable(
+                        renderer,
+                        cell.anchor_utf16,
+                        true,
+                        &plan,
+                        layout,
+                        visible_lines,
+                    );
+                }
+                vec![None; plan.runs.len()]
             }
         };
         #[cfg(feature = "pdf")]
@@ -60,40 +184,53 @@ impl NativePaintDispatcher {
             .flat_map(|line| &line.line.placements)
             .map(|placement| (placement.cluster.source.start, &placement.cluster))
             .collect::<BTreeMap<_, _>>();
-        let groups =
-            project_groups(&plan, styled, layout, visible_lines, viewport).and_then(|runs| {
-                runs.into_iter()
-                    .map(|run| {
-                        let spans = if retain_text {
-                            vec![carrier_span(&plan, styled, &run, theme)?]
-                        } else {
-                            svg_spans(&plan, styled, &clusters, &run, theme)?
-                        };
+        let groups = project_groups(
+            &plan,
+            styled,
+            layout,
+            visible_lines,
+            target.viewport,
+            &clips,
+        )
+        .and_then(|runs| {
+            runs.into_iter()
+                .map(|(run, clip)| {
+                    let spans = if target.retain_text {
+                        vec![carrier_span(&plan, styled, &run, theme)?]
+                    } else {
+                        svg_spans(&plan, styled, &clusters, &run, theme)?
+                    };
+                    #[cfg(feature = "pdf")]
+                    let retained = target
+                        .retain_text
+                        .then(|| bridge.block(&run))
+                        .transpose()
+                        .map_err(|_| ())?;
+                    #[cfg(feature = "pdf")]
+                    let inkless_carrier = target.retain_text
+                        && run.glyphs.iter().all(|glyph| {
+                            run.face
+                                .glyph_ink_bounds(glyph.glyph_id)
+                                .is_ok_and(|bounds| bounds.is_none())
+                        });
+                    Ok(NativePaintGroup {
+                        run,
+                        clip,
+                        spans,
                         #[cfg(feature = "pdf")]
-                        let retained = retain_text
-                            .then(|| bridge.block(&run))
-                            .transpose()
-                            .map_err(|_| ())?;
+                        retained,
                         #[cfg(feature = "pdf")]
-                        let inkless_carrier = retain_text
-                            && run.glyphs.iter().all(|glyph| {
-                                run.face
-                                    .glyph_ink_bounds(glyph.glyph_id)
-                                    .is_ok_and(|bounds| bounds.is_none())
-                            });
-                        Ok(NativePaintGroup {
-                            run,
-                            spans,
-                            #[cfg(feature = "pdf")]
-                            retained,
-                            #[cfg(feature = "pdf")]
-                            inkless_carrier,
-                        })
+                        inkless_carrier,
                     })
-                    .collect::<Result<Vec<_>, ()>>()
-            });
+                })
+                .collect::<Result<Vec<_>, ()>>()
+        });
         match groups {
-            Ok(groups) => Some(Self { plan, groups }),
+            Ok(groups) => Some(Self {
+                plan,
+                groups,
+                target,
+            }),
             Err(()) => {
                 report_unavailable(styled, layout, visible_lines, renderer);
                 None
@@ -140,46 +277,82 @@ impl NativePaintDispatcher {
             } else {
                 node
             };
-            svg.scope(node, |svg| {
-                for span in &group.spans {
-                    let style = renderer.output_style_with_face(&span.style, &group.run.face);
-                    renderer
-                        .for_source(span.source.clone())
-                        .report_resolution(&span.style, styled.context());
-                    let node = styled_tspan(
-                        styled.index.slice(span.source.clone()).unwrap(),
-                        &style,
-                        styled.context(),
-                    )
-                    .x_coordinates(&span.positions)
-                    .y(span.baseline)
-                    .font_face(group.run.face.weight, group.run.face.style)
-                    .font_synthesis(group.run.synthesis());
-                    push_text_span(svg, node, &style);
-                }
-                #[cfg(feature = "pdf")]
-                if group.inkless_carrier {
-                    svg.push(
-                        crate::render::vector::TSpan::new(".")
-                            .font_size(1)
-                            .family(FontFamily::Named(&group.run.face.svg_family()))
-                            .font_face(group.run.face.weight, group.run.face.style),
-                    );
-                }
-            });
+            let draw = |svg: &mut Scene| {
+                svg.scope(node, |svg| {
+                    for span in &group.spans {
+                        let style = renderer.output_style_with_face(&span.style, &group.run.face);
+                        renderer
+                            .for_source(span.source.clone())
+                            .report_resolution(&span.style, styled.context());
+                        let node = styled_tspan(
+                            styled.index.slice(span.source.clone()).unwrap(),
+                            &style,
+                            styled.context(),
+                        )
+                        .x_coordinates(&span.positions)
+                        .y(span.baseline)
+                        .font_face(group.run.face.weight, group.run.face.style)
+                        .font_synthesis(group.run.synthesis());
+                        push_text_span(svg, node, &style);
+                    }
+                    #[cfg(feature = "pdf")]
+                    if group.inkless_carrier {
+                        svg.push(
+                            crate::render::vector::TSpan::new(".")
+                                .font_size(1)
+                                .family(FontFamily::Named(&group.run.face.svg_family()))
+                                .font_face(group.run.face.weight, group.run.face.style),
+                        );
+                    }
+                })
+            };
+            if let Some(clip) = group.clip {
+                clip.paint(svg, draw);
+            } else {
+                self.target.paint_conservative(svg, draw);
+            }
         }
         let x = line.x
             + super::super::line_alignment_offset(line.line.advance, line.width, line.alignment);
-        render_retained_decorations(
-            svg,
-            styled,
-            &line.line,
-            x,
-            line.baseline,
-            theme,
-            line.predefined,
-        );
+        self.target.paint_conservative(svg, |svg| {
+            render_retained_decorations(
+                svg,
+                styled,
+                &line.line,
+                x,
+                line.baseline,
+                theme,
+                line.predefined,
+            );
+        });
     }
+}
+
+fn report_cell_unavailable(
+    renderer: &TextRenderer<'_>,
+    anchor_utf16: i32,
+    invalid: bool,
+    plan: &NativePaintPlan,
+    layout: &TextLayout,
+    visible_lines: &[bool],
+) {
+    if plan.runs.is_empty()
+        || !layout
+            .lines
+            .iter()
+            .zip(visible_lines)
+            .any(|(line, visible)| *visible && !line.line.source.is_empty())
+    {
+        return;
+    }
+    renderer.report_object_issues(&[super::super::ObjectDiagnostic {
+        anchor_utf16,
+        kind: if invalid {
+            super::super::ObjectDiagnosticKind::InvalidBounds
+        } else {
+            super::super::ObjectDiagnosticKind::UnsupportedCellClipping
+        },
+    }]);
 }
 
 fn report_unavailable(
@@ -209,7 +382,8 @@ fn project_groups(
     layout: &TextLayout,
     visible_lines: &[bool],
     viewport: Option<Viewport>,
-) -> Result<Vec<NativePaintRun>, ()> {
+    clips: &[Option<NativeRunClip>],
+) -> Result<Vec<(NativePaintRun, Option<NativeRunClip>)>, ()> {
     let mut windows: Vec<Range<usize>> = Vec::new();
     for (line, visible) in layout.lines.iter().zip(visible_lines) {
         if !visible || line.line.source.is_empty() {
@@ -225,7 +399,7 @@ fn project_groups(
         }
     }
     let mut groups = Vec::new();
-    for run in &plan.runs {
+    for (run, clip) in plan.runs.iter().zip(clips) {
         let bounds = if run.ink.0[0] < run.ink.0[2] && run.ink.0[1] < run.ink.0[3] {
             run.ink
         } else {
@@ -279,7 +453,7 @@ fn project_groups(
             projected.source = styled.index.source(source).ok_or(())?;
             projected.first_line = first_line;
             projected.glyphs = glyphs;
-            groups.push(projected);
+            groups.push((projected, *clip));
         }
     }
     Ok(groups)

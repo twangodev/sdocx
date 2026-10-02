@@ -97,6 +97,7 @@ impl Case {
             row.max_height = Some(*maximum);
         }
         let plan = PreparedTable {
+            callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             rows: initialize_rows(&source, 0.5).unwrap(),

@@ -238,6 +238,21 @@ struct PdfPage<'a> {
     text_error: Option<&'a str>,
 }
 
+#[cfg(test)]
+pub(crate) fn render_native_scene_pdf_for_test(
+    scene: &crate::render::RenderedScene,
+    options: &PdfOptions,
+) -> Result<Vec<u8>, PdfError> {
+    render_pages_pdf(
+        [PdfPage {
+            page: &scene.page,
+            text: Some(&scene.text),
+            text_error: scene.text_error.as_deref(),
+        }],
+        options,
+    )
+}
+
 fn render_pages_pdf<'a>(
     pages: impl IntoIterator<Item = PdfPage<'a>>,
     options: &PdfOptions,

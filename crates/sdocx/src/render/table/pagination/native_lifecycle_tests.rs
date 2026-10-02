@@ -196,6 +196,7 @@ fn native_public_table_lifecycle_matches_composed_rust_phases() {
             cell.content.text = "x".into();
         }
         let mut plan = PreparedTable {
+            callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             rows: initialize_rows(&source, 0.5).unwrap(),

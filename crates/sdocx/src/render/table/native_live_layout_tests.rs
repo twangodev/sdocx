@@ -253,6 +253,7 @@ fn cold_plan(
         )
         .unwrap(),
         pending_gaps: vec![0.0; 2],
+        callback_top: 0.0,
         half_border,
         topology: TableGrid::new(table).unwrap(),
     };

@@ -72,6 +72,12 @@ impl NativeCellTextClipTransport {
 #[derive(Debug, Clone, Copy)]
 pub(in crate::render) struct NativeCellTextWriterOrigin([f32; 2]);
 
+impl NativeCellTextWriterOrigin {
+    pub fn coordinates(self) -> [f32; 2] {
+        self.0
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(in crate::render) struct NativeDocumentTablePlacement {
     parent_rect: BoundingBox,
@@ -89,6 +95,47 @@ pub(in crate::render) struct NativeTableContentFit {
     pub maximum_height: f32,
     pub maximum_width: f32,
     pub maximum_height_enabled: bool,
+}
+
+impl Default for NativeTableContentFit {
+    fn default() -> Self {
+        Self {
+            mode: 3,
+            maximum_height: 0.0,
+            maximum_width: 0.0,
+            maximum_height_enabled: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(in crate::render) struct NativeTableContentResize {
+    pub column_scale: f32,
+    pub row_scale: f32,
+}
+
+impl NativeTableContentResize {
+    pub fn preserves_column(self, width: f32) -> bool {
+        let resized = self.column_scale * width;
+        width.is_finite() && resized.is_finite() && resized.to_bits() == width.to_bits()
+    }
+
+    pub fn preserves_row(self, height: f32, maximum_height: f32) -> bool {
+        let resized = self.row_scale * height;
+        if ![height, maximum_height, resized]
+            .into_iter()
+            .all(f32::is_finite)
+        {
+            return false;
+        }
+        resized > maximum_height || resized.to_bits() == height.to_bits()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(in crate::render) struct NativeTableRectUpdate {
+    pub model: NativeTableModelState,
+    pub resize: Option<NativeTableContentResize>,
 }
 
 impl NativeTableModelState {
@@ -110,11 +157,71 @@ impl NativeTableModelState {
         self.content_rect
     }
 
-    pub fn apply_document_placement(self, placement: NativeDocumentTablePlacement) -> Self {
-        Self {
-            raw_rect: native_coordinates(placement.parent_rect()),
-            ..self
+    pub fn apply_document_placement(
+        self,
+        placement: NativeDocumentTablePlacement,
+    ) -> Result<Self, NativeCellClipError> {
+        Ok(self
+            .set_rect(
+                native_coordinates(placement.parent_rect()),
+                NativeTableContentFit::default(),
+            )?
+            .model)
+    }
+
+    pub fn set_rect(
+        self,
+        raw_rect: [f32; 4],
+        fit: NativeTableContentFit,
+    ) -> Result<NativeTableRectUpdate, NativeCellClipError> {
+        if !raw_rect.into_iter().all(f32::is_finite)
+            || raw_rect[0] > raw_rect[2]
+            || raw_rect[1] > raw_rect[3]
+        {
+            return Err(NativeCellClipError);
         }
+        if rectangles_within(raw_rect, self.raw_rect, 0.01_f32) {
+            return Ok(NativeTableRectUpdate {
+                model: self,
+                resize: None,
+            });
+        }
+        let content_rect = [
+            0.0 + raw_rect[0],
+            0.0 + raw_rect[1],
+            raw_rect[0] + (self.content_rect[2] - self.content_rect[0]),
+            raw_rect[1] + (self.content_rect[3] - self.content_rect[1]),
+        ];
+        let fitted = Self::new(raw_rect, content_rect)?.fit_content(fit)?;
+        let content_rect = normalized_rect(content_rect);
+        if rectangles_within(content_rect, self.content_rect, 0.01_f32) {
+            return Ok(NativeTableRectUpdate {
+                model: Self::new(fitted.raw_rect, self.content_rect)?,
+                resize: None,
+            });
+        }
+        let scale = |axis: usize| {
+            let previous = self.content_rect[axis + 2] - self.content_rect[axis];
+            if previous == 0.0 {
+                0.0
+            } else {
+                (content_rect[axis + 2] - content_rect[axis]) / previous
+            }
+        };
+        let resize = NativeTableContentResize {
+            column_scale: scale(0),
+            row_scale: scale(1),
+        };
+        if ![resize.column_scale, resize.row_scale]
+            .into_iter()
+            .all(f32::is_finite)
+        {
+            return Err(NativeCellClipError);
+        }
+        Ok(NativeTableRectUpdate {
+            model: Self::new(fitted.raw_rect, content_rect)?,
+            resize: Some(resize),
+        })
     }
 
     pub fn set_content_size(
@@ -141,6 +248,17 @@ impl NativeTableModelState {
         let mut next = self;
         next.content_rect[2] = self.content_rect[0] + size[0];
         next.content_rect[3] = self.content_rect[1] + size[1];
+        next.fit_content(fit)
+    }
+
+    fn fit_content(self, fit: NativeTableContentFit) -> Result<Self, NativeCellClipError> {
+        let mut next = self;
+        if ![fit.maximum_height, fit.maximum_width]
+            .into_iter()
+            .all(f32::is_finite)
+        {
+            return Err(NativeCellClipError);
+        }
         if fit.mode & 0xfe == 2 {
             next.raw_rect[3] = next.raw_rect[1] + (next.content_rect[3] - next.content_rect[1]);
         }
@@ -156,13 +274,24 @@ impl NativeTableModelState {
         if fit.maximum_width > 0.0 && next.raw_rect[2] - next.raw_rect[0] > fit.maximum_width {
             next.raw_rect[2] = next.raw_rect[0] + fit.maximum_width;
         }
-        for axis in 0..2 {
-            if next.raw_rect[axis] > next.raw_rect[axis + 2] {
-                next.raw_rect.swap(axis, axis + 2);
-            }
-        }
+        next.raw_rect = normalized_rect(next.raw_rect);
         Self::new(next.raw_rect, next.content_rect)
     }
+}
+
+fn rectangles_within(left: [f32; 4], right: [f32; 4], epsilon: f32) -> bool {
+    left.into_iter()
+        .zip(right)
+        .all(|(left, right)| (left - right).abs() <= epsilon)
+}
+
+fn normalized_rect(mut rect: [f32; 4]) -> [f32; 4] {
+    for axis in 0..2 {
+        if rect[axis] > rect[axis + 2] {
+            rect.swap(axis, axis + 2);
+        }
+    }
+    rect
 }
 
 impl NativeDocumentTablePlacement {

@@ -167,6 +167,7 @@ impl Case {
             };
         }
         let mut plan = PreparedTable {
+            callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             topology: TableGrid::new(&source).unwrap(),
             rows,

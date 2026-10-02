@@ -1,9 +1,16 @@
 use std::ops::Range;
 
 mod native_object_bound;
-pub(in crate::render) use native_object_bound::NativeObjectEntryBounds;
+mod native_page_layout;
+pub(in crate::render) use native_object_bound::{
+    NativeCellPageObstacles, NativeObjectEntryBounds, NativeObjectPageObstacles,
+};
 #[cfg(all(test, feature = "serde"))]
-pub(in crate::render) use native_object_bound::caller_capture_profile as native_object_capture_profile;
+pub(in crate::render) use native_object_bound::{
+    caller_capture_profile as native_object_capture_profile,
+    caller_capture_source as native_object_capture_source,
+};
+pub(in crate::render) use native_page_layout::layout_native_page_text;
 
 use crate::render::RenderTheme;
 use crate::render::marker::{PreparedMarker, marker_center_y};
@@ -18,7 +25,7 @@ use super::objects::{MeasuredObject, ObjectDiagnosticKind, ObjectMeasurementCont
 use super::wrap_paragraph;
 use super::wrapping::{NativeObjectMeasurementWidth, ParagraphMeasurementWidth};
 use super::{
-    StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
+    ParagraphLayout, StyledText, TextRenderer, WrappedLine, explicit_line_height, paragraph_layout,
     paragraph_line_height, unmeasured_paragraph,
 };
 
@@ -617,8 +624,39 @@ impl PositionedMarker {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(in crate::render) enum NativeGlyphBaselineProjection {
+    ExactRequired,
+    ExactBands,
+    LocalGlyphBaseline,
+}
+
 pub(in crate::render) struct NativePaintFrame {
     pub translation: [f64; 2],
+    baseline_projection: NativeGlyphBaselineProjection,
+}
+
+impl NativePaintFrame {
+    pub fn retain_world_projection(&mut self, expected: [f64; 6], rounded: [f64; 6]) -> bool {
+        if [0, 2, 3, 4, 5]
+            .into_iter()
+            .any(|axis| expected[axis] != rounded[axis])
+        {
+            return false;
+        }
+        if expected[1] != rounded[1] {
+            if self.baseline_projection == NativeGlyphBaselineProjection::ExactRequired {
+                return false;
+            }
+            self.baseline_projection = NativeGlyphBaselineProjection::LocalGlyphBaseline;
+        }
+        true
+    }
+
+    #[cfg(test)]
+    pub fn baseline_projection(&self) -> NativeGlyphBaselineProjection {
+        self.baseline_projection
+    }
 }
 
 #[derive(Default)]
@@ -1021,6 +1059,10 @@ fn try_layout_text_with_context(
 ) -> Result<TextLayout, ObjectDiagnosticKind> {
     let scoped_renderer = renderer.local_measurement_scope();
     let renderer = &scoped_renderer;
+    let native_cell_obstacles_supported = frame.exclusions.is_empty()
+        || renderer
+            .native_cell_page_obstacles
+            .is_some_and(|page| page.supports_frame(&frame));
     let text_box = styled.text_box;
     let settings = renderer.settings;
     renderer.report_object_issues(styled.object_issues());
@@ -1257,7 +1299,7 @@ fn try_layout_text_with_context(
             let mut line_alignment = layout.alignment;
             if native_cell_measurement.is_some()
                 && frame.bbox.x_min == 0.0
-                && frame.exclusions.is_empty()
+                && native_cell_obstacles_supported
                 && layout.indent_level == 0
                 && marker_width == 0.0
             {
@@ -1342,7 +1384,7 @@ fn try_layout_text_with_context(
         native_frame: (native_cell_measurement.is_some()
             && frame.bbox.x_min == 0.0
             && frame.bbox.y_min == 0.0
-            && frame.exclusions.is_empty()
+            && native_cell_obstacles_supported
             && paragraph_layouts.iter().all(|paragraph| {
                 paragraph
                     .bullet
@@ -1351,12 +1393,49 @@ fn try_layout_text_with_context(
             && !lines_have_unsupported_native_metadata(&lines))
         .then_some(NativePaintFrame {
             translation: [0.0; 2],
+            baseline_projection: if captured_cell_default_metrics(
+                &lines,
+                &paragraph_layouts,
+                margins,
+            ) {
+                NativeGlyphBaselineProjection::ExactBands
+            } else {
+                NativeGlyphBaselineProjection::ExactRequired
+            },
         }),
         lines,
         content_height,
     };
     layout.apply_gravity(frame.gravity, outer_height, gravity_height);
     Ok(layout)
+}
+
+fn captured_cell_default_metrics(
+    lines: &[TextLine],
+    paragraphs: &[ParagraphLayout],
+    margins: [f64; 4],
+) -> bool {
+    let Some(first) = lines.first() else {
+        return false;
+    };
+    let size = first.line.font_size;
+    matches!(size, 17.0 | 50.0)
+        && margins == [0.0; 4]
+        && paragraphs.iter().all(|paragraph| {
+            paragraph.line_spacing.is_none()
+                && paragraph.spacing_before == 0.0
+                && paragraph.spacing_after == 0.0
+                && !paragraph.spacing_before_invalid
+                && !paragraph.spacing_after_invalid
+        })
+        && lines.iter().all(|line| {
+            line.line.font_size == size
+                && line
+                    .line
+                    .placements
+                    .iter()
+                    .all(|placement| placement.cluster.run.style.font_size == size)
+        })
 }
 
 fn lines_have_unsupported_native_metadata(lines: &[TextLine]) -> bool {

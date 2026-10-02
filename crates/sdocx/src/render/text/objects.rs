@@ -157,6 +157,7 @@ pub enum ObjectDiagnosticKind {
     InvalidBounds,
     MixedParagraphLayout,
     UnsupportedWidthLimitContext,
+    UnsupportedCellClipping,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

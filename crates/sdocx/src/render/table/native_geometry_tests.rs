@@ -179,6 +179,7 @@ impl Case {
             cell.metrics.measured_height = f64::from(self.metrics[slot].measured_height);
         }
         let plan = PreparedTable {
+            callback_top: 0.0,
             content_bbox: BoundingBox::default(),
             measured_bbox: BoundingBox {
                 x_min: 0.0,

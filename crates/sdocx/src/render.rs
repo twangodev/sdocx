@@ -24,6 +24,7 @@ mod fountain;
 mod harfrust;
 mod marker;
 pub use marker::PointMarkerTarget;
+mod native_body_pages;
 mod placed;
 mod table;
 mod text;
@@ -39,6 +40,10 @@ pub use theme::RenderTheme;
 #[cfg(test)]
 use theme::is_dark_background;
 use viewport::Viewport;
+#[cfg(all(test, feature = "serde"))]
+mod native_table_cache_tests;
+#[cfg(all(test, feature = "serde"))]
+mod native_table_clip_tests;
 mod vector;
 
 /// Color treatment to use while rendering a document.
@@ -103,6 +108,7 @@ struct BodyPreparationMetrics {
     page_mode: Option<u16>,
     padding: Option<(u32, u32)>,
     pages: Vec<(u32, u32)>,
+    native_object_page_obstacles: Option<text::NativeObjectPageObstacles>,
     options: RenderOptions,
 }
 
@@ -171,6 +177,7 @@ impl DocumentTextCache {
                 .iter()
                 .map(|page| (page.width, page.height))
                 .collect(),
+            native_object_page_obstacles: text::NativeObjectPageObstacles::from_document(document),
             options: options.clone(),
         };
         let database = fonts.database();
@@ -376,6 +383,9 @@ impl DocumentTextCache {
         let settings = TextSettings::from_document(&document.metadata);
         let text_renderer = TextRenderer::new(settings, fonts)
             .with_point_marker_target(options.point_marker_target)
+            .with_native_object_page_obstacles(text::NativeObjectPageObstacles::from_document(
+                document,
+            ))
             .with_table_export_page(table::TableExportPage::for_page(page, &document.metadata))
             .with_page_exclusions(text::PageExclusions::for_page(
                 document,
@@ -409,6 +419,7 @@ impl DocumentTextCache {
 
 struct PreparedBodyText {
     plan: Rc<PreparedBodyPlan>,
+    source_page_index: usize,
     object_index: usize,
     page_top: f64,
     viewport: Viewport,
@@ -420,6 +431,7 @@ struct PreparedBodyPlan {
     text_issues: Vec<text::SourceTextDiagnostic>,
     object_issues: Vec<text::SourceObjectDiagnostic>,
     exclusions: Option<text::PageExclusions>,
+    native_pages: Result<native_body_pages::NativeBodyPages, text::NativePageIndexUnavailable>,
 }
 
 impl PreparedBodyText {
@@ -477,6 +489,7 @@ impl PreparedBodyText {
             .sum::<f64>();
         Some(Self {
             plan,
+            source_page_index: page.source_page_index,
             object_index: body.object_index,
             page_top,
             viewport: Viewport::new(BoundingBox {
@@ -495,7 +508,18 @@ impl PreparedBodyText {
             .translated_paint(0.0, self.page_top)
             .with_page_exclusions(plan.exclusions.clone());
         let styled = StyledText::new(&plan.text, TextContext::Flow, renderer.settings);
-        let sources = VisibleTextSources::new(&styled, &plan.layout, self.viewport, context.theme);
+        let native_lines = plan
+            .native_pages
+            .as_ref()
+            .ok()
+            .and_then(|pages| pages.lines(self.source_page_index));
+        let sources = VisibleTextSources::new(
+            &styled,
+            &plan.layout,
+            self.viewport,
+            context.theme,
+            native_lines,
+        );
         renderer.report_owned_object_issues(
             &plan
                 .object_issues
@@ -520,14 +544,19 @@ impl PreparedBodyText {
             svg.scope(
                 Group::new().transformed(Transform::translate(0.0, -self.page_top, 5)),
                 |svg| {
-                    paint_text_layout_in_viewport(
+                    let mut target =
+                        text::NativePaintTarget::new(svg.retains_text(), Some(self.viewport));
+                    if let Some(lines) = native_lines {
+                        target = target.with_native_lines(lines);
+                    }
+                    paint_text_layout_with_target(
                         svg,
                         &styled,
                         &plan.layout,
                         context.media_assets,
                         context.theme,
                         &renderer,
-                        Some(self.viewport),
+                        target,
                     );
                 },
             );
@@ -565,6 +594,9 @@ impl PreparedBodyPlan {
         );
         let planner = TextRenderer::new(renderer.settings, renderer.fonts)
             .with_point_marker_target(renderer.point_marker_target)
+            .with_native_object_page_obstacles(text::NativeObjectPageObstacles::from_document(
+                document,
+            ))
             .with_object_page_ownership(if key.detached {
                 text::ObjectPageOwnership::Detached
             } else {
@@ -581,27 +613,46 @@ impl PreparedBodyPlan {
                 f64::from(horizontal)
             });
         let styled = StyledText::new(&text, TextContext::Flow, renderer.settings);
-        let layout = text::layout_capture_text(
-            &styled,
-            text::TextFrame {
-                bbox: BoundingBox {
-                    x_min: padding,
-                    y_min: 0.0,
-                    x_max: frame_width - padding,
-                    y_max: 0.0,
-                },
-                gravity: None,
-                exclusions: &bands,
+        let frame = text::TextFrame {
+            bbox: BoundingBox {
+                x_min: padding,
+                y_min: 0.0,
+                x_max: frame_width - padding,
+                y_max: 0.0,
             },
-            key.theme,
-            &planner,
-        );
+            gravity: None,
+            exclusions: &bands,
+        };
+        let complete_source = !key.detached
+            && matches!(document.metadata.page_mode, None | Some(0))
+            && document.metadata.note_text.as_ref().is_some_and(|source| {
+                source.text_sections.is_empty() && crate::layout::same_text_source(source, &text)
+            });
+        let (layout, native_page_layout) = if complete_source {
+            text::layout_native_page_text(&styled, frame, key.theme, &planner)
+        } else {
+            let mut layout = text::layout_capture_text(&styled, frame, key.theme, &planner);
+            layout.native_object_entry = None;
+            (
+                layout,
+                Err(text::NativePageIndexUnavailable::OutsideCertificate),
+            )
+        };
+        let native_pages = native_page_layout.and_then(|page_layout| {
+            native_body_pages::NativeBodyPages::from_measured(
+                document,
+                key.first_page_index,
+                key.last_page_index,
+                &page_layout,
+            )
+        });
         Some(Self {
             text,
             layout,
             text_issues: planner.scoped_diagnostics(),
             object_issues: planner.scoped_object_diagnostics(),
             exclusions,
+            native_pages,
         })
     }
 }
@@ -618,13 +669,17 @@ impl VisibleTextSources {
         layout: &text::TextLayout,
         viewport: Viewport,
         theme: RenderTheme,
+        native_lines: Option<text::NativePageLineRange>,
     ) -> Self {
         let mut sources = Self {
             text: Vec::new(),
             layout: Vec::new(),
             objects: Vec::new(),
         };
-        for line in &layout.lines {
+        for (index, line) in layout.lines.iter().enumerate() {
+            if native_lines.is_some_and(|lines| !lines.contains(index)) {
+                continue;
+            }
             if viewport.line_visible(line) {
                 sources.layout.push(line.line.source.clone());
                 if viewport.text_visible(styled, line, theme) {
@@ -1338,10 +1393,14 @@ fn render_placed_text(
                     &layout,
                     theme,
                     renderer,
-                    Some(Viewport::new(frame.background_bounds)),
+                    text::NativePaintTarget::new(
+                        svg.retains_text(),
+                        Some(Viewport::new(frame.background_bounds)),
+                    ),
                 );
             });
-            paint_text_foreground(svg, &styled, &layout, media_assets, theme, renderer, None);
+            let target = text::NativePaintTarget::new(svg.retains_text(), None);
+            paint_text_foreground(svg, &styled, &layout, media_assets, theme, renderer, target);
         } else {
             paint_text_layout(svg, &styled, &layout, media_assets, theme, renderer);
         }
@@ -1368,8 +1427,23 @@ fn paint_text_layout_in_viewport(
     renderer: &TextRenderer<'_>,
     viewport: Option<Viewport>,
 ) {
-    paint_text_backgrounds(svg, styled, layout, theme, renderer, viewport);
-    paint_text_foreground(svg, styled, layout, media_assets, theme, renderer, viewport);
+    let target = text::NativePaintTarget::new(svg.retains_text(), viewport);
+    paint_text_layout_with_target(svg, styled, layout, media_assets, theme, renderer, target);
+}
+
+fn paint_text_layout_with_target(
+    svg: &mut Scene,
+    styled: &StyledText<'_>,
+    layout: &text::TextLayout,
+    media_assets: &[MediaAsset],
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    target: text::NativePaintTarget,
+) {
+    target.paint_conservative(svg, |svg| {
+        paint_text_backgrounds(svg, styled, layout, theme, renderer, target);
+    });
+    paint_text_foreground(svg, styled, layout, media_assets, theme, renderer, target);
 }
 
 fn paint_text_backgrounds(
@@ -1378,10 +1452,13 @@ fn paint_text_backgrounds(
     layout: &text::TextLayout,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
-    viewport: Option<Viewport>,
+    target: text::NativePaintTarget,
 ) {
-    for line in &layout.lines {
-        for issue in text::render_line_backgrounds(svg, styled, line, theme, viewport) {
+    for (index, line) in layout.lines.iter().enumerate() {
+        if !target.includes_line(index) {
+            continue;
+        }
+        for issue in text::render_line_backgrounds(svg, styled, line, theme, target.viewport) {
             let scoped = match issue {
                 text::SourceOwner::Text(source) => renderer.for_source(source),
                 text::SourceOwner::Object(source) => renderer.for_object_source(source),
@@ -1402,24 +1479,25 @@ fn paint_text_foreground(
     media_assets: &[MediaAsset],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
-    viewport: Option<Viewport>,
+    target: text::NativePaintTarget,
 ) {
+    let viewport = target.viewport;
     let visible_lines = layout
         .lines
         .iter()
-        .map(|line| viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)))
+        .enumerate()
+        .map(|(index, line)| {
+            target.includes_line(index)
+                && viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme))
+        })
         .collect::<Vec<_>>();
-    let mut native_paint = text::NativePaintDispatcher::new(
-        styled,
-        layout,
-        theme,
-        renderer,
-        &visible_lines,
-        svg.retains_text(),
-        viewport,
-    );
+    let mut native_paint =
+        text::NativePaintDispatcher::new(styled, layout, theme, renderer, &visible_lines, target);
     svg.text_source(|svg| {
         for (index, line) in layout.lines.iter().enumerate() {
+            if !target.includes_line(index) {
+                continue;
+            }
             if let Some(marker) = &line.marker
                 && viewport.is_none_or(|viewport| {
                     marker
@@ -1429,8 +1507,10 @@ fn paint_text_foreground(
                 })
             {
                 let style = styled.style_at(marker.source, theme, line.predefined);
-                svg.text_marker(marker.source, |svg| {
-                    paint_positioned_marker(svg, marker, &style, theme, renderer);
+                target.paint_conservative(svg, |svg| {
+                    svg.text_marker(marker.source, |svg| {
+                        paint_positioned_marker(svg, marker, &style, theme, renderer);
+                    });
                 });
             }
             if visible_lines[index] {
@@ -1438,34 +1518,39 @@ fn paint_text_foreground(
                 if let Some(native) = &mut native_paint {
                     native.paint_line(svg, styled, index, line, theme, renderer);
                 } else {
-                    render_measured_line(
-                        svg,
-                        styled,
-                        &line.line,
-                        line.x,
-                        line.width,
-                        line.baseline,
-                        line.alignment,
-                        theme,
-                        line.predefined,
-                        renderer,
-                    );
+                    target.paint_conservative(svg, |svg| {
+                        render_measured_line(
+                            svg,
+                            styled,
+                            &line.line,
+                            line.x,
+                            line.width,
+                            line.baseline,
+                            line.alignment,
+                            theme,
+                            line.predefined,
+                            renderer,
+                        );
+                    });
                 }
             }
-            paint_line_objects(
-                svg,
-                styled,
-                &line.line,
-                line.x,
-                line.width,
-                line.baseline,
-                line.alignment,
-                line.predefined,
-                media_assets,
-                theme,
-                renderer,
-                viewport,
-            );
+            target.paint_conservative(svg, |svg| {
+                paint_line_objects(
+                    svg,
+                    styled,
+                    &line.line,
+                    layout.native_object_entry,
+                    line.x,
+                    line.width,
+                    line.baseline,
+                    line.alignment,
+                    line.predefined,
+                    media_assets,
+                    theme,
+                    renderer,
+                    viewport,
+                );
+            });
         }
     });
 }
@@ -1475,6 +1560,7 @@ fn paint_line_objects(
     svg: &mut Scene,
     styled: &StyledText<'_>,
     line: &text::WrappedLine,
+    native_entry: Option<text::NativeObjectEntryBounds>,
     left: f64,
     available_width: f64,
     baseline: f64,
@@ -1547,12 +1633,29 @@ fn paint_line_objects(
             let drawing_table = match &span.content {
                 Some(RichTextObjectContent::Table(table)) => {
                     if body_clone {
-                        table::prepare_table_clone_drawing(
+                        let native_source = native_entry
+                            .filter(|_| {
+                                renderer
+                                    .table_export_page
+                                    .is_none_or(table::TableExportPage::has_zero_origin)
+                            })
+                            .and_then(|entry| {
+                                let Some(Ok(embedded::PreparedObject::Table(prepared))) =
+                                    &placement.prepared
+                                else {
+                                    return None;
+                                };
+                                Some(table::NativeTableDocumentSource::from_entry(
+                                    entry, prepared,
+                                ))
+                            });
+                        table::prepare_table_clone_drawing_with_native_entry(
                             table,
                             span.layout_constraint,
                             target,
                             theme,
                             &drawing_renderer,
+                            native_source,
                         )
                     } else {
                         table::prepare_table_drawing(
@@ -1579,7 +1682,13 @@ fn paint_line_objects(
             if let Some(Ok(prepared)) = &drawing_table {
                 paint_bounds = prepared.measured_bbox;
             }
-            if viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds)) {
+            let native_table = drawing_table.as_ref().is_some_and(|prepared| {
+                prepared
+                    .as_ref()
+                    .is_ok_and(|table| has_native_table_clipping(&table.rows))
+            });
+            if !native_table && viewport.is_some_and(|viewport| !viewport.intersects(paint_bounds))
+            {
                 return;
             }
             if body_clone
@@ -1777,7 +1886,7 @@ fn render_text_frame(
     let planner = renderer.planning_scope();
     let layout = text::layout_text(&styled, frame, theme, &planner);
     let sources =
-        viewport.map(|viewport| VisibleTextSources::new(&styled, &layout, viewport, theme));
+        viewport.map(|viewport| VisibleTextSources::new(&styled, &layout, viewport, theme, None));
     paint_text_layout_in_viewport(
         svg,
         &styled,
@@ -2080,6 +2189,13 @@ struct TablePaint<'a> {
     artwork: table::TableArtworkGeometry,
 }
 
+fn has_native_table_clipping(rows: &[table::PreparedTableRow]) -> bool {
+    rows.iter().flat_map(|row| &row.cells).any(|cell| {
+        cell.native_text_placement()
+            .is_ok_and(|placement| placement.transport().is_some())
+    })
+}
+
 impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
     fn from(table: &'a table::PreparedTable) -> Self {
         Self {
@@ -2193,6 +2309,10 @@ fn render_table(
             frame,
             artwork_frame,
             layout: measured.map(|cell| &cell.layout),
+            native_text_placement: measured.map_or(
+                Ok(table::native_placement::NativeCellTextPlacement::Unknown),
+                |cell| cell.native_text_placement(),
+            ),
             position: table::CellPosition { row, column },
             gap: prepared.as_ref().is_some_and(|prepared| {
                 prepared
@@ -2271,40 +2391,48 @@ fn render_table(
         if prepared.is_none() {
             paint_table_outline(svg, borders.as_ref(), content_bbox, offset_y, theme);
         }
-        svg.scope(Group::new().clipped(&clip), |svg| {
-            for paint in &cells {
-                if viewport.is_some_and(|viewport| {
+        for paint in &cells {
+            let native_clip = paint
+                .native_text_placement
+                .is_ok_and(|placement| placement.transport().is_some());
+            if !native_clip
+                && viewport.is_some_and(|viewport| {
                     !viewport.intersects(BoundingBox {
                         y_min: paint.frame.y_min + offset_y,
                         y_max: paint.frame.y_max + offset_y,
                         ..paint.frame
                     })
-                }) {
-                    continue;
-                }
-                let cell_theme = paint.fill.theme(theme);
-                if let Some(layout) = paint.layout {
-                    let styled =
-                        StyledText::new(&paint.cell.content, TextContext::Flow, renderer.settings);
-                    paint_text_layout_in_viewport(
-                        svg,
-                        &styled,
-                        layout,
-                        media_assets,
-                        cell_theme,
-                        renderer,
-                        viewport,
-                    );
-                } else {
-                    let frame = text::TextFrame {
-                        bbox: BoundingBox {
-                            y_min: paint.frame.y_min + offset_y,
-                            y_max: paint.frame.y_max + offset_y,
-                            ..paint.frame
-                        },
-                        gravity: Some(0),
-                        exclusions: &[],
-                    };
+                })
+            {
+                continue;
+            }
+            let cell_theme = paint.fill.theme(theme);
+            if let Some(layout) = paint.layout {
+                let styled =
+                    StyledText::new(&paint.cell.content, TextContext::Flow, renderer.settings);
+                let mut target = text::NativePaintTarget::new(svg.retains_text(), viewport)
+                    .with_cell(anchor_utf16, paint.native_text_placement);
+                target.conservative_clip = Some(clip);
+                paint_text_layout_with_target(
+                    svg,
+                    &styled,
+                    layout,
+                    media_assets,
+                    cell_theme,
+                    renderer,
+                    target,
+                );
+            } else {
+                let frame = text::TextFrame {
+                    bbox: BoundingBox {
+                        y_min: paint.frame.y_min + offset_y,
+                        y_max: paint.frame.y_max + offset_y,
+                        ..paint.frame
+                    },
+                    gravity: Some(0),
+                    exclusions: &[],
+                };
+                svg.scope(Group::new().clipped(&clip), |svg| {
                     render_text_frame(
                         svg,
                         &paint.cell.content,
@@ -2314,9 +2442,9 @@ fn render_table(
                         renderer,
                         viewport,
                     );
-                }
+                });
             }
-        });
+        }
     });
 }
 
@@ -2326,6 +2454,10 @@ struct TableCellPaint<'a> {
     frame: BoundingBox,
     artwork_frame: BoundingBox,
     layout: Option<&'a text::TextLayout>,
+    native_text_placement: Result<
+        table::native_placement::NativeCellTextPlacement,
+        text::native_cell_clip::NativeCellClipError,
+    >,
     position: table::CellPosition,
     gap: bool,
 }

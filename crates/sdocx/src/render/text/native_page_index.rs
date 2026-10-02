@@ -1,5 +1,3 @@
-#![cfg_attr(not(all(test, feature = "serde")), allow(dead_code))]
-
 use super::{StyledText, TextLayout};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -28,6 +26,8 @@ pub(in crate::render) enum NativePageIndexUnavailable {
     InvalidSource,
     #[error("native page indexing requires a bounded page and rescan range")]
     InvalidPages,
+    #[error("native page selection requires a bounded measured line range")]
+    InvalidLines,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -54,6 +54,37 @@ impl NativePageSection {
         start: -1,
         count: 0,
     };
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(in crate::render) struct NativePageLineRange {
+    start: usize,
+    end: usize,
+}
+
+impl NativePageLineRange {
+    pub const EMPTY: Self = Self { start: 0, end: 0 };
+
+    pub fn new(
+        section: NativePageSection,
+        measured_lines: usize,
+    ) -> Result<Self, NativePageIndexUnavailable> {
+        use NativePageIndexUnavailable::InvalidLines;
+        if section == NativePageSection::ABSENT {
+            return Ok(Self::EMPTY);
+        }
+        let start = usize::try_from(section.start).map_err(|_| InvalidLines)?;
+        let count = usize::try_from(section.count).map_err(|_| InvalidLines)?;
+        let end = start.checked_add(count).ok_or(InvalidLines)?;
+        if measured_lines > 250_000 || end > measured_lines {
+            return Err(InvalidLines);
+        }
+        Ok(Self { start, end })
+    }
+
+    pub fn contains(self, line: usize) -> bool {
+        self.start <= line && line < self.end
+    }
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Eq)]
@@ -244,20 +275,16 @@ impl NativePageLayout {
         Ok(())
     }
 
-    pub fn from_measured(
+    pub(super) fn checked_source_length(
         styled: &StyledText<'_>,
-        layout: &TextLayout,
         width: i32,
-    ) -> Result<Self, NativePageIndexUnavailable> {
+    ) -> Result<i32, NativePageIndexUnavailable> {
         use NativePageIndexUnavailable as Error;
         let source = styled.text_box;
         if width <= 0
             || f64::from(width as f32) != f64::from(width)
             || !matches!(styled.context(), super::TextContext::Flow)
-            || !matches!(
-                styled.settings.font_size_units,
-                super::FontSizeUnits::Resolved
-            )
+            || source.text.len() > 250_000
             || !source
                 .text
                 .bytes()
@@ -282,10 +309,6 @@ impl NativePageLayout {
                 .any(|paragraph| paragraph.kind != crate::RichTextParagraphType::ParsingState)
             || styled.settings.scale != 1.0
             || styled.settings.font_size_delta != 0.0
-            || layout
-                .native_frame
-                .as_ref()
-                .is_none_or(|frame| frame.translation != [0.0; 2])
         {
             return Err(Error::OutsideCertificate);
         }
@@ -296,9 +319,28 @@ impl NativePageLayout {
                 .ok_or(Error::InvalidSource)?,
         )
         .map_err(|_| Error::InvalidSource)?;
-        if text_length_utf16 > 250_000 || layout.lines.len() > 250_000 {
+        if text_length_utf16 > 250_000 {
             return Err(Error::OutsideCertificate);
         }
+        Ok(text_length_utf16)
+    }
+
+    pub fn from_measured(
+        styled: &StyledText<'_>,
+        layout: &TextLayout,
+        width: i32,
+    ) -> Result<Self, NativePageIndexUnavailable> {
+        use NativePageIndexUnavailable as Error;
+        let text_length_utf16 = Self::checked_source_length(styled, width)?;
+        if layout.lines.len() > 250_000
+            || layout
+                .native_frame
+                .as_ref()
+                .is_none_or(|frame| frame.translation != [0.0; 2])
+        {
+            return Err(Error::OutsideCertificate);
+        }
+        let source = styled.text_box;
         let paragraphs: Vec<_> = styled.index.display_paragraphs().collect();
         let margins = source.margins.unwrap_or([0.0; 4]);
         let content_width = f64::from(width) - f64::from(margins[0]) - f64::from(margins[2]);

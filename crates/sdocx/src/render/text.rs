@@ -19,7 +19,7 @@ pub(in crate::render) mod native_cell_clip;
 mod native_entry;
 mod native_identity;
 mod native_line;
-mod native_page_index;
+pub(in crate::render) mod native_page_index;
 pub(in crate::render) mod native_paint_plan;
 mod native_runs;
 mod native_wrap;
@@ -31,21 +31,29 @@ mod styles;
 mod wrapping;
 pub(super) use background::render_line_backgrounds;
 #[cfg(test)]
+pub(super) use layout::NativeGlyphBaselineProjection;
+pub(super) use layout::layout_capture_text;
+#[cfg(test)]
 use layout::measure_paragraph;
-#[cfg(all(test, feature = "serde"))]
-pub(super) use layout::native_object_capture_profile;
 pub(super) use layout::{
-    NativeCellTextConstraints, NativeObjectEntryBounds, PositionedMarker, TextFrame, TextLayout,
-    TextLine, VerticalExclusion, layout_capture_text, layout_flow_text, layout_table_cell_text,
+    NativeCellPageObstacles, NativeCellTextConstraints, NativeObjectEntryBounds,
+    NativeObjectPageObstacles, PositionedMarker, TextFrame, TextLayout, TextLine,
+    VerticalExclusion, layout_flow_text, layout_native_page_text, layout_table_cell_text,
     layout_text, layout_text_with_size,
 };
+#[cfg(all(test, feature = "serde"))]
+pub(super) use layout::{native_object_capture_profile, native_object_capture_source};
 pub(in crate::render) use measurement::FontGeometry;
 pub(super) use native_identity::{NativeDrawSpan, NativeIdentityUnavailable};
+pub(super) use native_page_index::{
+    NativePageIndexUnavailable, NativePageLayout, NativePageLineRange, NativePageRecord,
+    NativePageSections,
+};
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use objects::{ObjectMeasurementContext, ObjectPageOwnership};
 pub(super) use pagination::PageExclusions;
 pub(super) use paint::{
-    NativePaintDispatcher, render_measured_line, text_ranges as body_text_ranges,
+    NativePaintDispatcher, NativePaintTarget, render_measured_line, text_ranges as body_text_ranges,
 };
 pub(super) use resources::{
     SourceObjectDiagnostic, SourceOwner, SourceTextDiagnostic, TextRenderer,

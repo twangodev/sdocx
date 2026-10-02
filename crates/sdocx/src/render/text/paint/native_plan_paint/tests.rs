@@ -3,7 +3,7 @@ use crate::fonts::FontBook;
 use crate::render::text::{
     NativeCellTextConstraints, TextContext, TextFrame, TextSettings, layout_table_cell_text,
 };
-use crate::render::vector::Svg;
+use crate::render::vector::{ClipPath, Definitions, Rectangle, Svg};
 use crate::{BoundingBox, RichTextBox, RichTextParagraph, RichTextParagraphType};
 use sha2::{Digest, Sha256};
 
@@ -87,6 +87,209 @@ fn captured_float(value: &serde_json::Value) -> f64 {
 }
 
 #[test]
+fn native_cell_clip_requests_report_only_certified_plan_failures_at_the_table_anchor() {
+    let capture = capture();
+    let case = capture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "default-auto")
+        .unwrap();
+    let fonts = FontBook::default();
+    let theme = RenderTheme::for_canvas(false);
+    let settings = TextSettings::resolved();
+    for (placement, expected) in [
+        (
+            Ok(NativeCellTextPlacement::Unknown),
+            super::super::super::ObjectDiagnosticKind::UnsupportedCellClipping,
+        ),
+        (
+            Err(NativeCellClipError),
+            super::super::super::ObjectDiagnosticKind::InvalidBounds,
+        ),
+    ] {
+        let renderer = TextRenderer::new(settings, &fonts);
+        let source = content(case);
+        let styled = StyledText::new(&source, TextContext::Flow, settings);
+        let mut layout = layout(&styled, case, [0.0, 0.0], &renderer);
+        let mut scene = Scene::new(Svg::new());
+        let conservative = scene.definition::<Clip>();
+        scene.push(
+            Definitions::new()
+                .add(ClipPath::new(&conservative).add(Rectangle::new().width(1000).height(1000))),
+        );
+        let mut target = NativePaintTarget::new(false, None).with_cell(23, placement);
+        target.conservative_clip = Some(conservative);
+        let mut dispatcher = NativePaintDispatcher::new(
+            &styled,
+            &layout,
+            theme,
+            &renderer,
+            &vec![true; layout.lines.len()],
+            target,
+        )
+        .unwrap();
+        let captured = case["emitted_runs"]["runs"].as_array().unwrap();
+        assert_eq!(dispatcher.groups.len(), captured.len());
+        for (group, captured) in dispatcher.groups.iter().zip(captured) {
+            assert!(group.clip.is_none());
+            assert_eq!(
+                f64::from(group.run.origin[0]),
+                captured_float(&captured["origin_bits"][0])
+            );
+            assert_eq!(
+                f64::from(group.run.origin[1]),
+                captured_float(&captured["origin_bits"][1])
+            );
+        }
+        for (index, line) in layout.lines.iter().enumerate() {
+            dispatcher.paint_line(&mut scene, &styled, index, line, theme, &renderer);
+        }
+        let svg = scene.finish();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        for text in xml.descendants().filter(|node| node.has_tag_name("text")) {
+            assert!(
+                text.ancestors()
+                    .any(|node| node.attribute("clip-path").is_some())
+            );
+        }
+        assert_eq!(
+            renderer.object_diagnostics(),
+            vec![super::super::super::ObjectDiagnostic {
+                anchor_utf16: 23,
+                kind: expected,
+            }]
+        );
+        assert!(renderer.diagnostics().is_empty());
+        #[cfg(feature = "pdf")]
+        {
+            let mut pdf_target = target;
+            pdf_target.retain_text = true;
+            let pdf_dispatcher = NativePaintDispatcher::new(
+                &styled,
+                &layout,
+                theme,
+                &renderer,
+                &vec![true; layout.lines.len()],
+                pdf_target,
+            )
+            .unwrap();
+            for group in pdf_dispatcher.groups {
+                assert!(group.clip.is_none());
+                let block = group.retained.unwrap();
+                assert_eq!(
+                    block.source.as_ref(),
+                    styled
+                        .index
+                        .slice(group.run.source.characters().clone())
+                        .unwrap()
+                );
+                assert_eq!(block.runs[0].glyphs.len(), group.run.glyphs.len());
+                for (actual, cached) in block.runs[0].glyphs.iter().zip(&group.run.glyphs) {
+                    assert_eq!(actual.glyph_id, cached.glyph_id);
+                    assert_eq!(actual.origin, cached.origin.map(f64::from));
+                }
+            }
+        }
+        let before = renderer.object_diagnostics();
+        let hidden = NativePaintDispatcher::new(
+            &styled,
+            &layout,
+            theme,
+            &renderer,
+            &vec![false; layout.lines.len()],
+            NativePaintTarget::new(false, None).with_cell(47, placement),
+        )
+        .unwrap();
+        assert!(hidden.groups.is_empty());
+        assert_eq!(renderer.object_diagnostics(), before);
+        layout.native_frame = None;
+        assert!(
+            NativePaintDispatcher::new(
+                &styled,
+                &layout,
+                theme,
+                &renderer,
+                &vec![true; layout.lines.len()],
+                NativePaintTarget::new(false, None).with_cell(47, placement),
+            )
+            .is_none()
+        );
+        assert_eq!(renderer.object_diagnostics(), before);
+    }
+    let case = capture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "newline-only")
+        .unwrap();
+    assert!(case["emitted_runs"]["runs"].as_array().unwrap().is_empty());
+    let renderer = TextRenderer::new(settings, &fonts);
+    let source = content(case);
+    let styled = StyledText::new(&source, TextContext::Flow, settings);
+    let layout = layout(&styled, case, [0.0, 0.0], &renderer);
+    let dispatcher = NativePaintDispatcher::new(
+        &styled,
+        &layout,
+        theme,
+        &renderer,
+        &vec![true; layout.lines.len()],
+        NativePaintTarget::new(false, None).with_cell(47, Ok(NativeCellTextPlacement::Unknown)),
+    )
+    .unwrap();
+    assert!(dispatcher.groups.is_empty());
+    assert!(renderer.object_diagnostics().is_empty());
+}
+
+#[test]
+fn visible_source_projection_keeps_the_original_cached_run_clip() {
+    let capture = capture();
+    let case = capture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "default-narrow")
+        .unwrap();
+    let fonts = FontBook::default();
+    let settings = TextSettings::resolved();
+    let renderer = TextRenderer::new(settings, &fonts);
+    let theme = RenderTheme::for_canvas(false);
+    let source = content(case);
+    let styled = StyledText::new(&source, TextContext::Flow, settings);
+    let layout = layout(&styled, case, [0.0, 0.0], &renderer);
+    let plan = native_paint_plan(&styled, &layout, theme).unwrap();
+    let context = super::super::super::native_cell_clip::NativeCellTextClipContext::new(
+        [0.0, 0.0, 1000.0, 0.0],
+        [7.0, 11.0],
+    )
+    .unwrap();
+    let clips = plan
+        .runs
+        .iter()
+        .map(|run| {
+            Some(NativeRunClip::new(context.decide(run.layout.0).unwrap(), [3.125, 4.375]).unwrap())
+        })
+        .collect::<Vec<_>>();
+    let visible = (0..layout.lines.len())
+        .map(|index| index % 2 == 0)
+        .collect::<Vec<_>>();
+    let projected = project_groups(&plan, &styled, &layout, &visible, None, &clips).unwrap();
+    assert!(!projected.is_empty());
+    assert!(projected.len() < plan.runs.len());
+    for (run, clip) in projected {
+        let original = plan
+            .runs
+            .iter()
+            .position(|original| {
+                original.source.characters().start <= run.source.characters().start
+                    && run.source.characters().end <= original.source.characters().end
+            })
+            .unwrap();
+        assert_eq!(clip, clips[original]);
+    }
+}
+
+#[test]
 fn full_source_svg_groups_follow_captured_cached_origins_and_combining_owners() {
     let capture = capture();
     let fonts = FontBook::default();
@@ -115,8 +318,7 @@ fn full_source_svg_groups_follow_captured_cached_origins_and_combining_owners() 
             theme,
             &renderer,
             &vec![true; layout.lines.len()],
-            false,
-            None,
+            NativePaintTarget::new(false, None),
         )
         .unwrap_or_else(|| panic!("capture {name} must reach the certified SVG writer"));
         let expected = case["emitted_runs"]["runs"].as_array().unwrap();
@@ -201,9 +403,15 @@ fn visible_source_projection_retains_cached_pdf_geometry_without_hidden_actual_t
     let layout = layout(&styled, case, translation, &renderer);
     let mut visible = vec![false; layout.lines.len()];
     visible[1] = true;
-    let mut dispatcher =
-        NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, true, None)
-            .unwrap();
+    let mut dispatcher = NativePaintDispatcher::new(
+        &styled,
+        &layout,
+        theme,
+        &renderer,
+        &visible,
+        NativePaintTarget::new(true, None),
+    )
+    .unwrap();
     assert_eq!(dispatcher.groups.len(), 1);
     let mut scene = Scene::new(Svg::new());
     scene.retain_text();
@@ -258,8 +466,15 @@ fn svg_rejects_internal_mark_displacement_while_pdf_keeps_the_cached_group() {
     assert!(plan.runs[0].glyphs.len() > 1);
     let visible = vec![true; layout.lines.len()];
     assert!(
-        NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, false, None,)
-            .is_none()
+        NativePaintDispatcher::new(
+            &styled,
+            &layout,
+            theme,
+            &renderer,
+            &visible,
+            NativePaintTarget::new(false, None)
+        )
+        .is_none()
     );
     assert_eq!(
         renderer.diagnostics(),
@@ -270,9 +485,15 @@ fn svg_rejects_internal_mark_displacement_while_pdf_keeps_the_cached_group() {
         }]
     );
     let renderer = TextRenderer::new(settings, &fonts);
-    let mut dispatcher =
-        NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, true, None)
-            .unwrap();
+    let mut dispatcher = NativePaintDispatcher::new(
+        &styled,
+        &layout,
+        theme,
+        &renderer,
+        &visible,
+        NativePaintTarget::new(true, None),
+    )
+    .unwrap();
     let mut scene = Scene::new(Svg::new());
     scene.retain_text();
     scene.text_source(|scene| {
@@ -318,8 +539,15 @@ fn stacked_marks_keep_captured_pdf_glyphs_with_an_explicit_svg_projection_fallba
         assert_eq!(plan.runs.len(), 1);
         let visible = vec![true; layout.lines.len()];
         assert!(
-            NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, false, None)
-                .is_none()
+            NativePaintDispatcher::new(
+                &styled,
+                &layout,
+                theme,
+                &renderer,
+                &visible,
+                NativePaintTarget::new(false, None)
+            )
+            .is_none()
         );
         assert_eq!(
             renderer.diagnostics(),
@@ -330,9 +558,15 @@ fn stacked_marks_keep_captured_pdf_glyphs_with_an_explicit_svg_projection_fallba
             }]
         );
         let renderer = TextRenderer::new(settings, &fonts);
-        let mut dispatcher =
-            NativePaintDispatcher::new(&styled, &layout, theme, &renderer, &visible, true, None)
-                .unwrap();
+        let mut dispatcher = NativePaintDispatcher::new(
+            &styled,
+            &layout,
+            theme,
+            &renderer,
+            &visible,
+            NativePaintTarget::new(true, None),
+        )
+        .unwrap();
         let mut scene = Scene::new(Svg::new());
         scene.retain_text();
         scene.text_source(|scene| {

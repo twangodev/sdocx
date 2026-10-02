@@ -37,6 +37,10 @@ impl TableExportPage {
         self
     }
 
+    pub fn has_zero_origin(self) -> bool {
+        self.origin == [0.0; 2]
+    }
+
     pub fn artwork_bounds(self, measured: BoundingBox) -> BoundingBox {
         let local = [
             (measured.x_min - self.origin[0]) as f32,
@@ -233,6 +237,9 @@ mod tests {
             layout: None,
             position: CellPosition { row: 0, column: 0 },
             gap: false,
+            native_text_placement: Ok(
+                super::super::native_placement::NativeCellTextPlacement::Unknown,
+            ),
         };
         let viewport = Viewport::new(bounds([0.0, 0.0, 100.0, 100.0]));
         assert!(!viewport.intersects(paint.frame));

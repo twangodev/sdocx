@@ -3,6 +3,9 @@ use crate::{ObjectSpanLayoutConstraint, ObjectSpanLayoutOption, RichTextObjectCo
 
 use super::super::{StyledText, TextRenderer};
 
+mod page_obstacles;
+pub(in crate::render) use page_obstacles::{NativeCellPageObstacles, NativeObjectPageObstacles};
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[cfg_attr(not(all(test, feature = "serde")), allow(dead_code))]
 pub(in crate::render) struct NativeObjectEntryBounds {
@@ -12,11 +15,19 @@ pub(in crate::render) struct NativeObjectEntryBounds {
     pub position: [f32; 2],
     pub layout: [f32; 4],
     pub ink: [f32; 4],
+    page_obstacles: Option<NativeObjectPageObstacles>,
 }
 
 impl NativeObjectEntryBounds {
     pub fn text_bound(self) -> [f32; 4] {
         self.ink
+    }
+
+    pub fn supports_callback_bands(self, callback_top: f32, bands: &[&crate::BoundingBox]) -> bool {
+        self.page_obstacles.map_or_else(
+            || bands.is_empty(),
+            |page| page.matches_callback_bands(callback_top, bands),
+        )
     }
 }
 
@@ -28,6 +39,16 @@ pub(super) fn native_object_entry_bounds(
     context: LayoutContext,
 ) -> Option<NativeObjectEntryBounds> {
     let source = styled.text_box;
+
+    let page_obstacles = if frame.exclusions.is_empty() {
+        None
+    } else {
+        let page = renderer.native_object_page_obstacles?;
+        if !page.supports_parent_frame(frame) {
+            return None;
+        }
+        Some(page)
+    };
     if !matches!(context, LayoutContext::Flow | LayoutContext::Capture)
         || source.text != "\u{fffc}"
         || source.object_spans.len() != 1
@@ -49,9 +70,8 @@ pub(super) fn native_object_entry_bounds(
         || frame.bbox.x_min != 0.0
         || frame.bbox.y_min != 0.0
         || frame.gravity.is_some_and(|gravity| gravity != 0)
-        || !frame.exclusions.is_empty()
         || !frame.bbox.y_max.is_finite()
-        || frame.bbox.y_max <= 0.0
+        || frame.bbox.y_max < 0.0
         || f64::from(frame.bbox.y_max as f32) != frame.bbox.y_max
     {
         return None;
@@ -64,10 +84,17 @@ pub(super) fn native_object_entry_bounds(
             ObjectSpanLayoutConstraint::OverPages
                 | ObjectSpanLayoutConstraint::OverPagesOverlapPadding
         )
-        || !renderer
-            .table_split_rects(span.layout_constraint, 0.0)
-            .is_empty()
     {
+        return None;
+    }
+    let callback_bands = renderer.table_split_rects(span.layout_constraint, 0.0);
+    if page_obstacles.map_or_else(
+        || !callback_bands.is_empty(),
+        |page| {
+            span.layout_constraint != ObjectSpanLayoutConstraint::OverPages
+                || !page.matches_callback_bands(0.0, &callback_bands.iter().collect::<Vec<_>>())
+        },
+    ) {
         return None;
     }
     let Some(RichTextObjectContent::Table(table)) = span.content.as_ref() else {
@@ -105,10 +132,11 @@ pub(super) fn native_object_entry_bounds(
         return None;
     };
     if prepared.rows.iter().flat_map(|row| &row.cells).any(|cell| {
-        cell.layout.native_frame.is_none()
-            || cell.layout.lines.is_empty()
+        cell.layout.lines.is_empty()
             || cell.layout.lines.iter().any(|line| {
-                line.line.source.is_empty()
+                line.native_bands.is_none()
+                    || line.line.native_placed.is_none()
+                    || line.line.source.is_empty()
                     || line.line.placements.iter().any(|placement| {
                         let Some(entries) = &placement.cluster.run.native_entries else {
                             return true;
@@ -146,7 +174,7 @@ pub(super) fn native_object_entry_bounds(
         || line.x != 0.0
         || offset != 0.0
         || line.baseline != f64::from(bands.baseline)
-        || frame.bbox.y_max < f64::from(bands.bottom)
+        || (frame.bbox.y_max != 0.0 && frame.bbox.y_max < f64::from(bands.bottom))
     {
         return None;
     }
@@ -159,6 +187,7 @@ pub(super) fn native_object_entry_bounds(
         position: [x, bands.baseline],
         layout,
         ink,
+        page_obstacles,
     };
     entry
         .layout
@@ -172,4 +201,4 @@ pub(super) fn native_object_entry_bounds(
 mod tests;
 
 #[cfg(all(test, feature = "serde"))]
-pub(in crate::render) use tests::caller_capture_profile;
+pub(in crate::render) use tests::{caller_capture_profile, caller_capture_source};

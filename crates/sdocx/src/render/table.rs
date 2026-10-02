@@ -42,6 +42,7 @@ pub(super) struct PreparedTable {
     pub min_first_page_height: f64,
     constraint: ObjectSpanLayoutConstraint,
     bands: BandList,
+    callback_top: f32,
     pub pending_gaps: Vec<f64>,
     half_border: f64,
     topology: TableGrid,
@@ -53,6 +54,21 @@ pub(super) struct PreparedTableDrawing {
     pub rows: Vec<PreparedTableRow>,
     pub pending_gaps: Vec<f64>,
     pub artwork: TableArtworkGeometry,
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct NativeTableDocumentSource<'a> {
+    entry: super::text::NativeObjectEntryBounds,
+    layout: &'a PreparedTable,
+}
+
+impl<'a> NativeTableDocumentSource<'a> {
+    pub fn from_entry(
+        entry: super::text::NativeObjectEntryBounds,
+        layout: &'a PreparedTable,
+    ) -> Self {
+        Self { entry, layout }
+    }
 }
 
 impl PreparedTable {
@@ -73,6 +89,7 @@ impl PreparedTable {
         renderer: &TextRenderer<'_>,
     ) -> Result<(), ObjectDiagnosticKind> {
         self.bands = table_bands(self.constraint, candidate_top, renderer)?;
+        self.callback_top = candidate_top as f32;
         pagination::warm(self, table, theme, renderer)?;
         self.update_geometry(table, renderer)
     }
@@ -89,6 +106,21 @@ pub(super) struct PreparedTableCell {
     pub layout: TextLayout,
     bands: Option<BandList>,
     metrics: CellMetrics,
+    native_text_placement: Result<
+        native_placement::NativeCellTextPlacement,
+        super::text::native_cell_clip::NativeCellClipError,
+    >,
+}
+
+impl PreparedTableCell {
+    pub fn native_text_placement(
+        &self,
+    ) -> Result<
+        native_placement::NativeCellTextPlacement,
+        super::text::native_cell_clip::NativeCellClipError,
+    > {
+        self.native_text_placement
+    }
 }
 
 #[derive(Default)]
@@ -146,6 +178,7 @@ pub(super) fn prepare_table_drawing(
         drawing_origin,
         theme,
         renderer,
+        None,
     )
 }
 
@@ -156,6 +189,7 @@ fn prepare_table_drawing_with_artwork_source(
     drawing_origin: [f64; 2],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
+    native_document: Option<NativeTableDocumentSource<'_>>,
 ) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
     if !matches!(
         constraint,
@@ -202,11 +236,57 @@ fn prepare_table_drawing_with_artwork_source(
         let measured_bbox = offset_rounded_rect(prepared.measured_bbox, drawing_origin)?;
         let origin = [measured_bbox.x_min, measured_bbox.y_min];
         let content_bbox = offset_rounded_rect(prepared.content_bbox, origin)?;
-        for row in &mut prepared.rows {
-            for cell in &mut row.cells {
+        let document_writer = native_document.map(|source| document_text_writer(table, source));
+        for (row_index, row) in prepared.rows.iter_mut().enumerate() {
+            for (column_index, cell) in row.cells.iter_mut().enumerate() {
+                let local_frame = cell.frame;
                 let frame = offset_rounded_rect(cell.frame, origin)?;
                 cell.layout.translate(-cell.frame.x_min, -cell.frame.y_min);
-                translate_cell_drawing(&mut cell.layout, [frame.x_min, frame.y_min])?;
+                let native_cell = document_writer.as_ref().and_then(|writer| {
+                    let writer = writer.as_ref().ok()?;
+                    let physical = writer
+                        .source
+                        .layout
+                        .rows
+                        .get(row_index)?
+                        .cells
+                        .get(column_index)?;
+                    if physical.frame != local_frame
+                        || physical.column_index != cell.column_index
+                        || cell.layout.native_frame.as_ref()?.translation != [0.0; 2]
+                    {
+                        return None;
+                    }
+                    let caller = writer
+                        .writer
+                        .cell_origin(coordinates(local_frame))
+                        .ok()?
+                        .coordinates()
+                        .map(f64::from);
+                    ([frame.x_min, frame.y_min] == caller).then_some((writer, caller))
+                });
+                if let Some((writer, caller)) = native_cell {
+                    cell.layout.translate(caller[0], caller[1]);
+                    let saved = &table.rows[row_index].cells[column_index];
+                    cell.native_text_placement = native_placement::NativeCellModelState::new(
+                        coordinates(saved.bbox),
+                        coordinates(saved.content.bbox),
+                    )
+                    .map_err(|_| super::text::native_cell_clip::NativeCellClipError)
+                    .and_then(|model| {
+                        writer.placement.cell_text(
+                            model,
+                            coordinates(local_frame),
+                            writer.writer,
+                            [0.0; 2],
+                        )
+                    });
+                } else {
+                    translate_cell_drawing(&mut cell.layout, [frame.x_min, frame.y_min])?;
+                    if let Some(Err(error)) = document_writer {
+                        cell.native_text_placement = Err(error);
+                    }
+                }
                 if !valid_cell_layout(&cell.layout) {
                     return Err(ObjectDiagnosticKind::InvalidBounds);
                 }
@@ -247,7 +327,161 @@ pub(super) fn prepare_table_clone_drawing(
         [drawn.x_min, drawn.y_min],
         theme,
         renderer,
+        None,
     )
+}
+
+pub(super) fn prepare_table_clone_drawing_with_native_entry(
+    table: &RichTextTable,
+    constraint: ObjectSpanLayoutConstraint,
+    target: BoundingBox,
+    theme: RenderTheme,
+    renderer: &TextRenderer<'_>,
+    source: Option<NativeTableDocumentSource<'_>>,
+) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
+    let source = source.filter(|source| {
+        [target.x_min, target.y_min, target.x_max, target.y_max]
+            == source.entry.text_bound().map(f64::from)
+            && source.layout.constraint == constraint
+            && source.entry.supports_callback_bands(
+                source.layout.callback_top,
+                &source.layout.bands.padding_rectangles(),
+            )
+            && table.style.content_bbox == Some(table.bbox)
+            && matches!(table.style.auto_fit, None | Some(crate::TableAutoFit::Both))
+            && table.style.max_height.is_none_or(|height| height == 0.0)
+            && table.style.max_width.is_none_or(|width| width == 0.0)
+            && native_placement::NativeDocumentTablePlacement::from_entry(
+                source.entry,
+                [0.0; 2],
+                table.bbox,
+                table_drawn_bounds(table),
+            )
+            .is_ok_and(|placement| {
+                let changed = coordinates(placement.parent_rect())
+                    .into_iter()
+                    .zip(coordinates(table.bbox))
+                    .any(|(next, current)| {
+                        let difference = (next - current).abs();
+                        difference.is_finite() && difference > 0.001_f32
+                    });
+                changed
+                    && document_table_rect_update(table, placement)
+                        .is_ok_and(|update| preserves_source_dimensions(table, update))
+            })
+    });
+    let Some(source) = source else {
+        return prepare_table_clone_drawing(table, constraint, target, theme, renderer);
+    };
+    let bbox =
+        match super::embedded::cloned_raw_bounds(table.bbox, table_drawn_bounds(table), target) {
+            Ok(bbox) => bbox,
+            Err(kind) => return Some(Err(kind)),
+        };
+    let drawn = drawn_bounds_for_rect(table, bbox);
+    prepare_table_drawing_with_artwork_source(
+        table,
+        constraint,
+        drawn,
+        [drawn.x_min, drawn.y_min],
+        theme,
+        renderer,
+        Some(source),
+    )
+}
+
+struct NativeDocumentCellText<'a> {
+    source: NativeTableDocumentSource<'a>,
+    placement: native_placement::NativeDocumentTablePlacement,
+    writer: native_placement::NativeTableTextWriterWindow,
+}
+
+fn coordinates(rect: BoundingBox) -> [f32; 4] {
+    [rect.x_min, rect.y_min, rect.x_max, rect.y_max].map(|value| value as f32)
+}
+
+fn document_table_rect_update(
+    table: &RichTextTable,
+    placement: native_placement::NativeDocumentTablePlacement,
+) -> Result<
+    native_placement::NativeTableRectUpdate,
+    super::text::native_cell_clip::NativeCellClipError,
+> {
+    use super::text::native_cell_clip::NativeCellClipError;
+    use native_placement::{NativeTableContentFit, NativeTableModelState};
+    NativeTableModelState::new(
+        coordinates(table.bbox),
+        coordinates(table.style.content_bbox.ok_or(NativeCellClipError)?),
+    )?
+    .set_rect(
+        coordinates(placement.parent_rect()),
+        NativeTableContentFit::default(),
+    )
+}
+
+fn preserves_source_dimensions(
+    table: &RichTextTable,
+    update: native_placement::NativeTableRectUpdate,
+) -> bool {
+    update.resize.is_none_or(|resize| {
+        table
+            .column_widths
+            .iter()
+            .all(|&width| resize.preserves_column(width))
+            && table
+                .rows
+                .iter()
+                .all(|row| resize.preserves_row(row.height, row.max_height.unwrap_or(f32::MAX)))
+    })
+}
+
+fn document_text_writer<'a>(
+    table: &RichTextTable,
+    source: NativeTableDocumentSource<'a>,
+) -> Result<NativeDocumentCellText<'a>, super::text::native_cell_clip::NativeCellClipError> {
+    use super::text::native_cell_clip::NativeCellClipError;
+    use native_placement::{
+        NativeDocumentTablePlacement, NativeTableContentFit, NativeTableTextWriterWindow,
+    };
+    let placement = NativeDocumentTablePlacement::from_entry(
+        source.entry,
+        [0.0; 2],
+        table.bbox,
+        table_drawn_bounds(table),
+    )?;
+    let content = coordinates(source.layout.content_bbox);
+    let update = document_table_rect_update(table, placement)?;
+    if !preserves_source_dimensions(table, update) {
+        return Err(NativeCellClipError);
+    }
+    let model = update.model.set_content_size(
+        [content[2] - content[0], content[3] - content[1]],
+        NativeTableContentFit {
+            mode: 3,
+            maximum_height: 0.0,
+            maximum_width: 0.0,
+            maximum_height_enabled: table.style.max_height_enabled,
+        },
+    )?;
+    let [x_min, y_min, x_max, y_max] = model.raw_rect().map(f64::from);
+    let drawn = drawn_bounds_for_rect(
+        table,
+        BoundingBox {
+            x_min,
+            y_min,
+            x_max,
+            y_max,
+        },
+    );
+    let writer = NativeTableTextWriterWindow::from_layout(
+        coordinates(drawn),
+        coordinates(source.layout.measured_bbox),
+    )?;
+    Ok(NativeDocumentCellText {
+        source,
+        placement,
+        writer,
+    })
 }
 
 fn translate_cell_drawing(
@@ -275,15 +509,19 @@ fn translate_cell_drawing(
         line.background_top = native_add(line.background_top, origin[1])?;
         line.bottom = native_add(line.bottom, origin[1])?;
         line.post_cursor = native_add(line.post_cursor, origin[1])?;
-        preserves_native_frame &= expected
-            == [
-                line.x,
-                line.baseline,
-                line.top,
-                line.background_top,
-                line.bottom,
-                line.post_cursor,
-            ];
+        preserves_native_frame &= layout.native_frame.as_mut().is_some_and(|frame| {
+            frame.retain_world_projection(
+                expected,
+                [
+                    line.x,
+                    line.baseline,
+                    line.top,
+                    line.background_top,
+                    line.bottom,
+                    line.post_cursor,
+                ],
+            )
+        });
         if let Some(marker) = &mut line.marker {
             marker.x = native_add(marker.x, origin[0])?;
             marker.center_y = native_add(marker.center_y, origin[1])?;
@@ -457,6 +695,7 @@ fn prepare_cold_grid(
         half_border,
         topology,
         bands: table_bands(constraint, candidate_top, renderer)?,
+        callback_top: candidate_top as f32,
     };
     pagination::cold(&mut prepared, table, theme, renderer)?;
     prepared.update_geometry(table, renderer)?;
@@ -494,6 +733,7 @@ fn initialize_rows(
                 layout: TextLayout::default(),
                 bands: None,
                 metrics: CellMetrics::default(),
+                native_text_placement: Ok(native_placement::NativeCellTextPlacement::Unknown),
             });
             left = right;
         }
@@ -544,6 +784,16 @@ impl PreparedTable {
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
     ) -> Result<(), ObjectDiagnosticKind> {
+        let native_page_bands = renderer.native_object_page_obstacles.and_then(|page| {
+            (self.constraint == ObjectSpanLayoutConstraint::OverPages)
+                .then(|| {
+                    page.certify_cell_bands(self.callback_top, &self.bands.padding_rectangles())
+                })
+                .flatten()
+        });
+        let renderer = &renderer
+            .clone()
+            .with_native_cell_page_obstacles(native_page_bands);
         let cell = &mut self.rows[row_index].cells[column_index];
         let bands = cell
             .bands
@@ -1536,6 +1786,108 @@ pub(super) mod tests {
                 ),
                 Err(super::super::text::native_paint_plan::NativePaintPlanUnavailable::OutsideCertificate("layout"))
             ));
+        }
+    }
+
+    #[test]
+    fn captured_cell_baseline_transport_preserves_local_glyphs_and_rounded_world_bands() {
+        use super::super::text::{
+            NativeCellTextConstraints, NativeGlyphBaselineProjection, TextSettings,
+            layout_table_cell_text,
+        };
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(TextSettings::resolved(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        for (size, custom_spacing) in [(17.0, false), (50.0, false), (20.0, true)] {
+            let mut source = grid(&[1000.0], &[80.0])
+                .rows
+                .remove(0)
+                .cells
+                .remove(0)
+                .content;
+            source.text = if custom_spacing { "A" } else { "AV\n\nTo" }.into();
+            source.font_size = Some(size);
+            source.spans.clear();
+            source.paragraphs.clear();
+            source.margins = Some([0.0; 4]);
+            source.gravity = Some(0);
+            if custom_spacing {
+                source.paragraphs.push(crate::RichTextParagraph {
+                    kind: crate::RichTextParagraphType::LineSpacing,
+                    start_paragraph: 0,
+                    end_paragraph: 1,
+                    payload: [0_u32.to_le_bytes(), 2.0_f32.to_le_bytes()].concat(),
+                });
+            }
+            let styled = StyledText::new(&source, TextContext::Flow, renderer.settings);
+            let measured = || {
+                layout_table_cell_text(
+                    &styled,
+                    TextFrame {
+                        bbox: BoundingBox {
+                            x_min: 0.0,
+                            y_min: 0.0,
+                            x_max: 80.0,
+                            y_max: 1000.0,
+                        },
+                        gravity: Some(0),
+                        exclusions: &[],
+                    },
+                    NativeCellTextConstraints {
+                        width: 80,
+                        height_limit: 1000.0,
+                    },
+                    theme,
+                    &renderer,
+                )
+                .unwrap()
+            };
+            let mut huge = measured();
+            assert!(huge.native_frame.is_some());
+            if custom_spacing {
+                assert_eq!(
+                    huge.native_frame.as_ref().unwrap().baseline_projection(),
+                    NativeGlyphBaselineProjection::ExactRequired,
+                );
+            }
+            let original = huge.lines[0].baseline;
+            translate_cell_drawing(&mut huge, [0.0, 16_777_216.0]).unwrap();
+            assert!(huge.native_frame.is_none());
+            assert_eq!(
+                huge.lines[0].baseline,
+                f64::from(original as f32 + 16_777_216.0_f32)
+            );
+            if custom_spacing {
+                assert_eq!(original, 15.0);
+                assert_eq!(huge.lines[0].baseline, 16_777_232.0);
+                assert_eq!(huge.lines[0].top, 16_777_216.0);
+                assert_eq!(huge.lines[0].bottom, 16_777_238.0);
+                continue;
+            }
+            if size == 17.0 {
+                let mut layout = measured();
+                let local_baseline = layout.lines[2].baseline;
+                translate_cell_drawing(&mut layout, [4.0, 10.0]).unwrap();
+                let frame = layout.native_frame.as_ref().unwrap();
+                assert_eq!(
+                    frame.baseline_projection(),
+                    NativeGlyphBaselineProjection::LocalGlyphBaseline
+                );
+                assert_eq!(
+                    layout.lines[2].baseline,
+                    f64::from(local_baseline as f32 + 10.0_f32)
+                );
+                assert_ne!(layout.lines[2].baseline, local_baseline + 10.0);
+                let plan = super::super::text::native_paint_plan::native_paint_plan(
+                    &styled, &layout, theme,
+                )
+                .unwrap();
+                assert_eq!(plan.translation, [4.0, 10.0]);
+                assert_eq!(
+                    f64::from(plan.runs.last().unwrap().origin[1]),
+                    local_baseline
+                );
+            }
         }
     }
 
