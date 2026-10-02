@@ -905,6 +905,109 @@ pub(super) mod tests {
     }
 
     #[test]
+    fn saved_model_border_translation_overflow_is_diagnosed() {
+        let mut table = grid(&[20.0], &[100.0]);
+        table.bbox = BoundingBox {
+            x_min: -f64::from(f32::MAX),
+            y_min: 0.0,
+            x_max: -f64::from(f32::from_bits(f32::MAX.to_bits() - 1)),
+            y_max: 20.0,
+        };
+        table.style.content_bbox = Some(BoundingBox {
+            x_min: f64::from(f32::MAX),
+            y_min: 0.0,
+            x_max: f64::from(f32::MAX),
+            y_max: 20.0,
+        });
+        table.style.border = Some(border([0.0; 4], 0));
+        table.style.default_cell_border = Some(border([1.0; 4], 0xff123456));
+        table.rows[0].cells[0].bbox = table.bbox;
+        table.rows[0].cells[0].content.text = "A".into();
+        table.rows[0].cells[0].content.font_size = Some(10.0);
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(Default::default(), &fonts);
+        let theme = RenderTheme::for_canvas(false);
+        let drawing = prepare_table_drawing(
+            &table,
+            ObjectSpanLayoutConstraint::Normal,
+            [0.0, 0.0],
+            theme,
+            &renderer,
+        )
+        .unwrap()
+        .unwrap();
+        let mut scene = super::super::Scene::new(super::super::Svg::new());
+        super::super::render_table(
+            &mut scene,
+            &table,
+            11,
+            Some((&drawing).into()),
+            0.0,
+            &[],
+            theme,
+            &renderer,
+            Some(super::super::viewport::Viewport::new(BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 100.0,
+                y_max: 20.0,
+            })),
+        );
+        let svg = scene.finish();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        assert!(!xml.descendants().any(|node| node.has_tag_name("line")));
+        assert!(
+            xml.descendants()
+                .any(|node| node.has_tag_name("rect") && node.attribute("fill").is_some())
+        );
+        assert!(
+            xml.descendants()
+                .any(|node| node.has_tag_name("tspan") && node.text() == Some("A"))
+        );
+        assert_eq!(
+            renderer.object_diagnostics(),
+            [super::super::text::ObjectDiagnostic {
+                anchor_utf16: 11,
+                kind: ObjectDiagnosticKind::InvalidBounds
+            }]
+        );
+        for constraint in [
+            ObjectSpanLayoutConstraint::OverPages,
+            ObjectSpanLayoutConstraint::OverPagesOverlapPadding,
+        ] {
+            let renderer = TextRenderer::new(Default::default(), &fonts);
+            let drawing = prepare_table_drawing(&table, constraint, [0.0, 0.0], theme, &renderer)
+                .unwrap()
+                .unwrap();
+            let mut scene = super::super::Scene::new(super::super::Svg::new());
+            super::super::render_table(
+                &mut scene,
+                &table,
+                11,
+                Some((&drawing).into()),
+                0.0,
+                &[],
+                theme,
+                &renderer,
+                None,
+            );
+            let svg = scene.finish();
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            assert_eq!(
+                xml.descendants()
+                    .filter(|node| node.has_tag_name("line"))
+                    .count(),
+                4
+            );
+            assert!(
+                xml.descendants()
+                    .any(|node| node.has_tag_name("tspan") && node.text() == Some("A"))
+            );
+            assert!(renderer.object_diagnostics().is_empty());
+        }
+    }
+
+    #[test]
     fn cloned_outer_frame_changes_drawn_origin_without_fitting_columns() {
         let mut table = grid(&[100.0], &[200.0]);
         table.bbox = BoundingBox {

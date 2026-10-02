@@ -2234,6 +2234,13 @@ fn render_table(
                     for path in borders.cell_paths(paint.position) {
                         if path.selected(paint.position, shape, outline.active(), paint.gap) {
                             let path = artwork.border(path, paint.artwork_frame);
+                            if !path.has_finite_endpoints() {
+                                renderer.report_object_issues(&[ObjectDiagnostic {
+                                    anchor_utf16,
+                                    kind: ObjectDiagnosticKind::InvalidBounds,
+                                }]);
+                                continue;
+                            }
                             paint_table_border(svg, path, offset_y, theme);
                         }
                     }
@@ -2339,10 +2346,11 @@ impl TableCellPaint<'_> {
                 let Some(width) = path.paint_width() else {
                     continue;
                 };
-                let [x1, y1, x2, y2] = artwork
-                    .border(path, self.artwork_frame)
-                    .endpoints
-                    .map(f64::from);
+                let path = artwork.border(path, self.artwork_frame);
+                if !path.has_finite_endpoints() {
+                    continue;
+                }
+                let [x1, y1, x2, y2] = path.endpoints.map(f64::from);
                 let guard = f64::from(width) / 2.0;
                 bounds.x_min = bounds.x_min.min(x1.min(x2) - guard);
                 bounds.y_min = bounds.y_min.min(y1.min(y2) + offset_y - guard);

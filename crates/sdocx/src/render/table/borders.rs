@@ -60,6 +60,10 @@ pub(in crate::render) struct BorderPath {
 }
 
 impl BorderPath {
+    pub fn has_finite_endpoints(self) -> bool {
+        self.endpoints.into_iter().all(f32::is_finite)
+    }
+
     pub fn on_frame(self, frame: BoundingBox) -> Self {
         Self {
             endpoints: self.edge.endpoints(native_rect(frame), false),
