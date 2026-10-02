@@ -1090,29 +1090,82 @@ the bundled HarfBuzz shape entry `0xecdcc` at `0x9c5d4` / `0x9c754`.
 It retains glyph positions, UTF-16 cluster indexes and character advances;
 `SpanRunFunctor` copies the shaped per-UTF-16 advances divided by 100
 at `0x77640`–`0x77668`. Paint size was multiplied by 100 at
-`0x76b30`–`0x76b44`. Keep source indexes separate from glyph indexes
-and shaped clusters in the Rust layout result.
+`0x76b30`–`0x76b44`. Source indexes, glyph indexes and shaped clusters
+are separate native inputs/results.
 
 SPen initializes the Minikin feature string empty at `0x76c34`. For a
-Latin script run with ordinary zero letter spacing, the layout-piece producer
+Latin script run with absolute letter spacing at most the double constant
+0.03, the layout-piece producer
 explicitly supplies `liga=0` and `clig=0` before shaping
 (`0x9c548`–`0x9c754`). The 16-byte feature records at `0x267a0` and
 `0x26750` contain the tags, value 0, start 0 and end `0xffffffff`.
-Its nonzero-letter-spacing branch also adds these features
+Its larger-letter-spacing branch also adds these features
 (`0x9b34c`–`0x9b3d8`). This proves disabling those two optional ligature
-features for the inspected Latin path; it does not disable required script
-shaping or establish the policy for every other script.
+features for the inspected Latin path. Larger absolute spacing also supplies
+those features for non-Latin chunks; at most 0.03, non-Latin chunks retain the
+supplied feature string without that override. This does not disable required
+script shaping or establish complete device shaping behavior.
 
 No `kern=0` override was established in this producer/caller trace. The
 captured heading matching an unkerned bundled-font width is useful fixture
-evidence, but does not prove a universal native kerning setting. Font choice,
-style-run boundaries and native advance quantization remain unverified.
-The native horizontal-advance callback, `0x9d728`, converts a font advance
-to a 256-scaled integer with `trunc(advance * 256 + 0.5)`; its vector
-counterpart at `0x9d858` truncates each 256-scaled advance. Those inputs
-use the 100-scaled paint above. Do not infer pixel-grid rounding from this.
-The argument 3 at `0x76b28` selects glyph text encoding through
+evidence, but does not prove a universal native kerning setting. Font choice
+and complete native style-run/shaping profiles remain separate evidence limits.
+
+### Native shaping numeric domains
+
+The backend font advance is already a measured value. Text's scalar/vector
+font callbacks, `0x8868c`/`0x8882c`, configure Skia paint through `0x88760`
+and call `SkPaint::getTextWidths`, `0x1cdaac`. Skia converts its cached glyph
+advance from fixed 16.16 to f32 at `0x1cdc18`–`0x1cdc28`, then applies any
+measurement normalization scale. Nonlinear FreeType metrics store the 26.6
+slot advance shifted left by ten at `0x27e360`–`0x27e37c`; linear/matrix
+metric paths use separate fixed-16.16 calculations. This backend quantization
+precedes the HarfBuzz callback conversion below. Backend ink bounds round
+outward with floor/ceil at `0x27e2c8`–`0x27e2f4`.
+
+Skia's measurement helper, `0x1ccdb0`, normalizes to paint size 64 when the
+LinearText flag is set or transform squared length exceeds 4,194,304.
+For ordinary scale-X one/skew zero, the latter means paint size above 2,048.
+That branch changes hint/subpixel settings and returns normalization scale
+paint-size/64 at `0x1ccefc`–`0x1ccf88`. It does not describe every ordinary
+size or hinting profile.
+
+HarfBuzz also receives paint-scaled integer coordinates before shaping.
+For paint size `P` and horizontal scale `s`, the layout-piece producer
+rounds `f64(P) * f64(s)` back to f32 at `0x9b62c`. It sets scale-Y to
+`trunc_i32(scalbnf(P, 8))` and scale-X to the corresponding conversion of
+that rounded product (`0x9bf18`–`0x9bf44`), then refreshes the font at
+`0x9bf4c`. The separate ppem values truncate `P` and its f64 horizontal
+product to unsigned integers. With horizontal scale one, shaping therefore
+uses a 24.8 paint-unit integer domain. GPOS operates in that domain;
+rescaling or rounding a final UPEM-domain advance cannot generally recover
+its intermediate quantization.
+
+The source-traced scalar horizontal-advance callback at `0x9d754` multiplies
+the f32 font advance by 256, promotes that result to f64, adds 0.5 and
+truncates to an integer. Its vector counterpart at `0x9d858` uses
+`scalbnf(advance, 8)` and integer truncation without the addition. Both
+callbacks are installed at `0x9d618`; their distinct conversion paths are not
+one interchangeable rounding rule.
+
+After HarfBuzz shaping, native positions/advances convert signed integers to
+f32 and apply `scalbnf(value, -8)` at `0x9cd48`–`0x9cd50` and
+`0x9c918`–`0x9c938`. Owner accumulation at `0x9cd6c` uses f32 additions;
+`SpanRunFunctor` divides by 100 at `0x77658`. These are separate arithmetic
+stages in the 100-scaled paint domain, not pixel-grid rounding.
+
+Native TextPaint construction at `0x7bb14` reaches Skia's paint constructor,
+`0x1c9c14`, which initializes bitfield member 104 to `0x08000000`. The
+Text getter at `0x7c1f4` supplies packed Minikin paint value `0x20000` at
+`0x76ca0`: low flags are zero and the high hint value is two. The value three
+at `0x76b28` selects glyph-ID encoding through
 `TextPaintImplSkia::setTextEncoding`, not a kerning/paint flag.
+
+These instruction findings establish the conversion sequence and defaults.
+They do not capture actual native glyph advances or establish a universal
+width correction. Rust currently retains integer font-unit shaping results,
+integer pen accumulation and f64 font-size/units-per-em scaling; local f32
+line-band parity does not reproduce these native horizontal numeric stages.
 
 ### Direction, break boundaries and tabs
 
