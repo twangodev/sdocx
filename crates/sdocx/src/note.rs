@@ -127,6 +127,7 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
         limits,
         "note title",
         0,
+        TextLoadContext::Standard,
     )?;
     let body_size = usize::try_from(reader.read_u32("body object size")?)
         .map_err(|_| Error::Format("body object size does not fit in memory".into()))?;
@@ -135,6 +136,7 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
         limits,
         "note body",
         0,
+        TextLoadContext::Standard,
     )?;
 
     Ok(StoredNote {
@@ -175,7 +177,13 @@ pub(crate) struct DecodedTextBox {
 
 pub(crate) fn parse_page_text_box(data: &[u8], limits: &ParseLimits) -> Result<DecodedTextBox> {
     let mut reader = Reader::new(data, "page text box");
-    let mut decoded = parse_text_frames(&mut reader, limits, "page text box", 0)?;
+    let mut decoded = parse_text_frames(
+        &mut reader,
+        limits,
+        "page text box",
+        0,
+        TextLoadContext::Standard,
+    )?;
     let tail = Frame::read(&mut reader)?;
     tail.expect_kind(2)?;
     // Native ComponentImage::TextboxGetOwnBinary writes border color, width
@@ -218,9 +226,10 @@ fn parse_text_object(
     limits: &ParseLimits,
     context: &'static str,
     depth: usize,
+    load_context: TextLoadContext,
 ) -> Result<RichTextBox> {
     let mut reader = Reader::new(data, context);
-    Ok(parse_text_frames(&mut reader, limits, context, depth)?.text_box)
+    Ok(parse_text_frames(&mut reader, limits, context, depth, load_context)?.text_box)
 }
 
 fn parse_text_frames(
@@ -228,6 +237,7 @@ fn parse_text_frames(
     limits: &ParseLimits,
     context: &'static str,
     depth: usize,
+    load_context: TextLoadContext,
 ) -> Result<DecodedTextBox> {
     check_limit(
         "rich-text object nesting depth",
@@ -241,7 +251,7 @@ fn parse_text_frames(
     shape_text.expect_kind(7)?;
     let mut flexible = Reader::new(shape_text.flexible, context);
     let common = if shape_text.fields.contains(0) {
-        parse_text_common(&mut flexible, limits, context, depth)?
+        parse_text_common_with_load(&mut flexible, limits, context, depth, load_context)?
     } else {
         TextCommon::default()
     };
@@ -334,6 +344,35 @@ struct TextCommon {
     gravity: Option<u8>,
 }
 
+#[derive(Clone, Copy)]
+enum TextLoadContext {
+    Standard,
+    TableCell,
+}
+
+impl TextLoadContext {
+    fn retained_constructor_spans(self, text: &str) -> Result<Vec<RichTextSpan>> {
+        if matches!(self, Self::Standard) {
+            return Ok(Vec::new());
+        }
+        let end_utf16 = u32::try_from(text.encode_utf16().count())
+            .map_err(|_| Error::Format("table cell text exceeds UTF-16 span range".into()))?;
+        Ok([
+            (RichTextSpanType::FontSize, 50_f32.to_bits()),
+            (RichTextSpanType::ForegroundColor, 0xff252525),
+        ]
+        .into_iter()
+        .map(|(kind, value)| RichTextSpan {
+            kind,
+            start_utf16: 0,
+            end_utf16,
+            interval_type: SpanIntervalType::ClosedClosed,
+            payload: [value.to_le_bytes(), 0_u32.to_le_bytes()].concat(),
+        })
+        .collect())
+    }
+}
+
 impl TextCommon {
     fn into_rich_text_box(self, object_base: ObjectMetadata) -> RichTextBox {
         let index = crate::text_index::TextIndex::new(&self.text);
@@ -409,6 +448,16 @@ fn parse_text_common(
     context: &'static str,
     depth: usize,
 ) -> Result<TextCommon> {
+    parse_text_common_with_load(reader, limits, context, depth, TextLoadContext::Standard)
+}
+
+fn parse_text_common_with_load(
+    reader: &mut Reader<'_>,
+    limits: &ParseLimits,
+    context: &'static str,
+    depth: usize,
+    load_context: TextLoadContext,
+) -> Result<TextCommon> {
     let common_size = usize::try_from(reader.read_u32("text common size")?)
         .map_err(|_| Error::Format(format!("{context}: text common size is too large")))?;
     let common_bytes = reader.read_bytes(common_size, "text common payload")?;
@@ -418,7 +467,11 @@ fn parse_text_common(
     let span_count = usize::try_from(common.read_u32("style span count")?)
         .map_err(|_| Error::Format(format!("{context}: style span count is too large")))?;
     check_limit("text spans", limits.max_text_spans, span_count)?;
-    let mut spans = Vec::with_capacity(span_count);
+    let mut spans = if span_count == 0 {
+        load_context.retained_constructor_spans(&text)?
+    } else {
+        Vec::with_capacity(span_count)
+    };
     for _ in 0..span_count {
         let record_size = usize::from(common.read_u16("style span size")?);
         if record_size < 16 {
@@ -443,6 +496,7 @@ fn parse_text_common(
             payload,
         });
     }
+    check_limit("text spans", limits.max_text_spans, spans.len())?;
 
     let paragraph_count = usize::try_from(common.read_u32("paragraph count")?)
         .map_err(|_| Error::Format(format!("{context}: paragraph count is too large")))?;
@@ -620,6 +674,7 @@ fn parse_code_block_object(
             limits,
             "code block title",
             depth,
+            TextLoadContext::Standard,
         )?)
     } else {
         None
@@ -630,6 +685,7 @@ fn parse_code_block_object(
             limits,
             "code block body",
             depth,
+            TextLoadContext::Standard,
         )?)
     } else {
         None
@@ -840,7 +896,13 @@ fn parse_table_cell(
         y_max: reader.read_f64("table cell bottom")?,
     };
     let editable = reader.read_u8("table cell editable flag")? != 0;
-    let content = parse_sized_text_object(reader, limits, "table cell text", depth)?;
+    let content = parse_sized_text_object(
+        reader,
+        limits,
+        "table cell text",
+        depth,
+        TextLoadContext::TableCell,
+    )?;
     let border = record
         .fields
         .contains(0)
@@ -866,6 +928,7 @@ fn parse_sized_text_object(
     limits: &ParseLimits,
     field: &'static str,
     depth: usize,
+    load_context: TextLoadContext,
 ) -> Result<RichTextBox> {
     let size = usize::try_from(reader.read_u32(field)?)
         .map_err(|_| Error::Format(format!("{field} size is too large")))?;
@@ -874,6 +937,7 @@ fn parse_sized_text_object(
         limits,
         field,
         depth.saturating_add(1),
+        load_context,
     )
 }
 
