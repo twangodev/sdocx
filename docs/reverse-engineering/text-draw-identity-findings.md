@@ -15,6 +15,7 @@ Addresses are virtual addresses in the named ELF, before harness relocation.
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenText.so` | `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b` |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
+| `libSPenPdf.so` | `cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 
 The [entry/run-bound capture](table-code-findings.md#retained-text-entry-and-run-bounds)
@@ -467,6 +468,49 @@ before allocation or rectangle access. Full callers, object/font producers,
 PDF allocation, clipping, paths, painting, pixels and native SVG consumption
 do not execute. In particular, the newer foreground-alpha rule is captured,
 but complete native output for those alpha-edge cases is not.
+
+### Captured PDF alpha transport
+
+[`table-text-pdf-alpha.json`](../../conformance/table-text-pdf-alpha.json),
+SHA-256 `4cc777240688534f6a967f4e741bef858d851c615d260a7a827327fed25222d1`,
+contains 60 cases repeated across three memory fills. The
+[capture module](../../conformance/native_table/text_pdf_alpha.rs) executes
+Composer color/alpha instruction windows with complete native PDF paint/engine
+setters and getters, followed by the native PDF text RGBA extraction window.
+Independent captures are byte-identical.
+
+Composer's color window, `0x383710`–`0x383724`, forwards complete foreground
+ARGB through PDF `PDFPaint::SetColor`, `0x665b4`, and its engine setter,
+`0x73338`. An alpha setter subsequently replaces that stored alpha byte; it
+does not multiply the previous byte. The path through `0x665a0` and `0x73314`
+stores the truncated integer result of f32 alpha times 255. Native getters
+at `0x7585c`/`0x7583c` expose the final color/alpha. The RGBA extraction window,
+`0xa2368`–`0xa2390`, forwards that byte to the intercepted PDFium fill-color
+call.
+
+| Legacy writer path | Captured alpha calculation |
+| --- | --- |
+| Table foreground, `0x37f5f4`–`0x37f62c` | Signed loading of source alpha treats bytes 128–255 as the full-alpha branch. Bytes 0–127 use source alpha / 255; the result is multiplied by writer opacity and quantized once. |
+| Code foreground, `0x3799f0`–`0x379a04` | Writer opacity replaces the source foreground alpha. |
+| Background, `0x37978c`–`0x3797a4` and `0x3798b4`–`0x3798e0` | Unsigned source background alpha / 255 is multiplied by writer opacity, then quantized once. |
+| Foreground color without a later alpha setter | Complete source ARGB survives the captured paint transport. |
+
+Cases include alpha 0, 1, 127, 128, 254 and 255, with supplied writer opacity
+0, 0.5 and 1. Alpha-zero background cases execute setter transport after the
+omitted caller gate; they are not evidence of reachable background paint.
+The full Body writer, `0x3765d8`, and placed writer, `0x380d4c`, have no later
+`SetAlpha` after paint setup in the inspected source. Their complete functions
+are not executed by this capture.
+
+Retained colors, writer opacity, paint/engine wrappers, native function vtables,
+raw paint storage and live register state are supplied. The PDFium fill-color
+call is intercepted without allocating or painting a PDF object. Full wrappers,
+export-route selection, font data, shaping, clipping and pixels are excluded.
+The [Standard export route](standard-pdf-composition-findings.md#text-writer-route-selection)
+does not select these standalone helper paths for every page-object context.
+Newer export information member 60 is scale, not opacity: native text handling
+multiplies font size by it at `0xa1dd0`–`0xa1de0` and forwards source ARGB
+directly at `0xa1e28`–`0xa1e4c`.
 
 ## Font metadata
 

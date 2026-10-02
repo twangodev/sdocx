@@ -77,6 +77,8 @@ mod text_object_runs;
 
 #[path = "native_table/text_object_export_policy.rs"]
 mod text_object_export_policy;
+#[path = "native_table/text_pdf_alpha.rs"]
+mod text_pdf_alpha;
 
 type Engine = *mut c_void;
 
@@ -1105,6 +1107,15 @@ fn main() {
             text_object_export_policy::capture(&mut machine, Path::new(&path));
             return;
         }
+        Some("--text-pdf-alpha") => {
+            let paths = [3, 4].map(|index| {
+                std::env::args_os()
+                    .nth(index)
+                    .expect("libSPenComposer.so and libSPenPdf.so paths required")
+            });
+            text_pdf_alpha::capture(&mut machine, Path::new(&paths[0]), Path::new(&paths[1]));
+            return;
+        }
         Some("--text-object-runs") => {
             let paths = [3, 4].map(|index| {
                 std::env::args_os()
@@ -1316,7 +1327,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --font-metadata, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-object-export-policy, --text-pdf-alpha or no capture mode"
         ),
     }
     let mut cases = Vec::new();

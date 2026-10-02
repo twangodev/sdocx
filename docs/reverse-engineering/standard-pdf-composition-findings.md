@@ -70,6 +70,26 @@ Consequently Standard uses the X implementation for both page modes. The
 composition below traces the list-page variant. Single-page segmentation
 is not established by this trace.
 
+## Text writer route selection
+
+The Standard X delegate reaches its legacy Body writer through body export at
+`0x35b488` and `0x35eb60`, and its legacy placed-text writer through
+`0x35bad8` and `0x35f4c8`. Ordinary Table and Code page objects enter the
+bitmap batch at `0x35b958`, rather than selecting their standalone retained
+text writers individually. Native type 1's vector implementation uses the
+newer Body path at `0x361d04`/`0x362b40` and newer object exporters. These are
+different native routes, even when their text helpers share retained data.
+
+The [captured PDF text alpha transport](text-draw-identity-findings.md#captured-pdf-alpha-transport)
+executes legacy Table/Code alpha windows and actual paint setters. It does
+not execute the exporter factory or establish that the public Standard path
+selects those helpers in every context. Likewise, the shared newer background
+helper's foreground-alpha gate is separate from the legacy background-alpha
+gates. Export-information member 60 and object-exporter member 72 are scale,
+not opacity; native PDF text handling multiplies font size by the former.
+Complete route selection and page painting are source-traced here, rather
+than executed by the bounded alpha capture.
+
 ## Note preparation and layer scope
 
 The ordinary `TaskMakePdf` path reopens the saved note through

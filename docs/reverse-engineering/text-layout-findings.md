@@ -399,6 +399,15 @@ backgrounds remain unverified. Native object opacity is also separate from
 the span alpha currently represented by the SDK. Proportional per-character
 subdivisions and fitted rectangles have no native proof.
 
+The [native PDF alpha capture](text-draw-identity-findings.md#captured-pdf-alpha-transport)
+separately executes paint color/alpha transport. Legacy Table foreground uses
+a signed source-alpha branch before writer opacity; Code foreground uses
+writer opacity alone; background alpha uses an unsigned source-alpha product.
+An alpha setter replaces the paint's existing alpha byte. Rust's RGB glyph
+paint does not implement these distinct source-alpha rules. The public
+Standard exporter and newer native exporters also select different writer
+routes; bounded helper transport is not complete page-appearance evidence.
+
 ## Font-name payload and measured fallback
 
 For the modern WDoc record, `FontNameSpan` (kind 4) has this payload **after**
