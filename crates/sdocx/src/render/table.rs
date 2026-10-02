@@ -882,6 +882,29 @@ pub(super) mod tests {
     }
 
     #[test]
+    fn drawing_rejects_saved_background_overflow_with_finite_native_inputs() {
+        let mut table = grid(&[20.0], &[100.0]);
+        table.bbox.x_min = -f64::from(f32::MAX);
+        table.bbox.x_max = -f64::from(f32::from_bits(f32::MAX.to_bits() - 1));
+        table.rows[0].cells[0].bbox.x_min = f64::from(f32::MAX);
+        table.rows[0].cells[0].bbox.x_max = f64::from(f32::MAX);
+        assert!(valid_grid_geometry(&table, 0.0));
+        assert!(finite_artwork_rect(table.rows[0].cells[0].bbox));
+        let fonts = crate::fonts::FontBook::default();
+        let renderer = TextRenderer::new(Default::default(), &fonts);
+        assert!(matches!(
+            prepare_table_drawing(
+                &table,
+                ObjectSpanLayoutConstraint::Normal,
+                [0.0, 0.0],
+                RenderTheme::for_canvas(false),
+                &renderer,
+            ),
+            Some(Err(ObjectDiagnosticKind::InvalidBounds))
+        ));
+    }
+
+    #[test]
     fn cloned_outer_frame_changes_drawn_origin_without_fitting_columns() {
         let mut table = grid(&[100.0], &[200.0]);
         table.bbox = BoundingBox {
