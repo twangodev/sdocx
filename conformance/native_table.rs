@@ -85,6 +85,8 @@ mod text_font_source;
 mod text_object_export_policy;
 #[path = "native_table/text_pdf_alpha.rs"]
 mod text_pdf_alpha;
+#[path = "native_table/text_shaping.rs"]
+mod text_shaping;
 
 type Engine = *mut c_void;
 
@@ -300,6 +302,8 @@ unsafe extern "C" fn imported_call(engine: Engine, address: u64, _: u32, data: *
 struct Machine {
     engine: Engine,
     heap: Box<Heap>,
+    call_timeout_micros: u64,
+    call_instruction_limit: usize,
 }
 impl Machine {
     fn new(path: &Path) -> Self {
@@ -322,6 +326,8 @@ impl Machine {
         }
         let mut machine = Self {
             engine,
+            call_timeout_micros: 1_000_000,
+            call_instruction_limit: 1_000_000,
             heap: Box::new(Heap {
                 cursor: HEAP,
                 allocation_fill: 0,
@@ -366,7 +372,15 @@ impl Machine {
         }
         register(self.engine, REGISTER_X30, STOP);
         register(self.engine, REGISTER_SP, STACK);
-        let error = unsafe { uc_emu_start(self.engine, function, STOP, 1_000_000, 1_000_000) };
+        let error = unsafe {
+            uc_emu_start(
+                self.engine,
+                function,
+                STOP,
+                self.call_timeout_micros,
+                self.call_instruction_limit,
+            )
+        };
         assert_eq!(
             error,
             0,
@@ -1129,13 +1143,18 @@ fn main() {
             );
             return;
         }
-        Some("--font-source") => {
+        Some(mode @ ("--font-source" | "--text-shaping")) => {
             let paths = [3, 4, 5, 6].map(|index| {
                 std::env::args_os().nth(index).expect(
                     "libSPenBase.so, libSPenText.so, libSPenSkia.so and font paths required",
                 )
             });
-            text_font_source::capture(
+            let capture: fn(&mut Machine, &Path, &Path, &Path, &Path) = if mode == "--font-source" {
+                text_font_source::capture
+            } else {
+                text_shaping::capture
+            };
+            capture(
                 &mut machine,
                 Path::new(&paths[0]),
                 Path::new(&paths[1]),
@@ -1401,7 +1420,7 @@ fn main() {
         }
         None => {}
         _ => panic!(
-            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --text-shaping, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();

@@ -158,6 +158,8 @@ impl Binary {
     }
 }
 
+pub(super) type HostImportHandler = fn(Engine, &str, [u64; 8], *mut c_void) -> Option<u64>;
+
 #[derive(Default)]
 struct Observation {
     imports: BTreeMap<u64, String>,
@@ -168,6 +170,7 @@ struct Observation {
     thread_values: BTreeMap<u64, u64>,
     file_size: usize,
     opened_paths: Vec<String>,
+    external_import: Option<(HostImportHandler, *mut c_void)>,
 }
 
 impl Observation {
@@ -187,11 +190,29 @@ impl Observation {
 }
 
 unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, data: *mut c_void) {
-    let state = unsafe { &mut *data.cast::<Observation>() };
+    let (name, external_handler) = {
+        let state = unsafe { &*data.cast::<Observation>() };
+        (
+            state.imports.get(&address).unwrap().clone(),
+            state.external_import,
+        )
+    };
     let first = read_register(engine, REGISTER_X0);
     let second = read_register(engine, REGISTER_X0 + 1);
     let third = read_register(engine, REGISTER_X0 + 2);
-    let name = state.imports.get(&address).unwrap().clone();
+    let external = external_handler.and_then(|(handler, data)| {
+        handler(
+            engine,
+            &name,
+            std::array::from_fn(|index| read_register(engine, REGISTER_X0 + index as i32)),
+            data,
+        )
+    });
+    if let Some(value) = external {
+        register(engine, REGISTER_X0, value);
+        return;
+    }
+    let state = unsafe { &mut *data.cast::<Observation>() };
     let result = match name.as_str() {
         "malloc" | "_Znwm" | "_Znam" => state.allocate(engine, first as usize, false),
         "calloc" => state.allocate(engine, first.checked_mul(second).unwrap() as usize, true),
@@ -259,16 +280,20 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, data: *mut c
                 .position(|byte| *byte == second as u8)
                 .map_or(0, |index| first + index as u64)
         }
-        "strcpy" | "strncpy" => {
+        "strcpy" | "strncpy" | "__strncpy_chk" => {
+            if name == "__strncpy_chk" {
+                assert!(third <= read_register(engine, REGISTER_X0 + 3));
+            }
             let mut content = c_string(engine, second);
             content.push(0);
-            if name == "strncpy" {
+            if name != "strcpy" {
                 content.resize(third as usize, 0);
             }
             write(engine, first, &content);
             first
         }
         "__open_2" => {
+            assert_eq!(c_string(engine, first), b"supplied/Roboto-Regular.ttf");
             state
                 .opened_paths
                 .push(String::from_utf8(c_string(engine, first)).unwrap());
@@ -363,29 +388,22 @@ impl Recorder {
         let addresses: Vec<_> = recorder.state.imports.keys().copied().collect();
         for address in addresses {
             write(machine.engine, address, &0xd65f03c0_u32.to_le_bytes());
-            if recorder
-                .state
-                .imports
-                .get(&address)
-                .is_some_and(|name| name == "pthread_once")
-            {
-                for (index, word) in [
-                    0xb40000a0_u32,
-                    0xa9bf7bfd,
-                    0xd63f0020,
-                    0xa8c17bfd,
-                    0x52800000,
+            let callback_words: &[u32] = match recorder.state.imports[&address].as_str() {
+                "pthread_once" => &[
+                    0xb40000a0, 0xa9bf7bfd, 0xd63f0020, 0xa8c17bfd, 0x52800000, 0xd65f03c0,
+                ],
+                "_ZNSt6__ndk111__call_onceERVmPvPFvS2_E" => &[
+                    0xb40000c0, 0xa9bf7bfd, 0xaa0103e0, 0xd63f0040, 0xa8c17bfd, 0x52800000,
                     0xd65f03c0,
-                ]
-                .into_iter()
-                .enumerate()
-                {
-                    write(
-                        machine.engine,
-                        address + index as u64 * 4,
-                        &word.to_le_bytes(),
-                    );
-                }
+                ],
+                _ => &[],
+            };
+            for (index, word) in callback_words.iter().enumerate() {
+                write(
+                    machine.engine,
+                    address + index as u64 * 4,
+                    &word.to_le_bytes(),
+                );
             }
             let mut hook = 0;
             check(unsafe {
@@ -535,7 +553,7 @@ impl NativeFontEnvironment {
         for (binary, address) in &binaries {
             binary.bind(machine.engine, *address, &exports, &mut imports);
         }
-        assert!(imports.len() < 2048);
+        assert!(imports.len() < 1024);
         let recorder = Recorder::new(machine, imports);
         let snapshots: Vec<_> = binaries
             .iter()
@@ -546,6 +564,13 @@ impl NativeFontEnvironment {
             snapshots,
             file_size: data.len(),
         }
+    }
+    pub(super) fn set_host_import_handler(
+        &mut self,
+        handler: HostImportHandler,
+        data: *mut c_void,
+    ) {
+        self.recorder.state.external_import = Some((handler, data));
     }
     pub(super) fn reset(&mut self, machine: &Machine, fill: u8, seed: u32) {
         for (address, snapshot) in &self.snapshots {
