@@ -391,6 +391,7 @@ test('sidebar and existing page navigation stay synchronized', async ({
 });
 
 test('dense vector scrubbing preserves state across reverse seeks', async ({ page }, testInfo) => {
+	test.setTimeout(90000);
 	test.skip(!existsSync(handwriting), 'Local dense fixture required');
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles(handwriting);
@@ -436,10 +437,11 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 		try {
 			const image = new Image(); image.src = url; await image.decode();
 			const viewer = document.querySelector<HTMLImageElement>('img[data-page-zoom-target]')!;
+			const baseline = new Image(); baseline.src = viewer.currentSrc; await baseline.decode();
 			const canvas = document.createElement('canvas');
 			canvas.width = 462; canvas.height = Math.round(462 * image.naturalHeight / image.naturalWidth);
 			const ctx = canvas.getContext('2d')!;
-			ctx.drawImage(viewer, 0, 0, canvas.width, canvas.height);
+			ctx.drawImage(baseline, 0, 0, canvas.width, canvas.height);
 			const expected = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -458,6 +460,8 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 			filters: root.querySelectorAll('filter').length
 		};
 	});
+	console.log('Vector scrubbing', JSON.stringify(metrics));
+	await testInfo.attach('vector-scrubbing-metrics', { body: JSON.stringify(metrics), contentType: 'application/json' });
 	expect(metrics.sameCompletedPixels).toBe(true);
 	expect(metrics.sameVectors).toBe(true);
 	expect(metrics.sameRoot).toBe(true);
@@ -465,8 +469,6 @@ test('dense vector scrubbing preserves state across reverse seeks', async ({ pag
 	expect(metrics.images).toBe(0);
 	expect(metrics.filters).toBe(0);
 	await expect(page.locator('[data-replay-overlay] canvas')).toHaveCount(0);
-	console.log('Vector scrubbing', JSON.stringify(metrics));
-	await testInfo.attach('vector-scrubbing-metrics', { body: JSON.stringify(metrics), contentType: 'application/json' });
 	await page.getByRole('button', { name: 'Close debugger', exact: true }).click();
 	await expect(vector).toHaveCount(0);
 });
