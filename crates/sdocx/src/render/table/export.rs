@@ -229,14 +229,25 @@ mod tests {
             cell,
             fill: CellFill::resolve(&table.style, 0, cell, RenderTheme::for_canvas(false)),
             frame: bounds([0.0, -100.0, 100.0, -0.25]),
+            artwork_frame: bounds([0.0, -100.0, 100.0, -0.25]),
             layout: None,
             position: CellPosition { row: 0, column: 0 },
             gap: false,
         };
         let viewport = Viewport::new(bounds([0.0, 0.0, 100.0, 100.0]));
         assert!(!viewport.intersects(paint.frame));
-        assert!(viewport.intersects(paint.artwork_bounds(Some(&borders), 0.0, true)));
-        paint.frame.y_max = -0.5;
-        assert!(!viewport.intersects(paint.artwork_bounds(Some(&borders), 0.0, true)));
+        assert!(viewport.intersects(paint.artwork_bounds(
+            Some(&borders),
+            0.0,
+            true,
+            super::super::TableArtworkGeometry::Cached
+        )));
+        paint.artwork_frame.y_max = -0.5;
+        assert!(!viewport.intersects(paint.artwork_bounds(
+            Some(&borders),
+            0.0,
+            true,
+            super::super::TableArtworkGeometry::Cached
+        )));
     }
 }

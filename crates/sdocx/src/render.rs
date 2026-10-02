@@ -2059,6 +2059,7 @@ struct TablePaint<'a> {
     content_bbox: BoundingBox,
     rows: &'a [table::PreparedTableRow],
     pending_gaps: &'a [f64],
+    artwork: table::TableArtworkGeometry,
 }
 
 impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
@@ -2068,6 +2069,7 @@ impl<'a> From<&'a table::PreparedTable> for TablePaint<'a> {
             content_bbox: table.content_bbox,
             rows: &table.rows,
             pending_gaps: &table.pending_gaps,
+            artwork: table::TableArtworkGeometry::Cached,
         }
     }
 }
@@ -2079,6 +2081,7 @@ impl<'a> From<&'a table::PreparedTableDrawing> for TablePaint<'a> {
             content_bbox: table.content_bbox,
             rows: &table.rows,
             pending_gaps: &table.pending_gaps,
+            artwork: table.artwork,
         }
     }
 }
@@ -2098,6 +2101,11 @@ fn render_table(
     let table_bbox = prepared
         .as_ref()
         .map_or(table.bbox, |table| table.measured_bbox);
+    let artwork = prepared
+        .as_ref()
+        .map_or(table::TableArtworkGeometry::Unprepared, |prepared| {
+            prepared.artwork
+        });
     let grid = table::TableGrid::new(table);
     if prepared.is_none()
         && (grid
@@ -2149,10 +2157,23 @@ fn render_table(
         } else {
             None
         };
+        let frame = measured.map_or(cell.bbox, |cell| cell.frame);
+        let artwork_frame = artwork.background(cell.bbox, frame);
+        if !artwork.cached()
+            && (!table::finite_artwork_rect(cell.bbox)
+                || !table::finite_artwork_rect(artwork_frame))
+        {
+            renderer.report_object_issues(&[ObjectDiagnostic {
+                anchor_utf16,
+                kind: ObjectDiagnosticKind::InvalidBounds,
+            }]);
+            return;
+        }
         cells.push(TableCellPaint {
             cell,
             fill: table::CellFill::resolve(&table.style, table.rows[row].index, cell, theme),
-            frame: measured.map_or(cell.bbox, |cell| cell.frame),
+            frame,
+            artwork_frame,
             layout: measured.map(|cell| &cell.layout),
             position: table::CellPosition { row, column },
             gap: prepared.as_ref().is_some_and(|prepared| {
@@ -2203,6 +2224,7 @@ fn render_table(
                         borders.as_ref(),
                         offset_y,
                         prepared.is_some(),
+                        artwork,
                     ))
                 }) {
                     continue;
@@ -2211,11 +2233,7 @@ fn render_table(
                 if let Some(borders) = &borders {
                     for path in borders.cell_paths(paint.position) {
                         if path.selected(paint.position, shape, outline.active(), paint.gap) {
-                            let path = if prepared.is_some() {
-                                path.on_frame(paint.frame)
-                            } else {
-                                path
-                            };
+                            let path = artwork.border(path, paint.artwork_frame);
                             paint_table_border(svg, path, offset_y, theme);
                         }
                     }
@@ -2281,6 +2299,7 @@ struct TableCellPaint<'a> {
     cell: &'a crate::RichTextTableCell,
     fill: table::CellFill,
     frame: BoundingBox,
+    artwork_frame: BoundingBox,
     layout: Option<&'a text::TextLayout>,
     position: table::CellPosition,
     gap: bool,
@@ -2292,6 +2311,7 @@ impl TableCellPaint<'_> {
         borders: Option<&table::TableBorderGeometry>,
         offset_y: f64,
         prepared: bool,
+        artwork: table::TableArtworkGeometry,
     ) -> BoundingBox {
         let guard = if prepared {
             borders.map_or(0.0, |borders| {
@@ -2306,12 +2326,31 @@ impl TableCellPaint<'_> {
             0.0
         };
         let guard = f64::from(guard);
-        BoundingBox {
-            x_min: self.frame.x_min - guard,
-            y_min: self.frame.y_min + offset_y - guard,
-            x_max: self.frame.x_max + guard,
-            y_max: self.frame.y_max + offset_y + guard,
+        let mut bounds = BoundingBox {
+            x_min: self.artwork_frame.x_min - guard,
+            y_min: self.artwork_frame.y_min + offset_y - guard,
+            x_max: self.artwork_frame.x_max + guard,
+            y_max: self.artwork_frame.y_max + offset_y + guard,
+        };
+        if matches!(artwork, table::TableArtworkGeometry::Saved { .. })
+            && let Some(borders) = borders
+        {
+            for path in borders.cell_paths(self.position) {
+                let Some(width) = path.paint_width() else {
+                    continue;
+                };
+                let [x1, y1, x2, y2] = artwork
+                    .border(path, self.artwork_frame)
+                    .endpoints
+                    .map(f64::from);
+                let guard = f64::from(width) / 2.0;
+                bounds.x_min = bounds.x_min.min(x1.min(x2) - guard);
+                bounds.y_min = bounds.y_min.min(y1.min(y2) + offset_y - guard);
+                bounds.x_max = bounds.x_max.max(x1.max(x2) + guard);
+                bounds.y_max = bounds.y_max.max(y1.max(y2) + offset_y + guard);
+            }
         }
+        bounds
     }
 }
 
@@ -2357,60 +2396,25 @@ fn paint_table_cell_background(
     let rectangle = |bounds, offset_y, places| {
         rectangle(bounds, offset_y, places).fill_opacity(decimal(paint.fill.opacity, 6))
     };
-    let [rx, ry] = radii;
-    let first_row = paint.position.row == 0;
-    let first_column = paint.position.column == 0;
-    let last_row = paint.position.row.checked_add(paint.cell.row_span as usize) == Some(shape[0]);
-    let last_column = paint
-        .position
-        .column
-        .checked_add(paint.cell.column_span as usize)
-        == Some(shape[1]);
-    let corners = [
-        first_row && first_column,
-        first_row && last_column,
-        last_row && last_column,
-        last_row && first_column,
-    ];
-    if rx <= 0.0 || ry <= 0.0 || !corners.into_iter().any(|corner| corner) {
-        svg.push(rectangle(paint.frame, offset_y, 5).fill(fill));
-        return;
-    }
-    svg.push(
-        rectangle(paint.frame, offset_y, 5)
-            .rx(decimal(f64::from(rx), 5))
-            .ry(decimal(f64::from(ry), 5))
-            .fill(fill),
+    let geometry = table::CellBackgroundGeometry::new(
+        paint.artwork_frame,
+        paint.position,
+        [paint.cell.row_span, paint.cell.column_span],
+        shape,
+        radii,
     );
-    let BoundingBox {
-        x_min,
-        y_min,
-        x_max,
-        y_max,
-    } = paint.frame;
-    let [left, top, right, bottom] = [x_min, y_min, x_max, y_max].map(|value| value as f32);
-    for (rounded, [x_min, y_min, x_max, y_max]) in corners.into_iter().zip([
-        [left, top, left + rx, top + ry],
-        [right - rx, top, right, top + ry],
-        [right - rx, bottom - ry, right, bottom],
-        [left, bottom - ry, left + rx, bottom],
-    ]) {
-        if !rounded {
-            let [x_min, y_min, x_max, y_max] = [x_min, y_min, x_max, y_max].map(f64::from);
-            svg.push(
-                rectangle(
-                    BoundingBox {
-                        x_min,
-                        y_min,
-                        x_max,
-                        y_max,
-                    },
-                    offset_y,
-                    5,
-                )
-                .fill(fill),
-            );
-        }
+    let background = rectangle(geometry.bounds, offset_y, 5).fill(fill);
+    if let Some([rx, ry]) = geometry.radii {
+        svg.push(
+            background
+                .rx(decimal(f64::from(rx), 5))
+                .ry(decimal(f64::from(ry), 5)),
+        );
+    } else {
+        svg.push(background);
+    }
+    for bounds in geometry.square_corners.into_iter().flatten() {
+        svg.push(rectangle(bounds, offset_y, 5).fill(fill));
     }
 }
 

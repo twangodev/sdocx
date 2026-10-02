@@ -8,6 +8,7 @@ use super::text::{
     VerticalExclusion, finite_native_geometry,
 };
 
+mod artwork;
 mod borders;
 mod export;
 mod fills;
@@ -17,6 +18,7 @@ mod pagination;
 #[cfg(test)]
 mod native_geometry_tests;
 
+pub(super) use artwork::{CellBackgroundGeometry, TableArtworkGeometry, finite_artwork_rect};
 pub(super) use borders::{BorderPath, TableBorderGeometry};
 pub(super) use export::{TableExportPage, artwork_bounds};
 pub(super) use fills::CellFill;
@@ -43,6 +45,7 @@ pub(super) struct PreparedTableDrawing {
     pub content_bbox: BoundingBox,
     pub rows: Vec<PreparedTableRow>,
     pub pending_gaps: Vec<f64>,
+    pub artwork: TableArtworkGeometry,
 }
 
 impl PreparedTable {
@@ -148,6 +151,16 @@ pub(super) fn prepare_table_drawing(
         return Some(Err(ObjectDiagnosticKind::InvalidBounds));
     }
     Some((|| {
+        let artwork = TableArtworkGeometry::drawing(constraint, table.bbox, drawing_origin)?;
+        if !artwork.cached()
+            && topology.visible_cells().iter().any(|position| {
+                let saved = table.rows[position.row].cells[position.column].bbox;
+                !finite_artwork_rect(saved)
+                    || !finite_artwork_rect(artwork.background(saved, saved))
+            })
+        {
+            return Err(ObjectDiagnosticKind::InvalidBounds);
+        }
         let mut prepared = prepare_cold_grid(
             table,
             topology,
@@ -176,6 +189,7 @@ pub(super) fn prepare_table_drawing(
             content_bbox,
             rows: prepared.rows,
             pending_gaps: prepared.pending_gaps,
+            artwork,
         })
     })())
 }
