@@ -498,19 +498,10 @@ fn shape_and_table_text_keep_mixed_source_and_images() {
         RichTextObjectContent::Table(Box::new(table)),
         ObjectType::Table,
     );
-    for (element, expected_diagnostics) in [
-        (PageElement::Shape(shape), Vec::new()),
-        (
-            PageElement::TextBox(table),
-            vec![sdocx::ObjectDiagnostic {
-                anchor_utf16: 0,
-                kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
-            }],
-        ),
-    ] {
+    for element in [PageElement::Shape(shape), PageElement::TextBox(table)] {
         for page in modes(&document(element)) {
             assert_eq!(selectable(&page.svg), "AB");
-            assert_eq!(page.object_diagnostics, expected_diagnostics);
+            assert!(page.object_diagnostics.is_empty());
             let xml = roxmltree::Document::parse(&page.svg).unwrap();
             assert_eq!(
                 xml.descendants()
@@ -518,6 +509,41 @@ fn shape_and_table_text_keep_mixed_source_and_images() {
                     .count(),
                 1
             );
+            let image = xml
+                .descendants()
+                .find(|node| node.has_tag_name("image"))
+                .unwrap();
+            assert_eq!(position(image, "width"), 30.0);
+            assert_eq!(position(image, "height"), 100.0);
+            assert!(
+                !xml.descendants()
+                    .any(|node| node.has_tag_name("foreignObject"))
+            );
+            #[cfg(feature = "pdf")]
+            {
+                let bytes = sdocx::render_svg_pages_pdf(&[page], &Default::default()).unwrap();
+                let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+                assert_eq!(
+                    pdf.extract_text(&[1]).unwrap().replace(['\n', ' '], ""),
+                    "AB"
+                );
+                assert!(pdf.objects.values().any(|object| {
+                    object
+                        .as_dict()
+                        .is_ok_and(|dict| dict.has(b"FontFile2") || dict.has(b"FontFile3"))
+                }));
+                assert_eq!(
+                    pdf.objects
+                        .values()
+                        .filter(|object| object.as_stream().is_ok_and(|stream| {
+                            stream.dict.get(b"Subtype").is_ok_and(|value| {
+                                value.as_name().is_ok_and(|name| name == b"Image")
+                            })
+                        }))
+                        .count(),
+                    1
+                );
+            }
         }
     }
 }

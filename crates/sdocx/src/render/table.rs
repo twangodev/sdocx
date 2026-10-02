@@ -324,12 +324,26 @@ pub(super) fn supports_prepared_content(table: &RichTextTable) -> bool {
         .rotation_degrees
         .is_none_or(|rotation| rotation == 0.0)
         && table.rows.iter().flat_map(|row| &row.cells).all(|cell| {
-            cell.content.object_spans.is_empty()
+            supports_cell_objects(&cell.content)
                 && cell
                     .content
                     .rotation_degrees
                     .is_none_or(|rotation| rotation == 0.0)
         })
+}
+
+fn supports_cell_objects(content: &crate::RichTextBox) -> bool {
+    content.object_spans.iter().all(|span| {
+        matches!(span.object_type, crate::ObjectType::Image)
+            && matches!(&span.content, Some(crate::RichTextObjectContent::Image(image))
+                if image.rotation_degrees.is_none_or(|rotation| rotation == 0.0)
+                    && finite_artwork_rect(image.bbox)
+                    && native_sub(image.bbox.x_max, image.bbox.x_min).is_ok_and(|width| width > 0.0)
+                    && native_sub(image.bbox.y_max, image.bbox.y_min).is_ok_and(|height| height > 0.0))
+    }) && (content.object_spans.is_empty()
+        || StyledText::new(content, TextContext::Flow, super::text::TextSettings::default())
+            .object_issues()
+            .is_empty())
 }
 
 fn valid_grid_geometry(table: &RichTextTable, candidate_top: f64) -> bool {

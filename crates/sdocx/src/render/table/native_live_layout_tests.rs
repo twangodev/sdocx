@@ -3,6 +3,9 @@ use crate::{Color, RichTextParagraph, RichTextParagraphType};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
+#[path = "native_cell_image_tests.rs"]
+mod cell_images;
+
 #[derive(Deserialize)]
 struct Capture {
     cases: Vec<Case>,
@@ -95,6 +98,9 @@ struct Cell {
 struct Entry {
     position_bits: [u32; 2],
     layout_rect_bits: [u32; 4],
+    kind: u32,
+    font_height_bits: u32,
+    ink_rect_bits: [u32; 4],
 }
 
 fn rect(bits: [u32; 4]) -> BoundingBox {
@@ -215,7 +221,7 @@ fn assert_geometry(plan: &PreparedTable, table: &RichTextTable, state: &State, n
                 let expected =
                     native.map(|value| f64::from(f32::from_bits(value)) + actual.frame.y_min);
                 assert_eq!(
-                    [line.top, line.baseline, line.bottom],
+                    [line.background_top, line.baseline, line.bottom],
                     expected,
                     "{label} slot{} text bounds",
                     cell.slot

@@ -455,7 +455,7 @@ fn saved_table_fallbacks_preserve_source_and_report_unsupported_preparation() {
 }
 
 #[test]
-fn dense_table_nested_content_fallback_is_diagnosed_at_the_outer_anchor() {
+fn dense_table_images_use_prepared_geometry_and_code_keeps_scoped_fallback() {
     use base64::Engine;
 
     for image in [false, true] {
@@ -539,30 +539,36 @@ fn dense_table_nested_content_fallback_is_diagnosed_at_the_outer_anchor() {
             !xml.descendants()
                 .any(|node| node.has_tag_name("foreignObject"))
         );
-        assert_eq!(
-            normal.object_diagnostics,
-            [sdocx::ObjectDiagnostic {
+        let expected_diagnostics = if image {
+            Vec::new()
+        } else {
+            vec![sdocx::ObjectDiagnostic {
                 anchor_utf16: 5,
                 kind: sdocx::ObjectDiagnosticKind::UnsupportedContent,
             }]
-        );
+        };
+        assert_eq!(normal.object_diagnostics, expected_diagnostics);
         #[cfg(feature = "pdf")]
-        if !image {
+        {
             let bytes = sdocx::render_svg_pages_pdf(&[normal], &Default::default()).unwrap();
             let pdf = lopdf::Document::load_mem(&bytes).unwrap();
             let selectable = pdf.extract_text(&[1]).unwrap();
             assert_eq!(
                 selectable.split_whitespace().collect::<String>(),
-                "HeadACODEB"
+                if image { "HeadAB" } else { "HeadACODEB" }
             );
-            assert!(pdf.objects.values().all(|object| {
-                object.as_stream().map_or(true, |stream| {
-                    !stream
-                        .dict
-                        .get(b"Subtype")
-                        .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
-                })
-            }));
+            let image_count =
+                pdf.objects
+                    .values()
+                    .filter(|object| {
+                        object.as_stream().is_ok_and(|stream| {
+                            stream.dict.get(b"Subtype").is_ok_and(|value| {
+                                value.as_name().is_ok_and(|name| name == b"Image")
+                            })
+                        })
+                    })
+                    .count();
+            assert_eq!(image_count, usize::from(image));
         }
         assert_eq!(serde_json::to_value(&doc).unwrap(), original);
     }
