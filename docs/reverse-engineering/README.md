@@ -41,9 +41,11 @@ Planning, task lists and development progress are kept outside these documents.
   wrapping, embedded-object placement, vector text transport and shaping numeric
   domains, including Skia hinting, HarfBuzz advance conversion and captured
   post-shaping geometry, bounded Rust paint metrics and paint-sized shaping,
-  mixed-script chunk arithmetic and itemization, whole-piece Rust measurement,
+  mixed-script chunk arithmetic and itemization, native cache-word context,
+  whole-piece Rust measurement and the bounded production paragraph adapter,
   logical-entry cache conversion, complete span paint profiles, native NAME/default
-  selection under supplied XML, captured ordinary
+  selection and four-face measurement under supplied XML, captured consumer
+  string metrics, captured ordinary
   block-selection/placement arithmetic and horizontal
   GPOS/fused-skew traces, with separate paragraph/vector
   transport boundaries.

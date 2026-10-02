@@ -11,7 +11,7 @@ for this implementation. Full Samsung Notes visual parity is not claimed.
 | Area | Implemented scope | Evidence and limits |
 | --- | --- | --- |
 | Fonts and spans | Pinned fonts, caller-provided fonts, local coverage fallback, typed paint/measurement projections and explicit Widget/Drawing span producers, authoritative parsed heading spans, modern composition, selected-face CBDT metadata and native hyperlink gating | Rust font/Unicode regressions, browser embedded-font checks and [native NAME/default selection](reverse-engineering/text-layout-findings.md#captured-span-font-name-and-default-selection) under supplied XML/four pinned faces. Legacy/incomplete composition and suggestion/correction remain unsupported. Device fallback selection and variable fonts remain outside scope. |
-| Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics, captured body/code/table origins and [native ordinary wrap arithmetic](reverse-engineering/text-layout-findings.md#captured-ordinary-wrap-arithmetic) for supplied entries. Complete Rust/native wrap parity, emergency breaking, RTL justification and all standalone native modes are not established. |
+| Text layout | Measured glyph advances, Unicode wrapping, paragraph spacing, density-scaled margins, alignment, placed-text gravity and empty-line metrics | Independent font metrics, captured body/code/table origins and [native ordinary wrap arithmetic](reverse-engineering/text-layout-findings.md#captured-ordinary-wrap-arithmetic), consumed through retained UTF-16 advances for wholly native-measured ordinary paragraphs. SDK UAX breaks/graphemes/heights, complete Rust/native wrap parity and all standalone native modes remain separate limits. |
 | Bidirectional text | Paragraph context retained across wrapping, native paragraph maps for covered cases, inline objects in visual order | Rust and Chromium regressions cover RTL, isolates and object positions; arbitrary device ICU/locale behavior remains unverified. |
 | Shapes | Shared measured text within supported native template/path frames and original rotation pivots | Typed-frame, preview/replay and PDF regressions; unsupported shape frames retain saved bounds and report diagnostics. |
 | Embedded content | Images, code title/body, bounded dense unmerged/merged table preparation, measured reservations, staged width/height feedback and page exclusions | Five external native-reference checks cover the locked corpus; table captures establish raw-slot cold sizing, frame-owner warm sizing and endpoint-owner bounds. Saved height limits do not cap the traced export layout. Native merged shaping/parent placement, sparse preparation and arbitrary nested composition remain unverified. |
@@ -25,6 +25,12 @@ Use `render_document_pdf` for a whole document, or
 `render_layout_pages_pdf_with_fonts` for selected layout pages with an explicit
 `FontBook`. The latter font book controls both measurement and carrier parsing.
 CLI and WASM document PDF exports use this retained path.
+`PdfOptions::from_font_book` preserves both the database and native NAME
+configuration; default options use the default book. `PdfOptions::new` with a
+custom database leaves native configuration absent. Supplied-book exports
+override both fields, keeping measurement admission consistent with that book.
+CLI exports without explicit font files retain the default book/configuration;
+explicit font files build a caller database and use compatibility measurement.
 
 `render_svg_pages_pdf` converts arbitrary or serialized SVG. It has no private
 Rust glyph registry and can reshape text. Its output remains a compatibility
@@ -208,8 +214,7 @@ composition or horizontal f32 ownership/adjacency.
   and 25 glyphs, including owner-position division, width division and native
   ink translation/scale/union. [Fractional hinting controls](reverse-engineering/text-layout-findings.md#captured-fractional-paint-hinting)
   separately pin the native Mono hint target and 192 fixed hinted extrema;
-  whole SpanRunFunctor, device font-manager resolution and production paragraph
-  caches remain outside scope.
+  whole SpanRunFunctor and device font-manager resolution remain outside scope.
   [Script itemization](reverse-engineering/text-layout-findings.md#captured-script-itemization)
   matches native plain-Script chunks and full-source context for 44 cases,
   including Common/Inherited absorption. `PaintShaper::shape_text` creates
@@ -227,14 +232,29 @@ composition or horizontal f32 ownership/adjacency.
   physical style-face synthesis remain outside its contract.
   A separate [NAME/default capture](reverse-engineering/text-layout-findings.md#captured-span-font-name-and-default-selection)
   observes 130 native profiles with actual XML parsing and four physical
-  Roboto styles; nullable versus empty names and suffix selection are verified
-  under that supplied configuration, separately from Rust/device font selection.
-  Production paragraph measurement still shapes in font units and projects
-  them in f64; retained logical owner offsets and transport advances serve
-  PDF, SVG, viewport ink and markers. The bounded producer and exact arithmetic
-  comparisons remain
-  separate from document widths, wrapping, fallback selection and Chromium
-  glyph reproduction.
+  Roboto styles. Typed `NativeFontNameRequest`/`FontBook::resolve_native_name`
+  matches those profiles, including null/empty names and physical file/style
+  identity. Caller configurations define database aliases and matching policy;
+  generic Minikin/device font selection remains unverified.
+  [Named-face measurement](reverse-engineering/text-layout-findings.md#captured-named-face-measurement)
+  captures 110 profiles through actual face/paint selection, shaping, metrics
+  and entry conversion. Rust matches 106 whole pieces, 122 calls and 401 glyphs;
+  four skewed composite
+  profiles remain typed rejections. This four-face API proof does not widen
+  production paragraph admission.
+  [Consumer metrics](reverse-engineering/text-layout-findings.md#captured-consumer-text-metrics)
+  add 52 Regular/normal/LTR profiles and 134 exact glyph/entry records for
+  supplied marker/body strings across ten sizes and two `AB` controls. Native
+  list numbering and object-width feedback algorithms remain outside the capture.
+  The [production paragraph adapter](reverse-engineering/text-layout-findings.md#production-paragraph-measurement-boundary)
+  uses paragraph-local [native cache-word views](reverse-engineering/text-layout-findings.md#captured-cache-word-context-windows)
+  and admits the pinned Regular face at index zero. It retains native logical
+  entries/global owners and shared glyph geometry for PDF, SVG, viewport ink
+  and markers. Unsupported font/style/script/tab/budget inputs report typed
+  diagnostics and use compatibility geometry. That compatibility producer
+  still shapes font units and projects them in f64; independent Chromium
+  glyph reproduction, SDK line/grapheme policies and device fallback remain
+  separate boundaries.
 - Native preview background geometry for embedded objects is captured through
   measurement, placement and rectangle commands for 40 supplied cases. Inline
   backgrounds include margins; block backgrounds use visible width despite a
@@ -291,9 +311,18 @@ SVG embeds the selected TTC/OTC face used for measurement. CLI exports report
 text and object diagnostics for the selected pages. Ordered diagnostics use
 indexed deduplication and retain source attribution; font validation includes
 metrics contributing to inline-object leading.
+Native-support warnings follow painted source visibility. Compatibility runs
+retain style/font/shaping/budget/tab reasons; unmeasured fallback lines retain
+local source intersections, and wrapping-policy reasons belong to affected
+lines. Export excludes all six aggregate native-support warning kinds from
+preparation replay while complete producer diagnostics remain available.
+Prepared table/code warnings therefore follow visible child source rather
+than only the outer object scope.
 
 Document exports and browser sessions reuse compatible body plans across
-pages. Style boundary resolution avoids repeated full-span scans, and fallback
+pages. Cache identity includes the immutable native NAME configuration as well
+as database/source/layout identity; changing that configuration invalidates
+plans even when the database is shared. Style boundary resolution avoids repeated full-span scans, and fallback
 lines reuse paragraph bidi contexts.
 
 ## Regression evidence

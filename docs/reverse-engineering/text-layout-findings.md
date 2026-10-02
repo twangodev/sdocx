@@ -1163,14 +1163,14 @@ at `0x76b28` selects glyph-ID encoding through
 
 These instruction findings establish the conversion sequence and defaults.
 They do not capture actual native glyph advances or establish a universal
-width correction. Rust's production paragraph measurer still shapes in
-font units, accumulates the producer pen as integers and projects geometry
-with f64 font-size/units-per-em scaling. It retains logical owner offsets
+width correction. Rust's compatibility paragraph producer shapes in font
+units, accumulates its pen as integers and projects geometry with f64
+font-size/units-per-em scaling. The bounded native-paint paragraph adapter
+below uses separate captured paint-domain stages. Both retain logical owner offsets
 and transport advances in `MeasuredGlyph`, shared by PDF, SVG, viewport ink
 and marker consumers; browser reproduction independently compares raw
-font-unit shaping. The bounded paint-shaping API below is a
-separate producer; local f32 line-band parity does not reproduce these native
-horizontal numeric stages in document layout.
+font-unit shaping. Local f32 line-band parity alone does not establish the
+native horizontal numeric stages in document layout.
 
 ### Captured native shaping
 
@@ -1292,8 +1292,8 @@ half spacing).
 Other controls expose incorrect skew and UTF-8 ownership. Unsupported
 scripts, incompatible or noncontiguous chunks, nonzero word spacing, vertical
 advance, extra font slots/fakery, malformed owners/ranges and nonfinite geometry
-return typed unavailability. This is a bounded arithmetic model, not an
-alternate font shaper or the production paragraph measurement path.
+return typed unavailability. These supplied-input regressions isolate the
+bounded arithmetic layer from metric production and paragraph integration.
 
 ### Captured horizontal GPOS scaling and fused skew
 
@@ -1373,9 +1373,10 @@ space, zero-advance marks and invalid/unsupported inputs.
 
 This validates the supplied Roboto backend metric boundary for those profiles.
 The provider does not shape glyphs, reproduce GPOS, select device fallback or
-replace `ParagraphMeasurer`. Its acceptance of other static `glyf` fonts is
-an API domain, not captured native equality for those fonts. Production widths
-and wrapping continue to use the font-unit shaping path.
+replace `ParagraphMeasurer`. Its acceptance of static `glyf` fonts is an
+API domain, not arbitrary-font equality; the named-face capture below supplies
+separate proof for three additional pinned Roboto styles. Production
+paragraph admission and wrapping have separate contracts below.
 
 ### Captured Skia residual matrices and outline metrics
 
@@ -1518,6 +1519,47 @@ below. Version-independent Unicode properties, malformed UTF-16 behavior,
 device fallback and general font coverage remain outside this evidence.
 Observed all-neutral missing glyphs remain captured outputs.
 
+### Captured cache-word context windows
+
+The [Rust capture](../../conformance/native_table/text_context_windows.rs) and
+[`table-text-context-windows.json`](../../conformance/table-text-context-windows.json),
+SHA-256
+`07d5f3c44ae387975f8070fe24dbe90049395a5ad8f1ff4e80f4780c36417d5d`,
+execute the native UTF-16 separator predicate (`0x9b050`), previous/next
+scans (`0x9af90` / `0x9b0b0`), directional iterator (`0x98168`) and bounded
+caller TextView window (`0x96f94`–`0x96fd8`). All 65,536 raw UTF-16 units,
+including surrogate units, are queried through the predicate and `A-unit-B`
+scan stencils. The fixture also records 32 valid source cases, 215 offset
+queries, 1390 selected LTR/RTL subranges and 2564 actual iterator windows
+and emitted source views. Three memory fills, repeated zero-fill and an
+independent process agree byte for byte.
+
+Native separators are U+0020, U+2000–U+200A, U+200E–U+200F,
+U+202A–U+202E, U+2066–U+2069 and U+3000. The scans separately isolate
+U+3400–U+9FFF. These are cache-word boundaries, separate from Unicode line
+or grapheme breaking. Direction reverses visitation in the captured cases;
+the source-ordered window partition is the same. The emitted view retains
+the entire cache word around the selected range, so context can cross a
+style or bidi selection inside that word. It does not establish whole-paragraph
+HarfBuzz source/context or the narrower partial-measure fast path.
+
+Separately inspected paragraph caller instructions form the paragraph pointer
+as document base plus twice its UTF-16 start (`0x78b3c`), retain its length
+(`0x78ad0`, `0x76670`–`0x76674`) and skip the preceding separator for later
+paragraphs (`0x78a80`). Style selection subtracts that paragraph origin
+(`0x771cc`–`0x771d0`); final owners add the global style start (`0x773a4`).
+The partial fast path builds a requested-subrange view instead
+(`0x78f14`–`0x78f48`) and is excluded from normal paragraph activation.
+
+[`PaintContextWindows`](../../crates/sdocx/src/render/fonts/paint_context.rs)
+retains immutable paragraph-relative source/selection ranges and each local
+TextView selection. Its bounds are 262144 source bytes, 65536 UTF-16 units,
+16384 selected scalars and 128 windows; source and selection endpoints must
+be scalar-aligned. Its [regressions](../../crates/sdocx/src/render/fonts/paint_context/tests.rs)
+match the exhaustive predicate/scans and all directional windows/caller views,
+with checked-range and budget controls. The capture supplies paragraph views and selection/direction;
+full `measureParagraph`, cache lookup, `LayoutPiece` and HarfBuzz do not execute.
+
 ### Bounded Rust paint shaping
 
 [`ResolvedFace::paint_shaper`](../../crates/sdocx/src/render/fonts.rs) constructs
@@ -1586,14 +1628,13 @@ anchors and cumulative coordinates in the selected paint scale. Unsafe
 arithmetic, other scripts, contextual/chained/cursive GPOS and fonts containing
 legacy `kern`, `kerx` or `trak` tables return `UnsupportedPositioningDomain`.
 Font-table inspection is bounded to 100000 records. The guard preserves all
-1453 captured producer glyphs; acceptance of another font remains distinct from
+1453 original producer glyphs; acceptance of another font remains distinct from
 native metric or positioning parity for that font.
 
-This script-level API does not select device fonts, resolve paragraph bidi/font
-runs, combine fallback-font chunks, wrap lines or populate the document's
-retained drawing caches.
-The production `ParagraphMeasurer`, Chromium text reproduction checks
-and document SVG/PDF transport remain separate boundaries.
+This script-level API does not itself select device fonts, resolve paragraph
+bidi/font runs, combine fallback-font chunks or wrap lines. The bounded
+production adapter below consumes its results; Chromium text reproduction
+and document SVG/PDF transport remain separate validation boundaries.
 
 ### Whole-piece Rust measurement
 
@@ -1626,8 +1667,59 @@ Source limits remain 262144 bytes and 65536 UTF-16 slots, with at most 16384
 selected scalars. A whole piece allows at most 128 chunks, 254 caller features
 so the final feature list stays within 256, and 65536 aggregate output glyphs.
 Per-chunk engine and numeric positioning limits remain in effect. This factory
-is separate from font/style selection, paragraph bidi resolution, wrapping
-and production `ParagraphMeasurer` consumption.
+does not itself perform font/style selection, paragraph bidi resolution or
+wrapping; the production adapter below supplies its paragraph-derived windows.
+
+### Production paragraph measurement boundary
+
+[`ParagraphMeasurer`](../../crates/sdocx/src/render/text/measurement.rs)
+attempts the paint-sized producer before compatibility measurement. It keeps
+the first complete native drawing-span result when spans merge under the
+native measurement key, then builds the literal source f32 size/style paint
+profile and resolves the configured native NAME/default face. Admission is
+bounded to pinned Roboto Regular bytes, face index zero, Typeface metadata
+400/nonitalic, covered source and supported paint/script/positioning/resource
+domains. NAME fallback cannot replace an available but unregistered database
+family such as Roboto Mono with default Regular. Fake-bold, unavailable
+native span identity, other physical faces, unsupported tabs and exhausted
+budgets report typed measurement diagnostics before compatibility geometry.
+Supported neighboring coverage ranges can retain native measurement.
+Prepared body-plan reuse compares the immutable native NAME configuration,
+font database identity, source and layout inputs. A configuration change
+invalidates cached plans even with the same database.
+
+The adapter derives paragraph-local [cache-word windows](#captured-cache-word-context-windows),
+itemizes and shapes each selected view, and consumes layout/entry conversion
+once. It retains all requested UTF-16 entry slots, including continuation
+slots, and maps owners back to global source coordinates. Cached logical
+owner positions use native f32 division by 100 before widening to f64.
+The shared retained glyph geometry serves PDF, SVG, viewport ink and markers.
+Per-glyph PDF advances are transport metadata derived from paint positioning;
+they are not a captured Samsung PDF field.
+
+Production regressions compare six immutable native entry cases with both
+zero origin and a supplementary-character/paragraph prefix, including exact
+entry advances, retained owners and owner-relative positions. Failure controls
+pin scoped diagnostics and compatibility geometry for unsupported styles,
+tabs, composite skew, budgets and unavailable physical style identity.
+
+Compatibility runs retain their native measurement rejection reason. Export
+emits style/font/shaping/budget/tab warnings for the source clusters that reach
+the painted-text visibility gate, rather than replaying aggregate preparation
+warnings. Failed-font cases without a measured run retain reasons in an
+isolated local-text collector and attach intersecting source spans to fallback
+lines. `UnsupportedNativeWrapping` is retained on the affected line and emitted
+for its visible source. All six native-support aggregate kinds are excluded
+from export replay; complete producer diagnostics remain available separately.
+This preserves child-local visibility for prepared table cells and code
+title/body text despite their shared outer object attribution.
+
+Browser reproduction still independently shapes natural font-unit text and
+checks whether one rigid translation reproduces the retained positions within
+strict roundoff. Unsupported relative differences across multiple glyphs retain
+the source-preserving SVG fallback. Font selection outside the pinned face,
+device fallback, the partial-measure fast path, native paragraph bidi/break
+production and complete paragraph composition remain separate limits.
 
 ### Captured logical-entry conversion and paint profiles
 
@@ -1668,8 +1760,9 @@ selection or Rust fake-bold metric parity.
 The capture supplies layout owner origin, zero extra advance, source/entry
 storage and preallocated glyph capacity. It does not execute the whole
 `SpanRunFunctor`, typeface/font-manager initialization, editing, entry
-classification, wrapping, fallback fonts or document composition. Production
-paragraph measurement remains separate from this captured cache conversion.
+classification, wrapping, fallback fonts or document composition. The
+production adapter's source mapping is separately tested; it does not make
+this capture a complete native paragraph execution.
 
 `PaintLayout::entry_geometry` exposes the shared
 [Rust logical-entry conversion](../../crates/sdocx/src/render/fonts/paint_layout/entry_geometry.rs).
@@ -1685,9 +1778,10 @@ All eight native entry cases match public Rust metric production, shaping,
 layout and entry conversion for 25 glyphs. Independent replay from captured
 layout output also matches those 25 glyphs. Controls distinguish width division
 from reciprocal multiplication and detect missing or repeated owner translation
-in ink. This proves the captured geometry conversion; it does not populate the
-production paragraph's entry caches or implement native classification, fake
-bold, font selection or wrapping.
+in ink. This proves the captured geometry conversion. The production adapter
+retains the same entry geometry under its admitted face/style boundary; native
+classification, fake-bold metrics, general font selection and wrapping remain
+separate contracts.
 
 ### Captured complete span paint helper
 
@@ -1749,7 +1843,7 @@ driver agree byte for byte.
 The supplied XML defines one `sans-serif` family with pinned Roboto Regular,
 Bold, Italic and BoldItalic files. A null span NAME uses the supplied default;
 a nonnull empty NAME suppresses it. `Roboto-Regular`, `Roboto-Bold`,
-`Roboto-Italic` and `Roboto-BoldItalic` resolve through the native suffix
+`Roboto-Italic` and `Roboto-BoldItalic` resolve through the native style-name
 parser (`0x8a42c`) to matching physical files and style metadata. `Roboto`,
 `Roboto Bold`, empty and missing names select the supplied regular face.
 The factory receives the caller direction unchanged. With both names null,
@@ -1766,6 +1860,92 @@ This is a fixture font configuration, not Samsung device font configuration.
 Alternate XML/schema/error paths, fallback glyph selection, shaping/metrics,
 fake-bold metric support, later whole-span execution, wrapping, composition
 and SVG output remain outside the capture.
+
+[`NativeFontNameRequest` and configuration](../../crates/sdocx/src/render/fonts/paint_font_name.rs)
+preserve nullable span/default names and direction. `FontBook::resolve_native_name`
+retains native family metadata separately from the physical database family,
+requested/Typeface styles and selected face. The
+[typed resolution regressions](../../crates/sdocx/src/render/fonts/paint_font_name/tests.rs)
+match all 130 captured requests, paint styles and physical file hashes,
+indices, lengths and metadata. The default book registers the four pinned
+filenames and maps native `sans-serif` to database `Roboto`.
+
+Source inspection of `0x8a42c` shows priority-ordered style-pattern lookup:
+Regular, Italic, BoldItalic, Bold, ThinItalic, Thin, LightItalic, Light,
+MediumItalic, Medium, BlackItalic and Black. Each pattern uses its rightmost
+occurrence at a positive position; it need not end the name. File registrations
+at `0x7f048`–`0x7f168` derive aliases before the last dot and last hyphen;
+lookup at `0x8076c` uses the complete NAME before falling back to the default.
+Caller configurations define registrations and aliases into the caller's
+database; physical matching uses its family membership/style policy. That
+generic database behavior is not Minikin/device matching parity. Missing
+configuration, embedded NULs and conflicting registrations return typed
+errors. Names are bounded to 4096 bytes, with at most 1024 registrations and
+1024 family aliases. The captured four-file
+resolution proof is separate from paint measurement activation.
+
+### Captured named-face measurement
+
+The [native producer](../../conformance/native_table/text_shaping/named_faces.rs)
+and [`table-text-shaping-named-faces.json`](../../conformance/table-text-shaping-named-faces.json),
+SHA-256
+`52bc6161befde8fe518148ca65631be25ae0712a9d07170caae61820ae211c30`,
+execute the same supplied XML/four-file manager, actual NAME selection and
+complete span paint helper, then pass the returned MinikinPaint and collection
+directly into `LayoutPiece` (`0x9b150`), bundled HarfBuzz (`0xecdcc`) and
+Skia/FreeType. Its 110 profiles capture 134 HarfBuzz calls, 437 glyphs/UTF-16
+advances, 614 FreeType loads and 110 scaler configurations. Allocation fills,
+repeat and independent processes agree byte for byte.
+
+Profiles combine each physical Roboto style with source flags 0, 1 and 4,
+covering pairs, marks, ligatures, context, RTL and sizes around the 2048-paint
+normalization threshold. Layout font-slot source ID is checked against the
+NAME-selected physical file, with no additional slot/fallback. Actual append
+and bounded SpanRun entry conversion consume the produced geometry. The
+XML omits family language, recorded as null. Two Regular controls at source
+size 20 capture `9.` and `10.` paint advances 1123/526 and 1123/1123/526.
+Hinted configurations use native `0x120208` flags; unhinted/skew/normalized
+configurations use `0x10020a`.
+
+The [Rust named-face regressions](../../crates/sdocx/src/render/fonts/native_named_face_tests.rs)
+match every generated HarfBuzz input/output, paint layout and logical-entry
+bit for 106 whole pieces, comprising 122 calls and 401 glyphs. Four
+`mixed_marks` source-flag-4 profiles, one per
+physical face, return explicit `UnsupportedComposite` for glyph 2578.
+Separately, 429 raw vector advances and 429 ink bounds match native metric
+callbacks; eight composite callback requests remain explicit rejections.
+These counts are separate from the original eight-suite producer corpus.
+
+Source fake-bold flag 2 is excluded from measurement. Constructor-only
+0–7 paint controls do not establish fake-bold metrics. This capture does not
+establish Samsung device font configuration, arbitrary fonts, fallback glyph
+selection, whole-span execution after paint conversion, wrapping/composition
+or raster/SVG output. The four-face producer proof and the production
+paragraph admission gate remain distinct.
+
+### Captured consumer text metrics
+
+The [native consumer-metric capture](../../conformance/native_table/text_shaping/consumer_metrics.rs)
+and [`table-text-shaping-consumer-metrics.json`](../../conformance/table-text-shaping-consumer-metrics.json),
+SHA-256
+`a5ce8f4ce74f205300f6fdb6e7ac7fa0a5023c377e659a2527760582feca8041`,
+record 52 Regular/normal/LTR profiles through actual NAME/paint selection,
+`LayoutPiece`, bundled HarfBuzz, Skia/FreeType and bounded logical-entry
+conversion. Ten source sizes (10, 12, 15, 17, 20, 24, 30, 36, 45 and 100)
+each measure supplied strings `1.`, `9.`, `10.`, `aa.` and `ABC`; two `AB`
+controls use sizes 10 and 30. The corpus captures 52 HarfBuzz calls,
+134 glyphs/UTF-16 slots, 186 FreeType loads and 52 scaler configurations.
+Three allocation fills, repeated zero-fill and independent compiled drivers
+agree byte for byte; the prior 110-profile named-face fixture is unchanged.
+
+The [Rust consumer regressions](../../crates/sdocx/src/render/fonts/native_named_face_tests.rs)
+match all 52 profiles and 134 glyphs without rejections: raw metric advances,
+24.8 shaping, UTF-16/full-glyph geometry and logical entry widths/ink/positions.
+These are separate metric controls for marker/body/object-width consumers;
+the native list numbering, object feedback, wrapping and composition algorithms
+do not execute. Source strings, size and the pinned XML/font configuration are
+caller inputs. Underline, skew, fake-bold, other physical faces, device fallback
+and output appearance remain outside this corpus.
 
 ### Direction, break boundaries and tabs
 
@@ -2018,9 +2198,8 @@ ceiling above remains instruction evidence without a runtime capture;
 the bounded ordinary block selection and placement capture below does not
 establish complete Rust wrapping parity.
 
-The corresponding Rust contract is to shape the paragraph's joined runs
-once, retain source/cluster mappings and advances, then select and position
-lines from those advances. Native
+Rust retains the paragraph's measured source/cluster mappings and advances,
+then selects and positions lines from those results. Native
 width comparisons here use float additions and a strict `>` test; no
 additional per-line width rounding or special kerning correction is proved.
 Native emergency splitting is not proven grapheme/cluster-safe;
@@ -2082,6 +2261,27 @@ Synthetic large/negative advances are numeric controls, not font-produced
 metrics. Native shaping, font selection, ICU break/bidi production, the
 automatic paragraph wrapping loop, natural-width ceiling, draw clip gates,
 full composition and raster/vector output do not execute.
+
+The [Rust selector/cursor](../../crates/sdocx/src/render/text/native_wrap.rs)
+matches the captured candidate/commit operations, ranges, block widths and
+independent entry positions. The production
+[UTF-16 slot bridge](../../crates/sdocx/src/render/text/wrapping/native_slots.rs)
+feeds retained per-UTF-16 advances into that selector before cluster
+compression for wholly native-measured paragraphs without objects. Zero
+continuation slots survive. Grouped block width controls center/right
+SVG/PDF alignment; the separate f32 visual cursor places glyph owners and
+distributes justification. SDK bidi scalar maps expand to physical UTF-16
+slots.
+
+Production regressions replay all 17 numeric cases and 45 positions, compare
+native widths from four shaping captures at zero/prefixed paragraph origins,
+and check adjacent-f32 fitting, grouped alignment and compatibility with
+embedded objects. Break ends from UAX rules, grapheme boundaries and entry
+heights remain SDK policy. Native emergency results that cut a glyph cluster,
+surrogate or grapheme, and narrowed intervals with no native block, report
+`UnsupportedNativeWrapping` before retaining the SDK emergency/source policy.
+Objects and mixed unsupported measurement retain the existing wrapper.
+These tests do not establish native ICU/object/full-composition parity.
 
 An oversized first ordinary entry can still be included. The helper
 `isCharacterOverflowWidth`, `0x6c5b0`, requires the candidate to be the
@@ -2911,7 +3111,18 @@ text nodes under its existing transform, clip, opacity and blend scopes;
 it does not reshape those registered glyphs. Registry entries must be handled
 exactly once. Missing nodes or effects that bypass the hook fail explicitly.
 SVG still supplies the surrounding vector graphics and clipping geometry.
-The supplied font book also controls carrier parsing. Inkless runs use a
+`PdfOptions::from_font_book` retains the font database and native NAME
+configuration. `PdfOptions::default` uses that constructor with the default
+book, so direct document PDF and supplied-book exports share native measurement
+admission. `PdfOptions::new(custom_database)` keeps native configuration absent
+and uses compatibility measurement; an explicit supplied book overrides both
+database and configuration. The supplied book also controls carrier parsing.
+The CLI keeps the default configured book when no font files are supplied;
+explicit files construct a caller database with compatibility measurement.
+An actual Regular `AV` source-size-17 regression checks captured owner prefix
+`265416 / 256 / 100`, f32 world placement, original outlines, selectable/tagged
+source and no images across SVG, direct/default PDF and supplied-book PDF.
+Inkless runs use a
 private ink-bearing carrier that the hook replaces entirely; its glyph and
 source never enter the PDF. Arbitrary object-bounding-box effects still derive
 bounds from the carrier and are not established as native-equivalent.
