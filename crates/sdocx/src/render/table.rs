@@ -13,6 +13,7 @@ mod borders;
 mod export;
 mod fills;
 mod grid;
+pub(in crate::render) mod native_placement;
 mod pagination;
 
 #[cfg(test)]
