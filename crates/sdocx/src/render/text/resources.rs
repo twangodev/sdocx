@@ -462,18 +462,6 @@ impl<'a> TextRenderer<'a> {
 
     pub fn report_span_issues(&self, styled: &StyledText<'_>) {
         for (range, span) in &styled.spans {
-            if span.kind == RichTextSpanType::ComposingTag && span.composition_value() == Some(true)
-            {
-                for object in styled.objects.in_range(range.clone()) {
-                    self.for_object_source(object.source.clone())
-                        .report_span_issue(
-                            styled,
-                            &object.source,
-                            TextDiagnosticKind::UnsupportedCompositionStyle,
-                        );
-                }
-                continue;
-            }
             let kind = match span.kind {
                 RichTextSpanType::ComposingBackgroundColor
                     if span.composing_background_value().is_none() =>

@@ -458,7 +458,7 @@ fn invalid_utf16_ranges_and_carets_never_paint_but_an_aligned_span_after_emoji_d
 }
 
 #[test]
-fn backgrounds_exclude_valid_embedded_object_anchors_and_their_horizontal_extent() {
+fn object_backgrounds_follow_widget_and_drawing_converter_guards() {
     use base64::Engine;
     let mut content = text("A\u{fffc}B");
     let image = serde_json::from_value::<PlacedImage>(serde_json::json!({
@@ -473,30 +473,75 @@ fn backgrounds_exclude_valid_embedded_object_anchors_and_their_horizontal_extent
     );
     anchor.text_index_utf16 = 1;
     content.object_spans.push(anchor);
-    for range in [(0, 3), (1, 2)] {
-        let mut highlighted = content.clone();
-        highlighted.spans.push(background(range.0, range.1, RED));
-        let mut doc = document(Context::Placed, highlighted);
-        doc.metadata.media_assets.push(MediaAsset {
-            name: "media/background-object.png".into(), archive_id: None,
-            mime_type: "image/png".into(), data: base64::engine::general_purpose::STANDARD.decode(
-                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
-            ).unwrap(),
-        });
-        for replay in [false, true] {
-            let page = render(&doc, 0, replay);
-            assert_eq!(source(&page.svg), "AB");
-            let highlights = rectangles(&page.svg, "#ff0011");
-            if range == (1, 2) {
-                assert!(highlights.is_empty());
-            } else {
-                assert_eq!(highlights.len(), 2);
-                for (rectangle, (x, width)) in highlights
-                    .iter()
-                    .zip([(20.0, 6.5234375), (56.5234375, 6.2255859375)])
-                {
-                    assert!((rectangle[0] - x).abs() <= 1e-4);
-                    assert!((rectangle[2] - width).abs() <= 1e-4);
+    for context in [
+        Context::Placed,
+        Context::Flow,
+        Context::Table,
+        Context::CodeTitle,
+        Context::CodeBody,
+    ] {
+        let drawing = matches!(
+            context,
+            Context::Placed | Context::CodeTitle | Context::CodeBody
+        );
+        for range in [(0, 3), (1, 2)] {
+            let mut highlighted = content.clone();
+            highlighted.spans.push(background(range.0, range.1, RED));
+            let mut doc = document(context, highlighted);
+            doc.metadata.media_assets.push(MediaAsset {
+                name: "media/background-object.png".into(), archive_id: None,
+                mime_type: "image/png".into(), data: base64::engine::general_purpose::STANDARD.decode(
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+                ).unwrap(),
+            });
+            for replay in [false, true] {
+                let page = render(&doc, 0, replay);
+                assert_eq!(source(&page.svg), "AB", "{context:?}");
+                let xml = roxmltree::Document::parse(&page.svg).unwrap();
+                let image = xml
+                    .descendants()
+                    .find(|node| node.has_tag_name("image"))
+                    .unwrap();
+                let image_x = point(image).0;
+                let highlights = rectangles(&page.svg, "#ff0011");
+                let glyph_count = if range == (0, 3) { 2 } else { 0 };
+                assert_eq!(
+                    highlights.len(),
+                    glyph_count + usize::from(drawing),
+                    "{context:?}: {range:?}: {highlights:?}"
+                );
+                if drawing {
+                    let object_band = highlights
+                        .iter()
+                        .find(|rectangle| {
+                            (rectangle[0] - image_x).abs() < 0.0001
+                                && (rectangle[2] - 30.0).abs() < 0.0001
+                        })
+                        .unwrap_or_else(|| {
+                            panic!("{context:?}: missing drawing-converter object band")
+                        });
+                    assert!(
+                        object_band[3] >= 40.0,
+                        "{context:?}: object band must use the measured line"
+                    );
+                }
+                if range == (0, 3) {
+                    for (value, units) in [("A", 1336.0), ("B", 1275.0)] {
+                        let glyph = xml
+                            .descendants()
+                            .find(|node| node.has_tag_name("tspan") && node.text() == Some(value))
+                            .unwrap();
+                        let glyph_x = point(glyph).0;
+                        let size: f64 = glyph.attribute("font-size").unwrap().parse().unwrap();
+                        let expected_width = units / 2048.0 * size;
+                        assert!(
+                            highlights
+                                .iter()
+                                .any(|rectangle| (rectangle[0] - glyph_x).abs() < 0.0001
+                                    && (rectangle[2] - expected_width).abs() < 0.0001),
+                            "{context:?}: {value}: glyph background lost"
+                        );
+                    }
                 }
             }
         }

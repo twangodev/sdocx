@@ -382,6 +382,9 @@ impl<'a> StyledText<'a> {
                 foreground_boundaries.extend([run.start, run.end]);
             }
         }
+        for object in objects.in_range(0..index.len()) {
+            boundaries.extend([object.source.start, object.source.end]);
+        }
         boundaries.sort_unstable();
         boundaries.dedup();
         foreground_boundaries.sort_unstable();
@@ -906,6 +909,14 @@ mod tests {
             let predefined = PredefinedTextStyle::from(case["style"].as_u64().unwrap() as u32);
             let mut content = text_box();
             content.text = "A".repeat(end as usize);
+            content.paragraphs.push(paragraph(
+                RichTextParagraphType::PredefinedStyle,
+                [
+                    (case["style"].as_u64().unwrap() as u32).to_le_bytes(),
+                    3_u32.to_le_bytes(),
+                ]
+                .concat(),
+            ));
             content.spans = case["after"]
                 .as_array()
                 .unwrap()
@@ -936,6 +947,10 @@ mod tests {
             let native_size = outputs[outputs.len() - 2]["font_size"].as_f64().unwrap() as f32;
             let native_bold = outputs.last().unwrap()["bold"].as_bool().unwrap();
             for settings in [TextSettings::default(), scaled_settings()] {
+                assert_eq!(
+                    paragraph_layout(&content, 0, settings).predefined_style,
+                    Some(predefined)
+                );
                 let styled = StyledText::new(&content, TextContext::Flow, settings);
                 let resolved = styled.resolved_style_at(start as usize, theme, Some(predefined));
                 assert_eq!(resolved.paint.bold, native_bold);

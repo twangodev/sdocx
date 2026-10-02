@@ -861,7 +861,7 @@ fn dark_composing_background_selection_tests_the_mapped_argb() {
 }
 
 #[test]
-fn composing_tag_background_on_an_object_reports_only_the_anchor_source() {
+fn object_composition_styles_keep_preview_and_pdf_diagnostics_consistent() {
     let fonts = FontBook::default();
     for layout_option in [
         ObjectSpanLayoutOption::Inline,
@@ -908,13 +908,10 @@ fn composing_tag_background_on_an_object_reports_only_the_anchor_source() {
                     .collect();
                 assert_eq!(
                     composition_issues.len(),
-                    usize::from(enabled),
+                    0,
                     "{context}: {layout_option:?}: {enabled}: {:?}",
                     rendered.text_diagnostics
                 );
-                for issue in composition_issues {
-                    assert_eq!(issue.codepoints, [0xfffc], "{context}: {layout_option:?}");
-                }
                 #[cfg(feature = "pdf")]
                 {
                     let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
@@ -931,6 +928,519 @@ fn composing_tag_background_on_an_object_reports_only_the_anchor_source() {
                         "{context}: {layout_option:?}: {enabled}"
                     );
                 }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+fn composition_image_text(source: &str, layout_option: ObjectSpanLayoutOption) -> RichTextBox {
+    let mut content = text(source);
+    let length = source.encode_utf16().count() as u32;
+    let anchor = source
+        .chars()
+        .position(|character| character == '\u{fffc}')
+        .unwrap() as u32;
+    let image: sdocx::PlacedImage = serde_json::from_value(serde_json::json!({
+        "bbox": {"x_min":0.0,"y_min":0.0,"x_max":30.0,"y_max":40.0},
+        "rotation_degrees": null, "media_id": null, "media_index": 0,
+        "crop_rect": null, "original_bbox": null,
+        "border_media_id": null, "original_media_id": null
+    }))
+    .unwrap();
+    content.object_spans.push(RichTextObjectSpan {
+        object_type: ObjectType::Image,
+        object_data: Vec::new(),
+        content: Some(RichTextObjectContent::Image(Box::new(image))),
+        text_index_utf16: anchor as i32,
+        layout_option,
+        layout_constraint: ObjectSpanLayoutConstraint::Normal,
+    });
+    content.spans = vec![
+        span(
+            RichTextSpanType::FontSize,
+            0,
+            length,
+            &1.0_f32.to_le_bytes(),
+        ),
+        span(
+            RichTextSpanType::ForegroundColor,
+            0,
+            length,
+            &0xff34_6578_u32.to_le_bytes(),
+        ),
+    ];
+    if source.starts_with('A') {
+        content.spans.push(span(
+            RichTextSpanType::BackgroundColor,
+            0,
+            1,
+            &0xff12_3456_u32.to_le_bytes(),
+        ));
+    }
+    content
+}
+
+#[cfg(feature = "serde")]
+fn add_composition_image_asset(document: &mut Document) {
+    document.metadata.media_assets.push(sdocx::MediaAsset {
+        name: "media/composition-object.png".into(),
+        archive_id: None,
+        mime_type: "image/png".into(),
+        data: base64::engine::general_purpose::STANDARD.decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC").unwrap(),
+    });
+}
+
+#[cfg(any(feature = "serde", feature = "pdf"))]
+fn svg_style_point(node: roxmltree::Node<'_, '_>) -> [f64; 2] {
+    let coordinate = |name| {
+        node.ancestors()
+            .find_map(|node| node.attribute(name))
+            .unwrap()
+            .split_whitespace()
+            .next()
+            .unwrap()
+            .parse::<f64>()
+            .unwrap()
+    };
+    let mut point = [coordinate("x"), coordinate("y")];
+    for ancestor in node.ancestors() {
+        if let Some(transform) = ancestor.attribute("transform") {
+            let transform: svgtypes::Transform = transform.parse().unwrap();
+            point = [
+                transform.a * point[0] + transform.c * point[1] + transform.e,
+                transform.b * point[0] + transform.d * point[1] + transform.f,
+            ];
+        }
+    }
+    point
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn composing_tag_object_bands_use_the_measured_object_line() {
+    let fonts = FontBook::default();
+    for source in ["A\u{fffc}B", "\u{fffc}"] {
+        for option in [
+            ObjectSpanLayoutOption::Inline,
+            ObjectSpanLayoutOption::Block,
+        ] {
+            let baseline = composition_image_text(source, option);
+            let anchor = baseline.object_spans[0].text_index_utf16 as u32;
+            let mut tagged = baseline.clone();
+            tagged.spans.push(modern_composition_flag(
+                RichTextSpanType::ComposingTag,
+                anchor,
+                true,
+            ));
+            let baselines = style_documents(&baseline);
+            for ((context, mut document), (_, mut control_document)) in
+                style_documents(&tagged).into_iter().zip(baselines)
+            {
+                add_composition_image_asset(&mut document);
+                add_composition_image_asset(&mut control_document);
+                let layout = sdocx::layout_document(&document);
+                let rendered = sdocx::render_layout_page_svg_with_fonts(
+                    &document,
+                    &layout,
+                    0,
+                    &Default::default(),
+                    &fonts,
+                )
+                .unwrap();
+                let control =
+                    sdocx::render_page_svg(&control_document, 0, &Default::default()).unwrap();
+                let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+                let control_xml = roxmltree::Document::parse(&control.svg).unwrap();
+                let band = xml
+                    .descendants()
+                    .find(|node| {
+                        node.has_tag_name("rect") && node.attribute("fill") == Some("#252525")
+                    })
+                    .unwrap_or_else(|| {
+                        panic!("{context}: {source:?}: {option:?}: object band missing")
+                    });
+                let image = xml
+                    .descendants()
+                    .find(|node| node.has_tag_name("image"))
+                    .unwrap();
+                let image_point = svg_style_point(image);
+                let band_point = svg_style_point(band);
+                let margin = if context == "Flow" && option == ObjectSpanLayoutOption::Inline {
+                    12.0
+                } else {
+                    0.0
+                };
+                let width: f64 = band.attribute("width").unwrap().parse().unwrap();
+                assert!(
+                    (band_point[0] - image_point[0] + margin).abs() < 0.0001,
+                    "{context}: {source:?}: {option:?}: object band origin"
+                );
+                assert!(
+                    (width - 30.0 - 2.0 * margin).abs() < 0.0001,
+                    "{context}: {source:?}: {option:?}: object band width {width}"
+                );
+                let height: f64 = band.attribute("height").unwrap().parse().unwrap();
+                assert!(
+                    height >= 40.0
+                        && band_point[1] <= image_point[1]
+                        && band_point[1] + height >= image_point[1] + 40.0,
+                    "{context}: {source:?}: {option:?}: measured line must cover object"
+                );
+                if source.starts_with('A') && option == ObjectSpanLayoutOption::Inline {
+                    let glyph_band = xml
+                        .descendants()
+                        .find(|node| {
+                            node.has_tag_name("rect") && node.attribute("fill") == Some("#123456")
+                        })
+                        .unwrap();
+                    assert!(
+                        (band_point[1] - svg_style_point(glyph_band)[1]).abs() < 0.0001,
+                        "{context}: object/glyph line top"
+                    );
+                    assert!(
+                        (height
+                            - glyph_band
+                                .attribute("height")
+                                .unwrap()
+                                .parse::<f64>()
+                                .unwrap())
+                        .abs()
+                            < 0.0001,
+                        "{context}: object/glyph line height"
+                    );
+                }
+                for value in ["A", "B"].into_iter().filter(|_| source.starts_with('A')) {
+                    let node = tspan(&xml, value);
+                    let control_node = tspan(&control_xml, value);
+                    assert_eq!(
+                        svg_style_point(node),
+                        svg_style_point(control_node),
+                        "{context}: {value}: glyph geometry changed"
+                    );
+                    assert_eq!(
+                        node.attribute("fill"),
+                        control_node.attribute("fill"),
+                        "{context}: {value}: glyph color changed"
+                    );
+                }
+                #[cfg(feature = "pdf")]
+                {
+                    let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                        &document,
+                        &layout,
+                        &[0],
+                        &Default::default(),
+                        &Default::default(),
+                        &fonts,
+                    )
+                    .unwrap();
+                    let pdf = PdfComposition::read(&retained.bytes);
+                    pdf.assert_object_background(
+                        &[[37; 3]],
+                        (context != "Flow").then_some((
+                            [37; 3],
+                            25.0 / 255.0,
+                            [band_point[0], band_point[1], width, height],
+                        )),
+                        &format!("{context}: {source:?}: {option:?}"),
+                    );
+                    assert_eq!(
+                        pdf.source,
+                        if source.starts_with('A') { "AB" } else { "" },
+                        "{context}: {source:?}: {option:?}"
+                    );
+                    assert_eq!(
+                        pdf.image_resources, 1,
+                        "{context}: embedded image preserved"
+                    );
+                    assert!(
+                        pdf.text_positions
+                            .iter()
+                            .all(|glyph| glyph.fill_color == [52, 101, 120]),
+                        "{context}: {source:?}: {option:?}: glyph color changed"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn mixed_object_backgrounds_survive_transparent_glyph_overwrites_in_widget_contexts() {
+    let fonts = FontBook::default();
+    let mut content = composition_image_text("A\u{fffc}B", ObjectSpanLayoutOption::Inline);
+    content
+        .spans
+        .retain(|span| span.kind != RichTextSpanType::BackgroundColor);
+    let mut tag = modern_composition_flag(RichTextSpanType::ComposingTag, 0, true);
+    tag.end_utf16 = 3;
+    content.spans.extend([
+        tag,
+        span(
+            RichTextSpanType::BackgroundColor,
+            0,
+            3,
+            &0x0011_2233_u32.to_le_bytes(),
+        ),
+    ]);
+    for (context, mut document) in style_documents(&content) {
+        add_composition_image_asset(&mut document);
+        let layout = sdocx::layout_document(&document);
+        let rendered = sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+        let bands: Vec<_> = xml
+            .descendants()
+            .filter(|node| {
+                node.has_tag_name("rect")
+                    && matches!(
+                        node.attribute("fill"),
+                        Some("#112233" | "#123456" | "#252525")
+                    )
+            })
+            .collect();
+        let widget = matches!(context.as_str(), "Flow" | "Table");
+        assert_eq!(bands.len(), usize::from(widget), "{context}");
+        if widget {
+            let band = bands[0];
+            assert_eq!(band.attribute("fill"), Some("#252525"), "{context}");
+            let image = xml
+                .descendants()
+                .find(|node| node.has_tag_name("image"))
+                .unwrap();
+            let margin = if context == "Flow" { 12.0 } else { 0.0 };
+            let band_point = svg_style_point(band);
+            assert!(
+                (band_point[0] - svg_style_point(image)[0] + margin).abs() < 0.0001,
+                "{context}: surviving object band origin"
+            );
+            let width: f64 = band.attribute("width").unwrap().parse().unwrap();
+            assert!(
+                (width - 30.0 - 2.0 * margin).abs() < 0.0001,
+                "{context}: surviving object band width"
+            );
+        }
+        for value in ["A", "B"] {
+            assert_eq!(
+                tspan(&xml, value).attribute("fill"),
+                Some("#346578"),
+                "{context}"
+            );
+        }
+        #[cfg(feature = "pdf")]
+        {
+            let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                &document,
+                &layout,
+                &[0],
+                &Default::default(),
+                &Default::default(),
+                &fonts,
+            )
+            .unwrap();
+            let pdf = PdfComposition::read(&retained.bytes);
+            let expected = (context == "Table").then(|| {
+                let band = bands[0];
+                let point = svg_style_point(band);
+                (
+                    [37; 3],
+                    25.0 / 255.0,
+                    [
+                        point[0],
+                        point[1],
+                        band.attribute("width").unwrap().parse().unwrap(),
+                        band.attribute("height").unwrap().parse().unwrap(),
+                    ],
+                )
+            });
+            pdf.assert_object_background(
+                &[[17, 34, 51], [18, 52, 86], [37; 3]],
+                expected,
+                &context,
+            );
+            assert_eq!(pdf.source, "AB", "{context}: selectable source");
+            assert_eq!(pdf.image_resources, 1, "{context}: image preserved");
+            for glyph in &pdf.text_positions {
+                assert_eq!(glyph.fill_color, [52, 101, 120], "{context}");
+                let node = tspan(&xml, &glyph.source);
+                assert!(
+                    (glyph.x - svg_style_point(node)[0]).abs() < 0.002,
+                    "{context}: {} glyph advance changed",
+                    glyph.source
+                );
+            }
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn object_backgrounds_keep_converter_guards_and_span_overwrite_order() {
+    let fonts = FontBook::default();
+    let ordinary = span(
+        RichTextSpanType::BackgroundColor,
+        0,
+        1,
+        &0xff11_2233_u32.to_le_bytes(),
+    );
+    let composing = span(
+        RichTextSpanType::ComposingBackgroundColor,
+        0,
+        1,
+        &[0x8012_3456_u32.to_le_bytes(), [0; 4]].concat(),
+    );
+    let tag = modern_composition_flag(RichTextSpanType::ComposingTag, 0, true);
+    for (name, spans, drawing_color, widget_color, _retained_drawing_color) in [
+        (
+            "ordinary",
+            vec![ordinary.clone()],
+            Some("#112233"),
+            None,
+            Some("#112233"),
+        ),
+        (
+            "composing",
+            vec![composing.clone()],
+            Some("#123456"),
+            None,
+            None,
+        ),
+        (
+            "ordinary then tag",
+            vec![ordinary.clone(), tag.clone()],
+            Some("#252525"),
+            Some("#252525"),
+            Some("#252525"),
+        ),
+        (
+            "tag then ordinary",
+            vec![tag.clone(), ordinary],
+            Some("#112233"),
+            Some("#252525"),
+            Some("#112233"),
+        ),
+        (
+            "composing then tag",
+            vec![composing.clone(), tag.clone()],
+            Some("#123456"),
+            Some("#252525"),
+            Some("#252525"),
+        ),
+        (
+            "tag then composing",
+            vec![tag, composing],
+            Some("#123456"),
+            Some("#252525"),
+            Some("#252525"),
+        ),
+    ] {
+        let mut content = composition_image_text("\u{fffc}", ObjectSpanLayoutOption::Inline);
+        content.spans.extend(spans);
+        for (context, mut document) in style_documents(&content) {
+            add_composition_image_asset(&mut document);
+            let drawing = !matches!(context.as_str(), "Flow" | "Table");
+            let expected = if drawing { drawing_color } else { widget_color };
+            let layout = sdocx::layout_document(&document);
+            let rendered = sdocx::render_layout_page_svg_with_fonts(
+                &document,
+                &layout,
+                0,
+                &Default::default(),
+                &fonts,
+            )
+            .unwrap();
+            let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+            let bands: Vec<_> = xml
+                .descendants()
+                .filter(|node| {
+                    node.has_tag_name("rect")
+                        && matches!(
+                            node.attribute("fill"),
+                            Some("#112233" | "#123456" | "#252525")
+                        )
+                })
+                .collect();
+            assert_eq!(
+                bands.len(),
+                usize::from(expected.is_some()),
+                "{context}: {name}: converter guard"
+            );
+            if let Some(expected) = expected {
+                assert_eq!(
+                    bands[0].attribute("fill"),
+                    Some(expected),
+                    "{context}: {name}: span overwrite order"
+                );
+                let opacity: f64 = bands[0]
+                    .attribute("fill-opacity")
+                    .unwrap_or("1")
+                    .parse()
+                    .unwrap();
+                let alpha = match expected {
+                    "#123456" => 128.0,
+                    "#252525" => 25.0,
+                    _ => 255.0,
+                };
+                assert!(
+                    (opacity - alpha / 255.0).abs() < 0.00001,
+                    "{context}: {name}: alpha"
+                );
+            }
+            #[cfg(feature = "pdf")]
+            {
+                let retained = sdocx::pdf::render_layout_pages_pdf_detailed_with_fonts(
+                    &document,
+                    &layout,
+                    &[0],
+                    &Default::default(),
+                    &Default::default(),
+                    &fonts,
+                )
+                .unwrap();
+                let pdf = PdfComposition::read(&retained.bytes);
+                let expected = if context == "Flow" {
+                    None
+                } else if drawing {
+                    _retained_drawing_color
+                } else {
+                    widget_color
+                };
+                pdf.assert_object_background(
+                    &[[17, 34, 51], [18, 52, 86], [37; 3]],
+                    expected.map(|color| {
+                        let band = bands[0];
+                        let point = svg_style_point(band);
+                        let (rgb, alpha) = match color {
+                            "#112233" => ([17, 34, 51], 1.0),
+                            "#252525" => ([37; 3], 25.0 / 255.0),
+                            _ => unreachable!(),
+                        };
+                        (
+                            rgb,
+                            alpha,
+                            [
+                                point[0],
+                                point[1],
+                                band.attribute("width").unwrap().parse().unwrap(),
+                                band.attribute("height").unwrap().parse().unwrap(),
+                            ],
+                        )
+                    }),
+                    &format!("{context}: {name}"),
+                );
+                assert_eq!(pdf.source, "", "{context}: {name}: object-only source");
+                assert_eq!(
+                    pdf.image_resources, 1,
+                    "{context}: {name}: embedded image preserved"
+                );
             }
         }
     }
@@ -1346,6 +1856,7 @@ struct PdfComposition {
     source: String,
     text_positions: Vec<PdfTextGlyph>,
     fill_colors: Vec<[u8; 3]>,
+    rectangles: Vec<PdfRectangle>,
     image_resources: usize,
 }
 
@@ -1359,7 +1870,50 @@ struct PdfTextGlyph {
 }
 
 #[cfg(feature = "pdf")]
+#[derive(Debug)]
+struct PdfRectangle {
+    bounds: [f64; 4],
+    fill_color: [u8; 3],
+    opacity: f64,
+}
+
+#[cfg(feature = "pdf")]
 impl PdfComposition {
+    fn assert_object_background(
+        &self,
+        colors: &[[u8; 3]],
+        expected: Option<([u8; 3], f64, [f64; 4])>,
+        context: &str,
+    ) {
+        let backgrounds: Vec<_> = self
+            .rectangles
+            .iter()
+            .filter(|rectangle| colors.contains(&rectangle.fill_color))
+            .collect();
+        assert_eq!(
+            backgrounds.len(),
+            usize::from(expected.is_some()),
+            "{context}: {backgrounds:?}"
+        );
+        if let Some((color, opacity, bounds)) = expected {
+            let rectangle = backgrounds[0];
+            assert_eq!(
+                rectangle.fill_color, color,
+                "{context}: retained ordinary background"
+            );
+            assert!(
+                (rectangle.opacity - opacity).abs() < 0.00001,
+                "{context}: {rectangle:?}"
+            );
+            for (actual, expected) in rectangle.bounds.into_iter().zip(bounds) {
+                assert!(
+                    (actual - expected).abs() < 0.002,
+                    "{context}: {rectangle:?}, expected {bounds:?}"
+                );
+            }
+        }
+    }
+
     fn assert_source(&self, expected: &str, context: &str) {
         assert_eq!(self.source, expected, "{context}");
         assert_eq!(
@@ -1369,7 +1923,7 @@ impl PdfComposition {
     }
 
     fn read(bytes: &[u8]) -> Self {
-        #[derive(Clone, Default)]
+        #[derive(Clone)]
         struct PaintState {
             fill: [u8; 3],
             font: Vec<u8>,
@@ -1377,6 +1931,74 @@ impl PdfComposition {
             text_matrix: svgtypes::Transform,
             font_size: f64,
             text_cursor: f64,
+            opacity: f64,
+        }
+        impl Default for PaintState {
+            fn default() -> Self {
+                Self {
+                    fill: [0; 3],
+                    font: Vec::new(),
+                    transform: svgtypes::Transform::default(),
+                    text_matrix: svgtypes::Transform::default(),
+                    font_size: 0.0,
+                    text_cursor: 0.0,
+                    opacity: 1.0,
+                }
+            }
+        }
+        #[derive(Default)]
+        struct RectanglePath {
+            points: Vec<[f64; 2]>,
+            subpaths: usize,
+            curved: bool,
+        }
+        impl RectanglePath {
+            fn point(&mut self, state: &PaintState, x: f64, y: f64) {
+                let matrix = state.transform;
+                self.points.push([
+                    matrix.a * x + matrix.c * y + matrix.e,
+                    matrix.b * x + matrix.d * y + matrix.f,
+                ]);
+            }
+            fn rectangle(&self, state: &PaintState, page_height: f64) -> Option<PdfRectangle> {
+                if self.curved || self.subpaths != 1 || self.points.len() != 4 {
+                    return None;
+                }
+                let minimum = |axis| {
+                    self.points
+                        .iter()
+                        .map(|point| point[axis])
+                        .fold(f64::INFINITY, f64::min)
+                };
+                let maximum = |axis| {
+                    self.points
+                        .iter()
+                        .map(|point| point[axis])
+                        .fold(f64::NEG_INFINITY, f64::max)
+                };
+                let (left, bottom, right, top) = (minimum(0), minimum(1), maximum(0), maximum(1));
+                let corners: std::collections::HashSet<_> = self
+                    .points
+                    .iter()
+                    .map(|point| (point[0].to_bits(), point[1].to_bits()))
+                    .collect();
+                if corners.len() != 4
+                    || right <= left
+                    || top <= bottom
+                    || !self.points.iter().all(|point| {
+                        (point[0] == left || point[0] == right)
+                            && (point[1] == bottom || point[1] == top)
+                    })
+                {
+                    return None;
+                }
+                Some(PdfRectangle {
+                    bounds: [left, page_height - top, right - left, top - bottom]
+                        .map(|value| value * 96.0 / 72.0),
+                    fill_color: state.fill,
+                    opacity: state.opacity,
+                })
+            }
         }
         fn cid_width(font: &lopdf::Dictionary, cid: u16) -> f64 {
             if let Ok(widths) = font.get(b"W") {
@@ -1437,13 +2059,58 @@ impl PdfComposition {
             data: &[u8],
             resources: &lopdf::Dictionary,
             mut state: PaintState,
+            page_height: f64,
             result: &mut PdfComposition,
         ) {
             let mut stack = Vec::new();
+            let mut path = RectanglePath::default();
             for operation in lopdf::content::Content::decode(data).unwrap().operations {
                 match operation.operator.as_str() {
                     "q" => stack.push(state.clone()),
                     "Q" => state = stack.pop().unwrap(),
+                    "gs" => {
+                        let states = dictionary(pdf, resources.get(b"ExtGState").unwrap());
+                        let attributes = dictionary(
+                            pdf,
+                            states
+                                .get(operation.operands[0].as_name().unwrap())
+                                .unwrap(),
+                        );
+                        if let Ok(alpha) = attributes.get(b"ca") {
+                            state.opacity = f64::from(alpha.as_float().unwrap());
+                        }
+                    }
+                    "m" | "l" => {
+                        if operation.operator == "m" {
+                            path.subpaths += 1;
+                        }
+                        path.point(
+                            &state,
+                            f64::from(operation.operands[0].as_float().unwrap()),
+                            f64::from(operation.operands[1].as_float().unwrap()),
+                        );
+                    }
+                    "re" => {
+                        path.subpaths += 1;
+                        let values: Vec<_> = operation
+                            .operands
+                            .iter()
+                            .map(|value| f64::from(value.as_float().unwrap()))
+                            .collect();
+                        let [x, y, width, height] = values.as_slice() else {
+                            unreachable!()
+                        };
+                        for (x, y) in [
+                            (*x, *y),
+                            (x + width, *y),
+                            (x + width, y + height),
+                            (*x, y + height),
+                        ] {
+                            path.point(&state, x, y);
+                        }
+                    }
+                    "c" | "v" | "y" => path.curved = true,
+                    "n" | "S" | "s" => path = RectanglePath::default(),
                     "cm" => {
                         state.transform = compose(state.transform, transform(&operation.operands))
                     }
@@ -1467,7 +2134,11 @@ impl PdfComposition {
                         }
                     }
                     "f" | "F" | "f*" | "B" | "B*" | "b" | "b*" => {
-                        result.fill_colors.push(state.fill)
+                        result.fill_colors.push(state.fill);
+                        if let Some(rectangle) = path.rectangle(&state, page_height) {
+                            result.rectangles.push(rectangle);
+                        }
+                        path = RectanglePath::default();
                     }
                     "Tf" => {
                         state.font = operation.operands[0].as_name().unwrap().to_vec();
@@ -1535,6 +2206,7 @@ impl PdfComposition {
                                 &stream.decompressed_content().unwrap(),
                                 child_resources,
                                 state.clone(),
+                                page_height,
                                 result,
                             );
                         }
@@ -1560,6 +2232,16 @@ impl PdfComposition {
             ..Self::default()
         };
         let page = pdf.get_pages()[&1];
+        let page_height = f64::from(
+            pdf.get_dictionary(page)
+                .unwrap()
+                .get(b"MediaBox")
+                .unwrap()
+                .as_array()
+                .unwrap()[3]
+                .as_float()
+                .unwrap(),
+        );
         let resources = dictionary(
             &pdf,
             pdf.get_dictionary(page).unwrap().get(b"Resources").unwrap(),
@@ -1569,6 +2251,7 @@ impl PdfComposition {
             &pdf.get_page_content(page).unwrap(),
             resources,
             PaintState::default(),
+            page_height,
             &mut result,
         );
         result

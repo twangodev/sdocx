@@ -6,11 +6,7 @@ use crate::render::vector::{Paint, Rectangle, Scene, Styled, color_hex, decimal}
 use crate::render::viewport::Viewport;
 use rustybuzz::Direction;
 
-use super::{StyledText, TextBackground, TextLine};
-
-pub(in crate::render) struct TextBackgroundIssue {
-    pub source: Range<usize>,
-}
+use super::{SourceOwner, StyledText, TextBackground, TextLine};
 
 struct BackgroundRectangle {
     source: Range<usize>,
@@ -24,7 +20,7 @@ pub(in crate::render) fn render_line_backgrounds(
     line: &TextLine,
     theme: RenderTheme,
     viewport: Option<Viewport>,
-) -> Vec<TextBackgroundIssue> {
+) -> Vec<SourceOwner> {
     let (rectangles, issues) =
         line_backgrounds_for_paint(styled, line, theme, viewport, svg.retains_text());
     for rectangle in rectangles {
@@ -48,7 +44,7 @@ fn line_backgrounds(
     line: &TextLine,
     theme: RenderTheme,
     viewport: Option<Viewport>,
-) -> (Vec<BackgroundRectangle>, Vec<TextBackgroundIssue>) {
+) -> (Vec<BackgroundRectangle>, Vec<SourceOwner>) {
     line_backgrounds_for_paint(styled, line, theme, viewport, false)
 }
 
@@ -58,7 +54,7 @@ fn line_backgrounds_for_paint(
     theme: RenderTheme,
     viewport: Option<Viewport>,
     canonical: bool,
-) -> (Vec<BackgroundRectangle>, Vec<TextBackgroundIssue>) {
+) -> (Vec<BackgroundRectangle>, Vec<SourceOwner>) {
     let mut rectangles: Vec<BackgroundRectangle> = Vec::new();
     let mut issues = Vec::new();
     let background_at = |source| {
@@ -89,23 +85,50 @@ fn line_backgrounds_for_paint(
             || contexts
                 .get(contexts.partition_point(|range| range.end <= line.line.source.start))
                 .is_some_and(|range| range.start < line.line.source.end));
+    let advance = line
+        .line
+        .advance_for_paint(canonical)
+        .unwrap_or(line.line.advance);
+    let origin = line.x + super::line_alignment_offset(advance, line.width, line.alignment);
+    for (index, placement) in line.line.objects.iter().enumerate() {
+        let source = &placement.object.source;
+        if canonical && placement.object.context == super::objects::ObjectMeasurementContext::Body {
+            continue;
+        }
+        if styled.object_span(placement.object.span_index).is_none() {
+            continue;
+        }
+        let Some(background) = background_at(source.start) else {
+            continue;
+        };
+        let Some(bounds) =
+            object_background_bounds(line, index, origin, canonical).filter(|_| !reordered)
+        else {
+            if viewport.is_none_or(|viewport| viewport.background_visible(line)) {
+                issues.push(SourceOwner::Object(source.clone()));
+            }
+            continue;
+        };
+        if background_bounds_visible(bounds, viewport) {
+            rectangles.push(BackgroundRectangle {
+                source: source.clone(),
+                bounds,
+                background,
+            });
+        }
+    }
     if line.line.placements.is_empty() || reordered {
         if viewport.is_none_or(|viewport| viewport.background_visible(line)) {
             for range in ranges {
                 for segment in styled.segments(range) {
                     if background_at(segment.start).is_some() {
-                        issues.push(TextBackgroundIssue { source: segment });
+                        issues.push(SourceOwner::Text(segment));
                     }
                 }
             }
         }
         return (rectangles, issues);
     }
-    let advance = line
-        .line
-        .advance_for_paint(canonical)
-        .unwrap_or(line.line.advance);
-    let origin = line.x + super::line_alignment_offset(advance, line.width, line.alignment);
     let placements = line
         .line
         .placements
@@ -146,20 +169,7 @@ fn line_backgrounds_for_paint(
             x_max: right,
             y_max: line.bottom,
         };
-        if ![
-            left,
-            right,
-            bounds.y_min,
-            bounds.y_max,
-            right - left,
-            bounds.y_max - bounds.y_min,
-        ]
-        .into_iter()
-        .all(f64::is_finite)
-            || right <= left
-            || bounds.y_max <= bounds.y_min
-            || viewport.is_some_and(|viewport| !viewport.intersects(bounds))
-        {
+        if !background_bounds_visible(bounds, viewport) {
             continue;
         }
         let background = background_at(source.start);
@@ -167,9 +177,7 @@ fn line_backgrounds_for_paint(
             .segments(source.clone())
             .any(|segment| background_at(segment.start) != background)
         {
-            issues.push(TextBackgroundIssue {
-                source: source.clone(),
-            });
+            issues.push(SourceOwner::Text(source.clone()));
             continue;
         }
         let Some(background) = background else {
@@ -177,9 +185,7 @@ fn line_backgrounds_for_paint(
         };
         let run = &placement.cluster.run;
         if run.variable {
-            issues.push(TextBackgroundIssue {
-                source: source.clone(),
-            });
+            issues.push(SourceOwner::Text(source.clone()));
             continue;
         }
         if let Some(previous) = rectangles.last_mut()
@@ -200,7 +206,46 @@ fn line_backgrounds_for_paint(
             });
         }
     }
+    rectangles.sort_by_key(|rectangle| rectangle.source.start);
     (rectangles, issues)
+}
+
+fn object_background_bounds(
+    line: &TextLine,
+    index: usize,
+    origin: f64,
+    canonical: bool,
+) -> Option<BoundingBox> {
+    let placement = line.line.objects.get(index)?;
+    let position = line.line.object_position(index, canonical)?;
+    let left = origin + position.x - placement.object.left_margin;
+    let width = if placement.object.inline {
+        placement.object.advance()
+    } else {
+        placement.object.width()
+    };
+    Some(BoundingBox {
+        x_min: left,
+        y_min: line.background_top,
+        x_max: left + width,
+        y_max: line.bottom,
+    })
+}
+
+fn background_bounds_visible(bounds: BoundingBox, viewport: Option<Viewport>) -> bool {
+    [
+        bounds.x_min,
+        bounds.x_max,
+        bounds.y_min,
+        bounds.y_max,
+        bounds.x_max - bounds.x_min,
+        bounds.y_max - bounds.y_min,
+    ]
+    .into_iter()
+    .all(f64::is_finite)
+        && bounds.x_max > bounds.x_min
+        && bounds.y_max > bounds.y_min
+        && viewport.is_none_or(|viewport| viewport.intersects(bounds))
 }
 
 #[cfg(test)]
@@ -239,6 +284,43 @@ mod tests {
             margins: None,
             gravity: None,
         }
+    }
+
+    fn image_text(source: &str, anchor: i32, argb: u32) -> RichTextBox {
+        let mut content = text(
+            source,
+            vec![span(
+                RichTextSpanType::BackgroundColor,
+                argb,
+                anchor as u32,
+                anchor as u32 + 1,
+            )],
+        );
+        content.object_spans.push(crate::RichTextObjectSpan {
+            object_type: crate::ObjectType::Image,
+            object_data: Vec::new(),
+            content: Some(crate::RichTextObjectContent::Image(Box::new(
+                crate::PlacedImage {
+                    bbox: BoundingBox {
+                        x_min: 0.0,
+                        y_min: 0.0,
+                        x_max: 30.0,
+                        y_max: 40.0,
+                    },
+                    rotation_degrees: None,
+                    media_id: None,
+                    media_index: None,
+                    crop_rect: None,
+                    original_bbox: None,
+                    border_media_id: None,
+                    original_media_id: None,
+                },
+            ))),
+            text_index_utf16: anchor,
+            layout_option: crate::ObjectSpanLayoutOption::Inline,
+            layout_constraint: crate::ObjectSpanLayoutConstraint::Normal,
+        });
+        content
     }
 
     fn measure(text: &RichTextBox, width: f64) -> TextLayout {
@@ -355,7 +437,7 @@ mod tests {
                 close(rectangle.bounds.x_max, 23.84033203125);
             }
             if let Some(issue) = issues.first() {
-                assert_eq!(issue.source, 0..2);
+                assert_eq!(issue, &SourceOwner::Text(0..2));
             }
         }
     }
@@ -397,7 +479,7 @@ mod tests {
         let (rectangles, issues) = line_backgrounds(&styled, line, theme, Some(viewport));
         assert!(rectangles.is_empty());
         assert_eq!(issues.len(), 1);
-        assert_eq!(issues[0].source, 0..1);
+        assert_eq!(issues[0], SourceOwner::Text(0..1));
     }
 
     #[test]
@@ -640,5 +722,186 @@ mod tests {
             assert!(rectangles.is_empty());
             assert!(issues.is_empty());
         }
+    }
+
+    #[test]
+    fn object_background_projection_matches_native_placed_entry_capture() {
+        use sha2::{Digest, Sha256};
+
+        let bytes = include_bytes!("../../../../../conformance/table-text-object-background.json");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "adc0d81004f5b372cf3f6cddc6c34aade8d9728339bc25056a5494cf71b0e076"
+        );
+        let fixture: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        let number = |case: &serde_json::Value, field: &str, index: usize| {
+            case[field][index].as_f64().unwrap()
+        };
+        let mut compared = 0;
+        for case in fixture["cases"].as_array().unwrap() {
+            if case["object"] != true {
+                continue;
+            }
+            let Some(command) = case["commands"].as_array().unwrap().first() else {
+                continue;
+            };
+            let inline = case["inline"].as_bool().unwrap();
+            let raw_width = f32::from_bits(case["width_bits"].as_u64().unwrap() as u32);
+            let width = f64::from(if raw_width.is_nan() { 17.0 } else { raw_width });
+            let left_margin = if inline {
+                number(case, "context_margins", 0)
+            } else {
+                0.0
+            };
+            let mut wrapped = super::super::WrappedLine::unmeasured(0..1, 17.0);
+            wrapped.objects.push(super::super::PositionedObject {
+                object: super::super::objects::MeasuredObject {
+                    source: 0..1,
+                    span_index: 0,
+                    context: super::super::objects::ObjectMeasurementContext::Frame,
+                    bounds: BoundingBox::default(),
+                    width,
+                    advance: number(case, "measured_advance_height", 0),
+                    height: number(case, "measured_advance_height", 1),
+                    inline,
+                    left_margin,
+                    top_margin: 0.0,
+                    bottom_margin: 0.0,
+                    minimum_first_page_height: None,
+                },
+                x: number(case, "position", 0) + left_margin,
+                visual_rank: 0,
+                prepared: None,
+            });
+            let offset_y = number(case, "offset", 1);
+            let line = TextLine {
+                line: wrapped,
+                x: 0.0,
+                width: 100.0,
+                baseline: 0.0,
+                top: 0.0,
+                background_top: case["initial_cursor"].as_f64().unwrap()
+                    + case["line_top_margin"].as_f64().unwrap()
+                    + offset_y,
+                bottom: case["post_cursor"].as_f64().unwrap() + offset_y,
+                post_cursor: 0.0,
+                alignment: None,
+                predefined: None,
+                marker: None,
+            };
+            let actual =
+                object_background_bounds(&line, 0, number(case, "offset", 0), false).unwrap();
+            let actual = [actual.x_min, actual.y_min, actual.x_max, actual.y_max];
+            for (axis, actual) in actual.into_iter().enumerate() {
+                let expected = command["rect"][axis].as_f64().unwrap();
+                let tolerance = 2.0 * f64::from(f32::EPSILON) * expected.abs().max(1.0);
+                assert!(
+                    (actual - expected).abs() <= tolerance,
+                    "{} axis {axis}: {actual} != {expected}",
+                    case["name"]
+                );
+            }
+            compared += 1;
+        }
+        assert_eq!(compared, 36);
+    }
+
+    #[test]
+    fn unavailable_object_background_geometry_keeps_its_source_owner() {
+        let content = image_text("\u{202e}\u{fffc}\u{202c}", 1, 0xff12_3456);
+        let settings = TextSettings::default();
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let mut wrapped = super::super::WrappedLine::unmeasured(0..3, 17.0);
+        wrapped.geometry = super::super::wrapping::LineGeometry::Unavailable(
+            super::super::bidi::BidiError::MixedEmbeddingLevels,
+        );
+        wrapped.objects.push(super::super::PositionedObject {
+            object: styled.objects.in_range(0..3)[0].measured(
+                settings,
+                super::super::objects::ObjectMeasurementContext::Frame,
+            ),
+            x: 0.0,
+            visual_rank: 0,
+            prepared: None,
+        });
+        let line = TextLine {
+            line: wrapped,
+            x: 0.0,
+            width: 100.0,
+            baseline: 22.0,
+            top: 0.0,
+            background_top: 5.0,
+            bottom: 45.0,
+            post_cursor: 45.0,
+            alignment: None,
+            predefined: None,
+            marker: None,
+        };
+        let theme = RenderTheme::for_canvas(false);
+        let offscreen = Viewport::new(BoundingBox {
+            x_min: 0.0,
+            y_min: 80.0,
+            x_max: 100.0,
+            y_max: 100.0,
+        });
+        for canonical in [false, true] {
+            let (rectangles, issues) =
+                line_backgrounds_for_paint(&styled, &line, theme, None, canonical);
+            assert!(rectangles.is_empty());
+            assert_eq!(issues, [SourceOwner::Object(1..2)]);
+            let (rectangles, issues) =
+                line_backgrounds_for_paint(&styled, &line, theme, Some(offscreen), canonical);
+            assert!(rectangles.is_empty());
+            assert!(issues.is_empty());
+        }
+    }
+
+    #[test]
+    fn retained_object_backgrounds_follow_captured_legacy_export_callers() {
+        use sha2::{Digest, Sha256};
+
+        let bytes =
+            include_bytes!("../../../../../conformance/table-text-object-export-policy.json");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(bytes)),
+            "63bca0a1f43a8a828c5127c4899d5ac63837e59d78ced56da34cedaf0520134c"
+        );
+        let fixture: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        let theme = RenderTheme::for_canvas(false);
+        let mut compared = 0;
+        for case in fixture["cases"].as_array().unwrap() {
+            let context = match case["window"].as_str().unwrap() {
+                "body-writer-background" => super::super::objects::ObjectMeasurementContext::Body,
+                "table-writer-background"
+                | "code-title-background"
+                | "code-body-background"
+                | "placed-background" => super::super::objects::ObjectMeasurementContext::Frame,
+                _ => continue,
+            };
+            if case["present"] != true || case["object_flag"] == 0 {
+                continue;
+            }
+            let argb = u32::try_from(case["background_argb"].as_u64().unwrap()).unwrap();
+            let content = image_text("\u{fffc}", 0, argb);
+            let styled = StyledText::new(&content, TextContext::Placed, TextSettings::default());
+            let mut layout = measure(&content, 200.0);
+            let line = &mut layout.lines[0];
+            line.line.objects[0].object.context = context;
+            let (rectangles, issues) = line_backgrounds_for_paint(&styled, line, theme, None, true);
+            let requested = case["calls"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|call| call == "background");
+            assert_eq!(rectangles.len(), usize::from(requested && argb >> 24 != 0));
+            assert!(issues.is_empty(), "{}", case["window"]);
+            for rectangle in rectangles {
+                assert_eq!(rectangle.source, 0..1);
+                assert_eq!(rectangle.background.alpha, (argb >> 24) as u8);
+                assert_eq!(rectangle.bounds.x_max - rectangle.bounds.x_min, 30.0);
+            }
+            compared += 1;
+        }
+        assert_eq!(compared, 40);
     }
 }

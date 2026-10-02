@@ -1343,13 +1343,15 @@ fn paint_text_backgrounds(
 ) {
     for line in &layout.lines {
         for issue in text::render_line_backgrounds(svg, styled, line, theme, viewport) {
-            renderer
-                .for_source(issue.source)
-                .report_geometry_issues(&[TextDiagnostic {
-                    kind: TextDiagnosticKind::UnsupportedBackgroundPositioning,
-                    family: String::new(),
-                    codepoints: Vec::new(),
-                }]);
+            let scoped = match issue {
+                text::SourceOwner::Text(source) => renderer.for_source(source),
+                text::SourceOwner::Object(source) => renderer.for_object_source(source),
+            };
+            scoped.report_geometry_issues(&[TextDiagnostic {
+                kind: TextDiagnosticKind::UnsupportedBackgroundPositioning,
+                family: String::new(),
+                codepoints: Vec::new(),
+            }]);
         }
     }
 }
