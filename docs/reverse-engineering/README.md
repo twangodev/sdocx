@@ -47,7 +47,8 @@ Planning, task lists and development progress are kept outside these documents.
   selection and four-face measurement under supplied XML, captured consumer
   string metrics, captured ordinary
   block-selection/placement arithmetic, supplied-metric paragraph layout with
-  host ICU, measured-line page range scans, supplied object-feedback/obstacle
+  host ICU, measured-line page range scans with actual Widget line/fallback
+  producers and a typed Rust indexing kernel, supplied object-feedback/obstacle
   kernels and horizontal
   GPOS/fused-skew traces, with separate paragraph/vector
   transport boundaries and private physical-face SVG/usvg/PDF identities.
@@ -238,8 +239,10 @@ Planning, task lists and development progress are kept outside these documents.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,
   bounded table/code records, merge construction, frame ownership and paint
   visibility; captured borders, fills, column minima, saved height limits,
-  live child measurement, first-pair padding capacity and actual cloned
-  cell writer clip inputs,
+  live child measurement, actual cold/warm column-width and source-change
+  producers with opaque host UText, first-pair padding capacity and actual cloned
+  cell writer clip inputs, genuine document object feedback and Bodytext
+  source-bound placement callbacks,
   cold/warm measurement, bounds, split caches, row-bottom compression, warm-row
   control, cell text dimensions, public layout lifecycle, visible rectangles and
   canvas clip arguments, PDF artwork crops, conditional text clips, independent

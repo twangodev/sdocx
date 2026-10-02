@@ -1343,7 +1343,9 @@ indent, then adds the text layout's left and right margins (`0x8c19c`–`0x8c238
 sets the optional width when that result is at least the configured layout
 width; otherwise it clears the presence byte and returns the configured
 width (`0x8c23c`–`0x8c260`). This producer trace is separate from the capture
-of supplied cache values below.
+of supplied cache values below; the
+[live-width capture](#captured-live-column-widths) executes it on actual native
+measured text and source-change callbacks.
 
 [The column-minimum capture](../../conformance/table-column-minima.json),
 SHA-256 `571f54fbc638314d34080bedee692d7010d42574844d21af03869cf56aacc68f`,
@@ -1369,6 +1371,80 @@ this column-minimum cache getter.
   --column-minima scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
   > /tmp/table-column-minima.json
 cmp /tmp/table-column-minima.json conformance/table-column-minima.json
+```
+
+### Captured live column widths
+
+[`table-live-column-widths.json`](../../conformance/table-live-column-widths.json),
+SHA-256 `b2ddd2a31d79c65426c0a8fd64bcc9bcdb521d69a07bc78dd1e9645bd48cc223`,
+records ten controls and 101 canonical native width-producer observations.
+The [capture module](../../conformance/native_table/live_column_widths.rs)
+executes genuine cold/warm cell measurement through the shared live TableLayout,
+Widget, NAME/font and paragraph pipeline. Passive instruction hooks record
+`getCellLayoutWidth`, `0x8c13c`, configured width, actual per-line
+width/paragraph-rectangle/indent operands, horizontal margins, returned width
+and optional minimum before/after. These hooks neither write guest state nor
+invoke nested native calls. The measured width (`0x8c070`) and optional minimum
+(`0x8c078`, payload 620/presence 624) remain separate fields.
+
+Controls cover empty text, fractional saved width, margins, constructor font 50,
+covered merged cells and actual warm column growth/shrink. Ordinary cases return
+their configured width with no optional minimum. The source-edit controls call
+native `ComponentText::SetText`, `0x39c9d4`, and `SetSpannableOverPages`,
+`0x2d21f4`, then invoke complete `TableLayout::OnCellChanged`, `0xb1848`,
+with an explicitly supplied full-replacement text event. Native Widget source
+update and Measure execute. Replacing empty text with `W` in a width-10 column
+produces width `15.079999923706055`, stores the optional minimum and reaches
+the native column setter observer at `0xb1984`, Model `SetColumnWidth`,
+`0x3d3b64`, and Drawing `resizeColumn`, `0xb0088`. Replacing `WWWW` with `i`
+in a width-80 column leaves the column width 80 and emits no column-setter call.
+These establish a captured source-change growth route, not automatic cold-export
+column sizing. The actual indexed editor minimum getter described above reads
+the optional cache; it is not a dependency of cold table export measurement.
+Source audit identifies its external consumer in `libSPenObjectControl.so`
+(SHA-256 `3211b70ad105e285b57aaa085e2bcd543f197238d702f9233aedea1c7caa1aea`):
+`ControlObject::ResizeColumn`, `0xf7168`, calls it at `0xf7224`, clamps the
+converted drag width against positive minimum/maximum values and calls Model
+`SetColumnWidth` at `0xf7300`. Drawing cold/warm/resize paths do not import
+that getter. The separate `OnCellChanged` route compares measured width minus
+old frame width against `0.001f32` at `0xb193c`–`0xb1940`, then reaches the
+setter and resize at `0xb1984`/`0xb1990`. Model's setter applies
+`GetValidColumnWidth`, `0x3c8420`, using global/per-column minima followed by
+the per-column maximum. The ObjectControl drag route is source evidence and
+does not execute in this fixture.
+
+Each control repeats under owned-memory fills `0x00`, `0x55`, `0xa5`, `0xff`
+and zero again. Strict independent replay matches the frozen 291,685 bytes.
+Library/font/XML and host ICU 76.1/Unicode 16 provenance and shared device,
+allocation/file/libc/single-thread, UUID, math and disabled-trace boundaries are
+retained. The [ICU adapter](../../conformance/native_table/text_paragraph_layout.rs)
+executes real host `utext_openUChars`, `ubrk_setUText` and `utext_close` with
+owned UTF16 backing storage. Guest UText addresses are opaque keys for real
+host UText objects; guarded native reads/writes of their guest structure abort
+rather than assuming Android/host structure compatibility. This remains a host
+ICU substitution, not device ICU equivalence.
+
+Caller inputs are source bounds/text/font/margins, requested resize widths and
+source-edit event type/range. Measured widths, optional cache values, dense
+entries, frames and callback dimensions are native outputs. Native event
+construction, history/listener dispatch, editor drag control, saved parsing,
+clone/Bodytext placement, pagination-band production, final vector transport
+and pixels remain excluded. SDK export retains saved column widths and does
+not implement this source-edit callback; this capture introduces no production
+width change or export autosizing contract.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --live-column-widths scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so > /tmp/table-live-column-widths.json
+cmp /tmp/table-live-column-widths.json conformance/table-live-column-widths.json
 ```
 
 ### Outer-border initialization
@@ -2165,19 +2241,22 @@ Missing owner/layout and view-callback guards prevent their corresponding route.
 Repeated warm notification calls the document getter twice but enters the
 bridge once after size convergence.
 
-A separate source-only document update route compares the complete rectangle.
+A separate document update route compares the complete rectangle.
 `BodyTextView::updateObjectSpanRect`, `0xd6fac`, and
 `updateObjectSpanRectBySpanList`, `0xd9618`, obtain native
 `PageViewGroup::GetObjectUpdateInfo`, `0xf80e8`. It reads the document text
 layout's virtual-slot-112 `GetTextBound` (`0xf8258`–`0xf8268`), removes the
 page origin and calls Widget `GetRectByDrawnRect` at `0xf82a4`.
-`updateObjectSpanRectList`, `0xd9320`, compares object virtual-slot-168 geometry
+`updateObjectSpanRectList`, `0xd9320`, compares the object's current raw
+`GetRect` (virtual slot 168)
 with that complete update rectangle using the `0.001` tolerance
 (`0xd9410`–`0xd9434`). A changed rectangle calls `setOriginalRect`, object
 virtual slot 48 and, for type 22 tables, `setCellRectForTable` directly at
 `0xd949c`. This bypasses the size-notification width/height gate above.
 These instructions establish a distinct update path; that producer and its
-document-to-cell callback timing do not execute in the 18-case fixture.
+document-to-cell callback timing do not execute in the 18-case fixture. The
+[Bodytext placement capture](#captured-bodytext-table-placement) separately
+executes that route with an actual document object-entry bound.
 
 Document virtual slot 112 is `GetTextBound(index)`, not `GetTextRect`.
 The actual Text producer is `TextLayout::GetTextBound`, `0x8afd4`, forwarding
@@ -2188,7 +2267,8 @@ The fixture supplies its RectF result and checks the actual native ObjectSpan in
 `-1`; the negative-index case therefore does not establish the real getter's
 zero-return behavior. The [cell measurement capture](#captured-cell-text-measurement)
 executes that getter on real placed single-cell entries; document object-entry
-bound production and callback integration remain outside both captures.
+bound production and callback integration remain outside those two captures
+and are executed in the bounded Bodytext capture below.
 
 Drawing/Bodytext storage, owner association, ComponentText/TextCommon chain,
 one-element span vector and the document getter result are supplied. Native
@@ -2209,6 +2289,101 @@ production callback activation or complete document lifecycle claim.
   scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so > /tmp/table-cell-model-callbacks.json
 cmp /tmp/table-cell-model-callbacks.json conformance/table-cell-model-callbacks.json
+```
+
+### Captured Bodytext table placement
+
+[`table-bodytext-placement.json`](../../conformance/table-bodytext-placement.json),
+SHA-256 `7a66e259030edb4e019258fc49f07a717d6386bba6db2d11945f1307c0fa594b`,
+records three document-placement controls and nine cloned-writer stages, with
+54 foreground runs and 30 selected clips. Two independent strict replays match
+the frozen 218,445 bytes. Each case repeats under fresh owned-memory fills
+`0x00`, `0x55`, `0xa5`, `0xff` and zero again; supplied caller storage starts
+zeroed in every sample. The
+[capture module](../../conformance/native_table/bodytext_table_placement.rs)
+extends the actual live table and writer captures with document production and
+Bodytext placement.
+
+Actual Model document construction (`0x3e1378`, `0x3e1408`), ObjectSpan
+construction/setters and `AppendObjectSpan`, `0x39d510`, insert one U+FFFC
+entry for the table. Native Widget conversion, NAME/font measurement and
+document layout produce a real kind-5 entry and `GetTextBound`, Text `0x8afd4`.
+The bounded registration window `[0xb01bc,0xb02dc)` installs the genuine
+Bodytext `onUpdateObjectSize`, `0xb0b9c`: native cold table Measure precedes
+document feedback into actual TableLayout Layout. The callback's dimensions,
+minimum height and the resulting placed document bound are observed rather
+than supplied.
+
+`PageViewGroup::GetObjectUpdateInfo`, `0xf80e8`, reads that document bound,
+subtracts the supplied page origin and applies native Widget
+`GetRectByDrawnRect`, `0xe1f88`; the target and converted rectangle are observed
+at `0xf82a4` and `0xf82a8`. Complete `updateObjectSpanRectBySpanList`,
+`0xd9618`, and `updateObjectSpanRectList`, `0xd9320`, compare the complete raw
+Model rectangle and invoke its native setter. The type-22 direct cell bridge,
+`0xd78ec`, derives all four saved cell and content Model rectangles from actual
+Drawing frames through `SetRectDataOnly`, Model `0x3c20cc`. There are no supplied
+table/cell source setters, object dimensions or dense entries on this route.
+The fixture retains raw/drawn table bounds and every saved cell/content/frame
+rectangle before and after placement.
+
+Actual listener `[0xb3228,0xb3314)` and view callback `[0xd080c,0xd085c)`
+installation precede complete Drawing notifications, `0xb1bf0`, with the real
+document getter. Changing only the supplied page origin leaves saved cells
+unchanged on size notification. Subsequent complete placement changes them,
+demonstrating the separate complete-rectangle route rather than a general
+origin-insensitive lifecycle. Native factory Copy, second TableLayout
+measure/layout and complete cached per-cell writer execute before placement,
+after placement and after the origin-change placement. The three initial writer
+stages select 18 clips: six intersections succeed and 12 fail. The six later
+stages select 12 clips, all with successful intersections. The writer reads the
+actual copied content Model rectangles produced by placement; this records the
+source-bound effect on native clips without final backend clipping or pixels.
+
+Caller inputs include explicit document shape/Widget dimensions, source table
+bounds/text/font, span constraints 1/2, context/device and owner/view
+associations with one genuine table layout in the owner map. A finite one-page
+infinite-scroll interface and initial/moved page origins are supplied;
+obstacle/history/cache services are null. Shared pinned host ICU 76.1,
+math/allocation/UUID/libc/file boundaries and APK/library/font provenance remain
+recorded. Full `SetBodyTextDocument`, `newObjectLayout`, `initBodyTextView`,
+saved parsing and actual page-bound production do not execute. Each writer
+explicitly selects four physical slots; aggregate visibility selection and
+parent Composer placement remain excluded. The writer measured-rounding window
+and complete foreground blocks retain the live-clipping capture's recorded
+PDF/Paint interfaces and skipped bitmap/background/decoration exports. These
+controls establish native document-bound/placement/clip composition without
+complete document lifecycle/export parity.
+
+The [typed object-entry adapter](../../crates/sdocx/src/render/text/layout/native_object_bound.rs)
+separately matches the three caller profiles in Flow and Capture: six exact
+comparisons of advance, height/font size, entry XY, layout/ink rectangles and
+`GetTextBound`, plus native callback size/minimum. Its admitted source is one
+U+FFFC block table with over-page constraint 1/2, font 17, unit scale, local
+zero origin, no style/paragraph changes or exclusions, finite exact-f32 frame
+dimensions, width at least the object width and sufficient height.
+The table Model origin must also be zero. Every prepared cell must retain a
+native local frame, nonempty lines/source and measured clusters with registered
+entry facts; this excludes empty cells and native-measured sizes outside the
+17/50 fact profile without approximating their bounds.
+Page bands, shifted/inexact frames, short heights and unsupported source
+metadata withdraw this optional geometry certificate. It does not certify the
+native kind-5 cached glyph 1855, object run/font/style emission or parent
+SVG/PDF writer behavior, and does not extend `NativePaintPlan` to kind 5.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --bodytext-table-placement scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  crates/sdocx/assets/fonts/Roboto-Regular.ttf \
+  scratch/apk-analysis-native/arm64-v8a/libSPenLibxml2.so \
+  scratch/apk-analysis-native/arm64-v8a/libc++_shared.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWidget.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenContent.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenBodytext.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so > /tmp/table-bodytext-placement.json
+cmp /tmp/table-bodytext-placement.json conformance/table-bodytext-placement.json
 ```
 
 ### Final PDF text clip paths

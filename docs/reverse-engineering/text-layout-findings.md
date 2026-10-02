@@ -2250,7 +2250,7 @@ neither establishes complete table or document composition.
 The [Rust capture](../../conformance/native_table/text_paragraph_layout.rs) and
 [`table-text-paragraph-layout.json`](../../conformance/table-text-paragraph-layout.json),
 SHA-256
-`d381922f40a06ef49ff43794aa01ae2546676e42f765c22e9512fff4fb948bf4`,
+`0e70b6e08ed084e33f36bac29d977488d4ccda33d3716c7ce03415c8f2800169`,
 execute the native RichText/default-paragraph constructors and complete
 `DoParagraphLayout` → `CalculateParagraphLayout` → `DoLayTextOut` →
 `GetBlockInfo`/`SetLayout` chain. Its 25 cases retain 38 lines and 81 placed
@@ -2742,8 +2742,39 @@ repagination do not execute. Rust saved-section handling accepts exact
 `[-1,0]` only in exhausted suffixes, preserving earlier saved captures and
 leaving absent pages blank. Malformed negatives, absent prefixes/interior
 sections and wholly empty sections for nonempty bodies retain compatibility
-reflow. These results do not establish an authoritative production measured-line
-indexer or replace SDK viewport ink visibility.
+reflow. These supplied-getter results are separate from the native-produced line
+capture below and do not replace SDK viewport ink visibility.
+
+### Captured native-produced page ranges
+
+The [measured-page capture](../../conformance/native_table/bodytext_page_ranges.rs)
+and [`table-bodytext-page-ranges.json`](../../conformance/table-bodytext-page-ranges.json),
+SHA-256
+`da1a8415277dd42697822f50921f4579561b90c1079296d0cc5d28afeeeb9d40`,
+cover 12 caller-source profiles with 32 produced lines, 231 boundary queries
+and 36 initial/repeat/rescan stages. Two independently built native replays
+agree across allocation fills 0, 85, 165, 255 and repeated zero.
+
+Actual Model construction, Widget source conversion, NAME/shaping, measurement
+and paragraph placement produce the line/source/background getters, first-empty
+rectangle and default cursor. Complete `isDownLine`, `isUpLine` and
+`UpdateTextRangeOnEachPage` consume that genuine wrapper. Only page count and
+integer page records are supplied. Empty source, newline-only and consecutive
+newlines, wrapping, size 50, fractional margins and positive first-line top
+exercise the native fallback and overlap rules. Repeat scans retain actual
+previous section vectors; source getters run after output observation.
+
+The [typed Rust indexer](../../crates/sdocx/src/render/text/native_page_index.rs)
+matches those 231 predicate results and 36 section stages, plus the earlier
+47 supplied cases' 251 predicates and 46 updates. Checked ranges, finite
+geometry and immutable failure paths are separate regression controls. Its
+measured-layout adapter accepts a bounded ordinary ASCII/newline, LTR, native
+17/50/default-size profile with zero translation, exact integer width and no
+object/style/gravity/rotation variants. These comparisons establish the
+indexing kernel and admitted measured inputs; they do not establish production
+body routing, native page-bound conversion, obstacle production, document
+repagination or Composer/PDF output. The capture uses pinned host
+ICU 76.1/Unicode 16 services rather than device locale behavior.
 
 Text `TextPaintImplSkia::getFontMetrics`, `0x7c16c`, calls
 `SkPaint::getFontMetrics` at `0x7c1ac`; `getFontSpacing`, `0x7c290`, delegates
