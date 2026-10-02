@@ -1194,7 +1194,9 @@ Text `getDrawnTextRun` offsets and unions retained entry rectangles
 (`0x67274`–`0x672ec`); `appendTextBlock` stores the second rectangle argument
 at `DrawnText` offsets 104–116 (`0x680e0`–`0x6810c`). The
 [text-bound capture](#retained-text-entry-and-run-bounds) executes these producer
-windows separately from the Composer clip capture. The SDK's table-wide text
+windows, and the [complete emitter capture](#complete-retained-text-run-emission)
+executes the ordinary cached-glyph run path separately from the Composer clip
+capture. The SDK's table-wide text
 clip does not reproduce the conditional native contract.
 
 ```sh
@@ -1247,14 +1249,76 @@ Entry advances/ink bounds, logical maps, block metric flags, line metrics,
 spacing, offsets and ordinary span inputs are supplied. Memory copy is a host
 interface. Wrap selection, shaping, actual embedded objects, bullets,
 justification, emoji, real-font gates and the complete `getDrawnTextRun` loop
-are outside this capture. Full native run emission, Rust per-run clipping and
-device appearance remain unverified.
+are outside this capture. The complete cached-glyph emitter is captured separately
+below. Rust per-run clipping and device appearance remain unimplemented/unverified.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
   --text-bounds scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
   scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-text-bounds.json
 cmp /tmp/table-text-bounds.json conformance/table-text-bounds.json
+```
+
+### Complete retained text run emission
+
+[`table-text-runs.json`](../../conformance/table-text-runs.json), SHA-256
+`dae6b6929ce1349eefdcb9202bffd4ac9393c3b731511ccf1f493d38cdba0792`,
+records 230 cases, 1,116 supplied entries, 528 emitted runs and 1,180 output
+glyph codewords. The Rust harness executes complete native
+`RichTextDrawing::getDrawnTextRun`, `0x66c98`, and `appendTextBlock`, `0x67ebc`.
+Cached `RichTextMeasure::GetGlyphInfo`, `0x78274`, copies supplied glyph vectors;
+`RichText::GetSpan`, `0x61f3c`, reads supplied spans. Run grouping, rectangle
+unions, temporary-vector growth, RTL reversal and output allocation execute
+unchanged. Every serialized field repeats across memory fills `0x00`, `0xa5`
+and `0xff`, including initially empty and preallocated output vectors.
+
+Ordinary adjacent entries form one run per line. Changing the middle entry's
+font size or resolved font ID splits the surrounding entries. Distinct Font
+wrappers with equal supplied IDs remain grouped. A middle baseline change alone
+does not split the run; its origin retains the first entry's baseline. Moving
+the middle X by one representable f32 step splits the first run, even though the
+following adjacency can still pass through native addition rounding.
+
+`inSameDraw` is only the first grouping gate. At `0x66f18`–`0x66f44`,
+`getDrawnTextRun` queries the previous font's implementation slots 56 and 80.
+The public wrappers `Font::IsBitmapFont`, `0x85d98`, and `Font::GetLanguage`,
+`0x85db0`, identify those slots. Bitmap fonts force a split. Language length 8
+and exact bytes `und-Deva` also force a split (`0x670cc`–`0x6710c`);
+`und-Deve` and `und-DevaX` do not. Both short and allocated NDK string
+representations exercise this check. The fixture supplies these font interfaces;
+it does not establish which fonts native selection resolves for actual text.
+
+The run origin and both rectangle unions include caller X/Y offsets. Vertical
+gravity at RichTextImpl member 212 is added to caller Y before placement
+(`0x66d0c`–`0x66d14`). Stored glyph positions are entry X plus cached glyph X
+offsets. RTL reverses the accumulated codeword and position vectors, including
+the glyph order within a multi-glyph entry. Each output retains one baseline;
+the supplied third glyph field of -0.75 does not produce per-glyph Y positions
+in these records. This capture does not execute the PDF glyph consumer.
+
+`appendTextBlock` copies foreground, background, font size and style into the
+record. Span member 40 bit 1 is stored separately at DrawnText member 120.
+Bit 0 selects foreground `0xff0054ff` and adds style bit 2
+(`0x68164`–`0x68178`). A selected paragraph's nonzero byte 65 then sets
+foreground alpha to `0x66` and adds style bit 3 (`0x681bc`–`0x681dc`), retaining
+the link override's RGB when both apply. These are storage contracts; the
+capture does not establish final decoration or theme appearance.
+
+The Rust line-placement regression checks all 230 cases and the emitted run
+tops, bottoms and baselines within 0.0001 units. It does not assert native
+glyph grouping, horizontal bounds, f32 bit identity or visual parity in Rust.
+Inputs include supplied metrics, logical maps, cached codewords/offsets, spans,
+font getters and empty or single-record paragraph vectors. Allocation, deletion
+and memory copy/move are host interfaces. Emoji slices are null. Native shaping,
+font selection, wrap selection, actual embedded objects, bullets, justification,
+emoji images, Composer clipping and final PDF paths/pixels remain outside this
+capture. Rust retains the conservative table-wide text clip.
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --text-runs scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenText.so > /tmp/table-text-runs.json
+cmp /tmp/table-text-runs.json conformance/table-text-runs.json
 ```
 
 ### Cell background selection
