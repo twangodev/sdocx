@@ -3,11 +3,16 @@ use super::*;
 #[path = "text_shaping/skia_metrics.rs"]
 mod skia_metrics;
 
+#[path = "text_entry_geometry.rs"]
+mod text_entry_geometry;
+
 #[derive(Clone, Copy)]
 enum CaptureTrace {
     ShapeOnly,
     Gpos,
     SkiaMetrics,
+    EntryGeometry,
+    MixedScripts,
 }
 use text_font_source::{NativeFontEnvironment, TEXT, bytes, json_string};
 
@@ -901,6 +906,7 @@ struct Case {
     skew: f32,
     letter_spacing: f32,
     features: &'static str,
+    entry_geometry: bool,
 }
 impl Case {
     fn regular(name: &'static str, text: &'static str, size: f32) -> Self {
@@ -914,6 +920,7 @@ impl Case {
             skew: 0.0,
             letter_spacing: 0.0,
             features: "",
+            entry_geometry: false,
         }
     }
     fn execute(
@@ -958,7 +965,11 @@ impl Case {
         );
         vector(machine.engine, FAMILY_VECTOR, FAMILY_ITEM, 16);
         machine.call(TEXT + 0x8f7a8, &[COLLECTION, FAMILY_VECTOR]);
-        let paint_size = self.font_size * 100.0;
+        let paint_size = if self.entry_geometry {
+            text_entry_geometry::paint_size(machine, self.font_size)
+        } else {
+            self.font_size * 100.0
+        };
         write(machine.engine, PAINT, &paint_size.to_bits().to_le_bytes());
         write(machine.engine, PAINT + 4, &1_f32.to_bits().to_le_bytes());
         write(
@@ -979,15 +990,20 @@ impl Case {
         machine.call(TEXT + 0x77e2c, &[PAINT + 40, features]);
         write(machine.engine, PAINT + 64, &COLLECTION.to_le_bytes());
         let source: Vec<_> = self.text.encode_utf16().collect();
-        assert!(source.len() <= 128);
+        assert!(source.len() <= 4096);
+        let source_pointer = if source.len() <= 128 {
+            UTF16
+        } else {
+            MODEL + 0x1a000
+        };
         for (index, code) in source.iter().enumerate() {
             write(
                 machine.engine,
-                UTF16 + index as u64 * 2,
+                source_pointer + index as u64 * 2,
                 &code.to_le_bytes(),
             );
         }
-        write(machine.engine, VIEW, &UTF16.to_le_bytes());
+        write(machine.engine, VIEW, &source_pointer.to_le_bytes());
         write(
             machine.engine,
             VIEW + 8,
@@ -1111,6 +1127,13 @@ impl Case {
         if let Some(skia) = &trace.state.skia {
             output.pop();
             output.push_str(&format!(",\"skia_metrics\":{}}}", skia.json()));
+        }
+        if self.entry_geometry {
+            output.pop();
+            output.push_str(&format!(
+                ",\"entry_geometry\":{}}}",
+                text_entry_geometry::capture(machine, self, &source, range),
+            ));
         }
         output
     }
@@ -1266,6 +1289,139 @@ pub(super) fn capture_skia_metrics(
     );
 }
 
+fn mixed_script_cases() -> Vec<Case> {
+    const MIXED: &str = "AVΑΒАВ";
+    const COMBINING: &str = "x\u{327}\u{301}χ\u{327}\u{301}Х\u{327}\u{301}";
+    const SIMPLE_COMBINING: &str = "x\u{327}\u{301}ξ\u{327}\u{301}Ж\u{327}\u{301}";
+    const LONG: &str = concat!(
+        "AVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВ",
+        "AVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВ",
+        "AVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВ",
+        "AVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВAVΑΒАВ",
+    );
+    let mut cases = Vec::new();
+    for (name, rtl, spacing) in [
+        ("mixed_ltr", false, 0.0),
+        ("mixed_rtl", true, 0.0),
+        ("mixed_positive_spacing", false, 0.04),
+        ("mixed_negative_spacing", false, -0.04),
+        ("mixed_small_positive_spacing", false, 0.02),
+        ("mixed_small_negative_spacing", false, -0.02),
+        ("mixed_positive_spacing_rtl", true, 0.04),
+        ("mixed_negative_spacing_rtl", true, -0.04),
+        ("mixed_small_positive_spacing_rtl", true, 0.02),
+        ("mixed_small_negative_spacing_rtl", true, -0.02),
+    ] {
+        let mut case = Case::regular(name, MIXED, 17.125);
+        case.rtl = rtl;
+        case.letter_spacing = spacing;
+        cases.push(case);
+    }
+    for (name, rtl, spacing) in [
+        ("mixed_partial", false, 0.0),
+        ("mixed_partial_rtl", true, 0.0),
+        ("mixed_partial_positive_spacing", false, 0.04),
+        ("mixed_partial_negative_spacing_rtl", true, -0.04),
+    ] {
+        let mut case = Case::regular(name, "😀AVΑΒАВ🙂", 17.125);
+        case.range = Some([2, 8]);
+        case.rtl = rtl;
+        case.letter_spacing = spacing;
+        cases.push(case);
+    }
+    for (name, size) in [
+        ("mixed_large_fractional", 1000.125),
+        ("mixed_large", 1337.0),
+    ] {
+        cases.push(Case::regular(name, MIXED, size));
+    }
+    for (name, rtl, spacing) in [
+        ("mixed_long_pen", false, 0.0),
+        ("mixed_long_pen_spaced", false, 0.02),
+        ("mixed_long_pen_rtl", true, 0.0),
+    ] {
+        let mut case = Case::regular(name, LONG, 80.125);
+        case.rtl = rtl;
+        case.letter_spacing = spacing;
+        cases.push(case);
+    }
+    for (name, rtl, spacing) in [
+        ("mixed_combining", false, 0.0),
+        ("mixed_combining_rtl", true, 0.0),
+        ("mixed_combining_positive_spacing", false, 0.04),
+        ("mixed_combining_negative_spacing", false, -0.04),
+        ("mixed_combining_positive_spacing_rtl", true, 0.04),
+        ("mixed_combining_negative_spacing_rtl", true, -0.04),
+    ] {
+        let mut case = Case::regular(name, COMBINING, 17.125);
+        case.rtl = rtl;
+        case.letter_spacing = spacing;
+        cases.push(case);
+    }
+    for (name, rtl, spacing) in [
+        ("mixed_simple_combining_skew", false, 0.0),
+        ("mixed_simple_combining_rtl_skew", true, 0.0),
+        ("mixed_simple_combining_positive_spacing", false, 0.04),
+        ("mixed_simple_combining_negative_spacing", false, -0.04),
+        ("mixed_simple_combining_positive_spacing_rtl", true, 0.04),
+        ("mixed_simple_combining_negative_spacing_rtl", true, -0.04),
+    ] {
+        let mut case = Case::regular(name, SIMPLE_COMBINING, 17.125);
+        case.rtl = rtl;
+        case.skew = -0.1234567;
+        case.letter_spacing = spacing;
+        cases.push(case);
+    }
+    let mut reentry = Case::regular("mixed_latin_reentry", "AVΑΒАВx\u{327}\u{301}y", 17.125);
+    reentry.letter_spacing = 0.02;
+    cases.push(reentry);
+    let mut simple_reentry = Case::regular(
+        "mixed_simple_latin_reentry_skew",
+        "AVΓΔЖЗx\u{327}\u{301}y",
+        17.125,
+    );
+    simple_reentry.skew = -0.1234567;
+    simple_reentry.letter_spacing = 0.02;
+    cases.push(simple_reentry);
+    cases
+}
+
+pub(super) fn capture_mixed_scripts(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        mixed_script_cases(),
+        CaptureTrace::MixedScripts,
+    );
+}
+
+pub(super) fn capture_entry_geometry(
+    machine: &mut Machine,
+    base: &Path,
+    text: &Path,
+    skia: &Path,
+    font: &Path,
+) {
+    capture_cases(
+        machine,
+        base,
+        text,
+        skia,
+        font,
+        text_entry_geometry::cases(),
+        CaptureTrace::EntryGeometry,
+    );
+}
+
 fn capture_cases(
     machine: &mut Machine,
     base: &Path,
@@ -1350,6 +1506,17 @@ fn capture_cases(
     if trace_skia {
         output.pop();
         output.push_str(",\"skia_metric_capture_boundary\":\"Actual Skia scaler constructor captures backend size, residual float matrix, FT fixed matrix, filtered hint/bitmap flags, FT load flags, FT size/scale. Actual FT_Get_Advance cached advance stores and full FT_Load_Glyph outline points before/after its outer transform execute on the pinned supplied Roboto. First-use cached fields are null until an executed native store; subsequent before fields are read and checked against that store. No raster pixels, other fonts, bitmap/variable fonts or general text composition parity is established.\",\"skia_metric_hook_addresses\":[2610356,2612020,2612024,2612076,2613224,2613228,2614108,2614144,1043632]}");
+    }
+    if matches!(trace_kind, CaptureTrace::EntryGeometry) {
+        output.pop();
+        output.push_str(&format!(
+            ",\"entry_geometry_capture_boundary\":{},\"entry_geometry_addresses\":{{\"paint_profile_window\":[\"Text+0x76b14\",\"Text+0x76bb8\"],\"paint_size_instruction\":\"Text+0x76b44\",\"layout_initializer\":\"Text+0x97c98\",\"layout_append\":\"Text+0x9dbf0\",\"entry_glyph_windows\":[[\"Text+0x773e0\",\"Text+0x7741c\"],[\"Text+0x774e4\",\"Text+0x774e8\"]],\"entry_ink_windows\":[[\"Text+0x775fc\",\"Text+0x77610\"],[\"Text+0x77610\",\"Text+0x7761c\"],[\"Text+0x7761c\",\"Text+0x77640\"]],\"entry_width_window\":[\"Text+0x77640\",\"Text+0x77678\"],\"rect_empty\":\"Base+0xb10ec\",\"rect_scale\":\"Base+0xb1510\",\"rect_union\":\"Base+0xb1538\"}}}}",
+            json_string(text_entry_geometry::CAPTURE_BOUNDARY),
+        ));
+    }
+    if matches!(trace_kind, CaptureTrace::MixedScripts) {
+        output.pop();
+        output.push_str(",\"mixed_script_capture_boundary\":\"Actual single-face LayoutPiece executes Latin/Greek/Cyrillic script chunk discovery, recorded HarfBuzz calls, shared f32 horizontal cursor, per-call owner origin, leading/trailing half-spacing and per-UTF16 advances on supplied pinned Roboto. Paint, locale, text range, whole-piece direction and spacing remain supplied caller inputs. For these captures RTL preserves source-ascending script chunk calls and reverses glyph order inside each chunk. Full bidi resolution, font selection/fallback, whole SpanRunFunctor, wrapping, entry conversion and document composition do not execute.\"}");
     }
     println!("{output}");
 }
