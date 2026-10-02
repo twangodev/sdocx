@@ -19,6 +19,7 @@ pub(in crate::render) mod native_cell_clip;
 mod native_entry;
 mod native_identity;
 mod native_line;
+mod native_page_index;
 pub(in crate::render) mod native_paint_plan;
 mod native_runs;
 mod native_wrap;
