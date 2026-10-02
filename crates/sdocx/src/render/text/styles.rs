@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, ops::Range, sync::Arc};
 
 use crate::{RichTextHyperlink, RichTextRun, RichTextSpan, RichTextSpanType};
 
-use super::{TextSettings, TextSpanProducer};
+use super::{NativeIdentityUnavailable, TextSettings, TextSpanProducer};
 
 #[derive(Clone, Copy)]
 enum Property {
@@ -20,6 +20,8 @@ enum Property {
     Hyperlink,
     Suggestion,
     UnderlineColor,
+    Unavailable,
+    ObjectUnavailable,
     RunBold,
     RunItalic,
     Object,
@@ -60,6 +62,7 @@ struct SpanPatch<'a> {
     hyperlink: Option<Arc<SelectedHyperlink<'a>>>,
     suggestion: bool,
     underline_color: Option<u32>,
+    unavailable: Option<NativeIdentityUnavailable>,
 }
 
 impl<'a> SpanPatch<'a> {
@@ -120,9 +123,46 @@ impl<'a> SpanPatch<'a> {
                     patch.underline_color = Some(suggestion.underline_argb);
                 }
             }
+            RichTextSpanType::SpellCorrection => {
+                patch.unavailable = Some(NativeIdentityUnavailable::UnsupportedCorrection);
+            }
             _ => {}
         }
+        let decoded = match span.kind {
+            RichTextSpanType::FontSize => patch.font_size.is_some(),
+            RichTextSpanType::ForegroundColor => patch.foreground.is_some(),
+            RichTextSpanType::BackgroundColor => patch.background.is_some(),
+            RichTextSpanType::ComposingBackgroundColor => patch.composing_background.is_some(),
+            RichTextSpanType::FontName => patch.family.is_some(),
+            RichTextSpanType::Bold => patch.bold.is_some(),
+            RichTextSpanType::Italic => patch.italic.is_some(),
+            RichTextSpanType::Underline | RichTextSpanType::Composing => patch.underline.is_some(),
+            RichTextSpanType::Strikethrough => patch.strikethrough.is_some(),
+            RichTextSpanType::Hyperlink => patch
+                .hyperlink
+                .as_ref()
+                .is_some_and(|link| link.value.is_some()),
+            RichTextSpanType::ComposingTag => patch.background.is_some() || patch.bold.is_some(),
+            RichTextSpanType::Suggestion => patch.suggestion,
+            _ => true,
+        };
+        if !decoded {
+            patch.unavailable = Some(NativeIdentityUnavailable::MalformedSpan(span.kind));
+        }
         patch
+    }
+
+    fn unavailable_in(&self, widget_object: bool) -> Option<NativeIdentityUnavailable> {
+        self.unavailable.filter(|reason| {
+            !widget_object
+                || !matches!(
+                    reason,
+                    NativeIdentityUnavailable::MalformedSpan(
+                        RichTextSpanType::BackgroundColor
+                            | RichTextSpanType::ComposingBackgroundColor
+                    )
+                )
+        })
     }
 
     fn properties(&self) -> impl Iterator<Item = Property> {
@@ -150,6 +190,11 @@ impl<'a> SpanPatch<'a> {
             (Property::Hyperlink, self.hyperlink.is_some()),
             (Property::Suggestion, self.suggestion),
             (Property::UnderlineColor, self.underline_color.is_some()),
+            (Property::Unavailable, self.unavailable.is_some()),
+            (
+                Property::ObjectUnavailable,
+                self.unavailable_in(true).is_some(),
+            ),
         ]
         .into_iter()
         .filter_map(|(property, written)| written.then_some(property))
@@ -183,6 +228,7 @@ impl<'a> SpanPatch<'a> {
             .or_else(|| selection.hyperlink.take());
         selection.suggestion |= self.suggestion;
         selection.underline_color = self.underline_color.or(selection.underline_color);
+        selection.unavailable = self.unavailable_in(widget_object).or(selection.unavailable);
     }
 }
 
@@ -223,6 +269,8 @@ pub(super) struct StyleSelection<'a> {
     pub hyperlink: Option<Arc<SelectedHyperlink<'a>>>,
     pub suggestion: bool,
     pub underline_color: Option<u32>,
+    pub widget_object: bool,
+    pub unavailable: Option<NativeIdentityUnavailable>,
 }
 
 pub(super) struct StyleIndex<'a> {
@@ -300,17 +348,21 @@ impl<'a> StyleIndex<'a> {
                 }
                 next_event += 1;
             }
+            let widget_object = !active[Property::Object as usize].is_empty();
             let mut selection = StyleSelection {
                 bold: !active[Property::RunBold as usize].is_empty(),
                 italic: !active[Property::RunItalic as usize].is_empty(),
+                widget_object,
                 ..Default::default()
             };
-            let widget_object = !active[Property::Object as usize].is_empty();
             let mut writers: [Option<usize>; SPAN_PROPERTIES] = std::array::from_fn(|property| {
                 if (widget_object
                     && (property == Property::Background as usize
-                        || property == Property::ComposingBackground as usize))
-                    || (!widget_object && property == Property::ObjectBackground as usize)
+                        || property == Property::ComposingBackground as usize
+                        || property == Property::Unavailable as usize))
+                    || (!widget_object
+                        && (property == Property::ObjectBackground as usize
+                            || property == Property::ObjectUnavailable as usize))
                 {
                     None
                 } else {
@@ -340,7 +392,7 @@ impl<'a> StyleIndex<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
     use crate::SpanIntervalType;
 
@@ -441,6 +493,7 @@ mod tests {
                 };
                 let widget_object = producer == TextSpanProducer::Widget
                     && objects.iter().any(|range| range.contains(&character));
+                expected.widget_object = widget_object;
                 for (range, span) in &spans {
                     if range.contains(&character) {
                         SpanPatch::decode(span, settings).apply(&mut expected, widget_object);
@@ -604,7 +657,9 @@ mod tests {
         assert_eq!(index.at(2 * count), &StyleSelection::default());
     }
 
-    fn captured_attribute(value: &serde_json::Value) -> Option<RichTextSpan> {
+    pub(in crate::render::text) fn captured_attribute(
+        value: &serde_json::Value,
+    ) -> Option<RichTextSpan> {
         let word = |key: &str| u32::try_from(value[key].as_u64().unwrap()).unwrap();
         let (kind, payload) = match value["kind"].as_str().unwrap() {
             "foreground" => (

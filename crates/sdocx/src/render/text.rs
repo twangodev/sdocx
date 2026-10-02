@@ -15,6 +15,7 @@ mod layout;
 mod measurement;
 #[cfg(feature = "pdf")]
 pub(crate) mod native;
+mod native_identity;
 mod objects;
 mod pagination;
 mod paint;
@@ -28,6 +29,7 @@ pub(super) use layout::{
     PositionedMarker, TextFrame, TextLayout, TextLine, VerticalExclusion, layout_capture_text,
     layout_flow_text, layout_text, layout_text_with_size,
 };
+pub(super) use native_identity::{NativeDrawSpan, NativeIdentityUnavailable};
 pub use objects::{ObjectDiagnostic, ObjectDiagnosticKind};
 pub(super) use objects::{ObjectMeasurementContext, ObjectPageOwnership};
 pub(super) use pagination::PageExclusions;
@@ -70,6 +72,8 @@ struct ResolvedTextStyle {
     paint: TextStyle,
     measurement: TextMeasureStyle,
     invalid_font: bool,
+    #[cfg_attr(not(feature = "pdf"), allow(dead_code))]
+    native_draw: Result<NativeDrawSpan, NativeIdentityUnavailable>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -552,20 +556,52 @@ impl<'a> StyledText<'a> {
             style.color = theme.foreground(Some(style.source_color));
             style.underline = true;
         }
-        let foreground = theme.span_color(source_color);
-        let measurement = TextMeasureStyle {
+        let source_foreground = selected.foreground.unwrap_or(
+            0xff00_0000
+                | u32::from(source_color.r) << 16
+                | u32::from(source_color.g) << 8
+                | u32::from(source_color.b),
+        );
+        let native = NativeDrawSpan {
             font_size: style.font_size as f32,
-            foreground: selected.foreground.unwrap_or(0xff00_0000) & 0xff00_0000
-                | u32::from(foreground.r) << 16
-                | u32::from(foreground.g) << 8
-                | u32::from(foreground.b),
+            foreground: native_identity::mapped_argb(source_foreground, theme),
+            background: selected
+                .background
+                .map_or(0, |argb| native_identity::mapped_argb(argb, theme)),
+            composing_background: selected
+                .composing_background
+                .map_or(0, |argb| native_identity::mapped_argb(argb, theme)),
             family: selected.family.clone(),
-            style_bits: (u8::from(style.bold) | u8::from(style.italic) << 1) & 0xc3,
+            style_bits: u8::from(selected.bold)
+                | u8::from(selected.italic) << 1
+                | u8::from(selected.underline.unwrap_or(text_box.underline)) << 2
+                | u8::from(selected.strikethrough.unwrap_or(false)) << 3
+                | u8::from(selected.suggestion) << 4,
+            underline: selected.underline_color.map_or(0xff00_0000, |argb| {
+                native_identity::mapped_argb(argb, theme)
+            }),
+            correction_foreground: 0xff00_0000,
+            flags: u8::from(is_hyperlink) | u8::from(selected.widget_object) << 1,
+            correction_foreground_enabled: false,
         };
+        let measurement = native.measurement_style();
+        let invalid_native_default = selected.font_size.is_none()
+            && matches!(self.settings.font_size_units, FontSizeUnits::Logical)
+            && {
+                let native_default = (size + self.settings.font_size_delta) * self.settings.scale;
+                !native_default.is_finite()
+                    || native_default <= 0.0
+                    || native_default != native.font_size
+            };
+        let unavailable = selected.unavailable.or_else(|| {
+            (invalid || invalid_native_default)
+                .then_some(NativeIdentityUnavailable::InvalidFontMetrics)
+        });
         ResolvedTextStyle {
             paint: style,
             measurement,
             invalid_font: invalid,
+            native_draw: unavailable.map_or_else(|| Ok(native), Err),
         }
     }
 
@@ -750,7 +786,7 @@ pub(super) fn sanitize_hyperlink_target(target: String) -> Option<String> {
 mod tests {
     use super::*;
 
-    fn text_box() -> RichTextBox {
+    pub(super) fn text_box() -> RichTextBox {
         RichTextBox {
             text_area_type: None,
             bbox: Default::default(),

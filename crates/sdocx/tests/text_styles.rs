@@ -537,7 +537,18 @@ fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
             "{context:?}"
         );
         let parsed = lopdf::Document::load_mem(&pdf.bytes).unwrap();
-        assert_eq!(parsed.extract_text(&[1]).unwrap().trim(), "ABCDE");
+        let composition = PdfComposition::read(&pdf.bytes);
+        composition.assert_source("ABCDE", &format!("{context:?}"));
+        assert_eq!(
+            composition.actual_text,
+            [b"ABCDE".to_vec()],
+            "{context:?}: complete selectable source survives run boundaries"
+        );
+        assert_eq!(
+            parsed.extract_text(&[1]).unwrap().replace('\n', ""),
+            "ABCDE",
+            "{context:?}: glyph source survives extractor run separators"
+        );
     }
 }
 
@@ -1854,6 +1865,7 @@ fn native_measure_join_identity_changes_wraps_at_the_actual_font_width() {
 #[derive(Default)]
 struct PdfComposition {
     source: String,
+    actual_text: Vec<Vec<u8>>,
     text_positions: Vec<PdfTextGlyph>,
     fill_colors: Vec<[u8; 3]>,
     rectangles: Vec<PdfRectangle>,
@@ -2066,6 +2078,17 @@ impl PdfComposition {
             let mut path = RectanglePath::default();
             for operation in lopdf::content::Content::decode(data).unwrap().operations {
                 match operation.operator.as_str() {
+                    "BDC" => {
+                        if let Some(bytes) = operation
+                            .operands
+                            .get(1)
+                            .and_then(|value| value.as_dict().ok())
+                            .and_then(|properties| properties.get(b"ActualText").ok())
+                            .and_then(|value| value.as_str().ok())
+                        {
+                            result.actual_text.push(bytes.to_vec());
+                        }
+                    }
                     "q" => stack.push(state.clone()),
                     "Q" => state = stack.pop().unwrap(),
                     "gs" => {

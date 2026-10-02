@@ -11,6 +11,9 @@ use crate::{ParagraphAlignment, PredefinedTextStyle};
 
 use super::{StyledText, TextRenderer, TextStyle, WrappedLine};
 
+#[cfg(all(test, feature = "pdf"))]
+mod identity_tests;
+
 struct PositionedSpan {
     source: Range<usize>,
     positions: Vec<f64>,
@@ -246,20 +249,29 @@ fn render_retained_fragment(
     while index < last_cluster {
         let first = &line.placements[index];
         let measured = &first.cluster.run;
-        let style = styled.style_at(first.cluster.source.start, theme, predefined);
+        let resolved = styled.resolved_style_at(first.cluster.source.start, theme, predefined);
+        let style = &resolved.paint;
         renderer
             .for_source(first.cluster.source.clone())
-            .report_resolution(&style, styled.context());
-        let paint = retained_paint(&style, measured.synthesis.skew_x())?;
+            .report_resolution(style, styled.context());
+        let paint = retained_paint(style, measured.synthesis.skew_x())?;
+        let start_index = index;
         let mut clusters = Vec::new();
         while index < last_cluster
             && let Some(placement) = line.placements.get(index)
             && Arc::ptr_eq(&placement.cluster.run, measured)
-            && retained_paint(
-                &styled.style_at(placement.cluster.source.start, theme, predefined),
-                measured.synthesis.skew_x(),
-            )? == paint
         {
+            if index > start_index {
+                let next =
+                    styled.resolved_style_at(placement.cluster.source.start, theme, predefined);
+                if !matches!(
+                    (&resolved.native_draw, &next.native_draw),
+                    (Ok(left), Ok(right)) if left == right
+                ) || retained_paint(&next.paint, measured.synthesis.skew_x())? != paint
+                {
+                    break;
+                }
+            }
             clusters.push((index, placement));
             index += 1;
         }
