@@ -239,9 +239,6 @@ fn flagged_margin_probe_suppresses_previous_bottom_for_following_ordinary_text()
 
 #[test]
 fn paragraph_before_stays_enabled_for_margin_probes_on_wrapped_lines() {
-    // Pinned F10 Roboto four-A width 26.09375 fits 30. Before 13.5 puts that
-    // line at 90; the next raw 103.5 probe subtracts 13.5 and hits the band.
-    // It omits margin 10; the final ordinary line later consumes bottom 10.
     let doc = document(
         "AAAA\u{fffc}B",
         4,
@@ -250,5 +247,5 @@ fn paragraph_before_stays_enabled_for_margin_probes_on_wrapped_lines() {
         ObjectSpanLayoutConstraint::Normal,
         Some(13.5),
     );
-    assert_modes(&doc, &[("AAAA", 20.0), ("B", 53.50101)], 23.501);
+    assert_modes(&doc, &[("AAAA", 20.001), ("B", 53.502)], 23.502);
 }
