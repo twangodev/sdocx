@@ -2326,8 +2326,15 @@ embedded objects. Break ends from UAX rules, grapheme boundaries and entry
 heights remain SDK policy. Native emergency results that cut a glyph cluster,
 surrogate or grapheme, and narrowed intervals with no native block, report
 `UnsupportedNativeWrapping` before retaining the SDK emergency/source policy.
-Objects and mixed unsupported measurement retain the existing wrapper.
-These tests do not establish native ICU/object/full-composition parity.
+A [bounded mixed-slot bridge](../../crates/sdocx/src/render/text/wrapping/native_mixed.rs)
+combines admitted native text slots with SDK single-U+FFFC object anchors and
+uses the shared native selector around staged object callbacks. It preserves
+the old-width fit decision, then includes the updated advance in pending f32
+width. Grouped width controls alignment, while a separate continuous f32 cursor
+places text and objects. Unsupported text/cluster/no-block results retain SDK
+source/emergency policy. Object classification, preparation, heights, margins,
+obstacles and UAX/grapheme/bidi rules remain SDK policy; these routes do not
+establish native ICU/object/full-composition parity.
 
 An oversized first ordinary entry can still be included. The helper
 `isCharacterOverflowWidth`, `0x6c5b0`, requires the candidate to be the
@@ -2342,12 +2349,35 @@ Horizontal alignment uses the available **block** width, which can differ
 from the complete text-box width when obstacles or indents are present.
 `GetBlockOffSetXByAlign`, `0x6c61c`, computes available width minus measured
 block width and returns 0 when the remainder is nonpositive. Align 1 uses
-the remainder; align 2 uses half; other values use 0. `SetLayout` applies
-that offset at `0x6b5d8`–`0x6b5ec`. `GetLineAlign`, `0x6aac0`, resolves
+the remainder; align 2 uses half; other values use 0. There are two native
+alignment stages. `GetBlockInfo` calls this helper at `0x6b1d4`–`0x6b1e8`
+and offsets the measured rectangle at member 8. `SetLayout` calls it again at
+`0x6b5dc`–`0x6b5f0`, using the translated rectangle's recomputed `f32` width
+for entry placement. Translation can change that width's rounding. The
+captured combining control has width 21.6700000763 and first offset
+0.1649999619; the translated width is 21.6699981689 and the second offset
+is 0.1650009155. One alignment calculation with an unchanged width does not
+reproduce this source path. `GetLineAlign`, `0x6aac0`, resolves
 internal align 4 through layout direction member 212; `m_CopyLayoutData`
 stores the supplied direction boolean there at `0x6aa8c`. Its caller
 compares stored `RichTextImpl` direction with 1 at `0x73eb0`–`0x73ec4`.
 Internal align 4 is not another public saved alignment enum.
+
+The admitted table-cell projection applies both stages and seeds the f32 entry
+cursor with the complete local origin. It retains that origin in `TextLine.x`
+and exact relative f64 position differences, checking that reconstruction
+recovers each local f32 position before committing it. Late alignment is
+suppressed for those retained lines. Admission requires the native table width
+profile, retained/native-positioned slots, a zero frame left, finite exact-f32
+local left/width, and no exclusions, indent or marker. The original world-frame addition remains
+separate. Outside this gate the existing positioning policy applies.
+Comparisons reproduce 29 UTF-16 slots and all 28 admitted cluster-owner X
+positions across ten captured paragraphs; synthetic roundoff controls and
+vector/generic fallback regressions check the boundary. The native constructor
+centers only the initial paragraph; later source-created paragraphs use Left.
+This establishes bounded local placement, not complete cached-run emission,
+world composition or per-run clipping. Generic Flow/Capture/Frame layout
+retains its existing behavior.
 
 Justification (align 3) calls `m_GetExtraSpaceWidth`, `0x6cc64`, from
 `SetLayout` at `0x6b628`–`0x6b650`. Its numerator is available block width
@@ -3111,8 +3141,14 @@ Native threshold/margin/leading arithmetic, rectangle mutation and vector
 operations execute. Upstream Widget/Bodytext callback installation or source
 callbacks, shaping/classification, general obstacle trees, the full paragraph
 loop, placement, cached glyph emission and SVG/PDF do not execute. The fixture
-does not establish Rust production parity across all 34 cases or complete
-object composition.
+does not establish complete object composition. The
+[shared Rust selector](../../crates/sdocx/src/render/text/native_wrap.rs) matches
+27 captured stages from nine over-page/no-kind-4 cases; the
+[mixed-slot regressions](../../crates/sdocx/src/render/text/wrapping/native_mixed/tests.rs)
+replay 54 stages including a supplementary prefix and source-anchor translation.
+They also retain combining zero slots/callback state and diagnose narrowed
+no-block results. Kind-4 prefixes, native over-page-false routing, upstream
+callback producers and the full object policy remain outside that equality.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \

@@ -173,13 +173,19 @@ composition or horizontal f32 ownership/adjacency.
   remain unverified/unimplemented.
 - The typed native Span projection covers ordinary/default fields and retained
   PDF grouping; unsupported correction and malformed/recovered inputs have
-  unavailable identity. Production font language metadata is not retained.
-  Selected faces retain exact CBDT presence, but production does not supply
-  native source/language/bitmap gates to the cached-entry kernel. Its tested
-  supplied-input gates do not establish native font-cache identity. Admitted
+  unavailable identity. Admitted default-family/default-book Regular runs retain a registry
+  source token, empty language and false bitmap metadata; clones/PDF options
+  preserve that instance while database/configuration replacement invalidates it.
+  Explicit NAME selections have no certified token; retained entry classification
+  and height facts are limited to size 17. Other selected faces retain exact CBDT
+  presence. Production PDF grouping
+  still uses its partial span boundary; full native cached-entry emission remains
+  a separate tested kernel. Admitted
   native-measured ordinary paragraphs use captured f32 glyph geometry and
-  retained UTF-16 entry slots. Compatibility and mixed/object profiles retain
-  SDK positioning/ownership policies; complete native cached-run grouping,
+  retained UTF-16 entry slots. The bounded mixed path uses native text slots and
+  f32 selection/cursor arithmetic around SDK object anchors. Compatibility
+  positioning/ownership and object preparation/height/break policy remain SDK
+  behavior; complete native cached-run grouping,
   including horizontal f32 adjacency, remains unverified.
   [Draw identity findings](reverse-engineering/text-draw-identity-findings.md)
   establish the native producers with supplied inputs and a separate Chromium
@@ -189,8 +195,11 @@ composition or horizontal f32 ownership/adjacency.
   unimplemented, independently of the verified PDF clip transport.
   [Cached snapshots](reverse-engineering/text-draw-identity-findings.md#captured-cached-entry-snapshots)
   preserve supplied codewords and shaping owners without establishing the
-  production font/UTF-16 bridge. Kind-4/emoji emission remains unsupported;
-  default-empty controls do not supply a legitimate first glyph word.
+  production font/UTF-16 bridge. Drawable kind-4/emoji emission remains unsupported;
+  default-empty controls do not supply a legitimate first glyph word. Actual
+  [cell emission](reverse-engineering/table-code-findings.md#captured-cell-text-emission)
+  adds nondrawable newline flushing without empty output; drawable kind-4/emoji
+  remains unsupported.
   [Nonzero owner-base capture](reverse-engineering/text-draw-identity-findings.md#captured-nonzero-owner-bases)
   verifies native request-relative addition and separate source-vector lookup
   for supplied owners; Minikin/HarfBuzz and chunk normalization remain excluded.

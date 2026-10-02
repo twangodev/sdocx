@@ -1100,12 +1100,18 @@ The kernel implements nondrawable-slot skipping, native boundary decisions,
 first-entry rectangle initialization, later native rectangle unions and whole-run
 RTL reversal. Cached Y does not enter the native retained output. Default-empty
 records carry an explicit classification without inventing first-codeword bits.
-Kind 4/emoji and unknown kinds, drawable owners with empty caches, unavailable
-font state and nonfinite/overflowing geometry fail explicitly. Bounded inputs
+Nondrawable kind-4 newlines flush a pending run without an empty append.
+Drawable kind-4/emoji and unknown kinds, drawable owners with empty caches,
+unavailable font state and nonfinite/overflowing geometry fail explicitly. Bounded inputs
 permit at most 250,000 UTF-16 entries and 1,000,000 cached glyphs.
 The comparisons cover the original 268 kind-0/3 cases and 56 published kind-5
 object records. They include kind 5's nonempty false-drawable and null-font
 branches, while keeping 26 glyphless precondition controls separate.
+The [actual cell comparisons](../../crates/sdocx/src/render/text/native_runs/cell_fixture_tests.rs)
+also replay all 17 emission cases, 78 entries, 67 cached glyph records and 27
+runs with native span/paragraph/gravity/logical-map inputs. Leading,
+consecutive and newline-only cases distinguish flushing from an empty append.
+These kernel comparisons do not activate the complete emitter in production.
 
 Production [TextSource](../../crates/sdocx/src/text_index.rs) keeps sealed,
 consistent character, UTF-8 byte and UTF-16 ranges. One `TextIndex` constructs
@@ -1130,12 +1136,23 @@ glyphs. `ResolvedFace::is_bitmap_font()` retains the exact CBDT table-directory
 presence of the selected SFNT/TTC face. Its 21 font tests include other color
 table tags, cached/cloned faces and both collection indexes. This metadata does
 not reproduce the native draw-run bitmap gate in production by itself.
-Production font language metadata is not retained. `ResolvedFace.id` is the current face identity, with
-no proven equivalence to Samsung's source instance/cache behavior. HarfBuzz
+The default book's [registered-source token](../../crates/sdocx/src/render/fonts/registered_source.rs)
+retains the admitted pinned Regular/index-zero registry instance, empty C++
+language string and false bitmap flag for default-family measurement. Explicit
+NAME selections do not receive that token. Equality uses retained registry identity,
+not a font-byte hash or `fontdb` ID; clones preserve it, while database or native
+configuration replacement invalidates it. PDF options preserve the supplied
+book's instance when its database/configuration still match. The source metadata
+checks 82 Regular requests from the actual live-registry capture. Other
+faces/configurations have no certified token. Retained entry classification and
+height facts are additionally limited to the captured size-17 profile. This
+metadata does not activate complete production native grouping. HarfBuzz
 byte clusters map to Rust character ranges in the compatibility path. Admitted
 native-measured ordinary paragraphs retain captured f32 geometry and UTF-16
-entry slots; compatibility and mixed/object profiles retain SDK ownership and
-positioning policies. Complete native cached-run horizontal adjacency remains
+entry slots. A bounded mixed path also retains native text slots around SDK
+object anchors and uses native f32 selection/cursor arithmetic. Compatibility
+profiles and object classification/height/preparation/break policies remain SDK
+behavior. Complete native cached-run horizontal adjacency remains
 separate from those bounded producer comparisons.
 
 The retained PDF path can transport supplied clips with selectable text, and

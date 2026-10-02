@@ -273,6 +273,27 @@ size 17. Width `80.9` reaches integer width 80. `AV abc` at constructor size
 `DoParagraphLayout`, Text `0x7278c`, with width in W2 and the separate raw W3
 control; Model shape type 4 is independently observed and is not that argument.
 
+Production table preparation now enters `layout_table_cell_text` with a
+`NativeCellMeasurementWidth`: positive integer dimensions are fixed and zero
+selects automatic measurement. A positive subpixel frame can therefore select
+automatic width after native integer conversion. For admitted native paragraphs,
+the automatic fold adds horizontal margins in f32, folds each dense entry's
+advance in source order, adds `0.001f32` and rounds upward to an integer before
+wrapping. It resolves each paragraph independently; margins are removed from
+the resulting outer width in the captured f32 order. Focused regressions match
+29 dense slots across ten admitted paragraphs, including independent widths
+22/39 and zero-advance widths 1/1. Parsed-body regressions cover five explicit-17
+width/multiple-paragraph/margin controls through normal/replay SVG and selectable
+vector PDF without image resources.
+
+Automatic measurement returns `UnsupportedContent` when native entries are
+unavailable, including unadmitted font/tab profiles, actual bullets, nonzero
+indent or empty paragraphs inside a nonempty source. An explicit bullet clear
+and entirely empty cell remain supported. Generic constrained zero-width
+wrapping retains its existing emergency behavior. These width checks cover the
+admitted subset rather than all 14 captured inputs, native placement or complete
+TableLayout/runtime parity.
+
 Combining and supplementary continuation slots retain kind 3, height zero,
 no drawable glyph cache and no font wrapper, while shaped owners retain their
 actual metrics and glyph records. Native newline entries use kind 4 and flush
@@ -342,9 +363,18 @@ and a repeated zero run agree; strict independent replay matches the fixture.
 The shared pinned NAME/HarfBuzz/Skia/FreeType and host ICU services retain their
 existing boundaries, with supplied default device profile and identity color
 conversion. The parent TableCell binary caller, complete document parsing and
-layout, callback timing, clone drawing and final export do not execute. These
-findings establish scoped native parser behavior; they do not rewrite raw
-source metadata or establish a final SDK default-style correction.
+layout, callback timing, clone drawing and final export do not execute.
+
+The production loader uses `TextLoadContext::TableCell` to retain the two
+constructor spans only when common data is present and its serialized raw span
+count is zero. Standard text objects retain their existing loading semantics.
+Serialized spans, unknown payloads and interval values remain available as raw
+metadata, including the caret record rejected by native admission. Five focused
+parser regressions verify scoped defaults, source preservation, effective span
+limits 0/1/2, normal/replay SVG and selectable vector PDF. The synthetic retained
+spans count toward the same limit as serialized spans. These establish the
+implemented loading and export contracts without complete native document
+parsing or rendering parity.
 
 ```sh
 /tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
