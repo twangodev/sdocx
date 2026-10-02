@@ -205,7 +205,9 @@ fn live_cell_measurement_widths_reuse_native_entries_and_block_selection() {
 
 #[test]
 fn table_layout_retains_captured_combining_alignment_before_world_translation() {
-    use super::super::super::layout::{TextFrame, layout_flow_text, layout_table_cell_text};
+    use super::super::super::layout::{
+        NativeCellTextConstraints, TextFrame, layout_flow_text, layout_table_cell_text,
+    };
     let capture = capture();
     let case = capture
         .cases
@@ -236,7 +238,10 @@ fn table_layout_retains_captured_combining_alignment_before_world_translation() 
             gravity: None,
             exclusions: &[],
         },
-        0,
+        NativeCellTextConstraints {
+            width: 0,
+            height_limit: f32::MAX,
+        },
         RenderTheme::for_canvas(false),
         &renderer,
     )

@@ -494,6 +494,19 @@ impl TSpan {
         }
         self
     }
+    pub fn x_coordinates(mut self, positions: &[f64]) -> Self {
+        if !positions.is_empty() {
+            let positions = positions
+                .iter()
+                .map(|position| Number::new(*position).map(Number::text))
+                .collect::<Option<Vec<_>>>();
+            self.0.optional(
+                "x",
+                positions.map(|positions| Value::from(positions).to_string()),
+            );
+        }
+        self
+    }
     pub fn y(mut self, position: impl Into<Numeric>) -> Self {
         self.0.optional("y", position.into().0.map(Number::text));
         self
@@ -640,6 +653,7 @@ mod text_position_tests {
             let mut scene = Scene::new(Svg::new());
             scene.scope(Text::new(""), |scene| {
                 scene.push(TSpan::new("invalid").x_positions(&[0.0, position, 1.0], 3));
+                scene.push(TSpan::new("invalid").x_coordinates(&[0.0, position, 1.0]));
                 scene.push(TSpan::new("retained"));
             });
             let output = scene.finish();

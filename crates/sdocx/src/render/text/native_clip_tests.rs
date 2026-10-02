@@ -45,6 +45,7 @@ fn text(face: &ResolvedFace, source: &str, origin: [f64; 2]) -> NativeTextBlock 
             font_size: 12.0,
             paint: NativeTextPaint {
                 color: Color { r: 0, g: 0, b: 0 },
+                alpha: 255,
                 bold: false,
                 skew_x: 0.0,
             },

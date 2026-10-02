@@ -13,12 +13,12 @@ mod fixture_tests;
 #[derive(Debug, Clone, Copy)]
 pub(super) enum NativeFontState<'a, Source = i32> {
     Missing,
-    #[cfg_attr(not(test), allow(dead_code))]
     Known {
         source: Source,
         bitmap: bool,
         language: &'a str,
     },
+    #[cfg_attr(not(any(feature = "pdf", test)), allow(dead_code))]
     Unavailable,
 }
 
@@ -37,6 +37,7 @@ pub(super) struct NativeBoundaryEntry<'a, Source = i32> {
     pub font: NativeFontState<'a, Source>,
 }
 
+#[cfg(any(feature = "pdf", test))]
 impl<'a> NativeBoundaryEntry<'a> {
     pub(super) fn from_span(span: &'a Result<NativeDrawSpan, NativeIdentityUnavailable>) -> Self {
         Self {
@@ -119,7 +120,7 @@ pub(super) fn native_run_boundary<Source: Copy + PartialEq>(
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub(super) struct NativeRect(pub [f32; 4]);
+pub(in crate::render) struct NativeRect(pub [f32; 4]);
 
 impl NativeRect {
     fn offset(self, x: f32, y: f32) -> Result<Self, NativeRunError> {
@@ -242,7 +243,7 @@ pub(super) struct NativeEmittedRun<Source = i32> {
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
-pub(super) enum NativeRunError {
+pub(in crate::render) enum NativeRunError {
     #[error("cached text source range is invalid")]
     InvalidRange,
     #[error("cached text exceeds the Rust entry or glyph budget")]

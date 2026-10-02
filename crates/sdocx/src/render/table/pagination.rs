@@ -58,6 +58,23 @@ impl BandList {
         Ok(Self { rectangles })
     }
 
+    pub fn padding_rectangles(&self) -> Vec<&BoundingBox> {
+        let mut rectangles = self
+            .rectangles
+            .iter()
+            .filter(|rect| rect.x_min < rect.x_max && rect.y_min < rect.y_max)
+            .collect::<Vec<_>>();
+        rectangles.sort_by(|left, right| left.y_max.total_cmp(&right.y_max));
+        rectangles
+    }
+
+    pub fn spacing_capacity(&self) -> f32 {
+        let rectangles = self.padding_rectangles();
+        rectangles.get(1).map_or(f32::MAX, |second| {
+            second.y_min as f32 - rectangles[0].y_max as f32
+        })
+    }
+
     fn for_row(&self, top: f64) -> Result<Self, ObjectDiagnosticKind> {
         Self::new(
             self.rectangles

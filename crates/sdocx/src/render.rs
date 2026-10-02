@@ -1404,8 +1404,22 @@ fn paint_text_foreground(
     renderer: &TextRenderer<'_>,
     viewport: Option<Viewport>,
 ) {
+    let visible_lines = layout
+        .lines
+        .iter()
+        .map(|line| viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)))
+        .collect::<Vec<_>>();
+    let mut native_paint = text::NativePaintDispatcher::new(
+        styled,
+        layout,
+        theme,
+        renderer,
+        &visible_lines,
+        svg.retains_text(),
+        viewport,
+    );
     svg.text_source(|svg| {
-        for line in &layout.lines {
+        for (index, line) in layout.lines.iter().enumerate() {
             if let Some(marker) = &line.marker
                 && viewport.is_none_or(|viewport| {
                     marker
@@ -1419,20 +1433,24 @@ fn paint_text_foreground(
                     paint_positioned_marker(svg, marker, &style, theme, renderer);
                 });
             }
-            if viewport.is_none_or(|viewport| viewport.text_visible(styled, line, theme)) {
+            if visible_lines[index] {
                 renderer.report_visible_line_issues(styled, &line.line);
-                render_measured_line(
-                    svg,
-                    styled,
-                    &line.line,
-                    line.x,
-                    line.width,
-                    line.baseline,
-                    line.alignment,
-                    theme,
-                    line.predefined,
-                    renderer,
-                );
+                if let Some(native) = &mut native_paint {
+                    native.paint_line(svg, styled, index, line, theme, renderer);
+                } else {
+                    render_measured_line(
+                        svg,
+                        styled,
+                        &line.line,
+                        line.x,
+                        line.width,
+                        line.baseline,
+                        line.alignment,
+                        theme,
+                        line.predefined,
+                        renderer,
+                    );
+                }
             }
             paint_line_objects(
                 svg,

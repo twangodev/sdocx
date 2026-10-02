@@ -112,7 +112,7 @@ impl NativeGeometry {
             .source(source.clone())
             .ok_or(MeasurementError::InvalidRange)?;
         let geometry = piece.entry_geometry().clone();
-        let facts = (font_size == 17.0
+        let facts = (matches!(font_size, 17.0 | 50.0)
             && source_instance
                 .as_ref()
                 .is_some_and(|source| source.language().is_empty() && !source.bitmap()))

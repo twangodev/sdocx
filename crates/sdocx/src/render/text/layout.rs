@@ -7,7 +7,7 @@ use crate::{
     ParagraphLineSpacing, PredefinedTextStyle,
 };
 
-use super::native_line::NativeLineMetrics;
+use super::native_line::{NativeLineBands, NativeLineMetrics};
 use super::objects::{MeasuredObject, ObjectDiagnosticKind, ObjectMeasurementContext};
 #[cfg(test)]
 use super::wrap_paragraph;
@@ -235,6 +235,7 @@ pub(in crate::render) struct LinePlacement {
     pub bottom: f64,
     pub post_cursor: f64,
     invalid_native_geometry: bool,
+    native_bands: Option<NativeLineBands>,
 }
 
 impl LinePlacement {
@@ -257,6 +258,7 @@ impl LineMetrics {
         line: &WrappedLine,
         spacing: Option<ParagraphLineSpacing>,
         settings: super::TextSettings,
+        height_limit: f32,
     ) -> Self {
         let mut native = NativeLineMetrics {
             max_font: line.font_size as f32,
@@ -267,7 +269,7 @@ impl LineMetrics {
             } else {
                 1.0
             },
-            height_limit: f32::INFINITY,
+            height_limit,
             object_margin_line: line.has_block_margins(),
             has_object_metric: !line.objects.is_empty(),
         };
@@ -299,6 +301,7 @@ pub(in crate::render) struct TextCursor {
     position: f64,
     pending_bottom: f64,
     enabled_before: f64,
+    height_limit: f32,
 }
 
 impl TextCursor {
@@ -307,6 +310,7 @@ impl TextCursor {
             position,
             pending_bottom: 0.0,
             enabled_before: 0.0,
+            height_limit: f32::INFINITY,
         }
     }
 
@@ -356,7 +360,7 @@ impl TextCursor {
         frame: &TextFrame<'_>,
         settings: super::TextSettings,
     ) -> LinePlacement {
-        let metrics = LineMetrics::for_line(line, spacing, settings);
+        let metrics = LineMetrics::for_line(line, spacing, settings, self.height_limit);
         let mut candidate = self.candidate(line, frame, frame.bbox.y_min + self.position);
         for _ in 0..frame.exclusions.len() {
             let Some(band) = frame.overlapping_band(line, candidate.top(), metrics.advance) else {
@@ -375,7 +379,7 @@ impl TextCursor {
         settings: super::TextSettings,
         candidate: LineCandidate,
     ) -> LinePlacement {
-        let metrics = LineMetrics::for_line(line, spacing, settings);
+        let metrics = LineMetrics::for_line(line, spacing, settings, self.height_limit);
         let cursor = self.position + (candidate.raw_top - (frame.bbox.y_min + self.position));
         let bands = metrics
             .native
@@ -401,9 +405,9 @@ impl TextCursor {
                 bottom: frame.bbox.y_min + self.position,
                 post_cursor: frame.bbox.y_min + self.position,
                 invalid_native_geometry: true,
+                native_bands: None,
             };
         };
-        debug_assert!(!bands.overflow);
         self.position = f64::from(bands.bottom);
         self.pending_bottom = line.object_margins()[1];
         LinePlacement {
@@ -413,6 +417,7 @@ impl TextCursor {
             bottom: frame.bbox.y_min + self.position,
             post_cursor: frame.bbox.y_min + self.position,
             invalid_native_geometry: false,
+            native_bands: Some(bands),
         }
     }
 }
@@ -555,6 +560,7 @@ pub(in crate::render) struct TextLine {
     pub alignment: Option<ParagraphAlignment>,
     pub predefined: Option<PredefinedTextStyle>,
     pub marker: Option<PositionedMarker>,
+    pub(super) native_bands: Option<NativeLineBands>,
 }
 
 pub(in crate::render) struct PositionedMarker {
@@ -606,10 +612,15 @@ impl PositionedMarker {
     }
 }
 
+pub(in crate::render) struct NativePaintFrame {
+    pub translation: [f64; 2],
+}
+
 #[derive(Default)]
 pub(in crate::render) struct TextLayout {
     pub lines: Vec<TextLine>,
     content_height: f64,
+    pub native_frame: Option<NativePaintFrame>,
 }
 
 impl TextLayout {
@@ -618,6 +629,10 @@ impl TextLayout {
     }
 
     pub fn translate(&mut self, dx: f64, dy: f64) {
+        if let Some(frame) = &mut self.native_frame {
+            frame.translation[0] += dx;
+            frame.translation[1] += dy;
+        }
         for line in &mut self.lines {
             line.x += dx;
             line.baseline += dy;
@@ -633,6 +648,9 @@ impl TextLayout {
     }
 
     fn apply_gravity(&mut self, gravity: Option<u8>, outer_height: f64, content_height: f64) {
+        if matches!(gravity, Some(1 | 2)) {
+            self.native_frame = None;
+        }
         let available_height = (outer_height - content_height).max(0.0);
         let offset = match gravity {
             Some(1) => available_height / 2.0,
@@ -842,6 +860,17 @@ enum NativeCellMeasurementWidth {
     Automatic,
 }
 
+pub(in crate::render) struct NativeCellTextConstraints {
+    pub width: i32,
+    pub height_limit: f32,
+}
+
+#[derive(Clone, Copy)]
+struct NativeCellMeasurement {
+    width: NativeCellMeasurementWidth,
+    height_limit: f32,
+}
+
 impl NativeCellMeasurementWidth {
     fn from_dimension(width: i32) -> Option<Self> {
         match width {
@@ -862,12 +891,15 @@ impl NativeCellMeasurementWidth {
 pub(in crate::render) fn layout_table_cell_text(
     styled: &StyledText<'_>,
     frame: TextFrame<'_>,
-    width: i32,
+    constraints: NativeCellTextConstraints,
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
 ) -> Result<TextLayout, ObjectDiagnosticKind> {
-    let width = NativeCellMeasurementWidth::from_dimension(width)
+    let width = NativeCellMeasurementWidth::from_dimension(constraints.width)
         .ok_or(ObjectDiagnosticKind::InvalidBounds)?;
+    if constraints.height_limit.is_nan() {
+        return Err(ObjectDiagnosticKind::InvalidBounds);
+    }
     try_layout_text_with_context(
         styled,
         frame,
@@ -875,7 +907,10 @@ pub(in crate::render) fn layout_table_cell_text(
         renderer,
         LayoutContext::Frame,
         None,
-        Some(width),
+        Some(NativeCellMeasurement {
+            width,
+            height_limit: constraints.height_limit,
+        }),
     )
 }
 
@@ -964,7 +999,7 @@ fn try_layout_text_with_context(
     renderer: &TextRenderer<'_>,
     context: LayoutContext,
     measurement_size: Option<[i32; 2]>,
-    native_cell_width: Option<NativeCellMeasurementWidth>,
+    native_cell_measurement: Option<NativeCellMeasurement>,
 ) -> Result<TextLayout, ObjectDiagnosticKind> {
     let scoped_renderer = renderer.local_measurement_scope();
     let renderer = &scoped_renderer;
@@ -986,8 +1021,9 @@ fn try_layout_text_with_context(
         },
         |size| size.map(f64::from),
     );
-    let outer_width =
-        native_cell_width.map_or(frame_width, NativeCellMeasurementWidth::requested_width);
+    let outer_width = native_cell_measurement.map_or(frame_width, |measurement| {
+        measurement.width.requested_width()
+    });
     let content_left = frame.bbox.x_min + margins[0];
     let content_width = outer_width - margins[0] - margins[2];
     let paragraphs = styled.index.display_paragraphs().collect::<Vec<_>>();
@@ -1003,6 +1039,9 @@ fn try_layout_text_with_context(
         .collect::<Vec<_>>();
     let mut lines = Vec::new();
     let mut cursor = TextCursor::new(margins[1]);
+    if let Some(measurement) = native_cell_measurement {
+        cursor.height_limit = measurement.height_limit;
+    }
     for (paragraph_number, (paragraph, layout)) in
         paragraphs.iter().zip(&paragraph_layouts).enumerate()
     {
@@ -1031,7 +1070,7 @@ fn try_layout_text_with_context(
         let x = marker_x + marker_width;
         let width = (content_width - left_indent - right_indent - marker_width).max(0.0);
         let automatic = matches!(
-            native_cell_width,
+            native_cell_measurement.map(|measurement| measurement.width),
             Some(NativeCellMeasurementWidth::Automatic)
         );
         if automatic
@@ -1146,7 +1185,12 @@ fn try_layout_text_with_context(
                     break;
                 };
                 let mut candidate = cursor.candidate(&line, &frame, raw_top);
-                let metrics = LineMetrics::for_line(&line, layout.line_spacing, settings);
+                let metrics = LineMetrics::for_line(
+                    &line,
+                    layout.line_spacing,
+                    settings,
+                    cursor.height_limit,
+                );
                 if context
                     .continuation_top(paragraph_number, line_number, &line)
                     .is_some()
@@ -1187,7 +1231,7 @@ fn try_layout_text_with_context(
             }
             let mut line_x = x;
             let mut line_alignment = layout.alignment;
-            if native_cell_width.is_some()
+            if native_cell_measurement.is_some()
                 && frame.bbox.x_min == 0.0
                 && frame.exclusions.is_empty()
                 && layout.indent_level == 0
@@ -1244,6 +1288,7 @@ fn try_layout_text_with_context(
                 alignment: line_alignment,
                 predefined: layout.predefined_style,
                 marker: positioned_marker,
+                native_bands: placement.native_bands,
             });
             line_number += 1;
         }
@@ -1267,11 +1312,34 @@ fn try_layout_text_with_context(
         content_height
     };
     let mut layout = TextLayout {
+        native_frame: (native_cell_measurement.is_some()
+            && frame.bbox.x_min == 0.0
+            && frame.bbox.y_min == 0.0
+            && frame.exclusions.is_empty()
+            && paragraph_layouts.iter().all(|paragraph| {
+                paragraph
+                    .bullet
+                    .is_none_or(|bullet| bullet.kind == BulletType::None && !bullet.checked)
+            })
+            && !lines_have_unsupported_native_metadata(&lines))
+        .then_some(NativePaintFrame {
+            translation: [0.0; 2],
+        }),
         lines,
         content_height,
     };
     layout.apply_gravity(frame.gravity, outer_height, gravity_height);
     Ok(layout)
+}
+
+fn lines_have_unsupported_native_metadata(lines: &[TextLine]) -> bool {
+    lines.iter().any(|line| {
+        line.predefined.is_some()
+            || line.marker.is_some()
+            || !line.line.objects.is_empty()
+            || line.native_bands.is_none()
+            || (!line.line.source.is_empty() && line.line.native_placed.is_none())
+    })
 }
 
 #[cfg(test)]

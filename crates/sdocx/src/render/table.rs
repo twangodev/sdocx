@@ -21,6 +21,9 @@ mod native_geometry_tests;
 #[cfg(test)]
 mod native_drawn_bounds_tests;
 
+#[cfg(test)]
+mod native_live_layout_tests;
+
 pub(super) use artwork::{CellBackgroundGeometry, TableArtworkGeometry, finite_artwork_rect};
 pub(super) use borders::{BorderPath, TableBorderGeometry};
 pub(super) use export::{TableExportPage, artwork_bounds};
@@ -510,10 +513,11 @@ impl PreparedTable {
         let source = &table.rows[row_index].cells[column_index];
         let bounds = cell_text_bounds(cell.frame)?;
         let width = bounds.x_max as i32;
+        let padding_rectangles = bands.padding_rectangles();
         let full_width = |rect: &&BoundingBox| rect.x_min <= 0.0 && rect.x_max >= f64::from(width);
-        let exclusions = bands
-            .rectangles
+        let exclusions = padding_rectangles
             .iter()
+            .copied()
             .filter(full_width)
             .map(|rect| VerticalExclusion::obstacle(rect.y_min, rect.y_max))
             .collect::<Vec<_>>();
@@ -527,16 +531,19 @@ impl PreparedTable {
                 gravity: Some(0),
                 exclusions: &exclusions,
             },
-            width,
+            super::text::NativeCellTextConstraints {
+                width,
+                height_limit: bands.spacing_capacity(),
+            },
             theme,
             renderer,
         )?;
         if !valid_cell_layout(&layout) {
             return Err(ObjectDiagnosticKind::InvalidBounds);
         }
-        if bands
-            .rectangles
+        if padding_rectangles
             .iter()
+            .copied()
             .filter(|rect| !full_width(rect))
             .any(|rect| {
                 layout
@@ -741,11 +748,8 @@ fn empty_cell_height(
         })
         .map_or(0.0, |marker| marker.reserved_width()) as f32;
     let cursor_height = styled.caret_line_height(0) as f32;
-    let mut sorted_bands = bands.rectangles.iter().collect::<Vec<_>>();
-    sorted_bands.sort_by(|left, right| left.y_min.total_cmp(&right.y_min));
-    let maximum_height = sorted_bands.get(1).map_or(f32::MAX, |second| {
-        second.y_min as f32 - sorted_bands[0].y_max as f32
-    });
+    let sorted_bands = bands.padding_rectangles();
+    let maximum_height = bands.spacing_capacity();
     let line_height = if cursor_height > maximum_height {
         styled.font_size_at_caret(0) as f32
     } else {

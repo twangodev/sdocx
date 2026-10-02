@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use krilla::color::rgb;
 use krilla::geom::{Path, PathBuilder, Point, Transform};
+use krilla::num::NormalizedF32;
 use krilla::paint::{Fill, Stroke};
 use krilla::surface::Surface;
 use krilla::tagging::{ContentTag, SpanTag, Tag, TagGroup};
@@ -12,6 +13,8 @@ use rustybuzz::ttf_parser;
 use crate::Color;
 use crate::fonts::{ResolvedFace, fontdb};
 use crate::text_index::{TextIndex, TextSource};
+
+use super::native_paint_plan::{NativePaintPlan, NativePaintRun};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct NativeTextId(usize);
@@ -33,6 +36,7 @@ pub(crate) struct NativeGlyph {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct NativeTextPaint {
     pub color: Color,
+    pub alpha: u8,
     pub bold: bool,
     pub skew_x: f32,
 }
@@ -52,6 +56,11 @@ pub(crate) struct NativeTextBlock {
     pub runs: Vec<NativeGlyphRun>,
 }
 
+pub(crate) struct NativePaintBridge<'a> {
+    plan: &'a NativePaintPlan,
+    source_index: TextIndex<'a>,
+}
+
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub(crate) enum NativeTextError {
     #[error("retained text has no glyphs")]
@@ -62,6 +71,8 @@ pub(crate) enum NativeTextError {
     InvalidSource,
     #[error("retained variable-font text is unsupported")]
     VariableFont,
+    #[error("native paint opacity {0} has no certified writer route")]
+    UnverifiedOpacity(u8),
     #[error("retained glyph {0} has no supported outline")]
     UnsupportedOutline(u32),
     #[error("cannot embed retained font {0}")]
@@ -206,6 +217,74 @@ impl NativeTextRegistry {
     }
 }
 
+impl<'a> NativePaintBridge<'a> {
+    pub fn new(plan: &'a NativePaintPlan) -> Self {
+        Self {
+            plan,
+            source_index: TextIndex::new(&plan.source),
+        }
+    }
+
+    pub fn block(&self, run: &NativePaintRun) -> Result<NativeTextBlock, NativeTextError> {
+        if self
+            .source_index
+            .source(run.source.characters().clone())
+            .as_ref()
+            != Some(&run.source)
+        {
+            return Err(NativeTextError::InvalidSource);
+        }
+        let alpha = (run.foreground >> 24) as u8;
+        if alpha != 255 {
+            return Err(NativeTextError::UnverifiedOpacity(alpha));
+        }
+        let source = self
+            .source_index
+            .slice(run.source.characters().clone())
+            .ok_or(NativeTextError::InvalidSource)?;
+        let glyphs = run
+            .glyphs
+            .iter()
+            .map(|glyph| {
+                Ok(NativeGlyph {
+                    glyph_id: glyph.glyph_id,
+                    origin: [
+                        self.plan.translation[0] + f64::from(glyph.origin[0]),
+                        self.plan.translation[1] + f64::from(glyph.origin[1]),
+                    ],
+                    advance: glyph.advance,
+                    source: glyph
+                        .source
+                        .relative_to(&run.source)
+                        .ok_or(NativeTextError::InvalidSource)?,
+                })
+            })
+            .collect::<Result<Vec<_>, NativeTextError>>()?;
+        let synthesis = run.synthesis();
+        let block = NativeTextBlock {
+            source: source.into(),
+            runs: vec![NativeGlyphRun {
+                face: run.face.clone(),
+                font_size: f64::from(run.font_size),
+                paint: NativeTextPaint {
+                    color: Color {
+                        r: (run.foreground >> 16) as u8,
+                        g: (run.foreground >> 8) as u8,
+                        b: run.foreground as u8,
+                    },
+                    alpha,
+                    bold: synthesis.bold,
+                    skew_x: synthesis.skew_x(),
+                },
+                glyphs,
+                variable: run.variable(),
+            }],
+        };
+        block.validate()?;
+        Ok(block)
+    }
+}
+
 impl NativeTextBlock {
     fn validate(&self) -> Result<(), NativeTextError> {
         if self.runs.is_empty() || self.runs.iter().all(|run| run.glyphs.is_empty()) {
@@ -288,6 +367,8 @@ impl NativePdfPainter {
                 let font = self.font(&run.face)?;
                 let (start, glyphs) = positioned_glyphs(run)?;
                 let transform = glyph_shear(run)?;
+                let opacity = NormalizedF32::new(f32::from(run.paint.alpha) / 255.0)
+                    .ok_or(NativeTextError::InvalidGeometry)?;
                 let paths = if run.paint.bold {
                     run.glyphs
                         .iter()
@@ -299,7 +380,7 @@ impl NativePdfPainter {
                 } else {
                     Vec::new()
                 };
-                Ok((run, font, start, glyphs, transform, paths))
+                Ok((run, font, start, glyphs, transform, paths, opacity))
             })
             .collect::<Result<Vec<_>, NativeTextError>>()?;
         let old_fill = surface.get_fill().cloned();
@@ -307,12 +388,13 @@ impl NativePdfPainter {
         let identifier = surface.start_tagged(ContentTag::Span(
             SpanTag::empty().with_actual_text(Some(&block.source)),
         ));
-        for (run, font, start, glyphs, transform, paths) in prepared {
+        for (run, font, start, glyphs, transform, paths, opacity) in prepared {
             let color = rgb::Color::new(run.paint.color.r, run.paint.color.g, run.paint.color.b);
             if run.paint.bold {
                 surface.set_fill(None);
                 surface.set_stroke(Some(Stroke {
                     paint: color.into(),
+                    opacity,
                     width: self.stroke_width as f32,
                     miter_limit: 4.0,
                     ..Stroke::default()
@@ -323,6 +405,7 @@ impl NativePdfPainter {
             }
             surface.set_fill(Some(Fill {
                 paint: color.into(),
+                opacity,
                 ..Fill::default()
             }));
             surface.set_stroke(None);
@@ -571,6 +654,7 @@ mod tests {
                     g: 40,
                     b: 60,
                 },
+                alpha: 255,
                 bold: false,
                 skew_x: 0.0,
             },
@@ -589,6 +673,135 @@ mod tests {
             source: Arc::from(source),
             runs: vec![run],
         }
+    }
+
+    fn paint_plan(text: &str) -> NativePaintPlan {
+        use super::super::layout::{NativeCellTextConstraints, TextFrame, layout_table_cell_text};
+        use super::super::native_paint_plan::native_paint_plan;
+        use super::super::{StyledText, TextContext, TextRenderer, TextSettings};
+        use crate::render::RenderTheme;
+
+        let content = crate::RichTextBox {
+            text_area_type: None,
+            bbox: crate::BoundingBox::default(),
+            rotation_degrees: None,
+            text: text.into(),
+            color: Some(Color { r: 0, g: 0, b: 0 }),
+            highlight_color: None,
+            underline: false,
+            font_size: Some(17.0),
+            runs: Vec::new(),
+            spans: Vec::new(),
+            paragraphs: Vec::new(),
+            object_spans: Vec::new(),
+            text_sections: Vec::new(),
+            margins: None,
+            gravity: None,
+        };
+        let fonts = FontBook::default();
+        let settings = TextSettings::resolved();
+        let renderer = TextRenderer::new(settings, &fonts);
+        let styled = StyledText::new(&content, TextContext::Placed, settings);
+        let theme = RenderTheme::for_canvas(false);
+        let layout = layout_table_cell_text(
+            &styled,
+            TextFrame {
+                bbox: crate::BoundingBox {
+                    x_max: 100.0,
+                    y_max: 100.0,
+                    ..Default::default()
+                },
+                gravity: None,
+                exclusions: &[],
+            },
+            NativeCellTextConstraints {
+                width: 100,
+                height_limit: f32::MAX,
+            },
+            theme,
+            &renderer,
+        )
+        .unwrap();
+        native_paint_plan(&styled, &layout, theme).unwrap()
+    }
+
+    fn projected_run(plan: &NativePaintPlan) -> NativePaintRun {
+        let mut run = plan.runs[0].clone();
+        run.source = TextIndex::new(&plan.source).source(1..3).unwrap();
+        run.glyphs
+            .retain(|glyph| glyph.source.relative_to(&run.source).is_some());
+        run
+    }
+
+    #[test]
+    fn paint_plan_bridge_preserves_projected_owners_and_visual_order() {
+        let mut plan = paint_plan("pAVq");
+        plan.translation = [10.125, 20.875];
+        let mut run = projected_run(&plan);
+        run.glyphs.reverse();
+        let block = NativePaintBridge::new(&plan).block(&run).unwrap();
+        assert_eq!(&*block.source, "AV");
+        assert_eq!(block.runs[0].face.id, run.face.id);
+        for (actual, original) in block.runs[0].glyphs.iter().zip(&run.glyphs) {
+            assert_eq!(actual.glyph_id, original.glyph_id);
+            assert_eq!(actual.advance, original.advance);
+            assert_eq!(
+                actual.origin,
+                [
+                    10.125 + f64::from(original.origin[0]),
+                    20.875 + f64::from(original.origin[1]),
+                ]
+            );
+        }
+        let (_, glyphs) = positioned_glyphs(&block.runs[0]).unwrap();
+        assert_eq!(
+            glyphs.iter().map(Glyph::text_range).collect::<Vec<_>>(),
+            [1..2, 0..1]
+        );
+        let pdf = pdf(&block);
+        let outer = operations(&pdf)
+            .into_iter()
+            .find(|operation| operation.operator == "BDC")
+            .unwrap();
+        assert_eq!(
+            outer.operands[1]
+                .as_dict()
+                .unwrap()
+                .get(b"ActualText")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            b"AV"
+        );
+    }
+
+    #[test]
+    fn paint_plan_bridge_rejects_escaping_owners_and_uncertified_opacity() {
+        let plan = paint_plan("pAVq");
+        let mut run = projected_run(&plan);
+        run.glyphs[0].source = TextIndex::new(&plan.source).source(0..1).unwrap();
+        assert!(matches!(
+            NativePaintBridge::new(&plan).block(&run),
+            Err(NativeTextError::InvalidSource)
+        ));
+        let mut run = projected_run(&plan);
+        run.foreground = 0x8012_3456;
+        assert!(matches!(
+            NativePaintBridge::new(&plan).block(&run),
+            Err(NativeTextError::UnverifiedOpacity(128))
+        ));
+        let mut invalid = plan.clone();
+        invalid.source = Arc::from("p😀Vq");
+        assert!(matches!(
+            NativePaintBridge::new(&invalid).block(&plan.runs[0]),
+            Err(NativeTextError::InvalidSource)
+        ));
+        let mut invalid = plan.clone();
+        invalid.translation[0] = f64::NAN;
+        assert!(matches!(
+            NativePaintBridge::new(&invalid).block(&plan.runs[0]),
+            Err(NativeTextError::InvalidGeometry)
+        ));
     }
 
     fn pdf(block: &NativeTextBlock) -> lopdf::Document {
@@ -963,6 +1176,47 @@ mod tests {
                 .collect::<Vec<_>>();
             assert_eq!(widths.len(), 1);
             assert!((widths[0] * (72.0 / dpi) - 0.25).abs() < 0.000001);
+        }
+    }
+
+    #[test]
+    fn source_alpha_transport_preserves_selectable_text_and_paint_state() {
+        for alpha in [0, 1, 127, 128, 254, 255] {
+            let mut run = run();
+            run.paint.alpha = alpha;
+            run.paint.bold = true;
+            let pdf = pdf(&block("A", run));
+            assert_eq!(pdf.extract_text(&[1]).unwrap().trim(), "A");
+            let expected = f32::from(alpha) / 255.0;
+            let opacities = pdf
+                .objects
+                .values()
+                .filter_map(|object| object.as_dict().ok())
+                .flat_map(|dictionary| {
+                    [b"ca".as_slice(), b"CA".as_slice()].map(|key| {
+                        dictionary
+                            .get(key)
+                            .ok()
+                            .and_then(|value| value.as_float().ok())
+                    })
+                })
+                .flatten()
+                .collect::<Vec<_>>();
+            if alpha != 255 {
+                assert!(
+                    opacities
+                        .iter()
+                        .any(|&opacity| (opacity - expected).abs() < 0.000_001),
+                    "alpha {alpha}: {opacities:?}"
+                );
+            }
+            assert!(!pdf.objects.values().any(|object| {
+                object.as_dict().is_ok_and(|dictionary| {
+                    dictionary
+                        .get(b"Subtype")
+                        .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+                })
+            }));
         }
     }
 

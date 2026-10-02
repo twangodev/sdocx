@@ -823,6 +823,7 @@ mod tests {
                 alignment: None,
                 predefined: None,
                 marker: None,
+                native_bands: None,
             };
             let actual =
                 object_background_bounds(&line, 0, number(case, "offset", 0), false).unwrap();
@@ -871,6 +872,7 @@ mod tests {
             alignment: None,
             predefined: None,
             marker: None,
+            native_bands: None,
         };
         let theme = RenderTheme::for_canvas(false);
         let offscreen = Viewport::new(BoundingBox {

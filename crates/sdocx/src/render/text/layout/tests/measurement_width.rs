@@ -20,7 +20,10 @@ fn measure_cell(
             gravity: Some(0),
             exclusions: &[],
         },
-        width,
+        NativeCellTextConstraints {
+            width,
+            height_limit: f32::MAX,
+        },
         RenderTheme::for_canvas(false),
         &renderer,
     )

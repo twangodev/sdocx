@@ -10,6 +10,7 @@ use super::objects::{MeasuredObject, ObjectMeasurementContext};
 use super::{StyledText, TextRenderer};
 
 mod native_slots;
+pub(in crate::render::text) use native_slots::NativePlacedLine;
 pub(in crate::render) use native_slots::ParagraphMeasurementWidth;
 use native_slots::{NativeLineSlots, NativeParagraphSlots};
 mod native_mixed;
@@ -26,6 +27,7 @@ pub(in crate::render) struct WrappedLine {
     pub native_positioned: bool,
     pub geometry: LineGeometry,
     native_slots: Option<NativeLineSlots>,
+    pub(super) native_placed: Option<NativePlacedLine>,
     native_mixed: bool,
     unsupported_native_wrapping: bool,
     fallback_measurement_issues: Vec<super::SourceTextDiagnostic>,
@@ -123,6 +125,7 @@ impl WrappedLine {
             native_positioned: false,
             geometry: LineGeometry::Unmeasured,
             native_slots: None,
+            native_placed: None,
             native_mixed: false,
             unsupported_native_wrapping: false,
             fallback_measurement_issues: Vec::new(),
@@ -183,6 +186,7 @@ impl WrappedLine {
         }
         let aligned = slots.aligned_positions(native_left, native_width, alignment)?;
         let origin = f64::from(aligned.origin);
+        self.native_placed = Some(aligned.dense);
         let mut text = aligned.positions;
         for position in &mut text {
             let relative = position.x - origin;
@@ -1042,6 +1046,7 @@ impl<'a, 'text, 'fonts> ParagraphWrapper<'a, 'text, 'fonts> {
             native_positioned: false,
             geometry: LineGeometry::Unmeasured,
             native_slots: None,
+            native_placed: None,
             native_mixed: false,
             unsupported_native_wrapping,
             fallback_measurement_issues: Vec::new(),

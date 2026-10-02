@@ -33,7 +33,6 @@ impl TextSource {
         &self.utf16
     }
 
-    #[cfg(any(feature = "pdf", test))]
     pub fn relative_to(&self, container: &Self) -> Option<Self> {
         if self.characters.start < container.characters.start
             || self.characters.end > container.characters.end

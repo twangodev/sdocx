@@ -13,6 +13,9 @@ use crate::{ParagraphAlignment, PredefinedTextStyle};
 use super::native_runs::{NativeBoundaryEntry, NativeRunBoundary, native_run_boundary};
 use super::{StyledText, TextRenderer, TextStyle, WrappedLine};
 
+mod native_plan_paint;
+pub(in crate::render) use native_plan_paint::NativePaintDispatcher;
+
 #[cfg(all(test, feature = "pdf"))]
 mod identity_tests;
 
@@ -210,6 +213,7 @@ fn retained_paint(
     };
     Ok(super::native::NativeTextPaint {
         color,
+        alpha: 255,
         bold: style.bold,
         skew_x,
     })
@@ -385,7 +389,6 @@ fn render_retained_fragment(
     Ok(())
 }
 
-#[cfg(feature = "pdf")]
 fn render_retained_decorations(
     svg: &mut Scene,
     styled: &StyledText<'_>,
@@ -429,7 +432,6 @@ fn render_retained_decorations(
     }
 }
 
-#[cfg(feature = "pdf")]
 fn same_decoration_style(left: &TextStyle, right: &TextStyle) -> bool {
     left.font_size == right.font_size
         && left.color == right.color

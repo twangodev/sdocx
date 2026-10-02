@@ -1,7 +1,7 @@
 use super::super::native_entry::NativeEntryKind;
 use super::super::native_wrap::{
-    NativeBlock, NativeEntryCursor, NativeHorizontalAlignment, NativeWrapEntry, NativeWrapKind,
-    NativeWrapMetrics, NativeWrapWidths, select_native_block,
+    NativeBlock, NativeEntryCursor, NativeEntryPosition, NativeHorizontalAlignment,
+    NativeWrapEntry, NativeWrapKind, NativeWrapMetrics, NativeWrapWidths, select_native_block,
 };
 use super::*;
 
@@ -29,10 +29,17 @@ pub(super) struct NativeLineSlots {
     block: NativeBlock,
 }
 
+pub(in crate::render::text) struct NativePlacedLine {
+    pub positions: Vec<NativeEntryPosition>,
+    pub visual_to_logical: Vec<usize>,
+    pub justified: bool,
+}
+
 pub(super) struct NativeAlignedLine {
     pub origin: f32,
     pub positions: Vec<LinePosition>,
     pub end: f64,
+    pub dense: NativePlacedLine,
 }
 
 fn width(value: f64) -> Result<f32, MeasurementError> {
@@ -284,6 +291,7 @@ impl NativeLineSlots {
 
     pub fn positions(&self, share: f32) -> Result<(Vec<LinePosition>, f64), MeasurementError> {
         self.positions_at(0.0, share)
+            .map(|(text, end, _)| (text, end))
     }
 
     pub fn aligned_positions(
@@ -306,11 +314,13 @@ impl NativeLineSlots {
         } else {
             0.0
         };
-        let (positions, end) = self.positions_at(origin, share)?;
+        let (positions, end, mut dense) = self.positions_at(origin, share)?;
+        dense.justified = alignment == Some(crate::ParagraphAlignment::Both);
         Ok(NativeAlignedLine {
             origin,
             positions,
             end,
+            dense,
         })
     }
 
@@ -318,7 +328,7 @@ impl NativeLineSlots {
         &self,
         origin: f32,
         share: f32,
-    ) -> Result<(Vec<LinePosition>, f64), MeasurementError> {
+    ) -> Result<(Vec<LinePosition>, f64, NativePlacedLine), MeasurementError> {
         let mut slots = vec![None; self.entries.len()];
         let mut cursor =
             NativeEntryCursor::new(origin).map_err(|_| MeasurementError::InvalidCluster)?;
@@ -360,7 +370,15 @@ impl NativeLineSlots {
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        Ok((text, f64::from(advance)))
+        let dense = NativePlacedLine {
+            positions: slots
+                .into_iter()
+                .collect::<Option<Vec<_>>>()
+                .ok_or(MeasurementError::InvalidCluster)?,
+            visual_to_logical: self.visual_to_logical.clone(),
+            justified: share != 0.0,
+        };
+        Ok((text, f64::from(advance), dense))
     }
 }
 
