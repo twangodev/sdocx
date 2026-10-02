@@ -1167,6 +1167,72 @@ width correction. Rust currently retains integer font-unit shaping results,
 integer pen accumulation and f64 font-size/units-per-em scaling; local f32
 line-band parity does not reproduce these native horizontal numeric stages.
 
+### Captured native shaping
+
+The [Rust capture](../../conformance/native_table/text_shaping.rs) and
+[`table-text-shaping.json`](../../conformance/table-text-shaping.json)
+execute the native file-font constructor, `FontFamily` (`0x8609c`),
+`FontCollection` (`0x8f7a8`), `LayoutPiece` (`0x9b150`), bundled HarfBuzz
+shaping (`0xecdcc`), Skia and bundled FreeType. The fixture SHA-256 is
+`a4c58481cb1e36bb7de8783bea49a800b10b4227177684c48f5b5c356d7a425b`.
+Its 16 cases produce 16 HarfBuzz calls, 48 glyphs, 49 UTF-16 character
+advances and 48 raw Skia ink bounds. Three allocation fills (`0x00`, `0xa5`,
+`0xff`), a repeated zero-fill run and an independent replay agree byte for
+byte.
+
+Inputs select one supplied Roboto Regular face, index zero, with SHA-256
+`56a45233d29f11b4dfb86d248e921939d115778f87325e7ae8cc108383d6664d`.
+Native getters verify source ID 1, no CBDT bitmap flag, empty raw font
+language, weight 400 and italic false. Family locale `en-Latn`, Minikin paint,
+UTF-16 source/range, direction and zero hyphen edits are supplied caller
+inputs. The cases cover `AV`, `To`, `office`, `fi`, combining marks,
+supplementary source units, paint sizes at/above the normalization threshold,
+hint/linear flags, RTL, partial source context, skew, requested ligatures and
+letter spacing. They do not select Samsung's device Roboto or exercise
+system fallback.
+
+Each HarfBuzz call records scale/ppem, source codepoints and clusters,
+direction/script/language, context, feature records, resulting glyph IDs and
+integer positions. Layout-piece output records full and owner positions,
+UTF-16 owners, character advances, ink bounds, extents and semantic font
+fakery bits; the latter are zero in this suite. All 16 calls use the vector
+advance callback, producing 48 raw/quantized metric samples. No scalar
+advance callback executes, so its distinct rounding remains a source finding.
+For the default-profile `AV` case, supplied paint size 1700 produces
+HarfBuzz scale 435200 and ppem 1700. Native Skia advances are 1109 and 1082;
+post-shaping advance integers are 265416 and 276992, giving layout-piece
+advance 2118.78125 in paint units. The no-hinting and LinearText profiles
+both advance 2118.35546875. The profile therefore affects measured output even
+with the same font and source.
+
+The native ICU loader resolves suffix 76 through its fallback search, but
+`dlopen` supplies hash-pinned host ICU 76.1 code/data with Unicode 16.0.
+The four exercised ICU APIs are character type, locale canonicalization,
+likely-subtag expansion and language-tag conversion. Bundled HarfBuzz Unicode
+tables and shaping execute unchanged; they are separate from these host
+Minikin property/locale services. Host `qsort` makes 48 calls and executes
+2,278 allowlisted native leaf-comparator invocations in a separate emulator.
+Allocation/file/memory services, single-thread synchronization, numeric feature
+parsing, formatting and libm are host boundaries. The fixture pins their
+library hashes and versions and records the nine native initializers used.
+
+The [Rust shaping comparisons](../../crates/sdocx/src/render/fonts/native_shaping_tests.rs)
+pass all 16 cases through public `ResolvedFace::shape` with the recorded
+pre-shaping source infos, properties, features and context. All 48 glyph IDs
+and UTF-16 owner starts match; native layout-piece owners equal the recorded
+clusters minus requested start. Controls detect optional-ligature changes and
+incorrect UTF-8 cluster offsets. The partial-context case observes one preceding
+and one following scalar. These comparisons establish identity for those
+inputs, rather than native metric equality: default-profile `AV` has Rust
+font-unit advance 2552, whose scaling by `1700 / 2048` gives 2118.359375,
+distinct from the captured native 2118.78125.
+
+This establishes the supplied single-face layout-piece boundary. It excludes
+device ICU/font configuration, font-manager reuse, bitmap/fallback fonts,
+complete library initialization, the whole `SpanRunFunctor`, wrapping,
+document composition, pixels and vector output. Rust's production horizontal
+metrics remain unchanged; this capture does not establish their native parity.
+
 ### Direction, break boundaries and tabs
 
 `RichTextMeasure::measureParagraph`, `0x78a0c`, calls ICU

@@ -37,6 +37,9 @@ Planning, task lists and development progress are kept outside these documents.
   fixture 02 measurements, dot-background spacing and saved shape paths.
 - [`text-box-findings.md`](text-box-findings.md) — native standalone-text frames,
   bounded rich-text decoding, diagnostics, regressions and rendering limits.
+- [`text-layout-findings.md`](text-layout-findings.md) — native paragraph metrics,
+  wrapping, embedded-object placement, vector text transport and shaping numeric
+  domains, including Skia hinting and HarfBuzz advance conversion.
 - [`text-draw-identity-findings.md`](text-draw-identity-findings.md) — native span
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha
