@@ -15,7 +15,7 @@ filename extension. PDF writes one document even when the note has many pages.
 
 The implementation uses [krilla 0.8.2](https://docs.rs/krilla/0.8.2/krilla/)
 and a [bundled krilla-svg 0.8.1 adapter](../../crates/sdocx/src/pdf/svg/UPSTREAM.md), with
-usvg/resvg 0.47.0 shared with PNG export. All workspace packages now declare
+usvg/resvg 0.47.0 shared with PNG export. All workspace packages declare
 Rust 1.92. PDF dependencies remain optional for library consumers. The WASM bindings
 enable `pdf` and `serde`, exposing the same renderer through
 `DocumentSession.render_pdf`. Eight pinned Roboto/Roboto Mono faces are bundled

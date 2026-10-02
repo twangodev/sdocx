@@ -164,8 +164,8 @@ stored count need not equal 65501. This also does not establish a bound on
 how many historical samples a dispatched event can add.
 
 For this ordinary branch, a continuous user gesture can consequently
-yield multiple model objects. Export should preserve their stored object
-boundaries; joining adjacent strokes merely because their endpoints meet
+yield multiple model objects. Their stored object boundaries retain separate
+pen state; joining adjacent strokes merely because their endpoints meet
 can change per-object pen state and composition. The successful InkPen2
 beautification branch returns before this ordinary split check, so the
 trace does not establish the same splitting behavior for that path.

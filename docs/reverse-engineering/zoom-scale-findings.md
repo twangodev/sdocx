@@ -117,8 +117,8 @@ A nonidentity explicit matrix therefore selects that stored matrix in
 Under the transform branch, these fields configure the matrix whose
 inverse is applied during child-view input dispatch. An exact conversion
 still requires the child's position, pivot, rotation, ancestor transforms
-and any explicit matrix selection. Saved stroke replay should continue
-to use decoded coordinates without reapplying this editing-time zoom.
+and any explicit matrix selection. This editing-time transform does not establish
+an additional zoom conversion for decoded saved-stroke coordinates.
 
 ## Writing-view scale dispatch reaches the removers
 

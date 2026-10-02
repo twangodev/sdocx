@@ -4,7 +4,6 @@
 
 These findings use Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-No newly captured document was needed for this analysis.
 
 | Source | Contract |
 | --- | --- |
@@ -52,8 +51,7 @@ blobs and extension groups are bounded by the declared payload, excluding the
 signature. Unknown bytes after application custom data are retained.
 
 Document metadata uses display timestamps when present and falls back to core
-timestamps for older tags. The former fixed-offset reader could interpret
-string contents as timestamps. The detailed API preserves the full `u32`
+timestamps for older tags. The detailed API preserves the full `u32`
 version; the existing `FormatVersion(u16)` metadata field only receives versions
 it can represent and otherwise remains eligible for the note-header fallback.
 
@@ -76,7 +74,7 @@ and resource limits. These are binary-contract tests, not Samsung export or
 visual fidelity measurements.
 
 The stream reader skips the ZIP EOCD's variable-length comment before reading
-the outer tag. The SDK now uses that record in preference to `end_tag.bin`.
+the outer tag. The SDK uses that record in preference to `end_tag.bin`.
 It scans a bounded tail large enough for both maximum `u16` lengths: the ZIP
 comment and the end-tag payload, plus their fixed headers. The native reader's
 65,535-byte scan window is smaller; supporting both maximum lengths together
@@ -90,7 +88,7 @@ fatal. A tag inside the ZIP comment is not an appended record.
 
 Tests cover differing inner/outer timestamps, absent inner members, ZIP comments,
 ZIP64, preambles, maximum lengths, false footer bytes in metadata, malformed
-trailers and limits. A marker in a valid prefixed ZIP no longer triggers the
+trailers and limits. A marker in a valid prefixed ZIP does not trigger the
 legacy protected-document heuristic; that fallback only applies after ZIP
 opening fails. ZIP directory validation remains delegated to the ZIP library.
 The appended layout assumes a single-disk archive and a trailer ending at EOF.

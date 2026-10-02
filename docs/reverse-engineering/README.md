@@ -75,7 +75,7 @@ Planning, task lists and development progress are kept outside these documents.
   string IDs, native pen registry, fallback lookup and Marker2 version selection.
 - [`marker2-rendering-findings.md`](marker2-rendering-findings.md) — V1/V2
   coverage comparison, size conversion, thin-stroke smoothing, and the saved
-  Marker2 geometry now used by the renderer.
+  Marker2 geometry used by the renderer.
 - [`marker4-rendering-findings.md`](marker4-rendering-findings.md) — saved V8
   rounded rectangular tips, opacity, and fixture 04 before/after measurements.
 - [`marker2-sampling-findings.md`](marker2-sampling-findings.md) — quadratic

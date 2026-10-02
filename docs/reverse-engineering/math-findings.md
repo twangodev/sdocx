@@ -4,8 +4,8 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-This pass uses native serializers, readers and getters, decompiled SDK constants,
-and synthetic records. It does not use new Samsung-generated SDOCX files.
+Evidence consists of native serializers, readers and getters, decompiled SDK
+constants and synthetic records. Samsung-generated math documents are not covered.
 
 Unless a library is named explicitly, addresses are ARM64 virtual addresses in
 `libSPenModel.so`.
@@ -117,7 +117,7 @@ entry limits, invalid lengths, non-finite margins, invalid UUID text encoding,
 wrong outer/frame types and out-of-bounds stored payload offsets. Formula bytes
 are checked for exact preservation rather than interpreted as valid formulas.
 
-Type-20 plot fields and graph expressions now have their own bounded inspection
+Type-20 plot fields and graph expressions have their own bounded inspection
 API; see [plot findings](plot-findings.md). Type-11 formulas also expose their
 expressions, embedded strokes and label graphs; see
 [formula findings](formula-findings.md). Real writer variants, layout and visual
