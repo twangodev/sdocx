@@ -13,6 +13,16 @@ pub(crate) fn capture_bodytext_page_ranges(
     bodytext_page_ranges::capture(machine, paths, bodytext);
 }
 
+#[path = "live_column_widths.rs"]
+mod column_widths;
+
+pub(crate) fn capture_column_widths(
+    machine: &mut Machine,
+    paths: widget_text_constructor::Paths<'_>,
+) {
+    column_widths::capture(machine, paths);
+}
+
 #[path = "bodytext_table_placement.rs"]
 mod bodytext_placement;
 

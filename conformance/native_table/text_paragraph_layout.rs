@@ -1,7 +1,8 @@
 use super::*;
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     ffi::{CString, c_char},
+    rc::Rc,
 };
 use text_font_source::{NativeFontEnvironment, TEXT, bytes, json_string};
 
@@ -101,8 +102,31 @@ pub(super) struct ParagraphIcu {
     names: BTreeMap<u64, String>,
     hooks: Vec<usize>,
     texts: BTreeMap<u64, Vec<u16>>,
+    break_iterators: BTreeSet<u64>,
+    utexts: BTreeMap<u64, HostUText>,
+    iterator_sources: BTreeMap<u64, Rc<Vec<u16>>>,
     pub(super) calls: Vec<String>,
     engine: Engine,
+}
+
+struct HostUText {
+    pointer: *mut c_void,
+    source: Rc<Vec<u16>>,
+    access_hook: usize,
+}
+
+unsafe extern "C" fn opaque_utext_access(
+    engine: Engine,
+    operation: i32,
+    address: u64,
+    size: i32,
+    _: i64,
+    _: *mut c_void,
+) {
+    panic!(
+        "native UText structure access: operation {operation}, address {address:x}, size {size}, pc {:x}",
+        read_register(engine, 260)
+    );
 }
 
 impl ParagraphIcu {
@@ -116,6 +140,9 @@ impl ParagraphIcu {
             names: BTreeMap::new(),
             hooks: Vec::new(),
             texts: BTreeMap::new(),
+            break_iterators: BTreeSet::new(),
+            utexts: BTreeMap::new(),
+            iterator_sources: BTreeMap::new(),
             calls: Vec::new(),
             engine: machine.engine,
         })
@@ -138,7 +165,16 @@ impl ParagraphIcu {
 
 impl Drop for ParagraphIcu {
     fn drop(&mut self) {
+        assert!(self.utexts.is_empty());
+        let close: unsafe extern "C" fn(*mut c_void) =
+            unsafe { std::mem::transmute(self.symbol("ubrk_close")) };
+        for iterator in std::mem::take(&mut self.break_iterators) {
+            unsafe { close(iterator as *mut c_void) };
+            self.texts.remove(&iterator);
+            self.iterator_sources.remove(&iterator);
+        }
         assert!(self.texts.is_empty());
+        assert!(self.iterator_sources.is_empty());
         for hook in &self.hooks {
             check(unsafe { uc_hook_del(self.engine, *hook) });
         }
@@ -192,10 +228,9 @@ pub(super) fn paragraph_icu_import(
 ) -> Option<u64> {
     if name == "dlsym" {
         let name = c_string(engine, args[1]);
-        if let Some(name) = name
-            .strip_suffix("_76")
-            .filter(|name| name.starts_with("ubidi_") || name.starts_with("ubrk_"))
-        {
+        if let Some(name) = name.strip_suffix("_76").filter(|name| {
+            name.starts_with("ubidi_") || name.starts_with("ubrk_") || name.starts_with("utext_")
+        }) {
             let _ = host.symbol(name);
             if let Some((&address, _)) = host.names.iter().find(|(_, saved)| saved.as_str() == name)
             {
@@ -248,6 +283,8 @@ unsafe extern "C" fn icu_call(engine: Engine, address: u64, _: u32, data: *mut c
                 let call: unsafe extern "C" fn(*mut c_void) = std::mem::transmute(function);
                 call(a[0] as *mut c_void);
                 host.texts.remove(&a[0]);
+                host.iterator_sources.remove(&a[0]);
+                host.break_iterators.remove(&a[0]);
                 0
             }
             "ubidi_getBaseDirection" => {
@@ -298,10 +335,9 @@ unsafe extern "C" fn icu_call(engine: Engine, address: u64, _: u32, data: *mut c
                 u64::from(call(a[0] as *mut c_void, a[1] as i32))
             }
             "ubrk_open" => {
-                assert_eq!(a[0], 2);
+                assert!(matches!(a[0], 0 | 2));
                 let text = utf16(engine, a[2], a[3]);
                 let locale = CString::new(c_string(engine, a[1])).unwrap();
-                assert!(locale.as_bytes().is_empty());
                 let mut error = read_u32(engine, a[4]) as i32;
                 let call: unsafe extern "C" fn(
                     i32,
@@ -318,13 +354,83 @@ unsafe extern "C" fn icu_call(engine: Engine, address: u64, _: u32, data: *mut c
                     &mut error,
                 ) as u64;
                 write(engine, a[4], &error.to_le_bytes());
-                host.texts.insert(iterator, text);
+                if iterator != 0 {
+                    host.break_iterators.insert(iterator);
+                    host.texts.insert(iterator, text);
+                }
                 iterator
             }
             "ubrk_following" => {
                 let call: unsafe extern "C" fn(*mut c_void, i32) -> i32 =
                     std::mem::transmute(function);
                 call(a[0] as *mut c_void, a[1] as i32) as i64 as u64
+            }
+            "utext_openUChars" => {
+                assert_ne!(a[0], 0);
+                let source = Rc::new(utf16(engine, a[1], a[2]));
+                let mut error = read_u32(engine, a[3]) as i32;
+                let call: unsafe extern "C" fn(
+                    *mut c_void,
+                    *const u16,
+                    i64,
+                    *mut i32,
+                ) -> *mut c_void = std::mem::transmute(function);
+                let pointer = call(
+                    ptr::null_mut(),
+                    source.as_ptr(),
+                    source.len() as i64,
+                    &mut error,
+                );
+                write(engine, a[3], &error.to_le_bytes());
+                if pointer.is_null() {
+                    0
+                } else {
+                    if let Some(previous) = host.utexts.remove(&a[0]) {
+                        check(uc_hook_del(engine, previous.access_hook));
+                        let close: unsafe extern "C" fn(*mut c_void) -> *mut c_void =
+                            std::mem::transmute(host.symbol("utext_close"));
+                        close(previous.pointer);
+                    }
+                    let mut access_hook = 0;
+                    check(uc_hook_add(
+                        engine,
+                        &mut access_hook,
+                        1024 | 2048,
+                        opaque_utext_access as *mut c_void,
+                        ptr::null_mut(),
+                        a[0],
+                        a[0] + 143,
+                    ));
+                    host.utexts.insert(
+                        a[0],
+                        HostUText {
+                            pointer,
+                            source,
+                            access_hook,
+                        },
+                    );
+                    a[0]
+                }
+            }
+            "utext_close" => {
+                let text = host.utexts.remove(&a[0]).unwrap();
+                check(uc_hook_del(engine, text.access_hook));
+                let call: unsafe extern "C" fn(*mut c_void) -> *mut c_void =
+                    std::mem::transmute(function);
+                assert!(call(text.pointer).is_null());
+                0
+            }
+            "ubrk_setUText" => {
+                let text = host.utexts.get(&a[1]).unwrap();
+                let mut error = read_u32(engine, a[2]) as i32;
+                let call: unsafe extern "C" fn(*mut c_void, *mut c_void, *mut i32) =
+                    std::mem::transmute(function);
+                call(a[0] as *mut c_void, text.pointer, &mut error);
+                write(engine, a[2], &error.to_le_bytes());
+                if error <= 0 {
+                    host.iterator_sources.insert(a[0], Rc::clone(&text.source));
+                }
+                0
             }
             _ => panic!("unsupported paragraph ICU call {name}"),
         }
