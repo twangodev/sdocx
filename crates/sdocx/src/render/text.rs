@@ -475,8 +475,8 @@ impl<'a> StyledText<'a> {
                 }
                 RichTextSpanType::FontSize => {}
                 RichTextSpanType::FontName => {
-                    if let Some(name) = span.font_name_value() {
-                        style.family = (!name.is_empty()).then(|| name.to_owned());
+                    if let Some(name) = span.decoded_font_name_value() {
+                        style.family = (!name.is_empty()).then(|| name.into_owned());
                     }
                 }
                 RichTextSpanType::Bold => {
@@ -500,10 +500,12 @@ impl<'a> StyledText<'a> {
                     }
                 }
                 RichTextSpanType::Hyperlink => {
-                    is_hyperlink = span
-                        .hyperlink_value()
+                    let hyperlink = span.hyperlink_value();
+                    is_hyperlink = hyperlink
+                        .as_ref()
                         .is_some_and(|hyperlink| hyperlink.kind.is_hypertext());
-                    style.link_target = hyperlink_target(&self.index, span);
+                    style.link_target = hyperlink
+                        .and_then(|hyperlink| hyperlink_target(&self.index, span, hyperlink));
                 }
                 _ => {}
             }
@@ -630,8 +632,11 @@ fn span_range(index: &TextIndex<'_>, span: &RichTextSpan) -> Option<Range<usize>
     (start < end).then_some(start..end)
 }
 
-fn hyperlink_target(index: &TextIndex<'_>, span: &RichTextSpan) -> Option<String> {
-    let hyperlink = span.hyperlink_value()?;
+fn hyperlink_target(
+    index: &TextIndex<'_>,
+    span: &RichTextSpan,
+    hyperlink: crate::RichTextHyperlink,
+) -> Option<String> {
     if !hyperlink.kind.is_hypertext() {
         return None;
     }

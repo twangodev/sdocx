@@ -710,6 +710,15 @@ impl RichTextSpan {
 
     /// Decode a font-name span's length-prefixed, NUL-terminated UTF-8 name.
     pub fn font_name_value(&self) -> Option<&str> {
+        std::str::from_utf8(self.font_name_bytes()?).ok()
+    }
+
+    /// Decode a native UTF-8 or CESU-8 font name, borrowing when no conversion is needed.
+    pub fn decoded_font_name_value(&self) -> Option<std::borrow::Cow<'_, str>> {
+        cesu8::from_cesu8(self.font_name_bytes()?).ok()
+    }
+
+    fn font_name_bytes(&self) -> Option<&[u8]> {
         if self.kind != RichTextSpanType::FontName {
             return None;
         }
@@ -720,7 +729,7 @@ impl RichTextSpan {
         if name.contains(&0) {
             return None;
         }
-        std::str::from_utf8(name).ok()
+        Some(name)
     }
 
     /// Decode the type and optional target stored by a hyperlink span.
@@ -1448,6 +1457,10 @@ mod tests {
             b'o', 0,
         ]);
         assert_eq!(regular.font_name_value(), Some("Roboto"));
+        assert!(matches!(
+            regular.decoded_font_name_value(),
+            Some(std::borrow::Cow::Borrowed("Roboto"))
+        ));
 
         let quoted_unicode = font_name_span(&[
             0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78, 8, 0, b' ', b'"', 0xe7, 0xad, 0x86,
@@ -1461,6 +1474,31 @@ mod tests {
 
         let empty = font_name_span(&[0xde, 0xad, 0xbe, 0xef, 0x12, 0x34, 0x56, 0x78, 1, 0, 0]);
         assert_eq!(empty.font_name_value(), Some(""));
+        assert_eq!(empty.decoded_font_name_value().as_deref(), Some(""));
+    }
+
+    #[test]
+    fn font_names_decode_native_cesu8_surrogate_pairs_without_losing_payloads() {
+        let span = font_name_span(&[
+            0, 0, 0, 0, 0, 0, 0, 0, 13, 0, 0xe5, 0xad, 0x97, 0xe4, 0xbd, 0x93, 0xed, 0xa0, 0xb4,
+            0xed, 0xb4, 0x9e, 0,
+        ]);
+        let original = span.payload.clone();
+        assert_eq!(span.font_name_value(), None);
+        assert!(
+            matches!(span.decoded_font_name_value(), Some(std::borrow::Cow::Owned(ref name)) if name == "字体𝄞")
+        );
+        assert_eq!(span.payload, original);
+
+        let mut utf8 = vec![0; 8];
+        utf8.extend_from_slice(&11_u16.to_le_bytes());
+        utf8.extend_from_slice("字体𝄞".as_bytes());
+        utf8.push(0);
+        let span = font_name_span(&utf8);
+        assert!(matches!(
+            span.decoded_font_name_value(),
+            Some(std::borrow::Cow::Borrowed("字体𝄞"))
+        ));
     }
 
     #[test]
@@ -1471,10 +1509,15 @@ mod tests {
         ];
         for end in 0..valid.len() {
             assert_eq!(font_name_span(&valid[..end]).font_name_value(), None);
+            assert_eq!(
+                font_name_span(&valid[..end]).decoded_font_name_value(),
+                None
+            );
         }
         let mut wrong_kind = font_name_span(&valid);
         wrong_kind.kind = RichTextSpanType::ForegroundColor;
         assert_eq!(wrong_kind.font_name_value(), None);
+        assert_eq!(wrong_kind.decoded_font_name_value(), None);
 
         let malformed: &[&[u8]] = &[
             &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1483,10 +1526,59 @@ mod tests {
             &[0, 0, 0, 0, 0, 0, 0, 0, 2, 0, b'A', b'B'],
             &[0, 0, 0, 0, 0, 0, 0, 0, 3, 0, b'A', 0, 0],
             &[0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0xe7, 0xad, 0],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0xed, 0xa0, 0xb4, 0],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0xed, 0xb4, 0x9e, 0],
+            &[
+                0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0xed, 0xa0, 0xb4, 0xed, 0xb4, 0,
+            ],
+            &[0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0xc0, 0x80, 0],
         ];
         for payload in malformed {
             assert_eq!(font_name_span(payload).font_name_value(), None);
+            assert_eq!(font_name_span(payload).decoded_font_name_value(), None);
         }
+    }
+
+    #[test]
+    fn font_names_match_native_binary_writer_outputs() {
+        use sha2::Digest;
+
+        const FIXTURE: &str = include_str!("../../../conformance/table-text-span-binary.json");
+        assert_eq!(
+            format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
+            "0e8437fead4285c0ead18349f8708309219c74c6aae8a2acc83bec9fdbbc1c7b"
+        );
+        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let mut count = 0;
+        for case in capture["cases"].as_array().unwrap() {
+            if case["kind"].as_u64() != Some(4) || case["written"].as_bool() != Some(true) {
+                continue;
+            }
+            let bytes: Vec<u8> = case["output"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
+                .collect();
+            let span = font_name_span(&bytes[16..]);
+            let expected = case["decoded"]["name"].as_str().unwrap();
+            assert_eq!(
+                span.decoded_font_name_value().as_deref(),
+                Some(expected),
+                "{}",
+                case["name"]
+            );
+            for end in 0..span.payload.len() {
+                assert_eq!(
+                    font_name_span(&span.payload[..end]).decoded_font_name_value(),
+                    None,
+                    "{} truncated at {end}",
+                    case["name"]
+                );
+            }
+            count += 1;
+        }
+        assert_eq!(count, 60);
     }
 
     #[test]

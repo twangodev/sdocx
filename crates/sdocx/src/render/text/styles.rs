@@ -29,7 +29,7 @@ impl Property {
             RichTextSpanType::FontSize => span.font_size_value().map(|_| Self::FontSize),
             RichTextSpanType::ForegroundColor => span.color_value().map(|_| Self::Foreground),
             RichTextSpanType::BackgroundColor => span.argb_value().map(|_| Self::Background),
-            RichTextSpanType::FontName => span.font_name_value().map(|_| Self::Family),
+            RichTextSpanType::FontName => span.decoded_font_name_value().map(|_| Self::Family),
             RichTextSpanType::Bold => span.boolean_value().map(|_| Self::Bold),
             RichTextSpanType::Italic => span.boolean_value().map(|_| Self::Italic),
             RichTextSpanType::Underline => span.boolean_value().map(|_| Self::Underline),

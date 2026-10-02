@@ -17,6 +17,7 @@ serde = ["dep:serde"]
 sha2 = "0.10.9"
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
+cesu8 = "1.1.0"
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 svg = { version = "0.18.0", optional = true }
 base64 = { version = "0.22", optional = true }

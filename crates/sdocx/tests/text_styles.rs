@@ -537,10 +537,7 @@ fn ignored_native_styles_report_the_same_diagnostics_in_svg_and_vector_pdf() {
             "{context:?}"
         );
         let parsed = lopdf::Document::load_mem(&pdf.bytes).unwrap();
-        assert_eq!(
-            parsed.extract_text(&[1]).unwrap().trim(),
-            "ABCDE"
-        );
+        assert_eq!(parsed.extract_text(&[1]).unwrap().trim(), "ABCDE");
     }
 }
 
@@ -686,6 +683,45 @@ fn font_name_spans_apply_locally_in_each_text_context() {
         }
         assert_eq!(tspan(&xml, "A").attribute("font-family"), None);
         assert_eq!(tspan(&xml, " C").attribute("font-family"), None);
+    }
+}
+
+#[test]
+fn native_cesu8_font_names_reach_font_resolution_in_every_context() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/table-text-span-binary.json"
+    ))
+    .unwrap();
+    let case = fixture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "font-cesu8-v8")
+        .unwrap();
+    let output = case["output"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|byte| byte.as_u64().unwrap() as u8)
+        .collect::<Vec<_>>();
+    let family = case["decoded"]["name"].as_str().unwrap();
+    let mut content = text("ABC");
+    content
+        .spans
+        .push(span(RichTextSpanType::FontName, 0, 1, &output[16..]));
+    for &context in CONTEXTS {
+        let document = document(context, content.clone());
+        let page = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+        assert!(
+            page.text_diagnostics.iter().any(|issue| {
+                issue.kind == sdocx::TextDiagnosticKind::UnavailableFamily
+                    && issue.family == family
+                    && issue.codepoints.is_empty()
+            }),
+            "{context:?}: {:?}",
+            page.text_diagnostics
+        );
+        assert_eq!(content.spans[0].payload, output[16..]);
     }
 }
 
