@@ -6,14 +6,16 @@ const MAX_UTF16_ENTRIES: usize = 250_000;
 const MAX_CACHED_GLYPHS: usize = 1_000_000;
 
 #[cfg(all(test, feature = "serde"))]
+mod cell_fixture_tests;
+#[cfg(all(test, feature = "serde"))]
 mod fixture_tests;
 
 #[derive(Debug, Clone, Copy)]
-pub(super) enum NativeFontState<'a> {
+pub(super) enum NativeFontState<'a, Source = i32> {
     Missing,
     #[cfg_attr(not(test), allow(dead_code))]
     Known {
-        source_id: i32,
+        source: Source,
         bitmap: bool,
         language: &'a str,
     },
@@ -27,12 +29,12 @@ pub(super) struct NativeHorizontalGeometry {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(super) struct NativeBoundaryEntry<'a> {
+pub(super) struct NativeBoundaryEntry<'a, Source = i32> {
     pub kind: Option<u32>,
     pub direction: Option<i32>,
     pub horizontal: Option<NativeHorizontalGeometry>,
     pub span: Result<&'a NativeDrawSpan, NativeIdentityUnavailable>,
-    pub font: NativeFontState<'a>,
+    pub font: NativeFontState<'a, Source>,
 }
 
 impl<'a> NativeBoundaryEntry<'a> {
@@ -54,9 +56,9 @@ pub(super) enum NativeRunBoundary {
     Unavailable,
 }
 
-pub(super) fn native_run_boundary(
-    previous: NativeBoundaryEntry<'_>,
-    current: NativeBoundaryEntry<'_>,
+pub(super) fn native_run_boundary<Source: Copy + PartialEq>(
+    previous: NativeBoundaryEntry<'_, Source>,
+    current: NativeBoundaryEntry<'_, Source>,
 ) -> NativeRunBoundary {
     if matches!(previous.font, NativeFontState::Missing)
         || matches!(current.font, NativeFontState::Missing)
@@ -95,14 +97,8 @@ pub(super) fn native_run_boundary(
     {
         return NativeRunBoundary::Split;
     }
-    let (
-        NativeFontState::Known {
-            source_id: left, ..
-        },
-        NativeFontState::Known {
-            source_id: right, ..
-        },
-    ) = (previous.font, current.font)
+    let (NativeFontState::Known { source: left, .. }, NativeFontState::Known { source: right, .. }) =
+        (previous.font, current.font)
     else {
         return NativeRunBoundary::Unavailable;
     };
@@ -176,7 +172,7 @@ pub(super) struct NativeGlyphCache<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(super) struct NativeRunEntry<'a> {
+pub(super) struct NativeRunEntry<'a, Source = i32> {
     pub kind: u32,
     pub direction: i32,
     pub advance: f32,
@@ -185,12 +181,12 @@ pub(super) struct NativeRunEntry<'a> {
     pub ink: NativeRect,
     pub cache: NativeGlyphCache<'a>,
     pub span: &'a NativeDrawSpan,
-    pub font: NativeFontState<'a>,
+    pub font: NativeFontState<'a, Source>,
     pub paragraph_override: bool,
 }
 
-impl<'a> NativeRunEntry<'a> {
-    fn boundary(&self) -> NativeBoundaryEntry<'a> {
+impl<'a, Source: Copy> NativeRunEntry<'a, Source> {
+    fn boundary(&self) -> NativeBoundaryEntry<'a, Source> {
         NativeBoundaryEntry {
             kind: Some(self.kind),
             direction: Some(self.direction),
@@ -234,13 +230,13 @@ pub(super) enum NativeEmittedKind {
 }
 
 #[derive(Debug, PartialEq)]
-pub(super) struct NativeEmittedRun {
+pub(super) struct NativeEmittedRun<Source = i32> {
     pub source: RangeInclusive<usize>,
     pub glyphs: Vec<NativeEmittedGlyph>,
     pub origin: [f32; 2],
     pub layout: NativeRect,
     pub ink: NativeRect,
-    pub font_id: i32,
+    pub font_source: Option<Source>,
     pub paint: NativeRunPaint,
     pub kind: NativeEmittedKind,
 }
@@ -268,7 +264,7 @@ fn finite(value: f32) -> Result<f32, NativeRunError> {
         .ok_or(NativeRunError::InvalidGeometry)
 }
 
-struct PendingRun<'a> {
+struct PendingRun<'a, Source> {
     start: usize,
     previous: Option<usize>,
     glyphs: Vec<NativeEmittedGlyph>,
@@ -276,10 +272,10 @@ struct PendingRun<'a> {
     layout: NativeRect,
     ink: NativeRect,
     span: Option<&'a NativeDrawSpan>,
-    font: NativeFontState<'a>,
+    font: NativeFontState<'a, Source>,
 }
 
-impl<'a> PendingRun<'a> {
+impl<'a, Source: Copy> PendingRun<'a, Source> {
     fn new(start: usize) -> Self {
         Self {
             start,
@@ -295,15 +291,23 @@ impl<'a> PendingRun<'a> {
 
     fn append(
         &mut self,
-        end: usize,
-        entries: &[NativeRunEntry<'_>],
-    ) -> Result<NativeEmittedRun, NativeRunError> {
+        end: Option<usize>,
+        entries: &[NativeRunEntry<'_, Source>],
+        emitted_glyphs: &mut usize,
+    ) -> Result<Option<NativeEmittedRun<Source>>, NativeRunError> {
         if entries[self.start].direction != 0 {
             self.glyphs.reverse();
         }
-        let font_id = match self.font {
-            NativeFontState::Missing => -1,
-            NativeFontState::Known { source_id, .. } => source_id,
+        let Some(end) = end.filter(|end| self.start <= *end) else {
+            return Ok(None);
+        };
+        *emitted_glyphs = emitted_glyphs
+            .checked_add(self.glyphs.len())
+            .filter(|count| *count <= MAX_CACHED_GLYPHS)
+            .ok_or(NativeRunError::BudgetExceeded)?;
+        let font_source = match self.font {
+            NativeFontState::Missing => None,
+            NativeFontState::Known { source, .. } => Some(source),
             NativeFontState::Unavailable => {
                 return Err(NativeRunError::UnavailableFont(self.start));
             }
@@ -332,29 +336,29 @@ impl<'a> PendingRun<'a> {
             paint.foreground = (paint.foreground & 0x00ff_ffff) | 0x6600_0000;
             paint.style_bits |= 8;
         }
-        Ok(NativeEmittedRun {
+        Ok(Some(NativeEmittedRun {
             source: self.start..=end,
-            glyphs: std::mem::take(&mut self.glyphs),
+            glyphs: self.glyphs.clone(),
             origin: self.origin,
             layout: self.layout,
             ink: self.ink,
-            font_id,
+            font_source,
             paint,
             kind: if self.span.is_none() {
                 NativeEmittedKind::DefaultEmpty
             } else {
                 NativeEmittedKind::Glyphs
             },
-        })
+        }))
     }
 }
 
 #[cfg_attr(not(test), allow(dead_code))]
-pub(super) fn native_runs(
-    entries: &[NativeRunEntry<'_>],
+pub(super) fn native_runs<Source: Copy + PartialEq>(
+    entries: &[NativeRunEntry<'_, Source>],
     range: RangeInclusive<usize>,
     offset: NativeRunOffset,
-) -> Result<Vec<NativeEmittedRun>, NativeRunError> {
+) -> Result<Vec<NativeEmittedRun<Source>>, NativeRunError> {
     if entries.len() > MAX_UTF16_ENTRIES {
         return Err(NativeRunError::BudgetExceeded);
     }
@@ -374,7 +378,15 @@ pub(super) fn native_runs(
     let y_offset = finite(offset.gravity + offset.y)?;
     let mut pending = PendingRun::new(start);
     let mut output = Vec::new();
+    let mut emitted_glyphs = 0;
     for (index, entry) in entries.iter().enumerate().take(end + 1).skip(start) {
+        if entry.kind == 4 && !entry.cache.drawable {
+            if let Some(run) = pending.append(index.checked_sub(1), entries, &mut emitted_glyphs)? {
+                output.push(run);
+            }
+            pending.start = index + 1;
+            continue;
+        }
         if !matches!(entry.kind, 0..=3 | 5) {
             return Err(NativeRunError::UnsupportedKind(entry.kind));
         }
@@ -404,12 +416,15 @@ pub(super) fn native_runs(
                 native_run_boundary(entries[previous].boundary(), entry.boundary())
             });
         if index > start && boundary != NativeRunBoundary::Join {
-            output.push(pending.append(index - 1, entries)?);
+            if let Some(run) = pending.append(index.checked_sub(1), entries, &mut emitted_glyphs)? {
+                output.push(run);
+            }
             pending.start = index;
         }
         let layout = entry.layout.offset(offset.x, y_offset)?;
         let ink = entry.ink.offset(offset.x, y_offset)?;
         if index == pending.start {
+            pending.glyphs.clear();
             pending.origin = [
                 finite(entry.position[0] + offset.x)?,
                 finite(entry.position[1] + y_offset)?,
@@ -432,7 +447,11 @@ pub(super) fn native_runs(
         pending.span = Some(entry.span);
         pending.font = entry.font;
     }
-    output.push(pending.append(end, entries)?);
+    if pending.start <= end
+        && let Some(run) = pending.append(Some(end), entries, &mut emitted_glyphs)?
+    {
+        output.push(run);
+    }
     Ok(output)
 }
 
@@ -469,12 +488,111 @@ mod tests {
             },
             span,
             font: NativeFontState::Known {
-                source_id: 7,
+                source: 7,
                 bitmap: false,
                 language: "en",
             },
             paragraph_override: false,
         }
+    }
+
+    #[test]
+    fn newline_flushes_before_owner_validation_and_retains_native_buffer_state() {
+        let span = span();
+        let glyphs = [NativeCachedGlyph {
+            payload: 1,
+            offset: [0.0; 2],
+        }];
+        let first = entry(&span, &glyphs);
+        let sentinel = NativeRunEntry {
+            kind: 4,
+            font: NativeFontState::Unavailable,
+            cache: NativeGlyphCache {
+                drawable: false,
+                glyphs: &[],
+            },
+            ..first
+        };
+        assert!(
+            native_runs(&[sentinel], 0..=0, NativeRunOffset::default())
+                .unwrap()
+                .is_empty()
+        );
+        let trailing = native_runs(&[first, sentinel], 0..=1, NativeRunOffset::default()).unwrap();
+        assert_eq!(trailing.len(), 1);
+        assert_eq!(trailing[0].source, 0..=0);
+        let final_owner = NativeRunEntry {
+            position: [20.0, 37.0],
+            ..first
+        };
+        let consecutive = native_runs(
+            &[first, sentinel, sentinel, final_owner],
+            0..=3,
+            NativeRunOffset::default(),
+        )
+        .unwrap();
+        assert_eq!(consecutive.len(), 2);
+        assert_eq!(consecutive[1].source, 3..=3);
+        assert_eq!(consecutive[1].glyphs.len(), 1);
+
+        let mut budgeted = PendingRun::new(0);
+        budgeted.glyphs = vec![NativeEmittedGlyph {
+            payload: 1,
+            owner_utf16: 0,
+            x: 0.0,
+        }];
+        let mut full_budget = MAX_CACHED_GLYPHS;
+        assert_eq!(
+            budgeted.append(Some(0), &[first], &mut full_budget),
+            Err(NativeRunError::BudgetExceeded)
+        );
+
+        let rtl_entries = [NativeRunEntry {
+            direction: 1,
+            ..first
+        }; 2];
+        let mut pending = PendingRun::new(0);
+        pending.glyphs = vec![
+            NativeEmittedGlyph {
+                payload: 1,
+                owner_utf16: 0,
+                x: 0.0,
+            },
+            NativeEmittedGlyph {
+                payload: 2,
+                owner_utf16: 0,
+                x: 1.0,
+            },
+        ];
+        assert!(
+            pending
+                .append(None, &rtl_entries, &mut 0)
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            pending
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.payload)
+                .collect::<Vec<_>>(),
+            [2, 1]
+        );
+        pending.start = 1;
+        assert!(
+            pending
+                .append(Some(0), &rtl_entries, &mut 0)
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            pending
+                .glyphs
+                .iter()
+                .map(|glyph| glyph.payload)
+                .collect::<Vec<_>>(),
+            [1, 2]
+        );
     }
 
     #[test]
@@ -517,7 +635,7 @@ mod tests {
             advance: 10.0,
         });
         previous.font = NativeFontState::Known {
-            source_id: -1,
+            source: -1,
             bitmap: false,
             language: "",
         };
@@ -532,7 +650,7 @@ mod tests {
             NativeRunBoundary::Split
         );
         current.font = NativeFontState::Known {
-            source_id: -1,
+            source: -1,
             bitmap: true,
             language: "und-Deva",
         };
@@ -546,7 +664,7 @@ mod tests {
             NativeRunBoundary::Split
         );
         previous.font = NativeFontState::Known {
-            source_id: -1,
+            source: -1,
             bitmap: false,
             language: "und-DevaX",
         };
@@ -555,7 +673,7 @@ mod tests {
             NativeRunBoundary::Join
         );
         previous.font = NativeFontState::Known {
-            source_id: -1,
+            source: -1,
             bitmap: false,
             language: "und-Deva",
         };

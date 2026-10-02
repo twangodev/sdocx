@@ -210,7 +210,7 @@ fn emit_case(case: &Case) -> CachedEmission {
                 .map_or(NativeFontState::Missing, |font| {
                     assert_ne!(font.wrapper, 0);
                     NativeFontState::Known {
-                        source_id: font.id,
+                        source: font.id,
                         bitmap: font.bitmap,
                         language: &font.language,
                     }
@@ -287,7 +287,11 @@ fn check_case(case: &Case) -> (usize, usize) {
         );
         let font_id = i32::try_from(expected.font_id)
             .unwrap_or_else(|_| u32::try_from(expected.font_id).unwrap() as i32);
-        assert_eq!(actual.font_id, font_id, "{context}: font identity");
+        assert_eq!(
+            actual.font_source.unwrap_or(-1),
+            font_id,
+            "{context}: font identity"
+        );
         assert_float_bits([actual.paint.font_size], [expected.font_size], &context);
         assert_eq!(
             actual.paint.foreground, expected.foreground,
@@ -488,7 +492,7 @@ fn glyphless_object_controls_are_separate_from_published_native_records() {
                 assert_eq!(runs.len(), 1);
                 assert_eq!(runs[0].kind, NativeEmittedKind::DefaultEmpty);
                 assert!(runs[0].glyphs.is_empty());
-                assert_eq!(runs[0].font_id, -1);
+                assert_eq!(runs[0].font_source, None);
                 assert_float_bits(runs[0].origin, [0.0; 2], &case.name);
                 empty_defaults += 1;
             }
