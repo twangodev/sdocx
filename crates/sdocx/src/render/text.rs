@@ -19,6 +19,8 @@ mod native_identity;
 mod native_line;
 #[cfg(any(feature = "pdf", test))]
 mod native_runs;
+#[cfg(test)]
+mod native_shaping;
 mod objects;
 mod pagination;
 mod paint;
