@@ -22,6 +22,10 @@ mod native_shaping_tests;
 #[path = "fonts/native_gpos_tests.rs"]
 mod native_gpos_tests;
 
+#[cfg(test)]
+#[path = "fonts/native_scaling_tests.rs"]
+mod native_scaling_tests;
+
 #[derive(Clone)]
 /// A shared font database with cached faces. Defaults contain pinned Roboto families.
 pub struct FontBook {

@@ -20,6 +20,8 @@ mod code;
 mod embedded;
 pub mod fonts;
 mod fountain;
+#[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
+mod harfrust;
 mod marker;
 pub use marker::PointMarkerTarget;
 mod placed;

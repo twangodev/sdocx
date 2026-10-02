@@ -10,6 +10,9 @@
 //! unsupported content and does not indicate a lossless decode. Preserve the
 //! source document when fidelity is important.
 
+#[cfg(feature = "render")]
+extern crate alloc;
+
 mod archive_tail;
 mod binary;
 #[cfg(feature = "render")]
