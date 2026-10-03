@@ -10,6 +10,8 @@ Offsets below are ELF virtual addresses, before relocation.
 | --- | --- |
 | `lib/arm64-v8a/libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `lib/arm64-v8a/libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+| `lib/arm64-v8a/libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+| `lib/arm64-v8a/libSPenMarker2.so` | `f1b2ceea921baac78b722cbd5423732f42d7bec19ccb63d428cf429582412269` |
 | `lib/arm64-v8a/libSPenPaintingCore.so` | `56b386228e9b4217a08e16afd7d8f65482bc6e66e4c76f0951a640e1a703c3fa` |
 | `lib/arm64-v8a/libSPenPaintingCompat.so` | `fb2f8cd46c45cc4b6ef79f7e7d45c7eac9f12583bfc70ff48e1244f9c861d4a8` |
 
@@ -105,6 +107,43 @@ establish metadata on ordinary strokes. They do not explain the wire payload
 of the separately named `StrokeGroup` type. Rust already exposes a common
 `group_id` in `ObjectFlexibleMetadata`; this is a separate preservation
 channel from `StoredObject.children`.
+
+## Sync grouping and ordinary drawing have distinct controls
+
+The decompiled sync listener `sources/e4/e.java`, `onOpen`, calls
+`SpenWNote.setStrokeGroupSize(100)` and requests save strategy 1024. Its
+caller, `sources/e4/f.java`, method `o`, opens the document through
+`UpdateDocumentHelper` and waits for the save callback. WDoc
+`WNote::SetStrokeGroupSize`, `0x9ed24`, routes a changed size through page
+and layer regrouping to Model's routine above. It requires regrouping to
+succeed before storing the size at `0x9eda0` and state flags at `0x9eda4`.
+In this regroup routine, UUIDs mark selected boundaries rather than assigning
+one shared identifier to every stroke in a run.
+
+Drawing `ObjectDrawing::drawObject` supplies literal `w4 = 0` at `0x7fd48`
+to its ordinary type-1 `drawObjectStroke` call at `0x7fd64`. That adapter
+reads `GetAdvancedPenSetting` at `0x81aec` and searches for `WETDRY` at
+`0x81b00`; the literal begins at Drawing `0x4ffb5`. A successful search
+sets the queue flag; an absent setting sets it to false at `0x81b8c`.
+The true branch adds the stroke to the renderer's pending list at `0x8256c`.
+The false branch adds it at `0x8257c`, calls `redrawIPen` at `0x82590`, then
+clears that list at `0x82598`. This queue branch uses a saved pen setting,
+not the common group UUID. Its redraw dispatch additionally distinguishes
+list count and stroke type (`0x82af4`–`0x82b70`).
+
+A concrete saved-stroke consumer, Marker2 V1
+`RedrawPen(ObjectStroke const*, RectF*)`, `0x21c58`, builds its `MotionEvent`
+at `0x21d04` from tool type, sample count, XY, pressure, timestamps, tilt and
+orientation. It passes the event through drawable slot 144 at `0x21d1c`;
+the original stroke pointer and common UUID do not cross that callback.
+This result concerns this wrapper, not every plugin or multi-object renderer.
+
+These static paths support retaining `group_id` independently of geometry and
+physical children. They do not justify merging strokes into one SVG opacity
+group by UUID. They also do not establish a metadata-only role throughout the
+app or grouped-stroke appearance parity. Deferred queue flushing and other
+plugins' multi-stroke behavior remain separate boundaries; the recovered
+[pen-opacity controls](pen-opacity-findings.md) still apply independently.
 
 ## Painting stores source and preview resources separately
 
