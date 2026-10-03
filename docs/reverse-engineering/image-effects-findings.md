@@ -1,0 +1,272 @@
+# Native image drawing and effect activation
+
+## Evidence and scope
+
+These are static ARM64 findings from Samsung Notes 4.4.45.37, APK SHA-256
+`daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
+The inspected ELF files were compared byte-for-byte with their APK entries.
+Addresses below are ELF virtual addresses in Drawing unless otherwise qualified.
+
+| Library | SHA-256 |
+| --- | --- |
+| `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+| `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenGraphics.so` | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
+| `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
+
+The [image serialization findings](image-findings.md) describe the saved fields
+and existing paired-document coverage. No native execution or new Samsung
+document/export pair was used for the drawing findings here.
+
+## Image-fill byte offsets and defaults
+
+Model `FillImageEffect::GetBinary`, `0x3b90c8`, writes the normal 62-byte
+payload below. Offsets are relative to the fill payload, excluding the
+enclosing effect type and size. The suffix writes are at `0x3b91cc`–`0x3b924c`.
+
+| Offset | Saved value |
+| ---: | --- |
+| 0 | `u8` fill mode: Java names 0 stretch and 1 tiling |
+| 1 | `i32` main media bind ID |
+| 5 | Four `f32` stretch offsets |
+| 21 | Two `f32` tiling offsets |
+| 29 / 33 | `f32` tiling scales X / Y |
+| 37 | `f32` transparency |
+| 41 | One-byte rotatable flag |
+| 42 | Four `i32` nine-patch coordinates |
+| 58 | `i32` nine-patch width |
+
+The coedit writer replaces the four-byte ID with a 64-byte hash, shifting
+every suffix offset by 60 and making the payload 122 bytes. The hash copy
+is at `0x3b9174`–`0x3b9180`; the ordinary ID store is at `0x3b91c4`.
+The coedit entry point `GetBinaryByCoedit`, `0x3b9594`, enables the alternate
+mode at `0x3b95b4`, invokes the common writer, then clears the mode byte.
+
+`ApplyBinary`, `0x3b9298`, normalizes any nonzero rotatable byte to true at
+`0x3b947c`–`0x3b948c`. It consumes the nine-patch suffix only when its
+unsigned version argument is at least 28, at `0x3b9488`–`0x3b9490`.
+This is the fill reader's version argument, not an established archive
+version-number rule.
+
+Native `FillImageEffect::Construct` calls its initialization helper at
+`0x3b80a4`; the helper at `0x3b8110`–`0x3b8160`
+sets stretch/tiling offsets and transparency to zero, tiling scales to 100,
+fill mode to 0, image index to -1, and rotatable to false. In contrast,
+`com/samsung/android/sdk/pen/document/shapeeffect/SpenFillImageEffect.java`
+initializes rotatable to true. That Java constructor is not evidence for
+the native `Construct` defaults. The Java setters allow arbitrary
+float offsets, scales and transparency; its fill-mode setter rejects values
+outside 0–1.
+
+## Original placement precision and coedit span state
+
+Type-3 field 17 writes four `f64` coordinates, but its native storage is
+an integer `Rect`. Model's writer converts the stored signed integers to
+doubles at `0x3a4740`–`0x3a4768`. The reader converts those doubles toward
+zero to 64-bit integers, keeps their low 32 bits, and only then applies
+`Rect::Scale` for non-unit magnification, at `0x3a4bf8`–`0x3a4c2c`.
+For finite coordinates in the representable range, a fractional wire value
+therefore does not remain fractional in native original-placement storage.
+The Java `SpenObjectImage` API also exposes `originalRect` as `Rect`, whereas
+displayed/drawn bounds use `RectF`.
+
+Type-3 field 19 is a saved span-attribute payload under a coedit writer gate.
+At `0x3a47e8`–`0x3a482c`, the writer requires an available context,
+`IsInitializeCoeditData == false`, `IsCoeditMode == true`, and
+`ObjectBase::BelongsToSpan == true`. Model getters `0x2ac29c` and
+`0x2ac2dc` identify the two context checks independently.
+
+The payload at `0x3a4830`–`0x3a4884` is a four-byte path size, the saved
+attribute path encoded with document-type argument 2, and two integer
+rectangles from `ObjectShapeImage` offsets 200 and 184, in that order.
+The reader restores them at `0x3a4ca0`–`0x3a4d0c` and calls
+`SetSavedAttValue(true)` at `0x3a4d20`. When the field is absent, it clears
+the saved attribute path and both rectangles at `0x3a4c4c`–`0x3a4c84`.
+These consumers establish coedit saved-span state; they do not establish
+that field 19 is a generic image mask. The geometric roles of the two
+rectangles remain unidentified here.
+
+## Shape effects and image pixels have separate drawing calls
+
+`ObjectDrawing::drawObjectImage`, `0x80f54`, constructs an
+`ObjectImageDrawing`, installs the image object, calls `DrawPath` at `0x80fbc`,
+then calls `DrawBitmap` at `0x80fd0`. These are separate operations.
+
+`ObjectImageDrawing::SetObject`, `0x846fc`, calls
+`ObjectShape::HasVisibleEffect` at `0x84720` and stores that result at internal
+offset 8. Only a true result installs the object in the embedded
+`ObjectShapeDrawing`. `DrawPath`, `0x84794`, checks that byte at
+`0x847ac`–`0x847b0`; false returns success without drawing a path. True calls
+`ObjectShapeDrawing::SetEffect` at `0x847c4` and its `DrawPath` at `0x847e4`.
+Consequently, path presence alone does not establish that this shape-effect
+pass paints anything.
+
+`getImageFromObject`, `0x84978`, requests `ComponentImage::GetCacheImage`
+first at `0x84994`. If that pointer is null, it requests `GetImage` at
+`0x849d0`. Model `ComponentImage::GetImage`, `0x3a1a74`, checks that the fill
+effect has type 2 and then calls `FillImageEffect::GetImage` at `0x3a1aa8`.
+This route does not fetch the separate original-image or border-image reference.
+
+`getImageSPBitmap`, `0x849e8`, skips additional image processing when the
+input came from the object cache. Otherwise `isExtraDrawingExist`,
+`0x863fc`, selects processing for any of these conditions:
+
+- Positive legacy line-border width with nonzero border type.
+- Border type 4, even when its line-border width is zero.
+- Positive fill-effect transparency.
+- Enabled hint text with a nonnull text pointer.
+- A nonempty crop rectangle or a nonempty nine-patch rectangle.
+
+The checks occur at `0x8640c`, `0x86424`–`0x8642c`, `0x86434`–`0x8643c`,
+`0x86444`, `0x86450` and `0x86474`. The selected
+`getResizedImageBitmap`, `0x86478`, calls `calculateDstSize`, then
+`drawImage`, and stores the resulting bitmap through `setCacheImageToObject`
+at `0x86508`. This object-local processed-image cache is separate from the
+[document canvas cache](document-image-cache-findings.md).
+
+## Pixel placement uses drawn bounds, local size and rotation
+
+`drawImageBitmap`, `0x84b20`, calls object virtual slots 160 and 168 at
+`0x84b68` and `0x84b84`. Model's `ObjectImage` address point is `0x497b58`:
+relocations `0x497bf8` and `0x497c00` identify those methods as
+`ObjectShape::GetDrawnRect` and `ObjectShapeBase::GetRect`. Slot 136,
+called at `0x84be0`, resolves through `0x497be0` to `ObjectBase::GetRotation`.
+
+The canvas operations are save, translate to the drawn rectangle's center,
+rotate by the stored angle, then translate by minus half the local width and
+height. It draws the whole supplied bitmap source rectangle into
+`[0, 0, local_width, local_height]`, then restores the canvas. The calls are
+at `0x84ba0`, `0x84bcc`, `0x84bf0`, `0x84c20`, `0x84ccc` and `0x84ce0`.
+Graphics relocations `0xd0308`, `0xd0370`, `0xd0350`, `0xd0420` and
+`0xd0310` identify the relevant `SPCanvas` operations as `Save`,
+`PreTranslate`, `PreRotate`, the source/destination `DrawBitmap` overload,
+and `Restore`.
+
+This final placement function does not read `OriginalRect`. The existing
+Rust clipping reconstruction for the measured cropped span is described in
+[image findings](image-findings.md#images-embedded-in-document-text-flow);
+that measured result does not establish the full native original-image editing
+or regeneration lifecycle.
+
+## Fill transparency is fractional and applies before borders and hint text
+
+`getFillEffectTransparency`, `0x8596c`, returns zero for object types other
+than 3. For type 3 it constructs a `FillImageEffect`, obtains the object's
+fill effect at `0x859c4`, and returns `GetTransparency` at `0x859cc`.
+This float is distinct from the image component's Boolean transparency API.
+
+For positive transparency `t`, `drawImage`, `0x852a4`, calculates paint alpha
+as `255 - t * 255` using a fused `f32` multiply-subtract at `0x8531c`,
+converts toward zero, clamps to
+`[0, 255]`, and calls `SkPaint::setAlpha` at `0x85330`. The arithmetic and
+clamp are at `0x85308`–`0x8532c`. Nonpositive values bypass that update.
+These instructions do not establish useful behavior for non-finite values.
+
+The zero-alpha gate at `0x85338`–`0x8533c` skips image pixels. Its internal
+offset 135 is the alpha byte of the `SkPaint` at offset 40, not a separately
+serialized image property: Skia `setAlpha`, `0x1cac68`, writes the high byte
+of the color at paint offset 92. The default paint constructor at Skia
+`0x1c9c14` initializes that alpha to 255.
+
+After image painting, positive transparency causes alpha to be reset to 255
+at `0x85460`–`0x85468`. `drawBorder` and `drawHintText` are then called at
+`0x85478` and `0x85488`. Thus even completely transparent image pixels do
+not suppress these later operations. This ordering does not establish the
+opacity of the surrounding object list or page compositing pass.
+
+## Crop takes precedence over nine-patch
+
+For a nonzero paint alpha and a successfully created source canvas bitmap,
+`drawImage` selects exactly one pixel path:
+
+| Condition | Drawing operation | Evidence |
+| --- | --- | --- |
+| Crop rectangle is nonempty | Convert its four signed integer coordinates to floats and use it as the source rectangle | `0x85370`–`0x853d0` |
+| Crop is empty and nine-patch rectangle is nonempty | Obtain the nine-patch rectangle and ratio, then draw nine patches | `0x853dc`–`0x8541c` |
+| Both are empty | Draw the full source bitmap with a null source-rectangle argument | `0x85424`–`0x85448` |
+
+The crop and ordinary paths dispatch Skia canvas slot 112. Skia relocation
+`0x295910` resolves it to `Spen_SkCanvas::drawBitmapRectToRect`.
+An active crop therefore bypasses nine-patch drawing even when both fields
+are populated.
+
+`hasCropRect`, `0x85a2c`, and `hasNinePatchRect`, `0x85a94`, both negate
+`Rect::IsEmpty`. Base `Rect::IsEmpty`, `0xb0984`, checks
+`left >= right || top >= bottom`; it does not check whether every coordinate
+is zero. Zero-area rectangles at nonzero coordinates and inverted rectangles
+are inactive under this gate. Nine-patch width alone is not an activation test.
+
+## Nine-patch destination geometry and rounding
+
+`drawNinePatchImage`, `0x856d0`, builds source cuts
+`[0, left, right, source_width]` and
+`[0, top, bottom, source_height]`. Given destination bounds
+`[L, T, R, B]` and supplied ratio `q`, its candidate internal destination cuts
+are:
+
+```text
+x1 = L + left * q
+x2 = R - (source_width - right) * q
+y1 = T + top * q
+y2 = B - (source_height - bottom) * q
+```
+
+The arithmetic is at `0x85740`–`0x857ac`. These equations use fused `f32`
+multiply-add/subtract instructions at `0x85780`, `0x85784`, `0x857a4` and
+`0x857ac`; separately rounded multiplication and addition/subtraction do not
+describe the instruction order. Source dimensions minus the second source cut
+are calculated as signed 32-bit integer differences before conversion to float.
+If either candidate center interval
+is not strictly positive, `0x857b8`–`0x857c4` replaces both axes' internal cuts
+with `L + left`, `L + right`, `T + top`, `T + bottom`. It then rounds the
+first internal cut on each axis upward and the second downward at
+`0x857c8`–`0x857dc`. The nested loops at `0x858a8`–`0x85920` issue all nine
+source/destination draws. There is no per-patch positive-area test in those loops.
+
+The supplied ratio is not simply inferred from the bitmap or destination size
+inside this function. Model `ObjectShapeImpl::GetNinePatchRatio`,
+`0x3a6c24`, defaults to 1 and otherwise divides a context-derived integer
+by the saved nine-patch width at `0x3a6c7c`–`0x3a6c84`. Its provider and
+coordinate-unit contract are not identified by this trace.
+
+## Legacy border drawing remains present despite Java deprecation
+
+The decompiled SDK file
+`com/samsung/android/sdk/pen/document/SpenObjectImage.java` names border
+types 0–4 as none, square, shadow, dot and image. Its Java API deprecates
+these settings, including declaring image and shadow borders unsupported
+as of 4.0.0. Native `drawBorder`, `0x85b00`, still contains these branches:
+
+| Type | Native operation | Evidence |
+| ---: | --- | --- |
+| 1 | Stroke a rectangle | `0x85c30`–`0x85c4c` |
+| 2 | Stroke an open path from bottom-left through bottom-right to top-right; no blur call occurs in this branch | `0x85c64`–`0x85cb0` |
+| 3 | Stroke a rectangle with dash intervals `[line_border_width, line_border_width]`, phase 0 | `0x85cd0`–`0x85d3c` |
+| 4 | Load the separate border image and draw it across the full destination bitmap with its own nine-patch rectangle and ratio | `0x85d54`–`0x85e00` |
+
+Except for type 4, entry requires positive line-border width and nonzero type
+through `hasLineBolder`, `0x86350`. The stroked rectangle expands the
+image destination by half the legacy line-border width plus half the inherited
+line-style width, at `0x85b90`–`0x85bc8`. Paint color and stroke width come
+from the legacy image-component getters at `0x85bf8` and `0x85c14`.
+
+`calculateDstSize`, `0x850b0`, allocates image-border type 4 dimensions as
+`ceil(source_width + left_width + right_width)` and
+`ceil(source_height + top_width + bottom_width)`, and insets the image
+destination by those side widths. Other active line borders use
+`ceil(source_width + 2 * line_border_width)` and the corresponding height,
+with a line-border-width inset. Inactive borders retain the source dimensions.
+These operations are at `0x85110`–`0x85284` and are performed in `f32`.
+The line-border dimension sums specifically use fused multiply-add at
+`0x85228` and `0x8522c`; image-border side widths use sequential additions.
+
+## Unresolved boundaries
+
+This static trace establishes the selected Drawing methods and their branch
+contracts. It does not establish device-export pixels, malformed geometry
+admission, full cache invalidation, original-image regeneration, or how generic
+shape fill transforms and custom masks interact with the separate shape-effect
+pass. Deprecated Java API declarations do not prove native saved-field branches
+are unreachable, and native branch presence does not prove a current Samsung
+document producer exercises them.
