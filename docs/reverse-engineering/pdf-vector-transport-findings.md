@@ -62,6 +62,39 @@ font, color space or mask subtype. The resource categories copied by the
 extractor are visible in
 [Hayro Write's `serialize_resources`](https://docs.rs/crate/hayro-write/0.7.0/source/src/lib.rs).
 
+## All available original paper pages
+
+A further Rust probe imported all twenty `cs61bl_su22` source pages and the one
+`quiz` source page. The 21-page output had 940,671 bytes and SHA-256
+`907a19151bb26c8d6b689dec564c22b706b75026bdafd93f82d4d09f4e3bcb66`.
+Source identities are pinned in the
+[real-document inventory](rendering-corpus-findings.md).
+
+All **3,726 operators** matched, as did decoded content bytes apart from outer
+whitespace. The output retained exactly the **27 unique original encoded image
+streams**, with none added. Recursive comparisons retained the full font
+graphs, including metrics, encodings/Differences, ToUnicode streams and embedded
+programs, together with color-space and image/soft-mask dependencies.
+Differences were restricted to removed ProcSet arrays and empty
+ExtGState/Pattern categories. A separate Hayro Syntax comparison found all
+**11,868 visited resource numeric values** bit-identical as `f64`; these are
+visits through page graphs, not unique document-wide objects.
+
+For a logical-text check, each imported Form's existing content and Resources
+were projected into a temporary page and read with lopdf's text extractor.
+Every result matched its source: **22,510 UTF-8 bytes** across the twenty text
+pages and zero bytes for quiz. This checks the available source mappings,
+not browser text selection. Direct extraction from an unprojected output page
+is different because lopdf's page extractor does not traverse Form draws.
+
+None of these source pages declared Annots, UserUnit, Rotate or CropBox, and
+neither source catalog declared OCProperties or StructTreeRoot. Ten cs61bl
+pages already had the same isolated RGB Group emitted by the importer; the
+others had no Group. The real resources contained no nonempty shading, pattern
+or ExtGState graph. Those features therefore have synthetic evidence rather
+than real-paper coverage. cs61bl's catalog Names/OpenAction/PageMode are outside
+the imported resource boundary.
+
 ## Source geometry and placement
 
 The ordinary source page had MediaBox and CropBox `[0,0,200,200]`. The probe
@@ -135,6 +168,43 @@ That filter applies to copied resource dictionaries, not just the root page.
 The actual exclusion list is in
 [Hayro Write's primitive serializer](https://docs.rs/crate/hayro-write/0.7.0/source/src/primitive.rs).
 
+## Bounded annotation and layer transport
+
+A further typed source had one view-OFF OCG, a visible blue path and a printable
+Stamp with a green vector normal appearance. Every root-reachable reference
+resolved and both lopdf and Hayro read it. No external whole-PDF validator was
+installed; this is a structurally complete bounded source rather than
+externally certified PDF conformance.
+
+Ordinary import omitted the Stamp appearance and catalog OCProperties. A
+bounded Rust transformation instead reused the original appearance Form and
+resource graph in the page's XObject dictionary and appended a draw command.
+The appearance BBox `[0,0,30,20]` and Matrix `[1,0,0,1,3,4]` give bounds
+`[3,4,33,24]`; affine `[2,0,0,2,14,12]` maps them onto Stamp Rect
+`[20,20,80,60]`. The appearance payload remained byte-identical, with no new
+images. This exercised one Stamp, a direct normal appearance and a translation
+Matrix. Other appearance states, annotation flags, NoZoom/NoRotate and arbitrary
+inherited graphics state or clipping were outside that transformation.
+
+Another bounded graph operation restored the original OCProperties dictionary,
+remapping its one OCG reference through the corresponding source/imported page
+Properties binding. Identity came from those explicit resource references,
+not the OCG display name. The final PDF retained its original default OFF
+configuration, content/appearance payloads and zero Image objects. This was
+one known reference mapping, without a generic merger or pixel comparison.
+The independently reproduced source and final output SHA-256 values were:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| Source with OCG and Stamp | `1492f8e9984591dc2e2a5097b5668068df203219be7b963734878db0413c5771` |
+| Appearance plus restored single-layer configuration | `0bf9357607e97e04771cee6b883245a4f104984049936a7e0baae6e12bebecf7` |
+
+Krilla's public AnnotationType supports Link only, and its page API does not
+separately import an arbitrary annotation appearance Form. The experiment used
+typed lopdf graph operations, not an SDK feature or another SVG conversion.
+See [Krilla's annotation API](https://docs.rs/crate/krilla/0.8.2/source/src/interactive/annotation.rs)
+and [lopdf's graph traversal](https://docs.rs/crate/lopdf/0.42.0/source/src/document.rs).
+
 ## Numeric resource rewriting
 
 The primitive serializer reads numbers as `f64`, emits integral values as
@@ -200,6 +270,44 @@ and a successful `finish` result therefore cannot certify complete source
 transport. See
 [Hayro Syntax's `page_stream`](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/page.rs)
 and [Hayro Write's extraction](https://docs.rs/crate/hayro-write/0.7.0/source/src/lib.rs).
+
+## Existing APIs for preservation diagnostics
+
+Hayro Syntax exposes original shared bytes, root IDs/xref lookups, raw page
+and annotation dictionaries, raw array members, appearance streams and
+per-stream decode results. The OCG/Stamp probe inspected those values through
+existing public APIs, without another PDF parser. PdfData accepts Arc-backed
+bytes, so placements need not each copy the source file. See the
+[PDF API](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/pdf.rs),
+[xref API](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/xref.rs), and
+[shared data representation](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/data.rs).
+
+Individual inspection of the Crypt Identity stream returned `StreamDecode`,
+before aggregate page-stream collection hid the omission. The malformed-Flate
+stream still returned `Ok` with empty data. Raw-reference traversal is therefore
+stronger than using aggregate results, but it does not establish strict decode
+completeness.
+
+A separate probe inserted a dangling reference before, between or after two
+valid three-operator streams in a Contents array. These intentionally invalid
+inputs successfully exported Forms with **0, 3 and 6 operators**, respectively.
+Typed array iteration terminated at the unresolvable member, omitting any valid
+suffix. That differs from skipping a failed decode of an already resolved
+Stream. Raw iteration plus explicit xref lookup exposed every supplied member.
+This demonstrates an invalid-input admission boundary, not damaged transport
+of a valid PDF. See the [array iterator](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/object/array.rs).
+
+The library does not expose a complete strict-PDF validator. Its object iterator
+skips unparseable objects, parsed filter lists omit unknown filter names, the
+Flate decoder uses permissive fallback, and `raw_data` can return empty bytes
+after a decryption failure. `has_optional_content_groups` tests for a catalog
+OCProperties dictionary, not valid group count or evaluated visibility. These
+are source-observed boundaries in the
+[stream decoder](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/object/stream.rs),
+[filter parser](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/filter/mod.rs), and
+[Flate fallback](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/filter/lzw_flate.rs).
+Opening or decoding successfully does not replace original source retention
+and explicit transport-capability reporting.
 
 ## Consequences for preservation
 
