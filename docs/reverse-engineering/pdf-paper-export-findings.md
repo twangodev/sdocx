@@ -349,6 +349,74 @@ certify emitted integer destinations in arbitrary viewers, widget behavior or
 the full Samsung source-cache lifecycle. The local helper executes without the
 complete import wrapper, handler constructor, Composer or navigation rendering.
 
+### Cached source handles persist between imports within a loaded document
+
+Source inspection distinguishes the temporary export handler from its parsed
+PDF inputs. `PDFEnginePdfium::Import` wraps the existing PdfiumImpl pointer in
+a lightweight handler (`0x71a94–0x71ab0`); its constructor only stores that
+pointer (`0x7a100`). Handler Import caches source handles by exact supplied
+filename bytes. A hit bypasses `FPDF_LoadDocument` (`0x7a354–0x7a3c4`), and the
+common path passes the cached handle to `importPages` (`0x7a3e0–0x7a400`) and
+then `restorePageLink` (`0x7ab6c–0x7ab80`). It does not reopen the source before
+each repair.
+
+A bounded capture executed that actual wrapper for the same two-page Link
+source, appending at zero-based positions 0, 2 and 4. It then executed actual
+`ClearImportReferences` (`0x856d8`) and appended at 6. Native load, cache,
+import and repair instructions ran unchanged. The lightweight handler
+constructor ran; the full PdfiumImpl constructor and Composer did not.
+Relevant state was supplied in a zeroed 2,048-byte object: an empty source map
+at offset 1288, load factor `1f32` at 1320, empty page-info vectors at 1496/1520,
+zero page count at 352 and an actual new destination handle at 1544. This does
+not establish equivalence to the complete constructed object or application.
+
+Additional host services admitted only the exact source fixture and read-only
+open flags `0x20000`. They supplied the native 128-byte `fstat` layout with file
+size at byte 48, checked seek/read bounds and tracked file positions and close.
+A log-string hook passed through its pointer. Actual native file loading and
+PDF parsing ran, subject to the earlier allocator/compression/ABI boundaries;
+no hook supplied a preloaded document or destination semantics.
+
+| Append position | Source state observed | Stored forward / current-backward destination integers |
+| --- | --- | --- |
+| 0 | First native filename load | 1 / 0 |
+| 2 | Same cached parsed handle | 3 / 2 |
+| 4 | Same handle after prior source mutation | 3 / 2; not the newly appended pages' 5 / 4 |
+| 6, after cache reset | Second native filename load | 7 / 6 |
+
+The first three imports shared one parsed source handle and one native load.
+Reset closed that source/file, emptied map entries and retained bucket storage;
+the next import loaded a fresh source. Both native page-info vector lengths and
+the page-count field matched the output's 2/4/6/8 pages. A separate process
+stopped after the second import and confirmed its parsed source already stored
+3/2. No serialization occurred between the full route's first three imports.
+The provider bytes and on-disk source stayed unchanged. The final cached source
+remained open at isolated-process exit; full teardown was not captured.
+
+The final eight-page PDF retained all 24 original vector operators and decoded
+content/resources/page fields, all twenty annotation page bindings, zero images
+and resolving root references. It had 5,709 bytes and SHA-256
+`1545c704c7ffd864c96766c8e3d6042dd65eaa012ac4d71014a945e9672ffa20`.
+Five fresh allocator-fill runs reproduced the outputs. An independent reviewer
+verified the frozen Rust client/executable hashes, replayed the full route and
+terminal two-import control in fresh processes and inspected their graphs.
+This establishes the controlled actual cache-wrapper sequence, including
+resolving references despite stale link destinations. It does not establish
+full Samsung UI behavior, arbitrary-reader integer-destination compatibility
+or every annotation subtype.
+
+The normal lifecycle has reset boundaries. Handler `NewDocument` calls
+PdfiumImpl::Close before creating a destination (`0x7a120–0x7a124`), and both
+Open overloads call Close before loading. With a nonnull main document, Close
+calls `ClearImportReferences` (`0x84da0`) before resetting the main handle. Its
+null-main guard skips that teardown (`0x849bc–0x849c0`), so unconditional reset
+wording would be inaccurate. `CloseWriter` does not clear the import cache.
+Separately, handler Export creates a temporary output, uses the existing main
+document as the source of the same import/repair helper, and closes the
+temporary output (`0x7cab0–0x7cad4`, `0x7ccb0`). This last route is statically
+traced, rather than executed by the cached Import capture: a fresh output does
+not itself provide a fresh parsed source.
+
 ## Source size controls the overlay scale
 
 The imported-page operation receives no requested output width or height.
