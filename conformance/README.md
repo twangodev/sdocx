@@ -759,6 +759,37 @@ or rendering. Negative queries describe the supplied-record predicate, not
 document admission. This is optional native research evidence, not an SDK PDF
 paper parity test. See [storage findings](../docs/reverse-engineering/pdf-paper-storage-findings.md).
 
+## Native shape path capture
+
+[`shape-paths.json`](shape-paths.json) records 31 native Skia path cases, six
+direct quadratic-arc builder cases and thirteen Model arc-helper cases. Native
+path construction, oval/arc commands, iteration and destruction execute;
+the Model helper also reaches native Base point rotation. All fifty cases
+agree across five fresh memory/state fills, including repeated zero.
+
+Build the [Rust native driver](#native-shaping-replay), then run:
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --shape-paths scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenSkia.so \
+  > /tmp/shape-paths.json
+cmp /tmp/shape-paths.json conformance/shape-paths.json
+```
+
+The APK libraries and each loaded host math function's library are hash-checked.
+The capture uses the pinned Linux `libm`, not Android math, so transcendental
+bit equivalence with a device is unverified. Oval and explicit-vector builder
+cases do not call transcendental imports. Native writable segments, caller
+storage, stack, heap and allocator state reset between fills.
+
+Supplied helper geometry is distinct from serialized Arc fields and Model's
+template normalization. This optional research capture executes no saved-path
+loader, named template/fill producer, Drawing object, SVG/PDF exporter or pixels;
+it adds no SDK parity test. See the
+[path findings](../docs/reverse-engineering/shape-path-findings.md) for the
+route-specific geometry and evidence boundaries.
+
 ## Stroke regressions
 
 Small synthetic tests in `structural_strokes.rs` run in ordinary CI without

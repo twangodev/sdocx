@@ -333,6 +333,15 @@ path. For a native Arc outline, its implicit SVG closing chord differs from
 the template's two center edges. No general fill rule for every template or
 non-solid effect follows from this inspected branch.
 
+The reusable [native path capture](../../conformance/README.md#native-shape-path-capture)
+combines these 31 Skia path cases, six explicit-vector cases and thirteen Model
+helper cases in [one fixture](../../conformance/shape-paths.json), SHA-256
+`0e86e3458be734b4996aae3083264f8fbda60d0f16f3ca30dca18c30b0fb86e2`.
+Each case matches the independently replayed temporary proofs. The driver pins
+the actual loaded math-library identity, traps unbound imports and restores
+native writable state between fills; its scope remains the primitive/helper
+execution described above.
+
 ## Current Rust preservation and rendering boundaries
 
 `NativeShape::path_data` and `NativeLine::path_data` retain raw WDoc path
