@@ -67,7 +67,6 @@ interface PlacedTableCapture {
 	name: string;
 	bounds_bits: number[];
 	texts_utf8: string[];
-	font_size_bits: number;
 	states: { cells: { emitted: { runs: CapturedRun[] } }[] }[];
 	writer: {
 		supplied_document_size_bits: number[];
@@ -95,56 +94,13 @@ interface ParsedTable {
 	style: { content_bbox: { x_min: number; y_min: number; x_max: number; y_max: number } };
 }
 
-function placedTableNote(source: PlacedTableCapture, parentFontSizeBits?: number) {
-	const [width, height] = source.writer.supplied_document_size_bits.map(float);
-	const bounds = source.bounds_bits.map(float);
-	const base = (bbox: number[]) => frame(0, 1, join(u32(5500), u16(2), Buffer.from('tx'), zero(8), ...bbox.map(f64), zero(5)), f32(0));
-	const text = (value: string, bbox: number[], cell: boolean, objects = zero(8)) => {
-		const fontSizeBits = cell ? source.font_size_bits : parentFontSizeBits;
-		const spans = fontSizeBits === undefined ? [] : [
-			join(u16(20), ...[3, 0, value.length, 1].map(u32), u32(fontSizeBits)),
-			...(cell ? [join(u16(20), ...[1, 0, value.length, 1, 0xff252525].map(u32))] : [])
-		];
-		const paragraphs = cell ? join(u32(1), u16(16), ...[3, 0, 1, 2].map(u32)) : u32(0);
-		const common = join(u32(value.length), Buffer.from(value, 'utf16le'), u32(spans.length), ...spans, paragraphs, zero(16), Buffer.from([cell ? 1 : 0]), u16(0), objects);
-		return join(base(bbox), frame(6, 0), frame(7, 1, zero(0), join(u32(common.length), common)));
-	};
-	const record = (fixed: Buffer) => join(u32(0), Buffer.from([1, 0, 1, 0]), fixed);
-	const columnWidth = (bounds[2] - bounds[0]) / 2;
-	const rowHeight = (bounds[3] - bounds[1]) / 2;
-	const rows = [0, 1].map(row => {
-		const cells = [0, 1].map(column => {
-			const bbox = [column * columnWidth, row * rowHeight, (column + 1) * columnWidth, (row + 1) * rowHeight];
-			const content = text(source.texts_utf8[row * 2 + column], bbox, true);
-			return record(join(...[column, 1, 1, 0].map(u32), ...bbox.map(f64), zero(1), u32(content.length), content));
-		});
-		return record(join(f32(rowHeight), u32(row), u32(2), ...cells.flatMap(cell => [u32(cell.length), cell])));
-	});
-	const table = join(base(bounds), frame(22, 28, zero(0), join(u32(2), f32(columnWidth), f32(columnWidth), u32(2), ...rows.flatMap(row => [u32(row.length), row]), ...bounds.map(f64)), 4));
-	const objects = join(u32(1), u32(0), u32(1), u32(table.length + 20), u32(table.length), u32(22), table, u32(0), u32(0), u32(2));
-	const body = text('\ufffc', [0, 0, width, height], false, objects);
-	const title = text('', [0, 0, 0, 0], false);
-	const utf16 = (value: string) => join(u16(value.length), Buffer.from(value, 'utf16le'));
-	const note = join(zero(4), Buffer.from([1, 0, 1, 0]), u32(5500), utf16('placed'), u32(12), zero(16), ...[width, height, 0, 0, 4000].map(u32), u32(title.length), title, u32(body.length), body, u32(360), u32(height));
-	note.writeUInt32LE(note.length, 0);
-	const completeNote = join(note, utf16('Samsung Notes'));
-	const header = join(zero(8), Buffer.from([1, 0, 5]), zero(5), ...[0, width, height, 0, 0].map(u32), utf16('placed'), zero(8), u32(5500), u32(4000));
-	header.writeUInt32LE(header.length, 0);
-	header.writeUInt32LE(header.length, 4);
-	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(0), zero(32));
-	const tag = join(u32(5500), utf16('placed'), zero(8), u32(0), utf16(''), u32(width), f32(height), utf16('Samsung Notes'), u32(4), u32(4), utf16(''), u32(4000), zero(8), u32(0), u16(0), Buffer.from('Document for S-Pen SDK'));
-	return zipSync({
-		'note.note': join(completeNote, createHash('sha256').update(completeNote).digest()),
-		'placed.page': join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK')),
-		'end_tag.bin': join(u16(tag.length), tag)
-	}, { mtime: new Date(2000, 0, 1) });
-}
-
 test('public block table preview and PDF retain captured per-run native clips', async ({ page, browserName }) => {
 	test.skip(browserName !== 'chromium', 'Chromium preview and vector exports are the immediate target.');
 	const bytes = await readFile(resolve('../conformance/table-bodytext-one-page-obstacles.json'));
 	expect(createHash('sha256').update(bytes).digest('hex')).toBe('0a919c37edba851e952c112a8d0ac4f1c4a58f6856b5d118fd26ad75098d5da5');
 	const source = (JSON.parse(bytes.toString()) as { cases: PlacedTableCapture[] }).cases.find(value => value.name === 'ordinary-one-page-native-page-padding')!;
+	const note = await readFile(resolve('../crates/sdocx/tests/fixtures/native_body_table.sdocx'));
+	expect(createHash('sha256').update(note).digest('hex')).toBe('68d94a73f18d44e28ecc41de819171f01fbca2d497808680797a2ecc654e735a');
 	await page.route('https://rybbit.twango.dev/api/script.js', route => route.fulfill({ body: '' }));
 	await page.goto('/');
 	const result = await page.evaluate(async note => {
@@ -173,7 +129,7 @@ test('public block table preview and PDF retain captured per-run native clips', 
 			const metadata = session.inspection().document.metadata;
 			return { parsed, dimensions: metadata.default_page_dimensions, padding: metadata.flow_page_padding, pageMode: metadata.page_mode, groups, images: document.querySelectorAll('image, foreignObject').length, pdf: Array.from(session.render_pdf(0, 'light')) as number[] };
 		} finally { session.free(); }
-	}, [...placedTableNote(source)]);
+	}, [...note]);
 	expect(result.parsed.text).toBe('\ufffc');
 	expect(result.parsed.font_size ?? null).toBeNull();
 	expect(result.parsed.spans).toEqual([]);
