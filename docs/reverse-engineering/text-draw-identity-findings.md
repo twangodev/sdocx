@@ -1219,8 +1219,10 @@ are separate from complete native writer world-positioning parity.
 
 The retained PDF path can transport supplied clips with selectable text, and
 Chromium can transport span clips without breaking the covered joined shaping.
-The production table text path still uses its conservative table-wide clip.
-Those transport results do not establish complete production native per-run identity or conditional
-clipping in the Rust engine. The
+Production table text retains its conservative table-wide clip outside the
+[certified ordinary one-page composition](table-code-findings.md#certified-ordinary-one-page-cell-clipping),
+which supplies the admitted Model/source and placement context for conditional
+per-run clipping. The helper transport results alone do not establish complete
+production native per-run identity or clipping outside that certificate. The
 [vector support contract](../text-vector-support.md) records the implemented
 scope and these independent evidence limits.
