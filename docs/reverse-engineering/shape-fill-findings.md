@@ -330,8 +330,9 @@ complete Drawing byte-generation loop execute, as does Base's empty
 pixel-buffer `Bitmap::Construct` call (`0x9c8d4`): width/height 8, row stride
 32, format 1, final booleans 0/1.
 All 896 observed cells agree with row/MSB order and exact ARGB-to-RGBA
-conversion, including transparent colors. Pixel-buffer `Bitmap::Construct`,
-CanvasBitmapFactory, shader execution and tile phase remain excluded.
+conversion, including transparent colors. That byte-generator capture excludes
+pixel-buffer `Bitmap::Construct`, CanvasBitmapFactory, shader execution and
+tile phase; the following pattern-construction capture extends its boundary.
 
 ### Native vector clip-stack state
 
@@ -362,3 +363,45 @@ control points. The antialias-false metadata branch (`0x1a1908–0x1a191c`)
 adds the literal `f32` vector
 `(0.44999998807907104,0.5,0.5,0.5)` from `0x88870` and applies `FRINTM`.
 That metadata adjustment does not rewrite the captured vector coordinates.
+
+### Native pattern construction and coordinate addressing
+
+A separate fifteen-case capture continues original `SetFillPatternEffect`
+(`0x9c7d4`) through Base's pixel-buffer `Bitmap::Construct` and `CreateShared`,
+Drawing's `CanvasBitmapFactory` (`0x6eea4`), original SkBitmap/Spen_SkCanvas
+construction, bitmap shader creation and paint installation. There is no
+`installPixels` bridge. Native source-bitmap lock/unlock verifies its retained
+256 bytes equal the Drawing generator, including hidden RGB at alpha zero
+and partial-alpha color controls. The shader receives width/height 8,
+color-type/alpha-type 4/2, repeat modes 1/1 and null local matrix. This is
+source-tile construction, not output rasterization.
+
+Ten transform controls and five additional alpha/color controls each match
+across five fresh allocation/byte-generator stack fills. Independent rebuild
+reproduces SHA-256
+`860fd971c381f26b65ba8a765fe4bb3ecddb2f9174cd325eadc08e7f0cfa953b`.
+Host services additionally supply bounded byte fill and ignored Android
+logging. Unsupported imports still trap.
+
+Original `computeTotalInverse` (`0x20bb5c`) concatenates canvas matrix,
+shader-local matrix and optional context-local matrix before inversion;
+`ContextRec` matrix pointers are at offsets 16/24. Identity, translation,
+nonuniform scale, shear and reflection succeed; singular scale returns false.
+Null-local cases use the original installed shader. Local-matrix controls
+explicitly create another native shader from its retained bitmap. These
+supplied matrices are controls, not additional recovered pattern-wire fields.
+`asABitmap` (`0x17a730`) reports an identity matrix even with a nonidentity
+shader-local matrix; that query alone omits local/context transforms.
+
+Actual default SkPaint construction, shader `createContext` (`0x20bd10`)
+and native `chooseProcs` (`0x18180c`) also execute. Context inverse matrices
+retain the geometric inverse, while selected coordinate-procedure state
+normalizes scale/shear by tile dimensions and specializes translation-only
+addressing. With supplied canvas translation `(3.25,-2.5)`, the geometric
+inverse translation is `(-3.25,2.5)` but default no-filter procedure state uses
+`(-3,2)`. Original coordinate procedures add device-point half offsets and
+wrap negative coordinates; identity spans starting at 0/8 match, as do
+-9/7/15. No sampling procedure or output pixels execute. Addressing
+specialization must not replace preserved source/context transforms. Full
+application canvas phase, filtered appearance and alpha blending remain
+uncertified.

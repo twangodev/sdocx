@@ -3,8 +3,8 @@
 ## Evidence boundary
 
 The archive and replay findings are static traces in Samsung Notes 4.4.45.37.
-Bounded native stroke-reducer and anchor-metadata writer captures are identified
-separately below. No `.spp` was generated, loaded or replayed during this
+Bounded native stroke-reducer, anchor-metadata and media-manifest captures are
+identified separately below. No `.spp` was generated, loaded or replayed during this
 investigation. These findings do not establish complete SVG or brush appearance
 parity.
 
@@ -19,6 +19,7 @@ The extracted ARM64 libraries were compared byte-for-byte against the APK entrie
 | `lib/arm64-v8a/libSPenPaintingCompat.so` | `fb2f8cd46c45cc4b6ef79f7e7d45c7eac9f12583bfc70ff48e1244f9c861d4a8` |
 | `lib/arm64-v8a/libSPenPaintingCore.so` | `56b386228e9b4217a08e16afd7d8f65482bc6e66e4c76f0951a640e1a703c3fa` |
 | `lib/arm64-v8a/libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `lib/arm64-v8a/libc++_shared.so` | `4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4` |
 
 Native addresses below are ELF virtual addresses. Decompiled Java paths are
 relative to `scratch/apk-analysis-decompiled/sources/`.
@@ -98,6 +99,78 @@ The foreground setter is itself raster storage.
 to a temporary `.mem` path through `BitmapFactory::SaveBitmap` at `0x336400`,
 then calls the path setter at `0x336410`. Keeping that resource preserves an
 image, not the original point channels. It coexists with saved layer objects.
+
+## Source media uses the legacy manifest
+
+This NoteDoc route constructs plain `MediaFileManager`, not
+`MediaFileManagerNew`: `NoteDocImpl` constructor `0x2ba354` selects vtable
+`0x491920` through GOT `0x4a3c00` and stores the facade at implementation
+offset 96 (`0x2ba594`). Fresh/loaded constructors use that manager without
+replacement. `SaveMedia` calls virtual slot 104 at `0x2bb5e0`, resolving to
+plain `Save`, `0x2899ac`; loaded construction calls slot 112 at `0x2bf27c`,
+resolving to plain `Load(bool)`, `0x28a784`.
+
+Both manifest generations use `media/mediaInfo.dat`, but this legacy writer
+begins with a u16 selected-entry count, rather than a modern u32 format version.
+Its successful record layout is:
+
+| Field | Legacy encoding | Writer |
+| --- | --- | --- |
+| Media ID | u32 | `0x289e60` |
+| Filename length | u16 UTF16 code-unit count | `0x289e74` |
+| Filename | twice that count of bytes | `0x289e94` |
+| File CRC | u32 | `0x289eb0` |
+| Reference count | u16 | `0x289f4c` |
+
+`Bind`, `0x287db4`, computes the file CRC and increments the CRC-keyed
+record's reference count (`0x287f50–0x287f58`). Save skips zero-reference
+records (`0x289d1c–0x289d20`), adds `media/<stored filename>` and backpatches
+the selected count. Original archive presence alone therefore does not imply
+retention through a later native save.
+
+Binding and archive compression are separate operations. Bind calls
+`Image::GetInfo` at `0x28868c`; nonimages or images within its configured
+dimension bound use byte-copy calls at `0x2886cc` / `0x2886bc`, while oversized
+images use `ResizeImage` at `0x288914` (failure falls back to copying).
+Model `SPenCopyFile`, `0x285268`, reads an 8192-byte buffer and writes the same
+buffer/count (`0x285314`, `0x285338`), with no object decoder. These copy/resize
+branches remain static evidence; no real `.spp` classification was executed.
+Save's special true flag for `.mem` (`0x289f04–0x289f20`) controls ZIP
+compression, not rasterization: Base's adapter selects method 8 versus 0 at
+`0x9b6a8–0x9b6b4`.
+
+### Executed native manifest preservation boundary
+
+A Rust probe reused the conformance `Machine` to execute native Save, then
+passed its exact output to native `Load(String*)`, `0x28a0c4`. Initial writer
+maps were synthetic, with IDs `[0,1,2]`, CRCs `[111,222,333]` and names
+`data0.spp`, `data1.bin`, `image2.mem`; they were not admitted by Bind. The
+loaded implementation used the actual native map initializer and insertion
+helpers. Native Base/libc++ String helpers were used throughout.
+
+| Initial map | Reference counts | Manifest size | Selected IDs |
+| --- | --- | --- | --- |
+| empty | none | 2 bytes | none |
+| three entries | `[0,0,0]` | 2 bytes | none |
+| three entries | `[1,0,2]` | 64 bytes | 0, 2 |
+| three entries | `[1,1,2]` | 94 bytes | 0, 1, 2 |
+
+Actual `GetCRCById`, `0x289770`, and `GetFileNameById`, `0x289820`, recovered
+the selected original ID/CRC/name triples. Native resave reproduced the
+initial bytes and Add arguments exactly. Four cases agreed across allocation
+fills `0x00/0xa5/0xff`: twelve loader and twenty-four writer invocations. Initial maps and
+implementation headers remained unchanged. No manifest decoder was supplied
+by the host. The probe was independently compiled with warnings denied and
+replayed; output SHA-256 was
+`d9532519541d7ba41c587e73f0c2ab5ad62d3a1e7e4f879b1a659f28adeb552d`.
+
+File access/open, bounded read/seek/write callbacks and logging were hosted;
+`NoteZip::Add` arguments were recorded rather than creating a ZIP. This
+establishes selected valid metadata framing and native resave, not media file
+contents, binding, source-object recovery, malformed-state handling or replay.
+The static loader inserts ID/name before CRC (`0x28a280`); its zero-CRC branch
+skips the reference count and CRC mappings, so that case is a separate
+unexecuted admission boundary.
 
 ## Layer records and the 10,000-object split
 
@@ -314,7 +387,9 @@ other encodings or deeply nested sources. Existing SPI and embedded PDF media
 belong to different contracts. The corpus does not cover Painting attachments,
 packet splitting, fills or replay-only strokes.
 
-Current Rust media admission retains JPEG/PNG/WebP resources; preserving an
+Current Rust retains `archive_id` and modern manifest bindings, while the
+legacy manifest above remains unsupported. Image admission retains
+JPEG/PNG/WebP resources; preserving an
 outer type-14 source requires retaining the bound non-image payload and its
 media metadata first. Current page conversion marks Painting unsupported.
 A native attachment retained intact would avoid irreversible loss before a
