@@ -232,8 +232,9 @@ and compatibility ownership/adjacency remain unverified.
   establish the native producers with supplied inputs and a separate Chromium
   clip regression. Chromium preserves joined shaping with full span clips, but
   clips follow glyph ownership: clipping the first character of an `ffi`
-  ligature hides the entire glyph. Native per-run clip selection remains
-  unimplemented, independently of the verified PDF clip transport.
+  ligature hides the entire glyph. Native per-run clip selection outside the
+  certified ordinary one-page cell route remains unimplemented, independently
+  of the verified PDF clip transport.
   [Cached snapshots](reverse-engineering/text-draw-identity-findings.md#captured-cached-entry-snapshots)
   preserve supplied codewords and shaping owners; the
   [whole-source certificate](reverse-engineering/text-draw-identity-findings.md#certified-whole-source-paint-plans)
@@ -392,10 +393,11 @@ Prepared table/code warnings therefore follow visible child source rather
 than only the outer object scope.
 
 Document exports and browser sessions reuse compatible body plans across
-pages. Cache identity includes the immutable native NAME configuration as well
-as database/source/layout identity; changing that configuration invalidates
-plans even when the database is shared. Style boundary resolution avoids repeated full-span scans, and fallback
-lines reuse paragraph bidi contexts.
+pages. Cache identity includes the immutable native NAME configuration and
+native font registry instance as well as database/source/layout identity;
+changing that configuration or registry invalidates plans even when the
+database is shared. Style boundary resolution avoids repeated full-span scans,
+and fallback lines reuse paragraph bidi contexts.
 
 ## Regression evidence
 

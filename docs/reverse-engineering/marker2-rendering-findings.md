@@ -185,10 +185,13 @@ operations or higher-level object-alpha composition.
 `ink/marker2.rs` reconstructs that saved model for V1 and V2: one stamp
 radius, one path opacity, and midpoint sampling. Overlapping stamps in one
 stroke are a single filled path, so coverage is a union rather than stacked
-transparency. Top-layer strokes, whichever pen produced them, are painted
-after the rest of the page in one Darken group. The V2 thin-stroke edge ramp
-is still not ported, and `Marker`, `Marker3`, and `Marker4` stay on the
-pressure approximation.
+transparency. Root strokes selected into the Top pass are painted after the
+Base pass and before the Masking pass. Their shared group uses Darken on light
+paper and Lighten on dark paper; see [composition](../svg-rendering.md) and
+[theme policy](../render-themes.md). The V2 thin-stroke edge ramp is still not
+ported. `Marker` and `Marker3` retain the pressure approximation; supported
+Marker4 settings use separate [V7](marker4-v7.md) and
+[V8](marker4-rendering-findings.md) vector stamp paths.
 
 Shader strings were compared byte for byte, enum assignments and uniform
 bindings were checked against instructions/relocations, and paired V1/V2

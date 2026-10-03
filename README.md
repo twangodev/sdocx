@@ -71,6 +71,7 @@ Use the detailed Rust parse APIs or CLI diagnostics to inspect unsupported featu
 
 ## Documentation
 
+- [Rendering support by feature and object type](docs/rendering-support.md)
 - [Rust vector text support and remaining scope](docs/text-vector-support.md)
 - [Format and reverse-engineering notes](docs/reverse-engineering/README.md)
 - [Web app](web/README.md) and [debugger guide](docs/web-debugger.md)

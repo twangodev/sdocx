@@ -72,8 +72,17 @@ binaries. Native LightColorTheme is also checked to preserve its input.
 Top-layer highlighters use one vector Darken batch on light paper and Lighten
 on dark paper. The dark-paper rule preserves light ink and keeps colored marks
 visible on black. Rust pixel tests cover normal/replay equality, and PDF tests
-verify a Lighten blend state without image objects. Dark-paper Lighten is an
-export policy; the native dark-paper compositing mode has no captured reference.
+verify a Lighten blend state without image objects.
+
+Static [page-capture findings](reverse-engineering/capture-composition-findings.md#top-pass-composition)
+trace Lighten selection when the converted background is dark and the page has
+no PDF background; otherwise capture selects Darken. The native shader maps
+those modes to component-wise maximum and minimum. This establishes mode
+selection and blend math, without captured appearance, sampling or edge-coverage
+parity. The SDK shares its background-based blend policy across SVG, replay and
+vector PDF. Samsung's separate
+[Standard list-page PDF path](reverse-engineering/standard-pdf-composition-findings.md#highlighter-blend-reaches-the-pdf-image-object)
+always selects Darken for its highlighter batch, including on dark paper.
 
 Library import and regeneration both render the first page in Auto mode,
 independent of the viewer selection. Catalog version 2 invalidates old thumbnail
@@ -105,8 +114,10 @@ Native evidence limits:
 - Per-object selection: the native conversion primitive is verified, but the
   renderer's contrast guard and canonical paper aliases are explicit export
   policies rather than verified Samsung selection rules.
-- Dark-paper highlighter blending: Lighten preserves light ink in vector outputs;
-  its native equivalence remains unverified.
+- Dark-paper highlighter blending: native capture mode selection and shader math
+  are statically traced, but resulting Samsung pixels remain unverified. The
+  SDK's dark-paper vector PDF uses Lighten, differing from Standard list-page
+  PDF's unconditional Darken.
 - Hyperlink palette: native `DarkColorTheme::GetColor(0xff0054ff)` returns the same
   blue (included in the checked fixture). That color is therefore preserved and
   can remain low contrast on dark paper. A separate native link/palette rule has

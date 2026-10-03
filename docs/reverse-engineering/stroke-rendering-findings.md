@@ -94,8 +94,10 @@ stored order within each pass. The shared top batch uses Darken on light paper
 and Lighten on dark paper; replay retains those SVG blend groups. See
 [composition](../svg-rendering.md) and [theme policy](../render-themes.md).
 
-Other pens and rejected saved settings use the pressure approximation, including
-rainbow, eraser and straighten effects. `stroke_paint` uses `pen_width / 2.5`,
+Other pens and rejected saved settings use the pressure approximation. Rainbow,
+eraser and straighten effects are not reproduced. Profile gates reject many
+such inputs; Marker4 V8 accepts straighten and fixed-width flags without
+implementing separate effect behavior. `stroke_paint` uses `pen_width / 2.5`,
 clamped to 0.4–12, then multiplies each segment by
 `0.3 + 0.7 * clamp(pressure, 0.05, 1)` when a
 pressure channel is present. `render_stroke` draws one straight, round-capped

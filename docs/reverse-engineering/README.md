@@ -5,6 +5,9 @@ serializers and compatibility fixtures. Each finding identifies its source
 and distinguishes recovered behavior from implementation and evidence limits.
 Planning, task lists and development progress are kept outside these documents.
 
+The [rendering support matrix](../rendering-support.md) maps current Rust
+decoding, rendering and evidence boundaries across object types and features.
+
 ## Documents
 
 - [`marker4-v7.md`](marker4-v7.md) — fractional-width V7 highlighter vectors,
