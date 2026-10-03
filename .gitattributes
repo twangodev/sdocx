@@ -1,0 +1,2 @@
+# Native captures are hash-pinned and must retain their exact bytes on every platform.
+conformance/*.json -text
