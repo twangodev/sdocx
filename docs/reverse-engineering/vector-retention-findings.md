@@ -250,3 +250,13 @@ unsupported-feature list; and invalid drawable elements may be omitted without
 an output diagnostic. Conversely, an unsupported-feature warning does not mean
 all original vector data was lost: embedded WDoc binaries, shape paths,
 unsupported paints or retained source assets may still be available.
+
+The browser's diagnostic transport is narrower than Rust's render result.
+[`DocumentSession`](../../crates/sdocx-wasm/src/lib.rs) returns only `page.svg`
+for preview and `output.bytes` for PDF export, dropping the render-produced
+text/object diagnostics. Its inspection report contains `parsed.report`;
+the [web inspection view](../../web/src/lib/converter/view-model.ts) displays
+those parser diagnostics. Debugger background/replay requests also return only
+the SVG and default ink color. Original source inspection remains available,
+but these routes do not expose render fallback reports. The
+[CLI](../../crates/sdocx-cli/src/main.rs) separately reports render diagnostics.

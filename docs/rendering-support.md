@@ -140,6 +140,9 @@ independent native capture boundaries and real-document reference coverage.
 The locked corpus contains four document/PDF pairs, not an exhaustive feature
 inventory. Synthetic archives establish SDK behavior and malformed-input
 handling; they cannot establish Samsung visual equivalence for absent features.
+The browser displays parser diagnostics; its preview/PDF bindings discard the
+separate text/object render diagnostics returned by Rust. See the
+[diagnostic transport boundary](reverse-engineering/vector-retention-findings.md#diagnostic-interpretation).
 The [real-document inventory](reverse-engineering/rendering-corpus-findings.md)
 records feature occurrence separately from native research. Its only parse
 warnings are PDF-backed paper in two local research notes. Rust currently
