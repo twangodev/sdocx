@@ -29,6 +29,14 @@ impl RegisteredFontSource {
 }
 
 impl FontBook {
+    pub(crate) fn native_registry_identity(&self) -> Option<RegisteredFontSource> {
+        self.native_registry
+            .as_ref()
+            .map(|registry| RegisteredFontSource {
+                registry: registry.clone(),
+            })
+    }
+
     pub(crate) fn registered_source(&self, face: &ResolvedFace) -> Option<RegisteredFontSource> {
         let registry = self.native_registry.as_ref()?;
         let regular = self.resolve("Roboto", false, false).ok()?;

@@ -117,6 +117,7 @@ struct BodyPreparationContext {
     metrics: BodyPreparationMetrics,
     fonts: Arc<fonts::fontdb::Database>,
     native_names: Option<fonts::NativeFontNameConfig>,
+    native_registry: Option<fonts::RegisteredFontSource>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -185,6 +186,7 @@ impl DocumentTextCache {
             context.metrics == metrics
                 && Arc::ptr_eq(&context.fonts, &database)
                 && context.native_names.as_ref() == fonts.native_name_config()
+                && context.native_registry == fonts.native_registry_identity()
                 && match (&context.source, &document.metadata.note_text) {
                     (Some(previous), Some(current)) => {
                         crate::layout::same_text_source(previous, current)
@@ -200,6 +202,7 @@ impl DocumentTextCache {
                 metrics,
                 fonts: database,
                 native_names: fonts.native_name_config().cloned(),
+                native_registry: fonts.native_registry_identity(),
             });
         }
     }
@@ -3281,12 +3284,27 @@ mod tests {
             .with_native_name_config(native_fonts.native_name_config().unwrap().clone());
         let options = RenderOptions::default();
         let cold = |fonts: &super::fonts::FontBook| {
-            super::DocumentTextCache::default()
+            let mut cache = super::DocumentTextCache::default();
+            let page = cache
                 .render_layout_page_svg(&document, &layout, 0, &options, fonts)
-                .unwrap()
+                .unwrap();
+            (page, super::Rc::clone(&cache.plans[0].1))
         };
-        let native_page = cold(&native_fonts);
-        let compatibility_page = cold(&compatibility_fonts);
+        let has_native_facts = |plan: &super::PreparedBodyPlan| {
+            plan.layout.lines[0].line.placements[0]
+                .cluster
+                .run
+                .native_entries
+                .as_ref()
+                .is_some_and(|native| {
+                    native
+                        .entry_facts_at_utf16(native.geometry().source_range_utf16().start)
+                        .is_some()
+                })
+        };
+        let (native_page, native_cold_plan) = cold(&native_fonts);
+        let (compatibility_page, _) = cold(&compatibility_fonts);
+        assert!(has_native_facts(&native_cold_plan));
         let positions = |svg: &str| {
             roxmltree::Document::parse(svg)
                 .unwrap()
@@ -3303,13 +3321,33 @@ mod tests {
         let mut cache = super::DocumentTextCache::default();
         cache.render_layout_page_svg(&document, &layout, 0, &options, &native_fonts);
         let native_plan = super::Rc::clone(&cache.plans[0].1);
-        cache.render_layout_page_svg(&document, &layout, 0, &options, &equivalent_fonts);
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &native_fonts.clone());
         assert!(super::Rc::ptr_eq(&native_plan, &cache.plans[0].1));
+        let equivalent_warm = cache
+            .render_layout_page_svg(&document, &layout, 0, &options, &equivalent_fonts)
+            .unwrap();
+        let (equivalent_cold, equivalent_cold_plan) = cold(&equivalent_fonts);
+        assert_eq!(
+            equivalent_warm.text_diagnostics,
+            equivalent_cold.text_diagnostics
+        );
+        assert_eq!(equivalent_warm.svg, equivalent_cold.svg);
+        assert!(!super::Rc::ptr_eq(&native_plan, &cache.plans[0].1));
+        assert!(!has_native_facts(&equivalent_cold_plan));
+        assert_eq!(
+            has_native_facts(&cache.plans[0].1),
+            has_native_facts(&equivalent_cold_plan)
+        );
+        let equivalent_plan = super::Rc::clone(&cache.plans[0].1);
+        let rebuilt_fonts = super::fonts::FontBook::new(native_fonts.database())
+            .with_native_name_config(native_fonts.native_name_config().unwrap().clone());
+        cache.render_layout_page_svg(&document, &layout, 0, &options, &rebuilt_fonts);
+        assert!(super::Rc::ptr_eq(&equivalent_plan, &cache.plans[0].1));
 
         let compatibility_warm = cache
             .render_layout_page_svg(&document, &layout, 0, &options, &compatibility_fonts)
             .unwrap();
-        assert!(!super::Rc::ptr_eq(&native_plan, &cache.plans[0].1));
+        assert!(!super::Rc::ptr_eq(&equivalent_plan, &cache.plans[0].1));
         assert_eq!(compatibility_warm.svg, compatibility_page.svg);
         assert_eq!(
             compatibility_warm.text_diagnostics,
@@ -3322,6 +3360,10 @@ mod tests {
         assert!(!super::Rc::ptr_eq(&compatibility_plan, &cache.plans[0].1));
         assert_eq!(native_warm.svg, native_page.svg);
         assert_eq!(native_warm.text_diagnostics, native_page.text_diagnostics);
+        assert_eq!(
+            has_native_facts(&cache.plans[0].1),
+            has_native_facts(&native_cold_plan)
+        );
     }
 
     #[test]
