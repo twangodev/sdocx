@@ -4,7 +4,8 @@
 
 Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-Evidence consists of APK sources and synthetic records.
+Evidence consists of APK sources, synthetic records and the bounded real
+archive/resource inventory identified below.
 
 | Source | Confirmed behavior |
 | --- | --- |
@@ -145,6 +146,56 @@ memory-backed font constructor copies bytes into its own storage at
 construction can terminate at U+0000, so this equality does not prove that
 the original Java language had exactly two code units. This runtime service
 does not establish serialization of custom font bytes into WDoc.
+
+## Font program provenance
+
+Saved NAME spans and EndTag fixed-font retain names, as described above and in
+the [NAME payload findings](text-layout-findings.md#font-name-payload-and-measured-fallback).
+The inspected native physical-font route resolves programs at runtime. Text
+`FontManager` initializes `/system/fonts/` and `/system/etc/fonts.xml`
+(`0x846d8`, `0x846f4`), with branches for alternate runtime configuration,
+then calls `FontListParser::Parse` (`0x847ac`). The file-backed
+`MinikinFontImplSkia::loadData`, `0x88214`, opens the selected path, obtains
+its size and maps its bytes (`0x88268`–`0x882c4`).
+
+The app supplies one concrete memory-backed font from its APK assets:
+`SpenComposerSdkInitializer.initialize` opens
+`font/SamsungKorean-Regular.ttf` and passes `readAllBytes()` to the Korean
+fallback service on Android SDK versions greater than 33. In this APK the
+1,530,792-byte asset has SHA-256
+`a37d021285b9ab1264172268a77fde3cd13d5d2b1612c789e1e2a96443ed4424`.
+This proves APK byte provenance, not storage of those bytes in the note.
+
+PDF text export also acquires runtime bytes. Composer
+`PdfTextAdapter::SetFontId`, `0x346564`, and
+`PDFWriterUtil::SetPaintInfo`, `0x3835fc`, request the selected font ID's
+bytes, size and face index from `FontManager::GetFontData`. PDF
+`PdfiumImpl::GetFont`, `0x8d17c`, passes those bytes to `FPDFText_LoadFont`
+at `0x8d1d4`. An embedded font in an exported PDF therefore does not prove
+an editable font program was serialized in its source note.
+
+This does not mean note archives cannot contain fonts. Model's inspected
+generic media `Bind`/`AttachFile`/`Load`/`GetZipList`/`saveItem` routes
+(`0x28c5dc`, `0x28f1e8`, `0x290f0c`, `0x2945c0`, `0x28fe5c`) apply
+ordinary file, metadata and archive-inclusion gates without a font exclusion.
+Failed image identification in Bind continues to generic BindFile.
+Generic font storage is possible on these routes, but no supplied-font
+roundtrip or connection to editable text's saved NAME was executed.
+
+ZIP directory inspection of the four `hf/*.sdocx` notes and the real
+`quiz`, `cs61bl_su22` and `handwritten` notes found no
+`.ttf`/`.otf`/`.ttc`/`.woff`/`.woff2` members among 68 entries. It does not
+rule out fonts inside other payloads: the original `cs61bl_su22` PDF-paper
+resource contains embedded font programs preserved through its imported
+resource graph, as documented in the
+[PDF resource findings](pdf-paper-export-findings.md).
+Those are imported PDF resources, not demonstrated editable-body fonts.
+
+Rust's `FontBook` uses caller-provided or pinned programs; the image-media
+accessor selects JPG/JPEG/PNG/WebP. Neither path binds saved NAME or fixed
+font automatically to arbitrary archive font bytes. A dedicated editable
+font-resource binding remains unproved, so the source evidence does not
+justify inventing one.
 
 ## Sized records
 

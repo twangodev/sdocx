@@ -373,10 +373,18 @@ Confirmed flexible page field-mask meanings from the Java writer:
 | 7 | `0x000080` | background rotation |
 | 8 | `0x000100` | PDF records: IDs plus a four-value rectangle |
 | 9 | `0x000200` | template type |
-| 10 | `0x000400` | 49-byte font/cache table records |
+| 10 | `0x000400` | 49-byte canvas-cache metadata records |
 | 11 | `0x000800` | imported-data height |
 | 12 | `0x001000` | deprecated/unknown `u32` |
 | 18 | `0x040000` | custom-object list; internals partly unresolved |
+
+Bit 10 is `CanvasCacheData`, confirmed by native
+`WPageLoadHandler::LoadHeader_CanvasCacheData`, `0xd3b44`, and the Java
+`canvasCacheDataMap` reader/writer in `n1/u.java`. Each 49-byte record stores
+a map key, media ID, width, height, one byte dark-mode flag, background color,
+three version integers, cache version, property, locale-list ID and
+system-font-path hash; all other fields are 32-bit integers. The hash is a
+cache field, not font-program bytes.
 
 The three fixture field masks are `0x471`, `0xd71`, and `0xd71`; their parsed
 flexible fields end exactly at `layer_offset`.
