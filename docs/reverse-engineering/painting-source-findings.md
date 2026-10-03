@@ -295,6 +295,46 @@ therefore serve different preservation purposes.
 The probe was independently rebuilt and replayed; its output SHA-256 was
 `cf9347195b0db00e4d685a4f2999ca4d78ca708bb9724d00b9474237bdeaba7d`.
 
+## Physical-layer properties in the painting editor
+
+These static traces concern the PaintingDoc/PageDoc editor route, not ordinary
+WDoc capture. Model `PageImplBase::GetLayerTransparency`, `0x344eb0`, resolves
+the requested layer and calls `LayerDocBase::GetTransparency`, which reads
+the unsigned byte at impl `+24` (`0x33d258`), the same runtime byte mapped by
+the [layer metadata writer](layer-findings.md).
+
+`PaintingCompatLayerManager::UpdateLayer`, Compat `0x5d944`, builds separate
+composites for physical indices below and above the current layer, each in
+ascending order (`0x5db04`, `0x5dd1c`). The current layer is excluded.
+`IsLayerVisible` returning false skips both shadow and contents for that
+sibling (`0x5db30–0x5db34`, `0x5dd48–0x5dd4c`). A visible sibling's shadow
+also requires its shadow-visible flag (`0x5dbb4`, `0x5ddcc`).
+
+Each admitted sibling's shadow merge precedes its drawing-bitmap merge
+(`0x5dc28`, `0x5dcac`; upper composite `0x5de3c`, `0x5deb8`). Each separately
+fetches the transparency byte and computes `f32(value) / 255.0f` with `scvtf`
+then `fdiv` (`0x5dbfc`, `0x5dc24`; `0x5dc84`, `0x5dca8`). `mergeInLayer`,
+`0x5e02c`, supplies that direct alpha to `SPPaint::SetAlpha` (`0x5e0a8`) for
+each bitmap draw (`0x5e104`), without inversion. Shadow and contents receive
+the same alpha in distinct draws, rather than one opacity after combining them.
+
+`PaintingCompatViewDrawing::drawCompositeLayer`, `0x6c244`, draws the lower
+composite (`0x6c2c0`), admitted current shadow (`0x6c4d4`), current canvas and
+floating stage (`0x6c648` on the non-alpha-lock route), then upper composite
+(`0x6c680`). Current alpha uses the same f32 division (`0x6c414–0x6c438`).
+Its current bitmap and shadow getters pass false for the second argument
+(`0x6c30c`, `0x6c480`); those getters return null for hidden requested layers
+(`0x5cd00–0x5cd08`, `0x5ce74–0x5ce78`). Current selection therefore splits
+the live drawing stage from sibling composites; it does not exclude siblings.
+
+`UpdateShadowBitmapOfCurrentLayer`, `0x6e108`, requires the shadow-visible flag
+and both visibility-aware bitmap resources (`0x6e148–0x6e188`). It obtains
+the layer's saved runtime `ShadowEffect` (`0x6e1a4`), copies all 20 bytes into
+`ShadowDrawing::EffectOption` (`0x6e1a8–0x6e1cc`), then calls `DrawShadow`
+(`0x6e1d0`). This establishes a saved-effect consumer without identifying its
+numeric fields or pixel appearance. The foreground image alone does not retain
+these physical-layer properties or their separate drawing order.
+
 ## Replay consumes original stroke channels and also uses bitmaps
 
 `PaintingCompatView::SetDocument`, Compat `0x66af8`, gets the painting's PageDoc
