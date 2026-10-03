@@ -441,6 +441,35 @@ list; edit state also agrees across fills. Temporary
 This establishes the general-template wrapper behavior on explicit inputs,
 without claiming a saved-file producer or executing Drawing.
 
+## Executed Drawing conversion of retained primitives
+
+A separate probe passes both paths from the actual unknown-template wrapper
+through Drawing's segment dispatcher (`0x9bd24`) and bundled Skia construction,
+mutation and raw iteration. Five supplied Arc/Oval cases, loaded twice each,
+agree across five fresh VM fills and independent strict-compiled replay.
+For Arc `(10,20,200,100,37,123)`, normalized base begins at
+`(165.28851318359375,111.66287231445312)` with two quadratics; raw display
+begins at `(180.87037658691406,84.07260131835938)` with three. This comparison
+combines the extent/LTRB and polar/parametric angle differences. The equal-bounds
+helper comparison above isolates angle interpretation instead. Temporary
+`/tmp/sdocx-native-unknown-drawing.json` has SHA-256
+`9b988bfacbf28d95c4475e3b067e1f65b500630a594411df74fd2212cbe424d6`.
+Model/Path, Drawing dispatch and Skia execute; host allocation/memory,
+single-thread pthread operations and verified Linux math remain boundaries.
+This probe reaches no full ObjectShape, fill effects, canvas, saved-file parser
+or application-selected co-edit context.
+
+A further bounded probe executes Drawing's solid-color consumer with an actual
+constructed effect whose dedicated-fill count is zero. It forwards the complete
+native outline copy to canvas virtual slot 96 with its main paint, matching the
+fallback branch at `0x9cda8–0x9cdb0`. Actual Model `GetType` executes over explicit
+type-7 caller storage; the ObjectShape itself is not constructed. The canvas
+callback records arguments without drawing. Temporary
+`/tmp/sdocx-native-unknown-solid.json` has SHA-256
+`7a96eb48dcb65e6aec9d3d79b6dc9a29889e571135af6961bbf1d18b9fb9c845`.
+No native `SetEffect` installation or template-fill-list transfer executes, so
+this proves the conditional fallback independently of a complete scene bridge.
+
 Drawing's solid-color shape branch retrieves each dedicated
 `ObjectShape::GetFillPath`, converts its segments and draws it
 (`0x9cda8–0x9ce38`). It does not simply fill the open outline in that branch.
@@ -457,6 +486,54 @@ Each case matches the independently replayed temporary proofs. The driver pins
 the actual loaded math-library identity, traps unbound imports and restores
 native writable state between fills; its scope remains the primitive/helper
 execution described above.
+
+## Saved control points can regenerate the preceding outline
+
+Saved loading restores the path first, then reads a one-byte control count and
+`f64` coordinate pairs, narrows them to `f32` and invokes template slot 32
+(`0x3a95c4–0x3a963c`). For named Arc, shape type 20, this reaches setter
+`0x224628`. It inverse-rotates a control point when template rotation is nonzero,
+recovers its polar angle, projects it onto the ellipse and regenerates base and
+display outlines plus the separate center-closed fill
+(`0x2246b4–0x2247e8`). Thus nonempty saved path bytes are not an unconditional
+geometry authority for this template. Later
+[saved-bounds refresh](text-layout-findings.md#saved-bounds-refresh) and load
+scaling can transform that regenerated geometry; the complete saved dispatcher
+has not been executed in these probes.
+
+Native saved writing retrieves controls using getter `0x20ec9c` with the
+enclosing saved rotation, then widens returned `f32` coordinates to `f64`
+(`0x3a8ee4–0x3a8f20`). Stored controls and generated drawable paths remain
+distinct; the native edit-point list above is a third representation.
+
+Actual constructor/getter/setter execution for ordered positive ellipse and
+circle bounds confirms that reapplying the default generated controls leaves
+captured path and control-getter records byte-identical. Supplying `(20,30)` and
+`(40,100)` instead projects onto the ellipse and regenerates quadratic outline
+and sector fill. Two rectangles with four sequential changes agree across five
+VM fills and independent replay; temporary `/tmp/sdocx-native-arc-controls.json`
+has SHA-256 `5c2a7c06e3f4e05bcf3048d9af8b324a3da1d1459521b8ace9806f8978dd9f5a`.
+This zero-angle probe does not execute the inverse-rotation branch.
+
+A separate probe invokes actual template rotation setter `0x20cb6c`, then
+reapplies native getter controls to both control indices twice. Default ellipse
+±37 and circle 37/90-degree cases preserve base/display/fill/control-getter
+records across five VM fills and independent replay. Temporary
+`/tmp/sdocx-native-arc-rotated-controls.json` has SHA-256
+`fded9eadf70b07651c7cd42fa2798c992ddbc77efeb63377630a3a1d17ce3a77`.
+This executes template rotation and inverse control rotation, not the public
+SDK/object rotation setter, enclosing saved-angle state or serialization.
+Host boundaries match the named Arc construction probe above.
+
+A separate moved-oblique probe first supplies the two points above, then
+rotates and reapplies getter controls for the same four cases. In circle 37,
+the first end-control reapplication shifts the getter's x coordinate by four
+`f32` ULP and y by one, while base/display/fill commands remain bit-identical;
+the second reapplication is stable. This is getter-coordinate drift, not a
+direct snapshot of stored control arrays or a general native-state guarantee.
+Five fills and independent replay agree; temporary
+`/tmp/sdocx-native-arc-oblique-rotated-controls.json` has SHA-256
+`556e4686577d4bacb1dbf6dcf5df017037929941df31e299cb0970b081c90dc6`.
 
 ## Current Rust preservation and rendering boundaries
 
@@ -490,3 +567,8 @@ and PDF without a raster intermediate. Saved command precision, native
 runtime precision and output decimal precision remain separate contracts.
 Native normalization can mutate caller coordinates and cached bounds
 independently of retained source bytes.
+
+Rust retains `control_points`, but `render_shape` immediately paints a supported
+nonempty `path_data` and returns. That branch does not apply named template
+control setters or derive their separate fill path. Raw data retention therefore
+does not establish equivalence to the native regeneration stage above.
