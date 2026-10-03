@@ -233,6 +233,64 @@ There was no rendered visibility comparison. Other annotation states, widgets,
 page groups, `/UserUnit`, tags and cross-page destinations were not supplied by
 this probe, and its successful return is not a general import-completeness check.
 
+### All available original paper pages survive the native content transport
+
+The same client imported all 20 `cs61bl_su22` pages and the one `quiz` page into
+one destination. These are the embedded originals identified in the
+[original-paper inspection](pdf-vector-transport-findings.md#all-available-original-paper-pages),
+not paired Samsung-export reference files. The output is 937,425 bytes,
+SHA-256 `2cb0a9a9327cf190546a9b9df661155648ce4fa4108e66a57553972de0320b0f`.
+Five fresh allocation-fill executions and an independent replay produced the
+same bytes. The real-source client additionally supplied host zlib inflate with
+pointer/count marshalling and host allocation in place of guest codec allocation
+callbacks, plus locale, math and single-thread services. Source parsing, page
+copying, C++ numeric serialization and saving still executed the APK code.
+
+Independent Rust inspection found all 3,726 operators and decoded page-content
+bytes unchanged. Direct `lopdf` text extraction succeeded and matched: 22,510
+UTF-8 bytes across `cs61bl`, zero for `quiz`. All 27 unique original encoded
+image payloads survived, with no added or missing image payloads. Resolved
+resource graphs matched after stream-encoding normalization and `f32` number
+comparison; font programs, encodings, ToUnicode, ColorSpaces and image masks
+remained present. Page dictionary comparisons and separate `f64` inspection of
+page-dictionary numbers found no supplied changes. All references reachable
+from the output root resolved.
+
+The `f32` comparison conceals a numeric boundary: direct Hayro `f64` inspection
+found 5,600 changed values among 11,868 resource-number **visits** through the
+page graphs. Every observed change is a font `/Widths` value, for example
+`777.8 → 777.79999` and `694.4 → 694.40002`. The maximum absolute change is
+approximately `0.00005` font units, not page coordinates or pixels. These are
+repeated graph visits, not counts of unique PDF objects. The
+[Rust-library original-paper result](pdf-vector-transport-findings.md#all-available-original-paper-pages)
+has no such observed `f64` resource-number changes. Native precision loss is an
+observed serializer behavior, not a requirement for Rust preservation outputs.
+
+These real sources do not supply annotations, `/UserUnit`, rotations, optional
+content catalogs or tagging trees, or nonempty shading, pattern and graphics
+state graphs. Their absence is not coverage. Source `cs61bl` catalog `/Names`,
+`/OpenAction` and `/PageMode` remain outside the imported page graph. This result
+still concerns the public PDFium import/save route, not the full Samsung wrapper
+or rendered appearance.
+
+### A geometry variant retains direct page fields and a CMYK group
+
+A typed variant of the one-page source adds `/CropBox [10 20 180 190]`,
+`/Rotate 90`, `/UserUnit 2` and a transparency Group with `/CS /DeviceCMYK`,
+`/I false` and `/K true`. Its source SHA-256 is
+`b3e9efc46dd232d2fe014df18bc677f1df67c633449f460be076af72b49d15d0`.
+The native output is 1,430 bytes with SHA-256
+`4ee607178794ae2e447cd605e49afa4f5673f48faf3ce533edc5f13ee18cfd8e`,
+identical across the five allocation fills and an independent replay.
+
+All supplied page fields and the complete Group dictionary survive unchanged;
+separate `f64` page-dictionary number inspection agrees. The eight content operators,
+annotation appearance, resources and current-page `/P` reference retain the
+earlier checkpoint's behavior. There are zero Image objects and all root
+references resolve; catalog `/OCProperties` is still absent. This establishes
+field and object-graph retention, without a rotated, physically scaled or CMYK
+appearance comparison. It does not expand the real papers' supplied feature set.
+
 ## Source size controls the overlay scale
 
 The imported-page operation receives no requested output width or height.
