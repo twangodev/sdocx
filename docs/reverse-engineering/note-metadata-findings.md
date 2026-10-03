@@ -23,8 +23,9 @@ All addresses are ARM64 virtual addresses. WNote and voice symbols are in
 `libSPenWDoc.so`; shared metadata and the author JNI bridge are in
 `libSPenModel.so`. The JNI field-name strings at `0x156717`, `0x12dc3c`,
 `0x159ec5` and `0x13970e` confirm the author field names and ordering.
-The coedit consumer below is in `libSPenComposer.so`; runtime font-service
-addresses are in `libSPenText.so`.
+Coedit and page-theme consumers below are in `libSPenComposer.so`; ordinary
+body callers are in `libSPenBodytext.so` and `libSPenWidget.so`, and font
+measurement/service addresses are in `libSPenText.so`.
 
 ## Ordered fields
 
@@ -93,10 +94,43 @@ state, without calling a font manager or text layout. `GetFixedFont`,
 `preSetCoeditModeInNative`, `0x388e64`, reads fixed direction only after an
 actual `IsCoeditMode` check. Values 0/1 reach the context-provided display's
 virtual slot 16; other values leave it unchanged (`0x388e74`–`0x388ee8`).
-This is a bounded coedit display policy. A connection from fixed font to the
-body's measured default face remains unproved. The
+This is a bounded coedit display policy. The
 [EndTag findings](end-tag-findings.md#field-boundaries) separately distinguish
 native inline-string validation from generic Java null-sentinel support.
+
+The ordinary body has an explicit font policy. Bodytext
+`BodyTextLayout::SetBodyTextDocument`, `0xafe54`, constructs a fresh Widget
+`ObjectTextLayout` and sets its system-font flag to `!WNote::IsCoeditMode`
+(`0xafed4`–`0xafef0`). `BodyTextDocument::IsSystemFontEnabled`,
+`0xaaf5c`–`0xaaf84`, repeats this rule; a null note leaves the flag enabled.
+Widget's constructor enables it at `0xd3198`–`0xd31a0` and takes layout
+direction from context display virtual slot 112 (`0xd31d8`–`0xd3200`).
+Bodytext's manager factory, `0xcee14`–`0xcee9c`, transfers note width, density
+and body font size delta, without transferring the fixed-font String.
+
+The fresh TextLayout calls `RichText::Construct` at Text `0x8a944`, which
+initializes default-name member 160 to null (`0x61de4`). Measurement passes
+that member and the system-font flag into `ParagraphMeasure`
+(`0x78c70`–`0x78ca4`); its Minikin implementation retains the name in member
+32 (`0x766b8`–`0x766ec`). Nonnull saved NAME spans take precedence over that
+default at `0x7715c`–`0x77164`, as detailed in the
+[font-name findings](text-layout-findings.md#font-name-payload-and-measured-fallback).
+With a null/empty name, `FontManager::GetFontFamilyNameByFontName` returns an
+empty family for enabled system-font selection (`0x84fd4`–`0x84fec`), or
+calls `FontListParser::GetDefaultFontFamily` when disabled (`0x85038`).
+This proves the ordinary caller's inputs, not its device-specific physical
+face. No fixed-font override was found in this inspected body caller chain;
+it does not justify applying retained EndTag font to every ordinary run.
+
+Decompiled `ComposerDocInitialization.setFixedParamCoeditNote` explicitly
+gates `isCoeditMode()` before setting direction LTR/theme LIGHT. Shared-note
+conversion in `AddNoteToSharedNotebookUseCase.updateDocument` sets those
+values; `DeleteCoeditNoteUseCase.updateWNote` resets both to DEFAULT.
+Composer's separate page-theme helper, `ContentsView::setPageBackgroundTheme`,
+`0x417fb8`–`0x418060`, derives theme from page PDF/background state and context
+color conversion before reading/updating `WPage` theme. That inspected helper
+does not read WNote's fixed theme. These source paths do not establish a
+global fixed-direction/theme override outside coedit.
 
 The font service has a separate caller-byte route. Java
 `SpenFontManager.setCustomFallbackFont` supplies a language and byte array;
