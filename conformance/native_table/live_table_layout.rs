@@ -2,6 +2,10 @@ use super::super::widget_text_constructor::{self, CELL_DRAWING, CONTENT, CONTENT
 use super::cell_host::{install_host, reset_host};
 use super::*;
 
+#[path = "code_observer.rs"]
+mod code_observer;
+use code_observer::CodeObserver;
+
 #[path = "bodytext_page_ranges.rs"]
 mod bodytext_page_ranges;
 
@@ -456,157 +460,145 @@ pub(crate) fn capture(machine: &mut Machine, paths: widget_text_constructor::Pat
         math_calls: BTreeMap::new(),
     });
     environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
-    let mut observation = Box::<Trace>::default();
-    for (_, address) in ENTRIES {
-        let mut hook = 0;
-        check(unsafe {
-            uc_hook_add(
-                machine.engine,
-                &mut hook,
-                4,
-                trace as *mut c_void,
-                ptr::from_mut(observation.as_mut()).cast(),
-                address,
-                address,
-            )
-        });
-    }
-    let base = Case {
-        name: "ordinary-native-defaults",
-        bounds: [13.25, -19.5, 173.25, 180.5],
-        texts: ["AV abc", "To", "A😀B", "last"],
-        merge: None,
-        font_size: None,
-        margins: None,
-        scale: 1.,
-        density: 1.,
-        direction: 0,
-        bands: &[],
-        resize: None,
-    };
-    let bands: &[[f32; 4]] = &[[0., 60., 180., 120.], [0., 140., 180., 250.]];
-    let cases = [
-        base,
-        Case {
-            name: "zero-absolute-origin",
-            bounds: [0., 0., 160., 200.],
-            ..base
-        },
-        Case {
-            name: "narrow-native-defaults",
-            bounds: [13.25, -19.5, 93.25, 100.5],
-            ..base
-        },
-        Case {
-            name: "fractional-grid",
-            bounds: [13.25, -19.5, 175.05, 181.0],
-            ..base
-        },
-        Case {
-            name: "native-source-font17",
-            font_size: Some(17.),
-            ..base
-        },
-        Case {
-            name: "asymmetric-source-margins",
-            font_size: Some(17.),
-            margins: Some([1.25, 2.5, 3.75, 4.5]),
-            ..base
-        },
-        Case {
-            name: "text-scale075",
-            scale: 0.75,
-            ..base
-        },
-        Case {
-            name: "text-scale15",
-            scale: 1.5,
-            ..base
-        },
-        Case {
-            name: "document-density2",
-            density: 2.,
-            ..base
-        },
-        Case {
-            name: "direction1-mixed-text",
-            direction: 1,
-            texts: ["AV אב", "To", "ÁB", "last"],
-            font_size: Some(17.),
-            ..base
-        },
-        Case {
-            name: "ordinary-local-split-bands",
-            bands,
-            ..base
-        },
-        Case {
-            name: "warm-width-grow",
-            resize: Some(120.),
-            ..base
-        },
-        Case {
-            name: "warm-width-shrink",
-            resize: Some(40.),
-            ..base
-        },
-        Case {
-            name: "merged-columns-covered-text",
-            merge: Some([0, 0, 0, 1]),
-            ..base
-        },
-        Case {
-            name: "merged-rows-covered-text",
-            merge: Some([0, 0, 1, 0]),
-            ..base
-        },
-        Case {
-            name: "merged-two-by-two-covered-text",
-            merge: Some([0, 0, 1, 1]),
-            ..base
-        },
-        Case {
-            name: "merged-two-by-two-split-bands",
-            merge: Some([0, 0, 1, 1]),
-            bands,
-            ..base
-        },
-        Case {
-            name: "merged-empty-owner-covered-text",
-            merge: Some([0, 0, 1, 1]),
-            texts: ["", "To", "A😀B", "last"],
-            ..base
-        },
-    ];
-    let output = cases
-        .into_iter()
-        .map(|case| {
-            let expected = case.sample(machine, &mut environment, &mut host, &mut observation, 0);
-            for fill in [85, 165, 255, 0] {
-                let actual =
-                    case.sample(machine, &mut environment, &mut host, &mut observation, fill);
-                assert!(
-                    actual == expected,
-                    "case {} fill {fill} disagrees",
-                    case.name
-                );
-            }
-            expected
-        })
-        .collect::<Vec<_>>();
-    println!(
-        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"dependencies\":{},\"memory_fills\":[0,85,165,255],\"repeat_zero_fill\":true,\"model_library_sha256\":{},\"base_library_sha256\":{},\"text_library_sha256\":{},\"skia_library_sha256\":{},\"widget_library_sha256\":{},\"content_library_sha256\":{},\"drawing_library_sha256\":{},\"native_entrypoints\":{{\"table_constructor\":\"Drawing:0xa9d58\",\"cold_measure\":\"Drawing:0xaa530\",\"init\":\"Drawing:0xaa6b4\",\"warm_layout\":\"Drawing:0xaa3d4\",\"set_text_scale\":\"Drawing:0xacfe8\",\"set_split_bands\":\"Drawing:0xad040\",\"model_column_width\":\"Model:0x3d3b64\",\"warm_resize_column\":\"Drawing:0xb0088\",\"editing_callback_installation\":\"Drawing:0xaada4\"}},\"capture_boundary\":{},\"cases\":[{}]}}",
-        dependency_metadata(),
-        json_string(LIBRARY_SHA256),
-        json_string(frames::BASE_SHA256),
-        json_string(geometry::TEXT_SHA256),
-        json_string(text_font_source::SKIA_SHA256),
-        json_string(geometry::WIDGET_SHA256),
-        json_string(CONTENT_SHA256),
-        json_string(DRAWING_SHA256),
-        json_string(
-            "Complete native Model table/row/cell/content construction, native merge and physical-cell text/optional font-size/margin setters; complete native TableLayout constructor and TextManager, cold Measure/init/extendRowBySplit/updateMeasuredRect, genuine child constructors/SetObject/SetTextScale/Widget Update, NAME font selection and bundled Minikin/HarfBuzz/Skia/FreeType measurement, complete warm Layout and optional Model SetColumnWidth/native resizeColumn execute. Native defaults establish margins and text policies. Actual measured entries, TextLayout.GetTextBound and cached emitted runs are observed; no child widths, measured entries, glyphs, classifications, font getters, cache frames or geometry callback values are supplied. Caller supplies fixed 2x2 source bounds, per-physical-cell text after merge, optional source style controls, independent table text scale, explicit default device/profile interfaces, document width1000/density and local split bands via actual setter. Caller IContext color service returns input ARGB, preferred document-width getter returns0 so constructor argument1000 applies; context/display storage is supplied while actual table TextManager executes. Native editing callback at child std::function+64 is installed by init; update-size callback target+288 and table forwarding callbacks remain constructor-null. Pinned host ICU76.1/Unicode16 replaces Android ICU; host allocation/files/libc/single-thread services, deterministic UUIDs, pow/acosf primitives and disabled ATrace are explicit boundaries. Model registry and runtime allocators reset between captures; table/input storage is zeroed before construction and allocation fills vary owned native memory. No saved parser/clone, complete Bodytext callback/document text rectangle production, document pagination/split-band production, native device ICU, final writer consumption or pixels execute."
-        ),
-        output.join(",")
-    );
+    CodeObserver::with(machine, Trace::default(), |machine, observation| {
+        observation.observe(trace, ENTRIES.map(|(_, address)| address));
+        let base = Case {
+            name: "ordinary-native-defaults",
+            bounds: [13.25, -19.5, 173.25, 180.5],
+            texts: ["AV abc", "To", "A😀B", "last"],
+            merge: None,
+            font_size: None,
+            margins: None,
+            scale: 1.,
+            density: 1.,
+            direction: 0,
+            bands: &[],
+            resize: None,
+        };
+        let bands: &[[f32; 4]] = &[[0., 60., 180., 120.], [0., 140., 180., 250.]];
+        let cases = [
+            base,
+            Case {
+                name: "zero-absolute-origin",
+                bounds: [0., 0., 160., 200.],
+                ..base
+            },
+            Case {
+                name: "narrow-native-defaults",
+                bounds: [13.25, -19.5, 93.25, 100.5],
+                ..base
+            },
+            Case {
+                name: "fractional-grid",
+                bounds: [13.25, -19.5, 175.05, 181.0],
+                ..base
+            },
+            Case {
+                name: "native-source-font17",
+                font_size: Some(17.),
+                ..base
+            },
+            Case {
+                name: "asymmetric-source-margins",
+                font_size: Some(17.),
+                margins: Some([1.25, 2.5, 3.75, 4.5]),
+                ..base
+            },
+            Case {
+                name: "text-scale075",
+                scale: 0.75,
+                ..base
+            },
+            Case {
+                name: "text-scale15",
+                scale: 1.5,
+                ..base
+            },
+            Case {
+                name: "document-density2",
+                density: 2.,
+                ..base
+            },
+            Case {
+                name: "direction1-mixed-text",
+                direction: 1,
+                texts: ["AV אב", "To", "ÁB", "last"],
+                font_size: Some(17.),
+                ..base
+            },
+            Case {
+                name: "ordinary-local-split-bands",
+                bands,
+                ..base
+            },
+            Case {
+                name: "warm-width-grow",
+                resize: Some(120.),
+                ..base
+            },
+            Case {
+                name: "warm-width-shrink",
+                resize: Some(40.),
+                ..base
+            },
+            Case {
+                name: "merged-columns-covered-text",
+                merge: Some([0, 0, 0, 1]),
+                ..base
+            },
+            Case {
+                name: "merged-rows-covered-text",
+                merge: Some([0, 0, 1, 0]),
+                ..base
+            },
+            Case {
+                name: "merged-two-by-two-covered-text",
+                merge: Some([0, 0, 1, 1]),
+                ..base
+            },
+            Case {
+                name: "merged-two-by-two-split-bands",
+                merge: Some([0, 0, 1, 1]),
+                bands,
+                ..base
+            },
+            Case {
+                name: "merged-empty-owner-covered-text",
+                merge: Some([0, 0, 1, 1]),
+                texts: ["", "To", "A😀B", "last"],
+                ..base
+            },
+        ];
+        let output = cases
+            .into_iter()
+            .map(|case| {
+                let expected = case.sample(machine, &mut environment, &mut host, observation, 0);
+                for fill in [85, 165, 255, 0] {
+                    let actual =
+                        case.sample(machine, &mut environment, &mut host, observation, fill);
+                    assert!(
+                        actual == expected,
+                        "case {} fill {fill} disagrees",
+                        case.name
+                    );
+                }
+                expected
+            })
+            .collect::<Vec<_>>();
+        println!(
+            "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"dependencies\":{},\"memory_fills\":[0,85,165,255],\"repeat_zero_fill\":true,\"model_library_sha256\":{},\"base_library_sha256\":{},\"text_library_sha256\":{},\"skia_library_sha256\":{},\"widget_library_sha256\":{},\"content_library_sha256\":{},\"drawing_library_sha256\":{},\"native_entrypoints\":{{\"table_constructor\":\"Drawing:0xa9d58\",\"cold_measure\":\"Drawing:0xaa530\",\"init\":\"Drawing:0xaa6b4\",\"warm_layout\":\"Drawing:0xaa3d4\",\"set_text_scale\":\"Drawing:0xacfe8\",\"set_split_bands\":\"Drawing:0xad040\",\"model_column_width\":\"Model:0x3d3b64\",\"warm_resize_column\":\"Drawing:0xb0088\",\"editing_callback_installation\":\"Drawing:0xaada4\"}},\"capture_boundary\":{},\"cases\":[{}]}}",
+            dependency_metadata(),
+            json_string(LIBRARY_SHA256),
+            json_string(frames::BASE_SHA256),
+            json_string(geometry::TEXT_SHA256),
+            json_string(text_font_source::SKIA_SHA256),
+            json_string(geometry::WIDGET_SHA256),
+            json_string(CONTENT_SHA256),
+            json_string(DRAWING_SHA256),
+            json_string(
+                "Complete native Model table/row/cell/content construction, native merge and physical-cell text/optional font-size/margin setters; complete native TableLayout constructor and TextManager, cold Measure/init/extendRowBySplit/updateMeasuredRect, genuine child constructors/SetObject/SetTextScale/Widget Update, NAME font selection and bundled Minikin/HarfBuzz/Skia/FreeType measurement, complete warm Layout and optional Model SetColumnWidth/native resizeColumn execute. Native defaults establish margins and text policies. Actual measured entries, TextLayout.GetTextBound and cached emitted runs are observed; no child widths, measured entries, glyphs, classifications, font getters, cache frames or geometry callback values are supplied. Caller supplies fixed 2x2 source bounds, per-physical-cell text after merge, optional source style controls, independent table text scale, explicit default device/profile interfaces, document width1000/density and local split bands via actual setter. Caller IContext color service returns input ARGB, preferred document-width getter returns0 so constructor argument1000 applies; context/display storage is supplied while actual table TextManager executes. Native editing callback at child std::function+64 is installed by init; update-size callback target+288 and table forwarding callbacks remain constructor-null. Pinned host ICU76.1/Unicode16 replaces Android ICU; host allocation/files/libc/single-thread services, deterministic UUIDs, pow/acosf primitives and disabled ATrace are explicit boundaries. Model registry and runtime allocators reset between captures; table/input storage is zeroed before construction and allocation fills vary owned native memory. No saved parser/clone, complete Bodytext callback/document text rectangle production, document pagination/split-band production, native device ICU, final writer consumption or pixels execute."
+            ),
+            output.join(",")
+        );
+    });
 }

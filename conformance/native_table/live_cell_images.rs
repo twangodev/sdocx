@@ -154,135 +154,115 @@ pub(super) fn capture(machine: &mut Machine, paths: widget_text_constructor::Pat
         math_calls: BTreeMap::new(),
     });
     environment.set_host_import_handler(host_import, ptr::from_mut(host.as_mut()).cast());
-    let mut observation = Box::<Trace>::default();
-    let mut object_trace = Box::new(RefCell::new(Trace::default()));
-    for (_, address) in ENTRIES {
-        let mut hook = 0;
-        check(unsafe {
-            uc_hook_add(
-                machine.engine,
-                &mut hook,
-                4,
-                trace as *mut c_void,
-                ptr::from_mut(observation.as_mut()).cast(),
-                address,
-                address,
-            )
-        });
-    }
-    for (_, address) in OBJECT_ENTRIES {
-        let mut hook = 0;
-        check(unsafe {
-            uc_hook_add(
-                machine.engine,
-                &mut hook,
-                4,
-                observe_object as *mut c_void,
-                ptr::from_mut(object_trace.as_mut()).cast(),
-                address,
-                address,
-            )
-        });
-    }
-    let base = Input {
-        name: "inline-image-normal",
-        object_type: 3,
-        bounds: [7.25, -3.5, 37.75, 38.75],
-        option: 1,
-        constraint: 0,
-        resize: None,
-    };
-    let cases = [
-        base,
-        Input {
-            name: "inline-image-over-pages",
-            constraint: 1,
-            ..base
-        },
-        Input {
-            name: "block-image-small-margin",
-            option: 2,
-            constraint: 1,
-            ..base
-        },
-        Input {
-            name: "block-image-medium-margin",
-            option: 3,
-            constraint: 2,
-            ..base
-        },
-        Input {
-            name: "inline-wide-image",
-            bounds: [0., 0., 160., 25.],
-            ..base
-        },
-        Input {
-            name: "inline-tall-image-resize",
-            bounds: [0., 0., 30., 150.25],
-            resize: Some([0., 0., 55.5, 205.75]),
-            ..base
-        },
-        Input {
-            name: "public-cell-rejects-table",
-            object_type: 22,
-            ..base
-        },
-        Input {
-            name: "public-cell-rejects-code",
-            object_type: 23,
-            ..base
-        },
-    ];
-    let output = cases
-        .into_iter()
-        .map(|input| {
-            let case = Case {
-                name: input.name,
-                bounds: [13.25, -19.5, 173.25, 180.5],
-                texts: ["AV", "To", "last", "ÁB"],
-                merge: None,
-                font_size: Some(17.),
-                margins: None,
-                scale: 1.,
-                density: 1.,
-                direction: 0,
-                bands: &[],
-                resize: None,
-            };
-            let mut canonical = None;
-            for fill in [0, 85, 165, 255, 0] {
-                object_trace.borrow_mut().take();
-                let sample = case.sample_customized(
-                    machine,
-                    &mut environment,
-                    &mut host,
-                    &mut observation,
-                    fill,
-                    Some(&|machine| insert(machine, input)),
-                    Some(&|machine| after_warm(machine, input, &object_trace)),
+    CodeObserver::with(machine, Trace::default(), |machine, observation| {
+        observation.observe(trace, ENTRIES.map(|(_, address)| address));
+        CodeObserver::with(
+            machine,
+            RefCell::new(Trace::default()),
+            |machine, object_trace| {
+                object_trace.observe(observe_object, OBJECT_ENTRIES.map(|(_, address)| address));
+                let base = Input {
+                    name: "inline-image-normal",
+                    object_type: 3,
+                    bounds: [7.25, -3.5, 37.75, 38.75],
+                    option: 1,
+                    constraint: 0,
+                    resize: None,
+                };
+                let cases = [
+                    base,
+                    Input {
+                        name: "inline-image-over-pages",
+                        constraint: 1,
+                        ..base
+                    },
+                    Input {
+                        name: "block-image-small-margin",
+                        option: 2,
+                        constraint: 1,
+                        ..base
+                    },
+                    Input {
+                        name: "block-image-medium-margin",
+                        option: 3,
+                        constraint: 2,
+                        ..base
+                    },
+                    Input {
+                        name: "inline-wide-image",
+                        bounds: [0., 0., 160., 25.],
+                        ..base
+                    },
+                    Input {
+                        name: "inline-tall-image-resize",
+                        bounds: [0., 0., 30., 150.25],
+                        resize: Some([0., 0., 55.5, 205.75]),
+                        ..base
+                    },
+                    Input {
+                        name: "public-cell-rejects-table",
+                        object_type: 22,
+                        ..base
+                    },
+                    Input {
+                        name: "public-cell-rejects-code",
+                        object_type: 23,
+                        ..base
+                    },
+                ];
+                let output = cases
+                    .into_iter()
+                    .map(|input| {
+                        let case = Case {
+                            name: input.name,
+                            bounds: [13.25, -19.5, 173.25, 180.5],
+                            texts: ["AV", "To", "last", "ÁB"],
+                            merge: None,
+                            font_size: Some(17.),
+                            margins: None,
+                            scale: 1.,
+                            density: 1.,
+                            direction: 0,
+                            bands: &[],
+                            resize: None,
+                        };
+                        let mut canonical = None;
+                        for fill in [0, 85, 165, 255, 0] {
+                            object_trace.borrow_mut().take();
+                            let sample = case.sample_customized(
+                                machine,
+                                &mut environment,
+                                &mut host,
+                                observation,
+                                fill,
+                                Some(&|machine| insert(machine, input)),
+                                Some(&|machine| after_warm(machine, input, &object_trace)),
+                            );
+                            if let Some(expected) = &canonical {
+                                assert_eq!(&sample, expected, "{} fill {fill}", input.name);
+                            } else {
+                                canonical = Some(sample);
+                            }
+                        }
+                        canonical.unwrap()
+                    })
+                    .collect::<Vec<_>>();
+                println!(
+                    "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"dependencies\":{},\"memory_fills\":[0,85,165,255],\"repeat_zero_fill\":true,\"model_library_sha256\":{},\"base_library_sha256\":{},\"text_library_sha256\":{},\"skia_library_sha256\":{},\"widget_library_sha256\":{},\"content_library_sha256\":{},\"drawing_library_sha256\":{},\"native_entrypoints\":{{\"image_constructor\":\"Model:0x420328\",\"image_construct\":\"Model:0x420450\",\"image_source_rect_setter\":\"Model:0x397708\",\"cell_append_object_span\":\"Model:0x3c26e8\",\"size_notification\":\"Drawing:0xb0d6c\"}},\"capture_boundary\":{},\"cases\":[{}]}}",
+                    dependency_metadata(),
+                    json_string(LIBRARY_SHA256),
+                    json_string(frames::BASE_SHA256),
+                    json_string(geometry::TEXT_SHA256),
+                    json_string(text_font_source::SKIA_SHA256),
+                    json_string(geometry::WIDGET_SHA256),
+                    json_string(CONTENT_SHA256),
+                    json_string(DRAWING_SHA256),
+                    json_string(
+                        "Complete native Model table/cell/source construction and genuine Image constructor/Construct/SetRect, ObjectSpan constructor/setters/public TableCell AppendObjectSpan, actual TableLayout cold Measure/warm Layout and Widget source conversion/shaping/placement execute. Source image bounds and layout options/constraints are caller inputs; no measured object dimensions or callbacks are supplied. One resize invokes actual image source SetRect then native TableLayout.onObjectSpanChanged, retaining actual warm cache. Genuine public cell insertion rejects constructed Table22/Code23 without source mutation; this does not establish serialized parser rejection. Images have nil media/bitmap data; capture proves source geometry, not decoded pixels or media loading. Existing host font/ICU, allocation, libc/device interfaces and default width1000/density1 boundaries apply; child update-size callbacks remain actual constructor state. No Bodytext/document placement, native raster rendering or final writer executes."
+                    ),
+                    output.join(","),
                 );
-                if let Some(expected) = &canonical {
-                    assert_eq!(&sample, expected, "{} fill {fill}", input.name);
-                } else {
-                    canonical = Some(sample);
-                }
-            }
-            canonical.unwrap()
-        })
-        .collect::<Vec<_>>();
-    println!(
-        "{{\"apk_version\":\"4.4.45.37\",\"apk_sha256\":\"daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667\",\"dependencies\":{},\"memory_fills\":[0,85,165,255],\"repeat_zero_fill\":true,\"model_library_sha256\":{},\"base_library_sha256\":{},\"text_library_sha256\":{},\"skia_library_sha256\":{},\"widget_library_sha256\":{},\"content_library_sha256\":{},\"drawing_library_sha256\":{},\"native_entrypoints\":{{\"image_constructor\":\"Model:0x420328\",\"image_construct\":\"Model:0x420450\",\"image_source_rect_setter\":\"Model:0x397708\",\"cell_append_object_span\":\"Model:0x3c26e8\",\"size_notification\":\"Drawing:0xb0d6c\"}},\"capture_boundary\":{},\"cases\":[{}]}}",
-        dependency_metadata(),
-        json_string(LIBRARY_SHA256),
-        json_string(frames::BASE_SHA256),
-        json_string(geometry::TEXT_SHA256),
-        json_string(text_font_source::SKIA_SHA256),
-        json_string(geometry::WIDGET_SHA256),
-        json_string(CONTENT_SHA256),
-        json_string(DRAWING_SHA256),
-        json_string(
-            "Complete native Model table/cell/source construction and genuine Image constructor/Construct/SetRect, ObjectSpan constructor/setters/public TableCell AppendObjectSpan, actual TableLayout cold Measure/warm Layout and Widget source conversion/shaping/placement execute. Source image bounds and layout options/constraints are caller inputs; no measured object dimensions or callbacks are supplied. One resize invokes actual image source SetRect then native TableLayout.onObjectSpanChanged, retaining actual warm cache. Genuine public cell insertion rejects constructed Table22/Code23 without source mutation; this does not establish serialized parser rejection. Images have nil media/bitmap data; capture proves source geometry, not decoded pixels or media loading. Existing host font/ICU, allocation, libc/device interfaces and default width1000/density1 boundaries apply; child update-size callbacks remain actual constructor state. No Bodytext/document placement, native raster rendering or final writer executes."
-        ),
-        output.join(","),
-    );
+            },
+        );
+    });
 }
