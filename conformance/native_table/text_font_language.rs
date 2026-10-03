@@ -165,6 +165,7 @@ struct Observation {
     cursor: u64,
     fill: u8,
     once: BTreeSet<u64>,
+    next_thread_key: u32,
     thread_values: BTreeMap<u64, u64>,
     languages: Vec<String>,
     names: Vec<Option<String>>,
@@ -283,7 +284,8 @@ unsafe extern "C" fn imported(engine: Engine, address: u64, _: u32, data: *mut c
             .unwrap_or(0) as i64 as u64,
         "pthread_once" => u64::from(state.once.insert(first)),
         "pthread_key_create" => {
-            write(engine, first, &1_u32.to_le_bytes());
+            state.next_thread_key = state.next_thread_key.checked_add(1).unwrap();
+            write(engine, first, &state.next_thread_key.to_le_bytes());
             0
         }
         "pthread_getspecific" => state.thread_values.get(&first).copied().unwrap_or(0),
@@ -461,6 +463,7 @@ pub(super) fn capture(machine: &mut Machine, base: &Path, text: &Path, xml: &Pat
                 recorder.state.cursor = HEAP;
                 recorder.state.fill = fill;
                 recorder.state.once.clear();
+                recorder.state.next_thread_key = 0;
                 recorder.state.thread_values.clear();
                 recorder.state.languages.clear();
                 recorder.state.names.clear();
