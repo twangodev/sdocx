@@ -202,6 +202,46 @@ the native bitmap intermediate. Exact phase and cell scaling under the
 surrounding canvas transform remain uncaptured; the literal shader arguments
 alone do not establish page-space units.
 
+## Shape frames and inherited paint coordinates
+
+Static Drawing `ObjectShapeDrawing::SetObject` snapshots drawn bounds through
+object slot 160 at `0x8a414`. Gradient setup instead reads current rotation
+and common unrotated rectangle through slots 136/168 (`0x9d9fc`, `0x9da1c`);
+Model ObjectShape relocations `0x4945e8`, `0x494600`, `0x494608` identify
+these methods. Gradient endpoints/centers/partitions use that common frame,
+not the temporary bitmap's extent; admitted rotation is baked into geometry,
+while the shader-local matrix remains null.
+
+Drawn bounds have another precision boundary: parameterless GetDrawnRect
+truncates float rotation to i32 (`0x397d48`). Its implementation compares that
+integer angle with actual float rotation and, when unequal, requests another
+template path (`0x3a645c`–`0x3a647c`, helper `0x20d68c`) for bounds. Drawing
+still retrieves the display path through `0x8bc94`. Extent calculation and
+painted geometry must remain separate; this is not a new paint-local matrix.
+
+Pattern setup copies rows/colors, without reading an object frame or angle
+(`0x9c464`–`0x9c46c`). Inner `drawPath` converts display commands, then saves,
+uniformly scales and translates the existing canvas by minus the supplied
+rectangle's left/top (`0x8a8c0`, `0x8a8d0`, `0x8a8e0`). The path adapter
+forwards that same canvas to fill drawing at `0x8bb00`. Thus, at command level,
+the pattern shares supplied path coordinates with no separately installed
+object-origin/angle transform. This source inference does not establish
+sampled page phase: inherited transforms, optimized addressing and later
+bitmap composition remain distinct, as the native capture below shows.
+The [image-fill consumer](image-effects-findings.md#ordinary-image-effect-paths-differ-from-image-filled-vector-shapes)
+instead constructs explicit local matrices from its saved coefficients and
+selected common/path-bound frame; it is not the pattern contract.
+
+Normal type-7 own loading refreshes/magnifies geometry (`0x3a96b8`,
+`0x3a96d8`) before loading fill at `0x3a9780`; the fill loader receives version
+and byte length, without a geometry matrix or magnification argument.
+Final data-only writes restore the common frame (`0x399eec`, `0x399ef8`).
+The inspected rectangle/rotation mutators update common/template geometry,
+not gradient or pattern coefficients; rectangle editing also updates crop/
+bound-image flip state (`0x3a6b1c`, `0x3a6b7c`). This bounds the direct native
+bodies, not arbitrary notification callbacks, compatible legacy loading or
+every coedit route. No actual movement/load appearance execution is claimed.
+
 ## Solid fill subpaths and background fills
 
 Solid color does not always mean one fill of the outline path.
