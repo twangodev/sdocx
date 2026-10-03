@@ -96,6 +96,72 @@ For nonzero object rotation, the native code subsequently applies
 `RectF::GetRotatedBound` at `0x2e9660`. This is a separate calculation from
 stroking the decoded point sequence.
 
+## Embedded-vector coordinate authority
+
+These static Model/Drawing paths establish dispatch, not executed mutation,
+loading or appearance; embedded coordinates remain distinct from the formula box.
+
+Formula `SetRect(RectF,bool,bool)` (`0x42c1d8`) has distinct branches. With the
+first boolean false, old/new signed width and height must differ by at most
+native f32 `0.01` (`0x42c318`–`0x42c35c`); accepted movement passes the f32
+left/top delta to `OffsetStrokeList` (`0x42c3ac`). That helper offsets each source
+and answer stroke rectangle, then calls its actual slot40
+`SetRect(RectF,false,forwarded_second_bool)` (`0x433b08`, `0x433bc0`). There is
+no visibility gate in these loops. Stroke SetRect reaches the already documented
+[sample-mutating paths](object-transform-findings.md#stroke-edits-update-samples-that-the-modern-writer-actually-serializes).
+With the first boolean true, Formula bypasses those checks and traversal and
+calls inherited Base three-boolean SetRect (`0x42c294`–`0x42c2bc`).
+
+Math `SetRectDataOnly` (`0x4587e8`) uses requested left/top displacement,
+ignoring requested right/bottom as scale inputs. `OffsetChildObjectList`
+(`0x45b5e8`) offsets formula children at +16 and separately referred strokes at
++136 through slot40 with `[false,true]`, then recomputes visible child bounds
+plus margins (`0x45b074`–`0x45b094`). Connected plots are a different list at +88
+(`0x45bd74`); +136 is identified by `GetReferredStrokeList` (`0x459620`).
+That runtime list differs from serialized connected-plot UUIDs; which saved
+records populate it is not established by this trace.
+Ordinary Math SetRect first rejects undersized destinations; after that check,
+its first-boolean-true branch logs and returns success without offset/base edit
+(`0x4585a0`–`0x4585f4`).
+
+Inherited dispatch differs again. Runtime slot48 is Base three-boolean SetRect
+for Formula and Math (relocations `0x497e90`, `0x4992e0`), so the container's
+normal child-slot48 call bypasses their slot40 offset overrides. Formula slot480
+is inherited Base SetRectDataOnly (`0x498040`); Math slot480 is its own override
+(`0x499490`). Both inherit Base SetRotation (relocations `0x497ed8`/`0x497ee0`,
+`0x499328`/`0x499330`), which changes angle metadata without direct embedded-list
+rotation. Base rectangle/angle setters still have callbacks and history;
+absence of direct traversal does not certify every callback side effect.
+
+The formula nested writer delegates complete child size/write methods
+(`0x42f560`, `0x42f5ac`) without subtracting the formula origin or undoing its
+angle. Its reader creates actual strokes and delegates each modern child reader
+(`0x43073c`–`0x4307b0`); Math similarly creates formulas and delegates their
+modern readers (`0x45a7c0`–`0x45a834`). The calls pass declared sizes, orientation
+and an integer argument, rather than the enclosing own-reader's float scale.
+Formula result/original rectangles separately narrow and scale their saved
+f64 coordinates (`0x42fe54`–`0x42fe80`, `0x430004`–`0x430098`). No formula-box
+rebase of embedded samples is visible.
+
+Drawing dispatch passes the existing canvases to formulas (`0x7fde0`–`0x7fe14`)
+and to Math's formula list and separate referred-stroke pass
+(`0x7fe1c`–`0x7ff2c`). Its formula ink loops apply no enclosing formula/math local
+matrix before stroke drawing (`0x818a0`, `0x81938`). Result/relative-original
+rectangles and base angles therefore do not justify an added SVG parent transform.
+
+Formula Copy creates fresh strokes and delegates their Copy
+(`0x4329f0`–`0x432a2c`); Math Copy similarly creates fresh formulas
+(`0x45b494`–`0x45b4ec`), without formula-origin displacement in those copy loops.
+OnAttach forwards shared context/layer to embedded strokes and conditionally
+registers ImageCommon (`0x42ad4c`, `0x42add0`, `0x42ae28`). Stroke attachment
+resolves pen/settings IDs through that context's StringIDManager and may clear
+unresolved IDs (`0x2e664c`–`0x2e66f4`).
+
+Rust FormulaStroke retains nested bytes, base metadata and decoded sample/style
+channels. Its pen/settings strings remain unresolved until existing public
+StrokeResources resolves them; formula inspection does not call that resolver
+or resolve the image. Retained vectors do not certify native appearance.
+
 ## Expression-type constraint
 
 `ObjectFormula::SetExpressionType` at `0x42a134` in `libSPenModel.so` rejects
