@@ -135,7 +135,7 @@ The import helper also calls `restorePageLink` immediately after successful
 `FPDF_ImportPages` (`0x7ab6c–0x7ab80`). The native export performs extra link
 repair after page copying. The inspected caller alone does not prove preservation
 of every destination, widget, annotation, structure tree or document-level
-resource. Those behaviors have not been executed against a PDF feature corpus.
+resource. The bounded experiments below cover only their supplied cases.
 
 ### PDFium copies page entries, with a narrower reference and catalog contract
 
@@ -290,6 +290,64 @@ earlier checkpoint's behavior. There are zero Image objects and all root
 references resolve; catalog `/OCProperties` is still absent. This establishes
 field and object-graph retention, without a rotated, physically scaled or CMYK
 appearance comparison. It does not expand the real papers' supplied feature set.
+
+### Successful graph rewriting can still lose forward link destinations
+
+A typed two-page source supplies five Link annotations: forward and backward
+`/Dest` arrays, forward and backward GoTo action `/A /D` arrays, and a current-page
+destination. Each page has three vector operators; all supplied root references
+resolve and both Rust parsers accept the source. Its SHA-256 is
+`6eff059e1d0a767af48ae0725e9379d8813f1c27ee56a0753d5a9843da765098`.
+
+Raw `FPDF_ImportPages` succeeds when importing both pages, but removes the first
+page's forward `/Dest`; its forward GoTo action retains `/S /GoTo` while losing
+`/D`. Current/backward references map correctly. All five annotation `/P` values
+identify their actual output pages, all root references resolve, and vector
+content remains unchanged. Resolving every graph reference does not establish
+retained destination semantics: a reference to a not-yet-mapped page can disappear even
+when that page is also requested in the import. This source has no intentionally
+dangling references.
+
+The client then executed the actual `libSPenPdf.so` `restorePageLink` helper
+(`0x7cea8`) before saving, without additional host substitutions. It restored
+both forward destinations and emitted integer output page indexes for every
+supplied destination: `1` for forward, `0` for current/backward, retaining `/Fit`.
+The raw and repaired captures match across five allocation fills and independent
+replay; the later reuse control matches three fresh processes.
+
+| Native route | Bytes | SHA-256 |
+| --- | ---: | --- |
+| Raw import/save | 1,738 | `eb080b94f707f2caf0d9d016fc23adf541ede1261427a908111da7c772e2c9e3` |
+| Import, actual link repair, save | 1,746 | `167fcef77ae26c1ced6ff1d534cecf1802116c4615be1ec1e90ddaeff39e2d4b` |
+| Three imports reusing the parsed source | 4,380 | `d5af31265bf06cd863bedcd483473ac315c68b6d02e02758ebf6157d9572561d` |
+
+Independent static review confirms repair pairs annotations by array index and
+requires equal source/output annotation-array lengths (`0x7cfdc–0x7cfe0`). It
+admits Link/Widget annotations with action type at most `1`, bounds the resolved
+destination to the imported source range, and computes
+`insertion_index + source_index - first_imported_index`
+(`0x7d168–0x7d180`, `0x7d248–0x7d260`). The helper at `0x7d754` replaces
+destination-array element zero with an integer, then clones the array into the
+output `/Dest` or action `/D`. Saving the source model after repair independently
+confirms this also mutates the parsed source object; exact guest-buffer checks
+confirm the borrowed source bytes remain unchanged.
+
+One bounded control reused that source handle: raw prefix import at insertion
+index `0`, import plus repair at `2`, then import plus repair at `4`. The first
+repaired copy stores forward index `3` and current/backward index `2`. The later
+copy still stores `3`/`2`, rather than the newly inserted `5`/`4`. Read-only native
+instruction hooks observe destination-index evaluation returning
+`[1, 1, 0, 0, 0]`, then `[3, 3, 2, 2, 2]`; the latter values exceed the helper's
+source range `0..1`, so its bounds check skips conversion. All 18 vector
+operators/content bytes, resources and 15 current-page `/P` references remain
+intact, with zero images and resolving root references. The original borrowed
+buffer remains unchanged after each operation.
+
+This distinguishes immutable source bytes from mutable loaded-document state
+and reproduces stale destinations in one explicit reuse sequence. It does not
+certify emitted integer destinations in arbitrary viewers, widget behavior or
+the full Samsung source-cache lifecycle. The local helper executes without the
+complete import wrapper, handler constructor, Composer or navigation rendering.
 
 ## Source size controls the overlay scale
 
