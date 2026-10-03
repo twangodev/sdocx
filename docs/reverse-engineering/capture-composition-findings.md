@@ -3,8 +3,8 @@
 ## Evidence and scope
 
 Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenComposer.so`,
-`libSPenModel.so` and `libSPenGraphics.so`. Addresses below belong to Composer
-unless marked Model or Graphics.
+`libSPenModel.so`, `libSPenDrawing.so` and `libSPenGraphics.so`.
+Addresses below belong to Composer unless marked Model, Drawing or Graphics.
 These are native capture-path findings; resulting pixels remain unverified
 against Samsung exports.
 
@@ -200,6 +200,45 @@ retaining all layers in its structural representation.
 The SDK retains ordered objects and stroke render properties. Captured parity
 for combinations of body text, ordinary strokes, highlighters, masking and
 overlapping physical layers across light/dark/PDF backgrounds remains unverified.
+
+## Caller clipping is separate from capture selection
+
+Drawing `ObjectDrawing::DrawObjectList`, `0x7f098`, accepts an optional
+integer `Rect` and an optional `Matrix3<float>`. When the Rect is present,
+it supplies left, top, Width and Height to `SetClipRect` on both its ordinary
+and pen canvases, with clip-operation value 0 (`0x7f17c`–`0x7f1f8`). Only
+afterward does it apply the supplied matrix (`0x7f22c`–`0x7f250`). The
+single-object `DrawObject`, Drawing `0x80100`, uses the same clip-before-matrix
+ordering (`0x80214`, `0x80254`, `0x80284`, `0x80298`).
+
+Graphics `SPCanvas::SetClipRect`, `0xa36c4`, copies the then-current matrix
+into the queued clip command (`0xa3714`, `0xa3730`, `0xa3778`). Later
+`SetMatrix`, `0xa3808`, replaces the current matrix without changing that
+copied command. The pen-canvas clip, Graphics `0xaec40`, likewise snapshots
+its current matrix.
+The clip therefore retains the earlier transform; this command-order evidence
+does not establish backend coverage or every factory variant's initial matrix.
+
+The capture passes send their RectF to `getCloneObjectList` for intersection
+selection, but pass a null integer Rect to the later `DrawObjectList` call:
+Base at `0x33003c`/`0x330054`, Top at `0x3301e8`/`0x330200`, and Masking at
+`0x330404`/`0x33041c`. Their matrix is still forwarded. Selecting objects
+intersecting a capture rectangle therefore does not activate this API's caller
+clip or establish clipping of their painted geometry to the selection bounds.
+The named Masking pass supplies render-filter value 4; its inspected draw call
+adds no clip rectangle/path. Bitmap bounds and surrounding callers can still
+limit output, so null Rect does not establish unrestricted rendering.
+
+The type-4 Drawing branch recursively supplies the same canvases and Rect
+pointer to children (`0x7fcf4`–`0x7fd04`), without a parent-bounds clip or
+per-container save/restore. Common parent/child visibility remains separate,
+as described in [object drawing](object-drawing-findings.md), and the
+[container transform findings](object-transform-findings.md) establish the
+absence of a parent affine drawing matrix. This caller scope is distinct from
+[physical-layer selection](page-layer-selection-findings.md) and the local
+vector image-fill clips in [image effects](image-effects-findings.md).
+These static routes do not establish persisted layer clip fields, complete
+editor-layer composition, unsupported-parent clipping or device appearance.
 
 ## Vector PDF export uses a separate collection path
 
