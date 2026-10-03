@@ -147,6 +147,9 @@ retains only the first PDF page index, discarding the resource bindings,
 placement rectangles and additional entries; see
 [page background findings](reverse-engineering/page-background-findings.md).
 This is a retention gap as well as a rendering gap.
+The [PDF preservation constraints](pdf-paper-preservation.md) connect the
+recovered contracts to the current Rust model and verified vector PDF transport;
+the library proof does not implement SDK PDF-paper support.
 
 The native [shape style contracts](reverse-engineering/shape-style-findings.md)
 and [image effect contracts](reverse-engineering/image-effects-findings.md)
