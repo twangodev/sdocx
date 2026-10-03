@@ -10,6 +10,24 @@ decoding, rendering and evidence boundaries across object types and features.
 
 ## Documents
 
+- [`vector-retention-findings.md`](vector-retention-findings.md) — original
+  byte ownership, semantic projection, resource identity, output precision and
+  diagnostic boundaries in the current Rust pipeline.
+- [`object-transform-findings.md`](object-transform-findings.md) — recursive
+  container edits, hidden-child resizing, baked stroke geometry and precision.
+- [`eraser-preservation-findings.md`](eraser-preservation-findings.md) — cut
+  fragments, sample-channel propagation, removal and saved eraser distinctions.
+- [`brush-record-findings.md`](brush-record-findings.md) — effective type-15
+  dispatch, opaque brush/group admission and separate painting source/preview.
+- [`shape-path-findings.md`](shape-path-findings.md) — saved path precision,
+  route-specific curve normalization and native quadratic arc/oval construction.
+- [`shape-fill-findings.md`](shape-fill-findings.md) — gradient/pattern records,
+  drawing admission, vector paint geometry and separate PDF capabilities.
+- [`connector-routing-findings.md`](connector-routing-findings.md) — saved line
+  geometry, rotation, UUID attachments and edit-time routing dependencies.
+- [`pdf-vector-transport-findings.md`](pdf-vector-transport-findings.md) — pinned
+  PDF library resource preservation, page/catalog losses and import admission.
+
 - [`pdf-paper-storage-findings.md`](pdf-paper-storage-findings.md) — saved and
   runtime PDF records, loader/JNI/setter boundaries and native binding predicates.
 - [`pdf-paper-resource-findings.md`](pdf-paper-resource-findings.md) — manifest

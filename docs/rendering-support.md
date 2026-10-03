@@ -156,3 +156,17 @@ and [image effect contracts](reverse-engineering/image-effects-findings.md)
 have static evidence for features absent from these documents; they do not add
 real-document appearance coverage. See also
 [PDF findings](reverse-engineering/pdf-export-findings.md).
+
+The [vector retention findings](reverse-engineering/vector-retention-findings.md)
+separate source-byte ownership, semantic decoding and drawable output. Physical
+payload offsets do not own their bytes, and vector output can still quantize or
+omit source geometry. Recovered
+[path](reverse-engineering/shape-path-findings.md),
+[fill](reverse-engineering/shape-fill-findings.md) and
+[connector](reverse-engineering/connector-routing-findings.md) contracts identify
+additional typed geometry and resource boundaries without adding SDK support.
+[Container edits](reverse-engineering/object-transform-findings.md) and
+[eraser cuts](reverse-engineering/eraser-preservation-findings.md) can modify saved
+child or stroke geometry before drawing. The
+[brush and painting findings](reverse-engineering/brush-record-findings.md)
+distinguish compatibility dispatch and editable resources from previews.

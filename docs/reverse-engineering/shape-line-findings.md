@@ -12,7 +12,7 @@ The native sources remain ignored, alongside the APK analysis artifacts.
 | `ObjectLine::NewGetBinary`, `0x386a64` | Line chain `0 + 6 + 8`. |
 | `ObjectShapeBase::NewGetBinary`, helper `0x37c6b4–0x37ca9c` | Type 6 connection data and optional sized line color/style effects at field bits 2/3. |
 | `ObjectShapeBinaryHandler::GetOwnBinary`, `0x3a8dd0–0x3a9228` | Type 7 geometry, an extra rectangle for outer type 7, then text/pen/fill fields. |
-| `ObjectLineBinaryHandler::GetOwnBinary`, `0x38bc34–0x38bed8` | Type 8 line type, routing setting, control points, endpoints, two rectangles and a four-byte setting. |
+| `ObjectLineBinaryHandler::GetOwnBinary`, `0x38bc34–0x38bed8` | Type 8 line type, start direction, control points, endpoints, two rectangles and saved `f32` common rotation. |
 | `LineStyleEffect::GetBinary`, `0x395b44` | Twelve bytes: float width, compound, dash, cap, join, begin arrow type/size, end arrow type/size. |
 | `LineStyleEffect::Construct`, `0x3953e4` | Default width 2.0, remaining style enums zero. |
 | `LineColorEffect::GetBinary`, `0x393968` | Property mask, color kind, ARGB, gradient settings and stops. Default is opaque black (`Construct`, `0x392e08`). |
@@ -42,11 +42,13 @@ At `0x399bb8–0x399be8`, the writer stores `GetRotation()` and temporarily
 clears the common rotation only for shape objects. Shape geometry uses the
 first type-7 rectangle and this angle, rather than the drawn type-0 bounds.
 
-Type 8 fixed data starts with one-byte line type, one routing byte, one-byte
+Type 8 fixed data starts with one-byte line type, one start-direction byte, one-byte
 control-point count and pairs of `f64`. Two endpoint pairs, two four-`f64`
-rectangles and a four-byte setting follow. Its minimum fixed size is 103 bytes.
+rectangles and a saved `f32` common rotation follow. Its minimum fixed size is 103 bytes.
 Flexible bits 1/2 hold four-byte advanced-pen-settings/name IDs; bit 3 holds a native path.
 Unknown preceding fields cannot be skipped by assuming an arbitrary width.
+The [connector findings](connector-routing-findings.md) distinguish this saved
+state from connection identities, native load adjustments and edit-time routing.
 
 Both pen fields are signed string-resource references, confirmed by native
 setters/getters through `StringIDManager`; neither encodes a color. Their raw
@@ -57,6 +59,8 @@ Native WDoc paths start with a `u32` command count. Move/line commands have two
 `f64` values, quadratic/oval four, cubic/arc six, and close none. The type-8
 field has no separate byte-length prefix. Known command widths locate the
 following field; an unknown verb makes the remaining bounded bytes opaque.
+The [path findings](shape-path-findings.md) recover runtime float narrowing,
+curve expansion and the distinct Model and Drawing contour contracts.
 
 The Java constants identify oval 1, triangle 2, right triangle 3, rectangle 4,
 rounded rectangle 5 and diamond 8. Line types are straight 0, elbow 1 and
