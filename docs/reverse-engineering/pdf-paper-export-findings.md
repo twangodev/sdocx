@@ -425,6 +425,40 @@ slot. Relocation `0xb1030` resolves it to `PDFExport::Save()`. These concrete
 callers establish final Save dispatch separately from ranged Export; they do
 not establish an additional ranged import/repair stage in ordinary note save.
 
+### Ranged Export trims a runtime font cache
+
+Source-only Pdf inspection identifies member 1000 as the linked head of an
+integer-keyed font map at PdfiumImpl member 984. `GetFont` (`0x8d17c`) reads
+the supplied `PDFFontData` ID; on a miss it loads that data's program bytes
+into the main document through `FPDFText_LoadFont` (`0x8d1d4`) and stores the
+returned font at node member 24 (`0x8d1fc`). A cache hit returns that handle
+without comparing or reloading supplied bytes. The separate bitmap-font map
+at member 1024 is outside this head-1000 traversal. These runtime programs have
+the [font provenance](note-metadata-findings.md#font-program-provenance) described
+for newly written text; no direct population from imported font-resource
+dictionaries was found in the inspected Import/Open bodies.
+
+After page import, ranged Export walks this list and passes each node's font
+to `FPDFText_TrimFontData` (`0x7cc10–0x7cc24`), ignoring its result. The pinned
+PdfiumB trimmer (`0x40bc40`) requires program data and a nonempty usage set. Recorded
+u32 usage values seed HarfBuzz's glyph set; explicit input flags enable
+`desubroutinize` and `retain_gids`. The custom `SetCharcodesAndPositions`
+route records supplied values (`0x58b650–0x58b684`); this is not proof that
+every value is a glyph identity or every text path records all required glyphs.
+
+The subset update starts from the supplied font's dictionary and requires
+exactly one `DescendantFonts` member, its `FontDescriptor` and an existing
+selected `FontFile`/`FontFile2` stream (`0x40bed8–0x40c0c4`). It replaces that
+stream's program bytes through `SetData` (`0x40c0d4`); the non-Type1 branch also
+updates `Length1`. Failed prerequisites return false rather than synthesizing
+a complete replacement font dictionary.
+
+This establishes a guarded runtime-font resource operation, not wholesale
+subsetting of the imported source-paper graph. No font-trimming capture,
+source-paper glyph loss or complete logical-text parity was established.
+The operation follows import; identity with the temporary destination's cloned
+font stream is unproved and cannot be inferred from matching font names.
+
 ## Source size controls the overlay scale
 
 The imported-page operation receives no requested output width or height.
