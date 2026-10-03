@@ -19,6 +19,8 @@ decoding, rendering and evidence boundaries across object types and features.
   fragments, sample-channel propagation, removal and saved eraser distinctions.
 - [`brush-record-findings.md`](brush-record-findings.md) — effective type-15
   dispatch, opaque brush/group admission and separate painting source/preview.
+- [`painting-source-findings.md`](painting-source-findings.md) — editable `.spp`
+  archives, packed object layers, shared stroke compression and replay boundaries.
 - [`shape-path-findings.md`](shape-path-findings.md) — saved path precision,
   route-specific curve normalization and native quadratic arc/oval construction.
 - [`shape-fill-findings.md`](shape-fill-findings.md) — gradient/pattern records,

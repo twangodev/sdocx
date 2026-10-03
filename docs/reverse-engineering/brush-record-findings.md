@@ -180,6 +180,10 @@ stroke drawing APIs. The companion painting APIs expose recorded objects,
 layers and dirty bitmaps together. Both vector samples and already-raster
 state can therefore participate in the painting subsystem; imported symbols
 alone do not recover an attached painting file's complete storage contract.
+The [painting source findings](painting-source-findings.md) recover the `.spp`
+archive route, ordinary layer/object framing and shared compression seam,
+including a bounded native reducer capture. Complete source replay and a real
+editable-source sample remain unverified.
 
 ## Rust retention and vector-preservation consequences
 
