@@ -1,6 +1,10 @@
 use sdocx::{RichTextBox, RichTextObjectContent, RichTextSpanType, SpanIntervalType, StoredNote};
 use serde::Deserialize;
 
+#[path = "support/binary_records.rs"]
+mod binary_records;
+use binary_records::{frame, sized};
+
 #[derive(Deserialize)]
 struct Capture {
     cases: Vec<NativeCase>,
@@ -48,20 +52,6 @@ fn cases() -> Vec<NativeCase> {
     .cases
 }
 
-fn frame(kind: i16, fields: &[u8], fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
-    let offset = 12 + fields.len() + fixed.len();
-    [
-        ((offset + flexible.len()) as u32).to_le_bytes().to_vec(),
-        kind.to_le_bytes().to_vec(),
-        (offset as u32).to_le_bytes().to_vec(),
-        vec![0, fields.len() as u8],
-        fields.to_vec(),
-        fixed.to_vec(),
-        flexible.to_vec(),
-    ]
-    .concat()
-}
-
 fn object_base() -> Vec<u8> {
     let fixed = [
         5500_u32.to_le_bytes().to_vec(),
@@ -78,49 +68,11 @@ fn object_base() -> Vec<u8> {
 }
 
 fn text_object(common_present: bool, payload: &[u8]) -> Vec<u8> {
-    [
-        object_base(),
-        frame(6, &[], &[], &[]),
-        frame(7, &[u8::from(common_present)], &[], payload),
-    ]
-    .concat()
-}
-
-fn sized(data: &[u8]) -> Vec<u8> {
-    [(data.len() as u32).to_le_bytes().as_slice(), data].concat()
+    binary_records::text_object(&object_base(), common_present, payload)
 }
 
 fn table_object(cell_text: &[u8]) -> Vec<u8> {
-    let cell = [
-        vec![0; 6],
-        [0_u32, 1, 1, 0]
-            .into_iter()
-            .flat_map(u32::to_le_bytes)
-            .collect(),
-        [0.0_f64, 0.0, 400.0, 1000.0]
-            .into_iter()
-            .flat_map(f64::to_le_bytes)
-            .collect(),
-        vec![0],
-        sized(cell_text),
-    ]
-    .concat();
-    let row = [
-        vec![0; 6],
-        1000_f32.to_le_bytes().to_vec(),
-        0_u32.to_le_bytes().to_vec(),
-        1_u32.to_le_bytes().to_vec(),
-        sized(&cell),
-    ]
-    .concat();
-    let flexible = [
-        1_u32.to_le_bytes().to_vec(),
-        400_f32.to_le_bytes().to_vec(),
-        1_u32.to_le_bytes().to_vec(),
-        sized(&row),
-    ]
-    .concat();
-    [object_base(), frame(22, &[12], &[], &flexible)].concat()
+    binary_records::single_cell_table(&object_base(), cell_text, 400.0, 1000.0)
 }
 
 fn body_object(table: &[u8]) -> Vec<u8> {
@@ -238,10 +190,11 @@ fn supplied_unknown_span_payload_and_interval_survive_cell_loading() {
         .into_iter()
         .find(|case| case.name == "nonempty-font50")
         .unwrap();
-    let data = &mut case.serialized_payload_bytes;
-    data[18..22].copy_from_slice(&0xffff_u32.to_le_bytes());
-    data[30..34].copy_from_slice(&99_u32.to_le_bytes());
-    data[34..42].copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
+    let record = first_style_record(&mut case.serialized_payload_bytes);
+    let (header, payload) = record.split_at_mut(16);
+    header[..4].copy_from_slice(&0xffff_u32.to_le_bytes());
+    header[12..].copy_from_slice(&99_u32.to_le_bytes());
+    payload.copy_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);
     let note = parse_case(&case);
     let content = cell(&note.body);
     assert_eq!(content.spans.len(), 1);
@@ -257,6 +210,26 @@ fn supplied_unknown_span_payload_and_interval_survive_cell_loading() {
         let restored: RichTextBox = serde_json::from_value(source.clone()).unwrap();
         assert_eq!(serde_json::to_value(restored).unwrap(), source);
     }
+}
+
+fn first_style_record(payload: &mut [u8]) -> &mut [u8] {
+    let common = &mut payload[4..];
+    let text_units = u32::from_le_bytes(common[..4].try_into().unwrap()) as usize;
+    let span_count_offset = 4 + text_units * 2;
+    assert_eq!(
+        u32::from_le_bytes(
+            common[span_count_offset..span_count_offset + 4]
+                .try_into()
+                .unwrap()
+        ),
+        1
+    );
+    let size_offset = span_count_offset + 4;
+    let size = usize::from(u16::from_le_bytes(
+        common[size_offset..size_offset + 2].try_into().unwrap(),
+    ));
+    let record_offset = size_offset + 2;
+    &mut common[record_offset..record_offset + size]
 }
 
 #[test]

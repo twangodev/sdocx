@@ -4,6 +4,9 @@ use crate::{
     RichTextObjectContent, RichTextObjectSpan,
 };
 
+#[path = "../../../tests/support/binary_records.rs"]
+mod binary_records;
+
 fn text_object(value: &str, margins: [f32; 4]) -> Vec<u8> {
     let units = value.encode_utf16().collect::<Vec<_>>();
     let mut common = (units.len() as u32).to_le_bytes().to_vec();
@@ -27,40 +30,12 @@ fn text_object(value: &str, margins: [f32; 4]) -> Vec<u8> {
     common.push(0);
     common.extend(0_u16.to_le_bytes());
     common.extend([0; 8]);
-    let flexible = [(common.len() as u32).to_le_bytes().as_slice(), &common].concat();
-    [
-        object_base_frame(),
-        object_frame(6, 0, &[]),
-        object_frame(7, 1, &flexible),
-    ]
-    .concat()
+    binary_records::text_object(&object_base_frame(), true, &binary_records::sized(&common))
 }
 
 fn parsed_table(value: &str, column_width: f32, margins: [f32; 4]) -> crate::RichTextTable {
     let text = text_object(value, margins);
-    let mut cell = Vec::new();
-    for field in [0_u32, 1, 1, 0] {
-        cell.extend(field.to_le_bytes());
-    }
-    for value in [0.0_f64, 0.0, f64::from(column_width), 100.0] {
-        cell.extend(value.to_le_bytes());
-    }
-    cell.push(0);
-    cell.extend((text.len() as u32).to_le_bytes());
-    cell.extend(text);
-    let cell = table_record(&cell, &[], &[], &[]);
-    let mut row = 100.0_f32.to_le_bytes().to_vec();
-    row.extend(0_u32.to_le_bytes());
-    row.extend(1_u32.to_le_bytes());
-    row.extend((cell.len() as u32).to_le_bytes());
-    row.extend(cell);
-    let row = table_record(&row, &[], &[], &[]);
-    let mut flexible = 1_u32.to_le_bytes().to_vec();
-    flexible.extend(column_width.to_le_bytes());
-    flexible.extend(1_u32.to_le_bytes());
-    flexible.extend((row.len() as u32).to_le_bytes());
-    flexible.extend(row);
-    let bytes = [object_base_frame(), object_frame(22, 0x0c, &flexible)].concat();
+    let bytes = binary_records::single_cell_table(&object_base_frame(), &text, column_width, 100.0);
     parse_table_object(
         &bytes,
         &ParseLimits::default(),

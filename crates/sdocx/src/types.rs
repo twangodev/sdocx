@@ -727,32 +727,22 @@ impl RichTextSpan {
         if self.kind != RichTextSpanType::Suggestion {
             return None;
         }
-        let suggestion_type = payload_u32(&self.payload, 0)?;
-        let underline_argb = payload_u32(&self.payload, 4)?;
-        let count = payload_u32(&self.payload, 8)? as i32;
+        let mut reader = crate::binary::Reader::new(&self.payload, "suggestion span");
+        let suggestion_type = reader.read_u32("suggestion type").ok()?;
+        let underline_argb = reader.read_u32("underline ARGB").ok()?;
+        let count = reader.read_i32("suggestion count").ok()?;
         let count = usize::try_from(count).unwrap_or(0);
-        if count > self.payload.len().saturating_sub(12) / 2 {
+        if count > reader.remaining() / 2 {
             return None;
         }
-        let mut cursor = 12;
         let mut strings = Vec::new();
         for _ in 0..count {
-            let length = usize::from(u16::from_le_bytes(
-                self.payload.get(cursor..cursor + 2)?.try_into().ok()?,
-            ));
-            cursor += 2;
-            let end = cursor.checked_add(length.checked_mul(2)?)?;
-            let bytes = self.payload.get(cursor..end)?;
-            if !bytes.is_empty() {
-                let units: Vec<_> = bytes
-                    .as_chunks::<2>()
-                    .0
-                    .iter()
-                    .map(|unit| u16::from_le_bytes(*unit))
-                    .collect();
-                strings.push(String::from_utf16(&units).ok()?);
+            let text = reader
+                .read_utf16_u16_without_null_sentinel("suggestion", usize::MAX)
+                .ok()?;
+            if !text.is_empty() {
+                strings.push(text);
             }
-            cursor = end;
         }
         Some(RichTextSuggestion {
             suggestion_type,
@@ -1458,8 +1448,7 @@ mod tests {
         }
     }
 
-    #[test]
-    fn composition_and_suggestion_values_match_native_binary_reader_and_writer() {
+    fn span_binary_capture() -> serde_json::Value {
         use sha2::Digest;
 
         const FIXTURE: &str = include_str!("../../../conformance/table-text-span-binary.json");
@@ -1467,15 +1456,21 @@ mod tests {
             format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
             "0e8437fead4285c0ead18349f8708309219c74c6aae8a2acc83bec9fdbbc1c7b"
         );
-        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
-        let bytes = |value: &serde_json::Value| {
-            value
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
-                .collect::<Vec<_>>()
-        };
+        serde_json::from_str(FIXTURE).unwrap()
+    }
+
+    fn capture_bytes(value: &serde_json::Value) -> Vec<u8> {
+        value
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn composition_and_suggestion_values_match_native_binary_reader_and_writer() {
+        let capture = span_binary_capture();
         let mut readers = 0;
         let mut writers = 0;
         for case in capture["cases"].as_array().unwrap() {
@@ -1489,7 +1484,7 @@ mod tests {
                         | RichTextSpanType::Suggestion
                 )
             {
-                let record = bytes(&case["record"]);
+                let record = capture_bytes(&case["record"]);
                 let available = case["available"].as_u64().unwrap() as usize;
                 let span = span_payload(kind, record.get(16..available).unwrap_or_default());
                 let original = span.payload.clone();
@@ -1516,7 +1511,7 @@ mod tests {
                 readers += 1;
             }
             if kind == RichTextSpanType::Suggestion && case["written"].as_bool() == Some(true) {
-                let output = bytes(&case["output"]);
+                let output = capture_bytes(&case["output"]);
                 let span = span_payload(kind, &output[16..]);
                 assert_native_suggestion(&span, case, true);
                 writers += 1;
@@ -1776,25 +1771,13 @@ mod tests {
 
     #[test]
     fn font_names_match_native_binary_writer_outputs() {
-        use sha2::Digest;
-
-        const FIXTURE: &str = include_str!("../../../conformance/table-text-span-binary.json");
-        assert_eq!(
-            format!("{:x}", sha2::Sha256::digest(FIXTURE.as_bytes())),
-            "0e8437fead4285c0ead18349f8708309219c74c6aae8a2acc83bec9fdbbc1c7b"
-        );
-        let capture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
+        let capture = span_binary_capture();
         let mut count = 0;
         for case in capture["cases"].as_array().unwrap() {
             if case["kind"].as_u64() != Some(4) || case["written"].as_bool() != Some(true) {
                 continue;
             }
-            let bytes: Vec<u8> = case["output"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|byte| u8::try_from(byte.as_u64().unwrap()).unwrap())
-                .collect();
+            let bytes = capture_bytes(&case["output"]);
             let span = font_name_span(&bytes[16..]);
             let expected = case["decoded"]["name"].as_str().unwrap();
             assert_eq!(
