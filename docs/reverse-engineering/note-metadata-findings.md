@@ -16,13 +16,15 @@ Evidence consists of APK sources and synthetic records.
 | `NoteDoc_getAuthorInfo`, `0x2f752c` | Native string slots map to Java `name`, `phoneNumber`, `email`, then resolved `imageUri` |
 | `WNoteLoadHandler::loadFlexibleData_LastPenInfo`, `0xab8a8` | Pen size includes its four-byte prefix; a trailing three-field extension is optional |
 | `VoiceData::GetBinary`, `0x8e194`; `ApplyBinary`, `0x8e38c` | Voice identity, strings, timestamps and action records; recording time is optional in older records |
-| `loadFlexibleData_FixedProperties`, `0xac0c8` | Fixed font, text direction and background theme |
+| `loadFlexibleData_FixedProperties`, `0xac0c8` | Reads fixed font/direction/theme copies and compares them with existing native state |
 | `loadFlexibleData_TextSummarization`, `0xac450`; `loadFlexibleData_AppCustomData`, `0xac6a8` | UTF-16 strings with 16-bit and 32-bit length prefixes respectively |
 
 All addresses are ARM64 virtual addresses. WNote and voice symbols are in
 `libSPenWDoc.so`; shared metadata and the author JNI bridge are in
 `libSPenModel.so`. The JNI field-name strings at `0x156717`, `0x12dc3c`,
 `0x159ec5` and `0x13970e` confirm the author field names and ordering.
+The coedit consumer below is in `libSPenComposer.so`; runtime font-service
+addresses are in `libSPenText.so`.
 
 ## Ordered fields
 
@@ -64,6 +66,51 @@ stops decoding at that point, including for wider future masks. Known earlier
 fields remain available, `first_unparsed_field` identifies the boundary, and
 `trailing_data` preserves all remaining bytes. The decoder does not attempt to
 locate later fields by searching their contents.
+
+## Fixed-property authority
+
+Native `WNoteImpl::ApplyEndTagData`, `0xa1d50`, copies the EndTag font String
+at offset 216 into Impl offset 800 (`0xa1e18`–`0xa1e30`), and its direction
+and theme integers at offsets 232/236 into Impl offsets 816/820
+(`0xa1e34`–`0xa1e3c`). `ConstructImpl` applies the EndTag at `0xa38f4` before
+the note loader at `0xa392c`; Reload uses the same order. `FillEndTagData`
+copies those members back at `0xa3d14`–`0xa3d28`.
+
+The flexible-data loader reads temporary values, compares these existing
+members and logs differences: font at `0xac110`–`0xac13c`, direction at
+`0xac164`–`0xac18c`, and theme at `0xac1b4`–`0xac1dc`. It does not assign
+the copies to native state. The font count is limited to 1024 UTF-16 units at
+`0xac244`–`0xac24c`. Missing integer fields compare temporary `-1`; that value
+is not a native default. The Impl constructor initializes empty font and
+numeric direction/theme 2/2 (`0xa0314`–`0xa032c`, String Construct at
+`0xa0bd4`–`0xa0bd8`). Model `EndTag::Clear` does
+the same (`0x2aa034`–`0x2aa054`); buffer parsing alone does not clear an
+existing EndTag when a tail field is absent.
+
+`WNote::SetFixedFont`, `0x9af2c`, copies or clears the String and marks changed
+state, without calling a font manager or text layout. `GetFixedFont`,
+`0x9b028`, returns null for the empty member. Composer
+`preSetCoeditModeInNative`, `0x388e64`, reads fixed direction only after an
+actual `IsCoeditMode` check. Values 0/1 reach the context-provided display's
+virtual slot 16; other values leave it unchanged (`0x388e74`–`0x388ee8`).
+This is a bounded coedit display policy. A connection from fixed font to the
+body's measured default face remains unproved. The
+[EndTag findings](end-tag-findings.md#field-boundaries) separately distinguish
+native inline-string validation from generic Java null-sentinel support.
+
+The font service has a separate caller-byte route. Java
+`SpenFontManager.setCustomFallbackFont` supplies a language and byte array;
+Text JNI `0x5f484` copies the array at `0x5f588`–`0x5f594`. Actual
+`FontListParser::SetCustomFallbackFont`, `0x80a1c`, requires a nonempty native
+String comparing equal to `ko` (`0x80a64`–`0x80a7c`, string at `0x25d10`),
+a nonnull buffer, positive length and an existing native fallback family
+(`0x80adc`–`0x80ae0`). It constructs a font with face index 0,
+weight 400, italic false and empty axes (`0x80af4`, `0x80b4c`–`0x80b58`). The
+memory-backed font constructor copies bytes into its own storage at
+`0x88484`–`0x884a0`; JNI frees its temporary at `0x5f69c`. Native String
+construction can terminate at U+0000, so this equality does not prove that
+the original Java language had exactly two code units. This runtime service
+does not establish serialization of custom font bytes into WDoc.
 
 ## Sized records
 
@@ -138,10 +185,19 @@ contents. The decoder excludes the final 32 bytes as the note hash trailer;
 callers must supply a complete entry. Metadata decoding does not verify that
 hash. Use the separate [integrity checks](integrity-findings.md) for verification.
 
-Metadata decoding is explicit and does not alter ordinary document parsing,
-rendering defaults, media resolution or network behavior. A malformed optional
-field produces an error from this method while structural note parsing remains
-available. Raw author image/media IDs are retained without fetching anything.
+Calling these metadata accessors does not mutate the stored note. A malformed
+optional field produces an error from the method while structural note parsing
+remains available. Raw author image/media IDs are retained without fetching anything.
+
+`ParsedDocument.end_tag.fixed_style` retains the authoritative fixed-property
+carrier. Ordinary `DocumentMetadata` has no corresponding fields;
+`container.rs::apply_end_tag_metadata` does not project them. Its optional note
+metadata projection keeps body-font-size delta and the stroke string table,
+not these fixed-property copies. The detailed document also does not retain
+the complete original note entry or a decoded `NoteMetadata`; callers need
+their original entry bytes to inspect its flexible data. Font-name span
+payload retention and caller-supplied physical font bytes remain separate
+source paths.
 
 ## Validation and evidence limits
 
@@ -153,6 +209,7 @@ aggregate allocation limits. Deliberately invalid hash bytes demonstrate that
 metadata decoding is independent of integrity verification.
 
 The synthetic cases do not validate combinations emitted by Samsung's UI or
-their rendering implications. Fixed-property enum semantics, voice actions and
-attachment resolution remain unestablished. Document-level style settings
-are exposed for inspection; they are not yet applied to the renderer.
+their rendering implications. Fixed properties have the bounded authority and
+coedit policy described above; broader enum/appearance semantics, voice actions
+and attachment resolution remain unestablished. Fixed-property settings
+are exposed for inspection; they are not applied to the renderer.

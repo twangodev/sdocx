@@ -8,9 +8,10 @@ These findings use Samsung Notes 4.4.45.37, APK SHA-256
 | Source | Contract |
 | --- | --- |
 | Decompiled `r1/w.java`, `b(RandomAccessFile)` | Current field order and the two-byte record-length prefix |
-| Decompiled `f2/a.java`, `Y` and `Z` | Little-endian UTF-16 unit counts, including null sentinels |
+| Decompiled `f2/a.java`, `Y` and `Z` | Generic UTF-16 writers support null sentinels; this is distinct from the native EndTag inline-string reader |
 | ARM64 `libSPenModel.so`, `SPen::EndTag::ParseImpl(IInputStream*, bool)`, `0x2a77b4` | ZIP EOCD lookup, comment skipping and outer record extraction |
 | ARM64 `libSPenModel.so`, buffer `EndTag::ParseImpl`, `0x2a7d20` | Signature validation, WDoc minimum version and historical extension boundaries |
+| `ReadString2`, `0x2788ac` | Counted inline UTF-16 String, without a null sentinel |
 | ARM64 `libSPenModel.so`, `EndTag::EncryptionData::ApplyBinary`, `0x2a7308` | Plaintext size and length-prefixed salt, IV and wrapped key |
 
 The buffer reader receives the payload without its two-byte length prefix.
@@ -37,10 +38,24 @@ to end before each following extension:
 10. Minimum unknown version.
 11. Application custom data, using a `u32` UTF-16 count.
 
-All earlier strings use `u16` UTF-16 counts. A count of all ones denotes null;
-zero denotes an empty string. There is no padding between strings and numbers.
-An absent extension differs from a present zero-valued extension. Optional
-string fields represent both absence and null as `None`.
+All earlier strings use `u16` UTF-16 counts; zero denotes an empty string.
+There is no padding between strings and numbers. An absent extension differs
+from a present zero-valued extension.
+
+The native buffer reader uses inline `ReadString2` for note ID (`0x2a7ef0`),
+cover image (`0x2a7f40`), application name (`0x2a7fa4`), patch name
+(`0x2a7ff4`), owner ID (`0x2a8140`) and fixed font (`0x2a82e8`). The helper
+reads an unsigned `u16`, checks `count * 2` bytes, sets the String from those
+counted units and advances the cursor (`0x2788d8`–`0x278914`). It does not
+interpret `0xffff` as null. Fixed-font helper failure branches directly to
+parser failure at `0x2a82ec` → `0x2a7e34`. Application custom data uses the
+inline `ReadLongString2` at `0x2a83ac`. These members differ from native
+nullable String-pointer readers used by other formats.
+
+Generic Java helpers `f2.a.Y/Z` can write all-ones null sentinels. However,
+`r1.w.b` computes its strings' `.length()` values, including fixed font,
+before calling those helpers. The generic helper contract does not establish
+that this EndTag writer emits null fixed fonts.
 
 ## SDK implementation
 
@@ -49,6 +64,15 @@ records. `ParsedDocument.end_tag` retains the authoritative structured metadata,
 and `end_tag_source` distinguishes the appended record from the archive member. Strings,
 blobs and extension groups are bounded by the declared payload, excluding the
 signature. Unknown bytes after application custom data are retained.
+
+The current Rust decoder additionally accepts all-ones string counts as null;
+its optional string fields represent both absence and accepted null as `None`.
+The synthetic null-string test pins this SDK behavior, not native inline-string
+parity. In particular, a short `0xffff` fixed-font input passes Rust null
+handling but fails the native counted-payload check. The native outer record
+length is itself `u16` (`0x2a7a30`–`0x2a7a94`), so a 65,535-unit font cannot
+fit inside a valid tag. This is an acceptance difference for an input rejected
+by the native reader, not evidence of lost valid maximum-length font data.
 
 Document metadata uses display timestamps when present and falls back to core
 timestamps for older tags. The detailed API preserves the full `u32`
@@ -72,6 +96,23 @@ surrogate pairs, nulls, every historical extension boundary, partial groups,
 signature/size corruption, future versions, unknown tails, metadata propagation
 and resource limits. These are binary-contract tests, not Samsung export or
 visual fidelity measurements.
+
+A local Rust/Unicorn probe executes actual `ReadString2` and Base String
+construction, getters and destruction, with allocation fills 0, 85, 165, 255
+and repeated 0. A second process replay is byte-identical. Native bounds and
+String decisions are unpatched; host services supply allocation, memory and
+platform/log/error calls. Independent ABI and observer-purity review passed.
+
+| Counted-string input | Native result | Consumed bytes | Remaining bytes |
+| --- | --- | ---: | ---: |
+| Empty, count 0 | Accepted, empty String | 2 | 0 |
+| `Roboto`, count 6 | Accepted, six UTF-16 units | 14 | 0 |
+| `ffff` followed by direction/theme 2/2 | Rejected, String remains empty | 2 | 8 |
+
+The probe output SHA-256 is
+`d3ad926efe23bb8cfce25e47d6c5873d6547e50fdbadccc316f807ec02264784`.
+This is a local counted-string helper probe, not a published full EndTag-parser
+capture or a Samsung-exported fixture.
 
 The stream reader skips the ZIP EOCD's variable-length comment before reading
 the outer tag. The SDK uses that record in preference to `end_tag.bin`.

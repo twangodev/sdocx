@@ -824,6 +824,12 @@ optional utf16_u32 application_custom_data
 ASCII "Document for S-Pen SDK"         # exactly 22 bytes
 ```
 
+These EndTag strings are counted inline values. For the `u16` fields, native
+`ReadString2` treats `0xffff` as 65,535 units rather than null; zero means empty.
+Generic Java nullable-string helpers and the current Rust sentinel handling
+have different admission behavior, as detailed in the
+[EndTag findings](end-tag-findings.md#field-boundaries).
+
 The end tag in fixture A is 144 bytes: its first `u16` is 142 and its last 22
 bytes are the signature. Its two variable blobs are empty and it predates the
 app-custom-data field. The tags in fixtures B and C include a zero-length `u32`
