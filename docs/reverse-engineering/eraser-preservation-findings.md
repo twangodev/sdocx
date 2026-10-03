@@ -9,11 +9,12 @@ it does not require the reader to recover an editor gesture and subtract its
 path at export time.
 
 The dispatch, object mutation and save boundaries below are static ARM64 and
-decompiled Java findings. A separate bounded native execution confirms fragment
-array construction, endpoint duplication and timestamp arithmetic. Neither
-full editor interaction nor save/reload after a device erasing gesture was
-executed. Brush erasing and generic saved eraser-property rendering remain
-separate, unresolved contracts.
+decompiled Java findings. Separate bounded native executions confirm collision
+predicates, coordinate preparation, retained-part construction, generated XY,
+fragment channel arrays and timestamp arithmetic. Those captures stop before
+object copying or the final `SetPoint` body. Neither full editor interaction nor
+save/reload after a device erasing gesture was executed. Brush erasing and
+generic saved eraser-property rendering remain unresolved contracts.
 
 The APK is the artifact identified in the
 [knowledge base](README.md#sources-and-validation). Library identities are:
@@ -71,10 +72,99 @@ into stroke fragments.
 Stroke admission is not a generic pen-name-independent geometry test. The
 ordinary branch calls `IsTopLayerPen` at `0x51fc44`; another helper at
 `0x51fdd4` recognizes Marker3, Marker4, StraightHighlighter and StraightMarker.
-Additional controller flags at members 168/169 affect admission. The eventual
-collision producer at `0x520078` has pen-specific size branches, including
-ObliquePen and TapePen. Exact boundaries of those collision calculations have
-not been certified by the fragment-array capture below.
+Either controller flag at members 168/169 also permits admission. Model
+`IsTopLayerPen`, `0x2e1ea0`, reads stroke-data byte 341, serialized as property
+bit 6; see [capture composition](capture-composition-findings.md#per-object-render-layer-selection).
+A nonnull pen name is required, but these gates are not a closed pen whitelist
+or evidence that every admitted profile is rendered by the SDK. Math also
+passes its type-1 Formula stroke/answer-stroke children to producer `0x520078`.
+
+## Collision uses copied coordinates and pen widths
+
+Preparation helper `0x51ffa4` requires nonnull source PointF and pressure arrays.
+It copies PointF samples into controller vector 224 through `0x521fe0`, adds
+integer page offsets 156/160 as `f32`, then scales each axis around the cutter
+center using `f32` FMA when scale 172/176 differs from 1. Pressure is a presence
+gate, not a transformed channel. Generated-endpoint helper `0x521828` divides
+around that center and subtracts the offsets to return to source coordinates.
+Native capture leaves the original arrays untouched. Identity round-trips
+bit-for-bit, while offset `(17,-33)` changes restored `(0.1,-0.3)` through
+rounding; those collision-space round trips do not replace retained source data.
+
+Except exact ObliquePen, producer `0x520078` chooses a coefficient through
+ordered, case-sensitive substring searches at `0x520144`–`0x520468`:
+
+| First matching family substring | Coefficient bits | Value |
+| --- | --- | ---: |
+| `Straight` or `straight` | `0x00000000` | 0 |
+| `Marker` or `marker` | `0x3dcccccd` | 0.1 |
+| `Brush` or `brush` | `0x3f733333` | 0.95 |
+| Otherwise | `0x3e19999a` | 0.15 |
+
+`0x520484`–`0x5204ac` stores `size * coefficient` at controller 184,
+`size * (1 - coefficient)` at 188 and a factor at 192. Exact full FountainPen
+identity selects factor 0.25; the other ordinary names select 0.5:
+
+```text
+R(p) = f32_fma(controller184, source_pressure, controller188) * controller192
+```
+
+This collision radius does not replay the pen's rendering kernel or intersect
+its final visible outline. These calculations do not query source timestamps,
+tilt or orientation or clamp pressure. Captured negative/above-one pressures
+exercise the same arithmetic without establishing editor admission of them.
+
+TapePen's exact-name branch, `0x520538`–`0x520978`, uses stroke rotation from
+virtual slot 136, converts degrees with `0x3c8efa35`, and calls `sincosf`.
+Model vtable relocation `0x4930a8` resolves that slot to
+`ObjectBase::GetRotation`, `0x2cbd08`. It tests a rotated spine extending
+`0.75 * R` on each side with a `0.25 * R` cap. This is a capsule/strip heuristic;
+arbitrary tape angles were not executed by the captures below.
+
+Exact ObliquePen instead uses axis-aligned offsets with half-extent
+`(size * 0x3f3504f3) * 0.5`, at `0x5201ec`–`0x520440`. That classification
+ignores pressure and bypasses writes to 184/188/192, although the later endpoint
+helper still reads them. Constructor `0x51d80c`/`0x51d818` seeds those fields
+as 1/0/1. Native replay of identical Oblique source/statuses produces endpoints
+±10.5 from those seeds versus ±12.775 after a preceding native size-6 InkPen
+call. This inherited controller state is preserved by the resulting saved
+points; an exporter cannot recover it by erasing an idealized outline.
+
+## Collision statuses become retained parts
+
+For ordinary CUT, segment/gesture proper crossings mark zero-status neighbors
+as 1 at `0x5204ec`–`0x52051c`. Sample cap/strip tests then mark affected samples
+as 2 at `0x52079c`–`0x520830`. Oblique and Tape use their dedicated predicates
+before the same retained-run scanner at `0x520a9c`–`0x520b60`.
+It starts a run at a 2→below-2 transition or a 1→1 pair, and ends it before
+a below-2→2 transition or another 1→1 pair. Outside-array neighbors are 2.
+Thus source X `[-100,100]`, pressures `[0,1]`, and vertical cutter movement
+`(0,-20)`→`(0,20)` produce two one-point parts: `[0,0]` with tail −13 and
+`[1,1]` with head +13. All-status-2 output instead queues a whole-delete task.
+
+Generated XY is attempted only when neighbor distance is strictly greater than
+`min(cutterRadius,20)`. `0x520ba0`/`0x520bb0` selects 20 when radius is greater;
+native comparisons confirm thresholds 10 and 20 for radii 10 and 40.
+Tail calls `0x521334` with indices `end,end+1` and selector 1; head uses
+`start-1,start` and selector 0. Rejected coordinates are discarded even if the
+helper already wrote its output.
+
+A proper crossing selects the larger endpoint radius at `0x521428`–`0x521440`.
+Otherwise cap/strip tests select the radius of the involved endpoint. The helper
+adds cutter radius at `0x5214b8`, without interpolating pressure or radius at
+the intersection. With size 6 and pressures `[0,1]`, source `[-100,0]` yields
+tail −13, while `[0,100]` yields head +12.55. The later channel-array builder
+independently copies pressure/time/stylus values from retained source samples.
+
+For `abs(dx) <= 0.5`, `0x5214ac`–`0x521528` treats the source as vertical at
+its first X. Otherwise the quadratic mixes earlier `f32` products/FMA with
+`f64` discriminant/root arithmetic at `0x521578`–`0x5215d8` and
+`0x521760`–`0x5217bc`, narrows roots to `f32`, then computes Y by `f32` FMA.
+`0x51f388` orders candidates along source direction; selector 1 chooses the
+first and selector 0 the second. Component boundary rules differ:
+`0x51f158` rejects determinant-zero touches, `0x51f1fc` accepts its cap-radius
+equality, and `0x51f28c` accepts its straight strip boundary. The producer ORs
+these predicates; one component's rejection does not establish a cutter miss.
 
 ## Cut tasks contain retained ranges, not a saved erase path
 
@@ -97,6 +187,8 @@ The task's generated coordinate pointers are runtime data. They are not a new
 serialized mask channel. The helper reads the source's ordinary point,
 pressure, timestamp, tilt and orientation arrays through the existing
 `ObjectStroke` getters at `0x523a28`–`0x523a58`.
+The producer stores one XY holder for each accepted head or tail. Repeated tail
+samples arise in this array builder, not from two tail-coordinate holders.
 
 For `last < first`, helper `0x523998` returns false before constructing arrays.
 The instructions otherwise compute the output sample count as:
@@ -208,6 +300,14 @@ calls `RemoveStroke`, `RemoveAnswerStroke` and `RemoveFormula` at
 `0x526cdc`, `0x526cb0` and `0x526d50`. Those calls establish native child-list
 mutation, not SDK formula rendering support.
 
+Its generator `0x527140` invokes `0x527a8c`, with a width heuristic distinct
+from CUT. Static dispatch at `0x527af0`–`0x527bf4` and `0x5282d4`–`0x5285e0`
+gives Brush/brush coefficient 0.95 with factor 0.3, and Fountain/fountain
+substring factor 0.25 instead of CUT's exact full name. Oblique/oblique and
+Tape/tape specialized routes are substring-selected. The ordinary pair cap
+at `0x528084`–`0x5280ac` adds neighboring pressures before its FMA/factor,
+without averaging. These whole-remover calculations were not executed here.
+
 ## Saved state and editor history are separate boundaries
 
 WDoc `WPage::InsertObjectList`, `0xc3d04`, delegates to Model
@@ -257,23 +357,42 @@ partial-erasure intervals from their name alone.
 
 ## Bounded native execution and corpus limits
 
-A temporary Rust Unicorn probe executes unchanged Composer `0x523998` through
-the first native `SetPoint` call. It supplies five source samples and tests
-five range/endpoint cases, stylus channels present/absent, millisecond flag
-true/false and five allocation fills `[0,85,165,255,0]`: 100 executions.
-Repeated zero-fill output and every other fill agree byte-for-byte.
+Temporary Rust Unicorn probes execute unchanged APK instructions through the
+repository's native-machine loader. All groups compare initial memory fills
+`[0,85,165,255,0]`, except the 13 width-prefix calls. Independent
+rebuild/replay reproduced every output hash:
 
-The probe hosts only supplied-array getters, original append time, the source
-mode flag, allocation/memory-copy imports and the terminal `SetPoint` recording.
-Base `PointF::SetX/SetY`, `0xb0f00`/`0xb0f08`, execute natively. It records
-computed append time from native register/spill state rather than recomputing
-that formula in Rust. Independent compilation/replay reproduces the output
-SHA-256 `f6abeb0fcfa3e486ee168a22c80a1c2f2852da0b41936a2cc62174293db4bc8a`.
+| Capture | Native calls | Output SHA-256 |
+| --- | ---: | --- |
+| Fragment array helper `0x523998` | 100 | `f6abeb0fcfa3e486ee168a22c80a1c2f2852da0b41936a2cc62174293db4bc8a` |
+| Width prefix and endpoint `0x521334` | 13 + 290 | `b92cad9c977f02a435b23d95fce0602ab7513194567cf24c0cf89f9e12750439` |
+| Collision/part producer `0x520078` | 60 + 5 prior Ink calls | `2d8851942195c29669006667eb87875260abb76515eaef8a4c265c9f8918a261` |
+| Three collision predicates | 240 | `b42d9ab8afd588412fe56026ff4b691449edf2c80cb14320e8f842370cf16505` |
+| Preparation/inverse helpers | 155 | `0319e59807874ba4eae27d796d80602ccde9ee54dbf3d99b7a8271d4127ae547` |
 
-This execution uses helper mode 1 and stops before the `SetPoint` body. It
-certifies the constructed channel arrays and arithmetic, not the collision
-producer, copying, complete remover interaction, document insertion or binary
-save. It is a local research capture, not a retained SDK conformance fixture.
+The array capture supplies five source samples, range/endpoint cases, paired
+stylus presence and millisecond mode. It hosts source getters, append time,
+allocation/memory-copy imports and terminal `SetPoint` recording. Computed
+append time comes from native register/spill state. Helper mode 1 executes
+through construction of arrays, stopping before the `SetPoint` body; it does
+not certify the collision producer by itself.
+
+The separate producer capture supplies already prepared PointF/pressure arrays,
+`IsTopLayerPen=true`, target 0, constructor coefficient seeds and ASCII strings.
+It executes collision, generated XY, part allocation and reference counting,
+stopping at `0x520f50` before Factory/Copy or at `0x521204` before the deletion-
+task builder. The 290 endpoint calls execute the complete endpoint helper.
+Base PointF setters and RectF offset/union operations execute natively.
+The three predicate captures require no hosted geometry.
+
+Preparation/inverse capture executes `0x51ffa4` and `0x521828` completely with
+supplied getters, bounded memmove and a preallocated output vector. It inverts
+prepared source samples, rather than generated intersections. Negative/tiny
+scales, large offsets and unusual pressure values are supplied boundary inputs,
+not editor admission evidence. Arbitrary Tape sin/cos, object copying, complete
+gesture interaction, document mutation and binary save remain outside these
+executed boundaries. These are local research captures, not retained SDK
+conformance fixtures or a second erase implementation.
 
 The seven documents in the
 [rendering corpus inventory](rendering-corpus-findings.md) contain 7,300

@@ -13,9 +13,10 @@ The inspected library identities are:
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 
 Most evidence is static reader, writer, mutator and drawing control flow.
-Two bounded Rust/Unicorn research replays execute unchanged native numeric
-helpers, described below. No complete editor operation, new saved Samsung
-document, paired PDF export or pixel comparison executes here.
+Bounded Rust/Unicorn replays separately exercise numeric helpers, public
+container command generation and actual zero-angle group-to-stroke mutation.
+Each capture qualifies its supplied state and hosted services below. No new
+saved Samsung document, paired PDF export or pixel comparison executes here.
 
 The type-4 container is a nested object list whose edits update child geometry.
 Its ordinary drawing branch does not apply a parent affine matrix. This extends
@@ -127,7 +128,19 @@ additional drawing transform waiting to be applied.
 ## Resize is a recursive mutation, including the method named DataOnly
 
 Model `ObjectContainer::SetRect(RectF, bool, bool, bool)`, `0x3719b8`,
-has a first-boolean branch that bypasses child mutation. The normal branch
+has a first-boolean branch that bypasses child mutation. When that boolean
+is true and implementation byte 66 is pending, it clears the member at
+`0x371a4c` before tail-calling `ObjectBase::t_SetRectOnlyData` at `0x371aa0`;
+without a pending update, it returns success without a write. This identifies
+the branch behavior, not a verified native/API name for the boolean.
+
+The normal path rejects equal destination left/right or top/bottom before
+reading the current rectangle (`0x371ad8`–`0x371ae4`). `SetRectDataOnly`
+has corresponding checks at `0x373090`–`0x37309c`. A zero destination extent
+is therefore distinct from a zero old extent. The earlier first-boolean
+branch can bypass this rejection and pass collapsed bounds to the base method.
+
+The normal branch
 uses the virtual current rectangle at `0x371af4`, normalizes destination
 edge order, and computes separate float width and height ratios at
 `0x371b58`–`0x371b84`. A zero old extent leaves its ratio at zero.
@@ -166,6 +179,36 @@ Its center propagation also uses float fused operations at
 The normal mutation paths temporarily set connectable children to connection
 mode 1 and later restore mode 0. Missing runtime handles are removed from the
 child vector. Those are editing side effects, not serialized transforms.
+
+### Bounded public mutator command replay
+
+A temporary Rust/Unicorn capture executes unchanged `SetRect` and
+`SetRectDataOnly` for 28 supplied cases across the same five memory fills.
+Eight child facades cover mixed angles, a hidden child, connectors and a zero
+rectangle; cases also cover destination inversions, zero old extents,
+unchanged bounds, a missing ID and boolean propagation. Native direction and
+Base geometry helpers execute. Child getters and ID resolution are supplied;
+child setters, connection changes and final parent writes are recording
+callbacks returning success. These are generated commands, not saved outcomes.
+The two parent-angle-37 cases use host Linux `sincos`; zero-parent cases reach
+no trigonometric import. Missing-ID compaction uses hosted `memmove`.
+
+For old parent `[0,0,100,100]` and destination `[100,200,400,600]`, hidden
+child angle 90 with bounds `[110,120,130,150]` receives `[210,320,230,350]`
+when invisible resizing is disabled and `[420,695,500,785]` when enabled.
+It receives connection and setter calls in both cases. A child angle of -450
+retains dimensions while its center moves, confirming the unusual direction
+branch below. Both public methods agree on these supplied geometry commands.
+With the first `SetRect` boolean false and the last two true, child calls
+receive `[0,1,1]` and the final parent call receives `[1,1,1]`. Missing ID 99
+is removed from the native vector; unchanged bounds emit no writes.
+
+A 38-case extension includes those 28 cases plus destination-domain checks.
+Both normal paths reject zero-width, zero-height and point destinations with
+return 0 and error 7, without child or parent writes. The first-boolean branch
+returns 1 for collapsed width/height: pending false emits nothing; pending true
+clears the member and emits only the terminal base call. This capture does
+not execute that callback's actual base mutation.
 
 ## The direction helper does not use ordinary modulo for every angle
 
@@ -232,6 +275,39 @@ unit old bounds, and a large fractional origin. No group caller, constructor,
 pen channel, history, nonzero trigonometry, serialization or drawing executes
 in this replay. Its canonical JSON SHA-256 is
 `2d786f19c3514c7d4d3a7908c221dfa7c07799d7f167b378f22e80130df86329`.
+
+### Actual zero-angle container-to-stroke edits
+
+A separate capture executes complete native container `SetRectDataOnly`,
+container `GetRect` (`0x371fc4`), stroke `SetRectDataOnly`, temporary-point
+copying, `ApplyRect`, base writes and dirty/coedit null-context methods on
+shared supplied state. Three stroke children include one hidden child.
+Ten cases cover normal, three inverted and unchanged destinations with both
+invisible-resize flag values, each across five fills. Actual getters and
+setters execute; only ID resolution and all-false connectability are supplied,
+and Android logging is ignored. All angles are zero, reaching no trig import.
+
+The native visible union starts at `[10,10,70,80]`. Resizing to
+`[100,200,400,550]` produces that stored parent rectangle and recomputed union;
+the first stroke's samples become `[100,200], [125,250], [150,300]`.
+An inverted-X request `[400,200,100,550]` normalizes stored parent/child bounds,
+but produces samples `[400,200], [375,250], [350,300]`. Reflection is already
+baked into coordinates; normalized rectangles do not erase it. Hidden samples
+actually translate and reflect when resizing is disabled, and scale when
+enabled. Native `GetRect` excludes hidden bounds even outside the visible union.
+
+Four supplied non-coordinate sentinel buffers per stroke remain bit-identical;
+this does not assign their complete pressure/time/tilt semantics. No
+constructors, registry, nested containers, history, serialization, documents,
+drawing or pixels execute. The original eight-case helper replay above remains
+separate from this complete native method chain. All three public-mutator
+captures strictly compile and independently replay byte-for-byte:
+
+| Capture | Canonical JSON SHA-256 |
+| --- | --- |
+| 28 command cases | `4fc355b98771544731538eadb00143121738039bd6cf63801d077ecf1e9c667c` |
+| 38 command/domain cases | `15b7f00385cf9314ca4d39022c9c1d4926df2c6a538c7722e22b7a3cf8bc8e2d` |
+| 10 actual mutation cases | `530abadcc955b10a4fe6d264a484c691b99adfd6256dd9952ca326a23f28e617` |
 
 Rotation similarly changes the samples. `ObjectStroke::SetRotation`,
 `0x2de4e0`, copies temporary points, updates base angle data, then calls
