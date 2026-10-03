@@ -3,8 +3,8 @@
 ## Evidence boundary
 
 The archive and replay findings are static traces in Samsung Notes 4.4.45.37.
-Bounded native stroke-reducer, anchor-metadata and media-manifest captures are
-identified separately below. No `.spp` was generated, loaded or replayed during this
+Bounded native stroke-reducer, anchor-metadata, media-manifest and memory-image
+captures are identified separately below. No `.spp` was generated, loaded or replayed during this
 investigation. These findings do not establish complete SVG or brush appearance
 parity.
 
@@ -99,6 +99,26 @@ The foreground setter is itself raster storage.
 to a temporary `.mem` path through `BitmapFactory::SaveBitmap` at `0x336400`,
 then calls the path setter at `0x336410`. Keeping that resource preserves an
 image, not the original point channels. It coexists with saved layer objects.
+
+This `.mem` resource has its own raw-image framing. Base
+`BitmapFactory::SaveBitmap`, `0xa94fc`, matches extension `mem` at `0xa95f0`
+and calls `write_mem_argb`, `0xbc208`, at `0xa99bc`, before the other formats'
+unpremultiplication at `0xa960c`. The writer emits three ASCII bytes `mem`,
+then little-endian u32 width, height and row-byte count at offsets 3, 7 and
+11, followed at offset 15 by exactly height × row-byte-count input bytes.
+Its bit-depth argument does not participate in those writes. This is a
+pixel cache, distinct from the editable source's layer-object records.
+
+A conformance `Machine` probe executed that writer with width/height 2,
+row-byte counts 8/12 and supplied consecutive pixel bytes. Output lengths
+were 31/39, retaining the exact 16/24 input bytes including row padding;
+input and surrounding canaries remained unchanged. Both cases matched across
+allocation fills `0x00/0xa5/0xff` (six writer invocations). File construction
+and destruction plus a bounded `fwrite` sink were hosted. The probe was
+independently compiled with warnings denied and replayed; output SHA-256 was
+`7484ed15b7feced3bfa45a0d898cbd00404b2609fc6248e604851f253a73c346`.
+This covers supplied raw-image framing, not foreground capture, pixel
+interpretation, native filesystem/archive writes or Painting replay.
 
 ## Source media uses the legacy manifest
 
