@@ -732,6 +732,33 @@ The fixture rows and linked findings distinguish executed native routines from
 supplied storage, metrics and host interfaces. These replays do not establish
 complete document composition or device appearance.
 
+## PDF paper predicate capture
+
+[`pdf-paper-predicates.json`](pdf-paper-predicates.json) records actual native
+`WPage::GetPDFData`, `HasPDF()` and `HasPDF(int)` calls, using native Base
+ArrayList construction, insertion and indexing. Seven supplied record grids and
+seven binding queries agree across allocation fills `0`, `0x55`, `0xa5`, `0xff`
+and a repeated `0`. `HasPDF(int)` searches the media binding ID, not the source
+PDF page index; duplicate bindings and independent indices remain observable.
+
+Build the Rust driver using the [native replay command](#native-shaping-replay),
+then run from the repository root:
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --pdf-paper-predicates scratch/apk-analysis-native/arm64-v8a/libSPenBase.so \
+  scratch/apk-analysis-native/arm64-v8a/libSPenWDoc.so \
+  > /tmp/pdf-paper-predicates.json
+cmp /tmp/pdf-paper-predicates.json conformance/pdf-paper-predicates.json
+```
+
+The libraries are hash-checked before execution. The capture supplies the page
+facade, implementation pointer and record storage; it does not execute page or
+PDFData constructors, setters, serialization, resource availability, placement
+or rendering. Negative queries describe the supplied-record predicate, not
+document admission. This is optional native research evidence, not an SDK PDF
+paper parity test. See [storage findings](../docs/reverse-engineering/pdf-paper-storage-findings.md).
+
 ## Stroke regressions
 
 Small synthetic tests in `structural_strokes.rs` run in ordinary CI without

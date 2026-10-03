@@ -10,6 +10,15 @@ decoding, rendering and evidence boundaries across object types and features.
 
 ## Documents
 
+- [`pdf-paper-storage-findings.md`](pdf-paper-storage-findings.md) — saved and
+  runtime PDF records, loader/JNI/setter boundaries and native binding predicates.
+- [`pdf-paper-resource-findings.md`](pdf-paper-resource-findings.md) — manifest
+  binding, synchronization identities, paths, availability and PDF open errors.
+- [`pdf-paper-placement-findings.md`](pdf-paper-placement-findings.md) — list
+  and continuous attachment geometry, inherited PDF boxes, views and clipping.
+- [`pdf-paper-export-findings.md`](pdf-paper-export-findings.md) — source PDF
+  imports, list continuity, continuous segmentation and note overlay placement.
+
 - [`rendering-corpus-findings.md`](rendering-corpus-findings.md) — observed
   feature occurrence and parse diagnostics across four locked pairs and three
   local research notes, with source identities and coverage limits.

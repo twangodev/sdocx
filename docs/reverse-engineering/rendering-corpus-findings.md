@@ -62,6 +62,50 @@ in the locked corpus are ID 7 in fixture 02 and ID 1 in fixture 04. No image-ID
 or URI-backed background, nonzero background rotation, or other built-in
 template ID occurs.
 
+## PDF source pages and stored placements
+
+Both PDF-backed notes use continuous mode, format 4000, orientation 0 and
+native default page dimensions `1080 × 1527`. They store different physical
+canvas dimensions: `quiz` is `1812 × 15372`; `cs61bl_su22` is `1080 × 27952`.
+Each has one physical `.page` entry, rather than one record per source PDF page.
+
+Field 8 starts at page offset `0xac` with a two-byte count. Each following
+24-byte record contains a media ID, a zero-based source page index and four
+little-endian integer rectangle values. `quiz` has one record: media ID 0,
+source page 0, rectangle `[0, 0, 1812, 1485]`. `cs61bl_su22` has 20 records,
+all media ID 0, with source indexes 0 through 19. Its first rectangle is
+`[0, 0, 1080, 1397]`; its last is `[0, 26554, 1080, 27952]`. Consecutive
+rectangles share their vertical boundary, with heights of 1397 or 1398.
+No other inventoried archive contains a field-8 PDF record or source PDF asset.
+
+| Note | Authoritative media-manifest filename for bind ID 0 | Source PDF pages | MediaBox in PDF units |
+| --- | --- | ---: | --- |
+| `quiz` | `0@pdf_1692322553368.pdf` | 1 | `[0, 0, 726.20428, 595.44006]` |
+| `cs61bl_su22` | `0@pdf_1691716745867.pdf` | 20 | `[0, 0, 612, 792]` on every page |
+
+The source-PDF hashes match their authoritative media-manifest digests:
+
+| Note | Source PDF SHA-256 |
+| --- | --- |
+| `quiz` | `f01243e2d712d47ad08735ec4e47da2a94974818f2cd7c28da2db3ee326c4279` |
+| `cs61bl_su22` | `1cd5ae14ddbcccc29ab7e0e8842aa2777d3c1d5c35463fcc7e6d0e7469afb689` |
+
+Neither source PDF declares CropBox, Rotate or UserUnit on its pages or page
+ancestors. `quiz` contains an image-only source page; `cs61bl_su22` contains
+Type1 font resources and mixed text/vector/image content. PDF dictionaries and
+page counts were inspected with `lopdf`, without converting or rendering them.
+
+The retained SPI [headers](spi-header-findings.md) report `1812 × 3843` caches
+for `quiz` and `1080 × 2290` caches for `cs61bl_su22`. Their heights differ
+from the PDF placement heights; no cache pixels were decoded in this inventory.
+
+At the inventoried revision, the SDK consumes all field-8 records but retains
+only the first source page index in `PageTemplateSource::CustomPdf`; it discards
+the media IDs and rectangles. These stored placements are therefore not
+represented completely in the high-level model. The temporary client used the
+SDK's existing bounded `Reader` for byte inspection; no production decoder or
+new native appearance comparison was added for this observation.
+
 ## Drawing features present and absent
 
 | Saved pen settings | Strokes | Documents |
