@@ -12,6 +12,7 @@ ELF virtual addresses. The input libraries have these SHA-256 identities:
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
+| `libSPenWordDocCoedit.so` | `82a73d24732efe4f5c3c385b9fcb0ccfb05970507ba50039d252c2abb7f0c2af` |
 
 No connector routing execution or paired connected-diagram export was
 captured here. [Shape and line frames](shape-line-findings.md) cover the
@@ -154,19 +155,70 @@ must not be merged into one invented integer-ID format.
 
 Missing UUID targets are skipped from the resolved object list, and a
 connection record with no resolved targets is removed
-(`0x356d48–0x356dec`). This is native runtime resolution behavior; keeping
-the unresolved saved identity still matters for preservation and inspection.
+(`0x356d48–0x356dec`). The loader then releases the original connection
+bytes before calling the object's setter (`0x356e0c–0x356e28`).
+`ReleaseConnectedInfoRawData` deletes and nulls implementation `+88`
+(`0x377a98–0x377aa4`). The modern `NewApplyConnectedInfoListBinary`
+resolver also filters unresolved UUIDs (`0x377e3c–0x377eb0`) and releases
+that raw block when resolution completes (`0x378030–0x378054`).
+
+The type-6 writer subsequently traverses implementation `+24` and writes
+UUIDs obtained from resolved object pointers (`0x37c7b8–0x37c874`); it has
+no fallback to the unresolved raw block. On a fresh loaded graph, a UUID
+discarded by these resolution paths therefore cannot be reproduced by
+that writer. This is a static resolver-to-writer conclusion, not a captured
+whole-document load/save round trip. Preserving the unresolved saved
+identity remains useful even where native runtime resolution discards it.
 The serialized connection record describes a point and object list,
 not an explicit begin/end enum alongside every UUID.
+
+The base setter accepts an incoming record only at magnetic points whose
+two `f32` coordinate differences are each strictly below 0.02
+(`0x378448–0x378470`; float bits `0x3ca3d70a` at `0x16450c`). When its
+boolean argument is true, it rebuilds target magnetic-point indices and
+can remove targets whose point lookup returns `−1`
+(`0x3785ec–0x378690`). Matching a UUID alone does not guarantee retention
+of its attachment.
 
 For a line, `SetConnectedInfo` invokes the shape-base setter and then
 `UpdateConnectionInfo` (`0x382f20–0x382f30`). The latter obtains magnetic
 connection records 0 and 1, copies their points into begin/end coordinates,
 and retains the first object of each list at implementation `+136/+144`
-(`0x3889f0–0x388a5c`). It does not call `RearrangePath` in that function.
+(`0x3889f0–0x388a5c`). The examined base/line setters and endpoint-update
+function neither replace the saved path at `+72` nor call `RearrangePath`.
+At this boundary, graph pruning changes attachment state while retaining
+the saved route; endpoint updates do not themselves regenerate it.
 The public connection action does call it, through `ObjectLineImpl::Connect`
 (`0x388970–0x38899c`). Loading a saved graph and interactively connecting
 a line are therefore distinct operations.
+
+Modern `WLayer::Load` calls `NewApplyConnectedInfoListBinary(false)`
+(`0x342288–0x34228c`), then separately calls `LoadFollowerList`
+(`0x342294–0x3422a0`). Followers have a different missing-target policy:
+`FollowerManager::m_LoadFollowerInstance` retains unmatched pending UUIDs
+and returns false with error 9 (`0x3223c8–0x32249c`). The layer loader checks
+that result and takes its failure branch. Silent connector-reference
+pruning is therefore not a universal rule for every saved relationship.
+
+Coedit also has a distinct deferral boundary. `CoeditNote::checkConnectedInfo`
+(`0x42684`, WordDocCoedit) tracks received shape UUIDs and pending reference
+UUIDs per owner page (`0x42714`, `0x42bac`). It enumerates raw connection
+UUIDs with `GetConnectedShapeUuidFromRawBinary(true)` (`0x431b8`) and adds
+identities absent from that page's accumulated received map to its pending
+map (`0x43258–0x43668`). While the pending count is nonzero, it skips
+resolution (`0x436f0–0x436f8`); that cleanup destroys the temporary string
+vector, retaining the shape's raw connection block.
+
+When the pending count reaches zero, the route walks the received shapes
+and calls `NewApplyConnectedInfoListBinary(true)` (`0x43790–0x43798`).
+This variant consumes an extra signed four-byte value after each target
+UUID (`0x377e54–0x377e60`) and passes false to the base setter
+(`0x37804c–0x378054`), unlike the modern layer loader's false variant.
+The coedit caller ignores the resolver's return value and clears its
+received map afterward (`0x4379c–0x437d4`). This establishes deferred
+resolution with raw identity retention, not guaranteed later attachment,
+network arrival order, or behavior when dependencies remain missing
+permanently. Its pending map is not a test of the entire model's UUID set.
 
 ## Routing is an edit-time geometry producer
 
