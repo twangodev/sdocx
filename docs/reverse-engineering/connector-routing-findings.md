@@ -260,6 +260,64 @@ it is not called by the drawing getter. Public loosely/tightly coupled
 connection modes are 1/0. Their editing consequences must not be inferred
 from the start-direction byte merely because both participate in editing.
 
+## Copying and transfer treat identity and geometry differently
+
+Layer `ObjectManager::Copy` and page `CopyNAppendObject` factory-create
+destination objects before invoking virtual `Copy` (`0x35f13c–0x35f17c`,
+`0x3649e4–0x364a24`). `ObjectBase::Construct` allocates a new `Uuid` at
+common data `+136` (`0x2c9478–0x2c9490`); Base `Uuid::Uuid` generates it
+through `uuid_create/make/export` (`0xaa99c–0xaa9bc`). Common property copy
+does not overwrite that slot (`0x2d83bc–0x2d8710`). Fresh copies retain
+their newly constructed UUIDs, rather than inheriting source UUIDs.
+
+Shape copy clears outgoing/incoming associations (`0x37acdc–0x37ace8`).
+Line copy initially clones saved segments through `SetPath` and copies
+the control count and all three stored control slots
+(`0x389260–0x38928c`). Layer copy then uses an old-to-new **runtime handle**
+map in `LayerDocImpl::CopyConnectionInfo` (`0x34f258`, called at
+`0x35f2ec`). These ephemeral handles are not the persisted target UUIDs.
+For each type-8 line, both endpoint indices 0/1 are considered, but only
+target index 0 and its first target-point metadata entry are inspected
+(`0x34f374–0x34f394`). Both line and target must map to copied objects;
+an unmapped target is skipped without reconnecting the original or trying
+later targets. Page `CopyNAppendObject` has a separate equivalent loop
+(`0x364b1c–0x364ce0`).
+
+Both loops invoke destination `Connect`, then replay active source controls
+through `MoveControlPoint` (`0x34f3fc–0x34f43c`). Connection creation reaches
+`RearrangePath` (`0x388984–0x38899c`); control editing can reach `MakePath`
+(`0x38f350`). Reconnection can therefore regenerate the initially cloned
+vector route. The loops ignore these edit results and do not restore the
+source path afterward. This is not proof of exact geometry preservation
+or successful restoration of every relationship.
+
+Grouping creates a type-4 container and moves original children into it
+(`0x34ef24`, `0x34efa4–0x34efe0`). Container copying instead factory-clones
+children through `CopyObjectInList` (`0x374b60–0x374bfc`), with no child
+correspondence map or connector reconstruction. Outer layer/page rebind
+loops inspect type-8 objects, so a type-4 container bypasses them.
+Container `AppendObject` (`0x373bb4–0x373f60`) and line attachment
+(`0x386f64`, `0x37dd0c`, `0x38957c`) bind resources/context and membership
+without a connector rebinder. Within this reviewed copy/append/attach
+lifecycle, copied child lines have their old graph cleared and bypass the
+flat-list reconnect pass. This does not establish every UI paste flow.
+
+`TransferObjects` and `TransferObjectList` (`0x35f404`, `0x35f630`) move
+existing pointers, scale/offset their rectangles, call `OnTransfer`, then
+`SetRect(rect, false, true)`. Base transfer changes resource context without
+changing the UUID (`0x2d0248–0x2d046c`). Identity survives this boundary;
+geometry and attachments need not. Line resize in connection mode 0 first
+requires successful disconnection of both endpoints
+(`0x387fc0–0x387fec`). `ResizePath` (`0x388010–0x3884f8`) transforms all
+three coordinate pairs per existing 28-byte segment and active controls
+in `f32`, preserving segment count/type words. It writes `Path::SetSegment`
+and derives endpoints (`0x388474`, `0x38849c`), without `MakePath` or
+`RearrangePath`. This generic pair transform does not establish semantic
+transformation of arbitrary nonstandard arc/oval line segments. These are
+static native operation boundaries, not executed copy/save captures or a
+guarantee that cross-page references remain valid. The current Rust
+connection-block omission is described below.
+
 ## Consequences for Rust vector preservation
 
 `NativeLine` already retains the type-8 controls, endpoints, both saved
