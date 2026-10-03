@@ -10,6 +10,18 @@ decoding, rendering and evidence boundaries across object types and features.
 
 ## Documents
 
+- [`rendering-corpus-findings.md`](rendering-corpus-findings.md) — observed
+  feature occurrence and parse diagnostics across four locked pairs and three
+  local research notes, with source identities and coverage limits.
+- [`page-background-findings.md`](page-background-findings.md) — versioned
+  PDF placement records, template/resource activation, native image modes and
+  drawing routes, and current Rust retention limits.
+- [`shape-style-findings.md`](shape-style-findings.md) — saved outline styles,
+  dash patterns, compound passes, arrow geometry and native path conversion.
+- [`image-effects-findings.md`](image-effects-findings.md) — image-fill field
+  layout and defaults, crop/nine-patch selection, transparency, cache placement
+  and legacy border drawing.
+
 - [`marker4-v7.md`](marker4-v7.md) — fractional-width V7 highlighter vectors,
   native saved-redraw fixtures and isolated native-layer appearance comparison.
 

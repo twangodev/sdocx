@@ -140,4 +140,16 @@ independent native capture boundaries and real-document reference coverage.
 The locked corpus contains four document/PDF pairs, not an exhaustive feature
 inventory. Synthetic archives establish SDK behavior and malformed-input
 handling; they cannot establish Samsung visual equivalence for absent features.
-See also [PDF findings](reverse-engineering/pdf-export-findings.md).
+The [real-document inventory](reverse-engineering/rendering-corpus-findings.md)
+records feature occurrence separately from native research. Its only parse
+warnings are PDF-backed paper in two local research notes. Rust currently
+retains only the first PDF page index, discarding the resource bindings,
+placement rectangles and additional entries; see
+[page background findings](reverse-engineering/page-background-findings.md).
+This is a retention gap as well as a rendering gap.
+
+The native [shape style contracts](reverse-engineering/shape-style-findings.md)
+and [image effect contracts](reverse-engineering/image-effects-findings.md)
+have static evidence for features absent from these documents; they do not add
+real-document appearance coverage. See also
+[PDF findings](reverse-engineering/pdf-export-findings.md).
