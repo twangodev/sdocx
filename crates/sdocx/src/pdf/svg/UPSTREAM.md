@@ -12,6 +12,8 @@ at the existing ordered traversal point. Callback failures stop further traversa
 unwind converter graphics state, and propagate to the PDF exporter. Without a
 callback, conversion retains upstream behavior. Filter rasterization does not
 invoke the text callback; the exporter validates retained-text completeness.
+The unused OpenType SVG-glyph callback and its private convenience entry points
+are omitted.
 
 `LICENSE_APACHE`, `LICENSE_MIT`, and `NOTICE.md` are copied from the same commit
 of <https://github.com/LaurenzV/krilla>. Upstream attributes the SVG converter to
