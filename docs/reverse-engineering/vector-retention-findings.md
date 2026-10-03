@@ -193,6 +193,21 @@ into the recovered original object. A type-19 envelope in source storage
 therefore need not remain type 19 in runtime; automatic recovery also does not
 establish preservation of the original envelope in a source model.
 
+The unknown class inherits the inspected common rectangle/rotation setters
+and `ReadyForSave`; its vtable resolves those entries to `ObjectBase`, rather
+than unknown-specific synchronizers. The common kernels write rectangle,
+rotation and modification time in current `BaseData` (`0x2d73c4`, `0x2d2bfc`,
+`0x2cc574`). `ObjectUnknown::Copy`, `0x44fcfc`, likewise copies common state
+through the base routine, then separately copies original type/version and
+`memcpy`s original bytes (`0x44fd64`–`0x44fe20`). Current serialization writes
+the current common frame followed by the original-byte own frame
+(`0x44f8dc`–`0x44f8f0`). These inspected bodies do not merge changed current
+common fields into embedded original common bytes. Context callbacks and
+external pointer aliases remain separate possible routes. If the two common
+representations differ without prior synchronization, successful automatic
+recovery selects the embedded original representation. That conditional source
+consequence is not an observed edit/save/recovery loss in an admitted document.
+
 Original and current hash trailers remain separate. The raw unknown reader
 passes the entire declared original binary to `NewApplyUnknownBinary`, without
 subtracting its trailer (`0x359074`–`0x35912c`). Normal WDoc saving reconstructs
