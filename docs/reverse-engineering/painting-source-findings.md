@@ -77,8 +77,10 @@ Its archive pipeline is explicit:
 `SaveNoteImpl`, `0x2bab60`, first writes page-ID information (`0x2bab88`) and
 then builds `<internal-directory>/note.note` (`0x2babc8–0x2babd4`; literal at
 `0x147277`). `PageDocManager::SavePage`, `0x2c6860`, saves changed pages,
-adds their ID plus the page extension to the ZIP (`0x2c6998–0x2c69c0`), saves
-history (`0x2c69d0`) and includes existing packed source data (`0x2c69dc`).
+adds their ID plus the page extension to the ZIP (`0x2c6998–0x2c69c0`), calls
+the conditional `SaveHistory` route (`0x2c69d0`) and includes existing packed
+source data (`0x2c69dc`). The history call alone does not establish a saved
+history member.
 The page extension is `.page` (literal at `0x162198`).
 `EndTag::GetBinary`, `0x2a891c`, selects the signature from its stored note type
 at `+276` (`0x2a8db8–0x2a8df4`). NoteType 1 selects the 39-byte

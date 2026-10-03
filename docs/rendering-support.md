@@ -170,3 +170,7 @@ additional typed geometry and resource boundaries without adding SDK support.
 child or stroke geometry before drawing. The
 [brush and painting findings](reverse-engineering/brush-record-findings.md)
 distinguish compatibility dispatch and editable resources from previews.
+The [painting source contract](reverse-engineering/painting-source-findings.md)
+identifies a separate archive with ordinary stroke packets, replay channels and
+bitmap state. The shared native reducer uses different coordinate widths from
+WDoc; neither a thumbnail nor decoding WDoc frames preserves that source.
