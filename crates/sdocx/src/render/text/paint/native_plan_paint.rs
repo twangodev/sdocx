@@ -36,9 +36,16 @@ struct NativePaintGroup {
     inkless_carrier: bool,
 }
 
+struct ProjectedPaintRun {
+    run: NativePaintRun,
+    first_line: usize,
+    clip: Option<NativeRunClip>,
+}
+
 pub(in crate::render) struct NativePaintDispatcher {
     plan: NativePaintPlan,
     groups: Vec<NativePaintGroup>,
+    groups_by_line: BTreeMap<usize, Vec<usize>>,
     target: NativePaintTarget,
 }
 
@@ -193,42 +200,53 @@ impl NativePaintDispatcher {
             &clips,
         )
         .and_then(|runs| {
-            runs.into_iter()
-                .map(|(run, clip)| {
-                    let spans = if target.retain_text {
-                        vec![carrier_span(&plan, styled, &run, theme)?]
-                    } else {
-                        svg_spans(&plan, styled, &clusters, &run, theme)?
-                    };
+            let mut groups = Vec::with_capacity(runs.len());
+            let mut groups_by_line: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+            for ProjectedPaintRun {
+                run,
+                first_line,
+                clip,
+            } in runs
+            {
+                let spans = if target.retain_text {
+                    vec![carrier_span(&plan, styled, &run, theme)?]
+                } else {
+                    svg_spans(&plan, styled, &clusters, &run, theme)?
+                };
+                #[cfg(feature = "pdf")]
+                let retained = target
+                    .retain_text
+                    .then(|| bridge.block(&run))
+                    .transpose()
+                    .map_err(|_| ())?;
+                #[cfg(feature = "pdf")]
+                let inkless_carrier = target.retain_text
+                    && run.glyphs.iter().all(|glyph| {
+                        run.face
+                            .glyph_ink_bounds(glyph.glyph_id)
+                            .is_ok_and(|bounds| bounds.is_none())
+                    });
+                groups_by_line
+                    .entry(first_line)
+                    .or_default()
+                    .push(groups.len());
+                groups.push(NativePaintGroup {
+                    run,
+                    clip,
+                    spans,
                     #[cfg(feature = "pdf")]
-                    let retained = target
-                        .retain_text
-                        .then(|| bridge.block(&run))
-                        .transpose()
-                        .map_err(|_| ())?;
+                    retained,
                     #[cfg(feature = "pdf")]
-                    let inkless_carrier = target.retain_text
-                        && run.glyphs.iter().all(|glyph| {
-                            run.face
-                                .glyph_ink_bounds(glyph.glyph_id)
-                                .is_ok_and(|bounds| bounds.is_none())
-                        });
-                    Ok(NativePaintGroup {
-                        run,
-                        clip,
-                        spans,
-                        #[cfg(feature = "pdf")]
-                        retained,
-                        #[cfg(feature = "pdf")]
-                        inkless_carrier,
-                    })
-                })
-                .collect::<Result<Vec<_>, ()>>()
+                    inkless_carrier,
+                });
+            }
+            Ok((groups, groups_by_line))
         });
         match groups {
-            Ok(groups) => Some(Self {
+            Ok((groups, groups_by_line)) => Some(Self {
                 plan,
                 groups,
+                groups_by_line,
                 target,
             }),
             Err(()) => {
@@ -247,11 +265,8 @@ impl NativePaintDispatcher {
         theme: RenderTheme,
         renderer: &TextRenderer<'_>,
     ) {
-        for group in self
-            .groups
-            .iter_mut()
-            .filter(|group| group.run.first_line == line_index)
-        {
+        for &index in self.groups_by_line.get(&line_index).into_iter().flatten() {
+            let group = &mut self.groups[index];
             let origin = [
                 f64::from(group.run.origin[0]) + self.plan.translation[0],
                 f64::from(group.run.origin[1]) + self.plan.translation[1],
@@ -383,7 +398,7 @@ fn project_groups(
     visible_lines: &[bool],
     viewport: Option<Viewport>,
     clips: &[Option<NativeRunClip>],
-) -> Result<Vec<(NativePaintRun, Option<NativeRunClip>)>, ()> {
+) -> Result<Vec<ProjectedPaintRun>, ()> {
     let mut windows: Vec<Range<usize>> = Vec::new();
     for (line, visible) in layout.lines.iter().zip(visible_lines) {
         if !visible || line.line.source.is_empty() {
@@ -449,11 +464,11 @@ fn project_groups(
             {
                 return Err(());
             }
-            let mut projected = run.clone();
-            projected.source = styled.index.source(source).ok_or(())?;
-            projected.first_line = first_line;
-            projected.glyphs = glyphs;
-            groups.push((projected, *clip));
+            groups.push(ProjectedPaintRun {
+                run: run.project(styled.index.source(source).ok_or(())?, glyphs),
+                first_line,
+                clip: *clip,
+            });
         }
     }
     Ok(groups)

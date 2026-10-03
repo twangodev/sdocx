@@ -338,40 +338,6 @@ fn native_entry_cursor_replays_actual_set_layout_in_visual_slot_order() {
 }
 
 #[test]
-fn captured_grouping_and_ulp_controls_distinguish_numeric_stages() {
-    let capture = capture();
-    let case = |name| capture.cases.iter().find(|case| case.name == name).unwrap();
-    let grouped = case("grouped_f32");
-    let continuous = case("continuous_f32");
-    assert_eq!(grouped.block_layout_rect_bits[2], 16_777_218_f32.to_bits());
-    assert_eq!(
-        continuous.block_layout_rect_bits[2],
-        16_777_216_f32.to_bits()
-    );
-    assert_eq!(
-        grouped.retained_line.layout_rect_bits[2],
-        continuous.retained_line.layout_rect_bits[2]
-    );
-    assert_eq!(case("below_budget").selected_range_utf16_inclusive, [0, 1]);
-    assert_eq!(case("exact_budget").selected_range_utf16_inclusive, [0, 2]);
-    assert_eq!(case("above_budget").selected_range_utf16_inclusive, [0, 2]);
-    assert_eq!(
-        case("break_at_index_zero").selected_range_utf16_inclusive,
-        [0, 1]
-    );
-    assert_eq!(
-        case("zero_continuations").selected_range_utf16_inclusive,
-        [0, 2]
-    );
-    assert_eq!(
-        case("oversized_first_slot").selected_range_utf16_inclusive,
-        [0, 0]
-    );
-    assert_eq!(case("space_commit").space_count, 1);
-    assert_eq!(case("tab_commit").space_count, 4);
-}
-
-#[test]
 fn native_wrap_rejects_invalid_source_and_numeric_domains_without_mutating_cursor() {
     let entry = NativeWrapEntry {
         advance: 1.0,

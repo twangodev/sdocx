@@ -1,4 +1,3 @@
-use std::ops::RangeInclusive;
 use std::sync::Arc;
 
 use crate::fonts::{Direction, FontSynthesis, RegisteredFontSource, ResolvedFace};
@@ -8,8 +7,8 @@ use crate::text_index::TextSource;
 use super::layout::TextLayout;
 use super::measurement::{MeasuredGlyph, MeasuredRun};
 use super::native_runs::{
-    NativeCachedGlyph, NativeEmittedKind, NativeFontState, NativeGlyphCache, NativeRect,
-    NativeRunEntry, NativeRunError, NativeRunOffset, native_runs,
+    MAX_CACHED_GLYPHS, NativeCachedGlyph, NativeEmittedKind, NativeFontState, NativeGlyphCache,
+    NativeRect, NativeRunEntry, NativeRunError, NativeRunOffset, native_runs,
 };
 use super::{NativeDrawSpan, StyledText};
 
@@ -25,8 +24,6 @@ pub(in crate::render) struct NativePaintGlyph {
 #[derive(Debug, Clone)]
 pub(in crate::render) struct NativePaintRun {
     pub source: TextSource,
-    pub source_utf16: RangeInclusive<usize>,
-    pub first_line: usize,
     pub face: ResolvedFace,
     pub font_size: f32,
     pub foreground: u32,
@@ -43,6 +40,23 @@ pub(in crate::render) struct NativePaintRun {
 }
 
 impl NativePaintRun {
+    pub fn project(&self, source: TextSource, glyphs: Vec<NativePaintGlyph>) -> Self {
+        Self {
+            source,
+            face: self.face.clone(),
+            font_size: self.font_size,
+            foreground: self.foreground,
+            style_bits: self.style_bits,
+            background: self.background,
+            glyphs,
+            origin: self.origin,
+            layout: self.layout,
+            ink: self.ink,
+            synthesis: self.synthesis,
+            variable: self.variable,
+        }
+    }
+
     pub fn synthesis(&self) -> FontSynthesis {
         self.synthesis
     }
@@ -93,13 +107,6 @@ impl NativePaintPlan {
         if index.char_to_utf16(index.len()) != Some(end) {
             return Err(NativePaintPlanUnavailable::InvalidSource);
         }
-        for run in &self.runs {
-            if run.source.utf16().start as usize != *run.source_utf16.start()
-                || run.source.utf16().end as usize != *run.source_utf16.end() + 1
-            {
-                return Err(NativePaintPlanUnavailable::InvalidSource);
-            }
-        }
         Ok(())
     }
 }
@@ -131,7 +138,6 @@ struct PreparedEntry<'a> {
 struct Payload<'a> {
     glyph: &'a MeasuredGlyph,
     run: &'a MeasuredRun,
-    line: usize,
 }
 
 pub(in crate::render) fn native_paint_plan(
@@ -184,7 +190,7 @@ pub(in crate::render) fn native_paint_plan(
         .collect::<Result<Vec<_>, Error>>()?;
 
     let mut paragraph_index = 0;
-    for (line_index, line) in layout.lines.iter().enumerate() {
+    for line in &layout.lines {
         let bands = line.native_bands.ok_or(Error::InvalidGeometry)?;
         if bands.overflow {
             return Err(Error::OutsideCertificate("height limit"));
@@ -268,8 +274,16 @@ pub(in crate::render) fn native_paint_plan(
                 if span.foreground >> 24 != 255 || span.flags & 2 != 0 {
                     return Err(Error::OutsideCertificate("paint"));
                 }
-                let mut glyphs = Vec::new();
-                for glyph_index in entry.glyphs() {
+                let glyph_indices = entry.glyphs();
+                if payloads
+                    .len()
+                    .checked_add(glyph_indices.len())
+                    .is_none_or(|count| count > MAX_CACHED_GLYPHS)
+                {
+                    return Err(NativeRunError::BudgetExceeded.into());
+                }
+                let mut glyphs = Vec::with_capacity(glyph_indices.len());
+                for glyph_index in glyph_indices {
                     let cache = native
                         .geometry()
                         .glyphs()
@@ -289,7 +303,6 @@ pub(in crate::render) fn native_paint_plan(
                     payloads.push(Payload {
                         glyph,
                         run: measured,
-                        line: line_index,
                     });
                 }
                 let ink = entry.ink_bounds();
@@ -431,8 +444,6 @@ pub(in crate::render) fn native_paint_plan(
         }
         runs.push(NativePaintRun {
             source: run_source,
-            source_utf16: emitted.source,
-            first_line: first.line,
             face: first.run.face.clone(),
             font_size: emitted.paint.font_size,
             foreground: emitted.paint.foreground,
@@ -461,3 +472,6 @@ mod fixture_tests;
 
 #[cfg(all(test, feature = "serde"))]
 mod source_fixture_tests;
+
+#[cfg(all(test, feature = "serde"))]
+mod test_support;

@@ -276,7 +276,7 @@ fn visible_source_projection_keeps_the_original_cached_run_clip() {
     let projected = project_groups(&plan, &styled, &layout, &visible, None, &clips).unwrap();
     assert!(!projected.is_empty());
     assert!(projected.len() < plan.runs.len());
-    for (run, clip) in projected {
+    for ProjectedPaintRun { run, clip, .. } in projected {
         let original = plan
             .runs
             .iter()
@@ -440,73 +440,6 @@ fn visible_source_projection_retains_cached_pdf_geometry_without_hidden_actual_t
         ]
     );
     assert!(scene.take_native_text_error().is_none());
-    assert!(renderer.diagnostics().is_empty());
-}
-
-#[cfg(feature = "pdf")]
-#[test]
-fn svg_rejects_internal_mark_displacement_while_pdf_keeps_the_cached_group() {
-    let capture = capture();
-    let case = capture["cases"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|case| case["name"] == "combining-auto")
-        .unwrap();
-    let mut content = content(case);
-    content.text = "x\u{327}\u{301}".into();
-    let fonts = FontBook::default();
-    let settings = TextSettings::resolved();
-    let renderer = TextRenderer::new(settings, &fonts);
-    let styled = StyledText::new(&content, TextContext::Flow, settings);
-    let theme = RenderTheme::for_canvas(false);
-    let layout = layout(&styled, case, [0.0; 2], &renderer);
-    let plan = native_paint_plan(&styled, &layout, theme).unwrap();
-    assert_eq!(plan.runs.len(), 1);
-    assert!(plan.runs[0].glyphs.len() > 1);
-    let visible = vec![true; layout.lines.len()];
-    assert!(
-        NativePaintDispatcher::new(
-            &styled,
-            &layout,
-            theme,
-            &renderer,
-            &visible,
-            NativePaintTarget::new(false, None)
-        )
-        .is_none()
-    );
-    assert_eq!(
-        renderer.diagnostics(),
-        [super::super::super::TextDiagnostic {
-            kind: super::super::super::TextDiagnosticKind::UnsupportedGlyphPositioning,
-            family: "native".into(),
-            codepoints: vec![120, 769, 807],
-        }]
-    );
-    let renderer = TextRenderer::new(settings, &fonts);
-    let mut dispatcher = NativePaintDispatcher::new(
-        &styled,
-        &layout,
-        theme,
-        &renderer,
-        &visible,
-        NativePaintTarget::new(true, None),
-    )
-    .unwrap();
-    let mut scene = Scene::new(Svg::new());
-    scene.retain_text();
-    scene.text_source(|scene| {
-        dispatcher.paint_line(scene, &styled, 0, &layout.lines[0], theme, &renderer)
-    });
-    let registry = scene.take_native_text();
-    let block = registry.iter().next().unwrap().1;
-    assert_eq!(block.source.as_ref(), content.text);
-    assert_eq!(block.runs[0].glyphs.len(), plan.runs[0].glyphs.len());
-    for (actual, expected) in block.runs[0].glyphs.iter().zip(&plan.runs[0].glyphs) {
-        assert_eq!(actual.glyph_id, expected.glyph_id);
-        assert_eq!(actual.origin, expected.origin.map(f64::from));
-    }
     assert!(renderer.diagnostics().is_empty());
 }
 

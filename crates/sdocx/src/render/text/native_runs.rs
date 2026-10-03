@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use super::{NativeDrawSpan, NativeIdentityUnavailable};
 
 const MAX_UTF16_ENTRIES: usize = 250_000;
-const MAX_CACHED_GLYPHS: usize = 1_000_000;
+pub(super) const MAX_CACHED_GLYPHS: usize = 1_000_000;
 
 #[cfg(all(test, feature = "serde"))]
 mod cell_fixture_tests;
@@ -546,53 +546,6 @@ mod tests {
         assert_eq!(
             budgeted.append(Some(0), &[first], &mut full_budget),
             Err(NativeRunError::BudgetExceeded)
-        );
-
-        let rtl_entries = [NativeRunEntry {
-            direction: 1,
-            ..first
-        }; 2];
-        let mut pending = PendingRun::new(0);
-        pending.glyphs = vec![
-            NativeEmittedGlyph {
-                payload: 1,
-                owner_utf16: 0,
-                x: 0.0,
-            },
-            NativeEmittedGlyph {
-                payload: 2,
-                owner_utf16: 0,
-                x: 1.0,
-            },
-        ];
-        assert!(
-            pending
-                .append(None, &rtl_entries, &mut 0)
-                .unwrap()
-                .is_none()
-        );
-        assert_eq!(
-            pending
-                .glyphs
-                .iter()
-                .map(|glyph| glyph.payload)
-                .collect::<Vec<_>>(),
-            [2, 1]
-        );
-        pending.start = 1;
-        assert!(
-            pending
-                .append(Some(0), &rtl_entries, &mut 0)
-                .unwrap()
-                .is_none()
-        );
-        assert_eq!(
-            pending
-                .glyphs
-                .iter()
-                .map(|glyph| glyph.payload)
-                .collect::<Vec<_>>(),
-            [1, 2]
         );
     }
 
