@@ -14,11 +14,13 @@ ELF virtual addresses, not file offsets. The libraries are the APK copies in
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `libc++_shared.so` | `4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4` |
 
-Serialization, Model template normalization and Drawing dispatch were
-inspected statically. Native execution covers the named Skia path route and
-the separate Model numeric arc helper below; no paired Samsung appearance
-comparison is asserted here.
+Serialization, named template and Drawing dispatch were inspected statically.
+Native execution covers Skia paths, the separate Model arc helper, and common
+template normalization with actual Path storage and bounds below. Saved binary
+and co-edit loading, named Arc fill generation and paired Samsung appearance
+remain unexecuted.
 The [shape and line findings](shape-line-findings.md) describe enclosing
 frames and the rotated saved path; [outline findings](shape-style-findings.md)
 describe paint, dashes and arrows. This document concerns command identity,
@@ -247,8 +249,11 @@ unless its start matches the preceding supported segment endpoint
 (`0x20c0ac–0x20c114`, `0x20c188–0x20c1c4`). For a preceding move or line,
 each `f32` absolute coordinate difference is widened to double and must be
 strictly less than the `f64` constant `0.0005` at `0x12d490`; a match rewrites
-the preceding point to the arc start (`0x20c10c–0x20c110`). For a preceding
-quadratic or cubic, its endpoint must match exactly as `f32`
+the preceding point to the arc start
+(`0x20bf60–0x20bf68`, `0x20c10c–0x20c110`). The earlier matching prepass
+occurs before output copying, so the first installed path also contains the
+snapped point. For a preceding quadratic or cubic, its endpoint must match
+exactly as `f32`
 (`0x20c194–0x20c1ac`). This normalization therefore
 has different contour linking from directly feeding the original arc verb
 to Drawing's force-move consumer.
@@ -258,8 +263,8 @@ Positive sweep exactly 360 is replaced with
 close (`0x20bd9c–0x20bdc4`, `0x20c204–0x20c214`). Oval uses start 0 and the
 same near-360 sweep before adding close (`0x20be1c–0x20be2c`). The Model
 point builder has its own elliptical and circular branches; it is not a
-call to the bundled Skia rectangle-arc helper. Equivalence of their
-quadratic coordinates is not established here.
+call to the bundled Skia rectangle-arc helper. Their quadratic coordinates
+differ in the captured ellipse case below.
 
 The arc call also changes the rectangle interpretation: it loads the first
 four runtime floats `(a, b, c, d)` but supplies `(a, b, a+c, b+d)` to the
@@ -280,8 +285,26 @@ shape template (`0x2121a0`) and invokes its load slot (`0x3abefc–0x3abf14`).
 That slot is `0x2122a8`, which calls the common loader at `0x2122cc`.
 The vtable identity is backed by relative relocations at `0x4a41f0`
 (pointing to `0x48f5c8`) and `0x48f5e8` (pointing to `0x2122a8`).
-Normalization precedes the optional negative-angle coordinate rotation at
-`0x20c278–0x20c298`.
+The preceding JNI route copies Java type and six float fields directly into
+28-byte native segments (`0x31a9a4–0x31aa9c`); it does not flatten primitives.
+Public `SetPath` obtains native input bounds and passes angle 0, flips 0 and
+input-frame bit 0 (`0x3abefc–0x3abf14`). Ordinary saved loading instead passes
+saved bounds/angle/flips and input-frame bit 1 (`0x3a95a0–0x3a95c0`).
+
+Common loading stores/sorts bounds and toggles flip state for reversed axes
+before expansion (`0x20bb3c–0x20bbd0`); this is not immediate point reflection.
+With input-frame bit 1, expanded geometry is rotated by negative saved angle
+(`0x20c278–0x20c298`). Installer `0x20c688` keeps that base outline at
+implementation offset 32 and rotates a separate display copy by positive angle
+at offset 24. Saved path writing retrieves this display copy (`0x3a8e64`),
+so negative rotation is not the final displayed transform.
+
+A conditional co-edit saved-load branch (`0x3a94a8–0x3a94d4`) invokes wrapper
+`0x20b9cc`: after virtual loading it replaces only the display outline with
+a copy of the caller's original segments (`0x20ba04–0x20ba60`), including
+source mutations. This supplies a concrete static producer route retaining
+raw Arc/Oval beside a normalized base path. It does not describe every co-edit
+file or prove that this transient load context is encoded in saved path bytes.
 
 The general template rotation helper (`0x20c968`) itself rotates the two
 rectangle corner pairs of an unexpanded arc or oval. Arc's start/sweep
@@ -290,6 +313,48 @@ representation of a rotated ellipse. The reached preprocessing route avoids
 retaining those verbs there; it does not certify every template producer or
 arbitrary manually supplied runtime path. Existing saved rotation must not
 be applied a second time merely because a path retains its angle metadata.
+
+## Executed normalization, mutation and native bounds
+
+Two temporary probes execute actual common template/Path constructors, loader,
+base/display storage and getters, plus bundled libc++ recursive-mutex lifecycle.
+Each of twelve cases loads one native input Path twice into one template, then
+into a fresh template reusing that same Path. Used command fields agree across
+five fresh memory fills and independent strict-compiled replays. Generated
+unused Move/Quad/Close slots vary with allocation fill and are omitted.
+
+| Captured input | Installed output |
+| --- | --- |
+| Arc `(10,20,200,100,0,360)` | First load: Move, eight Quad, Close; subsequent loads: no Close |
+| Move/Line endpoint `(209.99969482421875,70)` before quarter Arc | Source and first output endpoint snap to `(210,70)`; no new Move |
+| Move endpoint `(209.99940490722656,70)` before same Arc | Separate Move added; no snap |
+| Close followed by Arc; consecutive Arcs | Arc inserts a new Move in both cases |
+| Oval followed by explicit Close | Generated Close and supplied Close both remain |
+
+The first full-turn load mutates the caller's sweep to `359.989990234375`.
+Close disappears even with the fresh template, proving a reused input Path
+carries this state. Native const-qualified loading is not an immutable geometry
+contract. Supplied flip flags and reversed caller bounds change stored flag
+state without reflecting the captured expanded outline.
+
+The second probe also executes `GetBounds` and `Path::Refresh`. Fresh raw
+Arc/Oval-only input returns zero bounds before and after Refresh. Native bounds
+use generated Bezier records (`0x2f274c–0x2f2800`); raw verbs 5 and 7 do not
+contribute curves in `UpdateBezier` (`0x2f1a04`). With a preceding line, bounds
+built before loading retain right edge `209.99969482421875` after source snapping;
+Refresh (`0x2f0ee4`) recomputes it as 210. These source mutations do not invalidate
+an existing Bezier cache. They are not bounds of the expanded display path.
+
+Temporary probe SHA-256 values are
+`776776f1909a42e2a99295adbd45d215ad1367947d3ff46ac53b95cae27ac1be`
+(`/tmp/sdocx-native-shape-producer.json`) and
+`521aaf117c5cd945a52acc7f90ecdb27e55fc2eb25bde711eedcd905c1f3152c`
+(`/tmp/sdocx-native-shape-producer-bounds.json`). These are separate from the
+reusable primitive fixture below. Caller bounds, angle, frame and flips are
+explicit inputs, not decoded file state. Host boundaries are bounded allocation,
+memory, single-thread pthread operations and the verified Linux math library;
+bounds additionally reach `f64` `pow` and `acosf`. Saved loading, co-edit dispatch,
+named template postprocessors, serialization and Drawing do not execute.
 
 ## Executed Model helper and named Arc template
 
@@ -312,9 +377,19 @@ Reached external functions were `memcpy`, `atan2f`, `tanf`, `sincosf` and
 `f64` `sincos` from the runtime-hash-verified host math library above.
 Base rotation widens the angle, computes degree conversion and rotation with
 `f64` operations including fused multiply-add, then narrows to `f32`.
-Neither the common template loader nor named Arc template/fill dispatch was
-executed. These inputs are direct helper bounds, not serialized Arc fields;
-they do not settle the normalization route's extent interpretation.
+Named Arc template/fill dispatch was not executed. These helper inputs are
+direct bounds, not serialized Arc fields; they do not settle the normalization route's extent interpretation.
+
+The ordered ellipse `(10,20,210,120)`, start 37, sweep 123 also demonstrates
+a different angle contract. Model returns first point
+`(165.28851318359375,111.66287231445312)` and two quadratics; bundled Skia
+returns `(189.86355590820312,100.09075164794922)` and three. Model's point lies
+on the center's 37-degree polar ray, whereas Skia's axis-scaled sine/cosine
+point has polar angle about 20.645 degrees. Model's ellipse branch intersects
+the angle's ray using `tanf`/root arithmetic, then converts coordinates using
+`atan2f` (`0x2119f8–0x211a30`, `0x211c40`, `0x211c84`). This is a geometric
+contract difference, beyond float rounding; arbitrary inverted/degenerate
+rectangles are not covered by this paired case.
 
 Static named `ObjectShapeTemplateArc` generation (`0x2243cc`) calls that
 Model helper (`0x2244dc`) and builds an open outline using one move followed
@@ -323,7 +398,12 @@ The class identity is backed by RTTI name `0x1636be` and vtable `0x48fcb0`.
 Its separate fill builder (`0x224130`) copies the outline, appends a line to
 the bounds' center, then close (`0x2241e4–0x224214`), and installs fill index 0
 with type 1 (`0x22422c–0x22423c`). Named shape identity, saved command identity
-and generated fill geometry are therefore distinct.
+and generated fill geometry are therefore distinct. Fill refresh requests the
+zero-angle getter (`0x224c58–0x224c88`), which returns the base outline
+(`0x20d6b8–0x20d6c0`), then the common fill setter creates a separate rotated
+display fill. The conditional co-edit wrapper replaces only the display
+outline; its dedicated fill can remain derived from normalized base geometry.
+That split is statically established, not an executed co-edit result.
 
 Drawing's solid-color shape branch retrieves each dedicated
 `ObjectShape::GetFillPath`, converts its segments and draws it
@@ -372,3 +452,5 @@ not be transformed as an endpoint pair; contour-start and implicit-close
 semantics must remain explicit. Native quadratic expansion can serve SVG
 and PDF without a raster intermediate. Saved command precision, native
 runtime precision and output decimal precision remain separate contracts.
+Native normalization can mutate caller coordinates and cached bounds
+independently of retained source bytes.
