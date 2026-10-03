@@ -417,6 +417,14 @@ temporary output (`0x7cab0–0x7cad4`, `0x7ccb0`). This last route is statically
 traced, rather than executed by the cached Import capture: a fresh output does
 not itself provide a fresh parsed source.
 
+At the unprotected final-save branch, Standard list/single `saveFile`
+(`0x35a99c`, `0x35dee4`) reaches RasterDelegateX `savePDF` and slot 184
+(`0x357cc4`). Vector `savePDF` calls `PdfDocumentAdapter::Save`
+(`0x361598`, `0x343d14`), then `PdfExporter::Save` (`0xa8820`) and the same
+slot. Relocation `0xb1030` resolves it to `PDFExport::Save()`. These concrete
+callers establish final Save dispatch separately from ranged Export; they do
+not establish an additional ranged import/repair stage in ordinary note save.
+
 ## Source size controls the overlay scale
 
 The imported-page operation receives no requested output width or height.
