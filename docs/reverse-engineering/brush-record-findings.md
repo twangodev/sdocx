@@ -141,9 +141,10 @@ This result concerns this wrapper, not every plugin or multi-object renderer.
 These static paths support retaining `group_id` independently of geometry and
 physical children. They do not justify merging strokes into one SVG opacity
 group by UUID. They also do not establish a metadata-only role throughout the
-app or grouped-stroke appearance parity. Deferred queue flushing and other
-plugins' multi-stroke behavior remain separate boundaries; the recovered
-[pen-opacity controls](pen-opacity-findings.md) still apply independently.
+app or grouped-stroke appearance parity. The recovered
+[Painting continuation and watercolor list composition](painting-source-findings.md#saved-wetdry-continuation-changes-shared-brush-composition)
+use saved settings and shared coverage independently of UUID boundaries.
+Other plugins and [pen-opacity controls](pen-opacity-findings.md) remain separate.
 
 ## Painting stores source and preview resources separately
 

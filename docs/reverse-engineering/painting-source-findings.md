@@ -19,6 +19,10 @@ The extracted ARM64 libraries were compared byte-for-byte against the APK entrie
 | `lib/arm64-v8a/libSPenPaintingCompat.so` | `fb2f8cd46c45cc4b6ef79f7e7d45c7eac9f12583bfc70ff48e1244f9c861d4a8` |
 | `lib/arm64-v8a/libSPenPaintingCore.so` | `56b386228e9b4217a08e16afd7d8f65482bc6e66e4c76f0951a640e1a703c3fa` |
 | `lib/arm64-v8a/libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `lib/arm64-v8a/libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+| `lib/arm64-v8a/libSPenPenCommon.so` | `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d` |
+| `lib/arm64-v8a/libSPenRenderer.so` | `f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed` |
+| `lib/arm64-v8a/libSPenWaterColorBrush.so` | `ae17e7e63abdc0f5bac9ef4d78676d096779f3586f41c88b029dacfa157020ea` |
 | `lib/arm64-v8a/libc++_shared.so` | `4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4` |
 
 Native addresses below are ELF virtual addresses. Decompiled Java paths are
@@ -343,6 +347,63 @@ handles for undo/redo (`0x35a988`, `0x35a99c`). `PackObjectHandleList`,
 stroke serializer. These references can retain live objects after removal from
 the active layer. The generic manager's save/load/filename APIs return false,
 so this runtime undo state does not establish serialized vector history.
+
+## Saved wet/dry continuation changes shared brush composition
+
+Compat `commitStroke(bool,bool)`, `0x76268`, records continuation when its first
+boolean is true and the saved stroke color equals the current pen color
+(`0x76398–0x763bc`): it copies advanced settings, appends `WETDRY` (`0x763f4`),
+saves the string/millisecond mode and appends to the page (`0x76400–0x76420`),
+skipping terminal bitmap/history close-out. Pending finalization (`0x77214`)
+and the deferred callback `0x77330` supply first boolean false; the request
+supplies delay 500 (`0x76888`). The terminal merge selects
+the current layer and supplies paint alpha 1, clear-before-copy false
+(`0x5e204/0x5e218`), independently of the brush's internal color/coverage.
+
+Replay `initialWetDryObjectlist`, `0x60ff4`, derives run indices from saved
+settings and source positions. `DrawObjectStroke` computes dry from absent
+`WETDRY` or null settings (`0x64b24–0x64b34`). At a nonzero last sample
+(`0x64e34–0x64e40`), after successful `GetStrokeInfo`, wet retains dirty bounds;
+dry closes the floating result. Drawable bitmap type 1 selects the floating
+bitmap (`0x65398`); its terminal copy uses the **source stroke's layer ID** and
+helper `0x82c8c`, boolean false (`0x65034–0x65064`), then clears floating state
+and bounds (`0x65070/0x65078`). Type 2 instead draws into the requested layer
+(`0x653a0–0x653ac`). None of these controls supplies the common group UUID.
+
+Live alpha lock is separate: `onTouchDown` reads the current layer's lock,
+gated by action member 275 being zero (`0x75dfc–0x75e1c`), and saves
+`SetAlphaLock` (`0x76390`). `StartAlphaLock` captures the layer background;
+`FinishAlphaLock` draws its updated result with XFermode 8 (`0x6e094/0x6e0a4`).
+Replay supplies false to its helper's XFermode-8 selector; the live path does
+not establish saved replay alpha-lock parity.
+
+The [ordinary Drawing queue](brush-record-findings.md#sync-grouping-and-ordinary-drawing-have-distinct-controls)
+has a concrete multi-stroke consumer. Its drawable slot 48 binds WaterColor
+V1/V2 ObjectList redraw through relocations `0x760a8/0x761b8`, entering
+`0x62240/0x64248`. Each creates one callback/shared buffer before traversing
+strokes, reads separate point counts, XY, pressure and timestamps, and resets
+per-stroke geometry state; V2 reads `IsShape` (`0x643f0`). Pen size/color are
+queued once and the accumulated rectangle after the complete list.
+That `SetRect` task does not render: PenCommon's callback destructor `0x50424`
+queues buffer upload and `PenGLRenderMsg`; the message calls drawable slot 104
+for intersecting tiles (`0x46970`), bound to WaterColor `Draw`, `0x65a08`.
+
+This Draw uses one shared additive mask, then source-over color composition
+(`0x64e40/0x64e54`, `0x64df8/0x64e0c`; Renderer enum tables `0x308b8/0x30880`).
+Its color alpha is fused f32 `savedAlpha * f32(0.9) + f32(0.1)` (`0x65cdc`).
+In shader `0x52c7a`'s normal noneraser branch with positive mask red, green
+below 0.7 scales alpha toward a maximum of `0.8 * colorAlpha`; above threshold
+it holds that alpha and adds a mask-dependent RGB term. Nonpositive mask red
+is discarded; its eraser branch has a separate equation and original texture.
+
+Continuation/settings, source order/layer IDs, original channels, color and
+alpha lock therefore remain separate preservation inputs from regroup UUIDs.
+Rust's `StrokeStyle`, `StrokeRendering` and `StrokeProperties` already retain
+advanced-setting IDs/resolved strings and alpha lock. A uniform-opacity union
+or independent fill per stroke lacks this shared-coverage contract;
+retaining its source does not require adopting the native GPU/bitmap backend.
+Static findings do not establish appearance parity, universal plugin behavior,
+or a flush for malformed trailing wet runs.
 
 ## Anchor images checkpoint replay without replacing original strokes
 
