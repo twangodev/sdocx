@@ -181,6 +181,29 @@ current type 19 is admitted by the known-type mask `0x01cfe58f`; an original
 future-type child such as type 100 is a different case. This APK's skip branch
 does not establish that the format forbids opaque children.
 
+Already wrapped current type 19 can recover its original native type.
+`ReadDefaultObject_WDoc`, Model `0x358d58`, first decodes the wrapper, then
+retries its original binary/type when the stored original version is at most
+5500 and its original binary is non-null (`0x358e2c`–`0x358ea0`). The retry uses
+the enclosing loader's format-version argument, rather than substituting the
+stored original version. Successful recovery returns the reconstructed object;
+failed recovery retains the decoded wrapper (`0x358ea4`–`0x358ecc`,
+`0x359010`–`0x359030`). This routine does not merge current wrapper common data
+into the recovered original object. A type-19 envelope in source storage
+therefore need not remain type 19 in runtime; automatic recovery also does not
+establish preservation of the original envelope in a source model.
+
+Original and current hash trailers remain separate. The raw unknown reader
+passes the entire declared original binary to `NewApplyUnknownBinary`, without
+subtracting its trailer (`0x359074`–`0x35912c`). Normal WDoc saving reconstructs
+the current type-19 binary, then `WriteDefaultObject`, `0x354f78`, calculates
+the current runtime UUID/time hash and appends 32 bytes after that new binary
+(`0x3550c0`–`0x355174`). Thus an original trailer inside the copied opaque
+bytes can coexist with a newly generated current trailer outside the wrapper.
+Neither the new trailer nor the documented [logical integrity checks](integrity-findings.md)
+authenticate the copied opaque payload. This is a static reader/writer contract,
+not a complete archive round trip or proof of native integrity-policy behavior.
+
 Media preservation has a separate gate. `MediaFileManagerNew::Bind(int)` and
 `Release(int)` change metadata offset 24, the live binding count. `saveItem`,
 Model `0x28fe5c`, admits nonzero-count resources after validation; zero-count
@@ -205,10 +228,12 @@ establish preservation of every attachment referenced only by opaque own data.
 
 ## Precision and drawable output
 
-Saved WDoc points, rectangles and path bytes can contain `f64` values, while
-[native geometry reconstruction](stroke-rendering-findings.md#shared-preparation-and-replay)
-uses narrower arithmetic in specific drawing paths. Keeping source values and
-performing native drawing arithmetic are separate operations.
+Saved WDoc points, rectangles and path bytes can contain `f64` values.
+[Native stroke writing and restoration](object-transform-findings.md#compressed-format-loss-and-native-restoration-precision-are-separate)
+distinguish compressed-format loss, runtime float arithmetic and Rust's retained
+decoded values. Native drawing reconstruction has further
+[profile-specific arithmetic](stroke-rendering-findings.md#shared-preparation-and-replay).
+Source precision and drawable precision are separate boundaries.
 
 The [SVG adapter](../../crates/sdocx/src/render/vector/path.rs) uses the library's
 `f32` path parameters. Its `coordinate` helper first formats the requested
@@ -234,6 +259,18 @@ missing or unsupported retained text as export errors. That text safeguard does
 not certify geometry omitted before SVG carrier parsing. Generic imported SVG
 filters can also introduce rasterization; that separate compatibility output is
 bounded in the [output support table](../rendering-support.md#output-and-verification).
+
+Source inspection identifies a separate image-omission boundary in PDF export.
+Archive image admission owns bytes by filename extension without decoding them.
+The [PDF resolver](../../crates/sdocx/src/pdf.rs) validates PNG, but unreadable
+JPEG/WebP dimensions can make usvg omit an image node without setting the SDK's
+`InvalidImage` error. The bundled [image converter](../../crates/sdocx/src/pdf/svg/image.rs)
+also turns image-constructor rejection into `None`, whose
+[caller](../../crates/sdocx/src/pdf/svg/group.rs) ignores the result. These are
+source-observed rejection paths, without an executed malformed-image probe or
+evidence that a valid corpus image was dropped. Successful PDF generation alone
+does not verify transport of every retained image; original image bytes remain
+a separate preservation boundary.
 
 ## Diagnostic interpretation
 

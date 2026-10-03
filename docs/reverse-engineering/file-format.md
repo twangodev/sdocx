@@ -467,13 +467,16 @@ Known outer object type IDs:
 | 24 | attached file |
 | 100 | stroke group (logical/container type; skipped by this Java page writer) |
 
-The Rust stored-object model retains unrecognized type IDs and their payloads.
+The Rust stored-object model retains unrecognized type IDs, payload ranges and
+ordered children.
 
 Recognized outer object types without semantic decoders produce
 `UnsupportedObjectType` diagnostics with the page entry, raw type and payload
 offset. This includes undecoded container/group payloads even when their child
-records can be decoded. Payload bytes remain accessible through `StoredObject`,
-and child traversal continues. Unknown future IDs retain the separate
+records can be decoded. `StoredObject::payload(page_bytes)` borrows the matching
+original uncompressed page bytes; the stored model does not own them. See the
+[source ownership boundary](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).
+Child traversal continues. Unknown future IDs retain the separate
 `UnknownObjectType` diagnostic. Neither category implies that omitted content
 was rendered.
 
@@ -651,6 +654,10 @@ pressure/tilt/orientation, then add it to the previous value. Coordinates start
 at the stored absolute X/Y seed; the bounding box does not normalize them.
 The high byte also holds magnitude bits, so testing it only for `0x00` or
 `0x80` cannot determine where a channel ends. Use the declared point count.
+
+This describes encoded values;
+[native restoration and Rust decoded precision](object-transform-findings.md#compressed-format-loss-and-native-restoration-precision-are-separate)
+have distinct accumulation widths.
 
 The uncompressed ordering was rechecked directly in
 `ObjectStrokeBinaryHandler::NewApplyBinary` at `0x2ee9bc–0x2eea64` in the

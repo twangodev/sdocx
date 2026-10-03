@@ -46,7 +46,7 @@ index back through `ImageCommon::GetMediaId` at `0x2daf08`.
 `ObjectBaseImpl::GetCapturedThumbnailPath` at `0x2d7ed8` resolves offset 196
 through `ImageCommon::GetImagePath` at `0x2d7eec`.
 
-The current writer does not emit bit 1, although `GetOwnBinarySize` includes
+The [current writer does not emit bit 1](eraser-preservation-findings.md#legacy-rectangles-are-skipped-by-modern-native-loading-and-writing), although `GetOwnBinarySize` includes
 its `2 + count * 16` contribution at `0x2da8b4`–`0x2da8e4`. The SDK retains
 its raw records; its omission from this writer does not make it an empty field.
 
