@@ -33,6 +33,9 @@ mod parsed_cell_text;
 #[path = "native_table/page_text_ranges.rs"]
 mod page_text_ranges;
 
+#[path = "native_table/pdf_paper_predicates.rs"]
+mod pdf_paper_predicates;
+
 #[path = "native_table/text_paragraph_layout.rs"]
 mod text_paragraph_layout;
 
@@ -1177,7 +1180,10 @@ fn main() {
                     text_span_font_name::cell_measurement::capture_emission(&mut machine, paths)
                 }
                 "--text-cell-source-inputs" => {
-                    text_span_font_name::cell_measurement::capture_source_inputs(&mut machine, paths)
+                    text_span_font_name::cell_measurement::capture_source_inputs(
+                        &mut machine,
+                        paths,
+                    )
                 }
                 "--parsed-cell-text" => parsed_cell_text::capture(&mut machine, paths),
                 "--live-table-layout" => {
@@ -1187,7 +1193,10 @@ fn main() {
                     text_span_font_name::live_table_layout::capture_padding(&mut machine, paths)
                 }
                 "--live-column-widths" => {
-                    text_span_font_name::live_table_layout::capture_column_widths(&mut machine, paths)
+                    text_span_font_name::live_table_layout::capture_column_widths(
+                        &mut machine,
+                        paths,
+                    )
                 }
                 "--live-cell-images" => {
                     text_span_font_name::live_table_layout::capture_cell_images(&mut machine, paths)
@@ -1748,9 +1757,19 @@ fn main() {
             splits::capture(&mut machine, Path::new(&base_path));
             return;
         }
+        Some("--pdf-paper-predicates") => {
+            let base = std::env::args_os()
+                .nth(3)
+                .expect("libSPenBase.so path required");
+            let wdoc = std::env::args_os()
+                .nth(4)
+                .expect("libSPenWDoc.so path required");
+            pdf_paper_predicates::capture(&mut machine, Path::new(&base), Path::new(&wdoc));
+            return;
+        }
         None => {}
         _ => panic!(
-            "expected --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --table-background-transport, --widget-text-constructor, --text-cell-measurement, --text-cell-emission, --text-cell-source-inputs, --parsed-cell-text, --live-table-layout, --live-table-padding, --live-column-widths, --live-cell-images, --live-table-text-clipping, --bodytext-table-placement, --bodytext-table-placement-one-page-zero-height, --bodytext-table-placement-one-page-native-obstacles, --bodytext-page-ranges, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-object-feedback, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
+            "expected --pdf-paper-predicates, --table-drawn-bounds, --cell-model-callbacks, --table-clone-origin, --table-background-transport, --widget-text-constructor, --text-cell-measurement, --text-cell-emission, --text-cell-source-inputs, --parsed-cell-text, --live-table-layout, --live-table-padding, --live-column-widths, --live-cell-images, --live-table-text-clipping, --bodytext-table-placement, --bodytext-table-placement-one-page-zero-height, --bodytext-table-placement-one-page-native-obstacles, --bodytext-page-ranges, --cell-model-lifecycle, --cell-drawing, --code-layout, --page-text-ranges, --text-paragraph-layout, --border-paths, --drawing-borders, --backgrounds, --column-minima, --cold-frames, --merge-cells, --cold-rows, --warm-rows, --measured-geometry, --row-splits, --row-bottom, --warm-control, --cell-inputs, --cell-model-bounds, --lifecycle, --clipping, --export-clipping, --text-clipping, --text-clip-paths, --text-bounds, --text-context-windows, --text-wrap-numeric, --text-object-feedback, --text-runs, --text-ownership, --text-cached-runs, --text-cached-ownership, --text-owner-bases, --font-metadata, --font-language, --font-source, --font-registry, --text-shaping, --text-shaping-numeric, --text-shaping-gpos, --text-shaping-skia-metrics, --text-shaping-mixed-scripts, --text-shaping-entry-skia-metrics, --text-shaping-itemization, --text-span-paint, --text-span-font-name, --text-shaping-named-faces, --text-shaping-consumer-metrics, --text-entry-geometry, --text-span-identity, --text-span-binary, --text-decorations, --text-background-theme, --text-measurement-join, --text-object-background, --text-predefined-style, --text-object-runs, --text-cached-object-runs, --text-object-export-policy, --text-pdf-alpha, --grid-admission or no capture mode"
         ),
     }
     let mut cases = Vec::new();
