@@ -96,6 +96,15 @@ annotation/tag preservation, arbitrary PDF compatibility and conforming
 PDF/A/PDF/UA imports remain outside that proof. Content preservation is not a
 byte-identical copy of the entire source file.
 
+The [PDF vector transport findings](reverse-engineering/pdf-vector-transport-findings.md)
+extend this with adversarial source properties. Tested shading, patterns and
+vector soft masks survive, but Form import changes page transparency-group
+semantics and omits annotation appearances and optional-content configuration.
+Resource numbers are rewritten, and successful serialization can omit
+undecodable streams. Original resource retention and derived export capability
+therefore remain separate contracts; matching content operators alone does not
+certify complete transport.
+
 ## SVG is a separate conversion boundary
 
 The installed usvg 0.47 has no PDF image kind; putting PDF bytes into the current
