@@ -125,6 +125,66 @@ The checks occur at `0x8640c`, `0x86424`–`0x8642c`, `0x86434`–`0x8643c`,
 at `0x86508`. This object-local processed-image cache is separate from the
 [document canvas cache](document-image-cache-findings.md).
 
+## Ordinary image effect paths differ from image-filled vector shapes
+
+`ShapePathFactory::CreateShapePathType`, `0x8b66c`, selects the saved shape
+path for type 7, but `ImagePathType` for types 2/3. Its `GetPath`, `0x8bc98`,
+synthesizes six segments from `GetRect` and `GetRotation`: move, four lines
+including return to the first corner, then close (`0x8bd30`–`0x8be20`). It
+does not read the inherited saved custom path or the coedit attribute path.
+The standard type-3 shape-effect route therefore does not establish a custom
+outline mask for the subsequent ordinary image pixel draw.
+
+Generic `ShapeDrawingFillEffect::SetFillImageEffect`, `0x9c558`, returns true
+immediately for type 3 at `0x9c584`–`0x9c594`. Its freshly initialized
+prepared-canvas pointer is null (`0x9c14c`–`0x9c154`); `DrawEffectImage`
+returns false without that pointer (`0x9cf60`–`0x9cf64`, `0x9d164`). The
+surrounding path-effect method still draws a visible outline. For admitted
+non-image objects, image-fill setup instead prepares a source-sized canvas.
+
+For a type-7 image fill, stretch mode clips the supplied vector path on a
+temporary canvas before changing the bitmap matrix: clip-operation value 5,
+antialias false (`0x9d20c`, `0x9d4c0`). It draws the whole prepared bitmap
+with a null source rectangle, restores, then composites at the rotated-bounds
+origin (`0x9d2d4`–`0x9d2fc`, `0x9d550`–`0x9d578`). The clip is local to this
+fill. Tile mode draws the same vector path with a bitmap shader, without an
+explicit clipPath call (`0x9d0ac`–`0x9d120`, `0x9d364`–`0x9d3b0`); both
+shader tile-mode arguments are 1. These numeric Skia operations are recorded
+literally here. The generic fill draw does not read ordinary crop,
+OriginalRect or nine-patch settings; its supplied cache pixels may already
+have been processed.
+
+Generic setup truncates float rotation toward zero to a signed integer
+before computing rotated bounds (`0x9c66c`–`0x9c680`). Rotatable stretch uses
+the unrotated object bounds; nonrotatable stretch uses the actual SkPath
+bounds (`0x9c6f0`–`0x9c764`, `0x9d3b8`–`0x9d4b8`). An axis whose stretch
+offsets sum strictly above 1 is reflected. The clip precedes the reflected
+and rotated bitmap matrix (`0x9d214`–`0x9d28c`, `0x9d4dc`–`0x9d508`).
+Tile setup multiplies saved scales by f32 `0.01` (`0x9c7ac`, `0x9c7b8`);
+rotatable tiles anchor to the unrotated rectangle and use integer rotation,
+while nonrotatable tiles anchor to actual path bounds without that rotation.
+
+Generic fill alpha uses one fused f32 `255 - transparency * 255`, unsigned
+conversion toward zero, then `SkPaint::setAlpha`, without an explicit clamp
+(`0x9d08c`–`0x9d094`, `0x9d2a0`–`0x9d2ac`, `0x9d344`–`0x9d34c`,
+`0x9d51c`–`0x9d528`). Skia `0x1cac70` inserts only the argument's low eight
+bits. This differs from the ordinary image pixel alpha contract below;
+nonfinite inputs remain unexecuted.
+
+## Crop editing updates separate rectangles and invalidates cached pixels
+
+Model `ObjectImage::CropImage`, `0x420644`, compares and, when changed,
+updates its second argument as crop Rect first, its first as OriginalRect
+second, and its third through the displayed RectF setter last (`0x420734`,
+`0x4207b8`, `0x42085c`–`0x420878`).
+Earlier setter failure exits before later updates, with no rollback here.
+It neither derives the integer rectangles from display bounds nor changes
+fill stretch/tiling settings. `ObjectShapeImage::SetCropRect` clears the
+cache (`0x3b3dd4`–`0x3b3dec`); `SetOriginalRect` stores its rectangle and
+marks changed without clearing it (`0x3b3e58`–`0x3b3e68`). `GetCacheImage`
+returns an existing bitmap or loads its stored cache path (`0x3b4444`–
+`0x3b4490`). This editing route does not establish all cache-production paths.
+
 ## Pixel placement uses drawn bounds, local size and rotation
 
 `drawImageBitmap`, `0x84b20`, calls object virtual slots 160 and 168 at
@@ -265,8 +325,9 @@ The line-border dimension sums specifically use fused multiply-add at
 
 This static trace establishes the selected Drawing methods and their branch
 contracts. It does not establish device-export pixels, malformed geometry
-admission, full cache invalidation, original-image regeneration, or how generic
-shape fill transforms and custom masks interact with the separate shape-effect
-pass. Deprecated Java API declarations do not prove native saved-field branches
+admission, full cache invalidation, original-image regeneration, or complete
+cache-production transforms. The traced image-filled vector shape clipping
+does not establish ordinary-image custom-mask support. Deprecated Java API
+declarations do not prove native saved-field branches
 are unreachable, and native branch presence does not prove a current Samsung
 document producer exercises them.
