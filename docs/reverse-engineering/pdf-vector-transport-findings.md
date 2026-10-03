@@ -62,6 +62,28 @@ font, color space or mask subtype. The resource categories copied by the
 extractor are visible in
 [Hayro Write's `serialize_resources`](https://docs.rs/crate/hayro-write/0.7.0/source/src/lib.rs).
 
+## Explicit resource scopes
+
+Source inspection found a separate inheritance boundary. PDF 32000-1:2008
+Table 30 and sections 7.7.3.4/7.8.3 distinguish an explicitly supplied Resources
+dictionary, including an empty one, from an omitted entry that inherits the
+attribute. This selects a resource dictionary; it does not merge ancestor names
+into a page's explicit dictionary. See the
+[Adobe specification](https://github.com/adobe/dc-acrobat-sdk-docs/blob/ab3b42a75df65543025736e9699e1e63af1922b0/docs/standards/pdfstandards/pdf/PDF32000_2008.pdf).
+
+Hayro Syntax instead retains the parent resource chain even when the page
+supplies Resources. Hayro Write collects each category from ancestors first,
+then replaces duplicate names with current entries; parent-only names survive
+in both page and Form export. See [resource construction](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/page.rs)
+and [resource collection](https://docs.rs/crate/hayro-write/0.7.0/source/src/lib.rs).
+
+This can introduce ancestor-only DefaultGray, DefaultRGB or DefaultCMYK entries
+into an explicit child scope. Section 8.6.5.6 uses those current ColorSpace
+entries to remap selected device colors, so unchanged operators can acquire a
+different color-space binding. This is a source-observed route and potential
+semantic consequence, without an executed fixture, appearance comparison or
+observed defect in the available Samsung paper corpus.
+
 ## All available original paper pages
 
 A further Rust probe imported all twenty `cs61bl_su22` source pages and the one
