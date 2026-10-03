@@ -185,8 +185,6 @@ pub fn render_layout_pages_pdf_detailed_with_cache(
 ) -> Result<PdfOutput, PdfError> {
     let mut pdf_options = pdf_options.clone();
     pdf_options.font_database = fonts.database();
-    pdf_options.native_font_names = fonts.native_name_config().cloned();
-    pdf_options.retained_fonts = Some(fonts.clone());
     let selected_pages = page_indices
         .iter()
         .map(|&page_index| {
