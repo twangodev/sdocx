@@ -5,8 +5,10 @@
 These findings concern Samsung Notes APK 4.4.45.37. Java paths are relative to
 the decompiled `sources/` directory; native addresses are arm64 virtual
 addresses. The route conclusions below come from static disassembly, exported
-symbols and ELF relocations. No native export execution or paired visual capture
-establishes appearance, annotation preservation or arbitrary PDF compatibility.
+symbols and ELF relocations. A separate bounded native PDFium import/save probe
+establishes the explicitly reported object-graph results below. Neither that
+probe nor the static routes establish complete Samsung export appearance or
+arbitrary PDF compatibility.
 
 The inspected APK SHA-256 is
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
@@ -16,7 +18,9 @@ The extracted libraries were checked byte-for-byte against their APK entries:
 | --- | --- |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenPdf.so` | `cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04` |
+| `libSPenPdfiumB.so` | `4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854` |
 | `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+| `libc++_shared.so` | `4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4` |
 
 The [saved-background findings](page-background-findings.md) establish the
 versioned PDF record encoding and viewer's multiple-record composition. The
@@ -132,6 +136,102 @@ The import helper also calls `restorePageLink` immediately after successful
 repair after page copying. The inspected caller alone does not prove preservation
 of every destination, widget, annotation, structure tree or document-level
 resource. Those behaviors have not been executed against a PDF feature corpus.
+
+### PDFium copies page entries, with a narrower reference and catalog contract
+
+The pinned `libSPenPdfiumB.so` supplies `FPDF_ImportPages` at `0x59bc8c`.
+It calls `CPDF_PageExporter::ExportPages` (`0x406fb4`) at `0x59bd34`.
+Independent bounded disassembly and ELF relocation checks establish the
+following copier policy; this is not a full Samsung export execution result.
+
+| Boundary | Pinned native behavior |
+| --- | --- |
+| Local page entries | Clone every key except `/Type` and `/Parent` (`0x4070a8–0x4070f4`) |
+| Inherited page values | Copy `/MediaBox`, `/Resources`, `/CropBox`, `/Rotate` if the destination lacks them (`0x4071c4`, `0x4073c8`, `0x4074d4`, `0x407578`) |
+| Missing media box | Fall back to inherited `/CropBox`, then `[0, 0, 612, 792]` (`0x407274`, `0x407334`, constant `0x1b04c0`) |
+| Missing resources | Create an empty resource dictionary (`0x407440`) |
+| Stream cloning | Clone the stream dictionary and obtain raw stream data through `CPDF_StreamAcc::ProcessRawData` (`0x4450a8`, `0x44512c`, `0x445184`) |
+| Destination catalog | Initialize destination info, catalog and page tree; the helper does not read the source-document field (`InitDestDoc`, `0x407a04`) |
+
+The first loop admits local `/Annots`, annotation appearance resources, `/Group`
+and `/UserUnit` to cloning. It does not establish intact appearance, physical
+scale or annotation semantics. The stream clone path has no page-to-bitmap
+operation; subsequent serialization still passes through `CPDF_FlateEncoder`
+(`CPDF_Stream::WriteTo`, `0x445cdc`), so raw cloning alone does not establish
+identical encoded output bytes. This entry policy differs from the pinned Rust
+library's explicit page/Form writer, whose executed boundaries are recorded in
+the [PDF vector transport findings](pdf-vector-transport-findings.md).
+
+`UpdateReference` (`0x40844c`) rewrites nested references, but dictionary traversal
+skips `/Parent`, `/Prev` and `/First` (`0x408504–0x408548`). Plain reference
+cloning retains the original holder and object number (`0x43f654–0x43f668`);
+these skipped backlinks are therefore not demonstrated to be rebound safely.
+For other dictionary keys, a failed child rewrite queues the key for removal,
+then the dictionary returns success (`0x4085a4–0x4085ac`, `0x408790`,
+`0x4087bc`). Arrays instead return failure at the first unsuccessful child
+(`0x4086b0–0x4086c8`). `ExportPages` ignores the page-level rewrite result at
+`0x407618`. A successful import return consequently does not certify a complete
+rewritten object graph.
+
+The current source page's object number is mapped to its destination number
+before rewriting (`0x4075bc–0x4075f4`). An annotation `/P` pointing to that
+page has a cached resolution route. For an uncached reference, `GetNewObjId`
+(`0x4088ec`) refuses targets whose dictionary type is `/Page`, and returns
+literal object number `4` for `/Pages` (`0x408aa0–0x408acc`). This does not prove
+that an uncached destination page or that literal page-tree number is correct
+for every import context. Other objects enter the destination and identity cache
+before their children are rewritten (`0x408b14`, `0x408b58`, `0x408b6c`). A
+failed rewrite returns zero without a visible rollback in this helper, while
+later nonzero cache hits return immediately (`0x408970–0x408974`).
+
+The copier starts traversal from selected page entries. Catalog-only
+`/OCProperties`, `/StructTreeRoot`, names, outlines and actions are outside
+`InitDestDoc`'s source traversal. Retaining a page's optional-content resource or
+`/StructParents` integer cannot establish the corresponding catalog visibility
+or tagging context. The wrapper's separately observed link repair remains an
+additional operation; these local copier findings do not substitute for a
+complete Samsung export capture.
+
+### A native import/save probe retains one vector Stamp but drops layer defaults
+
+A temporary Rust/Unicorn client executed the APK's actual `libSPenPdfiumB.so`
+and `libc++_shared.so`, loading the one-page typed source from the
+[annotation and layer experiment](pdf-vector-transport-findings.md#bounded-annotation-and-layer-transport).
+It called `FPDF_InitLibrary`, `FPDF_LoadMemDocument64`,
+`FPDF_CreateNewDocument`, `FPDF_ImportPages` and `FPDF_SaveAsCopy`. The pinned
+Samsung save entry also reads a fourth argument; the client supplied a mapped,
+zeroed empty callable facade. This is a capture of the public PDFium operations,
+not the Composer/`libSPenPdf` wrapper or its additional link repair.
+
+The client supplied explicit host boundaries for allocation, memory/string
+operations, integer formatting, fixed time, single-thread synchronization and
+zlib compression. No unknown host import was allowed to silently succeed.
+System-font directory lookup returned absent; the supplied source contains no
+font. There was no page rendering or bitmap creation. An independent reviewer
+reran the native client and inspected the saved bytes through Rust `lopdf`.
+
+The source SHA-256 is
+`1492f8e9984591dc2e2a5097b5668068df203219be7b963734878db0413c5771`.
+The saved output is 1,319 bytes with SHA-256
+`44a839c4803a696e3f8e448066f202fbd4959ffb518d326d4c23fab7687a60bd`.
+Five fresh executions with ordinary allocation filled with `0x00`, `0x55`,
+`0xa5`, `0xff`, then `0x00` produced identical output; `calloc` remained zeroed.
+
+| Supplied feature | Independently inspected native result |
+| --- | --- |
+| Eight page-content operators | Decoded content bytes and operators unchanged |
+| Stamp annotation | Fields unchanged except `/P` rebound to the imported current page |
+| Direct normal appearance Form | Decoded vector stream, bounding box, matrix and resources unchanged |
+| Optional-content resource group | Resolved group dictionary unchanged |
+| Catalog layer configuration with default `/OFF` | `/OCProperties` absent from the output catalog |
+| Images and object references | Zero Image objects; all references reachable from the output root resolve |
+
+This confirms direct appearance-resource retention for the supplied Stamp,
+where the pinned Krilla Form route omits it. It also demonstrates that retaining
+the OCG dictionary does not retain the catalog's default visibility configuration.
+There was no rendered visibility comparison. Other annotation states, widgets,
+page groups, `/UserUnit`, tags and cross-page destinations were not supplied by
+this probe, and its successful return is not a general import-completeness check.
 
 ## Source size controls the overlay scale
 

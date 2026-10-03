@@ -3,8 +3,19 @@
 ## Evidence and meaning of retention
 
 These findings trace the current Rust parser, inspection APIs and vector output.
-Native contracts are linked to their separate findings; no new native execution
-or Samsung appearance comparison is claimed here.
+The native opaque-record section concerns Samsung Notes 4.4.45.37 ARM64, APK
+SHA-256 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
+Native addresses are ELF virtual addresses, before relocation. Other native
+contracts are linked to their separate findings.
+
+| Native library | SHA-256 |
+| --- | --- |
+| `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+
+Native opaque-record admission, hierarchy and resource findings are static
+traces. Only the bounded unknown own-frame writer/reader was executed; no
+complete native archive round trip or Samsung appearance comparison is claimed.
 
 | Representation | What it retains | What it does not establish |
 | --- | --- | --- |
@@ -122,6 +133,75 @@ bindings, rectangles and additional entries. The
 cover these losses, visible-page equality, original vector PDF transport and the
 separate SVG conversion problem. Offset-only page retention applies equally to
 non-PDF opaque vector records.
+
+## Native opaque records, wrappers and resources
+
+At a layer root, `LayerDocLoadHandler::ReadUnknownObject_WDoc`, Model
+`0x359038`, constructs current type 19 and applies the original outer type and
+binary through `ObjectUnknown::NewApplyUnknownBinary` (`0x359100`–`0x35912c`).
+The [type-100 admission finding](brush-record-findings.md#type-15-is-a-compatibility-dispatch-envelope)
+uses this route. Successful admission first requires a valid common base.
+It then allocates and copies the **entire supplied original object binary**,
+including that common base (`0x44fc48`–`0x44fc6c`), and separately stores original
+type, binary length and original load format version (`0x44fc74`–`0x44fc88`).
+This native ownership is stronger than the Rust physical index's external
+byte-range reference.
+
+The ordinary WDoc save path writes the object's current type, from `GetType()`
+at Model `0x355460`, as the outer byte at `0x355490`. Unknown construction sets
+that current type to 19 (`0x44f198`–`0x44f1a0`). `ObjectUnknown::NewGetBinary`,
+`0x44f89c`, writes reconstructed current common data followed by an unknown own
+frame; it does not return the original record wholesale. For a non-null original
+binary without the optional string, `ObjectUnknownImpl::GetOwnBinary`,
+`0x450984`, emits own-frame kind 19, original type/version, a four-byte original
+length and the unchanged original bytes. For an original length `N`, the frame
+occupies `N + 27` bytes; its flexible-data mask sets bit 1
+(`0x4505bc`–`0x4505d8`).
+Current outer type, own-frame kind, original outer type and original load version
+therefore remain separate identities. Original byte preservation does not make
+the reframed outer record byte-identical to its input.
+
+A Rust harness using Unicorn's C API executed the actual native own-frame size,
+writer and reader (`0x45093c`, `0x450984`, `0x450aec`), including native mask
+parsing and bounded-copy logic. Four synthetic cases used original lengths
+0, 1, 8 and 257; types 100, 27 and 255; and versions 7, 17 and `u32::MAX`.
+Across allocation fills `00`, `a5` and `ff`, the wrappers and reloaded original
+bytes/type/version were identical. Allocation, deallocation, memcpy and logging
+were host boundaries. This proves the selected no-string own-frame kernel,
+not complete original-record admission, resource reachability or archive saving.
+The temporary capture SHA-256 is
+`b1682308302f9807c7524e6d6c11e8a6e39fcc4b726574561b86aa15a73b6d6e`.
+
+Opaque admission also depends on location. Layer-root out-of-mask records use
+the unknown reader at Model `0x358728`–`0x358740` and join ordinary layer
+insertion. `ReadObjectContainer_WDoc`, `0x358a74`, instead sends out-of-mask,
+non-type-4 **children** to `SkipDefaultObject` at `0x358c24`–`0x358c48`.
+Known children are appended, and type-4 containers recurse. Already wrapped
+current type 19 is admitted by the known-type mask `0x01cfe58f`; an original
+future-type child such as type 100 is a different case. This APK's skip branch
+does not establish that the format forbids opaque children.
+
+Media preservation has a separate gate. `MediaFileManagerNew::Bind(int)` and
+`Release(int)` change metadata offset 24, the live binding count. `saveItem`,
+Model `0x28fe5c`, admits nonzero-count resources after validation; zero-count
+resources require the manager's coedit flag to be **true** and the operation's
+fourth bool to be **false** (`0x28feb0`–`0x28fec8`). WDoc's `WNote::IsCoeditMode`,
+`0x96a90`, reads WNoteImpl offset 854; `InitSubComponent` passes that same flag to the manager
+(`0xa3844`–`0xa384c`, Model `0x28c2cc`). It is not an unknown-object flag.
+For admitted entries, `saveItem` writes the existing numeric media ID and
+filename (`0x28ff14`–`0x28ff58`), without rewriting IDs inside opaque binaries.
+Its map-key field is copied, although the broader save path can refresh PDF
+hashes before this iteration (`0x290458`–`0x29045c`).
+
+`RemoveUnusedFiles`, Model `0x292cec`, additionally protects zero-count files
+whose filename and ID match the **previously saved** manifest
+(`0x293464`–`0x29348c`). This deletion protection does not establish inclusion
+in the next archive. Unknown's resolved original-version callback only lowers
+the note's minimum unknown version (WDoc `0xa7bb8`–`0xa7bd0`); it does not bind
+resources. The inspected unknown own-data paths contain no resource-ID scanner.
+Decoded common image data can still register through `ObjectBase::OnAttach`
+(Model `0x2d0018`). Owning opaque bytes and keeping admitted IDs stable do not
+establish preservation of every attachment referenced only by opaque own data.
 
 ## Precision and drawable output
 
