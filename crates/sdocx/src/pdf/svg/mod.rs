@@ -1,15 +1,12 @@
 //! Bundled krilla-svg 0.8.1 converter; provenance and licenses are recorded beside this module.
 
-use std::io::Read;
 use std::sync::Arc;
 
 use fontdb::Database;
-use krilla::color::rgb;
 use krilla::geom::{Rect, Size, Transform};
 use krilla::paint::FillRule;
 use krilla::surface::Surface;
-use krilla::text::GlyphId;
-use usvg::{Node, Tree, fontdb, roxmltree};
+use usvg::{Tree, fontdb};
 
 use self::text::Fonts;
 use self::util::RectExt;
@@ -137,10 +134,6 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
     }
 }
 
-pub(super) fn render_tree(tree: &Tree, svg_settings: SvgSettings, surface: &mut Surface) {
-    let _ = render_tree_with_text(tree, svg_settings, surface, None);
-}
-
 fn render_tree_with_text(
     tree: &Tree,
     svg_settings: SvgSettings,
@@ -152,91 +145,6 @@ fn render_tree_with_text(
     fc.text_hook = hook;
     group::render(tree.root(), surface, &mut fc);
     fc.error.map_or(Ok(()), Err)
-}
-
-pub(super) fn render_node(
-    node: &Node,
-    mut tree_fontdb: Arc<Database>,
-    svg_settings: SvgSettings,
-    surface: &mut Surface,
-) {
-    let mut fc = ProcessContext::new(Arc::make_mut(&mut tree_fontdb), svg_settings);
-    group::render_node(node, surface, &mut fc);
-}
-
-/// Render an SVG glyph from an OpenType font into a surface. You can plug this method into the
-/// `render_svg_glyph_fn` field of `SerializeSettings` in krilla..
-#[allow(dead_code)]
-pub(super) fn render_svg_glyph(
-    data: &[u8],
-    context_color: rgb::Color,
-    glyph: GlyphId,
-    default_size: (f32, f32),
-    surface: &mut Surface,
-) -> Option<()> {
-    let mut data = data;
-    let settings = SvgSettings::default();
-
-    let default_size = usvg::Size::from_wh(default_size.0, default_size.1).unwrap();
-
-    let mut decoded = vec![];
-    if data.starts_with(&[0x1f, 0x8b]) {
-        let mut decoder = flate2::read::GzDecoder::new(data);
-        decoder.read_to_end(&mut decoded).ok()?;
-        data = &decoded;
-    }
-
-    let xml = std::str::from_utf8(data).ok()?;
-    // Incredibly hacky, but hopefully that's enough for SVG glyphs.
-    let has_viewbox = xml.contains("viewBox");
-    let document = roxmltree::Document::parse(xml).ok()?;
-
-    // Reparsing every time might be pretty slow in some cases, because Noto Color Emoji
-    // for example contains hundreds of glyphs in the same SVG document, meaning that we have
-    // to reparse it every time. However, Twitter Color Emoji does have each glyph in a
-    // separate SVG document, and since we use COLRv1 for Noto Color Emoji anyway, this is
-    // good enough.
-    let opts = usvg::Options {
-        style_sheet: Some(format!(
-            "svg {{ color: rgb({}, {}, {}) }}",
-            context_color.red(),
-            context_color.green(),
-            context_color.blue()
-        )),
-        default_size,
-        ..Default::default()
-    };
-    let tree = Tree::from_xmltree(&document, &opts).ok()?;
-
-    let apply_scale = default_size != tree.size() && has_viewbox;
-
-    // From the specification:
-    //
-    // The size of the initial viewport for the SVG document is the em square:
-    // height and width both equal to head.unitsPerEm. If a viewBox
-    // attribute is specified on the <svg> element with width or
-    // height values different from the unitsPerEm value,
-    // this will have the effect of a scale transformation on the SVG “user” coordinate
-    // system.
-    if apply_scale {
-        let scale = (default_size.width() / tree.size().width())
-            .min(default_size.height() / tree.size().height());
-        surface.push_transform(&Transform::from_scale(scale, scale))
-    }
-
-    if let Some(node) = tree.node_by_id(&format!("glyph{}", glyph.to_u32())) {
-        render_node(node, tree.fontdb().clone(), settings, surface)
-    } else {
-        // Twitter Color Emoji SVGs contain the glyph ID on the root element, which isn't saved by
-        // usvg. So in this case, we simply draw the whole document.
-        render_tree(&tree, settings, surface)
-    };
-
-    if apply_scale {
-        surface.pop();
-    }
-
-    Some(())
 }
 
 #[cfg(test)]
