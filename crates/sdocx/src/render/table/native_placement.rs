@@ -1,9 +1,8 @@
-#![cfg_attr(not(test), allow(dead_code))]
-
 use crate::BoundingBox;
 use crate::render::text::NativeObjectEntryBounds;
 use crate::render::text::native_cell_clip::{NativeCellClipError, NativeCellTextClipContext};
 
+#[cfg(all(test, feature = "serde"))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(in crate::render) enum NativeCellTextClipProvenance {
     SavedSource,
@@ -14,11 +13,13 @@ pub(in crate::render) enum NativeCellTextClipProvenance {
 #[derive(Debug, Clone, Copy)]
 pub(in crate::render) enum NativeCellTextPlacement {
     Unknown,
+    #[cfg(all(test, feature = "serde"))]
     SavedSource(NativeCellTextClipTransport),
     ActualDocumentPlacement(NativeCellTextClipTransport),
 }
 
 impl NativeCellTextPlacement {
+    #[cfg(all(test, feature = "serde"))]
     pub fn provenance(self) -> NativeCellTextClipProvenance {
         match self {
             Self::Unknown => NativeCellTextClipProvenance::Unknown,
@@ -32,9 +33,9 @@ impl NativeCellTextPlacement {
     pub fn transport(self) -> Option<NativeCellTextClipTransport> {
         match self {
             Self::Unknown => None,
-            Self::SavedSource(transport) | Self::ActualDocumentPlacement(transport) => {
-                Some(transport)
-            }
+            #[cfg(all(test, feature = "serde"))]
+            Self::SavedSource(transport) => Some(transport),
+            Self::ActualDocumentPlacement(transport) => Some(transport),
         }
     }
 }
@@ -153,10 +154,12 @@ impl NativeTableModelState {
         self.raw_rect
     }
 
+    #[cfg(test)]
     pub fn content_rect(self) -> [f32; 4] {
         self.content_rect
     }
 
+    #[cfg(all(test, feature = "serde"))]
     pub fn apply_document_placement(
         self,
         placement: NativeDocumentTablePlacement,
@@ -358,6 +361,7 @@ fn native_bounds([x_min, y_min, x_max, y_max]: [f32; 4]) -> BoundingBox {
     }
 }
 
+#[cfg(all(test, feature = "serde"))]
 fn native_coordinates(rect: BoundingBox) -> [f32; 4] {
     [rect.x_min, rect.y_min, rect.x_max, rect.y_max].map(|value| value as f32)
 }
@@ -383,6 +387,7 @@ impl NativeTableTextWriterWindow {
         })
     }
 
+    #[cfg(all(test, feature = "serde"))]
     pub fn rounded_measured_world(self) -> [f32; 4] {
         self.rounded_measured_world
     }
@@ -443,6 +448,7 @@ impl NativeCellModelState {
         })
     }
 
+    #[cfg(test)]
     pub fn saved_rect(self) -> [f32; 4] {
         self.saved_rect
     }
@@ -451,6 +457,7 @@ impl NativeCellModelState {
         self.content_rect
     }
 
+    #[cfg(all(test, feature = "serde"))]
     pub fn saved_text(
         self,
         caller_origin: NativeCellTextWriterOrigin,

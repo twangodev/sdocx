@@ -15,6 +15,10 @@ impl TableExportPage {
     }
 
     pub fn for_page(page: &Page, metadata: &DocumentMetadata) -> Option<Self> {
+        let size = [
+            i32::try_from(page.width).ok()?,
+            i32::try_from(page.height).ok()?,
+        ];
         let margins = if metadata.page_mode == Some(0) {
             let stored = metadata
                 .note_text
@@ -28,7 +32,7 @@ impl TableExportPage {
         margins
             .into_iter()
             .all(f32::is_finite)
-            .then(|| Self::new([page.width as i32, page.height as i32], margins))
+            .then(|| Self::new(size, margins))
     }
 
     pub fn translated(mut self, dx: f64, dy: f64) -> Self {
@@ -218,6 +222,31 @@ mod tests {
             page.artwork_bounds(bounds([-20.25, 170.0, 120.0, 421.0])),
             bounds([-6.25, 209.0, 95.75, 381.0]),
         );
+    }
+
+    #[test]
+    fn oversized_public_pages_use_the_measured_artwork_fallback() {
+        let mut page = Page {
+            uuid: String::new(),
+            width: 100,
+            height: 200,
+            content_bbox: BoundingBox::default(),
+            background_color: None,
+            template: None,
+            background: Default::default(),
+            objects: Vec::new(),
+        };
+        let metadata = DocumentMetadata::default();
+        let measured = bounds([10.5, 20.5, 30.5, 40.5]);
+        let expected = bounds([9.0, 19.0, 32.0, 42.0]);
+        for size in [[1 << 31, 200], [100, 1 << 31], [u32::MAX; 2]] {
+            [page.width, page.height] = size;
+            let export = TableExportPage::for_page(&page, &metadata);
+            assert!(export.is_none(), "{size:?}");
+            assert_eq!(artwork_bounds(measured, export), expected, "{size:?}");
+        }
+        [page.width, page.height] = [i32::MAX as u32; 2];
+        assert!(TableExportPage::for_page(&page, &metadata).is_some());
     }
 
     #[test]

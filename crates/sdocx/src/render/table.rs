@@ -189,7 +189,9 @@ fn prepare_table_drawing_with_artwork_source(
     drawing_origin: [f64; 2],
     theme: RenderTheme,
     renderer: &TextRenderer<'_>,
-    native_document: Option<NativeTableDocumentSource<'_>>,
+    document_writer: Option<
+        Result<NativeDocumentCellText<'_>, super::text::native_cell_clip::NativeCellClipError>,
+    >,
 ) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
     if !matches!(
         constraint,
@@ -236,7 +238,6 @@ fn prepare_table_drawing_with_artwork_source(
         let measured_bbox = offset_rounded_rect(prepared.measured_bbox, drawing_origin)?;
         let origin = [measured_bbox.x_min, measured_bbox.y_min];
         let content_bbox = offset_rounded_rect(prepared.content_bbox, origin)?;
-        let document_writer = native_document.map(|source| document_text_writer(table, source));
         for (row_index, row) in prepared.rows.iter_mut().enumerate() {
             for (column_index, cell) in row.cells.iter_mut().enumerate() {
                 let local_frame = cell.frame;
@@ -339,38 +340,9 @@ pub(super) fn prepare_table_clone_drawing_with_native_entry(
     renderer: &TextRenderer<'_>,
     source: Option<NativeTableDocumentSource<'_>>,
 ) -> Option<Result<PreparedTableDrawing, ObjectDiagnosticKind>> {
-    let source = source.filter(|source| {
-        [target.x_min, target.y_min, target.x_max, target.y_max]
-            == source.entry.text_bound().map(f64::from)
-            && source.layout.constraint == constraint
-            && source.entry.supports_callback_bands(
-                source.layout.callback_top,
-                &source.layout.bands.padding_rectangles(),
-            )
-            && table.style.content_bbox == Some(table.bbox)
-            && matches!(table.style.auto_fit, None | Some(crate::TableAutoFit::Both))
-            && table.style.max_height.is_none_or(|height| height == 0.0)
-            && table.style.max_width.is_none_or(|width| width == 0.0)
-            && native_placement::NativeDocumentTablePlacement::from_entry(
-                source.entry,
-                [0.0; 2],
-                table.bbox,
-                table_drawn_bounds(table),
-            )
-            .is_ok_and(|placement| {
-                let changed = coordinates(placement.parent_rect())
-                    .into_iter()
-                    .zip(coordinates(table.bbox))
-                    .any(|(next, current)| {
-                        let difference = (next - current).abs();
-                        difference.is_finite() && difference > 0.001_f32
-                    });
-                changed
-                    && document_table_rect_update(table, placement)
-                        .is_ok_and(|update| preserves_source_dimensions(table, update))
-            })
-    });
-    let Some(source) = source else {
+    let document_writer = source
+        .and_then(|source| NativeDocumentCellText::for_clone(table, constraint, target, source));
+    let Some(document_writer) = document_writer else {
         return prepare_table_clone_drawing(table, constraint, target, theme, renderer);
     };
     let bbox =
@@ -386,7 +358,7 @@ pub(super) fn prepare_table_clone_drawing_with_native_entry(
         [drawn.x_min, drawn.y_min],
         theme,
         renderer,
-        Some(source),
+        Some(document_writer),
     )
 }
 
@@ -435,53 +407,83 @@ fn preserves_source_dimensions(
     })
 }
 
-fn document_text_writer<'a>(
-    table: &RichTextTable,
-    source: NativeTableDocumentSource<'a>,
-) -> Result<NativeDocumentCellText<'a>, super::text::native_cell_clip::NativeCellClipError> {
-    use super::text::native_cell_clip::NativeCellClipError;
-    use native_placement::{
-        NativeDocumentTablePlacement, NativeTableContentFit, NativeTableTextWriterWindow,
-    };
-    let placement = NativeDocumentTablePlacement::from_entry(
-        source.entry,
-        [0.0; 2],
-        table.bbox,
-        table_drawn_bounds(table),
-    )?;
-    let content = coordinates(source.layout.content_bbox);
-    let update = document_table_rect_update(table, placement)?;
-    if !preserves_source_dimensions(table, update) {
-        return Err(NativeCellClipError);
+impl<'a> NativeDocumentCellText<'a> {
+    fn for_clone(
+        table: &RichTextTable,
+        constraint: ObjectSpanLayoutConstraint,
+        target: BoundingBox,
+        source: NativeTableDocumentSource<'a>,
+    ) -> Option<Result<Self, super::text::native_cell_clip::NativeCellClipError>> {
+        use native_placement::{
+            NativeDocumentTablePlacement, NativeTableContentFit, NativeTableTextWriterWindow,
+        };
+        if [target.x_min, target.y_min, target.x_max, target.y_max]
+            != source.entry.text_bound().map(f64::from)
+            || source.layout.constraint != constraint
+            || !source.entry.supports_callback_bands(
+                source.layout.callback_top,
+                &source.layout.bands.padding_rectangles(),
+            )
+            || table.style.content_bbox != Some(table.bbox)
+            || !matches!(table.style.auto_fit, None | Some(crate::TableAutoFit::Both))
+            || !table.style.max_height.is_none_or(|height| height == 0.0)
+            || !table.style.max_width.is_none_or(|width| width == 0.0)
+        {
+            return None;
+        }
+        let placement = NativeDocumentTablePlacement::from_entry(
+            source.entry,
+            [0.0; 2],
+            table.bbox,
+            table_drawn_bounds(table),
+        )
+        .ok()?;
+        let changed = coordinates(placement.parent_rect())
+            .into_iter()
+            .zip(coordinates(table.bbox))
+            .any(|(next, current)| {
+                let difference = (next - current).abs();
+                difference.is_finite() && difference > 0.001_f32
+            });
+        if !changed {
+            return None;
+        }
+        let update = document_table_rect_update(table, placement).ok()?;
+        if !preserves_source_dimensions(table, update) {
+            return None;
+        }
+        Some((|| {
+            let content = coordinates(source.layout.content_bbox);
+            let model = update.model.set_content_size(
+                [content[2] - content[0], content[3] - content[1]],
+                NativeTableContentFit {
+                    mode: 3,
+                    maximum_height: 0.0,
+                    maximum_width: 0.0,
+                    maximum_height_enabled: table.style.max_height_enabled,
+                },
+            )?;
+            let [x_min, y_min, x_max, y_max] = model.raw_rect().map(f64::from);
+            let drawn = drawn_bounds_for_rect(
+                table,
+                BoundingBox {
+                    x_min,
+                    y_min,
+                    x_max,
+                    y_max,
+                },
+            );
+            let writer = NativeTableTextWriterWindow::from_layout(
+                coordinates(drawn),
+                coordinates(source.layout.measured_bbox),
+            )?;
+            Ok(Self {
+                source,
+                placement,
+                writer,
+            })
+        })())
     }
-    let model = update.model.set_content_size(
-        [content[2] - content[0], content[3] - content[1]],
-        NativeTableContentFit {
-            mode: 3,
-            maximum_height: 0.0,
-            maximum_width: 0.0,
-            maximum_height_enabled: table.style.max_height_enabled,
-        },
-    )?;
-    let [x_min, y_min, x_max, y_max] = model.raw_rect().map(f64::from);
-    let drawn = drawn_bounds_for_rect(
-        table,
-        BoundingBox {
-            x_min,
-            y_min,
-            x_max,
-            y_max,
-        },
-    );
-    let writer = NativeTableTextWriterWindow::from_layout(
-        coordinates(drawn),
-        coordinates(source.layout.measured_bbox),
-    )?;
-    Ok(NativeDocumentCellText {
-        source,
-        placement,
-        writer,
-    })
 }
 
 fn translate_cell_drawing(
