@@ -12,11 +12,15 @@ ELF virtual addresses, not file offsets. The libraries are the APK copies in
 | --- | --- |
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+| `libSPenGraphics.so` | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
+| `libSPenObjectControl.so` | `3211b70ad105e285b57aaa085e2bcd543f197238d702f9233aedea1c7caa1aea` |
+| `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libc++_shared.so` | `4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4` |
 
-Serialization, SDK entry points and Drawing dispatch were inspected statically.
+Serialization, SDK entry points, Drawing routes and export failure propagation
+were inspected statically.
 Native execution covers Skia paths, Model arc/normalization helpers, named Arc
 generation and common co-edit wrappers with actual native Path storage below.
 Saved binary loading, application selection of co-edit context and paired
@@ -562,6 +566,52 @@ Drawing appearance claim. Rust's pathless Triangle fixtures exercise its
 fixed-vertex fallback and known flip flags; they do not establish native saved
 parity. All five shapes in the recorded [rendering corpus](rendering-corpus-findings.md)
 have stored paths; no application-produced positive pathless Triangle is known.
+
+## Drawing routes separate geometry, commands and success
+
+The ordinary [object dispatcher](object-drawing-findings.md) reaches
+`ObjectDrawing::drawObjectShape` for type 7 (`0x7fb18`), which calls
+`ObjectShapeDrawing::DrawPath` at Drawing `0x80744`. A separate native view
+consumer, ObjectControl `ObjectShapeView::onDraw`, calls **Draw** at
+`0x124850` and ignores its result. This establishes distinct callers, rather
+than one universal UI route.
+
+`Draw`, Drawing `0x8a5b8`, still composites its created bitmap after inner
+`drawPath` failure (`0x8a648`, `0x8a6fc`); its result tracks bitmap allocation.
+`DrawPath`, `0x8aaa8`, instead saves the inner result at `0x8adb4`. If the
+wrapped bitmap exists, it attempts `drawSolidRectangle` at `0x8ae10`
+regardless of that result, composites the bitmap only if the shortcut returns
+false, then returns the original inner result at `0x8aeec`.
+
+The shortcut requires type 7, failed line-color retrieval or literal packed
+line solid color zero, successful fill-color retrieval, translated fill solid
+color nonzero and color type 0 (`0x8af5c`–`0x8b000`). It submits
+`[0,0,bitmap width,bitmap height]` with a fresh paint, style 0 and the translated
+color at `0x8b05c`; it forwards no bitmap mask or shader. There is no template
+test inside this helper, but its other gates and inherited destination state
+remain material. `DrawPath` saves/translates/scales the canvas first. Graphics
+`SPCanvasImpl::DrawRectRT`, `0xa71cc`, rejects zero-width/height extents and
+nonintersecting regions, then enables existing clipping at `0xa72d8`/`0xa73d8`.
+This source trace does not establish final coverage or imply that ordinary
+filled triangles appear as rectangles.
+
+For type 7, the `cset`/`orn`/`tbnz` sequence at Drawing `0x80750`–`0x80758`
+skips subsequent text drawing when **DrawPath is false**. A true result enters
+`drawTextContent` or, when alpha processing is enabled and alpha differs from
+1, `drawObjectTextBox`. The original status is still returned at `0x807c8`;
+these calls are not missing-outline geometry fallbacks. `DrawObjectList`
+ignores per-object results at `0x7f43c`, `0x7f488` and `0x7f4dc`. The
+[Standard list-PDF bitmap batch](standard-pdf-composition-findings.md#ordinary-objects-retain-interleaving-and-flush-the-tail)
+also ignores its list-renderer result at Composer `0x37c554` before writing
+the bitmap. An inner missing-outline result alone therefore need not fail
+this export batch or supply replacement vector geometry.
+
+The [separate native vector PDF paint route](shape-fill-findings.md#pdf-export-is-a-separate-paint-capability)
+has different admission: `ObjectShapePdfExporter::ExportObject` returns false
+directly if `setPathPoints` rejects the outline (`0x34ef8c` → `0x34f104`).
+Its image-adapter fallback is reached only after the later path-adapter
+`ExportObject` fails (`0x34f214` → `0x34f224`/`0x34f22c`). These are static
+consumer boundaries, not executed export or saved pathless-shape appearance.
 
 ## Current Rust preservation and rendering boundaries
 
