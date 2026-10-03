@@ -14,7 +14,8 @@ The inspected library identities are:
 
 Most evidence is static reader, writer, mutator and drawing control flow.
 Bounded Rust/Unicorn replays separately exercise numeric helpers, public
-container command generation and actual zero-angle group-to-stroke mutation.
+container command generation, actual zero-angle group-to-stroke mutation and
+native stroke writing followed by the existing Rust decoder.
 Each capture qualifies its supplied state and hosted services below. No new
 saved Samsung document, paired PDF export or pixel comparison executes here.
 
@@ -326,6 +327,44 @@ points at `0x2ee48c`–`0x2ee498`, promotes through `PointD::Set(PointF)`, and
 writes 16-byte coordinate pairs at `0x2ee4ac`. It does not undo the saved
 rotation before writing. Stored double sample coordinates on that branch
 therefore originate in edited float samples.
+
+### Native edited frames reach the existing Rust decoder unchanged
+
+A further temporary bridge executes complete native stroke size/write methods
+(`0x2e55c8`, `0x2e567c`), common type-0 size/write, modern type-1 size/write,
+property/flexible writers, the stroke format-version override and Base UUID,
+empty Bundle and PointD methods after actual zero-angle container mutation.
+Twelve resize cases, including fractional destinations, produce three stroke
+payloads each under five output-buffer fills. All 36 payloads are 267 bytes
+(129-byte common and 138-byte stroke frames), matching native size estimates
+for this supplied state;
+tail sentinels remain unchanged. Public writer return 4000 is the supplied
+object's format version, not its emitted byte length.
+
+Caller metadata/style storage is explicitly zeroed, pen/string and optional
+media IDs are explicitly -1, and compression byte 40 is zero. The writer gets
+supplied UUID/empty Bundle storage and, after null-context mutation, a zeroed
+context with a nonnull manager association; no manager/string service executes.
+These are supplied inputs, not constructor defaults or a complete pen profile.
+ID resolution, false connectability, bounded `memcpy` and logging remain hosted.
+
+A separate Rust reader calls existing public `StoredObject::decode_stroke`,
+`base_metadata` and `stroke_metadata` on those exact emitted bytes, supplying
+only the payload envelope. Every decoded point and bound equals exact promotion
+of its actual edited float word. For example, sample words `0x42c83333` and
+`0x43483334` decode to doubles `100.0999984741211` and `200.20001220703125`;
+double wire storage preserves these floats without restoring earlier precision.
+Reflected sample order, normalized bounds and hidden-child visibility survive
+both native save and Rust decode. The writer establishes the supplied buffers'
+serialized roles: pressure at +72, integer timestamps at +96, tilt at +120 and
+orientation at +144. All float channels widen exactly and integer values agree.
+
+Both drivers compile with warnings denied and independently replay byte-for-byte.
+No compression reducer, constructors/attach/registry/context lifecycle, nonzero
+angles, complete container/page/trailer/archive read/write or drawing executes.
+The finite supplied channels do not certify arbitrary pen-profile behavior.
+Native output SHA-256 is `475a7ae84e758dcc9c722c97758875b6fd43ec1909eeda62f4cba6e86b9a6c45`;
+SDK output is `b5b461743b198e4f29462d11068695d786a014bbf794564ed229719673252ebb`.
 
 ## Consequences for the current Rust representation
 

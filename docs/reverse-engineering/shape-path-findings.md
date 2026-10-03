@@ -16,11 +16,11 @@ ELF virtual addresses, not file offsets. The libraries are the APK copies in
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libc++_shared.so` | `4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4` |
 
-Serialization, named template and Drawing dispatch were inspected statically.
-Native execution covers Skia paths, the separate Model arc helper, and common
-template normalization with actual Path storage and bounds below. Saved binary
-and co-edit loading, named Arc fill generation and paired Samsung appearance
-remain unexecuted.
+Serialization, SDK entry points and Drawing dispatch were inspected statically.
+Native execution covers Skia paths, Model arc/normalization helpers, named Arc
+generation and common co-edit wrappers with actual native Path storage below.
+Saved binary loading, application selection of co-edit context and paired
+Samsung appearance remain unexecuted.
 The [shape and line findings](shape-line-findings.md) describe enclosing
 frames and the rotated saved path; [outline findings](shape-style-findings.md)
 describe paint, dashes and arrows. This document concerns command identity,
@@ -353,10 +353,10 @@ Temporary probe SHA-256 values are
 reusable primitive fixture below. Caller bounds, angle, frame and flips are
 explicit inputs, not decoded file state. Host boundaries are bounded allocation,
 memory, single-thread pthread operations and the verified Linux math library;
-bounds additionally reach `f64` `pow` and `acosf`. Saved loading, co-edit dispatch,
-named template postprocessors, serialization and Drawing do not execute.
+bounds additionally reach `f64` `pow` and `acosf`. These two probes do not
+execute saved/co-edit loading, named postprocessors, serialization or Drawing.
 
-## Executed Model helper and named Arc template
+## Executed Model helper and named Arc production
 
 The separate Model helper `0x211814` was executed with direct `f32`
 left/top/right/bottom/start/sweep arguments and bounded output storage.
@@ -377,8 +377,9 @@ Reached external functions were `memcpy`, `atan2f`, `tanf`, `sincosf` and
 `f64` `sincos` from the runtime-hash-verified host math library above.
 Base rotation widens the angle, computes degree conversion and rotation with
 `f64` operations including fused multiply-add, then narrows to `f32`.
-Named Arc template/fill dispatch was not executed. These helper inputs are
-direct bounds, not serialized Arc fields; they do not settle the normalization route's extent interpretation.
+These helper inputs are direct bounds, not serialized Arc fields; they do not
+settle the normalization route's extent interpretation. Separate named-template
+execution follows below.
 
 The ordered ellipse `(10,20,210,120)`, start 37, sweep 123 also demonstrates
 a different angle contract. Model returns first point
@@ -391,7 +392,7 @@ the angle's ray using `tanf`/root arithmetic, then converts coordinates using
 contract difference, beyond float rounding; arbitrary inverted/degenerate
 rectangles are not covered by this paired case.
 
-Static named `ObjectShapeTemplateArc` generation (`0x2243cc`) calls that
+Named `ObjectShapeTemplateArc` generation (`0x2243cc`) calls that
 Model helper (`0x2244dc`) and builds an open outline using one move followed
 by quadratics (`0x224518–0x224558`). It does not create a retained Arc verb.
 The class identity is backed by RTTI name `0x1636be` and vtable `0x48fcb0`.
@@ -402,8 +403,43 @@ and generated fill geometry are therefore distinct. Fill refresh requests the
 zero-angle getter (`0x224c58–0x224c88`), which returns the base outline
 (`0x20d6b8–0x20d6c0`), then the common fill setter creates a separate rotated
 display fill. The conditional co-edit wrapper replaces only the display
-outline; its dedicated fill can remain derived from normalized base geometry.
-That split is statically established, not an executed co-edit result.
+outline; its dedicated fill remains derived from base geometry in the
+separately executed wrapper cases below. Selection of that wrapper by saved
+loading remains a static link.
+
+Actual named Arc constructor `0x223ffc` and rectangle setter `0x224cf4`
+also executed for six rectangles across five fresh memory fills, with independent
+strict-compiled replay. Default angles 270 to 0 produce an open Move/Quad/Quad
+outline and separate Move/Quad/Quad/Line(center)/Close fill of type 1. Singular
+point/line rectangles have no outline and zero fills; reversed corners change
+the captured sector. Temporary `/tmp/sdocx-native-named-arc.json` has SHA-256
+`362b79f985a6ad4eb329d70b681b82b88bf9e82a1a13f4b8dfe11d45332b82e6`.
+Native template/Path/Bezier and libc++ code execute; bounded allocation/memory,
+logging/string length, single-thread once/TLS/mutex and verified host math remain
+boundaries. No full ObjectShape/SDK constructor or canvas executes.
+
+A clean co-edit probe copies that actual generated outline using native
+`Path::Construct`, then executes wrapper `0x20b9cc` twice. Four supplied
+bounds/rotation/flip cases agree across five fills, including recovered
+angle/text state. Source and display retain the generated Move/Quad/Quad;
+fill remains the separate center-closed sector. Temporary
+`/tmp/sdocx-native-generated-coedit-arc.json` has SHA-256
+`34da6a82a050c6b0cc728351ead7a47a8ca9f025a182b19ae8ceeecc16d44671`.
+These are native-generated input paths, not decoded saved samples.
+
+The actual unknown-template constructor (`0x2121a0`), virtual loader and
+postprocessors also executed through the wrapper for five supplied raw Arc/Oval
+cases, twice each across five fills. Display keeps raw verbs 5/7, while base
+outline contains Move/Quad with Close where normalization adds it. Dedicated
+fill count is zero;
+text margins are five on all sides. Positive-360 reuse loses base Close and
+reduces native edit-point count from nine to eight. The edit list getters
+(`0x20ee48`, `0x20edc8`) access distinct storage from the serialized control-point
+list; edit state also agrees across fills. Temporary
+`/tmp/sdocx-native-unknown-coedit.json` has SHA-256
+`0a932e0d8fba350ee1a6ba475a1141de662a3ed7874dd568c9726efeb486aeb9`.
+This establishes the general-template wrapper behavior on explicit inputs,
+without claiming a saved-file producer or executing Drawing.
 
 Drawing's solid-color shape branch retrieves each dedicated
 `ObjectShape::GetFillPath`, converts its segments and draws it
