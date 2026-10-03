@@ -8,13 +8,15 @@ ordinary cut route replaces an original stroke with ordinary stroke fragments;
 it does not require the reader to recover an editor gesture and subtract its
 path at export time.
 
-The dispatch, object mutation and save boundaries below are static ARM64 and
-decompiled Java findings. Separate bounded native executions confirm collision
+The dispatch, object mutation and handwriting save-boundary traces are static
+ARM64 and decompiled Java findings. Separate bounded native executions confirm collision
 predicates, coordinate preparation, retained-part construction, generated XY,
 fragment channel arrays and timestamp arithmetic. Those captures stop before
-object copying or the final `SetPoint` body. Neither full editor interaction nor
-save/reload after a device erasing gesture was executed. Brush erasing and
-generic saved eraser-property rendering remain unresolved contracts.
+object copying or the final `SetPoint` body. Additional executions inspect
+legacy-rectangle loader prefixes, complete modern common-frame writing and
+saved-stroke redraw adapters. Neither full editor interaction nor save/reload
+after a device erasing gesture was executed. Brush erasing and end-to-end
+saved eraser-property rendering remain unresolved contracts.
 
 The APK is the artifact identified in the
 [knowledge base](README.md#sources-and-validation). Library identities are:
@@ -25,6 +27,10 @@ The APK is the artifact identified in the
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+| `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+| `libSPenPenCommon.so` | `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d` |
+| `libSPenMarker2.so` | `f1b2ceea921baac78b722cbd5423732f42d7bec19ccb63d428cf429582412269` |
+| `libSPenEraser.so` | `b95ab0451ec8f7cb22ed4a83b1b6e678e441c8486098cb03702ca5a7031eeffb` |
 
 Addresses belong to Composer unless a different library is named. Unexported
 Composer methods are identified through signature strings, constructor RTTI,
@@ -342,6 +348,56 @@ The handwriting fragment helper replaces ordinary point channels and does not
 set that flag or create an Eraser-named stroke. Its existence does not establish
 how brush eraser objects should render.
 
+### Stored state and redraw inputs
+
+Model ordinary object copy preserves byte 332 at `0x2e3b40`–`0x2e3b54`;
+history packing and equality also inspect it. The separate draw-data copy,
+`CopyDrawingData`, `0x2eb144`–`0x2eb3fc`, copies point channels and drawing
+settings but omits that byte. PenCommon's JNI `setEraserEnabled`, `0x414a8`,
+and `isEraserEnabled`, `0x414b0`, are literal `mov w0, wzr; ret` stubs.
+The Java pen-mode setter treats the false return as an error.
+
+Drawing `drawObjectStroke`, `0x81a20`–`0x825a4`, obtains a pen by saved name,
+applies settings and passes the object to `redrawIPen` at `0x82590`, with no
+identified eraser-flag getter or setter call. Marker2 V1's saved-object adapter,
+`0x21c58`–`0x21d1c`, and Eraser's adapter, `0x1a610`–`0x1a6d4`, obtain tool
+type, count, XY, pressure, timestamps, tilt and orientation for a `MotionEvent`.
+Neither obtains eraser byte 332 or partial-rectangle data.
+
+With supplied three-point native state, toggling byte 332 from 0 to 1 leaves
+every constructor argument unchanged for both adapters. Actual Model getters
+and `CopyTempPointToRealPoint` execute with empty temporary vectors; capture
+stops at the external `MotionEvent` constructor entry, before its body, event
+redraw or painting. This establishes the adapter boundary, not every saved
+eraser-enabled object's appearance.
+
+### The dedicated Eraser compositor
+
+Ordinary Marker2 V1 selects `uIsEraserMode = 0` at `0x24208`; see
+[pen opacity](pen-opacity-findings.md#marker2-v1-separates-mask-coverage-from-color-composition).
+Eraser's separate `EraserStrokeDrawableRTV1::Draw` calls its mask at
+`0x1bb2c` and compositor at `0x1bb88`. Its `drawComposite`, `0x1bdb8`, disables
+blending at `0x1bddc`, binds the existing-layer and stroke-coverage textures,
+and supplies member 56 as uniform `Alpha` at `0x1be84`–`0x1be94`. Shader
+construction identifies the texture/uniform slots at `0x1d060`–`0x1d0a4`.
+
+Embedded `EraserCompositeShader::szFragmentShader`, `0xdead`, attenuates
+existing premultiplied color `Cd` and alpha `Ad` using coverage `m` and
+drawable alpha `a`:
+
+```text
+Aout = Ad * (1 - a * m)
+Cout = Cd * (1 - a * m)
+```
+
+Nonpositive resulting alpha outputs zero; already transparent destination
+fragments are discarded. For ordinary alpha/coverage inputs this is a
+destination-out paint operation. This is static compositor evidence: it does
+not establish that saved bit 3 selects the plugin, that ordinary CUT saves an
+Eraser object, or that common Masking objects subtract paint.
+
+### Render-layer selection
+
 Common render-layer ID 2 is called Masking, but
 [capture composition](capture-composition-findings.md#per-object-render-layer-selection)
 shows that it is a pass-selection field. TapePen insertion assigns that ID.
@@ -350,17 +406,53 @@ used to union pen stamps is another independent geometry/compositing concept.
 Converting all Masking objects into subtractive vector paths would misread
 the recovered fields.
 
-Common partial rectangles and stroke flexible field 5 likewise remain separate.
-The ordinary metadata reader skips four bytes per common partial rectangle;
-its numerical semantics are unresolved. Those bytes cannot be labeled as
-partial-erasure intervals from their name alone.
+## Legacy rectangles are skipped by modern native loading and writing
+
+Common flexible field 1 contains a `u16` count and `16 * count` rectangle
+bytes. Model `m_ApplyOwnBinary_FlexibleArea`, `0x2db794`–`0x2db7c0`, writes
+the count to `BaseData + 104`, bounds-checks the payload, and advances the
+caller pointer without reading or copying coordinates. Its separate
+`sm_GetBaseData_FlexibleArea`, `0x2dc238`–`0x2dc24c`, likewise retains only
+the count and advances by `2 + 16 * count`. `GetPartialRectCount`,
+`0x2caacc`, reads that count. The stroke field 5 reader uses it to skip
+`4 * count` companion bytes at `0x2ed974`–`0x2ed998`. These readers do not
+interpret those payloads as erasure intervals; their historical numeric
+meaning remains unresolved.
+
+Executed prefixes with counts 0, 1, 2 and 17 and arbitrary coordinate bytes
+consume exactly those spans. Only the rotation-default bytes 68–71 and count
+bytes 104–107 change in supplied `BaseData`. Both captures stop immediately
+after the rectangle branch, before later flexible fields.
+
+A separate capture then executes the same object's complete modern public
+`ObjectBase::NewGetBinarySize`, `0x2d11ac`, and `NewGetBinary`, `0x2d1248`.
+`GetOwnBinarySize` adds `2 + 16 * count` for positive counts at
+`0x2da8b4`–`0x2da8e0`, but `GetOwnBinary`, `0x2daad8`, omits flexible field 1:
+
+| Loaded count | Estimated capacity | Emitted frame bytes | Unused capacity |
+| ---: | ---: | ---: | ---: |
+| 0 | 121 | 121 | 0 |
+| 1 | 139 | 121 | 18 |
+| 2 | 155 | 121 | 34 |
+| 17 | 395 | 121 | 274 |
+
+All twenty emitted frames are byte-identical, with declared length 121 and
+flexible mask `0x40000`, whose rectangle bit 1 is absent. The retained count
+is unchanged and every unused output byte remains at its supplied fill. The
+extra estimate is unused capacity, not a malformed declared frame length.
+
+The writer capture supplies zeroed object/base state, explicit `-1` media/user
+IDs, a valid UUID and empty Bundles. Native Base UUID methods, Bundle emptiness,
+point predicate, Model format-version dispatch and complete modern common
+writer execute unchanged. Remaining loader fields, constructors, stroke-specific
+writing, archive saves and older compatibility representations do not execute.
 
 ## Bounded native execution and corpus limits
 
 Temporary Rust Unicorn probes execute unchanged APK instructions through the
-repository's native-machine loader. All groups compare initial memory fills
-`[0,85,165,255,0]`, except the 13 width-prefix calls. Independent
-rebuild/replay reproduced every output hash:
+repository's native-machine loader. Ink groups compare initial memory fills
+`[0,85,165,255,0]`, except the 13 width-prefix calls; rectangle/redraw groups use
+`[0,85,170,255,57]`. Independent rebuild/replay reproduced every output hash:
 
 | Capture | Native calls | Output SHA-256 |
 | --- | ---: | --- |
@@ -369,6 +461,8 @@ rebuild/replay reproduced every output hash:
 | Collision/part producer `0x520078` | 60 + 5 prior Ink calls | `2d8851942195c29669006667eb87875260abb76515eaef8a4c265c9f8918a261` |
 | Three collision predicates | 240 | `b42d9ab8afd588412fe56026ff4b691449edf2c80cb14320e8f842370cf16505` |
 | Preparation/inverse helpers | 155 | `0319e59807874ba4eae27d796d80602ccde9ee54dbf3d99b7a8271d4127ae547` |
+| Rectangle loaders, redraw adapters and pen-mode stubs | 40 + 20 + 10 | `1dc3cd75a938cf0d47dbc2bfe98466b2ba765d2537f3420f06373fc275c77a6c` |
+| Reader prefix → modern common size/write | 20 × 3 | `347db6dd8e0818c4e2e07f3183cfeab368c2bf25d52c5da60d8e992077251693` |
 
 The array capture supplies five source samples, range/endpoint cases, paired
 stylus presence and millisecond mode. It hosts source getters, append time,
@@ -390,9 +484,15 @@ supplied getters, bounded memmove and a preallocated output vector. It inverts
 prepared source samples, rather than generated intersections. Negative/tiny
 scales, large offsets and unusual pressure values are supplied boundary inputs,
 not editor admission evidence. Arbitrary Tape sin/cos, object copying, complete
-gesture interaction, document mutation and binary save remain outside these
-executed boundaries. These are local research captures, not retained SDK
+gesture interaction, document mutation and binary save remain outside the ink
+capture boundaries. These are local research captures, not retained SDK
 conformance fixtures or a second erase implementation.
+
+The rectangle/redraw inputs likewise come from supplied memory, not a saved
+eraser-enabled document. Allocation and terminal constructor recording are
+hosted. Modern common-frame writing runs completely; whole-object/archive
+save, event redraw, graphics, shader execution and pixels remain outside these
+captures.
 
 The seven documents in the
 [rendering corpus inventory](rendering-corpus-findings.md) contain 7,300
@@ -415,6 +515,13 @@ and Marker4 profiles reject it; the pressure fallback does not establish its
 native rendering semantics. Metadata retention therefore does not certify rendering
 of a saved eraser-enabled object. The ordinary handwriting cutter and that
 rendering gap must be tracked independently.
+
+Given original page bytes, metadata inspection retains raw common `[u8; 16]`
+rectangle records and stroke `[u8; 4]` companions. `StoredObject` indexes that
+external payload; `ParsedDocument` does not own it. Native loading and modern
+common writing cannot recover the discarded coordinates. The retained source
+bytes and decoded metadata therefore have distinct preservation boundaries;
+see [vector retention](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).
 
 The preservation constraint is to retain source fragments, channel order and
 style identity through geometry preparation. Equal XY samples cannot generally

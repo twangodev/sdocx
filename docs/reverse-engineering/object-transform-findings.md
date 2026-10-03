@@ -366,6 +366,48 @@ The finite supplied channels do not certify arbitrary pen-profile behavior.
 Native output SHA-256 is `475a7ae84e758dcc9c722c97758875b6fd43ec1909eeda62f4cba6e86b9a6c45`;
 SDK output is `b5b461743b198e4f29462d11068695d786a014bbf794564ed229719673252ebb`.
 
+### Compressed format loss and native restoration precision are separate
+
+A complementary bridge runs the same complete writer with compression enabled,
+reusing the [executed Painting reducer bindings](painting-source-findings.md#executed-reducer-boundary).
+Actual Model `sm_ReduceStroke` (`0x2ec1a8`) and `sm_ReduceTilt` (`0x2eed34`)
+produce the frame channels; actual `sm_RestoreStroke` (`0x2ed234`) then consumes
+those bytes into count-sized native vectors. Existing public Rust `StoredObject`
+APIs decode the complete emitted frames. No second geometry, compression,
+serialization or frame-decoding implementation is introduced.
+
+Fourteen zero-angle cases extend the twelve above with supplied timestamp wrap
+under both hidden-resize flags. The 42 payloads are each 227 bytes (129 common,
+98 stroke), repeated under five scratch-allocation/output fills. Restore consumes
+56 channel bytes each; canaries and vector tuple pointers remain unchanged.
+Restored values differ from the supplied pre-save source in 10 of 126 points and
+126 of 168 channel vectors: all pressure, tilt and orientation vectors, no
+timestamp vector. These counters compare values, not writer mutation of source
+buffers. Native format quantization/restoration already introduces these losses;
+they are separate from Rust decoding or retaining the original encoded bytes.
+
+Native Restore narrows the first widened coordinate pair with `FCVTN`
+(`0x2ed438`), then accumulates coordinate and float-channel deltas in f32
+(`0x2ed614`, `0x2ed624`, `0x2ed684`, `0x2ed694`). Rust retains the wire seed and
+accumulates deltas in f64. One fractional third X is `150.2874984741211` in Rust
+and `150.28750610351562` in native PointF. All 126 captured Rust samples and all
+captured float channels agree with native words after narrowing; this finite
+agreement does not establish general equivalence of f64 and repeated f32 sums.
+
+Supplied timestamps `[2147483646,-2147483648,-2147483647]` restore as those native
+signed 32-bit words; Rust's i64 delta accumulation yields
+`[2147483646,2147483648,2147483649]`. Narrowing recovers native words. This exposes
+the representation boundary without proving the editor admits this extreme
+sequence. Bounds, hidden visibility and reflected sample order survive transport.
+
+The explicit supplied metadata/style/context and hosted-import boundary above
+still applies. Complete native loading and its subsequent caller scaling,
+count-zero/malformed inputs, constructors/lifecycle, outer document/integrity
+transport and rendering are excluded. Both programs strictly compile and
+independently replay exactly. Native JSON SHA-256 is
+`effc95926461ed4f833e632cd64c7c947e083ec09b6e29381480e7dbf9e6d92c`;
+SDK JSON SHA-256 is `7e8a9c91b409a2433cc7b2b8e68dbdc94740e14b058961d812f442423d75eacd`.
+
 ## Consequences for the current Rust representation
 
 The recognized type-4 `PageObjectContent::Container` preserves child order;
