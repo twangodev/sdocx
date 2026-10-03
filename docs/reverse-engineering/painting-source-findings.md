@@ -3,9 +3,10 @@
 ## Evidence boundary
 
 The archive and replay findings are static traces in Samsung Notes 4.4.45.37.
-A bounded native stroke-reducer capture is identified separately below. No `.spp`
-was generated, loaded or replayed during this investigation. These findings do
-not establish complete SVG or brush appearance parity.
+Bounded native stroke-reducer and anchor-metadata writer captures are identified
+separately below. No `.spp` was generated, loaded or replayed during this
+investigation. These findings do not establish complete SVG or brush appearance
+parity.
 
 The APK is
 `com.samsung.android.app.notes_4.4.45.37-444537000_minAPI29(arm64-v8a,armeabi-v7a)(nodpi)_apkmirror.com.apk`,
@@ -17,6 +18,7 @@ The extracted ARM64 libraries were compared byte-for-byte against the APK entrie
 | `lib/arm64-v8a/libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `lib/arm64-v8a/libSPenPaintingCompat.so` | `fb2f8cd46c45cc4b6ef79f7e7d45c7eac9f12583bfc70ff48e1244f9c861d4a8` |
 | `lib/arm64-v8a/libSPenPaintingCore.so` | `56b386228e9b4217a08e16afd7d8f65482bc6e66e4c76f0951a640e1a703c3fa` |
+| `lib/arm64-v8a/libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 
 Native addresses below are ELF virtual addresses. Decompiled Java paths are
 relative to `scratch/apk-analysis-decompiled/sources/`.
@@ -79,8 +81,9 @@ then builds `<internal-directory>/note.note` (`0x2babc8–0x2babd4`; literal at
 `0x147277`). `PageDocManager::SavePage`, `0x2c6860`, saves changed pages,
 adds their ID plus the page extension to the ZIP (`0x2c6998–0x2c69c0`), calls
 the conditional `SaveHistory` route (`0x2c69d0`) and includes existing packed
-source data (`0x2c69dc`). The history call alone does not establish a saved
-history member.
+source data (`0x2c69dc`). This captured history route cannot add an undo file:
+`PageDoc::GetSavedHistoryFileName`, `0x3361e4`, returns false on every branch,
+preventing `SaveHistory` from reaching `NoteZip::Add` at `0x2c6c04`.
 The page extension is `.page` (literal at `0x162198`).
 `EndTag::GetBinary`, `0x2a891c`, selects the signature from its stored note type
 at `+276` (`0x2a8db8–0x2a8df4`). NoteType 1 selects the 39-byte
@@ -192,6 +195,8 @@ ordinary object framing, malformed-input handling or archive/replay execution.
 The emitted bytes encode native quantized deltas; they are not the original
 PointF arrays. Retaining the original stored block and exposing decoded channels
 therefore serve different preservation purposes.
+The probe was independently rebuilt and replayed; its output SHA-256 was
+`cf9347195b0db00e4d685a4f2999ca4d78ca708bb9724d00b9474237bdeaba7d`.
 
 ## Replay consumes original stroke channels and also uses bitmaps
 
@@ -228,14 +233,76 @@ Its `isClear=true` branch also calls `PageDoc::RemoveAllObject`
 (`0x6a390`, `0x6b014`). This removes the current layer's objects:
 `m_SetCurrentLayer` writes the same layer pointer to manager `+40` and its
 ObjectHandler at `0x3476e8–0x3476ec`; `ObjectHandlerBase::RemoveAllObject`
-calls that layer's removal at `0x364770`. Whether replay/history retains
-removed geometry in a subsequently saved source requires separate evidence.
+calls that layer's removal at `0x364770`. Successful Painting removal also
+clears page-impl packet counter `+552` and accumulated object count `+560`
+at `0x32e49c–0x32e4a4`; earlier packed-source reuse cannot be inferred afterward.
 `PaintingCompatViewFillColorAction::fillColor`, `0x7441c`, sets dirty bitmap
 at `0x74740` and commits history at `0x7476c`. Model
 `LayerDocImpl::SetDirtyBitmap`, `0x351424`, stores a path at impl `+184`, not a
 sample array. These traces alone do not establish whether each history action
 also has independently serializable vector geometry; dirty bitmap presence
 must not be reported as a vector object.
+
+`PageDocImpl::SetHistoryManager`, `0x3616f4`, constructs a plain runtime
+`HistoryManager`. History-enabled removal binds existing objects and packs their
+handles for undo/redo (`0x35a988`, `0x35a99c`). `PackObjectHandleList`,
+`0x368a48`, appends object pointers to history impl `+48/+64`; it invokes no
+stroke serializer. These references can retain live objects after removal from
+the active layer. The generic manager's save/load/filename APIs return false,
+so this runtime undo state does not establish serialized vector history.
+
+## Anchor images checkpoint replay without replacing original strokes
+
+Compat `SetReplayAnchorBitmapEnabled`, `0x70b0c`, creates anchor bitmaps then
+stores their interval/list in PageDoc (`0x70bc0`, `0x70bd8`, `0x70bf0`). Disabling
+stores threshold -1 and a null list. Neither branch removes source objects.
+`CreateReplayAnchorBitmap`, `0x63370`, copies visible layers' drawing bitmaps
+and saves them at quality 100 (`0x636a0`) while advancing the existing stroke
+list through `drawOrSkipStroke` (`0x63718`). Model `SetAnchorImageList`,
+`0x336e14`, binds these paths and keeps their media IDs separately from vectors.
+
+Model `Save_AnchorImage`, `0x3389cc`, writes threshold i32 under mask bit 25
+when threshold >=1. A nonempty list sets bits 26/27 and writes count i32,
+then each anchor's stroke index, timeline field and media ID as three i32
+values, followed by a second pass writing layer IDs. It contains no sample
+arrays. `LoadHeader_AnchorImage`, `0x33b138`, restores paths through media IDs;
+the layer-ID pass is optional under bit 27, otherwise IDs remain initialized -1.
+The timeline field's precise unit remains unverified.
+
+A Rust probe reused the conformance `Machine` and executed this native writer
+with actual Base `List` construction, insertion, count and traversal. Host
+support supplied bounded allocation/deletion, a `File::Write` byte sink and
+no-op recursive-mutex imports for single-threaded execution. Two supplied
+anchors `[layer,index,timeline,mediaID]` were `[7,29,250,17]` and `[-1,59,500,19]`;
+these were metadata inputs, not validated media bindings. The initial mask was
+`0x81`.
+
+| Threshold | Bound list | Resulting mask | Written bytes |
+| --- | --- | --- | --- |
+| -1 | absent | `0x00000081` | 0 |
+| 0 | absent | `0x00000081` | 0 |
+| 30 | absent | `0x02000081` | 4 |
+| 0 | two anchors | `0x0c000081` | 36 |
+| 30 | two anchors | `0x0e000081` | 40 |
+
+All five cases agreed across heap fills `0x00/0xa5/0xff`; supplied records and
+native list counts remained unchanged. This capture covers anchor metadata
+writing, not complete page framing, resource binding, archives or replay.
+The probe was independently rebuilt and replayed; its output SHA-256 was
+`ce537a822d43e494d43301d684a3bb6f0d754e1ea6614309b587bbbd73882671`.
+
+On fresh replay initialization, Compat `InitializeData`, `0x6021c`, calls
+`PageDoc::LoadAllObjects` before copying stored anchors (`0x60304–0x60360`);
+the caller does not check that load's return value.
+`FindAnchorBitmap`, `0x61b68`, chooses an anchor strictly before the requested
+frame's stroke index. The bound-list branch of `GetAnchorFileName`, `0x64940`,
+accepts a matching layer ID or -1 for a matching checkpoint index; its other
+branch derives temporary filenames.
+`SetReplayPositionWithAnchorBitmap`, `0x61fd8`, loads visible layers' checkpoint
+bitmaps (`0x6216c`), then calls `drawObjects` from checkpoint +1 (`0x62358`) and
+`drawOneFrame` (`0x62398`). The bitmap covers an already-drawn prefix; remaining
+replay uses original stroke channels. This shortcut does not justify discarding
+the prefix vectors or treating dirty-bitmap clears as equivalent checkpoints.
 
 ## Corpus and Rust consequences
 
@@ -258,6 +325,8 @@ stroke geometry after separately decoding ordinary base/stroke packets, explicit
 f32 coordinates without inventing precision, and preserving layer order,
 visibility and replay metadata. Flattening `.page`
 alone or exporting the JPEG thumbnail cannot establish vector preservation.
-The remaining significant unknown is the full ordinary
-`ObjectStrokeBinaryHandler` wire layout and how source packet objects,
-anchor-image operations and dirty bitmap changes combine during replay.
+The remaining significant unknowns are the full ordinary
+`ObjectStrokeBinaryHandler` wire layout, concrete archive membership after a
+bitmap clear, and whether separate recorded-operation contracts retain removed
+original samples. Runtime undo handles and anchor images alone do not establish
+that preservation.

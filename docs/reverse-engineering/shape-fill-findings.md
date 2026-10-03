@@ -332,3 +332,33 @@ pixel-buffer `Bitmap::Construct` call (`0x9c8d4`): width/height 8, row stride
 All 896 observed cells agree with row/MSB order and exact ARGB-to-RGBA
 conversion, including transparent colors. Pixel-buffer `Bitmap::Construct`,
 CanvasBitmapFactory, shader execution and tile phase remain excluded.
+
+### Native vector clip-stack state
+
+A separate probe submits the prior captured partition operation sequence
+directly to native `SkClipStack::clipDevPath` (`0x1a38b8`), then executes
+native bounds queries, element iteration/replay and optional save/restore.
+This is not an integrated effect-dispatcher/canvas scene. Eight cases match
+across five fresh machines with varied heap/caller-storage fills; independent
+source rebuild reproduces SHA-256
+`9a91a711ef5c0ed184fcf09b7c11ee997dbbb1d38b8e8aba521155c3d3145209`.
+
+Incoming clips are wide-open, a rectangle, a triangle and an explicit cubic
+path; source paths are constructed by native path methods. Element replay
+retains native path references and ordered operation/antialias values. The
+operation-0/2 sequence leaves six added elements. For incoming rectangle or
+triangle metadata bounds `(120,30,180,60)`, final native `getBounds`
+(`0x1a2d24`) reports `(10,21,310,71)`. These bounds include `BoundsType`
+metadata, not an exact visible region; the wide-open/difference cases are
+not finite-region certificates. Native save/restore returns a structurally
+equal original stack through native `operator==`; that equality is not a
+claim of pixel-region equivalence. RasterClip, device clipping and pixels
+remain excluded. Vector exporters must preserve paths, operations, ordering
+and scope rather than substitute these metadata rectangles.
+
+Native RawIter (`0x1d41ac`) on replayed path references retains the original
+fractional midpoint/corners, including `(10.25,20.5)`, and incoming cubic
+control points. The antialias-false metadata branch (`0x1a1908–0x1a191c`)
+adds the literal `f32` vector
+`(0.44999998807907104,0.5,0.5,0.5)` from `0x88870` and applies `FRINTM`.
+That metadata adjustment does not rewrite the captured vector coordinates.
