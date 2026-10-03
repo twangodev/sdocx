@@ -101,7 +101,7 @@ fn production_wrapper_replays_supplied_native_numeric_selection_and_placement() 
         .unwrap();
         // This capture supplies numeric entries independently of shaping and glyph metrics.
         wrapper.native_slots = Some(NativeParagraphSlots {
-            entries: entries(&case),
+            entries: NativeWrapEntries::new(entries(&case), None).unwrap(),
             origin_utf16: 0,
         });
         let mut line = wrapper
@@ -170,7 +170,7 @@ fn native_grouped_alignment_uses_block_width_instead_of_cursor_extent() {
     )
     .unwrap();
     wrapper.native_slots = Some(NativeParagraphSlots {
-        entries: entries(case),
+        entries: NativeWrapEntries::new(entries(case), None).unwrap(),
         origin_utf16: 0,
     });
     let line = wrapper.candidate(16_777_220.0, |_| {}).unwrap().unwrap();
@@ -396,14 +396,20 @@ fn supplied_zero_surrogate_slots_preserve_source_and_diagnose_owner_cuts() {
     )
     .unwrap();
     wrapper.native_slots = Some(NativeParagraphSlots {
-        entries: entries(case),
+        entries: NativeWrapEntries::new(entries(case), None).unwrap(),
         origin_utf16: 0,
     });
     let line = wrapper.candidate(10.0, |_| {}).unwrap().unwrap();
     assert_eq!(line.source, 0..2);
     assert!(!line.unsupported_native_wrapping());
     assert_eq!(line.native_slots.as_ref().unwrap().entries.len(), 3);
-    wrapper.native_slots.as_mut().unwrap().entries[2].advance = 2.0;
+    wrapper
+        .native_slots
+        .as_mut()
+        .unwrap()
+        .entries
+        .update_advance(2, 2.0)
+        .unwrap();
     let safe = wrapper.candidate(10.0, |_| {}).unwrap().unwrap();
     assert_eq!(safe.source, 0..1);
     assert!(safe.unsupported_native_wrapping());
@@ -439,7 +445,7 @@ fn narrowed_native_no_block_uses_diagnosed_policy_without_exhausting_source() {
     )
     .unwrap();
     wrapper.native_slots = Some(NativeParagraphSlots {
-        entries: entries(case),
+        entries: NativeWrapEntries::new(entries(case), None).unwrap(),
         origin_utf16: 0,
     });
     assert_eq!(

@@ -1,13 +1,11 @@
 use super::super::native_wrap::{
-    NativeBlock, NativeEntryCursor, NativeHorizontalAlignment, NativeWrapEntry, NativeWrapError,
-    NativeWrapKind, NativeWrapMetrics, NativeWrapWidths, select_native_block,
-    select_native_block_with_objects,
+    NativeBlock, NativeEntryCursor, NativeHorizontalAlignment, NativeWrapEntries, NativeWrapEntry,
+    NativeWrapError, NativeWrapKind, NativeWrapMetrics, NativeWrapWidths,
 };
 use super::*;
 
 pub(super) struct NativeMixedSlots {
-    entries: Vec<NativeWrapEntry>,
-    objects: Vec<bool>,
+    entries: NativeWrapEntries,
     block_objects: Vec<Option<NativeBlockObjectGeometry>>,
     item_slots: Vec<Range<usize>>,
     origin_utf16: u32,
@@ -25,7 +23,7 @@ pub(super) struct NativeMixedLine {
 
 impl NativeMixedLine {
     pub fn new(
-        slots: NativeMixedSlots,
+        slots: &NativeMixedSlots,
         styled: &StyledText<'_>,
         source: Range<usize>,
         visual_scalars: Vec<usize>,
@@ -73,11 +71,20 @@ pub(super) struct NativeMixedSelection {
 }
 
 impl NativeMixedSlots {
+    pub fn has_invalid_advances(&self) -> bool {
+        self.entries.has_invalid_advances()
+    }
+
     fn retain_line(
-        self,
+        &self,
         styled: &StyledText<'_>,
         source: Range<usize>,
     ) -> Result<Self, MeasurementError> {
+        // The original mixed builder admitted the whole paragraph, including
+        // objects outside this line. Retaining a prefix must keep that boundary.
+        if self.has_invalid_advances() {
+            return Err(MeasurementError::InvalidCluster);
+        }
         let range = self.range(styled, source)?;
         if range.is_empty() || range.end > self.entries.len() {
             return Err(MeasurementError::InvalidRange);
@@ -96,11 +103,15 @@ impl NativeMixedSlots {
                     .and_then(|end| end.checked_sub(range.start));
                 entry
             })
-            .collect();
-        let item_slots = self
+            .collect::<Vec<_>>();
+        let first_item = self
             .item_slots
-            .into_iter()
-            .filter(|slots| slots.start < range.end && slots.end > range.start)
+            .partition_point(|slots| slots.end <= range.start);
+        let last_item = self
+            .item_slots
+            .partition_point(|slots| slots.start < range.end);
+        let item_slots = self.item_slots[first_item..last_item]
+            .iter()
             .map(|slots| {
                 Ok(slots
                     .start
@@ -113,9 +124,13 @@ impl NativeMixedSlots {
                         .ok_or(MeasurementError::InvalidRange)?)
             })
             .collect::<Result<_, MeasurementError>>()?;
+        let objects = range
+            .clone()
+            .map(|slot| self.entries.is_object(slot))
+            .collect();
         Ok(Self {
-            entries,
-            objects: self.objects[range.clone()].to_vec(),
+            entries: NativeWrapEntries::new(entries, Some(objects))
+                .map_err(|_| MeasurementError::InvalidCluster)?,
             block_objects: self.block_objects[range].to_vec(),
             item_slots,
             origin_utf16,
@@ -207,9 +222,11 @@ impl NativeMixedSlots {
             }
             entry.break_end_utf16 = ends.peek().copied();
         }
+        #[cfg(test)]
+        MIXED_CONSTRUCTIONS.with(|count| count.set(count.get() + 1));
         Ok(Some(Self {
-            entries,
-            objects,
+            entries: NativeWrapEntries::new(entries, Some(objects))
+                .map_err(|_| MeasurementError::InvalidCluster)?,
             block_objects,
             item_slots,
             origin_utf16,
@@ -235,13 +252,16 @@ impl NativeMixedSlots {
     }
 
     pub fn select(
-        &self,
+        &mut self,
         styled: &StyledText<'_>,
         source: Range<usize>,
         widths: [f64; 2],
         items: &mut [MeasuredItem],
         prepare: &mut impl FnMut(&mut PositionedObject),
     ) -> Result<Option<NativeMixedSelection>, MeasurementError> {
+        if self.has_invalid_advances() {
+            return Err(MeasurementError::InvalidCluster);
+        }
         let range = self.range(styled, source)?;
         let width = |value| {
             if value == f64::INFINITY {
@@ -250,18 +270,22 @@ impl NativeMixedSlots {
                 native_geometry(value)
             }
         };
-        let block = select_native_block_with_objects(
-            &self.entries,
+        let mut cursor =
+            NativeEntryCursor::new(0.0).map_err(|_| MeasurementError::InvalidCluster)?;
+        let mut positioned_until = range.start;
+        let mut prepared_items = Vec::new();
+        let block = self.entries.select_with_objects(
             range.clone(),
             NativeWrapWidths {
                 available: width(widths[0])?,
                 full: width(widths[1])?,
             },
-            &self.objects,
             |slot, _| {
-                let mut cursor = NativeEntryCursor::new(0.0)?;
-                for previous in range.start..slot {
-                    let advance = if self.objects[previous] {
+                // Placement folds physical advances continuously, separately from
+                // GetBlockInfo's committed/pending grouping. Each prefix slot is
+                // visited once, and earlier objects already contain callback widths.
+                for previous in positioned_until..slot {
+                    let advance = if self.entries.is_object(previous) {
                         let item = self
                             .item_slots
                             .partition_point(|range| range.end <= previous);
@@ -272,6 +296,7 @@ impl NativeMixedSlots {
                     };
                     cursor.advance(advance)?;
                 }
+                positioned_until = slot;
                 let item = self.item_slots.partition_point(|range| range.end <= slot);
                 let MeasuredItem::Object { placement, .. } = &mut items[item] else {
                     return Err(NativeWrapError::InvalidRange);
@@ -285,11 +310,17 @@ impl NativeMixedSlots {
                     return Err(NativeWrapError::NumericOverflow);
                 }
                 prepare(placement);
+                prepared_items.push(item);
                 native_geometry(placement.object.advance())
                     .map_err(|_| NativeWrapError::InvalidAdvance)
             },
-        )
-        .map_err(|_| MeasurementError::InvalidCluster)?;
+        );
+        // The admission decision used the old width; later selection and line
+        // placement must observe every completed callback, including failed retries.
+        for item in prepared_items {
+            self.sync_object(item, &items[item]);
+        }
+        let block = block.map_err(|_| MeasurementError::InvalidCluster)?;
         block
             .map(|block| {
                 let end = u32::try_from(*block.range_utf16_inclusive.end() + 1)
@@ -303,6 +334,21 @@ impl NativeMixedSlots {
                 })
             })
             .transpose()
+    }
+
+    pub fn sync_object(&mut self, index: usize, item: &MeasuredItem) {
+        let MeasuredItem::Object { placement, .. } = item else {
+            return;
+        };
+        let slot = self.item_slots[index].start;
+        // Store invalid feedback too: the stream rejects its requested range
+        // before another callback, and valid restoration clears that rejection.
+        let _ = self
+            .entries
+            .update_advance(slot, placement.object.advance() as f32);
+        self.block_objects[slot] = (!placement.object.inline).then(|| NativeBlockObjectGeometry {
+            visible_width: placement.object.width() as f32,
+        });
     }
 
     pub fn block_width(
@@ -326,16 +372,17 @@ impl NativeMixedSlots {
         {
             return Err(MeasurementError::InvalidCluster);
         }
-        let mut block = select_native_block(
-            &self.entries,
-            range,
-            NativeWrapWidths {
-                available: f32::MAX,
-                full: f32::MAX,
-            },
-        )
-        .map_err(|_| MeasurementError::InvalidCluster)?
-        .ok_or(MeasurementError::InvalidCluster)?;
+        let mut block = self
+            .entries
+            .select(
+                range,
+                NativeWrapWidths {
+                    available: f32::MAX,
+                    full: f32::MAX,
+                },
+            )
+            .map_err(|_| MeasurementError::InvalidCluster)?
+            .ok_or(MeasurementError::InvalidCluster)?;
         if let Some(object) = object {
             block.width = object.visible_width;
         }
@@ -421,6 +468,11 @@ impl NativeMixedSlots {
             objects,
         })
     }
+}
+
+#[cfg(test)]
+thread_local! {
+    static MIXED_CONSTRUCTIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]

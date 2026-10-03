@@ -1,7 +1,9 @@
 use super::super::native_entry::NativeEntryKind;
+#[cfg(test)]
+use super::super::native_wrap::select_native_block;
 use super::super::native_wrap::{
     NativeBlock, NativeEntryCursor, NativeEntryPosition, NativeHorizontalAlignment,
-    NativeWrapEntry, NativeWrapKind, NativeWrapMetrics, NativeWrapWidths, select_native_block,
+    NativeWrapEntries, NativeWrapEntry, NativeWrapKind, NativeWrapMetrics, NativeWrapWidths,
 };
 use super::*;
 
@@ -39,7 +41,7 @@ impl From<f64> for ParagraphMeasurementWidth {
 }
 
 pub(super) struct NativeParagraphSlots {
-    entries: Vec<NativeWrapEntry>,
+    entries: NativeWrapEntries,
     origin_utf16: u32,
 }
 
@@ -187,7 +189,8 @@ impl NativeParagraphSlots {
             return Err(MeasurementError::InvalidCluster);
         }
         Ok(Some(Self {
-            entries,
+            entries: NativeWrapEntries::new(entries, None)
+                .map_err(|_| MeasurementError::InvalidCluster)?,
             origin_utf16,
         }))
     }
@@ -222,15 +225,16 @@ impl NativeParagraphSlots {
         full: f64,
     ) -> Result<Option<usize>, MeasurementError> {
         let range = self.range(styled, source)?;
-        let block = select_native_block(
-            &self.entries,
-            range,
-            NativeWrapWidths {
-                available: width(available)?,
-                full: width(full)?,
-            },
-        )
-        .map_err(|_| MeasurementError::InvalidCluster)?;
+        let block = self
+            .entries
+            .select(
+                range,
+                NativeWrapWidths {
+                    available: width(available)?,
+                    full: width(full)?,
+                },
+            )
+            .map_err(|_| MeasurementError::InvalidCluster)?;
         block
             .map(|block| {
                 let end = u32::try_from(*block.range_utf16_inclusive.end() + 1)
@@ -254,16 +258,17 @@ impl NativeParagraphSlots {
         visual_scalars: &[usize],
     ) -> Result<NativeLineSlots, MeasurementError> {
         let range = self.range(styled, source.clone())?;
-        let block = select_native_block(
-            &self.entries,
-            range.clone(),
-            NativeWrapWidths {
-                available: f32::MAX,
-                full: f32::MAX,
-            },
-        )
-        .map_err(|_| MeasurementError::InvalidCluster)?
-        .ok_or(MeasurementError::InvalidCluster)?;
+        let block = self
+            .entries
+            .select(
+                range.clone(),
+                NativeWrapWidths {
+                    available: f32::MAX,
+                    full: f32::MAX,
+                },
+            )
+            .map_err(|_| MeasurementError::InvalidCluster)?
+            .ok_or(MeasurementError::InvalidCluster)?;
         let entries = self.entries[range.clone()].to_vec();
         let cluster_slots = clusters
             .iter()

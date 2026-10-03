@@ -1,4 +1,5 @@
-use std::ops::{Range, RangeInclusive};
+use std::collections::BTreeSet;
+use std::ops::{Deref, Range, RangeInclusive};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum NativeWrapKind {
@@ -37,6 +38,125 @@ pub(super) struct NativeWrapEntry {
     pub kind: NativeWrapKind,
     pub break_end_utf16: Option<usize>,
     pub metrics: NativeWrapMetrics,
+}
+
+/// Paragraph entries whose source topology and metrics have been checked once.
+/// Only object advances change after preparation; invalid updates remain indexed
+/// so any requested future object is rejected before another callback runs.
+pub(super) struct NativeWrapEntries {
+    entries: Vec<NativeWrapEntry>,
+    objects: Option<Vec<bool>>,
+    invalid_advances: BTreeSet<usize>,
+}
+
+impl Deref for NativeWrapEntries {
+    type Target = [NativeWrapEntry];
+
+    fn deref(&self) -> &Self::Target {
+        &self.entries
+    }
+}
+
+impl NativeWrapEntries {
+    pub fn new(
+        entries: Vec<NativeWrapEntry>,
+        objects: Option<Vec<bool>>,
+    ) -> Result<Self, NativeWrapError> {
+        validate_entries(&entries, 0..entries.len(), objects.as_deref())?;
+        Ok(Self {
+            entries,
+            objects,
+            invalid_advances: BTreeSet::new(),
+        })
+    }
+
+    pub fn update_advance(&mut self, index: usize, advance: f32) -> Result<(), NativeWrapError> {
+        let entry = self
+            .entries
+            .get_mut(index)
+            .ok_or(NativeWrapError::InvalidRange)?;
+        entry.advance = advance;
+        if advance.is_finite() {
+            self.invalid_advances.remove(&index);
+            Ok(())
+        } else {
+            self.invalid_advances.insert(index);
+            Err(NativeWrapError::InvalidAdvance)
+        }
+    }
+
+    pub fn has_invalid_advances(&self) -> bool {
+        !self.invalid_advances.is_empty()
+    }
+
+    fn check_updates(&self, requested: Range<usize>) -> Result<(), NativeWrapError> {
+        if requested.is_empty() || requested.end > self.entries.len() {
+            return Err(NativeWrapError::InvalidRange);
+        }
+        if self.invalid_advances.range(requested).next().is_some() {
+            Err(NativeWrapError::InvalidAdvance)
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn select(
+        &self,
+        requested: Range<usize>,
+        widths: NativeWrapWidths,
+    ) -> Result<Option<NativeBlock>, NativeWrapError> {
+        self.check_updates(requested.clone())?;
+        select_checked_entries(
+            &self.entries,
+            requested,
+            widths,
+            None,
+            |_, _, advance| Ok(advance),
+            |_| {},
+        )
+    }
+
+    pub fn select_with_objects(
+        &self,
+        requested: Range<usize>,
+        widths: NativeWrapWidths,
+        mut prepare: impl FnMut(usize, f32) -> Result<f32, NativeWrapError>,
+    ) -> Result<Option<NativeBlock>, NativeWrapError> {
+        self.check_updates(requested.clone())?;
+        select_checked_entries(
+            &self.entries,
+            requested,
+            widths,
+            Some(
+                self.objects
+                    .as_deref()
+                    .ok_or(NativeWrapError::InvalidRange)?,
+            ),
+            |index, base, _| prepare(index, base),
+            |_| {},
+        )
+    }
+
+    pub fn is_object(&self, index: usize) -> bool {
+        self.objects.as_ref().is_some_and(|objects| objects[index])
+    }
+
+    #[cfg(test)]
+    pub fn object_flags(&self) -> Option<&[bool]> {
+        self.objects.as_deref()
+    }
+
+    #[cfg(test)]
+    pub fn capacity(&self) -> usize {
+        self.entries.capacity()
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    pub(super) static VALIDATED_ENTRY_VISITS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    pub(super) static SELECTED_ENTRY_VISITS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    pub(super) static CURSOR_ENTRY_VISITS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -144,6 +264,7 @@ enum NativeCommitReason {
     Tab,
 }
 
+#[cfg(test)]
 pub(super) fn select_native_block(
     entries: &[NativeWrapEntry],
     requested: Range<usize>,
@@ -152,6 +273,7 @@ pub(super) fn select_native_block(
     select_with_operations(entries, requested, widths, |_| {})
 }
 
+#[cfg(test)]
 fn select_with_operations(
     entries: &[NativeWrapEntry],
     requested: Range<usize>,
@@ -168,6 +290,7 @@ fn select_with_operations(
     )
 }
 
+#[cfg(test)]
 pub(super) fn select_native_block_with_objects(
     entries: &[NativeWrapEntry],
     requested: Range<usize>,
@@ -185,13 +308,14 @@ pub(super) fn select_native_block_with_objects(
     )
 }
 
+#[cfg(test)]
 fn select_with_feedback(
     entries: &[NativeWrapEntry],
     requested: Range<usize>,
     widths: NativeWrapWidths,
     objects: Option<&[bool]>,
-    mut prepare: impl FnMut(usize, f32, f32) -> Result<f32, NativeWrapError>,
-    mut observe: impl FnMut(NativeWrapOperation),
+    prepare: impl FnMut(usize, f32, f32) -> Result<f32, NativeWrapError>,
+    observe: impl FnMut(NativeWrapOperation),
 ) -> Result<Option<NativeBlock>, NativeWrapError> {
     if requested.is_empty() || requested.end > entries.len() || entries.len() > i32::MAX as usize {
         return Err(NativeWrapError::InvalidRange);
@@ -206,12 +330,29 @@ fn select_with_feedback(
     {
         return Err(NativeWrapError::InvalidGeometry);
     }
+    validate_entries(entries, requested.clone(), objects)?;
+    select_checked_entries(entries, requested, widths, objects, prepare, observe)
+}
+
+fn validate_entries(
+    entries: &[NativeWrapEntry],
+    requested: Range<usize>,
+    objects: Option<&[bool]>,
+) -> Result<(), NativeWrapError> {
+    if requested.end > entries.len()
+        || entries.len() > i32::MAX as usize
+        || objects.is_some_and(|objects| objects.len() != entries.len())
+    {
+        return Err(NativeWrapError::InvalidRange);
+    }
     for (index, &entry) in entries
         .iter()
         .enumerate()
         .take(requested.end)
         .skip(requested.start)
     {
+        #[cfg(test)]
+        VALIDATED_ENTRY_VISITS.with(|visits| visits.set(visits.get() + 1));
         if !entry.advance.is_finite() {
             return Err(NativeWrapError::InvalidAdvance);
         }
@@ -231,6 +372,30 @@ fn select_with_feedback(
             return Err(NativeWrapError::InvalidBreakEnd);
         }
     }
+    Ok(())
+}
+
+fn select_checked_entries(
+    entries: &[NativeWrapEntry],
+    requested: Range<usize>,
+    widths: NativeWrapWidths,
+    objects: Option<&[bool]>,
+    mut prepare: impl FnMut(usize, f32, f32) -> Result<f32, NativeWrapError>,
+    mut observe: impl FnMut(NativeWrapOperation),
+) -> Result<Option<NativeBlock>, NativeWrapError> {
+    if requested.is_empty()
+        || requested.end > entries.len()
+        || objects.is_some_and(|objects| objects.len() != entries.len())
+    {
+        return Err(NativeWrapError::InvalidRange);
+    }
+    if ![widths.available, widths.full]
+        .into_iter()
+        .all(|value| value.is_finite() && value >= 0.0)
+        || widths.available > widths.full
+    {
+        return Err(NativeWrapError::InvalidGeometry);
+    }
     let mut committed = 0.0_f32;
     let mut pending = 0.0_f32;
     let mut committed_metrics = NativeWrapMetrics::default();
@@ -244,6 +409,8 @@ fn select_with_feedback(
         .take(requested.end)
         .skip(requested.start)
     {
+        #[cfg(test)]
+        SELECTED_ENTRY_VISITS.with(|visits| visits.set(visits.get() + 1));
         let base = finite(committed + pending)?;
         let candidate = finite(base + entry.advance)?;
         observe(NativeWrapOperation::Candidate {
@@ -367,6 +534,8 @@ impl NativeEntryCursor {
         if !advance.is_finite() || !share.is_finite() {
             return Err(NativeWrapError::InvalidGeometry);
         }
+        #[cfg(test)]
+        CURSOR_ENTRY_VISITS.with(|visits| visits.set(visits.get() + 1));
         let left = self.x;
         let base = finite(left + advance)?;
         let right = if share == 0.0 {

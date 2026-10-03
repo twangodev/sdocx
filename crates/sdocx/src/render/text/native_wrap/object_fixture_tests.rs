@@ -211,3 +211,99 @@ fn object_inputs_are_validated_before_any_preparation() {
     );
     assert_eq!(result, Err(NativeWrapError::InvalidAdvance));
 }
+
+#[test]
+fn raw_wrapping_validates_only_the_requested_source_before_callbacks() {
+    let valid = NativeWrapEntry {
+        advance: 1.0,
+        kind: NativeWrapKind::Ordinary,
+        break_end_utf16: None,
+        metrics: NativeWrapMetrics {
+            font_size: 17.0,
+            height: 17.0,
+        },
+    };
+    let entries = [
+        valid,
+        NativeWrapEntry {
+            advance: f32::NAN,
+            ..valid
+        },
+    ];
+    let widths = NativeWrapWidths {
+        available: 10.0,
+        full: 10.0,
+    };
+    assert!(
+        select_native_block(&entries, 0..1, widths)
+            .unwrap()
+            .is_some()
+    );
+    let mut calls = 0;
+    assert!(
+        select_native_block_with_objects(&entries, 0..1, widths, &[true, false], |_, _| {
+            calls += 1;
+            Ok(2.0)
+        })
+        .unwrap()
+        .is_some()
+    );
+    assert_eq!(calls, 1);
+    assert_eq!(
+        select_native_block_with_objects(&entries, 0..2, widths, &[true, false], |_, _| {
+            panic!("a future invalid requested entry must precede object preparation")
+        }),
+        Err(NativeWrapError::InvalidAdvance)
+    );
+}
+
+#[test]
+fn cached_object_updates_reject_requested_invalid_feedback_and_recover_on_restore() {
+    let entry = NativeWrapEntry {
+        advance: 1.0,
+        kind: NativeWrapKind::Ordinary,
+        break_end_utf16: None,
+        metrics: NativeWrapMetrics {
+            font_size: 17.0,
+            height: 17.0,
+        },
+    };
+    let mut entries =
+        NativeWrapEntries::new(vec![entry; 3], Some(vec![true, false, true])).unwrap();
+    let widths = NativeWrapWidths {
+        available: 10.0,
+        full: 10.0,
+    };
+    assert_eq!(
+        entries.update_advance(2, f32::INFINITY),
+        Err(NativeWrapError::InvalidAdvance)
+    );
+    assert_eq!(
+        entries.select_with_objects(0..3, widths, |_, _| {
+            panic!("invalid future object feedback must precede all callbacks")
+        }),
+        Err(NativeWrapError::InvalidAdvance)
+    );
+    let mut prepared = Vec::new();
+    assert!(
+        entries
+            .select_with_objects(0..2, widths, |index, _| {
+                prepared.push(index);
+                Ok(2.0)
+            })
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(prepared, [0]);
+    entries.update_advance(2, 4.0).unwrap();
+    prepared.clear();
+    let block = entries
+        .select_with_objects(0..3, widths, |index, _| {
+            prepared.push(index);
+            Ok(entries[index].advance)
+        })
+        .unwrap()
+        .unwrap();
+    assert_eq!(prepared, [0, 2]);
+    assert_eq!(block.width, 6.0);
+}
