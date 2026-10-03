@@ -506,6 +506,15 @@ enclosing saved rotation, then widens returned `f32` coordinates to `f64`
 (`0x3a8ee4–0x3a8f20`). Stored controls and generated drawable paths remain
 distinct; the native edit-point list above is a third representation.
 
+Static factory/vtable inspection establishes that saved template identity
+selects the control operation: type 0 Unknown reaches common slot `0x20e45c`,
+which accepts the call without editing geometry; type 20 Arc reaches the
+regenerating setter above. Common loading stores the saved rotation before
+control dispatch. Public writer `NewGetBinary` snapshots outer rotation into
+owning ShapeImpl+264 (`0x399bbc`), temporarily zeroes only the outer/base angle,
+then restores it. `GetOwnBinary` uses that preserved snapshot for both saved
+angle and control-getter frame; +264 is not a live alias of template angle.
+
 Actual constructor/getter/setter execution for ordered positive ellipse and
 circle bounds confirms that reapplying the default generated controls leaves
 captured path and control-getter records byte-identical. Supplying `(20,30)` and
@@ -534,6 +543,25 @@ direct snapshot of stored control arrays or a general native-state guarantee.
 Five fills and independent replay agree; temporary
 `/tmp/sdocx-native-arc-oblique-rotated-controls.json` has SHA-256
 `556e4686577d4bacb1dbf6dcf5df017037929941df31e299cb0970b081c90dc6`.
+
+## Empty saved Triangle is distinct from ordinary construction
+
+Static type-2 Triangle loading accepts an empty Path through `0x2140dc` and
+common loading; it does not invoke the default generator. Its late control
+setter `0x2144ec` rejects a null or empty base outline. Rectangle setter
+`0x2141a8` generates the default Move/Line/Line/Close only when the *previous*
+stored rectangle is all zero; otherwise it resizes existing geometry. With
+positive saved geometry bounds already stored, no implicit Triangle outline
+is recovered by those routes. Ordinary construction starts with zero bounds
+and does reach the generator, so construction and saved loading differ.
+
+For the ordinary unscaled load with matching saved/current owner bounds,
+the final owner rectangle/angle writes and `ClearChanged` do not regenerate
+the object's template. These are static geometry findings, not a complete
+Drawing appearance claim. Rust's pathless Triangle fixtures exercise its
+fixed-vertex fallback and known flip flags; they do not establish native saved
+parity. All five shapes in the recorded [rendering corpus](rendering-corpus-findings.md)
+have stored paths; no application-produced positive pathless Triangle is known.
 
 ## Current Rust preservation and rendering boundaries
 
