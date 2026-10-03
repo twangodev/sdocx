@@ -149,6 +149,8 @@ impl Binary {
                     .get(name)
                     .copied()
                     .unwrap_or_else(|| *imports.entry(name.into()).or_insert(next));
+                let addend = i64::from_le_bytes(relocation[16..24].try_into().unwrap());
+                let target = target.checked_add_signed(addend).unwrap();
                 let address = u64::from_le_bytes(relocation[..8].try_into().unwrap());
                 write(engine, base + address, &target.to_le_bytes());
             }
