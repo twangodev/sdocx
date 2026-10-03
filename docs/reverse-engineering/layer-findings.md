@@ -55,6 +55,51 @@ floating-point values when deciding whether an effect differs from the default.
 The SDK currently retains this payload without assigning names to its numeric
 fields or interpreting its rendering behavior.
 
+## Native mask admission and metadata rewrite
+
+The current WDoc route reaches the generic `Load_LayerData`, Model `0x3559a4`:
+WDoc `WPageImpl::LoadLayerForChild`, `0xd0848`, calls `WLayer::Load` at
+`0xd0894`; Model `WLayer::Load` calls that reader at `0x342188`. Saving reaches
+`Save_LayerData_WDoc` through Model `WLayer::Save` at `0x341db4`.
+
+`Load_PropertyFlag`, `0x355fc0`, and `Load_FieldCheckFlag`, `0x3560cc`, reject
+mask widths greater than four before reading the mask bytes
+(`0x35600c`–`0x356010`, `0x356118`–`0x35611c`). The helpers leave unread output
+bytes unchanged, but `Load_LayerData` first clears both four-byte outputs
+(`0x355a3c`, `0x355a58`), so accepted short masks zero-extend on this route.
+Only property bits 0–4 and flexible bits 0–6 affect known runtime fields.
+Accepted higher bits are not retained as source masks by this reader.
+
+Unknown fixed bytes are skipped by seeking to the absolute flexible start
+(`0x355ab8`–`0x355ad8`); unknown flexible tails are skipped by seeking to the
+declared header end (`0x355ebc`–`0x355edc`). Its second `int&` output records
+the cursor before the latter seek (`0x355eb8`), which can precede the header end.
+
+The native writer reconstructs both masks as one-byte values
+(`0x354334`–`0x354348`, `0x354728`–`0x354774`) from known runtime fields. It
+does not copy the source masks or extension tails. Native admission of an
+unknown bit or tail therefore does not establish its preservation during a
+metadata rewrite; a five-byte mask instead fails admission.
+
+A Rust harness using Unicorn's C API executed fourteen actual native mask-helper
+calls and fifteen layer-header loads across implementation fills `00`, `a5` and
+`ff`. Empty masks, bit 7 and four-byte bit-31 masks loaded; five-byte masks
+failed. All nine accepted native rewrites matched their asserted 24-byte
+known-field header for their runtime flags, dropping two fixed extension bytes
+and three flexible extension bytes. File operations and diagnostics were host
+boundaries. The exercised branch had no name, UUID or thumbnail and a default
+shadow; constructors, page hashes and full archive saving were not exercised.
+The capture SHA-256 is
+`6be841dcb5969c85acb5982242010e142306850d4e8a9f39a34940403f2eac2b`.
+
+The Rust metadata decoder retains full masks and both tails, including widths
+this APK rejects. That preserves source structure without claiming native
+loadability or meanings for higher bits. The basic `StoredLayer` low-byte
+flags and `header_extra` are weaker: `header_extra` starts after the layer
+number, excluding the preceding mask bytes. Logical
+[integrity checks](integrity-findings.md) do not certify preservation of these
+extensions.
+
 ## Java transparency discrepancy
 
 The decompiled Java writer calls `f2.a.U(randomAccessFile, i34)` for non-default
