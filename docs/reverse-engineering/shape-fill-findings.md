@@ -2,7 +2,8 @@
 
 ## Evidence boundary
 
-These are static arm64 findings from Samsung Notes 4.4.45.37. Addresses are
+These are static arm64 findings and bounded native captures from Samsung
+Notes 4.4.45.37. Addresses are
 ELF virtual addresses in the libraries extracted under the ignored
 `scratch/apk-analysis-native/arm64-v8a/` directory.
 
@@ -11,12 +12,15 @@ ELF virtual addresses in the libraries extracted under the ignored
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
+| `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
+| `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 
 The decompiled SDK `shapeeffect/SpenFillColorEffect.java` and
 `SpenFillPatternEffect.java` provide API names and Java admission rules;
-those rules do not establish what native binary loading accepts. No fill
-shader, native PDF export or paired Samsung appearance has been executed for
-these findings. The [shape frames](shape-line-findings.md) and
+those rules do not establish what native binary loading accepts. The native
+capture section identifies executed geometry, shader construction and command
+boundaries; no native PDF export or paired Samsung appearance is certified.
+The [shape frames](shape-line-findings.md) and
 [outline styles](shape-style-findings.md) describe the surrounding frames,
 path commands and outlines.
 
@@ -171,8 +175,8 @@ and conditionally repeats with the third and fourth. It later applies
 clip-operation value 2 to the partition paths (`0x9cc5c–0x9cd30`,
 `0x9ce40–0x9ce4c`). Thus native rectangular gradients are a sequence of
 vector paths, clips and linear paints, not one radial shader. The exact
-partition formulas and native clip-state behavior are not certified by
-execution in this document.
+general partition formulas and final native clip-state behavior are not
+certified by execution; bounded partition commands are captured below.
 
 ## Pattern tiles
 
@@ -256,6 +260,75 @@ subpaths also require geometry beyond a single outline fill.
 SVG linear/radial gradients, vector pattern cells and piecewise clipped
 linear paints can express these source families without new raster images.
 That representability is an implementation constraint, not a current SDK
-support or appearance-parity claim. Exact rectangular partitions, pattern
-phase, contextual color translation, template fill-path generation and the
+support or appearance-parity claim. Final canvas clip state, pattern phase,
+contextual color translation, template fill-path generation and the
 background-fill scene dependency remain bounded evidence gaps.
+
+## Executed paint geometry and commands
+
+Temporary Rust/Unicorn probes executed original Model/Drawing routines and
+Skia shader construction, path mutation and paint installation. Forty-six
+gradient cases and fourteen pattern cases each matched across five fresh
+machines with allocation/stack fills `0x00`, `0x55`, `0xa5`, `0xff`, `0x00`.
+An independent reviewer reproduced the final gradient capture SHA-256
+`30c9be10e1657208277d7e6f2a3529e3b55003816896142de25ed6c8b670f222` and
+pattern capture `a689416683e615e10f7f66d1cdbe0a8434a34873fa83dbf578e8510ea63a8f90`.
+
+Native Drawing constructors (`0x9bee0`, `0x9bfc4`) initialize owned state;
+the admitted null context bypasses contextual color translation. Model
+construction, setters, getters and selected binary reading/writing execute
+natively. Drawing's gradient dispatcher (`0x9d9a4`) receives explicit
+rectangle/rotation values through virtual slots 136/168 and itself computes
+the midpoint, adjusts negative rotation and initializes point buffers. That
+source interface is not a native Model `ObjectShape` or a complete scene.
+Bounded host allocation/free/reallocation, byte copies and single-thread
+mutex stand-ins support execution; all remaining native imports trap by name.
+Native `sincos` calls use Linux libm, identified through the actual linked
+symbol with `dladdr`, SHA-256
+`6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3`.
+This is not execution of Android libm.
+
+For bounds `(10.25,20.5,310.25,70.5)`, observed radial shader inputs are:
+
+| Position / rotation | Center | Radius |
+| --- | --- | --- |
+| `(0.5,0.5)`, zero | `(160.25,45.5)` | `152.06906127929688` |
+| `(0.25,0.75)`, zero | `(85.25,58)` | `304.13812255859375` |
+| `(0.25,0.75)`, rotatable `37.25°` | `(92.98367309570312,10.052974700927734)` | `304.13812255859375` |
+
+One `f32` step above `0.5` still produces half-radius; two steps produce
+exactly `2^-23` difference and full radius. Both axes were exercised, as were
+tall translated bounds, rotation disabled, negative rotation and 90 degrees.
+For binary stop counts 1/10/11/255, native count getters and binary writers
+retain the entire count and stop bytes. Drawing sends at most the first ten
+to the observed shader factories, preserving saved order and duplicate stops.
+
+Zero-rotation centered rectangular cases generate midpoint-to-edge-midpoint
+linear shaders and three closed triangular paths. Corners generate two
+shaders and one triangular path. Rotatable centered/corner cases generate
+rotated points. For centered `37.25°` with rotation disabled, native instead
+uses axis-aligned bounds of the rotated corners: approximately
+`(25.717346,-65.194145,294.782654,156.194153)`. Tested position
+`(0.25,0.75)` and center-offset equality at `2^-23` produce no new partition
+path and two zero-endpoint shaders, using the dispatcher's zeroed buffers.
+These are observed renderer routes, not restrictions on saved positions.
+
+Original `DrawEffectColor` (`0x9cc00`) and Skia `clipPath`/`isRect`
+(`0x19b700`) execute through recording canvas callbacks. Centered cases draw
+the same outline four times, sending operation 0 for successive partitions
+between draws, then operation 2 for all three. Corners draw twice and send
+operation 0 then 2 for one partition. Antialias is false throughout. External
+canvas callbacks record commands and return success without applying clip
+state; final clip state and pixels are excluded. The first draw precedes
+partition clips. A vector
+implementation must account for potential overlap and blend order; disjoint
+triangle fills cannot be assumed equivalent.
+
+Pattern construction, sixteen-byte binary roundtrip, native getters and the
+complete Drawing byte-generation loop execute, as does Base's empty
+`Bitmap()` wrapper constructor (`0xa3cb0`). Execution stops before the
+pixel-buffer `Bitmap::Construct` call (`0x9c8d4`): width/height 8, row stride
+32, format 1, final booleans 0/1.
+All 896 observed cells agree with row/MSB order and exact ARGB-to-RGBA
+conversion, including transparent colors. Pixel-buffer `Bitmap::Construct`,
+CanvasBitmapFactory, shader execution and tile phase remain excluded.
