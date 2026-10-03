@@ -101,28 +101,69 @@ writer widens the original runtime floats to doubles. Double wire storage
 is therefore not evidence that Samsung routes its connectors with double
 coordinate precision.
 
-After reading endpoints, the loader replaces the line's two magnetic
-points with those endpoints (`0x38c150–0x38c15c`). It compares the first
-saved rectangle, after narrowing, with the currently loaded common
-rectangle (`0x38c1e0`). A mismatch invokes `RefreshRect`
-(`0x38c4cc–0x38c4e4`), which rescales geometry through native line setters.
-When they agree, the second saved rectangle is copied as the restored
-rectangle (`0x38c4ec–0x38c4f0`).
+Line kind, direction and control data are direct stores without editing
+setters (`0x38c05c–0x38c0ec`). Endpoints replace the two magnetic points
+(`0x38c150–0x38c15c`). Unlike [named Arc control restoration](shape-path-findings.md#saved-control-points-can-regenerate-the-preceding-outline),
+reading saved controls does not itself regenerate line geometry.
+
+Flexible bit 3 loads a new Path at implementation `+72` through
+`Path::ApplyBinary` (`0x38c464–0x38c4c0`), bypassing editing `SetPath`.
+It does not reconcile endpoints against saved segments: drawing commands,
+endpoints and controls remain distinct states. An absent bit retains the
+existing Path instead of generating one from the newly read fields.
+
+Let D be the first saved rectangle (drawn bounds), C the currently loaded
+common rectangle and G the second saved rectangle (original common bounds).
+The loader compares narrowed D with C using native `GetRect`, not
+`GetDrawnRect` (`0x38c1a0–0x38c1e0`). Base `RectF::operator!=` (`0xb1a58`)
+compares float coordinates directly, without an epsilon. If D equals C,
+G becomes the restored rectangle (`0x38c4ec–0x38c4f0`). A mismatch invokes
+`RefreshRect` (`0x38c4e4`), which computes axis scale ratios after inverse
+bound rotation, transforms G, clamps its resulting dimensions to at least
+one and calls `ResizePath` (`0x38ad14–0x38ae28`). That first stage transforms
+existing segments and active controls, then derives endpoints from the path.
+
+The next branch can regenerate the route. For ordinary finite inputs, it
+truncates the saved rotation toward zero to a signed integer and takes its
+remainder modulo 360. A zero remainder, or both float axis ratios strictly
+within 0.0001 of one, selects magnetic-point refresh only. Otherwise it
+adds float one to both coordinates of both endpoints and invokes public
+`SetConnectorPosition` twice (`0x38ae2c–0x38af30`). Those setters can reach
+disconnect, magnetic assignment, connection update and `RearrangePath`
+(`0x388a6c–0x388ac8`), replacing the transformed commands with a fresh route.
+This is an integer-angle gate, not a continuous near-zero-angle test.
+
+The endpoint setter skips editing when both coordinate differences are
+strictly below 0.0005; adding one can also round away at large float values.
+History/context, disconnect or subsequent operations can fail; `RefreshRect`
+ignores the resize and endpoint-setter results. This establishes conditional
+routing reachability, not successful replacement or actual saved route output.
 
 If the inherited common rotation is nonzero, loading also invokes
 `RefreshRotation` with that angle and the final saved float
-(`0x38c4f4–0x38c50c`). That helper rotates the path, endpoints and control
-points, then stores the sum of the supplied angles at implementation
-`+212` (`0x38af78`, `0x38b004–0x38b050`). When inherited rotation is zero,
-the loader stores the final float directly at `+212`. `NewApplyBinary`
-finally restores the common rectangle/rotation from `+192/+212`
-(`0x386dd0–0x386de8`).
+(`0x38c4f4–0x38c50c`). It rotates the current path, endpoints and control
+storage, then stores the sum of the angles at `+212`
+(`0x38af78–0x38b050`). Its path utility transforms three coordinate pairs
+per segment without verb dispatch; it does not expand Arc/Oval primitives
+or invoke the router. When inherited rotation is zero, the loader stores
+the final float directly at `+212`. `NewApplyBinary` finally restores the
+common rectangle/rotation from `+192/+212` through data-only setters.
+Its last virtual call resolves to base `ClearChanged`, without own-line
+route reconstruction (`0x386dd0–0x386df8`).
+
+The type-8 object factory constructs straight kind and zero endpoints
+(`0x36d910`); construction invokes routing and installs Move/Line before
+the saved own-frame stage (`0x3819d8`, `0x38ecd8`). An omitted path can
+therefore retain constructor geometry, or another path on a reused object.
+It does not establish a native endpoint fallback or null drawing geometry.
+No application-produced pathless line is established by the recorded corpus.
 
 Those compatibility transformations matter for deliberately inconsistent
-or rescaled records. The normal writer's drawn-rectangle/zero-rotation
-normalization is a narrower contract than universal equivalence of raw
-saved coordinates with every native load path. Current Rust rendering
-does not reproduce these native load adjustments.
+or rescaled records. A coherent modern writer record whose D equals loaded
+C and whose inherited rotation is zero bypasses both compatibility producers;
+G remains its separately restored common rectangle. That narrow contract
+does not establish universal equivalence of raw saved commands with every
+native load path. Current Rust rendering does not reproduce these adjustments.
 
 ## Connection identities live in the inherited shape frame
 
@@ -191,6 +232,14 @@ the saved route; endpoint updates do not themselves regenerate it.
 The public connection action does call it, through `ObjectLineImpl::Connect`
 (`0x388970–0x38899c`). Loading a saved graph and interactively connecting
 a line are therefore distinct operations.
+
+Ordinary WDoc loading factory-creates each object before invoking its virtual
+saved loader (`0x3597e4–0x359834`); a line reaches `NewApplyBinary`.
+`WLayer::Load` completes `Load_ObjectList_WDoc` (`0x342248`) before its
+deferred connection pass. Thus the geometry compatibility stages above
+precede graph resolution. That later line setter can overwrite endpoint
+fields without rebuilding the path, so endpoint/path agreement is not a
+universal loaded-state invariant. This ordering remains static evidence.
 
 Modern `WLayer::Load` calls `NewApplyConnectedInfoListBinary(false)`
 (`0x342288–0x34228c`), then separately calls `LoadFollowerList`
