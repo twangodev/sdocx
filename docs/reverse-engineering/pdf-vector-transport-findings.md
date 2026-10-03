@@ -282,7 +282,16 @@ bytes, so placements need not each copy the source file. See the
 [xref API](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/xref.rs), and
 [shared data representation](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/data.rs).
 
-Individual inspection of the Crypt Identity stream returned `StreamDecode`,
+`Dict::get_raw::<Object>` retains `MaybeRef<Object>`, `get_ref` exposes the
+original object reference, and dictionaries/streams expose object IDs.
+`keys` with checked raw lookup distinguishes a lookup failure from an unresolved
+reference; `entries` instead unwraps each raw lookup internally. Raw array
+iteration remains a parser iterator, not arbitrary malformed-token recovery.
+These are existing [dictionary](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/object/dict.rs)
+and [reference](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/object/ref.rs)
+APIs, separate from a resolving convenience view or complete source validation.
+
+Individual inspection of the Crypt Identity stream returned `DecodeFailure::StreamDecode`,
 before aggregate page-stream collection hid the omission. The malformed-Flate
 stream still returned `Ok` with empty data. Raw-reference traversal is therefore
 stronger than using aggregate results, but it does not establish strict decode
@@ -308,6 +317,27 @@ are source-observed boundaries in the
 [Flate fallback](https://docs.rs/crate/hayro-syntax/0.7.2/source/src/filter/lzw_flate.rs).
 Opening or decoding successfully does not replace original source retention
 and explicit transport-capability reporting.
+
+The transport's structured errors cover a narrower contract. Hayro Write's
+`ExtractionError` contains only `InvalidPageIndex`; Krilla's `PdfError` contains
+`InvalidPage` and `VersionMismatch`. An unresolved resource reference is written
+as PDF `null`, and failed dependency extraction emits a warning rather than a
+corresponding extraction-error variant. Those error enums do not report missing
+annotations/catalog context or resource-key/numeric rewriting. See the
+[extraction/dependency implementation](https://docs.rs/crate/hayro-write/0.7.0/source/src/lib.rs),
+[reference writer](https://docs.rs/crate/hayro-write/0.7.0/source/src/primitive.rs), and
+[Krilla PDF errors](https://docs.rs/crate/krilla/0.8.2/source/src/pdf.rs).
+Krilla's [validated-output modes](https://docs.rs/crate/krilla/0.8.2/source/src/configure/validate.rs)
+reject `ValidationError::EmbeddedPDF` because they cannot verify the embedded
+source meets the selected profile; that rejection is not source validation.
+
+Hayro exposes the shared source through public read views; extraction receives
+`&Pdf`, while output chunks, reference mappings and visited sets belong to the
+extraction context. This differs from the
+[executed Samsung link-repair helper](pdf-paper-export-findings.md#successful-graph-rewriting-can-still-lose-forward-link-destinations),
+which mutates parsed source destination arrays while leaving the borrowed bytes
+unchanged. Original source retention and loaded-document state are distinct
+contracts in both cases.
 
 ## Consequences for preservation
 
