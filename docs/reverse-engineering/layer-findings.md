@@ -55,6 +55,22 @@ floating-point values when deciding whether an effect differs from the default.
 The SDK currently retains this payload without assigning names to its numeric
 fields or interpreting its rendering behavior.
 
+`ShadowEffect::ApplyBinary`, `0x2b90ec`, accepts exactly 16 bytes and leaves
+the final four-byte field unchanged (`0x2b9160`–`0x2b9168`, `0x2b9184`).
+The constructor initializes that field to zero (`0x2b909c`). Payloads of
+17–19 bytes return false after applying the first 16 bytes; payloads of at
+least 20 bytes apply only the first 20 and ignore the remainder
+(`0x2b9174`–`0x2b9184`). Shorter failures can likewise leave earlier complete
+fields applied. The decoder writes fields incrementally without rollback.
+
+The layer loader ignores that application's return at `0x355ea4` and frees
+its temporary source buffer at `0x355eac`. Other header/file conditions can
+still fail loading. Its current shadow writer emits 20 bytes when the runtime
+effect is nondefault; it does not preserve an oversized source tail. These
+are independently reviewed static admission boundaries, without an executed
+shadow round trip or evidence that 16 bytes identifies a historical format.
+The Rust metadata decoder instead retains the complete sized payload.
+
 ## Native mask admission and metadata rewrite
 
 The current WDoc route reaches the generic `Load_LayerData`, Model `0x3559a4`:
