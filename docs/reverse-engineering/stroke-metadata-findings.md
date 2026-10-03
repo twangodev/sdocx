@@ -113,11 +113,27 @@ after any decoded rotation, and validates the count's 16-byte rectangle
 records against their own common frame. It does not use the stroke's point
 count or search for a later pen setting to infer the boundary.
 
-Bit 6 has no established serialized field contract. It and unknown higher
-bits stop optional decoding before consumption, set `first_unparsed_field`,
-and preserve the whole remaining flexible tail. A future field cannot shift
-the known fields that follow it. Field 4 has a known one-byte width but no
-confirmed semantic name.
+Field 4 remains unnamed. Constructor `0x2e87cc`–`0x2e87dc` zeros member
+312 indirectly; the reader stores zero for absence at `0x2ed93c` and
+zero-extends the present byte. Writer `0x2ec7e8`–`0x2ec808` emits its low
+byte only when the 32-bit member is nonzero. A present zero therefore becomes
+absent on native re-save, while the SDK preserves its `Option<u8>` presence.
+The direct transfers in `Copy` (`0x2e391c`) and `CopyDrawingData`
+(`0x2eb144`), and comparisons in `Equals` (`0x2e4160`), omit member 312;
+this does not establish every indirect helper or callback's behavior.
+`GetStrokeType`, `0x2e16b0`, uses member 464 and does not name field 4.
+
+Bit 6 has no established serialized field contract. The native reader tests
+bit 5 then bit 7 at `0x2ed940`/`0x2ed944`, without a bit-6 consume, skip
+or error branch; that omission does not prove a zero-byte field contract.
+The current flexible writer emits neither field 5 nor field 6 and does not
+OR either bit; it does not clear caller-supplied bits. The SDK stops before
+bit 6 or unknown higher fields, sets `first_unparsed_field`, and preserves
+the remaining flexible tail so their bytes cannot shift later known fields.
+
+Field 5's unresolved historical meaning and the separate modern common
+rectangle writer omission are documented in
+[eraser preservation](eraser-preservation-findings.md#legacy-rectangles-are-skipped-by-modern-native-loading-and-writing).
 
 ## Boundaries and rendering implications
 
