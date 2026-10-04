@@ -102,6 +102,58 @@ extension fields. Persisted options and native consumers therefore remain
 separate from implemented SDK behavior; see
 [text options and derived overflow](text-layout-findings.md#text-options-and-derived-overflow).
 
+## Native TextCommon source units
+
+These selected ordinary text routes also use the pinned `libSPenBase.so`,
+SHA-256 `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb`.
+They concern text source units, separately from font-name byte strings,
+math-expression bytes and style-range endpoint validation.
+
+The application's `ObjectManagerHelper.insertTextContentAtLastPages` calls
+`setText(spannableSB.toString())` on a new body text object. The SDK method
+reaches Model `ObjectShape_setText`, `0x3bbc6c`, which constructs a temporary
+`JNI_String` and forwards it to `ObjectShapeText::SetText`. Base
+`JNI_String::Construct`, `0xdf218`, obtains the Java length and character
+pointer through JNI slots 164/165, then calls `String::Construct(u16*, int)`.
+The Model setter's successful copy/history routes reach `m_SetText`,
+`0x3ec300`, which uses `String::Set(String*)` for its owned destination.
+That destination does not borrow the temporary JNI source pointer.
+
+An explicit count does not preserve embedded NUL here. The complete Base
+constructor (`0xc2f54`–`0xc3120`) scans to the first zero unit or supplied
+count; its raw unit copy does not validate surrogate pairs. The actual
+`Set(u16*, int)` route (`0xc36fc`–`0xc3934`, including `Append`) also stops
+at the first zero. Nonzero units, including unpaired surrogates, encounter
+no Unicode validity test in these inspected copies. Successful allocation
+and the setter's configured limits remain admission conditions.
+
+The public `TextCommon::SetText` can shorten an over-limit source through
+`CopyFrom(String*, limit)` at `0x3e23c4`. Its Base raw-unit copy
+(`0xc4fa4`–`0xc51c8`) caps the count to the NUL prefix but does not adjust
+the copy boundary to a surrogate pair. This is a unit limit, not a scalar limit.
+
+The WDoc writer obtains the retained `String::GetLength`, writes that unit
+count and copies exactly `stored_length * 2` bytes (`0x3f61f8`–`0x3f6220`),
+without adding a terminator or validating Unicode. The selected modern loader,
+`m_LoadText`, `0x3f6c88`, calls the explicit-count setter in both positive-count
+branches. It retains the resulting NUL prefix but returns `declared_length * 2`;
+the enclosing reader advances past the original field before reading spans.
+Retained text length and consumed binary framing can therefore differ.
+
+The Rust [ordinary text decoder](../../crates/sdocx/src/note.rs) instead reads
+all declared units through [strict `String::from_utf16`](../../crates/sdocx/src/binary.rs).
+An actual unpaired surrogate in that field returns a format error; NUL and its
+declared suffix remain in a successfully decoded Rust string. Title/body errors
+propagate through `note.note` parsing and [archive parsing](../../crates/sdocx/src/container.rs)
+before `ParsedDocument` is returned. Caller/archive bytes and separately retained
+object payload carriers are distinct from a failed typed text projection; the
+failure does not establish deletion of their source bytes.
+
+These are static producer/copy/serializer findings for bounded successful
+routes. No malformed real-document witness, native execution or edit/save result
+was obtained. They establish neither all-version admission nor shaping, visible
+Unicode appearance, or a requirement to normalize/discard the original source.
+
 ## Native TextCommon object-span trailer
 
 The pinned Model ELF SHA-256 is
