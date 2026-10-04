@@ -697,14 +697,56 @@ Its map-key field is copied, although the broader save path can refresh PDF
 hashes before this iteration (`0x290458`–`0x29045c`).
 
 `RemoveUnusedFiles`, Model `0x292cec`, additionally protects zero-count files
-whose filename and ID match the **previously saved** manifest
-(`0x293464`–`0x29348c`). This deletion protection does not establish inclusion
-in the next archive. Unknown's resolved original-version callback only lowers
+whose hash map key and numeric ID match the **previously saved** manifest
+(`0x293464`–`0x29348c`). Its previous-entry parser skips the filename and builds
+the map key from the 64-byte hash (`0x292ed8`–`0x292f7c`). A found key with a
+different ID reports failure (`0x293614`–`0x293668`), rather than taking the
+direct file-deletion branch. This deletion protection does not establish
+inclusion in the next archive. Unknown's resolved original-version callback only lowers
 the note's minimum unknown version (WDoc `0xa7bb8`–`0xa7bd0`); it does not bind
 resources. The inspected unknown own-data paths contain no resource-ID scanner.
 Decoded common image data can still register through `ObjectBase::OnAttach`
 (Model `0x2d0018`). Owning opaque bytes and keeping admitted IDs stable do not
 establish preservation of every attachment referenced only by opaque own data.
+
+### Close-time working-cache cleanup
+
+The app's `CloseDocumentTask.java:238,268` passes `true` to
+`DocumentFileManager.closeWordDocument`; its forwarding lambda (`:89`–`:94`),
+`SpenWordDocument.close` (`:83`–`:86`) and SDK `SpenWNote.close(removeCache)`
+(`:1545`–`:1565`) carry that bool to WDoc JNI `WNote_close` (`0xe45b8`).
+Native false callers also exist: `WNote::~WNote` (`0x8fd10`–`0x8fd14`) and the
+[selected-object clipboard archive](#selected-object-clipboard-archive)'s
+successful backup save followed by `Close(false)` (`0x96470`–`0x96480`).
+These establish reached policies, without asserting every app caller or that
+all temporary notes qualify for retention.
+
+WDoc `WNoteImpl::Close`, `0xa39f0`, selects its retained-cache branch for a false
+bool and a nonzero core-created timestamp (`0xa3a44`–`0xa3a4c`). The timestamp
+is positively identified by `WNote::GetCreatedTime`, `0x96c08`, which reads
+WNoteImpl offset 200. True or zero-timestamp closes instead remove the whole
+working cache if present, checking `Directory::RemoveDirectory`'s result
+(`0xa3b14`–`0xa3b28`). The deletion operand is the working cache path; these
+branches do not establish an alias to, or executed deletion of, the original
+input archive.
+
+The retained branch first requires `DeleteInternalTempDirectory` to succeed
+(`0xa3a50`–`0xa3a58`), then calls manager virtual slot 120
+(`0xa3a5c`–`0xa3a68`). Model's installed `MediaFileManagerNew` vtable
+`0x491a30` +16 resolves this slot at `0x491ab8` to `RemoveUnusedFiles`,
+`0x292cec`. Its return is ignored before `SetCacheState(cachePath, 0)`
+(`0xa3a6c`–`0xa3a74`). WDoc `WNote::Close` checks the outer close result before
+WNoteImpl destruction (`0x8fd74`–`0x8fd88`); cleanup therefore uses counts before
+that teardown, without establishing an atomic operation or complete deletion.
+
+Ordinary save's successful tail separately calls `MediaFileManagerNew::OnSaved`
+(WDoc `0xadb4c`–`0xadb50`), whose bounded Model method updates a manager timestamp
+(`0x295fcc`–`0x295ff0`). That method does not call unused-file cleanup.
+Retained-cache cleanup reads the working `mediaInfo.dat`, not the original ZIP;
+its saved-key protection and current binding counts are separate from admission
+to a later archive. A retained cache may already reflect earlier load, repair or
+save. It is not automatically an exact original source carrier; Rust's supplied
+original archive remains a distinct source unit.
 
 ### Copying between resource namespaces
 
