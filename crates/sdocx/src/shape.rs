@@ -127,6 +127,16 @@ pub struct NativeShape {
     pub text: Option<Box<RichTextBox>>,
 }
 
+/// Saved type-8 field-0 pen source, independent of the modern pen-name field.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct LineLegacyPenSource {
+    pub pen_name_id: i32,
+    /// Uninterpreted bytes following the legacy pen-name ID.
+    pub remainder: [u8; 4],
+}
+
 /// Geometry and styles decoded from the native `0 + 6 + 8` line chain.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -155,6 +165,9 @@ pub struct NativeLine {
     pub raw_setting: u32,
     /// Optional string-resource ID for the native pen name.
     pub pen_name_id: Option<i32>,
+    /// Legacy pen source, retained separately from the modern pen-name ID.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub legacy_pen_source: Option<LineLegacyPenSource>,
     /// Optional string-resource ID for advanced native pen settings.
     pub pen_settings_id: Option<i32>,
     /// Native custom path bytes, when present.
@@ -340,33 +353,40 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
         unsupported.push("line geometry extensions or properties");
     }
     let mut fields = Reader::new(frame.flexible, "line fields");
-    let mut pen_name_id = None;
-    let mut pen_settings_id = None;
+    let legacy_pen_source = if frame.fields.contains(0) {
+        let pen_name_id = fields.read_i32("legacy pen name ID")?;
+        let mut remainder = [0; 4];
+        remainder.copy_from_slice(fields.read_bytes(4, "legacy pen remainder")?);
+        Some(LineLegacyPenSource {
+            pen_name_id,
+            remainder,
+        })
+    } else {
+        None
+    };
+    let pen_settings_id = frame
+        .fields
+        .contains(1)
+        .then(|| fields.read_i32("pen settings ID"))
+        .transpose()?;
+    let pen_name_id = frame
+        .fields
+        .contains(2)
+        .then(|| fields.read_i32("pen name ID"))
+        .transpose()?;
     let mut path_data = Vec::new();
-    if !frame.fields.contains(0) {
-        pen_settings_id = frame
-            .fields
-            .contains(1)
-            .then(|| fields.read_i32("pen settings ID"))
-            .transpose()?;
-        pen_name_id = frame
-            .fields
-            .contains(2)
-            .then(|| fields.read_i32("pen name ID"))
-            .transpose()?;
-        if frame.fields.contains(3) {
-            let bytes = &frame.flexible[fields.position()..];
-            let (size, supported) = visit_path(bytes, |_| {})?;
-            path_data = fields.read_bytes(size, "line path")?.to_vec();
-            if !supported {
-                unsupported.push("unsupported native path commands");
-            }
+    if frame.fields.contains(3) {
+        let bytes = &frame.flexible[fields.position()..];
+        let (size, supported) = visit_path(bytes, |_| {})?;
+        path_data = fields.read_bytes(size, "line path")?.to_vec();
+        if !supported {
+            unsupported.push("unsupported native path commands");
         }
     }
-    if pen_name_id.is_some() || pen_settings_id.is_some() {
+    if legacy_pen_source.is_some() || pen_name_id.is_some() || pen_settings_id.is_some() {
         unsupported.push("native pen rendering");
     }
-    if fields.remaining() != 0 || frame.fields.has_other_bits(0x0e) {
+    if fields.remaining() != 0 || frame.fields.has_other_bits(0x0f) {
         unsupported.push("additional line fields");
     }
     if line_type != 0 && path_data.is_empty() {
@@ -386,6 +406,7 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
             reference_bbox,
             raw_setting,
             pen_name_id,
+            legacy_pen_source,
             pen_settings_id,
             path_data,
             style: shape_base.style,

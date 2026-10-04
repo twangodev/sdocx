@@ -106,7 +106,9 @@ pub use render::{
     render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
-pub use shape::{NativeLine, NativeShape, ShapeBaseSource, ShapePaint, ShapeStyle};
+pub use shape::{
+    LineLegacyPenSource, NativeLine, NativeShape, ShapeBaseSource, ShapePaint, ShapeStyle,
+};
 pub use shape_paint_source::{
     ColorPaintSource, GradientStopSource, ImagePaintSource, NinePatchSource, PaintFloat32,
     PatternPaintSource, ShapePaintSource,

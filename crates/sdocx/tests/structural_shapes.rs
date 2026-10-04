@@ -576,6 +576,81 @@ fn line_pen_settings_and_name_ids_precede_the_path_in_native_order() {
 }
 
 #[test]
+fn legacy_line_pen_source_keeps_modern_ids_and_vector_path_aligned() {
+    let path = native_path(&[(1, &[90.0, 45.0]), (2, &[-10.0, 45.0])]);
+    for (pen_name_id, modern_id) in [(-123456_i32, 123456_i32), (-123456, -1), (-1, -2)] {
+        let mut fields = pen_name_id.to_le_bytes().to_vec();
+        fields.extend([0xde, 0xad, 0, 0xff]);
+        fields.extend((-9_i32).to_le_bytes());
+        fields.extend(modern_id.to_le_bytes());
+        fields.extend(&path);
+        let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 15, &fields))).unwrap();
+        let decoded = as_line(parsed.document.pages[0].elements().next().unwrap());
+        let legacy = decoded.legacy_pen_source.as_ref().unwrap();
+        assert_eq!(legacy.pen_name_id, pen_name_id);
+        assert_eq!(legacy.remainder, [0xde, 0xad, 0, 0xff]);
+        assert_eq!(decoded.pen_settings_id, Some(-9));
+        assert_eq!(decoded.pen_name_id, Some(modern_id));
+        assert_eq!(decoded.path_data, path);
+        assert!(has_shape_warning(&parsed));
+        #[cfg(feature = "serde")]
+        {
+            let restored: NativeLine =
+                serde_json::from_value(serde_json::to_value(decoded).unwrap()).unwrap();
+            let legacy = restored.legacy_pen_source.as_ref().unwrap();
+            assert_eq!(legacy.pen_name_id, pen_name_id);
+            assert_eq!(legacy.remainder, [0xde, 0xad, 0, 0xff]);
+            assert_eq!(restored.pen_name_id, Some(modern_id));
+            assert_eq!(restored.path_data, path);
+        }
+        #[cfg(feature = "render")]
+        assert_svg_path(
+            &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg,
+            "M 90 45 L -10 45",
+        );
+    }
+}
+
+#[test]
+fn legacy_line_pen_source_distinguishes_zero_from_absent_and_old_json() {
+    for present in [false, true] {
+        let fields = if present { vec![0; 8] } else { Vec::new() };
+        let parsed =
+            sdocx::parse_bytes_detailed(&single(8, &line(0, u32::from(present), &fields))).unwrap();
+        let decoded = as_line(parsed.document.pages[0].elements().next().unwrap());
+        assert_eq!(decoded.legacy_pen_source.is_some(), present);
+        if let Some(legacy) = &decoded.legacy_pen_source {
+            assert_eq!(legacy.pen_name_id, 0);
+            assert_eq!(legacy.remainder, [0; 4]);
+        }
+        assert!(decoded.pen_name_id.is_none());
+        assert_eq!(has_shape_warning(&parsed), present);
+        #[cfg(feature = "serde")]
+        {
+            let mut json = serde_json::to_value(decoded).unwrap();
+            let restored: NativeLine = serde_json::from_value(json.clone()).unwrap();
+            assert_eq!(restored.legacy_pen_source.is_some(), present);
+            if let Some(legacy) = &restored.legacy_pen_source {
+                assert_eq!(legacy.pen_name_id, 0);
+                assert_eq!(legacy.remainder, [0; 4]);
+            }
+            json.as_object_mut().unwrap().remove("legacy_pen_source");
+            let restored: NativeLine = serde_json::from_value(json).unwrap();
+            assert!(restored.legacy_pen_source.is_none());
+        }
+    }
+}
+
+#[test]
+fn short_legacy_line_pen_sources_cannot_consume_the_following_frame() {
+    for length in 0..8 {
+        let mut payload = line(0, 1, &[0xff; 7][..length]);
+        payload.extend(frame(66, 0, b"future", &[]));
+        assert_format(8, &payload);
+    }
+}
+
+#[test]
 fn effect_sizes_and_fixed_geometry_cannot_consume_adjacent_fields() {
     for (mask, effect) in [(4, color(true, 0, 0xff123456)), (8, style(4.0))] {
         for end in 0..effect.len() {
@@ -604,7 +679,7 @@ fn effect_sizes_and_fixed_geometry_cannot_consume_adjacent_fields() {
 }
 
 #[test]
-fn shape_pen_slots_keep_fill_aligned_and_unknown_line_fields_still_stop() {
+fn shape_pen_slots_keep_fill_aligned_and_unknown_line_fields_still_warn() {
     let mut payload = base(0.0);
     payload.extend(outline());
     let mut fields = 77_i32.to_le_bytes().to_vec();
@@ -623,8 +698,7 @@ fn shape_pen_slots_keep_fill_aligned_and_unknown_line_fields_still_stop() {
     };
     assert_eq!(source.solid_argb, 0x40ff0000);
     assert!(has_shape_warning(&parsed));
-    let path = native_path(&[(1, &[0.0, 0.0]), (2, &[10.0, 20.0])]);
-    let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 1 | 8, &path))).unwrap();
+    let parsed = sdocx::parse_bytes_detailed(&single(8, &line(0, 16, b"future"))).unwrap();
     assert!(
         as_line(parsed.document.pages[0].elements().next().unwrap())
             .path_data
