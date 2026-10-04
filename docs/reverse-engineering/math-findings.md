@@ -105,8 +105,34 @@ matching the APK member byte for byte). Its native key getters identify:
 The UUID producer uses each pointer's own GetUuid/ToString (`0x120aa0`,
 `0x120aa4`), without remapping to an original-object identity. Answer UUIDs
 are written to source and answer strokes (`0x1b0dd4`, `0x1b1090`); answers are
-marked generated (`0x1b103c`). UUID-query consumers are separate from Math +136;
-these arrays do not establish a bridge into that list or replace source vectors.
+marked generated (`0x1b103c`).
+
+In RecogUIFeature, `getUuidList` (`0x1b2454`) selects the source array with flag
+bit 0 and the answer array with bit 1, reading their common StringArray entries (`0x1b2518`,
+`0x1b26f4`). An absent source array can still reach the answer branch.
+`findStrokeSetByUuid` (`0x1abb94`) obtains candidates from the current document
+using the supplied page or seed-relative query, compares each candidate's own
+GetUuid/ToString with those saved strings (`0x1ac068`–`0x1ac100`), and inserts
+the same matching pointer into a set. No direct UUID remap, clone, visibility
+check or Math +136 append appears here; candidate filtering remains defined
+by document callbacks. `getAnswerRect` reads the answer array and unions
+matched objects' current rectangles with the seed's (`0x1ad17c`–`0x1ad318`).
+
+The conditional refresh route with `OnObjectSelected`'s boolean false
+(`0x1aa878`) uses nongenerated input handles as fresh-recognition seeds
+(`0x1aaae8`–`0x1aab08`); both generated and nongenerated resolved inputs still
+reach the flag3 source/answer UUID query (`0x1aab20`). It calls
+`removeExistingAnswerList` (`0x1aab60`), which offers generated matches to a
+removal queue and erases their temporary set nodes without checking queue
+insertion success. The caller then invokes removers on remaining matches for
+both UUID arrays and `RecogUIFeature_MathExpressionString` (`0x1aaba0`,
+`0x1aabc8`, `0x1aabf0`), before requesting recognition with the separate seed
+handle set (`0x1aac3c`). This establishes cleanup calls and recognition requests;
+it does not prove completed deletion or replacement of the original stroke data.
+
+`SetDocument` (`0x1a9ed0`) registers document callbacks; indirect callback and
+complete archive-reopen paths remain untraced. These consumers do not establish
+a bridge from saved UUID groups into Math +136 or replace source vectors.
 
 Model SetExtraDataStringArray uses common BaseData +88 (`0x2cd02c`–`0x2cd03c`),
 serialized as [common flexible bit5](object-flexible-findings.md#modern-typed-frame-field-order).
