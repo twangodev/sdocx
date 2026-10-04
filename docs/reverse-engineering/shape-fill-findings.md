@@ -341,12 +341,14 @@ paths; it does not require copying Samsung's export omissions.
 
 ## Consequences for this codebase
 
-`crates/sdocx/src/shape.rs::read_paint` retains the complete bounded payload
-for gradient effects through `ShapePaint::Unsupported`. It reads positions
-and stops but does not expose them as typed semantic data; for solid paints
-it keeps only ARGB and discards the dormant gradient configuration. The
-finite-float checks in Rust are stricter than the native binary copy route.
-Pattern, image and background effects remain opaque kind/data records.
+`NativeShape.fill_source` and `ShapeStyle.paint_source` expose
+[`ShapePaintSource`](../../crates/sdocx/src/shape_paint_source.rs) separately from rendering.
+Canonical color records retain dormant gradient settings, ordered stops, ARGB,
+raw flags/enums and trailing bytes. `PaintFloat32` preserves nonfinite bits and
+signed zero without finite-value rejection. Pattern sources retain eight tile rows,
+both ARGB colors and trailing bytes. Noncanonical color masks keep original payload
+bytes. Gradients and patterns remain unsupported by the renderer; image and
+background effects still retain opaque kind/data records.
 
 The preserved record needs to remain distinct from the paint that a native
 drawing route can consume: stop order, all stops, ARGB alpha and raw enum
