@@ -11,6 +11,7 @@ use crate::shape::{decode_line, decode_shape};
 use crate::storage::{StoredObject, StoredPage};
 use crate::types::{
     BoundingBox, Color, ObjectType, Page, PageElement, PageTemplate, PageTemplateSource,
+    PdfPaperRecord, PdfPaperRectangle,
 };
 
 pub(crate) fn parse_page(
@@ -272,18 +273,41 @@ fn parse_page_properties(data: &[u8], stored: &StoredPage, page: &mut Page) -> R
                 });
             }
             8 => {
-                let count = fields.read_u16("PDF record count")?;
-                for index in 0..count {
-                    fields.read_u32("PDF media ID")?;
-                    let page_index = fields.read_u32("PDF page index")?;
-                    if index == 0 {
-                        pdf_page_index = Some(page_index);
-                    }
-                    fields.skip(16, "PDF rectangle")?;
+                let count = usize::from(fields.read_u16("PDF record count")?);
+                let bytes = fields.read_bytes(count * 24, "PDF records")?;
+                let mut records = Reader::new(bytes, "PDF records");
+                let mut pdf_paper = Vec::with_capacity(count);
+                for _ in 0..count {
+                    let media_id = records.read_i32("PDF media ID")?;
+                    let page_index = records.read_i32("PDF page index")?;
+                    let raw: [u8; 16] = records
+                        .read_bytes(16, "PDF rectangle")?
+                        .try_into()
+                        .expect("reader returned exactly 16 bytes");
+                    let words = raw.as_chunks::<4>().0;
+                    let rectangle = match header.format_version {
+                        Some(2034..) => PdfPaperRectangle::Integer(std::array::from_fn(|index| {
+                            i32::from_le_bytes(words[index])
+                        })),
+                        Some(_) => {
+                            PdfPaperRectangle::LegacyFloatBits(std::array::from_fn(|index| {
+                                u32::from_le_bytes(words[index])
+                            }))
+                        }
+                        None => PdfPaperRectangle::Unspecified(raw),
+                    };
+                    pdf_paper.push(PdfPaperRecord {
+                        media_id,
+                        page_index,
+                        rectangle,
+                    });
                 }
+                pdf_page_index = pdf_paper.first().map(|record| record.page_index as u32);
+                page.background.pdf_paper = Some(pdf_paper);
             }
             9 => {
                 let id = fields.read_u32("template type")?;
+                page.background.template_type = Some(id);
                 if is_builtin_template_id(id) {
                     page.template = Some(PageTemplate {
                         id,

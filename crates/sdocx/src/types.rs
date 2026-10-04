@@ -1283,13 +1283,45 @@ pub struct PageBackground {
     pub image_mode: Option<u32>,
     pub width: Option<u32>,
     pub rotation: Option<u32>,
+    /// Saved field-8 records. `None` means absent; an empty list means present and empty.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub pdf_paper: Option<Vec<PdfPaperRecord>>,
+    /// Saved field-9 template type, independent of PDF-record presence.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub template_type: Option<u32>,
 }
 
-/// Page template metadata.
+/// One saved PDF page placement, before native binding checks or runtime scaling.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct PdfPaperRecord {
+    /// Signed binding ID; negative sentinels are retained without resource admission.
+    pub media_id: i32,
+    /// Signed source PDF page index, independent of the physical note page.
+    pub page_index: i32,
+    /// Saved destination coordinates in left, top, right, bottom order.
+    pub rectangle: PdfPaperRectangle,
+}
+
+/// Version-dependent encoding of a saved PDF destination rectangle.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum PdfPaperRectangle {
+    /// Signed integer coordinates in page formats 2034 and newer.
+    Integer([i32; 4]),
+    /// Exact IEEE-754 `f32` bits in older page formats, including nonfinite values.
+    LegacyFloatBits([u32; 4]),
+    /// Exact bytes when the fixed header does not identify the page format.
+    Unspecified([u8; 16]),
+}
+
+/// Compatibility summary of page template metadata.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PageTemplate {
-    /// Raw Samsung Notes template identifier.
+    /// Built-in template identifier, or the first PDF index for a custom-PDF summary.
     pub id: u32,
     /// Template backing source.
     pub source: PageTemplateSource,
@@ -1302,9 +1334,9 @@ pub struct PageTemplate {
 pub enum PageTemplateSource {
     /// Built-in Samsung Notes page template.
     BuiltIn,
-    /// Custom PDF-backed page template.
+    /// Compatibility summary of the first saved PDF record, not a native template-type assignment.
     CustomPdf {
-        /// Zero-based PDF page index used as the template.
+        /// First source page index as unsigned bits; signed values remain in `PageBackground`.
         page_index: u32,
     },
 }
