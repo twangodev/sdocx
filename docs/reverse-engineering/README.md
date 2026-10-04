@@ -66,6 +66,8 @@ decoding, rendering and evidence boundaries across object types and features.
   channels, generated particles and separate runtime paper coverage inputs.
 - [`inkpen-v4-findings.md`](inkpen-v4-findings.md) — selected saved curve redraw,
   pressure/movement/time width state and generated geometry versus source samples.
+- [`inkpen2-saved-findings.md`](inkpen2-saved-findings.md) — selected V9 saved
+  time/history radius, curve sampling and derived cache versus retained channels.
 
 - [`file-format.md`](file-format.md) — authoritative archive and binary-format
   map: `note.note`, pages, layers, objects, frames, strokes, media, hashes and

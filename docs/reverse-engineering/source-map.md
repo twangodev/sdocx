@@ -34,6 +34,7 @@ are more stable evidence than class-field names.
 | `libSPenDefaultPen.so`, `libSPenMarker.so` through `libSPenMarker4.so` | Concrete pen interfaces, fixed-opacity bindings and Marker2 coverage shaders. |
 | `libSPenPencil3.so` | [Selected V1 saved replay](pencil3-source-findings.md), generated particle/brush-row state and configured paper bitmap ownership. |
 | `libSPenInkPen.so` | [Selected V4 saved curve redraw](inkpen-v4-findings.md), pressure/movement/time width state and derived RTV1 point buffer. |
+| `libSPenInkPen2.so` | [Selected V9 saved redraw](inkpen2-saved-findings.md), timestamp/history radius, incoming state and derived RTV3 geometry; separate from live filtering. |
 | `libSPenRenderer.so` | Blend descriptors, native-to-OpenGL enum tables and state activation. |
 | `libSPenView.so`, `libSPenBase.so` | Active color-theme selection and alpha-preserving RGB conversion. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |
