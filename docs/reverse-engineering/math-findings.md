@@ -79,6 +79,41 @@ and checks hexadecimal characters and the usual hyphen positions. The SDK
 inspection API decodes the length-prefixed UTF-8 text without normalizing or
 requiring UUID syntax, consistent with existing base-object identity decoding.
 
+## Referred strokes and recognition identity
+
+The runtime referred-stroke list at implementation +136 holds the supplied
+object pointers: ReferStroke adds and binds them (`0x45c218`, `0x45c228`),
+UnReferStroke removes/releases them (`0x45c354`, `0x45c35c`), and the getter
+returns the same pointers (`0x459620`–`0x459664`). These loops have no direct
+visibility gate or cloning. The list differs from formulas at +16 and plots
+at +88. Current own writer/reader (`0x45a10c`, `0x45a6d0`) omit +136; Copy
+(`0x45b40c`) performs no direct clear/copy of the destination's referred list.
+Attachment registers Math's own UUID (`0x4556f4`–`0x455780`); application
+population and saved reconstruction remain unproven by these direct bodies.
+
+Separate saved recognition groups appear in `libSPenRecogUIFeature.so`
+(SHA-256 `53ecf90eb45d0a09ecaebb367cf75b3ad327b34386b8a0ca674b0247fa47f276`,
+matching the APK member byte for byte). Its native key getters identify:
+
+| Getter | Common ExtraData string-array key |
+| --- | --- |
+| `0x11f52c` | `RecogUIFeature_MathStrokeUuidStringArray` |
+| `0x11f574` | `RecogUIFeature_AnswerStrokeUuidStringArray` |
+
+`updateMathResult` resolves recognition input handles to existing objects
+(`0x1b08a0`) and writes the source UUID array to each source stroke (`0x1b0a54`).
+The UUID producer uses each pointer's own GetUuid/ToString (`0x120aa0`,
+`0x120aa4`), without remapping to an original-object identity. Answer UUIDs
+are written to source and answer strokes (`0x1b0dd4`, `0x1b1090`); answers are
+marked generated (`0x1b103c`). UUID-query consumers are separate from Math +136;
+these arrays do not establish a bridge into that list or replace source vectors.
+
+Model SetExtraDataStringArray uses common BaseData +88 (`0x2cd02c`–`0x2cd03c`),
+serialized as [common flexible bit5](object-flexible-findings.md#modern-typed-frame-field-order).
+Explicit Rust inspection of common metadata retains these entries through
+`ObjectFlexibleMetadata::extra_data` / `ObjectBundleValue::StringArray`, alongside
+the stored payload. This is distinct from ownership in the high-level Document.
+
 ## SDK inspection and limits
 
 `StoredObject::math_metadata(page_bytes)` and `math_metadata_with_limits`

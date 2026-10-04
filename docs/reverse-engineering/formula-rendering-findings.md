@@ -118,8 +118,8 @@ ignoring requested right/bottom as scale inputs. `OffsetChildObjectList`
 +136 through slot40 with `[false,true]`, then recomputes visible child bounds
 plus margins (`0x45b074`–`0x45b094`). Connected plots are a different list at +88
 (`0x45bd74`); +136 is identified by `GetReferredStrokeList` (`0x459620`).
-That runtime list differs from serialized connected-plot UUIDs; which saved
-records populate it is not established by this trace.
+Its [runtime pointer lifecycle and separate saved recognition UUID groups](math-findings.md#referred-strokes-and-recognition-identity)
+are distinct; a saved-record bridge into the referred list remains unproven.
 Ordinary Math SetRect first rejects undersized destinations; after that check,
 its first-boolean-true branch logs and returns success without offset/base edit
 (`0x4585a0`–`0x4585f4`).
