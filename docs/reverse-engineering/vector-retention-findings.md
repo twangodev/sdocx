@@ -431,6 +431,66 @@ unchanged opaque bytes do not certify transport of private resource references.
 The native clipboard archive therefore preserves an editable representation
 separately from original archive bytes and external HTML/JPEG appearance.
 
+### SPD to WDoc migration
+
+The app's legacy migration is another editable-source route.
+`SPDToSDocXConverterWrapper.java:130–164` opens a SpenNoteDoc with the provided
+WNote's page-default width, then calls `SPDToSDocXConverter.java:185–226`.
+That converter uses the **loaded** source note/page dimensions as destination
+defaults and page sizes. The old loader's width normalization and original SPD
+header identity remain unestablished. It also appends a final page (`274–278`).
+
+`MultiPageNoteComposer.java:167–173` supplies scale 1.0 and PointF(0,0) to
+transferObjects; `SpenWPage.java:1186–1194` throws on false. WDoc's
+`WPage::TransferObjects`, `0xc9c78`, passes the PageDoc's **current-layer cookie**
+(`0xc9ce8`) to Model `PageImplBase::TransferObjects`, `0x345550`. Its handler
+route reaches `ObjectManager::TransferObjects`, `0x35f404`. This inspected
+operation does not establish migration of every physical source layer.
+
+The manager transfers existing runtime pointers. Each object passes through
+GetRect, temporary RectF scale/offset, OnTransfer(destination context),
+SetRect(false,true) and destination-list Add (`0x35f4a8`–`0x35f52c`), without
+factory cloning or a stroke-array reconstruction loop. SetRect/Add results
+are unchecked. Source-list RemoveAll (`0x35f564`) clears membership nodes:
+Base List Add stores the pointer at node+16 (`0x9d01c`–`0x9d030`), while
+RemoveAll frees only nodes (`0x9e30c`–`0x9e330`). Conditional on successful
+destination additions, clearing the source list does not dispose its objects.
+
+Neutral parameters still run stroke rectangle methods. SetRect returns before
+point mutation when requested/current common rectangles compare equal
+(`0x2de15c`–`0x2de180`). However GetRect expands zero width/height by one unit
+(`0x2e6b28`–`0x2e6b44`), so scale 1/offset 0 alone does not prove equality.
+Unequal rectangles can invoke ApplyRect on the PointF vector
+(`0x2de184`–`0x2de2b4`, `0x2e8f60`–`0x2e9070`). Stroke OnTransfer separately
+rebinds pen-name/advanced-setting string IDs (`0x2e69c0`–`0x2e6a7c`); its
+inspected body does not replace the implementation or rebuild the other
+stroke-channel arrays. Neither boundary certifies original wire precision.
+
+The actual Magic Pen converter runs after transfer. Its admission requires
+type 1, a SpenObjectStroke instance and the exact name
+`com.samsung.android.sdk.pen.pen.preload.MagicPen`
+(`SPDToSDocXConverter.java:167–173,229–249`, `SpenPenManager.java:43`).
+`HandWritingConverter.java:16–24` calls setColor with
+`(destinationBackground & 0x00ffffff) | (strokeColor & 0xff000000)`:
+current destination-page RGB replaces stroke RGB while source alpha remains.
+That background is read before the later page-background assignment
+(`SPDToSDocXConverter.java:260–265`); no fixed white/dark value is inferred.
+The native kernel writes saved color member 288 (`0x2ea388`) and marks
+changed/cache-dirty, without rewriting point arrays in that local kernel.
+Converter status handling does not certify that every selected rewrite succeeds.
+
+Base OnTransfer resolves the declared BaseData+108 attachment ID through its
+old manager and rebinds its path (`0x2d02dc`–`0x2d0324`); ImageCommon transfers
+its ImageData owners (`0x2d03c8`, `0x2b7034`). Those lookup/bind results are not
+individually checked. Destination context/dimension state is then installed
+(`0x2d03cc`–`0x2d040c`). These are declared-owner routes, separate from a whole
+manifest import or references inside opaque original bytes.
+The resulting WDoc serializes migrated runtime state. Its saved coordinates,
+channels and ARGB are converted source, without evidence for another
+extension-based DPI transform or reversing the admitted color rewrite.
+These static routes do not establish original SPD archive preservation,
+complete channel/resource equivalence or observed original-vector loss.
+
 ## Precision and drawable output
 
 Saved WDoc points, rectangles and path bytes can contain `f64` values.
