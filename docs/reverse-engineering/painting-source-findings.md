@@ -335,6 +335,40 @@ original bytes and transformed native state remain separate preservation inputs.
 These framing and reader findings are source-only, without a complete ordinary
 packet or archive load execution.
 
+### Lazy packet loading and vector completeness
+
+Page impl `+552/+560` are the saved packet count and packed-object total read
+from the header (`0x33a104`, `0x33a124`), not load-progress counters.
+`LoadAllObjects`, `0x33c130`, starts its packet index at 1 (`0x33c370`) and
+does not directly update those counters. A set `+564` returns true immediately
+(`0x33c170–0x33c194`); terminal packet success sets it at `0x33c8b8`.
+Ordinary `LoadObject` separately sets `+31` (`0x33c0c0`), so a later packet
+failure does not make the next call reload the main page.
+
+Failure gates differ. Unzip, trailer validation, layer-count validation and
+layer-load failures return false. But an extracted file's `Construct` failure
+branches to a zero local failure flag (`0x33c440 → 0x33c4cc`), then advances the
+packet index (`0x33c5c0–0x33c5d4`); this skipped open can reach terminal success.
+Thus `+564` alone does not certify that every packet file was opened.
+
+`Load_ObjectList`, `0x357038`, inserts decoded objects directly into the live
+layer (`0x357204–0x357210`); its temporary List/map track connections, without
+staging or undoing all inserts. Null decoder results advance the serialized
+slot index (`0x3571e0 → 0x3572d4`). Only loop completion adds the **declared**
+count to packed prefix `+176` (`0x3572e0–0x3572f0`), including skipped/null slots.
+A list failure bypasses that increment; connection resolution can fail after
+it (`0x341a64–0x341a68`). Prefix length does not certify recovered vector count.
+
+The page dispatch finds the existing layer, not a clone (`0x33c704`), and a
+false `LayerDoc::Load` invokes its deleting destructor (`0x33c87c–0x33c888`).
+That destroys its live object ownership (`0x34e268–0x34e324`); the inspected
+cleanup does not remove/replace the page List entry or restore earlier layers.
+The facade's recursive mutex (`0x333018–0x333040`) does not provide rollback.
+Retry re-entry is source-proven; safe or idempotent retry and actual malformed
+archive outcomes remain unexecuted. Original serialized bytes and partially
+materialized active vectors are separate preservation evidence, without a
+universal native source-loss or crash claim.
+
 ### Executed reducer boundary
 
 A Rust probe reused the existing conformance `Machine` loader and executed
@@ -440,7 +474,7 @@ Its `isClear=true` branch also calls `PageDoc::RemoveAllObject`
 `m_SetCurrentLayer` writes the same layer pointer to manager `+40` and its
 ObjectHandler at `0x3476e8–0x3476ec`; `ObjectHandlerBase::RemoveAllObject`
 calls that layer's removal at `0x364770`. Successful Painting removal also
-clears page-impl packet counter `+552` and accumulated object count `+560`
+clears page-impl saved packet count `+552` and packed-object total `+560`
 at `0x32e49c–0x32e4a4`; earlier packed-source reuse cannot be inferred afterward.
 `PaintingCompatViewFillColorAction::fillColor`, `0x7441c`, sets dirty bitmap
 at `0x74740` and commits history at `0x7476c`. Model
@@ -458,7 +492,7 @@ the active layer. The generic manager's save/load/filename APIs return false,
 so this runtime undo state does not establish serialized vector history.
 
 Source-only packet selection distinguishes clearing from individual removal.
-Successful painting `PageDoc::RemoveAllObject`, `0x32e444`, resets loaded packet
+Successful painting `PageDoc::RemoveAllObject`, `0x32e444`, resets saved packet
 count 552 and packed-object total 560 (`0x32e4a0–0x32e4a4`), leaving selected
 count 556 unchanged. When the page writer actually runs successfully,
 `Save_PaintingPage` copies 552 into 556 before its 10,000-object threshold
@@ -468,6 +502,13 @@ packet number 1 from current saveable objects, without selecting old higher
 indices. Saveable counts and writing exclude each layer's packed prefix 176
 (`0x3416fc–0x341708`, `0x354938–0x354950`); clearing does not itself prove all
 old packet vectors are materialized or other layers are safely rebuilt.
+
+Successful packed loading advances a loaded layer's packed prefix, rather
+than making its objects part of the saveable suffix (`0x3572e0–0x3572f0`).
+After clearing resets page counts, the inspected `LoadAllObjects` path can
+return true without reopening old packets (`0x33c170–0x33c194`,
+`0x33c224–0x33c31c`); this does not establish preservation of other layers
+through a valid application edit.
 
 This outcome requires the writer: `SavePage` checks `IsChanged` before saving
 (`0x2c6930`, `0x2c6984`). Empty-layer clearing can succeed without marking the
@@ -619,8 +660,10 @@ stroke geometry after separately decoding ordinary base/stroke packets, explicit
 f32 coordinates without inventing precision, and preserving layer order,
 visibility and replay metadata. Flattening `.page`
 alone or exporting the JPEG thumbnail cannot establish vector preservation.
-The remaining significant unknowns are the ordinary base block's complete
-optional layout, an actual packet/archive load, full materialization of old
+The ordinary base field order and known optional framing are now mapped in
+[the static extraction findings](object-flexible-findings.md#a-different-static-extraction-format).
+Reserved raw ExtraData semantics remain unresolved, alongside actual
+packet/archive admission, full materialization of old
 packed vectors before edits,
 valid arbitrary packed-prefix mutation, and whether separate recorded-operation
 contracts retain removed original samples. Packet selection after clearing is
