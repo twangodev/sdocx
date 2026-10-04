@@ -79,6 +79,72 @@ and checks hexadecimal characters and the usual hyphen positions. The SDK
 inspection API decodes the length-prefixed UTF-8 text without normalizing or
 requiring UUID syntax, consistent with existing base-object identity decoding.
 
+## Connected plot references after loading
+
+Field 3 loads UUID strings into a pending vector at implementation +104,
+whose end is +112 (`0x45a884`–`0x45a8e8`). This retains their input order;
+it does not immediately populate the connected-pointer list at +88. The
+writer instead traverses +88 and writes each current pointer's own UUID
+(`0x45a340`–`0x45a3e4`), without refreshing or consulting pending strings.
+An empty live list omits the field even if pending UUIDs remain.
+
+`UpdatePlotList` (`0x4590cc`) requires the current context and its +440
+registry. Math OnAttach registers its own identity in the registry's tree
+at +0 (`0x4556f4`–`0x455780`); Plot OnAttach uses a separate tree at +24
+(`0x4513b8`–`0x451444`). Plot registration can be skipped by the context
++608 callback returning nonzero (`0x451398`–`0x4513a8`). Existing keys keep
+their registered pointers on these insertion paths; document-level collision
+admission remains unverified. Math attachment performs no direct resolution
+of pending plot UUIDs.
+
+The resolver looks up each pending UUID in the Plot tree, adds the found
+pointer to +88 and binds it (`0x459150`–`0x45917c`). It has no direct type,
+visibility, clone or UUID-remapping operation. Public ConnectPlot/SetList
+do check type20 (`0x458a90`, `0x458ec8`); this resolver bypasses those checks.
+ObjectList::Add delegates to Base List::Add (`0x2dcd84`, `0x9d000`), which
+appends without deduplication. Repeated saved UUIDs can append/bind the same
+pointer repeatedly in pending order. Base SHA-256 is
+`e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb`.
+
+Missing targets log and continue. Normal completion clears all pending
+strings, including misses (`0x4591b8`–`0x4591c0`); the subsequent writer has
+no fallback for those identities. Add failure instead releases/clears the
+live list and returns false without clearing pending strings (`0x45921c`–
+`0x459270`). Missing context also returns before consumption.
+
+A verified caller exists in `libSPenWDoc.so`, SHA-256
+`1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6`,
+freshly matched to the APK member. WNoteLoadHandler::Load (`0x0a8584`)
+calls LoadPage (`0x0a8824`); on true it iterates WNoteImpl's map at +648
+and passes each node's object pointer to UpdatePlotList (`0x0a8844`). Its
+return is unchecked. The map's construction/alias to the context registry
+was not independently established; neither complete page availability nor
+every other reopen route is implied by this load pass.
+
+GetConnectedPlotCount/GetConnectedPlotList refresh first (`0x458d84`,
+`0x45907c`), whereas indexed GetConnectedPlot does not (`0x458cfc`).
+With a context registry available, refresh checks each live pointer's own UUID
+for existence in the Plot tree and removes misses (`0x45baa4`, `0x45bab8`).
+It does not compare the current pointer with the map's value or rebind it.
+Plot OnDetach erases its own key before Base OnDetach (`0x4515dc`–`0x4515fc`);
+later refresh can therefore prune an association. These are static conditional
+paths, not captured deletion/save.
+
+MathImpl::Copy directly neither clears nor copies live +88 or pending +104
+associations (`0x45b40c`–`0x45b568`); a fresh destination starts both empty.
+Base copy, callbacks and higher-level reconnect flows remain separate scopes.
+Math's own OnTransfer is a literal return (`0x455840`), which does not prove
+the complete framework's cross-document outcome. Connector reconnection
+findings for type8 lines do not establish Math restoration.
+
+Rust inspection retains the ordered saved `connected_plot_uuids` independently
+of this current pointer projection. Original payload access requires separately
+supplied original uncompressed page bytes; StoredObject offsets do not own
+them. A reference neither supplies nor owns its separate
+[Plot source](plot-findings.md#saved-source-and-generated-appearance).
+No real connected Math/Plot copy, collision, partial load or archive round trip
+was executed, and no native cleanup is applied to the Rust inspection data.
+
 ## Referred strokes and recognition identity
 
 The runtime referred-stroke list at implementation +136 holds the supplied
