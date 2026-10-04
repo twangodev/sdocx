@@ -56,6 +56,11 @@ code content. A table inside a text box therefore differs from a physical
 type-22 page record. Flattened supported children under an unsupported parent
 do not establish that parent's transform or composition semantics.
 
+Native [card contracts](reverse-engineering/card-source-findings.md) distinguish
+saved Web/Link/AttachedFile text, action metadata and source bindings from
+regenerated card artwork. A thumbnail does not retain the contents of a bound
+Web or attached document.
+
 The [formula](reverse-engineering/formula-findings.md),
 [math](reverse-engineering/math-findings.md), and
 [plot](reverse-engineering/plot-findings.md) findings describe inspection APIs.

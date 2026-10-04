@@ -50,6 +50,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`image-effects-findings.md`](image-effects-findings.md) — image-fill field
   layout and defaults, crop/nine-patch selection, transparency, cache placement
   and legacy border drawing.
+- [`card-source-findings.md`](card-source-findings.md) — Web, Link and attached-file
+  source metadata/resources, regenerated previews and native PDF card export.
 
 - [`marker4-v7.md`](marker4-v7.md) — fractional-width V7 highlighter vectors,
   native saved-redraw fixtures and isolated native-layer appearance comparison.
