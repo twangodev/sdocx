@@ -73,6 +73,7 @@ producer remain unknown; no actual saved field-0 fixture was executed.
 
 Selected modern Shape/Line consumers use the attached WDoc note's
 [string namespace](painting-source-findings.md#layer-records-and-the-10000-object-split).
+For context-bearing objects, including reused/direct decoder calls,
 Shape pen loading (`0x3ac380–0x3ac418`) and Line loading
 (`0x38c358–0x38c40c`) call `GetString` then `Bind(String const*)` when a
 manager is available, ignore its result and store the original wire ID after
@@ -81,7 +82,22 @@ normal return. This does not prove successful missing-reference admission:
 binding chain can pass that null receiver to Base `String::CompareTo`
 (`0xc49e4`), which dereferences it without a local guard. No crash was executed.
 
-Attachment instead calls `Bind(int)` only for nonnegative IDs and ignores
+Fresh ordinary WDoc loading has a different order. The actual factory Shape/Line
+branches (`0x36dba8/0x36dbe8`, `0x36d8dc/0x36d910`) reach the BaseImpl constructor's
+explicit null context store (`0x2d718c`). `SetLoadByCoedit` writes only its flag;
+the inspected shared modern decoding prefix keeps the object unattached.
+On the selected ordinary Line and text-absent Shape paths, pen readers therefore
+skip string lookup/binding and retain signed IDs without validating their strings.
+The fresh Shape text helper's bit-0-absent branch skips text construction
+(`0x3b2214–0x3b2264`). Later checked layer insertion (`0x34e624–0x34e640`)
+calls `OnAttach`; Base attachment then installs the supplied context (`0x2cfe70`).
+This static proof does not close present-text Shape callbacks, arbitrary callback
+reentry, malformed records or whole-note load success; it does not change the
+context-bearing reader limitation above.
+
+Derived pen attachment is subject to the context's mode gate
+(`0x39a65c–0x39a6b0`, `0x386fbc–0x387008`). It calls `Bind(int)` only for
+nonnegative IDs and ignores
 failure (Shape `0x3ae59c–0x3ae644`; Line `0x3895a0–0x389648`). Without queued
 local strings, those branches leave saved IDs unchanged. Queued strings can
 overwrite IDs during attachment. Native Copy obtains current source strings
