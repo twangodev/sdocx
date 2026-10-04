@@ -1,3 +1,4 @@
+use crate::source_summary::{self, MediaManifestSummary, PageManifestSummary};
 use sdocx::{LayoutDocument, ObjectType, ParsedDocument, StoredObject};
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -197,9 +198,11 @@ impl Source {
                     "default_page_dimensions":m.default_page_dimensions,"page_mode":m.page_mode,"orientation":m.orientation,
                     "page_dimensions":m.page_dimensions,"flow_dimensions":m.flow_dimensions,"flow_page_padding":m.flow_page_padding,
                     "page_ids":m.page_ids,"note_text":m.note_text,"note_title":m.note_title,
+                    "media_manifest":m.media_manifest.as_ref().map(MediaManifestSummary::from),
+                    "archive_resources":source_summary::archive_resources(m),
                     "media_assets":m.media_assets.iter().map(|a| json!({"name":a.name,"archive_id":a.archive_id,"mime_type":a.mime_type,"byte_length":a.data.len()})).collect::<Vec<_>>()});
                 json!({"metadata":metadata,"note":parsed.note,"endTag":parsed.end_tag,"endTagSource":parsed.end_tag_source,
-                "manifest":parsed.page_manifest,"integrity":parsed.integrity,"diagnostics":parsed.report})
+                "manifest":parsed.page_manifest.as_ref().map(PageManifestSummary::from),"integrity":parsed.integrity,"diagnostics":parsed.report})
             }
             "bytes" => {
                 let offset = number(&r, "offset")?;
@@ -230,11 +233,13 @@ impl Source {
                             .and_then(|n| n.metadata_with_limits(bytes, &limits)),
                     ),
                     "media/mediaInfo.dat" => decoded(
-                        sdocx::parse_media_manifest_bytes_with_limits(bytes, &limits),
+                        sdocx::parse_media_manifest_bytes_with_limits(bytes, &limits)
+                            .map(|manifest| value(MediaManifestSummary::from(&manifest))),
                     ),
-                    "pageIdInfo.dat" => {
-                        decoded(sdocx::parse_page_manifest_bytes_with_limits(bytes, &limits))
-                    }
+                    "pageIdInfo.dat" => decoded(
+                        sdocx::parse_page_manifest_bytes_with_limits(bytes, &limits)
+                            .map(|manifest| value(PageManifestSummary::from(&manifest))),
+                    ),
                     "end_tag.bin" => {
                         decoded(sdocx::parse_end_tag_bytes_with_limits(bytes, &limits))
                     }

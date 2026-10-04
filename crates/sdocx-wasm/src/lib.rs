@@ -1,4 +1,5 @@
 mod debugger;
+mod source_summary;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::cell::RefCell;
@@ -10,7 +11,10 @@ const MAX_BROWSER_TOTAL_UNCOMPRESSED_SIZE: u64 = 1024 * 1024 * 1024;
 
 /// Parse a `.sdocx` file from bytes.
 ///
-/// Accepts a `Uint8Array` and returns a `Document` object.
+/// Accepts a `Uint8Array` and returns a complete `Document`, including retained
+/// source bytes. Use `DocumentSession::inspection` for byte-free asset summaries.
+/// This copies source arrays into JavaScript; raw timestamps outside JavaScript's
+/// safe integer range cannot be represented by this serializer.
 #[wasm_bindgen]
 pub fn parse(bytes: &[u8]) -> Result<JsValue, JsError> {
     let doc = sdocx::parse_bytes(bytes).map_err(|e| JsError::new(&e.to_string()))?;
@@ -234,7 +238,7 @@ struct Inspection<'a> {
     document: InspectionDocument<'a>,
     layout: &'a sdocx::LayoutDocument,
     stored_page_count: usize,
-    page_manifest: &'a Option<sdocx::PageManifest>,
+    page_manifest: Option<source_summary::PageManifestSummary<'a>>,
     report: &'a sdocx::ParseReport,
 }
 
@@ -259,6 +263,8 @@ struct InspectionMetadata<'a> {
     flow_page_padding: Option<(u32, u32)>,
     page_ids: &'a [String],
     media_assets: Vec<MediaAssetSummary<'a>>,
+    media_manifest: Option<source_summary::MediaManifestSummary<'a>>,
+    archive_resources: Vec<source_summary::ArchiveResourceSummary<'a>>,
     note_text: &'a Option<sdocx::RichTextBox>,
     note_title: &'a Option<sdocx::RichTextBox>,
 }
@@ -276,6 +282,13 @@ fn inspection_value(
     parsed: &sdocx::ParsedDocument,
     layout: &sdocx::LayoutDocument,
 ) -> Result<JsValue, serde_wasm_bindgen::Error> {
+    serde_wasm_bindgen::to_value(&inspection_data(parsed, layout))
+}
+
+fn inspection_data<'a>(
+    parsed: &'a sdocx::ParsedDocument,
+    layout: &'a sdocx::LayoutDocument,
+) -> Inspection<'a> {
     let document = &parsed.document;
     let metadata = &document.metadata;
     let media_assets = metadata
@@ -292,7 +305,7 @@ fn inspection_value(
             }
         })
         .collect::<Vec<_>>();
-    let inspection = Inspection {
+    Inspection {
         document: InspectionDocument {
             pages: &document.pages,
             metadata: InspectionMetadata {
@@ -309,16 +322,17 @@ fn inspection_value(
                 flow_page_padding: metadata.flow_page_padding,
                 page_ids: &metadata.page_ids,
                 media_assets,
+                media_manifest: metadata.media_manifest.as_ref().map(Into::into),
+                archive_resources: source_summary::archive_resources(metadata),
                 note_text: &metadata.note_text,
                 note_title: &metadata.note_title,
             },
         },
         layout,
         stored_page_count: parsed.stored_pages.len(),
-        page_manifest: &parsed.page_manifest,
+        page_manifest: parsed.page_manifest.as_ref().map(Into::into),
         report: &parsed.report,
-    };
-    serde_wasm_bindgen::to_value(&inspection)
+    }
 }
 
 #[cfg(test)]
