@@ -146,6 +146,47 @@ properties is not established. Rust's raw `path_data` and f64 control points
 retain original WDoc authority: this XML projection does not justify decimal
 quantization of those retained values or bytes.
 
+### Partial edits select the next writer's model sources
+
+This continuation is also static source evidence, without a captured XML
+exchange or subsequent file save. For a successful non-identical path edit,
+ObjectShapeData's setter creates UnknownTemplate (`0x3abed8→0x2121a0`),
+loads the supplied Path with zero angle/flags, then destroys the old template
+and stores its replacement and shape type 0 (`0x3abf14–0x3abf38`). An
+`IsSame` result returns before replacement (`0x3ad790–0x3ad794`). This
+ordinary loader reaches the existing normalization contract; it does not
+use the coedit raw-display wrapper or retain the caller's XML spelling.
+
+After replacement, the public data wrapper calls qualified
+ObjectShapeBase::SetRect with `(true,false,false)` (`0x3ad9bc/0x3ada7c`).
+That reaches ObjectBase common placement/flag updates, not the distinct
+ObjectShape template-resize entry point. The inspected direct rectangle
+methods do not rewrite path segments; observer/history/magnetic callbacks
+remain outside a closed no-mutation guarantee. A later false rectangle result
+can follow installation of the new template, without a proven whole-edit
+rollback (`0x3ad9c8/0x3ada80`).
+
+Control edits compare current indexed getter values, then call the current
+template's slot +32 in order (`0x3ae408–0x3ae438`). They do not retain the
+supplied list as an opaque source; a failing later index has no local rollback
+of earlier setters. Unknown's slot (`0x20e45c`) returns true for a valid impl
+without direct point/segment writes, unlike the named Arc regeneration
+described below. Path replacement therefore changes subsequent control
+authority. Complete mutation helpers mark the object changed and emit event
+21 (`0x3abf40–0x3abf54`, `0x3ae470–0x3ae480`); these flags do not prove
+every cache or saved snapshot was refreshed.
+
+The inspected own binary writer reads the current template display Path
+(`0x3a8e64→0x20d630`) and serializes it with document type 2. It writes the
+current shape type and queries current controls using the serialization-angle
+getter (`0x3a8eec→0x20ec9c`), then widens returned f32 pairs. That getter
+rotates stored base controls; the edit-comparison getter reads a separate
+control projection. Neither writer source is the supplied XML text/list.
+The [image field-19 saved baseline](image-effects-findings.md) remains a
+separate conditional span/coedit channel; these setters have no direct copy
+to that saved path. Current-template serialization is therefore not a
+universal source for every shape-derived field or a whole-session parity claim.
+
 ## The native drawing consumer
 
 `ShapeDrawingCommon::convertToPath` (Drawing `0x9bd24`) reads those runtime
