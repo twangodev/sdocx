@@ -11,6 +11,7 @@ Addresses below are ELF virtual addresses in Drawing unless otherwise qualified.
 | --- | --- |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
 | `libSPenGraphics.so` | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
@@ -284,11 +285,50 @@ first internal cut on each axis upward and the second downward at
 `0x857c8`–`0x857dc`. The nested loops at `0x858a8`–`0x85920` issue all nine
 source/destination draws. There is no per-patch positive-area test in those loops.
 
-The supplied ratio is not simply inferred from the bitmap or destination size
-inside this function. Model `ObjectShapeImpl::GetNinePatchRatio`,
-`0x3a6c24`, defaults to 1 and otherwise divides a context-derived integer
-by the saved nine-patch width at `0x3a6c7c`–`0x3a6c84`. Its provider and
-coordinate-unit contract are not identified by this trace.
+The ratio comes from Model `ObjectShapeImpl::GetNinePatchRatio`, `0x3a6c24`:
+current context page width divided by the saved fill nine-patch width. The
+provider is exactly `ModelContext::GetPageWidth`, `0x2ab694`: invoke its
+`std::function<int()>` callable at context +1200 through slot +48, otherwise
+read the stored integer at +1156. Missing context or zero denominator returns
+1; the getter does not require positive values. Two signed-i32-to-f32
+conversions precede f32 division (`0x3a6c7c`–`0x3a6c84`).
+
+Model `ComponentImage::SetImage(String const*, Rect)`, `0x3a17dc`, snapshots
+that page width when context exists, calls `SetNinePatchWidth` at `0x3a18b4`,
+then `SetImageUri` at `0x3a18c8`. With no active image, the width is pending
+member +68 (`0x3b89c0`–`0x3b89e4`); image binding passes it to
+`ImageCommon::AddImage` (`0x3b86d0`–`0x3b86e4`). The Bitmap overload reaches
+this String setter at `0x3a1a14`. Thus these producers capture a reference
+page width, rather than using the source bitmap's pixel width. Other arbitrary
+fill-effect producers and universal physical units are not established here.
+
+Model `SetPageSize`, `0x2ab678`, and `PageImplBase::SetWidth`, `0x343748`,
+populate/synchronize context +1156. WDoc `WPageImpl::OnAttach` copies its
+page's current width/height into that context (`0xced90`–`0xcedac`), as does
+`OnContextChanged` (`0xcfba8`–`0xcfbc4`). WDoc's fixed-header reader passes
+saved page width to `SetWidth` at `0xd2c90`; `LoadHeader_Scale`, `0xd3760`,
+can subsequently replace it with the requested dimension or an orientation-
+dependent scaled/truncated width (`0xd37bc`–`0xd3824`). The numerator can
+therefore reflect the loaded/scaled page. These ratio routines query neither
+DPI nor browser zoom; upstream choices of requested dimensions and later
+canvas scaling remain separate from this bounded contract.
+
+Border images share that numerator but have an independent denominator:
+Model `ObjectShapeImage::GetImageBorderNinePatchRatio`, `0x3b3f94`, reads
+the border image's own `ImageCommon` width (`0x3b3fa8`–`0x3b3ff0`). Its
+attached history-backed setter snapshots page width and supplies it to a new
+image (`0x3a2660`–`0x3a26ac`, `0x3a279c`–`0x3a27b4`); a detached new-image
+branch supplies zero (`0x3a25a4`–`0x3a25ac`). Main and border ratios can differ.
+Drawing passes these separate ratios to the same slicing helper at `0x8541c`
+and `0x85e00`, respectively.
+
+Saved main cuts/width pass unchanged into `ImageCommon` during fill loading
+(Model `0x3b94ac`–`0x3b94dc`). Border cuts and width likewise remain unscaled
+(`0x3b47ac`–`0x3b47b4`, `0x3b480c`–`0x3b481c`), while the separate float
+border side-width rectangle is magnified (`0x3b47d8`–`0x3b47ec`).
+The SDK currently reads and discards both reference widths in `image.rs`
+(main at 337, border at 221); it reports nonzero main cuts as unsupported.
+Raw page bytes retain these inputs, which are absent from the high-level image.
 
 ## Legacy border drawing remains present despite Java deprecation
 
