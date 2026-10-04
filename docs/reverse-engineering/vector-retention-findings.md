@@ -125,6 +125,91 @@ recovery. Caller-owned original archive/page bytes and the browser source
 carrier remain distinct from native current-cache or editable serialization;
 the parsed Rust model does not acquire their complete resource namespace.
 
+### Native note opening and recovery sources
+
+The SDK exposes `discardSnapSavedData`, `skipCorruptedFileInfo` and coedit mode
+(`SpenWNote.java:951`, `2843–2862`; JNI `0xe4108`–`0xe414c`). An actual normal
+repository route allows snapshots: `WordDocRepository.java:111–124` opens when
+the input path exists or hasSnapSavedData is true, supplying discard=false;
+`SpenWordDocument.java:269–278` also supplies skip=false. A maintenance caller,
+`DeleteCoeditNoteUseCase.java:142–147`, supplies discard=true. These are distinct
+observed policies, not every app open path or a successful-recovery certificate.
+
+Path ConstructLoad checks InitCachePath, ConfigureCache and ConstructImpl in
+that order (`0x90688`–`0x906b0`, `0x90774`–`0x90778`). The original path at
+impl+16 and working cache at impl+48 are separate carriers. ConfigureCache
+first checks the original. For a directory, CheckEndTag checks quick-save
+recovery on that original directory before ordinary EndTag reading
+(`0xbc65c`–`0xbc6ac`); a file instead uses its stream. Invalid originals enter
+restoreBackupFile, which checks the original path plus `_back`, its EndTag,
+and the restoration helper (`0xa1c60`–`0xa1c70`, `0xa1f3c`–`0xa1fcc`). After
+failed restoration, impl+976==1 rejects configuration; otherwise the cache-only
+helper rejects discard=true or absent working cache (`0xa1c74`–`0xa1d3c`,
+`0xa20a8`–`0xa20b8`). Its remaining branch can return true even without an
+admitted snapshot; that return alone does not certify a complete note.
+
+With an original source, CheckOverwriteFlag forces overwrite for absent cache
+or skip=true. Otherwise it reads the cache's ordinary EndTag and compares core
+note modified time with the supplied EndTag (`0xa26d4`–`0xa2768`). The +32
+field is identified by FillEndTagData copying impl+208, the named GetModifiedTime
+reading that member, and Model's wire reader immediately after note ID
+(`0xa3c38`–`0xa3c40`, `0x96c58`–`0x96c64`, `0x2a7ef0`–`0x2a7f18`). It is
+separate from display timestamps. Equality is a single-field check, not an
+archive-content hash or byte-identity certificate; read failure or inequality
+sets overwrite=true.
+
+Only equality reaches CheckSnapSavedData on that route. A snapshot attempt
+requires cache state exactly 1, discard=false and accessible
+`<cache>/end_tag.bin.ssf` (`0xa2554`–`0xa25a8`). A skipped attempt sets
+overwrite=false and does not delete snapshot files. An admitted attempt clears
+the supplied EndTag before checking ReadFile(cache,true,true); success sets
+impl+793 and overwrite=false, failure sets overwrite=true
+(`0xa2600`–`0xa263c`). There is no local restoration of the cleared EndTag.
+Subsequent cache extraction/merge checks receive the overwrite flag
+(`0xa21fc`–`0xa2240`, `0xa2410`–`0xa245c`); this does not establish an admitted
+note with lost metadata or universal fallback. The stream ConstructLoad route
+instead creates a UUID cache and supplies overwrite=true, without CheckSnap in
+its ConfigureCache body (`0x90c18`–`0x90c58`, `0xa22f8`–`0xa2320`).
+
+ConstructImpl applies the selected EndTag, initializes components, then passes
+impl+793 and skip to Load (`0xa38f4`–`0xa392c`). Load checks media loading before
+note loading and then pages (`0xa85b8`–`0xa85f4`, `0xa8824`). The media virtual
+slot resolves to Model Load(bool,bool), which directly selects its manager-cache
+`mediaInfo.dat[.ssf]` (`0x292bdc`–`0x292c44`). The same first bool selects
+working-cache `note.note[.ssf]`; note data, title and body textboxes come from
+that selected file (`0xa8900`–`0xa892c`, `0xa9190`–`0xa9218`). loadPageIdInfo
+passes impl+793 to select `pageIdInfo.dat[.ssf]` (`0xaa0e0`–`0xaa0ec`,
+`0xb2378`–`0xb2398`). These selected-file routes have no local ordinary-file
+retry after failure. The flag also reaches PageLoadInfo+24 (`0xa880c`), but
+individual pages retain the accessible `.page.ssf` gate [above](#native-page-files-during-save).
+Selected metadata suffixes therefore do not imply every page/resource payload
+is a snapshot copy or prove their complete namespace. The independent
+[version-admission contracts](note-header-findings.md#native-reader-version-authority)
+remain separate from this source choice.
+
+Quick-save recovery is a physical-file operation before this snapshot decision.
+RecoverQuickSavedData reads `qsave_state.dat`; state0 returns true. After checked
+backup listing for nonzero state, state1 checks rollback, state2 checks backup
+deletion, and other nonzero states reach cleanup
+(`0xbc9ac`–`0xbca58`). Backup-list matching uses ReverseFind('.bak')==length-4
+(`0xbe750`–`0xbe75c`), separately from the original-path `_back` sibling.
+Rollback strips that suffix, checks target unlink and raw rename; it stops on
+failure without undoing earlier member changes (`0xbe8f8`–`0xbe934`). State
+reading returns its initialized/read buffer even after logging read errors
+(`0xbe62c`–`0xbe634`), and recovery ignores state-file removal and filesystem-sync
+results (`0xbca50`–`0xbca58`, `0xbcab8`). Success is not an atomic rollback or
+whole-note completeness guarantee. InitializeCacheDirectory does not call this
+recovery helper.
+
+The Rust [archive parser](../../crates/sdocx/src/container.rs) selects appended
+or archive EndTag, archive `note.note` and `pageIdInfo.dat` from the supplied ZIP.
+It does not select external lifecycle/quick-save state, `_back`, `.bak` or these
+`.ssf` alternatives. Caller-owned archive/page bytes and the browser source
+carrier retain that input, separately from the native chosen recovery/cache
+source. A preservation comparison must associate the selected note and page
+manifest with its resource namespace and payloads. These static traces establish
+no executed recovered-note round trip, corpus mismatch or source loss.
+
 ## Selected objects and opaque parents
 
 The [page decoder](../../crates/sdocx/src/page.rs) builds high-level objects from
