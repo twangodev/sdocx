@@ -237,6 +237,36 @@ current type 19 is admitted by the known-type mask `0x01cfe58f`; an original
 future-type child such as type 100 is a different case. This APK's skip branch
 does not establish that the format forbids opaque children.
 
+External child envelopes are separate from an opaque parent's copied bytes.
+`Load_ObjectList_WDoc`, Model `0x358410`, reads the outer u16 child count for
+versions at least 7 (`0x358518`–`0x358538`). Its successful default and unknown
+readers receive no child count (`0x358584`, `0x358740`); only the type-4 reader
+gets that count (`0x3586fc`, `0x358720`). `ReadUnknownObject_WDoc` reads a
+four-byte length and exactly `N` own-payload bytes (`0x359090`, `0x3590cc`),
+then supplies only that payload to the owned-copy route (`0x359114`–`0x35912c`).
+Any integrity trailer inside `N` is included; the outer header and external
+descendant records are excluded. Successful admission joins insertion at
+`0x358590`, then advances the root loop at `0x3586dc` without child recursion.
+
+If such a non-container input declares nonzero children physically following
+its payload, the next root iteration reads the first child's type as a root
+(`0x3586e4` → `0x3584b4`); if this is the final declared root, that loop stops
+without consuming those records. This is a conditional source trace, not an
+executed input, an observed valid-file loss or a format prohibition. The
+inspected WDoc saver produces a different boundary: its non-type-4 branch
+passes literal child count zero (`0x355554`, `0x355560`), which the default
+writer emits as two bytes (`0x354fd0`–`0x354fd4`). Native opaque own-byte
+preservation therefore does not establish ownership of an external subtree.
+
+Rust's physical `storage.rs::parse_object` instead recurses over declared
+children independently of object type, after consuming the parent's payload
+and integrity trailer. `StoredObject.children` retains those ordered records
+separately; `StoredObject::payload` borrows only the parent's payload from
+caller-owned page bytes. Retaining that payload alone does not retain the
+physical subtree. Original page bytes, child boundaries and integrity metadata
+remain separate preservation inputs, without asserting that the APK renders
+those descendants as the opaque parent's semantic children.
+
 Already wrapped current type 19 can recover its original native type.
 `ReadDefaultObject_WDoc`, Model `0x358d58`, first decodes the wrapper, then
 retries its original binary/type when the stored original version is at most
