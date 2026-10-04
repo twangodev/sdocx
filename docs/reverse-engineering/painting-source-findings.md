@@ -448,7 +448,8 @@ and calls `LoadObjectEngine` at `0x66b4c`. Replay initialization
 `PaintingCompatReplayDrawing::DrawObject`, `0x6451c`, checks visibility,
 `IsReplayOnlyEnabled` for hidden strokes and `IsReplayable` before
 `DrawRecordedObject`. Hidden replay-only strokes can therefore be needed for
-replay even when ordinary final-page visibility would exclude them. Its type-1 branch calls `DrawObjectStroke` at `0x654e8`.
+replay even when ordinary final-page visibility would exclude them.
+`DrawRecordedObject`, `0x6542c`, directly calls `DrawObjectStroke` at `0x654e8`.
 The latter consumes these model channels:
 
 | Call site | Getter |
@@ -479,9 +480,8 @@ at `0x32e49c–0x32e4a4`; earlier packed-source reuse cannot be inferred afterwa
 `PaintingCompatViewFillColorAction::fillColor`, `0x7441c`, sets dirty bitmap
 at `0x74740` and commits history at `0x7476c`. Model
 `LayerDocImpl::SetDirtyBitmap`, `0x351424`, stores a path at impl `+184`, not a
-sample array. These traces alone do not establish whether each history action
-also has independently serializable vector geometry; dirty bitmap presence
-must not be reported as a vector object.
+sample array. The bounded action/history contracts below distinguish that path
+from an ordinary source stroke; dirty bitmap presence is not a vector object.
 
 `PageDocImpl::SetHistoryManager`, `0x3616f4`, constructs a plain runtime
 `HistoryManager`. History-enabled removal binds existing objects and packs their
@@ -490,6 +490,49 @@ handles for undo/redo (`0x35a988`, `0x35a99c`). `PackObjectHandleList`,
 stroke serializer. These references can retain live objects after removal from
 the active layer. The generic manager's save/load/filename APIs return false,
 so this runtime undo state does not establish serialized vector history.
+
+### Recorded status and action carriers
+
+Model `PaintingDoc::HasRecordedObject`, `0x4679a0`, forwards to Page:
+loaded objects use the layer manager; otherwise it uses a cached header flag
+(`0x330b64–0x330bcc`). The manager tests a nonzero replay timestamp and
+replayable=true on ordinary ObjectList entries (`0x34a928–0x34a93c`), not a
+separate command type. `ClearRecordedObject` only sets replayable=false
+(`0x34aa80–0x34aa84`); it does not remove those source objects.
+Replay-only is a separate saved stroke property (`0x2ec09c–0x2ec0ac`).
+Base writers carry replayable and replay time; the ordinary optional block also
+carries replay order, subject to
+the [ordinary base framing differences](object-flexible-findings.md#a-different-static-extraction-format).
+
+Compat `InitializeLayerData` obtains ordinary objects through Page virtual56
+(`0x60878–0x60888`; relocation `0x4938b8 → 0x32e79c`). Its true argument
+bypasses visibility filtering and orders pointers by replay order, without a
+recorded-command filter. Subsequent getters consume stroke channels/settings;
+these casts do not certify arbitrary nonstroke Painting entries as replay inputs.
+
+Wet/dry continuation and final pen commits append the supplied ordinary stroke
+(`0x76420`, `0x76650`): Page virtual16 resolves through `0x493890` to
+`PageDoc::AppendObject`, `0x32e0ac`. Thus timing, channels and advanced settings
+have a positive source-object path alongside bitmap updates; `WETDRY` does not
+change the object into a command journal entry.
+
+Flood fill instead copies drawing pixels, runs `floodFill` (`0x74570`) and
+paints the changed buffer (`0x746b8`). Its named history helper is
+`SPen::SPUndoRedoData` (Compat RTTI `0xaf250`, name `0x41b3b`): a 40-byte
+payload contains RectF at+0, before/after String pointers at+16/+24 and layer ID
+at+32 (`0xa1174–0xa11d8`). Helpers capture cropped pixel patches and write
+`/canvas/<PageDocId>/history/Bm_%x_%x_{u,r}.bin` beneath PageDoc's internal directory.
+The fill caller does not check their write results. `updateUndoRedo`, `0x6fcac`,
+selects those paths and restores pixels, without interpreting a fill command.
+
+The inspected direct fill and current-layer clear routes do not append a vector
+operation record. Ordinary `Save_LayerData`, `0x353e48`, does not serialize the
+runtime dirty-bitmap path as one. A saved foreground/thumbnail can retain the
+result without retaining the action's vector source or seed/color/tolerance.
+Original archive bytes, active layer objects, runtime history and opaque payloads
+remain distinct: factory-created `ObjectUnknown` does not establish its payload
+semantics. Higher-level callbacks and complete valid Painting save/load/replay
+remain unexecuted; this source slice does not prove universal action-source loss.
 
 Source-only packet selection distinguishes clearing from individual removal.
 Successful painting `PageDoc::RemoveAllObject`, `0x32e444`, resets saved packet
@@ -665,7 +708,8 @@ The ordinary base field order and known optional framing are now mapped in
 Reserved raw ExtraData semantics remain unresolved, alongside actual
 packet/archive admission, full materialization of old
 packed vectors before edits,
-valid arbitrary packed-prefix mutation, and whether separate recorded-operation
-contracts retain removed original samples. Packet selection after clearing is
+valid arbitrary packed-prefix mutation, higher-level action callbacks and opaque
+object payloads beyond the inspected recorded-status/history routes.
+Packet selection after clearing is
 conditional on the writer's change gate and successful execution, as above.
 Runtime undo handles and anchor images alone do not establish that preservation.
