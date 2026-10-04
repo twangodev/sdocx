@@ -7,6 +7,16 @@ Analyzed Samsung Notes 4.4.45.37, APK SHA-256
 The following ARM64 traces establish drawing decisions.
 Addresses in the first two sections are in `libSPenDrawing.so`.
 
+The drawn-bounds producer/helper findings below are static source traces, without
+native execution, new geometry captures or device appearance validation. Inspected
+ARM64 copies match these APK entries byte for byte:
+
+| Library | SHA-256 |
+| --- | --- |
+| `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+
 ## Image and stroke precedence
 
 `ObjectDrawing::drawObjectFormula` at `0x817b8` first calls
@@ -76,25 +86,45 @@ offset 88 and the answer list at 104. The union helper at `0x4324a4` calls
 boolean argument true it uses object virtual slot 160 (`GetDrawnRect`); false
 selects slot 168 (`GetRect`).
 
-`ObjectStrokeImpl::GetDrawnRect` at `0x2e9488` expands the stroke rectangle
-according to the native pen category at implementation offset 328 and pen size
-at offset 292. The scalar passed to `RectF::IncreaseRect` at `0x2e9604` is:
+`ObjectStrokeImpl::GetDrawnRect`, `0x2e9488`, first checks the refresh flag
+(`0x2e94b4`); otherwise it returns cached bounds at implementation `+364–376`.
+On refresh, it expands nonrotated bounds according to category `+328` and pen
+size `+292`. This category is derived from the pen name, not the serialized
+stroke type or tool type. `SetPenName` calls `SetPenType` at `0x2e8a34` before
+storing the name/reference. On attach, successful saved-name-ID binding resolves
+the string and calls `SetPenType` (`0x2e6670/0x2e667c`). Its string comparisons
+at `0x2ea3c0–0x2ea4f4` select the categories below; a changed category requests
+drawn-bound refresh at `0x2ea538`. Names share the full prefix
+`com.samsung.android.sdk.pen.pen.preload.`; suffixes are literal name matches.
 
-| Native category | Expansion scalar |
-| --- | --- |
-| 0, 4, 8, 9, 12 | `size + 4` |
-| 1 | `size * 0.5 + 20` |
-| 3, 5 | `size * 2 + 4` |
-| 6, 7 | `size * 9 + 4` |
-| 10 | `size * 0.5 * constant_at_0x1644fc + 4` |
-| 11 | `size * 35 + 4` |
-| Remaining values | `size * 0.5 + 4` |
+| Native category | Matched name suffixes | Expansion scalar per side |
+| --- | --- | --- |
+| 0, 4, 8, 9, 12 | Marker, BrushPen, InkPen, ObliquePen, TapePen, respectively | `size + 4` |
+| 1 | Beautify, Beautify2 | `size * 0.5 + 20` |
+| 3, 5 | Crayon/Crayon2, Pencil2, respectively | `size * 2 + 4` |
+| 6, 7 | Pencil3, PatternPen, respectively | `size * 9 + 4` |
+| 10 | OilBrush3 | `size * 0.5 * f32(1.3) + 4` |
+| 11 | ColoredPencil | `size * 35 + 4` |
+| Remaining values | Null/unmatched name selects category 2 | `size * 0.5 + 4` |
 
-The category names, category-10 constant and exact `IncreaseRect` convention
-are unresolved; this table does not establish a portable geometry algorithm.
-For nonzero object rotation, the native code subsequently applies
-`RectF::GetRotatedBound` at `0x2e9660`. This is a separate calculation from
-stroking the decoded point sequence.
+OilBrush3's literal is at `0x13ca52`; its comparison at `0x2ea4dc` selects 10
+at `0x2ea57c`, stored to `+328` at `0x2ea510`. Category 10 first multiplies
+size by f32 `0.5` (`0x2e9554`), then performs f32 fused multiply-add with
+`0x1644fc` plus 4 (`0x2e955c`). That constant is bits `0x3fa66666`, exactly
+`1.2999999523162842`; a real-number formula does not imply device bit parity.
+
+The expansion call is `0x2e9604`. Base `RectF::IncreaseRect`, `0xb15c0`, maps
+`(left, top, right, bottom)` to `(left-s, top-s, right+s, bottom+s)` in f32,
+without validity normalization. The scalar applies to each side, not the whole
+width/height. Nonzero rotation subsequently uses `GetRotatedBound` at
+`0x2e9660`. These cached drawn bounds are separate from the stroke silhouette.
+
+Formula image placement uses this visible-stroke union's drawn origin, as traced
+above. [Capture selection](object-selection-findings.md#selection-depends-on-object-content)
+has a different stroke rectangle: `getSelectionRect`, `0x2e6d9c`, reads `GetRect`
+and expands by **half pen size** (`0x2e6de8/0x2e6dec`), then rotates. It does not
+use the category margins above. Pen-dependent drawn bounds, query selection,
+and original vector geometry therefore need distinct representation.
 
 ## Embedded-vector coordinate authority
 
