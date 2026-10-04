@@ -1,4 +1,5 @@
 mod debugger;
+mod js_numbers;
 mod source_summary;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -282,7 +283,7 @@ fn inspection_value(
     parsed: &sdocx::ParsedDocument,
     layout: &sdocx::LayoutDocument,
 ) -> Result<JsValue, serde_wasm_bindgen::Error> {
-    serde_wasm_bindgen::to_value(&inspection_data(parsed, layout))
+    serde_wasm_bindgen::to_value(&js_numbers::JsSafe(inspection_data(parsed, layout)))
 }
 
 fn inspection_data<'a>(
