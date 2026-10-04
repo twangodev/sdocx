@@ -252,9 +252,52 @@ sets transfer-mode value 0; types 2/3/4/5 install a color-matrix image filter
 with respective RGB offsets `+0.2`, `+0.4`, `-0.2`, `-0.4`, multiplied by
 255. The matrix preserves alpha (`0x9d888–0x9d90c`, helper `0x9f144`;
 constants `0x517dc`, `0x517f8`, `0x517d4`, `0x517c8`). Java names these
-transparent, lighten-less, lighten, darken-less and darken. The generation
-of template-specific fill paths is separate from the effect wire record;
-an outline path alone does not prove complete shading geometry.
+transparent, lighten-less, lighten, darken-less and darken.
+
+Model keeps base and display fill lists at template implementation `+152`
+and `+160`, distinct from the outline pair. Count reads the base list
+(`0x20f9fc`); ordinary `GetFillPath` returns a display entry and the fill-type
+word at Path `+8` (`0x20fcbc`). Common append `0x20d2bc` copies the supplied
+contour/type into the base list, then rotates a copy by template angle `+48`
+for the display list (`0x20d34c–0x20d35c`, `0x20d3b8–0x20d55c`). Drawing's
+ten-path cap is a separate consumer limit.
+
+These positive source branches derive closed fill contours from expected
+angle-zero template geometry; they do not establish every template or safe
+admission of arbitrary saved/custom commands.
+
+| Template | Loader → fill generator | Derived contours in paint order |
+| --- | --- | --- |
+| Can, 26 | `0x22a238→0x229fa0` | 12 commands/type 1; 10 commands/type 2 |
+| Cube, 27 | `0x22b2dc→0x22b760` | Three five-command contours, types 1/2/4 |
+| Bevel, 40 | `0x238e60→0x238a84` | Five five-command contours, types 1/3/2/5/4 |
+
+The inspected version-17 WDoc own writer saves one display outline
+(`0x3a8e64–0x3a8e8c`), angle (`0x3a8e58–0x3a8e5c`) and controls
+(`0x3a8ee4–0x3a8f20`), without independent template fill lists. Its loader
+calls the selected template with mode 1, horizontal/vertical flip flags and
+saved angle (`0x3a95ac–0x3a95c0`). Common `0x20bad0` stores those flags and
+angle; the mode-1 path branch inverse-rotates supplied commands before base
+installation (`0x20c278–0x20c2b4`). The three loaders then regenerate fills.
+Late saved controls narrow f64→f32 and call the template control slot
+(`0x3a9618–0x3a9628`), which can regenerate outline and fills again
+(Can `0x22a984`, Cube `0x22aeb8`, Bevel `0x239e44`). See the
+[saved-control findings](shape-path-findings.md#saved-control-points-can-regenerate-the-preceding-outline).
+
+Angle changes rebuild display fills from base entries (`0x20da84–0x20db28`).
+Common rectangle resize transforms and refreshes both lists while retaining
+types (`0x20e07c–0x20e1b0`); concrete rectangle setters also regenerate
+fills. Template generation reads horizontal/vertical flip flags; these do
+not imply another generic flip of already oriented saved commands. Native
+generators assume their source command layout: Cube reads fixed indices up
+to 10 after only a nonnull-path/segment gate. No complete saved-load scene
+or rendered shading comparison was executed for these source findings.
+
+Rust retains the template ID, path, controls, angle and flip flags, but
+`render_shape` fills one stored outline without deriving these contour/type
+lists or replaying template controls. The inspected face geometry is derived
+from retained inputs, rather than missing independent saved face records;
+reconstruction depends on the native restore/control/float/transform order.
 
 Native kind 4 `FillBackgroundEffect` writes one `f32` transparency value
 (`GetBinary`, `0x3b536c`; loader `0x3b53d4`), not an image resource ID or
@@ -315,7 +358,7 @@ SVG linear/radial gradients, vector pattern cells and piecewise clipped
 linear paints can express these source families without new raster images.
 That representability is an implementation constraint, not a current SDK
 support or appearance-parity claim. Final canvas clip state, pattern phase,
-contextual color translation, template fill-path generation and the
+contextual color translation, other template fill-path generators and the
 background-fill scene dependency remain bounded evidence gaps.
 
 ## Executed paint geometry and commands
