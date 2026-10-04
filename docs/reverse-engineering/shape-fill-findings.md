@@ -257,12 +257,26 @@ of template-specific fill paths is separate from the effect wire record;
 an outline path alone does not prove complete shading geometry.
 
 Native kind 4 `FillBackgroundEffect` writes one `f32` transparency value
-(`GetBinary`, `0x3b536c`; loader `0x3b53d4`). Its drawing setup requires an
-externally supplied background bitmap, creates a bitmap shader with tile
-arguments 0/0 and null matrix, and fails if that bitmap is absent
-(`0x9c9e4–0x9ca84`). This record does not carry an image resource ID or
-vector background scene. The intended source scene and transparency
-application are not recovered by this setup trace.
+(`GetBinary`, `0x3b536c`; loader `0x3b53d4`), not an image resource ID or
+vector background scene. `ObjectShapeDrawing::SetBackgroundImage` stores
+an external `CanvasBitmap const*` at implementation `+48` (`0x8a480`),
+initially null (`0x8a31c`). `SetEffect` forwards it to the owned fill
+effect (`0x8a4f4–0x8a508`). The ordinary `drawObjectShape` route constructs
+a fresh drawer, then sets its object/effects and calls `DrawPath`
+(`0x8070c–0x80744`) without supplying this background pointer. Previously
+drawing page paper does not itself bind that paper to this effect.
+
+`SetFillBackgroundEffect` returns false when the pointer is absent
+(`0x9c9f8–0x9c9fc→0x9ca84`), but fill `SetEffect` ignores that result and
+returns true (`0x9c3e4–0x9c3e8→0x9c314`); the outer drawer also ignores
+the fill setup status. This is not proof that the whole shape disappears.
+With a supplied bitmap, setup installs its bitmap shader with tile
+arguments 0/0 and null local matrix (`0x9ca00–0x9ca1c`), without reading
+source bounds, rotation or transparency. The kind-4 draw branch submits
+the supplied outline and main paint to the existing bitmap canvas under
+its current state (`0x9cb90–0x9cba4`). The upstream scene and transparency
+application remain unresolved; the consumed bitmap alone does not
+identify or recover an underlying vector composition.
 
 ## PDF export is a separate paint capability
 
