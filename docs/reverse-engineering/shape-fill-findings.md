@@ -347,8 +347,10 @@ Canonical color records retain dormant gradient settings, ordered stops, ARGB,
 raw flags/enums and trailing bytes. `PaintFloat32` preserves nonfinite bits and
 signed zero without finite-value rejection. Pattern sources retain eight tile rows,
 both ARGB colors and trailing bytes. Noncanonical color masks keep original payload
-bytes. Gradients and patterns remain unsupported by the renderer; image and
-background effects still retain opaque kind/data records.
+bytes. Admitted ordinary 42/62-byte image fills expose signed bindings, mode,
+raw offset/scale/transparency bits, the rotatable byte, version-gated nine-patch
+fields and trailing bytes. Other image/coedit forms and background effects remain
+opaque. Gradients, patterns and image fills remain unsupported by the renderer.
 
 The preserved record needs to remain distinct from the paint that a native
 drawing route can consume: stop order, all stops, ARGB alpha and raw enum

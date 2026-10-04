@@ -224,6 +224,9 @@ with every public Standard export path.
 mode, width and rotation as optional values. Unlike the Java in-memory model,
 these preserve omission separately from a present default value. The raw words
 are exposed as `u32`; native `-1` image IDs appear as `u32::MAX`.
+`PageBackground.color_argb` retains the complete field-5 word, including alpha and
+omission versus presence. `Page.background_color` remains the RGB paint projection;
+retaining saved alpha does not change page rendering.
 
 `PageBackground.pdf_paper` preserves absent versus present-empty field 8 and every
 ordered signed binding/index/rectangle. Rectangle encoding follows the page
