@@ -26,6 +26,8 @@ are more stable evidence than class-field names.
 | `libSPenComposer.so` | Page capture sequence, base/top/masking passes, object clones and native PDF stroke rasterization. |
 | `libSPenDrawing.so` | Object visibility, common-alpha drawing options and stroke pen configuration. |
 | `libSPenPdf.so` | Native PDF image insertion and pixel-alpha conversion. |
+| `libSPenPdfiumB.so` | PDF page/resource copying, ordinary glyph codewords and generated Unicode mappings. |
+| `libSPenPaintingCompat.so`, `libSPenPaintingCore.so` | Editable painting source, replay and brush composition. |
 | `libSPenGraphics.so` | Capture blend-mode dispatch and embedded GPU shader equations. |
 | `libSPenPenCommon.so` | Shared pen settings, packed ARGB conversion and render-thread alpha. |
 | `libSPenDefaultPen.so`, `libSPenMarker.so` through `libSPenMarker4.so` | Concrete pen interfaces, fixed-opacity bindings and Marker2 coverage shaders. |
@@ -41,6 +43,14 @@ Important native functions/symbol families include:
 - `SPen::ObjectStroke` setters and stroke binary handlers.
 - `SPen::EndTag::{ParseImpl,GetBinarySize,GetBinary,Append}`.
 - `SPen::EncryptionData::{GetBinary,Apply}`.
+
+[Painting source findings](painting-source-findings.md) trace ordinary
+stroke/base framing, page-owned string resources and packet membership;
+native load completion does not certify complete recovered vectors. These
+records differ from modern WDoc frames.
+[PDF paper export findings](pdf-paper-export-findings.md) distinguish imported
+resource preservation and ordinary glyph transport from generated Unicode
+mapping, which does not establish reconstruction of original shaped clusters.
 
 Replay-order assignment and capture composition were traced through these
 ARM64 entry points:

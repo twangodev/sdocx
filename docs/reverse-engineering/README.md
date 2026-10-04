@@ -20,7 +20,7 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`brush-record-findings.md`](brush-record-findings.md) — effective type-15
   dispatch, opaque brush/group admission and separate painting source/preview.
 - [`painting-source-findings.md`](painting-source-findings.md) — editable `.spp`
-  archives, packed object layers, shared stroke compression and replay boundaries.
+  archives, ordinary stroke/page-string framing, packet membership and lazy-load/replay boundaries.
 - [`shape-path-findings.md`](shape-path-findings.md) — saved path precision,
   route-specific curve normalization and native quadratic arc/oval construction.
 - [`shape-fill-findings.md`](shape-fill-findings.md) — gradient/pattern records,
@@ -37,7 +37,7 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`pdf-paper-placement-findings.md`](pdf-paper-placement-findings.md) — list
   and continuous attachment geometry, inherited PDF boxes, views and clipping.
 - [`pdf-paper-export-findings.md`](pdf-paper-export-findings.md) — source PDF
-  imports, list continuity, continuous segmentation and note overlay placement.
+  imports, resource copying, glyph/Unicode boundaries and note overlay placement.
 
 - [`rendering-corpus-findings.md`](rendering-corpus-findings.md) — observed
   feature occurrence and parse diagnostics across four locked pairs and three
