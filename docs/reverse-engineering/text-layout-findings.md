@@ -147,13 +147,46 @@ ordinary Drawing construction/update route does not override those values.
 This boolean alone is not evidence for shape-path clipping: the low-level
 drawing also selects visible lines from the rectangle (`0x64c48`–`0x64c68`).
 
-No `GetTextAreaType` or `GetTextAutoFitOption` read was found in the inspected
-ordinary Drawing/Widget adapter route. The saved Margin/Free/Path values are
-verified in [text-box-findings.md](text-box-findings.md), but mapping Free to
-no-wrap, Path to a shape clip, or auto-fit to dynamic font resizing remains
-unverified. Standalone editing/resizing, export clipping and visual parity
-have no captured reference in this evidence set. The ordinary baseline helper
-is shared with placed text as traced below.
+### Text options and derived overflow
+
+The [saved option contract](text-box-findings.md#persisted-auto-fit-and-ellipsis)
+is distinct from layout policy. Composer's `setRectInPage`, `0x3c4208`, and
+`SetObjectViewRect`, `0x3c5628`, change auto-fit VERTICAL/BOTH to NONE for a
+type-2 first container object when `(ShapeSetType & 0xe)` is nonzero
+(`0x3c4390`–`0x3c43b8`, `0x3c56a0`–`0x3c56c8`). The selected-text-box
+`OnChangeSize` callback at `0x3d6584` can also clamp its supplied integer
+height to page limits, disable auto-fit and apply a new rectangle. These are
+positive rectangle consumers, not a complete fitting algorithm. The public
+auto-fit setter stores the mode with history/notifications; it directly
+changes no source text or font-size span (`0x39f5bc`–`0x39f804`).
+
+Dots have separate display and cached-export routes. Text
+`RichTextDrawing::drawRect`, `0x64bec`, selects a cutoff and separately draws
+three periods into its canvas (`0x64ca8`, `0x64dc8`). Its temporary dot
+String/RichText is derived data, not replacement model text (`0x6514c`).
+Ordinary `ObjectTextDrawing::GetDrawnTextData`, `0x8f058`, instead calls
+Widget `ScrollEditTextView::GetDrawnTextData`, `0xbe6bc`, which passes View
+bounds to `TextLayout::GetDrawnText(RectF)`. Text's range helper applies DOTS
+cutoff and stores `cutoff - 1` as the inclusive last source entry when
+nonnegative (`0x6839c`–`0x683e8`). The audited cached route emits that source
+range without appending synthetic dots; separate card helpers call
+`GetEllipsisDots`. This is a source trace, not an executed export comparison.
+
+TRIANGLE uses separate overflow cue geometry. Drawing checks that mode in
+`UpdateVisualCueVisible`, `0x8eba0`, and appends cues after ordinary text data
+(`0x8f070`–`0x8f080`). Legacy `ObjectTextPdfExporter` turns cue points into a
+filled path (`0x352660`–`0x352748`). Modern `ObjectTextPDFWriter` rotates and
+scales the points, then passes the cue geometry object and paint to writer
+virtual slot 128 (`0x380998`–`0x3809fc`). These vectors do not replace saved
+text or require a new bitmap.
+
+No text-area or auto-fit getter read was found in the inspected ordinary
+Drawing/Widget adapter. None of the 95 retained arm64 `libSPen` libraries imports a
+text-area getter outside Model; direct-member/hidden consumers are not ruled
+out. Free→no-wrap, Path→shape clip and auto-fit→font shrinking remain
+unproved. Full fitting, Free/Path editing and standalone visual parity have
+no captured reference here. SDK option projection limits remain documented
+with the saved fields above; the ordinary baseline helper is traced below.
 
 ### Shape template text frames
 
@@ -244,7 +277,8 @@ Unsupported nonempty shape text retains its saved frame with `UnsupportedTextFra
 invalid known geometry reports `InvalidGeometry` and stays in placed context.
 Native background spans use retained layout ranges as described below;
 author-supplied legacy highlight summaries retain their whole-box behavior.
-Free/Path editing and autofit semantics remain unverified. The hash-checked
+Full Free/Path and fitting behavior remains outside these verified template
+contracts. The hash-checked
 HF02 corpus has five empty shape text boxes and no native shape glyph
 operators, so these regressions establish source
 contracts and synthetic vector behavior, not captured shape typography parity.

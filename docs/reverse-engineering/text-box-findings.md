@@ -73,6 +73,35 @@ Synthetic tests exercise every byte value with and without text, absent versus
 explicit zero, text slicing, the complete visible object path, and following
 shape fills. A truncated field cannot borrow its byte from the next frame.
 
+## Persisted auto-fit and ellipsis
+
+Modern frame 7 also persists two one-byte options, independently of text-area
+bit 1. `GetShapeBinary_TextBoxInfo`, `0x3b2120`–`0x3b2174`, writes ellipsis
+at bit 12 unless it is 2, and auto-fit at bit 13 unless it is 3. Actual
+constructor data at `0x163320`, copied by `0x3af0f4`, initializes those
+members to TRIANGLE=2 and BOTH=3. `SpenObjectShape.java` names ellipsis
+NONE=0/DOTS=1/TRIANGLE=2 and auto-fit
+NONE=0/HORIZONTAL=1/VERTICAL=2/BOTH=3.
+
+The modern reader bounds-checks each byte but stores raw values
+(`0x3a97e4`–`0x3a9850`). Absent options retain the object's current members;
+fresh-object defaults do not prove reused objects reset on each load. Public
+setters instead validate auto-fit 0–3 and ellipsis 0–2 (`0x39f5bc`,
+`0x39f86c`). Getters substitute NONE for invalid auto-fit and TRIANGLE for
+invalid ellipsis (`0x39f808`, `0x39fac0`). This differs from text-area's
+reader normalization of absent/invalid values to MARGIN.
+
+The older standalone `ApplyTextBoxOptionBinary`, `0x39e204`, forwards to
+`ApplyTextBoxBinary_Option`, `0x3b273c`, using ellipsis bit 11 and auto-fit
+bit 12; its caller is `ObjectTextBoxBinaryHandler` at `0x3ab588`. These shifted
+bits do not describe modern frame 7 or the older generic-shape option reader.
+
+`RichTextBox` currently exposes text-area but no typed auto-fit/ellipsis.
+`note.rs::parse_text_frames` reports their bits or remaining bytes as shape-text
+extension fields. Persisted options and native consumers therefore remain
+separate from implemented SDK behavior; see
+[text options and derived overflow](text-layout-findings.md#text-options-and-derived-overflow).
+
 ## SDK decoding
 
 `StoredPage` traversal dispatches outer type 2 directly to a bounded frame
