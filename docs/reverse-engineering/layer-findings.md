@@ -126,6 +126,37 @@ no captured export establishes whether the four-byte path is used for such
 layers in practice. The SDK decoder follows the one-byte native/read contract.
 It does not guess a writer variant from arbitrary padding or identity strings.
 
+### Temporary down-sync publication
+
+A source-visible temporary-note branch calls this Java page writer before
+publishing its working directory. `d4/d.java:115–129` downloads current data,
+optionally calls `k1.a.o`, then reaches `e4.a.f` and `k1.a.q(target)`.
+For initialized state and a valid working path, `q` calls `r(this.n)` before
+renaming that directory to the target (`k1/a.java:684–724`). `r` writes each
+current page through `n1.u.h` (`:727–762`); no native layer serializer intervenes
+between that write and the selected directory rename in these inspected bodies.
+The following `d4.d.h` writes `current_server_note_info.json`, not `.page` data.
+
+Optional Java ungrouping (`k1/a.java:499–572`) replaces type-100 group entries in
+each existing layer's object list; it does not directly assign layer member `d`.
+The XML transparency setter and page writer use that same current member.
+Layer identity is also current state: XML `id` supplies layer `g`, which the
+writer emits when nonnull (`n1/b.java:320–329`, `n1/u.java:1221–1224`). Ordinary
+and nested object lists use `n1.b.i/j`, invoking current object serialization
+and appending derived hashes (`n1/b.java:58–95`). This is reconstruction from
+current Java objects, rather than a copy of original page bytes; this caller
+trace does not prove complete original vector/channel or extension retention.
+
+The decompilation leaves the message-2112 dispatcher, incoming XML orchestration
+and normal downloaded-note service insertion unresolved. A separate SDK-open
+listener chain does not close that association. Consequently this publication
+trace does not establish that its exact output reaches the native layer reader,
+that native opening normalizes it, or that a nondefault layer succeeds in
+practice. The [native reader/rewrite contract](#native-mask-admission-and-metadata-rewrite)
+remains separate from this input provenance. Retaining
+[caller-owned original page bytes](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model)
+and explicit metadata does not require guessing a Java writer variant.
+
 ## SDK behavior and validation
 
 `StoredLayer` records its header offset and size. `metadata(page_bytes)` and
