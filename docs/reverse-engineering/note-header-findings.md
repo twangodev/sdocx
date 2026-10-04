@@ -70,8 +70,9 @@ returns 5500. Native save backfills the live note format/minimum
 
 Rust retains raw full-width note and optional page versions without those
 native high-version changes. Its EndTag decoder already rejects format below
-2034, but retains the minimum without the native upper gate. Optional invalid
-EndTags become diagnostics and no tag, except fatal limit errors.
+2034, but retains the minimum without the native upper gate. Invalid optional
+EndTag candidates produce diagnostics and are not retained; limit errors remain
+fatal. A rejected appended candidate can still fall back to the archive entry.
 The legacy metadata version projection and EndTag/note fallback below govern
 display metadata, not object codec selection. Raw declarations, normalized
 native state and original source bytes remain distinct; structural parsing
