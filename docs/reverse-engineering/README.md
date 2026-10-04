@@ -64,6 +64,8 @@ decoding, rendering and evidence boundaries across object types and features.
   native saved-redraw fixtures and isolated native-layer appearance comparison.
 - [`pencil3-source-findings.md`](pencil3-source-findings.md) — selected V1 saved
   channels, generated particles and separate runtime paper coverage inputs.
+- [`inkpen-v4-findings.md`](inkpen-v4-findings.md) — selected saved curve redraw,
+  pressure/movement/time width state and generated geometry versus source samples.
 
 - [`file-format.md`](file-format.md) — authoritative archive and binary-format
   map: `note.note`, pages, layers, objects, frames, strokes, media, hashes and

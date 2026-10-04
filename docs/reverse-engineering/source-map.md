@@ -33,6 +33,7 @@ are more stable evidence than class-field names.
 | `libSPenPenCommon.so` | Shared pen settings, packed ARGB conversion and render-thread alpha. |
 | `libSPenDefaultPen.so`, `libSPenMarker.so` through `libSPenMarker4.so` | Concrete pen interfaces, fixed-opacity bindings and Marker2 coverage shaders. |
 | `libSPenPencil3.so` | [Selected V1 saved replay](pencil3-source-findings.md), generated particle/brush-row state and configured paper bitmap ownership. |
+| `libSPenInkPen.so` | [Selected V4 saved curve redraw](inkpen-v4-findings.md), pressure/movement/time width state and derived RTV1 point buffer. |
 | `libSPenRenderer.so` | Blend descriptors, native-to-OpenGL enum tables and state activation. |
 | `libSPenView.so`, `libSPenBase.so` | Active color-theme selection and alpha-preserving RGB conversion. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |

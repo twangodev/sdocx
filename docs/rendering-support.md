@@ -96,6 +96,9 @@ Profile admission and validation are narrower than the names above. See
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation.
+The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
+selected saved curve width/sampling and cache boundaries; ordinary InkPen also
+uses the generic approximation, without a shipped native width-law guarantee.
 
 ## Text and embedded layout
 
