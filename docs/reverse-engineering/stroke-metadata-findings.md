@@ -43,6 +43,11 @@ reader's explicit assignment, not a guessed constructor default. The writer
 likewise sets those bits only when the corresponding native members are
 false. Unknown property bits remain in `property_mask`.
 
+The [straight-stroke producer](stroke-recording-findings.md#straight-stroke-creation-materializes-new-channels)
+marks shape identity separately: native member 380 is restored from common
+ExtraData integer `extra_key_stroke_shape`, a typed Bundle field separate from
+straighten member 493/property bit 13, generated's inverse bit 10 and alignment.
+
 The raw two-byte tool/input field follows all point channels. `GetToolType`,
 `0x2e1550`, reads stroke-data member 316 and normalizes values outside 0–4
 to zero. `tool_type_raw` retains the stored value, including unknown values.

@@ -63,6 +63,60 @@ resolves those timestamp getters: they return sample time minus the event's
 down time. The append loop uses this millisecond channel, not the separate
 nanosecond getters, and does not subtract the first recorded timestamp.
 
+## Straight-stroke creation materializes new channels
+
+This source-only producer trace additionally uses ARM64 `libSPenPenCommon.so`
+(SHA-256 `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d`)
+and `libSPenEngine.so`
+(`79a8024586ce58ceeca613ddfce159e92274c597c5a863dd0aaf3e8e32e1b505`).
+No gesture or complete saved-file roundtrip was executed; appearance parity remains unproved.
+
+Engine's installed callback `0x13c754` belongs to `WritingViewStraightStrokeAction`:
+constructor `0x13c3dc–0x13c3f0` installs the vtable whose `0x17e0a0` entry targets
+it; typeinfo `0x187ba0` names the class at `0x72251`. Its actual builder chain
+`0x13cc5c–0x13cd44` supplies current PenData, stored start XY,
+MotionEvent end XY narrowed to float, screen rectangle, note dimensions,
+alignment=true and density DPI; full UI selection remains unproved here.
+
+PenCommon `StraightStrokeBuilder::CreateStroke`, `0x58abc`, derives a short-distance
+threshold from `DPI / 160 * 5`, runs alignment when enabled and calls `createStroke`, `0x57fd0`.
+Alignment can change an endpoint to starting X or Y (`0x57fa0–0x57fb4`). A fresh
+ObjectStroke receives the current pen name/style and tool type 0 (`0x58038`,
+`0x580d8`). The loop `0x58424–0x58480` supplies generated linear XY to AddPoint
+at `0x58474`, with pressure `0.5`, tilt f32 bits `0x3f2e147b` (about `0.68`)
+and orientation `0xbd4ccccd` (about `-0.05`). Timestamp stages use `logf(i+1)`,
+division by double `log(n+1)`, scaling by n, narrowing to float, multiplication
+by 6 and integer truncation (`0x583f8–0x5846c`). For subdivision count n≥5 it
+attempts n+1 additions, without copying an original freehand sample history.
+The short TapePen branch holds Y at starting Y (`0x583c8–0x583e8`, `0x58450`).
+
+`convertAngledObjectStroke`, `0x585e4`, transforms generated XY about its midpoint,
+calls ReplacePoint (`0x58874`) and then SetRotation through slot 120 (`0x58888`,
+Model relocation `0x493098`). Replacement changes the XY vector, not the other
+channels. SetRotation is not metadata-only: `0x2de6d8` updates common angle and
+`0x2de714` invokes SetRotationPoint, which changes actual XY. The established
+[writer connection](object-transform-findings.md#double-wire-coordinates-do-not-imply-double-editing-geometry)
+serializes mutated samples without undoing rotation; this establishes no additional
+export rotation. AddPoint rejects count
+65,535 (`0x2e019c–0x2e01a8`); this producer ignores append/replacement/rotation
+returns, so attempted additions are not an unconditional retained-count guarantee.
+
+Both producer stages call SetAsShape(true) (`0x58100`, `0x58894`), without a
+SetStraighten call in these bodies. On a changed value, Model SetAsShape writes
+member 380 (`0x2e2684`) and its true branch stores integer 1 under
+`extra_key_stroke_shape` (`0x2e2698`, literal `0x13ecbd`) in common ExtraData.
+The [typed Bundle field 5](object-flexible-findings.md#modern-typed-frame-field-order)
+is separate from straighten member 493/property bit 13. Ordinary and modern
+loaders restore member 380 from key==1 (`0x2e4f1c`, `0x2e5938`). No replay
+straighten instruction was established by the examined adapters/getter callers,
+without a claim about every plugin or flag consumer.
+
+Rust's `ObjectFlexibleMetadata.extra_data` supports typed Bundle integers, while
+`PageObjectContent::Stroke` does not carry every common metadata field. Generated
+channels, the common/source inspection and original record/page bytes remain
+separate preservation inputs. The straighten flag cannot reconstruct alignment/DPI inputs
+or an earlier gesture, and establishes no second generation pass.
+
 ## Voice synchronization uses append time and original objects
 
 Voice actions and the checked vector append producer share Base `GetTimeStamp`,
