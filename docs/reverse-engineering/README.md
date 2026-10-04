@@ -53,6 +53,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`image-effects-findings.md`](image-effects-findings.md) — image-fill field
   layout and defaults, crop/nine-patch selection, transparency, cache placement
   and legacy border drawing.
+- [`image-edit-source-findings.md`](image-edit-source-findings.md) — external
+  editor and lasso source replacement, conditional original bindings and save gates.
 - [`card-source-findings.md`](card-source-findings.md) — Web, Link and attached-file
   source metadata/resources, regenerated previews and native PDF card export.
 - [`coedit-resource-findings.md`](coedit-resource-findings.md) — XML resource IDs,

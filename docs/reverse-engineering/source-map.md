@@ -38,6 +38,7 @@ are more stable evidence than class-field names.
 | `libSPenMontblancCalligraphyPen.so` | [Selected V1 saved geometry](calligraphy-source-findings.md), orientation/extent consumers, reused nib state and derived mesh buffers. |
 | `libSPenRenderer.so` | Blend descriptors, native-to-OpenGL enum tables and state activation. |
 | `libSPenView.so`, `libSPenBase.so` | Active color-theme selection and alpha-preserving RGB conversion. |
+| `libSPenObjectControl.so` | [Reached lasso image editing](image-edit-source-findings.md), conditional original capture and current bitmap-source replacement; View supplies child touch dispatch. |
 | `libSPenSDoc.so` | Separate deprecated SDoc container; not the modern SDOCX format. |
 
 Important native functions/symbol families include:

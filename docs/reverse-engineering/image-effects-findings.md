@@ -239,6 +239,10 @@ marks changed without clearing it (`0x3b3e58`–`0x3b3e68`). `GetCacheImage`
 returns an existing bitmap or loads its stored cache path (`0x3b4444`–
 `0x3b4490`). This editing route does not establish all cache-production paths.
 
+[External editor and lasso source replacement](image-edit-source-findings.md)
+separately trace current main bindings, conditional original capture and
+generated SPI resources; rectangle/cache setters do not establish those contracts.
+
 ## Pixel placement uses drawn bounds, local size and rotation
 
 `drawImageBitmap`, `0x84b20`, calls object virtual slots 160 and 168 at

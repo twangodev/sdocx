@@ -140,6 +140,10 @@ extending its guarantees.
 | Highlighter blending | Whole Top batch uses Darken on light paper and Lighten on dark paper | Capture-route selection/shader math has static evidence; native Standard list PDF uses Darken. SDK shares its SVG policy with PDF; native pixel parity is not claimed. |
 | Tape visibility/reveal | Saved note preference and per-stroke reveal flag retained | Generic pen approximation does not implement native presentation controls or destination attenuation. See [Tape findings](reverse-engineering/stroke-metadata-findings.md#tape-visibility-and-reveal-controls). |
 
+Native [image editing](reverse-engineering/image-edit-source-findings.md) can replace
+the main resource independently of its original binding. Manifest-backed SPI
+resources remain unsupported typed assets; caller-retained archive bytes are separate.
+
 The [SVG composition description](svg-rendering.md) and
 [native capture findings](reverse-engineering/capture-composition-findings.md)
 give the ordering and export-route boundaries. “Masking” is a pass name; it
