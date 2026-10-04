@@ -89,9 +89,10 @@ and passes them to destination setters (Shape `0x39819c–0x3981cc`; Line
 `0x38922c–0x38925c`), binding strings rather than cloning numeric IDs or source bytes.
 These are selected source contracts, not a pen-rendering parity result.
 
-Current Rust retains modern raw IDs but stops before later flexible fields
-when line bit 0 is present. Thus those pen fields and the saved path still
-require the original record in that branch.
+Rust retains the complete legacy carrier in `NativeLine.legacy_pen_source`,
+separately from modern IDs, and reads the following known fields and path.
+It rejects incomplete carriers, unlike the native second-check continuation
+above. Pen rendering and string resolution remain unsupported.
 
 Native WDoc paths start with a `u32` command count. Move/line commands have two
 `f64` values, quadratic/oval four, cubic/arc six, and close none. The type-8
