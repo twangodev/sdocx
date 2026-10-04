@@ -12,7 +12,7 @@ decoding, rendering and evidence boundaries across object types and features.
 
 - [`vector-retention-findings.md`](vector-retention-findings.md) — original
   byte ownership, semantic projection, opaque subtree/resource namespaces,
-  native selected-object clipboard transformations, output precision and diagnostic
+  native clipboard transformations and SPD migration, output precision and diagnostic
   boundaries in the current Rust pipeline.
 - [`object-transform-findings.md`](object-transform-findings.md) — recursive
   container edits, hidden-child resizing, baked stroke geometry and precision.
@@ -152,7 +152,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`marker2-sampling-findings.md`](marker2-sampling-findings.md) — quadratic
   distance approximation, stored-point replay and ordinary stroke completion.
 - [`stroke-recording-findings.md`](stroke-recording-findings.md) — event-sample
-  appends, repeated-coordinate taps, optional replacement and replay source reset.
+  appends, generated straight-stroke channels and separate shape identity,
+  repeated-coordinate taps, optional replacement and replay source reset.
 - [`motion-event-adapter-findings.md`](motion-event-adapter-findings.md) — Android
   sample channels, pointer-major history, raw coordinates and time origins.
 - [`stroke-input-findings.md`](stroke-input-findings.md) — InkPen2 input-filter
@@ -282,7 +283,7 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`integrity-findings.md`](integrity-findings.md) — optional hash verification,
   exact coverage, unavailable checks and independent synthetic reference hashes.
 - [`note-header-findings.md`](note-header-findings.md) — variable note masks,
-  bounded fixed data and structured document metadata.
+  bounded fixed data, native admission/version authority and structured metadata.
 - [`note-metadata-findings.md`](note-metadata-findings.md) — optional application,
   author, pen, voice, attachment and fixed-style fields with bounded records.
 - [`table-code-findings.md`](table-code-findings.md) — native inheritance chains,

@@ -20,6 +20,10 @@ The file representation includes that prefix, and its count includes the final
 WDoc records require version 2034 or later; older SDoc formats have separate
 native branches and signatures.
 
+The [native reader version authority](note-header-findings.md#native-reader-version-authority)
+distinguishes the default minimum-format gate from note/page version normalization
+and Rust's raw declarations and display metadata.
+
 ## Field boundaries
 
 The [file-format schema](file-format.md#end_tagbin) describes the current writer.
