@@ -373,6 +373,64 @@ neither that media manifest nor the original archive/page bytes. The
 [external source-byte boundary](#original-page-bytes-are-external-to-the-parsed-model) also
 limits recovery of opaque references and their original bindings.
 
+### Selected-object clipboard archive
+
+The selected-object clipboard path carries native objects alongside its HTML
+appearance. `ObjectCopy.java:162–179` backs up the list to `.sdocx` before
+generating HTML or a JPEG of selected strokes/math/plots; line 225 adds the
+archive path in an HTML comment. That JPEG does not replace the preceding
+native archive. `SpenWNote.java:1503–1507` throws on native backup failure.
+
+The archive input is a processed selection. ObjectCopy adds shape followers
+(`133–144`) and, for a single partially selected table, creates a typed table
+copy and deletes rows/columns outside the selected row/column sets
+(`234–288`). `TaskCopy.java:116–137` separately adds a PNG-backed image made
+from retrieved selected PDF pixels; this helper does not transfer the PDF's
+vector page. These are selection changes or derived image sources, rather
+than a raw selected-record slice from the original archive.
+
+WDoc `WNote::BackupObjectList`, `0x961b0`, creates a temporary note and one
+page (`0x963cc`, `0x9643c`), then checks the utility copy and Save results
+(`0x96458`–`0x96474`). The true Save branch reaches actual `NoteZip::Zip`
+(`0xad630`–`0xad664`). `WNoteUtil::BackupObjectList`, `0xba770`, creates each
+admitted runtime type and checks virtual Copy and page append
+(`0xba850`, `0xba8b4`–`0xba8b8`, `0xba9b4`–`0xba9b8`). This saves cloned
+editable objects without establishing original wire-record byte identity.
+
+The utility skips PDF dummy objects (`0xba814`–`0xba840`). For source type 2,
+it removes timestamp spans from the **source** ComponentText before cloning
+(`0xba894`–`0xba89c`): filter `0x80000` matches
+`SpenTextSpanBase.java:23`, `FILTER_SPAN_TIME_STAMP`. This is metadata removal,
+not proof of removed text content or pen geometry. Source owner-page offsets
+are added to the clone's RectF (`0xba8c0`–`0xba91c`), with separate integer
+image OriginalRect and double painting OriginalRect adjustments
+(`0xba930`–`0xba9a0`). Runtime-handle mapping can also rewrite connected shape
+information (`0xba9c0`–`0xbaa0c`). These editing conversions are separate from
+the precision of the original saved coordinates.
+
+`WNote::RestoreObjectList`, `0x96648`, loads the temporary archive and checks
+its utility restore (`0x967d4`, `0x96858`–`0x9685c`). The utility checks page
+loading, factory Copy and output-list Add (`0xbabbc`, `0xbac88`–`0xbac8c`,
+`0xbad90`–`0xbad94`). Type 19 can be copied if it remains the runtime type
+after loading; automatic recovery can instead produce its original known type.
+For types 2/7, nonzero archived-minus-current body-font delta adjusts float
+font-size spans (`0x96804`–`0x9681c`, `0xbacd4`–`0xbad48`). Original byte
+identity and physical font-program transport do not follow from this copy.
+
+Restore returns a list in the caller note implementation at +264
+(`0x96848`), before destination-layer insertion. `TaskPasteHandler.java:90–132`
+chooses PasteObject for an existing native selected-object path when plain-text
+paste is disabled; whole-page clipboard data uses a separate route.
+`PasteObject.java:40–68` restores and applies restrictions before
+`ObjectManager.java:233–305,641–652` inserts surviving objects through page or
+position policies. Clipboard placement depends on those insertion policies.
+The temporary note is closed before return (`0x96868`); resource-path lifetime
+depends on cache state and later attachment. Declared attachments use the
+[destination binding contract](#copying-between-resource-namespaces), while
+unchanged opaque bytes do not certify transport of private resource references.
+The native clipboard archive therefore preserves an editable representation
+separately from original archive bytes and external HTML/JPEG appearance.
+
 ## Precision and drawable output
 
 Saved WDoc points, rectangles and path bytes can contain `f64` values.
