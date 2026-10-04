@@ -327,6 +327,52 @@ Decoded common image data can still register through `ObjectBase::OnAttach`
 (Model `0x2d0018`). Owning opaque bytes and keeping admitted IDs stable do not
 establish preservation of every attachment referenced only by opaque own data.
 
+### Copying between resource namespaces
+
+Conflict merging supplies a concrete cross-context route:
+`SyncConflictConfirmDialogPresenter.java:336–355` opens two note paths, saves
+the sync note as a directory and opens a new merge note from it.
+`CompareManager.java:516–521` assigns the other note as local;
+`MergeNoteManager.java:46–55` copies its page into a newly inserted merge page.
+The destination is seeded from the sync snapshot, so its existing resources
+can overlap the source. This is not evidence of arbitrary empty-document paste.
+
+WDoc `WPage::Copy`, `0xc90b8`, reaches `WPageImpl::Copy` and Model
+`PageImplBase::Copy`, `0x346418`, then copies layers and their runtime objects.
+The object loop factory-creates each source type and calls virtual Copy
+(`0x35f13c`, `0x35f17c`), including current type 19: its factory branch
+constructs Unknown at `0x36d7bc`. Fresh destination layers attach before copying
+their objects (`0x34b10c`–`0x34b11c`). Their context clone shares the supplied
+destination media-manager pointer at +416 (`0x2aa8a0`–`0x2aa8a4`); it does not
+import the source manifest. Unknown inherits `ObjectBase::OnAttach`.
+
+Current declared attachments have a separate transfer contract. Common copy
+captures the source path (`0x2d8750`–`0x2d8758`) and passes it to AttachFile
+(`0x2d83f0`). Under the ordinary attach gates, destination Bind(path) returns
+the current ID stored in `BaseData+108` (`0x2cff4c`–`0x2cff54`). Bind can reuse
+a destination hash match or allocate a destination-local ID
+(`0x28c79c`, `0x28c86c`); the source number is not an input to that binding.
+Known captured thumbnails separately use an ImageCommon local key, whose
+ImageData stores the destination archive media ID (`0x2b86b8`–`0x2b86c0`).
+These helpers do not receive or rewrite Unknown's embedded original bytes.
+
+Copy success is not a complete transfer certificate. The whole-page object
+loop ignores virtual Copy's result before adding its clone
+(`0x35f17c`–`0x35f188`); common copy likewise ignores AttachFile's result.
+Null context, missing manager or a true sync requester can bypass ordinary
+binding. A pathless current ID is looked up in the destination manager,
+without importing its source namespace. External listeners, adapters and
+broader document operations remain separate boundaries; no private-reference
+decoder or observed merge/save resource loss is established here.
+
+Rebound current attachments are distinct from unchanged opaque bytes and their
+originating resource namespace; those bytes alone do not establish portability.
+Rust's archive parser builds its manifest resolver locally
+([`container.rs`](../../crates/sdocx/src/container.rs)); `ParsedDocument` owns
+neither that media manifest nor the original archive/page bytes. The
+[external source-byte boundary](#original-page-bytes-are-external-to-the-parsed-model) also
+limits recovery of opaque references and their original bindings.
+
 ## Precision and drawable output
 
 Saved WDoc points, rectangles and path bytes can contain `f64` values.
