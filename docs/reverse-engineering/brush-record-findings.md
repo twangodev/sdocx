@@ -87,6 +87,19 @@ Construction aliasing does not prove every compatibility payload has the
 ordinary frame layout.
 
 Type 18 reaches the default-loader path but fails the recovered factory.
+That failure does not retry the record through the opaque reader.
+`ReadDefaultObject_WDoc`, `0x358d58`, reads the four-byte length and, on the
+successful read path, the entire declared payload before factory dispatch
+(`0x358dbc`, `0x358df8`, `0x358e28`). A null factory result returns null
+(`0x3597ec`, `0x359884`, `0x359aa8`). The root caller sends that null result
+directly to its serialized-slot increment (`0x35858c → 0x3586dc`), then
+reads the next declared root or reaches its local successful return
+(`0x3586e4`, `0x358850`). This permits local counted traversal to continue
+without a runtime object for a completely read type-18 payload; it does not
+prove complete layer/archive success or aligned recovery after an earlier
+read failure. The retained original source remains a separate
+[preservation boundary](vector-retention-findings.md#native-opaque-records-wrappers-and-resources).
+
 Type 100 instead reaches `ReadUnknownObject_WDoc`, `0x359038`, which explicitly
 constructs type 19 at `0x359100` and calls
 `ObjectUnknown::NewApplyUnknownBinary` with the original type at `0x35912c`.
