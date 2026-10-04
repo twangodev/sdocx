@@ -122,15 +122,79 @@ sticky archive round trip or every deduplicated state was executed. Reference
 release and [old-manifest cleanup](#native-opaque-records-wrappers-and-resources)
 remain separate from next-save payload admission.
 
+### Loaded custom-file maps
+
+The saved keyed file map is an input to later attachment, rather than a bound
+source-file certificate. WDoc `CustomObjectImpl::ApplyOwnBinary`, `0x8a654`,
+reads keys and signed IDs, skips saved `-1` (`0x8a7e4`–`0x8a834`), and calls
+`FileAttacher::ApplyFileId` for other IDs (`0x8a888`). Model's helper,
+`0x2b48e4`, only stores the integer. It neither resolves a path/hash nor binds
+or validates it. Skipping saved `-1` creates no fresh key; it does not delete
+an existing key when applying a frame to an existing map.
+
+`LoadCustomObject` appends an accepted binary, calls OnAttach with its page
+context, binds the instance, then checks validity (`0xd4b58`–`0xd4b80`).
+Custom OnAttach requires context, sync mode 0 and a media manager
+(`0x86b38`–`0x86b6c`). Register stores manager/context and attaches each key
+(`0x88984`–`0x889b8`); an identical existing manager short-circuits that work
+(`0x88958`). For an ID-only attacher, Model's registerFile binds the integer
+only when the context's coedit-mode requester exists and returns true
+(`0x2b4530`–`0x2b4558`, named IsCoeditMode at `0x2ac2dc`). Otherwise, or after
+failed Bind(int), the current integer remains unchanged. The actual requester
+state for every WDoc open was not established.
+
+The explicit `AttachFile(key,int)` API follows a different path (`0x88e50`,
+`0x88f58`): Model requires a manager, releases prior ownership, calls Bind(int)
+for non--1, then stores the requested ID without checking that Bind result
+(`0x2b47ac`–`0x2b47e0`). Its returned bool reports manager availability,
+rather than successful source resolution (`0x2b4844`–`0x2b4848`).
+
+Custom validity requires context and manager (`0x86cb8`). Its attacher helper
+accepts current ID `-1`; other IDs require metadata validity (`0x2b4c20`).
+The resolved media helper, `0x293884`, rejects absent metadata or nonpositive
+binding count, accepts flag `+57`, and otherwise requires its bool false,
+manager coedit flag true and metadata flag `+58` false
+(`0x293a40`–`0x293a84`). That body does not check disk existence.
+`IsAllContentFileAvailable`, `0x870b0`, instead checks actual file existence
+for non--1 current IDs, or nonnull deferred paths when context/manager is
+unavailable (`0x87130`–`0x871a4`, media helper `0x28b504`). It skips `-1` or
+null paths and can succeed with empty/skipped entries. Neither query alone
+proves that every original saved reference resolved.
+
+Custom Copy requires matching custom kinds (`0x86f54`), then overlays source
+file keys onto the destination without clearing its file map (`0x89910`,
+`0x89980`–`0x89a30`). Destination-only keys remain in that local body. Per-key
+FileAttacher Copy uses the documented hash/path or deferred binding route,
+rather than cloning the source numeric ID; the custom-level success does not
+certify each binding. The inspected WPage, WPageImpl and Model PageImplBase
+Copy bodies (`0xc90b8`, `0xd0264`, `0x346418`) do not directly traverse the
+custom list or invoke this keyed Copy mechanism. This bounded observation does
+not rule out cache rehydration, virtual callbacks or external custom-copy
+handling, and does not prove app-wide loss.
+
+Own-frame size and writing omit current-ID `-1` keys and patch the emitted
+count (`0x8a28c`–`0x8a290`, `0x8a394`–`0x8a474`), without erasing runtime
+nodes. Current `-1` is a state sentinel, not universally missing/deferred
+bytes. Whole-custom admission is separate: loaded validity failure removes
+the custom object, then operation bool false fails while true permits
+continuation (`0xd4bb4`–`0xd4bf8`). Save checks validity before writing;
+false policy fails, true permits omission of that entire custom record
+(`0xd67e0`, `0xd68a8`–`0xd694c`). Save omission does not delete its runtime
+node. These source-only contracts do not establish a real sticky archive
+round trip, every deferred recovery, or whole-archive payload loss.
+
 Rust bounds the page header and jumps to layers (`storage.rs:233–266`);
-semantic flexible decoding reads only bits 0–9 (`page.rs:242–296`). It exposes
+semantic flexible decoding reads only bits 0–9 (`page.rs:237–304`). It exposes
 no owned custom-list records, validates no individual custom count/size, and
 does not diagnose their kinds through layer-object warnings. Their bytes need
 the original page buffer. High-level asset admission accepts only image
 extensions (`container.rs:519–533`), omitting these `.sdocx` member bytes and
 the custom key-to-ID relationship. Caller-owned archive bytes and browser
-original ZIP retention are separate source carriers. These are source ownership
-boundaries, not verified archive loss or arbitrary custom-vector semantics.
+original ZIP retention are separate source carriers; original page bytes and
+manifest resources do not become a typed custom-key/source-namespace graph.
+Rust does not apply the native attachment or validity gates above. These are
+source ownership boundaries, not verified archive loss or arbitrary
+custom-vector semantics.
 
 ## Ownership differs among supported object families
 
