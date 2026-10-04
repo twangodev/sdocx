@@ -210,6 +210,77 @@ source. A preservation comparison must associate the selected note and page
 manifest with its resource namespace and payloads. These static traces establish
 no executed recovered-note round trip, corpus mismatch or source loss.
 
+### Native protected carriers
+
+The SDK password save route native-saves a fresh temporary plaintext file before
+calling WLockUtil.encrypt and renaming it to the destination
+(`SpenWNote.java:2345–2393`). Its input is the current native save described
+[above](#native-page-files-during-save), rather than the original imported
+archive supplied through byte retention. Public direct-file lock instead
+replaces the input's document type before encrypting it; a directory first
+becomes a packed `.enc` file (`SpenWNoteFile.java:350–398`). Actual app
+SdocXDocumentLocker.lockFile only sets owner ID and LOCKED_WDOC
+(`model/document/save/lock/locker/SdocXDocumentLocker.java:43–64`); the WDoc
+setters parse/replace EndTag (`0xc00f8`, `0xc042c`). These examined methods do
+not encrypt the file. A locked type alone does not identify ciphertext.
+
+WLockUtil.encrypt streams the supplied plaintext through EOF before adding
+its readable appendix (`worddoc/util/WLockUtil.java:136–233`). The saved
+plaintext length narrows from Java long to signed int. Model Append requires
+a positive signed size and a wrapped-key pointer (`0x2a9964–0x2a997c`). It
+writes the source EndTag's captured 20-byte EOCD prefix, zero two-byte comment
+length and freshly serialized tag after the ciphertext (`0x2a9bc4–0x2a9c00`).
+The prefix was captured while parsing the source EOCD
+(`0x2a79c4–0x2a79d0`); this outer carrier is separate from encrypted ZIP entries.
+
+The ordinary JADX decryptCore stub is a failed decompilation. Existing-JADX
+fallback output and direct DEX code units establish its actual instructions.
+The APK's `classes8.dex` SHA-256 is
+`6b7498f182bb73e136e5ce512c0035d3fccada94aecb52e84a1c4154dfa09e84`.
+DEX method 26301, code_item `0x2e9138`, has 612 code units starting at `0x2e9148`:
+Cipher.init uses unwrap mode 4, unwrap selects AES key type 3, then init uses
+decrypt mode 2 (`0x0067`, `0x006d`, `0x0072`). The saved signed plaintext size N
+selects CipherBlockInputStreamUtil's cap `N + (16 - N%16)` before CipherInputStream
+(`0x0075`, `0x00a6`, `0x00ab`; helper code_item `0x1b7cc8`, units 8–12).
+For positive N and nonoverflowing signed arithmetic, this includes a full padding
+block when N is divisible by 16. The cap limits bytes exposed to the cipher;
+BufferedInputStream can physically prefetch beyond it. The readable appendix
+is outside this intended cipher-facing extent, rather than decrypted to EOF.
+
+The output loop writes decrypted chunks until EOF or clips the final write to
+N minus the prior total (`0x00b4–0x00c8`). This caps output; it does not check
+that EOF produced exactly N bytes. Close IOExceptions are logged and the final
+local check tests destination existence (`0x00ce–0x00ea`). Signed-size overflow,
+provider padding behavior and successful complete output remain unexecuted.
+
+The outer decrypt wrapper then constructs an EndTag utility on the destination
+for validation, clears encryption on its retained **source** tag object and
+replaces the destination tag with that object (`WLockUtil.java:279–304`).
+Model regular-file Replace finds EOCD, seeks EOCD+20 and overwrites zero comment
+length plus a freshly serialized tag (`0x2a93ec–0x2a9404`, `0x2a9500–0x2a9528`).
+The bounded Append/Replace file branches show no explicit truncation or checked
+File::Write counts. Java's void append/replace discard their native booleans;
+the examined WDoc JNI bridges return them without false-to-exception translation
+(`0xe38c0`, `0xe39cc`). Wrapper return does not certify a complete carrier write.
+
+SDK open passes a validated temporary decrypted path to ConstructLoad for the
+separate [recovery/cache selection](#native-note-opening-and-recovery-sources)
+and deletes it after construction (`SpenWNote.java:1346–1370,1406–1443,2895–2914`).
+Direct-file unlock can additionally change the type and replace EndTag again
+(`SpenWNoteFile.java:515–542`). Neither sequence proves original plaintext-byte
+identity or atomic file replacement.
+
+Independent [EndTag inspection](end-tag-findings.md#sdk-implementation)
+retains raw encryption appendix bytes and their typed wire fields. The Rust
+[archive parser](../../crates/sdocx/src/container.rs) instead rejects a nonempty,
+structurally decodable encryption blob with ProtectedDocument; its conservative
+blob policy differs from native IsEncrypted's positive signed size/key-pointer
+predicate. It does not return a successfully decrypted ParsedDocument owning the
+protected input. Caller-owned ciphertext, the bounded plaintext temporary with
+rewritten EndTag, and fresh current native output are separate source units.
+These static traces establish no encrypted-fixture round trip, complete provider
+or disk-write validation, original-byte recovery, or visual parity.
+
 ## Selected objects and opaque parents
 
 The [page decoder](../../crates/sdocx/src/page.rs) builds high-level objects from

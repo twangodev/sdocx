@@ -923,13 +923,16 @@ u32 wrapped_key_length
 bytes wrapped_key
 ```
 
-Protected-document save paths generate a random AES-256 content key, encrypt
-the original file with AES-CBC/PKCS7, derive a 256-bit key-encryption key with
-PBKDF2-HMAC-SHA1 (4,000 iterations and a random 32-byte salt), wrap the content
-key with AES-CBC using the random 16-byte IV, and append a readable end tag.
-The native append path also emits a minimal copied ZIP EOCD header before that
-tag, so encrypted files retain a discoverable tail. This path is source-
-confirmed but has not yet been checked against an encrypted fixture.
+The password wrapper encrypts the supplied plaintext file with a random
+AES-256 content key and AES-CBC/PKCS7. It derives a 256-bit key-encryption key
+with PBKDF2-HMAC-SHA1 (4,000 iterations and a random 32-byte salt), wraps the
+content key using the random 16-byte IV, and appends a readable end tag after
+a captured 20-byte ZIP EOCD prefix and zero comment length. SDK password save
+supplies a fresh current native save; direct-file lock changes the type tag
+before encryption. Decryption bounds ciphertext using the saved plaintext size
+and subsequently rewrites EndTag. These source-confirmed
+[protected-carrier boundaries](vector-retention-findings.md#native-protected-carriers)
+do not establish exact original-byte recovery or an encrypted-fixture round trip.
 
 ## Why the legacy decoder produced top-right strokes
 
