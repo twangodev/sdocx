@@ -54,6 +54,74 @@ The browser has a separate ownership boundary: its
 archive bytes. This permits later structural inspection in that session. It
 does not add source ownership to the standalone Rust `ParsedDocument` API.
 
+### Native page files during save
+
+Ordinary native saving builds from working cache. SDK `SpenWNote.java:2412–2416`
+calls the file-save JNI route, which resolves the note and calls
+`WNote::Save(path,true,false)` (`0xe6120`–`0xe6128`). The bool overload forwards
+`skipCorruptedFileInfo` (`0xe6660`–`0xe6678`); the directory route supplies
+file-output false (`0xe6288`–`0xe6290`). An actual app caller,
+`SpenWordDocument.java:193–199`, uses saveAsDirectory. These calls do not
+establish every application save policy.
+
+WNote checks its state/cache-directory preparation, then SaveHandler
+(`0x95408`–`0x95444`). The handler constructs NoteZip from working cache,
+checks SaveCache, then promotes temporary files before ZIP or directory copy
+(`0xad5a4`–`0xad608`, `0xad660`, `0xad72c`). SaveCache checks media saving,
+page saving and fresh note serialization in that order
+(`0xadd64`–`0xadde0`). Member payload forwarding therefore coexists with new
+note/manifest/trailer state; this route does not forward the original ZIP.
+
+The page decision uses current UUID `<page-id>.page` under the working root.
+`WPageManager::savePage`, `0xb2ca0`, calls live WPage::Save only if IsChanged,
+corrupted-info, or absence of that cache file is true (`0xb2e44`–`0xb2e64`).
+Loaded state and HasSnapSavedData are not part of that rewrite predicate.
+An existing unchanged, noncorrupted page bypasses live writing. Main NoteZip
+selects every admitted page; an optional second ZIP selects only snap-present
+or PageFileUpdated pages (`0xb2e7c`–`0xb2ea0`, `0xb2f10`). These local Add
+returns are ignored, so member selection alone does not prove payload I/O.
+
+Pending snapshot promotion changes which cache bytes are packaged.
+RenameTempFiles processes updated, restore-snap or has-snap pages
+(`0xb35dc`–`0xb3600`). Updated pages use the current temporary extension;
+otherwise the source is `<page-id>.page.ssf` (`0xb3648`–`0xb36a4`). Ordinary
+save uses a null target extension, promoting that physical file to `.page`
+before packaging. An unchanged page can thus bypass live writing while its
+pending snapshot replaces the selected `.page`. SnapSave instead targets
+`.ssf` (`0xaeda0`–`0xaedd4`); its SaveCache snapshot bool selects media
+SnapSave (`0xadce0`–`0xadcf4`), rather than changing the page rewrite predicate.
+
+Live writing requires page implementation, its context at impl+304 and a media
+manager. If unloaded, Save checks LoadObject(false,false) before output
+(`0xd566c`–`0xd56f4`). LoadObject's first bool true alone selects an accessible
+`.page.ssf`; false uses ordinary `.page` (`0xd52dc`–`0xd5340`). The writer opens
+`<impl-cache>/<UUID>.page<tempExt>` in `wb+`, then reconstructs current common,
+flexible/custom and layer records and a page hash (`0xd5704`–`0xd5794`,
+`0xd5e40`, `0xd6044`, `0xd61c4`). It has no whole-original-page tail-copy path.
+The existing [opaque-record contracts](#native-opaque-records-wrappers-and-resources)
+still bound what those lower writers retain.
+
+Failed live Save stops page admission, with no local older-page fallback
+(`0xb2e68`, `0xb2f30`–`0xb2f34`). Custom, layer, hash and WithInfo returns are
+checked, while some individual Write/Seek/Close returns are ignored.
+RenameTempFile constructs source/destination filenames and calls raw rename,
+without serializer or copy fallback (`0xd77e4`, Base `0x96ca0`). Its source
+must be accessible; an existing destination is unlinked before the checked
+rename (`0xd794c`–`0xd7950`, `0xd79b8`–`0xd7a1c`). Failure therefore does not
+establish transactional rollback. ZIP/file transport is checked later and
+carries the selected current file bytes, conditional on successful I/O;
+outer compression, password and EndTag framing remain separate.
+
+Cache initially can come from a supplied input stream through checked NoteUnzip
+extraction, or from a saved directory (`0xa2410`–`0xa245c`). It can later hold
+promoted snapshots or reconstructed pages. Changed-page unload itself checks
+save/promotion before clearing live layers (`0xd7250`–`0xd72cc`). Bypassing a
+later serializer therefore does not certify original archive-entry identity.
+These source-only traces establish no executed native round trip or universal
+recovery. Caller-owned original archive/page bytes and the browser source
+carrier remain distinct from native current-cache or editable serialization;
+the parsed Rust model does not acquire their complete resource namespace.
+
 ## Selected objects and opaque parents
 
 The [page decoder](../../crates/sdocx/src/page.rs) builds high-level objects from
