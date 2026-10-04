@@ -114,6 +114,20 @@ equality does not deduplicate this insertion, and its numeric prefix does not
 remap an ID. Separate runtime name matching and fresh-ID allocation do not
 define saved-manifest admission.
 
+The selected loader preserves all 32 ID bits from the record (`0x2910c4`,
+`0x2915b0–0x2915d0`) into metadata (`0x28bb40`); manager lookup compares those
+bits without a sign or sentinel guard (`0x28f9cc`). Other admission gates still apply.
+
+Ordinary saved main/original image references instead have sign guards
+(`0x3b93b0`, `0x3b4bd0`), and `ImageCommon::AddImage` rejects negative input
+(`0x2b54ac`). These consumer rules do not reject raw manifest metadata.
+
+Later image availability skips only returned media ID `-1`
+(`0x39c17c`, `0x39c19c`, `0x39c1bc`); this does not prove saved negative
+references survive their earlier guards. Fresh-ID allocation starts at zero
+and fails at `INT_MAX` (`0x28ce38`, `0x28ceac–0x28ceb4`), independently of loading.
+These are static source distinctions; no negative-ID archive or native execution was tested.
+
 These static findings cover tagged `EOF`/`EOFX` records reaching insertion
 after native name, record, attachment and file-access gates. They do not cover
 no-marker hash recovery, arbitrary malformed input, later context updates or

@@ -86,7 +86,8 @@ impl<'a> ArchiveResourceResolver<'a> {
         }
     }
 
-    /// Resolve an archive bind ID. Negative native sentinels are not unsigned bind IDs.
+    /// Resolve a raw archive bind ID. Callers must validate signed object references
+    /// and sentinel meanings before requesting source lookup.
     pub fn resolve(&self, id: u32) -> Result<ResolvedArchiveResource<'a>, ArchiveResourceError> {
         let (name, inferred) = self.bindings.resolve(id)?;
         let resource = self.resources.get(name).copied().ok_or_else(|| {

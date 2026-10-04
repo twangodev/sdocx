@@ -238,7 +238,9 @@ The archive loader retains modern manifest bindings and non-directory `media/`
 entries. JPEG/PNG/WebP remain typed image assets; PDFs and other formats remain
 opaque resources. [`ArchiveResourceResolver`](../../crates/sdocx/src/archive_resource.rs)
 resolves source bindings separately from image admission and does not certify an
-openable PDF. It accepts unsigned IDs; negative saved sentinels are not admitted bindings.
+openable PDF. It resolves raw unsigned manifest ID bits without sentinel validation.
+PDF callers must interpret signed saved IDs and external sentinels before requesting
+source lookup; resolution alone does not establish native PDF admission.
 
 `PageBackground.pdf_paper` preserves every ordered signed ID/index/rectangle,
 independently of the first-record `CustomPdf` compatibility summary. Invalid and
