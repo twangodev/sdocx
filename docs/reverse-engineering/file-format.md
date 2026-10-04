@@ -821,7 +821,7 @@ types, native call sites, unknown-field boundaries and parser validation.
 
 ## `media/mediaInfo.dat`
 
-Modern form (`format_version > 3001`):
+The Java WDoc writer's modern form is:
 
 ```text
 u32 format_version
@@ -838,8 +838,45 @@ repeat media_count:
 ASCII "EOFX"
 ```
 
-Older form omits the top-level version, record-size prefix and attached byte,
-then uses the older S Pen end-of-file tag instead of `EOFX`.
+The unversioned WDoc form uses populated 64-byte hashes:
+
+```text
+u16 media_count
+repeat media_count:
+    u32 bind_id
+    utf16_u16 file_name
+    bytes file_hash[64]
+    u16 reference_count
+    i64 modified_time
+ASCII "EOF"
+```
+
+In `sources/k1/a.java:66,792–807`, the writer starts with `i = false`, sets
+it to true when the note version exceeds 3001, and uses its current value to
+select framing and `EOF`/`EOFX`. It does not reset a previously true flag for
+a lower version. `sources/n1/a.java:49–103` reads/writes the record fields;
+the unversioned reader defaults attachment to true without consuming a byte.
+
+The native WDoc loader selects framing by trailer, rather than comparing a
+leading version. In `libSPenModel.so`, `MediaFileManagerNew::Load`, `0x290f0c`,
+checks `EOF` at `0x290fac` and `EOFX` at `0x290fcc`. Only the `EOFX` result
+enables the version read (`0x290fec`), record size (`0x291098`), attached byte
+(`0x29121c`) and record-end seek (`0x291238`). Both routes read bind ID,
+filename, fixed 64-byte hash, reference count and timestamp
+(`0x2910c4–0x2911f4`). `WNoteLoadHandler::Load` calls this manager through
+virtual slot 160 (`libSPenWDoc.so`, `0xa85b8–0xa85dc`), resolving to
+`Load(bool,bool)`, `0x292b9c`, then `Load(path,bool)`, `0x292c30`.
+The pinned native New writer emits version 5500 (`0x290548–0x290560`) and
+`EOFX` (`0x290710`, `0x290924`).
+
+This unversioned WDoc hash-and-timestamp layout differs from the plain
+NoteDoc manager's [CRC manifest](painting-source-findings.md#source-media-uses-the-legacy-manifest).
+The same archive filename does not identify the document family or record schema.
+These are static findings from the pinned APK; no real unversioned WDoc archive
+or native execution validated this branch. The Java writer's two-byte empty
+hash conflicts with both readers' fixed 64-byte read, so empty-hash legacy
+round trips are unconfirmed. The native no-marker recovery branch is outside
+the explicit `EOF` contract described here.
 
 Media names are resolved as `media/<file_name>`. Media payloads are not one
 format: objects may reference PNG/JPEG/PDF/audio/video or Samsung-specific
@@ -852,7 +889,13 @@ that fixture in this investigation. Its manifest's
 payload.
 
 The SDK parses modern manifest records and resolves displayed-image IDs
-through this mapping. A filename's numeric prefix is only a warned fallback
+through this mapping. Its parser reads a leading u32 before rejecting values
+at or below 3001; an unversioned manifest instead starts with a u16 count and
+record bytes, so that check cannot reliably identify the older layout.
+Unversioned WDoc and plain NoteDoc manifests remain unsupported. Saved bind IDs,
+filenames and recorded hashes are source identities, separate from native
+filesystem admission and support for decoding a media payload.
+A filename's numeric prefix is only a warned fallback
 when the manifest is absent. In native image objects (`0 + 6 + 7 + 3`), the main
 ID is inside type 7's bit-5 image fill; type 3's border/original IDs are separate.
 See [`image-findings.md`](image-findings.md) for field layouts and limitations.

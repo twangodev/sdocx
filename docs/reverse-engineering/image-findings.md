@@ -50,8 +50,12 @@ These contracts are confirmed from native serialization. The measured
 modern media manifest, including bind IDs, filenames, recorded hashes, reference counts, timestamps,
 attached flags and extension bytes. Record sizes exclude their four-byte size
 prefix. The empty-hash writer form is a two-byte zero; populated hashes occupy
-64 ASCII hexadecimal bytes. Legacy manifests at versions 3001 and below are
-not implemented. Malformed modern records fail instead of falling back to
+64 ASCII hexadecimal bytes. The [unversioned WDoc `EOF` layout](file-format.md#mediamediainfodat)
+retains hashes and timestamps; it differs from the plain NoteDoc CRC manifest.
+Both remain unsupported. The SDK's initial u32 read cannot classify an
+unversioned u16 count plus record bytes as a version. Native New loading uses
+`EOF`/`EOFX` trailers; 3001 is a Java writer threshold with mutable flag state.
+Malformed modern records fail instead of falling back to
 filename guesses. Hashes are retained; normal parsing does not verify them.
 `archive_resources` retains `media/` source files; `ArchiveResourceResolver` borrows
 their bytes independently of typed image admission.
