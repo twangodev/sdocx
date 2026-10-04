@@ -91,7 +91,7 @@ container:
 | `size.dat` | Cached unpacked-directory size written during close. |
 | `refer.dat` | Generic SPen model cache reference count; WDoc does not import that path. |
 | `.bak`, `_back` | Save/recovery artifacts. |
-| `*.ssf` | Snapshot/internal page form accepted by loaders; canonical saves use `.page`. |
+| `*.ssf` | Snapshot forms of selected metadata and page cache files; canonical pages use `.page`. See [native source selection](vector-retention-findings.md#native-note-opening-and-recovery-sources). |
 
 `attach/attachInfo.dat` belongs to the generic `NoteDoc`/`FileManager` path,
 not the modern WDoc save path. That compatibility form is:

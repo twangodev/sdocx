@@ -12,7 +12,7 @@ decoding, rendering and evidence boundaries across object types and features.
 
 - [`vector-retention-findings.md`](vector-retention-findings.md) — original
   byte ownership, semantic projection, opaque subtree/resource namespaces,
-  native cache/save and clipboard boundaries, SPD migration, output precision
+  native cache/open/save and clipboard boundaries, SPD migration, output precision
   and diagnostic boundaries in the current Rust pipeline.
 - [`object-transform-findings.md`](object-transform-findings.md) — recursive
   container edits, hidden-child resizing, baked stroke geometry and precision.
