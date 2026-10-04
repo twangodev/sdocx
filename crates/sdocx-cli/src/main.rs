@@ -234,7 +234,15 @@ fn print_info(doc: &Document, layout: &LayoutDocument) {
                 .map(|color| format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b))
                 .unwrap_or_else(|| "none".to_string()),
             page.template
-                .map(format_template)
+                .map(|template| {
+                    let source_index = page
+                        .background
+                        .pdf_paper
+                        .as_ref()
+                        .and_then(|records| records.first())
+                        .map(|record| record.page_index);
+                    format_template(template, source_index)
+                })
                 .unwrap_or_else(|| "none".to_string()),
             page.strokes().count(),
             total_points,
@@ -244,11 +252,14 @@ fn print_info(doc: &Document, layout: &LayoutDocument) {
     }
 }
 
-fn format_template(template: PageTemplate) -> String {
+fn format_template(template: PageTemplate, source_index: Option<i32>) -> String {
     match template.source {
         PageTemplateSource::BuiltIn => format!("built-in {}", template.id),
         PageTemplateSource::CustomPdf { page_index } => {
-            format!("custom PDF page {}", page_index + 1)
+            match source_index.filter(|index| *index < 0 && *index as u32 == page_index) {
+                Some(index) => format!("custom PDF page index {index}"),
+                None => format!("custom PDF page {}", u64::from(page_index) + 1),
+            }
         }
         _ => format!("template {}", template.id),
     }
@@ -424,6 +435,33 @@ fn main() {
 mod tests {
     use super::{Format, resolve_format};
     use std::path::Path;
+
+    #[test]
+    fn custom_pdf_template_display_preserves_negative_source_indices() {
+        for index in [-1, i32::MIN] {
+            let template = sdocx::PageTemplate {
+                id: 0,
+                source: sdocx::PageTemplateSource::CustomPdf {
+                    page_index: index as u32,
+                },
+            };
+            assert_eq!(
+                super::format_template(template, Some(index)),
+                format!("custom PDF page index {index}")
+            );
+        }
+        for (index, expected) in [
+            (0, "custom PDF page 1"),
+            (i32::MAX as u32, "custom PDF page 2147483648"),
+            (u32::MAX, "custom PDF page 4294967296"),
+        ] {
+            let template = sdocx::PageTemplate {
+                id: 0,
+                source: sdocx::PageTemplateSource::CustomPdf { page_index: index },
+            };
+            assert_eq!(super::format_template(template, None), expected);
+        }
+    }
 
     fn svg_options(
         font_files: &[std::path::PathBuf],
