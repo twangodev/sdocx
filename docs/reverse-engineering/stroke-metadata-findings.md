@@ -52,6 +52,84 @@ The raw two-byte tool/input field follows all point channels. `GetToolType`,
 `0x2e1550`, reads stroke-data member 316 and normalizes values outside 0–4
 to zero. `tool_type_raw` retains the stored value, including unknown values.
 
+## Tape visibility and reveal controls
+
+Static Java/ARM64 tracing against the pinned APK connects app tape controls to
+saved properties and rendering; no native save/reload or pixel comparison was
+executed. Model/WDoc hashes are pinned in the
+[common-object findings](object-base-findings.md#evidence-and-scope). Other
+libraries used by this trace have these SHA-256 values:
+
+| Library | SHA-256 |
+| --- | --- |
+| Composer | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
+| Drawing | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
+| TapePen | `ca0793d7cc8759ca6b21770cf866b796ddb59c2bd219798eb653061076c95d07` |
+| Renderer | `f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed` |
+| Graphics | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
+
+The app's `HwToolbarTapePen.functionEnable` applies tape settings through
+`HwSettingTapePenInfo` (`HwToolbarTapePen.java:40–44`,
+`HwSettingTapePenInfo.java:48–51`). The existing
+[insertion trace](stroke-insertion-findings.md#the-pen-action-dispatches-the-completed-object)
+appends the recorded TapePen stroke and assigns render-layer ID 2; that pass ID
+is separate from the saved reveal property and physical layer selection.
+
+The Hide All Tapes listener (`HwSettingTapePenLayout.java:279–287`) negates the
+note's preference and reaches `HwSettingPresenter.java:687–694`. This writes
+`SpenWNote.setTapeVisibility` before delegating to the live writing manager.
+WDoc `SetTapeVisibility`, `0x9ee74`, changes note byte 852 and marks it dirty;
+`SaveNoteFile` reads it at `0xaf4bc` and emits inverted property bit 4 at `0xaf598`.
+See [note-header findings](note-header-findings.md). The live delegation requires
+initialized `WritingToolManager` and a nonzero native view pointer, so the saved
+note preference alone does not prove that every per-object update ran.
+
+Composer JNI `0x321494` reaches `WritingView::SetAllTapePenVisibility`,
+`0x5336a0` (signature string `0x1cb2f2`). It requests stroke objects in render
+filter 4, then requires the exact TapePen name. It calls `SetRevealMode(!visible)`
+on returned original stroke pointers when needed (`0x5337f0–0x533830`), retaining
+the adapter's collection/layer scope rather than proving every archived layer
+was visited. Model `SetRevealMode`, `0x2e73ec`, directly changes only byte 492
+and calls `SetChanged` (`0x2e7440–0x2e7444`); the property writer/reader emit and
+restore positive bit 14 (`0x2ec190–0x2ec1a0`, `0x2ed1ac–0x2ed1b8`). This is
+saved state of the same object, without a direct point/UUID/geometry rewrite.
+Callback side effects and conditional [save-time identity changes](object-base-findings.md#modification-time-during-native-saving)
+remain separate from that direct-body claim.
+
+Conditionally reached single/double-tap handlers call `handleTapePenRevealTap`
+at `0x419ee4/0x41a000`; it reaches `ToggleTapePenRevealModeAtPosition`,
+`0x5339ac`, and toggles the matched original TapePen's flag at `0x533bb4`,
+then requests redraw. It does not write the note-wide preference in this body.
+Remove All Tapes is another action: its listener dispatches `TaskEraseAllTapePen`,
+whose `removeAllObject` calls `page.removeStrokes` with that TapePen name
+(`TaskEraseAllTapePen.java:39–41`). Reveal is not that source-removal operation.
+
+Drawing `drawObjectStroke` reads saved reveal at `0x82548` and forwards it through
+the pen's pattern interface at `0x8255c`. TapePen `GetPatternable`, `0x2afd4`,
+and its setter thunk `0x2b098` store data byte 18; saved-object `RedrawPen`,
+`0x3739c`, queues it to RT `SetRevealMode`, `0x3c600`, via task `Run`, `0x3840c`.
+The selected non-rainbow composite substitutes outline color with alpha ×0.8
+(`0x3b9b0–0x3b9ec`). Reveal then attenuates the current destination by
+`1 - 0.9 * interior_mask` (`0x3bc7c`, Renderer blend activation `0x514cc`).
+Full interior coverage retains roughly 10% of prior output, not full transparency.
+
+Target ownership differs: the direct non-rainbow branch activates the supplied
+bitmap before ordinary and reveal composites (`0x3ae54/0x3aefc`). Graphics slot
+40 resolves to `ActivateFrameBufferRT`, `0x8dfc4`. The other composite branch
+uses a fetched intermediate before rebinding the supplied bitmap
+(`0x3aa58–0x3aa88`, `0x3ad54/0x3adc4`). Previous contents of that supplied bitmap
+remain untraced; neither Tape-only attenuation nor universal exposure of
+underlying page ink is established. Raster surface attenuation does not itself
+delete or subtract underlying stored vector geometry.
+
+The [Standard PDF tape pass](standard-pdf-composition-findings.md#standard-list-page-paint-sequence)
+reaches ordinary `ObjectDrawing` through its bitmap writer (`0x37c554`), so it
+also reaches this consumer when TapePen resolution succeeds. That does not
+establish every export policy, vector-only native output or pixel parity.
+Rust retains note `tape_visible()` and stroke `reveal_mode`, but the current
+production renderer reads neither; the plugin registry entry does not implement
+these presentation controls.
+
 ## Optional pen fields
 
 Fields are consumed in ascending mask-bit order. Their exact stored types

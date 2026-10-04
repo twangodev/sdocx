@@ -125,6 +125,7 @@ extending its guarantees.
 | Root intersection filtering | No native geometric selection filter | Native collector behavior is traced, but comparing stored bounding boxes alone does not implement it. See [selection findings](reverse-engineering/object-selection-findings.md). |
 | Light/dark treatment | Shared modes, native lightness reversal, local contrast and alpha-preserving paint | Color conversion is independently verified; paper aliases/contrast selection and some palette decisions remain export policy. See [themes](render-themes.md). |
 | Highlighter blending | Whole Top batch uses Darken on light paper and Lighten on dark paper | Capture-route selection/shader math has static evidence; native Standard list PDF uses Darken. SDK shares its SVG policy with PDF; native pixel parity is not claimed. |
+| Tape visibility/reveal | Saved note preference and per-stroke reveal flag retained | Generic pen approximation does not implement native presentation controls or destination attenuation. See [Tape findings](reverse-engineering/stroke-metadata-findings.md#tape-visibility-and-reveal-controls). |
 
 The [SVG composition description](svg-rendering.md) and
 [native capture findings](reverse-engineering/capture-composition-findings.md)

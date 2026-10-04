@@ -69,9 +69,8 @@ high-contrast themes:
   converts an opaque copy and replaces only its low 24 bits at `0xe51bc`.
   The original alpha byte survives the RGB conversion.
 
-This addresses the ordinary color-conversion call. Drawing also contains
-separate reveal/effect branches; their resulting color overrides require
-their own traces.
+This addresses ordinary color conversion; [Tape reveal](stroke-metadata-findings.md#tape-visibility-and-reveal-controls)
+has a separate confirmed presentation path. Other effect overrides remain outside this trace.
 
 ## Marker2 queues the packed color without discarding alpha
 
