@@ -90,7 +90,7 @@ container:
 | `state.dat` | Cache lifecycle state, also a raw four-byte enum. |
 | `size.dat` | Cached unpacked-directory size written during close. |
 | `refer.dat` | Generic SPen model cache reference count; WDoc does not import that path. |
-| `.bak`, `_back` | Atomic-save/recovery artifacts. |
+| `.bak`, `_back` | Save/recovery artifacts. |
 | `*.ssf` | Snapshot/internal page form accepted by loaders; canonical saves use `.page`. |
 
 `attach/attachInfo.dat` belongs to the generic `NoteDoc`/`FileManager` path,

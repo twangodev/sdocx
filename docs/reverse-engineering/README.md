@@ -12,8 +12,8 @@ decoding, rendering and evidence boundaries across object types and features.
 
 - [`vector-retention-findings.md`](vector-retention-findings.md) — original
   byte ownership, semantic projection, opaque subtree/resource namespaces,
-  native clipboard transformations and SPD migration, output precision and diagnostic
-  boundaries in the current Rust pipeline.
+  native cache/save and clipboard boundaries, SPD migration, output precision
+  and diagnostic boundaries in the current Rust pipeline.
 - [`object-transform-findings.md`](object-transform-findings.md) — recursive
   container edits, hidden-child resizing, baked stroke geometry and precision.
 - [`eraser-preservation-findings.md`](eraser-preservation-findings.md) — cut
@@ -35,7 +35,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`pdf-paper-storage-findings.md`](pdf-paper-storage-findings.md) — saved and
   runtime PDF records, loader/JNI/setter boundaries and native binding predicates.
 - [`pdf-paper-resource-findings.md`](pdf-paper-resource-findings.md) — manifest
-  binding, synchronization identities, paths, availability and PDF open errors.
+  binding, synchronization identities, replacement and retargeting boundaries,
+  paths, availability and PDF open errors.
 - [`pdf-paper-placement-findings.md`](pdf-paper-placement-findings.md) — list
   and continuous attachment geometry, inherited PDF boxes, views and clipping.
 - [`pdf-paper-export-findings.md`](pdf-paper-export-findings.md) — source PDF
@@ -129,7 +130,8 @@ decoding, rendering and evidence boundaries across object types and features.
   saved current-layer assignment, Standard PDF page pointers and semantic
   selection with complete structural retention.
 - [`object-base-findings.md`](object-base-findings.md) — shared object visibility,
-  editing flags, replay/resize values and preserved frame extensions.
+  editing flags, replay/resize values, native save-time modification/hash authority
+  and preserved frame extensions.
 - [`object-flexible-findings.md`](object-flexible-findings.md) — optional common
   fields, bundle boundaries and the distinct static extraction format.
 - [`object-drawing-findings.md`](object-drawing-findings.md) — common visibility,

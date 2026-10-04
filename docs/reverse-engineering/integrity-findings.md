@@ -79,6 +79,8 @@ Inspect every count group and the diagnostics. The object formula excludes
 geometry, stroke samples, rich text, style and media bytes. Consequently these
 checks establish consistency of Samsung's stored hash relationships, not payload
 authentication, lossless parsing, rendering fidelity or trusted authorship.
+[Native save-time modification authority](object-base-findings.md#modification-time-during-native-saving)
+explains when a writer can change the time used by that identity digest.
 
 ## Validation
 
