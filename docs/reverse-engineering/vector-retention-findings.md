@@ -13,9 +13,12 @@ contracts are linked to their separate findings.
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
+| `libSPenBodytext.so` | `27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0` |
+| `libSPenWidget.so` | `cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9` |
 
-Native opaque-record, hierarchy, custom-object and resource findings are static
-traces. Only the bounded unknown own-frame writer/reader was executed; no
+Native opaque-record, hierarchy, custom-object, resource and clipboard findings
+are static traces. Only the bounded unknown own-frame writer/reader was executed; no
 complete native archive round trip or Samsung appearance comparison is claimed.
 
 | Representation | What it retains | What it does not establish |
@@ -562,6 +565,93 @@ depends on cache state and later attachment. Declared attachments use the
 unchanged opaque bytes do not certify transport of private resource references.
 The native clipboard archive therefore preserves an editable representation
 separately from original archive bytes and external HTML/JPEG appearance.
+
+### App page copy carries a separate body-text envelope
+
+`TaskCopyPage.java:91–98` calls `NoteManager.copyPage`; its JPEG `1.jpg` and
+HTML backup-path comment are separate (`61–70`). `NoteManager.java:249–280`
+constructs a temporary LIST note and walks the supplied selection list in its
+current order, skipping zero-width/height pages. For each eligible page it
+copies that page, then appends another same-sized physical page containing a
+fresh container. The container has integer `page_copy_bookmark_key` and a first
+textbox child from `copyBodyTextFrom(sourceIndex)` when nonnull; it remains
+present without that child. The temporary note records the source body-font-size
+delta. This is an app clipboard schema, not a rule for interpreting every
+two-page LIST note.
+
+The producer calls `saveAsDirectory` despite naming the path `.sdocx`
+(`SpenWNote.java:2394–2411`). Native false enters SDK error handling; the
+file-manager wrapper propagates action exceptions. The name alone does not
+establish ZIP output, and the JPEG does not replace the editable native source.
+The [native save boundary](#native-page-files-during-save) still applies.
+
+WDoc `WNote::CopyPage` (`0x93af4`) reaches manager CopyPage (`0xb50ac`), which
+constructs a new source-sized/oriented page with no supplied UUID
+(`0xb5120–0xb5154`), calls `WPage::Copy(source,true)` before destination
+insertion (`0xb5168`, `0xb5198`), and validates index in `[0,count]`. Model
+Construct (`0x34367c`) generates the UUID; WPageImpl starts with null context
+(`0xcd42c`). The inspected copy kernels do not replace that UUID with the
+source UUID: Model Copy (`0x346418`) leaves member `+48` untouched, CopyTag
+(`0x344b98`) edits the separate tag list, and cache Copy (`0xd05e0`) reads both
+UUIDs as filenames. Preattachment coedit notification exits on null context
+(`0xce920–0xce924`). This is a copy-phase identity result, not a claim about
+later attachment callbacks or save/reload identity.
+
+WPage Copy checks source loading and implementation copy, but ignores PDF-copy
+and template-type returns (`0xc9258`, `0xc9264`) before returning true. PDF
+copy carries source path, page index and rectangle; destination binding is
+separate and requires a media manager absent during this preattachment phase.
+Insertion adds the pointer before void OnAttach/callback/Bind
+(`0xb7da4–0xb7db8`); OnAttach can return early or skip custom attachment after
+failed media attachment (`0xceec4–0xceec8`). Success is not a complete asset
+certificate. Existing [copy/resource limits](#copying-between-resource-namespaces)
+and [custom-object limits](#loaded-custom-file-maps) remain separate.
+
+Composer `CopyBodyTextFrom` (`0x3a1cbc`) reaches Bodytext CopyPage (`0xbc214`)
+and copyPages (`0xbbd24`), creating a fresh textbox from selected body sections.
+The measured-range route asks `GetTextSectionResult` (`0xc17ec`) then copies
+that result (`0xc180c`). BodyTextUtil (`0xcdbfc`) dispatches to Widget CopyText,
+or only CopyFontSizeSpan when its source-content flag is false. Widget passes
+inclusive end−1 to Model CopyText (`0xdf318–0xdf358`). Model TextCommonImpl Copy
+(`0x3ec1f0`) copies the UTF-16 substring, margin/gravity, spans and paragraphs;
+it is not a concatenation of page object lists.
+
+ObjectSpan range copying includes anchors start≤index≤end and rebases them
+by −start (`0x3fd34c–0x3fd384`). Its source-object copier creates the actual
+source type, calls virtual Copy and binds that fresh instance
+(`0x417a54–0x417a9c`), preserving an embedded-source route beyond thumbnails.
+That virtual-copy return and the textbox wrapper's return are unchecked
+(`0x417a78`, `0xbc31c`); arbitrary child/resource success or universal saved-UUID
+rewriting does not follow from fresh-instance construction.
+
+The derived slice removes timestamp spans, filter `0x80000` (`0xc0b60`),
+synthesizes size 17 over nonempty text only when font-size spans are absent
+(`0xc2238–0xc2270`), carries a positive boundary line-height font size
+(`0xc22b4–0xc22d4`), and can fill page boundaries with blanks. Those editing
+normalizations are distinct from original saved strings/styles/source bytes.
+
+`PastePage.java:136–184` consumes copied page `i` plus companion `i+1`, reads
+the container's first textbox/bookmark metadata and advances by two. It checks
+`i < pageCount`, without proving admission of arbitrary malformed pairs. It
+rejects coedit notes, mismatched orientation, destination SINGLE mode,
+template type 17 and the applicable text limit; already-added pages can still
+be committed if a later selection fails. Bookmark insertion uses the new page
+ID. `NoteManager.java:873–896` locks body text, copies the page, replaces its
+background with the destination background, requests layout, then reinserts
+the carrier using destination ratio and transported font delta, or an empty
+body-text section.
+Composer's manager (`0x3a1e04`) sends normal modes to InsertPage; mode 1 uses
+cursor 0/new-paragraph true. Its inspected switch does not directly use the
+supplied height/ratio. Bodytext adjustment subtracts the current editor delta
+from the incoming delta and removes timestamp spans again (`0xbed54–0xbee0c`).
+Source transport therefore does not certify identical pasted appearance.
+
+Rust retains physical page order/UUIDs, typed container children and document
+font delta. Common UUID and ExtraData are inspectable through ObjectMetadata
+and ObjectFlexibleMetadata, but semantic PageObject containers do not retain
+the bookmark bundle as a dedicated field. The parser is not this clipboard
+mutator; this trace does not justify dropping companion pages from ordinary
+notes or assert a complete native save/reload, asset or appearance result.
 
 ### SPD to WDoc migration
 
