@@ -5,9 +5,9 @@
 Confirmed against Samsung Notes 4.4.45.37, ARM64 `libSPenModel.so`,
 `libSPenBase.so`, `libSPenDrawing.so` and `libSPenComposer.so`. The APK
 SHA-256 is recorded in the knowledge-base index. These findings trace
-serialization, loading, intersection selection and drawing without new
-SDOCX/PDF pairs. The extracted libraries were rechecked against their archived
-bytes, including WDoc's forwarding layer.
+serialization, loading, grouping/ungrouping edits, intersection selection and
+drawing without new SDOCX/PDF pairs. The extracted libraries were rechecked
+against their archived bytes, including WDoc's forwarding layer.
 
 The native paths retain file order within the current physical layer and
 retain child order within a container. Standard list-page PDF export then
@@ -86,6 +86,73 @@ a child list or replace the stroke with a different object type.
 child list at `0x354cc8`, traverses it at `0x354cd4`/`0x354d14` and advances
 at `0x354e3c`. Nested containers recurse at `0x354dbc`; ordinary child
 payloads are written at `0x354e1c`.
+
+## Grouping moves source children and changes root order
+
+The source mutation trace uses Model SHA-256
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`
+and Base SHA-256
+`e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb`.
+Addresses below are in Model except the explicitly named Base UUID constructor.
+
+`PageDoc::GroupObject`, `0x32fe4c`, resolves the current physical layer
+at `0x32fe84–0x32fe98`, then reaches `LayerDocBase::GroupObject`,
+`0x33ebe0` → `ObjectManager::GroupObject`, `0x35cb90` →
+`LayerDocImpl::GroupObject`, `0x34eeb4`. The manager requires more than
+one supplied object, rejects duplicate pointers and records their original
+root indices through `GetObjectIndex` at `0x35cdb0`. That lookup searches
+the current layer's roots, not arbitrary nested children.
+
+The layer constructs an empty type-4 parent at `0x34ef24`; common construction
+allocates its UUID at `0x2c9478–0x2c9490`. Base `Uuid::Uuid`, `0xaa964`,
+generates it through `uuid_create`/`uuid_make`/`uuid_export`. Each selected
+child is detached, removed from the root list and appended as the same
+pointer (`0x34efb8–0x34efe0`). On success the children retain their facades,
+runtime handles and common UUID objects; the parent independently generates
+its UUID rather than copying child identity.
+
+The loop chooses children by ascending original root index
+(`0x34ef4c–0x34ef94`), irrespective of supplied-list order. It inserts the
+parent at `max_selected_original_index − selected_count + 1`
+(`0x34f038–0x34f048`). Unselected roots retain their relative order.
+`PageDoc::UngroupObject`, `0x3301f4`, reaches the corresponding layer facade
+and manager (`0x33ec3c`, `0x35d304`); the manager requires a root container.
+`LayerDocImpl::UngroupObject`, `0x34f110`, obtains its current child pointer
+list and inserts the same children contiguously at `group_index + child_index`
+(`0x34f130–0x34f1fc`). It does not restore scattered original positions.
+Thus `A B C D E`, grouped using `D,B`, becomes `A C [B D] E`; ordinary
+ungroup becomes `A C B D E`. This example follows source insertion arithmetic,
+not a recorded editor execution. History stores the original index vector
+separately; both grouping branches reach the same producer.
+
+Append binds children and sets container membership (`0x373b2c–0x373b70`).
+After insertion, the ordinary container attach branch recurses with its final
+context and physical layer (`0x3727ac–0x3727c8`); a context callback can skip
+recursion at `0x372764–0x372778`. Base attachment writes context `impl+56`,
+physical layer `impl+32` and cookie layer `impl+116`. Saved render-layer
+selection is separately `common+212`; these common attachment writes do not
+replace it with the parent's render layer.
+
+Append computes parent bounds from visible children's rectangles and nearest
+cardinal rotation (`CalcRect`, `0x373784`, using `f32`). It sets `impl+66=1`
+then calls parent `SetRect(RectF,true)` (`0x373b7c–0x373b94`). The reached
+`0x371994` wrapper and four-argument body `0x3719b8` clear this flag and
+take `t_SetRectOnlyData` at `0x371aa0`, bypassing the child resize loop.
+This parent bounds update does not convert children into local coordinates.
+
+Ungroup defers final release until after child insertion/attachment/binding
+(`0x34f164–0x34f20c`), preserving the parent-owned list during the move.
+Attachment/detachment still update context resources; common detach can
+return before cleanup (`0x2d0110–0x2d0124`). No universal inert-callback or
+transactional rollback guarantee is established. The ungroup producer does
+not call `ObjectContainerImpl::RemoveObject`, whose separate path clears
+membership at `0x374014`; becoming a root alone does not prove that bit resets.
+
+Rust retains ordered container children and typed decoded geometry in
+`PageObject`, with source offsets and render-layer metadata. Common UUIDs
+decode separately; this tree is not the native manager/history reparenting
+lifecycle. The trace does not establish UI grouping, history replay,
+save/reload, subsequent connector resolution or appearance equivalence.
 
 ## Top-only selection restricts the object type mask
 
