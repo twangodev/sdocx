@@ -722,6 +722,89 @@ fn no_outline_and_unsupported_gradient_are_distinct_from_solid_black() {
 }
 
 #[test]
+fn shapes_and_lines_own_precise_magnetic_points_and_opaque_connections() {
+    let points = [
+        [1.0000000000000002, -0.0],
+        [-2.0000000000000004, f64::from_bits(1)],
+    ];
+    let mut connections = 1_u32.to_le_bytes().to_vec();
+    connections.extend(b"\xffunresolved");
+    let mut fixed = (points.len() as u32).to_le_bytes().to_vec();
+    for point in &points {
+        fixed.extend(numbers(point));
+    }
+    fixed.extend(sized(&connections));
+    fixed.push(0);
+    let source_frame = frame(6, 0, &fixed, &[]);
+    let objects = [7, 8].map(|kind| object(kind, &with_shape_base(kind, &source_frame), &[]));
+    let parsed = sdocx::parse_bytes_detailed(&archive(&page(&[objects.to_vec()], 0, &[]))).unwrap();
+    assert!(has_shape_warning(&parsed));
+    let elements: Vec<_> = parsed.document.pages[0].elements().collect();
+    assert_eq!(elements.len(), 2);
+    for element in elements {
+        let source = shape_base_source(element).unwrap();
+        assert_eq!(source.connection_data, connections);
+        assert_eq!(
+            source
+                .magnetic_points
+                .iter()
+                .map(|point| point.map(f64::to_bits))
+                .collect::<Vec<_>>(),
+            points.map(|point| point.map(f64::to_bits))
+        );
+    }
+}
+
+fn with_shape_base(kind: u8, source_frame: &[u8]) -> Vec<u8> {
+    let mut payload = base(0.0);
+    payload.extend(source_frame);
+    payload.extend(match kind {
+        7 => frame(7, 32, &shape_fixed(4, 0.0), &shape_fields()),
+        8 => frame(8, 0, &line_fixed(0), &[]),
+        _ => panic!("expected shape or line"),
+    });
+    payload
+}
+
+fn shape_base_source(element: &PageElement) -> Option<&sdocx::ShapeBaseSource> {
+    match element {
+        PageElement::Shape(shape) => shape.base_source.as_deref(),
+        PageElement::Line(line) => line.base_source.as_deref(),
+        _ => panic!("expected shape or line"),
+    }
+}
+
+#[test]
+fn parsed_empty_shape_base_is_present_and_older_json_can_omit_it() {
+    for (kind, payload) in [(7, shape(4)), (8, line(0, 0, &[]))] {
+        let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+        assert!(!has_shape_warning(&parsed));
+        let element = parsed.document.pages[0].elements().next().unwrap();
+        let source = shape_base_source(element).unwrap();
+        assert!(source.magnetic_points.is_empty());
+        assert_eq!(source.connection_data, [0; 4]);
+        #[cfg(feature = "serde")]
+        {
+            let mut json = serde_json::to_value(element).unwrap();
+            let restored: PageElement = serde_json::from_value(json.clone()).unwrap();
+            let source = shape_base_source(&restored).unwrap();
+            assert!(source.magnetic_points.is_empty());
+            assert_eq!(source.connection_data, [0; 4]);
+            json.as_object_mut()
+                .unwrap()
+                .values_mut()
+                .next()
+                .unwrap()
+                .as_object_mut()
+                .unwrap()
+                .remove("base_source");
+            let restored: PageElement = serde_json::from_value(json).unwrap();
+            assert!(shape_base_source(&restored).is_none());
+        }
+    }
+}
+
+#[test]
 fn connection_counts_and_shape_paths_are_bounded_before_allocation() {
     for fixed in [
         u32::MAX.to_le_bytes().to_vec(),

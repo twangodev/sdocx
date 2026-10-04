@@ -67,6 +67,16 @@ impl Default for ShapeStyle {
     }
 }
 
+/// Source relationships from the native type-6 shape-base frame, before resolution.
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct ShapeBaseSource {
+    pub magnetic_points: Vec<[f64; 2]>,
+    /// Sized connection payload, including its record count and any opaque remainder.
+    pub connection_data: Vec<u8>,
+}
+
 /// Geometry and styles decoded from the native `0 + 6 + 7` shape chain.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -84,6 +94,9 @@ pub struct NativeShape {
     pub text_area_type: Option<TextAreaType>,
     /// Stored type-0 metadata. Normal shape writers put drawn bounds here.
     pub metadata: ObjectMetadata,
+    /// Parsed type-6 source; absent in older serialized model data.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub base_source: Option<Box<ShapeBaseSource>>,
     /// Native shape-template ID; unfamiliar values are preserved.
     pub shape_type: u32,
     /// Unrotated geometry rectangle from type 7.
@@ -121,6 +134,9 @@ pub struct NativeShape {
 pub struct NativeLine {
     /// Stored common identity and placement.
     pub metadata: ObjectMetadata,
+    /// Parsed type-6 source; absent in older serialized model data.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub base_source: Option<Box<ShapeBaseSource>>,
     /// Native line kind: 0 straight, 1 elbow, 2 curve.
     pub line_type: u8,
     /// Native routing setting, retained without interpretation.
@@ -152,11 +168,16 @@ pub(crate) struct Decoded<T> {
     pub(crate) unsupported: Vec<&'static str>,
 }
 
+pub(crate) struct DecodedShapeBase {
+    pub(crate) style: ShapeStyle,
+    pub(crate) source: ShapeBaseSource,
+}
+
 pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<NativeShape>> {
     let mut reader = Reader::new(data, "shape object");
     let metadata = ObjectMetadata::read(&mut reader)?;
     let mut unsupported = Vec::new();
-    let style = read_style(&Frame::read(&mut reader)?, &mut unsupported)?;
+    let shape_base = read_shape_base(&Frame::read(&mut reader)?, &mut unsupported)?;
     let frame = Frame::read(&mut reader)?;
     frame.expect_kind(7)?;
     let mut fixed = Reader::new(frame.fixed, "shape geometry");
@@ -277,13 +298,14 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
             text_editable,
             text_area_type,
             metadata,
+            base_source: Some(Box::new(shape_base.source)),
             shape_type,
             geometry_bbox,
             drawn_bbox,
             rotation_degrees,
             control_points,
             path_data,
-            style,
+            style: shape_base.style,
             fill,
             fill_source,
             pen_name_id,
@@ -299,7 +321,7 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
     let mut reader = Reader::new(data, "line object");
     let metadata = ObjectMetadata::read(&mut reader)?;
     let mut unsupported = Vec::new();
-    let style = read_style(&Frame::read(&mut reader)?, &mut unsupported)?;
+    let shape_base = read_shape_base(&Frame::read(&mut reader)?, &mut unsupported)?;
     let frame = Frame::read(&mut reader)?;
     frame.expect_kind(8)?;
     let mut fixed = Reader::new(frame.fixed, "line geometry");
@@ -354,6 +376,7 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
     Ok(Decoded {
         value: NativeLine {
             metadata,
+            base_source: Some(Box::new(shape_base.source)),
             line_type,
             routing,
             control_points,
@@ -365,16 +388,16 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
             pen_name_id,
             pen_settings_id,
             path_data,
-            style,
+            style: shape_base.style,
         },
         unsupported,
     })
 }
 
-pub(crate) fn read_style(
+pub(crate) fn read_shape_base(
     frame: &Frame<'_>,
     unsupported: &mut Vec<&'static str>,
-) -> Result<ShapeStyle> {
+) -> Result<DecodedShapeBase> {
     frame.expect_kind(6)?;
     let mut fixed = Reader::new(frame.fixed, "shape base");
     let magnetic_count = fixed.read_u32("magnetic point count")? as usize;
@@ -385,10 +408,12 @@ pub(crate) fn read_style(
         fixed.read_bytes(point_bytes, "magnetic points")?,
         "magnetic points",
     );
+    let mut magnetic_points = Vec::with_capacity(magnetic_count);
     for _ in 0..magnetic_count {
-        read_point(&mut points)?;
+        magnetic_points.push(read_point(&mut points)?);
     }
-    let mut connections = Reader::new(sized(&mut fixed, "connection block")?, "shape connections");
+    let connection_data = sized(&mut fixed, "connection block")?;
+    let mut connections = Reader::new(connection_data, "shape connections");
     let connection_count = connections.read_u32("connection count")?;
     let reserved = fixed.read_u8("reserved shape byte")?;
     if connection_count != 0
@@ -441,7 +466,13 @@ pub(crate) fn read_style(
     if fields.remaining() != 0 || frame.fields.has_other_bits(0x0c) {
         unsupported.push("additional outline fields");
     }
-    Ok(style)
+    Ok(DecodedShapeBase {
+        style,
+        source: ShapeBaseSource {
+            magnetic_points,
+            connection_data: connection_data.to_vec(),
+        },
+    })
 }
 
 fn read_paint(
