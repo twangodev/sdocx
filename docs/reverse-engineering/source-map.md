@@ -24,12 +24,12 @@ are more stable evidence than class-field names.
 | `libSPenWDoc.so` | WDoc archive/page loading, `pageIdInfo.dat`, page signatures, quick-save/cache sidecars. |
 | `libSPenModel.so` | Generic object frames, object type handlers, packed stroke channels, end-tag parser and encryption appendix. |
 | `libSamsungNotesCoedit.so`, `libSPenWordDocCoedit.so` | Reached download completion, current-note content attachment and pending object resource callbacks. |
-| `libSPenComposer.so` | Page capture sequence, base/top/masking passes, object clones and native PDF stroke rasterization. |
+| `libSPenComposer.so` | Page capture sequence, base/top/masking passes, object clones, native PDF stroke rasterization and [current-main GIF animation selection](image-findings.md#native-gif-import-and-current-file-animation). |
 | `libSPenDrawing.so` | Object visibility, common-alpha drawing options and stroke pen configuration. |
 | `libSPenPdf.so` | Native PDF image insertion and pixel-alpha conversion. |
 | `libSPenPdfiumB.so` | PDF page/resource copying, ordinary glyph codewords and generated Unicode mappings. |
 | `libSPenPaintingCompat.so`, `libSPenPaintingCore.so` | Editable painting source, replay and brush composition. |
-| `libSPenGraphics.so` | Capture blend-mode dispatch and embedded GPU shader equations. |
+| `libSPenGraphics.so` | Capture blend-mode dispatch, embedded GPU shader equations and [GIF loader path/restart boundaries](image-findings.md#a-changed-path-does-not-establish-immediate-reader-replacement). |
 | `libSPenPenCommon.so` | Shared pen settings, packed ARGB conversion and render-thread alpha. |
 | `libSPenDefaultPen.so`, `libSPenMarker.so` through `libSPenMarker4.so` | Concrete pen interfaces, fixed-opacity bindings and Marker2 coverage shaders. |
 | `libSPenPencil3.so` | [Selected V1 saved replay](pencil3-source-findings.md), generated particle/brush-row state and configured paper bitmap ownership. |

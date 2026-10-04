@@ -190,3 +190,115 @@ outline variants, dormant nine-patch width, active effects, custom paths,
 unknown properties and malformed path/outline lengths. The diagnostic-only
 correction left all three image SVG pages and all five formatting SVG pages
 byte-identical to the preceding output.
+
+## Native GIF import and current-file animation
+
+These are static Java and ARM64 findings from Samsung Notes 4.4.45.37,
+APK SHA-256 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
+No native insertion, playback, save/reopen or paired appearance comparison was
+executed. Addresses below are ELF virtual addresses in the named library.
+Java paths start at `sources/com/samsung/android/support/senl/nt/` in the
+identified APK decompilation.
+
+| ARM64 library | SHA-256 |
+| --- | --- |
+| `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
+| `libSPenObjectControl.so` | `3211b70ad105e285b57aaa085e2bcd543f197238d702f9233aedea1c7caa1aea` |
+| `libSPenGraphics.so` | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
+| `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+
+Graphics (871,768 bytes) and Base (980,664 bytes) match their pinned APK members
+byte-for-byte; the others use the established pinned inputs.
+
+### Gallery insertion and current saved identity
+
+`composer/main/base/presenter/menu/option/AttachMenuPresenter.java:139–143`
+dispatches gallery request 30000; `:76–87,109–113` obtains the URI list and
+executes TaskAddImage. `composer/main/base/presenter/task/TaskAddImage.java:56–83` rejects absent
+MIME/video, calls DownloadBitmap.saveImageFromUri and requires a nonempty
+existing returned file. Storage checks and handler publication are separate
+(`:88–114,117–130,230–235`).
+
+`model/base/utils/image/DownloadBitmap.java:411–428` selects MIME containing
+`gif`, checks BitmapInspector validity (`:330–335`), names a GIF destination
+and calls UriFileUtils.saveUriToFile. It uses this file route rather than the
+ordinary saveBitmapFromUri branch. `:445–446` exposes the path only on mSuccess;
+`base/common/util/UriFileUtils.java:1004–1008` returns whether its save helper
+reported integer zero. These checks do not establish multiple frames or exact
+copied bytes after downstream processing.
+
+`composer/main/base/presenter/task/TaskAddImageHandler.java:39–57` checks file existence
+and constructs SpenObjectImage in its span route,
+calls setImage(path), then ObjectManager.insertImage. The SDK throws
+if that setter returns false; this span body has no local catch. The page route
+(`:78–99`) reaches `composer/main/base/model/composer/util/ObjectManagerHelper.java:382–418`, which
+catches failed setters, omits those objects and inserts the admitted images.
+This producer is separate from the [GIF copy for external-editor preparation](image-edit-source-findings.md#external-editor-preparation-uses-current-main-pixels).
+
+The [registered String setter](image-edit-source-findings.md#returned-editor-source-conditionally-clears-the-original-binding)
+and [current writer](image-edit-source-findings.md#generated-spi-source-failure-path-and-ordinary-save-are-separate)
+remain conditional: Model ComponentImage::SetImage `0x3a17dc` admits a temporary
+fill path before attempting live SetFillEffect (`0x3a18c8–0x3a18e4`).
+ImageData::SetImage retains a detached path (`0x2b80dc–0x2b80e4`) or calls manager
+Bind(path), stores its ID, rejects -1 and checks managed-path resolution
+(`0x2b8080–0x2b80a8`). Register has the same retained-path Bind/-1/resolution
+gates (`0x2b86b8–0x2b86c4,0x2b873c–0x2b8740`). ComponentImage::GetImagePath
+requires fill type 2 and delegates to GetImageUri (`0x3a1ac8–0x3a1afc`). The
+ordinary fill writer reads the current media ID (`0x3b90fc`) and writes it
+(`0x3b91c4`); original ID remains separate type-3 bit 18. Neither establishes
+source-file availability or archive inclusion.
+
+### Animation opens the current main file
+
+Composer PageForegroundView::loadGifAnimation calls GifAnimationDrawing::Load
+(`0x3fe1f4`). Load enumerates page objects through FindObjectInRect and
+AppendObjectList (`0x3f68d0–0x3f68dc`); its type-3 branch invokes appendGif
+(`0x3f69a0–0x3f69b4`). appendGif requires type 3, reads current main GetImagePath
+(`0x3f6f94`), then requires successful Image::GetInfo with codec 5
+(`0x3f6fa8–0x3f6fb8`). Base GetInfo confirms that codec through DGifOpenFileName
+(`0xab700`) followed by value 5 (`0xab718–0xab724`). Codec identity alone does
+not prove multiple frames. The admitted branch constructs AnimatedImage with
+that main path (`0x3f70d0–0x3f70d4`); separate live-view/membership gates precede
+DoLoad and StartOrResumeAnimation (`0x3f6c10–0x3f6c24`).
+
+ObjectControl AnimatedImage copies the supplied path to member +40
+(`0x1102f4–0x110300`); DoLoad passes it to Graphics SPGifAnimationLoader
+(`0x110ef8–0x110f10`). Graphics copies it to loader +8 (`0xbf930–0xbf938`), then
+FrameContext passes it to Base SPenGifAnimation (`0xbf054–0xbf05c`). The latter's
+constructor calls reopenFile (`Base 0xdc70c`), which opens the path read-only
+(`0xdc858`) and invokes DGifOpenFileHandle (`0xdc878`). Graphics FutureFrame
+requests successive Base GetNextFrame results (`0xbf4a4`) and transports frame/time
+data (`0xbf4b4–0xbf4f4`). Composer drawGif invokes AnimatedImage::OnDraw
+(`0x3f7de0`). These consumers read the main file, rather than selecting the
+separate original binding or the [ordinary cache-first bitmap path](image-effects-findings.md#shape-effects-and-image-pixels-have-separate-drawing-calls).
+
+### A changed path does not establish immediate reader replacement
+
+Composer checkGifPathChange compares current main path with AnimatedImage's
+stored path (`0x3f6da0–0x3f6dbc`); a difference calls ChangeFilePath (`0x3f6dcc`).
+ObjectControl stores the path. With an existing loader it dispatches slot 64
+(`0x1112a4–0x1112bc`); Graphics relocation `0xd2248` resolves it to ChangeFilePath
+`0xc0134`, which only updates the loader String without reopening its reader.
+With no loader, ObjectControl constructs one (`0x1112c0–0x1112e8`). Graphics
+constructor slot 32 (`0xbf9c4–0xbf9d0`, relocation `0xd2228`) reaches Restart
+`0xbfca4`; FrameContext construction (`0xbfd7c`) takes the reader-opening route
+above. AnimatedImage::ChangeFilePath therefore is not universally String-only.
+Graphics FrameContext::Restart separately passes the current loader path to
+Base reopenFile (`0xbf140–0xbf148`). These calls do not certify successful reload,
+immediate frame switching or atomicity.
+
+If a main-binding manifest record names an existing GIF archive entry without
+a typed asset, current Rust media resolution reports unsupported media: the
+typed asset filter admits JPG/JPEG/PNG/WebP. The new source finding is the reached
+main-file animation route; the filter alone is an existing gap. This trace does
+not establish original-image bytes or ordinary processed cache pixels as
+substitutes for that playback source, nor prove those references must differ.
+Caller-retained original archive bytes remain a [separate carrier](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).
+
+Native binding can resize an image when configured dimensions are exceeded
+(Model `0x28c8cc–0x28c948`); import-copy admission does not establish identical
+or still-animated managed GIF bytes. Existing [media save gates](vector-retention-findings.md)
+remain required. SPI temporal caches belong to the [Maetel codec](spi-media-findings.md),
+not this GIF reader. Complete disposal/blending/delay/loop behavior, worker/frame
+lifetime, reload success and PDF/export frame selection remain unverified.

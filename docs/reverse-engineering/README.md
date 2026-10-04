@@ -124,7 +124,8 @@ decoding, rendering and evidence boundaries across object types and features.
   paint plans shared by SVG/PDF and Chromium text clip
   behavior.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
-  references, authoritative media bindings and image regression coverage.
+  references, authoritative media bindings, current-file GIF animation and
+  image regression coverage.
 - [`shape-line-findings.md`](shape-line-findings.md) — native geometry and effects,
   pen references, bounded paths, rendering coverage and remaining fidelity gaps.
 - [`visual-conformance-findings.md`](visual-conformance-findings.md) — measured
