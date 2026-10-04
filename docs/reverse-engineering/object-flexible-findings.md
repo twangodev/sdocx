@@ -202,9 +202,38 @@ Byte counts are `u32` for document types >= 2 and `u16` for 0/1, selected at
 
 The byte-array key `SPEN_SDK_KEY_SYSTEM_RESERVED_EXTRA_DATA` has special handling
 at `0xa25ec`–`0xa2664`; the comparison string is at virtual address `0x2e5ca`.
-The native reader returns its bytes through optional out-parameters instead of
-putting it in the ordinary bundle. The SDK preserves it as a named byte-array
-entry. Its payload semantics remain unresolved.
+Base `Bundle::GetAdditionalBinary`, `0xa1e24`, appends this key when supplied
+compatibility bytes are nonnull with positive length (`0xa1e90–0xa1ea4`),
+copying them unchanged (`0xa214c`). It supplies no universal inner schema.
+The reader allocates/copies the bytes and transfers ownership through optional
+out-parameters instead of adding the entry to its Bundle; without a pointer
+output it deletes them (`0xa25cc–0xa25e8`, `0xa263c–0xa2664`). Ordinary base
+field 5 exports these bytes and accounts for their count in its consumed extent
+(`0x2dc38c–0x2dc3bc`).
+
+For ordinary versions >19, a nonnull extracted pointer with nonzero count
+selects compatible object loading (`0x357c08–0x357c54`); the successful path
+deletes that allocation (`0x357d7c–0x357d84`). Current ObjectStroke forwards
+it to the base, which installs supplied BaseData without interpreting those
+raw arguments; stroke channels still come from the outer packet (`0x2e5114`,
+`0x2da238–0x2da250`, `0x2e5160`). Ordinary default compatible saving supplies
+null/zero raw arguments (`0x355038–0x355048`), so this route does not automatically
+re-inject that extracted buffer. Other object consumers remain separate.
+
+Detached pen identity uses separate owned strings: `GetPenName`, `0x2de974`,
+and `GetAdvancedPenSetting`, `0x2dec00`, look up attached table IDs when a
+table exists, otherwise return owned strings; a failed ID lookup does not
+trigger that fallback. Under their context guards, detach copies text into those
+strings, while attach binds them into the destination table, updates IDs and destroys the
+owned strings (`0x2e68c8–0x2e6930`, `0x2e668c–0x2e670c`). Neither getter
+decodes EXTRA_DATA. The [Painting page-table contract](painting-source-findings.md#layer-records-and-the-10000-object-split)
+explains the separate resource namespace.
+
+These are source-only traces using the [Model/Base evidence pins](painting-source-findings.md#evidence-boundary),
+without an ordinary archive round trip. The reserved payload stays opaque;
+it is not an established vector backup or pen-identity record. For its supported
+modern object layout, Rust preserves the named byte-array and complete Bundle
+bytes; that does not establish ordinary Painting Bundle decoder coverage.
 
 ## Explicit SDK decoding
 
