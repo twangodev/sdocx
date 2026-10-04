@@ -6,6 +6,15 @@ Confirmed against Samsung Notes 4.4.45.37, `arm64-v8a/libSPenModel.so`.
 This investigation uses native reader, writer and getter code, without a paired
 SDOCX/Samsung PDF comparison.
 
+The modification-time save trace also uses `libSPenWDoc.so` and `libSPenBase.so`.
+Pinned SHA-256 values are:
+
+| Library | SHA-256 |
+| --- | --- |
+| Model | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| WDoc | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+| Base | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+
 Every mapped object chain begins with a type-0 frame. The bounded decoder
 exposes that frame through `StoredObject::base_metadata`, as well as the `base`
 member of explicit object metadata such as `FormulaMetadata`.
@@ -102,6 +111,64 @@ they exclude subsequent typed frames and the outer integrity trailer. Later
 flexible fields are available through a separate `flexible_metadata` call.
 Their native map, bounded bundle decoding and remaining unknowns are recorded
 in [optional object findings](object-flexible-findings.md).
+
+## Modification time during native saving
+
+Static ARM64 calls and relocations establish a selected ordinary-object save
+route, without executing a native save/reload. WDoc `WPageSaveHandler::Save`
+calls `Save_LayerDoc` at `0xd6044`, which calls Model `WLayer::Save` at
+`0xd6c2c`. The latter calls `Save_Objects_WDoc` at `0x341de8`; its non-container
+branch supplies compatibility false and document type 2 to `WriteDefaultObject`
+(`0x355558–0x355560`). That modern branch invokes virtual `ReadyForSave` before
+binary size and bytes (`0x35505c–0x3550ac`). ObjectBase and ObjectStroke slot-424
+relocations resolve to `ObjectBase::ReadyForSave`, `0x2d1500`; other types can
+override preparation, as ObjectShape does at `0x399f14`.
+
+The base preparation requires an implementation and attached context. It skips
+when the sync requester returns any nonzero integer or the coedit requester
+returns true (`0x2d1514–0x2d1550`). Otherwise virtual `IsChanged` true or an
+existing zero modification value triggers `GetTimeStamp` and replacement of
+base-data offset 152 (`0x2d1554–0x2d157c`). A clean nonzero value is preserved
+by this body. Missing requester functions default to zero/false here; missing
+context skips replacement. Model `GetSyncMode`, `0x2ac27c`, and `IsCoeditMode`,
+`0x2ac2dc`, identify those requesters. The WDoc note constructor installs them
+at `0xa07d4/0xa0904`; callback bodies `0xa75d4/0xa77f8` read captured note
+implementation offset 976's sync integer and offset 854's coedit byte.
+
+For the base/stroke implementation, `IsChanged`, `0x2cf2c0`, reads implementation
+byte 240. `HasUnsavedChanges`, `0x2cf320`, reads distinct byte 241.
+`ObjectBaseImpl::SetChanged`, `0x2d74f4`, and `ClearChanged`, `0x2d7f78`, notify
+available context callbacks and set/clear these flags, without a direct clock
+call or modification store in either body. This does not establish all callback
+side effects or the complete save-success clear lifecycle.
+
+These replacement values are realtime microseconds: Base `GetTimeStamp`,
+`0x9a1f0`, uses clock ID 0 and seconds × 1,000,000 + nanoseconds / 1,000. The
+[recording findings](stroke-recording-findings.md#voice-synchronization-uses-append-time-and-original-objects)
+pin the clock instructions. This producer contract does not normalize every
+historical or manually assigned value: `SetModifiedTime`, `0x2cc524`, directly
+stores its `i64` argument at `0x2cc574`. The separate replay `i32` above remains
+a different timestamp domain.
+
+ObjectStroke's modern writer calls the base writer at `0x2e56cc`, which calls
+`ObjectBaseBinaryHandler::GetOwnBinary` at `0x2d12ac`. The latter emits offset
+152's eight bytes at `0x2dabc4–0x2dabcc`. `WriteDefaultObject` then derives its
+32-byte trailer from UUID text and the current signed decimal modification time
+(`0x3550c4–0x355168`); see [integrity findings](integrity-findings.md). A changed
+time can change both fixed bytes and identity trailer while geometry stays the
+same. Equal clock results remain possible. This is an identity digest, rather
+than proof of all object-content integrity or byte-preserving archive output.
+
+`RequestUpdateHash`, `0x2d42a4`, is a separate explicit operation requiring a
+present coedit requester returning true. It timestamps offset 152 and stores
+`ExtractHash`'s result at offset 216 (`0x2d4318–0x2d4368`), without a dirty or
+sync requester test in its body. The inspected save chain does not establish a
+call to it. The compatible writer separately stamps dirty-or-zero modification
+with an attached context and zero/absent sync requester (`0x2da094–0x2da0d0`);
+its dirty argument comes from virtual `IsChanged` (`0x2d06c8–0x2d06f4`), and
+that bounded branch has no coedit skip. Rust retains `modified_time_raw` and
+verifies identities against saved values; parsing does not perform this native
+save preparation or substitute a current timestamp.
 
 ## SDK behavior and validation
 
