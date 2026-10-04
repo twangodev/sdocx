@@ -193,6 +193,32 @@ interfaces; diagnostic logging is isolated. Whole-document parsing, native
 span traversal, Widget conversion, shaping, grouping and rendering do not
 execute in this binary capture.
 
+#### Volatile formula-style spans
+
+Model `FormulaSpan` is rich-text style type 23, distinct from outer Formula
+object type 11 and CodeBlock object type 23. Its complete direct binary methods
+(`0x419c28`–`0x419e1c`) append/read only a raw four-byte value after the
+`TextSpanBase` header; they do not validate an enum or carry an expression,
+embedded vector or resource reference.
+
+`FormulaSpan::IsVolatile`, `0x419e1c`, returns true for a nonnull implementation,
+independent of that value. The actual `TextCommon` WDoc writer reaches the span
+writer at `0x3f6240`–`0x3f6254`. Both span-list size and write loops call virtual
+slot 72 and skip true results (`0x3fb408`–`0x3fb410`,
+`0x3fb640`–`0x3fb648`), excluding normally constructed FormulaSpan instances
+despite their direct binary methods. The reader, `0x3fb93c`–`0x3fbb8c`, permits
+type 23 and publishes it subject to decode, range and optional zero-length
+deduplication gates; it does not apply this volatility predicate.
+
+The Rust [span reader](../../crates/sdocx/src/note.rs) already owns an incoming
+span's raw payload and range. [Style projection](../../crates/sdocx/src/render/text/styles.rs)
+uses an empty patch for the known Formula kind. Native writer exclusion does
+not authorize discarding those incoming bytes or establish missing vectors/media.
+
+This is static evidence for the selected modern WDoc route, separate from the
+binary capture above. It does not establish an executed edit/save result,
+every serializer/version, formula recognition or rendered appearance.
+
 ## Measurement identity
 
 Native measurement joining is a different predicate from retained draw
