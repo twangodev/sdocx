@@ -169,6 +169,20 @@ clone is type 2 or 7, `ComponentText::SetTextVisibility(true, true)` runs at
 includes runtime editing state; it is separate from the common serialized
 object visibility check in [object drawing findings](object-drawing-findings.md).
 
+Before `DrawObjectList`, the Base, Top and Masking passes each call
+`SetObjectAlphaEnabled(false)` at `0x33002c`, `0x3301d8` and `0x3303f4`.
+The capture factory constructs `ObjectDrawing` (Drawing `0x74934`);
+its vtable relocation at Drawing `0xc2fc0` resolves these virtual calls.
+False bypasses intermediate object-alpha bitmap batching at Drawing
+`0x7f3d4`–`0x7f3d8`. The object-alpha gate remains: positive alpha can reach
+dispatch, while alpha <= 0 retains the selected-object exception at Drawing
+`0x7f454`–`0x7f488`.
+
+This alpha comes from object draw state (`ObjectBase::GetAlpha`, Model
+`0x2d1bd8`), distinct from the saved physical-layer transparency byte
+(`LayerDocBase::GetTransparency`, Model `0x33d250`). These capture calls
+do not establish how that physical-layer byte affects ordinary composition.
+
 Model `ObjectManager::FindObjectInRectIntersect`, `0x35e670`, traverses its
 existing object list, checks intersection at `0x35e740`, applies the layer
 filter at `0x35e750`, and adds matches at `0x35e760`. This is a different
