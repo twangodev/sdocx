@@ -23,6 +23,17 @@ impl PaintFloat32 {
     fn read(reader: &mut Reader<'_>, field: &'static str) -> Result<Self> {
         reader.read_u32(field).map(Self)
     }
+
+    fn read_array<const N: usize>(
+        reader: &mut Reader<'_>,
+        field: &'static str,
+    ) -> Result<[Self; N]> {
+        let mut values = [Self(0); N];
+        for value in &mut values {
+            *value = Self::read(reader, field)?;
+        }
+        Ok(values)
+    }
 }
 
 /// One saved gradient stop; order and repeated positions are significant.
@@ -127,6 +138,79 @@ impl PatternPaintSource {
     }
 }
 
+/// Saved integer nine-patch coordinates and source width.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct NinePatchSource {
+    pub coordinates: [i32; 4],
+    pub width: i32,
+}
+
+/// Ordinary image-fill source fields; no runtime bitmap or resource hash.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct ImagePaintSource {
+    pub fill_mode: u8,
+    pub media_bind_id: i32,
+    pub stretch_offsets: [PaintFloat32; 4],
+    pub tiling_offsets: [PaintFloat32; 2],
+    pub tiling_scales: [PaintFloat32; 2],
+    pub transparency: PaintFloat32,
+    pub rotatable_byte: u8,
+    /// Decoded only when the saved base-object format version is at least 28.
+    pub nine_patch: Option<NinePatchSource>,
+    pub trailing_data: Vec<u8>,
+}
+
+impl ImagePaintSource {
+    pub fn rotatable(&self) -> bool {
+        self.rotatable_byte != 0
+    }
+
+    pub(crate) fn read(data: &[u8], format_version: u32) -> Result<Option<Self>> {
+        // Other sizes can contain a coedit hash or an unknown record layout.
+        if !matches!(data.len(), 42 | 62) {
+            return Ok(None);
+        }
+        let mut reader = Reader::new(data, "shape image fill");
+        let fill_mode = reader.read_u8("image fill mode")?;
+        let media_bind_id = reader.read_i32("image fill media ID")?;
+        let stretch_offsets = PaintFloat32::read_array(&mut reader, "stretch offset")?;
+        let tiling_offsets = PaintFloat32::read_array(&mut reader, "tiling offset")?;
+        let tiling_scales = PaintFloat32::read_array(&mut reader, "tiling scale")?;
+        let transparency = PaintFloat32::read(&mut reader, "fill transparency")?;
+        let rotatable_byte = reader.read_u8("fill rotatable")?;
+        let nine_patch = if format_version >= 28 {
+            let mut coordinates = [0; 4];
+            for coordinate in &mut coordinates {
+                *coordinate = reader.read_i32("nine-patch coordinate")?;
+            }
+            Some(NinePatchSource {
+                coordinates,
+                width: reader.read_i32("nine-patch width")?,
+            })
+        } else {
+            None
+        };
+        let trailing_data = reader
+            .read_bytes(reader.remaining(), "image fill trailing data")?
+            .to_vec();
+        Ok(Some(Self {
+            fill_mode,
+            media_bind_id,
+            stretch_offsets,
+            tiling_offsets,
+            tiling_scales,
+            transparency,
+            rotatable_byte,
+            nine_patch,
+            trailing_data,
+        }))
+    }
+}
+
 /// Saved source data independent of the renderer's supported paint projection.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -134,6 +218,7 @@ impl PatternPaintSource {
 pub enum ShapePaintSource {
     Color(ColorPaintSource),
     Pattern(PatternPaintSource),
+    Image(ImagePaintSource),
     /// A noncanonical record whose legacy paint projection would drop bytes.
     Opaque {
         data: Vec<u8>,

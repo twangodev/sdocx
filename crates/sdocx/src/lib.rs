@@ -108,7 +108,8 @@ pub use render::{
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use shape::{NativeLine, NativeShape, ShapePaint, ShapeStyle};
 pub use shape_paint_source::{
-    ColorPaintSource, GradientStopSource, PaintFloat32, PatternPaintSource, ShapePaintSource,
+    ColorPaintSource, GradientStopSource, ImagePaintSource, NinePatchSource, PaintFloat32,
+    PatternPaintSource, ShapePaintSource,
 };
 pub use storage::{
     PageManifest, PageManifestEntry, ParsedDocument, StoredArchivePage, StoredLayer, StoredObject,

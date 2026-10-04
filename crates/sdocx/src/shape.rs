@@ -2,7 +2,9 @@ use crate::binary::Reader;
 use crate::frame::{Frame, Mask};
 use crate::note::parse_shape_text;
 use crate::object::read_bbox;
-use crate::shape_paint_source::{ColorPaintSource, PatternPaintSource, ShapePaintSource};
+use crate::shape_paint_source::{
+    ColorPaintSource, ImagePaintSource, PatternPaintSource, ShapePaintSource,
+};
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
 /// Paint supported by the shape renderer, or an uninterpreted native effect.
@@ -237,11 +239,16 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
                 fill_source = source;
                 paint
             } else {
-                if kind == 3 {
-                    fill_source = PatternPaintSource::read(data)
+                fill_source = match kind {
+                    2 => ImagePaintSource::read(data, metadata.format_version)
                         .ok()
-                        .map(ShapePaintSource::Pattern);
-                }
+                        .flatten()
+                        .map(ShapePaintSource::Image),
+                    3 => PatternPaintSource::read(data)
+                        .ok()
+                        .map(ShapePaintSource::Pattern),
+                    _ => None,
+                };
                 unsupported.push("non-color shape fill");
                 ShapePaint::Unsupported {
                     kind,

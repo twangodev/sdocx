@@ -223,3 +223,96 @@ fn valid_and_short_patterns_keep_the_same_unsupported_render_projection() {
         }
     }
 }
+
+fn image_effect() -> Vec<u8> {
+    let mut bytes = vec![255];
+    bytes.extend(i32::MIN.to_le_bytes());
+    for bits in [
+        0x80000000_u32,
+        0x7fc12345,
+        0x7f800000,
+        0xff800000,
+        0x3f800000,
+        0xbf800000,
+        0x00000001,
+        0x7f7fffff,
+        0x7fc54321,
+    ] {
+        bytes.extend(bits.to_le_bytes());
+    }
+    bytes.push(7);
+    for value in [-5_i32, 6, -7, 8, -9] {
+        bytes.extend(value.to_le_bytes());
+    }
+    bytes
+}
+
+#[test]
+fn image_source_uses_saved_base_version_and_retains_raw_bits_and_suffix_authority() {
+    let effect = image_effect();
+    for version in [27, 28, 5500, u32::MAX] {
+        let shape = parsed_shape(&shape_archive_with_effect(version, 2, &effect, &[], None));
+        assert_eq!(shape.metadata.format_version, version);
+        assert!(
+            matches!(&shape.fill, ShapePaint::Unsupported { kind: 2, data } if data == &effect)
+        );
+        let Some(ShapePaintSource::Image(source)) = &shape.fill_source else {
+            panic!("expected image source")
+        };
+        assert_eq!(source.fill_mode, 255);
+        assert_eq!(source.media_bind_id, i32::MIN);
+        assert_eq!(
+            source.stretch_offsets.map(|value| value.bits()),
+            [0x80000000, 0x7fc12345, 0x7f800000, 0xff800000]
+        );
+        assert_eq!(
+            source.tiling_offsets.map(|value| value.bits()),
+            [0x3f800000, 0xbf800000]
+        );
+        assert_eq!(
+            source.tiling_scales.map(|value| value.bits()),
+            [0x00000001, 0x7f7fffff]
+        );
+        assert_eq!(source.transparency.bits(), 0x7fc54321);
+        assert_eq!(source.rotatable_byte, 7);
+        assert!(source.rotatable());
+        if version < 28 {
+            assert!(source.nine_patch.is_none());
+            assert_eq!(source.trailing_data, effect[42..]);
+        } else {
+            let nine_patch = source.nine_patch.as_ref().unwrap();
+            assert_eq!(nine_patch.coordinates, [-5, 6, -7, 8]);
+            assert_eq!(nine_patch.width, -9);
+            assert!(source.trailing_data.is_empty());
+        }
+        #[cfg(feature = "serde")]
+        {
+            let encoded = serde_json::to_string(&shape).unwrap();
+            let restored: NativeShape = serde_json::from_str(&encoded).unwrap();
+            assert_eq!(restored.fill_source, shape.fill_source);
+        }
+    }
+    let old = parsed_shape(&shape_archive_with_effect(27, 2, &effect[..42], &[], None));
+    assert!(matches!(old.fill_source, Some(ShapePaintSource::Image(_))));
+}
+
+#[test]
+fn truncated_unknown_and_coedit_sized_image_records_remain_opaque_and_bounded() {
+    let original = image_effect();
+    for length in [0, 41, 42, 43, 61, 63, 122] {
+        let mut effect = original.clone();
+        effect.resize(length, 0xa5);
+        let archive = shape_archive_with_effect(28, 2, &effect, &[0; 32], None);
+        let parsed = sdocx::parse_bytes_detailed(&archive).unwrap();
+        assert!(parsed.report.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == sdocx::DiagnosticCode::UnsupportedShapeFeature
+        }));
+        let PageElement::Shape(shape) = parsed.document.pages[0].elements().next().unwrap() else {
+            panic!("expected shape")
+        };
+        assert!(
+            matches!(&shape.fill, ShapePaint::Unsupported { kind: 2, data } if data == &effect)
+        );
+        assert!(shape.fill_source.is_none());
+    }
+}
