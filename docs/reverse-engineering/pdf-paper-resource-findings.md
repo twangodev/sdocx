@@ -93,6 +93,89 @@ rectangle at `+0x18`, and password string at `+0x28`.
 The path and password are runtime record members, not extra fields beside the
 saved page rectangle.
 
+## Replacing source bytes and retargeting placements
+
+Two native operations have different identity contracts. WDoc
+`WNote::UpdatePDFFile`, `0x9e87c`, delegates to the page manager. It selects
+pages whose PDF records match the old binding ID, then calls Model `BindPDF`
+once for the replacement path (`0xb828c`/`0xb82d0`). With no matching pages it
+returns true without binding that source. `BindPDF`, Model `0x28d964`, can
+allocate a new ID or reuse a content-hash match through `Bind(path)`
+(`0x28daf0`, `0x28c760`–`0x28c79c`); its returned ID is not necessarily new.
+
+WPageImpl's update changes matching records' IDs at `0xcea78`, then releases
+the old binding, binds the returned ID and resolves its path
+(`0xcea90`/`0xceaa4`/`0xceabc`). Those per-record return values are ignored.
+The direct body retains list order/count, source page indices, rectangles and
+passwords; it does not recreate the PDF list, query the replacement's page
+count or recompute placements. A retained index is not proof that the new PDF
+contains that page. History and outer errors do not establish a transactional
+update. The [record lifecycle](pdf-paper-storage-findings.md#runtime-pdf-data-is-richer-than-the-saved-record)
+remains separate from this binding change.
+
+`WNote::ReplacePDFFile`, `0x9e93c`, instead calls Model `ReplacePDF` at
+`0x9e9a8`; it does not invoke that page-update route. Its supplied bool is
+unused in this facade, which returns true for a nonnegative Model result.
+Model `0x28e1d4` checks a supplied path exists and finds metadata by numeric
+ID. On its no-conflict successful path, it retains the metadata pointer,
+numeric ID, managed filename and live binding count while installing supplied
+managed bytes, rekeying the map from the supplied content hash and recording
+the target size
+(`0x28e6a4`–`0x28e730`). BindFile checks copy/rename success for distinct paths;
+this does not compare original and replacement bytes or validate PDF content.
+
+Direct replacement is not an atomic swap. It detaches metadata, erases the old
+map entry and unlinks the existing managed file (`0x28e474`–`0x28e480`)
+before hashing or installing the new source. Later unlink/hash/copy failure
+can return failure without a visible old-file/map rollback in this body. An
+equal hash already in the map takes the conflict/error/`ForcedFC` route
+(`0x28e5a0`–`0x28e630`), rather than successful deduplication to another ID.
+This is static failure ordering, not an executed replacement loss.
+
+There is a concrete source-rewrite caller. Composer JNI
+`Native_updateAttachedFile`, `0x3193c8`, reaches
+`NotePDFManager::UpdateAttachedFile`, `0x36c390`. After gathering existing PDF
+bindings it checks `HasChangedFormField`, then calls RebindPdf only if true
+(`0x36c40c`/`0x36c418`). RebindPdf generates a temporary path, checks extractor
+SaveFile with `(temp,true,false,false,true)`, and checks
+`ReplacePDFFile(oldId,temp,true)` (`0x371424`/`0x37144c`/`0x371464`). The
+selected Pdfium vtable resolves those slots to `IsFormDirty`, PDF `0xa5cb0`,
+and `SaveFile`, `0xa50f8`; SaveFile returns true only for engine status zero.
+This serializes extractor state before replacing content behind the old ID;
+it does not select the placement-retargeting operation above.
+
+Java `SpenNotePdfManager.java:1251–1256` exposes the native bool.
+`PdfManager.java:551–552` implements a void PDFDataSource callback that only
+logs it, registered by `ModelManager.java:114`.
+`NotesDocument.java:612–615` calls that callback immediately before
+`saveCacheDocument()` in writing mode **100 (PDF Writing)**. A returned false
+native result is not propagated through this void callback to that cache save.
+This is a specific branch, not every ordinary note save; the inspected
+loop does not undo earlier successful replacements when a later one fails.
+
+The public four-argument media Save overload sets its private trailing flag
+false (`0x290f04`), reaching `RefreshAllPdfFileHash` before saving entries
+(`0x29045c`). Refresh processes map keys beginning `pdf_`, including placeholder
+keys allocated by BindPDF, and hashes current managed root/filename
+(`0x28dfc0`/`0x28dfcc`). It does not restore original imported bytes or change
+page indices/placements. Moving metadata to an absent new hash key retains
+its ID, but equal-hash collision has a separate static boundary: unique-map
+insertion returns without replacing an existing key (`0x2983d0`–`0x2983f8`),
+then refresh erases its old node without checking insertion success
+(`0x28e094`/`0x28e0b0`). Unconditional ID retention across collisions is not
+established; no collision execution is claimed here.
+
+For entries admitted by the existing
+[media save gates](vector-retention-findings.md#native-opaque-records-wrappers-and-resources),
+saveItem writes the current ID, filename and map key, and its checked archive
+add selects that managed filename (`0x290078`–`0x290084`). It does not select an
+original import backup or the updater's temporary path. A stable binding can
+therefore name changed PDF bytes. For Rust source retention, binding identity,
+current managed content and retained original source bytes are separate
+facts. These source-only calls do not establish a complete replacement/archive
+round trip or the [vector transport guarantees](pdf-paper-export-findings.md)
+of either exporter.
+
 ## Presence, availability and successful opening
 
 These are three different native questions:
