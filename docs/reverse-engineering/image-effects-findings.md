@@ -131,6 +131,10 @@ a null backup value (`0x1209dc`–`0x1209f8`); it does not establish numeric
 field-19 restoration. These XML consumers establish synchronization source
 roles, not rendered appearance or clipping behavior.
 
+[Coedit resource attachment](coedit-resource-findings.md) separately traces
+current image IDs, pending file availability and received-content callbacks;
+this file-availability route is separate from the saved geometry XML contract.
+
 Current Rust `image.rs:227`–`229` skips the sized field-19 path and 32 rectangle
 bytes; its live crop/original projection does not retain the saved baseline.
 The [original-byte carrier](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model) can preserve those

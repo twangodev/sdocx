@@ -23,6 +23,7 @@ are more stable evidence than class-field names.
 | --- | --- |
 | `libSPenWDoc.so` | WDoc archive/page loading, `pageIdInfo.dat`, page signatures, quick-save/cache sidecars. |
 | `libSPenModel.so` | Generic object frames, object type handlers, packed stroke channels, end-tag parser and encryption appendix. |
+| `libSamsungNotesCoedit.so`, `libSPenWordDocCoedit.so` | Reached download completion, current-note content attachment and pending object resource callbacks. |
 | `libSPenComposer.so` | Page capture sequence, base/top/masking passes, object clones and native PDF stroke rasterization. |
 | `libSPenDrawing.so` | Object visibility, common-alpha drawing options and stroke pen configuration. |
 | `libSPenPdf.so` | Native PDF image insertion and pixel-alpha conversion. |
@@ -54,6 +55,12 @@ mapping, which does not establish reconstruction of original shaped clusters.
 [Physical Voice findings](voice-source-findings.md) trace reached page/span
 imports, Model own-frame save dispatch and audio/thumbnail bindings separately
 from note VoiceData actions and conditional coedit reference removal.
+[Coedit resource findings](coedit-resource-findings.md) close app completion
+through wrapper slot 56 (`0x183960`, relocation `0x24af80`) onto native note
+attachment, separately from XML namespace creation and archive payload gates.
+The pinned APK's ARM64 `libSamsungNotesCoedit.so` is 2,474,392 bytes, SHA-256
+`ca947736284c75035a4a89e4d654a604b42e2ff6947b0b13317824bbadaa9e60`;
+its exact member comparison and the other library identities are recorded there.
 
 Replay-order assignment and capture composition were traced through these
 ARM64 entry points:

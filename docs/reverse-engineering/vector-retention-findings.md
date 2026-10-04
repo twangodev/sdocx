@@ -34,6 +34,10 @@ images remain images; retaining those bytes does not introduce rasterization.
 Reconstructed vector pen geometry can preserve a drawable ink representation
 without being a copy of an original saved outline.
 
+[Coedit resource findings](coedit-resource-findings.md) distinguish XML-created
+local IDs, live resource references, received managed bytes and ordinary-save
+payload admission. Attachment callbacks do not certify original archive identity.
+
 ## Original page bytes are external to the parsed model
 
 [`StoredObject`](../../crates/sdocx/src/storage.rs) stores `payload_offset` and
