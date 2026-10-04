@@ -23,13 +23,21 @@ const PROTECTED_DOCUMENT_MARKER: &[u8] = b"Document for S-Pen SDK";
 
 /// Parse a `.sdocx` ZIP archive from a reader.
 pub fn parse_from_reader<R: Read + Seek>(reader: R, options: &ParseOptions) -> Result<Document> {
-    parse_detailed_from_reader(reader, options).map(ParsedDocument::into_document)
+    parse_archive_from_reader(reader, options, false).map(ParsedDocument::into_document)
 }
 
 /// Parse a `.sdocx` archive while retaining its physical page structure.
 pub fn parse_detailed_from_reader<R: Read + Seek>(
+    reader: R,
+    options: &ParseOptions,
+) -> Result<ParsedDocument> {
+    parse_archive_from_reader(reader, options, options.retain_page_sources)
+}
+
+fn parse_archive_from_reader<R: Read + Seek>(
     mut reader: R,
     options: &ParseOptions,
+    retain_page_sources: bool,
 ) -> Result<ParsedDocument> {
     let protected_marker = is_protected_document(&mut reader)?;
     let tail = ArchiveTail::read(&mut reader)?;
@@ -209,6 +217,7 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
             stored: StoredArchivePage {
                 archive_entry: name.clone(),
                 page: stored_page,
+                source_bytes: retain_page_sources.then_some(buf),
             },
         });
     }

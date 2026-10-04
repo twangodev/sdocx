@@ -59,6 +59,13 @@ pub struct StoredArchivePage {
     pub archive_entry: String,
     /// Parsed physical page structure.
     pub page: StoredPage,
+    /// Original page bytes when requested. Cloning copies this buffer;
+    /// editing the public source or indices can invalidate their association.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub source_bytes: Option<Vec<u8>>,
 }
 
 /// Parsed contents of `pageIdInfo.dat`.

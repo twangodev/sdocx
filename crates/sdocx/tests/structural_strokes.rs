@@ -676,19 +676,39 @@ fn source_stroke_inspection_keeps_hidden_and_nested_identities() {
         0,
         &[],
     ));
-    let parsed = sdocx::parse_bytes_detailed(&bytes).unwrap();
-    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(&bytes)).unwrap();
-    let mut raw = Vec::new();
-    std::io::Read::read_to_end(&mut zip.by_name("page.page").unwrap(), &mut raw).unwrap();
-    let records = &parsed.stored_pages[0].page.layers.layers[0].objects;
+    let default = sdocx::parse_bytes_detailed(&bytes).unwrap();
+    assert!(default.stored_pages[0].source_bytes.is_none());
+    #[cfg(feature = "serde")]
+    assert!(
+        serde_json::to_value(&default.stored_pages[0])
+            .unwrap()
+            .get("source_bytes")
+            .is_none()
+    );
+    let parsed = sdocx::parse_bytes_detailed_with_options(
+        &bytes,
+        &ParseOptions {
+            retain_page_sources: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    drop(bytes);
+    let stored = &parsed.stored_pages[0];
+    let raw = stored.source_bytes.as_deref().unwrap();
+    let records = &stored.page.layers.layers[0].objects;
+    assert_eq!(records[0].payload(raw).unwrap(), [1, 2, 3]);
+    assert_eq!(records[1].payload(raw).unwrap(), hidden);
+    assert!(!records[1].base_metadata(raw).unwrap().visible);
+    assert_eq!(records[2].children[0].payload(raw).unwrap(), visible);
     let limits = ParseLimits::default();
-    assert!(records[0].decode_stroke(&raw, &limits).is_err());
-    let hidden_stroke = records[1].decode_stroke(&raw, &limits).unwrap();
+    assert!(records[0].decode_stroke(raw, &limits).is_err());
+    let hidden_stroke = records[1].decode_stroke(raw, &limits).unwrap();
     let child = &records[2].children[0];
     assert_ne!(records[1].payload_offset, child.payload_offset);
     assert_eq!(hidden_stroke.points.len(), 3);
     assert_eq!(
-        child.decode_stroke(&raw, &limits).unwrap().timestamps,
+        child.decode_stroke(raw, &limits).unwrap().timestamps,
         parsed.document.pages[0]
             .strokes()
             .next()
@@ -700,4 +720,21 @@ fn source_stroke_inspection_keeps_hidden_and_nested_identities() {
             .decode_stroke(&raw[..child.payload_offset], &limits)
             .is_err()
     );
+    #[cfg(feature = "serde")]
+    {
+        let mut json = serde_json::to_value(stored).unwrap();
+        let restored: sdocx::StoredArchivePage = serde_json::from_value(json.clone()).unwrap();
+        assert_eq!(restored.source_bytes.as_deref(), Some(raw));
+        let restored_child = &restored.page.layers.layers[0].objects[2].children[0];
+        assert_eq!(
+            restored_child
+                .decode_stroke(restored.source_bytes.as_deref().unwrap(), &limits)
+                .unwrap()
+                .timestamps,
+            child.decode_stroke(raw, &limits).unwrap().timestamps,
+        );
+        json.as_object_mut().unwrap().remove("source_bytes");
+        let restored: sdocx::StoredArchivePage = serde_json::from_value(json).unwrap();
+        assert!(restored.source_bytes.is_none());
+    }
 }

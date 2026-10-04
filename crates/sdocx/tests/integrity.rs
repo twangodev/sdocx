@@ -415,6 +415,61 @@ fn duplicate_manifest_ids_pair_with_physical_pages_in_the_existing_order() {
 }
 
 #[test]
+fn retained_page_sources_follow_manifest_order_and_duplicate_ids() {
+    let make_page =
+        |payload: &[u8]| support::page(&[vec![support::object(250, payload, &[])]], 0, &[]);
+    let first = make_page(b"first");
+    let second = make_page(b"second");
+    let mut other = make_page(b"other");
+    let encoded = utf16("page");
+    let offset = other
+        .windows(encoded.len())
+        .position(|bytes| bytes == encoded)
+        .unwrap();
+    other[offset..offset + encoded.len()].copy_from_slice(&utf16("next"));
+    let note = note();
+    let manifest = manifest(
+        &note,
+        &[("next", [0; 32]), ("page", [0; 32]), ("page", [0; 32])],
+    );
+    let bytes = archive(&[
+        ("z.page", &second),
+        ("note.note", &note),
+        ("m.page", &other),
+        ("a.page", &first),
+        ("pageIdInfo.dat", &manifest),
+    ]);
+    let parsed = sdocx::parse_bytes_detailed_with_options(
+        &bytes,
+        &ParseOptions {
+            retain_page_sources: true,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    drop(bytes);
+    assert_eq!(parsed.stored_pages.len(), 3);
+    for (stored, (name, id, payload)) in parsed.stored_pages.iter().zip([
+        ("m.page", "next", b"other".as_slice()),
+        ("a.page", "page", b"first".as_slice()),
+        ("z.page", "page", b"second".as_slice()),
+    ]) {
+        assert_eq!(stored.archive_entry, name);
+        assert_eq!(stored.page.header.uuid, id);
+        assert_eq!(
+            stored.page.layers.layers[0].objects[0]
+                .payload(stored.source_bytes.as_deref().unwrap())
+                .unwrap(),
+            payload
+        );
+        assert!(parsed.report.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == DiagnosticCode::PageIdentifierMismatch
+                && diagnostic.archive_entry.as_deref() == Some(name)
+        }));
+    }
+}
+
+#[test]
 fn integrity_checks_preserve_configured_metadata_limits() {
     let mut options = ParseOptions {
         verify_integrity: true,

@@ -188,6 +188,8 @@ impl Default for ParseLimits {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ParseOptions {
     pub verify_integrity: bool,
+    /// Retain original page bytes in detailed results; ordinary parse ignores this option.
+    pub retain_page_sources: bool,
     /// Resource limits for untrusted input.
     pub limits: ParseLimits,
 }

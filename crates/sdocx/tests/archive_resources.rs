@@ -185,6 +185,7 @@ fn retained_opaque_entries_obey_existing_archive_size_limits() {
     let opaque = vec![0_u8; 4096];
     let bytes = archive(&[("media/large.pdf", &opaque)]);
     let options = ParseOptions {
+        retain_page_sources: true,
         limits: ParseLimits {
             max_entry_size: 4095,
             ..ParseLimits::default()
@@ -192,7 +193,7 @@ fn retained_opaque_entries_obey_existing_archive_size_limits() {
         ..ParseOptions::default()
     };
     assert!(matches!(
-        sdocx::parse_bytes_with_options(&bytes, &options),
+        sdocx::parse_bytes_detailed_with_options(&bytes, &options),
         Err(Error::LimitExceeded {
             resource: "archive entry size",
             actual: 4096,
@@ -202,6 +203,7 @@ fn retained_opaque_entries_obey_existing_archive_size_limits() {
     let archive = zip::ZipArchive::new(Cursor::new(&bytes)).unwrap();
     let total = u64::try_from(archive.decompressed_size().unwrap()).unwrap();
     let options = ParseOptions {
+        retain_page_sources: true,
         limits: ParseLimits {
             max_total_uncompressed_size: total - 1,
             ..ParseLimits::default()
@@ -209,7 +211,7 @@ fn retained_opaque_entries_obey_existing_archive_size_limits() {
         ..ParseOptions::default()
     };
     assert!(matches!(
-        sdocx::parse_bytes_with_options(&bytes, &options),
+        sdocx::parse_bytes_detailed_with_options(&bytes, &options),
         Err(Error::LimitExceeded {
             resource: "total uncompressed size",
             ..
