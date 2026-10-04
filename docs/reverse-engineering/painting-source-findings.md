@@ -599,6 +599,16 @@ gated by action member 275 being zero (`0x75dfc–0x75e1c`), and saves
 Replay supplies false to its helper's XFermode-8 selector; the live path does
 not establish saved replay alpha-lock parity.
 
+The saved stroke flag is distinct from that current live layer state:
+Model `ObjectStroke::IsAlphaLock`, `0x2e25a4`, reads implementation byte 360.
+The inspected Compat `DrawObjectStroke`/`SetPenAttribute` routes
+(`0x64a84`/`0x651c0`) and Drawing `drawObjectStroke` (`0x81a20`) establish no
+consumer of that saved flag. Drawing `redrawIPen` (`0x82abc–0x82b8c`) forwards
+original stroke/list pointers to indirect pen callbacks, so this boundary does
+not establish that every pen ignores the flag. Saved alpha-lock mask ownership
+and an SVG clipping rule remain unestablished; original stroke flags, order and
+source-layer IDs remain separate preservation inputs.
+
 The [ordinary Drawing queue](brush-record-findings.md#sync-grouping-and-ordinary-drawing-have-distinct-controls)
 has a concrete multi-stroke consumer. Its drawable slot 48 binds WaterColor
 V1/V2 ObjectList redraw through relocations `0x760a8/0x761b8`, entering
