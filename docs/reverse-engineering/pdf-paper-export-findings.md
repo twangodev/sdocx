@@ -440,11 +440,35 @@ dictionaries was found in the inspected Import/Open bodies.
 
 After page import, ranged Export walks this list and passes each node's font
 to `FPDFText_TrimFontData` (`0x7cc10–0x7cc24`), ignoring its result. The pinned
-PdfiumB trimmer (`0x40bc40`) requires program data and a nonempty usage set. Recorded
-u32 usage values seed HarfBuzz's glyph set; explicit input flags enable
-`desubroutinize` and `retain_gids`. The custom `SetCharcodesAndPositions`
-route records supplied values (`0x58b650–0x58b684`); this is not proof that
-every value is a glyph identity or every text path records all required glyphs.
+PdfiumB trimmer (`0x40bc40`) requires program data and a nonempty usage set.
+Those values seed HarfBuzz's glyph set; explicit input flags enable
+`desubroutinize` and `retain_gids`.
+
+For ordinary shaped text, the [glyph-owner producer](text-draw-identity-findings.md#utf-16-entry-ownership)
+and Text's retained-run transfer (`0x67330–0x673b0`, `0x67f84–0x67fb4`) carry glyph
+IDs unchanged into `DrawnText`. Both modern and legacy PDF writers forward
+that code vector to the custom `SetCharcodesAndPositions`, which inserts each
+u32 unchanged into the font's usage set (`0x58b650–0x58b684`). This establishes
+glyph-ID-valued subset inputs for those ordinary paths; it does not establish
+the value kind of every OCR, bitmap or public text caller, correct face selection
+or recording of every required glyph.
+
+The inspected `GetFont` loader supplies type 2 and CID mode 1, creating a
+Type0 `Identity-H` font with a `CIDFontType2` descendant (`0x58b8ec–0x58b900`).
+For its embedded face with no `CIDToGID` stream, the normal identity branch
+uses the codeword's low 16 bits as the glyph ID (`0x40e840–0x40e980`). Identity
+encoding emits two big-endian bytes (`0x40fed4–0x40fefc`). These conditions
+connect ordinary drawing codes to glyphs; they do not establish that arbitrary
+imported font encodings or supplied u32 values use the same mapping.
+
+Generated `ToUnicode` has a separate origin: the loader enumerates the font
+charmap's character/glyph pairs, keys them by glyph ID (`0x58ba64–0x58ba78`),
+and installs the resulting CMap (`0x58cb20`). It receives no original shaping
+clusters. Thus retained glyph IDs and subset seeds do not prove reconstruction
+of ligatures, contextual alternates or multi-character source sequences.
+The public Unicode `SetText` route separately maps Unicode to font codewords
+before encoding them (`0x58b344–0x58b38c`). Existing source-paper `ToUnicode`
+and encodings follow resource copying, rather than this runtime font creation.
 
 The subset update starts from the supplied font's dictionary and requires
 exactly one `DescendantFonts` member, its `FontDescriptor` and an existing
