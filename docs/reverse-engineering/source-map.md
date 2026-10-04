@@ -36,6 +36,7 @@ are more stable evidence than class-field names.
 | `libSPenInkPen.so` | [Selected V4 saved curve redraw](inkpen-v4-findings.md), pressure/movement/time width state and derived RTV1 point buffer. |
 | `libSPenInkPen2.so` | [Selected V9 saved redraw](inkpen2-saved-findings.md), timestamp/history radius, incoming state and derived RTV3 geometry; separate from live filtering. |
 | `libSPenMontblancCalligraphyPen.so` | [Selected V1 saved geometry](calligraphy-source-findings.md), orientation/extent consumers, reused nib state and derived mesh buffers. |
+| `libSPenObliquePen.so` | [Selected V4 saved geometry](oblique-v4-source-findings.md), integer size/runtime diagonal coefficient, separate fixed-width bounds and terminal XY consumers. |
 | `libSPenRenderer.so` | Blend descriptors, native-to-OpenGL enum tables and state activation. |
 | `libSPenView.so`, `libSPenBase.so` | Active color-theme selection and alpha-preserving RGB conversion. |
 | `libSPenObjectControl.so` | [Reached lasso image editing](image-edit-source-findings.md), conditional original capture and current bitmap-source replacement; View supplies child touch dispatch. |

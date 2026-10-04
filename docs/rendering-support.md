@@ -105,6 +105,9 @@ also uses the generic approximation, separately from native live filtering.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and reused state; this profile
 also uses the generic approximation in Rust.
+The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
+establishes an integer-size diagonal core and separate fixed-width bounds;
+Oblique also uses the generic pressure approximation in Rust.
 
 ## Text and embedded layout
 

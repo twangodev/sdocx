@@ -72,6 +72,8 @@ decoding, rendering and evidence boundaries across object types and features.
   time/history radius, curve sampling and derived cache versus retained channels.
 - [`calligraphy-source-findings.md`](calligraphy-source-findings.md) — selected
   V1 saved orientation, reused nib state, fixed-width extent and derived mesh.
+- [`oblique-v4-source-findings.md`](oblique-v4-source-findings.md) — selected
+  saved diagonal core, integer size, fixed-width bounds and terminal source roles.
 
 - [`file-format.md`](file-format.md) — authoritative archive and binary-format
   map: `note.note`, pages, layers, objects, frames, strokes, media, hashes and
