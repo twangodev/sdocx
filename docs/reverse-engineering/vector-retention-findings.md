@@ -210,6 +210,90 @@ source. A preservation comparison must associate the selected note and page
 manifest with its resource namespace and payloads. These static traces establish
 no executed recovered-note round trip, corpus mismatch or source loss.
 
+### Native opening normalizes the requested fixed axis
+
+The main composer passes `UUIDUtils.isCoeditUuid(str)` to getOpenParam
+(`DocumentServiceManager.java:234–242`). BaseSubManager returns 2160 for that
+true input, otherwise mScreenWidth initialized from SpenDocumentDisplayUtils
+(`183`, `235–240`). Its getScreenWidth returns the screen's short side: minimum
+main-screen Rect width/height, or minimum real DisplayMetrics widthPixels/
+heightPixels (`115–131`). This is not composer viewport width or a physical/DPI
+unit promise; null context or some unavailable-display branches can yield zero.
+Activity-null getOpenParam returns builder defaults before this policy
+(`ServiceContractImpl.java:477–506`).
+
+The existing-file/snapshot repository branch passes configured page width and
+integer open mode to opening (`WordDocRepository.java:111–124`). Builder
+orientation, derived height and PageMode are separate absent-file creation
+arguments; that creation branch selects height only for exact LANDSCAPE, not
+LANDSCAPE_NEW. The existing route reaches SDK constructLoad through
+DocumentFileManager `207–211`, file/a.java `30–35` and SpenWordDocument `269–278`.
+SDK `SpenWNote.java:951` names its integer pageFixedAxisSize. Native ConstructLoad
+requires a signed request >31 and stores it at noteImpl+128
+(`0x904e4–0x904e8`, `0x90674`). These traced callers do not establish every open mode.
+
+Saved note orientation governs the configured load chain. ApplyEndTagData
+stores EndTag GetOrientation at noteImpl+188 (`0xa1d84`); the constructor
+registers its captured-note requester (`0xa0770–0xa0788`). Relocation `0x1035b0`
+points to callable `0xa7548`, which reads that member; Model GetNoteOrientation
+uses it (`0x2ab8cc`). The builder's requested orientation is not substituted here.
+Note-level scale uses EndTag reference width as i32, but reference height as f32
+(`0xa1da8–0xa1dcc`, `0xa1d8c`). FillEndTagData copies width and converts signed
+height to f32 (`0xa3c6c–0xa3c80`); page-header width/height instead enter Model as
+saved signed integers (`0xd2c90/0xd2cbc`). These are distinct precision contracts.
+
+After fixed/flexible header data and ReadHash, LoadHeader_Scale stores the
+requested axis at pageImpl+180 and divides requested/saved dimensions in f32
+(`0xd2914`, `0xd379c`, `0xd37c4/0xd3808`). Orientation exactly 1 fixes requested
+height and truncates scaled width with FCVTZS (`0xd37f0`); other values fix
+requested width and normally truncate scaled height (`0xd384c`). One explicit
+exception is request **2256**, which uses FCVTAS nearest ties-away for height
+(`0xd3844`); this is separate from the upstream **2160** policy. Exact f32 scale
+1 skips transformations but still reaches Model OnLoadScale (`0xd3a10`).
+Nonunit scaling also reaches PDF record rectangles (`0xd38f0`), custom SetRect
+(`0xd397c`) and type-1 StickyNote collapse rectangles (`0xd39b8`). Existing
+[leaf coordinate findings](object-transform-findings.md#double-wire-coordinates-do-not-imply-double-editing-geometry)
+cover object loading; this top-level policy does not establish another geometry algorithm.
+
+Scaling has real local dirty producers. Unequal CustomObject SetRect calls its
+implementation, writes changed bytes +152/+153 and sends callback 3
+(`0x85f50–0x85f60`, `0x8958c–0x89590`). WPage IsChanged reaches their getter
+(`0xc75a8`, `0xd1428`, `0x868a4`). Unequal StickyNote collapse updates also call
+SetCustomData and callback 4 (`0x8bb90/0x8bbc4`). Nevertheless, successful public
+WPage LoadHeader calls ClearPageChangedFlagAll **after** scaling (`0xc7c3c`):
+Model/page flags and custom changed bytes are cleared (`0xcffc4–0xcffd8`,
+`0xd0068`). Loaded becomes false, HeaderLoaded true, and layer changed flags
+are cleared (`0xc7c48/0xc7c54/0xc7c5c`). This does not reverse normalized geometry.
+It is a successful enclosing-route fact, not a guarantee for callbacks, failed
+header loading or direct scale-helper calls.
+
+Actual WPageManager loadPage immediately follows successful LoadHeader with
+LoadObject (`0xb1e48/0xb1e5c/0xb1e70`); not every manager-loaded page remains lazy.
+LoadObject snapshots current IsChanged before its loaded shortcut and forwards
+that value to LoadLayer (`0xd5158–0xd5168`, `0xd54d4/0xd54e0`). Successful layer
+loading with false preservation clears page/custom and layer/object-manager
+flags (`0xd0824–0xd0830`, `0x346c20/0x346c48/0x346c58`); child loading receives
+current orientation and requested axis (`0xd0874–0xd0894`). Separately, successful
+ConstructImpl sets note dirty flags for recovery flag+793 or clears them and
+sets cache state 2 otherwise (`0xa3944`, `0xa39a0/0xa39a4`). Its producer belongs
+to the [recovery-source contract](#native-note-opening-and-recovery-sources),
+not the per-page save predicate.
+
+The [page-save contract](#native-page-files-during-save) selects live writing for
+changed/corrupt/missing-cache pages. Loaded state alone does not select it:
+unchanged current cache can remain selected despite normalized runtime geometry,
+and pending snapshots can replace those cache bytes. Current working cache is
+not necessarily the original supplied page or ZIP. When live writing is reached,
+Save loads objects if needed and emits current GetWidth/GetHeight
+(`0xd56dc–0xd56f0`, `0xd5950–0xd5988`); after successful layer writes it resets
+magnification to 1 (`0xd6c58`). Existing opaque-object writer boundaries still apply.
+
+Rust Page construction copies stored header width/height directly
+([page.rs](../../crates/sdocx/src/page.rs)); it receives no app screen-axis input.
+Saved units, caller-owned original bytes and native normalized runtime state are
+separate preservation authorities. These static paths establish neither an
+executed native save nor a reason to silently normalize Rust vectors to a screen.
+
 ### Native protected carriers
 
 The SDK password save route native-saves a fresh temporary plaintext file before
