@@ -10,6 +10,7 @@ archive/resource inventory identified below.
 | Source | Confirmed behavior |
 | --- | --- |
 | Decompiled `n1/h.java:536-711` | Ordered document fields, masks, collection counts and pen serialization |
+| `libSPenWDoc.so`, `WNoteSaveHandler::SaveNoteFileImpl_FlexibleData`, `0xafa9c` | Pinned writer omits flexible bits 4, 5 and 8 |
 | `libSPenWDoc.so`, `WNoteLoadHandler::loadNoteFile_FlexibleData`, `0xa9644` | Native dispatch order through bit 22 |
 | `libSPenModel.so`, `MetaData::Load`, `0x2c2338` | Application, author and geographic metadata |
 | `MetaData::m_Load_AuthorInfo`, `0x2c2b18` | Three strings followed by an image media ID; `0xffffffff` means no image |
@@ -63,11 +64,40 @@ with an image reference, and bit 3 as latitude/longitude.
 The decoder preserves scalar values rather than applying UI defaults or
 guessing meanings for text-direction/background-theme enum values.
 
-Bits 4, 5 and 8 have no confirmed payload layout. An encountered unknown bit
-stops decoding at that point, including for wider future masks. Known earlier
-fields remain available, `first_unparsed_field` identifies the boundary, and
-`trailing_data` preserves all remaining bytes. The decoder does not attempt to
-locate later fields by searching their contents.
+### Pinned behavior of bits 4, 5 and 8
+
+These bits have no recovered legacy payload schema. The pinned producer omits
+them: Model `MetaData::Save`, `0x2c2200`, emits only bits 0–3; WDoc's flexible
+writer calls it at `0xafae8`, then writes bit 6 (`0xafb08`), bit 7 (`0xafb30`)
+and bit 9 (`0xafb58`). Its parent initializes the flexible field mask to zero
+at `0xaf480` and passes that mask at `0xaf4d8`–`0xaf4e4`. The separate
+property mask is not this field mask. Java's writer independently resets its
+field mask at `n1/h.java:531` and omits masks 16, 32 and 256.
+
+The native reader silently ignores these bits without consuming bytes for
+them. Model `MetaData::Load`, `0x2c2338`, dispatches only the bit-0/1/2/3
+helpers (`0x2c2354`–`0x2c239c`). WDoc calls it at `0xa968c`, then calls the
+bit-6 template helper (`0xa96a0`, selector `0xaaa18`) and proceeds from bit 7
+at `0xa96a8` directly to bit 9 at `0xa96d4`. No bit-4/5/8 size, read, seek or
+unsupported-field rejection intervenes. If bytes were supplied for one of
+these bits before a known later field, that later field would start at the
+unchanged cursor; this conditional input was not executed or observed.
+
+The loader's integer argument is the field mask, reloaded at `0xa8b84` and
+passed at `0xa8b94`, rather than a format version. This establishes this APK's
+dispatch, not zero-length payloads across older or future formats. The
+independent Java reader remains unproved: `n1/h.java:314-320` omits its body;
+the displayed exception is a decompiler artifact. ARM64 source SHA-256 pins:
+Model `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`;
+WDoc `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6`.
+This finding is source-only, without complete load/save or appearance evidence.
+
+Rust retains its conservative boundary: an unsupported bit, including 4, 5 or
+8 or a wider future field, stops typed decoding. Known earlier fields remain
+available, `first_unparsed_field` identifies the boundary, and `trailing_data`
+preserves all remaining bytes. Native silent ignore does not supply a universal
+framing rule for those source bytes; the decoder does not search their contents
+for later fields.
 
 ## Fixed-property authority
 
