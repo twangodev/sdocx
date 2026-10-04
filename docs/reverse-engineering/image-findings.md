@@ -37,7 +37,7 @@ bytes), no fixed payload, and these flexible fields in ascending bit order:
 | 12 | Four-byte border nine-patch width. |
 | 17 | Four `f64` original-image rectangle coordinates. |
 | 18 | Four-byte original-image ID. |
-| 19 | Sized path followed by two 16-byte rectangles. |
+| 19 | Sized saved attribute path, then [saved crop and original-placement integer rectangles](image-effects-findings.md#original-placement-precision-and-coedit-span-state), 16 bytes each. |
 
 The main, border and original-image IDs have different roles. Source addresses
 and Java manifest writers are indexed in [`source-map.md`](source-map.md).

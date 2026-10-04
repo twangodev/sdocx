@@ -135,7 +135,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`object-drawing-findings.md`](object-drawing-findings.md) — common visibility,
   container traversal, replay-order assignment and layer collection boundaries.
 - [`object-order-findings.md`](object-order-findings.md) — file-order insertion,
-  nested container order, stroke-only top selection and grouping boundaries.
+  nested container order, stroke-only top selection and grouping/ungrouping
+  source identity and root-order changes.
 - [`capture-composition-findings.md`](capture-composition-findings.md) — base,
   top and masking passes, object layer filters and capture clone state.
 - [`stroke-metadata-findings.md`](stroke-metadata-findings.md) — stroke property
@@ -152,7 +153,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`marker2-sampling-findings.md`](marker2-sampling-findings.md) — quadratic
   distance approximation, stored-point replay and ordinary stroke completion.
 - [`stroke-recording-findings.md`](stroke-recording-findings.md) — event-sample
-  appends, generated straight-stroke channels and separate shape identity,
+  appends, generated straight strokes, private recognition results and separate
+  shape identity,
   repeated-coordinate taps, optional replacement and replay source reset.
 - [`motion-event-adapter-findings.md`](motion-event-adapter-findings.md) — Android
   sample channels, pointer-major history, raw coordinates and time origins.
@@ -311,7 +313,8 @@ decoding, rendering and evidence boundaries across object types and features.
   chrome/cache/minimum geometry and vector
   evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
-  formula boundaries, angle modes and connected plot references.
+  formula boundaries, angle modes, saved plot references and native resolution
+  boundaries.
 - [`plot-findings.md`](plot-findings.md) — saved expressions/styles, mathematical
   viewport and derived segment/precision/cache boundaries.
 - [`formula-findings.md`](formula-findings.md) — expression/answer records, native
