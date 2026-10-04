@@ -140,8 +140,8 @@ On the successful ordinary update path:
 
 | Composer call site | Operation | Render selection / blend |
 | --- | --- | --- |
-| `0x35b0a8` | Add background |
-| `0x35b0b8` | Add body text |
+| `0x35b0a8` | Add background | |
+| `0x35b0b8` | Add body text | |
 | `0x35b0c8` | Add ordinary page objects | Filter 1; bitmap batches use PDF Normal |
 | `0x35b0e4` | Add highlighter pass | Filter 2; bitmap batch uses PDF Darken |
 | `0x35b0f4` | Add tape pass | Filter 4; bitmap batch uses PDF Normal |
