@@ -1289,6 +1289,9 @@ pub struct PageBackground {
     pub image_mode: Option<u32>,
     pub width: Option<u32>,
     pub rotation: Option<u32>,
+    /// Complete saved field-5 color word, independent of the RGB paint projection.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub color_argb: Option<u32>,
     /// Saved field-8 records. `None` means absent; an empty list means present and empty.
     #[cfg_attr(feature = "serde", serde(default))]
     pub pdf_paper: Option<Vec<PdfPaperRecord>>,

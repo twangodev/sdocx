@@ -266,6 +266,7 @@ fn parse_page_properties(data: &[u8], stored: &StoredPage, page: &mut Page) -> R
             7 => page.background.rotation = Some(fields.read_u32("background rotation")?),
             5 => {
                 let argb = fields.read_u32("background color")?;
+                page.background.color_argb = Some(argb);
                 page.background_color = Some(Color {
                     r: (argb >> 16) as u8,
                     g: (argb >> 8) as u8,

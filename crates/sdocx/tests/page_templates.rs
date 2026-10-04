@@ -22,7 +22,7 @@ fn background_fields_and_unknown_template_identifiers_are_preserved() {
     for c in uri.encode_utf16() {
         fields.extend(c.to_le_bytes());
     }
-    for value in [42_u32, 99, 0xff123456, 1848, 90, u32::MAX] {
+    for value in [42_u32, 99, 0x40123456, 1848, 90, u32::MAX] {
         fields.extend(value.to_le_bytes());
     }
     let mask = (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 9);
@@ -37,6 +37,7 @@ fn background_fields_and_unknown_template_identifiers_are_preserved() {
     assert_eq!(background.image_mode, Some(99));
     assert_eq!(background.width, Some(1848));
     assert_eq!(background.rotation, Some(90));
+    assert_eq!(background.color_argb, Some(0x40123456));
     assert_eq!(page.template.unwrap().id, u32::MAX);
     assert_eq!(page.template.unwrap().source, PageTemplateSource::BuiltIn);
     assert_eq!(page.background_color.unwrap().r, 0x12);
@@ -209,4 +210,52 @@ fn template_ys(svg: &str, kind: &str) -> Vec<f64> {
             _ => None,
         })
         .collect()
+}
+
+#[test]
+fn saved_background_alpha_and_presence_participate_in_compatibility_page_equality() {
+    let mut document = sdocx::parse_bytes(&support::archive(&support::page(
+        &[vec![]],
+        1 << 5,
+        &0x40123456_u32.to_le_bytes(),
+    )))
+    .unwrap();
+    document.pages.push(document.pages[0].clone());
+    document.metadata.page_mode = Some(0);
+    document.metadata.flow_dimensions = Some((1080, 3054));
+    document.metadata.flow_page_padding = Some((0, 0));
+    assert!(sdocx::layout_document(&document).omitted_trailing_blank_page);
+    for saved_color in [Some(0xff123456), None] {
+        document.pages[1].background.color_argb = saved_color;
+        assert_eq!(
+            document.pages[0].background_color,
+            document.pages[1].background_color
+        );
+        let layout = sdocx::layout_document(&document);
+        assert!(!layout.omitted_trailing_blank_page);
+        assert_eq!(layout.pages.len(), 2);
+    }
+    let absent = sdocx::parse_bytes(&support::archive(&support::page(&[vec![]], 0, &[]))).unwrap();
+    let sentinel = sdocx::parse_bytes(&support::archive(&support::page(
+        &[vec![]],
+        1 << 5,
+        &u32::MAX.to_le_bytes(),
+    )))
+    .unwrap();
+    assert_eq!(absent.pages[0].background.color_argb, None);
+    assert_eq!(sentinel.pages[0].background.color_argb, Some(u32::MAX));
+    assert_eq!(
+        sentinel.pages[0].background_color,
+        Some(sdocx::Color {
+            r: 255,
+            g: 255,
+            b: 255
+        })
+    );
+    #[cfg(feature = "serde")]
+    {
+        let json = serde_json::to_string(&document).unwrap();
+        let restored: sdocx::Document = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.pages[0].background, document.pages[0].background);
+    }
 }
