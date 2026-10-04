@@ -55,6 +55,44 @@ setters/getters through `StringIDManager`; neither encodes a color. Their raw
 values, including negative sentinels, are preserved. Outline color comes from
 the type-6 `LineColorEffect`.
 
+### Legacy line pen field and string attachment
+
+On complete valid type-8 input, flexible bit 0 precedes bits 1/2/3 and
+contains an `i32` legacy pen-name ID followed by four uninterpreted bytes.
+Model `ApplyOwnBinary` (`0x38c300–0x38c334`) reads the ID, then skips those
+four bytes. Its second four-byte check can fail and still proceed
+(`0x38c328`), so this establishes the complete eight-byte carrier rather than
+strict malformed-input admission. Modern settings/name fields then follow;
+the bit-3 path is consumed independently of bit 0 (`0x38c33c–0x38c4c0`).
+When the current name is exactly `-1`, the legacy temporary is assigned
+at `0x38c458`. Legacy `-1` skips lookup; other legacy values use an available
+context manager before that store. Other current names, including other
+negative values, take precedence. The inspected current own writer
+(`0x38bc34–0x38bed8`) omits bit 0. The skipped bytes' meaning and historical
+producer remain unknown; no actual saved field-0 fixture was executed.
+
+Selected modern Shape/Line consumers use the attached WDoc note's
+[string namespace](painting-source-findings.md#layer-records-and-the-10000-object-split).
+Shape pen loading (`0x3ac380–0x3ac418`) and Line loading
+(`0x38c358–0x38c40c`) call `GetString` then `Bind(String const*)` when a
+manager is available, ignore its result and store the original wire ID after
+normal return. This does not prove successful missing-reference admission:
+`GetString` returns null for a missing ID (`0x2a6710–0x2a673c`), and the reached
+binding chain can pass that null receiver to Base `String::CompareTo`
+(`0xc49e4`), which dereferences it without a local guard. No crash was executed.
+
+Attachment instead calls `Bind(int)` only for nonnegative IDs and ignores
+failure (Shape `0x3ae59c–0x3ae644`; Line `0x3895a0–0x389648`). Without queued
+local strings, those branches leave saved IDs unchanged. Queued strings can
+overwrite IDs during attachment. Native Copy obtains current source strings
+and passes them to destination setters (Shape `0x39819c–0x3981cc`; Line
+`0x38922c–0x38925c`), binding strings rather than cloning numeric IDs or source bytes.
+These are selected source contracts, not a pen-rendering parity result.
+
+Current Rust retains modern raw IDs but stops before later flexible fields
+when line bit 0 is present. Thus those pen fields and the saved path still
+require the original record in that branch.
+
 Native WDoc paths start with a `u32` command count. Move/line commands have two
 `f64` values, quadratic/oval four, cubic/arc six, and close none. The type-8
 field has no separate byte-length prefix. Known command widths locate the
