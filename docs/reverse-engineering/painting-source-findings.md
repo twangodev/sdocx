@@ -289,6 +289,39 @@ references through the context's StringIDManager; the writer requires that
 manager, with a detached-history fallback (`0x2ec614–0x2ec6b0`). Decoding
 samples alone cannot resolve the saved pen without its source string table.
 
+The source table is page-owned. `PageDocLoadHandler::LoadHeader_StringManager`,
+`0x33a47c`, gates it on flexible bit 5 / `0x20` (`0x33a4a8`), reads a
+nonnegative i32 blob length, then the blob (`0x33a500–0x33a544`). The blob
+contains a u16 count and explicit i32 ID / u16 UTF-16-unit count / UTF-16LE
+string entries (`StringIDManager::GetBinary`, `0x2a6804`; `ApplyBinary`,
+`0x2a6924`). An absent field leaves the manager unchanged; a present field
+clears a nonnull manager before application (`0x33a558`). The native call
+passes INT_MAX instead of that blob length (`0x33a564`), establishing framing,
+not malformed-blob safety. `Save_StringManager`, `0x3380e4`, omits a null or
+empty manager and writes bit `0x20`, length and blob (`0x338124–0x3381a8`);
+its false-mode writer includes only positively referenced IDs (`0x2a6858`).
+
+`PageDocManager::LoadPage` attaches the page before loading its header
+(`0x2c5c1c`, `0x2c5c44`). `PageDocImpl::OnAttach` allocates its own manager
+at impl `+0x200` (`0x362014`, `0x361bf4`) and installs it in the page-private
+ModelContext at `+0x1b0` (`0x3620b4`). Layer attachment copies that context
+(`0x33f76c`); `ModelContext::Copy` copies the manager pointer unchanged
+(`0x2aa8a8–0x2aa8ac`). Physical layers therefore share their source page's
+manager; separately attached source pages own separate managers.
+
+Lazy `.dat.pack` loading finds an existing layer and calls its `Load`
+(`0x33c704–0x33c770`). The object-list reader inserts each recovered stroke
+(`0x3571d8–0x35720c`); `insertObject` passes the layer's copied context to
+virtual slot `+0xe8` (`0x34e630–0x34e640`). ObjectStroke vtable relocation
+`0x493108` resolves that slot to `OnAttach`, `0x2e65c4`. When its attachment
+guard permits binding and the manager is nonnull (`0x2e6634–0x2e6650`), it
+binds the saved nonnegative pen/settings IDs in this page table; missing
+bindings reset those IDs to `-1` (`0x2e6654–0x2e6688`, `0x2e66c4–0x2e66dc`).
+The packet framing above supplies no replacement string table. This source
+page namespace is distinct from the modern WDoc note-wide bit-10 table used
+by Rust `StrokeResources`; equal IDs across pages or the enclosing WDoc do
+not establish equal strings. This attachment chain remains source-only.
+
 The reader accepts variable mask widths, keeping their low property two/field
 four bytes while advancing the declared widths (`0x2ecdbc–0x2ece7c`). Versions
 >=7 use the leading base-size envelope (`0x2e4e40–0x2e4e8c`); versions <=6
@@ -587,8 +620,8 @@ f32 coordinates without inventing precision, and preserving layer order,
 visibility and replay metadata. Flattening `.page`
 alone or exporting the JPEG thumbnail cannot establish vector preservation.
 The remaining significant unknowns are the ordinary base block's complete
-optional layout and source-archive string-table loading contract, an actual
-packet/archive load, full materialization of old packed vectors before edits,
+optional layout, an actual packet/archive load, full materialization of old
+packed vectors before edits,
 valid arbitrary packed-prefix mutation, and whether separate recorded-operation
 contracts retain removed original samples. Packet selection after clearing is
 conditional on the writer's change gate and successful execution, as above.
