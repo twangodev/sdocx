@@ -24,7 +24,7 @@ decoding, rendering and evidence boundaries across object types and features.
   archives, ordinary stroke/page-string framing, packet membership and lazy-load/replay boundaries.
 - [`shape-path-findings.md`](shape-path-findings.md) — saved path precision,
   route-specific curve normalization, drawing-route winding and native quadratic
-  arc/oval construction.
+  arc/oval construction and native XML command/control projection.
 - [`shape-fill-findings.md`](shape-fill-findings.md) — gradient/pattern records,
   drawing admission, vector paint geometry and separate PDF capabilities.
 - [`connector-routing-findings.md`](connector-routing-findings.md) — saved line
@@ -136,11 +136,12 @@ decoding, rendering and evidence boundaries across object types and features.
   container traversal, replay-order assignment and layer collection boundaries.
 - [`object-order-findings.md`](object-order-findings.md) — file-order insertion,
   nested container order, stroke-only top selection and grouping/ungrouping
-  source identity and root-order changes.
+  source identity, root-order changes and fresh-child XML reconstruction.
 - [`capture-composition-findings.md`](capture-composition-findings.md) — base,
   top and masking passes, object layer filters and capture clone state.
 - [`stroke-metadata-findings.md`](stroke-metadata-findings.md) — stroke property
-  polarity, ARGB colors, pen settings and legacy partial-rectangle records.
+  polarity, ARGB colors, pen settings, legacy partial-rectangle records and
+  native XML/binary separation.
 - [`pen-opacity-findings.md`](pen-opacity-findings.md) — pen-specific fixed
   opacity dispatch, theme-preserved alpha and Marker2 mask/composite equations.
 - [`pen-selection-findings.md`](pen-selection-findings.md) — corrected stroke

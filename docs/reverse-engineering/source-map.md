@@ -354,8 +354,8 @@ The stroke format contracts use these arm64 locations in `libSPenModel.so`
   by separate pressure, timestamp, tilt and orientation arrays.
 - `m_ApplyBinary_FlexibleData`, `0x2ed780–0x2ed934`: the legacy bit-0 pen-name
   ID and bit-1 advanced-settings ID are four bytes each, followed by masked
-  ARGB and pen size. The alternate coedit string representation is outside
-  this parser's normal WDoc archive path.
+  ARGB and pen size. The [alternate coedit string representation](stroke-metadata-findings.md#xml-and-separately-transported-stroke-binary)
+  is outside this parser's normal WDoc archive path.
 
 The extended [stroke metadata inspection](stroke-metadata-findings.md) also
 uses the full property reader/writer (`0x2ed138` / `0x2ec080`), named stroke

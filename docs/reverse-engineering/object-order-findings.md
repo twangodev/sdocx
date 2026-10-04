@@ -182,7 +182,7 @@ this raw gate is not assigned an inferred semantic name.
 
 Both lists carry child XML representations rather than UUID-only membership.
 That does not establish all original vector channels inline: format-1 stroke
-`strokeBinary` remains gated by its library-global inclusion flag
+[`strokeBinary` remains gated by its library-global inclusion flag](stroke-metadata-findings.md#xml-and-separately-transported-stroke-binary)
 (`0x14ccbc–0x14ccf4`). Container composition does not bypass this child gate.
 
 `ParseElement`, `0x10d6e4`, accepts either list tag and reaches
