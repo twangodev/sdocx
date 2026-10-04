@@ -154,6 +154,45 @@ routes. No malformed real-document witness, native execution or edit/save result
 was obtained. They establish neither all-version admission nor shaping, visible
 Unicode appearance, or a requirement to normalize/discard the original source.
 
+## Native style and paragraph record admission
+
+The containing WDoc style reader (`0x3fb93c`–`0x3fbb8c`) checks each declared
+`u16` block length, then skips types above 23, types 0/2/8/10 and types 11–13.
+The remaining types reach their factory-installed class decoder; allocation
+and dispatch alone do not establish successful style restoration. Type 22's
+immediate false return reaches deletion and continuation in this reader.
+
+False `ApplyBinary` or negative consumed length deletes the new span and
+continues at `0x3fbaec`; the next offset uses the declared block length at
+`0x3fbaf0`, rather than the decoder's consumed output. Insertion additionally
+requires `m_IsValidSpan` and passing the optional existing-zero-length update
+gate (`0x3fba70`–`0x3fba98`). A containing-reader bounds-check failure returns -1 at
+`0x3fbb44`; the enclosing text loader rejects it at `0x3f666c`.
+
+Rust's [span reader](../../crates/sdocx/src/note.rs) owns each admitted record's
+kind, UTF-16 range, interval and remaining payload, including native-skipped
+kinds. Its minimum 16-byte header and configured limits remain admission gates.
+The [individual span binary capture](text-draw-identity-findings.md#native-binary-boundaries)
+is separate from this static containing-reader proof. Native loaded-style
+selection can differ from Rust's retained source records; these findings certify
+neither all malformed inputs nor whole text-context loading.
+
+Modern paragraph records use `ApplyParagraphsBinary_WDoc` (`0x404dbc`): its numeric
+filter and factory admit types **2–10** (`0x404ea0–0x404eb0`). After successful
+class decoding, a start at or beyond the native paragraph count deletes the
+temporary; an end beyond that count is capped by `SetEndPosition`
+(`0x404efc–0x404f24`). A surviving temporary is passed to `m_AppendPara`, then
+deleted; the append helper's complete ownership and overwrite policy is not
+established by this caller (`0x404f38`, `0x404f88`).
+
+Successful decoding and skipped-type/null-factory paths advance by the declared
+record size. Failed Apply or a negative consumed count follows a different
+branch without that addition (`0x404ef8`, `0x404f5c–0x404f8c`); this does not
+establish reliable continuation through malformed records. The
+[Rust reader](../../crates/sdocx/src/note.rs) retains the original paragraph kind,
+ranges and payload, separately from native filtered or capped loading state.
+These are static reader findings, not complete-load parity or observed corpus loss.
+
 ## Native TextCommon object-span trailer
 
 The pinned Model ELF SHA-256 is
