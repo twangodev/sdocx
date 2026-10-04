@@ -11,8 +11,8 @@ decoding, rendering and evidence boundaries across object types and features.
 ## Documents
 
 - [`vector-retention-findings.md`](vector-retention-findings.md) — original
-  byte ownership, semantic projection, resource identity, output precision and
-  diagnostic boundaries in the current Rust pipeline.
+  byte ownership, semantic projection, opaque subtree/resource namespaces,
+  output precision and diagnostic boundaries in the current Rust pipeline.
 - [`object-transform-findings.md`](object-transform-findings.md) — recursive
   container edits, hidden-child resizing, baked stroke geometry and precision.
 - [`eraser-preservation-findings.md`](eraser-preservation-findings.md) — cut
@@ -22,7 +22,8 @@ decoding, rendering and evidence boundaries across object types and features.
 - [`painting-source-findings.md`](painting-source-findings.md) — editable `.spp`
   archives, ordinary stroke/page-string framing, packet membership and lazy-load/replay boundaries.
 - [`shape-path-findings.md`](shape-path-findings.md) — saved path precision,
-  route-specific curve normalization and native quadratic arc/oval construction.
+  route-specific curve normalization, drawing-route winding and native quadratic
+  arc/oval construction.
 - [`shape-fill-findings.md`](shape-fill-findings.md) — gradient/pattern records,
   drawing admission, vector paint geometry and separate PDF capabilities.
 - [`connector-routing-findings.md`](connector-routing-findings.md) — saved line
@@ -102,7 +103,8 @@ decoding, rendering and evidence boundaries across object types and features.
   measurement/draw identity, font metadata, UTF-16 glyph ownership, embedded-object
   background geometry, producer/emitter/export-caller boundaries, PDF alpha
   transport, cached-entry snapshots, XML font language, file-font source instances,
-  live four-file registry source/language/copy identity, certified whole-source
+  live four-file registry source/language/copy identity, dynamic locale/custom
+  fallback lifetime, certified whole-source
   paint plans shared by SVG/PDF and Chromium text clip
   behavior.
 - [`image-findings.md`](image-findings.md) — displayed-image versus border/original
