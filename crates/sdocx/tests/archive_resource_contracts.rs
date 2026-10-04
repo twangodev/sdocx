@@ -103,7 +103,10 @@ fn understated_zip_sizes_cannot_bypass_the_resource_memory_budget() {
         },
         ..Default::default()
     };
-    assert!(sdocx::parse_bytes_with_options(&bytes, &options).is_err());
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&bytes, &options),
+        Err(sdocx::Error::Format(_))
+    ));
 }
 
 #[cfg(feature = "serde")]
