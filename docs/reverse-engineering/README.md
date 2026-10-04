@@ -12,7 +12,8 @@ decoding, rendering and evidence boundaries across object types and features.
 
 - [`vector-retention-findings.md`](vector-retention-findings.md) — original
   byte ownership, semantic projection, opaque subtree/resource namespaces,
-  output precision and diagnostic boundaries in the current Rust pipeline.
+  native selected-object clipboard transformations, output precision and diagnostic
+  boundaries in the current Rust pipeline.
 - [`object-transform-findings.md`](object-transform-findings.md) — recursive
   container edits, hidden-child resizing, baked stroke geometry and precision.
 - [`eraser-preservation-findings.md`](eraser-preservation-findings.md) — cut
@@ -310,10 +311,10 @@ decoding, rendering and evidence boundaries across object types and features.
   evidence limits.
 - [`math-findings.md`](math-findings.md) — native math envelopes, embedded
   formula boundaries, angle modes and connected plot references.
-- [`plot-findings.md`](plot-findings.md) — plot coordinates, graph expressions,
-  substitutions, colors, widths and visibility.
-- [`formula-findings.md`](formula-findings.md) — formula expressions, answers,
-  embedded strokes, image references and label graphs.
+- [`plot-findings.md`](plot-findings.md) — saved expressions/styles, mathematical
+  viewport and derived segment/precision/cache boundaries.
+- [`formula-findings.md`](formula-findings.md) — expression/answer records, native
+  byte/JNI projection, embedded strokes, image references and recognition graphs.
 - [`formula-rendering-findings.md`](formula-rendering-findings.md) — image/ink
   precedence, image placement, visible-stroke bounds and expression-type limits.
 - [`parser-findings.md`](parser-findings.md) — structural decoding, metadata,
