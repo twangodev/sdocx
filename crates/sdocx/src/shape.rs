@@ -2,6 +2,7 @@ use crate::binary::Reader;
 use crate::frame::{Frame, Mask};
 use crate::note::parse_shape_text;
 use crate::object::read_bbox;
+use crate::shape_paint_source::{ColorPaintSource, PatternPaintSource, ShapePaintSource};
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
 /// Paint supported by the shape renderer, or an uninterpreted native effect.
@@ -29,6 +30,9 @@ pub enum ShapePaint {
 pub struct ShapeStyle {
     /// Outline color effect.
     pub paint: ShapePaint,
+    /// Saved color source; independent of paint rendering support.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub paint_source: Option<ShapePaintSource>,
     /// Width in document coordinates; native default is 2.0.
     pub width: f32,
     /// Native compound-line enum (0 means simple).
@@ -49,6 +53,7 @@ impl Default for ShapeStyle {
     fn default() -> Self {
         Self {
             paint: ShapePaint::Solid(0xff000000),
+            paint_source: None,
             width: 2.0,
             compound: 0,
             dash: 0,
@@ -93,6 +98,9 @@ pub struct NativeShape {
     pub style: ShapeStyle,
     /// Interior paint.
     pub fill: ShapePaint,
+    /// Saved interior source; unsupported paint still retains its original bytes.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub fill_source: Option<ShapePaintSource>,
     /// Optional string-resource ID for the native pen name.
     pub pen_name_id: Option<i32>,
     /// Optional string-resource ID for advanced native pen settings.
@@ -211,6 +219,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
         .transpose()?;
     let mut pen_settings_id = None;
     let mut fill = ShapePaint::None;
+    let mut fill_source = None;
     if frame.fields.contains(3) {
         unsupported.push("unknown field before shape fill");
     } else {
@@ -224,8 +233,15 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
             let kind = fields.read_u8("fill kind")?;
             let data = fields.read_bytes(size, "fill effect")?;
             fill = if kind == 1 {
-                read_paint(data, false, &mut unsupported)?
+                let (paint, source) = read_paint(data, false, &mut unsupported)?;
+                fill_source = source;
+                paint
             } else {
+                if kind == 3 {
+                    fill_source = PatternPaintSource::read(data)
+                        .ok()
+                        .map(ShapePaintSource::Pattern);
+                }
                 unsupported.push("non-color shape fill");
                 ShapePaint::Unsupported {
                     kind,
@@ -256,6 +272,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
             path_data,
             style,
             fill,
+            fill_source,
             pen_name_id,
             pen_settings_id,
             text,
@@ -374,7 +391,8 @@ pub(crate) fn read_style(
         unsupported.push("unknown field before outline effects");
     } else {
         if frame.fields.contains(2) {
-            style.paint = read_paint(sized(&mut fields, "line color effect")?, true, unsupported)?;
+            (style.paint, style.paint_source) =
+                read_paint(sized(&mut fields, "line color effect")?, true, unsupported)?;
         }
         if frame.fields.contains(3) {
             let mut effect = Reader::new(sized(&mut fields, "line style effect")?, "line style");
@@ -416,38 +434,44 @@ fn read_paint(
     data: &[u8],
     outline: bool,
     unsupported: &mut Vec<&'static str>,
-) -> Result<ShapePaint> {
+) -> Result<(ShapePaint, Option<ShapePaintSource>)> {
     let mut reader = Reader::new(data, "shape color effect");
     let properties = Mask::read(&mut reader)?;
-    let kind = if outline {
-        reader.read_u8("color type")?
-    } else {
-        u8::from(properties.contains(0))
-    };
-    let argb = reader.read_u32("ARGB")?;
-    reader.read_u8("gradient type")?;
-    reader.read_u16("gradient angle")?;
-    finite_f32(&mut reader, "gradient x")?;
-    finite_f32(&mut reader, "gradient y")?;
-    let stops = reader.read_u8("gradient stop count")?;
-    for _ in 0..stops {
-        reader.read_u32("gradient color")?;
-        finite_f32(&mut reader, "gradient stop")?;
-    }
+    let mut source = ColorPaintSource::read_body(
+        &mut reader,
+        outline,
+        properties.bytes().first().copied().unwrap_or(0),
+    )?;
+    let kind = source
+        .outline_color_type
+        .unwrap_or_else(|| u8::from(properties.contains(0)));
     if properties.has_other_bits(if outline { 1 } else { 3 }) || reader.remaining() != 0 {
         unsupported.push("color effect extensions");
     }
-    match kind {
-        0 => Ok(ShapePaint::Solid(argb)),
-        2 if outline => Ok(ShapePaint::None),
+    let paint = match kind {
+        0 => ShapePaint::Solid(source.solid_argb),
+        2 if outline => ShapePaint::None,
         _ => {
             unsupported.push("gradient or unknown color effect");
-            Ok(ShapePaint::Unsupported {
+            ShapePaint::Unsupported {
                 kind,
                 data: data.to_vec(),
-            })
+            }
         }
-    }
+    };
+    let source = if data.first() == Some(&1) {
+        source.trailing_data = reader
+            .read_bytes(reader.remaining(), "color effect trailing data")?
+            .to_vec();
+        Some(ShapePaintSource::Color(source))
+    } else if matches!(paint, ShapePaint::Unsupported { .. }) {
+        None
+    } else {
+        Some(ShapePaintSource::Opaque {
+            data: data.to_vec(),
+        })
+    };
+    Ok((paint, source))
 }
 
 fn read_points(reader: &mut Reader<'_>) -> Result<Vec<[f64; 2]>> {

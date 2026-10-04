@@ -46,6 +46,7 @@ pub mod pdf;
 mod render;
 mod report;
 mod shape;
+mod shape_paint_source;
 mod storage;
 mod stroke_metadata;
 mod table;
@@ -106,6 +107,9 @@ pub use render::{
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use shape::{NativeLine, NativeShape, ShapePaint, ShapeStyle};
+pub use shape_paint_source::{
+    ColorPaintSource, GradientStopSource, PaintFloat32, PatternPaintSource, ShapePaintSource,
+};
 pub use storage::{
     PageManifest, PageManifestEntry, ParsedDocument, StoredArchivePage, StoredLayer, StoredObject,
     StoredPage, StoredPageHeader, StoredPageLayers, parse_page_manifest_bytes,
