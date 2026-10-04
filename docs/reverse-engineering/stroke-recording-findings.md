@@ -4,7 +4,8 @@
 
 Confirmed by static inspection of Samsung Notes 4.4.45.37 ARM64
 `libSPenDrawing.so`, `libSPenModel.so`, `libSPenBase.so` and
-`libSPenMarker2.so` from the APK identified in the
+`libSPenMarker2.so`, with the voice-session trace also using `libSPenWDoc.so`
+and `libSPenComposer.so`, from the APK identified in the
 [knowledge base](README.md#sources-and-validation). This follows the
 [Marker2 sampling findings](marker2-sampling-findings.md) upstream into the
 touch recorder and downstream into its stored-array replay wrapper.
@@ -61,6 +62,59 @@ The [Android adapter trace](motion-event-adapter-findings.md#millisecond-getters
 resolves those timestamp getters: they return sample time minus the event's
 down time. The append loop uses this millisecond channel, not the separate
 nanosecond getters, and does not subtract the first recorded timestamp.
+
+## Voice synchronization uses append time and original objects
+
+Voice actions and the checked vector append producer share Base `GetTimeStamp`,
+`0x9a1f0`: `clock_gettime` with clock ID 0 returns realtime microseconds as
+seconds × 1,000,000 + nanoseconds / 1,000 (`0x9a208–0x9a254`). WDoc
+`AddVoicePropertyList`, `0x8ebe0`, stores that result directly. Composer's
+recorder callbacks invoke Start/Pause/Resume/Stop (`0x43fa40`, `0x43fd54`,
+`0x43fdf4`, `0x43fb90`); their timestamps belong to callback execution,
+not merely a recording request. Model's selected history insertion branch
+calls GetTimeStamp → SetAppendTime (`0x359ebc–0x359ec8`); fallback insertion
+does not stamp it. The setter can preserve an existing nonzero value when
+impl+132 is set (`0x2cc6e4–0x2cc708`), so admission need not retime an object.
+
+This signed 64-bit append time is saved [optional field 13](object-flexible-findings.md#modern-typed-frame-field-order),
+separate from common signed 32-bit replay time and relative sample milliseconds.
+Painting's actual common-time producer, `m_RecordObject`, derives a handler
+counter from clock deltas, incrementing small deltas and dividing larger
+microsecond deltas by 10,000 (`0x363778–0x363814`); stroke duration further
+adjusts the assigned value (`0x363828–0x363894`). The voice selector instead
+calls GetAppendTime (`Composer 0x448830`), without merging these clocks.
+
+`NoteVoiceReplayController::Init`, `0x447134`, takes the voice manager's current
+VoiceData. Playback callbacks validate its ModelContext NoteCookie against the
+WNote runtime handle (`WDoc 0x9a0e4–0x9a104`): note ownership, without a saved
+per-object voice ID list in this selector. Init derives the session start and
+pause-gap accumulator from saved actions, then adds media length × 1,000
+(`0x4472b8–0x447360`). Update likewise converts media progress milliseconds
+to microseconds (`0x4475bc–0x4475c4`); `updateBaseTime`, `0x448138`, compensates
+resume-minus-pause gaps and can rewind the base/traversal when crossing a pause.
+
+`updateObjectList`, `0x448318`, reads original WNote page object lists;
+`getAlphaObjectList`, `0x448728`, skips BodyText, selected, hidden and
+nonpositive-append-time objects. Effective base + progress strictly greater
+than append time queues nonunit-alpha objects for restoration to alpha 1.
+The other side queues dimming
+only for unit-alpha objects strictly before session start + accumulator;
+equality remains on the future side. Locked runtime handles are excluded.
+These temporary lists contain original pointers, not regenerated vectors or
+authoritative saved session membership. BodyText is dispatched separately.
+
+The page applies runtime alpha; Model's true SetAlpha branch stores data+168
+(`0x352e60–0x352e6c → 0x2d1b60–0x2d1b68`). It does not literally leave runtime
+objects immutable, but this controller does not remove objects or rewrite their
+sample channels, append/replay times, visibility flag or saved order. Reset
+restores eligible alpha to 1 (`0x447fc8–0x448034`). Init's null attached-file
+path exits without media-duration setup (`0x447318 → 0x4473d0`), without deleting
+vectors; a nonnull path does not certify an existing/decodable audio file.
+Rust exposes [voice records](note-metadata-findings.md#sized-records) and separate
+common/flexible timestamp inspection; PageObject does not carry those clocks
+or an automatic voice-session source map. Retain original page bytes. Full
+reopened playback, BodyText effects and missing-file/player failures remain
+unexecuted; alpha lists must not filter source or define universal session ownership.
 
 ## Repeated coordinates are retained by the model
 
@@ -191,7 +245,7 @@ input sequence consumed by other pens. Keep stored input samples distinct
 from generated mask stamps, and use the recovered stored-array replay
 rules when reproducing document export.
 
-The APK digest and all four library byte streams were verified. Constructor
+The APK digest and all four recorder library byte streams were verified. Constructor
 bindings, provider relocations, append count updates, writer count accesses
 and source initialization were checked against their instructions. The
 down/up and source-flag cases are static derivations; no device fixtures were

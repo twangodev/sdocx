@@ -253,6 +253,8 @@ absence is represented as `None`, partial timestamps fail, and bytes following
 a complete recording time are retained. The two time representations and event
 actions are exposed as stored; no playback or synchronization behavior is
 implemented. Decompiled `r1/z.java` confirms the display names.
+The [voice synchronization trace](stroke-recording-findings.md#voice-synchronization-uses-append-time-and-original-objects)
+separates native action/append clocks and playback alpha from retained vectors.
 
 Both pen forms begin with:
 
