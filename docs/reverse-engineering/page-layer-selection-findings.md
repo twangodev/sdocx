@@ -64,7 +64,8 @@ and calls `LoadLayer` at `0xd54e0`. It sets loaded state only after success
 at `0xd54f4`. `WPageLoadHandler::LoadLayer`, `0xd501c`, forwards through
 implementation slot 24 at `0xd503c`; relocation `0x103b48` resolves that
 slot to `WPageImpl::LoadLayer`, `0xd07f8`. Its call at `0xd0810` reaches
-the Model loader above. The successful wrapper clears changed flags.
+the Model loader above. The successful wrapper clears changed flags only when
+the current IsChanged snapshot passed as the preservation flag is false.
 
 `WPage::FindObjectInRectIntersect` loads page objects
 at `0xc5090` before dispatching into the manager and object handler.
