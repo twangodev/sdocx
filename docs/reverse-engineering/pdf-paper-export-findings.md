@@ -456,8 +456,20 @@ a complete replacement font dictionary.
 This establishes a guarded runtime-font resource operation, not wholesale
 subsetting of the imported source-paper graph. No font-trimming capture,
 source-paper glyph loss or complete logical-text parity was established.
-The operation follows import; identity with the temporary destination's cloned
-font stream is unproved and cannot be inferred from matching font names.
+
+The successful stream-copy path establishes a more specific storage boundary.
+`CPDF_Stream::CloneNonCyclic` (`0x445024`) clones the dictionary (`0x44512c`)
+and calls `DetachData` (`0x445184`). A memory-backed source is initially borrowed,
+but detach allocates and copies its bytes (`0x446cb0–0x446cc4`); a file-backed
+source transfers its separately allocated read buffer. The new stream owns
+that buffer and cloned dictionary (`0x445324–0x445358`, `0x44481c–0x444854`).
+Successful import also rebinds cloned reference holder/ID fields to the
+destination (`0x408644–0x408648`). `SetData` copies replacement bytes and
+replaces only the receiver's storage (`0x4449c0–0x4449e4`, `0x44565c`). Thus a
+later source-stream update cannot change an already copied and rebound target
+font program through shared byte or dictionary storage. This conditional
+source finding excludes failed or skipped graph rewriting; it is not an
+executed subset, glyph-coverage or complete resource-graph preservation proof.
 
 ## Source size controls the overlay scale
 
