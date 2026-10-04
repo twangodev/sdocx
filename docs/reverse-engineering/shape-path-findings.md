@@ -106,6 +106,38 @@ The app's `office.base.SpenToBitmap` conversion does explicitly pass
 it remains a separate consumer rather than proof of how arc records are
 created.
 
+## Winding belongs to the drawing route
+
+The Model path record above stores count and commands, without a fill-rule
+field. Ordinary `ObjectShapeDrawing::drawPath` creates a fresh SkPath
+(Drawing `0x8a880`) and appends the source commands to that same path
+(`0x8a89c–0x8a8b8`). Its constructor zeros the rule byte at object+12
+(Skia `0x1d38f4`); the bundled fill scanner interprets zero as nonzero winding
+(`0x20a538–0x20a544`, `0x20a63c–0x20a64c`). The verb converter does not
+assign a different rule. Multiple source contours remain in one path.
+
+Dedicated solid fill entries also construct fresh SkPaths before conversion
+and drawing (`0x9cdf0–0x9ce1c`). Their template fill types select paint,
+rather than SkPath winding. Neither converter forces the default on an
+arbitrary pre-existing destination supplied by another caller. Source contour
+direction/order and Move/Close identity must therefore survive conversion;
+nesting or holes alone do not justify rewriting the path to even-odd winding.
+
+Bundled Skia has a separate serializer: `writeToMemory` stores the rule byte
+in header bits 8–15 (`0x1d85d4–0x1d85ec`), and `readFromMemory` restores it
+(`0x1d86f0–0x1d86fc`). That is not the inspected Model/WDoc path record.
+Runtime clipping also has separate ownership: retained path clips copy the
+incoming rule (`0x1a1190–0x1a11a0`), while a clip helper can toggle its inverse
+bit (`0x1a0fe4–0x1a0fec`). Region operation and antialiasing are distinct
+arguments/state, not saved winding fields.
+
+Rust's stored-path SVG emission currently uses its implicit nonzero default;
+this inspection establishes no newly lost saved even-odd field in the ordinary
+bridge. The existing usvg-to-Krilla NonZero/EvenOdd conversion in
+`pdf/svg/util.rs` and `pdf/svg/clip_path.rs` is separate imported-SVG transport.
+These source findings do not establish every native path's rule, full-scene
+hole appearance, or inverse clipping parity in SVG/PDF.
+
 ## The bundled oval is eight ordinary quadratics
 
 The APK's `Spen_SkPath::addOval` (Skia `0x1d6204`) calls `quadTo` eight
