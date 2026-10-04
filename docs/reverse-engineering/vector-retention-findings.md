@@ -362,6 +362,9 @@ custom-vector semantics.
 | Rich text | Original style/paragraph payloads and ranges; full embedded WDoc object bytes; typed image/table/code projections | Enclosing common metadata, text-common extensions and page-textbox border/extra frames are not completely owned |
 | Formula, math and plot inspection | Explicit metadata APIs retain mapped fields, masks and remainder bytes; formula strokes and math formula envelopes own their embedded binaries | The inspection call requires original page bytes; these values are not automatically attached to the high-level page model or rendered |
 
+[Accepted handwriting-to-text](stroke-recording-findings.md#handwriting-to-text-source-replacement)
+can remove eligible current-layer originals before app text insertion; preserve original source separately from edited text.
+
 The concrete decoders are
 [stroke](../../crates/sdocx/src/decode.rs),
 [stroke metadata](../../crates/sdocx/src/stroke_metadata.rs),

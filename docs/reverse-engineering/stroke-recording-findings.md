@@ -176,6 +176,93 @@ page bytes; its outline or AsShape flag cannot restore an earlier gesture.
 Final document order, UUIDs, hidden/history originals and save membership remain
 unproved beyond the optional parent callback; no second generator is implied.
 
+## Handwriting-to-text source replacement
+
+This source-only trace uses the same pinned APK's byte-identical ARM64 libraries:
+Composer SHA-256 `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f`,
+WDoc `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6`, and
+Model `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`.
+Recognition, acceptance, insertion, undo and save/reopen were not executed.
+
+Composer `OnTextTransformationComplete`, `0x449614`, stores nonempty recognition
+results and shows the preview (`0x449738–0x449760`, `0x44992c`). Its called
+`setResultData` produces String/List data through `StrokeTextUIConvertor::getLineData`
+(`0x449bf0`); completion is not source removal or app insertion.
+
+Preview `updateDimmedStrokes`, `0x44e928`, resolves recognized runtime handles,
+sets that source list's alpha to 1 (`0x44eb34–0x44eb4c`), excludes it from the
+page list and dims the remainder to f32 0.2 (`0x44eb58–0x44eb74`, rodata
+`0x1f9134`). This reaches the same runtime-alpha setter as
+[voice replay](#voice-synchronization-uses-append-time-and-original-objects),
+not the serialized visibility flag or stored sample channels. The inspected
+visible-to-hidden branch with member 1154 clear calls `restoreDimmedStrokes`
+(`0x44c1f8`), which sets page-list alpha to 1 (`0x44bfc8`), without restoring an
+arbitrary previous alpha snapshot.
+
+The accept chain is Java `FloatingTextResult.java:278–305` → SDK
+`SpenConvertToTextManager.java:269–291` → native click → app
+`SpenConvertToTextListenerImpl.java:134–153`. The UI checks the original builder
+nonnull but takes CURRENT edited text; the app validates nonempty text later.
+The SDK conditionally begins a history group, calls void `Native_onClickTextResult`
+FIRST (`:282–284`), then the app listener (`:285–288`) and conditionally ends the
+group. The SDK tracks whether it initiated a group, ignoring begin success;
+removal/insertion status does not gate continuation or establish atomic replacement.
+
+Native click, Composer `0x310a98`, passes a nonzero handle to
+`RemoveObjectStrokesInRect`, `0x44cc6c`. It hides the control through the bound
+SetVisible slot (`0x5791f8 → 0x44c100`), calls
+`PageHwrDataList::RemoveResultObjectListInDocument` (`0x44ccc8`), and clears its
+private recognition data. The supplied mode bit-4 bool only controls clearing
+union-rectangle left AFTER removal (`0x461f90–0x461f98`), not removal admission.
+The method's returned bool describes required nonnull pointers, not success.
+
+The removal kernel, `0x461e04`, gets a result page ID and converts HwrData runtime
+handles to an ObjectList (`0x461ed8–0x461ef8`). `HwrDataListToObjectList`,
+`0x3b6f70`, resolves each handle with `ObjectBase::FindObjectBase` and adds only
+nonnull objects (`0x3b704c–0x3b705c`). When conversion succeeds, document slot
+104 receives page ID/list (`0x461f44`); its result is ignored. The accumulated
+count (`0x461f6c`) is attempted objects, not confirmed removals or complete
+handle resolution. These live handles are not a saved UUID/channel backup.
+
+`RecognitionContentsView::SetDocument` installs NoteWritingWNote addresspoint
+`0x575e18` from `_ZTV 0x575e08` (`0x40e1b4–0x40e1d8`) and passes this view
+the same adapter (`0x40e344`). Slot 104 (`0x575e80 → 0x4f72bc`) finds WPage
+and calls its `RemoveObjectList`.
+WPage requires a loaded page and passes true (`0xc3f7c–0xc3f9c`) through Model
+Page/LayerDoc/ObjectManager (`0x345044 → 0x33e670 → 0x35ba74 → 0x35b348`).
+The handler refers to the CURRENT layer (`0x3476e8–0x3476ec` setters); supplied
+pointers must belong to its list+56 (`0x35b438–0x35b448`). The called
+`LayerDocImpl::RemoveObjectList` actually removes admitted pointers (`0x34e9ac`),
+then detaches/releases them. This mutates membership, not merely visible=false,
+without proving removal in every page layer. History packs handles/indices
+(`0x35b6b4–0x35b6f4`), without establishing saved recovery or successful undo.
+
+The app receives recognized strings/formatting and geometry, creates a fresh
+TextBox or temporary body-text payload (`SpenConvertToTextListenerImpl.java:58–82`
+→ `ObjectTextFactory.java:32–59`) and attempts insertion. This called path does not pass
+original stroke UUIDs or pressure/tilt/orientation channels. Empty text returns
+only after native accept. TextBox insertion's boolean is discarded
+(`ObjectManager.java:373–377`); body insertion false only skips selection/cursor
+(`:71–75`). No compensation for removal is shown in these called paths. Body
+insertion does not establish a new saved body UUID. `clearSelectObject` is later
+UI cleanup, not our deletion evidence. No save is called by this callback chain.
+
+Cancel calls `Native_cancelConvertToText → RequestCancel → CloseControl`
+(`0x311448 → 0x44cb7c → 0x44cbec`), hides the visible control, requests cancellation
+and clears recognition data; this route does not call removal or app conversion.
+The SDK copy callback bypasses native click; preview `onFinished` only updates
+focus/running state, not edit/save success.
+
+WLayer `Save` installs the same layer implementation in its handler (`0x341db0`)
+and calls `Save_Objects_WDoc` (`0x341de8 → 0x3552bc`), which counts/traverses
+current list+56 (`0x355300–0x35530c`, `0x355398`). A successfully removed pointer
+is not emitted by that traversal merely because history binds it. Changed/save
+gates, packed-prefix/cache rewriting, saved undo/source associations and an actual
+accepted conversion's saved archive remain unexecuted. Rust's semantic hidden-
+record filter cannot recover a stroke absent from newly saved membership.
+Retain original archives; strings, preview handles and undo groups cannot
+reconstruct original vectors or justify a generated text-to-stroke link.
+
 ## Voice synchronization uses append time and original objects
 
 Voice actions and the checked vector append producer share Base `GetTimeStamp`,
