@@ -31,7 +31,7 @@ that the object has semantic content or a renderer.
 | 7 | Shape | Geometry, styles, saved paths, controls and embedded text | Supported page templates/paths and solid paint; partial styling |
 | 8 | Line | Geometry, styles, controls and saved paths | Straight lines and supported paths; partial styling/routing |
 | 9 | DeprecatedDummyStroke | Stored/common metadata | No dedicated renderer |
-| 10 | Voice | Stored/common metadata; separate note-level voice metadata exists | No voice-object renderer |
+| 10 | Voice | Stored/common metadata; [own attachment/source contract](reverse-engineering/voice-source-findings.md) is distinct from typed note VoiceData | No voice-object renderer |
 | 11 | Formula | Bounded expressions, result/image rectangles, media ID, strokes and label graphs | Inspection only; no automatic formula drawing |
 | 12 | DeprecatedTable | Stored/common metadata | No dedicated renderer |
 | 13 | Web | Stored/common metadata | No dedicated renderer |

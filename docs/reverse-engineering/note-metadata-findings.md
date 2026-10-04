@@ -255,6 +255,8 @@ actions are exposed as stored; no playback or synchronization behavior is
 implemented. Decompiled `r1/z.java` confirms the display names.
 The [voice synchronization trace](stroke-recording-findings.md#voice-synchronization-uses-append-time-and-original-objects)
 separates native action/append clocks and playback alpha from retained vectors.
+[Physical Voice objects](voice-source-findings.md) have separate page/span own
+frames and audio/thumbnail bindings; this note record is not their own payload.
 
 Both pen forms begin with:
 

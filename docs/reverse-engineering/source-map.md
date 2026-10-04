@@ -51,6 +51,9 @@ records differ from modern WDoc frames.
 [PDF paper export findings](pdf-paper-export-findings.md) distinguish imported
 resource preservation and ordinary glyph transport from generated Unicode
 mapping, which does not establish reconstruction of original shaped clusters.
+[Physical Voice findings](voice-source-findings.md) trace reached page/span
+imports, Model own-frame save dispatch and audio/thumbnail bindings separately
+from note VoiceData actions and conditional coedit reference removal.
 
 Replay-order assignment and capture composition were traced through these
 ARM64 entry points:

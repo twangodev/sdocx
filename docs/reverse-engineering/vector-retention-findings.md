@@ -621,6 +621,10 @@ including when `content` is absent. The typed projection and that original binar
 are different representations. Table-cell constructor-default spans also
 represent native load state rather than the exact saved span count.
 
+[Physical Voice sources](voice-source-findings.md) retain separate audio/thumbnail
+references in their own frames. Raw embedded/page source and note VoiceData
+inspection do not supply a typed Voice attachment/session projection.
+
 The formula [drawing contract](formula-rendering-findings.md#image-and-stroke-precedence)
 uses a stored image when available and otherwise draws embedded source strokes,
 then answer strokes. It does not evaluate LaTeX. Preserving those original stroke

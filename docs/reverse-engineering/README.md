@@ -55,6 +55,8 @@ decoding, rendering and evidence boundaries across object types and features.
   and legacy border drawing.
 - [`card-source-findings.md`](card-source-findings.md) — Web, Link and attached-file
   source metadata/resources, regenerated previews and native PDF card export.
+- [`voice-source-findings.md`](voice-source-findings.md) — physical Voice page/span
+  sources, own attachment IDs and conditional copy/coedit reference transitions.
 
 - [`marker4-v7.md`](marker4-v7.md) — fractional-width V7 highlighter vectors,
   native saved-redraw fixtures and isolated native-layer appearance comparison.
