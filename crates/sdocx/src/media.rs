@@ -1,10 +1,64 @@
 use crate::binary::Reader;
-use crate::{Error, ParseLimits, Result};
+use crate::{ArchiveResourceError, Error, ParseLimits, Result};
 use std::collections::{HashMap, HashSet};
 
 pub(crate) struct MediaResolver {
     bindings: HashMap<u32, std::result::Result<usize, String>>,
     inferred: bool,
+}
+
+pub(crate) struct MediaBindings {
+    names: HashMap<u32, std::result::Result<String, ArchiveResourceError>>,
+    inferred: bool,
+}
+
+impl MediaBindings {
+    pub(crate) fn new(manifest: Option<&MediaManifest>, names: &HashSet<String>) -> Self {
+        let records: Vec<_> = if let Some(manifest) = manifest {
+            manifest
+                .entries
+                .iter()
+                .map(|entry| (entry.bind_id, format!("media/{}", entry.file_name)))
+                .collect()
+        } else {
+            names
+                .iter()
+                .filter(|name| name.starts_with("media/"))
+                .filter_map(|name| media_archive_id(name).map(|id| (id, name.clone())))
+                .collect()
+        };
+        let mut bindings = HashMap::new();
+        for (id, name) in records {
+            let resolved = if names.contains(&name) {
+                Ok(name)
+            } else {
+                Err(ArchiveResourceError::MissingEntry { id, name })
+            };
+            match bindings.entry(id) {
+                std::collections::hash_map::Entry::Vacant(entry) => {
+                    entry.insert(resolved);
+                }
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    *entry.get_mut() = Err(ArchiveResourceError::AmbiguousBinding { id });
+                }
+            }
+        }
+        Self {
+            names: bindings,
+            inferred: manifest.is_none(),
+        }
+    }
+
+    pub(crate) fn resolve(
+        &self,
+        id: u32,
+    ) -> std::result::Result<(&str, bool), ArchiveResourceError> {
+        match self.names.get(&id) {
+            Some(Ok(name)) => Ok((name, self.inferred)),
+            Some(Err(error)) => Err(error.clone()),
+            None => Err(ArchiveResourceError::UnboundId { id }),
+        }
+    }
 }
 
 impl MediaResolver {
@@ -19,36 +73,15 @@ impl MediaResolver {
             .enumerate()
             .map(|(i, asset)| (asset.name.as_str(), i))
             .collect();
-        let records: Vec<_> = if let Some(manifest) = manifest {
-            manifest
-                .entries
-                .iter()
-                .map(|entry| (entry.bind_id, format!("media/{}", entry.file_name)))
-                .collect()
-        } else {
-            names
-                .iter()
-                .filter(|name| name.starts_with("media/"))
-                .filter_map(|name| media_archive_id(name).map(|id| (id, name.clone())))
-                .collect()
-        };
-        for (id, name) in records {
-            let resolved = if names.contains(&name) {
+        let source = MediaBindings::new(manifest, names);
+        for (id, name) in source.names {
+            let resolved = name.map_err(|error| error.to_string()).and_then(|name| {
                 indexes
                     .get(name.as_str())
                     .copied()
                     .ok_or_else(|| format!("media ID {id} names unsupported media {name}"))
-            } else {
-                Err(format!("media ID {id} names missing archive entry {name}"))
-            };
-            match bindings.entry(id) {
-                std::collections::hash_map::Entry::Vacant(entry) => {
-                    entry.insert(resolved);
-                }
-                std::collections::hash_map::Entry::Occupied(mut entry) => {
-                    *entry.get_mut() = Err(format!("media ID {id} has ambiguous bindings"));
-                }
-            }
+            });
+            bindings.insert(id, resolved);
         }
         Self {
             bindings,

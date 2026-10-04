@@ -13,6 +13,7 @@
 #[cfg(feature = "render")]
 extern crate alloc;
 
+mod archive_resource;
 mod archive_tail;
 mod binary;
 #[cfg(feature = "render")]
@@ -51,6 +52,10 @@ mod table;
 mod text_index;
 mod types;
 
+pub use archive_resource::{
+    ArchiveResource, ArchiveResourceContent, ArchiveResourceError, ArchiveResourceResolver,
+    ResolvedArchiveResource,
+};
 pub use end_tag::{
     EndTagDisplayTimestamps, EndTagEncryption, EndTagFixedStyle, EndTagSource, StoredEndTag,
     parse_end_tag_bytes, parse_end_tag_bytes_with_limits,

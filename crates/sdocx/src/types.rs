@@ -42,8 +42,14 @@ pub struct DocumentMetadata {
     pub flow_page_padding: Option<(u32, u32)>,
     /// Ordered list of page UUIDs.
     pub page_ids: Vec<String>,
-    /// Embedded media assets from the archive.
+    /// Embedded raster image assets from the archive.
     pub media_assets: Vec<MediaAsset>,
+    /// Authoritative media bindings, including entries whose files are missing or unsupported.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub media_manifest: Option<crate::MediaManifest>,
+    /// Retained `media/` source files; opaque resources are not image render inputs.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub archive_resources: Vec<crate::ArchiveResource>,
     /// Top-level typed note text from `note.note`, if present.
     pub note_text: Option<RichTextBox>,
     /// Top-level note title from `note.note`, if present.

@@ -16,6 +16,7 @@ use crate::storage::{
     parse_stored_page_bytes_with_limits,
 };
 use crate::types::{Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page};
+use crate::{ArchiveResource, ArchiveResourceContent};
 use crate::{ParseLimits, ParseOptions};
 
 const PROTECTED_DOCUMENT_MARKER: &[u8] = b"Document for S-Pen SDK";
@@ -140,13 +141,18 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     check_limit("page count", options.limits.max_pages, page_names.len())?;
     page_names.sort();
 
-    metadata.media_assets = parse_media_assets(&mut archive, &options.limits)?;
-    let media_manifest = read_optional_entry(&mut archive, "media/mediaInfo.dat", &options.limits)?
-        .map(|bytes| parse_media_manifest_bytes_with_limits(&bytes, &options.limits))
+    (metadata.media_assets, metadata.archive_resources) =
+        parse_media_resources(&mut archive, &options.limits)?;
+    metadata.media_manifest = metadata
+        .archive_resources
+        .iter()
+        .find(|resource| resource.name == "media/mediaInfo.dat")
+        .and_then(|resource| resource.data(&metadata.media_assets))
+        .map(|bytes| parse_media_manifest_bytes_with_limits(bytes, &options.limits))
         .transpose()?;
     let archive_names = archive.file_names().map(str::to_owned).collect();
     let media = MediaResolver::new(
-        media_manifest.as_ref(),
+        metadata.media_manifest.as_ref(),
         &metadata.media_assets,
         &archive_names,
     );
@@ -373,16 +379,20 @@ fn read_zip_entry<R: Read>(
     entry: zip::read::ZipFile<'_, R>,
     limits: &ParseLimits,
 ) -> Result<Vec<u8>> {
-    check_u64_limit("archive entry size", limits.max_entry_size, entry.size())?;
+    let declared_size = entry.size();
+    let name = entry.name().to_owned();
+    check_u64_limit("archive entry size", limits.max_entry_size, declared_size)?;
     let mut data = Vec::new();
     entry
-        .take(limits.max_entry_size.saturating_add(1))
+        .take(declared_size.saturating_add(1))
         .read_to_end(&mut data)?;
-    check_u64_limit(
-        "archive entry size",
-        limits.max_entry_size,
-        u64::try_from(data.len()).unwrap_or(u64::MAX),
-    )?;
+    let actual_size = u64::try_from(data.len()).unwrap_or(u64::MAX);
+    check_u64_limit("archive entry size", limits.max_entry_size, actual_size)?;
+    if actual_size != declared_size {
+        return Err(Error::Format(format!(
+            "archive entry {name}: decoded size {actual_size} differs from declared size {declared_size}"
+        )));
+    }
     Ok(data)
 }
 
@@ -516,23 +526,17 @@ fn apply_note_metadata(header: &StoredNoteHeader, metadata: &mut DocumentMetadat
     metadata.modified_ms.get_or_insert(header.modified_time_raw);
 }
 
-fn parse_media_assets<R: Read + Seek>(
+fn parse_media_resources<R: Read + Seek>(
     archive: &mut zip::ZipArchive<R>,
     limits: &ParseLimits,
-) -> Result<Vec<MediaAsset>> {
+) -> Result<(Vec<MediaAsset>, Vec<ArchiveResource>)> {
     let mut names = Vec::new();
     for index in 0..archive.len() {
         let name = {
             let entry = archive.by_index(index)?;
             let name = entry.name().to_string();
-            let lower = name.to_ascii_lowercase();
-            if name.starts_with("media/")
-                && (lower.ends_with(".jpg")
-                    || lower.ends_with(".jpeg")
-                    || lower.ends_with(".png")
-                    || lower.ends_with(".webp"))
-            {
-                Some(name)
+            if name.starts_with("media/") && !entry.is_dir() {
+                Some((name, index))
             } else {
                 None
             }
@@ -541,7 +545,7 @@ fn parse_media_assets<R: Read + Seek>(
             names.push(name);
         }
     }
-    names.sort_by(|left, right| {
+    names.sort_by(|(left, _), (right, _)| {
         media_archive_id(left)
             .map(u64::from)
             .unwrap_or(u64::MAX)
@@ -549,25 +553,44 @@ fn parse_media_assets<R: Read + Seek>(
             .then_with(|| left.cmp(right))
     });
 
-    let mut assets = Vec::with_capacity(names.len());
-    for name in names {
-        let data = read_required_entry(archive, &name, limits)?;
+    let mut assets = Vec::new();
+    let mut resources = Vec::with_capacity(names.len());
+    for (name, index) in names {
+        let data = read_zip_entry(archive.by_index(index)?, limits)?;
         let lower = name.to_ascii_lowercase();
-        let mime_type = if lower.ends_with(".png") {
-            "image/png"
-        } else if lower.ends_with(".webp") {
-            "image/webp"
+        let mime_type = image_mime_type(&lower);
+        let archive_id = media_archive_id(&name);
+        let content = if let Some(mime_type) = mime_type {
+            let media_index = assets.len();
+            assets.push(MediaAsset {
+                archive_id,
+                name: name.clone(),
+                mime_type: mime_type.to_owned(),
+                data,
+            });
+            ArchiveResourceContent::MediaAsset { media_index }
         } else {
-            "image/jpeg"
+            ArchiveResourceContent::Opaque { data }
         };
-        assets.push(MediaAsset {
-            archive_id: media_archive_id(&name),
+        resources.push(ArchiveResource {
             name,
-            mime_type: mime_type.to_string(),
-            data,
+            archive_id,
+            content,
         });
     }
-    Ok(assets)
+    Ok((assets, resources))
+}
+
+fn image_mime_type(lower: &str) -> Option<&'static str> {
+    if lower.ends_with(".png") {
+        Some("image/png")
+    } else if lower.ends_with(".webp") {
+        Some("image/webp")
+    } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+        Some("image/jpeg")
+    } else {
+        None
+    }
 }
 
 #[cfg(test)]
