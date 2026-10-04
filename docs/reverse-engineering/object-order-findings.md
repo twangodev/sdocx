@@ -154,6 +154,69 @@ decode separately; this tree is not the native manager/history reparenting
 lifecycle. The trace does not establish UI grouping, history replay,
 save/reload, subsequent connector resolution or appearance equivalence.
 
+## Container XML embeds children and appends fresh objects
+
+This source trace additionally uses `libSPenXmlSerializer.so`, SHA-256
+`7be7af380ae378f91c0e565dcc022479c3f87aa965a5190f245f4d006cb6f36a`,
+and `libSPenWordDocCoedit.so`, SHA-256
+`82a73d24732efe4f5c3c385b9fcb0ccfb05970507ba50039d252c2abb7f0c2af`.
+Addresses in this section are in XmlSerializer unless another library is
+named. WordDocCoedit's extracted bytes match its APK member.
+
+WordDocCoedit `CoeditObjectContainer` constructor, `0x38ad4`, calls
+`ObjectXmlSerializerFactory::CreateObject` at `0x38b08` with literal format
+`1`. The factory `0x110e2c` dispatches type 4 to the container constructor
+at `0x110ee0`; common initialization selects its Coedit branch for format 1
+(`0x11e084–0x11e0b4`). Container `ComposeElement`, `0x10de04`, gets the
+current child list and chooses Coedit for format 1, otherwise Sync.
+
+Coedit `composeObjectListCoedit`, `0x10df28`, opens `subObjectList`, writes
+`dummy="0"`, and creates a same-format serializer per child before calling
+virtual Compose (`0x10dfcc–0x10dfe8`). Common Compose `0x11c648` emits an
+`object` element containing that child's attributes/elements; nested
+containers recurse. Sync `composeObjectListSync`, `0x10e124`, also calls
+child Compose (`0x10e238–0x10e24c`), opening `objectList` lazily. With nonnull
+context and `GetSyncMode()==3`, it skips children whose facade byte `+8` is
+zero (`0x10e200–0x10e214`). The emitted children retain traversal order;
+this raw gate is not assigned an inferred semantic name.
+
+Both lists carry child XML representations rather than UUID-only membership.
+That does not establish all original vector channels inline: format-1 stroke
+`strokeBinary` remains gated by its library-global inclusion flag
+(`0x14ccbc–0x14ccf4`). Container composition does not bypass this child gate.
+
+`ParseElement`, `0x10d6e4`, accepts either list tag and reaches
+`parseObjectList`, `0x10d898`. It walks XML siblings, skips non-`object`
+elements and empty `type` attributes, converts each nonempty type, and calls
+Model `ObjectFactory::CreateObject(type,false)` at `0x10d9bc`. It creates a
+same-format child serializer, passes the parent context and calls child Parse
+(`0x10d9d0–0x10da08`). Successful children reach `SetAppendByXml(true)` →
+Model `ObjectContainerImpl::AppendObject` → clear flag (`0x10da18–0x10da34`).
+This constructs and appends fresh objects in sibling order; it does not
+resolve container membership through existing UUID targets.
+
+Common parsing can overwrite the fresh child's UUID from XML `id`
+(`0x11cc88–0x11cc90`); the same UUID string does not imply pointer reuse.
+The list loop has no UUID coalescing, preclear, removal or replacement.
+Reached Model append checks runtime handles, not UUID strings. Factory,
+Parse or append failure can occur after earlier children were admitted;
+this is not an atomic or idempotent replacement of an existing child list.
+
+Unfinished child serializers receive the parent's current child pointer list
+then virtual `OnFinishParsing` (`0x10db54–0x10db70`). Both returns are ignored.
+Common related-object lookup `0x11e1d0` returns the first UUID match or null;
+this deferred reference work is separate from fresh-child membership.
+Derived callbacks can fail; cleanup destroys pending serializers rather than
+removing admitted children. In WordDocCoedit's included-page
+`CoeditNote::InsertObject(int,String&)`, `0x43ebc`, `SetXml` at `0x43f54`
+is followed by `insertObject` at `0x43f64` without checking its boolean.
+That local caller behavior does not establish server admission rules.
+
+Rust's ordered container tree comes from nested binary records. This trace
+does not establish SDK XML/session support, binary source completeness from
+XML alone, actual Sync-mode frequency, complete session exchange, or
+save/reload behavior after partial parsing.
+
 ## Top-only selection restricts the object type mask
 
 Model `ObjectManager::FindObjectInRectIntersect`, `0x35e670`, receives the
