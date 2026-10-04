@@ -154,7 +154,7 @@ are not projected.
 
 The [raw-page ownership boundary](vector-retention-findings.md) still applies:
 `StoredObject::payload` requires supplied original page bytes (`storage.rs:215–218`).
-`container.rs::parse_media_assets:519–572` projects only media/ PNG, JPEG and WebP entries. An
-accepted image resource may remain an unbound asset; HTML/MHTML and nonimage attached files are
-not high-level assets in this path. Saved source bytes/metadata, measured display text and
-preview pixels are distinct.
+Non-directory `media/` files, including HTML/MHTML and attached files present there,
+are retained as opaque sources alongside typed image assets. This does not project
+card metadata or render cards; files outside `media/` and raw card payloads still require
+the original input. Saved source metadata, measured display text and preview pixels are distinct.

@@ -46,13 +46,15 @@ These contracts are confirmed from native serialization. The measured
 
 ## Resolution and public API
 
-`parse_media_manifest_bytes` exposes the bounded modern media manifest,
-including bind IDs, filenames, recorded hashes, reference counts, timestamps,
+`DocumentMetadata.media_manifest` and `parse_media_manifest_bytes` expose the bounded
+modern media manifest, including bind IDs, filenames, recorded hashes, reference counts, timestamps,
 attached flags and extension bytes. Record sizes exclude their four-byte size
 prefix. The empty-hash writer form is a two-byte zero; populated hashes occupy
 64 ASCII hexadecimal bytes. Legacy manifests at versions 3001 and below are
 not implemented. Malformed modern records fail instead of falling back to
 filename guesses. Hashes are retained; normal parsing does not verify them.
+`archive_resources` retains `media/` source files; `ArchiveResourceResolver` borrows
+their bytes independently of typed image admission.
 
 For image objects, bind IDs resolve through manifest filenames under `media/`.
 This mapping takes precedence over both ZIP order and numeric filename prefixes.
@@ -291,7 +293,8 @@ immediate frame switching or atomicity.
 If a main-binding manifest record names an existing GIF archive entry without
 a typed asset, current Rust media resolution reports unsupported media: the
 typed asset filter admits JPG/JPEG/PNG/WebP. The new source finding is the reached
-main-file animation route; the filter alone is an existing gap. This trace does
+main-file animation route; existing GIF entries are retained as opaque resources,
+without animation decoding or playback. This trace does
 not establish original-image bytes or ordinary processed cache pixels as
 substitutes for that playback source, nor prove those references must differ.
 Caller-retained original archive bytes remain a [separate carrier](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).

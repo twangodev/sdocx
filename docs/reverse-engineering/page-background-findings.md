@@ -225,16 +225,15 @@ mode, width and rotation as optional values. Unlike the Java in-memory model,
 these preserve omission separately from a present default value. The raw words
 are exposed as `u32`; native `-1` image IDs appear as `u32::MAX`.
 
-For PDF records, `parse_page_properties` consumes every entry, retains **only the
-first page index**, and skips every media ID and rectangle. Remaining page
-indices are also discarded. A nonempty PDF list overrides `Page.template` with
-`CustomPdf { page_index }`. The decoded model is therefore insufficient to
-resolve the PDF resource or reproduce multiple-record placement. Neither the
-decoded page nor `StoredPage` exposes these PDF fields as typed data.
+`PageBackground.pdf_paper` preserves absent versus present-empty field 8 and every
+ordered signed binding/index/rectangle. Rectangle encoding follows the page
+version: integers from 2034, exact float bits below 2034 and raw bytes when the
+version is unavailable. Raw field-9 `template_type` is retained separately.
+A nonempty list supplies `Page.template` with a first-index `CustomPdf` compatibility
+summary; this does not establish native template assignment or PDF drawing.
 
-Without a PDF record, any nonzero raw template ID is currently marked `BuiltIn`,
-including custom/PDF/dynamic IDs. That source label is a parser classification,
-not proof that the native drawing factory generates it.
+The raw template type and admitted built-in projection remain separate; neither
+proves that the native drawing factory generates the template.
 
 [`page_background.rs`](../../crates/sdocx/src/page_background.rs) admits only
 line IDs 1–3 and dot IDs 7–9, with known native document dimensions/orientation

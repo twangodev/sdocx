@@ -145,8 +145,9 @@ extending its guarantees.
 | Tape visibility/reveal | Saved note preference and per-stroke reveal flag retained | Generic pen approximation does not implement native presentation controls or destination attenuation. See [Tape findings](reverse-engineering/stroke-metadata-findings.md#tape-visibility-and-reveal-controls). |
 
 Native [image editing](reverse-engineering/image-edit-source-findings.md) can replace
-the main resource independently of its original binding. Manifest-backed SPI
-resources remain unsupported typed assets; caller-retained archive bytes are separate.
+the main resource independently of its original binding. SPI sources under `media/`
+are retained as opaque resources but remain unsupported image inputs;
+complete original archive/page bytes are a separate caller-owned carrier.
 
 The [SVG composition description](svg-rendering.md) and
 [native capture findings](reverse-engineering/capture-composition-findings.md)
@@ -173,12 +174,13 @@ The browser displays parser diagnostics; its preview/PDF bindings discard the
 separate text/object render diagnostics returned by Rust. See the
 [diagnostic transport boundary](reverse-engineering/vector-retention-findings.md#diagnostic-interpretation).
 The [real-document inventory](reverse-engineering/rendering-corpus-findings.md)
-records feature occurrence separately from native research. Its only parse
-warnings are PDF-backed paper in two local research notes. Rust currently
-retains only the first PDF page index, discarding the resource bindings,
-placement rectangles and additional entries; see
+records feature occurrence separately from native research. At that revision its only
+parse warnings were PDF-backed paper in two local research notes. Rust now retains
+all ordered signed PDF records, version-dependent rectangles and raw template type;
+modern manifest bindings and `media/` source bytes are retained separately. See
 [page background findings](reverse-engineering/page-background-findings.md).
-This is a retention gap as well as a rendering gap.
+PDF-backed paper remains unrendered; retained records and bytes do not certify PDF
+validity or native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
 the library proof does not implement SDK PDF-paper support.

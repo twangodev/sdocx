@@ -29,13 +29,13 @@ separately there. None establishes complete Samsung export appearance parity.
 
 ## Current Rust boundaries
 
-The [page decoder](../crates/sdocx/src/page.rs) consumes every PDF record but
-keeps only the first source index. It discards resource bindings, rectangles and
-additional records, and overwrites the separate template-type projection.
-The [archive asset loader](../crates/sdocx/src/container.rs) retains raster-image
-assets only; source PDF bytes are absent from the high-level document.
-Structural page offsets permit reinspection only while original page bytes are
-available. These losses happen before SVG or PDF drawing begins.
+The [page decoder](../crates/sdocx/src/page.rs) retains all ordered signed records
+and version-dependent rectangles in `PageBackground.pdf_paper`, independently of
+raw `template_type`. `PageTemplateSource::CustomPdf` remains a first-record
+compatibility summary. Document metadata retains modern manifest bindings and
+uncompressed `media/` source bytes, including opaque PDFs. Source resolution does
+not open a PDF or certify its indices. Structural page offsets still require
+caller-retained original uncompressed page bytes.
 
 `PageBackground` participates in
 [trailing compatibility-page equality](../crates/sdocx/src/layout.rs). Complete

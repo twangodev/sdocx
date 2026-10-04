@@ -145,11 +145,11 @@ admitted (`0x3a4770–0x3a4794`); a negative index skips it. Current references 
 certify bytes, final ZIP inclusion or original retention: reuse the
 [resource/save gates](coedit-resource-findings.md#pending-callbacks-and-ordinary-saving-use-different-gates).
 
-Rust `crates/sdocx/src/image.rs:226` retains original_media_id separately from main;
-`storage.rs:216–218` borrows the caller's original page bytes. `container.rs:526–534`
-admits JPG/JPEG/PNG/WebP assets, excluding SPI. If the manifest names an existing
-`.spi` entry for the main binding, `media.rs:35–42` reports unsupported media rather
-than carrying those bytes as a typed asset. The generated cache suffix alone does
-not prove every final archive filename/bytes. Original archive preservation is
+Rust [image decoding](../../crates/sdocx/src/image.rs) retains original_media_id separately from main;
+[raw payload access](../../crates/sdocx/src/storage.rs) borrows original page bytes.
+SPI files under `media/` are retained as opaque resources, but the
+[image resolver](../../crates/sdocx/src/media.rs) rejects them as unsupported image inputs.
+The generated cache suffix alone does not prove every final archive filename/bytes.
+Original archive/page preservation is
 [separate from parsed source state](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model);
 a lasso-generated bitmap does not establish a generic persisted vector mask.

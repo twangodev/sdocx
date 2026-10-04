@@ -60,7 +60,7 @@ The browser has a separate ownership boundary: its
 [`DocumentSession`](../../crates/sdocx-wasm/src/lib.rs) retains a
 [debugger source](../../crates/sdocx-wasm/src/debugger.rs) containing original
 archive bytes. This permits later structural inspection in that session. It
-does not add source ownership to the standalone Rust `ParsedDocument` API.
+does not add complete original archive/page-byte ownership to the standalone Rust API.
 
 ### Native page files during save
 
@@ -588,9 +588,9 @@ Rust bounds the page header and jumps to layers (`storage.rs:233–266`);
 semantic flexible decoding reads only bits 0–9 (`page.rs:237–304`). It exposes
 no owned custom-list records, validates no individual custom count/size, and
 does not diagnose their kinds through layer-object warnings. Their bytes need
-the original page buffer. High-level asset admission accepts only image
-extensions (`container.rs:519–533`), omitting these `.sdocx` member bytes and
-the custom key-to-ID relationship. Caller-owned archive bytes and browser
+the original page buffer. `media_assets` admits only image extensions;
+non-directory `.sdocx` files under `media/` are retained as opaque resources,
+without the custom key-to-ID relationship. Caller-owned archive bytes and browser
 original ZIP retention are separate source carriers; original page bytes and
 manifest resources do not become a typed custom-key/source-namespace graph.
 Rust does not apply the native attachment or validity gates above. These are
@@ -644,23 +644,22 @@ does not preserve their clipping, transforms or effect placement.
 
 ## Resource identity and page paper
 
-The [asset loader](../../crates/sdocx/src/container.rs) owns bytes for `media/`
-entries ending in JPEG, PNG or WebP extensions. Other entries, including PDF
-sources, are absent from `DocumentMetadata.media_assets`.
+The [asset loader](../../crates/sdocx/src/container.rs) retains non-directory `media/`
+entries. JPEG/PNG/WebP bytes remain owned by `media_assets`; other files own opaque
+bytes in `archive_resources`. Document metadata retains the bounded modern
+[media manifest](../../crates/sdocx/src/media.rs) and its authoritative bindings.
+[`ArchiveResourceResolver`](../../crates/sdocx/src/archive_resource.rs) borrows source bytes
+without admitting a decoder or renderer; missing and ambiguous bindings remain separate.
+Filename-prefix `archive_id` is not a manifest binding, and resolved indices do not
+identify immutable bytes after caller mutation.
 
-The [media manifest](../../crates/sdocx/src/media.rs) supplies authoritative
-bindings while parsing. It is used by a transient resolver and is not returned
-inside `ParsedDocument`; explicit manifest parsing is a separate API. A
-`MediaAsset.archive_id` inferred from its filename prefix is not the same
-identity as a manifest binding. A resolved array index also does not identify
-immutable resource bytes when callers can replace assets.
-
-The page decoder retains only the first PDF source-page index and discards
-bindings, rectangles and additional entries. The
+The page decoder retains all ordered signed PDF records and version-dependent
+rectangles, separately from raw template type and the first-record compatibility
+summary. PDF drawing remains unsupported. The
 [PDF preservation constraints](../pdf-paper-preservation.md#current-rust-boundaries)
-cover these losses, visible-page equality, original vector PDF transport and the
-separate SVG conversion problem. Offset-only page retention applies equally to
-non-PDF opaque vector records.
+cover visible-page equality, original vector PDF transport and the separate SVG
+conversion problem. Original page payloads still require caller-owned bytes;
+offset-only retention applies equally to non-PDF opaque vector records.
 
 ## Native opaque records, wrappers and resources
 
@@ -881,11 +880,10 @@ decoder or observed merge/save resource loss is established here.
 
 Rebound current attachments are distinct from unchanged opaque bytes and their
 originating resource namespace; those bytes alone do not establish portability.
-Rust's archive parser builds its manifest resolver locally
-([`container.rs`](../../crates/sdocx/src/container.rs)); `ParsedDocument` owns
-neither that media manifest nor the original archive/page bytes. The
-[external source-byte boundary](#original-page-bytes-are-external-to-the-parsed-model) also
-limits recovery of opaque references and their original bindings.
+Rust document metadata retains modern manifest bindings and `media/` sources,
+but not the original archive or page buffers. Opaque references still require their
+originating namespace; raw page payloads also require
+[caller-retained page bytes](#original-page-bytes-are-external-to-the-parsed-model).
 
 ### Selected-object clipboard archive
 

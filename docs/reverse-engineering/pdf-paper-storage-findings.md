@@ -166,20 +166,17 @@ The presence of PDF records cannot safely be used to invent a type-16 assignment
 
 ## Current Rust interpretation
 
-[`page.rs`](../../crates/sdocx/src/page.rs) consumes all saved PDF entries but
-retains only the first index as unsigned `u32`, overriding the template source
-with `CustomPdf`. Thus a native negative index retains its bits but is exposed
-as a large positive value; source binding, placement and additional indices are
-not exposed. The override also conflates PDF presence with template backing,
-although native `HasPDF` and type 16 are distinct above.
+[`page.rs`](../../crates/sdocx/src/page.rs) preserves all ordered signed records in
+`PageBackground.pdf_paper`, including absent versus present-empty and version-dependent
+rectangle encodings. Raw field-9 `template_type` remains separate. The `CustomPdf`
+compatibility summary exposes the first index as unsigned bits.
 
-[`container.rs`](../../crates/sdocx/src/container.rs) loads only JPEG/PNG/WebP
-entries into `DocumentMetadata.media_assets`; PDF bytes are omitted.
-[PDF resource resolution](pdf-paper-resource-findings.md) describes the separate
-manifest and open-file contracts. Neither
-[`StoredPage`](../../crates/sdocx/src/storage.rs) nor the high-level page owns a
-typed PDF record list. Stored offsets require the caller's original page bytes
-to revisit the discarded fields. The existing
+[`container.rs`](../../crates/sdocx/src/container.rs) retains modern manifest bindings
+and opaque PDF source bytes separately from JPEG/PNG/WebP image admission.
+Source lookup does not certify opening or rendering; the native
+[resource contracts](pdf-paper-resource-findings.md) remain separate.
+[`StoredPage`](../../crates/sdocx/src/storage.rs) still requires original
+page bytes for raw payload access. The
 [`pdf_template_index_follows_the_declared_record_instead_of_page_size`](../../crates/sdocx/tests/structural_strokes.rs)
-test establishes only first-index selection from supplied bytes, not media
-binding, placement, native load filtering or PDF rendering.
+test checks the compatibility summary; [record preservation tests](../../crates/sdocx/tests/pdf_paper_source.rs)
+cover the owned list. Neither establishes native load filtering or PDF rendering.

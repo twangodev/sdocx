@@ -585,11 +585,10 @@ list-mode first-record selection cannot be generalized to single-mode notes.
 
 ## Consequences for the Rust model and vector outputs
 
-The current Rust parser consumes PDF records but keeps only the first source
-page index; it discards binding IDs, placements and subsequent records. As
-recorded in the saved-background findings, the resulting `CustomPdf` value
-cannot identify the PDF bytes or reproduce viewer composition. Knowing the
-template ID and first page number is insufficient for either use.
+The Rust model retains all ordered signed PDF records and version-dependent placement
+rectangles, with manifest/source-byte resolution separate from the `CustomPdf`
+compatibility summary. It does not yet import PDF paper into note output or reproduce
+viewer composition. The first-index summary alone remains insufficient.
 
 The evidence distinguishes three operations:
 

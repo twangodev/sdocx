@@ -226,13 +226,11 @@ boundaries of the inspected bitmap route.
 
 ## Consequences for the current Rust model
 
-[`parse_page_properties`](../../crates/sdocx/src/page.rs) currently reads every
-PDF record but discards its media binding and rectangle and keeps only the first
-source page index as `PageTemplateSource::CustomPdf`. The parser does not reject
-the bytes; its decoded semantic model loses resource identity, later indices
-and destination geometry. Source PDF bytes alone cannot recover these choices:
-selected source indices, attachment offsets and document page dimensions are
-independent inputs to the native producers above.
+[`parse_page_properties`](../../crates/sdocx/src/page.rs) retains every ordered signed
+PDF binding/index and version-dependent placement rectangle. `PageTemplateSource::CustomPdf`
+is only a first-record compatibility summary. Retained placements, separately resolved
+source bytes and document dimensions remain independent inputs to the native producers;
+the renderer does not yet reproduce native multiple-record placement.
 
 [`page_background.rs`](../../crates/sdocx/src/page_background.rs) rejects this
 template source. The existing seven-document inventory contains two PDF-backed

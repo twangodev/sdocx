@@ -260,9 +260,9 @@ type-15 envelope requires retaining outer identity while resolving its
 integer dispatch key and compatible bytes; it does not justify a second
 stroke implementation.
 
-For Painting, `container.rs::parse_media_assets` admits only `.jpg`, `.jpeg`,
-`.png` and `.webp` entries. Even if a painting thumbnail is retained as an
-image asset, that does not retain its separately bound editable source. A
+Painting thumbnails in JPEG/PNG/WebP remain typed image assets. Separate editable
+source files under `media/` are retained as opaque resources with manifest bindings;
+this does not decode Painting records or resolve all private references. A
 vector-preserving document needs the original attached resource identity and
 bytes as well as placement/crop and preview identity. Rendering the thumbnail
 alone is a preview fallback, with no demonstrated preservation of editable

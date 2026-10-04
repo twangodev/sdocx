@@ -234,17 +234,16 @@ normal parsing does not verify the retained asset hash. Those contracts apply
 at the archive-resource level; they do not certify a resolved file as a
 supported or openable PDF.
 
-`container.rs::parse_media_assets` currently includes only PNG, JPEG and WebP.
-PDF ZIP entries can be present in the manifest and archive while absent from
-`Document.media_assets`. This is an unsupported asset type in the current
-extraction path, not evidence that the source archive has lost its PDF.
+The archive loader retains modern manifest bindings and non-directory `media/`
+entries. JPEG/PNG/WebP remain typed image assets; PDFs and other formats remain
+opaque resources. [`ArchiveResourceResolver`](../../crates/sdocx/src/archive_resource.rs)
+resolves source bindings separately from image admission and does not certify an
+openable PDF. It accepts unsigned IDs; negative saved sentinels are not admitted bindings.
 
-`page.rs` currently reads every PDF ID and rectangle but discards them, retaining
-only the first page index as `PageTemplateSource::CustomPdf`. Consequently the
-public model cannot distinguish multiple PDF placements, multiple bindings,
-their rectangles, an unresolved resource, or a present PDF with an invalid
-page index. The saved list's order and cardinality are independent of the
-number of physical note pages.
+`PageBackground.pdf_paper` preserves every ordered signed ID/index/rectangle,
+independently of the first-record `CustomPdf` compatibility summary. Invalid and
+sentinel values remain inspectable; PDF opening and page-index validation remain
+unimplemented. Saved list order and cardinality are independent of physical note pages.
 
 The native boundaries distinguish archive binding, byte availability, PDF
 opening, page selection and placement. Treating all five as a template type
