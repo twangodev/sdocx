@@ -541,7 +541,8 @@ Recognized outer object types without semantic decoders produce
 `UnsupportedObjectType` diagnostics with the page entry, raw type and payload
 offset. This includes undecoded container/group payloads even when their child
 records can be decoded. `StoredObject::payload(page_bytes)` borrows the matching
-original uncompressed page bytes; the stored model does not own them. See the
+original uncompressed page bytes. `StoredObject` owns no payload bytes; opt-in
+detailed `StoredArchivePage.source_bytes` can own the matching page buffer. See the
 [source ownership boundary](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).
 Child traversal continues. Unknown future IDs retain the separate
 `UnknownObjectType` diagnostic. Neither category implies that omitted content

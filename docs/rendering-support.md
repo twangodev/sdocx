@@ -147,7 +147,8 @@ extending its guarantees.
 Native [image editing](reverse-engineering/image-edit-source-findings.md) can replace
 the main resource independently of its original binding. SPI sources under `media/`
 are retained as opaque resources but remain unsupported image inputs;
-complete original archive/page bytes are a separate caller-owned carrier.
+complete original archive bytes remain a separate carrier. Detailed parsing can
+opt into retaining original page sources.
 
 The [SVG composition description](svg-rendering.md) and
 [native capture findings](reverse-engineering/capture-composition-findings.md)

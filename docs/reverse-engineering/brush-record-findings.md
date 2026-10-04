@@ -242,8 +242,8 @@ editable-source sample remain unverified.
 
 `storage.rs::parse_object` retains each outer type, payload byte range,
 integrity trailer and child tree independent of semantic support. The payload
-is borrowed from caller-supplied original `.page` bytes; `StoredObject` does
-not own those bytes. Structural retention is not a self-contained round-trip
+is borrowed from original page bytes, optionally owned by detailed `StoredArchivePage`
+records; `StoredObject` itself owns no bytes. Structural retention is not a round-trip
 archive or a decoded vector model.
 
 `page.rs::decode_objects` admits only type 1 as a stroke. Types 14, 15, 18 and

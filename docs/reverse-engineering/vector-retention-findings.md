@@ -38,29 +38,32 @@ without being a copy of an original saved outline.
 local IDs, live resource references, received managed bytes and ordinary-save
 payload admission. Attachment callbacks do not certify original archive identity.
 
-## Original page bytes are external to the parsed model
+<a name="original-page-bytes-are-external-to-the-parsed-model"></a>
+
+## Original page source ownership
 
 [`StoredObject`](../../crates/sdocx/src/storage.rs) stores `payload_offset` and
-`payload_size`. Its `payload(page_bytes)` method borrows the corresponding range
-from a caller-supplied uncompressed `.page` entry. `ParsedDocument` owns the
-physical indices, high-level document, typed note, manifests for page order and
-diagnostics, but no original page-byte store.
+`payload_size`; `payload(page_bytes)` borrows a checked range without owning bytes.
+Detailed [archive parsing](../../crates/sdocx/src/container.rs) with
+`ParseOptions.retain_page_sources = true` retains each parsed uncompressed `.page`
+buffer in its `StoredArchivePage.source_bytes`, alongside the physical record.
+Default detailed parsing retains no page buffers. Ordinary parsing ignores this
+option and returns only the semantic `Document`; converting a detailed result to
+`Document` also drops physical sources.
 
-The [archive parser](../../crates/sdocx/src/container.rs) reads each page into a
-local buffer, decodes it, and returns only semantic values and physical indices.
-The buffer does not survive in the returned `ParsedDocument`. Ordinary `parse`
-also discards the physical indices and parse report. Consequently, an opaque
-page-object payload remains recoverable only when the caller retains or reopens
-the matching original input. Serializing offsets does not serialize their bytes.
-The physical page-header projection also keeps only the low 32 bits of each
-variable-length mask, alongside its byte count; it does not own the original
-high mask bytes or page flexible data.
+Retained buffers are original snapshots, not regenerated from semantic edits.
+Cloning copies them; serde includes present bytes, omits `None` and defaults old
+snapshots to `None`. Public mutation or deserialization can invalidate source/index
+association, so byte presence does not certify association or integrity. Retention
+does not add semantic decoding, rendering, original `note.note`, complete ZIP ownership
+or roundtrip identity. The typed page header still retains only low mask bits and
+mapped fields; original buffers preserve the remaining bytes for explicit inspection.
 
 The browser has a separate ownership boundary: its
 [`DocumentSession`](../../crates/sdocx-wasm/src/lib.rs) retains a
 [debugger source](../../crates/sdocx-wasm/src/debugger.rs) containing original
-archive bytes. This permits later structural inspection in that session. It
-does not add complete original archive/page-byte ownership to the standalone Rust API.
+archive bytes. Its default page-buffer option remains off. This whole-archive
+carrier is separate from the opt-in detailed Rust page sources.
 
 ### Native page files during save
 
@@ -658,8 +661,9 @@ rectangles, separately from raw template type and the first-record compatibility
 summary. PDF drawing remains unsupported. The
 [PDF preservation constraints](../pdf-paper-preservation.md#current-rust-boundaries)
 cover visible-page equality, original vector PDF transport and the separate SVG
-conversion problem. Original page payloads still require caller-owned bytes;
-offset-only retention applies equally to non-PDF opaque vector records.
+conversion problem. Original page payloads require matching bytes, available from
+opt-in detailed page sources or separately retained input. Default structural
+records remain offset-only, including for non-PDF opaque vectors.
 
 ## Native opaque records, wrappers and resources
 
@@ -732,8 +736,8 @@ preservation therefore does not establish ownership of an external subtree.
 Rust's physical `storage.rs::parse_object` instead recurses over declared
 children independently of object type, after consuming the parent's payload
 and integrity trailer. `StoredObject.children` retains those ordered records
-separately; `StoredObject::payload` borrows only the parent's payload from
-caller-owned page bytes. Retaining that payload alone does not retain the
+separately; `StoredObject::payload` borrows only the parent's payload from matching
+original page bytes, optionally retained by detailed parsing. That payload alone does not retain the
 physical subtree. Original page bytes, child boundaries and integrity metadata
 remain separate preservation inputs, without asserting that the APK renders
 those descendants as the opaque parent's semantic children.
@@ -880,10 +884,10 @@ decoder or observed merge/save resource loss is established here.
 
 Rebound current attachments are distinct from unchanged opaque bytes and their
 originating resource namespace; those bytes alone do not establish portability.
-Rust document metadata retains modern manifest bindings and `media/` sources,
-but not the original archive or page buffers. Opaque references still require their
-originating namespace; raw page payloads also require
-[caller-retained page bytes](#original-page-bytes-are-external-to-the-parsed-model).
+Rust document metadata retains modern manifest bindings and `media/` sources.
+Opt-in detailed records separately retain original page buffers, not the complete
+archive. Opaque references still require their originating namespace and
+[matching original page sources](#original-page-bytes-are-external-to-the-parsed-model).
 
 ### Selected-object clipboard archive
 

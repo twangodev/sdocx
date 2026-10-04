@@ -34,8 +34,8 @@ and version-dependent rectangles in `PageBackground.pdf_paper`, independently of
 raw `template_type`. `PageTemplateSource::CustomPdf` remains a first-record
 compatibility summary. Document metadata retains modern manifest bindings and
 uncompressed `media/` source bytes, including opaque PDFs. Source resolution does
-not open a PDF or certify its indices. Structural page offsets still require
-caller-retained original uncompressed page bytes.
+not open a PDF or certify its indices. Structural offsets require matching original
+page bytes, retained by opt-in detailed parsing or supplied separately.
 
 `PageBackground` participates in
 [trailing compatibility-page equality](../crates/sdocx/src/layout.rs). Complete
