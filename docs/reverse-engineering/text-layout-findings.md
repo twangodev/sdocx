@@ -2754,6 +2754,50 @@ forcing disjoint string chunks. This proves page indexing of an already
 measured layout. It does not establish moving/resizing objects or document
 repagination.
 
+### Source objects become derived body obstacles
+
+Bodytext `updateObstacle` calls `MakeObstacle(0)` (`0xb2d34`). Make clears
+its derived list, then visits supplied page records (`0xb8964`). It visits
+only the first record when `IsInfiniteScrollDocument` is true: ordinary
+`BodyTextDocument` returns true for text-only mode **or** page mode 1
+(`0xa98a8`–`0xa98b8`, conditional-compare fallback NZCV 4). Otherwise it
+visits all records, skipping null `WPage` pointers. The no-argument page
+list query reaches WDoc `WPage::GetObjectList`, `0xc4450`, and Model
+`PageImplBase::GetObjectList`, `0x3450e4`: it reads the current physical
+layer's original object list, without merging sibling layers or traversing
+container children. [Saved layer selection](page-layer-selection-findings.md)
+establishes the initial assignment; callers can later change it.
+
+`AppendObstacle`, `0xb8af0`, accepts root objects with layout Flow 1 or
+Block 2 (`0xb8bf4`–`0xb8c10`), then reads virtual `GetDrawnRect` at slot
+160 (`0xb8c2c`). It does not independently test type or visibility. The
+getter can have its own content rules; drawn bounds are not universally
+the saved bbox. Block replaces left/right with `[0,page_width]`
+(`0xb8c48`–`0xb8c54`); Flow retains its drawn horizontal extent.
+
+Both attempt page intersection (`0xb8c60`) and ignore the result. Base
+`RectF::Intersect`, `0xb1350`, clips ordered finite rectangles on positive
+overlap, but leaves disjoint/edge-touching input unchanged when returning
+false (`0xb13c8`). Such rectangles still become obstacles; the producer
+does not universally clip or reject off-page bounds. It then offsets Y by
+the cumulative integer `BodyTextDocument::GetY(page)`, converted to `f32`
+(`0xb8bcc`, `0xb8c70`), without density division or page X translation.
+The supplied float affects dirty-region bookkeeping, not rect inflation.
+
+`ChangeObstacle`, `0xb93ac`, requires an existing object-pointer map entry.
+Flow/Block update it with the same geometry projection; other modes remove
+it (`0xb9488`–`0xb9568`). It does not insert newly eligible unmapped objects.
+Object-add events instead call Append (`0xb18bc`). Composer's separate
+`GetObstacleFilterInBody`, `0x3a2d7c`, returns `0x00fffffc`; its
+`IsObstacleInBody`, `0x3a2d84`, accepts types 3/4/7/8/10/11/13/14/22.
+Neither predicate is reached by this full-rebuild producer chain.
+
+Rust retains [saved layout modes](object-flexible-findings.md), but body
+plan exclusions currently come from page-padding bands, without a general
+Flow/Block object producer. The native page-obstacle certificate requires
+an empty one-page object list. These source-only findings do not extend
+that certificate or establish executed document repagination.
+
 ### Captured page text ranges
 
 The [Rust capture](../../conformance/native_table/page_text_ranges.rs) and
