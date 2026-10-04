@@ -388,13 +388,18 @@ value in either field does not itself show that the saved path is unusable.
 Conversely, accepting such state must not imply native edit-time routing
 or the compatibility load transformations are implemented.
 
-Type-6 magnetic coordinates are read and discarded; the connection block
-is retained only through the original bounded object payload and yields
-an unsupported warning when populated. There is no typed resolved or
-unresolved connector graph in the SDK. Preserving visual saved paths
-therefore does not currently preserve editable attachment relationships.
-`StoredPage` payload boundaries require the original uncompressed page
-bytes to recover those relationships.
+`NativeShape.base_source` and `NativeLine.base_source` retain boxed type-6 source:
+f64 magnetic points and raw sized `connection_data`, excluding its length prefix
+but including the count and opaque remainder. Populated connection records or opaque
+connection remainders still produce an unsupported warning; there is no typed resolved
+or unresolved connector graph or edit-time routing. Object format version remains in
+common metadata; page/document versions are separate source context. Unowned type-6
+masks, reserved bytes and fixed/flexible/style extensions still require original
+uncompressed page bytes. The raw connection bytes retain the saved relationship
+payload without resolving target identity or recomputing routes.
+The locked `hf/02-shapes-and-dot-calibration.sdocx` contains five shapes and one line
+with 31 retained magnetic points. All six connection payloads are exactly four zero
+bytes, so this provides no nonempty-graph or native-appearance witness.
 
 For existing diagrams, emitting complete saved geometry avoids making
 vector export dependent on a second routing implementation or a guessed
