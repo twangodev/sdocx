@@ -96,8 +96,10 @@ The ordinary `TaskMakePdf` path reopens the saved note through
 `DocumentFileManager.open`, resets selected parameters and passes the note
 to the exporter. A separate created-note path uses an existing share note.
 `resetParameterInNote`, lines 130–135, copies a missing default page height
-and removes custom sticky-memo objects. Immediately before constructing the
-exporter, line 228 copies PDF-reader mode. These inspected task methods do
+and removes every page's [custom-object entries](file-format.md#page-custom-object-list).
+Despite its name, `removeAllStickyMemoObject`, lines 119–127, calls
+`removeAllCustomObject()` without filtering the custom kind. Immediately before
+constructing the exporter, line 228 copies PDF-reader mode. These task methods do
 not explicitly flatten physical layers or sort their objects.
 
 In native code, `NotePDFExporter::SetDocument`, `0x3603e4`, stores the note

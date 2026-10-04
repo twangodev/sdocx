@@ -76,6 +76,26 @@ transforms or composition for opaque painting, brush or stroke-group objects.
 The [support matrix](../rendering-support.md#object-types-and-locations) records
 which native types currently have a dedicated semantic or rendering route.
 
+## Page custom objects and attached source
+
+Page flexible [field 18](file-format.md#page-custom-object-list) owns a separate
+custom-kind namespace and keyed file/string records, rather than layer objects
+or rich-text embedded-object spans. One concrete kind is `SpenStickyNote` (1):
+the app creates and saves another `.sdocx`, attaches it to the custom object,
+then appends that object to the page (`StickyMemoObjectManager.java:159–192`,
+`SmDocumentManager.java:101–102`, `190–200`, `350–355`). Collapse bounds and
+color live in keyed strings; thumbnail attachment uses `co_thumbnail_path`.
+Composer's kind-1 overlay draws icon bitmaps (`0x400c4c`), separately from that
+nested document's source. An icon or thumbnail does not retain its contents.
+
+Rust bounds the page header and jumps to layers (`storage.rs:233–266`);
+semantic flexible decoding reads only bits 0–9 (`page.rs:242–296`). It exposes
+no owned custom-list records, validates no individual custom count/size, and
+does not diagnose their kinds through layer-object warnings. Their bytes need
+the original page buffer; nested non-image resources are outside high-level
+image assets. These are source ownership boundaries, not verified archive loss
+or arbitrary custom-vector semantics.
+
 ## Ownership differs among supported object families
 
 | Family | Owned semantic or opaque data | Remaining source dependency |

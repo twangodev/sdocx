@@ -376,7 +376,7 @@ Confirmed flexible page field-mask meanings from the Java writer:
 | 10 | `0x000400` | 49-byte canvas-cache metadata records |
 | 11 | `0x000800` | imported-data height |
 | 12 | `0x001000` | deprecated/unknown `u32` |
-| 18 | `0x040000` | custom-object list; internals partly unresolved |
+| 18 | `0x040000` | [page-owned custom-object list](#page-custom-object-list) |
 
 Bit 10 is `CanvasCacheData`, confirmed by native
 `WPageLoadHandler::LoadHeader_CanvasCacheData`, `0xd3b44`, and the Java
@@ -388,6 +388,65 @@ cache field, not font-program bytes.
 
 The three fixture field masks are `0x471`, `0xd71`, and `0xd71`; their parsed
 flexible fields end exactly at `layer_offset`.
+
+### Page custom-object list
+
+In ARM64 `libSPenWDoc.so`, `WPageLoadHandler::LoadCustomObject` (`0xd49b4`)
+tests field 18 at `0xd49e8`; `Save_CustomObject` (`0xd66f0`) serializes the
+separate page-owned list at `WPageImpl + 0x210`. Its envelope is:
+
+```text
+i32 count
+repeat count:
+    i32 custom_kind
+    i32 own_binary_byte_count
+    u8[own_binary_byte_count] own_binary
+```
+
+Custom kinds are a separate namespace from layer-object types. The loader
+constructs `CustomObject` with the supplied integer (`0xd4ad4`, `0x84d48`),
+without the layer factory's known-type mask. This envelope has no layer child
+count or object hash. The current own binary is:
+
+```text
+u32 zero
+u8 property_mask_width = 1; u8 property_mask = 0
+u8 flexible_mask_width = 2; u16 flexible_mask = 0
+u16 uuid_byte_count = 36; u8[36] uuid_bytes
+i32 file_count
+repeat file_count:
+    i32 key_byte_count; u8[key_byte_count] key_bytes; i32 file_id
+i32 string_count
+repeat string_count:
+    i32 key_byte_count; u8[key_byte_count] key_bytes
+    i32 value_byte_count; u8[value_byte_count] value_bytes
+f64 left, top, right, bottom
+optional pair: u32 format_version; u32 minimum_format_version
+```
+
+`CustomObjectImpl::GetOwnBinary` (`0x8a31c`) starts UUID at offset 9,
+writes keyed file IDs and string pairs, widens its runtime rectangle floats
+to doubles, and appends both version words. The current empty-map size is 95
+bytes; Java `n1/u.java:1087–1164` ends after the rectangle, giving 87 bytes.
+The native reader defaults both versions to 5303 when fewer than eight bytes
+remain (`0x8a990`–`0x8aa38`), otherwise reads two words and ignores extra tail.
+There is no version-comparison gate in these inspected own/list methods.
+
+`ApplyOwnBinary` (`0x8a654`) skips the leading word and fully advances both
+declared mask widths, copying at most one property byte and two flexible bytes
+into local words. It does not dispatch their bits or reject widths above four.
+String lengths count raw bytes; arbitrary bytes are not verified as UTF-8.
+Runtime maps overwrite duplicate keys. Saving omits file ID -1 and empty
+string keys/values and reconstructs the frame; extensions are not copied.
+
+List loading rejects negative count/size and aborts on binary decode failure.
+Successful records are attached to the page context, then checked for valid
+bound files (`0xd4b80`). Failed bindings remove the record; the operation's
+true boolean permits continuing, while false fails. Saving checks bindings
+before emitting a record (`0xd67e0`); the same boolean permits skipping invalid
+entries or failing, and the writer backpatches the emitted count. These are
+static admission rules, not an observed archive round-trip. Custom semantics
+and expanded appearance remain unresolved; see [source retention](vector-retention-findings.md#page-custom-objects-and-attached-source).
 
 ### Layer record
 
