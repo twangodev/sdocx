@@ -11,6 +11,7 @@ Addresses below are ELF virtual addresses in Drawing unless otherwise qualified.
 | --- | --- |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenXmlSerializer.so` | `7be7af380ae378f91c0e565dcc022479c3f87aa965a5190f245f4d006cb6f36a` |
 | `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
 | `libSPenGraphics.so` | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
@@ -79,14 +80,62 @@ At `0x3a47e8`–`0x3a482c`, the writer requires an available context,
 `0x2ac2dc` identify the two context checks independently.
 
 The payload at `0x3a4830`–`0x3a4884` is a four-byte path size, the saved
-attribute path encoded with document-type argument 2, and two integer
-rectangles from `ObjectShapeImage` offsets 200 and 184, in that order.
-The reader restores them at `0x3a4ca0`–`0x3a4d0c` and calls
-`SetSavedAttValue(true)` at `0x3a4d20`. When the field is absent, it clears
-the saved attribute path and both rectangles at `0x3a4c4c`–`0x3a4c84`.
-These consumers establish coedit saved-span state; they do not establish
-that field 19 is a generic image mask. The geometric roles of the two
-rectangles remain unidentified here.
+attribute path encoded with document-type argument 2, saved crop `Rect`
+at `ObjectShapeImage` +200, then saved original-placement `Rect` at +184.
+Model `ObjectShape::UpdateAttValue`, `0x39c298`, establishes these roles:
+it copies the current path to `ObjectShapeData` +296 at `0x39c308`–`0x39c314`,
+then copies live crop +36 and original +148 into saved +200 and +184 at
+`0x39c318`–`0x39c324`, without integer-to-float conversion. ShapeImpl
+constructs its data at +8 and image component at +312 (`0x3a560c`–`0x3a5620`).
+
+This method preserves a previously pending saved snapshot after qualified
+Base update (`0x39c2b4`–`0x39c2c4`); otherwise it clears saved geometry and
+copies only when `BelongsToSpan` is true (`0x39c2c8`–`0x39c324`). Image span
+transitions reach this producer: `OnBelongedToSpan` invokes virtual slot +384
+at `0x2d2024`, and ObjectImage's relocation `0x497cd8` resolves to `0x39c298`.
+The [common span lifecycle](object-flexible-findings.md) remains separate.
+
+The reader writes saved members directly at `0x3a4ca0`–`0x3a4d0c`, without
+scaling them or calling live rectangle setters, and marks
+`SetSavedAttValue(true)` after successful rectangle reads at `0x3a4d20`.
+Field absence clears saved path and rectangles at `0x3a4c4c`–`0x3a4c84`.
+This establishes load preservation, not automatic restoration into live
+geometry, malformed-input recovery, or a generic image clipping mask.
+
+## Coedit XML consumes saved geometry separately from live attributes
+
+XmlSerializer `initialSubSerializer`, `0x136338`–`0x136368`, installs the
+coedit shape serializer for XML format value 1. Its full attribute writers
+choose by `BelongsToSpan`, without checking `HasSavedAttValue`:
+`ComposePathAttribute` selects saved ShapeImpl +304 over `GetPath()` at
+`0x1370d8`–`0x1370f4`; crop selects saved impl +512 over live +348 at
+`0x1378b0`–`0x1378d4`; original selects saved +496 over live +460 at
+`0x137b2c`–`0x137b50`. Invalid selected paths log and return success without
+writing a path attribute (`0x1370f8`–`0x13717c`). `ComposeDisplayInfoAttribute`
+calls these routines, but admits crop/original output using the **live**
+rectangles' `Rect::IsNull` checks (`0x133e10`–`0x133e40`). Admission and the
+selected output rectangle therefore use different members while belonging.
+
+Incoming coedit XML also updates snapshots: `ParseCropRectAttribute` stores
+changed live crop and clears its cache, then copies live crop to saved crop
+when belonging (`0x137774`–`0x1377ac`). `ParseOriginalRectAttribute` stores
+live original unconditionally and copies it to saved original when belonging
+(`0x1379fc`–`0x137a28`). `ParseDisplayInfoAttribute` copies its parsed path
+into saved impl +304 when belonging (`0x133b28`–`0x133b44`) and calls the two
+rectangle parsers at `0x133cb8` and `0x133cc8`.
+
+Partial attribute bodies instead use live getters (`0x13900c`, `0x13a288`,
+`0x13a384`) and setters (`0x138f44`, `0x13a208`, `0x13a304`). The separate
+`GetPartialData` backup route retrieves an integer-keyed String, then passes
+a null backup value (`0x1209dc`–`0x1209f8`); it does not establish numeric
+field-19 restoration. These XML consumers establish synchronization source
+roles, not rendered appearance or clipping behavior.
+
+Current Rust `image.rs:227`–`229` skips the sized field-19 path and 32 rectangle
+bytes; its live crop/original projection does not retain the saved baseline.
+The [original-byte carrier](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model) can preserve those
+bytes separately: `StoredObject::payload` borrows caller-supplied page bytes
+(`storage.rs:215`–`218`), rather than making a typed image own them.
 
 ## Shape effects and image pixels have separate drawing calls
 
