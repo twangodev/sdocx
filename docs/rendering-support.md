@@ -93,6 +93,10 @@ Profile admission and validation are narrower than the names above. See
 [Marker4 V7](reverse-engineering/marker4-v7.md), and
 [Marker4 V8](reverse-engineering/marker4-rendering-findings.md).
 
+The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
+separates saved samples from generated particles and configured paper coverage.
+Pencil profiles currently use the generic pressure approximation.
+
 ## Text and embedded layout
 
 The detailed [text support table](text-vector-support.md) owns the admission

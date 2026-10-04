@@ -62,6 +62,8 @@ decoding, rendering and evidence boundaries across object types and features.
 
 - [`marker4-v7.md`](marker4-v7.md) — fractional-width V7 highlighter vectors,
   native saved-redraw fixtures and isolated native-layer appearance comparison.
+- [`pencil3-source-findings.md`](pencil3-source-findings.md) — selected V1 saved
+  channels, generated particles and separate runtime paper coverage inputs.
 
 - [`file-format.md`](file-format.md) — authoritative archive and binary-format
   map: `note.note`, pages, layers, objects, frames, strokes, media, hashes and
