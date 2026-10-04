@@ -732,6 +732,51 @@ The capture does not construct later UTF-16 glyph/cache entries, perform glyph
 fallback/itemization or shaping, emit retained runs, or establish full device
 font selection, grouping or clipping parity.
 
+### Dynamic locale and custom fallback ownership
+
+The following contracts are source-only findings from the pinned Text library,
+SHA-256 `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b`;
+they do not extend the 154-request capture to live replacement or teardown.
+Java `SpenFontManager.setLocaleList()` forwards ordered default-locale language
+tags. Native `SetLocaleList`, `0x84a78`, registers their comma-separated list
+and stores its ID at `0x84bbc`. The registrar, `0x940c8`, caches exact input
+strings, calls dynamic ICU normalization, omits invalid/duplicate locales and
+interns at most twelve accepted locales in order. It appends new list IDs or
+reuses existing ones; this process-local locale-list ID is separate from a
+physical font source ID, collection-face index and raw font-language string.
+The source does not determine device ICU outputs or fallback priority.
+
+Despite its nullable Java language/buffer signature, native
+`SetCustomFallbackFont`, `0x80a1c`, accepts only exact `ko`, nonnull positive
+bytes and an existing designated fallback-family slot (`0x80a64`–`0x80ae0`).
+System-family parsing creates that slot on the inspected missing
+`SamsungKorean-Regular.ttf` branch; null bytes do not remove an installed font.
+The accepted memory Font requests index 0, weight 400 and nonitalic
+(`0x80b4c`–`0x80b58`). JNI copies Java bytes to a temporary buffer, and the
+source constructor copies them again into its retained program
+(`0x88488`–`0x884a0`); that program does not borrow the Java array. File sources
+instead retain a read-only shared mapping (`0x88268`–`0x882d0`), which is not a
+proof of immutable file contents under external modification.
+
+Replacement installs new shared family/collection implementations and inserts
+a new source-ID entry (`0x80d08`–`0x80da0`, `0x896c0`–`0x896c8`). The inspected
+replacement/default/path-change routes preserve older source-ID map entries;
+existing-key insertion does not overwrite the retained Font. Thus an old lookup
+remains backed by its shared Font while that parser registry lives, rather than
+being rebound to the replacement program. `GetFontData`, `0x80864`, lends the
+selected program pointer, length and requested face index; it returns no new
+buffer owner. Reporting an index does not prove nonzero collection-face
+selection by the imported stream factory.
+
+Parser destruction releases map references (`0x7c9dc`→`0x820ac`→`0x81d00`),
+while Font implementations separately retain shared physical sources. Map
+lookup lifetime, borrowed-buffer lifetime and retained run ownership are
+therefore distinct. These bodies do not establish global cache refresh, all
+measured-run validity after teardown or reference-device font order. Rust's
+[registered source token](../../crates/sdocx/src/render/fonts/registered_source.rs)
+remains restricted to the admitted default Regular registration; physical
+program/index identity does not replace that source-instance identity.
+
 ## UTF-16 entry ownership
 
 Text `RichTextMeasure::createMeasureData`, `0x788f0`, obtains source length
