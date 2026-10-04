@@ -78,6 +78,76 @@ display metadata, not object codec selection. Raw declarations, normalized
 native state and original source bytes remain distinct; structural parsing
 does not certify native admission or future semantic compatibility.
 
+## Explicit page dimensions and orientation
+
+These static traces use the Model/WDoc hashes pinned in
+[vector-retention evidence](vector-retention-findings.md#evidence-and-meaning-of-retention).
+They concern explicit edits, separately from
+[ordinary-open fixed-axis normalization](vector-retention-findings.md#native-opening-normalizes-the-requested-fixed-axis)
+and the [leaf geometry contracts](object-transform-findings.md#double-wire-coordinates-do-not-imply-double-editing-geometry).
+
+The inspected ordinary options menu does not expose its page-ratio handler:
+OptionMenuPageSetting.show constructs the selector only when isPageRatioAvailable
+is true, while its presenter returns literal false (`65–71`, `77–79`). This bounds
+that route; it does not establish global absence of size changes.
+
+A reached external-PDF route can replace pages instead. EntryAction `50–68` →
+OptionMenuPdfPresenter `251–258`, `303–314` supplies external-import and actual
+PDF-reader flags to TaskAddPdf. After input validation/download, its
+canChangePageModeAndOrientation requires exactly one downloaded PDF and external
+import (`313–354`, `932–953`). Target mode/orientation follows PDF queries;
+non-readers reject a mismatched orientation. Null mode, equal mode+orientation,
+cancellation and landscape-limit branches remain conditional (`620–648`). This
+method does not itself prove the note is empty or the whole import succeeds.
+
+ComposerViewPresenter.changeNoteType detaches the view document, changes mode/
+orientation and reinitializes it (`376–388`, `256–275`). Different orientation
+first removes current pages in descending index order (`130–157`). SDK/JNI then
+reaches WNote::ChangeOrientation (`0xedc04` → `0x9abb8`). Native implementation,
+flag+792 and orientation<3 gates precede mutation; equality returns success.
+Different orientation calls RemoveAllPages before storing orientation, requested
+axis/default dimensions and clearing history (`0x9ace8–0x9ad14`). A false removal
+aborts those stores, without rolling back prior removals. Different page mode
+likewise removes pages before installing its value (`0x9ab54–0x9ab74`). These are
+page-membership changes, not affine transforms of the old stroke channels.
+
+Successful per-page removal clears its callback, calls OnDetach and Release
+(`0xb53d8`, `0xb5414–0xb5424`). Detachment can load objects first; with media
+context it retains resource hashes while releasing current background/PDF media
+IDs, and invokes custom/page detach hooks (`0xcf1a8–0xcf1c0`, `0xcf200–0xcf22c`,
+`0xcf2ac–0xcf37c`). This does not prove physical deletion or destruction with
+other owners. App initialization creates one SINGLE page or two LIST pages when
+count is zero, with new size/background/template state, and sets body-text style
+(`ComposerDocInitialization.java:135–166`, `176–205`). These direct paths do not
+establish loss, retention or final reflow of all old global body-text content.
+
+A separate reached save-time operation changes page extent. Screenoff
+SaveModel.savePrimitiveDocument calls adjustSize before notesDocument.save
+(`551–589`). SpenDocumentDisplayUtils `24–39` retains width and computes height
+from integer-truncated drawn-bottom/default-height multiples. For positive height,
+nonnegative bottom and nonoverflowing integer arithmetic, it adds a spare height
+multiple. The supplied default page count affects logging only.
+
+SDK SetSize reaches JNI `0xf7c60`, which passes skip-history=false directly to
+m_SetSize (`0xf7cbc–0xf7cc0`, `0xc2adc`). Equal dimensions succeed without mutation.
+With context, differing dimensions require page-extendability+1496; the history
+path records old/new integers around the mutation (`0xc2b24–0xc2c04`). History
+submission can fail **after** dimensions change, without direct rollback
+(`0xc2c20–0xc2c50`); native false does not necessarily mean untouched state.
+WPageImpl::SetSize writes width/height, calls the note-size callback and optional
+layout requester, then marks the page changed (`0xcdba4–0xcdc08`). It directly
+traverses no stroke samples, PDF or custom-object rectangles. The bound note-size
+callback updates aggregate note dimensions/dirty state (`0xa2d04`, `0xa2e44`);
+the concrete layout requester only sets pending noteImpl+828 (`0xa74b8`). Later
+consumers of that flag and their body-text placement effects remain unproven here.
+
+A successful SetSize with differing dimensions feeds the existing
+[live-page save predicate](vector-retention-findings.md#native-page-files-during-save),
+whose writer reads current dimensions. Page replacement changes current membership;
+original bytes in cache do not imply those removed pages remain selected. Rust
+retains saved page dimensions and supported objects; these static edit routes add
+no resize implementation or executed-save/complete-resource-cleanup guarantee.
+
 ## Rust decoding
 
 `parse_note_bytes` walks both length-prefixed masks and the UTF-16 note ID.
