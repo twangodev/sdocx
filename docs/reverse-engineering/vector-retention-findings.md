@@ -12,13 +12,14 @@ contracts are linked to their separate findings.
 | --- | --- |
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+| `libSPenSDoc.so` | `e1b2aa314e69ea5ba284aafec4326967075c0f2ec878cb2265b96abfd817de10` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenBodytext.so` | `27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0` |
 | `libSPenWidget.so` | `cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9` |
 
-Native opaque-record, hierarchy, custom-object, resource and clipboard findings
-are static traces. Only the bounded unknown own-frame writer/reader was executed; no
+Native opaque-record, hierarchy, custom-object, resource, clipboard and legacy
+content-conversion findings are static traces. Only the bounded unknown own-frame writer/reader was executed; no
 complete native archive round trip or Samsung appearance comparison is claimed.
 
 | Representation | What it retains | What it does not establish |
@@ -955,6 +956,88 @@ channels and ARGB are converted source, without evidence for another
 extension-based DPI transform or reversing the admitted color rewrite.
 These static routes do not establish original SPD archive preservation,
 complete channel/resource equivalence or observed original-vector loss.
+
+### SDOC content conversion
+
+The reached app envelope differs from the [whole-SPD transfer](#spd-to-wdoc-migration).
+`ConvertServiceManager.java:374–388` gets the queue destination SpenWordDocument
+and selects `SDocXConverterWrapper` when no custom converter is supplied. Its
+runner calls conversion before saving (`:146–163`); repository construction
+chooses a supplied path or one ending `.sdocx`, plus destination UUID/page mode
+(`:394–409`). `converter/sdoc/SDocXConverterWrapper.java:68–103` opens a SpenSDoc
+and calls `sdoc/model/SDocXConverter`, which iterates content blocks into a
+SinglePageNoteComposer (`:122–146`), rather than importing an entire archive.
+
+The dispatcher installs handwriting and Drawing converters separately
+(`SDocXConverter.java:69–91`). `runConverter`, `:111–119`, discards the converter
+boolean; absent types only log. `AbsContentConverter.java:16–25` also ignores
+convertContent's boolean and returns true unless it catches an Exception.
+Therefore outer conversion/save success does not certify each content's
+admission. Null source creation can make the void wrapper return early.
+No unsupported-content log here establishes observed vector or resource loss.
+
+SDOC `sdoc/model/converters/HandWritingConverter.java:387–423` requires a nonempty
+attachment, initializes its NoteDoc, then selects only `getPage(0)` for composition.
+This is not evidence that any actual attachment contains omitted extra pages.
+Its native loader is positively reached: SDOC JNI `0xd7e14 → 0xd7e40` calls
+`ContentHandWriting::CreateNoteDoc`, `0xb784c`. It reuses cached impl+160 or gets
+the attached path (`0xb7964`). A successful getter/nonempty path calls old
+`NoteDoc::Construct(app-dir, path, null, supplied-width, mode=1, false)`
+(`0xb79e8–0xb7a04`), without a thumbnail decoder. Failed getter/empty returned
+path takes fresh width/height construction; a nonempty missing filesystem path
+still enters the loaded constructor. Failure clears the cached pointer.
+Complete old-file channel/resource admission and width normalization are unproved.
+
+Its container helper (`HandWritingConverter.java:163–195`) recursively visits
+containers, converts type-2/7 shapes and collects type-2 children unless parent
+extra integer `Type` equals 23. A nonempty collected list triggers child removal/
+page append; an empty container is removed. Admitted nesting can therefore change.
+Shape rect/style and layout setters are also present; the top-level decompiled
+cast/fallthrough is not treated as universal per-type dispatch. Background image
+conversion (`:140–160`) removes page objects before capture, restoring the list
+only inside the nonnull-capture-creator branch. Failure restoration/instance
+lifetime are not established by that body. Background color creates new fill
+rectangles and uses the previously described MagicPen RGB rewrite.
+
+`SinglePageNoteComposer.java:202–210,329–337` clears source history and supplies
+scale 1, PointF(`getMDP()*24`, accumulated height) to WPage.transferObjects.
+This caller adds layout placement to the [current-layer pointer transfer](#spd-to-wdoc-migration),
+whose rectangle methods can mutate coordinates; do not reverse that placement
+or reconstruct earlier channels from modern saved geometry. The composer derives
+new first-page height/background (`:272–292`). Extra pages/layers/media and
+numerical migration parity remain unexecuted, not declared lost by these calls.
+
+`DrawingConverter.java:23–76` requires an attached source and thumbnail. Its
+nonnull display-metrics branch creates ObjectPainting with thumbnail/layout
+and passes the attached source to composer.appendObject; `:322–326` calls
+object.attachFile before append. These are distinct [Painting source and cache](painting-source-findings.md)
+carriers. Null metrics has no append in the decompiled branch yet returns true;
+r3/z decompiler artifacts prevent an unconditional runtime branch guarantee.
+The PaintingDoc and loaded handwriting NoteDoc are closed afterward; neither
+source-file lifetime nor unchanged original Painting bytes follow from that alone.
+
+The explicit-destination save route is concrete: ConvertRunner.saveTempFile
+(`:107–114`) → NotesDocument.saveDocument (`:672–673`) → WordDocRepository
+(`:438–451`) → DocumentFileManager.saveWordDocument/lambda (`:225`, `:123–126`)
+→ SpenWordDocument.save (`:195–199`) → saveAsDirectory. WDoc JNI `0xe61f4`
+passes file-output false (`0xe6288–0xe6290`) to the
+[working-cache saver](#native-page-files-during-save). The separate normal-service
+save call is not replaced with this explicit-path implementation. A `.sdocx`
+path suffix or SaveResult does not prove final ZIP publication or full conversion.
+
+Source cleanup is a separate call boundary. `SDocXConvertTask.java:47–66` attempts
+FileUtils.deleteFile for source marked outside DB even when conversion-success
+argument is false; `onFailed`, `:77–84`, can call it when the failure argument is not 3.
+DB-managed DeleteNoteUseCase additionally requires enabled-delete flag, successful
+message, destination without `/converted/`, source UUID and nonempty result.
+These guards do not prove actual deletion, successful backup or preserved originals.
+Wrapper postprocess attempts old lock-file attachment then closes source SDOC
+(`:41–55`), without establishing a whole original archive attached to WNote.
+
+Rust parses modern records rather than this legacy content dispatcher. Keep
+original source independently of admitted modern channels and Painting attachments;
+image-only media admission, outer save success and runtime pointer migration
+cannot replace missing source bytes or justify a second migration renderer.
 
 ## Precision and drawable output
 
