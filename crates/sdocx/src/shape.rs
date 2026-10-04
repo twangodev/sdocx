@@ -105,6 +105,9 @@ pub struct NativeShape {
     pub fill_source: Option<ShapePaintSource>,
     /// Optional string-resource ID for the native pen name.
     pub pen_name_id: Option<i32>,
+    /// Uninterpreted four-byte type-7 pen-data field 3.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub pen_data_field_3_raw: Option<[u8; 4]>,
     /// Optional string-resource ID for advanced native pen settings.
     pub pen_settings_id: Option<i32>,
     /// Embedded shape text, decoded with the rich-text limits.
@@ -219,48 +222,51 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
         .contains(2)
         .then(|| fields.read_i32("pen name ID"))
         .transpose()?;
-    let mut pen_settings_id = None;
+    let pen_data_field_3_raw = if frame.fields.contains(3) {
+        let mut raw = [0; 4];
+        raw.copy_from_slice(fields.read_bytes(4, "shape pen field 3")?);
+        unsupported.push("uninterpreted shape pen field 3");
+        Some(raw)
+    } else {
+        None
+    };
+    let pen_settings_id = frame
+        .fields
+        .contains(4)
+        .then(|| fields.read_i32("pen settings ID"))
+        .transpose()?;
     let mut fill = ShapePaint::None;
     let mut fill_source = None;
-    if frame.fields.contains(3) {
-        unsupported.push("unknown field before shape fill");
-    } else {
-        pen_settings_id = frame
-            .fields
-            .contains(4)
-            .then(|| fields.read_i32("pen settings ID"))
-            .transpose()?;
-        if frame.fields.contains(5) {
-            let size = fields.read_u32("fill size")? as usize;
-            let kind = fields.read_u8("fill kind")?;
-            let data = fields.read_bytes(size, "fill effect")?;
-            fill = if kind == 1 {
-                let (paint, source) = read_paint(data, false, &mut unsupported)?;
-                fill_source = source;
-                paint
-            } else {
-                fill_source = match kind {
-                    2 => ImagePaintSource::read(data, metadata.format_version)
-                        .ok()
-                        .flatten()
-                        .map(ShapePaintSource::Image),
-                    3 => PatternPaintSource::read(data)
-                        .ok()
-                        .map(ShapePaintSource::Pattern),
-                    _ => None,
-                };
-                unsupported.push("non-color shape fill");
-                ShapePaint::Unsupported {
-                    kind,
-                    data: data.to_vec(),
-                }
+    if frame.fields.contains(5) {
+        let size = fields.read_u32("fill size")? as usize;
+        let kind = fields.read_u8("fill kind")?;
+        let data = fields.read_bytes(size, "fill effect")?;
+        fill = if kind == 1 {
+            let (paint, source) = read_paint(data, false, &mut unsupported)?;
+            fill_source = source;
+            paint
+        } else {
+            fill_source = match kind {
+                2 => ImagePaintSource::read(data, metadata.format_version)
+                    .ok()
+                    .flatten()
+                    .map(ShapePaintSource::Image),
+                3 => PatternPaintSource::read(data)
+                    .ok()
+                    .map(ShapePaintSource::Pattern),
+                _ => None,
             };
-        }
+            unsupported.push("non-color shape fill");
+            ShapePaint::Unsupported {
+                kind,
+                data: data.to_vec(),
+            }
+        };
     }
     if pen_name_id.is_some() || pen_settings_id.is_some() {
         unsupported.push("native pen rendering");
     }
-    if fields.remaining() != 0 || frame.fields.has_other_bits(0x37) {
+    if fields.remaining() != 0 || frame.fields.has_other_bits(0x3f) {
         unsupported.push("additional shape fields");
     }
     read_extensions(&mut reader, &mut unsupported)?;
@@ -281,6 +287,7 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
             fill,
             fill_source,
             pen_name_id,
+            pen_data_field_3_raw,
             pen_settings_id,
             text,
         },

@@ -604,17 +604,24 @@ fn effect_sizes_and_fixed_geometry_cannot_consume_adjacent_fields() {
 }
 
 #[test]
-fn unknown_preceding_fields_prevent_guessing_later_effects() {
+fn shape_pen_slots_keep_fill_aligned_and_unknown_line_fields_still_stop() {
     let mut payload = base(0.0);
     payload.extend(outline());
     let mut fields = 77_i32.to_le_bytes().to_vec();
-    fields.extend(b"unknown");
+    fields.extend([0xde, 0xad, 0, 0xff]);
+    fields.extend((-123456_i32).to_le_bytes());
     fields.extend(shape_fields());
-    payload.extend(frame(7, 4 | 8 | 32, &shape_fixed(4, 0.0), &fields));
+    payload.extend(frame(7, 4 | 8 | 16 | 32, &shape_fixed(4, 0.0), &fields));
     let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
     let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
     assert_eq!(shape.pen_name_id, Some(77));
-    assert!(matches!(shape.fill, ShapePaint::None));
+    assert_eq!(shape.pen_data_field_3_raw, Some([0xde, 0xad, 0, 0xff]));
+    assert_eq!(shape.pen_settings_id, Some(-123456));
+    assert!(matches!(shape.fill, ShapePaint::Solid(0x40ff0000)));
+    let Some(sdocx::ShapePaintSource::Color(source)) = &shape.fill_source else {
+        panic!("expected retained fill source")
+    };
+    assert_eq!(source.solid_argb, 0x40ff0000);
     assert!(has_shape_warning(&parsed));
     let path = native_path(&[(1, &[0.0, 0.0]), (2, &[10.0, 20.0])]);
     let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 1 | 8, &path))).unwrap();
@@ -624,6 +631,48 @@ fn unknown_preceding_fields_prevent_guessing_later_effects() {
             .is_empty()
     );
     assert!(has_shape_warning(&parsed));
+}
+
+#[test]
+fn zero_pen_slot_is_distinct_from_absent_and_old_json_defaults_to_absent() {
+    for present in [false, true] {
+        let mut payload = base(0.0);
+        payload.extend(outline());
+        let mut fields = if present { vec![0; 4] } else { Vec::new() };
+        fields.extend(shape_fields());
+        payload.extend(frame(
+            7,
+            32 | if present { 8 } else { 0 },
+            &shape_fixed(4, 0.0),
+            &fields,
+        ));
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+        assert_eq!(shape.pen_data_field_3_raw, present.then_some([0; 4]));
+        assert!(matches!(shape.fill, ShapePaint::Solid(0x40ff0000)));
+        assert!(shape.fill_source.is_some());
+        assert_eq!(has_shape_warning(&parsed), present);
+        #[cfg(feature = "serde")]
+        {
+            let mut json = serde_json::to_value(shape).unwrap();
+            let restored: NativeShape = serde_json::from_value(json.clone()).unwrap();
+            assert_eq!(restored.pen_data_field_3_raw, shape.pen_data_field_3_raw);
+            json.as_object_mut().unwrap().remove("pen_data_field_3_raw");
+            let restored: NativeShape = serde_json::from_value(json).unwrap();
+            assert!(restored.pen_data_field_3_raw.is_none());
+        }
+    }
+}
+
+#[test]
+fn short_pen_slots_cannot_consume_the_following_frame() {
+    for length in 0..4 {
+        let mut payload = base(0.0);
+        payload.extend(outline());
+        payload.extend(frame(7, 8, &shape_fixed(4, 0.0), &[0xff; 3][..length]));
+        payload.extend(frame(66, 0, b"future", &[]));
+        assert_format(7, &payload);
+    }
 }
 
 #[test]
