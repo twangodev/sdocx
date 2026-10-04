@@ -53,14 +53,14 @@ There is no size prefix or field mask around each graph:
 
 ```text
 u16 latex_byte_count
-u8[latex_byte_count] latex_utf8
+u8[latex_byte_count] latex_bytes
 u32 color_argb
 f32 line_width
 u8 visibility
 u32 substitution_count
 repeat substitution_count:
     u16 substitution_byte_count
-    u8[substitution_byte_count] substitution_utf8
+    u8[substitution_byte_count] substitution_bytes
 ```
 
 The writer accesses native graph members at offsets 0 (LaTeX string), 24
@@ -70,8 +70,11 @@ at `0x141af6`, `color` at `0x14c26b`, `lineWidth` at `0x14b7d7`, and `isShow`
 at `0x14d1a8`. Stores at `0x454590`, `0x4545b8` and `0x4545cc` corroborate
 the scalar layout.
 
-The byte-text lengths count bytes, not UTF-16 units. Empty strings are valid;
-there is no null-string sentinel in these records. The reader at `0x453a14`
+The native lengths count bytes, not UTF-16 units, and the payloads are copied
+without UTF validation or normalization. Empty wire strings have no null sentinel;
+the Java list adapter has separate acceptance rules. See the
+[expression byte-string and JNI contract](formula-findings.md#expression-byte-strings-and-jni-projection).
+The reader at `0x453a14`
 compares visibility to exactly 1. `PlotGraph::is_visible` mirrors that behavior,
 while `visibility_raw` preserves other values. Graph line widths are retained
 as stored; this inspection API does not lay out or evaluate expressions.
@@ -89,7 +92,7 @@ substitution strings share a per-object `max_objects_per_page` budget, reported
 as `math entries`. Count checks include the minimum remaining bytes before
 vector allocation: 15 bytes per graph and two bytes per substitution. Decoded
 LaTeX strings obey `max_text_characters` measured in UTF-16 units, matching the
-existing limit's meaning even though these fields use UTF-8 on disk.
+existing limit's meaning after the Rust SDK's strict UTF-8 projection succeeds.
 
 Known fields cover bits 0 through 5, so later unknown fields remain as flexible
 trailing bytes. The complete original payload remains available through

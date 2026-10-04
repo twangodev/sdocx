@@ -56,8 +56,9 @@ higher. Both writer and reader establish this ordering.
 | 15 | LaTeX list | Substitutions | `GetSubstitutionLatex` at `0x42e7ec`, vector at 64 |
 
 Each LaTeX list starts with a `u32` count. Each string has a `u16` byte count
-followed by UTF-8, with no terminator or null sentinel. The getter mappings
-distinguish calculated results in bit 4 from substitutions in bit 15.
+followed by native byte-string payload, with no stored terminator or null sentinel.
+The Rust SDK interprets these bytes as strict UTF-8. The getter mappings distinguish
+calculated results in bit 4 from substitutions in bit 15.
 
 Bit 9 uses a different representation. The call at `0x42ffa4` reaches
 `ReadString2`: `0x2788e0` reads the unsigned 16-bit length, `0x2788e8` doubles it,
@@ -71,6 +72,47 @@ modes use `MathAngleType`; unknown expression values remain `expression_type_raw
 The image media ID remains signed because the native reader only remaps
 nonnegative values. This inspection API does not resolve the image asset or
 apply nine-patch scaling.
+
+### Expression byte strings and JNI projection
+
+This source trace uses Model SHA-256
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`
+and Base SHA-256
+`e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb`.
+Formula's Java LaTeX, result and substitution lists reach
+`ConvertToCStdStringList` at `0x434668`, `0x435738` and `0x4348b4`.
+Each element calls Base `JNI_String::ConvertToStdString` (`0xdf480`), which
+uses JNI slots 169/170 (`GetStringUTFChars` / `ReleaseStringUTFChars`), then
+copies `strlen` bytes into `std::string` (`0xa33e0`, `0xa3430`). It does not use
+the separate `SPen::String` conversion. Empty converted elements stop list
+conversion with failure (`0x318e28`, `0x318e80`); the Formula setters do not
+publish that temporary list. Plot expressions use the same byte converter
+(`0x454520`), and their substitutions use the same list adapter (`0x45456c`).
+
+The [JNI specification](https://docs.oracle.com/en/java/javase/11/docs/specs/jni/functions.html#getstringutfchars)
+declares modified UTF-8. This is not a universal standard-UTF8 guarantee or
+proof of Samsung runtime bytes. [AOSP ART's encoding table](https://android.googlesource.com/platform/art/+/master/libdexfile/dex/utf.h)
+(blob `d372bff662aec9ec2288807024b163ff0c75aaca`) describes a JNI variant with
+NUL encoded as `c0 80`, four-byte valid surrogate pairs and three-byte unmatched
+surrogates. No Samsung ART execution was performed here; supplementary
+characters must not all be classified as CESU-8 or rejected Rust input.
+
+Writers for fields 0/4/15 copy stored bytes at `0x42ee80..0x42eef4`,
+`0x42f048..0x42f0c0` and `0x42f3e0..0x42f458`. Their readers call the explicit
+length constructor `0x278698` at `0x430174`, `0x430334` and `0x4304d8` without
+UTF validation, normalization or stopping at an embedded zero. Correctly framed
+u16 payloads retain their encoding bytes. Complete list reserialization is
+different: fields 0/4 skip zero-length entries (`0x430164`, `0x430324`), and
+oversized strings write a low16 prefix while copying the full low32 length.
+These are source observations, not malformed-input or round-trip execution.
+
+Java getters project each C-string through JNI slot 167 `NewStringUTF`
+(`0x319020`, graph `0x45428c`), so a literal stored zero terminates that projection.
+The Rust SDK's `read_latex` instead uses strict `Reader::read_utf8_u16`; invalid UTF-8
+aborts the explicit Formula/Plot metadata result. `StoredObject::payload` still
+borrows the original object bytes from the caller's uncompressed page, so an
+accessor error does not mean absent or lost expression source. These expression
+adapters do not establish the encoding of the separate label producer below.
 
 ## Embedded strokes
 
