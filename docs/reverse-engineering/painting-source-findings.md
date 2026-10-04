@@ -424,6 +424,35 @@ stroke serializer. These references can retain live objects after removal from
 the active layer. The generic manager's save/load/filename APIs return false,
 so this runtime undo state does not establish serialized vector history.
 
+Source-only packet selection distinguishes clearing from individual removal.
+Successful painting `PageDoc::RemoveAllObject`, `0x32e444`, resets loaded packet
+count 552 and packed-object total 560 (`0x32e4a0–0x32e4a4`), leaving selected
+count 556 unchanged. When the page writer actually runs successfully,
+`Save_PaintingPage` copies 552 into 556 before its 10,000-object threshold
+(`0x3384d4–0x3384e8`). After this reset, at most 10,000 saveable objects selects
+no packet names and omits the packet header field; above 10,000 generates new
+packet number 1 from current saveable objects, without selecting old higher
+indices. Saveable counts and writing exclude each layer's packed prefix 176
+(`0x3416fc–0x341708`, `0x354938–0x354950`); clearing does not itself prove all
+old packet vectors are materialized or other layers are safely rebuilt.
+
+This outcome requires the writer: `SavePage` checks `IsChanged` before saving
+(`0x2c6930`, `0x2c6984`). Empty-layer clearing can succeed without marking the
+Model layer changed (`0x35a7ac`), and `SetDirtyBitmap`, `0x351424`, does not itself
+mark those change bytes. Before a writer updates 556, `GetPackedData` can still
+select its prior packet names. Single `RemoveObject`, `0x32e354`, leaves page
+packet counters unchanged; the inspected no-history list-removal branch leaves
+prefix 176 unchanged (`0x34e6a4`). Selected packets are not filtered against that list.
+This does not establish valid arbitrary deletion of an already-packed object
+or preservation of every removed sample through ordinary editing.
+
+`GetPackedData`, `0x361ce0`, adds exact packet names through selected count 556.
+The fresh outer NoteZip writes explicit entries (`0x2bb744–0x2bb854`, Base
+`0xcb30c–0xcb414`), rather than sweeping leftover packet files from the work
+root. Unselected old packets may remain working-file orphans; their presence
+there does not establish new archive membership. Retaining original archive
+bytes preserves their original source bytes even when edited saves omit them.
+
 ## Saved wet/dry continuation changes shared brush composition
 
 Compat `commitStroke(bool,bool)`, `0x76268`, records continuation when its first
@@ -559,6 +588,8 @@ visibility and replay metadata. Flattening `.page`
 alone or exporting the JPEG thumbnail cannot establish vector preservation.
 The remaining significant unknowns are the ordinary base block's complete
 optional layout and source-archive string-table loading contract, an actual
-packet/archive load, concrete archive membership after a bitmap clear, and
-whether separate recorded-operation contracts retain removed original samples.
+packet/archive load, full materialization of old packed vectors before edits,
+valid arbitrary packed-prefix mutation, and whether separate recorded-operation
+contracts retain removed original samples. Packet selection after clearing is
+conditional on the writer's change gate and successful execution, as above.
 Runtime undo handles and anchor images alone do not establish that preservation.
