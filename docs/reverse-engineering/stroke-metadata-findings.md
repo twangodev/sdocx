@@ -179,3 +179,79 @@ The partial-rectangle test has zero stroke points and two partial rectangles,
 so a mistaken dependency on point count cannot pass through alignment.
 These are parser contract checks; new Samsung captures remain necessary
 for visual conformance of the additional rendering properties.
+
+## XML and separately transported stroke binary
+
+Source-only traces use the same 4.4.45.37 ARM64 APK, SHA-256
+`daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
+Both additional extracted ELF files were byte-compared with their APK members:
+
+| ELF under `scratch/apk-analysis-native/arm64-v8a/` | SHA-256 |
+| --- | --- |
+| `libSPenWordDocCoedit.so` | `82a73d24732efe4f5c3c385b9fcb0ccfb05970507ba50039d252c2abb7f0c2af` |
+| `libSPenXmlSerializer.so` | `7be7af380ae378f91c0e565dcc022479c3f87aa965a5190f245f4d006cb6f36a` |
+
+WordDocCoedit's `CoeditObjectStroke` constructor, `0x3b4e8`, passes literal
+XML format `1` to `ObjectXmlSerializerFactory::CreateObject` at `0x3b51c`.
+XmlSerializer's factory dispatches native type `1` to `ObjectStrokeXmlSerializer`
+(`0x110e70`–`0x110e90`); `initialSubSerializer`, `0x14c534`, selects its coedit
+adapter at `0x14c56c`. `CoeditNote::GetStrokeData`, `0x47b54`, requests a wrapper
+and calls that serializer's binary getter (`0x47c54`/`0x47c64`), appending returned
+bytes/count plus UUID and modified-time strings without checking binary pointer/
+count success. `ApplyBinaryData`, `0x41c28`, resolves a supplied UUID, checks
+native type `1`, then calls its binary apply API at `0x41ce8`. These are concrete
+callers; an output record does not prove successful receipt or storage of channels.
+
+Coedit `ComposeAttribute`, `0x14cbac`, writes identity/hash/time, pen size,
+fixed width, color, rectangle and rotation. Only library-global inclusion byte
+`0x1885e8` enables its base64 `strokeBinary` attribute (`0x14ccc0`–`0x14ccf4`).
+The setter `0x14c4bc` returns whether the flag changed; the note caller `0x47810`
+refreshes cached XML only on that change. Its element composer `0x14ce4c` emits
+no stroke fields. With inline binary disabled, these composers supply no separate
+XY/pressure/time/tilt/orientation arrays; the separate binary getter remains
+available. Sync has a different gate: `ComposeElement`, `0x14ddf0`, embeds a
+base64 `strokeBinary` child only for `BelongsToContainer()` (`0x14de34`), with
+reader application at `0x14dc68`. XML nesting alone does not establish completeness.
+
+`m_GetStrokeBinary`, `0x14b738`, prefixes native data with 12 bytes: little-endian
+words `0xffffffff`, `4`, `4000` at `STREAM_HEADER_ARRAY`, `0x187990`. Format `1`
+calls Model `GetBinaryByCoedit(DocumentType=2)` at `0x14b81c`. Model `0x2e5ef0`
+writes the common prefix then sets handler coedit mode true (`0x2e5f90`) and
+uses the existing modern stroke writer. That writer commits temporary points
+(`0x2ee3fc`), serializes the current XY/pressure/time tuple and optional stylus
+channels, using the shared compressed reducer (`0x2ee428`) or promoted PointD
+coordinates/raw channel arrays (`0x2ee48c`–`0x2ee548`). These bytes describe current
+native data, not necessarily original pre-mutation archive bytes. Flexible bits
+1/7 carry advanced settings/pen name as u16 UTF-16-unit counts and raw UTF-16
+bytes (`0x2ec654`/`0x2ec81c`), instead of normal u32 string IDs. Their reader binds
+strings into a live StringIDManager (`0x2ed804`/`0x2ed9e8`); inline names do not
+make application independent of its model context. The wrapper is not an archive
+record header, and the current Rust metadata API excludes this coedit variant.
+
+Binary application requires model context. `m_ApplyStrokeBinary`, `0x14b924`,
+selects page width for orientations `0`/`2`, height otherwise, then strips the
+header using its offset-4 word plus eight; headerless coedit input is rejected.
+The orientation-aware overload `0x14ce54` snapshots existing style, rectangle,
+rotation, hash and time, and calls slot 416 (`0x14cf40`), resolved by Model
+relocation `0x4931c0` to `SetBinaryByCoedit`, `0x2e5b08`. Its base loader derives
+target/stored-extent magnification (`0x2db4b8`–`0x2db4cc`), and the stroke reader
+scales decoded XY when nonunit (`0x2ee8bc`–`0x2ee8f0`). Afterwards the overload
+restores style, calls actual `SetRotation` then `SetRect(false)` and restores
+hash/time (`0x14cf48`–`0x14cfb8`), even if inner application returned negative.
+Those setters can rotate/rescale XY; metadata restoration is neither unchanged
+received coordinate bits nor a demonstrated transactional rollback.
+
+Parsing runs common attributes before coedit stroke attributes (`0x14be3c`),
+then child elements (`0x11c5cc`/`0x11c5f8`). Coedit applies nonempty binary first
+(`0x14ca9c`), returning false on failure before later reads of XML color/size/
+fixed width (`0x14cac0`/`0x14cad4`/`0x14cae8`). Present scalar attributes therefore
+apply later; absent binary does not itself fail parsing. `m_OnFinishParsing`,
+`0x14bd3c`, checks nonnull source/serializer state and sets a common implementation
+flag if its pointer exists (`0x14bd64`–`0x14bd6c`), without proving received channels.
+
+These static traces do not establish ordinary archive use of XML, actual server
+payload modes or an executed exchange. Rust's existing channel representation
+can retain decoded samples without another renderer; XML metadata, binary sidecar
+and original archive bytes remain separate preservation boundaries. Neither
+style-only XML nor parse success justifies reconstructing missing samples or
+replacing original source bytes with the potentially transformed applied object.
