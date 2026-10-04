@@ -117,6 +117,65 @@ channels, the common/source inspection and original record/page bytes remain
 separate preservation inputs. The straighten flag cannot reconstruct alignment/DPI inputs
 or an earlier gesture, and establishes no second generation pass.
 
+## Nonline recognition creates generated strokes before private admission
+
+This distinct source-only Engine path starts with recognition geometry;
+it does not establish a completed recognition gesture or saved-file roundtrip.
+AutoResultToStrokeConverter::ConvertShapeResultToStroke, `0xcd4a8`, obtains a
+ShapePath and samples native segments into a temporary PointF vector.
+buildBezier dispatches quadratic/cubic/arc segments (`0xcda80`, `0xcdaf4`,
+`0xcdb18`); its named createStroke helper, `0xce31c`, appends XY rather than
+constructing ObjectStroke. Slot 48 at `0xcd7f0` supplies the generated vector,
+recognition angle and closed flag to IStrokeShapeObject.
+
+One concrete binding is StrokeShapeObject: its factory admits type 1
+(`0xd1f8c–0xd1f94`), and vtable relocation `0x179b98` resolves that slot to
+CreateObject, `0xd1a34`. This creator supplies copied generated XY, pressure
+`0.5` (`0xd1b28`, `0xd1b54`) and timestamp `0` (`0xd1b2c`, `0xd1b5c`) to a fresh
+ObjectStroke. Model Construct at `0x2ddf18` passes null tilt/orientation arrays;
+the supplied-array branch skips their insertion (`0x2ddda8` -> `0x2dddd4`).
+These are absent supplied/copied stylus samples, not recovered original zeros.
+Construct rejects counts >=65,536 (`0x2ddc54–0x2ddc58`), and the creator checks
+its return (`0xd1bcc`), so sampling does not guarantee successful construction.
+
+On success it sets tool type 1 (`0xd1bd8`), disables curves for closed results
+(`0xd1c0c`), uses current PenData name/size/color/advanced settings, enables
+fixed width, sets common alpha 1 and marks AsShape (`0xd1c44–0xd1cb4`). It does
+not copy the original pressure/time/stylus channels or UUID in this body.
+applyRotation (`0xd1b98`, implementation `0xd1de8`) conditionally changes actual
+XY and its bounds before Construct; this is no additional export transform.
+
+AutoRecognitionHandler's nonline branch adds a nonnull created object to the
+result ObjectList (`0xcc65c–0xcc670` -> converter `0xccb14`). The transformer
+hands its own result list to a callable (`0xcf254–0xcf288`). This is temporary
+result admission, without establishing a PageDoc/LayerDoc append or removal.
+A concrete StrokeShapeView constructor lambda is installed at `0x115c80–0x115c9c`;
+RTTI `0x186858`, name `0x70de7`, identifies its ObjectList callback, and
+relocation `0x17c7f0` resolves slot 48 to `0x116b84`.
+
+Its guarded callback selects nonnull results into private member 688 (`0x116c04`),
+calls a geometry helper and SetRect(false) (`0x116c58`, `0x116cb0`), then stores
+the selected result in member 640 (`0x116e0c`). These later edits mean factory
+XY are not established as final saved coordinates or document-space geometry.
+The view's separate input path copies a stroke into member 720 (`0x11681c`),
+adjusts its bounds, wraps it and requests recognition (`0x116850–0x1168c4`).
+Private input copy and generated result are distinct objects; their existence
+does not establish coexistence or replacement in the source document.
+
+The callback's next slot 128 is View::Invalidate: the installed address point
+`0x17c2b8` maps relocation `0x17c338` to that import (`0x116e14`). Its following
+function wrapper at member 528 is also bound: the actual view creator
+`0x164b58–0x164b94` installs a captured WritingView lambda, whose slot relocation
+`0x182328` resolves to `0x1669c4`. It forwards to the captured WritingView's optional
+callable (`0x1669c8–0x1669d8`), initially null in its constructor (`0x161768`).
+The next concrete callable is not established by this inspected caller chain.
+
+If a generated stroke is stored, its admitted channels and current typed style/
+common metadata are source. Reuse the Rust channels and retain original record/
+page bytes; its outline or AsShape flag cannot restore an earlier gesture.
+Final document order, UUIDs, hidden/history originals and save membership remain
+unproved beyond the optional parent callback; no second generator is implied.
+
 ## Voice synchronization uses append time and original objects
 
 Voice actions and the checked vector append producer share Base `GetTimeStamp`,
