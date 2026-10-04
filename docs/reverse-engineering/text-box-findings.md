@@ -127,6 +127,44 @@ record an extension diagnostic; they are not owned. The reserved u32 is
 consumed and discarded without diagnosing a nonzero value. This source-only
 result establishes neither runtime replay nor all-version extension coverage.
 
+### Embedded object admission
+
+The embedded reader has its own type policy. `ObjectSpan::ApplyBinary_Wdoc`,
+`0x417c98`, selects direct construction for unsigned types 0 through 19 except
+11, and for 22 through 24 (`0x417d00`–`0x417d14`). Other values create current
+type 19 and call `NewApplyUnknownBinary` with the original type and supplied
+bytes (`0x417d40`–`0x417d7c`). Successful common-base parsing is required before
+the opaque path owns the complete original binary. This differs from
+[layer-root wrapping and container-child skipping](vector-retention-findings.md#native-opaque-records-wrappers-and-resources).
+
+The direct factory branch rejects 0, 5, 6, 12 and 18; its dispatch table is
+at `0x16768c`, with unsupported entries reaching `0x36d9f0`. A null factory
+result or negative virtual slot-408 decode result makes the span reader return
+false (`0x417d9c`, `0x417dd0`). Neither branch retries as opaque. The list
+reader clears its prior spans, appends successful results, and returns -1 on
+the first failure (`0x3ff27c`, `0x3ff300`–`0x3ff354`). Its failure branch does
+not locally roll back the successful prefix or continue to later records.
+The enclosing reader passes that result to `CheckReadBuffer` at
+`0x3f6944`–`0x3f694c`: bounded lengths reject a negative size, while the
+helper's INT_MAX unbounded sentinel bypasses that check (`0x2784b4`–`0x2784bc`).
+These local branches do not establish complete archive acceptance or an
+observed valid-file loss.
+
+Already wrapped type 19 follows the direct branch. Its slot-408 relocation
+`0x498fb8` resolves `ObjectUnknown::NewApplyBinary`, `0x44f984`, which reads
+the current common data and opaque own frame without retrying the original
+type's factory. The span reader likewise has no post-decode recovery before
+binding at `0x417df4`. The layer loader's original-type recovery therefore
+does not describe this embedded caller; later consumers remain separate.
+
+Current Rust retains exact `RichTextObjectSpan.object_data` for successfully
+published unsupported spans, whose typed content is absent. Supported Table
+or Code decoding errors instead abort the high-level accessor; original stored
+object/page bytes remain a separate carrier. Native writing uses the surviving
+runtime object's current type and WDoc binary, rather than rejected source
+envelopes. Owned embedded bytes do not establish ownership or archive admission
+of external media; the linked resource binding/save limits still apply.
+
 ## SDK decoding
 
 `StoredPage` traversal dispatches outer type 2 directly to a bounded frame
