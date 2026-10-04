@@ -11,6 +11,8 @@ ELF virtual addresses, not file offsets. The libraries are the APK copies in
 | Library | SHA-256 |
 | --- | --- |
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenXmlSerializer.so` | `7be7af380ae378f91c0e565dcc022479c3f87aa965a5190f245f4d006cb6f36a` |
+| `libSPenWordDocCoedit.so` | `82a73d24732efe4f5c3c385b9fcb0ccfb05970507ba50039d252c2abb7f0c2af` |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 | `libSPenGraphics.so` | `aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621` |
 | `libSPenObjectControl.so` | `3211b70ad105e285b57aaa085e2bcd543f197238d702f9233aedea1c7caa1aea` |
@@ -75,6 +77,74 @@ consume only their one-byte verb and do not reject the path at its dispatch
 (`0x2f0444–0x2f0500`). This native behavior does not make unknown future
 payload widths knowable. Rust's bounded opaque retention remains distinct
 from guessing unknown coordinates or reproducing unsafe native parsing.
+
+## XML command and control transport
+
+This section comes from static inspection, without XML execution or a
+document/session round-trip capture. WordDocCoedit's shape constructor calls
+the XML factory with format 1 (`0x3b38c–0x3b398`). The factory's type-7 entry
+at XML `0x67907` reaches the shape serializer constructor (`0x110f30`);
+its subserializer selects Coedit for format 1 and Sync otherwise
+(`0x136338–0x13639c`). This establishes concrete native callers, rather than
+inferring a format contract from exported helper names.
+
+Coedit path attributes use `GetProperties`/`ApplyProperties`
+(`0x14fbc4/0x14f654`): semicolon-separated commands, each containing a comma
+separated integer verb and its active float values. Sync instead emits
+`path/segmentList/segment` elements with integer `type` and coordinate
+attributes (`0x14f318`). Both read the 28-byte model and preserve the verb
+identities and active coordinate ordering in the table above. Quadratic uses
+`x,y,x2,y2`; cubic/arc use all six slots; oval uses the first four; close has
+none. Arc/oval are not expanded inside either codec. Parsing constructs/copies
+a native Path or replaces its segment storage (`0x14f978/0x14f994`,
+`0x14f210–0x14f24c`), without retaining original lexical spelling.
+
+The actual numeric formatter is Base `String::Append(float)` (`0xc6190`),
+also called by Sync `WriteAttribute(float)` at XML `0x155d74`. Finite f32
+values widen at Base `0xc61dc`, then reach `Swprintf` and its local variadic
+formatter (`0xc280c/0xc28ec`). Its literal at `0x2b5cc` is `%f`, used by
+`__vsprintf_chk` at `0xc2968`: six decimal places before trailing-zero trimming
+(`0xc2854–0xc2898`), retaining one fractional digit. This is fixed decimal
+formatting of runtime floats, not shortest-round-trip formatting or an
+original f64 transport. Nonfinite values take separate literal branches.
+XML `StringToFloat` (`0x152cbc/0x152e6c`) scans with `%f` into float storage
+and does not check the conversion count. Compact paths do not validate each
+verb's required field count before indexed reads; Sync's inner segment loop
+does not separately validate every child's name/type. These branches do not
+establish safe arbitrary-string admission or known future command payloads.
+
+Control attributes encode ordered `x,y;x,y` pairs through
+`PointListToString` (`0x1547c8`) and the same formatter. `StringToPointList`
+(`0x153cbc`) clears its destination, requires exactly two comma fields per
+point and stores parsed f32 pairs; a malformed pair clears accumulated points
+again and returns false. The arity check does not check float conversion.
+Sync writes indexed control x/y attributes using the saved angle
+(`0x142ce8–0x142d14`). Its parser ignores each template setter's bool and
+advances the index over every child (`0x142df8–0x142e00`); no valid producer
+use of unrecognized/whitespace nodes is established here.
+
+Full Coedit parsing buffers path and controls (`0x1325bc/0x1325d0`). For
+format 1 without display info, finish loads a valid buffered path through
+template slot +16/mode 1, then replays ordered controls through slot +32
+(`0x131924–0x13199c`). The display-info branch uses separate callbacks;
+its saved/live authority is covered in the [image effect findings](image-effects-findings.md).
+Sync parses attributes first, then element children in input order
+(`0x11c5cc–0x11c608`). Its composer emits path before controls
+(`0x133998/0x1339a8`), but its parser does not reorder arbitrary input to
+enforce that ordering. Later rectangle/rotation, ShapeRefresh and span-finish
+operations remain separate boundaries; controls are not universally the
+final geometry operation (`0x1319b4–0x131a14`, `0x132d58`).
+
+The partial map registers path property 29 and controls property 30
+(`0x1384cc/0x138590`); resolved callback wrappers reach the actual setters
+at `0x13a740/0x13a8d4`. Successful path parsing calls public `SetPath`
+(`0x138f34/0x138f44`); nonempty parsed controls call public
+`MoveControlPointList` (`0x13916c/0x13917c`). These delegate to ObjectShapeData,
+not the full buffered replay; their partial bodies have no local full-finish
+or saved-baseline write. Joint ordering/rollback between separate partial
+properties is not established. Rust's raw `path_data` and f64 control points
+retain original WDoc authority: this XML projection does not justify decimal
+quantization of those retained values or bytes.
 
 ## The native drawing consumer
 
