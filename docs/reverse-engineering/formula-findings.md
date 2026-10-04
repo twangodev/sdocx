@@ -138,8 +138,15 @@ when they do not resolve to a label in the same graph.
 
 ### Recognition bridge
 
-The APK also contains `libSPenRecognizerMathRecognition.so` and
-`libSPenRecogUIFeature.so`. In the recognition library,
+The following libraries were compared byte for byte with the pinned APK members:
+
+| Library | SHA-256 |
+| --- | --- |
+| `libSPenRecognizerMathRecognition.so` | `ecc78e41bf1b9172e3a2c8fd7b1f27be8aca954733398b91f8e257fe7b6baf3a` |
+| `libSPenRecogUIFeature.so` | `53ecf90eb45d0a09ecaebb367cf75b3ad327b34386b8a0ca674b0247fa47f276` |
+| `libSPenHwrData.so` | `25dfcf1c222936c2e185059f4a7504e5b81219b9df02a377019e85cad8afde10` |
+
+In the recognition library,
 `Math::HME::Expression::LabelGraph::Node::getStrokeIndexes` at `0xe0200`
 returns the set at offset 40. Its neighboring getters establish the label at
 offset 0 and rectangle at offset 24 (`0xe01f4`, `0xe01f8`).
@@ -158,7 +165,32 @@ are stored at destination graph offsets 48 and 56 at `0x1d1440` and `0x1d1460`.
 the relevant source/destination accesses are `0x1d62e4`–`0x1d62ec` and
 `0x1d6324`–`0x1d632c`. The endpoint pair at offsets 48/56 is copied together
 at `0x1d65d0`–`0x1d65d4` and `0x1d6a84`–`0x1d6a88`. This ties the recognition
-getter meanings to the members written by the formula serializer.
+getter meanings to the members written by the formula serializer. Both overloads
+use their first graph argument as destination and their second as source.
+
+### Recognition input namespace
+
+The following addresses are in `libSPenRecogUIFeature.so` unless named otherwise.
+`StrokeFormulaTransformer::requestRecognition` (`0x1cc2f0`) queues RequestData
+retaining the supplied ObjectList pointer at +48 (`0x1ce5a0`). These inspected
+request bodies do not establish its mapping to the saved Formula StrokeList.
+
+A separate `HwrMathTransformer::requestMathRecognition` route selects a group's
+stroke pointers through supplied MathGroup indices (`0x1ba370`–`0x1ba380`),
+copies them in sequence, and builds temporary coordinate vectors for recognition
+(`0x1ba39c`, `0x1ba3c0`, `0x1ba420`). On success, the same grouped pointer vector
+feeds HwrData (`0x1ba4a8`). Its converter reads PointF coordinates, runtime handle,
+`RecogUIFeature_OriginalRuntimeHandle` and integer pen size (`0x1263b8`–`0x1263e4`);
+it does not read pressure, sample time, tilt or orientation in this bounded body.
+This derived recognition input is separate from original serialized channels.
+
+In `libSPenHwrData.so`, PushStrokeData keys a map by supplied runtime handle
+(`0x29670`–`0x296ac`) and appends new records to a pointer vector; repeated keys
+can update existing records (`0x297d0`–`0x297ec`). Its selected-set
+GetStrokeDataVector API uses integers as vector positions (`0x291d4`, `0x29228`),
+not handle lookups. No caller of this selected overload was established in the
+inspected Formula/layout routes. Neither that API nor grouped recognition input
+proves a complete mapping from saved graph indices to original StrokeList order.
 
 ### Relation names
 
@@ -183,8 +215,14 @@ tree root is at `0xf7a10`.
 The pointers are `R_AARCH64_RELATIVE` relocations, so reading only their
 unrelocated file bytes would miss the names. `FormulaLabelRelationKind` keeps
 native zero (`Unknown`) distinct from unmapped numbers (`Other(u32)`). These
-names establish the stored categories; layout rules and the exact interpretation
-of `Index` remain unresolved.
+names establish the stored categories. In RecogUIFeature, the inspected main and
+dialer layout paths address graph labels by index*64 (`0x185840`–`0x185848`); no
+dedicated kind-7 branch was established there or in the selected relation helpers.
+This does not establish that Index is ignored: generic descendant traversal follows
+all outgoing relations regardless of kind (`0x18aa50`–`0x18aa68`), then label
+rectangle bounds supply subtree extents (`0x18aab0`–`0x18ab00`). Index can therefore
+participate in label topology without proving a stroke-identity resolver. Its
+dedicated meaning and association to original source strokes remain unproven.
 
 ## SDK inspection and validation
 
