@@ -138,8 +138,9 @@ WPageImpl::SetSize writes width/height, calls the note-size callback and optiona
 layout requester, then marks the page changed (`0xcdba4–0xcdc08`). It directly
 traverses no stroke samples, PDF or custom-object rectangles. The bound note-size
 callback updates aggregate note dimensions/dirty state (`0xa2d04`, `0xa2e44`);
-the concrete layout requester only sets pending noteImpl+828 (`0xa74b8`). Later
-consumers of that flag and their body-text placement effects remain unproven here.
+the concrete layout requester sets pending noteImpl+828 (`0xa74b8`), consumed by
+the [cached extent getters](#cached-page-layout-extents) below. Their bounded
+consumer chain does not establish later body-text reflow.
 
 A successful SetSize with differing dimensions feeds the existing
 [live-page save predicate](vector-retention-findings.md#native-page-files-during-save),
@@ -147,6 +148,40 @@ whose writer reads current dimensions. Page replacement changes current membersh
 original bytes in cache do not imply those removed pages remain selected. Rust
 retains saved page dimensions and supported objects; these static edit routes add
 no resize implementation or executed-save/complete-resource-cleanup guarantee.
+
+### Cached page-layout extents
+
+The pending flag feeds a getter-owned cache, rather than directly invoking a
+body-text mutation. GetPageLayoutWidth/GetPageLayoutHeight call
+updatePageLayoutSize before reading noteImpl+144/+148 (`0x91ef0/0x91ff8`).
+When +828 is nonzero, the full updater obtains current layout dimensions,
+clears pending, adds layout margins and stores the pair (`0x91f64–0x91f94`).
+Despite D-register loads, the two NEON ADDs use **integer 32-bit lanes**, not f64.
+SetPageLayoutMargin writes left/top/right/bottom at +152/+156/+160/+164 and
+marks the same cache pending (`0x92060–0x92068`).
+
+WPageManager::GetPageLayoutSize zeroes its outputs, then unions each current
+page's integer [offsetX,offsetY,offsetX+width,offsetY+height] rectangle and returns
+the union width/height (`0xb91a8–0xb9238`). This is positioned-page extent, not
+ink bounds or a text range; empty membership leaves zero before margins.
+JNI getters tail-call the actual WNote getters (`0xeeecc/0xeef64`).
+
+Composer's infinite-scrolling reload uses GetPageLayoutHeight only when its
+manager+300 override is zero; the result bounds reload rectangles
+(`0x33de38–0x33de48`, `0x33debc–0x33ded8`). Logical-view rectangle conversion
+uses the same conditional fallback to bound/select bands (`0x33ea98–0x33eaa8`).
+These are scrolling/load-window consumers. The checked cache method directly
+calls no stroke, PDF/custom rectangle, ObjectTextBox or page-section mutator;
+later loading callbacks and body reflow remain separate.
+
+Fixed note serialization instead writes current +132/+136 width/height and
++168/+172 page padding (`0xaf210–0xaf258`), not these cached +144/+148 fields.
+The [body-layout manager](note-metadata-findings.md#fixed-property-authority)
+takes WNote::GetWidth as its width input (`0xcee44–0xcee58`, Bodytext), separately
+from these aggregate getters. Rust retains supplied fixed dimensions/padding;
+this cached extent does not justify substituting display margins for saved flow
+units or treating a getter read as body-text remeasurement. These static paths
+do not establish a complete saved body-layout or callback contract.
 
 ## Rust decoding
 
