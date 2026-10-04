@@ -102,6 +102,31 @@ extension fields. Persisted options and native consumers therefore remain
 separate from implemented SDK behavior; see
 [text options and derived overflow](text-layout-findings.md#text-options-and-derived-overflow).
 
+## Native TextCommon object-span trailer
+
+The pinned Model ELF SHA-256 is
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`.
+After margins, gravity and saved sections, `m_GetBinary_WDoc`, `0x3f61c8`,
+writes an object-list presence byte followed by seven zero bytes
+(`0x3f6314`–`0x3f6334`). Its size method, `0x3f5fbc`, accounts for this
+header and the known list only. `m_ApplyBinary_WDoc`, `0x3f6568`, reads it
+for format versions at least 2035 (`0x3f68dc`), tests only bit 0 of the
+first word and skips the second word; upper flags and trailing bytes have
+no separate consumer in this pair.
+
+The list writer/reader (`0x3ff0d4`, `0x3ff234`) and ObjectSpan WDoc pair
+(`0x417be4`, `0x417c98`) contain the embedded object's complete WDoc bytes,
+UTF-16 index, layout option and layout constraint. Runtime identity/history
+and measured object margins are separate from this enclosing wire header.
+No additional vector/resource-owning trailer field is justified by these
+complete source paths; embedded object payloads can retain their own fields.
+
+[Rust decoding](../../crates/sdocx/src/note.rs) owns the known embedded bytes
+and placement fields. Unknown upper flags or remaining common bytes only
+record an extension diagnostic; they are not owned. The reserved u32 is
+consumed and discarded without diagnosing a nonzero value. This source-only
+result establishes neither runtime replay nor all-version extension coverage.
+
 ## SDK decoding
 
 `StoredPage` traversal dispatches outer type 2 directly to a bounded frame
