@@ -47,9 +47,9 @@ The current pen-data writer (`0x3ac284–0x3ac33c`) emits only fields 2 and 4;
 it does not emit field 3. The own-frame writer calls it at `0x3a8ff0` before
 the fill. This scoped omission does not identify an older producer or prove
 every native save route drops these bytes. The slot was traced statically,
-without a containing-record execution. Current Rust treats field 3 as an
-unknown-width boundary and stops before later pen settings and fill; retaining
-its four opaque bytes would allow those existing source decoders to continue.
+without a containing-record execution. Rust retains field 3 as optional
+`NativeShape.pen_data_field_3_raw` bytes and continues decoding later pen
+settings and fill. Its semantic meaning remains unknown.
 Type-8 field 3 remains the separate line-path contract.
 
 `ObjectShapeData::CreateEffect` (`0x3abfe0`) has four branches: color 1,
