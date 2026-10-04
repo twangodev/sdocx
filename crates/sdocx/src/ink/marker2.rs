@@ -150,6 +150,7 @@ mod tests {
     fn stroke(points: &[(f64, f64)], settings: Option<&str>, tool: u16) -> Stroke {
         Stroke {
             rendering: Some(StrokeRendering {
+                metadata: None,
                 pen_name: Some(PEN.into()),
                 advanced_settings: settings.map(str::to_string),
                 tool_type_raw: tool,

@@ -40,6 +40,7 @@ mod tests {
     fn stroke(top_layer_pen: bool) -> PageObjectContent {
         PageObjectContent::Stroke(Stroke {
             rendering: Some(StrokeRendering {
+                metadata: None,
                 pen_name: None,
                 advanced_settings: None,
                 tool_type_raw: 2,

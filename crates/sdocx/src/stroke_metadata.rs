@@ -278,6 +278,9 @@ fn reserve_entries(
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct StrokeRendering {
+    /// Common saved identity, flags and source extensions; absent on generated strokes.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub metadata: Option<Box<ObjectMetadata>>,
     pub pen_name: Option<String>,
     pub advanced_settings: Option<String>,
     pub tool_type_raw: u16,

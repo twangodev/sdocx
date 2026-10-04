@@ -23,6 +23,10 @@ fn frame(kind: i16, properties: u16, fields: u32, fixed: &[u8], flexible: &[u8])
 }
 
 fn base() -> Vec<u8> {
+    base_with_extensions(None, &[], &[0; 16])
+}
+
+fn base_with_extensions(rotation: Option<f32>, fixed_tail: &[u8], flexible_tail: &[u8]) -> Vec<u8> {
     let mut fixed = 5500_u32.to_le_bytes().to_vec();
     fixed.extend_from_slice(&36_u16.to_le_bytes());
     fixed.extend_from_slice(b"00000000-0000-0000-0000-000000000001");
@@ -32,7 +36,19 @@ fn base() -> Vec<u8> {
     }
     fixed.extend_from_slice(&0_i32.to_le_bytes());
     fixed.push(0);
-    frame(0, 1 << 3, 0x6000, &fixed, &[0; 16])
+    fixed.extend_from_slice(fixed_tail);
+    let mut flexible = Vec::new();
+    if let Some(rotation) = rotation {
+        flexible.extend_from_slice(&rotation.to_le_bytes());
+    }
+    flexible.extend_from_slice(flexible_tail);
+    frame(
+        0,
+        1 << 3,
+        0x6000 | u32::from(rotation.is_some()),
+        &fixed,
+        &flexible,
+    )
 }
 
 fn stroke(properties: u16, count: u16, channels: &[u8], fields: u32, style: &[u8]) -> Vec<u8> {
@@ -487,7 +503,9 @@ fn zero_point_strokes_have_no_channel_seed_values() {
 
 #[test]
 fn stored_objects_expose_shared_identity_and_placement_metadata() {
-    let payload = stroke(1, 3, &compressed(false), 0, &[]);
+    let ordinary = stroke(1, 3, &compressed(false), 0, &[]);
+    let mut payload = base_with_extensions(Some(-45.5), &[0xab, 0xcd], &[0xde, 0xad, 0xbe, 0xef]);
+    payload.extend_from_slice(&ordinary[base().len()..]);
     let raw = page(&[vec![object(1, &payload, &[])]], 0, &[]);
     let parsed = sdocx::parse_bytes_detailed(&archive(&raw)).unwrap();
     let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
@@ -499,8 +517,49 @@ fn stored_objects_expose_shared_identity_and_placement_metadata() {
         metadata.bbox,
         parsed.document.pages[0].strokes().next().unwrap().bbox
     );
-    assert_eq!(metadata.rotation_degrees, None);
+    assert_eq!(metadata.rotation_degrees, Some(-45.5));
     assert!(stored.base_metadata(&raw[..stored.payload_offset]).is_err());
+    let direct = stored.decode_stroke(&raw, &ParseLimits::default()).unwrap();
+    let archived = parsed.document.pages[0].strokes().next().unwrap();
+    for stroke in [&direct, archived] {
+        let retained = stroke
+            .rendering
+            .as_ref()
+            .unwrap()
+            .metadata
+            .as_ref()
+            .unwrap();
+        assert_eq!(retained.uuid, metadata.uuid);
+        assert_eq!(retained.modified_time_raw, metadata.modified_time_raw);
+        assert_eq!(retained.replay_timestamp_raw, 0);
+        assert_eq!(retained.resize_mode_raw, 0);
+        assert_eq!(retained.rotation_degrees, Some(-45.5));
+        assert_eq!(retained.property_mask, [1 << 3, 0]);
+        assert_eq!(retained.field_mask, [1, 0x60, 0, 0]);
+        assert_eq!(retained.fixed_trailing_data, [0xab, 0xcd]);
+        assert_eq!(retained.flexible_trailing_data, [0xde, 0xad, 0xbe, 0xef]);
+        assert!(retained.visible);
+        #[cfg(feature = "serde")]
+        assert_eq!(
+            serde_json::to_value(retained).unwrap(),
+            serde_json::to_value(&metadata).unwrap()
+        );
+    }
+    #[cfg(feature = "serde")]
+    {
+        let rendering = archived.rendering.as_ref().unwrap();
+        let mut json = serde_json::to_value(rendering).unwrap();
+        let restored: sdocx::StrokeRendering = serde_json::from_value(json.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_value(restored.metadata).unwrap(),
+            serde_json::to_value(&rendering.metadata).unwrap()
+        );
+        json.as_object_mut().unwrap().remove("metadata");
+        let historical: sdocx::StrokeRendering = serde_json::from_value(json).unwrap();
+        assert!(historical.metadata.is_none());
+        assert_eq!(historical.style, rendering.style);
+        assert_eq!(historical.properties, rendering.properties);
+    }
 }
 
 #[test]

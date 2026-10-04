@@ -3846,6 +3846,7 @@ mod tests {
     fn marker(top_layer: bool, x: f64) -> Stroke {
         Stroke {
             rendering: Some(StrokeRendering {
+                metadata: None,
                 pen_name: Some("com.samsung.android.sdk.pen.pen.preload.Marker2".into()),
                 advanced_settings: Some("2;".into()),
                 tool_type_raw: 2,

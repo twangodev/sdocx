@@ -86,6 +86,7 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
         }),
         pen_width: style.pen_size.unwrap_or(0.8),
         rendering: Some(crate::StrokeRendering {
+            metadata: Some(Box::new(base)),
             pen_name: None,
             advanced_settings: None,
             tool_type_raw: channels.tool_type_raw,
