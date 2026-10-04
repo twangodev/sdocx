@@ -244,27 +244,63 @@ count, a four-byte payload size and the payload (`0x354fd4`, `0x3551d8`,
 `NewGetBinary` used by current WDoc saving. Dynamic relocations in the
 `ObjectStroke` vtable at `0x493010` establish those slot names.
 
-The ordinary stroke block has a 14-byte prefix: flexible offset u32 at +0,
+The complete ordinary stroke payload starts with a u32 base-block size, then
+that ordinary base block (`ObjectStroke::GetBinary`, `0x2e4b60–0x2e4b68`).
+The own block starts at payload +4 +base size (`0x2e4b80`, `0x2e4b9c`);
+`GetBinarySize` sums those blocks plus the four-byte size word (`0x2e49f4`).
+The compatible wrapper uses the compatible base writer, then the same stroke
+writer, passing the base writer's returned integer rather than the compatibility
+argument directly (`0x2e4c98–0x2e4ccc`).
+
+The current ordinary own block has a 14-byte prefix: flexible offset u32 at +0,
 property width byte 2 at +4 and two property bytes at +5, field width byte 4
 at +7 and four field bytes at +8, then point count u16 at +12.
-`GetBinary` writes offsets relative to the complete object output buffer
-(base plus stroke), rather than to a standalone new-style own frame.
+The flexible offset is relative to the complete payload, including its base-size
+word; it points after the sample channels and tool field, or is zero when the
+field mask is zero (`0x2ebfdc–0x2ec004`). There is no own-size/kind pair here.
 The WDoc own block adds total size and kind before the corresponding fields
 and starts samples at +20. These layouts follow `0x2ebe88–0x2ebea0` and
 `0x2ec008–0x2ec048`, compared with `0x2ee5b0–0x2ee614`.
 
-`ObjectStroke::GetBinary`, `0x2e4b14`, serializes ordinary base data then calls
-`ObjectStrokeBinaryHandler::GetBinary` at `0x2e4b9c`. Both ordinary `GetBinary` and WDoc `NewGetBinary` use the same
+Uncompressed samples are grouped arrays: N f32 XY pairs (8N bytes), N f32
+pressures (4N), N i32 timestamps (4N), then optional N f32 tilts and N f32
+orientations (4N each). Only the paired stylus arrays are optional; the writer
+tests whether the tilt vector is nonempty. The five memcpy calls are
+`0x2ebf28`, `0x2ebf44`, `0x2ebf60`, `0x2ebf84`, `0x2ebfa0`. Raw tool/input
+u16 follows those channels (`0x2ebfc8–0x2ebfd8`), before flexible style fields.
+
+Both ordinary `GetBinary` and WDoc `NewGetBinary` use the same
 `sm_ReduceStroke`, property writer and flexible-data writer, but the reducer
 mode differs: ordinary passes false (`0x2ebecc`) and WDoc passes true
 (`0x2ee424`). The mode branch (`0x2ec46c–0x2ec490`) stores the first compressed
 point as two f32 values for ordinary packets, or widens that PointF pair into
-two f64 values for WDoc. The ordinary uncompressed writer likewise copies
-eight-byte PointF pairs (`0x2ebf18–0x2ebf28`); WDoc stores widened coordinates.
+two f64 values for WDoc. Ordinary reading calls the shared `sm_RestoreStroke`
+with mode false (`0x2ecf1c–0x2ecf20`).
 An adapter that only removes/replaces frame headers would misread the channels.
-The common channel model, compression algorithm and geometry remain reusable
-with explicit coordinate-width handling; current Rust `StrokeChannels::read`
-and `decode_stroke` assume WDoc byte counts and f64 point storage.
+Current Rust `StrokeChannels::read` and `decode_stroke` assume WDoc byte counts
+and f64 point storage; the five-channel representation remains reusable with
+explicit ordinary framing and coordinate-width handling.
+
+Ordinary handlers explicitly use false string mode (`0x2e4b90`, `0x2e4ec0`):
+advanced-settings and pen-name fields contain i32 string-table IDs, using the
+same [style map](stroke-metadata-findings.md#optional-pen-fields) as normal WDoc
+(`0x2ed898–0x2ed8d0`, `0x2ed9fc–0x2eda68`). The reader gets/binds those
+references through the context's StringIDManager; the writer requires that
+manager, with a detached-history fallback (`0x2ec614–0x2ec6b0`). Decoding
+samples alone cannot resolve the saved pen without its source string table.
+
+The reader accepts variable mask widths, keeping their low property two/field
+four bytes while advancing the declared widths (`0x2ecdbc–0x2ece7c`). Versions
+>=7 use the leading base-size envelope (`0x2e4e40–0x2e4e8c`); versions <=6
+instead place an inline base block after the masks, before the u16 count
+(`0x2ece78–0x2ececc`). The current 14-byte prefix is not every legacy layout.
+Native loading can also change state: nonunit scale multiplies XY
+(`0x2ecfcc–0x2ed000`), versions <=19 replace owner bounds from samples
+(`0x2ed008–0x2ed034`), and supplied orientation later transforms points
+(`0x2ed068–0x2ed0f0`). Those are load transformations, not stored channels;
+original bytes and transformed native state remain separate preservation inputs.
+These framing and reader findings are source-only, without a complete ordinary
+packet or archive load execution.
 
 ### Executed reducer boundary
 
@@ -521,8 +557,8 @@ stroke geometry after separately decoding ordinary base/stroke packets, explicit
 f32 coordinates without inventing precision, and preserving layer order,
 visibility and replay metadata. Flattening `.page`
 alone or exporting the JPEG thumbnail cannot establish vector preservation.
-The remaining significant unknowns are the full ordinary
-`ObjectStrokeBinaryHandler` wire layout, concrete archive membership after a
-bitmap clear, and whether separate recorded-operation contracts retain removed
-original samples. Runtime undo handles and anchor images alone do not establish
-that preservation.
+The remaining significant unknowns are the ordinary base block's complete
+optional layout and source-archive string-table loading contract, an actual
+packet/archive load, concrete archive membership after a bitmap clear, and
+whether separate recorded-operation contracts retain removed original samples.
+Runtime undo handles and anchor images alone do not establish that preservation.
