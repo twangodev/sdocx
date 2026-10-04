@@ -74,31 +74,55 @@ records from field 1 remain raw 16-byte arrays.
 
 ## Saved span snapshot
 
-`ObjectBase::UpdateAttValue` at `0x2d2268` explains field 16. When no saved ATT
-value is pending, it clears base offsets 232–248, checks `BelongsToSpan`, then
-calls virtual slot 168 at `0x2d22c4`. It stores the returned four floats at
-`0x2d22c8` and `0x2d22d0`. Virtual slot 136 is called at `0x2d22dc`, and its
-float result is stored at offset 248 at `0x2d22e0`.
+`ObjectBase::UpdateAttValue` at `0x2d2268` explains field 16. Without a pending
+saved value it clears BaseData offsets 232–248, then, only when `BelongsToSpan`
+is true, snapshots `GetRect`/slot 168 and `GetRotation`/slot 136
+(`0x2d22c4`–`0x2d22e0`). The base relocations `0x4921b0` and `0x492190`
+identify those getters: the five floats are left/top/right/bottom and rotation.
+The reader copies 20 raw bytes into this separate snapshot and sets BaseImpl
+byte 135 pending (`0x2dba78`–`0x2dbab8`), without applying or scaling geometry.
+Current base getters still read rectangle offsets 8/16 and rotation offset 68
+(`0x2caa68`–`0x2caa70`, `0x2cbd10`–`0x2cbd18`).
 
-The base vtable relocations identify those slots as `GetRect` (`0x4921b0` ->
-`0x2caa60`) and `GetRotation` (`0x492190` -> `0x2cbd08`). Thus the five floats
-are left/top/right/bottom and rotation, not drawn bounds or a pivot.
+`OnBelongedToSpan` (`0x2d1f90`) compares membership at BaseImpl offset 120;
+equal membership bypasses both update and notification (`0x2d1fe4`–`0x2d1fec`).
+A change stores membership, calls `UpdateAttValue`/slot 384 (`0x2d2024`), then
+optionally notifies the context. True membership can capture current geometry;
+false membership clears the snapshot when no saved value is pending. A pending
+value instead has its flag cleared without replacement (`0x2d2284`–`0x2d229c`).
+It therefore survives the next actual update, not necessarily the next attachment.
 
-`OnBelongedToSpan` at `0x2d1f90` updates the membership byte at implementation
-offset 120, then calls virtual slot 384 at `0x2d2024`. The relocation at
-`0x492288` identifies that slot as `UpdateAttValue`. A membership change to
-true can therefore capture the object's current rectangle and rotation;
-a change to false clears the snapshot when no saved value is pending.
+Shape and Image dispatch this update to `ObjectShape::UpdateAttValue`
+(`0x39c298`, relocations `0x4946e0`/`0x497cd8`). It checks the prior pending
+flag before qualified Base update and also preserves its saved path and integer
+rectangles on that first update; otherwise it clears or snapshots them according
+to membership (`0x39c2c8`–`0x39c324`). Formula inherits the Base update
+(`0x497fe0`). These are attribute snapshots, not a generic restoration dispatch.
 
-If `HasSavedAttValue` is already true, `UpdateAttValue` clears that flag and
-returns without replacing the snapshot (`0x2d2284`–`0x2d229c`). The binary
-loader sets the flag after reading field 16 at `0x2dbab8`, preserving the
-loaded snapshot across the next update. The writer emits these 20 bytes only
-when `BelongsToSpan` and additional context checks pass (`0x2daecc`–`0x2daef0`).
+The Base rectangle-change callable sends its notification at `0x2ca990`, then
+preserves the snapshot when belonging and both absolute width/height differences
+are strictly below double `0.001` (`0x2ca9a0`–`0x2ca9fc`, constant `0x12d470`).
+Differences are computed in f32 before widening. Pure translation and sufficiently
+small resizing therefore skip update on this path; other size changes dispatch
+slot 384 (`0x2caa18`). Base SetRect calls this directly (`0x2ca7cc`), and the
+rotation-change path also dispatches slot 384 whenever belonging (`0x2cbc04`).
+The snapshot is consequently a mutable baseline, still subject to the pending-value guard.
 
-`ObjectSpanSnapshot` exposes these stored values without applying the text
-layout's later transforms. The snapshot's relation to final page placement,
-and derived-object overrides of the update behavior, are unverified.
+`ObjectSpan::OnDetach` changes membership to false before calling the owned
+object's detach method (`0x417918`, `0x417934`). On an unpending membership
+change, that update clears the snapshot before concrete detach. The inspected
+Shape/Image, ShapeBase, Base and Formula detach bodies (`0x39a6d0`, `0x37dd54`,
+`0x2d00b4`, `0x42aeac`) do not directly reapply its rectangle or angle.
+`RestoreAttributeByCoedit` (`0x2d4798`) retrieves a saved `SPen::String` from
+an integer-keyed map; it does not directly apply numeric snapshot geometry.
+
+The common writer requires a context, `IsInitializeCoeditData` false or absent,
+`IsCoeditMode` present and true, and `BelongsToSpan` true before copying these
+20 bytes (`0x2dae90`–`0x2daeec`; named context getters `0x2ac29c`, `0x2ac2dc`).
+Field absence therefore does not prove that an object never belonged to a span.
+Rust retains the raw bytes and exposes `saved_span_snapshot()` separately from
+current geometry. Applying it as source geometry or final inline placement is
+not established; callbacks, full reflow and final page placement remain untraced.
 
 ## A different static extraction format
 
