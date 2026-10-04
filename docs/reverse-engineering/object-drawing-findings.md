@@ -63,6 +63,53 @@ The dispatcher also has separate conditions:
 The last distinction supplements [formula drawing findings](formula-rendering-findings.md).
 The math object's own common visibility is checked before its formula loop.
 
+### Unavailable child resources select local placeholders
+
+The following static trace uses the pinned Model, Drawing and Graphics hashes in
+[image-effect evidence](image-effects-findings.md#evidence-and-scope).
+Container slot 472, Model relocation `0x493f90`, inherits Base availability at
+`0x2d45dc`; its complete body returns true without checking children. A visible
+type-4 container therefore reaches recursive drawing even when one child's
+resource check will fail. After each child call, Drawing `0x7fd08–0x7fd20`
+continues without testing the returned Boolean. The last child's result is
+retained, rather than an accumulated all-child success value.
+
+Image availability instead resolves through Model `0x497d30` to
+`ObjectShape::IsAllContentFileAvailable`, `0x39bfbc`. Its managed-resource route
+checks main, border and original media IDs, skipping only `-1`; the manager calls
+are `0x39c194/0x39c1b4/0x39c1d4`. They reach the existing
+[bound-file availability check](coedit-resource-findings.md#pending-callbacks-and-ordinary-saving-use-different-gates).
+An unavailable border or original can therefore select fallback after the main
+check succeeds. The no-manager route separately checks nonnull file paths at
+`0x39c0f4/0x39c104/0x39c114`. File existence does not certify decoded content.
+
+False availability calls `ObjectDummyDrawing::Draw` at Drawing `0x7fbd0`, before
+normal type-specific drawing. Its mask `0x14088` includes image type 3. This
+route reads virtual `GetRect` and own `GetRotation` at `0x82d60/0x82d98`, centers
+the local rectangle, then saves the incoming canvas, translates to that center,
+rotates, draws the rectangle and restores (`0x82db0/0x82dc8/0x82ddc/0x82e00/0x82e14`).
+Graphics relocations `0xd0308/0xd0370/0xd0350/0xd03e8/0xd0310` identify Save,
+PreTranslate, PreRotate, DrawRect and Restore. No new clip is installed in this
+bounded route. Image getter relocations `0x497c00/0x497be0` resolve to ShapeBase
+GetRect and Base GetRotation: this uses the current rectangle and angle, rather
+than replaying the retained path or adding a
+[container matrix](object-transform-findings.md#consequences-for-the-current-rust-representation).
+The inspected dummy route calls object getters, not geometry setters.
+
+Current Rust retains accepted nonnegative main/border/original parsed references,
+but `DecodedImage::resolve` resolves only the main ID. Negative image IDs
+[collapse to absent](vector-retention-findings.md#ownership-differs-among-supported-object-families).
+Missing main media produces a warning while retaining `PlacedImage`;
+`render_image` emits nothing without an asset. Container drawing still visits
+subsequent children. This differs from native placeholder presentation without
+establishing loss of the retained physical geometry. Original payload inspection
+requires separately supplied
+[original page bytes](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).
+Resource-dependent presentation and original geometry/reference identity remain
+separate. No missing-resource fixture, live transition, final clip/paint/pixel
+result, save/reopen behavior or complete object-family availability policy was
+executed by this trace.
+
 ## Layer collection is a different operation
 
 Model `LayerManagerBase::GetAllLayerObjectList(bool)` at `0x34a28c` traverses
