@@ -81,6 +81,49 @@ and stored rotation. Unsupported image features generate
 `UnsupportedImageFeature` diagnostics. CLI conversion and WASM inspection use
 the shared report plumbing. Only the native image decoder produces placed images.
 
+### Native loaded manifest identity
+
+The pinned [WDoc/New manager route](source-map.md#native-libraries) differs
+from the SDK's duplicate-ID policy. `WNoteLoadHandler::Load` reaches
+`MediaFileManagerNew::Load` through manager slot 160 (`libSPenWDoc.so`,
+`0xa85b8–0xa85dc`; Model wrapper `0x292c30`, loader `0x290f0c`).
+
+The loader reads the recorded 64-byte file hash (`0x2911a8`), constructs its
+string (`0x2911bc`), pairs it with newly loaded metadata (`0x291618`) and
+inserts into the hash-keyed tree (`0x291628`, helper `0x29839c`). This key is
+the recorded file hash, separate from Java's computed metadata hash.
+Its string constructor uses `strlen` (`0x277cb4`), so an embedded NUL ends
+the key; ordinary 64-byte ASCII hexadecimal hashes use all 64 bytes.
+The comparator orders key bytes with `memcmp`, then length (`0x298378–0x29838c`).
+
+Equal keys retain the metadata already in the tree: helper
+`0x2983d0–0x2983f8` returns without replacing the payload or merging reference
+counts. In a fresh empty manager, this retains the first admitted record with
+that hash; preexisting manager state can instead supply the retained record.
+The loader still updates its timestamp maximum after insertion (`0x29163c–0x291650`).
+
+Distinct hash keys with the same bind ID survive this insertion. ID lookup scans
+the tree in hash order and stops at the first matching metadata ID
+(`GetFilePathById`, `0x28f9b4–0x28fa08`), then builds the path from that record's filename.
+The selected record therefore follows hash order, rather than serialized
+first/last duplicate-ID order. `WNote::GetPDFFilePathById` reaches this lookup
+through the same manager's slot 80 (`0x96af8–0x96b04`).
+
+The stored bind ID and filename remain independent metadata fields. Filename
+equality does not deduplicate this insertion, and its numeric prefix does not
+remap an ID. Separate runtime name matching and fresh-ID allocation do not
+define saved-manifest admission.
+
+These static findings cover tagged `EOF`/`EOFX` records reaching insertion
+after native name, record, attachment and file-access gates. They do not cover
+no-marker hash recovery, arbitrary malformed input, later context updates or
+the plain NoteDoc CRC manager. No duplicate archive or native execution was tested.
+The tagged insertion path does not verify the recorded hash against file bytes.
+
+Rust deliberately keeps duplicate bind IDs ambiguous. Ordered manifest records
+and retained raw source bytes remain available independently of resolution;
+serialized first/last selection would not reproduce the native route above.
+
 ## Validation
 
 - Twelve image tests cover reordered assets and mismatched filename prefixes,
