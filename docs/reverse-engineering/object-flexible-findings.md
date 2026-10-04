@@ -126,25 +126,59 @@ not established; callbacks, full reflow and final page placement remain untraced
 
 ## A different static extraction format
 
-`sm_GetBaseData_FlexibleArea` at `0x2dc1c0` is not interchangeable with the
-modern typed-frame loader. It reads additional fields at bits 9, 10 and 12:
-an eight-byte value into base offset 80, a UUID into offset 136, and a timestamp
-into offset 152. It does not follow the modern field-16/19/20/21 sequence.
-The eight-byte field is replay order: `ObjectBase::GetReplayOrder` reads that
-member at `0x2cc880`. Its signed comparison and load-time fallback are recorded
-in [object drawing findings](object-drawing-findings.md). This is distinct from
-the four-byte replay timestamp in the modern fixed area.
+`sm_GetBaseData_FlexibleArea` (`0x2dc1c0`) is shared by the ordinary
+`sm_GetBaseDataImpl` (`0x2da338`) and older `sm_GetBaseDataImpl_WDoc`
+(`0x2da6b0`). [Painting source packets](painting-source-findings.md#layer-records-and-the-10000-object-split)
+use the ordinary LayerDoc serializers with document value 0. The older WDoc
+caller invokes this helper with document value 2 (`0x2da794`); neither path
+is the current modern typed-frame common loader.
 
-The distinction is broader than the function's WDoc name. Its caller
-`sm_GetBaseDataImpl_WDoc` at `0x2da6b0` starts with a four-byte flexible offset,
-then masks, a 16-byte float rectangle, replay timestamp, resize byte and another
-four-byte field. That differs from the modern size/type/offset header and
-UUID/timestamp/double-rectangle fixed area. It calls the shared static flexible
-extractor at `0x2da794` with document type 2.
+The ordinary reader consumes a u32 relative flexible offset, length-prefixed
+property and optional masks, four f32 bounds, i32 replay timestamp and u8 resize
+value (`0x2da394`–`0x2da408`). Version >=26 adds a four-byte saved runtime handle;
+older versions set its BaseData offset 128 to -1 (`0x2da410`–`0x2da420`). The
+current writer's fixed area ends at offset 34. Version comes from the caller,
+not a word in this base block: the writer returns 26 for document value 0 or
+4000 otherwise (`0x2d9d70`, `0x2da10c`), rather than an emitted byte length.
 
-The format dispatch for this alternate encoding is not established. Its field
-map does not establish the meaning or width of unknown modern fields; the SDK
-retains those fields and the later flexible tail without decoding them.
+Ordinary masks retain only one property byte and two optional bytes while
+advancing their full declared widths (`0x2dc110`–`0x2dc144`, `0x2da3a4`–`0x2da3d8`).
+The older WDoc reader retains four optional bytes (`0x2da724`). Thus shared-helper
+bits 17/18 do not become reachable through a wider ordinary mask. Its bits
+9/10/12 load replay order/UUID/modification time into BaseData 80/136/152
+(`0x2dc4b0`–`0x2dc54c`), unlike the modern optional sequence. Replay order is
+separate from the four-byte replay timestamp; its getter and sorting are in
+[object drawing findings](object-drawing-findings.md#replay-order-is-a-distinct-64-bit-value).
+
+The saved runtime word copies BaseImpl offset 20, except document value 2
+writes zero (`0x2d9e28`–`0x2d9e90`); `GetRuntimeHandle` reads that member
+(`0x2cb0d8`). The size calculator inserts reserved object-type and runtime-handle
+keys into ExtraData (`0x2d9b28`, `0x2d9b9c`). If the fixed loaded handle is -1,
+the reader tries that Bundle key (`0x2dc3c4`–`0x2dc3fc`). This does not establish
+stable source identity or a UUID remapping.
+
+Capacity and producer output also differ in the inspected current routines.
+`GetCompatibleBinarySize` reserves partial rectangles, thumbnail and pivot space
+(`0x2d9aa4`–`0x2d9ac0`, `0x2d9c80`–`0x2d9c98`), but the complete ordinary base
+writer does not emit those fields. The stroke wrapper starts its own block at
+that calculated base capacity plus four (`0x2e4b80`), not at a writer-returned
+length. Declared capacity therefore does not establish equal emitted bytes.
+
+The successful writer copies RectF to output offset 9 (`0x2d9d94`), then its
+final store zeros bytes 9/10 (`0x2da1b0`): the emitted left-coordinate word is
+`source_word & 0xffff0000`. The inspected reader loads it without recovery.
+Writer property bits 1–7 are set for zero source booleans (`0x2d9d98`–`0x2d9e14`),
+while its property reader assigns those bits directly (`0x2dc148`–`0x2dc18c`).
+These are static producer/consumer observations, not established intentional
+quantization, valid round-trip behavior or an actual Painting archive defect.
+
+Loading can multiply bounds by the supplied scale in f32 (`0x2da3ec`–`0x2da3f4`)
+and relocate their center/add rotation for supplied orientation
+(`0x2da454`–`0x2da534`). Original base bytes, declared capacity/slack and post-load
+geometry remain separate preservation inputs. Current Rust typed frames do not
+decode this ordinary envelope. No ordinary base/packet load, caller-owned output
+initialization or archive round trip was executed for these findings; this map
+also does not establish widths of unknown modern fields.
 
 ## Bundle boundaries
 
