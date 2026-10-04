@@ -16,6 +16,7 @@ Addresses are virtual addresses in the named ELF, before harness relocation.
 | `libSPenText.so` | `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b` |
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenPdf.so` | `cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04` |
+| `libSPenPdfiumB.so` | `4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854` |
 | `libSPenLibxml2.so` | `46753f76c8c007e78777e8fe7de7b57202f966f9494d4fba2b675c3540e35dbd` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 
@@ -557,6 +558,44 @@ and typeface table-tag results. Every result repeats across three memory fills;
 the cases perform 132 table scans per fill. Font factories, native XML parsing,
 constructor chains, source reuse, font selection and shaping do not execute in
 this capture.
+
+### Line feeds and emoji resources
+
+Native entry kind 4 marks a line feed: Text `RichTextMeasure::IsLineFeed`
+tests member 48 against 4 at `0x78490`–`0x78498`. `measureParagraph` writes
+that kind to the paragraph-leading separator at `0x78a88`–`0x78a8c`, zeros
+its advance and skips it during subsequent span measurement.
+
+Emoji collection instead operates inside drawable glyph emission.
+`getDrawnTextRun` requires an optional `EmojiFontSlices` output and selected
+Font, then calls `FontManager::IsColorEmojiFont` at `0x674d4`. It stores the
+physical source ID at slices member 40 (`0x67504`), groups glyphs by high byte
+(`0x67500`) and keys the inner map by low byte (`0x67888`, `0x6799c`).
+The map retains owning source UTF-16 units, including kind-3 continuation slots
+(`0x6792c`–`0x67940`, `0x67a00`–`0x67a80`); it contains no glyph pixels.
+Canvas `drawGlyphs` separately selects `drawCacheEmoji` when its bitmap-font
+predicate is true and its caller flag is false (`0x66a48`–`0x66a90`). The cache
+draws the glyph into an allocated TextBitmap (`0x61410`–`0x61490`, `0x693ac`–`0x693e8`),
+then canvas DrawBitmap consumes it (`0x66c38`–`0x66c3c`).
+
+Composer `PDFWriterUtil::LoadBitmapFont`, `0x383878`, obtains font bytes,
+length and face index from the selected physical face's runtime registry
+(`0x3838ac`–`0x3838bc`), then passes its descriptor and copied slice map to
+writer slot 176 (`0x383910`–`0x38392c`). These source bytes are not proof of a
+font asset owned by the `.sdocx`. Pdf `PdfiumImpl::LoadBitmapFont`, `0x8dc94`, forwards
+bytes and maps to PdfiumB `FPDFText_LoadBitmapFont`, `0x58d168`. That branch
+loads CFX_Font with face index zero (`0x58d228`), creates Type3
+font resources (`0x58d3f0`–`0x58d428`) and renders selected glyphs through
+FreeType (`0x593ca0`/`0x593cb0`). RGB image streams with an optional alpha mask
+back glyph procedures using `/X... Do` (`0x593b18`–`0x593b58`). This proves
+derived image-backed glyph transport, not vector outlines or font-program
+embedding in the final PDF. Arbitrary color/pixel-mode parity is unverified.
+
+This is static source evidence, separately from the cached emitter fixtures.
+No drawable kind-4 emoji producer is established. Rust rejects drawable kind-4
+states and lacks this resource producer; its retained PDF outline path rejects color/image glyphs.
+The [Rust transport boundary](text-layout-findings.md#retained-glyph-pdf-transport)
+preserves source text and physical font bytes without general text rasterization.
 
 ### Captured font-family language
 
@@ -1101,7 +1140,7 @@ first-entry rectangle initialization, later native rectangle unions and whole-ru
 RTL reversal. Cached Y does not enter the native retained output. Default-empty
 records carry an explicit classification without inventing first-codeword bits.
 Nondrawable kind-4 newlines flush a pending run without an empty append.
-Drawable kind-4/emoji and unknown kinds, drawable owners with empty caches,
+Drawable kind-4 states and unknown kinds, drawable owners with empty caches,
 unavailable font state and nonfinite/overflowing geometry fail explicitly. Bounded inputs
 permit at most 250,000 UTF-16 entries and 1,000,000 cached glyphs.
 The comparisons cover the original 268 kind-0/3 cases and 56 published kind-5

@@ -3453,7 +3453,11 @@ cached glyph Y. Its common baseline is entry baseline plus caller offset and
 RichText member 212 (`0x66d0c`–`0x66d14`, `0x672b4`–`0x672c4`), stored at
 DrawnText offset 84 (`0x680e8`). Composer's ordinary-font writer consumes that
 baseline (`0x380e28`–`0x380e44`); color emoji selects a different rectangle
-endpoint. The [cached-run capture](table-code-findings.md#complete-retained-text-run-emission)
+endpoint. Its [font-based resource producer](text-draw-identity-findings.md#line-feeds-and-emoji-resources)
+is separate from kind 4's line-feed classification and derives image-backed
+Type3 glyphs in the native PDF backend. Rust's retained outline path rejects
+color/image glyphs; this source trace does not establish SDK emoji support.
+The [cached-run capture](table-code-findings.md#complete-retained-text-run-emission)
 executes the complete ordinary emitter with supplied entries and font interfaces,
 including baseline, X offsets, run unions and RTL reversal. It does not execute
 shaping or the final PDF consumer. The Rust PDF path preserves full XY from
