@@ -126,6 +126,91 @@ recovery. Caller-owned original archive/page bytes and the browser source
 carrier remain distinct from native current-cache or editable serialization;
 the parsed Rust model does not acquire their complete resource namespace.
 
+### Native directory and file publication
+
+Ordinary app saving and file sharing use distinct publication routes.
+`WordDocRepository.java:439–454` calls `DocumentFileManager.saveWordDocument`;
+its lambda (`:123`–`:125`) reaches `SpenWordDocument.save` (`:193`–`:199`), which
+uses `saveAsDirectory`. Repository `SaveResult.isFileSaved` is set after normal
+return, while caught exceptions populate the result. A `.sdocx` pathname alone
+therefore does not establish ZIP output.
+
+The [native page-save route](#native-page-files-during-save) constructs selected
+current cache members first. WDoc SaveHandler, `0xad4e4`, then stages output at
+its selected target plus a generated temporary extension (`0xad610`–`0xad630`).
+Its file branch checks ZIP and appended fresh EndTag byte count
+(`0xad644`–`0xad684`); its directory branch checks selected-file-list copying
+(`0xad710`–`0xad730`). Both enter the same target exchange.
+
+SaveHandler builds `target + "_back"` (`0xad76c`–`0xad784`). When the target is
+accessible, it attempts removal of a previous backup, then requires
+`Rename(target, backup)` to return zero (`0xad958`–`0xadaa4`). Backup cleanup
+failure logs and does not itself stop that rename. It next checks
+`Rename(stagedOutput, target)` (`0xad798`–`0xad7a4`). An inaccessible target
+skips the old-target backup stage. Failed publication attempts backup-to-target
+restoration if the backup is accessible, then still returns failure
+(`0xad810`–`0xad878`). Successful publication instead attempts backup cleanup;
+cleanup failure logs but does not veto OnSaved (`0xada2c`–`0xadb50`). This is the
+producer corresponding to the [open/recovery backup route](#native-note-opening-and-recovery-sources),
+not a complete rollback or atomic multi-rename guarantee.
+
+Base File::Rename and File::Unlink return their raw libc integers unchanged
+(`0x96ca0`–`0x96cb8`, `0x96b4c`–`0x96b5c`), so zero means success. After handler
+success, WNote calls `SyncFileSystem` (`0x9546c`), whose Model helper `0x2861dc`
+tail-calls `sync`. Later state-reset failure can still make WNote::Save fail
+(`0x95484`–`0x95488`). These observations do not establish checked per-file
+durability or exact original-source publication.
+
+A concrete file-sharing caller, `ShareUriHelper.java:96–112`, generates a unique
+share path and calls two-argument `DocumentCopyUtils.copy` for `.sdocx` source.
+Its default is coedit false (`:58`–`:60`); the four-argument helper (`:161`–`:175`)
+uses native MakeFile only for an actual Sdocx directory with false. Other input
+uses BaseUtils.copyFile; coedit-true directory input instead opens a live note
+and calls saveAsFile. Its outer true follows normal return from a void helper
+that catches inner exceptions, rather than a checked save-result bool.
+`DocumentFileManager.copy` (`:174`–`:175`, lambda `:98`–`:100`) reaches SDK
+`SpenWNote.makeFile` (`:380`–`:391`), whose JNI calls WDoc MakeFile
+(`0xe63d8`–`0xe63e4`). These bounded routes do not describe every shared output.
+
+WDoc `WNote::MakeFile`, `0x95af0`, branches on actual source-directory status
+(`0x95cf4`–`0x95cfc`). For a directory, it roots NoteZip at that supplied source
+and checks page then media GetZipList (`0x95d10`–`0x95d30`), before adding
+`note.note` and `end_tag.bin` (`0x95d34`–`0x95d88`). Its Construct and these Add
+results are not locally tested. The page selector reads saved `pageIdInfo.dat`
+and emits each nonempty ID plus `.page` in manifest order
+(`0xb7430`–`0xb7574`); it does not rewrite live pages, promote `.ssf`, or recursively
+scan directory files. Model's media selector, `0x2945c0`, applies saved manifest inclusion gates to
+`media/<filename>` (`0x29487c`–`0x2948dc`). Selected saved membership is distinct
+from [live media admission](#native-opaque-records-wrappers-and-resources)
+and arbitrary original archive entries.
+
+MakeFile stages at `target + ".tmp"`, checks output construction and ZIP, then
+calls `AppendEndTagToFile(source, stream)` (`0x95d94`–`0x95df4`). That helper
+reads the entire saved `source/end_tag.bin` into a buffer and submits those
+bytes (`0xbb9c8`–`0xbbbe4`), rather than reconstructing a tag from a newly opened
+note. It rejects only a zero write result; the concrete Base stream writer can
+return a short count or -1 (`0xd0628`–`0xd072c`), so the helper does not certify
+full-length completion. Stream Close calls fsync then close
+(Base `0xd0610`–`0xd0624`), but MakeFile ignores its result at `0x95dfc`.
+No executed short-write or replacement loss is established.
+
+Before publishing, MakeFile attempts removal of an accessible existing target
+(`0x95e00`–`0x95f28`). A false directory-removal result logs and still continues;
+its regular-file branch logs on raw Unlink zero and skips logging on nonzero,
+then both proceed. Final `Rename(temp, target)` is checked for zero
+(`0x95f2c`–`0x95f38`), with no local backup restoration. Nondirectory native input
+instead uses checked SPenCopyFile (`0x95e4c`–`0x95e58`); its Model String overload
+copies the same chunk buffer through read/write (`0x2852b8`–`0x285340`), with a
+same-path success shortcut. It does not decode native records or locally
+validate ZIP format.
+
+Saved-directory packing can transport selected vector, opaque and original
+asset payloads without redraw while creating new outer ZIP state. Live save
+can reconstruct native records first. Original supplied archives, current saved
+directory members and published output remain separate source units; neither
+helper success nor output existence establishes retention of every original
+archive member or unselected orphan file.
+
 ### Native note opening and recovery sources
 
 The SDK exposes `discardSnapSavedData`, `skipCorruptedFileInfo` and coedit mode
