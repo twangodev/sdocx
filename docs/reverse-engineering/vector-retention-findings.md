@@ -3,7 +3,7 @@
 ## Evidence and meaning of retention
 
 These findings trace the current Rust parser, inspection APIs and vector output.
-The native opaque-record section concerns Samsung Notes 4.4.45.37 ARM64, APK
+The native sections concern Samsung Notes 4.4.45.37 ARM64, APK
 SHA-256 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
 Native addresses are ELF virtual addresses, before relocation. Other native
 contracts are linked to their separate findings.
@@ -12,8 +12,9 @@ contracts are linked to their separate findings.
 | --- | --- |
 | `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
 | `libSPenWDoc.so` | `1fc540573cc07f3e52466fd048568c8522119c6952cf22213b135ead00af57f6` |
+| `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 
-Native opaque-record admission, hierarchy and resource findings are static
+Native opaque-record, hierarchy, custom-object and resource findings are static
 traces. Only the bounded unknown own-frame writer/reader was executed; no
 complete native archive round trip or Samsung appearance comparison is claimed.
 
@@ -80,21 +81,56 @@ which native types currently have a dedicated semantic or rendering route.
 
 Page flexible [field 18](file-format.md#page-custom-object-list) owns a separate
 custom-kind namespace and keyed file/string records, rather than layer objects
-or rich-text embedded-object spans. One concrete kind is `SpenStickyNote` (1):
-the app creates and saves another `.sdocx`, attaches it to the custom object,
-then appends that object to the page (`StickyMemoObjectManager.java:159–192`,
-`SmDocumentManager.java:101–102`, `190–200`, `350–355`). Collapse bounds and
-color live in keyed strings; thumbnail attachment uses `co_thumbnail_path`.
+or rich-text embedded-object spans. One concrete kind is `SpenStickyNote` (1).
+The app saves a separate `SpenWNote` as `stickymemo_<timestamp>.sdocx`, attaches
+that file, then appends the custom object (`StickyMemoObjectManager.java:159–192`,
+`SmDocumentManager.java:101–102`, `190–200`, `350–355`). WDoc's ordinary attachment
+key is `co_attach_file` (`CustomObject::AttachFile`, `0x84ed0`–`0x84eec`);
+its keyed attacher binds through the media manager, and its own frame saves
+the returned numeric file ID. Collapse bounds and color live in keyed strings;
+thumbnail attachment uses the separate key `co_thumbnail_path`.
 Composer's kind-1 overlay draws icon bitmaps (`0x400c4c`), separately from that
 nested document's source. An icon or thumbnail does not retain its contents.
+
+The nested file has a concrete archive-member route. Model's
+`MediaFileManagerNew::Bind(String*)`, `0x28c5dc`, hashes and deduplicates files;
+new generic content is copied or renamed into its resource directory
+(`BindFile`, `0x28d390`–`0x28d43c`). The new-name helper, `0x28cf0c`–`0x28d0d8`,
+keeps the basename suffix after the last `@`, or the whole basename if absent,
+and prefixes the new decimal ID plus `@`. A fresh sticky filename therefore
+becomes `media/<id>@stickymemo_<timestamp>.sdocx`; deduplication can select an
+existing ID/name instead; binding uses the saved numeric ID.
+
+Fresh successful generic bindings initialize live count 1 and payload flag
+`+58` true (`0x28cac4`–`0x28cad4`, constructor `0x28bb90`–`0x28bba0`). Current
+WDoc `SaveCache`, `0xadc88`, calls the working four-argument media save
+(`0xadd64`–`0xadd7c`, Model `0x290f04`). For an admitted accessible file,
+`saveItem` requires flag `+58`, then adds `media/` plus its existing filename
+to `NoteZip` (`0x290020`–`0x290080`). A manifest record alone does not prove
+payload inclusion. Base's stream ZIP route opens that file in `rb` mode,
+reads up to 16 KiB, and writes the same buffer/count into the member
+(`Stream_ZipFile`, `0x9b7bc`, `0x9b820`, `0x9b8d0`). This route packages nested
+source bytes without decoding the note or substituting a bitmap; outer ZIP
+framing/password handling remains separate from its payload.
+
+Opening a sticky memo loads its attached document with a cache save path
+(`StickyMemoManager.java:1350–1352`). Updating saves that nested document,
+then rebinds its saved file (`StickyMemoObjectManager.java:342–352`), so its
+current source need not equal the first creation's bytes. The archive route
+above is conditional on successful binding, admission and I/O; no whole
+sticky archive round trip or every deduplicated state was executed. Reference
+release and [old-manifest cleanup](#native-opaque-records-wrappers-and-resources)
+remain separate from next-save payload admission.
 
 Rust bounds the page header and jumps to layers (`storage.rs:233–266`);
 semantic flexible decoding reads only bits 0–9 (`page.rs:242–296`). It exposes
 no owned custom-list records, validates no individual custom count/size, and
 does not diagnose their kinds through layer-object warnings. Their bytes need
-the original page buffer; nested non-image resources are outside high-level
-image assets. These are source ownership boundaries, not verified archive loss
-or arbitrary custom-vector semantics.
+the original page buffer. High-level asset admission accepts only image
+extensions (`container.rs:519–533`), omitting these `.sdocx` member bytes and
+the custom key-to-ID relationship. Caller-owned archive bytes and browser
+original ZIP retention are separate source carriers. These are source ownership
+boundaries, not verified archive loss or arbitrary custom-vector semantics.
 
 ## Ownership differs among supported object families
 
