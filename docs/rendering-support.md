@@ -102,6 +102,9 @@ uses the generic approximation, without a shipped native width-law guarantee.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.
+The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
+establishes orientation-derived nib geometry and reused state; this profile
+also uses the generic approximation in Rust.
 
 ## Text and embedded layout
 

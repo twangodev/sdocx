@@ -68,6 +68,8 @@ decoding, rendering and evidence boundaries across object types and features.
   pressure/movement/time width state and generated geometry versus source samples.
 - [`inkpen2-saved-findings.md`](inkpen2-saved-findings.md) — selected V9 saved
   time/history radius, curve sampling and derived cache versus retained channels.
+- [`calligraphy-source-findings.md`](calligraphy-source-findings.md) — selected
+  V1 saved orientation, reused nib state, fixed-width extent and derived mesh.
 
 - [`file-format.md`](file-format.md) — authoritative archive and binary-format
   map: `note.note`, pages, layers, objects, frames, strokes, media, hashes and
