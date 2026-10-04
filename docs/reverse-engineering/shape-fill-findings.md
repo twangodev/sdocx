@@ -33,6 +33,25 @@ the length prefix and kind byte. Native
 bounded payload, constructs the selected effect, applies its bytes and then
 sets it on the shape. Absent bit 5 returns success without applying an effect.
 
+The preceding type-7 pen-data field 3 has a four-byte boundary even though its
+meaning is unknown. Model `ObjectShapeData::ApplyBinary_PenData` (`0x3ac340`)
+tests bit 3 at `0x3ac3b4`, checks four bytes at `0x3ac3b8–0x3ac3c4`, then
+advances the cursor by four at `0x3ac3c8–0x3ac3d0`. It does not load, convert
+or store their value. Field 4's advanced-settings ID follows immediately.
+The modern `ObjectShape::NewApplyBinary` calls own-frame loading at
+`0x399e38`; that loader applies pen data at `0x3a9764` and fill at `0x3a9780`
+through the same checked cursor. This slot therefore precedes the known fill
+without assigning it an invented numeric type.
+
+The current pen-data writer (`0x3ac284–0x3ac33c`) emits only fields 2 and 4;
+it does not emit field 3. The own-frame writer calls it at `0x3a8ff0` before
+the fill. This scoped omission does not identify an older producer or prove
+every native save route drops these bytes. The slot was traced statically,
+without a containing-record execution. Current Rust treats field 3 as an
+unknown-width boundary and stops before later pen settings and fill; retaining
+its four opaque bytes would allow those existing source decoders to continue.
+Type-8 field 3 remains the separate line-path contract.
+
 `ObjectShapeData::CreateEffect` (`0x3abfe0`) has four branches: color 1,
 image 2, pattern 3 and background 4. An unknown kind returns null after
 setting an error. The Java `SpenFillEffectBase` factory admits only 1–3;
