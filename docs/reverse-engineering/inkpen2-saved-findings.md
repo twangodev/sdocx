@@ -12,6 +12,8 @@ are ELF virtual addresses in Samsung Notes 4.4.45.37 APK SHA-256
 | --- | --- |
 | `libSPenInkPen2.so` | `61806b1a7b11c89d0b9c8fa620ac7407d21eda9ac7555c280dbeb38076501c7c` |
 | `libSPenPenCommon.so` | `afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d` |
+| `libSPenModel.so` | `4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a` |
+| `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 
 The InkPen2 ELF matches its APK entry. The [registry](pen-selection-findings.md)
 and [Drawing adapter](inkpen-v4-findings.md#evidence-and-admission) resolve and
@@ -149,6 +151,68 @@ These nine derived floats include scale-dependent half-pixel support; they
 are not raw XY/radius triples. The emission=false branch stores 12-byte
 XY/radius triples, but it is not this saved callback route. Shader coverage,
 alpha composition, final vector outlines and SVG/PDF appearance are unproved.
+
+## Saved dash offset and fresh working phase
+
+The [stroke field table](stroke-metadata-findings.md) already identifies field
+15 as a saved f32 dash offset: Model member 388 is serialized/restored at
+`0x2eca30–0x2eca5c` / `0x2edbd4–0x2edbe4`. Drawing gets pen slot 304's dash
+interface and forwards saved line type to slot 16 and `GetDashOffset` to
+slot 32 (`0x81fb0–0x8201c`). InkPen2's plugin+104 interface thunks
+`0x3b728/0x3b760` store these in PenData members 16/20. That configured offset
+is distinct from PenData 52's subsequently reconstructed current position.
+
+On the fresh V9 branch, lower redraw instead negates drawable spacing 88 and
+passes that float to `initDashStrokeEffect` (`0x4e6f4–0x4e708`). The complete
+InkPen2 wrapper `0x3d520–0x3d5bc` carries this supplied phase, size, line type
+and actual slot 144 interval factors into PenCommon init `0x520d0`. It does
+not read PenData 20. V9 relocation `0x68d60` resolves the factor getter to
+`0x4ed2c`, rather than the inherited empty-vector getter. The saved adapter
+first writes `GetSizeLevel()` into shared setting 56 (`0x4e45c–0x4e46c`).
+The getter selects two factors from native threshold records at `0x71230`
+using that signed level converted to f32, and copies the second factor vector
+from `0x71248`. Its reached vector-copy helpers do not dispatch an offset
+getter. These are native runtime vectors, not universally immutable constants.
+
+Common init resets **drawable** accumulated distance 52 and stores supplied
+phase in **effect implementation** member 12 (`0x46f98`). Factor-copy
+`0x47040–0x470d8` installs two vectors; `CalculatePenDashIntervals`,
+`0x470ec–0x47570`, chooses them for line types 1/2 and builds cumulative
+boundaries beginning at zero. Each append is f32
+`fmadd(factor, configured_width, previous_boundary)` (`0x47474`); this
+calculation does not read phase. Its boolean return alone does not certify
+usable factors or a positive period.
+
+For usable boundaries and finite ordered arithmetic with a positive period,
+`SkipPoint`, `0x475e0–0x4770c`, computes f32 local distance + drawable
+accumulated distance + phase in that order, then calls `fmodf` with the last
+boundary. Ordered negative remainders or remainders above the period become
+zero (`0x47638–0x47644`); it does not add a period to negative remainders.
+The result becomes effect current position 16. Its half-open interval search
+returns false for even intervals. An odd interval returns true and advances
+the caller's local distance by `max(next_boundary-position, 0.01f32)`;
+the minimum has bits `0x3c23d70a` (`0x2c1c4`).
+
+Interior V9 line types 1/2 call this effect, copy its current position into
+**PenData** 52, and on true recheck the mutated distance without getPosTan or
+emission (`0x4dfb4–0x4dff4`). This PenData position is distinct from drawable
+52's accumulated measured path length (`0x4e0c4–0x4e108`). Terminal sampling
+uses the same skip/copy gate (`0x4d3c8–0x4d480`). Only line type 0 receives
+the unconditional final endpoint dot (`0x4d494–0x4d4cc`). However, the
+no-emission-byte-376 shortcut draws the retained control-position dot before
+that gate (`0x4d358–0x4d3c4`), so dashed taps are not universally suppressed.
+Saved redraw ignores endPen's boolean before returning true (`0x4e840/0x4e864`).
+
+These static findings supplement the plain line-type-0 profile above. Clean
+cache reuse, other versions/line types, incoming state, native factor-vector
+lifecycle and degenerate arithmetic remain separate boundaries; no numerical
+or appearance parity follows. Current Rust retains the complete
+`StrokeStyle`, including `dash_offset`, and boxed common metadata in
+`StrokeRendering`; the selected geometry consumer remains Approximate.
+Keep saved offset/presence and pen identity separate from negative spacing or
+working position. This selected fresh phase substitution does not establish
+global offset inertness or justify treating the saved value directly as SVG
+`stroke-dashoffset`.
 
 ## Saved channels and current Rust boundary
 
