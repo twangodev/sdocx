@@ -132,11 +132,11 @@ use std::path::Path;
 /// Resource limits applied while parsing untrusted `.sdocx` input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ParseLimits {
-    /// Maximum number of entries in the ZIP archive.
+    /// Maximum number of reader-selected ZIP entries.
     pub max_archive_entries: usize,
     /// Maximum declared or decoded size of one archive entry.
     pub max_entry_size: u64,
-    /// Maximum total declared uncompressed size across archive entries.
+    /// Maximum total declared uncompressed size across reader-selected ZIP entries.
     pub max_total_uncompressed_size: u64,
     /// Maximum number of pages.
     pub max_pages: usize,

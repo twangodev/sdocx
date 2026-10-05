@@ -74,6 +74,8 @@ as well as `len` and `file_names`, use that coalesced map. Rust page/media
 validation and enumeration, retained page buffers and debugger entry listings
 therefore expose selected entries, not every physical ZIP member. The debugger's
 complete original archive bytes still retain those superseded source bytes.
+Entry-count and total-declared-size limits run after ZIP index construction;
+they cover selected entries, not physical record count or index allocation.
 
 Native Base `NoteZip::Add` appends a separate entry without comparing earlier
 names (`0xcab3c`, `0xcaba4–0xcabac`). The ZIP loop submits each listed entry
