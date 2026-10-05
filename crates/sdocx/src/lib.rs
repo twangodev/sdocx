@@ -190,6 +190,8 @@ pub struct ParseOptions {
     pub verify_integrity: bool,
     /// Retain original page bytes in detailed results; ordinary parse ignores this option.
     pub retain_page_sources: bool,
+    /// Retain original note bytes in detailed results; ordinary parse ignores this option.
+    pub retain_note_source: bool,
     /// Resource limits for untrusted input.
     pub limits: ParseLimits,
 }

@@ -22,6 +22,13 @@ pub struct StoredNote {
     pub title: RichTextBox,
     /// Document-level flowing rich-text body.
     pub body: RichTextBox,
+    /// Original note bytes when requested. Cloning copies this buffer;
+    /// editing the public source or parsed fields can invalidate their association.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub source_bytes: Option<Vec<u8>>,
 }
 
 impl StoredNote {
@@ -165,6 +172,7 @@ pub fn parse_note_bytes_with_limits(data: &[u8], limits: &ParseLimits) -> Result
         },
         title,
         body,
+        source_bytes: None,
     })
 }
 

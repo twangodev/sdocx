@@ -512,3 +512,96 @@ fn metadata_decoding_is_explicit_and_excludes_the_hash_trailer() {
             .contains("null string sentinel")
     );
 }
+
+fn archive_with_note(note_bytes: &[u8]) -> Vec<u8> {
+    let page = support::page(&[Vec::new()], 0, &[]);
+    let mut writer = zip::ZipWriter::new_append(Cursor::new(support::archive(&page))).unwrap();
+    writer
+        .start_file("note.note", zip::write::SimpleFileOptions::default())
+        .unwrap();
+    writer.write_all(note_bytes).unwrap();
+    writer.finish().unwrap().into_inner()
+}
+
+#[test]
+fn retained_note_source_is_independent_and_recovers_original_metadata() {
+    let original = note(&[(10, string_table()), (11, (-12_i32).to_le_bytes().to_vec())]);
+    let input = archive_with_note(&original);
+    let default = parse_bytes_detailed(&input).unwrap();
+    assert!(default.note.unwrap().source_bytes.is_none());
+    assert!(parse_note_bytes(&original).unwrap().source_bytes.is_none());
+    let mut retained = None;
+    for (retain_note_source, retain_page_sources) in
+        [(false, false), (false, true), (true, false), (true, true)]
+    {
+        let options = sdocx::ParseOptions {
+            retain_note_source,
+            retain_page_sources,
+            ..Default::default()
+        };
+        let parsed = sdocx::parse_bytes_detailed_with_options(&input, &options).unwrap();
+        assert_eq!(
+            parsed.note.as_ref().unwrap().source_bytes.is_some(),
+            retain_note_source
+        );
+        assert_eq!(
+            parsed.stored_pages[0].source_bytes.is_some(),
+            retain_page_sources
+        );
+        if retain_note_source && !retain_page_sources {
+            retained = Some(parsed);
+        }
+    }
+    drop(input);
+    let parsed = retained.unwrap();
+    let stored = parsed.note.as_ref().unwrap();
+    let source = stored.source_bytes.as_deref().unwrap();
+    assert_eq!(source, original);
+    let limits = ParseLimits {
+        max_note_metadata_entries: 2,
+        ..Default::default()
+    };
+    let metadata = stored.metadata_with_limits(source, &limits).unwrap();
+    assert_eq!(metadata.body_font_size_delta, Some(-12));
+    let table = metadata.string_table.unwrap();
+    let entries: Vec<_> = table
+        .entries
+        .iter()
+        .map(|entry| (entry.id, entry.text.as_str()))
+        .collect();
+    assert_eq!(entries, [(12, "first"), (12, "second 🖊")]);
+    assert_eq!(table.trailing_data, [0xf1, 0xf2]);
+    #[cfg(feature = "serde")]
+    {
+        let mut json = serde_json::to_value(stored).unwrap();
+        let restored: sdocx::StoredNote = serde_json::from_value(json.clone()).unwrap();
+        assert_eq!(restored.source_bytes.as_deref(), Some(source));
+        json.as_object_mut().unwrap().remove("source_bytes");
+        let restored: sdocx::StoredNote = serde_json::from_value(json).unwrap();
+        assert!(restored.source_bytes.is_none());
+        let json = serde_json::to_value(restored).unwrap();
+        assert!(json.get("source_bytes").is_none());
+    }
+}
+
+#[test]
+fn note_source_preserves_accepted_optional_metadata_errors_and_absence() {
+    let original = note(&[(0, vec![3, 0, b'A', 0])]);
+    let input = archive_with_note(&original);
+    let options = sdocx::ParseOptions {
+        retain_note_source: true,
+        ..Default::default()
+    };
+    assert!(sdocx::parse_bytes_with_options(&input, &options).is_ok());
+    let parsed = sdocx::parse_bytes_detailed_with_options(&input, &options).unwrap();
+    drop(input);
+    let stored = parsed.note.unwrap();
+    let source = stored.source_bytes.as_deref().unwrap();
+    assert_eq!(source, original);
+    let metadata = stored.metadata_with_limits(source, &ParseLimits::default());
+    assert!(metadata.is_err());
+    assert!(parsed.document.metadata.body_font_size_delta.is_none());
+    let empty = support::archive(&support::page(&[Vec::new()], 0, &[]));
+    let parsed = sdocx::parse_bytes_detailed_with_options(&empty, &options).unwrap();
+    assert!(parsed.note.is_none());
+}

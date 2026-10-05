@@ -31,13 +31,13 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     reader: R,
     options: &ParseOptions,
 ) -> Result<ParsedDocument> {
-    parse_archive_from_reader(reader, options, options.retain_page_sources)
+    parse_archive_from_reader(reader, options, true)
 }
 
 fn parse_archive_from_reader<R: Read + Seek>(
     mut reader: R,
     options: &ParseOptions,
-    retain_page_sources: bool,
+    retain_sources: bool,
 ) -> Result<ParsedDocument> {
     let protected_marker = is_protected_document(&mut reader)?;
     let tail = ArchiveTail::read(&mut reader)?;
@@ -91,7 +91,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
 
     // Parse note.note (optional)
     if let Some(buf) = read_optional_entry(&mut archive, "note.note", &options.limits)? {
-        let parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
+        let mut parsed_note = parse_note_bytes_with_limits(&buf, &options.limits)?;
         if let Ok(extra) = parsed_note.metadata_with_limits(&buf, &options.limits) {
             metadata.body_font_size_delta = extra.body_font_size_delta;
             if let Some(table) = extra.string_table {
@@ -108,6 +108,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
             parsed_note.header.page_horizontal_padding,
             parsed_note.header.page_vertical_padding,
         ));
+        parsed_note.source_bytes = (retain_sources && options.retain_note_source).then_some(buf);
         note = Some(parsed_note);
     }
 
@@ -217,7 +218,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
             stored: StoredArchivePage {
                 archive_entry: name.clone(),
                 page: stored_page,
-                source_bytes: retain_page_sources.then_some(buf),
+                source_bytes: (retain_sources && options.retain_page_sources).then_some(buf),
             },
         });
     }
