@@ -647,6 +647,10 @@ geometry authority for this template. Later
 [saved-bounds refresh](text-layout-findings.md#saved-bounds-refresh) and load
 scaling can transform that regenerated geometry; the complete saved dispatcher
 has not been executed in these probes.
+The binary reader discards each slot-32 boolean result and continues to the
+next saved point or later refresh stages (`0x3a9628–0x3a963c`). Path, buffer and
+later field checks remain independent, so this local continuation does not
+establish whole-file acceptance or final geometry.
 
 Native saved writing retrieves controls using getter `0x20ec9c` with the
 enclosing saved rotation, then widens returned `f32` coordinates to `f64`
