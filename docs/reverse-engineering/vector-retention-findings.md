@@ -681,6 +681,52 @@ This is stronger than their present drawing support. In contrast, decoded
 nine-patch geometry, are not retained in `PlacedImage`. Keeping image pixels alone
 does not preserve their clipping, transforms or effect placement.
 
+### Physical Video source bindings
+
+Physical type 16 has two source bindings, distinct from note VoiceData and app
+ExtraData `VideoPath` playback. Model's current own writer (`0x4492fc`) emits
+23 bytes: u32 size at 0, u16 kind 16 at 4, u32 flexible offset 0 at 6,
+property byte-count 1/zero mask at 10/11, field byte-count 2/zero masks at
+12/13–14, then attached-file and thumbnail IDs at 15–18 and 19–22. These
+are raw int32 ID words without floating conversion. The fixed writer
+(`0x448c4c`) requires each to differ from exactly `-1`; this comparison
+does not establish validity of other negative IDs or available resource bytes.
+
+The modern own reader (`0x449394`) checks size/kind and consumes the full
+declared variable masks, copying only their first one/two bytes into zeroed
+locals. Neither mask nor the flexible-offset value controls the following
+fixed reads. Those reads assign the two words directly to impl `+88`/`+200`
+(`0x448da4`), without binding or resolving files. The first assignment precedes
+the second bounds check, so failure need not be transactional. Success returns
+the declared own size without exhausting its remainder. The containing modern
+reader's final size check (`0x447a00`) requires a fit, not equality with input.
+
+The SDK's `SpenObjectVideo` attachedFile/thumbnailPath methods reach actual
+registered JNI functions: Model `JNI_OnLoad`, `0x311c8c`, calls registration
+`0x4496a8` using the five-method table at `0x4b5de0`. On the valid-existing-handle
+setter route, source attachment (`0x449914` → `0x447fe0`) releases
+FileAttacher `+16`, then binds a nonnull path; a null path only releases.
+Thumbnail attachment (`0x449aa0` → `0x448110`) uses the same rule for `+128`,
+clearing the thumbnail cache after successful binding or null removal.
+These runtime operations differ from raw saved-ID assignment.
+OnAttach registers both attachers (`0x448ec4`, `0x448ed0`) on its selected
+context/manager route, subject to the context's callback gate. Generic
+[resource binding and admission](card-source-findings.md#bound-resources-have-consumers-beyond-card-drawing)
+remain separate from successful Video loading or archive inclusion.
+
+The thumbnail consumer (`0x449084`) reads the `+128` path and creates a
+bitmap (`0x449104`); it does not decode the separately attached video source.
+A retained thumbnail therefore does not retain that source file. Current Rust
+has no typed Video projection or dedicated renderer. The original record is
+available through an owned rich-text embedded binary, opt-in original page
+bytes, or caller-retained source; associated media bytes and the manifest
+namespace follow [resource ownership](#resource-identity-and-page-paper).
+
+These are static current-method contracts. No physical-type-16 app import,
+real-corpus occurrence, completed save/reload, playback/export codec, arbitrary
+future-tail interpretation or whole-load success was established. Transitive
+base loading and post-load callbacks remain outside this bounded trace.
+
 ## Resource identity and page paper
 
 The [asset loader](../../crates/sdocx/src/container.rs) retains non-directory `media/`

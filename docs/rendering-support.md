@@ -37,7 +37,7 @@ that the object has semantic content or a renderer.
 | 13 | Web | Stored/common metadata | No dedicated renderer |
 | 14 | Painting | Stored/common metadata | No dedicated renderer |
 | 15 | StrokeDevelopmentVersion | Stored/common metadata | Not routed through the type-1 stroke renderer |
-| 16 | Video | Stored/common metadata | No dedicated renderer |
+| 16 | Video | Stored/common metadata; [source/thumbnail binding contract](reverse-engineering/vector-retention-findings.md#physical-video-source-bindings), without a typed Video projection | No dedicated renderer |
 | 17 | Link | Stored/common metadata; separate rich-text hyperlink spans exist | No link-object renderer |
 | 18 | StrokeBrush | Stored/common metadata | Not routed through the type-1 stroke renderer |
 | 19 | Unknown | Explicit Samsung unknown marker | No dedicated renderer |
