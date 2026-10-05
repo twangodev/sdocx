@@ -169,6 +169,11 @@ pub struct ViewBox {
     values: [Option<Number>; 4],
 }
 impl ViewBox {
+    pub fn unrounded(x: f64, y: f64, width: f64, height: f64) -> Self {
+        Self {
+            values: [x, y, width, height].map(Number::new),
+        }
+    }
     pub fn new(x: f64, y: f64, width: f64, height: f64, places: usize) -> Self {
         Self {
             values: [x, y, width, height].map(|value| decimal(value, places)),
@@ -196,6 +201,12 @@ enum TransformKind {
     Matrix,
 }
 impl Transform {
+    pub fn rotate_unrounded(angle: f64, cx: f64, cy: f64) -> Self {
+        Self {
+            kind: TransformKind::Rotate,
+            values: [angle, cx, cy].map(Number::new).into(),
+        }
+    }
     pub fn rotate(angle: f64, cx: f64, cy: f64, places: usize) -> Self {
         Self {
             kind: TransformKind::Rotate,

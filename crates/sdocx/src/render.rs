@@ -1240,17 +1240,16 @@ fn render_image(
         return;
     }
     let mut image = Image::embedded(&asset.data, &asset.mime_type)
-        .x(decimal(bbox.x_min, 2))
-        .y(decimal(bbox.y_min, 2))
-        .width(decimal(width, 2))
-        .height(decimal(height, 2))
+        .x(bbox.x_min)
+        .y(bbox.y_min)
+        .width(width)
+        .height(height)
         .stretched();
     if let Some(angle) = rotation.filter(|angle| angle.is_finite()) {
-        image = image.transformed(Transform::rotate(
+        image = image.transformed(Transform::rotate_unrounded(
             angle,
             bbox.x_min + width / 2.,
             bbox.y_min + height / 2.,
-            2,
         ));
     }
     svg.push(image);
@@ -1285,15 +1284,15 @@ fn render_placed_image(svg: &mut Scene, image: &PlacedImage, media_assets: &[Med
         let cx = (bbox.x_min + bbox.x_max) / 2.0;
         let cy = (bbox.y_min + bbox.y_max) / 2.0;
         svg.scope(
-            Group::new().transformed(Transform::rotate(angle, cx, cy, 4)),
+            Group::new().transformed(Transform::rotate_unrounded(angle, cx, cy)),
             |svg| {
                 svg.scope(
                     Svg::new()
-                        .x(decimal(bbox.x_min, 4))
-                        .y(decimal(bbox.y_min, 4))
-                        .width(decimal(width, 4))
-                        .height(decimal(height, 4))
-                        .view_box(ViewBox::new(bbox.x_min, bbox.y_min, width, height, 4))
+                        .x(bbox.x_min)
+                        .y(bbox.y_min)
+                        .width(width)
+                        .height(height)
+                        .view_box(ViewBox::unrounded(bbox.x_min, bbox.y_min, width, height))
                         .clipped_viewport(),
                     |svg| {
                         render_image(svg, original, image.media_index, None, media_assets);

@@ -1,7 +1,3 @@
-#[cfg(feature = "render")]
-#[path = "support/svg.rs"]
-mod svg_support;
-
 mod support;
 
 use sdocx::{DiagnosticCode, Error, PageElement, PlacedImage};
@@ -400,7 +396,10 @@ fn embedded_images_resolve_media_and_preserve_utf16_anchors_and_raw_records() {
     {
         let pages = sdocx::render_document_svg(&parsed.document, &sdocx::RenderOptions::default());
         assert_eq!(pages[0].svg.matches("<image ").count(), 2);
-        assert!(pages[0].svg.contains("rotate(30.00"));
+        let xml = roxmltree::Document::parse(&pages[0].svg).unwrap();
+        for node in xml.descendants().filter(|node| node.has_tag_name("image")) {
+            assert_svg_rotation(node, 30.0, [40.0, 60.0]);
+        }
     }
 }
 
@@ -553,19 +552,21 @@ fn cropped_embedded_images_keep_original_placement_and_clip_the_render() {
     {
         let svg =
             &sdocx::render_document_svg(&parsed.document, &sdocx::RenderOptions::default())[0].svg;
-        assert!(svg.contains("overflow=\"hidden\""));
-        assert!(svg.contains("viewBox=\"-10.0000 20.0000 100.0000 80.0000\""));
-        assert!(svg.contains("rotate(30.0000"));
-        svg_support::assert_svg_element(
-            svg,
-            "image",
-            &[
-                ("x", "-20.00"),
-                ("y", "0.00"),
-                ("width", "200.00"),
-                ("height", "160.00"),
-            ],
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let node = xml
+            .descendants()
+            .find(|node| node.has_tag_name("image"))
+            .unwrap();
+        assert_eq!(svg_rectangle(node), [-20.0, 0.0, 200.0, 160.0]);
+        let viewport = node.parent().unwrap();
+        assert!(viewport.has_tag_name("svg"));
+        assert_eq!(viewport.attribute("overflow"), Some("hidden"));
+        let view_box: svgtypes::ViewBox = viewport.attribute("viewBox").unwrap().parse().unwrap();
+        assert_eq!(
+            [view_box.x, view_box.y, view_box.w, view_box.h],
+            [-10.0, 20.0, 100.0, 80.0]
         );
+        assert_svg_rotation(viewport.parent().unwrap(), 30.0, [40.0, 60.0]);
     }
 }
 
@@ -706,6 +707,33 @@ fn asset_bytes<'a>(doc: &'a sdocx::Document, element: &PageElement) -> &'a [u8] 
     &doc.metadata.media_assets[placed(element).media_index.unwrap()].data
 }
 
+#[cfg(feature = "render")]
+fn svg_rectangle(node: roxmltree::Node<'_, '_>) -> [f64; 4] {
+    ["x", "y", "width", "height"].map(|name| node.attribute(name).unwrap().parse().unwrap())
+}
+
+#[cfg(feature = "render")]
+fn assert_svg_rotation(node: roxmltree::Node<'_, '_>, angle: f64, pivot: [f64; 2]) {
+    use svgtypes::TransformListToken::{Rotate, Translate};
+    let actual: Vec<_> = svgtypes::TransformListParser::from(node.attribute("transform").unwrap())
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(
+        actual,
+        [
+            Translate {
+                tx: pivot[0],
+                ty: pivot[1]
+            },
+            Rotate { angle },
+            Translate {
+                tx: -pivot[0],
+                ty: -pivot[1]
+            }
+        ]
+    );
+}
+
 #[test]
 fn manifest_ids_override_filename_prefixes_archive_order_and_encounter_order() {
     let pages = one_page(vec![
@@ -749,17 +777,11 @@ fn manifest_ids_override_filename_prefixes_archive_order_and_encounter_order() {
             assert_eq!(svg.matches("<image ").count(), 3);
             assert_eq!(svg.matches("data:image/png;base64,Ymx1ZQ==").count(), 2);
             assert!(svg.contains("data:image/png;base64,cmVk"));
-            assert!(svg.contains("rotate(30.00 40.00 60.00)"));
-            svg_support::assert_svg_element(
-                &svg,
-                "image",
-                &[
-                    ("x", "-10.00"),
-                    ("y", "20.00"),
-                    ("width", "100.00"),
-                    ("height", "80.00"),
-                ],
-            );
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            for node in xml.descendants().filter(|node| node.has_tag_name("image")) {
+                assert_eq!(svg_rectangle(node), [-10.0, 20.0, 100.0, 80.0]);
+                assert_svg_rotation(node, 30.0, [40.0, 60.0]);
+            }
             assert!(!svg.contains("dW51c2Vk"));
         }
     }
@@ -1109,6 +1131,161 @@ fn no_fill_means_no_main_image_even_when_an_original_asset_exists() {
     assert_eq!(image.media_id, None);
     assert_eq!(image.original_media_id, Some(7));
     assert_eq!(image.media_index, None);
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn saved_image_placement_preserves_fractional_attributes_and_rotation() {
+    let bounds = [1.0009765625_f64, 2.0009765625, 1.0029296875, 2.00390625];
+    let mut payload = image(7);
+    for (index, value) in bounds.into_iter().enumerate() {
+        payload[36 + index * 8..44 + index * 8].copy_from_slice(&value.to_le_bytes());
+    }
+    payload[base().len() - 4..base().len()]
+        .copy_from_slice(&f32::from_bits(0x41f8_0100).to_le_bytes());
+    let pages = one_page(vec![object(3, &payload, &[])]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &pages,
+        Some(&[(7, "main.png")]),
+        &[("main.png", b"precision")],
+    ))
+    .unwrap();
+    let element = parsed.document.pages[0].elements().next().unwrap();
+    let svg = sdocx::render_page_svg(&parsed.document, 0, &Default::default())
+        .unwrap()
+        .svg;
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let node = xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    assert_eq!(
+        svg_rectangle(node),
+        [1.0009765625, 2.0009765625, 0.001953125, 0.0029296875]
+    );
+    assert_svg_rotation(node, 31.00048828125, [1.001953125, 2.00244140625]);
+    let image = placed(element);
+    assert_eq!(image.bbox.x_min, bounds[0]);
+    assert_eq!(image.bbox.y_min, bounds[1]);
+    assert_eq!(image.bbox.x_max, bounds[2]);
+    assert_eq!(image.bbox.y_max, bounds[3]);
+    assert_eq!(image.rotation_degrees, Some(31.00048828125));
+    assert_eq!(image.media_id, Some(7));
+    assert_eq!(asset_bytes(&parsed.document, element), b"precision");
+    let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
+    assert_eq!(stored.payload(&pages[0].1).unwrap(), payload);
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn saved_image_crop_preserves_fine_viewport_and_integer_original_bounds() {
+    let unit = 1.0_f64 / 131072.0;
+    let bounds = [1.0 + unit, 2.0 + unit, 1.0 + 3.0 * unit, 2.0 + 5.0 * unit];
+    let mut tail = Vec::new();
+    for value in [10_i32, 20, 110, 100] {
+        tail.extend(value.to_le_bytes());
+    }
+    for value in [-20.0_f64, 0.0, 180.0, 160.0] {
+        tail.extend(value.to_le_bytes());
+    }
+    let mut payload = image_with_fill(2, &fill(7), 0, &[], &frame(3, 2 | (1 << 17), &[], &tail));
+    for (index, value) in bounds.into_iter().enumerate() {
+        payload[36 + index * 8..44 + index * 8].copy_from_slice(&value.to_le_bytes());
+    }
+    payload[base().len() - 4..base().len()]
+        .copy_from_slice(&f32::from_bits(0x41f8_0100).to_le_bytes());
+    let pages = one_page(vec![object(3, &payload, &[])]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &pages,
+        Some(&[(7, "main.png")]),
+        &[("main.png", b"precision")],
+    ))
+    .unwrap();
+    let element = parsed.document.pages[0].elements().next().unwrap();
+    let svg = sdocx::render_page_svg(&parsed.document, 0, &Default::default())
+        .unwrap()
+        .svg;
+    let xml = roxmltree::Document::parse(&svg).unwrap();
+    let node = xml
+        .descendants()
+        .find(|node| node.has_tag_name("image"))
+        .unwrap();
+    let viewport = node.parent().unwrap();
+    assert!(viewport.has_tag_name("svg"));
+    assert_eq!(viewport.attribute("overflow"), Some("hidden"));
+    let expected = [1.0 + unit, 2.0 + unit, 2.0 * unit, 4.0 * unit];
+    for (node, expected) in [(viewport, expected), (node, [-20.0, 0.0, 200.0, 160.0])] {
+        assert_eq!(svg_rectangle(node), expected);
+    }
+    let view_box: svgtypes::ViewBox = viewport.attribute("viewBox").unwrap().parse().unwrap();
+    assert_eq!([view_box.x, view_box.y, view_box.w, view_box.h], expected);
+    assert_svg_rotation(
+        viewport.parent().unwrap(),
+        31.00048828125,
+        [1.0 + 2.0 * unit, 2.0 + 3.0 * unit],
+    );
+    let image = placed(element);
+    assert_eq!(image.bbox.x_min, bounds[0]);
+    assert_eq!(image.bbox.y_min, bounds[1]);
+    assert_eq!(image.bbox.x_max, bounds[2]);
+    assert_eq!(image.bbox.y_max, bounds[3]);
+    assert_eq!(image.crop_rect, Some([10, 20, 110, 100]));
+    let original = image.original_bbox.unwrap();
+    assert_eq!(original.x_min, -20.0);
+    assert_eq!(original.y_min, 0.0);
+    assert_eq!(original.x_max, 180.0);
+    assert_eq!(original.y_max, 160.0);
+    assert_eq!(image.rotation_degrees, Some(31.00048828125));
+    assert_eq!(image.media_id, Some(7));
+    assert_eq!(asset_bytes(&parsed.document, element), b"precision");
+    let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
+    assert_eq!(stored.payload(&pages[0].1).unwrap(), payload);
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn image_rendering_keeps_extent_and_cropped_transform_admission() {
+    let mut document = sdocx::parse_bytes(&archive(
+        &one_page(vec![object(3, &image(7), &[])]),
+        Some(&[(7, "main.png")]),
+        &[("main.png", b"precision")],
+    ))
+    .unwrap();
+    let original = placed(document.pages[0].elements().next().unwrap()).clone();
+    for (bounds, angle, cropped, visible) in [
+        ([0.0, 0.0, 0.0, 1.0], 30.0, false, false),
+        ([1.0, 0.0, 0.0, 1.0], 30.0, false, false),
+        ([0.0, 0.0, 1.0, f64::INFINITY], 30.0, false, false),
+        ([0.0, 0.0, 1.0, 1.0], f64::NAN, true, false),
+        ([f64::MAX / 2.0, 0.0, f64::MAX, 1.0], 30.0, true, false),
+        ([0.0, 0.0, 1.0, 1.0], f64::NAN, false, true),
+    ] {
+        let mut image = original.clone();
+        image.bbox = sdocx::BoundingBox {
+            x_min: bounds[0],
+            y_min: bounds[1],
+            x_max: bounds[2],
+            y_max: bounds[3],
+        };
+        image.rotation_degrees = Some(angle);
+        if cropped {
+            image.crop_rect = Some([0, 0, 1, 1]);
+            image.original_bbox = Some(original.bbox);
+        }
+        document.pages[0].objects = vec![PageElement::PlacedImage(image).into()];
+        let svg = sdocx::render_page_svg(&document, 0, &Default::default())
+            .unwrap()
+            .svg;
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let images: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("image"))
+            .collect();
+        assert_eq!(images.len(), usize::from(visible));
+        if let Some(image) = images.first() {
+            assert!(image.attribute("transform").is_none());
+        }
+    }
 }
 
 #[cfg(feature = "render")]
