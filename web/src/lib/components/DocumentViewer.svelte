@@ -67,6 +67,8 @@
 		<DocumentInfoPanel
 			pageCount={model.document.pageCount}
 			details={model.document.details}
+			renderReports={session.previewReports}
+			colorMode={session.previewColorMode}
 			open={model.view.detailsOpen}
 			class="h-full w-56"
 		/>

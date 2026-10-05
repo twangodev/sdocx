@@ -3,7 +3,8 @@
 	import { tick } from 'svelte';
 	import ExportPreview from './ExportPreview.svelte';
 	import ColorModeSwitch from './ColorModeSwitch.svelte';
-	import type { ColorMode } from '$converter/protocol';
+	import type { ColorMode, PageRenderReport, SvgRenderResult } from '$converter/protocol';
+	import RenderNotices from '../RenderNotices.svelte';
 	import IconButton from './IconButton.svelte';
 	import { exportDetails, type ExportFormat, type ExportRequest } from '$converter/export-options';
 	import { sanitizeStem } from '$converter/files';
@@ -18,11 +19,13 @@
 			exporting: boolean;
 			rendering: boolean;
 			exportProgress: string;
+			exportReports: PageRenderReport[];
+			exportColorMode: ColorMode;
 		};
 		actions: {
 			onExport: (request: ExportRequest) => Promise<string>;
 			onResolvePages: (selection: string) => Promise<number[]>;
-			onPreview: (page: number, mode: ColorMode) => Promise<string>;
+			onPreview: (page: number, mode: ColorMode) => Promise<SvgRenderResult>;
 			onCancel: () => void;
 		};
 	}
@@ -227,6 +230,7 @@
 			{#if busy}
 				<p role="status" class="text-xs text-muted">{model.exportProgress || 'Preparing download'}</p>
 			{:else if downloaded}
+				<div class="max-h-32 overflow-auto"><RenderNotices reports={model.exportReports} label={`Download rendering (${model.exportColorMode})`} /></div>
 				<div class="flex flex-wrap items-center justify-between gap-2 text-xs">
 					<p role="status">Download started</p>
 					<a href="https://github.com/twangodev/sdocx" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 text-muted hover:text-text"><Star size={12} />Star on GitHub</a>

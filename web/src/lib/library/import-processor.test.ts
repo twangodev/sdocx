@@ -7,7 +7,10 @@ function setup() {
 	const client: ConverterClientPort = {
 		load: vi.fn().mockResolvedValue({ pageCount: 4, inspection: {} }),
 		inspect: vi.fn(),
-		renderPage: vi.fn().mockResolvedValue('<svg/>'),
+		renderPage: vi.fn<ConverterClientPort['renderPage']>().mockResolvedValue({
+			svg: '<svg/>', page_index: 0, text_diagnostics: [],
+			object_diagnostics: [{ kind: 'ThumbnailNotice', anchor_utf16: 0 }]
+		}),
 		exportPdf: vi.fn(),
 		resolvePages: vi.fn(),
 		exportJson: vi.fn(),
@@ -23,13 +26,17 @@ function setup() {
 const file = (name = 'note.sdocx') => new File(['note'], name);
 
 it('imports sequentially, renders only first pages, and continues after invalid files', async () => {
-	const { processor, save, client } = setup();
+	const { processor, save, client, thumbnail } = setup();
 	const results = await processor.run([file(), file('bad.txt'), file('other.sdocx')]);
 	expect(results.map((result) => result.status)).toEqual(['imported', 'failed', 'imported']);
 	expect(save).toHaveBeenCalledTimes(2);
 	expect(save.mock.calls[0][0].contentHash).toMatch(/^[a-f0-9]{64}$/);
 	expect(client.renderPage).toHaveBeenCalledTimes(2);
 	expect(client.renderPage).toHaveBeenCalledWith(0, 'auto');
+	expect(thumbnail).toHaveBeenNthCalledWith(1, '<svg/>');
+	expect(thumbnail).toHaveBeenNthCalledWith(2, '<svg/>');
+	expect(save.mock.calls[0][0].thumbnail).toBeInstanceOf(Blob);
+	expect(await save.mock.calls[0][0].thumbnail.text()).toBe('png');
 	expect(client.destroy).toHaveBeenCalledOnce();
 });
 

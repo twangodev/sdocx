@@ -2,6 +2,7 @@
 
 import type { ConverterEvent, ConverterRequest } from './protocol';
 import { ConverterWorkerSession } from './worker-session';
+import { resultTransfers } from './render-reports';
 
 function emit(event: ConverterEvent): void {
 	self.postMessage(event);
@@ -17,7 +18,7 @@ self.onmessage = async (event: MessageEvent<ConverterRequest>) => {
 		const value = await session.handle(request);
 		self.postMessage(
 			{ id: request.id, type: 'result', value } satisfies ConverterEvent,
-			value instanceof Uint8Array ? [value.buffer] : []
+			resultTransfers(value)
 		);
 	} catch (error) {
 		emit({

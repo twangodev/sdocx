@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { Check } from '@lucide/svelte';
 	import type { InspectionView } from '$converter/view-model';
+	import type { ColorMode, PageRenderReport } from '$converter/protocol';
+	import RenderNotices from './RenderNotices.svelte';
 
 	let {
 		pageCount,
 		details,
+		renderReports = [],
+		colorMode = 'auto',
 		open = false,
 		class: className = ''
-	}: { pageCount: number; details: InspectionView | null; open?: boolean; class?: string } = $props();
+	}: { pageCount: number; details: InspectionView | null; renderReports?: PageRenderReport[]; colorMode?: ColorMode; open?: boolean; class?: string } = $props();
 </script>
 
 <aside
@@ -66,4 +70,5 @@
 			</p>
 		{/if}
 	</div>
+	<RenderNotices reports={renderReports} label={`Preview rendering (${colorMode})`} />
 </aside>

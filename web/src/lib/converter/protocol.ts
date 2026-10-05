@@ -5,6 +5,36 @@ export const LARGE_INPUT_BYTES = 100 * 1024 * 1024;
 export type ColorMode = 'auto' | 'light' | 'dark';
 export type WorkerPhase = 'loading' | 'parsing' | 'inspecting' | 'rendering' | 'ready';
 
+export interface TextRenderDiagnostic {
+	kind: string;
+	family: string;
+	codepoints: number[];
+	[field: string]: unknown;
+}
+
+export interface ObjectRenderDiagnostic {
+	kind: string;
+	anchor_utf16: number;
+	[field: string]: unknown;
+}
+
+export interface PageRenderReport {
+	page_index: number;
+	text_diagnostics: TextRenderDiagnostic[];
+	object_diagnostics: ObjectRenderDiagnostic[];
+	[field: string]: unknown;
+}
+
+export interface SvgRenderResult extends PageRenderReport {
+	svg: string;
+}
+
+export interface PdfRenderResult {
+	bytes: Uint8Array<ArrayBuffer>;
+	pages: PageRenderReport[];
+	[field: string]: unknown;
+}
+
 export interface DocumentSummary {
 	pageCount: number;
 	inspection: unknown;

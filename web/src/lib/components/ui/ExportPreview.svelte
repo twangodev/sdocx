@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { LoaderCircle, Maximize, Minus, Plus } from '@lucide/svelte';
 	import IconButton from './IconButton.svelte';
-	import type { ColorMode } from '$converter/protocol';
+	import type { ColorMode, PageRenderReport, SvgRenderResult } from '$converter/protocol';
+	import { pageReport } from '$converter/render-reports';
+	import RenderNotices from '../RenderNotices.svelte';
 
 	let { pageIndex, colorMode, enabled, busy, pngScale, render }: {
 		pageIndex: number;
@@ -9,11 +11,12 @@
 		enabled: boolean;
 		busy: boolean;
 		pngScale?: 1 | 2;
-		render: (pageIndex: number, colorMode: ColorMode) => Promise<string>;
+		render: (pageIndex: number, colorMode: ColorMode) => Promise<SvgRenderResult>;
 	} = $props();
 	let url = $state('');
 	let error = $state('');
 	let loading = $state(false);
+	let reports = $state<PageRenderReport[]>([]);
 	let attempt = $state(0);
 	let width = $state(0), height = $state(0);
 	let viewportWidth = $state(0), viewportHeight = $state(0);
@@ -24,15 +27,16 @@
 	$effect(() => {
 		const page = pageIndex, mode = colorMode;
 		attempt;
-		url = ''; error = ''; width = 0; height = 0; zoom = null;
+		url = ''; error = ''; width = 0; height = 0; zoom = null; reports = [];
 		loading = enabled;
 		if (!enabled) return;
 		let active = true;
 		let ownedUrl = '';
-		void render(page, mode).then(svg => {
+		void render(page, mode).then(result => {
 			if (!active) return;
-			ownedUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+			ownedUrl = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml' }));
 			url = ownedUrl;
+			reports = [pageReport(result)];
 		}).catch(cause => {
 			if (!active) return;
 			error = cause instanceof Error ? cause.message : 'Could not load the preview.';
@@ -67,6 +71,7 @@
 		{/if}
 	{/if}
 </div>
+<div class="max-h-32 overflow-auto px-3"><RenderNotices {reports} label={`Page preview rendering (${colorMode})`} /></div>
 <div class="flex min-h-11 flex-wrap items-center justify-between gap-2 border-t border-subtle px-3 py-2 text-[11px] text-muted">
 	<span>{#if width && height}{pngScale ? `${width * pngScale} × ${height * pngScale} px output` : `${width} × ${height}`}{:else}Page preview{/if}</span>
 	<div class="flex items-center gap-1">

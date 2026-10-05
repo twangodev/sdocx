@@ -201,7 +201,9 @@
 				activity: {
 					exporting: session.exporting,
 					rendering: session.rendering,
-					exportProgress: session.exportProgress
+					exportProgress: session.exportProgress,
+					exportReports: session.exportReports,
+					exportColorMode: session.exportColorMode
 				}
 			}}
 			actions={{

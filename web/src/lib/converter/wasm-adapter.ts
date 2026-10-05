@@ -1,14 +1,14 @@
 import type { DebugRequest } from '$lib/debugger/model';
-import type { ColorMode, DocumentSummary } from './protocol';
+import type { ColorMode, DocumentSummary, PdfRenderResult, SvgRenderResult } from './protocol';
+import { validatePdfResult, validateSvgResult } from './render-reports';
 
 interface WasmDocumentSession {
 	page_count: number | (() => number);
 	inspection: unknown | (() => unknown);
 	debug?: (request: string) => string;
 	resolve_pages(selection: string): Uint32Array;
-	render_pdf_pages(pageIndices: Uint32Array, colorMode: ColorMode): Uint8Array<ArrayBuffer>;
-	render_pdf(pageIndex: number | undefined, colorMode: ColorMode): Uint8Array<ArrayBuffer>;
-	render_svg(pageIndex: number, colorMode: ColorMode): unknown;
+	render_pdf_pages_detailed(pageIndices: Uint32Array, colorMode: ColorMode): unknown;
+	render_svg_detailed(pageIndex: number, colorMode: ColorMode): unknown;
 	dispose?: () => void;
 	free?: () => void;
 }
@@ -48,15 +48,6 @@ function normalizeInspection(value: unknown): unknown {
 	}
 }
 
-function normalizeSvg(value: unknown): string {
-	if (typeof value === 'string') return value;
-	if (value && typeof value === 'object' && 'svg' in value) {
-		const svg = (value as { svg: unknown }).svg;
-		if (typeof svg === 'string') return svg;
-	}
-	throw new Error('The renderer returned an invalid SVG page.');
-}
-
 export class BrowserDocumentSession {
 	private disposed = false;
 
@@ -83,9 +74,12 @@ export class BrowserDocumentSession {
 		return normalizeInspection(callOrRead(this.inner.inspection, this.inner));
 	}
 
-	renderPage(pageIndex: number, colorMode: ColorMode): string {
+	renderPage(pageIndex: number, colorMode: ColorMode): SvgRenderResult {
 		this.assertActive();
-		return normalizeSvg(this.inner.render_svg(pageIndex, colorMode));
+		if (typeof this.inner.render_svg_detailed !== 'function') {
+			throw new Error('Rebuild the WASM package to enable SVG rendering reports.');
+		}
+		return validateSvgResult(this.inner.render_svg_detailed(pageIndex, colorMode), pageIndex);
 	}
 
 	resolvePages(selection: string): number[] {
@@ -93,9 +87,12 @@ export class BrowserDocumentSession {
 		return Array.from(this.inner.resolve_pages(selection));
 	}
 
-	async exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>> {
+	async exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult> {
 		this.assertActive();
-		return this.inner.render_pdf_pages(new Uint32Array(pageIndices), colorMode);
+		if (typeof this.inner.render_pdf_pages_detailed !== 'function') {
+			throw new Error('Rebuild the WASM package to enable PDF rendering reports.');
+		}
+		return validatePdfResult(this.inner.render_pdf_pages_detailed(new Uint32Array(pageIndices), colorMode), pageIndices);
 	}
 
 	debug(request: DebugRequest): unknown {

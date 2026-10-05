@@ -37,6 +37,84 @@ async function previewColor(page: Page) {
 	});
 }
 
+test('detailed WASM PDF owns its bytes and ordered reports after the session is freed', async ({ page }) => {
+	await openDocument(page);
+	const result = await page.evaluate(async input => {
+		const wasm = await import(`${location.origin}/wasm/sdocx_wasm.js`);
+		const exports = await wasm.default({ module_or_path: `${location.origin}/wasm/sdocx_wasm_bg.wasm` });
+		const session = new wasm.DocumentSession(new Uint8Array(input));
+		const rendered = session.render_svg_detailed(1, 'auto');
+		const pdf = session.render_pdf_pages_detailed(new Uint32Array([1, 0, 1]), 'auto');
+		const ownedBytes = pdf.bytes instanceof Uint8Array && pdf.bytes.buffer instanceof ArrayBuffer
+			&& pdf.bytes.buffer !== exports.memory.buffer;
+		const beforeBytes = Array.from(pdf.bytes);
+		const before = JSON.stringify({ rendered, pages: pdf.pages });
+		session.dispose();
+		session.free();
+		const replacement = new wasm.DocumentSession(new Uint8Array(input));
+		replacement.render_pdf_pages_detailed(new Uint32Array([0]), 'dark');
+		replacement.dispose();
+		replacement.free();
+		return {
+			ownedBytes,
+			bytesSurvived: JSON.stringify(Array.from(pdf.bytes)) === JSON.stringify(beforeBytes),
+			signature: Array.from(pdf.bytes.subarray(0, 4)),
+			pageIndices: pdf.pages.map((report: { page_index: number }) => report.page_index),
+			reportsSurvived: JSON.stringify({ rendered, pages: pdf.pages }) === before,
+			svgSurvived: typeof rendered.svg === 'string' && rendered.svg.includes('<svg')
+		};
+	}, Array.from(pdfNote(false, true)));
+	expect(result).toEqual({ ownedBytes: true, bytesSurvived: true, signature: [37, 80, 68, 70], pageIndices: [1, 0, 1], reportsSurvived: true, svgSurvived: true });
+});
+
+test('rendering notices stay scoped to viewer, export preview, and download colors', async ({ page }) => {
+	await page.addInitScript(() => {
+		const post = Worker.prototype.postMessage;
+		const patched = new WeakSet<Worker>();
+		const requests = new WeakMap<Worker, Map<number, { type: string; colorMode: string }>>();
+		Worker.prototype.postMessage = function(message, options?: StructuredSerializeOptions | Transferable[]) {
+			if (!patched.has(this)) {
+				patched.add(this);
+				const pending = new Map<number, { type: string; colorMode: string }>();
+				requests.set(this, pending);
+				const receive = this.onmessage;
+				this.onmessage = event => {
+					const request = pending.get(event.data.id);
+					pending.delete(event.data.id);
+					if (request && event.data.type === 'result') {
+						const reports = request.type === 'exportPdf' ? event.data.value.pages : [event.data.value];
+						for (const report of reports) {
+							report.object_diagnostics.push({ kind: `Browser${request.colorMode === 'dark' ? 'Dark' : 'Auto'}Notice`, anchor_utf16: 0 });
+						}
+					}
+					receive?.call(this, event);
+				};
+			}
+			if (message.type === 'renderPage' || message.type === 'exportPdf') requests.get(this)!.set(message.id, message);
+			post.call(this, message, options as StructuredSerializeOptions);
+		};
+	});
+	await openDocument(page);
+	await page.getByRole('button', { name: 'Document information', exact: true }).click();
+	const info = page.getByRole('complementary', { name: 'Document information' });
+	await info.locator('summary', { hasText: 'Preview rendering (auto)' }).click();
+	await expect(info.getByText('Browser Auto Notice · text position 0')).toHaveCount(3);
+	await page.getByRole('button', { name: 'Export document', exact: true }).click();
+	const dialog = page.getByRole('dialog');
+	await dialog.getByRole('radio', { name: 'Dark document mode' }).click();
+	await dialog.locator('summary', { hasText: 'Page preview rendering (dark)' }).click();
+	await expect(dialog.getByText('Browser Dark Notice · text position 0')).toBeVisible();
+	await dialog.getByRole('radio', { name: 'Current page · 1' }).check();
+	const download = page.waitForEvent('download');
+	await dialog.getByRole('button', { name: 'Download PDF' }).click();
+	await download;
+	await dialog.locator('summary', { hasText: 'Download rendering (dark)' }).click();
+	await expect(dialog.getByText('Browser Dark Notice · text position 0')).toHaveCount(2);
+	await page.keyboard.press('Escape');
+	await expect(info.getByText('Browser Auto Notice · text position 0')).toHaveCount(3);
+	await expect(info.getByText('Browser Dark Notice · text position 0')).toHaveCount(0);
+});
+
 test('selected-page preview supports navigation, zoom, resolution, and JSON summary', async ({ page }) => {
 	await openDocument(page);
 	await page.getByRole('button', { name: 'Next page', exact: true }).click();

@@ -4,7 +4,7 @@ import { BrowserDocumentSession } from './wasm-adapter';
 type TestInner = {
 	page_count: number;
 	inspection: () => unknown;
-	render_svg: (pageIndex: number, colorMode: string) => string;
+	render_svg_detailed?: (pageIndex: number, colorMode: string) => unknown;
 	dispose: () => void;
 	free: () => void;
 };
@@ -17,11 +17,23 @@ function sessionFrom(inner: TestInner): BrowserDocumentSession {
 }
 
 describe('BrowserDocumentSession disposal', () => {
+	it('reports a stale WASM package without inventing empty rendering reports', async () => {
+		const session = sessionFrom({
+			page_count: 1,
+			inspection: () => ({}),
+			dispose: vi.fn(),
+			free: vi.fn()
+		});
+		expect(() => session.renderPage(0, 'auto')).toThrow(/Rebuild the WASM package/);
+		await expect(session.exportPdf([0], 'auto')).rejects.toThrow(/Rebuild the WASM package/);
+		session.dispose();
+	});
+
 	it('disposes and frees the WASM wrapper only once', () => {
 		const inner: TestInner = {
 			page_count: 1,
 			inspection: () => ({}),
-			render_svg: () => '<svg/>',
+			render_svg_detailed: () => ({ svg: '<svg/>', page_index: 0, text_diagnostics: [], object_diagnostics: [] }),
 			dispose: vi.fn(),
 			free: vi.fn()
 		};
@@ -39,7 +51,7 @@ describe('BrowserDocumentSession disposal', () => {
 		const inner: TestInner = {
 			page_count: 1,
 			inspection: () => ({}),
-			render_svg: () => '<svg/>',
+			render_svg_detailed: () => ({ svg: '<svg/>', page_index: 0, text_diagnostics: [], object_diagnostics: [] }),
 			dispose: vi.fn(() => {
 				throw new Error('dispose failed');
 			}),

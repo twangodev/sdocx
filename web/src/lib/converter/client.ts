@@ -4,6 +4,8 @@ import type {
 	ConverterEvent,
 	ConverterRequest,
 	DocumentSummary,
+	PdfRenderResult,
+	SvgRenderResult,
 	WorkerPhase
 } from './protocol';
 
@@ -23,8 +25,8 @@ export interface ConverterClientPort {
 	load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary>;
 	inspect(): Promise<unknown>;
 	debug?(request: DebugRequest): Promise<unknown>;
-	renderPage(pageIndex: number, colorMode: ColorMode): Promise<string>;
-	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>>;
+	renderPage(pageIndex: number, colorMode: ColorMode): Promise<SvgRenderResult>;
+	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult>;
 	resolvePages(selection: string): Promise<number[]>;
 	exportJson(): Promise<string>;
 	dispose(generation: number): Promise<void>;
@@ -55,17 +57,17 @@ export class ConverterClient implements ConverterClientPort {
 		return this.request({ type: 'inspect', generation: this.generation });
 	}
 
-	async renderPage(pageIndex: number, colorMode: ColorMode): Promise<string> {
+	async renderPage(pageIndex: number, colorMode: ColorMode): Promise<SvgRenderResult> {
 		return (await this.request({
 			type: 'renderPage',
 			generation: this.generation,
 			pageIndex,
 			colorMode
-		})) as string;
+		})) as SvgRenderResult;
 	}
 
-	async exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>> {
-		return (await this.request({ type: 'exportPdf', generation: this.generation, pageIndices, colorMode })) as Uint8Array<ArrayBuffer>;
+	async exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult> {
+		return (await this.request({ type: 'exportPdf', generation: this.generation, pageIndices, colorMode })) as PdfRenderResult;
 	}
 
 	async resolvePages(selection: string): Promise<number[]> {

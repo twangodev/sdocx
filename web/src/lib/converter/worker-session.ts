@@ -3,6 +3,8 @@ import type {
 	ColorMode,
 	ConverterRequest,
 	DocumentSummary,
+	PdfRenderResult,
+	SvgRenderResult,
 	WorkerPhase
 } from './protocol';
 import { BrowserDocumentSession } from './wasm-adapter';
@@ -11,9 +13,9 @@ interface ActiveDocumentSession {
 	summary(): DocumentSummary;
 	inspection(): unknown;
 	resolvePages(selection: string): number[];
-	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<Uint8Array<ArrayBuffer>>;
+	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult>;
 	debug?(request: DebugRequest): unknown;
-	renderPage(pageIndex: number, colorMode: ColorMode): string;
+	renderPage(pageIndex: number, colorMode: ColorMode): SvgRenderResult;
 	dispose(): void;
 }
 
@@ -51,9 +53,9 @@ export class ConverterWorkerSession {
 				this.progress(request.generation, 'rendering', `Rendering page ${request.pageIndex + 1}`);
 				return this.requireSession().renderPage(request.pageIndex, request.colorMode);
 			case 'exportPdf': {
-				const bytes = await this.requireSession().exportPdf(request.pageIndices, request.colorMode);
+				const result = await this.requireSession().exportPdf(request.pageIndices, request.colorMode);
 				this.assertCurrent(request.generation);
-				return bytes;
+				return result;
 			}
 			case 'resolvePages':
 				return this.requireSession().resolvePages(request.selection);

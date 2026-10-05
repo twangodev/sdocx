@@ -18,10 +18,13 @@ import {
 	isLargeFile,
 	type ColorMode,
 	type DocumentSummary,
+	type PageRenderReport,
+	type SvgRenderResult,
 	type WorkerPhase
 } from './protocol';
 import { exportDetails, type ExportRequest } from './export-options';
 import { toInspectionView, type InspectionView } from './view-model';
+import { pageReport } from './render-reports';
 
 
 export interface RenderedPage {
@@ -42,6 +45,10 @@ export class DocumentSession {
 	details = $state<InspectionView | null>(null);
 	colorMode = $state<ColorMode>('auto');
 	previewUrls = $state<string[]>([]);
+	previewReports = $state<PageRenderReport[]>([]);
+	previewColorMode = $state<ColorMode>('auto');
+	exportReports = $state<PageRenderReport[]>([]);
+	exportColorMode = $state<ColorMode>('auto');
 	phase = $state<WorkerPhase | null>(null);
 	status = $state('Waiting for a document');
 	error = $state('');
@@ -85,6 +92,8 @@ export class DocumentSession {
 		this.client?.destroy();
 		this.client = undefined;
 		this.releasePreviews();
+		this.previewReports = [];
+		this.exportReports = [];
 	}
 
 	async load(file: File): Promise<void> {
@@ -175,21 +184,21 @@ export class DocumentSession {
 	async renderThumbnailSvg(file: File): Promise<string> {
 		if (this.activeFile !== file) throw new Error('Document replaced.');
 		const generation = this.loadGeneration;
-		const svg = await this.requireClient().renderPage(0, 'auto');
+		const result = await this.requireClient().renderPage(0, 'auto');
 		if (generation !== this.loadGeneration) throw new Error('Document replaced.');
-		return svg;
+		return result.svg;
 	}
 
 
-	async renderExportPreview(pageIndex: number, colorMode: ColorMode): Promise<string> {
+	async renderExportPreview(pageIndex: number, colorMode: ColorMode): Promise<SvgRenderResult> {
 		if (!this.summary || !this.activeFile) throw new Error('No document loaded.');
 		if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= this.summary.pageCount) {
 			throw new Error('Select a valid preview page.');
 		}
 		const generation = this.loadGeneration;
-		const svg = await this.requireClient().renderPage(pageIndex, colorMode);
+		const result = await this.requireClient().renderPage(pageIndex, colorMode);
 		if (generation !== this.loadGeneration) throw new Error('Document replaced.');
-		return svg;
+		return result;
 	}
 
 
@@ -216,6 +225,9 @@ export class DocumentSession {
 		const assertCurrent = () => {
 			if (generation !== this.loadGeneration) throw new Error('Export cancelled.');
 		};
+		const reports: PageRenderReport[] = [];
+		this.exportReports = [];
+		this.exportColorMode = colorMode;
 		await this.withExport(async () => {
 			if (!indices.length || indices.some((index) => !Number.isInteger(index) || index < 0 || index >= pageCount)) {
 				throw new Error('Select valid pages to export.');
@@ -223,14 +235,17 @@ export class DocumentSession {
 			let blob: Blob;
 			if (format === 'pdf') {
 				this.exportProgress = 'Generating PDF';
-				const bytes = await client.exportPdf(indices, colorMode);
-				blob = new Blob([bytes], { type: 'application/pdf' });
+				const result = await client.exportPdf(indices, colorMode);
+				assertCurrent();
+				reports.push(...result.pages);
+				blob = new Blob([result.bytes], { type: 'application/pdf' });
 			} else if (format === 'json') {
 				blob = new Blob([await client.exportJson()], { type: 'application/json' });
 			} else if (format !== 'everything' && indices.length === 1) {
-				const svg = await client.renderPage(indices[0], colorMode);
+				const result = await client.renderPage(indices[0], colorMode);
 				assertCurrent();
-				blob = format === 'png' ? await svgToPng(svg, pngScale) : new Blob([svg], { type: 'image/svg+xml' });
+				reports.push(pageReport(result));
+				blob = format === 'png' ? await svgToPng(result.svg, pngScale) : new Blob([result.svg], { type: 'image/svg+xml' });
 			} else {
 				const session = this;
 				async function* entries() {
@@ -244,14 +259,15 @@ export class DocumentSession {
 					for (const [position, index] of indices.entries()) {
 						assertCurrent();
 						session.exportProgress = `Rendering page ${position + 1} of ${indices.length}`;
-						const svg = await client.renderPage(index, colorMode);
+						const result = await client.renderPage(index, colorMode);
 						assertCurrent();
+						reports.push(pageReport(result));
 						if (format === 'svg' || format === 'everything') {
-							yield { name: pageFilename(stem, index, 'svg'), bytes: textBytes(svg) };
+							yield { name: pageFilename(stem, index, 'svg'), bytes: textBytes(result.svg) };
 						}
 						if (format === 'png' || format === 'everything') {
 							session.exportProgress = `Rasterizing page ${position + 1} of ${indices.length}`;
-							const png = await svgToPng(svg, pngScale);
+							const png = await svgToPng(result.svg, pngScale);
 							assertCurrent();
 							yield { name: pageFilename(stem, index, 'png'), bytes: new Uint8Array(await png.arrayBuffer()) };
 						}
@@ -261,24 +277,31 @@ export class DocumentSession {
 			}
 			assertCurrent();
 			downloadBlob(blob, filename);
+			this.exportReports = reports;
 		});
 	}
 
 	private async renderPreviews(): Promise<void> {
 		if (!this.summary || this.summary.pageCount === 0) return;
 		const generation = ++this.renderGeneration;
+		const loadGeneration = this.loadGeneration;
 		const pageCount = this.summary.pageCount;
+		const colorMode = this.colorMode;
+		const file = this.activeFile;
 		this.rendering = true;
 		this.error = '';
 		this.releasePreviews();
 		this.previewUrls = Array(pageCount).fill('');
+		this.previewReports = [];
+		this.previewColorMode = colorMode;
 		try {
 			for (let index = 0; index < pageCount; index += 1) {
 				this.status = `Rendering page ${index + 1} of ${pageCount}`;
-				const svg = await this.requireClient().renderPage(index, this.colorMode);
-				if (generation !== this.renderGeneration) return;
-				if (this.activeFile) this.onPageRendered?.({ file: this.activeFile, pageIndex: index, svg });
-				const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+				const result = await this.requireClient().renderPage(index, colorMode);
+				if (generation !== this.renderGeneration || loadGeneration !== this.loadGeneration) return;
+				this.previewReports = [...this.previewReports, pageReport(result)];
+				if (file) this.onPageRendered?.({ file, pageIndex: index, svg: result.svg });
+				const url = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml' }));
 				this.previewUrls[index] = url;
 				this.previewUrls = [...this.previewUrls];
 			}
@@ -295,6 +318,8 @@ export class DocumentSession {
 		this.exportProgress = '';
 		this.renderGeneration += 1;
 		this.releasePreviews();
+		this.previewReports = [];
+		this.exportReports = [];
 		this.activeFile = null;
 		this.summary = null;
 		this.details = null;
