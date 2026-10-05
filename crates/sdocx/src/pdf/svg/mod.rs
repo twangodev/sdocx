@@ -29,6 +29,7 @@ pub(super) struct SvgSettings {
     /// How much filters, which will be converted to bitmaps, should be scaled. Higher values
     /// mean better quality, but also bigger file sizes.
     pub filter_scale: f32,
+    pub reject_images: bool,
 }
 
 impl Default for SvgSettings {
@@ -36,6 +37,7 @@ impl Default for SvgSettings {
         Self {
             embed_text: true,
             filter_scale: 4.0,
+            reject_images: false,
         }
     }
 }
@@ -51,7 +53,27 @@ pub(super) trait SurfaceExt {
         size: Size,
         svg_settings: SvgSettings,
         hook: &mut TextHook<'_>,
-    ) -> Result<(), String>;
+    ) -> Result<(), SvgError>;
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum SvgError {
+    Text(String),
+    Image(String),
+}
+
+pub(super) fn raster_image(kind: &usvg::ImageKind) -> Result<Option<krilla::image::Image>, String> {
+    use krilla::image::Image;
+    use usvg::ImageKind;
+
+    match kind {
+        ImageKind::JPEG(bytes) => Image::from_jpeg(bytes.clone().into(), false),
+        ImageKind::PNG(bytes) => Image::from_png(bytes.clone().into(), false),
+        ImageKind::GIF(bytes) => Image::from_gif(bytes.clone().into(), false),
+        ImageKind::WEBP(bytes) => Image::from_webp(bytes.clone().into(), false),
+        ImageKind::SVG(_) => return Ok(None),
+    }
+    .map(Some)
 }
 
 pub(super) type TextHook<'a> =
@@ -68,7 +90,7 @@ impl SurfaceExt for Surface<'_> {
         size: Size,
         svg_settings: SvgSettings,
         hook: &mut TextHook<'_>,
-    ) -> Result<(), String> {
+    ) -> Result<(), SvgError> {
         draw_svg(self, tree, size, svg_settings, Some(hook))
     }
 }
@@ -79,7 +101,7 @@ fn draw_svg(
     size: Size,
     svg_settings: SvgSettings,
     hook: Option<&mut TextHook<'_>>,
-) -> Result<(), String> {
+) -> Result<(), SvgError> {
     let old_fill = surface.get_fill().cloned();
     let old_stroke = surface.get_stroke().cloned();
 
@@ -108,7 +130,7 @@ struct ProcessContext<'a, 'h, 'o> {
     pub(super) fonts: Fonts<'a>,
     svg_settings: SvgSettings,
     text_hook: Option<&'h mut TextHook<'o>>,
-    error: Option<String>,
+    error: Option<SvgError>,
 }
 
 impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
@@ -128,7 +150,7 @@ impl<'a, 'h, 'o> ProcessContext<'a, 'h, 'o> {
             .map(|hook| hook(node, surface))
         {
             Some(Ok(true)) => {}
-            Some(Err(error)) => self.error = Some(error),
+            Some(Err(error)) => self.error = Some(SvgError::Text(error)),
             None | Some(Ok(false)) => text::render(node, surface, self),
         }
     }
@@ -139,7 +161,7 @@ fn render_tree_with_text(
     svg_settings: SvgSettings,
     surface: &mut Surface<'_>,
     hook: Option<&mut TextHook<'_>>,
-) -> Result<(), String> {
+) -> Result<(), SvgError> {
     let mut db = tree.fontdb().clone();
     let mut fc = ProcessContext::new(Arc::make_mut(&mut db), svg_settings);
     fc.text_hook = hook;
@@ -231,7 +253,7 @@ mod tests {
                     Err("retained glyph rejected".into())
                 },
             ),
-            Err("retained glyph rejected".into())
+            Err(SvgError::Text("retained glyph rejected".into()))
         );
         assert_eq!(visits, 1);
         assert_eq!(surface.cur_transform(), before);
@@ -261,11 +283,67 @@ mod tests {
                 Err("mask failure".into())
             },
         );
-        assert_eq!(result, Err("mask failure".into()));
+        assert_eq!(result, Err(SvgError::Text("mask failure".into())));
         assert_eq!(visited, ["mask-text"]);
         assert_eq!(surface.cur_transform(), Transform::identity());
         surface.finish();
         page.finish();
         document.finish().unwrap();
+    }
+    #[test]
+    fn rejected_image_stops_native_traversal_and_restores_surface_state() {
+        use base64::Engine;
+
+        let header = [
+            0xff, 0xd8, 0xff, 0xc0, 0, 17, 8, 0, 1, 0, 1, 3, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0,
+        ];
+        let data = base64::engine::general_purpose::STANDARD.encode(header);
+        let tree = tree(&format!(
+            r#"<g transform="translate(7 11)" opacity="0.5"><image id="broken" width="10" height="10" href="data:image/jpeg;base64,{data}"/><text x="0" y="20">A</text></g>"#
+        ));
+        let Some(usvg::Node::Group(group)) = tree.node_by_id("broken") else {
+            panic!("image placement group absent");
+        };
+        let [usvg::Node::Image(image)] = group.children() else {
+            panic!("image absent from placement group");
+        };
+        assert_eq!(image.size().width(), 1.0);
+        assert_eq!(image.size().height(), 1.0);
+        assert!(matches!(image.kind(), usvg::ImageKind::JPEG(bytes) if bytes.as_slice() == header));
+        for reject_images in [false, true] {
+            let mut document = Document::new();
+            let mut page =
+                document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+            let mut surface = page.surface();
+            surface.push_transform(&Transform::from_translate(3.0, 5.0));
+            let before = surface.cur_transform();
+            let mut visits = 0;
+            let result = surface.draw_svg_with_text(
+                &tree,
+                Size::from_wh(100.0, 100.0).unwrap(),
+                SvgSettings {
+                    reject_images,
+                    ..Default::default()
+                },
+                &mut |_, _| {
+                    visits += 1;
+                    Ok(true)
+                },
+            );
+            if reject_images {
+                assert!(matches!(result, Err(SvgError::Image(_))), "{result:?}");
+                assert_eq!(visits, 0);
+            } else {
+                assert_eq!(result, Ok(()));
+                assert_eq!(visits, 1);
+            }
+            assert_eq!(surface.cur_transform(), before);
+            assert!(surface.get_fill().is_none());
+            assert!(surface.get_stroke().is_none());
+            surface.pop();
+            surface.finish();
+            page.finish();
+            document.finish().unwrap();
+        }
     }
 }

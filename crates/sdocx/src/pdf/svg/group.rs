@@ -3,7 +3,7 @@ use krilla::surface::Surface;
 use usvg::{BlendMode, Node, Opacity};
 
 use super::util::{UsvgTransformExt, convert_blend_mode};
-use super::{ProcessContext, clip_path, filter, image, mask, path};
+use super::{ProcessContext, SvgError, clip_path, filter, image, mask, path};
 
 pub(super) fn render(
     group: &usvg::Group,
@@ -75,7 +75,11 @@ pub(super) fn render_node(
         Node::Group(g) => render(g, surface, process_context),
         Node::Path(p) => path::render(p, surface, process_context),
         Node::Image(i) => {
-            image::render(i, surface, process_context);
+            if let Err(message) = image::render(i, surface, process_context)
+                && process_context.svg_settings.reject_images
+            {
+                process_context.error = Some(SvgError::Image(message));
+            }
         }
         Node::Text(t) => process_context.render_text(t, surface),
     }

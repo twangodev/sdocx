@@ -480,3 +480,124 @@ fn selected_layout_pages_reject_empty_indices_invalid_indices_and_dpi() {
         ));
     }
 }
+
+fn image_document(mime_type: &str, data: Vec<u8>) -> sdocx::Document {
+    let blank = sdocx::Page {
+        uuid: "pdf-image".into(),
+        width: 100,
+        height: 100,
+        content_bbox: Default::default(),
+        background_color: None,
+        template: None,
+        background: Default::default(),
+        objects: vec![],
+    };
+    let mut image = blank.clone();
+    image.objects.push(
+        sdocx::PageElement::Image {
+            bbox: sdocx::BoundingBox {
+                x_min: 10.0,
+                y_min: 10.0,
+                x_max: 50.0,
+                y_max: 50.0,
+            },
+            media_index: 0,
+        }
+        .into(),
+    );
+    sdocx::Document {
+        pages: vec![blank, image],
+        metadata: sdocx::DocumentMetadata {
+            media_assets: vec![sdocx::MediaAsset {
+                name: "media/image".into(),
+                archive_id: None,
+                mime_type: mime_type.into(),
+                data,
+            }],
+            ..Default::default()
+        },
+    }
+}
+
+#[test]
+fn rejected_native_image_headers_report_output_page_order() {
+    let fonts = sdocx::fonts::FontBook::default();
+    for (mime, data) in [
+        ("image/jpeg", vec![0xff, 0xd8]),
+        ("image/webp", b"RIFF\x04\0\0\0WEBP".to_vec()),
+    ] {
+        let document = image_document(mime, data);
+        let layout = sdocx::layout_document(&document);
+        assert_eq!(layout.pages.len(), 2);
+        let result = render_layout_pages_pdf_with_fonts(
+            &document,
+            &layout,
+            &[0, 0, 1],
+            &Default::default(),
+            &no_fonts(),
+            &fonts,
+        );
+        assert!(
+            matches!(result, Err(PdfError::InvalidImage { page_index: 2, .. })),
+            "{mime}: {result:?}"
+        );
+        let svg_pages = sdocx::render_document_svg(&document, &Default::default());
+        assert!(
+            render_svg_pages_pdf(&svg_pages, &no_fonts()).is_ok(),
+            "arbitrary SVG keeps its compatibility policy"
+        );
+    }
+}
+
+#[test]
+fn native_png_jpeg_and_webp_keep_images_and_vector_backgrounds() {
+    use base64::Engine;
+
+    // JPEG and lossless WebP: FFmpeg 7.1.5 encodings of a one-pixel red RGB image.
+    for (mime, encoded) in [
+        (
+            "image/png",
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
+        ),
+        (
+            "image/jpeg",
+            "/9j//gAQTGF2YzYxLjE5LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABNAAEBAAAAAAAAAAAAAAAAAAAABgEBAQEAAAAAAAAAAAAAAAAAAAYHEAEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/8AAEQgAAQABAwESAAISAAMSAP/aAAwDAQACEQMRAD8AixKDfx//2Q==",
+        ),
+        (
+            "image/webp",
+            "UklGRhwAAABXRUJQVlA4TA8AAAAvAAAAAAcQ/Y/+ByKi/wEA",
+        ),
+    ] {
+        let data = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .unwrap();
+        let mut document = image_document(mime, data);
+        document.pages[1].background_color = Some(sdocx::Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        });
+        let bytes =
+            sdocx::render_document_pdf(&document, &Default::default(), &no_fonts()).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        assert!(
+            pdf.objects
+                .values()
+                .any(|object| object.as_stream().is_ok_and(|stream| stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image")))),
+            "{mime}: missing image"
+        );
+        let page_id = pdf.get_pages()[&2];
+        let content =
+            lopdf::content::Content::decode(&pdf.get_page_content(page_id).unwrap()).unwrap();
+        assert!(
+            content
+                .operations
+                .iter()
+                .any(|operation| operation.operator == "f"),
+            "{mime}: missing vector background"
+        );
+    }
+}

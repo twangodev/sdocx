@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use self::svg::{SurfaceExt, SvgSettings};
+use self::svg::{SurfaceExt, SvgError, SvgSettings};
 use krilla::{
     Document as PdfDocument,
     geom::Size,
@@ -93,6 +93,8 @@ pub struct PdfPageDiagnostics {
     pub object_diagnostics: Vec<ObjectDiagnostic>,
 }
 
+/// Rendering error page indices are zero-based output ordinals, including repeated selections.
+/// `InvalidPageIndex` instead reports the requested index in the supplied visible layout.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum PdfError {
@@ -108,7 +110,7 @@ pub enum PdfError {
     UnsupportedText { page_index: usize, message: String },
     #[error("invalid SVG on page {page_index}: {message}")]
     InvalidSvg { page_index: usize, message: String },
-    #[error("invalid PNG on page {page_index}: {message}")]
+    #[error("invalid image on page {page_index}: {message}")]
     InvalidImage { page_index: usize, message: String },
     #[error("PDF export failed: {0}")]
     Conversion(String),
@@ -266,34 +268,6 @@ fn render_pages_pdf<'a>(
         select_fallback,
     } = physical_families.usvg_resolver();
     let data_resolver = usvg::ImageHrefResolver::default_data_resolver();
-    let svg_options = usvg::Options {
-        fontdb: options.font_database.clone(),
-        font_resolver: usvg::FontResolver {
-            select_font: Box::new(|font, database| {
-                if let Some(usvg::FontFamily::Named(family)) = font.families().first()
-                    && physical_families.is_unavailable(family)
-                {
-                    *font_error.lock().unwrap() = true;
-                }
-                select_font(font, database)
-            }),
-            select_fallback,
-        },
-        image_href_resolver: usvg::ImageHrefResolver {
-            resolve_data: Box::new(|mime, data, options| {
-                let image = data_resolver(mime, data, options)?;
-                if let usvg::ImageKind::PNG(bytes) = &image
-                    && let Err(error) = validate_png(bytes)
-                {
-                    *image_error.lock().unwrap() = Some(error);
-                    return None;
-                }
-                Some(image)
-            }),
-            resolve_string: Box::new(|_, _| None),
-        },
-        ..Default::default()
-    };
     let mut pdf = PdfDocument::new();
     let mut painter = NativePdfPainter::new(options.dpi);
     let mut tags = TagTree::default();
@@ -315,6 +289,59 @@ fn render_pages_pdf<'a>(
         }
         let size = Size::from_wh(width, height).ok_or(PdfError::InvalidPageSize { page_index })?;
         *font_error.lock().unwrap() = false;
+        let strict_images = source.text.is_some();
+        let svg_options = usvg::Options {
+            fontdb: options.font_database.clone(),
+            font_resolver: usvg::FontResolver {
+                select_font: Box::new(|font, database| {
+                    if let Some(usvg::FontFamily::Named(family)) = font.families().first()
+                        && physical_families.is_unavailable(family)
+                    {
+                        *font_error.lock().unwrap() = true;
+                    }
+                    select_font(font, database)
+                }),
+                select_fallback: Box::new(|character, used_fonts, database| {
+                    select_fallback(character, used_fonts, database)
+                }),
+            },
+            image_href_resolver: usvg::ImageHrefResolver {
+                resolve_data: Box::new(|mime, data, options| {
+                    let Some(image) = data_resolver(mime, data, options) else {
+                        if strict_images {
+                            image_error.lock().unwrap().get_or_insert_with(|| {
+                                format!("cannot resolve embedded {mime} image")
+                            });
+                        }
+                        return None;
+                    };
+                    if let usvg::ImageKind::PNG(bytes) = &image
+                        && let Err(error) = validate_png(bytes)
+                    {
+                        image_error.lock().unwrap().get_or_insert(error);
+                        return None;
+                    }
+                    if strict_images {
+                        let admission = svg::raster_image(&image).and_then(|image| {
+                            if let Some(image) = image {
+                                let (width, height) = image.size();
+                                if width == 0 || height == 0 {
+                                    return Err("embedded image has zero dimensions".into());
+                                }
+                            }
+                            Ok(())
+                        });
+                        if let Err(error) = admission {
+                            image_error.lock().unwrap().get_or_insert(error);
+                            return None;
+                        }
+                    }
+                    Some(image)
+                }),
+                resolve_string: Box::new(|_, _| None),
+            },
+            ..Default::default()
+        };
         let tree = usvg::Tree::from_str(&rendered.svg, &svg_options).map_err(|error| {
             PdfError::InvalidSvg {
                 page_index,
@@ -344,9 +371,15 @@ fn render_pages_pdf<'a>(
         if let Some(registry) = source.text {
             retained_text = true;
             let page_tags = draw_retained_page(&mut surface, &tree, size, registry, &mut painter)
-                .map_err(|message| PdfError::UnsupportedText {
-                page_index,
-                message,
+                .map_err(|error| match error {
+                SvgError::Text(message) => PdfError::UnsupportedText {
+                    page_index,
+                    message,
+                },
+                SvgError::Image(message) => PdfError::InvalidImage {
+                    page_index,
+                    message,
+                },
             })?;
             for tag in page_tags {
                 tags.push(tag);
@@ -375,37 +408,46 @@ fn draw_retained_page(
     size: Size,
     registry: &NativeTextRegistry,
     painter: &mut NativePdfPainter,
-) -> Result<Vec<TagGroup>, String> {
+) -> Result<Vec<TagGroup>, SvgError> {
     let mut nodes = HashMap::with_capacity(registry.len());
     for (id, block) in registry.iter() {
         let Some(usvg::Node::Text(text)) = tree.node_by_id(&id.svg_id()) else {
-            return Err(format!(
+            return Err(SvgError::Text(format!(
                 "retained text {} was lost during SVG parsing",
                 id.svg_id()
-            ));
+            )));
         };
         nodes.insert(text.as_ref() as *const usvg::Text, (id, block));
     }
     let mut tags = HashMap::with_capacity(registry.len());
-    surface.draw_svg_with_text(tree, size, SvgSettings::default(), &mut |text, surface| {
-        let Some(&(id, block)) = nodes.get(&(text as *const usvg::Text)) else {
-            return Ok(false);
-        };
-        if tags.contains_key(&id) {
-            return Err("retained text was painted more than once".into());
-        }
-        let tag = painter
-            .paint(block, surface)
-            .map_err(|error| error.to_string())?;
-        tags.insert(id, tag);
-        Ok(true)
-    })?;
+    surface.draw_svg_with_text(
+        tree,
+        size,
+        SvgSettings {
+            reject_images: true,
+            ..Default::default()
+        },
+        &mut |text, surface| {
+            let Some(&(id, block)) = nodes.get(&(text as *const usvg::Text)) else {
+                return Ok(false);
+            };
+            if tags.contains_key(&id) {
+                return Err("retained text was painted more than once".into());
+            }
+            let tag = painter
+                .paint(block, surface)
+                .map_err(|error| error.to_string())?;
+            tags.insert(id, tag);
+            Ok(true)
+        },
+    )?;
     registry
         .ordered_ids()
         .into_iter()
         .map(|id| {
-            tags.remove(&id)
-                .ok_or_else(|| "retained text was skipped by an unsupported SVG effect".into())
+            tags.remove(&id).ok_or_else(|| {
+                SvgError::Text("retained text was skipped by an unsupported SVG effect".into())
+            })
         })
         .collect()
 }
