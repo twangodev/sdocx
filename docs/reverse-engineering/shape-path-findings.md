@@ -773,12 +773,11 @@ excludes additional valid native contours independently of the unsupported
 verb check. Unknown commands remain opaque; trailing bytes prevent an exact
 render. Non-finite saved doubles are a Rust format error before rendering.
 
-Supported saved coordinates currently pass through
-`render::vector::path::coordinate(value, 2)`: two decimal places are formatted
-before parsing to `f32`. Native loading instead directly narrows the saved
-double to float. Thus current Rust path output adds decimal quantization
-beyond Samsung's float narrowing; preserving raw bytes alone does not remove
-that geometric difference.
+Supported saved M/L/Q/C/Z paths directly narrow their `f64` coordinates to the
+`svg` 0.18 library's `f32` path parameters without fixed decimal rounding.
+A non-finite narrowed coordinate rejects the entire drawable path. Raw saved
+path bytes remain unchanged; float narrowing still separates source precision
+from SVG output and does not establish native appearance parity.
 
 One typed retained command representation can describe saved geometry and
 feed vector outputs. Arc start/sweep angles must remain named scalar fields,

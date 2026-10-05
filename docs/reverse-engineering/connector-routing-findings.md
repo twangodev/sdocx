@@ -376,11 +376,11 @@ straight line. Supported path verbs become SVG commands; a path-less
 straight line uses its saved endpoints. A path-less elbow/curve is omitted
 with an unsupported-feature diagnostic rather than routed speculatively.
 
-This is vector output, but it is not coordinate-exact serialization.
-`native_svg_path` rounds coordinates to two decimal places and passes
-`f32` values to the typed path builder; the straight-line fallback also
-uses two decimal places. Raw path bytes and decoded double endpoints
-retain finer source values independently of that export precision.
+`native_svg_path` directly narrows supported saved M/L/Q/C/Z coordinates from
+`f64` to the typed `svg` 0.18 path builder's `f32`, rejecting non-finite results
+without fixed decimal rounding. The straight-line fallback uses finite `f64`
+endpoint attributes. Raw path bytes and decoded endpoints remain unchanged;
+this does not establish native routing, appearance or PDF parity.
 
 The current decoder's `routing != 0 || raw_setting != 0` warning combines
 known direction/rotation state with unknown geometry extensions. A nonzero

@@ -1185,19 +1185,18 @@ decoded values. Native drawing reconstruction has further
 [profile-specific arithmetic](stroke-rendering-findings.md#shared-preparation-and-replay).
 Source precision and drawable precision are separate boundaries.
 
-The [SVG adapter](../../crates/sdocx/src/render/vector/path.rs) uses the library's
-`f32` path parameters. Its `coordinate` helper first formats the requested
-number of decimal places, then parses that value as `f32`.
-[`native_svg_path`](../../crates/sdocx/src/render.rs) requests two decimal places
-for saved shape/line paths. A `0.004`-unit displacement can consequently become
-`0.00` before narrowing, even within the finite `f32` range. The owned native path
-bytes remain unchanged. Other routes have different policies: basic shape/line
-attributes and generic ink commonly use two places; stamp paths commonly use
-four; some attributes accept validated `f64` values without fixed formatting.
+The [SVG adapter](../../crates/sdocx/src/render/vector/path.rs) uses `svg` 0.18's
+`f32` path parameters. [`native_svg_path`](../../crates/sdocx/src/render.rs)
+directly narrows saved shape/line M/L/Q/C/Z coordinates from `f64`, rejecting
+non-finite narrowed values without fixed decimal rounding. Owned path bytes stay
+unchanged; straight-line endpoint attributes retain decoded `f64` values. Other
+routes have different policies: basic shape attributes and generic ink commonly
+use two places; stamp paths commonly use four; some attributes accept validated
+`f64` values without fixed formatting.
 
-This output quantization is an approximation boundary, not proof of an incorrect
-native arithmetic port. Full saved numerical identity does not survive merely
-because the emitted element is vector. The
+These conversion and quantization policies are approximation boundaries, not
+proof of an incorrect native arithmetic port. Full saved numerical identity does
+not survive merely because the emitted element is vector. The
 [SVG serialization contract](../svg-rendering.md#validation-and-serialization)
 already records these precision and validation rules.
 
