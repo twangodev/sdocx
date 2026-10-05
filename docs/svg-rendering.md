@@ -80,8 +80,9 @@ replay paths; a valid prefix is never emitted as a partial drawing.
 Path commands use the library's `f32` coordinates. Supported saved shape/line
 M/L/Q/C/Z paths narrow directly from `f64`, without fixed decimal rounding;
 paths outside the finite `f32` range are omitted as a whole. Straight-line
-endpoint attributes retain `f64` values. Other routes keep their existing
-precision policies; transforms and other numeric attributes can retain `f64`.
+endpoint attributes retain `f64` values. Image-local bounds, rotation/pivots and
+cropped viewport/viewBox use validated `f64` without fixed decimal rounding.
+Inline image translation still uses four places; other routes keep their policies.
 
 Completed top-level subtrees are serialized promptly to limit element-tree
 memory. The internal `Blob` holds only output already serialized by library

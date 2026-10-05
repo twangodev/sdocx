@@ -76,10 +76,12 @@ optional resolved `media_index`. An unresolved object stays in the model, with
 supported by the renderer. `MediaAsset::archive_id` continues to mean the
 filename prefix; use `PlacedImage::media_id` for the authoritative object bind ID.
 
-The SVG renderer embeds the resolved PNG/JPEG/WebP bytes and applies placement
-and stored rotation. Unsupported image features generate
-`UnsupportedImageFeature` diagnostics. CLI conversion and WASM inspection use
-the shared report plumbing. Only the native image decoder produces placed images.
+The SVG renderer embeds the resolved PNG/JPEG/WebP bytes. Image-local bounds,
+rotation/pivots and cropped viewport/viewBox use validated `f64` without fixed
+decimal rounding; inline outer translation still uses four places. Unsupported
+image features generate `UnsupportedImageFeature` diagnostics. CLI conversion
+and WASM inspection use the shared report plumbing. Only the native image
+decoder produces placed images.
 
 ### Native loaded manifest identity
 
