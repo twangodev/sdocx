@@ -153,8 +153,14 @@ fn inline_image_uses_pinned_neighbor_advances_and_native_mixed_baseline() {
             .find(|node| node.has_tag_name("image"))
             .unwrap();
         assert_eq!(image_position(image), (image_left, 0.001));
-        assert_eq!(image.attribute("width"), Some("30.00"));
-        assert_eq!(image.attribute("height"), Some("100.00"));
+        assert_eq!(
+            image.attribute("width").unwrap().parse::<f64>().unwrap(),
+            30.0
+        );
+        assert_eq!(
+            image.attribute("height").unwrap().parse::<f64>().unwrap(),
+            100.0
+        );
     }
 }
 
@@ -296,7 +302,14 @@ fn last_stored_duplicate_selects_its_own_geometry_without_consuming_neighbor_tex
             .filter(|node| node.has_tag_name("image"))
             .collect::<Vec<_>>();
         assert_eq!(images.len(), 1);
-        assert_eq!(images[0].attribute("width"), Some("60.00"));
+        assert_eq!(
+            images[0]
+                .attribute("width")
+                .unwrap()
+                .parse::<f64>()
+                .unwrap(),
+            60.0
+        );
         assert_eq!(position(span(&xml, "B"), "x"), 91.05);
     }
 }

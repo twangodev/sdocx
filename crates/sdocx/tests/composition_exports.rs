@@ -274,10 +274,21 @@ fn nested_containers_keep_leaf_rotation_and_placement_in_page_coordinates() {
             .descendants()
             .filter_map(|node| node.attribute("transform"))
             .collect::<Vec<_>>();
-        assert_eq!(
-            transforms,
-            ["rotate(90.00 20.00 15.00)", "rotate(90.00 80.00 15.00)"]
-        );
+        use svgtypes::TransformListToken::{Rotate, Translate};
+        assert_eq!(transforms.len(), 2);
+        for (transform, x) in transforms.iter().zip([20.0, 80.0]) {
+            let tokens = svgtypes::TransformListParser::from(*transform)
+                .map(Result::unwrap)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                tokens,
+                [
+                    Translate { tx: x, ty: 15.0 },
+                    Rotate { angle: 90.0 },
+                    Translate { tx: -x, ty: -15.0 }
+                ]
+            );
+        }
         let image = pixels(&page.svg);
         assert_pixel(&image, 20, 8, [0, 255, 0, 255]);
         assert_pixel(&image, 12, 15, [255, 255, 255, 255]);
