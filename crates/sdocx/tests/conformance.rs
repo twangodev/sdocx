@@ -690,7 +690,11 @@ fn shapes_fixture_preserves_calibration_samples_and_renders_native_geometry() {
         .filter(|node| node.has_tag_name("path") && node.attribute("data-page-template").is_none())
         .collect();
     assert_eq!(paths.len(), 6, "five native shapes and one line");
-    for (expected_x, expected_y) in [(466.05, 403.90), (678.82, 398.50)] {
+    let saved_shape_starts = [
+        (466.0503845214844, 403.8978271484375),
+        (678.822021484375, 398.5047912597656),
+    ];
+    for (expected_x, expected_y) in saved_shape_starts {
         assert!(paths.iter().any(
             |node| matches!(svgtypes::PathParser::from(node.attribute("d").unwrap()).next(),
             Some(Ok(svgtypes::PathSegment::MoveTo { abs: true, x, y }))

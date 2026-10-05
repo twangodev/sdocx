@@ -553,7 +553,11 @@ test('dotted fixture shares native geometry between the viewer and replay', asyn
 			stamps: paths.filter(path => path.getAttribute('d')?.includes('a')).length
 		};
 	}, svg);
-	for (const [x, y] of [[466.05, 403.90], [678.82, 398.50]]) {
+	const savedShapeStarts = [
+		[466.0503845214844, 403.8978271484375],
+		[678.822021484375, 398.5047912597656]
+	];
+	for (const [x, y] of savedShapeStarts) {
 		expect(exported.starts.some(([actualX, actualY]) => Math.abs(actualX - x) < 0.001 && Math.abs(actualY - y) < 0.001)).toBe(true);
 	}
 	expect(exported.stamps).toBe(77);
