@@ -1,5 +1,6 @@
 mod debugger;
 mod js_numbers;
+mod render_output;
 mod source_summary;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -71,20 +72,19 @@ impl DocumentSession {
 
     /// Render one visible page as a standalone SVG document.
     pub fn render_svg(&self, page_index: usize, color_mode: &str) -> Result<String, JsError> {
-        let parsed = self.parsed()?;
-        let mut options = sdocx::RenderOptions::default();
-        options.color_mode = parse_render_color_mode(color_mode)?;
-        self.text_cache
-            .borrow_mut()
-            .render_layout_page_svg(
-                &parsed.document,
-                self.layout()?,
-                page_index,
-                &options,
-                &self.fonts,
-            )
-            .map(|page| page.svg)
-            .ok_or_else(|| JsError::new("page index is out of bounds"))
+        self.render_svg_output(page_index, color_mode)
+            .map(|output| output.svg)
+    }
+
+    /// Render one visible page with the diagnostics from that rendering.
+    pub fn render_svg_detailed(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+    ) -> Result<JsValue, JsError> {
+        let page = self.render_svg_output(page_index, color_mode)?;
+        let output = render_output::SvgOutput::new(page_index, page);
+        serde_wasm_bindgen::to_value(&output).map_err(|error| JsError::new(&error.to_string()))
     }
 
     /// Add a TTF/OTF font for preview, replay, and PDF export.
@@ -124,32 +124,19 @@ impl DocumentSession {
         page_indices: &[u32],
         color_mode: &str,
     ) -> Result<Vec<u8>, JsError> {
-        let parsed = self.parsed()?;
-        let layout = self.layout()?;
-        let mut options = sdocx::RenderOptions::default();
-        options.color_mode = parse_render_color_mode(color_mode)?;
-        let page_indices = page_indices
-            .iter()
-            .map(|&index| index as usize)
-            .collect::<Vec<_>>();
-        if page_indices
-            .iter()
-            .any(|&index| index >= layout.pages.len())
-        {
-            return Err(JsError::new("page index is out of bounds"));
-        }
-        let pdf_options = sdocx::PdfOptions::new(self.fonts.database());
-        sdocx::render_layout_pages_pdf_detailed_with_cache(
-            &parsed.document,
-            layout,
-            &page_indices,
-            &options,
-            &pdf_options,
-            &self.fonts,
-            &mut self.text_cache.borrow_mut(),
-        )
-        .map(|output| output.bytes)
-        .map_err(|error| JsError::new(&error.to_string()))
+        self.render_pdf_output(page_indices, color_mode)
+            .map(|output| output.bytes)
+    }
+
+    /// Export explicit visible pages with diagnostics in the supplied order.
+    pub fn render_pdf_pages_detailed(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+    ) -> Result<JsValue, JsError> {
+        let output = self.render_pdf_output(page_indices, color_mode)?;
+        serde_wasm_bindgen::to_value(&render_output::PdfOutput::from(output))
+            .map_err(|error| JsError::new(&error.to_string()))
     }
 
     /// Lazy debugger request. Large integers are returned as decimal strings.
@@ -188,6 +175,58 @@ impl DocumentSession {
 }
 
 impl DocumentSession {
+    fn render_svg_output(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+    ) -> Result<sdocx::RenderedPage, JsError> {
+        let parsed = self.parsed()?;
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = parse_render_color_mode(color_mode)?;
+        self.text_cache
+            .borrow_mut()
+            .render_layout_page_svg(
+                &parsed.document,
+                self.layout()?,
+                page_index,
+                &options,
+                &self.fonts,
+            )
+            .ok_or_else(|| JsError::new("page index is out of bounds"))
+    }
+
+    fn render_pdf_output(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+    ) -> Result<sdocx::PdfOutput, JsError> {
+        let parsed = self.parsed()?;
+        let layout = self.layout()?;
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = parse_render_color_mode(color_mode)?;
+        let page_indices = page_indices
+            .iter()
+            .map(|&index| index as usize)
+            .collect::<Vec<_>>();
+        if page_indices
+            .iter()
+            .any(|&index| index >= layout.pages.len())
+        {
+            return Err(JsError::new("page index is out of bounds"));
+        }
+        let pdf_options = sdocx::PdfOptions::new(self.fonts.database());
+        sdocx::render_layout_pages_pdf_detailed_with_cache(
+            &parsed.document,
+            layout,
+            &page_indices,
+            &options,
+            &pdf_options,
+            &self.fonts,
+            &mut self.text_cache.borrow_mut(),
+        )
+        .map_err(|error| JsError::new(&error.to_string()))
+    }
+
     fn add_font(&mut self, bytes: &[u8]) -> Result<(), String> {
         let mut database = self.fonts.database();
         let before = database.faces().count();
@@ -576,6 +615,109 @@ mod tests {
             cold_session.render_pdf_pages(&[2, 0, 2], "light").unwrap(),
             warm_pdf
         );
+    }
+
+    #[test]
+    fn svg_reports_preserve_core_diagnostics_and_visible_page_identity() {
+        let session = diagnostic_session();
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = sdocx::RenderColorMode::Light;
+        let expected = sdocx::render_layout_page_svg_with_fonts(
+            &session.parsed.as_ref().unwrap().document,
+            session.layout.as_ref().unwrap(),
+            0,
+            &options,
+            &session.fonts,
+        )
+        .unwrap();
+        assert!(!expected.text_diagnostics.is_empty());
+        assert!(!expected.object_diagnostics.is_empty());
+        assert_eq!(expected.source_page_index, 2);
+        let page = session.render_svg_output(0, "light").unwrap();
+        assert_eq!(page, expected);
+        assert_eq!(session.render_svg(0, "light").unwrap(), expected.svg);
+        let output = crate::render_output::SvgOutput::new(0, page);
+        assert_eq!(output.page_index, 0);
+        assert_eq!(output.text_diagnostics, expected.text_diagnostics);
+        assert_eq!(output.object_diagnostics, expected.object_diagnostics);
+        let value = serde_json::to_value(output).unwrap();
+        assert_eq!(value["svg"], expected.svg);
+        assert_eq!(value["page_index"], 0);
+        assert!(value.get("source_page_index").is_none());
+        assert_eq!(
+            value["text_diagnostics"],
+            serde_json::to_value(expected.text_diagnostics).unwrap()
+        );
+    }
+
+    #[test]
+    fn pdf_reports_preserve_core_output_and_repeated_selection_order() {
+        let session = diagnostic_session();
+        let mut options = sdocx::RenderOptions::default();
+        options.color_mode = sdocx::RenderColorMode::Light;
+        let expected = sdocx::render_layout_pages_pdf_detailed_with_cache(
+            &session.parsed.as_ref().unwrap().document,
+            session.layout.as_ref().unwrap(),
+            &[2, 0, 2],
+            &options,
+            &sdocx::PdfOptions::new(session.fonts.database()),
+            &session.fonts,
+            &mut sdocx::DocumentTextCache::default(),
+        )
+        .unwrap();
+        let output = session.render_pdf_output(&[2, 0, 2], "light").unwrap();
+        assert_eq!(output, expected);
+        assert_eq!(
+            session.render_pdf_pages(&[2, 0, 2], "light").unwrap(),
+            expected.bytes
+        );
+        assert!(
+            expected
+                .pages
+                .iter()
+                .all(|page| !page.text_diagnostics.is_empty())
+        );
+        assert!(
+            expected
+                .pages
+                .iter()
+                .all(|page| !page.object_diagnostics.is_empty())
+        );
+        let output = crate::render_output::PdfOutput::from(output);
+        assert_eq!(
+            output
+                .pages
+                .iter()
+                .map(|page| page.page_index)
+                .collect::<Vec<_>>(),
+            [2, 0, 2]
+        );
+        for (actual, expected) in output.pages.iter().zip(&expected.pages) {
+            assert_eq!(actual.text_diagnostics, expected.text_diagnostics);
+            assert_eq!(actual.object_diagnostics, expected.object_diagnostics);
+        }
+        assert_eq!(output.bytes, expected.bytes);
+    }
+
+    fn diagnostic_session() -> DocumentSession {
+        let mut session = body_session("alpha beta gamma", "Unavailable report font");
+        let parsed = session.parsed.as_mut().unwrap();
+        let mut text = parsed.document.metadata.note_text.take().unwrap();
+        text.object_spans.push(sdocx::RichTextObjectSpan {
+            object_type: sdocx::ObjectType::Video,
+            object_data: Vec::new(),
+            content: None,
+            text_index_utf16: 0,
+            layout_option: sdocx::ObjectSpanLayoutOption::Inline,
+            layout_constraint: sdocx::ObjectSpanLayoutConstraint::Normal,
+        });
+        for page in &mut parsed.document.pages {
+            page.objects = vec![sdocx::PageElement::TextBox(text.clone()).into()];
+        }
+        let mut layout = sdocx::layout_document(&parsed.document);
+        layout.pages.swap(0, 2);
+        session.layout = Some(layout);
+        session
     }
 
     #[test]
