@@ -46,10 +46,10 @@ payload admission. Attachment callbacks do not certify original archive identity
 `payload_size`; `payload(page_bytes)` borrows a checked range without owning bytes.
 Detailed [archive parsing](../../crates/sdocx/src/container.rs) with
 `ParseOptions.retain_page_sources = true` retains each parsed uncompressed `.page`
-buffer in its `StoredArchivePage.source_bytes`, alongside the physical record.
+buffer in its `StoredArchivePage.source_bytes`, alongside its stored page index.
 Default detailed parsing retains no page buffers. Ordinary parsing ignores this
 option and returns only the semantic `Document`; converting a detailed result to
-`Document` also drops physical sources.
+`Document` also drops retained page sources.
 
 Retained buffers are original snapshots, not regenerated from semantic edits.
 Cloning copies them; serde includes present bytes, omits `None` and defaults old
@@ -64,6 +64,35 @@ The browser has a separate ownership boundary: its
 [debugger source](../../crates/sdocx-wasm/src/debugger.rs) containing original
 archive bytes. Its default page-buffer option remains off. This whole-archive
 carrier is separate from the opt-in detailed Rust page sources.
+
+### Repeated ZIP names and selected entries
+
+Locked `zip` 8.2.0 builds an `IndexMap` keyed by decoded member name
+(`src/read.rs:63–78`). Repeated equal names replace earlier metadata; locked
+`indexmap` 2.13.0 retains the first key's position. Both `by_name` and `by_index`,
+as well as `len` and `file_names`, use that coalesced map. Rust page/media
+validation and enumeration, retained page buffers and debugger entry listings
+therefore expose selected entries, not every physical ZIP member. The debugger's
+complete original archive bytes still retain those superseded source bytes.
+
+Native Base `NoteZip::Add` appends a separate entry without comparing earlier
+names (`0xcab3c`, `0xcaba4–0xcabac`). The ZIP loop submits each listed entry
+(`0xcb30c–0xcb414`); the member writer emits its named central/local headers
+(`0xc8104`, `0xc82bc`, `0xc82e4`). Native extraction instead walks directory
+entries sequentially (`0xccf8c`, `0xc9ce8–0xc9d2c`). For successfully processed
+equal names mapping to one regular destination, overwrite=true leaves the last
+processed payload. Overwrite=false skips a destination readable with `rb`,
+retaining an existing file or a first-created file that remains readable to later
+probes (`0xccba0–0xccc30`).
+
+WDoc supplied-stream configuration passes true (`0xa2314–0xa2320`); original-file
+preparation forwards `CheckOverwriteFlag` (`0xa21fc–0xa2240`). Rust's last-record
+selection can agree with successful true-overwrite extraction without retaining
+all original records. Native current-cache bytes, selected uncompressed page
+bytes and complete original archive bytes remain distinct source carriers.
+These static traces do not establish repeated-name corpus occurrence, completed
+native ZIP/extraction execution or universal cache policy; alternative encodings,
+path aliases and malformed/encrypted inputs are outside this boundary.
 
 ### Native page files during save
 
@@ -1027,7 +1056,7 @@ supplied height/ratio. Bodytext adjustment subtracts the current editor delta
 from the incoming delta and removes timestamp spans again (`0xbed54–0xbee0c`).
 Source transport therefore does not certify identical pasted appearance.
 
-Rust retains physical page order/UUIDs, typed container children and document
+Rust retains selected page order/UUIDs, typed container children and document
 font delta. Common UUID and ExtraData are inspectable through ObjectMetadata
 and ObjectFlexibleMetadata, but semantic PageObject containers do not retain
 the bookmark bundle as a dedicated field. The parser is not this clipboard
