@@ -1314,13 +1314,16 @@ Paired stacked-mark consumers preserve native glyph IDs, source and origins
 in retained PDF; SVG emits `UnsupportedGlyphPositioning` for the geometry its
 rigid shaping projection cannot represent.
 
-Table Drawing preserves the plan's world translation only when every line's
-f32-transformed X, baseline, top, background top, bottom and post-cursor equals
-its local value plus the f64 world origin exactly. Otherwise it clears the
-certificate and retains compatibility vector transport. This admits checked
-one-unit translations at sizes 17/50 and rejects nonrepresentable ordinary or
-large `2^24` controls. It adds the accepted world translation once, without
-reconstructing geometry or using a tolerance.
+Table Drawing preserves the plan only when each line's f32-transformed X, top,
+background top, bottom and post-cursor exactly equal its local value plus the
+f64 world origin. Within independently admitted frames, uniform resolved/measured
+size 17 or 50, zero margins, no explicit line-spacing mode and valid zero
+before/after spacing permit local glyph baselines with separate world translation;
+world baselines remain native f32 values. Other baseline mismatches or failed
+exact checks clear the certificate and retain compatibility vectors. Existing
+nonrepresentable and large `2^24` controls remain rejected. Accepted translation
+is added once without reconstruction or tolerance; this transport policy does
+not establish native world-appearance parity.
 
 These writer transports do not establish native per-run clip selection, legacy
 Table/Code opacity overrides, arbitrary font/script/gravity behavior or native

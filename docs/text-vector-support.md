@@ -249,9 +249,14 @@ and compatibility ownership/adjacency remain unverified.
   profiles, including nonzero mark offsets; five
   RTL/`.notdef`/mixed profiles remain outside it. Stacked marks at 17/50 retain
   native glyph IDs/source/origins in PDF while SVG reports unsupported
-  positioning. Table world translation retains the plan only when all retained
-  line fields exactly match local-plus-origin f64 addition after native f32
-  translation; nonrepresentable transforms use compatibility vectors.
+  positioning. Table world translation requires exact local-plus-origin f64
+  equality for X, top, background top, bottom and post-cursor after native f32
+  translation. Within independently admitted frames, uniform resolved/measured
+  size 17 or 50, zero margins, no explicit line-spacing mode and valid zero
+  before/after spacing permit local glyph baselines with separate output
+  translation while world baselines retain native f32 rounding. Other mismatches
+  use compatibility vectors; this does not establish native world-appearance
+  parity.
   [Nonzero owner-base capture](reverse-engineering/text-draw-identity-findings.md#captured-nonzero-owner-bases)
   verifies native request-relative addition and separate source-vector lookup
   for supplied owners; Minikin/HarfBuzz and chunk normalization remain excluded.
