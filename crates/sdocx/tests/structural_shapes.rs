@@ -236,16 +236,14 @@ fn preserves_reversed_horizontal_line_without_rotating_it_twice() {
     #[cfg(feature = "render")]
     {
         let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-        svg_support::assert_svg_element(
-            svg,
-            "line",
-            &[
-                ("x1", "90.00"),
-                ("y1", "45.00"),
-                ("x2", "-10.00"),
-                ("y2", "45.00"),
-            ],
-        );
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let node = xml
+            .descendants()
+            .find(|node| node.has_tag_name("line"))
+            .unwrap();
+        let endpoints = ["x1", "y1", "x2", "y2"]
+            .map(|attribute| node.attribute(attribute).unwrap().parse::<f64>().unwrap());
+        assert_eq!(endpoints, [90.0, 45.0, -10.0, 45.0]);
         assert!(!svg.contains("rotate("));
         assert!(!svg.contains("/ >"));
     }
@@ -965,6 +963,115 @@ fn native_shape_paths_override_templates_and_already_include_rotation() {
     }
 }
 
+#[cfg(feature = "render")]
+#[test]
+fn saved_vector_paths_keep_fractional_commands_and_source_bytes() {
+    let a = 1025.0 / 1024.0;
+    let b = 1026.0 / 1024.0;
+    let path = native_path(&[
+        (1, &[a, a]),
+        (2, &[b, b]),
+        (3, &[a, b, b, a]),
+        (4, &[b, a, a, b, b, b]),
+        (6, &[]),
+    ]);
+    for (kind, payload) in [(7, shape_with_path(4, &path)), (8, line(2, 8, &path))] {
+        let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let paths: Vec<_> = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("path"))
+            .collect();
+        assert_eq!(paths.len(), 1);
+        let commands: Vec<_> = svgtypes::PathParser::from(paths[0].attribute("d").unwrap())
+            .map(|command| {
+                use svgtypes::PathSegment::*;
+                let (verb, values) = match command.unwrap() {
+                    MoveTo { abs: true, x, y } => ("M", vec![x, y]),
+                    LineTo { abs: true, x, y } => ("L", vec![x, y]),
+                    Quadratic {
+                        abs: true,
+                        x1,
+                        y1,
+                        x,
+                        y,
+                    } => ("Q", vec![x1, y1, x, y]),
+                    CurveTo {
+                        abs: true,
+                        x1,
+                        y1,
+                        x2,
+                        y2,
+                        x,
+                        y,
+                    } => ("C", vec![x1, y1, x2, y2, x, y]),
+                    ClosePath { .. } => ("Z", vec![]),
+                    command => panic!("unexpected emitted command {command:?}"),
+                };
+                (
+                    verb,
+                    values
+                        .into_iter()
+                        .map(|value| (value as f32).to_bits())
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect();
+        let (a_bits, b_bits) = (0x3f80_2000, 0x3f80_4000);
+        assert_eq!(
+            commands,
+            [
+                ("M", vec![a_bits, a_bits]),
+                ("L", vec![b_bits, b_bits]),
+                ("Q", vec![a_bits, b_bits, b_bits, a_bits]),
+                ("C", vec![b_bits, a_bits, a_bits, b_bits, b_bits, b_bits]),
+                ("Z", vec![]),
+            ]
+        );
+        let retained = match parsed.document.pages[0].elements().next().unwrap() {
+            PageElement::Shape(shape) => &shape.path_data,
+            PageElement::Line(line) => &line.path_data,
+            _ => panic!("expected saved vector"),
+        };
+        assert_eq!(retained, &path);
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn saved_vector_straight_line_attributes_keep_f64_endpoints() {
+    let bits = [
+        0x3ff0_0400_0000_0001,
+        0x4000_0400_0000_0001,
+        0x3ff0_1000_0000_0001,
+        0x4000_0600_0000_0001,
+    ];
+    let endpoints = bits.map(f64::from_bits);
+    let mut fixed = line_fixed(0);
+    fixed[3..35].copy_from_slice(&numbers(&endpoints));
+    let payload = [base(90.0), outline(), frame(8, 0, &fixed, &[])].concat();
+    let parsed = sdocx::parse_bytes_detailed(&single(8, &payload)).unwrap();
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    let node = xml
+        .descendants()
+        .find(|node| node.has_tag_name("line"))
+        .unwrap();
+    let actual = ["x1", "y1", "x2", "y2"].map(|attribute| {
+        node.attribute(attribute)
+            .unwrap()
+            .parse::<f64>()
+            .unwrap()
+            .to_bits()
+    });
+    assert_eq!(actual, bits);
+    let retained = as_line(parsed.document.pages[0].elements().next().unwrap());
+    assert_eq!(retained.begin.map(f64::to_bits), [bits[0], bits[1]]);
+    assert_eq!(retained.end.map(f64::to_bits), [bits[2], bits[3]]);
+    assert!(retained.path_data.is_empty());
+}
+
 #[test]
 fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
     let mut trailing = native_path(&[(1, &[1.0, 2.0]), (2, &[3.0, 4.0])]);
@@ -996,6 +1103,17 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
         7,
         &shape_with_path(6, &native_path(&[(1, &[f64::NAN, 0.0])])),
     );
+    #[cfg(feature = "render")]
+    {
+        let path = native_path(&[(1, &[1.0, 2.0]), (2, &[f64::MAX, 4.0])]);
+        for (kind, payload) in [(7, shape_with_path(4, &path)), (8, line(0, 8, &path))] {
+            let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+            assert!(!svg.contains("<path "));
+            assert!(!svg.contains("<line "));
+            assert!(!svg.contains("stroke=\"#0000ff\""));
+        }
+    }
 }
 
 #[cfg(feature = "render")]

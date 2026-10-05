@@ -1044,7 +1044,7 @@ fn native_svg_path(bytes: &[u8]) -> Option<Data> {
     use crate::shape::NativePathCommand;
 
     fn coordinates<const N: usize>(values: [f64; N]) -> Option<[f32; N]> {
-        let values = values.map(|value| coordinate(value, 2));
+        let values = values.map(|value| value as f32);
         values
             .iter()
             .all(|value| value.is_finite())
@@ -1167,10 +1167,10 @@ fn render_line(svg: &mut Scene, line: &crate::NativeLine, theme: RenderTheme) {
         svg.push(
             style.add(
                 Line::new()
-                    .x1(decimal(line.begin[0], 2))
-                    .y1(decimal(line.begin[1], 2))
-                    .x2(decimal(line.end[0], 2))
-                    .y2(decimal(line.end[1], 2)),
+                    .x1(line.begin[0])
+                    .y1(line.begin[1])
+                    .x2(line.end[0])
+                    .y2(line.end[1]),
             ),
         );
     }
