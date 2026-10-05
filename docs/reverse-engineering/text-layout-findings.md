@@ -3639,7 +3639,8 @@ pinned-font contracts. Pixel/percentage spacing, indents, justification and
 before/after gaps also have route-specific scaling limits.
 
 Locked body/code/table origins do not establish arbitrary inline composition,
-obstacle wrapping, explicit page breaks or merged/sparse tables. UTF-16 source
+obstacle wrapping, [explicit page breaks](text-box-findings.md#native-page-break-paragraph-marker)
+or merged/sparse tables. UTF-16 source
 and paragraph ranges remain distinct from glyph clusters throughout these
 contracts. Captured Samsung output supplies reference evidence; the authored
 layout implementation remains Rust.

@@ -193,6 +193,46 @@ establish reliable continuation through malformed records. The
 ranges and payload, separately from native filtered or capped loading state.
 These are static reader findings, not complete-load parity or observed corpus loss.
 
+## Native page-break paragraph marker
+
+These static findings use the Model ELF pinned below, plus `libSPenWidget.so`
+SHA-256 `cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9`
+and `libSPenText.so`
+SHA-256 `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b`.
+
+Paragraph type **7** constructs `PageBreakParagraph`, whose valid presence and
+range carry the marker. Its WDoc size is 20 bytes: the 12-byte type/start/end
+header plus eight trailing bytes (`0x411f10`). The writer delegates only to the
+base header writer (`0x411f78`); it does not write those eight bytes. The reader
+checks and skips them (`0x411fd0`). Neither zero tail contents nor retention of
+a break property from that tail follows from these methods.
+
+`TextCommonImpl::InsertPageBreak`, `0x3f0de8`, inserts a newline at a supplied
+UTF-16 text index. After successful insertion it counts CR/LF units through
+`index + 1`, constructs range `[paragraph_ordinal, paragraph_ordinal + 1)` and
+calls `AppendParagraph` (`0x3f0e40`–`0x3f0e80`). Text indices, paragraph ordinals,
+supplied-area indices and document page indices are separate namespaces.
+
+Widget `TextLayoutUtil::SetFromObject` reaches paragraph conversion and
+`TextLayout::SetParagraphs` (`0xdb02c`, `0xdb078`). Conversion limits the range
+to available paragraph ordinals and invokes `convertParagraphImpl` for each
+surviving ordinal (`0xdb6a8`–`0xdb708`). Type 7 sets `RichTextParagraph` byte 66
+to true without reading the trailing payload (`0xdba88`, `0xdbb38`).
+
+Text `ParagraphLayout::DoLayTextOut` reads that flag at `0x6a6d8`. With a valid
+index into the supplied padding areas, and current top strictly greater than
+the matched area's bottom, it replaces the top with the next area's top; at
+the last area it uses that area's bottom (`0x6a6fc`–`0x6a738`). Missing areas,
+missing indices and equality do not make this replacement. This conditional
+area movement does not establish unconditional document page allocation.
+Lower vector-transfer helpers, padding-area production, cached routing and
+final export remain separate from this source proof.
+
+The [Rust reader](../../crates/sdocx/src/note.rs) owns type 7's original range
+and payload as `Other(7)` and reports unknown paragraph records. These native
+marker semantics do not authorize discarding its bytes or establish Rust
+page-break rendering, executed edit/save behavior, or native appearance parity.
+
 ## Native TextCommon object-span trailer
 
 The pinned Model ELF SHA-256 is
