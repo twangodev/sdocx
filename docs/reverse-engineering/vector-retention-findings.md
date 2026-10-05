@@ -47,23 +47,28 @@ payload admission. Attachment callbacks do not certify original archive identity
 Detailed [archive parsing](../../crates/sdocx/src/container.rs) with
 `ParseOptions.retain_page_sources = true` retains each parsed uncompressed `.page`
 buffer in its `StoredArchivePage.source_bytes`, alongside its stored page index.
-Default detailed parsing retains no page buffers. Ordinary parsing ignores this
-option and returns only the semantic `Document`; converting a detailed result to
-`Document` also drops retained page sources.
+The independent `ParseOptions.retain_note_source = true` retains the selected
+uncompressed `note.note` entry in `StoredNote.source_bytes`, when present. Direct
+`parse_note_bytes` calls retain no source buffer. Default detailed parsing retains
+neither source. Ordinary parsing ignores both options and returns the semantic
+`Document`; converting a detailed result to `Document` also drops both sources.
 
 Retained buffers are original snapshots, not regenerated from semantic edits.
 Cloning copies them; serde includes present bytes, omits `None` and defaults old
-snapshots to `None`. Public mutation or deserialization can invalidate source/index
-association, so byte presence does not certify association or integrity. Retention
-does not add semantic decoding, rendering, original `note.note`, complete ZIP ownership
-or roundtrip identity. The typed page header still retains only low mask bits and
-mapped fields; original buffers preserve the remaining bytes for explicit inspection.
+snapshots to `None`. Public mutation or deserialization can invalidate a buffer's
+association with its parsed fields, so byte presence does not certify association
+or integrity. Both options reuse archive entry/aggregate extraction limits;
+retained allocations, decoded values, clones and serialization can coexist, so
+those limits are not resident-memory bounds. Retention adds no semantic decoding,
+rendering, complete ZIP ownership or roundtrip identity. The typed page header
+still retains only low mask bits and mapped fields; original buffers preserve
+remaining bytes for explicit inspection.
 
 The browser has a separate ownership boundary: its
 [`DocumentSession`](../../crates/sdocx-wasm/src/lib.rs) retains a
 [debugger source](../../crates/sdocx-wasm/src/debugger.rs) containing original
-archive bytes. Its default page-buffer option remains off. This whole-archive
-carrier is separate from the opt-in detailed Rust page sources.
+archive bytes. Its default page and note buffer options remain off. This
+whole-archive carrier is separate from opt-in detailed Rust entry sources.
 
 ### Repeated ZIP names and selected entries
 

@@ -292,6 +292,13 @@ fn inspect_note(note_bytes: &[u8]) -> sdocx::Result<sdocx::NoteMetadata> {
 }
 ```
 
+Detailed archive parsing can independently opt into
+`ParseOptions.retain_note_source`; its `StoredNote.source_bytes` then owns the
+selected original uncompressed entry. Pass the retained bytes to the existing
+`metadata_with_limits` accessor. Direct note parsing retains `None`; ordinary
+archive parsing ignores this option. Retaining source bytes adds no metadata
+pass or integrity check.
+
 `metadata_with_limits` accepts `ParseLimits`. Entry size and each string's
 UTF-16 code-unit count are bounded. `max_note_metadata_entries` limits the
 combined number of string-table entries, voices, voice events and attachments
@@ -311,12 +318,17 @@ remains available. Raw author image/media IDs are retained without fetching anyt
 `ParsedDocument.end_tag.fixed_style` retains the authoritative fixed-property
 carrier. Ordinary `DocumentMetadata` has no corresponding fields;
 `container.rs::apply_end_tag_metadata` does not project them. Its optional note
-metadata projection keeps body-font-size delta and the stroke string table,
-not these fixed-property copies. The detailed document also does not retain
-the complete original note entry or a decoded `NoteMetadata`; callers need
-their original entry bytes to inspect its flexible data. Font-name span
-payload retention and caller-supplied physical font bytes remain separate
-source paths.
+metadata projection keeps body-font-size delta and uses the stroke string table
+to resolve stroke names; it does not project these fixed-property copies. The
+detailed document does not own a decoded `NoteMetadata`; explicit inspection
+uses retained source bytes when opted in,
+or caller-owned complete entry bytes otherwise. An optional metadata error still
+leaves structural note parsing available, and opt-in capture keeps the supplied
+bytes without changing that error. Source snapshot, clone/serde and mutation
+bounds follow the
+[source ownership contract](vector-retention-findings.md#original-page-source-ownership).
+Font-name span payload retention and caller-supplied physical font bytes remain
+separate source paths.
 
 ## Validation and evidence limits
 
