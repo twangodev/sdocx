@@ -91,6 +91,11 @@ skip string lookup/binding and retain signed IDs without validating their string
 The fresh Shape text helper's bit-0-absent branch skips text construction
 (`0x3b2214–0x3b2264`). Later checked layer insertion (`0x34e624–0x34e640`)
 calls `OnAttach`; Base attachment then installs the supplied context (`0x2cfe70`).
+Shape attachment next checks the supplied context's `+608` callable: nonzero
+returned `w0` skips forwarding to embedded TextCommon (`0x39a664–0x39a690`).
+Otherwise an existing TextCommon receives that context (`0x39a6a0`) and stores
+it in TextImpl `+104` (`0x3e4de4`), distinct from owner BaseImpl `+56`.
+A null supplied context does not create a new context in these attachment bodies.
 This static proof does not close present-text Shape callbacks, arbitrary callback
 reentry, malformed records or whole-note load success; it does not change the
 context-bearing reader limitation above.

@@ -3322,8 +3322,12 @@ arithmetic; it does not add an unchanged border after scaling.
 The owner is runtime context (`ObjectImpl + 56`), distinct from saved owner
 page-size metadata. Partial capture clones a detached text box and its spans
 (`0xdf30c`–`0xdf358`, `0x4179b8`–`0x417a78`); property copying does not copy
-that context. `setBodyText` and `ObjectTextLayout::SetObject` merely retain
-the copied model (`0xa90d4`, `0xaff08`–`0xaff10`, `0xd3974`). Consequently
+that context. `setBodyText` retains the copied model (`0xa90d4`);
+`ObjectTextLayout::SetObject` stores it and dispatches virtual slot 24
+(`0xd3974`–`0xd3980`). For concrete ObjectTextLayout this resolves to
+`updateBound` (`0xf5560`, `0xd713c`), which refreshes derived text settings.
+This path does not directly install the model's owner context; derived layout
+overrides and later reflow remain separate consumers. Consequently
 a partial capture's code cap must not assume the physical source page's width.
 Full first-page coverage with the native completed-section flag bypasses
 copying (`0xaa4cc`–`0xaa4dc`), and missing sections likewise use the original
