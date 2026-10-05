@@ -199,6 +199,8 @@ These static findings use the Model ELF pinned below, plus `libSPenWidget.so`
 SHA-256 `cfaaccbfd62763f0e514271cc372c0de7b6df41f0d2f991887b8b9584abd1ec9`
 and `libSPenText.so`
 SHA-256 `5483711673a499743625eb3275e34b37a006919af346212b46b8d8857834308b`.
+The `libSPenBodytext.so` SHA-256 is
+`27324ca3807f07e0c1d0647b23eb9af1296762a8c9d892ee486f37b1eb9543f0`.
 
 Paragraph type **7** constructs `PageBreakParagraph`, whose valid presence and
 range carry the marker. Its WDoc size is 20 bytes: the 12-byte type/start/end
@@ -225,8 +227,16 @@ the matched area's bottom, it replaces the top with the next area's top; at
 the last area it uses that area's bottom (`0x6a6fc`–`0x6a738`). Missing areas,
 missing indices and equality do not make this replacement. This conditional
 area movement does not establish unconditional document page allocation.
-Lower vector-transfer helpers, padding-area production, cached routing and
-final export remain separate from this source proof.
+Bodytext `updateObstacle` supplies its padding-band list at obstacle member 80
+through Widget/Text setters (`0xb2dd0`, `0xd73a0`, `0x8c1b0`). Text copies
+rectangle values into its owned vector at member 184 (`0x70d24`);
+`CalculateParagraphLayout` passes that vector to this consumer (`0x73ed8`).
+The setter marks obstacle-tree byte 144; rebuilding uses the current vectors
+and clears it (`0x70840`–`0x70874`). Widget completion byte 535 is separate:
+`ClearLayout` clears it (`0xd3b80`); the padding setter does not clear that flag or
+guarantee a complete layout call. Upstream setup, source-vector helpers,
+complete cached/empty routes, `m_ReLayout` and final export remain outside this
+selected producer/consumer proof.
 
 The [Rust reader](../../crates/sdocx/src/note.rs) owns type 7's original range
 and payload as `Other(7)` and reports unknown paragraph records. These native
