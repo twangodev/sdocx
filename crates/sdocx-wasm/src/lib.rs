@@ -632,6 +632,14 @@ mod tests {
         .unwrap();
         assert!(!expected.text_diagnostics.is_empty());
         assert!(!expected.object_diagnostics.is_empty());
+        assert_eq!(
+            expected.geometry_diagnostics,
+            [sdocx::GeometryDiagnostic {
+                source_offset: None,
+                object_uuid: "report geometry".into(),
+                kind: sdocx::GeometryDiagnosticKind::UnsupportedShapeTemplate,
+            }]
+        );
         assert_eq!(expected.source_page_index, 2);
         let page = session.render_svg_output(0, "light").unwrap();
         assert_eq!(page, expected);
@@ -640,10 +648,15 @@ mod tests {
         assert_eq!(output.page_index, 0);
         assert_eq!(output.text_diagnostics, expected.text_diagnostics);
         assert_eq!(output.object_diagnostics, expected.object_diagnostics);
+        assert_eq!(output.geometry_diagnostics, expected.geometry_diagnostics);
         let value = serde_json::to_value(output).unwrap();
         assert_eq!(value["svg"], expected.svg);
         assert_eq!(value["page_index"], 0);
-        assert!(value.get("source_page_index").is_none());
+        assert_eq!(value["source_page_index"], 2);
+        assert_eq!(
+            value["geometry_diagnostics"],
+            serde_json::to_value(expected.geometry_diagnostics).unwrap()
+        );
         assert_eq!(
             value["text_diagnostics"],
             serde_json::to_value(expected.text_diagnostics).unwrap()
@@ -692,10 +705,26 @@ mod tests {
                 .collect::<Vec<_>>(),
             [2, 0, 2]
         );
-        for (actual, expected) in output.pages.iter().zip(&expected.pages) {
-            assert_eq!(actual.text_diagnostics, expected.text_diagnostics);
-            assert_eq!(actual.object_diagnostics, expected.object_diagnostics);
-        }
+        assert_eq!(
+            output
+                .pages
+                .iter()
+                .map(|page| page.source_page_index)
+                .collect::<Vec<_>>(),
+            [0, 2, 0]
+        );
+        assert!(
+            output
+                .pages
+                .iter()
+                .all(|page| !page.geometry_diagnostics.is_empty())
+        );
+        assert_eq!(output.pages, expected.pages);
+        let value = serde_json::to_value(&output).unwrap();
+        assert_eq!(
+            value["pages"],
+            serde_json::to_value(expected.pages).unwrap()
+        );
         assert_eq!(output.bytes, expected.bytes);
     }
 
@@ -711,8 +740,43 @@ mod tests {
             layout_option: sdocx::ObjectSpanLayoutOption::Inline,
             layout_constraint: sdocx::ObjectSpanLayoutConstraint::Normal,
         });
+        let fixture = sdocx::parse_bytes(include_bytes!(
+            "../../sdocx/tests/fixtures/inspection_integers.sdocx"
+        ))
+        .unwrap();
+        let mut geometry = fixture
+            .pages
+            .into_iter()
+            .flat_map(|page| page.objects)
+            .find(|object| {
+                matches!(
+                    &object.content,
+                    sdocx::PageObjectContent::Element(sdocx::PageElement::Shape(_))
+                )
+            })
+            .unwrap();
+        geometry.source_offset = None;
+        let sdocx::PageObjectContent::Element(sdocx::PageElement::Shape(shape)) =
+            &mut geometry.content
+        else {
+            unreachable!()
+        };
+        shape.shape_type = 900;
+        shape.path_data.clear();
+        shape.metadata.uuid = "report geometry".into();
+        shape.metadata.visible = true;
+        shape.geometry_bbox = sdocx::BoundingBox {
+            x_min: 10.0,
+            y_min: 10.0,
+            x_max: 30.0,
+            y_max: 30.0,
+        };
+        shape.rotation_degrees = 0.0;
         for page in &mut parsed.document.pages {
-            page.objects = vec![sdocx::PageElement::TextBox(text.clone()).into()];
+            page.objects = vec![
+                sdocx::PageElement::TextBox(text.clone()).into(),
+                geometry.clone(),
+            ];
         }
         let mut layout = sdocx::layout_document(&parsed.document);
         layout.pages.swap(0, 2);

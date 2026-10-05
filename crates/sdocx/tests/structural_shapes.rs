@@ -1435,6 +1435,64 @@ fn geometry_reports_follow_admitted_roots_and_reset_for_cached_replay() {
     }
 }
 
+#[cfg(feature = "pdf")]
+#[test]
+fn pdf_geometry_reports_retain_backing_identity_and_repeated_page_order() {
+    let mut document = sdocx::parse_bytes(&single(7, &shape(900))).unwrap();
+    document.pages.push(document.pages[0].clone());
+    let mut layout = sdocx::layout_document(&document);
+    layout.pages.swap(0, 1);
+    let fonts = sdocx::fonts::FontBook::default();
+    let options = sdocx::PdfOptions::from_font_book(&fonts);
+    let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+        &document,
+        &layout,
+        &[1, 0, 1],
+        &Default::default(),
+        &options,
+        &fonts,
+    )
+    .unwrap();
+    assert_eq!(
+        output
+            .pages
+            .iter()
+            .map(|page| (page.page_index, page.source_page_index))
+            .collect::<Vec<_>>(),
+        [(1, 0), (0, 1), (1, 0)]
+    );
+    for page in &output.pages {
+        let rendered = sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            page.page_index,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        assert_eq!(page.geometry_diagnostics, rendered.geometry_diagnostics);
+        assert_eq!(page.geometry_diagnostics.len(), 1);
+        assert!(page.geometry_diagnostics[0].source_offset.is_some());
+        assert_eq!(page.geometry_diagnostics[0].object_uuid, "sh");
+        assert_eq!(
+            page.geometry_diagnostics[0].kind,
+            sdocx::GeometryDiagnosticKind::UnsupportedShapeTemplate
+        );
+    }
+    assert_eq!(
+        output.bytes,
+        sdocx::render_layout_pages_pdf_with_fonts(
+            &document,
+            &layout,
+            &[1, 0, 1],
+            &Default::default(),
+            &options,
+            &fonts,
+        )
+        .unwrap()
+    );
+}
+
 #[cfg(feature = "render")]
 #[test]
 fn mutated_geometry_reports_invalid_paths_and_bounds_without_changing_source() {

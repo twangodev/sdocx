@@ -12,8 +12,10 @@ impl RenderWarnings {
     fn report(
         &mut self,
         page_index: usize,
+        source_page_index: usize,
         text: &[sdocx::TextDiagnostic],
         objects: &[sdocx::ObjectDiagnostic],
+        geometry: &[sdocx::GeometryDiagnostic],
     ) {
         if !self.pages.insert(page_index) {
             return;
@@ -43,6 +45,19 @@ impl RenderWarnings {
                 diagnostic.kind,
                 page_index + 1,
                 diagnostic.anchor_utf16,
+            );
+        }
+        for diagnostic in geometry {
+            let source = match diagnostic.source_offset {
+                Some(offset) => format!("page payload byte offset {offset}"),
+                None => "no retained page payload byte offset".into(),
+            };
+            eprintln!(
+                "Warning [{:?}] visible page {} (source page {}): geometry object UUID {:?}, {source}",
+                diagnostic.kind,
+                page_index + 1,
+                source_page_index + 1,
+                diagnostic.object_uuid,
             );
         }
     }
@@ -381,8 +396,10 @@ fn main() {
         for page in &output.pages {
             render_warnings.report(
                 page.page_index,
+                page.source_page_index,
                 &page.text_diagnostics,
                 &page.object_diagnostics,
+                &page.geometry_diagnostics,
             );
         }
         let pdf = output.bytes;
@@ -409,7 +426,13 @@ fn main() {
         })
         .collect();
     for (&page_index, page) in page_indices.iter().zip(&rendered_pages) {
-        render_warnings.report(page_index, &page.text_diagnostics, &page.object_diagnostics);
+        render_warnings.report(
+            page_index,
+            page.source_page_index,
+            &page.text_diagnostics,
+            &page.object_diagnostics,
+            &page.geometry_diagnostics,
+        );
     }
 
     let png_options = (format == Format::Png).then_some(&svg_options);
