@@ -82,8 +82,8 @@ test('actual geometry omissions reach viewer and download notices with object id
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles({ name: 'geometry.sdocx', mimeType: 'application/zip', buffer: geometryNote() });
 	await expect(page.getByAltText('Rendered preview of page 2')).toBeAttached();
-	await page.getByRole('button', { name: 'Document information', exact: true }).click();
 	const info = page.getByRole('complementary', { name: 'Document information' });
+	await expect(info).toBeVisible();
 	await info.locator('summary', { hasText: 'Preview rendering (auto)' }).click();
 	await expect(info.getByText(/Unsupported Line Type · object geometry-line · source byte \d+/)).toBeVisible();
 	await page.getByRole('button', { name: 'Export document', exact: true }).click();
@@ -130,8 +130,8 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 		};
 	});
 	await openDocument(page);
-	await page.getByRole('button', { name: 'Document information', exact: true }).click();
 	const info = page.getByRole('complementary', { name: 'Document information' });
+	await expect(info).toBeVisible();
 	await info.locator('summary', { hasText: 'Preview rendering (auto)' }).click();
 	await expect(info.getByText('Browser Auto Notice · text position 0')).toHaveCount(3);
 	await page.getByRole('button', { name: 'Export document', exact: true }).click();
