@@ -517,11 +517,12 @@ of a saved eraser-enabled object. The ordinary handwriting cutter and that
 rendering gap must be tracked independently.
 
 Given original page bytes, metadata inspection retains raw common `[u8; 16]`
-rectangle records and stroke `[u8; 4]` companions. `StoredObject` indexes that
-external payload; `ParsedDocument` does not own it. Native loading and modern
-common writing cannot recover the discarded coordinates. The retained source
-bytes and decoded metadata therefore have distinct preservation boundaries;
-see [vector retention](vector-retention-findings.md#original-page-bytes-are-external-to-the-parsed-model).
+rectangle records and stroke `[u8; 4]` companions. `StoredObject` indexes a
+borrowed payload; optional `StoredArchivePage.source_bytes` owns the original
+page bytes when requested. Native loading and modern common writing cannot
+recover the discarded coordinates. The retained source bytes and decoded
+metadata therefore have distinct preservation boundaries;
+see [vector retention](vector-retention-findings.md#original-page-source-ownership).
 
 The preservation constraint is to retain source fragments, channel order and
 style identity through geometry preparation. Equal XY samples cannot generally

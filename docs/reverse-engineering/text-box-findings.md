@@ -264,8 +264,10 @@ complete source paths; embedded object payloads can retain their own fields.
 
 [Rust decoding](../../crates/sdocx/src/note.rs) owns the known embedded bytes
 and placement fields. Unknown upper flags or remaining common bytes only
-record an extension diagnostic; they are not owned. The reserved u32 is
-consumed and discarded without diagnosing a nonzero value. This source-only
+record an extension diagnostic; they have no separately decoded fields. The
+reserved u32 is consumed and discarded from the semantic projection without
+diagnosing a nonzero value. Requested note/page source snapshots retain the
+encompassing entry bytes; this does not decode those extensions. This source-only
 result establishes neither runtime replay nor all-version extension coverage.
 
 ### Embedded object admission
