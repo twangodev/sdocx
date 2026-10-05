@@ -80,7 +80,9 @@ replay paths; a valid prefix is never emitted as a partial drawing.
 Path commands use the library's `f32` coordinates. Supported saved shape/line
 M/L/Q/C/Z paths narrow directly from `f64`, without fixed decimal rounding;
 paths outside the finite `f32` range are omitted as a whole. Straight-line
-endpoint attributes retain `f64` values. Image-local bounds, rotation/pivots and
+endpoints and supported pathless shape bounds, ellipse radii, polygon points,
+rotation/pivots and shape/line outline widths use validated numbers without fixed
+decimal rounding. Image-local bounds, rotation/pivots and
 cropped viewport/viewBox use validated `f64` without fixed decimal rounding.
 Inline image translation still uses four places; other routes keep their policies.
 
@@ -92,6 +94,44 @@ existing hyperlink scheme validation remains in the native text converter.
 
 Tests compare parsed SVG semantics, preserved text, complete replay boundaries,
 invalid-input handling, vector PDF shading, and Chromium appearance.
+
+## Render diagnostics
+
+[`RenderedPage`](../crates/sdocx/src/render.rs) carries separate text,
+embedded-object and shape/line geometry diagnostics from its render attempt.
+Geometry reasons cover malformed, unsupported or unrepresentable saved paths,
+invalid checked geometry, unsupported pathless shape templates, unsupported line
+types and missing required line paths. A geometry diagnostic identifies the
+object UUID and optional payload offset in its backing page. It does not cover
+every invalid SVG element, unsupported paint, invisible object or omitted pixel.
+Shape text may still render when its outline is rejected.
+
+The additive WASM `render_svg_detailed` and `render_pdf_pages_detailed` methods
+return output and diagnostics together from one render/export. Existing
+`render_svg`, `render_pdf` and `render_pdf_pages` methods retain their payload-only
+results. The browser uses detailed results and validates their report shape and
+selected visible-page order; it does not synthesize diagnostics or read a mutable
+last-report field. PDF selections retain caller order and repeated pages.
+
+`page_index` in detailed reports identifies the zero-based visible-layout page;
+`source_page_index` identifies its backing parsed-document page. PDF report array
+position is the output ordinal. Page-indexed PDF rendering errors use that output
+ordinal; `InvalidPageIndex` instead identifies the requested visible-layout index.
+These identities can differ after reflow or an ordered/repeated export selection.
+
+Parser inspection, document preview, export-dialog page preview and completed
+download reports have separate scopes. Preview results are guarded by document
+and render generations; dialog results also expire when the selected page or
+theme changes. Download reports use the export's captured theme and document
+generation, rather than merging with current preview notices. Debugger
+background/replay requests still return payload-only SVG. An empty report does
+not certify full native appearance or preservation of every source field.
+
+The public `RenderedPage.geometry_diagnostics` and
+`PdfPageDiagnostics.source_page_index`/`geometry_diagnostics` additions require
+updates to exhaustive Rust struct literals and patterns. With `serde`, older
+serialized `RenderedPage` values may omit the geometry field, which defaults to
+an empty list; `PdfPageDiagnostics` supports serialization, not deserialization.
 
 ## Text styling
 

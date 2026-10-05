@@ -1274,10 +1274,12 @@ The [SVG adapter](../../crates/sdocx/src/render/vector/path.rs) uses `svg` 0.18'
 `f32` path parameters. [`native_svg_path`](../../crates/sdocx/src/render.rs)
 directly narrows saved shape/line M/L/Q/C/Z coordinates from `f64`, rejecting
 non-finite narrowed values without fixed decimal rounding. Owned path bytes stay
-unchanged; straight-line endpoint attributes retain decoded `f64` values. Other
-routes have different policies: basic shape attributes and generic ink commonly
-use two places; stamp paths commonly use four; some attributes accept validated
-`f64` values without fixed formatting.
+unchanged. Straight-line endpoints and supported pathless shape bounds, radii,
+polygon points, rotation/pivots and shape/line outline widths are serialized
+without fixed decimal rounding. Other routes retain different policies: generic
+ink commonly uses two places and stamp paths commonly use four. Neither widening
+a saved `f32` outline width nor serializing an attribute as `f64` restores source
+precision already lost before that boundary.
 
 These conversion and quantization policies are approximation boundaries, not
 proof of an incorrect native arithmetic port. Full saved numerical identity does
@@ -1286,25 +1288,31 @@ not survive merely because the emitted element is vector. The
 already records these precision and validation rules.
 
 Arc/oval native path commands retain their source bytes but reject the entire
-unsupported drawable path. Invalid or unrepresentable SVG elements are omitted;
-invalid containers skip their children. The adapter itself has no source-aware
-omission report. Retained PDF glyph transport checks its own registry and reports
-missing or unsupported retained text as export errors. That text safeguard does
-not certify geometry omitted before SVG carrier parsing. Generic imported SVG
+unsupported drawable path. Admitted shape/line render attempts now report checked
+path, geometry, template and line-type rejection with the object's UUID and optional
+source payload offset. This does not inventory every invalid adapter element,
+unsupported paint or invisible object; invalid containers still skip their children.
+Retained PDF glyph transport checks its own registry and reports missing or
+unsupported retained text as export errors. These checks do not certify every
+element before SVG carrier parsing. Generic imported SVG
 filters can also introduce rasterization; that separate compatibility output is
 bounded in the [output support table](../rendering-support.md#output-and-verification).
 
-Source inspection identifies a separate image-omission boundary in PDF export.
+Image admission remains a separate boundary in PDF export.
 Archive image admission owns bytes by filename extension without decoding them.
-The [PDF resolver](../../crates/sdocx/src/pdf.rs) validates PNG, but unreadable
-JPEG/WebP dimensions can make usvg omit an image node without setting the SDK's
-`InvalidImage` error. The bundled [image converter](../../crates/sdocx/src/pdf/svg/image.rs)
-also turns image-constructor rejection into `None`, whose
-[caller](../../crates/sdocx/src/pdf/svg/group.rs) ignores the result. These are
-source-observed rejection paths, without an executed malformed-image probe or
-evidence that a valid corpus image was dropped. Successful PDF generation alone
-does not verify transport of every retained image; original image bytes remain
-a separate preservation boundary.
+The [PDF resolver](../../crates/sdocx/src/pdf.rs) decodes the PNG frame within a
+64 MiB decoded-buffer limit. For Rust document scenes it also records
+embedded-data resolution failure and checks
+raster-image constructor admission and positive dimensions before usvg can omit
+the image silently. The bundled [image converter](../../crates/sdocx/src/pdf/svg/image.rs)
+propagates constructor rejection through its
+[caller](../../crates/sdocx/src/pdf/svg/group.rs) under the document exporter's strict
+setting. These confirmed failures return `PdfError::InvalidImage`, rather than a
+successful PDF with the rejected image missing. JPEG/WebP constructor admission
+uses deferred decoding, not full pixel validation. Generic imported SVG retains
+its compatibility rejection policy, with the existing PNG validation. Neither
+these checks nor successful PDF generation prove every usvg omission is detected
+or every retained image transported; original bytes remain a separate boundary.
 
 ## Diagnostic interpretation
 
@@ -1322,12 +1330,17 @@ an output diagnostic. Conversely, an unsupported-feature warning does not mean
 all original vector data was lost: embedded WDoc binaries, shape paths,
 unsupported paints or retained source assets may still be available.
 
-The browser's diagnostic transport is narrower than Rust's render result.
-[`DocumentSession`](../../crates/sdocx-wasm/src/lib.rs) returns only `page.svg`
-for preview and `output.bytes` for PDF export, dropping the render-produced
-text/object diagnostics. Its inspection report contains `parsed.report`;
-the [web inspection view](../../web/src/lib/converter/view-model.ts) displays
-those parser diagnostics. Debugger background/replay requests also return only
-the SVG and default ink color. Original source inspection remains available,
-but these routes do not expose render fallback reports. The
-[CLI](../../crates/sdocx-cli/src/main.rs) separately reports render diagnostics.
+[`DocumentSession`](../../crates/sdocx-wasm/src/lib.rs) retains its payload-only
+compatibility methods and adds detailed SVG/PDF methods carrying Rust's render
+diagnostics. The browser consumes those detailed results through its worker,
+session and notice views. Parser inspection stays separate from document preview,
+export-dialog page preview and completed-download reports. Each detailed report
+names its visible-layout and backing-source page; PDF reports retain output order
+and repeated selections. PDF error page indices use output ordinals, except
+`InvalidPageIndex`, which names a requested visible-layout page. Document/theme
+generation guards prevent obsolete preview results from replacing current ones;
+completed exports keep their captured theme. Debugger background/replay requests
+still return only SVG and default ink color. The
+[render-report contract](../svg-rendering.md#render-diagnostics) records these
+scopes and compatibility boundaries. The
+[CLI](../../crates/sdocx-cli/src/main.rs) also reports render diagnostics.

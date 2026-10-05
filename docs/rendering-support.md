@@ -163,7 +163,7 @@ group-opacity contract.
 | --- | --- | --- |
 | SVG preview/export | Typed Rust elements, validated numeric/path values, escaped content, vector ink and embedded fonts | Supported geometry and text transport do not imply complete native appearance. |
 | Replay | Reveals the same generated vector geometry at saved sample boundaries | No pen geometry in the UI; no native live prediction or all-layer replay-state guarantee. |
-| Document PDF | Shared scene plus retained selected fonts/glyphs/XY, vector masks/shadings/clips and selectable logical source | Inherits rendering gaps; source images remain images; universal PDF accessibility is not established. |
+| Document PDF | Shared scene plus retained selected fonts/glyphs/XY, vector masks/shadings/clips and selectable logical source; embedded image resolver/constructor rejections become export errors | Inherits rendering gaps; source images remain images; deferred image decoding and universal PDF accessibility are not certified. |
 | Arbitrary SVG to PDF | Compatibility conversion through the SVG importer | Can reshape text and rasterize imported filter effects; lacks the document exporter's private retained-glyph guarantee. |
 
 The [conformance guide](../conformance/README.md) records fixture identities,
@@ -171,8 +171,9 @@ independent native capture boundaries and real-document reference coverage.
 The locked corpus contains four document/PDF pairs, not an exhaustive feature
 inventory. Synthetic archives establish SDK behavior and malformed-input
 handling; they cannot establish Samsung visual equivalence for absent features.
-The browser displays parser diagnostics; its preview/PDF bindings discard the
-separate text/object render diagnostics returned by Rust. See the
+The browser displays parser diagnostics separately from Rust's text, embedded-object
+and shape/line render notices for previews and completed exports. Legacy WASM and
+debugger SVG methods remain payload-only. See the
 [diagnostic transport boundary](reverse-engineering/vector-retention-findings.md#diagnostic-interpretation).
 The [real-document inventory](reverse-engineering/rendering-corpus-findings.md)
 records feature occurrence separately from native research. At that revision its only

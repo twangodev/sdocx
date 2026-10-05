@@ -9,8 +9,11 @@ Upstream `lib.rs` is this directory's `mod.rs`.
 Local changes adapt imports, visibility, and match patterns to this Rust 2024
 module and add a text callback
 at the existing ordered traversal point. Callback failures stop further traversal,
-unwind converter graphics state, and propagate to the PDF exporter. Without a
-callback, conversion retains upstream behavior. Filter rasterization does not
+unwind converter graphics state, and propagate to the PDF exporter. A separate
+strict image setting propagates image-constructor rejection through the same
+ordered traversal/error boundary; Rust document export enables it, while
+generic SVG conversion keeps the compatibility setting. Without a callback or
+strict image setting, conversion retains upstream behavior. Filter rasterization does not
 invoke the text callback; the exporter validates retained-text completeness.
 The unused OpenType SVG-glyph callback and its private convenience entry points
 are omitted.
