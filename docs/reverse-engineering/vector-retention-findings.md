@@ -692,6 +692,9 @@ are raw int32 ID words without floating conversion. The fixed writer
 (`0x448c4c`) requires each to differ from exactly `-1`; this comparison
 does not establish validity of other negative IDs or available resource bytes.
 
+`NewGetBinary` (`0x447918`) returns its base writer's count after writing its 23-byte own block;
+the [selected modern caller](object-base-findings.md#modification-time-during-native-saving) uses queried full size for framing on its successful writer route.
+
 The modern own reader (`0x449394`) checks size/kind and consumes the full
 declared variable masks, copying only their first one/two bytes into zeroed
 locals. Neither mask nor the flexible-offset value controls the following

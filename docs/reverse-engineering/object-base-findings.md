@@ -124,6 +124,13 @@ binary size and bytes (`0x35505c–0x3550ac`). ObjectBase and ObjectStroke slot-
 relocations resolve to `ObjectBase::ReadyForSave`, `0x2d1500`; other types can
 override preparation, as ObjectShape does at `0x399f14`.
 
+On this DocumentType-2/non-compatible branch, queried size (`0x355080`) selects the
+payload boundary; a negative writer return fails, while its nonnegative count
+does not replace that size (`0x3550b0`). With coherent queried/current size,
+the 32-byte trailer starts there and requested length is size +32
+(`0x355164–0x3551ec`). Those `File::Write` results are unchecked here, so this
+framing contract does not establish completed I/O or a successful save.
+
 The base preparation requires an implementation and attached context. It skips
 when the sync requester returns any nonzero integer or the coedit requester
 returns true (`0x2d1514–0x2d1550`). Otherwise virtual `IsChanged` true or an
