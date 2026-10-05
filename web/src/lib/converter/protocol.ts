@@ -18,10 +18,19 @@ export interface ObjectRenderDiagnostic {
 	[field: string]: unknown;
 }
 
+export interface GeometryRenderDiagnostic {
+	kind: string;
+	object_uuid: string;
+	source_offset?: number | null;
+	[field: string]: unknown;
+}
+
 export interface PageRenderReport {
 	page_index: number;
+	source_page_index: number;
 	text_diagnostics: TextRenderDiagnostic[];
 	object_diagnostics: ObjectRenderDiagnostic[];
+	geometry_diagnostics: GeometryRenderDiagnostic[];
 	[field: string]: unknown;
 }
 

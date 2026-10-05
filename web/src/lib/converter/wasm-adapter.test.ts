@@ -33,7 +33,7 @@ describe('BrowserDocumentSession disposal', () => {
 		const inner: TestInner = {
 			page_count: 1,
 			inspection: () => ({}),
-			render_svg_detailed: () => ({ svg: '<svg/>', page_index: 0, text_diagnostics: [], object_diagnostics: [] }),
+			render_svg_detailed: () => ({ svg: '<svg/>', page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] }),
 			dispose: vi.fn(),
 			free: vi.fn()
 		};
@@ -51,7 +51,7 @@ describe('BrowserDocumentSession disposal', () => {
 		const inner: TestInner = {
 			page_count: 1,
 			inspection: () => ({}),
-			render_svg_detailed: () => ({ svg: '<svg/>', page_index: 0, text_diagnostics: [], object_diagnostics: [] }),
+			render_svg_detailed: () => ({ svg: '<svg/>', page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] }),
 			dispose: vi.fn(() => {
 				throw new Error('dispose failed');
 			}),

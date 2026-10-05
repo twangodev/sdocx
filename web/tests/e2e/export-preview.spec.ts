@@ -1,7 +1,8 @@
 import { test, expect, type Page } from '../fixtures/browser';
 import { readFile } from 'node:fs/promises';
 import { PDFDocument, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
-import { pdfNote } from '../fixtures/pdf-note';
+import { geometryNote, pdfNote } from '../fixtures/pdf-note';
+import { unzipSync } from 'fflate';
 
 declare global {
 	interface Window {
@@ -39,6 +40,9 @@ async function previewColor(page: Page) {
 
 test('detailed WASM PDF owns its bytes and ordered reports after the session is freed', async ({ page }) => {
 	await openDocument(page);
+	const input = geometryNote();
+	const sourcePage = Buffer.from(unzipSync(input)['two2.page']);
+	const sourceOffset = sourcePage.indexOf(Buffer.from('geometry-line')) - 24;
 	const result = await page.evaluate(async input => {
 		const wasm = await import(`${location.origin}/wasm/sdocx_wasm.js`);
 		const exports = await wasm.default({ module_or_path: `${location.origin}/wasm/sdocx_wasm_bg.wasm` });
@@ -60,11 +64,38 @@ test('detailed WASM PDF owns its bytes and ordered reports after the session is 
 			bytesSurvived: JSON.stringify(Array.from(pdf.bytes)) === JSON.stringify(beforeBytes),
 			signature: Array.from(pdf.bytes.subarray(0, 4)),
 			pageIndices: pdf.pages.map((report: { page_index: number }) => report.page_index),
+			sourceIndices: pdf.pages.map((report: { source_page_index: number }) => report.source_page_index),
+			svgPage: [rendered.page_index, rendered.source_page_index],
+			geometry: rendered.geometry_diagnostics,
+			pdfGeometry: pdf.pages.map((report: { geometry_diagnostics: unknown[] }) => report.geometry_diagnostics),
 			reportsSurvived: JSON.stringify({ rendered, pages: pdf.pages }) === before,
 			svgSurvived: typeof rendered.svg === 'string' && rendered.svg.includes('<svg')
 		};
-	}, Array.from(pdfNote(false, true)));
-	expect(result).toEqual({ ownedBytes: true, bytesSurvived: true, signature: [37, 80, 68, 70], pageIndices: [1, 0, 1], reportsSurvived: true, svgSurvived: true });
+	}, Array.from(input));
+	const geometry = [{ kind: 'UnsupportedLineType', object_uuid: 'geometry-line', source_offset: sourceOffset }];
+	expect(sourceOffset).toBeGreaterThan(0);
+	expect(result).toEqual({ ownedBytes: true, bytesSurvived: true, signature: [37, 80, 68, 70], pageIndices: [1, 0, 1], sourceIndices: [1, 0, 1], svgPage: [1, 1], geometry, pdfGeometry: [geometry, [], geometry], reportsSurvived: true, svgSurvived: true });
+});
+
+test('actual geometry omissions reach viewer and download notices with object identity', async ({ page }) => {
+	await page.route('https://rybbit.twango.dev/api/script.js', route => route.fulfill({ body: '' }));
+	await page.goto('/');
+	await page.locator('input[type=file]').setInputFiles({ name: 'geometry.sdocx', mimeType: 'application/zip', buffer: geometryNote() });
+	await expect(page.getByAltText('Rendered preview of page 2')).toBeAttached();
+	await page.getByRole('button', { name: 'Document information', exact: true }).click();
+	const info = page.getByRole('complementary', { name: 'Document information' });
+	await info.locator('summary', { hasText: 'Preview rendering (auto)' }).click();
+	await expect(info.getByText(/Unsupported Line Type · object geometry-line · source byte \d+/)).toBeVisible();
+	await page.getByRole('button', { name: 'Export document', exact: true }).click();
+	const dialog = page.getByRole('dialog');
+	await dialog.getByRole('button', { name: 'Next export preview page' }).click();
+	await dialog.locator('summary', { hasText: 'Page preview rendering (auto)' }).click();
+	await expect(dialog.getByText(/Unsupported Line Type · object geometry-line · source byte \d+/)).toBeVisible();
+	const download = page.waitForEvent('download');
+	await dialog.getByRole('button', { name: 'Download PDF' }).click();
+	await download;
+	await dialog.locator('summary', { hasText: 'Download rendering (auto)' }).click();
+	await expect(dialog.getByText(/Unsupported Line Type · object geometry-line · source byte \d+/)).toHaveCount(2);
 });
 
 test('rendering notices stay scoped to viewer, export preview, and download colors', async ({ page }) => {
@@ -85,6 +116,10 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 						const reports = request.type === 'exportPdf' ? event.data.value.pages : [event.data.value];
 						for (const report of reports) {
 							report.object_diagnostics.push({ kind: `Browser${request.colorMode === 'dark' ? 'Dark' : 'Auto'}Notice`, anchor_utf16: 0 });
+							if (request.colorMode === 'dark') {
+								report.source_page_index += 7;
+								report.geometry_diagnostics.push({ kind: 'FutureGeometryNotice', object_uuid: 'future-id', source_offset: null });
+							}
 						}
 					}
 					receive?.call(this, event);
@@ -104,12 +139,15 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 	await dialog.getByRole('radio', { name: 'Dark document mode' }).click();
 	await dialog.locator('summary', { hasText: 'Page preview rendering (dark)' }).click();
 	await expect(dialog.getByText('Browser Dark Notice · text position 0')).toBeVisible();
+	await expect(dialog.getByText('Future Geometry Notice · object future-id')).toBeVisible();
+	await expect(dialog.getByText(/source page 8/)).toHaveCount(1);
 	await dialog.getByRole('radio', { name: 'Current page · 1' }).check();
 	const download = page.waitForEvent('download');
 	await dialog.getByRole('button', { name: 'Download PDF' }).click();
 	await download;
 	await dialog.locator('summary', { hasText: 'Download rendering (dark)' }).click();
 	await expect(dialog.getByText('Browser Dark Notice · text position 0')).toHaveCount(2);
+	await expect(dialog.getByText(/source page 8/)).toHaveCount(2);
 	await page.keyboard.press('Escape');
 	await expect(info.getByText('Browser Auto Notice · text position 0')).toHaveCount(3);
 	await expect(info.getByText('Browser Dark Notice · text position 0')).toHaveCount(0);

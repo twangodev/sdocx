@@ -14,8 +14,9 @@ function frame(kind: number, properties: number, fields: number, fixed = zero(0)
 	return join(u32(offset + flexible.length), u16(kind), u32(offset), Buffer.from([2]), u16(properties), Buffer.from([4]), u32(fields), fixed, flexible);
 }
 
-function base() {
-	return frame(0, 8, 1, join(u32(5500), u16(2), Buffer.from('id'), zero(8), ...[10, 20, 210, 160].map(f64), zero(5)), f32(0));
+function base(uuid = 'id') {
+	const identity = Buffer.from(uuid);
+	return frame(0, 8, 1, join(u32(5500), u16(identity.length), identity, zero(8), ...[10, 20, 210, 160].map(f64), zero(5)), f32(0));
 }
 
 function object(kind: number, payload: Buffer) {
@@ -34,12 +35,26 @@ function text(index: number) {
 	return object(2, join(base(), frame(6, 0, 0), frame(7, 0, 1, zero(0), join(u32(common.length), common)), frame(2, 0, 0)));
 }
 
-function page(index: number, width: number, height: number) {
+function unsupportedLine() {
+	const bounds = [10, 20, 210, 160].map(f64);
+	const outline = frame(6, 0, 0, join(u32(0), u32(4), u32(0), zero(1)));
+	const fixed = join(Buffer.from([9, 0, 0]), ...bounds, ...bounds, ...bounds, zero(4));
+	return object(8, join(base('geometry-line'), outline, frame(8, 0, 0, fixed)));
+}
+
+function page(index: number, width: number, height: number, extra?: Buffer) {
 	const header = join(zero(8), Buffer.from([1, 0, 5]), zero(5), ...[0, width, height, 0, 0].map(u32), u16(4), Buffer.from(['one1', 'two2', 'zzz3'][index], 'utf16le'), zero(8), u32(5500), u32(4000));
 	header.writeUInt32LE(header.length, 0);
 	header.writeUInt32LE(header.length, 4);
-	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(2), stroke(index), text(index), zero(32));
+	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(extra ? 3 : 2), stroke(index), text(index), extra ?? zero(0), zero(32));
 	return join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK'));
+}
+
+export function geometryNote(): Buffer {
+	return Buffer.from(zipSync({
+		'one1.page': page(0, 400, 800),
+		'two2.page': page(1, 800, 400, unsupportedLine())
+	}));
 }
 
 export function pdfNote(oversized = false, threePages = false): Buffer {

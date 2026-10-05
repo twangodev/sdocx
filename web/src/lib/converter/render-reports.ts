@@ -11,6 +11,7 @@ function integerIn(value: unknown, min: number, max: number): value is number {
 function isPageReport(value: unknown): value is PageRenderReport {
 	return isRecord(value)
 		&& integerIn(value.page_index, 0, Number.MAX_SAFE_INTEGER)
+		&& integerIn(value.source_page_index, 0, Number.MAX_SAFE_INTEGER)
 		&& Array.isArray(value.text_diagnostics)
 		&& value.text_diagnostics.every(issue => isRecord(issue)
 			&& typeof issue.kind === 'string' && typeof issue.family === 'string'
@@ -19,7 +20,12 @@ function isPageReport(value: unknown): value is PageRenderReport {
 		&& Array.isArray(value.object_diagnostics)
 		&& value.object_diagnostics.every(issue => isRecord(issue)
 			&& typeof issue.kind === 'string'
-			&& integerIn(issue.anchor_utf16, -0x80000000, 0x7fffffff));
+			&& integerIn(issue.anchor_utf16, -0x80000000, 0x7fffffff))
+		&& Array.isArray(value.geometry_diagnostics)
+		&& value.geometry_diagnostics.every(issue => isRecord(issue)
+			&& typeof issue.kind === 'string' && typeof issue.object_uuid === 'string'
+			&& (issue.source_offset === undefined || issue.source_offset === null
+				|| integerIn(issue.source_offset, 0, Number.MAX_SAFE_INTEGER)));
 }
 
 export function validateSvgResult(value: unknown, pageIndex: number): SvgRenderResult {
@@ -44,7 +50,7 @@ export function pageReport({ svg: _svg, ...report }: SvgRenderResult): PageRende
 }
 
 export function renderNoticeCount(reports: readonly PageRenderReport[]): number {
-	return reports.reduce((count, report) => count + report.text_diagnostics.length + report.object_diagnostics.length, 0);
+	return reports.reduce((count, report) => count + report.text_diagnostics.length + report.object_diagnostics.length + report.geometry_diagnostics.length, 0);
 }
 
 export function diagnosticLabel(kind: string): string {
