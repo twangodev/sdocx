@@ -99,9 +99,10 @@ pub use pdf::{
 };
 #[cfg(feature = "render")]
 pub use render::{
-    DocumentTextCache, ObjectDiagnostic, ObjectDiagnosticKind, PointMarkerTarget, RenderColorMode,
-    RenderOptions, RenderTheme, RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind,
-    fonts, render_document_svg, render_document_svg_with_fonts, render_layout_page_replay_svg,
+    DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, ObjectDiagnostic,
+    ObjectDiagnosticKind, PointMarkerTarget, RenderColorMode, RenderOptions, RenderTheme,
+    RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts, render_document_svg,
+    render_document_svg_with_fonts, render_layout_page_replay_svg,
     render_layout_page_replay_svg_with_fonts, render_layout_page_svg,
     render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
 };

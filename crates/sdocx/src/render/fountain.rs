@@ -152,6 +152,7 @@ mod tests {
         let page = crate::RenderedPage {
             text_diagnostics: Vec::new(),
             object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
             source_page_index: 0,
             width: 64,
             height: 64,

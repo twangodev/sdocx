@@ -20,6 +20,8 @@ mod code;
 mod embedded;
 pub mod fonts;
 mod fountain;
+mod geometry;
+pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
 #[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
 mod harfrust;
 mod marker;
@@ -89,6 +91,9 @@ pub struct RenderedPage {
     /// Embedded-object anchors and composition that could not be laid out.
     #[cfg_attr(feature = "serde", serde(default))]
     pub object_diagnostics: Vec<ObjectDiagnostic>,
+    /// Shape and line geometry not emitted during an admitted render attempt.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub geometry_diagnostics: Vec<GeometryDiagnostic>,
 }
 
 /// Reuses body-text measurement across pages without retaining rendered SVG.
@@ -396,7 +401,7 @@ impl DocumentTextCache {
                 settings,
             ));
         let body_text = PreparedBodyText::new(document, layout_page, theme, &text_renderer, self);
-        let svg = render_page_contents_svg(
+        let mut svg = render_page_contents_svg(
             page,
             &document.metadata,
             &document.metadata.media_assets,
@@ -414,6 +419,7 @@ impl DocumentTextCache {
                 svg: String::new(),
                 text_diagnostics: text_renderer.diagnostics(),
                 object_diagnostics: text_renderer.object_diagnostics(),
+                geometry_diagnostics: svg.take_geometry_diagnostics(),
             },
             svg,
         )
@@ -897,7 +903,9 @@ fn render_object(
             );
             *stroke_index += 1;
         }
-        PageObjectContent::Element(element) => render_element(svg, element, context),
+        PageObjectContent::Element(element) => {
+            render_element(svg, element, object.source_offset, context);
+        }
         PageObjectContent::Container(children) => {
             for child in children {
                 render_object(svg, context, child, stroke_index);
@@ -980,7 +988,12 @@ fn render_dot_background(
     );
 }
 
-fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionContext<'_>) {
+fn render_element(
+    svg: &mut Scene,
+    element: &PageElement,
+    source_offset: Option<usize>,
+    context: &CompositionContext<'_>,
+) {
     let CompositionContext {
         page,
         media_assets,
@@ -1004,7 +1017,13 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
             text_renderer,
         ),
         PageElement::Shape(shape) => {
-            render_shape(svg, shape, theme);
+            if let Err(kind) = render_shape(svg, shape, theme) {
+                svg.report_geometry_issue(GeometryDiagnostic {
+                    source_offset,
+                    object_uuid: shape.metadata.uuid.clone(),
+                    kind,
+                });
+            }
             if let Some(text) = &shape.text {
                 let theme = match shape.fill {
                     crate::ShapePaint::Solid(argb) => theme.on_surface(
@@ -1034,13 +1053,21 @@ fn render_element(svg: &mut Scene, element: &PageElement, context: &CompositionC
                 render_placed_text(svg, text, frame, media_assets, theme, text_renderer);
             }
         }
-        PageElement::Line(line) => render_line(svg, line, theme),
+        PageElement::Line(line) => {
+            if let Err(kind) = render_line(svg, line, theme) {
+                svg.report_geometry_issue(GeometryDiagnostic {
+                    source_offset,
+                    object_uuid: line.metadata.uuid.clone(),
+                    kind,
+                });
+            }
+        }
     }
 }
 
 // Both shape and line writers serialize the drawing path in page coordinates,
 // including rotation. Reject an unsupported path as a whole, never draw a prefix.
-fn native_svg_path(bytes: &[u8]) -> Option<Data> {
+fn native_svg_path(bytes: &[u8]) -> Result<Data, GeometryDiagnosticKind> {
     use crate::shape::NativePathCommand;
 
     fn coordinates<const N: usize>(values: [f64; N]) -> Option<[f32; N]> {
@@ -1083,22 +1110,32 @@ fn native_svg_path(bytes: &[u8]) -> Option<Data> {
             representable = false;
         }
     });
-    parsed
-        .ok()
-        .filter(|(size, supported)| representable && *supported && *size == bytes.len())?;
-    Some(data)
+    let (size, supported) = parsed.map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
+    if size != bytes.len() {
+        return Err(GeometryDiagnosticKind::InvalidPath);
+    }
+    if !supported {
+        return Err(GeometryDiagnosticKind::UnsupportedPath);
+    }
+    if !representable {
+        return Err(GeometryDiagnosticKind::UnrepresentablePath);
+    }
+    Ok(data)
 }
 
-fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, theme: RenderTheme) {
+fn render_shape(
+    svg: &mut Scene,
+    shape: &crate::NativeShape,
+    theme: RenderTheme,
+) -> Result<(), GeometryDiagnosticKind> {
     let (fill, opacity) = shape_paint(&shape.fill, theme);
     let mut style = shape_outline(&shape.style, theme)
         .fill(Paint::from_hex(&fill))
         .fill_opacity(decimal(opacity, 4));
     if !shape.path_data.is_empty() {
-        if let Some(path) = native_svg_path(&shape.path_data) {
-            svg.push(style.add(Path::new().data(path)));
-        }
-        return;
+        let path = native_svg_path(&shape.path_data)?;
+        svg.push(style.add(Path::new().data(path)));
+        return Ok(());
     }
     let bbox = shape.geometry_bbox;
     let width = bbox.x_max - bbox.x_min;
@@ -1110,7 +1147,7 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, theme: RenderTheme)
         || height <= 0.0
         || !shape.rotation_degrees.is_finite()
     {
-        return;
+        return Err(GeometryDiagnosticKind::InvalidGeometry);
     }
     let cx = bbox.x_min + width / 2.0;
     let cy = bbox.y_min + height / 2.0;
@@ -1126,7 +1163,7 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, theme: RenderTheme)
                         .ry(decimal(height / 2.0, 2)),
                 ),
             );
-            return;
+            return Ok(());
         }
         2 => vec![
             (cx, bbox.y_min),
@@ -1140,7 +1177,7 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, theme: RenderTheme)
         ],
         4 => {
             svg.push(style.add(rectangle(bbox, 0., 2)));
-            return;
+            return Ok(());
         }
         8 => vec![
             (cx, bbox.y_min),
@@ -1148,21 +1185,28 @@ fn render_shape(svg: &mut Scene, shape: &crate::NativeShape, theme: RenderTheme)
             (cx, bbox.y_max),
             (bbox.x_min, cy),
         ],
-        _ => return,
+        _ => return Err(GeometryDiagnosticKind::UnsupportedShapeTemplate),
     };
     svg.push(style.add(Polygon::new().points(&points, 2)));
+    Ok(())
 }
 
-fn render_line(svg: &mut Scene, line: &crate::NativeLine, theme: RenderTheme) {
+fn render_line(
+    svg: &mut Scene,
+    line: &crate::NativeLine,
+    theme: RenderTheme,
+) -> Result<(), GeometryDiagnosticKind> {
     // Serialized endpoints already include the native rotation.
-    if line.line_type > 2 || line.begin.iter().chain(&line.end).any(|v| !v.is_finite()) {
-        return;
+    if line.line_type > 2 {
+        return Err(GeometryDiagnosticKind::UnsupportedLineType);
+    }
+    if line.begin.iter().chain(&line.end).any(|v| !v.is_finite()) {
+        return Err(GeometryDiagnosticKind::InvalidGeometry);
     }
     let style = shape_outline(&line.style, theme).fill(Paint::None);
     if !line.path_data.is_empty() {
-        if let Some(path) = native_svg_path(&line.path_data) {
-            svg.push(style.add(Path::new().data(path)));
-        }
+        let path = native_svg_path(&line.path_data)?;
+        svg.push(style.add(Path::new().data(path)));
     } else if line.line_type == 0 {
         svg.push(
             style.add(
@@ -1173,7 +1217,10 @@ fn render_line(svg: &mut Scene, line: &crate::NativeLine, theme: RenderTheme) {
                     .y2(line.end[1]),
             ),
         );
+    } else {
+        return Err(GeometryDiagnosticKind::MissingLinePath);
     }
+    Ok(())
 }
 
 fn rectangle(bbox: BoundingBox, offset_y: f64, precision: usize) -> Rectangle {
@@ -2886,7 +2933,10 @@ mod tests {
             bytes.extend(x.to_le_bytes());
             bytes.extend(y.to_le_bytes());
         }
-        assert!(super::native_svg_path(&bytes).is_none());
+        assert!(matches!(
+            super::native_svg_path(&bytes),
+            Err(super::GeometryDiagnosticKind::UnrepresentablePath)
+        ));
     }
 
     fn page_with_uncolored_stroke() -> Page {

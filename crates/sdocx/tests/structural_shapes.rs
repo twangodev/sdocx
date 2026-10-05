@@ -118,6 +118,12 @@ fn hidden_shapes_and_lines_are_retained_outside_the_visible_page() {
         let stored = &parsed.stored_pages[0].page.layers.layers[0].objects[0];
         assert_eq!(stored.payload(&raw).unwrap(), payload);
         assert!(!stored.base_metadata(&raw).unwrap().visible);
+        #[cfg(feature = "render")]
+        assert!(
+            sdocx::render_document_svg(&parsed.document, &Default::default())[0]
+                .geometry_diagnostics
+                .is_empty()
+        );
     }
 }
 
@@ -139,6 +145,21 @@ fn has_shape_warning(parsed: &sdocx::ParsedDocument) -> bool {
         .diagnostics
         .iter()
         .any(|d| d.code == DiagnosticCode::UnsupportedShapeFeature)
+}
+#[cfg(feature = "render")]
+fn assert_geometry_issue(
+    parsed: &sdocx::ParsedDocument,
+    rendered: &sdocx::RenderedPage,
+    kind: sdocx::GeometryDiagnosticKind,
+) {
+    assert_eq!(
+        rendered.geometry_diagnostics,
+        [sdocx::GeometryDiagnostic {
+            source_offset: parsed.document.pages[0].objects[0].source_offset,
+            object_uuid: "sh".into(),
+            kind,
+        }]
+    );
 }
 fn assert_format(kind: u8, payload: &[u8]) {
     let error = sdocx::parse_bytes(&single(kind, payload)).unwrap_err();
@@ -264,8 +285,13 @@ fn missing_effects_use_native_defaults_and_unknown_templates_remain_shapes() {
         assert_eq!(has_shape_warning(&parsed), kind == 900);
         #[cfg(feature = "render")]
         if kind == 900 {
-            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-            assert!(!svg.contains("stroke-width=\"2.00\""));
+            let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(!rendered[0].svg.contains("stroke-width=\"2.00\""));
+            assert_geometry_issue(
+                &parsed,
+                &rendered[0],
+                sdocx::GeometryDiagnosticKind::UnsupportedShapeTemplate,
+            );
         }
     }
 }
@@ -406,20 +432,34 @@ fn path_counts_coordinates_and_truncation_are_bounded() {
 
 #[test]
 fn unknown_line_types_or_path_verbs_do_not_become_straight_lines() {
-    for payload in [
+    for (index, payload) in [
         line(88, 0, &[]),
         line(1, 0, &[]),
         line(2, 8, &native_path(&[(99, &[])])),
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let parsed = sdocx::parse_bytes_detailed(&single(8, &payload)).unwrap();
         assert!(has_shape_warning(&parsed));
         assert_eq!(parsed.document.pages[0].elements().count(), 1);
         #[cfg(feature = "render")]
         {
-            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-            assert!(!svg.contains("<line "));
-            assert!(!svg.contains("<path "));
+            let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(!rendered[0].svg.contains("<line "));
+            assert!(!rendered[0].svg.contains("<path "));
+            assert_geometry_issue(
+                &parsed,
+                &rendered[0],
+                [
+                    sdocx::GeometryDiagnosticKind::UnsupportedLineType,
+                    sdocx::GeometryDiagnosticKind::MissingLinePath,
+                    sdocx::GeometryDiagnosticKind::UnsupportedPath,
+                ][index],
+            );
         }
+        #[cfg(not(feature = "render"))]
+        let _ = index;
     }
 }
 
@@ -512,6 +552,25 @@ fn embedded_shape_text_preserves_unicode_and_keeps_fill_aligned() {
     {
         let pages = sdocx::render_document_svg(&parsed.document, &Default::default());
         let svg = roxmltree::Document::parse(&pages[0].svg).unwrap();
+        let source: String = svg
+            .descendants()
+            .filter(|node| node.has_tag_name("tspan"))
+            .filter_map(|node| node.text())
+            .collect();
+        assert_eq!(source, "A日本語😀");
+
+        let mut document = parsed.document.clone();
+        let PageElement::Shape(shape) = document.pages[0].elements_mut().next().unwrap() else {
+            panic!("expected shape")
+        };
+        shape.path_data = native_path(&[(1, &[1.0, 2.0]), (99, &[])]);
+        let rendered = sdocx::render_document_svg(&document, &Default::default());
+        assert_geometry_issue(
+            &parsed,
+            &rendered[0],
+            sdocx::GeometryDiagnosticKind::UnsupportedPath,
+        );
+        let svg = roxmltree::Document::parse(&rendered[0].svg).unwrap();
         let source: String = svg
             .descendants()
             .filter(|node| node.has_tag_name("tspan"))
@@ -977,7 +1036,9 @@ fn saved_vector_paths_keep_fractional_commands_and_source_bytes() {
     ]);
     for (kind, payload) in [(7, shape_with_path(4, &path)), (8, line(2, 8, &path))] {
         let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
-        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+        assert!(rendered[0].geometry_diagnostics.is_empty());
+        let svg = &rendered[0].svg;
         let xml = roxmltree::Document::parse(svg).unwrap();
         let paths: Vec<_> = xml
             .descendants()
@@ -1076,12 +1137,15 @@ fn saved_vector_straight_line_attributes_keep_f64_endpoints() {
 fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
     let mut trailing = native_path(&[(1, &[1.0, 2.0]), (2, &[3.0, 4.0])]);
     trailing.push(0xff);
-    for path in [
+    for (index, path) in [
         native_path(&[(1, &[1.0, 2.0]), (99, &[])]),
         native_path(&[(1, &[1.0, 2.0]), (5, &[0.0; 6])]),
         native_path(&[(2, &[1.0, 2.0])]),
         trailing,
-    ] {
+    ]
+    .into_iter()
+    .enumerate()
+    {
         let parsed = sdocx::parse_bytes_detailed(&single(7, &shape_with_path(4, &path))).unwrap();
         assert!(has_shape_warning(&parsed));
         assert_eq!(
@@ -1090,10 +1154,21 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
         );
         #[cfg(feature = "render")]
         {
-            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-            assert!(!svg.contains("<path "));
-            assert!(!svg.contains("rotate("));
+            let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(!rendered[0].svg.contains("<path "));
+            assert!(!rendered[0].svg.contains("rotate("));
+            assert_geometry_issue(
+                &parsed,
+                &rendered[0],
+                if index == 3 {
+                    sdocx::GeometryDiagnosticKind::InvalidPath
+                } else {
+                    sdocx::GeometryDiagnosticKind::UnsupportedPath
+                },
+            );
         }
+        #[cfg(not(feature = "render"))]
+        let _ = index;
     }
     let path = native_path(&[(1, &[1.0, 2.0]), (2, &[3.0, 4.0])]);
     for end in 1..path.len() {
@@ -1108,12 +1183,107 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
         let path = native_path(&[(1, &[1.0, 2.0]), (2, &[f64::MAX, 4.0])]);
         for (kind, payload) in [(7, shape_with_path(4, &path)), (8, line(0, 8, &path))] {
             let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
-            let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
-            assert!(!svg.contains("<path "));
-            assert!(!svg.contains("<line "));
-            assert!(!svg.contains("stroke=\"#0000ff\""));
+            let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(!rendered[0].svg.contains("<path "));
+            assert!(!rendered[0].svg.contains("<line "));
+            assert!(!rendered[0].svg.contains("stroke=\"#0000ff\""));
+            assert_geometry_issue(
+                &parsed,
+                &rendered[0],
+                sdocx::GeometryDiagnosticKind::UnrepresentablePath,
+            );
         }
     }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn geometry_reports_follow_admitted_roots_and_reset_for_cached_replay() {
+    use sdocx::{GeometryDiagnostic, GeometryDiagnosticKind, PageObject, PageObjectContent};
+
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &shape(900))).unwrap();
+    let mut document = parsed.document;
+    let mut child = document.pages[0].objects.remove(0);
+    child.render_layer = sdocx::ObjectRenderLayer::Top;
+    let mut excluded = child.clone();
+    excluded.source_offset = None;
+    let PageObjectContent::Element(PageElement::Shape(shape)) = &mut excluded.content else {
+        panic!("expected shape")
+    };
+    shape.metadata.uuid = "excluded".into();
+    document.pages[0].objects = vec![
+        excluded,
+        PageObject {
+            render_layer: sdocx::ObjectRenderLayer::Base,
+            source_offset: None,
+            content: PageObjectContent::Container(vec![child.clone()]),
+        },
+    ];
+    let layout = sdocx::layout_document(&document);
+    let fonts = sdocx::fonts::FontBook::default();
+    let mut cache = sdocx::DocumentTextCache::default();
+    for replay in [false, true, false] {
+        let rendered = if replay {
+            cache.render_layout_page_replay_svg(&document, &layout, 0, &Default::default(), &fonts)
+        } else {
+            cache.render_layout_page_svg(&document, &layout, 0, &Default::default(), &fonts)
+        }
+        .unwrap();
+        assert_eq!(
+            rendered.geometry_diagnostics,
+            [GeometryDiagnostic {
+                source_offset: child.source_offset,
+                object_uuid: "sh".into(),
+                kind: GeometryDiagnosticKind::UnsupportedShapeTemplate,
+            }]
+        );
+        assert!(rendered.object_diagnostics.is_empty());
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn mutated_geometry_reports_invalid_paths_and_bounds_without_changing_source() {
+    use sdocx::GeometryDiagnosticKind;
+
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &shape(4))).unwrap();
+    for (path, invalid_bounds, expected) in [
+        (vec![1, 0], false, GeometryDiagnosticKind::InvalidPath),
+        (
+            native_path(&[(1, &[f64::NAN, 0.0])]),
+            false,
+            GeometryDiagnosticKind::InvalidPath,
+        ),
+        (vec![], true, GeometryDiagnosticKind::InvalidGeometry),
+    ] {
+        let mut document = parsed.document.clone();
+        let PageElement::Shape(shape) = document.pages[0].elements_mut().next().unwrap() else {
+            panic!("expected shape")
+        };
+        shape.path_data = path.clone();
+        if invalid_bounds {
+            shape.geometry_bbox.x_max = shape.geometry_bbox.x_min;
+        }
+        let rendered = sdocx::render_document_svg(&document, &Default::default());
+        assert_geometry_issue(&parsed, &rendered[0], expected);
+        assert_eq!(
+            as_shape(document.pages[0].elements().next().unwrap()).path_data,
+            path
+        );
+    }
+}
+
+#[cfg(all(feature = "render", feature = "serde"))]
+#[test]
+fn rendered_pages_without_geometry_reports_still_deserialize() {
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &shape(4))).unwrap();
+    let rendered = sdocx::render_document_svg(&parsed.document, &Default::default()).remove(0);
+    let mut old = serde_json::to_value(&rendered).unwrap();
+    old.as_object_mut().unwrap().remove("geometry_diagnostics");
+    assert_eq!(
+        serde_json::from_value::<sdocx::RenderedPage>(old).unwrap(),
+        rendered
+    );
 }
 
 #[cfg(feature = "render")]

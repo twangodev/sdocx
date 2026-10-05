@@ -139,6 +139,7 @@ children!(Group, Definitions, ClipPath, LinearGradient);
 pub(super) struct Scene {
     elements: Vec<Node>,
     next_id: usize,
+    geometry_diagnostics: Vec<super::GeometryDiagnostic>,
     #[cfg(feature = "pdf")]
     native_text: Option<super::text::native::NativeTextRegistry>,
     #[cfg(feature = "pdf")]
@@ -149,6 +150,7 @@ impl Scene {
         Self {
             elements: vec![root.into()],
             next_id: 0,
+            geometry_diagnostics: Vec::new(),
             #[cfg(feature = "pdf")]
             native_text: None,
             #[cfg(feature = "pdf")]
@@ -231,6 +233,12 @@ impl Scene {
         } else {
             self.elements.last_mut().unwrap().append(node);
         }
+    }
+    pub fn report_geometry_issue(&mut self, issue: super::GeometryDiagnostic) {
+        self.geometry_diagnostics.push(issue);
+    }
+    pub fn take_geometry_diagnostics(&mut self) -> Vec<super::GeometryDiagnostic> {
+        std::mem::take(&mut self.geometry_diagnostics)
     }
     pub fn scope(&mut self, element: impl Container, draw: impl FnOnce(&mut Self)) {
         let element = element.into();
