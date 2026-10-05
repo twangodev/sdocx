@@ -436,10 +436,10 @@ impl Path {
     }
 }
 impl Polygon {
-    pub fn points(mut self, points: &[(f64, f64)], places: usize) -> Self {
+    pub fn points_unrounded(mut self, points: &[(f64, f64)]) -> Self {
         let pairs = points
             .iter()
-            .map(|(x, y)| Some((decimal(*x, places)?.text(), decimal(*y, places)?.text())))
+            .map(|(x, y)| Some((Number::new(*x)?.text(), Number::new(*y)?.text())))
             .collect::<Option<Vec<_>>>();
         self.0
             .optional("points", pairs.map(|pairs| Value::from(pairs).to_string()));

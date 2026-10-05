@@ -89,6 +89,35 @@ fn shape(kind: u32) -> Vec<u8> {
     bytes.extend(frame(7, 32, &shape_fixed(kind, 30.0), &shape_fields()));
     bytes
 }
+
+#[cfg(feature = "render")]
+const FRACTIONAL_BOUNDS: [f64; 4] = [
+    1025.0 / 1024.0,
+    2049.0 / 1024.0,
+    1027.0 / 1024.0,
+    2052.0 / 1024.0,
+];
+
+#[cfg(feature = "render")]
+fn svg_number(node: roxmltree::Node<'_, '_>, name: &str) -> f64 {
+    node.attribute(name).unwrap().parse().unwrap()
+}
+
+#[cfg(feature = "render")]
+fn shape_outline_node<'a, 'input>(
+    xml: &'a roxmltree::Document<'input>,
+) -> roxmltree::Node<'a, 'input> {
+    xml.descendants()
+        .find(|node| node.attribute("stroke") == Some("#0000ff"))
+        .unwrap()
+}
+
+#[cfg(feature = "render")]
+fn shape_with_geometry(kind: u32, bounds: [f64; 4], rotation: f32) -> Vec<u8> {
+    let mut fixed = shape_fixed(kind, rotation);
+    fixed[4..36].copy_from_slice(&numbers(&bounds));
+    [base(0.0), outline(), frame(7, 32, &fixed, &shape_fields())].concat()
+}
 fn line_fixed(kind: u8) -> Vec<u8> {
     let mut fixed = vec![kind, 0, 0];
     fixed.extend(numbers(&[90.0, 45.0, -10.0, 45.0]));
@@ -222,12 +251,7 @@ fn decodes_shape_geometry_rotation_and_independent_outline_and_fill() {
         svg_support::assert_svg_element(
             svg,
             "rect",
-            &[
-                ("x", "-10.00"),
-                ("y", "0.00"),
-                ("width", "100.00"),
-                ("height", "60.00"),
-            ],
+            &[("x", "-10"), ("y", "0"), ("width", "100"), ("height", "60")],
         );
         svg_support::assert_svg_element(
             svg,
@@ -237,13 +261,179 @@ fn decodes_shape_geometry_rotation_and_independent_outline_and_fill() {
                 ("fill-opacity", "0.2510"),
                 ("stroke", "#0000ff"),
                 ("stroke-opacity", "0.5020"),
-                ("stroke-width", "3.50"),
+                ("stroke-width", "3.5"),
                 ("stroke-linecap", "round"),
                 ("stroke-linejoin", "bevel"),
             ],
         );
-        assert!(svg.contains("rotate(30.00 40.00 30.00)"));
+        assert!(svg.contains("rotate(30 40 30)"));
     }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn pathless_shape_templates_keep_positive_fractional_geometry() {
+    let bounds = FRACTIONAL_BOUNDS;
+    let center = [1026.0 / 1024.0, 4101.0 / 2048.0];
+    for (kind, tag) in [
+        (1, "ellipse"),
+        (2, "polygon"),
+        (3, "polygon"),
+        (4, "rect"),
+        (8, "polygon"),
+    ] {
+        let parsed =
+            sdocx::parse_bytes_detailed(&single(7, &shape_with_geometry(kind, bounds, 0.0)))
+                .unwrap();
+        let retained = as_shape(parsed.document.pages[0].elements().next().unwrap());
+        assert_eq!(
+            [
+                retained.geometry_bbox.x_min,
+                retained.geometry_bbox.y_min,
+                retained.geometry_bbox.x_max,
+                retained.geometry_bbox.y_max
+            ]
+            .map(f64::to_bits),
+            bounds.map(f64::to_bits)
+        );
+        assert!(retained.path_data.is_empty());
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let node = shape_outline_node(&xml)
+            .children()
+            .find(|node| node.has_tag_name(tag))
+            .unwrap();
+        let number = |name| svg_number(node, name).to_bits();
+        match kind {
+            1 => assert_eq!(
+                ["cx", "cy", "rx", "ry"].map(number),
+                [center[0], center[1], 1.0 / 1024.0, 3.0 / 2048.0].map(f64::to_bits)
+            ),
+            4 => assert_eq!(
+                ["x", "y", "width", "height"].map(number),
+                [bounds[0], bounds[1], 2.0 / 1024.0, 3.0 / 1024.0].map(f64::to_bits)
+            ),
+            _ => {
+                let expected = match kind {
+                    2 => vec![
+                        (center[0], bounds[1]),
+                        (bounds[2], bounds[3]),
+                        (bounds[0], bounds[3]),
+                    ],
+                    3 => vec![
+                        (bounds[0], bounds[1]),
+                        (bounds[2], bounds[3]),
+                        (bounds[0], bounds[3]),
+                    ],
+                    8 => vec![
+                        (center[0], bounds[1]),
+                        (bounds[2], center[1]),
+                        (center[0], bounds[3]),
+                        (bounds[0], center[1]),
+                    ],
+                    _ => unreachable!(),
+                };
+                let actual: Vec<_> =
+                    svgtypes::PointsParser::from(node.attribute("points").unwrap()).collect();
+                assert_eq!(actual, expected, "template {kind}");
+            }
+        }
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn pathless_shape_rotation_keeps_fractional_angle_and_pivot() {
+    let angle = 1.0_f32 / 1024.0;
+    let parsed = sdocx::parse_bytes_detailed(&single(
+        7,
+        &shape_with_geometry(4, FRACTIONAL_BOUNDS, angle),
+    ))
+    .unwrap();
+    assert_eq!(
+        as_shape(parsed.document.pages[0].elements().next().unwrap())
+            .rotation_degrees
+            .to_bits(),
+        angle.to_bits()
+    );
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    let xml = roxmltree::Document::parse(svg).unwrap();
+    let group = shape_outline_node(&xml);
+    let tokens: Vec<_> = svgtypes::TransformListParser::from(group.attribute("transform").unwrap())
+        .map(Result::unwrap)
+        .collect();
+    use svgtypes::TransformListToken::{Rotate, Translate};
+    assert_eq!(
+        tokens,
+        [
+            Translate {
+                tx: 1026.0 / 1024.0,
+                ty: 4101.0 / 2048.0
+            },
+            Rotate {
+                angle: f64::from(angle)
+            },
+            Translate {
+                tx: -1026.0 / 1024.0,
+                ty: -4101.0 / 2048.0
+            },
+        ]
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn shape_and_line_outlines_keep_positive_fractional_width() {
+    let width = 1.0_f32 / 1024.0;
+    let mut fields = sized(&color(true, 0, 0xff0000ff));
+    fields.extend(sized(&style(width)));
+    for (kind, geometry) in [
+        (7, frame(7, 0, &shape_fixed(4, 0.0), &[])),
+        (8, frame(8, 0, &line_fixed(0), &[])),
+    ] {
+        let payload = [base(0.0), frame(6, 12, &base_fixed(), &fields), geometry].concat();
+        let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+        let retained = match parsed.document.pages[0].elements().next().unwrap() {
+            PageElement::Shape(shape) => shape.style.width,
+            PageElement::Line(line) => line.style.width,
+            _ => unreachable!(),
+        };
+        assert_eq!(retained.to_bits(), width.to_bits());
+        let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        let group = shape_outline_node(&xml);
+        let emitted = svg_number(group, "stroke-width");
+        assert_eq!(emitted.to_bits(), f64::from(width).to_bits());
+        assert!(group.children().any(|node| node.is_element()));
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn positive_fractional_shape_extent_survives_vector_pdf_conversion() {
+    let parsed =
+        sdocx::parse_bytes_detailed(&single(7, &shape_with_geometry(4, FRACTIONAL_BOUNDS, 0.0)))
+            .unwrap();
+    let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+    let bytes =
+        sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+    let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+    let operations =
+        lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+            .unwrap()
+            .operations;
+    assert!(operations.iter().any(|operation| operation.operator == "S"));
+    assert!(operations.iter().any(|operation| {
+        operation.operator == "w" && operation.operands[0].as_float().unwrap() > 0.0
+    }));
+    assert!(!pdf.objects.values().any(|object| {
+        object.as_stream().is_ok_and(|stream| {
+            stream
+                .dict
+                .get(b"Subtype")
+                .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+        })
+    }));
 }
 
 #[test]
@@ -286,7 +476,11 @@ fn missing_effects_use_native_defaults_and_unknown_templates_remain_shapes() {
         #[cfg(feature = "render")]
         if kind == 900 {
             let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
-            assert!(!rendered[0].svg.contains("stroke-width=\"2.00\""));
+            let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
+            assert!(
+                xml.descendants()
+                    .all(|node| node.attribute("stroke-width").is_none())
+            );
             assert_geometry_issue(
                 &parsed,
                 &rendered[0],

@@ -1151,16 +1151,20 @@ fn render_shape(
     }
     let cx = bbox.x_min + width / 2.0;
     let cy = bbox.y_min + height / 2.0;
-    style = style.transformed(Transform::rotate(shape.rotation_degrees.into(), cx, cy, 2));
+    style = style.transformed(Transform::rotate_unrounded(
+        shape.rotation_degrees.into(),
+        cx,
+        cy,
+    ));
     let points = match shape.shape_type {
         1 => {
             svg.push(
                 style.add(
                     Ellipse::new()
-                        .cx(decimal(cx, 2))
-                        .cy(decimal(cy, 2))
-                        .rx(decimal(width / 2.0, 2))
-                        .ry(decimal(height / 2.0, 2)),
+                        .cx(cx)
+                        .cy(cy)
+                        .rx(width / 2.0)
+                        .ry(height / 2.0),
                 ),
             );
             return Ok(());
@@ -1176,7 +1180,15 @@ fn render_shape(
             (bbox.x_min, bbox.y_max),
         ],
         4 => {
-            svg.push(style.add(rectangle(bbox, 0., 2)));
+            svg.push(
+                style.add(
+                    Rectangle::new()
+                        .x(bbox.x_min)
+                        .y(bbox.y_min)
+                        .width(width)
+                        .height(height),
+                ),
+            );
             return Ok(());
         }
         8 => vec![
@@ -1187,7 +1199,7 @@ fn render_shape(
         ],
         _ => return Err(GeometryDiagnosticKind::UnsupportedShapeTemplate),
     };
-    svg.push(style.add(Polygon::new().points(&points, 2)));
+    svg.push(style.add(Polygon::new().points_unrounded(&points)));
     Ok(())
 }
 
@@ -1266,7 +1278,7 @@ fn shape_outline(style: &crate::ShapeStyle, theme: RenderTheme) -> Group {
     Group::new()
         .stroke(Paint::from_hex(&paint))
         .stroke_opacity(decimal(opacity, 4))
-        .stroke_width(decimal(width.into(), 2))
+        .stroke_width(width)
         .line_cap(cap)
         .line_join(join)
 }
