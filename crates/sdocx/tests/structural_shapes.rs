@@ -1659,6 +1659,12 @@ mod gradient_transport_tests {
                 .find(|n| n.attribute("fill") == Some(fill_ref.as_str()))
                 .unwrap();
             assert_eq!(group.attribute("stroke"), Some(outline_ref.as_str()));
+            let geometry_tag = if saved_path.is_empty() {
+                "rect"
+            } else {
+                "path"
+            };
+            assert!(group.children().any(|node| node.has_tag_name(geometry_tag)));
             for (node, opacity, color) in [
                 (linear, 128.0 / 255.0, "#ff0000"),
                 (radial, 64.0 / 255.0, "#00ff00"),
@@ -1752,7 +1758,11 @@ mod gradient_transport_tests {
             assert_eq!(rendered[0].paint_diagnostics, [expected]);
             assert!(rendered[0].geometry_diagnostics.is_empty());
             let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
-            assert!(xml.descendants().any(|n| n.has_tag_name("rect")));
+            svg_support::assert_svg_element(
+                &rendered[0].svg,
+                "rect",
+                &[("x", "10.2500000001"), ("width", "300"), ("height", "50")],
+            );
             let (attribute, color) = if role == Fill {
                 ("stroke", "#0000ff")
             } else {
