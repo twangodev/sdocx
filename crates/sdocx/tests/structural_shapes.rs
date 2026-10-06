@@ -1560,3 +1560,290 @@ fn assert_svg_path(svg: &str, expected: &str) {
             .any(|data| commands(data) == expected)
     );
 }
+
+#[cfg(feature = "render")]
+mod gradient_transport_tests {
+    use super::*;
+    use PaintRole::{Fill, Outline};
+    use sdocx::{
+        PaintDiagnostic, PaintDiagnosticKind as Kind, PaintRole, ShapePaintSource,
+        parse_bytes as parse, render_document_svg as render,
+    };
+
+    fn effect(outline: bool) -> Vec<u8> {
+        let shift = usize::from(outline);
+        let mut bytes = color(outline, 1, 0);
+        bytes[1] = 1;
+        bytes[6 + shift] = u8::from(outline);
+        let position = if outline {
+            [0.25_f32.to_bits(), 0.75_f32.to_bits()]
+        } else {
+            [0x7fc12345, 0x80000000]
+        };
+        bytes[9 + shift..17 + shift].copy_from_slice(&position.map(u32::to_le_bytes).concat());
+        bytes[17 + shift] = 2;
+        let colors: [u32; 2] = if outline {
+            [0x4000ff00, 0xffffff00]
+        } else {
+            [0x80ff0000, 0xff0000ff]
+        };
+        for (argb, offset) in colors.into_iter().zip([0.0_f32, 1.0]) {
+            bytes.extend(argb.to_le_bytes());
+            bytes.extend(offset.to_le_bytes());
+        }
+        bytes
+    }
+    fn payload(fill: &[u8], outline: &[u8], path: &[u8], text: bool) -> Vec<u8> {
+        let mut fixed = shape_fixed(4, 37.25);
+        fixed[4..36].copy_from_slice(&numbers(&[10.2500000001, 20.5, 310.2500000001, 70.5]));
+        if !path.is_empty() {
+            fixed.splice(40..45, [sized(path), vec![0]].concat());
+        }
+        let mut fields = if text { text_common("kept") } else { vec![] };
+        let mut fill_field = sized(fill);
+        fill_field.insert(4, 1);
+        fields.extend(fill_field);
+        let mut outline_fields = sized(outline);
+        outline_fields.extend(sized(&style(3.5)));
+        [
+            base(0.0),
+            frame(6, 12, &base_fixed(), &outline_fields),
+            frame(7, if text { 33 } else { 32 }, &fixed, &fields),
+        ]
+        .concat()
+    }
+    fn gradient_line() -> Vec<u8> {
+        [
+            base(90.0),
+            frame(6, 4, &base_fixed(), &sized(&effect(true))),
+            frame(8, 0, &line_fixed(0), &[]),
+        ]
+        .concat()
+    }
+
+    #[test]
+    fn parsed_gradient_refs_alpha_frame_and_saved_source_survive_svg() {
+        for saved_path in [
+            vec![],
+            native_path(&[(1, &[10.25, 20.5]), (2, &[310.25, 70.5]), (6, &[])]),
+        ] {
+            let document = parse(&single(
+                7,
+                &payload(&effect(false), &effect(true), &saved_path, false),
+            ))
+            .unwrap();
+            let shape = as_shape(document.pages[0].elements().next().unwrap());
+            let before = (shape.fill_source.clone(), shape.style.paint_source.clone());
+            let Some(ShapePaintSource::Color(source)) = &shape.fill_source else {
+                panic!("color source");
+            };
+            assert_eq!(source.position.map(|p| p.bits()), [0x7fc12345, 0x80000000]);
+            assert_eq!(source.stops.len(), 2);
+            assert_eq!(source.stops[1].position.bits(), 0x3f800000);
+            let rendered = render(&document, &Default::default());
+            assert!(rendered[0].paint_diagnostics.is_empty());
+            assert!(rendered[0].geometry_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
+            let linear = xml
+                .descendants()
+                .find(|n| n.has_tag_name("linearGradient"))
+                .unwrap();
+            let radial = xml
+                .descendants()
+                .find(|n| n.has_tag_name("radialGradient"))
+                .unwrap();
+            let fill_ref = format!("url(#{})", linear.attribute("id").unwrap());
+            let outline_ref = format!("url(#{})", radial.attribute("id").unwrap());
+            let group = xml
+                .descendants()
+                .find(|n| n.attribute("fill") == Some(fill_ref.as_str()))
+                .unwrap();
+            assert_eq!(group.attribute("stroke"), Some(outline_ref.as_str()));
+            for (node, opacity, color) in [
+                (linear, 128.0 / 255.0, "#ff0000"),
+                (radial, 64.0 / 255.0, "#00ff00"),
+            ] {
+                assert_eq!(node.attribute("gradientUnits"), Some("userSpaceOnUse"));
+                let stops = node
+                    .children()
+                    .filter(|n| n.has_tag_name("stop"))
+                    .collect::<Vec<_>>();
+                assert_eq!(stops.len(), 2);
+                assert_eq!(stops[0].attribute("stop-color"), Some(color));
+                assert_eq!(svg_number(stops[0], "stop-opacity"), opacity);
+                assert_eq!(
+                    node.attribute("gradientTransform"),
+                    if saved_path.is_empty() {
+                        Some("rotate(-37.25 160.2500000001 45.5)")
+                    } else {
+                        None
+                    }
+                );
+            }
+            assert_eq!(svg_number(group, "fill-opacity"), 1.0);
+            assert_eq!(svg_number(group, "stroke-opacity"), 1.0);
+            assert_eq!(
+                group.attribute("transform"),
+                if saved_path.is_empty() {
+                    Some("rotate(37.25 160.2500000001 45.5)")
+                } else {
+                    None
+                }
+            );
+            assert_eq!(
+                ["x1", "y1", "x2", "y2"].map(|name| svg_number(linear, name)),
+                [10.25, 45.5, 310.25, 45.5]
+            );
+            // Native dispatcher capture, hosted Linux libm, gradient-reviewed.json:
+            // SHA256 30c9be10e1657208277d7e6f2a3529e3b55003816896142de25ed6c8b670f222.
+            for (name, bits) in [("cx", 1119483812), ("cy", 1092671740), ("r", 1134039470)] {
+                assert!((svg_number(radial, name) as f32).to_bits().abs_diff(bits) <= 2);
+            }
+            assert_eq!(
+                (shape.fill_source.clone(), shape.style.paint_source.clone()),
+                before
+            );
+            assert_eq!(shape.path_data, saved_path);
+        }
+    }
+
+    #[test]
+    fn paint_rejection_keeps_other_component_text_and_exact_identity() {
+        for (case, (role, kind)) in [
+            (Fill, Kind::InvalidGradient),
+            (Outline, Kind::InvalidGradient),
+            (Fill, Kind::UnsupportedGradientFrame),
+            (Fill, Kind::MissingPaintSource),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut fill = effect(false);
+            let mut outline = effect(true);
+            if case == 0 {
+                fill[22..26].copy_from_slice(&0.8_f32.to_le_bytes());
+                fill[30..34].copy_from_slice(&0.2_f32.to_le_bytes());
+            }
+            if case == 1 {
+                outline[23..27].copy_from_slice(&f32::NAN.to_le_bytes());
+            }
+            if role == Fill {
+                outline = color(true, 0, 0xff0000ff);
+            } else {
+                fill = color(false, 0, 0xffff0000);
+            }
+            let mut document = parse(&single(7, &payload(&fill, &outline, &[], true))).unwrap();
+            let PageElement::Shape(shape) = document.pages[0].elements_mut().next().unwrap() else {
+                panic!("shape");
+            };
+            if case == 2 {
+                shape.metadata.bbox.x_min += 1.0;
+            }
+            if case == 3 {
+                shape.fill_source = None;
+            }
+            let expected = PaintDiagnostic {
+                source_offset: document.pages[0].objects[0].source_offset,
+                object_uuid: "sh".into(),
+                role,
+                kind,
+            };
+            let rendered = render(&document, &Default::default());
+            assert_eq!(rendered[0].paint_diagnostics, [expected]);
+            assert!(rendered[0].geometry_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
+            assert!(xml.descendants().any(|n| n.has_tag_name("rect")));
+            let (attribute, color) = if role == Fill {
+                ("stroke", "#0000ff")
+            } else {
+                ("fill", "#ff0000")
+            };
+            assert!(
+                xml.descendants()
+                    .any(|n| n.attribute(attribute) == Some(color))
+            );
+            assert!(
+                xml.descendants()
+                    .any(|n| n.has_tag_name("tspan") && n.text() == Some("kept"))
+            );
+            assert!(
+                !xml.descendants()
+                    .any(|n| n.has_tag_name("linearGradient") || n.has_tag_name("radialGradient"))
+            );
+        }
+        let document = parse(&single(8, &gradient_line())).unwrap();
+        let rendered = render(&document, &Default::default());
+        assert_eq!(
+            rendered[0].paint_diagnostics,
+            [PaintDiagnostic {
+                source_offset: document.pages[0].objects[0].source_offset,
+                object_uuid: "sh".into(),
+                role: Outline,
+                kind: Kind::UnsupportedGradientFrame
+            }]
+        );
+        assert!(rendered[0].geometry_diagnostics.is_empty());
+        svg_support::assert_svg_element(&rendered[0].svg, "line", &[("x1", "90"), ("y1", "45")]);
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn parsed_gradients_remain_pdf_shadings_and_repeat_paint_reports() {
+        let document = parse(&archive(&page(
+            &[vec![
+                object(7, &payload(&effect(false), &effect(true), &[], false), &[]),
+                object(8, &gradient_line(), &[]),
+            ]],
+            0,
+            &[],
+        )))
+        .unwrap();
+        let layout = sdocx::layout_document(&document);
+        let fonts = sdocx::fonts::FontBook::default();
+        let options = sdocx::PdfOptions::from_font_book(&fonts);
+        let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+            &document,
+            &layout,
+            &[0, 0],
+            &Default::default(),
+            &options,
+            &fonts,
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&output.bytes).unwrap();
+        let dictionaries = pdf
+            .objects
+            .values()
+            .filter_map(|o| {
+                o.as_dict()
+                    .ok()
+                    .or_else(|| o.as_stream().ok().map(|s| &s.dict))
+            })
+            .collect::<Vec<_>>();
+        for kind in [2, 3] {
+            assert!(dictionaries.iter().any(|d| {
+                d.get(b"ShadingType")
+                    .is_ok_and(|v| v.as_i64().is_ok_and(|value| value == kind))
+            }));
+        }
+        assert!(!dictionaries.iter().any(|d| {
+            d.get(b"Subtype")
+                .is_ok_and(|v| v.as_name().is_ok_and(|name| name == b"Image"))
+        }));
+        assert_eq!(output.pages.len(), 2);
+        let svg = sdocx::render_layout_page_svg_with_fonts(
+            &document,
+            &layout,
+            0,
+            &Default::default(),
+            &fonts,
+        )
+        .unwrap();
+        assert_eq!(svg.paint_diagnostics.len(), 1);
+        for selected in output.pages {
+            assert_eq!((selected.page_index, selected.source_page_index), (0, 0));
+            assert_eq!(selected.paint_diagnostics, svg.paint_diagnostics);
+            assert!(selected.geometry_diagnostics.is_empty());
+        }
+    }
+}
