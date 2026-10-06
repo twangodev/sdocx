@@ -25,6 +25,12 @@ function isPageReport(value: unknown): value is PageRenderReport {
 		&& value.geometry_diagnostics.every(issue => isRecord(issue)
 			&& typeof issue.kind === 'string' && typeof issue.object_uuid === 'string'
 			&& (issue.source_offset === undefined || issue.source_offset === null
+				|| integerIn(issue.source_offset, 0, Number.MAX_SAFE_INTEGER)))
+		&& Array.isArray(value.paint_diagnostics)
+		&& value.paint_diagnostics.every(issue => isRecord(issue)
+			&& typeof issue.kind === 'string' && typeof issue.object_uuid === 'string'
+			&& (issue.role === 'Fill' || issue.role === 'Outline')
+			&& (issue.source_offset === undefined || issue.source_offset === null
 				|| integerIn(issue.source_offset, 0, Number.MAX_SAFE_INTEGER)));
 }
 
@@ -50,7 +56,7 @@ export function pageReport({ svg: _svg, ...report }: SvgRenderResult): PageRende
 }
 
 export function renderNoticeCount(reports: readonly PageRenderReport[]): number {
-	return reports.reduce((count, report) => count + report.text_diagnostics.length + report.object_diagnostics.length + report.geometry_diagnostics.length, 0);
+	return reports.reduce((count, report) => count + report.text_diagnostics.length + report.object_diagnostics.length + report.geometry_diagnostics.length + report.paint_diagnostics.length, 0);
 }
 
 export function diagnosticLabel(kind: string): string {

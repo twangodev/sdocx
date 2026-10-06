@@ -35,12 +35,12 @@ function clientWith(load: ConverterClientPort['load']): ConverterClientPort {
 }
 
 function svgResult(page_index = 0): SvgRenderResult {
-	return { svg: '<svg/>', page_index, source_page_index: page_index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] };
+	return { svg: '<svg/>', page_index, source_page_index: page_index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [] };
 }
 
 function pdfResult(indices: number[]): PdfRenderResult {
 	return { bytes: new Uint8Array([37, 80, 68, 70]), pages: indices.map(index => ({
-		page_index: index, source_page_index: index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: []
+		page_index: index, source_page_index: index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: []
 	})) };
 }
 

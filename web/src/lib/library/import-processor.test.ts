@@ -8,7 +8,7 @@ function setup() {
 		load: vi.fn().mockResolvedValue({ pageCount: 4, inspection: {} }),
 		inspect: vi.fn(),
 		renderPage: vi.fn<ConverterClientPort['renderPage']>().mockResolvedValue({
-			svg: '<svg/>', page_index: 0, source_page_index: 0, text_diagnostics: [], geometry_diagnostics: [],
+			svg: '<svg/>', page_index: 0, source_page_index: 0, text_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [],
 			object_diagnostics: [{ kind: 'ThumbnailNotice', anchor_utf16: 0 }]
 		}),
 		exportPdf: vi.fn(),

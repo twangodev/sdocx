@@ -14,7 +14,7 @@
 			<p class="mt-2 text-muted">Some content uses a fallback or could not be drawn as saved.</p>
 			<ul class="mt-2 list-none space-y-2 p-0">
 				{#each reports as report}
-					{#if report.text_diagnostics.length || report.object_diagnostics.length || report.geometry_diagnostics.length}
+					{#if report.text_diagnostics.length || report.object_diagnostics.length || report.geometry_diagnostics.length || report.paint_diagnostics.length}
 						<li>
 							<strong>Page {report.page_index + 1}</strong>
 							{#if report.source_page_index !== report.page_index}<span class="text-muted"> · source page {report.source_page_index + 1}</span>{/if}
@@ -27,6 +27,9 @@
 								{/each}
 								{#each report.geometry_diagnostics as issue}
 									<li class="break-words">{diagnosticLabel(issue.kind)} · object {issue.object_uuid || '(unnamed)'}{issue.source_offset != null ? ` · source byte ${issue.source_offset}` : ''}</li>
+								{/each}
+								{#each report.paint_diagnostics as issue}
+									<li class="break-words">{issue.role} · {diagnosticLabel(issue.kind)} · object {issue.object_uuid || '(unnamed)'}{issue.source_offset != null ? ` · source byte ${issue.source_offset}` : ''}</li>
 								{/each}
 							</ul>
 						</li>

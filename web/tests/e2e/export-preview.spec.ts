@@ -119,6 +119,8 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 							if (request.colorMode === 'dark') {
 								report.source_page_index += 7;
 								report.geometry_diagnostics.push({ kind: 'FutureGeometryNotice', object_uuid: 'future-id', source_offset: null });
+								report.paint_diagnostics.push({ kind: 'UnsupportedGradientFrame', role: 'Fill', object_uuid: 'fill-id', source_offset: 321 });
+								report.paint_diagnostics.push({ kind: 'FuturePaintNotice', role: 'Outline', object_uuid: 'outline-id', source_offset: null });
 							}
 						}
 					}
@@ -140,6 +142,8 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 	await dialog.locator('summary', { hasText: 'Page preview rendering (dark)' }).click();
 	await expect(dialog.getByText('Browser Dark Notice · text position 0')).toBeVisible();
 	await expect(dialog.getByText('Future Geometry Notice · object future-id')).toBeVisible();
+	await expect(dialog.getByText('Fill · Unsupported Gradient Frame · object fill-id · source byte 321')).toBeVisible();
+	await expect(dialog.getByText('Outline · Future Paint Notice · object outline-id')).toBeVisible();
 	await expect(dialog.getByText(/source page 8/)).toHaveCount(1);
 	await dialog.getByRole('radio', { name: 'Current page · 1' }).check();
 	const download = page.waitForEvent('download');
@@ -147,10 +151,14 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 	await download;
 	await dialog.locator('summary', { hasText: 'Download rendering (dark)' }).click();
 	await expect(dialog.getByText('Browser Dark Notice · text position 0')).toHaveCount(2);
+	await expect(dialog.getByText('Fill · Unsupported Gradient Frame · object fill-id · source byte 321')).toHaveCount(2);
+	await expect(dialog.getByText('Outline · Future Paint Notice · object outline-id')).toHaveCount(2);
 	await expect(dialog.getByText(/source page 8/)).toHaveCount(2);
 	await page.keyboard.press('Escape');
 	await expect(info.getByText('Browser Auto Notice · text position 0')).toHaveCount(3);
 	await expect(info.getByText('Browser Dark Notice · text position 0')).toHaveCount(0);
+	await expect(info.getByText('Fill · Unsupported Gradient Frame · object fill-id · source byte 321')).toHaveCount(0);
+	await expect(info.getByText('Outline · Future Paint Notice · object outline-id')).toHaveCount(0);
 });
 
 test('selected-page preview supports navigation, zoom, resolution, and JSON summary', async ({ page }) => {

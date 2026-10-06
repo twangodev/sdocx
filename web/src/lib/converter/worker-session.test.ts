@@ -15,8 +15,8 @@ function fakeSession(label: string) {
 		summary: () => ({ pageCount: 1, inspection: { label } }),
 		inspection: () => ({ label }),
 		resolvePages: vi.fn(() => [0]),
-		exportPdf: vi.fn(async (indices: number[]): Promise<PdfRenderResult> => ({ bytes: new Uint8Array([37, 80, 68, 70]), pages: indices.map(page_index => ({ page_index, source_page_index: page_index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] })) })),
-		renderPage: (page_index: number) => ({ svg: `<svg>${label}</svg>`, page_index, source_page_index: page_index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] }),
+		exportPdf: vi.fn(async (indices: number[]): Promise<PdfRenderResult> => ({ bytes: new Uint8Array([37, 80, 68, 70]), pages: indices.map(page_index => ({ page_index, source_page_index: page_index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [] })) })),
+		renderPage: (page_index: number) => ({ svg: `<svg>${label}</svg>`, page_index, source_page_index: page_index, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [] }),
 		dispose: vi.fn()
 	};
 }
@@ -51,7 +51,7 @@ describe('ConverterWorkerSession generations', () => {
 
 		await expect(
 			worker.handle({ id: 3, generation: 2, type: 'renderPage', pageIndex: 0, colorMode: 'auto' })
-		).resolves.toEqual({ svg: '<svg>newer</svg>', page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] });
+		).resolves.toEqual({ svg: '<svg>newer</svg>', page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [] });
 		expect(olderSession.dispose).toHaveBeenCalledOnce();
 		expect(newerSession.dispose).not.toHaveBeenCalled();
 	});
@@ -95,7 +95,7 @@ it('routes PDF requests through the active session and rejects superseded export
 	const exporting = worker.handle({ id: 2, generation: 1, type: 'exportPdf', pageIndices: [0], colorMode: 'dark' });
 	expect(session.exportPdf).toHaveBeenCalledWith([0], 'dark');
 	await worker.handle({ id: 3, generation: 2, type: 'dispose' });
-	converted.resolve({ bytes: new Uint8Array([37, 80, 68, 70]), pages: [{ page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [] }] });
+	converted.resolve({ bytes: new Uint8Array([37, 80, 68, 70]), pages: [{ page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [] }] });
 	await expect(exporting).rejects.toThrow(/superseded/);
 });
 

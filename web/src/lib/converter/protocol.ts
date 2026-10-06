@@ -25,12 +25,23 @@ export interface GeometryRenderDiagnostic {
 	[field: string]: unknown;
 }
 
+export type PaintRole = 'Fill' | 'Outline';
+
+export interface PaintRenderDiagnostic {
+	kind: string;
+	object_uuid: string;
+	source_offset?: number | null;
+	role: PaintRole;
+	[field: string]: unknown;
+}
+
 export interface PageRenderReport {
 	page_index: number;
 	source_page_index: number;
 	text_diagnostics: TextRenderDiagnostic[];
 	object_diagnostics: ObjectRenderDiagnostic[];
 	geometry_diagnostics: GeometryRenderDiagnostic[];
+	paint_diagnostics: PaintRenderDiagnostic[];
 	[field: string]: unknown;
 }
 

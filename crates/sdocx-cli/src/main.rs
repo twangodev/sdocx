@@ -16,6 +16,7 @@ impl RenderWarnings {
         text: &[sdocx::TextDiagnostic],
         objects: &[sdocx::ObjectDiagnostic],
         geometry: &[sdocx::GeometryDiagnostic],
+        paint: &[sdocx::PaintDiagnostic],
     ) {
         if !self.pages.insert(page_index) {
             return;
@@ -45,6 +46,20 @@ impl RenderWarnings {
                 diagnostic.kind,
                 page_index + 1,
                 diagnostic.anchor_utf16,
+            );
+        }
+        for diagnostic in paint {
+            let source = match diagnostic.source_offset {
+                Some(offset) => format!("page payload byte offset {offset}"),
+                None => "no retained page payload byte offset".into(),
+            };
+            eprintln!(
+                "Warning [{:?}] visible page {} (source page {}): {:?} paint object UUID {:?}, {source}",
+                diagnostic.kind,
+                page_index + 1,
+                source_page_index + 1,
+                diagnostic.role,
+                diagnostic.object_uuid,
             );
         }
         for diagnostic in geometry {
@@ -400,6 +415,7 @@ fn main() {
                 &page.text_diagnostics,
                 &page.object_diagnostics,
                 &page.geometry_diagnostics,
+                &page.paint_diagnostics,
             );
         }
         let pdf = output.bytes;
@@ -432,6 +448,7 @@ fn main() {
             &page.text_diagnostics,
             &page.object_diagnostics,
             &page.geometry_diagnostics,
+            &page.paint_diagnostics,
         );
     }
 
