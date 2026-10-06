@@ -457,3 +457,30 @@ fn collapsed_rotated_axis_has_no_admitted_svg_fallback() {
         Err(PaintDiagnosticKind::UnrepresentableGradient)
     ));
 }
+
+#[test]
+fn gradient_stops_share_shape_foreground_policy_and_keep_saved_alpha() {
+    let mut source = source(&[0.0, 1.0]);
+    source.stops[0].argb = 0x80000000;
+    source.stops[1].argb = 0x40000000;
+    let before = source.clone();
+    for (dark, color) in [(false, "#000000"), (true, "#ffffff")] {
+        let mut scene = Scene::new(Svg::new());
+        Plan::for_shape(&shape(), &source, PaintRole::Fill, None)
+            .unwrap()
+            .paint(&mut scene, RenderTheme::for_canvas(dark));
+        let svg = scene.finish();
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let stops = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("stop"))
+            .collect::<Vec<_>>();
+        assert_eq!(stops.len(), 2);
+        for (stop, alpha) in stops.into_iter().zip([128.0 / 255.0, 64.0 / 255.0]) {
+            assert_eq!(stop.attribute("stop-color"), Some(color));
+            let opacity: f64 = stop.attribute("stop-opacity").unwrap().parse().unwrap();
+            assert_eq!(opacity, alpha);
+        }
+        assert_eq!(source, before);
+    }
+}
