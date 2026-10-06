@@ -73,7 +73,7 @@ impl Plan {
         let width = rect[2] - rect[0];
         let height = rect[3] - rect[1];
         let center = [(rect[0] + rect[2]) * 0.5, (rect[1] + rect[3]) * 0.5];
-        if rect.iter().chain(&center).any(|v| !v.is_finite())
+        if rect.iter().any(|v| !v.is_finite())
             || !width.is_finite()
             || !height.is_finite()
             || width <= 0.0
@@ -94,7 +94,7 @@ impl Plan {
         };
         let geometry = if source.gradient_type == 0 {
             let points = linear_points(rect, source.linear_angle).map(rotate);
-            if points.iter().flatten().any(|v| !v.is_finite()) {
+            if points.iter().flatten().any(|v| !v.is_finite()) || points[0] == points[1] {
                 return Err(PaintDiagnosticKind::UnrepresentableGradient);
             }
             Geometry::Linear(points)

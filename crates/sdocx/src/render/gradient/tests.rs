@@ -364,12 +364,6 @@ fn plan_admits_only_ordinary_finite_frame_and_validates_before_allocating_ids() 
             x_max: shape.geometry_bbox.x_min,
             ..shape.geometry_bbox
         },
-        BoundingBox {
-            x_min: 2e38,
-            x_max: 3e38,
-            y_min: 2e38,
-            y_max: 3e38,
-        },
     ] {
         shape.geometry_bbox = bbox;
         assert!(matches!(
@@ -423,5 +417,42 @@ fn plan_checks_active_source_role_but_preserves_proven_flag_semantics() {
     assert!(matches!(
         Plan::for_shape(&shape, &source, PaintRole::Outline, None),
         Err(PaintDiagnosticKind::UnsupportedPaint)
+    ));
+}
+
+#[test]
+fn unconsumed_overflow_center_does_not_reject_finite_paint() {
+    let mut shape = shape();
+    shape.geometry_bbox.x_min = 2e38;
+    shape.geometry_bbox.x_max = 3e38;
+    let source = source(&[0.0, 1.0]);
+    assert!(Plan::for_shape(&shape, &source, PaintRole::Fill, None).is_ok());
+    shape.rotation_degrees = 90.0;
+    let mut rotated = source;
+    rotated.property_flags = 3;
+    assert!(matches!(
+        Plan::for_shape(&shape, &rotated, PaintRole::Fill, None),
+        Err(PaintDiagnosticKind::UnrepresentableGradient)
+    ));
+}
+
+#[test]
+fn collapsed_rotated_axis_has_no_admitted_svg_fallback() {
+    // Constructed exporter-capability regression, not a native capture.
+    let mut shape = shape();
+    shape.geometry_bbox = BoundingBox {
+        x_min: 1073741824.0,
+        y_min: 0.0,
+        x_max: 1073741952.0,
+        y_max: 1.0,
+    };
+    let mut source = source(&[0.0, 1.0]);
+    source.linear_angle = 90;
+    assert!(Plan::for_shape(&shape, &source, PaintRole::Fill, None).is_ok());
+    shape.rotation_degrees = 90.0;
+    source.property_flags = 3;
+    assert!(matches!(
+        Plan::for_shape(&shape, &source, PaintRole::Fill, None),
+        Err(PaintDiagnosticKind::UnrepresentableGradient)
     ));
 }
