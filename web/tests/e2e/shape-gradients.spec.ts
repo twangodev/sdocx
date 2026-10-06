@@ -37,6 +37,9 @@ test('parsed shape gradients reach the worker preview and downloaded vector PDF'
 			const paint = [...xml.querySelectorAll(`[${role}]`)].find(node => node.getAttribute(role) === reference);
 			return {
 				units: definition.getAttribute('gradientUnits'),
+				transform: definition.getAttribute('gradientTransform'),
+				geometry: Object.fromEntries((tag === 'linearGradient' ? ['x1', 'y1', 'x2', 'y2'] : ['cx', 'cy', 'r'])
+					.map(attribute => [attribute, Number(definition.getAttribute(attribute))])),
 				drawsShape: Boolean(paint?.matches('rect, ellipse, polygon, path') || paint?.querySelector('rect, ellipse, polygon, path')),
 				stops: [...definition.querySelectorAll('stop')].map(stop => ({
 					offset: Number(stop.getAttribute('offset')),
@@ -60,6 +63,14 @@ test('parsed shape gradients reach the worker preview and downloaded vector PDF'
 		stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }] });
 	expect(paints.radialOutline).toMatchObject({ units: 'userSpaceOnUse', drawsShape: true,
 		stops: [{ offset: 0, color: '#00ff00' }, { offset: 1, color: '#ffff00' }] });
+	expect(paints.linearFill!.geometry).toEqual({ x1: 10.25, y1: 45.5, x2: 310.25, y2: 45.5 });
+	expect(paints.linearFill!.transform).toBe('rotate(-37.25 160.25 45.5)');
+	expect(paints.radialOutline!.transform).toBe('rotate(-37.25 160.25 45.5)');
+	// Native constructor capture: this checks the WASM target's f32 geometry only.
+	// Full scene appearance, pixels and Samsung's native PDF export are outside this test.
+	expect(Math.abs(paints.radialOutline!.geometry.cx - 92.98367309570312)).toBeLessThanOrEqual(2e-5);
+	expect(Math.abs(paints.radialOutline!.geometry.cy - 10.052974700927734)).toBeLessThanOrEqual(2e-6);
+	expect(Math.abs(paints.radialOutline!.geometry.r - 304.13812255859375)).toBeLessThanOrEqual(1e-5);
 	expect(paints.linearFill!.stops[0].opacity).toBeCloseTo(128 / 255, 4);
 	expect(paints.linearFill!.stops[1].opacity).toBeCloseTo(192 / 255, 4);
 	expect(paints.radialOutline!.stops[0].opacity).toBeCloseTo(64 / 255, 4);

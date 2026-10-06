@@ -59,25 +59,25 @@ export function geometryNote(): Buffer {
 
 // Canonical ColorRecord and ordinary saved shape frames from structural_shapes.
 // These records exercise the parser and worker rather than supplying rendered SVG.
-function shapeColor(outline: boolean, kind: number, gradientType: number, stops: [number, number][]) {
-	return join(Buffer.from(outline ? [1, 0, kind] : [1, kind]), u32(0xffff00ff),
-		Buffer.from([gradientType]), u16(0), f32(0.5), f32(0.5), Buffer.from([stops.length]),
+function shapeColor(outline: boolean, kind: number, gradientType: number, stops: [number, number][], position: [number, number] = [0.5, 0.5], rotatable = false) {
+	return join(Buffer.from(outline ? [1, Number(rotatable), kind] : [1, kind]), u32(0xffff00ff),
+		Buffer.from([gradientType]), u16(0), ...position.map(f32), Buffer.from([stops.length]),
 		...stops.map(([argb, position]) => join(u32(argb), f32(position))));
 }
 
-function gradientShape(uuid: string, bounds: number[], fill: Buffer, outline: Buffer) {
+function gradientShape(uuid: string, bounds: number[], fill: Buffer, outline: Buffer, rotation = 0) {
 	const sized = (bytes: Buffer) => join(u32(bytes.length), bytes);
 	const style = join(f32(4), zero(8)); // simple solid outline, butt cap, miter join, no arrows
 	const shapeBase = frame(6, 0, 12, join(u32(0), u32(4), u32(0), zero(1)), join(sized(outline), sized(style)));
-	const geometry = join(u32(4), ...bounds.map(f64), f32(0), zero(5), ...bounds.map(f64));
+	const geometry = join(u32(4), ...bounds.map(f64), f32(rotation), zero(5), ...bounds.map(f64));
 	return object(7, join(base(uuid, bounds), shapeBase, frame(7, 0, 32, geometry, join(u32(fill.length), Buffer.from([1]), fill))));
 }
 
 export function shapeGradientNote(): Buffer {
 	return Buffer.from(zipSync({ 'one1.page': page(0, 400, 800, [
-		gradientShape('gradient-admitted', [10, 20, 210, 160],
+		gradientShape('gradient-admitted', [10.25, 20.5, 310.25, 70.5],
 			shapeColor(false, 1, 0, [[0x80ff0000, 0], [0xc00000ff, 1]]),
-			shapeColor(true, 1, 1, [[0x4000ff00, 0], [0xffffff00, 1]])),
+			shapeColor(true, 1, 1, [[0x4000ff00, 0], [0xffffff00, 1]], [0.25, 0.75], true), 37.25),
 		gradientShape('gradient-rejected-fill', [30, 250, 230, 390],
 			shapeColor(false, 1, 0, [[0xffff0000, 0.75], [0xff0000ff, 0.25]]),
 			shapeColor(true, 0, 0, []))
