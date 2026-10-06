@@ -73,7 +73,8 @@ bounding rectangle.
 Construction sets the visibility byte to one (`0x9f6b8`), and `SetEffect`
 copies the saved line-color effect (`0x9f900`). Color kind 1 dispatches
 known linear/radial/rectangular gradients (`0x9fb40`); linear/radial helpers
-install their shaders on the main `SkPaint` (`0xa23d8`, `0xa2760`). The
+construct and install their shaders on the main `SkPaint`
+(`0xa23d8–0xa23e4`, `0xa2760–0xa276c`). The
 line-color loader treats the whole saved property byte as rotatable when
 nonzero (`0x393ac8–0x393adc`), unlike fill's separate bits 0/1. The
 [fill findings](shape-fill-findings.md#skia-stop-construction) describe their
@@ -85,7 +86,8 @@ Color kind 2 disables the outline by clearing the visibility byte
 `isLineShow` getter reads that byte at implementation offset `0x24`
 (`0xa01f8–0xa020c`). `AbsShapePathType::DrawEffect` draws the fill first
 and invokes the outline only when this getter succeeds
-(`0x8bab0–0x8bb3c`; fill/outline calls at `0x8bb00`/`0x8bb10`).
+(`0x8bab0–0x8bb3c`; fill at `0x8bb00`, visibility check at `0x8bb10`,
+outline at `0x8bb34`).
 
 `LinePathType::DrawEffect` uses a different route (`0x8bba4`): it never calls
 the fill effect. A visible line with either nonzero arrow type calls the
