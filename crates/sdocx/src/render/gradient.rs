@@ -79,7 +79,11 @@ impl Plan {
             || width <= 0.0
             || height <= 0.0
             || !shape.rotation_degrees.is_finite()
-            || element_rotation.is_some_and(|rotation| rotation.inverse().text().is_none())
+            || element_rotation.is_some_and(|rotation| {
+                ![rotation.angle, rotation.center[0], rotation.center[1]]
+                    .iter()
+                    .all(|value| value.is_finite())
+            })
         {
             return Err(PaintDiagnosticKind::UnrepresentableGradient);
         }

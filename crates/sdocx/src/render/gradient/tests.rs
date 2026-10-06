@@ -394,7 +394,8 @@ fn plan_admits_only_ordinary_finite_frame_and_validates_before_allocating_ids() 
     let paint = Plan::for_shape(&shape, &source, PaintRole::Fill, None)
         .unwrap()
         .paint(&mut scene, RenderTheme::for_canvas(false));
-    assert_eq!(paint.text(), "url(#sdocx-def-0)");
+    scene.push(Rectangle::new().width(1.0).height(1.0).fill(paint));
+    assert!(scene.finish().contains("fill=\"url(#sdocx-def-0)\""));
 }
 
 #[test]
