@@ -89,8 +89,8 @@ test('parsed shape gradients reach the worker preview and downloaded vector PDF'
 	expect(dictionaries).not.toContain('/Subtype /Image');
 	const contents = objects.filter((value): value is PDFRawStream => value instanceof PDFRawStream)
 		.map(stream => Buffer.from(decodePDFRawStream(stream).decode()).toString('latin1')).join('\n');
-	expect(contents, 'PDF must select a gradient fill pattern').toMatch(/\/Pattern cs\s+\/[^\s/]+ scn\b/);
-	expect(contents, 'PDF must select a gradient outline pattern').toMatch(/\/Pattern CS\s+\/[^\s/]+ SCN\b/);
+	expect(contents, 'PDF must select a gradient fill pattern').toMatch(/\/Pattern cs\s*\/[^\s/]+ scn\b/);
+	expect(contents, 'PDF must select a gradient outline pattern').toMatch(/\/Pattern CS\s*\/[^\s/]+ SCN\b/);
 	expect([...contents.matchAll(/\/[^\s/]+\s+sh\b/g)].length, 'PDF must draw both gradient alpha shaders').toBeGreaterThanOrEqual(2);
 	await dialog.locator('summary', { hasText: 'Download rendering (auto)' }).click();
 	await expect(dialog.getByText(omission)).toHaveCount(2);
