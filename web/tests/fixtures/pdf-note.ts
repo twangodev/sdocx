@@ -14,9 +14,9 @@ function frame(kind: number, properties: number, fields: number, fixed = zero(0)
 	return join(u32(offset + flexible.length), u16(kind), u32(offset), Buffer.from([2]), u16(properties), Buffer.from([4]), u32(fields), fixed, flexible);
 }
 
-function base(uuid = 'id') {
+function base(uuid = 'id', bounds = [10, 20, 210, 160]) {
 	const identity = Buffer.from(uuid);
-	return frame(0, 8, 1, join(u32(5500), u16(identity.length), identity, zero(8), ...[10, 20, 210, 160].map(f64), zero(5)), f32(0));
+	return frame(0, 8, 1, join(u32(5500), u16(identity.length), identity, zero(8), ...bounds.map(f64), zero(5)), f32(0));
 }
 
 function object(kind: number, payload: Buffer) {
@@ -42,19 +42,46 @@ function unsupportedLine() {
 	return object(8, join(base('geometry-line'), outline, frame(8, 0, 0, fixed)));
 }
 
-function page(index: number, width: number, height: number, extra?: Buffer) {
+function page(index: number, width: number, height: number, extra: Buffer[] = []) {
 	const header = join(zero(8), Buffer.from([1, 0, 5]), zero(5), ...[0, width, height, 0, 0].map(u32), u16(4), Buffer.from(['one1', 'two2', 'zzz3'][index], 'utf16le'), zero(8), u32(5500), u32(4000));
 	header.writeUInt32LE(header.length, 0);
 	header.writeUInt32LE(header.length, 4);
-	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(extra ? 3 : 2), stroke(index), text(index), extra ?? zero(0), zero(32));
+	const layer = join(u32(20), zero(4), Buffer.from([2, 2, 0, 3, 0, 0, 0]), zero(5), u32(2 + extra.length), stroke(index), text(index), ...extra, zero(32));
 	return join(header, u16(1), u16(0), layer, zero(32), Buffer.from('Page for SAMSUNG S-Pen SDK'));
 }
 
 export function geometryNote(): Buffer {
 	return Buffer.from(zipSync({
 		'one1.page': page(0, 400, 800),
-		'two2.page': page(1, 800, 400, unsupportedLine())
+		'two2.page': page(1, 800, 400, [unsupportedLine()])
 	}));
+}
+
+// Canonical ColorRecord and ordinary saved shape frames from structural_shapes.
+// These records exercise the parser and worker rather than supplying rendered SVG.
+function shapeColor(outline: boolean, kind: number, gradientType: number, stops: [number, number][]) {
+	return join(Buffer.from(outline ? [1, 0, kind] : [1, kind]), u32(0xffff00ff),
+		Buffer.from([gradientType]), u16(0), f32(0.5), f32(0.5), Buffer.from([stops.length]),
+		...stops.map(([argb, position]) => join(u32(argb), f32(position))));
+}
+
+function gradientShape(uuid: string, bounds: number[], fill: Buffer, outline: Buffer) {
+	const sized = (bytes: Buffer) => join(u32(bytes.length), bytes);
+	const style = join(f32(4), zero(8)); // simple solid outline, butt cap, miter join, no arrows
+	const shapeBase = frame(6, 0, 12, join(u32(0), u32(4), u32(0), zero(1)), join(sized(outline), sized(style)));
+	const geometry = join(u32(4), ...bounds.map(f64), f32(0), zero(5), ...bounds.map(f64));
+	return object(7, join(base(uuid, bounds), shapeBase, frame(7, 0, 32, geometry, join(u32(fill.length), Buffer.from([1]), fill))));
+}
+
+export function shapeGradientNote(): Buffer {
+	return Buffer.from(zipSync({ 'one1.page': page(0, 400, 800, [
+		gradientShape('gradient-admitted', [10, 20, 210, 160],
+			shapeColor(false, 1, 0, [[0x80ff0000, 0], [0xc00000ff, 1]]),
+			shapeColor(true, 1, 1, [[0x4000ff00, 0], [0xffffff00, 1]])),
+		gradientShape('gradient-rejected-fill', [30, 250, 230, 390],
+			shapeColor(false, 1, 0, [[0xffff0000, 0.75], [0xff0000ff, 0.25]]),
+			shapeColor(true, 0, 0, []))
+	]) }));
 }
 
 export function pdfNote(oversized = false, threePages = false): Buffer {
