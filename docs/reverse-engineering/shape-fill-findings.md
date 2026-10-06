@@ -14,6 +14,7 @@ ELF virtual addresses in the libraries extracted under the ignored
 | `libSPenComposer.so` | `52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f` |
 | `libSPenSkia.so` | `42636cb9ac06cc286114b42c1b9d8f4b78d33761843251cde2b443b101ffb88d` |
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
+| `libSPenView.so` | `c4a17e4232c2074d3833604974d75ac961fab4d9651949bb2552704c86621dc8` |
 
 The decompiled SDK `shapeeffect/SpenFillColorEffect.java` and
 `SpenFillPatternEffect.java` provide API names and Java admission rules;
@@ -90,7 +91,8 @@ Gradient settings and stops are written even when color kind is solid.
 
 `ApplyBinary` (`0x3b659c`) advances past one prefix byte and reads a single
 flags byte; it does not implement arbitrary-length property masks or
-validate the prefix value. It masks only flags bits 0 and 1. It copies the
+validate the prefix value. It masks only flags bits 0 and 1; higher bits do
+not change the loaded fill kind or rotatable value. It copies the
 position floats directly and reconstructs stops in serialized order without
 range checks on positions, finite-value checks, sorting or the Java ten-stop
 limit (`0x3b6688–0x3b67dc`). Its per-field buffer checks remain relevant:
@@ -121,18 +123,23 @@ only these types:
 | 2 | Rectangular, `0x9dd44`, helper `0x9e224` |
 | Other | Error branch `0x9dd70–0x9dda4` |
 
+The outline caller also caps stops at ten (`0x9fbc4–0x9fbd0`) and
+dispatches these types, but does not reject zero count before the factory.
+A null factory result alone does not establish malformed outline scene output.
+
 Java names type 3 `GRADIENT_PATH`, but `setGradientType` rejects values
 above 2 and this native drawing dispatcher does not support 3. The constant
 alone is not evidence of a path-gradient rendering contract. Loaded records
 can retain more than ten stops even though this drawing route uses only the
-first ten. One stop passes this admission check; downstream shader validity
-is a separate question.
+first ten. One stop passes this admission check; Skia duplicates that color
+and ignores its saved position, as described below.
 
 Linear and radial branches pass saved stop positions and ARGB colors into
 Skia shader constructors. When a drawing-context color translator exists,
 colors first pass through its virtual slot `0x50` with role argument 3
-(`0x9dc14–0x9dc30`, `0x9dfbc–0x9dfd8`). The color translation policy is
-not established here. Shader calls use tile-mode value 0, flags 0 and null
+(`0x9dc14–0x9dc30`, `0x9dfbc–0x9dfd8`). The concrete theme route is
+closed statically below; full application scene selection is unproven.
+Shader calls use tile-mode value 0, flags 0 and null
 local matrix (`0x9dc50–0x9dc6c`, `0x9dff8–0x9e018`). Those are runtime
 choices, not additional saved fields.
 
@@ -150,13 +157,18 @@ The helper uses `f32` rectangle differences, centers, diagonal-angle
 calculation and radians conversion, then double `tan` and fused double
 multiply/add or multiply/subtract before narrowing endpoints to `f32`
 (`0x9bc48–0x9bcf4`). A generic bounding-box SVG angle formula need not
-produce these exact endpoints.
+produce these exact endpoints. The radians multiplier is literal `f32`
+`0x3c8efa35`, and the diagonal calculation uses `f32` pi `0x40490fdb`.
+Stored angle 65535 keeps its large comparison angle while using remainder
+15 for the tangent; normalizing the saved angle to 15 changes the branch.
+Saved position x/y do not participate in linear geometry.
 
 The caller reads the object's rotation, adds 360 once if it is negative,
 and rotates the endpoints around the rectangle center only when the
 rotatable flag is set and the resulting angle is greater than `0x34000000`
 (approximately `1.1920929e-7`). Rotation uses double `sincos` and fused
-double products, followed by narrowing and `f32` center additions
+double products after `f32` displacement subtraction, followed by narrowing
+and `f32` center additions
 (`0x9da00–0x9da40`, `0x9db30–0x9dbdc`). This threshold test is literal;
 it does not use the rotation's absolute value.
 
@@ -178,6 +190,56 @@ rotatable/positive-angle condition succeeds (`0x9dea0–0x9df7c`). A centered
 radial gradient on a nonsquare rectangle therefore has a circular radius
 of half its diagonal; it is not simply an ellipse fitted to its bounds.
 No independent focal point or elliptical transform is stored in this effect.
+The centered branch skips rotation, even when the saved position is one
+`f32` step from 0.5. Outline linear/radial helpers (`0xa2194`, `0xa2514`)
+use the same geometry and precision rules as fill.
+
+### Skia stop construction
+
+Linear/radial factories (`0x2689b4`, `0x268a80`) reject count below one
+or a null color pointer. A singleton is copied twice, count becomes two,
+and the positions pointer is cleared (`0x2689f0`, `0x268ac8`); its saved
+position is unused, including a nonfinite position.
+
+For multiple stops, `SkGradientShaderBase` (`0x266088`) compares the raw
+first/last positions with 0/1 before converting offsets. Missing endpoints
+prepend/append copies of the respective endpoint colors. Original stop
+order and duplicate entries survive. At `0x266274`, `FCVTZS w0,s0,#16`
+directly converts the float to signed 16.16, followed by integer clamping
+to `[0,65536]`; there is no rounded intermediate `f32` multiplication.
+For finite in-range positions the derived offset is
+`trunc(f64(position) * 65536) / 65536`.
+
+After quantization, `SUBS`/`B.HI` (`0x26628c–0x266298`) computes an interval
+reciprocal only for increasing offsets. Equal and descending pairs use zero
+reciprocal; descending records remain in order, without sorting, monotonic
+repair or a wrapped negative divisor. The raster-cache loop later skips
+nonpositive table-index intervals (`0x2680a8`), which does not deduplicate
+source stops or establish native pixels. No nonfinite-position rejection
+is established by these constructor bodies. Exporter admission of finite,
+in-range, nondecreasing consumed stops is a bounded projection, distinct
+from native loading or constructor acceptance.
+
+Drawing passes shader flags 0. The static cache branch interpolates RGB
+and alpha separately before eventual output premultiplication
+(`0x2674dc`, `0x26753c`). Stop alpha is the saved ARGB high byte; no extra
+gradient-opacity scalar is serialized. Hidden RGB at alpha zero remains
+source data. Separate SVG stop color/opacity with sRGB interpolation fits
+this vector model; native sampling and pixels remain unverified.
+
+### Contextual color translation
+
+View's Context vtable slot `0x50` resolves to `Context::GetColor`
+(`0xa1098` relocation to `0x6c39c`). Role 3 selects Color's active theme
+pointer; `Color::SetColorTheme` (`0x8aef0`) selects light, dark or high
+contrast. Outline stop loops use the same role-3 route (`0xa2384`,
+`0xa2704`). Base light/high-contrast implementations return ARGB unchanged
+(`0xe54f8`, `0xe54b4`). Dark theme (`0xe51a4`) reverses HSL lightness outside
+the inclusive `[0.4,0.6]` band and replaces only RGB, retaining source alpha.
+This closes the concrete static route, without an executed application-theme
+scene or native HSL rounding certificate. Rust keeps its existing shape
+foreground policy, which additionally selects adapted colors when they
+improve background contrast; stop alpha stays separate.
 
 ### Rectangular gradient clipping
 
@@ -230,6 +292,24 @@ Model ObjectShape relocations `0x4945e8`, `0x494600`, `0x494608` identify
 these methods. Gradient endpoints/centers/partitions use that common frame,
 not the temporary bitmap's extent; admitted rotation is baked into geometry,
 while the shader-local matrix remains null.
+
+The ordinary saved-frame mapping is conditional. Slot 168 resolves to
+`ObjectShapeBase::GetRect` (`0x37aa94`), which reads the live outer common
+rectangle. The writer snapshots it into the first type-7 rectangle, then
+uses drawn bounds for common metadata (`0x399b80–0x399be8`). On loading,
+when `f32(metadata.bbox) == f32(drawn_bbox)` per bound, refresh takes its
+equality branch (`0x3a9b70–0x3a9bdc`), and final loading restores the first
+type-7 rectangle and shape rotation to common state (`0x399edc–0x399ef8`).
+Thus `geometry_bbox` narrowed to `f32` supplies the gradient frame on this
+ordinary branch. Differing snapshots can trigger another inverse-rotated
+restore (`0x3a9be4–0x3a9c54`); nonzero common metadata rotation can compose
+with the saved shape angle. Both require separate frame admission.
+
+Gradient geometry uses native page coordinates. A procedural SVG primitive
+may already carry an element rotation, so its paint needs the inverse
+of that element transform to avoid applying rotation again. Saved display
+paths use their existing coordinates directly. The source does not justify
+adding generic flip transforms to the gradient.
 
 Drawn bounds have another precision boundary: parameterless GetDrawnRect
 truncates float rotation to i32 (`0x397d48`). Its implementation compares that
@@ -369,7 +449,9 @@ both ARGB colors and trailing bytes. Noncanonical color masks keep original payl
 bytes. Admitted ordinary 42/62-byte image fills expose signed bindings, mode,
 raw offset/scale/transparency bits, the rotatable byte, version-gated nine-patch
 fields and trailing bytes. Other image/coedit forms and background effects remain
-opaque. Gradients, patterns and image fills remain unsupported by the renderer.
+opaque. Supported type-7 shapes can project canonical linear/radial color
+fill and outline records into vector paint. Patterns, rectangular/other
+gradients, image fills and background effects remain unsupported.
 
 The preserved record needs to remain distinct from the paint that a native
 drawing route can consume: stop order, all stops, ARGB alpha and raw enum
@@ -377,12 +459,38 @@ values describe source data; the ten-stop cap and recognized shader types
 describe one renderer's admission. Rectangular gradients and solid template
 subpaths also require geometry beyond a single outline fill.
 
-SVG linear/radial gradients, vector pattern cells and piecewise clipped
-linear paints can express these source families without new raster images.
-That representability is an implementation constraint, not a current SDK
-support or appearance-parity claim. Final canvas clip state, pattern phase,
-contextual color translation, other template fill-path generators and the
-background-fill scene dependency remain bounded evidence gaps.
+The linear/radial projection requires an ordinary common-frame restore:
+metadata and drawn bounds equal after per-bound `f32` narrowing, zero/absent
+base metadata rotation, finite ordered positive common width/height, finite
+shape rotation and representable output geometry. Linear angles retain the
+full saved `u16` helper semantics; dormant linear x/y do not gate admission.
+Equal rounded linear endpoints are rejected. An overflowing midpoint that
+is not consumed by rotation does not independently block finite paint.
+Radial positions may lie outside `[0,1]` when the derived center is finite
+and radius is finite and positive.
+Canonical one-byte fill flags use bits 0/1; outline rotatability uses any
+nonzero property byte. Higher flag bits retain their source values and the
+existing parser extension warning without independently blocking this paint.
+Opaque/noncanonical records and trailing bytes remain unsupported. The parser
+marks canonical nonempty linear/radial records as `ShapePaint::Gradient`;
+zero-stop records retain unsupported raw paint and parser warnings.
+
+Only the first ten stops feed drawing. A singleton becomes uniform paint
+without consuming its position. Multiple consumed positions must be finite,
+in `[0,1]` and nondecreasing; copied endpoint colors and derived 16.16 offsets
+retain duplicates and order. Stops beyond ten remain preserved and do not
+affect admission. Rejected paint emits a diagnostic for its fill/outline role
+rather than substituting a solid color. Geometry and paint diagnostics describe
+separate omissions. Source records remain unchanged by rendering.
+
+SVG paint servers and vector PDF shadings transport these admitted paints,
+including inverse paint transforms for rotated procedural geometry and separate
+stop RGB/alpha. Parsed-archive Rust SVG and vector PDF checks verify SDK
+behavior and transport; they do not establish paired Samsung appearance.
+The real-document corpus has no gradient witness. Our vector PDF support is
+separate from the solid-only Samsung export adapters above. Rectangular
+clipping, pattern phase, other template fill-path generators and the
+background-fill scene dependency retain their existing evidence limits.
 
 ## Executed paint geometry and commands
 
@@ -390,9 +498,19 @@ Temporary Rust/Unicorn probes executed original Model/Drawing routines and
 Skia shader construction, path mutation and paint installation. Forty-six
 gradient cases and fourteen pattern cases each matched across five fresh
 machines with allocation/stack fills `0x00`, `0x55`, `0xa5`, `0xff`, `0x00`.
-An independent reviewer reproduced the final gradient capture SHA-256
+An independent reviewer reproduced the reviewed gradient capture SHA-256
 `30c9be10e1657208277d7e6f2a3529e3b55003816896142de25ed6c8b670f222` and
 pattern capture `a689416683e615e10f7f66d1cdbe0a8434a34873fa83dbf578e8510ea63a8f90`.
+
+A separate 108-case capture of original `GetLinearGradientPoint` uses six
+supplied rectangles and eighteen integer angles, SHA-256
+`d109f7d515f3bae10525501b9bd3dc8994425159aa0f6fc6c221b28427a371b6`.
+It executes only the helper with hosted Linux `atanf`/`tan`, without Model
+shape construction, effect loading, dispatcher/shader setup or pixels.
+The reviewed 46 gradient cases above execute radial/rectangular dispatch
+and shader/paint installation with supplied rectangle/rotation slots. Neither
+capture establishes Android libm bit equality, a complete native Model shape
+scene, paired Samsung pixels or native PDF appearance.
 
 Native Drawing constructors (`0x9bee0`, `0x9bfc4`) initialize owned state;
 the admitted null context bypasses contextual color translation. Model

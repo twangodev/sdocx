@@ -66,15 +66,26 @@ command (`0x9bdec`); this drawing boundary does not report a validation error.
 constructs default color/style effects, copies the object's effects, and
 configures its `SkPaint` (`0x9f8f4–0x9f930`). Objects of type 7 supply
 `ObjectShape::GetPath`; type 8 supplies `ObjectLine::GetPath`
-(`0x9f984–0x9f9c8`). This is the native drawing path, rather than a fresh
-primitive inferred from the object's bounding rectangle.
+(`0x9f984–0x9f9c8`; type-7 path call at `0x9f9b4`). This is the native
+drawing path, rather than a fresh primitive inferred from the object's
+bounding rectangle.
+
+Construction sets the visibility byte to one (`0x9f6b8`), and `SetEffect`
+copies the saved line-color effect (`0x9f900`). Color kind 1 dispatches
+known linear/radial/rectangular gradients (`0x9fb40`); linear/radial helpers
+install their shaders on the main `SkPaint` (`0xa23d8`, `0xa2760`). The
+line-color loader treats the whole saved property byte as rotatable when
+nonzero (`0x393ac8–0x393adc`), unlike fill's separate bits 0/1. The
+[fill findings](shape-fill-findings.md#skia-stop-construction) describe their
+shared stop construction and geometry. This establishes static activation
+and paint installation, without an executed outline scene or pixel claim.
 
 Color kind 2 disables the outline by clearing the visibility byte
 (`SetLineColorEffect`, `0x9faec–0x9faf4`). The corresponding
 `isLineShow` getter reads that byte at implementation offset `0x24`
 (`0xa01f8–0xa020c`). `AbsShapePathType::DrawEffect` draws the fill first
 and invokes the outline only when this getter succeeds
-(`0x8bab0–0x8bb3c`).
+(`0x8bab0–0x8bb3c`; fill/outline calls at `0x8bb00`/`0x8bb10`).
 
 `LinePathType::DrawEffect` uses a different route (`0x8bba4`): it never calls
 the fill effect. A visible line with either nonzero arrow type calls the

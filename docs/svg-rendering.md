@@ -92,19 +92,34 @@ nodes. Inline composition prevents formatting whitespace from entering rich
 text and hyperlinks. Library escaping handles text and attribute content;
 existing hyperlink scheme validation remains in the native text converter.
 
+Type-7 shape linear/radial fill and outline paint uses user-space gradient
+coordinates derived from the admitted native common frame. Saved paths carry
+no extra element rotation; procedural primitives use an inverse gradient
+transform to preserve native page coordinates. Derived stops use the native
+first-ten limit, singleton duplication, copied endpoints and 16.16 offsets,
+retaining duplicate order and separate color/alpha. The
+[paint findings](reverse-engineering/shape-fill-findings.md#consequences-for-this-codebase)
+describe admission and native evidence boundaries.
+
 Tests compare parsed SVG semantics, preserved text, complete replay boundaries,
-invalid-input handling, vector PDF shading, and Chromium appearance.
+invalid-input handling, vector PDF shading, and Chromium appearance. Synthetic
+gradient archives verify parsed Rust SVG and vector PDF transport; they are
+not paired Samsung scenes, and the real corpus has no gradient witness.
 
 ## Render diagnostics
 
 [`RenderedPage`](../crates/sdocx/src/render.rs) carries separate text,
-embedded-object and shape/line geometry diagnostics from its render attempt.
+embedded-object, shape/line geometry and fill/outline paint diagnostics from
+its render attempt.
 Geometry reasons cover malformed, unsupported or unrepresentable saved paths,
 invalid checked geometry, unsupported pathless shape templates, unsupported line
 types and missing required line paths. A geometry diagnostic identifies the
-object UUID and optional payload offset in its backing page. It does not cover
-every invalid SVG element, unsupported paint, invisible object or omitted pixel.
-Shape text may still render when its outline is rejected.
+object UUID and optional payload offset in its backing page. Paint diagnostics
+identify the object, optional payload offset and paint role,
+covering unsupported paint, missing retained paint source, invalid consumed
+stops, unsupported gradient frames and unrepresentable gradient geometry.
+Rejected paint is omitted without a solid substitute; the other paint role and shape text may still render.
+Neither diagnostic list covers every invisible object or omitted pixel.
 
 The additive WASM `render_svg_detailed` and `render_pdf_pages_detailed` methods
 return output and diagnostics together from one render/export. Existing
@@ -127,11 +142,13 @@ generation, rather than merging with current preview notices. Debugger
 background/replay requests still return payload-only SVG. An empty report does
 not certify full native appearance or preservation of every source field.
 
-The public `RenderedPage.geometry_diagnostics` and
-`PdfPageDiagnostics.source_page_index`/`geometry_diagnostics` additions require
-updates to exhaustive Rust struct literals and patterns. With `serde`, older
-serialized `RenderedPage` values may omit the geometry field, which defaults to
-an empty list; `PdfPageDiagnostics` supports serialization, not deserialization.
+Public `RenderedPage` and `PdfPageDiagnostics` include `paint_diagnostics`;
+exhaustive Rust struct literals must supply this new field. With `serde`, old
+`RenderedPage` JSON may omit it and receives an empty list, matching the existing
+geometry-field default; `PdfPageDiagnostics` supports serialization, not
+deserialization. Detailed WASM reports and browser report validation require
+the paint-diagnostic array. Legacy SVG strings and PDF byte results retain
+their existing payload-only contracts.
 
 ## Text styling
 

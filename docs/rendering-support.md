@@ -28,7 +28,7 @@ that the object has semantic content or a renderer.
 | 2 | TextBox | Rich text, styles, paragraphs and object spans | Page text and supported embedded content |
 | 3 | Image | Geometry, media references and supported crop fields | Page and text-flow images; effects are partial |
 | 4 | Container | Common metadata and ordered children | Nested page objects; supported parent visibility and root selection |
-| 7 | Shape | Geometry, styles, saved paths, controls and embedded text | Supported page templates/paths and solid paint; partial styling |
+| 7 | Shape | Geometry, styles, saved paths, controls and embedded text | Supported page templates/paths, solid paint and bounded linear/radial fill/outline gradients; partial styling |
 | 8 | Line | Geometry, styles, controls and saved paths | Straight lines and supported paths; partial styling/routing |
 | 9 | DeprecatedDummyStroke | Stored/common metadata | No dedicated renderer |
 | 10 | Voice | Stored/common metadata; [own attachment/source contract](reverse-engineering/voice-source-findings.md) is distinct from typed note VoiceData | No voice-object renderer |
@@ -132,7 +132,7 @@ extending its guarantees.
 
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |
-| Shapes and lines | Basic templates, supported saved move/line/quadratic/cubic/close paths, rotation, solid fills/outlines and embedded text | Specialized templates, arc/oval commands, connector routing, pen simulation, gradients, image fills, dash/compound styles and arrowheads remain incomplete. See [shape/line findings](reverse-engineering/shape-line-findings.md). |
+| Shapes and lines | Basic templates, supported saved move/line/quadratic/cubic/close paths, rotation, solid fills/outlines and embedded text; bounded type-7 linear/radial fill/outline gradients | Gradients require admitted common frames and consumed stops; rectangular/other gradients, type-8 gradient outlines, image fills, specialized templates, arc/oval commands, connectors, pen simulation, dash/compound styles and arrowheads remain incomplete. See [paint admission](reverse-engineering/shape-fill-findings.md#consequences-for-this-codebase) and [shape/line findings](reverse-engineering/shape-line-findings.md). |
 | Images | Media resolution, placement, rotation and supported original-placement rectangular cropping | Pixel crops without original placement, border/original references, fill transforms, tiling and active nine-patch remain incomplete. Nonrectangular inherited image paths produce diagnostics; the traced native effect route uses a rectangle. See [image findings](reverse-engineering/image-findings.md) and [image-filled vector shapes](reverse-engineering/image-effects-findings.md#ordinary-image-effect-paths-differ-from-image-filled-vector-shapes). |
 | GIF image sources | No typed GIF asset admission or animation renderer | Native animation opens the current main file; reader replacement has separate loader/restart gates. See [GIF source findings](reverse-engineering/image-findings.md#native-gif-import-and-current-file-animation). |
 | Page paper | Solid color and supported built-in ruled/dotted templates | Image/URI-backed and rotated paper are rejected by [template admission](../crates/sdocx/src/page_background.rs); other templates are retained without drawing. |
@@ -171,9 +171,12 @@ independent native capture boundaries and real-document reference coverage.
 The locked corpus contains four document/PDF pairs, not an exhaustive feature
 inventory. Synthetic archives establish SDK behavior and malformed-input
 handling; they cannot establish Samsung visual equivalence for absent features.
-The browser displays parser diagnostics separately from Rust's text, embedded-object
-and shape/line render notices for previews and completed exports. Legacy WASM and
-debugger SVG methods remain payload-only. See the
+The corpus has no real gradient witness. Parsed Rust SVG and vector PDF
+gradient checks verify synthetic transport, separately from native
+helper/dispatcher captures and paired Samsung appearance.
+The browser displays parser diagnostics separately from Rust's text, embedded-object,
+shape/line geometry and fill/outline paint notices for previews and completed
+exports. Legacy WASM and debugger SVG methods remain payload-only. See the
 [diagnostic transport boundary](reverse-engineering/vector-retention-findings.md#diagnostic-interpretation).
 The [real-document inventory](reverse-engineering/rendering-corpus-findings.md)
 records feature occurrence separately from native research. At that revision its only
