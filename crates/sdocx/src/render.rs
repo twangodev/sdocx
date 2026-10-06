@@ -21,6 +21,7 @@ mod embedded;
 pub mod fonts;
 mod fountain;
 mod geometry;
+mod gradient;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
 mod paint_diagnostic;
 pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
@@ -1023,7 +1024,7 @@ fn render_element(
             text_renderer,
         ),
         PageElement::Shape(shape) => {
-            if let Err(kind) = render_shape(svg, shape, theme) {
+            if let Err(kind) = render_shape(svg, shape, theme, source_offset) {
                 svg.report_geometry_issue(GeometryDiagnostic {
                     source_offset,
                     object_uuid: shape.metadata.uuid.clone(),
@@ -1060,7 +1061,7 @@ fn render_element(
             }
         }
         PageElement::Line(line) => {
-            if let Err(kind) = render_line(svg, line, theme) {
+            if let Err(kind) = render_line(svg, line, theme, source_offset) {
                 svg.report_geometry_issue(GeometryDiagnostic {
                     source_offset,
                     object_uuid: line.metadata.uuid.clone(),
@@ -1133,35 +1134,63 @@ fn render_shape(
     svg: &mut Scene,
     shape: &crate::NativeShape,
     theme: RenderTheme,
+    source_offset: Option<usize>,
 ) -> Result<(), GeometryDiagnosticKind> {
-    let (fill, opacity) = shape_paint(&shape.fill, theme);
-    let mut style = shape_outline(&shape.style, theme)
-        .fill(Paint::from_hex(&fill))
-        .fill_opacity(decimal(opacity, 4));
-    if !shape.path_data.is_empty() {
-        let path = native_svg_path(&shape.path_data)?;
-        svg.push(style.add(Path::new().data(path)));
-        return Ok(());
-    }
+    // Validate all path/primitive geometry before paint definitions allocate IDs.
+    let path = if shape.path_data.is_empty() {
+        None
+    } else {
+        Some(native_svg_path(&shape.path_data)?)
+    };
     let bbox = shape.geometry_bbox;
     let width = bbox.x_max - bbox.x_min;
     let height = bbox.y_max - bbox.y_min;
-    if ![bbox.x_min, bbox.y_min, width, height]
-        .iter()
-        .all(|v| v.is_finite())
-        || width <= 0.0
-        || height <= 0.0
-        || !shape.rotation_degrees.is_finite()
-    {
-        return Err(GeometryDiagnosticKind::InvalidGeometry);
-    }
     let cx = bbox.x_min + width / 2.0;
     let cy = bbox.y_min + height / 2.0;
-    style = style.transformed(Transform::rotate_unrounded(
-        shape.rotation_degrees.into(),
-        cx,
-        cy,
-    ));
+    let rotation = if path.is_none() {
+        if ![bbox.x_min, bbox.y_min, width, height, cx, cy]
+            .iter()
+            .all(|v| v.is_finite())
+            || width <= 0.0
+            || height <= 0.0
+            || !shape.rotation_degrees.is_finite()
+        {
+            return Err(GeometryDiagnosticKind::InvalidGeometry);
+        }
+        if !matches!(shape.shape_type, 1..=4 | 8) {
+            return Err(GeometryDiagnosticKind::UnsupportedShapeTemplate);
+        }
+        Some(gradient::ElementRotation {
+            angle: f64::from(shape.rotation_degrees),
+            center: [cx, cy],
+        })
+    } else {
+        None
+    };
+    let (fill, opacity) =
+        render_shape_paint(svg, shape, PaintRole::Fill, rotation, theme, source_offset);
+    let outline = render_shape_paint(
+        svg,
+        shape,
+        PaintRole::Outline,
+        rotation,
+        theme,
+        source_offset,
+    );
+    let mut style = shape_outline(&shape.style, outline)
+        .fill(fill)
+        .fill_opacity(decimal(opacity, 4));
+    if let Some(path) = path {
+        svg.push(style.add(Path::new().data(path)));
+        return Ok(());
+    }
+    if let Some(rotation) = rotation {
+        style = style.transformed(Transform::rotate_unrounded(
+            rotation.angle,
+            rotation.center[0],
+            rotation.center[1],
+        ));
+    }
     let points = match shape.shape_type {
         1 => {
             svg.push(
@@ -1213,6 +1242,7 @@ fn render_line(
     svg: &mut Scene,
     line: &crate::NativeLine,
     theme: RenderTheme,
+    source_offset: Option<usize>,
 ) -> Result<(), GeometryDiagnosticKind> {
     // Serialized endpoints already include the native rotation.
     if line.line_type > 2 {
@@ -1221,11 +1251,34 @@ fn render_line(
     if line.begin.iter().chain(&line.end).any(|v| !v.is_finite()) {
         return Err(GeometryDiagnosticKind::InvalidGeometry);
     }
-    let style = shape_outline(&line.style, theme).fill(Paint::None);
-    if !line.path_data.is_empty() {
-        let path = native_svg_path(&line.path_data)?;
-        svg.push(style.add(Path::new().data(path)));
+    let path = if !line.path_data.is_empty() {
+        Some(native_svg_path(&line.path_data)?)
     } else if line.line_type == 0 {
+        None
+    } else {
+        return Err(GeometryDiagnosticKind::MissingLinePath);
+    };
+    let outline = project_shape_paint(
+        svg,
+        &line.style.paint,
+        line.style.paint_source.as_ref(),
+        None,
+        PaintRole::Outline,
+        theme,
+    )
+    .unwrap_or_else(|kind| {
+        svg.report_paint_issue(PaintDiagnostic {
+            source_offset,
+            object_uuid: line.metadata.uuid.clone(),
+            role: PaintRole::Outline,
+            kind,
+        });
+        (Paint::None, 0.0)
+    });
+    let style = shape_outline(&line.style, outline).fill(Paint::None);
+    if let Some(path) = path {
+        svg.push(style.add(Path::new().data(path)));
+    } else {
         svg.push(
             style.add(
                 Line::new()
@@ -1235,8 +1288,6 @@ fn render_line(
                     .y2(line.end[1]),
             ),
         );
-    } else {
-        return Err(GeometryDiagnosticKind::MissingLinePath);
     }
     Ok(())
 }
@@ -1264,8 +1315,60 @@ fn shape_paint(paint: &crate::ShapePaint, theme: RenderTheme) -> (String, f64) {
     }
 }
 
-fn shape_outline(style: &crate::ShapeStyle, theme: RenderTheme) -> Group {
-    let (paint, opacity) = shape_paint(&style.paint, theme);
+fn render_shape_paint(
+    svg: &mut Scene,
+    shape: &crate::NativeShape,
+    role: PaintRole,
+    rotation: Option<gradient::ElementRotation>,
+    theme: RenderTheme,
+    source_offset: Option<usize>,
+) -> (Paint, f64) {
+    let (paint, source) = match role {
+        PaintRole::Fill => (&shape.fill, shape.fill_source.as_ref()),
+        PaintRole::Outline => (&shape.style.paint, shape.style.paint_source.as_ref()),
+    };
+    project_shape_paint(svg, paint, source, Some((shape, rotation)), role, theme).unwrap_or_else(
+        |kind| {
+            svg.report_paint_issue(PaintDiagnostic {
+                source_offset,
+                object_uuid: shape.metadata.uuid.clone(),
+                role,
+                kind,
+            });
+            (Paint::None, 0.0)
+        },
+    )
+}
+
+fn project_shape_paint(
+    svg: &mut Scene,
+    paint: &crate::ShapePaint,
+    source: Option<&crate::ShapePaintSource>,
+    frame: Option<(&crate::NativeShape, Option<gradient::ElementRotation>)>,
+    role: PaintRole,
+    theme: RenderTheme,
+) -> Result<(Paint, f64), PaintDiagnosticKind> {
+    match paint {
+        crate::ShapePaint::None => Ok((Paint::None, 0.0)),
+        crate::ShapePaint::Solid(_) => {
+            let (color, opacity) = shape_paint(paint, theme);
+            Ok((Paint::from_hex(&color).unwrap(), opacity))
+        }
+        crate::ShapePaint::Gradient => {
+            let Some(crate::ShapePaintSource::Color(source)) = source else {
+                return Err(PaintDiagnosticKind::MissingPaintSource);
+            };
+            let Some((shape, rotation)) = frame else {
+                return Err(PaintDiagnosticKind::UnsupportedGradientFrame);
+            };
+            let plan = gradient::Plan::for_shape(shape, source, role, rotation)?;
+            Ok((plan.paint(svg, theme), 1.0))
+        }
+        crate::ShapePaint::Unsupported { .. } => Err(PaintDiagnosticKind::UnsupportedPaint),
+    }
+}
+
+fn shape_outline(style: &crate::ShapeStyle, (paint, opacity): (Paint, f64)) -> Group {
     let cap = match style.cap {
         1 => LineCap::Round,
         2 => LineCap::Square,
@@ -1282,7 +1385,7 @@ fn shape_outline(style: &crate::ShapeStyle, theme: RenderTheme) -> Group {
         0.0
     };
     Group::new()
-        .stroke(Paint::from_hex(&paint))
+        .stroke(paint)
         .stroke_opacity(decimal(opacity, 4))
         .stroke_width(width)
         .line_cap(cap)
