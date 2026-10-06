@@ -22,6 +22,8 @@ pub mod fonts;
 mod fountain;
 mod geometry;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
+mod paint_diagnostic;
+pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
 #[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
 mod harfrust;
 mod marker;
@@ -94,6 +96,9 @@ pub struct RenderedPage {
     /// Shape and line geometry not emitted during an admitted render attempt.
     #[cfg_attr(feature = "serde", serde(default))]
     pub geometry_diagnostics: Vec<GeometryDiagnostic>,
+    /// Shape and line fill or outline components omitted during rendering.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub paint_diagnostics: Vec<PaintDiagnostic>,
 }
 
 /// Reuses body-text measurement across pages without retaining rendered SVG.
@@ -420,6 +425,7 @@ impl DocumentTextCache {
                 text_diagnostics: text_renderer.diagnostics(),
                 object_diagnostics: text_renderer.object_diagnostics(),
                 geometry_diagnostics: svg.take_geometry_diagnostics(),
+                paint_diagnostics: svg.take_paint_diagnostics(),
             },
             svg,
         )

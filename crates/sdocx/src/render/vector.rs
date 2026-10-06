@@ -140,6 +140,7 @@ pub(super) struct Scene {
     elements: Vec<Node>,
     next_id: usize,
     geometry_diagnostics: Vec<super::GeometryDiagnostic>,
+    paint_diagnostics: Vec<super::PaintDiagnostic>,
     #[cfg(feature = "pdf")]
     native_text: Option<super::text::native::NativeTextRegistry>,
     #[cfg(feature = "pdf")]
@@ -151,6 +152,7 @@ impl Scene {
             elements: vec![root.into()],
             next_id: 0,
             geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
             #[cfg(feature = "pdf")]
             native_text: None,
             #[cfg(feature = "pdf")]
@@ -239,6 +241,12 @@ impl Scene {
     }
     pub fn take_geometry_diagnostics(&mut self) -> Vec<super::GeometryDiagnostic> {
         std::mem::take(&mut self.geometry_diagnostics)
+    }
+    pub fn report_paint_issue(&mut self, issue: super::PaintDiagnostic) {
+        self.paint_diagnostics.push(issue);
+    }
+    pub fn take_paint_diagnostics(&mut self) -> Vec<super::PaintDiagnostic> {
+        std::mem::take(&mut self.paint_diagnostics)
     }
     pub fn scope(&mut self, element: impl Container, draw: impl FnOnce(&mut Self)) {
         let element = element.into();

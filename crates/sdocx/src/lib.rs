@@ -100,7 +100,8 @@ pub use pdf::{
 #[cfg(feature = "render")]
 pub use render::{
     DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, ObjectDiagnostic,
-    ObjectDiagnosticKind, PointMarkerTarget, RenderColorMode, RenderOptions, RenderTheme,
+    ObjectDiagnosticKind, PaintDiagnostic, PaintDiagnosticKind, PaintRole, PointMarkerTarget,
+    RenderColorMode, RenderOptions, RenderTheme,
     RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts, render_document_svg,
     render_document_svg_with_fonts, render_layout_page_replay_svg,
     render_layout_page_replay_svg_with_fonts, render_layout_page_svg,

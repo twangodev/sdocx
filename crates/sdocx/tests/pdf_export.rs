@@ -12,6 +12,7 @@ fn page(width: u32, height: u32, content: &str) -> RenderedPage {
         text_diagnostics: Vec::new(),
         object_diagnostics: Vec::new(),
         geometry_diagnostics: Vec::new(),
+        paint_diagnostics: Vec::new(),
         width,
         height,
         svg: format!(

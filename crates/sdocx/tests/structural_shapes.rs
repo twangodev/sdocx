@@ -1527,11 +1527,12 @@ fn mutated_geometry_reports_invalid_paths_and_bounds_without_changing_source() {
 
 #[cfg(all(feature = "render", feature = "serde"))]
 #[test]
-fn rendered_pages_without_geometry_reports_still_deserialize() {
+fn rendered_pages_without_geometry_or_paint_reports_still_deserialize() {
     let parsed = sdocx::parse_bytes_detailed(&single(7, &shape(4))).unwrap();
     let rendered = sdocx::render_document_svg(&parsed.document, &Default::default()).remove(0);
     let mut old = serde_json::to_value(&rendered).unwrap();
     old.as_object_mut().unwrap().remove("geometry_diagnostics");
+    old.as_object_mut().unwrap().remove("paint_diagnostics");
     assert_eq!(
         serde_json::from_value::<sdocx::RenderedPage>(old).unwrap(),
         rendered

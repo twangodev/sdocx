@@ -19,8 +19,8 @@ mod font_identity_tests;
 
 use crate::render::{DocumentTextCache, NativePdfPainter, NativeTextRegistry};
 use crate::{
-    Document, GeometryDiagnostic, LayoutDocument, ObjectDiagnostic, RenderOptions, RenderedPage,
-    TextDiagnostic,
+    Document, GeometryDiagnostic, LayoutDocument, ObjectDiagnostic, PaintDiagnostic, RenderOptions,
+    RenderedPage, TextDiagnostic,
     fonts::{FontBook, NativeFontNameConfig, SvgFontFamilies},
 };
 
@@ -96,6 +96,7 @@ pub struct PdfPageDiagnostics {
     pub text_diagnostics: Vec<TextDiagnostic>,
     pub object_diagnostics: Vec<ObjectDiagnostic>,
     pub geometry_diagnostics: Vec<GeometryDiagnostic>,
+    pub paint_diagnostics: Vec<PaintDiagnostic>,
 }
 
 /// Rendering error page indices are zero-based output ordinals, including repeated selections.
@@ -220,6 +221,7 @@ pub fn render_layout_pages_pdf_detailed_with_cache(
             text_diagnostics: scene.page.text_diagnostics,
             object_diagnostics: scene.page.object_diagnostics,
             geometry_diagnostics: scene.page.geometry_diagnostics,
+            paint_diagnostics: scene.page.paint_diagnostics,
         })
         .collect();
     Ok(PdfOutput { bytes, pages })
