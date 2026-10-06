@@ -101,11 +101,10 @@ pub use pdf::{
 pub use render::{
     DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, ObjectDiagnostic,
     ObjectDiagnosticKind, PaintDiagnostic, PaintDiagnosticKind, PaintRole, PointMarkerTarget,
-    RenderColorMode, RenderOptions, RenderTheme,
-    RenderedPage, StrokePaint, TextDiagnostic, TextDiagnosticKind, fonts, render_document_svg,
-    render_document_svg_with_fonts, render_layout_page_replay_svg,
-    render_layout_page_replay_svg_with_fonts, render_layout_page_svg,
-    render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
+    RenderColorMode, RenderOptions, RenderTheme, RenderedPage, StrokePaint, TextDiagnostic,
+    TextDiagnosticKind, fonts, render_document_svg, render_document_svg_with_fonts,
+    render_layout_page_replay_svg, render_layout_page_replay_svg_with_fonts,
+    render_layout_page_svg, render_layout_page_svg_with_fonts, render_page_svg, stroke_paint,
 };
 pub use report::{DiagnosticCode, DiagnosticSeverity, ParseDiagnostic, ParseReport};
 pub use shape::{
