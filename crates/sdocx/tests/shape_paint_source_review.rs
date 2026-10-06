@@ -316,3 +316,61 @@ fn truncated_unknown_and_coedit_sized_image_records_remain_opaque_and_bounded() 
         assert!(shape.fill_source.is_none());
     }
 }
+
+#[test]
+fn only_canonical_active_linear_and_radial_records_get_gradient_marker() {
+    for gradient_type in [0, 1, 2, 3, 255] {
+        for outline in [false, true] {
+            let mut effect = solid_color();
+            effect[1] = 1;
+            effect[6] = gradient_type;
+            effect[7..9].copy_from_slice(&u16::MAX.to_le_bytes());
+            effect[9..13].copy_from_slice(&0x7fc12345_u32.to_le_bytes());
+            effect[17] = 1;
+            effect.extend(0x00123456_u32.to_le_bytes());
+            effect.extend(0x7fc54321_u32.to_le_bytes());
+            if outline {
+                effect.insert(2, 1);
+            }
+            let shape = parsed_shape(&if outline {
+                shape_archive_with_outline(5500, &solid_color(), &[], Some(&effect))
+            } else {
+                shape_archive(5500, &effect, &[])
+            });
+            let (paint, source) = if outline {
+                (&shape.style.paint, &shape.style.paint_source)
+            } else {
+                (&shape.fill, &shape.fill_source)
+            };
+            if gradient_type <= 1 {
+                assert!(matches!(paint, ShapePaint::Gradient));
+            } else {
+                assert!(
+                    matches!(paint, ShapePaint::Unsupported { kind: 1, data } if data == &effect)
+                );
+            }
+            let Some(ShapePaintSource::Color(source)) = source else {
+                panic!("color source");
+            };
+            assert_eq!(source.gradient_type, gradient_type);
+            assert_eq!(source.linear_angle, u16::MAX);
+            assert_eq!(source.position[0].bits(), 0x7fc12345);
+            assert_eq!(source.stops[0].position.bits(), 0x7fc54321);
+            assert_eq!(source.stops[0].argb, 0x00123456);
+            #[cfg(feature = "serde")]
+            {
+                let restored: NativeShape =
+                    serde_json::from_str(&serde_json::to_string(&shape).unwrap()).unwrap();
+                assert_eq!(restored.fill_source, shape.fill_source);
+                assert_eq!(restored.style.paint_source, shape.style.paint_source);
+            }
+        }
+    }
+    // The marker relies on a lossless canonical color source, not a legacy mask.
+    let mut noncanonical = solid_color();
+    noncanonical[0] = 2;
+    noncanonical[1] = 1;
+    noncanonical.insert(2, 0);
+    let shape = parsed_shape(&shape_archive(5500, &noncanonical, &[]));
+    assert!(matches!(shape.fill, ShapePaint::Unsupported { .. }));
+}

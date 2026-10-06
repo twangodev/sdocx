@@ -16,6 +16,8 @@ pub enum ShapePaint {
     None,
     /// Solid color, including alpha, in native ARGB order.
     Solid(u32),
+    /// Linear or radial color gradient, described by the accompanying saved color source.
+    Gradient,
     /// An effect whose rendering semantics are not yet supported.
     Unsupported {
         /// Native effect/color kind, depending on the containing field.
@@ -517,6 +519,12 @@ fn read_paint(
     let paint = match kind {
         0 => ShapePaint::Solid(source.solid_argb),
         2 if outline => ShapePaint::None,
+        1 if data.first() == Some(&1)
+            && matches!(source.gradient_type, 0 | 1)
+            && !source.stops.is_empty() =>
+        {
+            ShapePaint::Gradient
+        }
         _ => {
             unsupported.push("gradient or unknown color effect");
             ShapePaint::Unsupported {

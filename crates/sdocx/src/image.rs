@@ -266,7 +266,7 @@ fn read_image_outline(frame: &Frame<'_>, unsupported: &mut Vec<&'static str>) ->
     let invisible = match style.paint {
         ShapePaint::None => true,
         ShapePaint::Solid(argb) => argb >> 24 == 0,
-        ShapePaint::Unsupported { .. } => false,
+        ShapePaint::Gradient | ShapePaint::Unsupported { .. } => false,
     };
     if style.width != 0.0 && !invisible {
         unsupported.push("image outlines");

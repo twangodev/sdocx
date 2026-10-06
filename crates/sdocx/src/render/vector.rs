@@ -89,6 +89,7 @@ elements!(
     Definitions,
     ClipPath,
     LinearGradient,
+    RadialGradient,
     SvgMask,
     Stop,
     Path,
@@ -125,6 +126,7 @@ containers!(
     Definitions,
     ClipPath,
     LinearGradient,
+    RadialGradient,
     SvgMask,
     Text,
     Anchor
@@ -134,7 +136,7 @@ macro_rules! children {
         pub fn add(mut self, child: impl Into<Node>) -> Self { self.0.append(child.into()); self }
     })* };
 }
-children!(Group, Definitions, ClipPath, LinearGradient);
+children!(Group, Definitions, ClipPath, LinearGradient, RadialGradient);
 
 pub(super) struct Scene {
     elements: Vec<Node>,
@@ -392,6 +394,7 @@ numeric_attributes! {
     TSpan { font_size => ("font-size", 0.) }
     SvgMask { x => ("x", -f64::MAX), y => ("y", -f64::MAX), width => ("width", 0.), height => ("height", 0.) }
     LinearGradient { x1 => ("x1", -f64::MAX), y1 => ("y1", -f64::MAX), x2 => ("x2", -f64::MAX), y2 => ("y2", -f64::MAX) }
+    RadialGradient { cx => ("cx", -f64::MAX), cy => ("cy", -f64::MAX), r => ("r", 0.) }
 }
 impl Svg {
     pub fn new() -> Self {
@@ -617,6 +620,24 @@ impl LinearGradient {
         ))
     }
 }
+impl RadialGradient {
+    pub fn new(id: &Definition<Gradient>) -> Self {
+        Self(Node::new(
+            svg_element::RadialGradient::new()
+                .set("id", id.id())
+                .set("gradientUnits", "userSpaceOnUse"),
+        ))
+    }
+}
+macro_rules! gradient_transforms {
+    ($($name:ident),*) => { $(impl $name {
+        pub fn transformed(mut self, transform: Transform) -> Self {
+            self.0.optional("gradientTransform", transform.text());
+            self
+        }
+    })* };
+}
+gradient_transforms!(LinearGradient, RadialGradient);
 impl SvgMask {
     pub fn luminance(id: &Definition<Mask>) -> Self {
         Self(Node::new(
@@ -633,6 +654,10 @@ impl Stop {
         node.number("offset", offset, 0.0..=1.0);
         node.optional("stop-color", color.into().map(ColorValue::text));
         Self(node)
+    }
+    pub fn opacity(mut self, value: impl Into<Numeric>) -> Self {
+        self.0.number("stop-opacity", value, 0.0..=1.0);
+        self
     }
 }
 
