@@ -3,8 +3,23 @@ import { readFile } from 'node:fs/promises';
 import { PDFDocument, PDFRawStream, decodePDFRawStream } from 'pdf-lib';
 import { shapeGradientNote } from '../fixtures/pdf-note';
 
+declare global {
+	interface Window {
+		shapeGradientBlobs: Map<string, Blob>;
+	}
+}
+
 test('parsed shape gradients reach the worker preview and downloaded vector PDF', async ({ page, browserName }) => {
 	test.skip(browserName !== 'chromium', 'Chromium preview and vector exports are the immediate target.');
+	await page.addInitScript(() => {
+		const blobs = window.shapeGradientBlobs = new Map<string, Blob>();
+		const create = URL.createObjectURL.bind(URL);
+		URL.createObjectURL = blob => {
+			const url = create(blob);
+			if (blob instanceof Blob) blobs.set(url, blob);
+			return url;
+		};
+	});
 	await page.route('https://rybbit.twango.dev/api/script.js', route => route.fulfill({ body: '' }));
 	await page.goto('/');
 	await page.locator('input[type=file]').setInputFiles({ name: 'shape-gradients.sdocx', mimeType: 'application/zip', buffer: shapeGradientNote() });
@@ -12,7 +27,9 @@ test('parsed shape gradients reach the worker preview and downloaded vector PDF'
 	await expect(preview).toBeAttached();
 	await expect(page.getByRole('button', { name: 'Export document', exact: true })).toBeEnabled();
 	const paints = await preview.evaluate(async (image: HTMLImageElement) => {
-		const xml = new DOMParser().parseFromString(await (await fetch(image.src)).text(), 'image/svg+xml');
+		const blob = window.shapeGradientBlobs.get(image.src);
+		if (!blob) throw new Error('The worker preview SVG Blob was not captured.');
+		const xml = new DOMParser().parseFromString(await blob.text(), 'image/svg+xml');
 		const gradient = (tag: 'linearGradient' | 'radialGradient', role: 'fill' | 'stroke') => {
 			const definition = xml.querySelector(tag);
 			if (!definition) return null;
