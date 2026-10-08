@@ -7,7 +7,7 @@
 
 * **npm:** initialize `@twango/sdocx` with its default async `init()` export before calling `parse` or constructing `DocumentSession`. The package now uses the web-target module rather than automatic bundler initialization.
 * **api:** construct RenderedPage, PdfOutput and PdfPageDiagnostics with their new constructors instead of external struct literals. Matches on text and object diagnostic kinds must include a fallback arm.
-* **render:** PdfPageDiagnostics adds source_page_index and geometry_diagnostics; exhaustive struct literals must provide both fields.
+* **render:** PdfPageDiagnostics includes source_page_index, geometry_diagnostics and paint_diagnostics; use its constructor when creating reports.
 
 ### Features
 

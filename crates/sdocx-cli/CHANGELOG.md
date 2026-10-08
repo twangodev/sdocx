@@ -5,7 +5,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **render:** PdfPageDiagnostics adds source_page_index and geometry_diagnostics; exhaustive struct literals must provide both fields.
+* **render:** PdfPageDiagnostics includes source_page_index, geometry_diagnostics and paint_diagnostics; use its constructor when creating reports.
 
 ### Features
 

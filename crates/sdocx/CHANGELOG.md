@@ -6,8 +6,8 @@
 ### ⚠ BREAKING CHANGES
 
 * **api:** construct RenderedPage, PdfOutput and PdfPageDiagnostics with their new constructors instead of external struct literals. Matches on text and object diagnostic kinds must include a fallback arm.
-* **render:** PdfPageDiagnostics adds source_page_index and geometry_diagnostics; exhaustive struct literals must provide both fields.
-* **render:** RenderedPage adds the public geometry_diagnostics field, so exhaustive Rust struct literals must initialize it. Older serialized payloads continue to deserialize with an empty geometry_diagnostics vector.
+* **render:** PdfPageDiagnostics includes source_page_index, geometry_diagnostics and paint_diagnostics; use its constructor when creating reports.
+* **render:** RenderedPage includes geometry_diagnostics and paint_diagnostics. Older serialized payloads continue to deserialize with empty diagnostic vectors; Rust callers use the new constructor.
 * **parser:** exhaustive ParseOptions and StoredNote literals must include the new retain_note_source and source_bytes fields.
 * **parser:** ParseOptions and StoredArchivePage add fields; update exhaustive struct literals and patterns.
 * **table:** Rust callers must use min_column_width and min_row_height. Serialization emits these names; deserialization accepts the previous padding-named keys. Raw optional values and rendering behavior are unchanged.
