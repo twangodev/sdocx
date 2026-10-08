@@ -79,6 +79,7 @@ pub struct RenderOptions {
 /// One visible page rendered as a standalone Svg document.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub struct RenderedPage {
     /// Index of the backing page in the parsed document.
     pub source_page_index: usize,
@@ -100,6 +101,22 @@ pub struct RenderedPage {
     /// Shape and line fill or outline components omitted during rendering.
     #[cfg_attr(feature = "serde", serde(default))]
     pub paint_diagnostics: Vec<PaintDiagnostic>,
+}
+
+impl RenderedPage {
+    /// Construct a page with no render diagnostics.
+    pub fn new(source_page_index: usize, width: u32, height: u32, svg: impl Into<String>) -> Self {
+        Self {
+            source_page_index,
+            width,
+            height,
+            svg: svg.into(),
+            text_diagnostics: Vec::new(),
+            object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
+        }
+    }
 }
 
 /// Reuses body-text measurement across pages without retaining rendered SVG.

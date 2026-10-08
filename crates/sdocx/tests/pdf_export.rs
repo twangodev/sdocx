@@ -7,18 +7,14 @@ use sdocx::{
 };
 
 fn page(width: u32, height: u32, content: &str) -> RenderedPage {
-    RenderedPage {
-        source_page_index: 0,
-        text_diagnostics: Vec::new(),
-        object_diagnostics: Vec::new(),
-        geometry_diagnostics: Vec::new(),
-        paint_diagnostics: Vec::new(),
+    RenderedPage::new(
+        0,
         width,
         height,
-        svg: format!(
+        format!(
             r#"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">{content}</svg>"#
         ),
-    }
+    )
 }
 
 fn no_fonts() -> PdfOptions {

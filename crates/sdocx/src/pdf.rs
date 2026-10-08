@@ -80,14 +80,23 @@ impl Default for PdfOptions {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct PdfOutput {
     pub bytes: Vec<u8>,
     /// Render diagnostics in exported page order, including repeated selections.
     pub pages: Vec<PdfPageDiagnostics>,
 }
 
+impl PdfOutput {
+    /// Construct an export with diagnostics in output page order.
+    pub fn new(bytes: Vec<u8>, pages: Vec<PdfPageDiagnostics>) -> Self {
+        Self { bytes, pages }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[non_exhaustive]
 pub struct PdfPageDiagnostics {
     /// The selected page's index in the supplied visible layout.
     pub page_index: usize,
@@ -97,6 +106,20 @@ pub struct PdfPageDiagnostics {
     pub object_diagnostics: Vec<ObjectDiagnostic>,
     pub geometry_diagnostics: Vec<GeometryDiagnostic>,
     pub paint_diagnostics: Vec<PaintDiagnostic>,
+}
+
+impl PdfPageDiagnostics {
+    /// Construct an empty report for one selected page and its backing source.
+    pub fn new(page_index: usize, source_page_index: usize) -> Self {
+        Self {
+            page_index,
+            source_page_index,
+            text_diagnostics: Vec::new(),
+            object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
+        }
+    }
 }
 
 /// Rendering error page indices are zero-based output ordinals, including repeated selections.

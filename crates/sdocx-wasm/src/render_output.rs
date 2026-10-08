@@ -66,16 +66,8 @@ mod tests {
                 kind: PaintDiagnosticKind::InvalidGradient,
             },
         ];
-        let page = RenderedPage {
-            source_page_index: 7,
-            width: 64,
-            height: 64,
-            svg: "<svg><path stroke=\"#112233\"/></svg>".into(),
-            text_diagnostics: Vec::new(),
-            object_diagnostics: Vec::new(),
-            geometry_diagnostics: Vec::new(),
-            paint_diagnostics: paint.clone(),
-        };
+        let mut page = RenderedPage::new(7, 64, 64, "<svg><path stroke=\"#112233\"/></svg>");
+        page.paint_diagnostics = paint.clone();
         let expected = serde_json::json!([
             { "source_offset": 321, "object_uuid": "shape paint", "role": "Fill", "kind": "UnsupportedGradientFrame" },
             { "source_offset": null, "object_uuid": "line paint", "role": "Outline", "kind": "InvalidGradient" }
@@ -86,20 +78,17 @@ mod tests {
         assert!(svg["svg"].as_str().unwrap().contains("stroke="));
         assert_eq!(svg["page_index"], 2);
         assert_eq!(svg["source_page_index"], 7);
-        let pdf = PdfOutput::from(sdocx::PdfOutput {
-            bytes: b"%PDF".to_vec(),
-            pages: [2, 0, 2]
+        let pdf = PdfOutput::from(sdocx::PdfOutput::new(
+            b"%PDF".to_vec(),
+            [2, 0, 2]
                 .into_iter()
-                .map(|page_index| sdocx::PdfPageDiagnostics {
-                    page_index,
-                    source_page_index: 7,
-                    text_diagnostics: Vec::new(),
-                    object_diagnostics: Vec::new(),
-                    geometry_diagnostics: Vec::new(),
-                    paint_diagnostics: paint.clone(),
+                .map(|page_index| {
+                    let mut report = sdocx::PdfPageDiagnostics::new(page_index, 7);
+                    report.paint_diagnostics = paint.clone();
+                    report
                 })
                 .collect(),
-        });
+        ));
         let pdf = serde_json::to_value(pdf).unwrap();
         for (report, page_index) in pdf["pages"].as_array().unwrap().iter().zip([2, 0, 2]) {
             assert_eq!(report["page_index"], page_index);

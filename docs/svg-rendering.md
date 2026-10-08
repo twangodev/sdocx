@@ -142,8 +142,11 @@ generation, rather than merging with current preview notices. Debugger
 background/replay requests still return payload-only SVG. An empty report does
 not certify full native appearance or preservation of every source field.
 
-Public `RenderedPage` and `PdfPageDiagnostics` include `paint_diagnostics`;
-exhaustive Rust struct literals must supply this new field. With `serde`, old
+Public `RenderedPage`, `PdfOutput` and `PdfPageDiagnostics` are non-exhaustive.
+Use their `new` constructors and read or update their public fields; destructuring
+requires `..`. New render diagnostic categories may be added, so matches on
+diagnostic kinds require a fallback arm. These boundaries let the SDK extend
+reports without breaking callers. With `serde`, old
 `RenderedPage` JSON may omit it and receives an empty list, matching the existing
 geometry-field default; `PdfPageDiagnostics` supports serialization, not
 deserialization. Detailed WASM reports and browser report validation require

@@ -65,6 +65,13 @@ console.log(doc.pages);
 
 ## Limitations
 
+Version 1.x maintains compatible Rust APIs, CLI flags and WASM entry points.
+Rendering support can expand within this series; the
+[support matrix](docs/rendering-support.md) records implemented contracts and remaining gaps.
+Rust render results are non-exhaustive: use their constructors and include a
+fallback when matching diagnostic kinds. Serialized reports may gain fields
+and diagnostic categories.
+
 The format is reverse-engineered, and conversion is best-effort. Unsupported objects or styles may be omitted even when parsing succeeds. Keep original files and check output against Samsung Notes when fidelity matters. Protected documents must be unlocked or exported first.
 
 Use the detailed Rust parse APIs or CLI diagnostics to inspect unsupported features. `--verify-integrity` adds stored-hash checks; it does not guarantee complete fidelity or fail conversion on mismatches.

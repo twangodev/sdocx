@@ -18,6 +18,7 @@ use crate::{LineSpacingType, ParagraphLineSpacing, RichTextSpanType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum TextDiagnosticKind {
     UnavailableFamily,
     UnusableFontData,
