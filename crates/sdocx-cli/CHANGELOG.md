@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.7.0...sdocx-cli-v1.0.0) (2026-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **render:** PdfPageDiagnostics adds source_page_index and geometry_diagnostics; exhaustive struct literals must provide both fields.
+
+### Features
+
+* **pdf:** paint retained Rust glyph plans in document exports ([71bc17b](https://github.com/twangodev/sdocx/commit/71bc17b110ed9f21247bed3e2585e29fd149dbb1))
+* **render:** preserve geometry diagnostics across exports ([f8a5638](https://github.com/twangodev/sdocx/commit/f8a5638183fd5b2754316f4c4d93b5e9aa63a288))
+* transport paint diagnostics through export and preview reports ([338aba4](https://github.com/twangodev/sdocx/commit/338aba418205c1c68b9827019f377a802a6f4aba))
+* use native text entries for paragraph layout and exports ([e166e53](https://github.com/twangodev/sdocx/commit/e166e53bb7c95ae5401a2b067658aeaf67689311))
+
+
+### Bug Fixes
+
+* **cli:** report selected-page rendering diagnostics ([2d5fd59](https://github.com/twangodev/sdocx/commit/2d5fd59947b6691d33ab12bfea2bd1e5b6841393))
+* display signed PDF paper indices without overflow ([b4d83bf](https://github.com/twangodev/sdocx/commit/b4d83bf2678d935af3ad5855592999b56f487418))
+* preserve selected physical fonts in SVG and PDF ([211020e](https://github.com/twangodev/sdocx/commit/211020ec83d91fb31b2a5d4ad3f9c841f1abe173))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.7.0 to 1.0.0
+
 ## [0.7.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.6.0...sdocx-cli-v0.7.0) (2026-09-25)
 
 

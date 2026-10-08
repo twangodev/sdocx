@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.5.0...sdocx-wasm-v1.0.0) (2026-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** construct RenderedPage, PdfOutput and PdfPageDiagnostics with their new constructors instead of external struct literals. Matches on text and object diagnostic kinds must include a fallback arm.
+* **render:** PdfPageDiagnostics adds source_page_index and geometry_diagnostics; exhaustive struct literals must provide both fields.
+
+### Features
+
+* **api:** make render reports extensible ([85df6a9](https://github.com/twangodev/sdocx/commit/85df6a9229dc8c6ddc2f80c04f1462f33ba1c734))
+* **pdf:** paint retained Rust glyph plans in document exports ([71bc17b](https://github.com/twangodev/sdocx/commit/71bc17b110ed9f21247bed3e2585e29fd149dbb1))
+* **render:** preserve geometry diagnostics across exports ([f8a5638](https://github.com/twangodev/sdocx/commit/f8a5638183fd5b2754316f4c4d93b5e9aa63a288))
+* summarize retained sources in browser inspection ([f48a48c](https://github.com/twangodev/sdocx/commit/f48a48cb11eef7d14e384bb40e78f0d80e3f1999))
+* **text:** preserve typed native span intervals ([7526e31](https://github.com/twangodev/sdocx/commit/7526e3184c6b8abef0518d263db2e54ceb6ca113))
+* transport paint diagnostics through export and preview reports ([338aba4](https://github.com/twangodev/sdocx/commit/338aba418205c1c68b9827019f377a802a6f4aba))
+* **wasm:** expose detailed render reports ([f2ddc43](https://github.com/twangodev/sdocx/commit/f2ddc4328f7fc54f7a5a127ece07c6dc157b7d26))
+
+
+### Bug Fixes
+
+* preserve selected physical fonts in SVG and PDF ([211020e](https://github.com/twangodev/sdocx/commit/211020ec83d91fb31b2a5d4ad3f9c841f1abe173))
+* preserve unsafe integers in browser inspection ([be0817c](https://github.com/twangodev/sdocx/commit/be0817cebf2d6ab4ebae8ebb6cd76dfa95bc4089))
+
+
+### Performance Improvements
+
+* **render:** reuse body plans across previews and exports ([bbe089d](https://github.com/twangodev/sdocx/commit/bbe089d491e5277d1d6c97112a69aaa8f64bfe26))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 0.7.0 to 1.0.0
+
 ## [0.5.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.4.0...sdocx-wasm-v0.5.0) (2026-09-25)
 
 
