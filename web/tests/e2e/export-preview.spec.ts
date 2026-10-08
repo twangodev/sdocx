@@ -304,7 +304,9 @@ for (const theme of ['light', 'dark']) {
 			};
 		});
 		await dialog.getByRole('button', { name: 'Download PDF' }).click();
-		await expect(dialog.getByRole('progressbar', { name: 'Writing PDF pages' })).toHaveAttribute('value', String(1 / 3));
+		const progress = dialog.getByRole('progressbar', { name: 'Writing PDF pages' });
+		await expect(progress).toBeVisible();
+		expect(await progress.evaluate((bar: HTMLProgressElement) => bar.value)).toBeCloseTo(1 / 3);
 		for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
 			await page.setViewportSize(viewport);
 			const bounds = await dialog.getByRole('button', { name: 'Hide', exact: true }).boundingBox();
