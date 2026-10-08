@@ -17,13 +17,14 @@ use crate::storage::{
 };
 use crate::types::{Document, DocumentMetadata, FormatVersion, MediaAsset, ObjectType, Page};
 use crate::{ArchiveResource, ArchiveResourceContent};
-use crate::{ParseLimits, ParseOptions};
+use crate::{ParseLimits, ParseOptions, Progress, ProgressStage};
 
 const PROTECTED_DOCUMENT_MARKER: &[u8] = b"Document for S-Pen SDK";
 
 /// Parse a `.sdocx` ZIP archive from a reader.
 pub fn parse_from_reader<R: Read + Seek>(reader: R, options: &ParseOptions) -> Result<Document> {
-    parse_archive_from_reader(reader, options, false).map(ParsedDocument::into_document)
+    parse_archive_from_reader(reader, options, false, &mut |_| {})
+        .map(ParsedDocument::into_document)
 }
 
 /// Parse a `.sdocx` archive while retaining its physical page structure.
@@ -31,14 +32,24 @@ pub fn parse_detailed_from_reader<R: Read + Seek>(
     reader: R,
     options: &ParseOptions,
 ) -> Result<ParsedDocument> {
-    parse_archive_from_reader(reader, options, true)
+    parse_detailed_from_reader_with_progress(reader, options, &mut |_| {})
+}
+
+pub(crate) fn parse_detailed_from_reader_with_progress<R: Read + Seek>(
+    reader: R,
+    options: &ParseOptions,
+    observer: &mut dyn FnMut(Progress),
+) -> Result<ParsedDocument> {
+    parse_archive_from_reader(reader, options, true, observer)
 }
 
 fn parse_archive_from_reader<R: Read + Seek>(
     mut reader: R,
     options: &ParseOptions,
     retain_sources: bool,
+    observer: &mut dyn FnMut(Progress),
 ) -> Result<ParsedDocument> {
+    observer(Progress::pending(ProgressStage::Archive));
     let protected_marker = is_protected_document(&mut reader)?;
     let tail = ArchiveTail::read(&mut reader)?;
     let mut report = ParseReport::default();
@@ -151,7 +162,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
     page_names.sort();
 
     (metadata.media_assets, metadata.archive_resources) =
-        parse_media_resources(&mut archive, &options.limits)?;
+        parse_media_resources(&mut archive, &options.limits, observer)?;
     metadata.media_manifest = metadata
         .archive_resources
         .iter()
@@ -173,7 +184,12 @@ fn parse_archive_from_reader<R: Read + Seek>(
     }
 
     let mut page_records = Vec::with_capacity(page_names.len());
-    for name in &page_names {
+    observer(Progress::new(
+        ProgressStage::Pages,
+        0,
+        Some(page_names.len()),
+    ));
+    for (page_index, name) in page_names.iter().enumerate() {
         let buf = read_required_entry(&mut archive, name, &options.limits)?;
         let stored_page = parse_stored_page_bytes_with_limits(&buf, &options.limits)?;
         if let Some(verifier) = &mut integrity {
@@ -186,6 +202,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
             name,
             &mut report,
             &media,
+            observer,
         )?;
 
         for stroke in page.strokes_mut() {
@@ -221,6 +238,11 @@ fn parse_archive_from_reader<R: Read + Seek>(
                 source_bytes: (retain_sources && options.retain_page_sources).then_some(buf),
             },
         });
+        observer(Progress::new(
+            ProgressStage::Pages,
+            page_index + 1,
+            Some(page_names.len()),
+        ));
     }
     page_records = order_page_records(page_records, &metadata.page_ids, &mut report);
     let (pages, stored_pages): (Vec<_>, Vec<_>) = page_records
@@ -539,6 +561,7 @@ fn apply_note_metadata(header: &StoredNoteHeader, metadata: &mut DocumentMetadat
 fn parse_media_resources<R: Read + Seek>(
     archive: &mut zip::ZipArchive<R>,
     limits: &ParseLimits,
+    observer: &mut dyn FnMut(Progress),
 ) -> Result<(Vec<MediaAsset>, Vec<ArchiveResource>)> {
     let mut names = Vec::new();
     for index in 0..archive.len() {
@@ -565,6 +588,8 @@ fn parse_media_resources<R: Read + Seek>(
 
     let mut assets = Vec::new();
     let mut resources = Vec::with_capacity(names.len());
+    let mut progress =
+        crate::progress::WorkProgress::new(observer, ProgressStage::Resources, names.len());
     for (name, index) in names {
         let data = read_zip_entry(archive.by_index(index)?, limits)?;
         let lower = name.to_ascii_lowercase();
@@ -587,6 +612,7 @@ fn parse_media_resources<R: Read + Seek>(
             archive_id,
             content,
         });
+        progress.advance(1);
     }
     Ok((assets, resources))
 }

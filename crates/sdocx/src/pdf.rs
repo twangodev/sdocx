@@ -1,3 +1,4 @@
+use crate::{Progress, ProgressStage};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -214,6 +215,30 @@ pub fn render_layout_pages_pdf_detailed_with_cache(
     fonts: &crate::fonts::FontBook,
     cache: &mut DocumentTextCache,
 ) -> Result<PdfOutput, PdfError> {
+    render_layout_pages_pdf_detailed_with_cache_and_progress(
+        document,
+        layout,
+        page_indices,
+        render_options,
+        pdf_options,
+        fonts,
+        cache,
+        &mut |_| {},
+    )
+}
+
+/// Export the same selected-page PDF while reporting vector composition and writing.
+#[allow(clippy::too_many_arguments)]
+pub fn render_layout_pages_pdf_detailed_with_cache_and_progress(
+    document: &Document,
+    layout: &LayoutDocument,
+    page_indices: &[usize],
+    render_options: &RenderOptions,
+    pdf_options: &PdfOptions,
+    fonts: &crate::fonts::FontBook,
+    cache: &mut DocumentTextCache,
+    observer: &mut dyn FnMut(Progress),
+) -> Result<PdfOutput, PdfError> {
     let mut pdf_options = pdf_options.clone();
     pdf_options.font_database = fonts.database();
     let selected_pages = page_indices
@@ -225,14 +250,16 @@ pub fn render_layout_pages_pdf_detailed_with_cache(
                 .ok_or(PdfError::InvalidPageIndex { page_index })
         })
         .collect::<Result<Vec<_>, PdfError>>()?;
-    let scenes = cache.render_layout_page_scenes(document, &selected_pages, render_options, fonts);
-    let bytes = render_pages_pdf(
+    let scenes =
+        cache.render_layout_page_scenes(document, &selected_pages, render_options, fonts, observer);
+    let bytes = render_pages_pdf_with_progress(
         scenes.iter().map(|scene| PdfPage {
             page: &scene.page,
             text: Some(&scene.text),
             text_error: scene.text_error.as_deref(),
         }),
         &pdf_options,
+        observer,
     )?;
     let pages = page_indices
         .iter()
@@ -289,6 +316,14 @@ fn render_pages_pdf<'a>(
     pages: impl IntoIterator<Item = PdfPage<'a>>,
     options: &PdfOptions,
 ) -> Result<Vec<u8>, PdfError> {
+    render_pages_pdf_with_progress(pages, options, &mut |_| {})
+}
+
+fn render_pages_pdf_with_progress<'a>(
+    pages: impl IntoIterator<Item = PdfPage<'a>>,
+    options: &PdfOptions,
+    observer: &mut dyn FnMut(Progress),
+) -> Result<Vec<u8>, PdfError> {
     if !options.dpi.is_finite() || options.dpi <= 0.0 {
         return Err(PdfError::InvalidDpi);
     }
@@ -305,7 +340,11 @@ fn render_pages_pdf<'a>(
     let mut tags = TagTree::default();
     let mut page_count = 0;
     let mut retained_text = false;
-    for (page_index, source) in pages.into_iter().enumerate() {
+    let pages = pages.into_iter();
+    let (lower, upper) = pages.size_hint();
+    let total = (upper == Some(lower)).then_some(lower);
+    observer(Progress::new(ProgressStage::WritingPdf, 0, total));
+    for (page_index, source) in pages.enumerate() {
         page_count += 1;
         let rendered = source.page;
         if let Some(message) = source.text_error {
@@ -423,6 +462,7 @@ fn render_pages_pdf<'a>(
         }
         surface.finish();
         page.finish();
+        observer(Progress::new(ProgressStage::WritingPdf, page_count, total));
     }
     if page_count == 0 {
         return Err(PdfError::EmptyDocument);
@@ -430,6 +470,7 @@ fn render_pages_pdf<'a>(
     if retained_text {
         pdf.set_tag_tree(tags);
     }
+    observer(Progress::pending(ProgressStage::Finalizing));
     pdf.finish()
         .map_err(|error| PdfError::Conversion(error.to_string()))
 }

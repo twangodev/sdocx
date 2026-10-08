@@ -420,6 +420,15 @@ impl SourceFloats {
 
 /// Build a visible-page view without changing the parsed storage model.
 pub fn layout_document(document: &Document) -> LayoutDocument {
+    layout_document_with_progress(document, &mut |_| {})
+}
+
+/// Build the same visible-page view while reporting completed pages.
+pub fn layout_document_with_progress(
+    document: &Document,
+    observer: &mut dyn FnMut(crate::Progress),
+) -> LayoutDocument {
+    observer(crate::Progress::pending(crate::ProgressStage::Layout));
     let omitted_trailing_blank_page = omits_trailing_blank_page(document);
     let visible_count = document
         .pages
@@ -452,6 +461,8 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
         .zip(text_index.as_ref())
         .filter(|(body, index)| saved_inspection_ranges(body, index, visible_count).is_none())
         .map(|(body, _)| Arc::new(body.clone()));
+    let mut progress =
+        crate::progress::WorkProgress::new(observer, crate::ProgressStage::Layout, visible_count);
     let pages = document
         .pages
         .iter()
@@ -495,6 +506,7 @@ pub fn layout_document(document: &Document) -> LayoutDocument {
                     });
                 }
             }
+            progress.advance(1);
             LayoutPage {
                 source_page_index,
                 page,

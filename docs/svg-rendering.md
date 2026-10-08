@@ -6,7 +6,8 @@ formats their values. It covers the emitted elements and attributes;
 it does not expose a generic attribute setter or raw XML constructor.
 
 `ink` owns Samsung stroke reconstruction. Preview, replay, and PDF conversion
-share the resulting SVG renderer.
+share the resulting SVG renderer. [Processing progress](progress.md) describes
+the observer APIs used by browser loading and exports.
 
 Pages own one `objects: Vec<PageObject>` tree, retaining stored order, container
 boundaries, source offsets and render-layer selection inputs. `strokes()` and

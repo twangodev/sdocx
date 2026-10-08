@@ -990,6 +990,7 @@ name = "sdocx-wasm"
 version = "1.0.0"
 dependencies = [
  "base64",
+ "js-sys",
  "sdocx",
  "serde",
  "serde-wasm-bindgen",

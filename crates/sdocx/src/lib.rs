@@ -42,6 +42,7 @@ mod page_objects;
 mod page_selection;
 #[cfg(feature = "pdf")]
 pub mod pdf;
+mod progress;
 #[cfg(feature = "render")]
 mod render;
 mod report;
@@ -72,7 +73,7 @@ pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;
 pub use layout::{
     BodyTextCaptureWindow, BodyTextReflow, BodyTextSlice, LayoutDocument, LayoutPage,
-    layout_document,
+    layout_document, layout_document_with_progress,
 };
 pub use math::{MathAngleType, MathMargins, MathMetadata, PlotGraph, PlotMetadata};
 pub use media::{
@@ -94,9 +95,12 @@ pub use page_selection::{PageSelectionError, parse_page_selection};
 #[cfg(feature = "pdf")]
 pub use pdf::{
     PdfError, PdfOptions, PdfOutput, PdfPageDiagnostics, render_document_pdf,
-    render_layout_pages_pdf_detailed_with_cache, render_layout_pages_pdf_detailed_with_fonts,
-    render_layout_pages_pdf_with_fonts, render_svg_pages_pdf,
+    render_layout_pages_pdf_detailed_with_cache,
+    render_layout_pages_pdf_detailed_with_cache_and_progress,
+    render_layout_pages_pdf_detailed_with_fonts, render_layout_pages_pdf_with_fonts,
+    render_svg_pages_pdf,
 };
+pub use progress::{Progress, ProgressStage};
 #[cfg(feature = "render")]
 pub use render::{
     DocumentTextCache, GeometryDiagnostic, GeometryDiagnosticKind, ObjectDiagnostic,
@@ -245,6 +249,15 @@ pub fn parse_bytes_detailed_with_options(
 ) -> Result<ParsedDocument> {
     let cursor = Cursor::new(bytes);
     container::parse_detailed_from_reader(cursor, options)
+}
+
+/// Parse using the same decoder while observing completed archive and object work.
+pub fn parse_bytes_detailed_with_progress(
+    bytes: &[u8],
+    options: &ParseOptions,
+    observer: &mut dyn FnMut(Progress),
+) -> Result<ParsedDocument> {
+    container::parse_detailed_from_reader_with_progress(Cursor::new(bytes), options, observer)
 }
 
 /// Length of the ZIP portion, excluding Samsung's appended end tag.

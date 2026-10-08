@@ -1,5 +1,8 @@
 //! Presentation-oriented Svg rendering for parsed Samsung Notes documents.
 
+use crate::progress::WorkProgress;
+use crate::{Progress, ProgressStage};
+
 use crate::{
     BoundingBox, Color, Document, LayoutDocument, MediaAsset, Page, PageElement,
     ParagraphAlignment, PlacedImage, PredefinedTextStyle, RichTextBox, RichTextObjectContent,
@@ -177,6 +180,27 @@ impl DocumentTextCache {
     ) -> Option<RenderedPage> {
         let page = layout.pages.get(page_index)?;
         Some(self.render_page(document, page, options, false, fonts))
+    }
+
+    /// Render the same vector scene while observing preparation and object composition.
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_layout_page_svg_with_progress(
+        &mut self,
+        document: &Document,
+        layout: &LayoutDocument,
+        page_index: usize,
+        options: &RenderOptions,
+        fonts: &fonts::FontBook,
+        observer: &mut dyn FnMut(Progress),
+    ) -> Option<RenderedPage> {
+        let page = layout.pages.get(page_index)?;
+        observer(Progress::pending(ProgressStage::Preparing));
+        self.bind(document, options, fonts);
+        let (mut rendered, scene) =
+            self.prepare_page(document, page, options, false, fonts, false, observer);
+        observer(Progress::pending(ProgressStage::Finalizing));
+        rendered.svg = scene.finish();
+        Some(rendered)
     }
 
     /// Render sample-addressable replay using the same retained body measurements.
@@ -367,7 +391,15 @@ impl DocumentTextCache {
         replay: bool,
         fonts: &fonts::FontBook,
     ) -> RenderedPage {
-        let (page, scene) = self.prepare_page(document, layout_page, options, replay, fonts, false);
+        let (page, scene) = self.prepare_page(
+            document,
+            layout_page,
+            options,
+            replay,
+            fonts,
+            false,
+            &mut |_| {},
+        );
         RenderedPage {
             svg: scene.finish(),
             ..page
@@ -381,16 +413,26 @@ impl DocumentTextCache {
         pages: &[&crate::LayoutPage],
         options: &RenderOptions,
         fonts: &fonts::FontBook,
+        observer: &mut dyn FnMut(Progress),
     ) -> Vec<RenderedScene> {
+        observer(Progress::pending(ProgressStage::Preparing));
         self.bind(document, options, fonts);
         pages
             .iter()
-            .map(|page| {
+            .enumerate()
+            .map(|(index, page)| {
+                observer(Progress::pending(ProgressStage::Preparing));
                 let (mut page, mut scene) =
-                    self.prepare_page(document, page, options, false, fonts, true);
+                    self.prepare_page(document, page, options, false, fonts, true, observer);
                 let text = scene.take_native_text();
                 let text_error = scene.take_native_text_error();
+                observer(Progress::pending(ProgressStage::Finalizing));
                 page.svg = scene.finish();
+                observer(Progress::new(
+                    ProgressStage::Pages,
+                    index + 1,
+                    Some(pages.len()),
+                ));
                 RenderedScene {
                     page,
                     text,
@@ -400,6 +442,7 @@ impl DocumentTextCache {
             .collect()
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn prepare_page(
         &mut self,
         document: &Document,
@@ -408,6 +451,7 @@ impl DocumentTextCache {
         replay: bool,
         fonts: &fonts::FontBook,
         retain_text: bool,
+        observer: &mut dyn FnMut(Progress),
     ) -> (RenderedPage, Scene) {
         let page = &layout_page.page;
         let theme = RenderTheme::resolve(page, &document.metadata, options.color_mode);
@@ -423,6 +467,7 @@ impl DocumentTextCache {
                 layout_page.source_page_index,
                 settings,
             ));
+        observer(Progress::pending(ProgressStage::Preparing));
         let body_text = PreparedBodyText::new(document, layout_page, theme, &text_renderer, self);
         let mut svg = render_page_contents_svg(
             page,
@@ -433,6 +478,7 @@ impl DocumentTextCache {
             &text_renderer,
             body_text.as_ref(),
             retain_text,
+            observer,
         );
         (
             RenderedPage {
@@ -812,6 +858,7 @@ fn render_page_contents_svg(
     text_renderer: &TextRenderer<'_>,
     body_text: Option<&PreparedBodyText>,
     retain_text: bool,
+    observer: &mut dyn FnMut(Progress),
 ) -> Scene {
     let bg = color_hex(&theme.background());
     let vb_x = 0.0;
@@ -862,7 +909,9 @@ fn render_page_contents_svg(
         replay,
         body_text,
     };
-    render_pass(&mut svg, &composition, RenderPass::Base);
+    let total = page.composed_objects().count();
+    let mut progress = WorkProgress::new(observer, ProgressStage::Rendering, total);
+    render_pass(&mut svg, &composition, RenderPass::Base, &mut progress);
     if page
         .objects
         .iter()
@@ -874,10 +923,10 @@ fn render_page_contents_svg(
             Blend::Darken
         };
         svg.scope(Group::new().blend(blend), |svg| {
-            render_pass(svg, &composition, RenderPass::Top);
+            render_pass(svg, &composition, RenderPass::Top, &mut progress);
         });
     }
-    render_pass(&mut svg, &composition, RenderPass::Masking);
+    render_pass(&mut svg, &composition, RenderPass::Masking, &mut progress);
     text_renderer.embed_fonts(&mut svg);
     svg
 }
@@ -892,7 +941,12 @@ struct CompositionContext<'a> {
     body_text: Option<&'a PreparedBodyText>,
 }
 
-fn render_pass(svg: &mut Scene, context: &CompositionContext<'_>, pass: RenderPass) {
+fn render_pass(
+    svg: &mut Scene,
+    context: &CompositionContext<'_>,
+    pass: RenderPass,
+    progress: &mut WorkProgress<'_>,
+) {
     let mut stroke_index = 0;
     for (object_index, object) in context.page.objects.iter().enumerate() {
         if let Some(selected) = object.render_pass() {
@@ -901,8 +955,9 @@ fn render_pass(svg: &mut Scene, context: &CompositionContext<'_>, pass: RenderPa
                     && body.object_index == object_index
                 {
                     body.paint(svg, context);
+                    progress.advance(1);
                 } else {
-                    render_object(svg, context, object, &mut stroke_index);
+                    render_object(svg, context, object, &mut stroke_index, progress);
                 }
             } else {
                 stroke_index += object.stroke_count();
@@ -916,6 +971,7 @@ fn render_object(
     context: &CompositionContext<'_>,
     object: &PageObject,
     stroke_index: &mut usize,
+    progress: &mut WorkProgress<'_>,
 ) {
     match &object.content {
         PageObjectContent::Stroke(stroke) => {
@@ -932,10 +988,11 @@ fn render_object(
         }
         PageObjectContent::Container(children) => {
             for child in children {
-                render_object(svg, context, child, stroke_index);
+                render_object(svg, context, child, stroke_index, progress);
             }
         }
     }
+    progress.advance(1);
 }
 
 fn render_line_background(
@@ -3452,7 +3509,8 @@ mod tests {
         #[cfg(feature = "pdf")]
         {
             let pages = layout.pages.iter().collect::<Vec<_>>();
-            let scenes = cache.render_layout_page_scenes(&document, &pages, &options, &fonts);
+            let scenes =
+                cache.render_layout_page_scenes(&document, &pages, &options, &fonts, &mut |_| {});
             assert!(scenes.iter().all(|scene| scene.text_error.is_none()));
             assert!(super::Rc::ptr_eq(&plan, &cache.plans[0].1));
         }

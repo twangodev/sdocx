@@ -1,4 +1,3 @@
-use crate::ParseLimits;
 use crate::binary::Reader;
 use crate::decode::decode_stroke;
 use crate::error::{Error, Result};
@@ -6,6 +5,7 @@ use crate::image::{decode_image, decode_text_images};
 use crate::media::MediaResolver;
 use crate::note::parse_page_text_box;
 use crate::object::read_bbox;
+use crate::progress::WorkProgress;
 use crate::report::{DiagnosticCode, ParseReport};
 use crate::shape::{decode_line, decode_shape};
 use crate::storage::{StoredObject, StoredPage};
@@ -13,6 +13,7 @@ use crate::types::{
     BoundingBox, Color, ObjectType, Page, PageElement, PageTemplate, PageTemplateSource,
     PdfPaperRecord, PdfPaperRectangle,
 };
+use crate::{ParseLimits, Progress, ProgressStage};
 
 pub(crate) fn parse_page(
     data: &[u8],
@@ -21,6 +22,7 @@ pub(crate) fn parse_page(
     archive_entry: &str,
     report: &mut ParseReport,
     media: &MediaResolver,
+    observer: &mut dyn FnMut(Progress),
 ) -> Result<Page> {
     let header = &stored.header;
     let stroke_count = stored
@@ -46,15 +48,16 @@ pub(crate) fn parse_page(
         objects: Vec::new(),
     };
     parse_page_properties(data, stored, &mut page)?;
-    page.objects = decode_objects(
-        data,
-        &current_layer.objects,
-        &page.uuid,
+    let total = count_objects(&current_layer.objects);
+    let mut decoder = PageDecoder {
+        page_uuid: &page.uuid,
         media,
         limits,
         archive_entry,
         report,
-    )?;
+        progress: WorkProgress::new(observer, ProgressStage::Objects, total),
+    };
+    page.objects = decoder.decode_objects(data, &current_layer.objects)?;
     Ok(page)
 }
 
@@ -67,172 +70,190 @@ fn count_strokes(objects: &[StoredObject]) -> usize {
         .sum()
 }
 
-fn decode_objects(
-    data: &[u8],
-    objects: &[StoredObject],
-    page_uuid: &str,
-    media: &MediaResolver,
-    limits: &ParseLimits,
-    archive_entry: &str,
-    report: &mut ParseReport,
-) -> Result<Vec<crate::PageObject>> {
-    use crate::{ObjectRenderLayer, PageObject, PageObjectContent};
-    let mut decoded_objects = Vec::with_capacity(objects.len());
-    for object in objects {
-        let payload = object
-            .payload(data)
-            .ok_or_else(|| Error::Format("object payload is outside its page".into()))?;
-        let base = object.base_metadata(data).ok();
-        if !matches!(object.object_type, ObjectType::Other(_))
-            && base.as_ref().is_some_and(|base| !base.visible)
-        {
-            continue;
-        }
-        let mut content = None;
-        if object.object_type == ObjectType::Stroke {
-            let stroke = decode_stroke(payload, limits).map_err(|error| match error {
-                Error::Format(message) => Error::Format(format!(
-                    "page {}: stroke at 0x{:x}: {message}",
-                    page_uuid, object.payload_offset
-                )),
-                error => error,
-            })?;
-            content = Some(PageObjectContent::Stroke(stroke));
-        } else if object.object_type == ObjectType::TextBox {
-            let mut decoded =
-                parse_page_text_box(payload, limits).map_err(|error| match error {
+fn count_objects(objects: &[StoredObject]) -> usize {
+    objects
+        .iter()
+        .map(|object| 1 + count_objects(&object.children))
+        .sum()
+}
+
+struct PageDecoder<'a, 'p> {
+    page_uuid: &'a str,
+    media: &'a MediaResolver,
+    limits: &'a ParseLimits,
+    archive_entry: &'a str,
+    report: &'a mut ParseReport,
+    progress: WorkProgress<'p>,
+}
+
+impl PageDecoder<'_, '_> {
+    fn decode_objects(
+        &mut self,
+        data: &[u8],
+        objects: &[StoredObject],
+    ) -> Result<Vec<crate::PageObject>> {
+        use crate::{ObjectRenderLayer, PageObject, PageObjectContent};
+        let mut decoded_objects = Vec::with_capacity(objects.len());
+        for object in objects {
+            let payload = object
+                .payload(data)
+                .ok_or_else(|| Error::Format("object payload is outside its page".into()))?;
+            let base = object.base_metadata(data).ok();
+            if !matches!(object.object_type, ObjectType::Other(_))
+                && base.as_ref().is_some_and(|base| !base.visible)
+            {
+                self.progress.advance(1 + count_objects(&object.children));
+                continue;
+            }
+            let mut content = None;
+            if object.object_type == ObjectType::Stroke {
+                let stroke = decode_stroke(payload, self.limits).map_err(|error| match error {
                     Error::Format(message) => Error::Format(format!(
-                        "page {}: text box at 0x{:x}: {message}",
-                        page_uuid, object.payload_offset
+                        "page {}: stroke at 0x{:x}: {message}",
+                        self.page_uuid, object.payload_offset
                     )),
                     error => error,
                 })?;
-            decode_text_images(&mut decoded.text_box, media, archive_entry, report)?;
-            if !decoded.unsupported.is_empty() {
-                report.warning(
-                    DiagnosticCode::UnsupportedTextBoxFeature,
-                    Some(archive_entry.to_owned()),
-                    format!(
-                        "page {}: text box at 0x{:x}: incomplete semantic support for {}",
-                        page_uuid,
-                        object.payload_offset,
-                        decoded.unsupported.join(", ")
-                    ),
+                content = Some(PageObjectContent::Stroke(stroke));
+            } else if object.object_type == ObjectType::TextBox {
+                let mut decoded =
+                    parse_page_text_box(payload, self.limits).map_err(|error| match error {
+                        Error::Format(message) => Error::Format(format!(
+                            "page {}: text box at 0x{:x}: {message}",
+                            self.page_uuid, object.payload_offset
+                        )),
+                        error => error,
+                    })?;
+                decode_text_images(
+                    &mut decoded.text_box,
+                    self.media,
+                    self.archive_entry,
+                    self.report,
+                )?;
+                if !decoded.unsupported.is_empty() {
+                    self.report.warning(
+                        DiagnosticCode::UnsupportedTextBoxFeature,
+                        Some(self.archive_entry.to_owned()),
+                        format!(
+                            "page {}: text box at 0x{:x}: incomplete semantic support for {}",
+                            self.page_uuid,
+                            object.payload_offset,
+                            decoded.unsupported.join(", ")
+                        ),
+                    );
+                }
+                check_limit(
+                    "objects per page",
+                    self.limits.max_objects_per_page,
+                    decoded_objects.len() + 1,
+                )?;
+                content = Some(PageObjectContent::Element(PageElement::TextBox(
+                    decoded.text_box,
+                )));
+            } else if object.object_type == ObjectType::Image {
+                let decoded = decode_image(payload).map_err(|error| match error {
+                    Error::Format(message) => Error::Format(format!(
+                        "page {}: image at 0x{:x}: {message}",
+                        self.page_uuid, object.payload_offset
+                    )),
+                    error => error,
+                })?;
+                let location = format!(
+                    "page {}: image at 0x{:x}",
+                    self.page_uuid, object.payload_offset
                 );
-            }
-            check_limit(
-                "objects per page",
-                limits.max_objects_per_page,
-                decoded_objects.len() + 1,
-            )?;
-            content = Some(PageObjectContent::Element(PageElement::TextBox(
-                decoded.text_box,
-            )));
-        } else if object.object_type == ObjectType::Image {
-            let decoded = decode_image(payload).map_err(|error| match error {
-                Error::Format(message) => Error::Format(format!(
-                    "page {}: image at 0x{:x}: {message}",
-                    page_uuid, object.payload_offset
-                )),
-                error => error,
-            })?;
-            let location = format!("page {page_uuid}: image at 0x{:x}", object.payload_offset);
-            if let Some(image) = decoded.resolve(media, archive_entry, &location, report) {
-                content = Some(PageObjectContent::Element(PageElement::PlacedImage(image)));
-            }
-        } else if matches!(object.object_type, ObjectType::Shape | ObjectType::Line) {
-            let decoded = if object.object_type == ObjectType::Shape {
-                decode_shape(payload, limits)
-                    .map(|decoded| (PageElement::Shape(decoded.value), decoded.unsupported))
-            } else {
-                decode_line(payload)
-                    .map(|decoded| (PageElement::Line(decoded.value), decoded.unsupported))
-            };
-            let (mut element, unsupported) = decoded.map_err(|error| match error {
-                Error::Format(message) => Error::Format(format!(
-                    "page {}: {:?} at 0x{:x}: {message}",
-                    page_uuid, object.object_type, object.payload_offset
-                )),
-                error => error,
-            })?;
-            if !unsupported.is_empty() {
-                report.warning(
-                    DiagnosticCode::UnsupportedShapeFeature,
-                    Some(archive_entry.to_owned()),
-                    format!(
-                        "page {}: {:?} at 0x{:x}: incomplete support for {}",
-                        page_uuid,
-                        object.object_type,
-                        object.payload_offset,
-                        unsupported.join(", ")
-                    ),
-                );
-            }
-            if let PageElement::Shape(shape) = &mut element
-                && let Some(text) = &mut shape.text
-            {
-                decode_text_images(text, media, archive_entry, report)?;
-            }
-            content = Some(PageObjectContent::Element(element));
-        } else if object.object_type == ObjectType::Container {
-            if base.is_none() {
-                report.warning(
+                if let Some(image) =
+                    decoded.resolve(self.media, self.archive_entry, &location, self.report)
+                {
+                    content = Some(PageObjectContent::Element(PageElement::PlacedImage(image)));
+                }
+            } else if matches!(object.object_type, ObjectType::Shape | ObjectType::Line) {
+                let decoded = if object.object_type == ObjectType::Shape {
+                    decode_shape(payload, self.limits)
+                        .map(|decoded| (PageElement::Shape(decoded.value), decoded.unsupported))
+                } else {
+                    decode_line(payload)
+                        .map(|decoded| (PageElement::Line(decoded.value), decoded.unsupported))
+                };
+                let (mut element, unsupported) = decoded.map_err(|error| match error {
+                    Error::Format(message) => Error::Format(format!(
+                        "page {}: {:?} at 0x{:x}: {message}",
+                        self.page_uuid, object.object_type, object.payload_offset
+                    )),
+                    error => error,
+                })?;
+                if !unsupported.is_empty() {
+                    self.report.warning(
+                        DiagnosticCode::UnsupportedShapeFeature,
+                        Some(self.archive_entry.to_owned()),
+                        format!(
+                            "page {}: {:?} at 0x{:x}: incomplete support for {}",
+                            self.page_uuid,
+                            object.object_type,
+                            object.payload_offset,
+                            unsupported.join(", ")
+                        ),
+                    );
+                }
+                if let PageElement::Shape(shape) = &mut element
+                    && let Some(text) = &mut shape.text
+                {
+                    decode_text_images(text, self.media, self.archive_entry, self.report)?;
+                }
+                content = Some(PageObjectContent::Element(element));
+            } else if object.object_type == ObjectType::Container {
+                if base.is_none() {
+                    self.report.warning(
                     DiagnosticCode::UnsupportedContainerFeature,
-                    Some(archive_entry.to_owned()),
-                    format!("page {page_uuid}: container at 0x{:x}: unreadable common metadata; retaining child order without verified parent visibility or render-layer selection", object.payload_offset),
+                    Some(self.archive_entry.to_owned()),
+                    format!("page {}: container at 0x{:x}: unreadable common metadata; retaining child order without verified parent visibility or render-layer selection", self.page_uuid, object.payload_offset),
                 );
-            }
-            content = Some(PageObjectContent::Container(Vec::new()));
-        } else if !matches!(object.object_type, ObjectType::Other(_)) {
-            report.warning(
+                }
+                content = Some(PageObjectContent::Container(Vec::new()));
+            } else if !matches!(object.object_type, ObjectType::Other(_)) {
+                self.report.warning(
                 DiagnosticCode::UnsupportedObjectType,
-                Some(archive_entry.to_owned()),
+                Some(self.archive_entry.to_owned()),
                 format!(
                     "page {}: {:?} (type {}) at 0x{:x}: payload retained without semantic decoding; child records are traversed separately",
-                    page_uuid,
+                    self.page_uuid,
                     object.object_type,
                     object.object_type.raw(),
                     object.payload_offset
                 ),
             );
-        }
-        let mut children = decode_objects(
-            data,
-            &object.children,
-            page_uuid,
-            media,
-            limits,
-            archive_entry,
-            report,
-        )?;
-        if let Some(mut content) = content {
-            if let PageObjectContent::Container(container) = &mut content {
-                *container = std::mem::take(&mut children);
             }
-            let render_layer = if let Some(base) = base.as_ref()
-                && base.declares_render_layer()
-            {
-                let metadata = base.flexible_metadata_with_limits(limits)?;
-                metadata.render_layer().unwrap_or_else(|| {
-                    report.warning(
+            let mut children = self.decode_objects(data, &object.children)?;
+            if let Some(mut content) = content {
+                if let PageObjectContent::Container(container) = &mut content {
+                    *container = std::mem::take(&mut children);
+                }
+                let render_layer = if let Some(base) = base.as_ref()
+                    && base.declares_render_layer()
+                {
+                    let metadata = base.flexible_metadata_with_limits(self.limits)?;
+                    metadata.render_layer().unwrap_or_else(|| {
+                    self.report.warning(
                         DiagnosticCode::UnresolvedObjectRenderLayer,
-                        Some(archive_entry.to_owned()),
-                        format!("page {page_uuid}: object at 0x{:x}: declared render-layer field could not be decoded after unsupported common field {:?}", object.payload_offset, metadata.first_unparsed_field),
+                        Some(self.archive_entry.to_owned()),
+                        format!("page {}: object at 0x{:x}: declared render-layer field could not be decoded after unsupported common field {:?}", self.page_uuid, object.payload_offset, metadata.first_unparsed_field),
                     );
                     ObjectRenderLayer::Unresolved
                 })
-            } else {
-                ObjectRenderLayer::Base
-            };
-            decoded_objects.push(PageObject {
-                render_layer,
-                source_offset: Some(object.payload_offset),
-                content,
-            });
+                } else {
+                    ObjectRenderLayer::Base
+                };
+                decoded_objects.push(PageObject {
+                    render_layer,
+                    source_offset: Some(object.payload_offset),
+                    content,
+                });
+            }
+            decoded_objects.extend(children);
+            self.progress.advance(1);
         }
-        decoded_objects.extend(children);
+        Ok(decoded_objects)
     }
-    Ok(decoded_objects)
 }
 
 fn parse_page_properties(data: &[u8], stored: &StoredPage, page: &mut Page) -> Result<()> {

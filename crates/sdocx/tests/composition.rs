@@ -604,3 +604,49 @@ fn document_body_text_precedes_page_local_content() {
         );
     }
 }
+
+#[test]
+fn decode_progress_counts_nested_and_hidden_objects_without_changing_output() {
+    use sdocx::{ParseOptions, ProgressStage};
+    let visible = stroke(0xff000000, false, true, 1000);
+    let hidden = object(4, &base(false, 1000), std::slice::from_ref(&visible));
+    let nested = object(4, &base(true, 1000), std::slice::from_ref(&visible));
+    let bytes = archive(&page(&[vec![hidden, nested]], 0, &[]));
+    let mut events = Vec::new();
+    let reported =
+        sdocx::parse_bytes_detailed_with_progress(&bytes, &ParseOptions::default(), &mut |event| {
+            events.push(event)
+        })
+        .unwrap();
+    let normal = sdocx::parse_bytes_detailed(&bytes).unwrap();
+    assert_eq!(
+        rendered_modes(&reported.document),
+        rendered_modes(&normal.document)
+    );
+    #[cfg(feature = "serde")]
+    assert_eq!(
+        serde_json::to_value(&reported).unwrap(),
+        serde_json::to_value(&normal).unwrap()
+    );
+    let counts = events
+        .iter()
+        .filter(|event| event.stage == ProgressStage::Objects)
+        .map(|event| (event.completed, event.total))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        counts,
+        [(0, Some(4)), (2, Some(4)), (3, Some(4)), (4, Some(4))]
+    );
+    assert_eq!(events.last().unwrap().stage, ProgressStage::Pages);
+    assert_eq!(events.last().unwrap().completed, 1);
+    let mut failed = Vec::new();
+    assert!(
+        sdocx::parse_bytes_detailed_with_progress(
+            b"invalid",
+            &ParseOptions::default(),
+            &mut |event| failed.push(event)
+        )
+        .is_err()
+    );
+    assert!(failed.iter().all(|event| event.total.is_none()));
+}

@@ -44,7 +44,13 @@ fn scene() -> crate::render::RenderedScene {
     let layout = crate::layout_document(&document);
     let fonts = FontBook::default();
     let scene = DocumentTextCache::default()
-        .render_layout_page_scenes(&document, &[&layout.pages[0]], &Default::default(), &fonts)
+        .render_layout_page_scenes(
+            &document,
+            &[&layout.pages[0]],
+            &Default::default(),
+            &fonts,
+            &mut |_| {},
+        )
         .remove(0);
     assert!(scene.text_error.is_none());
     assert_eq!(scene.text.len(), 1);

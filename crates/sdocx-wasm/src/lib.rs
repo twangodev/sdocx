@@ -1,5 +1,6 @@
 mod debugger;
 mod js_numbers;
+mod progress;
 mod render_output;
 mod source_summary;
 use serde::Serialize;
@@ -39,23 +40,15 @@ impl DocumentSession {
     /// Parse a `.sdocx` document using browser-specific resource limits.
     #[wasm_bindgen(constructor)]
     pub fn new(bytes: &[u8]) -> Result<DocumentSession, JsError> {
-        if bytes.len() > MAX_BROWSER_INPUT_SIZE {
-            return Err(JsError::new("input exceeds the browser limit of 250 MiB"));
-        }
+        Self::create(bytes, &mut |_| {})
+    }
 
-        let options = browser_parse_options();
-        let parsed = sdocx::parse_bytes_detailed_with_options(bytes, &options)
-            .map_err(|error| JsError::new(&error.to_string()))?;
-        let layout = sdocx::layout_document(&parsed.document);
-        let page_count = layout.pages.len();
-        Ok(Self {
-            debugger: Some(debugger::Source::new(bytes)?),
-            parsed: Some(parsed),
-            layout: Some(layout),
-            page_count,
-            fonts: sdocx::fonts::FontBook::default(),
-            text_cache: RefCell::new(sdocx::DocumentTextCache::default()),
-        })
+    /// Parse with live stage counters without retaining the JavaScript listener.
+    pub fn create_with_progress(
+        bytes: &[u8],
+        callback: &js_sys::Function,
+    ) -> Result<DocumentSession, JsError> {
+        Self::create(bytes, &mut progress::observer(callback))
     }
 
     /// Number of visible pages available for preview or export.
@@ -139,6 +132,38 @@ impl DocumentSession {
             .map_err(|error| JsError::new(&error.to_string()))
     }
 
+    /// Render vector SVG with live preparation and object counters.
+    pub fn render_svg_detailed_with_progress(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+        callback: &js_sys::Function,
+    ) -> Result<JsValue, JsError> {
+        let page = self.render_svg_output_with_progress(
+            page_index,
+            color_mode,
+            &mut progress::observer(callback),
+        )?;
+        serde_wasm_bindgen::to_value(&render_output::SvgOutput::new(page_index, page))
+            .map_err(|error| JsError::new(&error.to_string()))
+    }
+
+    /// Export vector PDF with live scene and page-writing counters.
+    pub fn render_pdf_pages_detailed_with_progress(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+        callback: &js_sys::Function,
+    ) -> Result<JsValue, JsError> {
+        let output = self.render_pdf_output_with_progress(
+            page_indices,
+            color_mode,
+            &mut progress::observer(callback),
+        )?;
+        serde_wasm_bindgen::to_value(&render_output::PdfOutput::from(output))
+            .map_err(|error| JsError::new(&error.to_string()))
+    }
+
     /// Lazy debugger request. Large integers are returned as decimal strings.
     pub fn debug(&mut self, request: &str) -> Result<String, JsError> {
         let parsed = self
@@ -175,22 +200,57 @@ impl DocumentSession {
 }
 
 impl DocumentSession {
+    fn create(
+        bytes: &[u8],
+        observer: &mut dyn FnMut(sdocx::Progress),
+    ) -> Result<DocumentSession, JsError> {
+        if bytes.len() > MAX_BROWSER_INPUT_SIZE {
+            return Err(JsError::new("input exceeds the browser limit of 250 MiB"));
+        }
+
+        let options = browser_parse_options();
+        let parsed = sdocx::parse_bytes_detailed_with_progress(bytes, &options, observer)
+            .map_err(|error| JsError::new(&error.to_string()))?;
+        let layout = sdocx::layout_document_with_progress(&parsed.document, observer);
+        let page_count = layout.pages.len();
+        observer(sdocx::Progress::pending(sdocx::ProgressStage::Preparing));
+        Ok(Self {
+            debugger: Some(debugger::Source::new(bytes)?),
+            parsed: Some(parsed),
+            layout: Some(layout),
+            page_count,
+            fonts: sdocx::fonts::FontBook::default(),
+            text_cache: RefCell::new(sdocx::DocumentTextCache::default()),
+        })
+    }
+
     fn render_svg_output(
         &self,
         page_index: usize,
         color_mode: &str,
     ) -> Result<sdocx::RenderedPage, JsError> {
+        self.render_svg_output_with_progress(page_index, color_mode, &mut |_| {})
+    }
+
+    fn render_svg_output_with_progress(
+        &self,
+        page_index: usize,
+        color_mode: &str,
+        observer: &mut dyn FnMut(sdocx::Progress),
+    ) -> Result<sdocx::RenderedPage, JsError> {
         let parsed = self.parsed()?;
         let mut options = sdocx::RenderOptions::default();
         options.color_mode = parse_render_color_mode(color_mode)?;
         self.text_cache
-            .borrow_mut()
-            .render_layout_page_svg(
+            .try_borrow_mut()
+            .map_err(|_| JsError::new("document rendering is already in progress"))?
+            .render_layout_page_svg_with_progress(
                 &parsed.document,
                 self.layout()?,
                 page_index,
                 &options,
                 &self.fonts,
+                observer,
             )
             .ok_or_else(|| JsError::new("page index is out of bounds"))
     }
@@ -199,6 +259,15 @@ impl DocumentSession {
         &self,
         page_indices: &[u32],
         color_mode: &str,
+    ) -> Result<sdocx::PdfOutput, JsError> {
+        self.render_pdf_output_with_progress(page_indices, color_mode, &mut |_| {})
+    }
+
+    fn render_pdf_output_with_progress(
+        &self,
+        page_indices: &[u32],
+        color_mode: &str,
+        observer: &mut dyn FnMut(sdocx::Progress),
     ) -> Result<sdocx::PdfOutput, JsError> {
         let parsed = self.parsed()?;
         let layout = self.layout()?;
@@ -215,14 +284,19 @@ impl DocumentSession {
             return Err(JsError::new("page index is out of bounds"));
         }
         let pdf_options = sdocx::PdfOptions::new(self.fonts.database());
-        sdocx::render_layout_pages_pdf_detailed_with_cache(
+        let mut cache = self
+            .text_cache
+            .try_borrow_mut()
+            .map_err(|_| JsError::new("document rendering is already in progress"))?;
+        sdocx::render_layout_pages_pdf_detailed_with_cache_and_progress(
             &parsed.document,
             layout,
             &page_indices,
             &options,
             &pdf_options,
             &self.fonts,
-            &mut self.text_cache.borrow_mut(),
+            &mut cache,
+            observer,
         )
         .map_err(|error| JsError::new(&error.to_string()))
     }
