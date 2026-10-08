@@ -1,0 +1,55 @@
+name: Tag Container Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing CLI release tag
+        required: true
+        type: string
+      image_digest:
+        description: Published multi-architecture image digest (sha256)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    environment: docker
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify release image and publish version tags
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+          IMAGE: ghcr.io/twangodev/sdocx
+        run: |
+          [[ "$RELEASE_TAG" =~ ^sdocx-cli-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]
+          version="${BASH_REMATCH[1]}"
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          revision="$(git rev-parse HEAD)"
+          manifest="$(docker buildx imagetools inspect "$IMAGE@$IMAGE_DIGEST" --raw)"
+          for architecture in amd64 arm64; do
+            digest="$(jq -er --arg architecture "$architecture" \
+              '.manifests[] | select(.platform.os == "linux" and .platform.architecture == $architecture) | .digest' <<< "$manifest")"
+            docker buildx imagetools inspect "$IMAGE@$digest" --format '{{json .Image}}' \
+              | jq -e --arg revision "$revision" '.config.Labels["org.opencontainers.image.revision"] == $revision'
+          done
+          docker buildx imagetools create \
+            --tag "$IMAGE:$version" \
+            --tag "$IMAGE:${version%.*}" \
+            "$IMAGE@$IMAGE_DIGEST"
