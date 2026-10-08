@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { CircleCheck, TriangleAlert, X } from '@lucide/svelte';
 	import IconButton from './ui/IconButton.svelte';
+	import Notification from './ui/Notification.svelte';
 
 	let { codes, failed = false, anchored = false, onDismiss }: {
 		codes: string[];
@@ -24,32 +25,19 @@
 	}));
 </script>
 
-<div class="pointer-events-none {anchored ? 'absolute top-4' : 'fixed top-12'} left-1/2 z-50 w-max max-w-[calc(100%-2rem)] -translate-x-1/2">
-	<aside aria-label="Document upload notification" class="toast pointer-events-auto flex items-start gap-2 rounded-lg border border-subtle bg-raised px-3 py-2 text-text shadow-lg" class:leaving>
-		<div class="mt-0.5 shrink-0" class:text-muted={hasIssues} class:text-success={!hasIssues}>
+<Notification label="Document upload notification" floating {anchored} {leaving}>
+	{#snippet icon()}
+		<div class:text-muted={hasIssues} class:text-success={!hasIssues}>
 			{#if hasIssues}<TriangleAlert size={14} />{:else}<CircleCheck size={14} />{/if}
 		</div>
-		<div class="min-w-0">
-			<p role="status" class="text-xs font-medium">{failed ? 'Import failed' : codes.length ? `Imported with ${codes.length} ${codes.length === 1 ? 'warning' : 'warnings'}` : 'Successfully imported'}</p>
-			<div class="mt-0.5 flex flex-wrap items-center gap-x-1 text-[11px] text-muted">
-				<a href={issueUrl} target="_blank" rel="noreferrer" class="hover:text-accent hover:underline">Report an issue</a>
-				<span>or</span>
-				<a href="https://github.com/twangodev/sdocx/issues/new?title=Feature%20request" target="_blank" rel="noreferrer" class="hover:text-accent hover:underline">request a feature</a>
-			</div>
-		</div>
+	{/snippet}
+	{#snippet actions()}
 		<IconButton label="Dismiss notification" onclick={onDismiss}><X size={12} /></IconButton>
-	</aside>
-</div>
-
-<style>
-	.toast { animation: toast-in 180ms var(--ease-out) both; }
-	.toast.leaving { animation: toast-out 180ms var(--ease-standard) both; }
-	@keyframes toast-in {
-		from { opacity: 0; transform: translateY(-12px); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-	@keyframes toast-out {
-		from { opacity: 1; transform: translateY(0); }
-		to { opacity: 0; transform: translateY(-12px); }
-	}
-</style>
+	{/snippet}
+	<p role="status" class="text-xs font-medium">{failed ? 'Import failed' : codes.length ? `Imported with ${codes.length} ${codes.length === 1 ? 'warning' : 'warnings'}` : 'Successfully imported'}</p>
+	<div class="mt-0.5 flex flex-wrap items-center gap-x-1 text-[11px] text-muted">
+		<a href={issueUrl} target="_blank" rel="noreferrer" class="hover:text-accent hover:underline">Report an issue</a>
+		<span>or</span>
+		<a href="https://github.com/twangodev/sdocx/issues/new?title=Feature%20request" target="_blank" rel="noreferrer" class="hover:text-accent hover:underline">request a feature</a>
+	</div>
+</Notification>
