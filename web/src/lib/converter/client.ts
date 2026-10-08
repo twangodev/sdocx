@@ -2,19 +2,20 @@ import type { DebugRequest } from '$lib/debugger/model';
 import type {
 	ColorMode,
 	ConverterEvent,
+	ConverterProgress,
 	ConverterRequest,
 	DocumentSummary,
 	PdfRenderResult,
 	SvgRenderResult,
-	WorkerPhase
 } from './protocol';
 
 type Pending = {
 	resolve: (value: unknown) => void;
 	reject: (reason: Error) => void;
+	onProgress?: ProgressListener;
 };
 
-export type ProgressListener = (generation: number, phase: WorkerPhase, message: string) => void;
+export type ProgressListener = (event: ConverterProgress) => void;
 type RequestPayload = ConverterRequest extends infer Request
 	? Request extends { id: number }
 		? Omit<Request, 'id'>
@@ -25,8 +26,8 @@ export interface ConverterClientPort {
 	load(bytes: ArrayBuffer, generation: number): Promise<DocumentSummary>;
 	inspect(): Promise<unknown>;
 	debug?(request: DebugRequest): Promise<unknown>;
-	renderPage(pageIndex: number, colorMode: ColorMode): Promise<SvgRenderResult>;
-	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult>;
+	renderPage(pageIndex: number, colorMode: ColorMode, onProgress?: ProgressListener): Promise<SvgRenderResult>;
+	exportPdf(pageIndices: number[], colorMode: ColorMode, onProgress?: ProgressListener): Promise<PdfRenderResult>;
 	resolvePages(selection: string): Promise<number[]>;
 	exportJson(): Promise<string>;
 	dispose(generation: number): Promise<void>;
@@ -57,17 +58,17 @@ export class ConverterClient implements ConverterClientPort {
 		return this.request({ type: 'inspect', generation: this.generation });
 	}
 
-	async renderPage(pageIndex: number, colorMode: ColorMode): Promise<SvgRenderResult> {
+	async renderPage(pageIndex: number, colorMode: ColorMode, onProgress?: ProgressListener): Promise<SvgRenderResult> {
 		return (await this.request({
 			type: 'renderPage',
 			generation: this.generation,
 			pageIndex,
 			colorMode
-		})) as SvgRenderResult;
+		}, [], onProgress)) as SvgRenderResult;
 	}
 
-	async exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult> {
-		return (await this.request({ type: 'exportPdf', generation: this.generation, pageIndices, colorMode })) as PdfRenderResult;
+	async exportPdf(pageIndices: number[], colorMode: ColorMode, onProgress?: ProgressListener): Promise<PdfRenderResult> {
+		return (await this.request({ type: 'exportPdf', generation: this.generation, pageIndices, colorMode }, [], onProgress)) as PdfRenderResult;
 	}
 
 	async resolvePages(selection: string): Promise<number[]> {
@@ -105,18 +106,22 @@ export class ConverterClient implements ConverterClientPort {
 
 	private request(
 		request: RequestPayload,
-		transfer: Transferable[] = []
+		transfer: Transferable[] = [],
+		onProgress?: ProgressListener
 	): Promise<unknown> {
 		const id = this.nextId++;
 		return new Promise((resolve, reject) => {
-			this.pending.set(id, { resolve, reject });
+			this.pending.set(id, { resolve, reject, onProgress });
 			this.worker.postMessage({ ...request, id } as ConverterRequest, transfer);
 		});
 	}
 
 	private handleMessage(event: ConverterEvent): void {
 		if (event.type === 'progress') {
-			this.onProgress?.(event.generation, event.phase, event.message);
+			if (event.generation !== this.generation) return;
+			const pending = this.pending.get(event.id);
+			if (!pending) return;
+			(pending.onProgress ?? this.onProgress)?.(event);
 			return;
 		}
 

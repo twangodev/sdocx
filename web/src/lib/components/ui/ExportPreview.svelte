@@ -3,6 +3,8 @@
 	import IconButton from './IconButton.svelte';
 	import type { ColorMode, PageRenderReport, SvgRenderResult } from '$converter/protocol';
 	import { pageReport } from '$converter/render-reports';
+	import ProcessingProgress from './ProcessingProgress.svelte';
+	import { pendingProgress, type ProcessingProgress as WorkProgress, type WorkListener } from '$converter/progress';
 	import RenderNotices from '../RenderNotices.svelte';
 
 	let { pageIndex, colorMode, enabled, busy, pngScale, render }: {
@@ -11,11 +13,12 @@
 		enabled: boolean;
 		busy: boolean;
 		pngScale?: 1 | 2;
-		render: (pageIndex: number, colorMode: ColorMode) => Promise<SvgRenderResult>;
+		render: (pageIndex: number, colorMode: ColorMode, onProgress?: WorkListener) => Promise<SvgRenderResult>;
 	} = $props();
 	let url = $state('');
 	let error = $state('');
 	let loading = $state(false);
+	let work = $state<WorkProgress | null>(null);
 	let reports = $state<PageRenderReport[]>([]);
 	let attempt = $state(0);
 	let width = $state(0), height = $state(0);
@@ -29,11 +32,13 @@
 		attempt;
 		url = ''; error = ''; width = 0; height = 0; zoom = null; reports = [];
 		loading = enabled;
+		work = enabled ? pendingProgress('preparing') : null;
 		if (!enabled) return;
 		let active = true;
 		let ownedUrl = '';
-		void render(page, mode).then(result => {
+		void render(page, mode, progress => { if (active) work = progress; }).then(result => {
 			if (!active) return;
+			work = pendingProgress('displaying');
 			ownedUrl = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml' }));
 			url = ownedUrl;
 			reports = [pageReport(result)];
@@ -47,7 +52,7 @@
 
 	function loaded(event: Event) {
 		const image = event.currentTarget as HTMLImageElement;
-		width = image.naturalWidth; height = image.naturalHeight; loading = false;
+		width = image.naturalWidth; height = image.naturalHeight; loading = false; work = null;
 	}
 	function stepZoom(step: number) {
 		zoom = Math.min(2, Math.max(0.1, imageScale + step));
@@ -60,7 +65,7 @@
 	{:else if !enabled}
 		<p class="preview-message">Choose valid pages to preview.</p>
 	{:else}
-		{#if loading}<div class="preview-message" role="status"><LoaderCircle size={20} class="mx-auto mb-2 animate-spin" />Preparing page…</div>{/if}
+		{#if loading}<div class="preview-message" role="status"><LoaderCircle size={20} class="mx-auto mb-2 animate-spin" />Preparing page…<ProcessingProgress progress={work} /></div>{/if}
 		{#if url}
 			<div class="preview-sheet" style:visibility={loading ? 'hidden' : undefined}>
 				<img src={url} alt={`Export preview of page ${pageIndex + 1}`} onload={loaded}

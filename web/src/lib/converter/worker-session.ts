@@ -5,22 +5,24 @@ import type {
 	DocumentSummary,
 	PdfRenderResult,
 	SvgRenderResult,
-	WorkerPhase
+	WorkerPhase,
+	ConverterProgress
 } from './protocol';
 import { BrowserDocumentSession } from './wasm-adapter';
+import { pendingProgress, progressLabel, type ProcessingProgress, type WorkListener } from './progress';
 
 interface ActiveDocumentSession {
 	summary(): DocumentSummary;
 	inspection(): unknown;
 	resolvePages(selection: string): number[];
-	exportPdf(pageIndices: number[], colorMode: ColorMode): Promise<PdfRenderResult>;
+	exportPdf(pageIndices: number[], colorMode: ColorMode, onProgress?: WorkListener): Promise<PdfRenderResult>;
 	debug?(request: DebugRequest): unknown;
-	renderPage(pageIndex: number, colorMode: ColorMode): SvgRenderResult;
+	renderPage(pageIndex: number, colorMode: ColorMode, onProgress?: WorkListener): SvgRenderResult;
 	dispose(): void;
 }
 
-type SessionFactory = (bytes: ArrayBuffer) => Promise<ActiveDocumentSession>;
-type ProgressListener = (generation: number, phase: WorkerPhase, message: string) => void;
+type SessionFactory = (bytes: ArrayBuffer, onProgress: WorkListener) => Promise<ActiveDocumentSession>;
+type ProgressListener = (event: ConverterProgress) => void;
 
 export class ConverterWorkerSession {
 	private session: ActiveDocumentSession | undefined;
@@ -50,10 +52,9 @@ export class ConverterWorkerSession {
 			case 'inspect':
 				return this.requireSession().inspection();
 			case 'renderPage':
-				this.progress(request.generation, 'rendering', `Rendering page ${request.pageIndex + 1}`);
-				return this.requireSession().renderPage(request.pageIndex, request.colorMode);
+				return this.requireSession().renderPage(request.pageIndex, request.colorMode, this.observer(request));
 			case 'exportPdf': {
-				const result = await this.requireSession().exportPdf(request.pageIndices, request.colorMode);
+				const result = await this.requireSession().exportPdf(request.pageIndices, request.colorMode, this.observer(request));
 				this.assertCurrent(request.generation);
 				return result;
 			}
@@ -68,18 +69,18 @@ export class ConverterWorkerSession {
 		if (request.generation < this.generation) throw supersededLoad();
 		this.generation = request.generation;
 		this.disposeCurrent();
-		this.progress(request.generation, 'loading', 'Loading the browser renderer');
+		const observer = this.observer(request);
+		observer(pendingProgress('loading'));
 		let next: ActiveDocumentSession | undefined;
 		try {
-			this.progress(request.generation, 'parsing', 'Parsing document locally');
-			next = await this.createSession(request.bytes);
+			next = await this.createSession(request.bytes, observer);
 			this.assertCurrent(request.generation);
-			this.progress(request.generation, 'inspecting', 'Reading document structure');
+			observer(pendingProgress('inspecting'));
 			const summary = next.summary();
 			this.assertCurrent(request.generation);
 			this.session = next;
 			next = undefined;
-			this.progress(request.generation, 'ready', 'Document ready');
+			observer({ stage: 'ready', completed: 1, total: 1 });
 			return summary;
 		} catch (error) {
 			try {
@@ -91,8 +92,16 @@ export class ConverterWorkerSession {
 		}
 	}
 
-	private progress(generation: number, phase: WorkerPhase, message: string): void {
-		this.onProgress(generation, phase, message);
+	private observer(request: Extract<ConverterRequest, { type: 'load' | 'renderPage' | 'exportPdf' }>): WorkListener {
+		return (progress: ProcessingProgress) => {
+			if (request.generation !== this.generation) return;
+			const phase: WorkerPhase = request.type !== 'load' ? 'rendering'
+				: progress.stage === 'loading' ? 'loading'
+				: progress.stage === 'inspecting' ? 'inspecting'
+				: progress.stage === 'ready' ? 'ready' : 'parsing';
+			this.onProgress({ type: 'progress', id: request.id, generation: request.generation,
+				operation: request.type, phase, message: progressLabel(progress), progress });
+		};
 	}
 
 	private assertCurrent(generation: number): void {

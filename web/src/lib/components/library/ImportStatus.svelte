@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import ProcessingProgress from '../ui/ProcessingProgress.svelte';
 	import IconButton from '../ui/IconButton.svelte';
 	import type { LibraryWorkspace } from '$lib/library/workspace.svelte';
 	let { library, onTemporary }: { library: LibraryWorkspace; onTemporary: (file: File) => void } =
@@ -40,6 +41,7 @@
 				>
 			{/if}
 		</div>
+		{#if library.importing}<ProcessingProgress progress={library.progress?.work} />{/if}
 		{#if counts.failed}
 			<div class="max-h-36 overflow-y-auto pb-2">
 				{#each library.results as result, index (index)}

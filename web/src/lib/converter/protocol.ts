@@ -1,4 +1,5 @@
 import type { DebugRequest } from '$lib/debugger/model';
+import type { ProcessingProgress } from './progress';
 export const MAX_INPUT_BYTES = 250 * 1024 * 1024;
 export const LARGE_INPUT_BYTES = 100 * 1024 * 1024;
 
@@ -76,7 +77,17 @@ export type ConverterResult =
 
 export type ConverterEvent =
 	| ConverterResult
-	| { type: 'progress'; generation: number; phase: WorkerPhase; message: string };
+	| ConverterProgress;
+
+export interface ConverterProgress {
+	type: 'progress';
+	id: number;
+	generation: number;
+	operation: 'load' | 'renderPage' | 'exportPdf';
+	phase: WorkerPhase;
+	message: string;
+	progress: ProcessingProgress;
+}
 
 export function assertAcceptedFile(file: Pick<File, 'name' | 'size'>): void {
 	if (!file.name.toLowerCase().endsWith('.sdocx')) {

@@ -158,6 +158,7 @@
 			status={model.status.message}
 			exporting={model.view.exporting}
 			exportProgress={model.status.exportProgress}
+			progress={model.view.exporting ? session.exportWork : session.progress}
 		/>
 	</div>
 </div>

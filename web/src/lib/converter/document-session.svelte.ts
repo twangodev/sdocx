@@ -25,6 +25,7 @@ import {
 import { exportDetails, type ExportRequest } from './export-options';
 import { toInspectionView, type InspectionView } from './view-model';
 import { pageReport } from './render-reports';
+import { pendingProgress, type ProcessingProgress, type WorkListener } from './progress';
 
 
 export interface RenderedPage {
@@ -56,6 +57,8 @@ export class DocumentSession {
 	rendering = $state(false);
 	exporting = $state(false);
 	exportProgress = $state('');
+	progress = $state<ProcessingProgress | null>(null);
+	exportWork = $state<ProcessingProgress | null>(null);
 
 	private client: ConverterClientPort | undefined;
 	private loadGeneration = 0;
@@ -79,10 +82,11 @@ export class DocumentSession {
 	}
 
 	start(): () => void {
-		this.client = this.createClient((generation, phase, message) => {
-			if (generation !== this.loadGeneration) return;
-			this.phase = phase;
-			this.status = message;
+		this.client = this.createClient((event) => {
+			if (event.generation !== this.loadGeneration || event.operation !== 'load') return;
+			this.phase = event.phase;
+			this.status = event.message;
+			this.progress = event.progress;
 		});
 		return () => this.destroy();
 	}
@@ -121,6 +125,8 @@ export class DocumentSession {
 			this.activeFile = file;
 			this.parsing = true;
 			this.status = 'Reading file from this device';
+			this.phase = 'loading';
+			this.progress = pendingProgress('reading');
 			const bytes = await file.arrayBuffer();
 			if (generation !== this.loadGeneration) return;
 			const nextSummary = await this.requireClient().load(bytes, generation);
@@ -129,6 +135,7 @@ export class DocumentSession {
 			this.details = toInspectionView(nextSummary.inspection);
 			this.status = `${nextSummary.pageCount} ${nextSummary.pageCount === 1 ? 'page' : 'pages'} ready`;
 			this.phase = 'ready';
+			this.progress = null;
 
 			if (nextSummary.pageCount > 0) await this.renderPreviews();
 		} catch (cause) {
@@ -190,13 +197,16 @@ export class DocumentSession {
 	}
 
 
-	async renderExportPreview(pageIndex: number, colorMode: ColorMode): Promise<SvgRenderResult> {
+	async renderExportPreview(pageIndex: number, colorMode: ColorMode, onProgress?: WorkListener): Promise<SvgRenderResult> {
 		if (!this.summary || !this.activeFile) throw new Error('No document loaded.');
 		if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= this.summary.pageCount) {
 			throw new Error('Select a valid preview page.');
 		}
 		const generation = this.loadGeneration;
-		const result = await this.requireClient().renderPage(pageIndex, colorMode);
+		const client = this.requireClient();
+		const result = await (onProgress ? client.renderPage(pageIndex, colorMode, event => {
+			if (generation === this.loadGeneration) onProgress(event.progress);
+		}) : client.renderPage(pageIndex, colorMode));
 		if (generation !== this.loadGeneration) throw new Error('Document replaced.');
 		return result;
 	}
@@ -225,6 +235,9 @@ export class DocumentSession {
 		const assertCurrent = () => {
 			if (generation !== this.loadGeneration) throw new Error('Export cancelled.');
 		};
+		const onProgress: ProgressListener = (event) => {
+			if (generation === this.loadGeneration && this.exporting) this.exportWork = event.progress;
+		};
 		const reports: PageRenderReport[] = [];
 		this.exportReports = [];
 		this.exportColorMode = colorMode;
@@ -235,16 +248,18 @@ export class DocumentSession {
 			let blob: Blob;
 			if (format === 'pdf') {
 				this.exportProgress = 'Generating PDF';
-				const result = await client.exportPdf(indices, colorMode);
+				const result = await client.exportPdf(indices, colorMode, onProgress);
 				assertCurrent();
 				reports.push(...result.pages);
 				blob = new Blob([result.bytes], { type: 'application/pdf' });
 			} else if (format === 'json') {
+				this.exportWork = pendingProgress('inspecting');
 				blob = new Blob([await client.exportJson()], { type: 'application/json' });
 			} else if (format !== 'everything' && indices.length === 1) {
-				const result = await client.renderPage(indices[0], colorMode);
+				const result = await client.renderPage(indices[0], colorMode, onProgress);
 				assertCurrent();
 				reports.push(pageReport(result));
+				if (format === 'png') this.exportWork = pendingProgress('encoding');
 				blob = format === 'png' ? await svgToPng(result.svg, pngScale) : new Blob([result.svg], { type: 'image/svg+xml' });
 			} else {
 				const session = this;
@@ -259,18 +274,20 @@ export class DocumentSession {
 					for (const [position, index] of indices.entries()) {
 						assertCurrent();
 						session.exportProgress = `Rendering page ${position + 1} of ${indices.length}`;
-						const result = await client.renderPage(index, colorMode);
+						const result = await client.renderPage(index, colorMode, onProgress);
 						assertCurrent();
 						reports.push(pageReport(result));
 						if (format === 'svg' || format === 'everything') {
 							yield { name: pageFilename(stem, index, 'svg'), bytes: textBytes(result.svg) };
 						}
 						if (format === 'png' || format === 'everything') {
+							session.exportWork = pendingProgress('encoding');
 							session.exportProgress = `Rasterizing page ${position + 1} of ${indices.length}`;
 							const png = await svgToPng(result.svg, pngScale);
 							assertCurrent();
 							yield { name: pageFilename(stem, index, 'png'), bytes: new Uint8Array(await png.arrayBuffer()) };
 						}
+						session.exportWork = pendingProgress('packaging');
 					}
 				}
 				blob = await createZip(entries());
@@ -289,6 +306,8 @@ export class DocumentSession {
 		const colorMode = this.colorMode;
 		const file = this.activeFile;
 		this.rendering = true;
+		this.phase = 'rendering';
+		this.progress = pendingProgress('preparing');
 		this.error = '';
 		this.releasePreviews();
 		this.previewUrls = Array(pageCount).fill('');
@@ -297,7 +316,9 @@ export class DocumentSession {
 		try {
 			for (let index = 0; index < pageCount; index += 1) {
 				this.status = `Rendering page ${index + 1} of ${pageCount}`;
-				const result = await this.requireClient().renderPage(index, colorMode);
+				const result = await this.requireClient().renderPage(index, colorMode, (event) => {
+					if (generation === this.renderGeneration && loadGeneration === this.loadGeneration) this.progress = event.progress;
+				});
 				if (generation !== this.renderGeneration || loadGeneration !== this.loadGeneration) return;
 				this.previewReports = [...this.previewReports, pageReport(result)];
 				if (file) this.onPageRendered?.({ file, pageIndex: index, svg: result.svg });
@@ -309,11 +330,17 @@ export class DocumentSession {
 		} catch (cause) {
 			if (generation === this.renderGeneration) this.error = messageFrom(cause);
 		} finally {
-			if (generation === this.renderGeneration) this.rendering = false;
+			if (generation === this.renderGeneration) {
+				this.rendering = false;
+				this.phase = this.error ? null : 'ready';
+				this.progress = null;
+			}
 		}
 	}
 
 	private clearDocument(): void {
+		this.progress = null;
+		this.exportWork = null;
 		this.exporting = false;
 		this.exportProgress = '';
 		this.renderGeneration += 1;
@@ -338,6 +365,7 @@ export class DocumentSession {
 		this.exporting = true;
 		this.error = '';
 		this.exportProgress = 'Preparing download';
+		this.exportWork = pendingProgress('preparing');
 		try {
 			await task();
 			if (generation === this.loadGeneration) this.status = 'Download started';
@@ -347,6 +375,7 @@ export class DocumentSession {
 			if (generation === this.loadGeneration) {
 				this.exporting = false;
 				this.exportProgress = '';
+				this.exportWork = null;
 			}
 		}
 	}

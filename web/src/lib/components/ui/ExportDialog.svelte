@@ -2,8 +2,10 @@
 	import { Download, LoaderCircle, Star, X, ChevronLeft, ChevronRight, FileJson } from '@lucide/svelte';
 	import { tick } from 'svelte';
 	import ExportPreview from './ExportPreview.svelte';
+	import ProcessingProgress from './ProcessingProgress.svelte';
 	import ColorModeSwitch from './ColorModeSwitch.svelte';
 	import type { ColorMode, PageRenderReport, SvgRenderResult } from '$converter/protocol';
+	import type { ProcessingProgress as WorkProgress, WorkListener } from '$converter/progress';
 	import RenderNotices from '../RenderNotices.svelte';
 	import IconButton from './IconButton.svelte';
 	import { exportDetails, type ExportFormat, type ExportRequest } from '$converter/export-options';
@@ -19,13 +21,14 @@
 			exporting: boolean;
 			rendering: boolean;
 			exportProgress: string;
+			exportWork?: WorkProgress | null;
 			exportReports: PageRenderReport[];
 			exportColorMode: ColorMode;
 		};
 		actions: {
 			onExport: (request: ExportRequest) => Promise<string>;
 			onResolvePages: (selection: string) => Promise<number[]>;
-			onPreview: (page: number, mode: ColorMode) => Promise<SvgRenderResult>;
+			onPreview: (page: number, mode: ColorMode, onProgress?: WorkListener) => Promise<SvgRenderResult>;
 			onCancel: () => void;
 		};
 	}
@@ -229,6 +232,7 @@
 			{#if error}<p role="alert" class="text-xs text-danger">{error}</p>{/if}
 			{#if busy}
 				<p role="status" class="text-xs text-muted">{model.exportProgress || 'Preparing download'}</p>
+				<ProcessingProgress progress={model.exportWork} />
 			{:else if downloaded}
 				<div class="max-h-32 overflow-auto"><RenderNotices reports={model.exportReports} label={`Download rendering (${model.exportColorMode})`} /></div>
 				<div class="flex flex-wrap items-center justify-between gap-2 text-xs">

@@ -93,7 +93,7 @@ it('routes PDF requests through the active session and rejects superseded export
 	const worker = new ConverterWorkerSession(vi.fn(), async () => session);
 	await worker.handle({ id: 1, generation: 1, type: 'load', bytes: new ArrayBuffer(1) });
 	const exporting = worker.handle({ id: 2, generation: 1, type: 'exportPdf', pageIndices: [0], colorMode: 'dark' });
-	expect(session.exportPdf).toHaveBeenCalledWith([0], 'dark');
+	expect(session.exportPdf).toHaveBeenCalledWith([0], 'dark', expect.any(Function));
 	await worker.handle({ id: 3, generation: 2, type: 'dispose' });
 	converted.resolve({ bytes: new Uint8Array([37, 80, 68, 70]), pages: [{ page_index: 0, source_page_index: 0, text_diagnostics: [], object_diagnostics: [], geometry_diagnostics: [], paint_diagnostics: [] }] });
 	await expect(exporting).rejects.toThrow(/superseded/);
@@ -106,4 +106,26 @@ it('uses shared WASM validation for page ranges', async () => {
 	await expect(worker.handle({ id: 2, generation: 1, type: 'resolvePages', selection: '1' })).resolves.toEqual([0]);
 	expect(session.resolvePages).toHaveBeenCalledWith('1');
 	await expect(worker.handle({ id: 3, generation: 0, type: 'resolvePages', selection: '1' })).rejects.toThrow(/superseded/);
+});
+
+it('emits live counters with their request identity and ignores superseded observers', async () => {
+	const pending = deferred<ReturnType<typeof fakeSession>>();
+	const observers: import('./progress').WorkListener[] = [];
+	const progress = vi.fn();
+	const worker = new ConverterWorkerSession(progress, async (_bytes, observer) => {
+		observers.push(observer);
+		return pending.promise;
+	});
+	const loading = worker.handle({ id: 11, generation: 1, type: 'load', bytes: new ArrayBuffer(1) });
+	observers[0]({ stage: 'objects', completed: 20, total: 40 });
+	expect(progress).toHaveBeenLastCalledWith(expect.objectContaining({
+		id: 11, generation: 1, operation: 'load', phase: 'parsing',
+		progress: { stage: 'objects', completed: 20, total: 40 }
+	}));
+	await worker.handle({ id: 12, generation: 2, type: 'dispose' });
+	const count = progress.mock.calls.length;
+	observers[0]({ stage: 'objects', completed: 40, total: 40 });
+	expect(progress).toHaveBeenCalledTimes(count);
+	pending.resolve(fakeSession('old'));
+	await expect(loading).rejects.toThrow(/superseded/);
 });

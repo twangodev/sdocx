@@ -111,7 +111,7 @@ test('rendering notices stay scoped to viewer, export preview, and download colo
 				const receive = this.onmessage;
 				this.onmessage = event => {
 					const request = pending.get(event.data.id);
-					pending.delete(event.data.id);
+					if (event.data.type === 'result' || event.data.type === 'error') pending.delete(event.data.id);
 					if (request && event.data.type === 'result') {
 						const reports = request.type === 'exportPdf' ? event.data.value.pages : [event.data.value];
 						for (const report of reports) {
@@ -237,7 +237,7 @@ test('preview rejects stale results, retries failures, and releases its object U
 				}
 				if (controls.hold) {
 					const received = (event: MessageEvent) => {
-						if (event.data.id !== message.id) return;
+						if (event.data.id !== message.id || (event.data.type !== 'result' && event.data.type !== 'error')) return;
 						controls.delivered++;
 						this.removeEventListener('message', received);
 					};

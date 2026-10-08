@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ProcessingProgress from '$lib/components/ui/ProcessingProgress.svelte';
 	import { getContext, onMount } from 'svelte';
 	import { WORKSPACE, type WorkspaceState } from '$lib/workspace';
 	import Debugger from '$lib/debugger/Debugger.svelte';
@@ -165,10 +166,11 @@
 	/>
 	{#if session.parsing}<div
 			role="status"
-			class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded border border-subtle bg-bg px-4 py-2 text-xs"
+			class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded border border-subtle bg-bg px-4 py-2 text-xs min-w-72 max-w-[calc(100vw-2rem)]"
 		>
 			{session.status}<button class="ml-4 underline" onclick={() => session.cancel()}>Cancel</button
 			>
+			<ProcessingProgress progress={session.progress} />
 		</div>{/if}
 	{#if session.error}<div class="fixed bottom-4 left-4 z-50">
 			<ErrorNotice message={session.error} />
@@ -202,6 +204,7 @@
 					exporting: session.exporting,
 					rendering: session.rendering,
 					exportProgress: session.exportProgress,
+					exportWork: session.exportWork,
 					exportReports: session.exportReports,
 					exportColorMode: session.exportColorMode
 				}
@@ -217,7 +220,7 @@
 				onColorMode: (nextMode) => void session.setColorMode(nextMode),
 				onExport: (request) => exportResult(session.downloadExport(request)),
 				onResolvePages: (selection) => session.resolvePages(selection),
-				onPreview: (page, mode) => session.renderExportPreview(page, mode),
+				onPreview: (page, mode, onProgress) => session.renderExportPreview(page, mode, onProgress),
 				onCancel: () => session.cancel(),
 				onReplace: () => picker?.click(),
 				onClose: () => void session.close()

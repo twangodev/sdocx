@@ -112,7 +112,7 @@ describe('DocumentSession PDF exports', () => {
 		session.colorMode = 'dark';
 		await session.downloadExport({ format: 'pdf', pageIndices: [0, 1], pngScale: 1 });
 		await session.downloadExport({ format: 'pdf', pageIndices: [1], pngScale: 1 });
-		expect(vi.mocked(client.exportPdf).mock.calls).toEqual([[[0, 1], 'dark'], [[1], 'dark']]);
+		expect(vi.mocked(client.exportPdf).mock.calls.map(([pages, mode]) => [pages, mode])).toEqual([[[0, 1], 'dark'], [[1], 'dark']]);
 		expect(download).toHaveBeenNthCalledWith(1, expect.any(Blob), 'note.pdf');
 		expect(download).toHaveBeenNthCalledWith(2, expect.any(Blob), 'note-page-002.pdf');
 		expect(download.mock.calls[0][0].type).toBe('application/pdf');
@@ -157,7 +157,7 @@ describe('render report scopes', () => {
 		await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
 		vi.mocked(client.renderPage).mockClear();
 		await session.downloadExport({ format: 'everything', pageIndices: [], pngScale: 1, colorMode: 'dark' });
-		expect(vi.mocked(client.renderPage).mock.calls).toEqual([[0, 'dark'], [1, 'dark']]);
+		expect(vi.mocked(client.renderPage).mock.calls.map(([page, mode]) => [page, mode])).toEqual([[0, 'dark'], [1, 'dark']]);
 		expect(files.svgToPng).toHaveBeenCalledTimes(2);
 		expect(session.exportReports.map(report => report.page_index)).toEqual([0, 1]);
 		const { unzipSync } = await import('fflate');
@@ -238,7 +238,7 @@ describe('render report scopes', () => {
 		session.colorMode = 'light';
 		first.resolve(svgResult());
 		await rendering;
-		expect(vi.mocked(client.renderPage).mock.calls).toEqual([[0, 'dark'], [1, 'dark']]);
+		expect(vi.mocked(client.renderPage).mock.calls.map(([page, mode]) => [page, mode])).toEqual([[0, 'dark'], [1, 'dark']]);
 		expect(session.previewColorMode).toBe('dark');
 		session.destroy();
 	});
@@ -265,7 +265,7 @@ it('snapshots archive pages and colors while settings change', async () => {
 	session.colorMode = 'light';
 	rendered.resolve(svgResult());
 	await exporting;
-	expect(vi.mocked(client.renderPage).mock.calls).toEqual([[0, 'dark'], [2, 'dark']]);
+	expect(vi.mocked(client.renderPage).mock.calls.map(([page, mode]) => [page, mode])).toEqual([[0, 'dark'], [2, 'dark']]);
 	expect(download).toHaveBeenCalledWith(expect.any(Blob), 'note-selected-svg.zip');
 	const { unzipSync } = await import('fflate');
 	const entries = unzipSync(new Uint8Array(await download.mock.calls[0][0].arrayBuffer()));
@@ -338,9 +338,9 @@ describe('export preview colors', () => {
 		expect(await session.renderExportPreview(1, 'dark')).toEqual(svgResult(1));
 		expect(client.renderPage).toHaveBeenLastCalledWith(1, 'dark');
 		await session.downloadExport({ format: 'pdf', pageIndices: [1], pngScale: 1, colorMode: 'dark' });
-		expect(client.exportPdf).toHaveBeenLastCalledWith([1], 'dark');
+		expect(client.exportPdf).toHaveBeenLastCalledWith([1], 'dark', expect.any(Function));
 		await session.downloadExport({ format: 'svg', pageIndices: [1], pngScale: 1, colorMode: 'dark' });
-		expect(client.renderPage).toHaveBeenLastCalledWith(1, 'dark');
+		expect(client.renderPage).toHaveBeenLastCalledWith(1, 'dark', expect.any(Function));
 		expect(session.colorMode).toBe('light');
 		session.destroy();
 	});
@@ -360,4 +360,30 @@ describe('export preview colors', () => {
 		await pending;
 		session.destroy();
 	});
+});
+
+it('keeps vector rendering progress separate from export progress and clears it on cancellation', async () => {
+	const client = clientWith(vi.fn(async () => ({ pageCount: 1, inspection: {} })));
+	client.renderPage = vi.fn(async (_index, _mode, listener) => {
+		listener?.({ type: 'progress', id: 2, generation: 1, operation: 'renderPage', phase: 'rendering', message: 'Composing vector objects', progress: { stage: 'rendering', completed: 1, total: 2 } });
+		return svgResult();
+	});
+	const session = new DocumentSession({ createClient: () => client });
+	session.start();
+	await session.load(file('note.sdocx', Promise.resolve(new ArrayBuffer(1))));
+	const exported = deferred<PdfRenderResult>();
+	let listener: import('./client').ProgressListener | undefined;
+	client.exportPdf = vi.fn((_indices, _mode, progress) => { listener = progress; return exported.promise; });
+	const exporting = session.downloadExport({ format: 'pdf', pageIndices: [0], pngScale: 1 });
+	const event = { type: 'progress', id: 3, generation: 1, operation: 'exportPdf', phase: 'rendering', message: 'Writing PDF pages', progress: { stage: 'writingPdf', completed: 0, total: 1 } } as const;
+	listener?.(event);
+	expect(session.exportWork).toEqual(event.progress);
+	expect(session.progress).toBeNull();
+	session.cancel();
+	listener?.({ ...event, progress: { ...event.progress, completed: 1 } });
+	expect(session.exportWork).toBeNull();
+	exported.resolve(pdfResult([0]));
+	await exporting;
+	expect(session.error).toBe('');
+	session.destroy();
 });

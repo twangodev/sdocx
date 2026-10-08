@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Info, RefreshCw, ArrowLeft } from '@lucide/svelte';
 	import type { ColorMode, PageRenderReport, SvgRenderResult } from '$converter/protocol';
+	import type { ProcessingProgress as WorkProgress, WorkListener } from '$converter/progress';
 	import ConverterToolbar from './ConverterToolbar.svelte';
 	import ColorModeSwitch from './ui/ColorModeSwitch.svelte';
 	import ExportDialog from './ui/ExportDialog.svelte';
@@ -27,6 +28,7 @@
 			exporting: boolean;
 			rendering: boolean;
 			exportProgress: string;
+			exportWork?: WorkProgress | null;
 			exportReports: PageRenderReport[];
 			exportColorMode: ColorMode;
 		};
@@ -43,7 +45,7 @@
 		onColorMode: (mode: ColorMode) => void;
 		onExport: (request: ExportRequest) => Promise<string>;
 		onResolvePages: (selection: string) => Promise<number[]>;
-		onPreview: (page: number, colorMode: ColorMode) => Promise<SvgRenderResult>;
+		onPreview: (page: number, colorMode: ColorMode, onProgress?: WorkListener) => Promise<SvgRenderResult>;
 		onCancel: () => void;
 		onReplace: () => void;
 		onClose: () => void;
@@ -121,6 +123,7 @@
 					pageIndex: model.viewer.pageIndex,
 					colorMode: model.viewer.colorMode,
 					exportProgress: model.activity.exportProgress,
+					exportWork: model.activity.exportWork,
 					exportReports: model.activity.exportReports,
 					exportColorMode: model.activity.exportColorMode
 				}}

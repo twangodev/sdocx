@@ -1,8 +1,9 @@
-import { ConverterClient, type ConverterClientPort } from '$converter/client';
+import { ConverterClient, type ConverterClientPort, type ProgressListener } from '$converter/client';
 import { assertAcceptedFile, isLargeFile } from '$converter/protocol';
 import { toInspectionView } from '$converter/view-model';
 import { errorMessage, type LibraryDocument, type PreparedDocument } from './model';
 import { createThumbnail } from './thumbnail';
+import { pendingProgress, type ProcessingProgress } from '$converter/progress';
 
 export type ImportOutcome =
 	| { filename: string; status: 'imported' | 'duplicate'; document: LibraryDocument }
@@ -13,6 +14,7 @@ export interface ImportProgress {
 	completed: number;
 	total: number;
 	filename: string;
+	work?: ProcessingProgress;
 }
 
 interface ImportOptions {
@@ -35,7 +37,7 @@ export class ImportProcessor {
 
 	constructor(
 		private readonly save: SaveDocument,
-		private readonly createClient: () => ConverterClientPort = () => new ConverterClient(),
+		private readonly createClient: (onProgress: ProgressListener) => ConverterClientPort = (onProgress) => new ConverterClient(onProgress),
 		private readonly thumbnail: (svg: string) => Promise<Blob> = createThumbnail
 	) {}
 
@@ -50,14 +52,19 @@ export class ImportProcessor {
 		this.cancelled = false;
 		const results: ImportOutcome[] = [];
 		try {
-			this.client = this.createClient();
+			let current: ImportProgress | undefined;
+			const update = (work: ProcessingProgress) => {
+				if (this.cancelled || !current) return;
+				current = { ...current, work };
+				options.onProgress?.(current);
+			};
+			this.client = this.createClient((event) => {
+				if (event.generation === this.generation) update(event.progress);
+			});
 			for (const file of files) {
 				if (this.cancelled) break;
-				options.onProgress?.({
-					completed: results.length,
-					total: files.length,
-					filename: file.name
-				});
+				current = { completed: results.length, total: files.length, filename: file.name };
+				update(pendingProgress('reading'));
 				let prepared: PreparedDocument | undefined;
 				let result: ImportOutcome;
 				try {
@@ -66,6 +73,7 @@ export class ImportProcessor {
 						result = { filename: file.name, status: 'skipped' };
 					} else {
 						const bytes = await file.arrayBuffer();
+						update(pendingProgress('hashing'));
 						const digest = await crypto.subtle.digest('SHA-256', bytes);
 						const contentHash = Array.from(new Uint8Array(digest), (byte) =>
 							byte.toString(16).padStart(2, '0')
@@ -77,6 +85,7 @@ export class ImportProcessor {
 						if (summary.pageCount > 0) {
 							try {
 								const result = await this.client.renderPage(0, 'auto');
+								update(pendingProgress('encoding'));
 								thumbnail = await this.thumbnail(result.svg);
 							} catch {
 								/* Thumbnails are optional derived assets. */
@@ -90,6 +99,7 @@ export class ImportProcessor {
 							title: toInspectionView(summary.inspection).title || file.name,
 							thumbnail
 						};
+						update(pendingProgress('saving'));
 						const saved = await this.save(prepared, options.collectionId);
 						result = {
 							filename: file.name,
@@ -113,6 +123,7 @@ export class ImportProcessor {
 					total: files.length,
 					filename: file.name
 				});
+				current = undefined;
 				await this.client.dispose(++this.generation);
 			}
 			return results;

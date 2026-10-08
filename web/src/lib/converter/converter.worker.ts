@@ -8,9 +8,7 @@ function emit(event: ConverterEvent): void {
 	self.postMessage(event);
 }
 
-const session = new ConverterWorkerSession((generation, phase, message) => {
-	emit({ type: 'progress', generation, phase, message });
-});
+const session = new ConverterWorkerSession(emit);
 
 self.onmessage = async (event: MessageEvent<ConverterRequest>) => {
 	const request = event.data;
