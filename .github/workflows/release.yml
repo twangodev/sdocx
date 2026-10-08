@@ -136,9 +136,13 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack@0.15.0
       - name: Build WASM package
-        run: wasm-pack build crates/sdocx-wasm --out-name sdocx
+        run: wasm-pack build crates/sdocx-wasm --target web --out-name sdocx
+      - name: Add package documentation
+        run: cp README.md LICENSE crates/sdocx-wasm/pkg/
       - name: Set npm package name
         run: npm pkg set name="@twango/sdocx"
         working-directory: crates/sdocx-wasm/pkg
