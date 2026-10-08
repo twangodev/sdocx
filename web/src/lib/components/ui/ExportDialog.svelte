@@ -231,8 +231,11 @@
 		<footer class="export-footer">
 			{#if error}<p role="alert" class="text-xs text-danger">{error}</p>{/if}
 			{#if busy}
-				<p role="status" class="text-xs text-muted">{model.exportProgress || 'Preparing download'}</p>
-				<ProcessingProgress progress={model.exportWork} />
+				{#if model.exportWork}
+					<ProcessingProgress progress={model.exportWork} detail={model.exportProgress} />
+				{:else}
+					<p role="status" class="text-xs text-muted">{model.exportProgress || 'Preparing download'}</p>
+				{/if}
 			{:else if downloaded}
 				<div class="max-h-32 overflow-auto"><RenderNotices reports={model.exportReports} label={`Download rendering (${model.exportColorMode})`} /></div>
 				<div class="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -252,11 +255,13 @@
 
 <style>
 	.export-dialog { width: min(64rem, calc(100% - 2rem)); max-height: calc(100svh - 2rem); padding: 0; overflow: hidden; }
-	.export-form { display: flex; flex-direction: column; min-height: 0; }
+	.export-dialog[open] { display: flex; flex-direction: column; }
+	.export-dialog > header { flex-shrink: 0; }
+	.export-form { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
 	.export-body { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; height: min(65svh, 38rem); min-height: 22rem; border-top: 1px solid var(--site-border); }
 	.export-preview { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 	.export-settings { display: flex; flex-direction: column; gap: 20px; padding: 20px; overflow: auto; border-left: 1px solid var(--site-border); }
-	.export-footer { display: grid; gap: 12px; padding: 16px 20px; border-top: 1px solid var(--site-border); }
+	.export-footer { display: grid; flex-shrink: 0; gap: 12px; padding: 16px 20px; border-top: 1px solid var(--site-border); }
 	@media (max-width: 720px) {
 		.export-dialog { width: calc(100% - 1rem); }
 		.export-body { display: flex; flex-direction: column; height: auto; min-height: 0; max-height: calc(100svh - 12rem); overflow: auto; }

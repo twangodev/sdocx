@@ -290,5 +290,30 @@ for (const theme of ['light', 'dark']) {
 			await page.screenshot({ path: `/tmp/export-preview-${theme}-${viewport.width}.png` });
 			await testInfo.attach(`${theme}-${viewport.width}`, { body: await dialog.screenshot(), contentType: 'image/png' });
 		}
+		await page.evaluate(() => {
+			const postMessage = Worker.prototype.postMessage;
+			Worker.prototype.postMessage = function(message, ...rest) {
+				if (message.type === 'exportPdf') {
+					queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', { data: {
+						type: 'progress', id: message.id, generation: message.generation, operation: 'exportPdf',
+						phase: 'rendering', message: 'Generating PDF', progress: { stage: 'writingPdf', completed: 1, total: 3 }
+					} })));
+					return;
+				}
+				Reflect.apply(postMessage, this, [message, ...rest]);
+			};
+		});
+		await dialog.getByRole('button', { name: 'Download PDF' }).click();
+		await expect(dialog.getByRole('progressbar', { name: 'Writing PDF pages' })).toHaveAttribute('value', String(1 / 3));
+		for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }, { width: 844, height: 390 }]) {
+			await page.setViewportSize(viewport);
+			const bounds = await dialog.getByRole('button', { name: 'Hide', exact: true }).boundingBox();
+			const frame = await dialog.boundingBox();
+			expect(bounds).not.toBeNull();
+			expect(frame).not.toBeNull();
+			expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(frame!.y + frame!.height);
+			expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
+			expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+		}
 	});
 }

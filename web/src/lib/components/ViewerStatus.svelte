@@ -1,17 +1,14 @@
 <script lang="ts">
 	import type { WorkerPhase } from '$converter/protocol';
-	import type { ProcessingProgress as WorkProgress } from '$converter/progress';
-	import ProcessingProgress from './ui/ProcessingProgress.svelte';
 
 	interface Props {
 		phase: WorkerPhase | null;
 		status: string;
 		exporting: boolean;
 		exportProgress: string;
-		progress?: WorkProgress | null;
 	}
 
-	let { phase, status, exporting, exportProgress, progress }: Props = $props();
+	let { phase, status, exporting, exportProgress }: Props = $props();
 </script>
 
 <div
@@ -21,5 +18,4 @@
 >
 	<span class="mr-1.5" class:text-positive={phase === 'ready'}>{phase === 'ready' ? '●' : '○'}</span>
 	{exporting ? exportProgress : status}
-	<ProcessingProgress {progress} />
 </div>

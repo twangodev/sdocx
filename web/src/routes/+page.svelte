@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ProcessingProgress from '$lib/components/ui/ProcessingProgress.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { getContext, onMount } from 'svelte';
 	import { WORKSPACE, type WorkspaceState } from '$lib/workspace';
 	import Debugger from '$lib/debugger/Debugger.svelte';
@@ -164,14 +165,11 @@
 		onOpen={(id) => void openSaved(id)}
 		onTemporary={openTemporary}
 	/>
-	{#if session.parsing}<div
-			role="status"
-			class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded border border-subtle bg-bg px-4 py-2 text-xs min-w-72 max-w-[calc(100vw-2rem)]"
-		>
-			{session.status}<button class="ml-4 underline" onclick={() => session.cancel()}>Cancel</button
-			>
-			<ProcessingProgress progress={session.progress} />
-		</div>{/if}
+	{#if session.parsing}
+		<ProcessingProgress progress={session.progress} detail={session.status} floating>
+			{#snippet actions()}<Button size={7} tone="ghost" onclick={() => session.cancel()}>Cancel</Button>{/snippet}
+		</ProcessingProgress>
+	{/if}
 	{#if session.error}<div class="fixed bottom-4 left-4 z-50">
 			<ErrorNotice message={session.error} />
 		</div>{/if}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle, Maximize, Minus, Plus } from '@lucide/svelte';
+	import { Maximize, Minus, Plus } from '@lucide/svelte';
 	import IconButton from './IconButton.svelte';
 	import type { ColorMode, PageRenderReport, SvgRenderResult } from '$converter/protocol';
 	import { pageReport } from '$converter/render-reports';
@@ -65,7 +65,7 @@
 	{:else if !enabled}
 		<p class="preview-message">Choose valid pages to preview.</p>
 	{:else}
-		{#if loading}<div class="preview-message" role="status"><LoaderCircle size={20} class="mx-auto mb-2 animate-spin" />Preparing page…<ProcessingProgress progress={work} /></div>{/if}
+		{#if loading}<div class="preview-message"><div class="w-80 max-w-full"><ProcessingProgress progress={work} detail={`Preparing page ${pageIndex + 1}`} /></div></div>{/if}
 		{#if url}
 			<div class="preview-sheet" style:visibility={loading ? 'hidden' : undefined}>
 				<img src={url} alt={`Export preview of page ${pageIndex + 1}`} onload={loaded}

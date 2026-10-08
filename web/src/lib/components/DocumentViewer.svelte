@@ -9,6 +9,7 @@
 	import DocumentInfoPanel from './DocumentInfoPanel.svelte';
 	import DocumentCanvas from './viewer/DocumentCanvas.svelte';
 	import ViewerStatus from './ViewerStatus.svelte';
+	import ProcessingProgress from './ui/ProcessingProgress.svelte';
 	import { gesturePreview } from '$lib/viewer/gesture-preview';
 
 	interface DocumentViewerModel {
@@ -47,6 +48,7 @@
 		session,
 		notification
 	}: Props = $props();
+	const progress = $derived(model.view.exporting ? session.exportWork : session.progress);
 </script>
 
 <div
@@ -77,7 +79,14 @@
 	<div
 		class="preview-panel relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-canvas"
 	>
-		{@render notification?.()}
+		{#if progress}
+			<ProcessingProgress
+				{progress}
+				detail={model.view.exporting ? model.status.exportProgress : model.status.message}
+				floating anchored
+			/>
+		{/if}
+		<div hidden={Boolean(progress)}>{@render notification?.()}</div>
 		<DocumentCanvas
 			pages={model.document.previewUrls}
 			pageIndex={model.view.pageIndex}
@@ -158,7 +167,6 @@
 			status={model.status.message}
 			exporting={model.view.exporting}
 			exportProgress={model.status.exportProgress}
-			progress={model.view.exporting ? session.exportWork : session.progress}
 		/>
 	</div>
 </div>
