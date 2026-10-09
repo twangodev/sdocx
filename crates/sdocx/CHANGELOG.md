@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-v1.0.0...sdocx-v1.1.0) (2026-10-09)
+
+
+### Features
+
+* report native decode and vector processing progress ([a79443d](https://github.com/twangodev/sdocx/commit/a79443d0cf8c3984dc1bba41742688dcab023be1))
+
 ## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-v0.7.0...sdocx-v1.0.0) (2026-10-08)
 
 

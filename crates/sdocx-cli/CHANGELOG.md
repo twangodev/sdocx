@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1](https://github.com/twangodev/sdocx/compare/sdocx-cli-v1.0.0...sdocx-cli-v1.0.1) (2026-10-09)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.0.0 to 1.1.0
+
 ## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-cli-v0.7.0...sdocx-cli-v1.0.0) (2026-10-08)
 
 

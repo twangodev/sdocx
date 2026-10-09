@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.0.0...sdocx-wasm-v1.1.0) (2026-10-09)
+
+
+### Features
+
+* report native decode and vector processing progress ([a79443d](https://github.com/twangodev/sdocx/commit/a79443d0cf8c3984dc1bba41742688dcab023be1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.0.0 to 1.1.0
+
 ## [1.0.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v0.5.0...sdocx-wasm-v1.0.0) (2026-10-08)
 
 
