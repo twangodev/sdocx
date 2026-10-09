@@ -18,13 +18,15 @@
 {#if progress}
 	<Notification label="Processing progress" {floating} {anchored} {actions}>
 		{#snippet icon()}<LoaderCircle size={14} class="animate-spin text-muted" />{/snippet}
-		<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
-			<span role="status" class="font-medium">{progressLabel(progress)}</span>
+		<div class="flex items-start justify-between gap-3 text-left text-xs">
+			<div role="status" class="min-w-0">
+				<p class="font-medium">{progressLabel(progress)}</p>
+				{#if detail}<p class="mt-0.5 truncate text-[11px] text-muted" title={detail}>{detail}</p>{/if}
+			</div>
 			{#if fraction !== undefined}
-				<span class="rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted tabular-nums">{Math.floor(fraction * 100)}%</span>
+				<span class="shrink-0 rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted tabular-nums">{Math.floor(fraction * 100)}%</span>
 			{/if}
 		</div>
-		{#if detail}<p class="mt-0.5 truncate text-left text-[11px] text-muted" title={detail}>{detail}</p>{/if}
 		<div class="relative mt-2 h-1 overflow-hidden rounded-full bg-subtle">
 			<progress aria-label={progressLabel(progress)} max="1" value={fraction} class="block h-full w-full"></progress>
 			{#if fraction === undefined}<span aria-hidden="true" class="indeterminate absolute inset-y-0 left-0 w-1/3 rounded-full bg-accent"></span>{/if}
