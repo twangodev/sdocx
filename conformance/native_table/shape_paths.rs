@@ -37,7 +37,7 @@ struct DynamicSymbol {
 unsafe extern "C" {
     fn dladdr(address: *const c_void, information: *mut DynamicSymbol) -> i32;
 }
-fn verify_host_math() {
+pub(super) fn verify_host_math() {
     for address in [
         sincosf as *const c_void,
         sinf as *const c_void,

@@ -42,6 +42,9 @@ mod shape_paths;
 #[path = "native_table/shape_styles.rs"]
 mod shape_styles;
 
+#[path = "native_table/shape_arrows.rs"]
+mod shape_arrows;
+
 #[path = "native_table/text_paragraph_layout.rs"]
 mod text_paragraph_layout;
 
@@ -1761,6 +1764,13 @@ fn main() {
                 .expect("libSPenBase.so path required");
             machine.load_drawing(Path::new(&drawing_path));
             splits::capture(&mut machine, Path::new(&base_path));
+            return;
+        }
+        Some("--shape-arrows") => {
+            let drawing = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            shape_arrows::capture(&mut machine, Path::new(&drawing));
             return;
         }
         Some("--shape-styles") => {

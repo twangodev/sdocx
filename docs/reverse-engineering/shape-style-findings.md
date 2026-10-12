@@ -161,8 +161,8 @@ Structural archive regressions compare SVG values with the positive-width named
 cases in the native capture. A PDF regression retains the six-interval long-dash
 dot-dot pattern as PDF dash and stroke operators and confirms no image XObjects.
 These checks establish SDK vector transport, not Samsung edge coverage or a
-paired real-document appearance comparison. Compound outlines and arrowheads
-remain separate renderer limits.
+paired real-document appearance comparison. Compound outlines remain a separate
+renderer limit.
 
 ## Compound outlines
 
@@ -282,6 +282,55 @@ widens to `f64`, divides by `6.283185307179586` at `0x51910`, narrows to
 `f32`, and adds `90` (`0xa1490–0xa14d0`). `DrawEndArrow` uses the same
 scale and subtracts `90` (`0xa16ac–0xa16ec`). This has the conventional
 degrees-per-radian scale, with the specific intermediate rounding stated
-above. The resulting orientation,
-cubic-endpoint treatment, overlap removal and native pixels have not been
-verified by execution.
+above. Straight-path orientation and local geometry have the bounded execution
+below. Cubic-endpoint treatment, successful cleanup-surface painting and native
+pixels remain unverified.
+
+### Executed arrow geometry and straight placement
+
+[`shape-arrows.json`](../../conformance/shape-arrows.json) records sixty
+executions of `DrawArrow`, covering types 1–5, sizes 0–2 and widths 0.1, 1,
+3.5 and 100.25. The [Rust capture](../../conformance/native_table/shape_arrows.rs)
+intercepts path commands, paint setters, canvas translation/rotation and
+shape draws; it does not execute Skia painting. Local paths, diamond
+rectangle and additional 45-degree rotation, oval radius and open-arrow
+path-effect removal/restoration match the contracts above. Filled arrows
+copy the stored outline ARGB, separately from its path effect.
+
+For types 1–3 with false endpoint flags, the capture records a cleanup-surface
+request and returns null from that factory. Successful cleanup pixels therefore
+do not execute. Static continuation at `0xa1c34–0xa1c68` clears the requested
+surface and copies it with transfer mode 1 at local `(-w,-w)` before drawing
+the arrow. Its dimensions are `2*trunc(w)` by `trunc(w+L/2)` for types 1/3,
+and `2*trunc(w)` by `trunc(w+f32(1.2)*w)` for type 2. The latter literal is
+`0x3f99999a` at `0x517d0`, distinct from the open-tip literal at `0x517cc`.
+Zero-width factory requests at width 0.1 are retained as observations, not
+evidence of a usable surface or a successful removal.
+
+Original `DrawBeginArrow` and `DrawEndArrow`, including Model size getters,
+execute against six supplied straight paths: four cardinal directions, a
+diagonal and a degenerate zero-length path. Intercepted `DrawArrow` calls
+record endpoint coordinates and angles. `atan2f` uses hash-verified Linux libm;
+Android transcendental bit parity is not established. Whole-object `SetEffect`,
+path loading/normalization, `ConvertToPath`, curved endpoint selection and
+Samsung appearance remain separate boundaries.
+
+### Bounded Rust arrow projection
+
+The renderer admits named arrow types and sizes on simple solid-color type-8
+straight lines, from endpoints or a saved two-command move/line path. Endpoints
+must be exactly representable as f32; their float rounding step must stay below
+one percent of outline width. Nominal integer sizes must remain representable.
+Zero-length and native short-segment contexts, curved/multiple-segment paths,
+overlapping cleanup areas, zero-sized cleanup requests and compound contexts
+remain outside this route. Rejected enabled arrows report
+`UnsupportedArrowGeometry` while retaining the independently supported line
+body and source settings. A disabled or otherwise rejected outline emits no
+arrows. Type-7 shapes do not emit arrows, matching the traced type-8 gate.
+
+Triangle, open and stealth arrows remove a local rectangular area from the
+line through a typed even-odd vector clip, then draw their local geometry.
+Diamond and oval arrows require no cleanup clip. Open arrows inherit the
+saved cap/join but do not inherit dashes; filled arrows share the themed solid
+paint and alpha. Geometry and straight angles are compared with the native
+capture; this does not certify native edge coverage or whole-scene parity.

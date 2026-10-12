@@ -868,6 +868,13 @@ diff -u conformance/shape-styles.json /tmp/shape-styles.json
 capture boundary. This establishes selected constructor inputs and nominal
 sizes, not Skia path-effect execution, endpoint placement or Samsung pixels.
 
+The `--shape-arrows` route takes the same Drawing library argument and reproduces
+[`shape-arrows.json`](shape-arrows.json). It executes local arrow geometry and
+straight begin/end placement, recording path/canvas/paint calls. Cleanup-surface
+requests return null; no cleanup pixels or whole-object painting execute.
+The capture verifies its host math library identity, separately from Android
+libm bit parity. See the [arrow findings](../docs/reverse-engineering/shape-style-findings.md#executed-arrow-geometry-and-straight-placement).
+
 ## Native color checks
 
 `theme-colors.json` contains 785 native lightness-reversal samples checked by
