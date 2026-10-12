@@ -342,6 +342,25 @@ pub(super) trait Styled: NodeAccess + Sized {
         self.node().number("stroke-width", value, 0.0..=f64::MAX);
         self
     }
+    fn stroke_dash(mut self, intervals: &[f32], phase: f32) -> Self {
+        let values = intervals
+            .iter()
+            .map(|value| {
+                Number::new(f64::from(*value))
+                    .filter(|value| value.value() > 0.0)
+                    .map(Number::text)
+            })
+            .collect::<Option<Vec<_>>>();
+        self.node().optional(
+            "stroke-dasharray",
+            values
+                .filter(|values| !values.is_empty() && values.len().is_multiple_of(2))
+                .map(|values| Value::from(values).to_string()),
+        );
+        self.node()
+            .number("stroke-dashoffset", phase, -f64::MAX..=f64::MAX);
+        self
+    }
     fn line_cap(mut self, cap: LineCap) -> Self {
         self.node().attr("stroke-linecap", cap.text());
         self

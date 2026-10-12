@@ -1251,9 +1251,15 @@ fn render_shape(
         theme,
         source_offset,
     );
-    let mut style = shape_outline(&shape.style, outline)
-        .fill(fill)
-        .fill_opacity(decimal(opacity, 4));
+    let mut style = shape_outline(
+        svg,
+        &shape.style,
+        outline,
+        source_offset,
+        &shape.metadata.uuid,
+    )
+    .fill(fill)
+    .fill_opacity(decimal(opacity, 4));
     if let Some(path) = path {
         svg.push(style.add(Path::new().data(path)));
         return Ok(());
@@ -1349,7 +1355,14 @@ fn render_line(
         });
         (Paint::None, 0.0)
     });
-    let style = shape_outline(&line.style, outline).fill(Paint::None);
+    let style = shape_outline(
+        svg,
+        &line.style,
+        outline,
+        source_offset,
+        &line.metadata.uuid,
+    )
+    .fill(Paint::None);
     if let Some(path) = path {
         svg.push(style.add(Path::new().data(path)));
     } else {
@@ -1442,7 +1455,27 @@ fn project_shape_paint(
     }
 }
 
-fn shape_outline(style: &crate::ShapeStyle, (paint, opacity): (Paint, f64)) -> Group {
+fn shape_outline(
+    svg: &mut Scene,
+    style: &crate::ShapeStyle,
+    (mut paint, opacity): (Paint, f64),
+    source_offset: Option<usize>,
+    object_uuid: &str,
+) -> Group {
+    let dash = if matches!(paint, Paint::None) {
+        None
+    } else {
+        style.dash_pattern().unwrap_or_else(|()| {
+            svg.report_paint_issue(PaintDiagnostic {
+                source_offset,
+                object_uuid: object_uuid.into(),
+                role: PaintRole::Outline,
+                kind: PaintDiagnosticKind::UnsupportedDashPattern,
+            });
+            paint = Paint::None;
+            None
+        })
+    };
     let cap = match style.cap {
         1 => LineCap::Round,
         2 => LineCap::Square,
@@ -1458,12 +1491,16 @@ fn shape_outline(style: &crate::ShapeStyle, (paint, opacity): (Paint, f64)) -> G
     } else {
         0.0
     };
-    Group::new()
+    let group = Group::new()
         .stroke(paint)
         .stroke_opacity(decimal(opacity, 4))
         .stroke_width(width)
         .line_cap(cap)
-        .line_join(join)
+        .line_join(join);
+    match dash {
+        Some(dash) => group.stroke_dash(dash.intervals(), dash.phase),
+        None => group,
+    }
 }
 
 fn render_image(

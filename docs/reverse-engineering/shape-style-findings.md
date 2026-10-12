@@ -145,6 +145,25 @@ produces the three integer lengths documented below. Zero/negative-width dash
 appearance, reused SkPaint state, final arrow placement and whole-object
 appearance remain outside this capture.
 
+### Rust dash projection
+
+`ShapeStyle` retains the raw enum and width independently of its internal dash
+projection. Saved values 1–7 with finite positive width and finite positive
+intervals now emit typed `stroke-dasharray` and `stroke-dashoffset` on the shared
+shape/line outline group, using the captured `f32` arithmetic. Cap/join values
+remain independent. Solid value 0 adds neither dash attribute. Unknown values,
+zero widths, underflowed intervals and overflowed intervals omit an enabled
+outline and report `UnsupportedDashPattern`; independently supported shape fill
+and text remain eligible. A disabled outline does not emit this render diagnostic.
+Parsing also retains unsupported-style warnings for rejected dash inputs.
+
+Structural archive regressions compare SVG values with the positive-width named
+cases in the native capture. A PDF regression retains the six-interval long-dash
+dot-dot pattern as PDF dash and stroke operators and confirms no image XObjects.
+These checks establish SDK vector transport, not Samsung edge coverage or a
+paired real-document appearance comparison. Compound outlines and arrowheads
+remain separate renderer limits.
+
 ## Compound outlines
 
 `DrawEffect` (`0xa0258`) forces compound type 0 for object type 8,

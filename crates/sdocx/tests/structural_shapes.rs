@@ -1020,6 +1020,171 @@ fn future_frames_masks_and_outline_settings_are_retained_or_reported() {
     assert!(has_shape_warning(&parsed));
 }
 
+#[cfg(feature = "render")]
+#[test]
+fn saved_dashes_match_native_constructor_inputs_without_changing_caps_or_source() {
+    #[derive(serde::Deserialize)]
+    struct Capture {
+        cases: Vec<Case>,
+    }
+    #[derive(serde::Deserialize)]
+    struct Case {
+        width: f32,
+        dash: u8,
+        intervals: Vec<f32>,
+        phase: f32,
+    }
+    let capture: Capture =
+        serde_json::from_str(include_str!("../../../conformance/shape-styles.json")).unwrap();
+    for case in capture
+        .cases
+        .into_iter()
+        .filter(|case| case.width > 0.0 && case.dash <= 7)
+    {
+        for kind in [7, 8] {
+            let mut saved_style = style(case.width);
+            saved_style[5] = case.dash;
+            let mut effects = sized(&color(true, 0, 0x800000ff));
+            effects.extend(sized(&saved_style));
+            let specific = if kind == 7 {
+                frame(7, 32, &shape_fixed(4, 30.0), &shape_fields())
+            } else {
+                frame(8, 0, &line_fixed(0), &[])
+            };
+            let payload = [base(0.0), frame(6, 12, &base_fixed(), &effects), specific].concat();
+            let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+            assert!(!has_shape_warning(&parsed), "{} {}", case.width, case.dash);
+            let saved = match parsed.document.pages[0].elements().next().unwrap() {
+                PageElement::Shape(shape) => &shape.style,
+                PageElement::Line(line) => &line.style,
+                _ => unreachable!(),
+            };
+            assert_eq!(saved.dash, case.dash);
+            assert_eq!(saved.width, case.width);
+            let output = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(output[0].paint_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&output[0].svg).unwrap();
+            let outline = shape_outline_node(&xml);
+            assert_eq!(outline.attribute("stroke-linecap"), Some("round"));
+            assert_eq!(outline.attribute("stroke-linejoin"), Some("bevel"));
+            match outline.attribute("stroke-dasharray") {
+                Some(pattern) => {
+                    let actual = pattern
+                        .split([' ', ','])
+                        .filter(|v| !v.is_empty())
+                        .map(|value| value.parse::<f64>().unwrap())
+                        .collect::<Vec<_>>();
+                    assert_eq!(
+                        actual,
+                        case.intervals
+                            .iter()
+                            .copied()
+                            .map(f64::from)
+                            .collect::<Vec<_>>()
+                    );
+                    assert_eq!(
+                        svg_number(outline, "stroke-dashoffset"),
+                        f64::from(case.phase)
+                    );
+                }
+                None => assert!(case.intervals.is_empty()),
+            }
+        }
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn unsupported_dashes_report_the_omitted_outline_and_preserve_fill_and_saved_style() {
+    for (width, dash) in [(0.0, 3), (3.5, 8), (3.5, 255), (f32::MAX, 5)] {
+        let mut saved_style = style(width);
+        saved_style[5] = dash;
+        let mut effects = sized(&color(true, 0, 0xff0000ff));
+        effects.extend(sized(&saved_style));
+        let payload = [
+            base(0.0),
+            frame(6, 12, &base_fixed(), &effects),
+            frame(7, 32, &shape_fixed(4, 0.0), &shape_fields()),
+        ]
+        .concat();
+        let parsed = sdocx::parse_bytes_detailed(&single(7, &payload)).unwrap();
+        assert!(has_shape_warning(&parsed));
+        let shape = as_shape(parsed.document.pages[0].elements().next().unwrap());
+        assert_eq!(shape.style.dash, dash);
+        let output = sdocx::render_document_svg(&parsed.document, &Default::default());
+        assert_eq!(output[0].paint_diagnostics.len(), 1);
+        let issue = &output[0].paint_diagnostics[0];
+        assert_eq!(
+            issue.kind,
+            sdocx::PaintDiagnosticKind::UnsupportedDashPattern
+        );
+        assert_eq!(issue.role, sdocx::PaintRole::Outline);
+        assert_eq!(issue.object_uuid, "sh");
+        assert!(issue.source_offset.is_some());
+        svg_support::assert_svg_element(
+            &output[0].svg,
+            "g",
+            &[("stroke", "none"), ("fill", "#ff0000")],
+        );
+    }
+}
+
+#[cfg(feature = "pdf")]
+#[test]
+fn dashed_outlines_remain_pdf_path_operations_without_new_images() {
+    let mut saved_style = style(3.5);
+    saved_style[5] = 7;
+    let mut effects = sized(&color(true, 0, 0xff0000ff));
+    effects.extend(sized(&saved_style));
+    let payload = [
+        base(0.0),
+        frame(6, 12, &base_fixed(), &effects),
+        frame(8, 0, &line_fixed(0), &[]),
+    ]
+    .concat();
+    let document = sdocx::parse_bytes(&single(8, &payload)).unwrap();
+    let fonts = sdocx::fonts::FontBook::default();
+    let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+        &document,
+        &sdocx::layout_document(&document),
+        &[0],
+        &Default::default(),
+        &sdocx::PdfOptions::from_font_book(&fonts),
+        &fonts,
+    )
+    .unwrap();
+    assert!(output.pages[0].paint_diagnostics.is_empty());
+    let pdf = lopdf::Document::load_mem(&output.bytes).unwrap();
+    let content = pdf
+        .get_page_content(*pdf.get_pages().values().next().unwrap())
+        .unwrap();
+    let operations = lopdf::content::Content::decode(&content)
+        .unwrap()
+        .operations;
+    assert!(operations.iter().any(|operation| operation.operator == "S"));
+    let dashes = operations
+        .iter()
+        .find(|operation| operation.operator == "d")
+        .unwrap();
+    let lengths = dashes.operands[0].as_array().unwrap();
+    assert_eq!(
+        lengths
+            .iter()
+            .map(|value| value.as_float().unwrap())
+            .collect::<Vec<_>>(),
+        [28.0, 10.5, 3.5, 10.5, 3.5, 10.5]
+    );
+    assert_eq!(dashes.operands[1].as_float().unwrap(), 1.0);
+    assert!(
+        !pdf.objects
+            .values()
+            .any(|object| object.as_stream().is_ok_and(|stream| stream
+                .dict
+                .get(b"Subtype")
+                .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))))
+    );
+}
+
 #[test]
 fn no_outline_and_unsupported_gradient_are_distinct_from_solid_black() {
     for kind in [1, 2, 99] {

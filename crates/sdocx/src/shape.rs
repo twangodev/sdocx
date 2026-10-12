@@ -7,6 +7,8 @@ use crate::shape_paint_source::{
 };
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
+mod outline;
+
 /// Paint supported by the shape renderer, or an uninterpreted native effect.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -475,14 +477,15 @@ pub(crate) fn read_shape_base(
                 effect.read_u8("end arrow size")?,
             ];
             if style.compound != 0
-                || style.dash != 0
+                || style.dash_pattern().is_err()
                 || style.cap > 2
                 || style.join > 2
                 || style.begin_arrow != [0; 2]
                 || style.end_arrow != [0; 2]
                 || effect.remaining() != 0
             {
-                unsupported.push("compound/dashed outlines, arrows or style extensions");
+                unsupported
+                    .push("compound/unsupported dashed outlines, arrows or style extensions");
             }
         }
     }

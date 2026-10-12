@@ -14,6 +14,8 @@ pub enum PaintRole {
 pub enum PaintDiagnosticKind {
     /// The saved paint type has no admitted rendering implementation.
     UnsupportedPaint,
+    /// The saved dash enum or width does not define an admitted dash pattern.
+    UnsupportedDashPattern,
     /// An enabled paint has no retained source.
     MissingPaintSource,
     /// The saved gradient stops or parameters do not meet admission constraints.

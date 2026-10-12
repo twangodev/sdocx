@@ -183,10 +183,12 @@ Native contracts and synthetic tests do not establish Samsung visual equivalence
 for every shape/line variant. The [fixture 02 comparison](shapes-dot-calibration-findings.md)
 covers its saved shape paths and diagonal line. Rounded/specialized templates,
 arc/oval path commands, connector routing, pen simulation,
-rectangular/other gradients, type-8 gradient outlines, dashed/compound outlines
+rectangular/other gradients, type-8 gradient outlines, compound outlines
 and arrowheads remain incomplete. Type-7 linear/radial fill and outline
 gradients use the bounded
-[paint admission](shape-fill-findings.md#consequences-for-this-codebase). Known
+[paint admission](shape-fill-findings.md#consequences-for-this-codebase).
+named positive-width dashes use the [captured style projection](shape-style-findings.md#rust-dash-projection);
+this establishes vector transport separately from native edge appearance. Known
 basic templates may render approximately when unsupported adjustments exist.
 Text wrapping, margins, gravity and embedded-object layout retain the existing
 text-renderer limitations. An empty report does not certify a lossless render.
