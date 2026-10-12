@@ -850,6 +850,24 @@ Native evidence and current limits are recorded in
 The `02-shapes-and-dot-calibration` pair contains five native shapes and one
 line. Other templates, dashes and arrowhead settings lack reference coverage.
 
+## Native shape style inputs
+
+The optional `--shape-styles` route in `native_table.rs` records original
+Drawing style setup and Model getters, intercepting SkPaint setter and dash
+constructor inputs, plus original arrow-size arithmetic. Build the capture
+using the Rust/Unicorn command above, then run:
+
+```sh
+/tmp/sdocx-native-table scratch/apk-analysis-native/arm64-v8a/libSPenModel.so \
+  --shape-styles scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so \
+  > /tmp/shape-styles.json
+diff -u conformance/shape-styles.json /tmp/shape-styles.json
+```
+
+[`shape-styles.json`](shape-styles.json) pins both libraries and describes the
+capture boundary. This establishes selected constructor inputs and nominal
+sizes, not Skia path-effect execution, endpoint placement or Samsung pixels.
+
 ## Native color checks
 
 `theme-colors.json` contains 785 native lightness-reversal samples checked by

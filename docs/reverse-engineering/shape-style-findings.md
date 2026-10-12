@@ -10,8 +10,9 @@ and `libSPenModel.so`, SHA-256
 and the decompiled SDK class
 `com.samsung.android.sdk.pen.document.shapeeffect.SpenLineStyleEffect`.
 Addresses below are ELF virtual addresses. The native input remains under
-the ignored `scratch/apk-analysis-native/arm64-v8a/` directory. No native
-execution or Samsung appearance comparison was performed for these contracts.
+the ignored `scratch/apk-analysis-native/arm64-v8a/` directory. The bounded
+execution below verifies selected style inputs; no Samsung appearance comparison
+was performed for these contracts.
 The [shape and line findings](shape-line-findings.md) describe the saved
 frames, path encoding and existing renderer separately.
 
@@ -127,6 +128,22 @@ join names are miter/round/bevel. The dash branches do not override the cap:
 the label "round dot" alone does not establish a round-cap activation rule.
 This trace does not establish the downstream appearance of zero-width or
 degenerate dash intervals.
+
+### Executed style setup and arrow sizes
+
+[`shape-styles.json`](../../conformance/shape-styles.json) records sixty
+supplied-input executions of `SetLineStyleEffect`, the original Model width,
+dash, cap and join getters, and `setArrowSize`. The hash-pinned
+[`Rust capture`](../../conformance/native_table/shape_styles.rs) intercepts
+SkPaint setters and the SkDashPathEffect constructor, recording their inputs;
+it does not execute the path effect or paint pixels. Widths are -2, 0, 0.1,
+1, 3.5 and 100.25; dash values cover 0–8 and 255, with cap/join values
+covering 0–3. Negative widths become zero. Named dash intervals and phases
+match the table; unnamed values install no effect. Cap/join 3 is not applied.
+The separate arrow-size routine consumes a supplied effective width and
+produces the three integer lengths documented below. Zero/negative-width dash
+appearance, reused SkPaint state, final arrow placement and whole-object
+appearance remain outside this capture.
 
 ## Compound outlines
 
