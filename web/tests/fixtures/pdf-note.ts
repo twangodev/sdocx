@@ -57,6 +57,19 @@ export function geometryNote(): Buffer {
 	}));
 }
 
+export function shapeOutlineNote(): Buffer {
+	const lines = Array.from({ length: 5 }, (_, index) => {
+		const y = 100 + index * 100;
+		const bounds = [50, y, 350, y];
+		const paint = join(Buffer.from([1, 0, 0]), u32(0xff167bff), zero(12));
+		const style = join(f32(3.5), Buffer.from([0, 7, 1, 2, index + 1, 0, index + 1, 2]));
+		const outline = frame(6, 0, 12, join(u32(0), u32(4), u32(0), zero(1)), join(u32(paint.length), paint, u32(style.length), style));
+		const fixed = join(Buffer.from([0, 0, 0]), ...bounds.map(f64), ...bounds.map(f64), ...bounds.map(f64), zero(4));
+		return object(8, join(base(`arrow-${index + 1}`, bounds), outline, frame(8, 0, 0, fixed)));
+	});
+	return Buffer.from(zipSync({ 'one1.page': page(0, 400, 800, lines) }));
+}
+
 // Canonical ColorRecord and ordinary saved shape frames from structural_shapes.
 // These records exercise the parser and worker rather than supplying rendered SVG.
 function shapeColor(outline: boolean, kind: number, gradientType: number, stops: [number, number][], position: [number, number] = [0.5, 0.5], rotatable = false) {
