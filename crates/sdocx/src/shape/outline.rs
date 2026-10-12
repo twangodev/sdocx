@@ -15,6 +15,30 @@ impl DashPattern {
 }
 
 impl ShapeStyle {
+    pub(crate) fn arrow_lengths(&self) -> Option<[i32; 3]> {
+        let width = f64::from(self.width);
+        if !width.is_finite() || width <= 0.0 {
+            return None;
+        }
+        let lengths = [3.0 * width + 10.0, 2.5 * width + 5.0, 4.0 * width + 15.0];
+        if lengths.iter().any(|value| *value >= f64::from(i32::MAX)) {
+            return None;
+        }
+        Some([
+            (3.0 * width).trunc() as i32 + 10,
+            (2.5 * width).trunc() as i32 + 5,
+            (4.0 * width).trunc() as i32 + 15,
+        ])
+    }
+
+    pub(crate) fn has_supported_arrow_settings(&self) -> bool {
+        [self.begin_arrow, self.end_arrow]
+            .iter()
+            .all(|[kind, size]| {
+                *kind == 0 || (*kind <= 5 && *size <= 2 && self.arrow_lengths().is_some())
+            })
+    }
+
     pub(crate) fn dash_pattern(&self) -> Result<Option<DashPattern>, ()> {
         if self.dash == 0 {
             return Ok(None);

@@ -225,6 +225,12 @@ impl Transform {
             values: vec![Number::new(x), decimal(y, places)],
         }
     }
+    pub fn translate_unrounded(x: f64, y: f64) -> Self {
+        Self {
+            kind: TransformKind::Translate,
+            values: vec![Number::new(x), Number::new(y)],
+        }
+    }
     pub fn scale(x: f64, y: f64, places: usize) -> Self {
         Self {
             kind: TransformKind::Scale,

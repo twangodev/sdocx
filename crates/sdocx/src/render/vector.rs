@@ -451,6 +451,10 @@ impl Group {
     }
 }
 impl Path {
+    pub fn even_odd_clip(mut self) -> Self {
+        self.0.attr("clip-rule", "evenodd");
+        self
+    }
     pub fn template(mut self, kind: PageTemplate) -> Self {
         self.0.attr("data-page-template", kind.text());
         self

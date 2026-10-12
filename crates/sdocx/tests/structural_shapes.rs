@@ -1185,6 +1185,257 @@ fn dashed_outlines_remain_pdf_path_operations_without_new_images() {
     );
 }
 
+#[cfg(feature = "render")]
+mod arrow_transport_tests {
+    use super::*;
+
+    fn document(width: f32, kind: u8, size: u8) -> sdocx::Document {
+        let mut settings = style(width);
+        settings[5] = 3;
+        settings[8..10].copy_from_slice(&[kind, size]);
+        let mut effects = sized(&color(true, 0, 0x800000ff));
+        effects.extend(sized(&settings));
+        let path = native_path(&[(1, &[0.0, 0.0]), (2, &[1000.0, 0.0])]);
+        let payload = [
+            base(0.0),
+            frame(6, 12, &base_fixed(), &effects),
+            frame(8, 8, &line_fixed(0), &path),
+        ]
+        .concat();
+        let parsed = sdocx::parse_bytes_detailed(&single(8, &payload)).unwrap();
+        assert!(!has_shape_warning(&parsed));
+        parsed.document
+    }
+
+    #[test]
+    fn arrow_geometry_matches_native_calls_and_keeps_open_arrows_undashed() {
+        let capture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../conformance/shape-arrows.json")).unwrap();
+        for case in capture["geometry"].as_array().unwrap() {
+            let width = case["width"].as_f64().unwrap() as f32;
+            let kind = case["type"].as_u64().unwrap() as u8;
+            let size = case["size"].as_u64().unwrap() as u8;
+            if width < 1.0 && kind <= 3 {
+                continue;
+            }
+            let document = document(width, kind, size);
+            let rendered = sdocx::render_document_svg(&document, &Default::default());
+            assert!(rendered[0].paint_diagnostics.is_empty(), "{case}");
+            let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
+            let arrow = xml
+                .descendants()
+                .find(|node| node.attribute("transform") == Some("rotate(270)"))
+                .unwrap();
+            let events = case["events"].as_array().unwrap();
+            if kind <= 3 {
+                let data = arrow
+                    .descendants()
+                    .find(|node| node.has_tag_name("path"))
+                    .unwrap();
+                let points = svgtypes::PathParser::from(data.attribute("d").unwrap())
+                    .filter_map(|command| match command.unwrap() {
+                        svgtypes::PathSegment::MoveTo { x, y, .. }
+                        | svgtypes::PathSegment::LineTo { x, y, .. } => Some([x as f32, y as f32]),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                let expected = events
+                    .iter()
+                    .filter(|event| matches!(event["op"].as_str(), Some("move" | "line")))
+                    .map(|event| {
+                        [
+                            event["values"][0].as_f64().unwrap() as f32,
+                            event["values"][1].as_f64().unwrap() as f32,
+                        ]
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(points, expected, "{case}");
+                let parent = data.parent_element().unwrap();
+                assert!(parent.attribute("stroke-dasharray").is_none());
+                if kind == 2 {
+                    assert_eq!(parent.attribute("stroke-linecap"), Some("round"));
+                    assert_eq!(parent.attribute("stroke-linejoin"), Some("bevel"));
+                    assert_eq!(parent.attribute("fill"), Some("none"));
+                } else {
+                    assert_eq!(parent.attribute("fill"), Some("#0000ff"));
+                }
+                let clip = xml
+                    .descendants()
+                    .find(|node| node.attribute("clip-rule") == Some("evenodd"))
+                    .unwrap();
+                let clip_points = svgtypes::PathParser::from(clip.attribute("d").unwrap())
+                    .filter_map(|command| match command.unwrap() {
+                        svgtypes::PathSegment::MoveTo { x, y, .. }
+                        | svgtypes::PathSegment::LineTo { x, y, .. } => Some([x, y]),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                let cut = events
+                    .iter()
+                    .find(|event| event["op"] == "cleanup_request")
+                    .unwrap();
+                assert!(
+                    ((clip_points[5][1] - clip_points[4][1]).abs()
+                        - cut["width"].as_f64().unwrap())
+                    .abs()
+                        < 1e-4
+                );
+                assert!(
+                    ((clip_points[6][0] - clip_points[5][0]).abs()
+                        - cut["height"].as_f64().unwrap())
+                    .abs()
+                        < 1e-4
+                );
+            } else if kind == 4 {
+                let expected = events
+                    .iter()
+                    .find(|event| event["op"] == "rectangle")
+                    .unwrap();
+                let rect = arrow
+                    .descendants()
+                    .find(|node| node.has_tag_name("rect"))
+                    .unwrap();
+                assert_eq!(
+                    svg_number(rect, "x") as f32,
+                    expected["values"][0].as_f64().unwrap() as f32
+                );
+                assert_eq!(
+                    svg_number(rect, "width") as f32,
+                    (expected["values"][2].as_f64().unwrap()
+                        - expected["values"][0].as_f64().unwrap()) as f32
+                );
+            } else {
+                let expected = events.iter().find(|event| event["op"] == "circle").unwrap();
+                let circle = arrow
+                    .descendants()
+                    .find(|node| node.has_tag_name("circle"))
+                    .unwrap();
+                assert_eq!(
+                    svg_number(circle, "r") as f32,
+                    expected["values"][2].as_f64().unwrap() as f32
+                );
+            }
+            assert!(
+                xml.descendants()
+                    .any(|node| node.attribute("stroke-dasharray").is_some())
+            );
+            assert_eq!(
+                as_line(document.pages[0].elements().next().unwrap())
+                    .style
+                    .begin_arrow,
+                [kind, size]
+            );
+        }
+    }
+
+    #[test]
+    fn arrow_angles_follow_native_straight_path_poses_and_reject_uncaptured_contexts() {
+        let capture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../conformance/shape-arrows.json")).unwrap();
+        for case in capture["poses"].as_array().unwrap().iter().take(5) {
+            let mut document = document(3.5, 4, 0);
+            let PageElement::Line(line) = document.pages[0].elements_mut().next().unwrap() else {
+                unreachable!()
+            };
+            let end = [
+                case["end"][0].as_f64().unwrap(),
+                case["end"][1].as_f64().unwrap(),
+            ];
+            line.path_data = native_path(&[(1, &[0.0, 0.0]), (2, &end)]);
+            line.style.end_arrow = [4, 0];
+            let rendered = sdocx::render_document_svg(&document, &Default::default());
+            assert!(rendered[0].paint_diagnostics.is_empty());
+            let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
+            for event in case["events"].as_array().unwrap() {
+                let expected = event["values"][2].as_f64().unwrap() as f32;
+                assert!(
+                    xml.descendants()
+                        .filter_map(|node| node.attribute("transform"))
+                        .filter_map(|text| text
+                            .strip_prefix("rotate(")?
+                            .strip_suffix(')')?
+                            .parse::<f32>()
+                            .ok())
+                        .any(|angle| angle.to_bits() == expected.to_bits()),
+                    "{case}"
+                );
+            }
+        }
+        for case in 0..6 {
+            let mut document = document(3.5, 1, 0);
+            let PageElement::Line(line) = document.pages[0].elements_mut().next().unwrap() else {
+                unreachable!()
+            };
+            match case {
+                0 => line.style.begin_arrow = [6, 0],
+                1 => line.style.begin_arrow = [1, 3],
+                2 => line.path_data = native_path(&[(1, &[0.0, 0.0]), (2, &[1.0, 0.0])]),
+                3 => {
+                    line.path_data =
+                        native_path(&[(1, &[0.0, 0.0]), (4, &[20.0, 0.0, 40.0, 30.0, 100.0, 0.0])])
+                }
+                4 => line.path_data = native_path(&[(1, &[0.1, 0.0]), (2, &[100.0, 0.0])]),
+                _ => line.style.width = 0.1,
+            }
+            let output = sdocx::render_document_svg(&document, &Default::default());
+            assert_eq!(
+                output[0].paint_diagnostics[0].kind,
+                sdocx::PaintDiagnosticKind::UnsupportedArrowGeometry
+            );
+            assert!(!output[0].svg.contains("<clipPath"));
+        }
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn arrow_cleanup_and_all_named_tips_remain_pdf_vectors_in_both_themes() {
+        for mode in [sdocx::RenderColorMode::Light, sdocx::RenderColorMode::Dark] {
+            let mut document = document(3.5, 1, 0);
+            for kind in 2..=5 {
+                document.pages[0]
+                    .objects
+                    .push(self::document(3.5, kind, 0).pages[0].objects.remove(0));
+            }
+            let fonts = sdocx::fonts::FontBook::default();
+            let mut options = sdocx::RenderOptions::default();
+            options.color_mode = mode;
+            let output = sdocx::render_layout_pages_pdf_detailed_with_fonts(
+                &document,
+                &sdocx::layout_document(&document),
+                &[0],
+                &options,
+                &sdocx::PdfOptions::from_font_book(&fonts),
+                &fonts,
+            )
+            .unwrap();
+            assert!(output.pages[0].paint_diagnostics.is_empty());
+            let pdf = lopdf::Document::load_mem(&output.bytes).unwrap();
+            let content = pdf
+                .get_page_content(*pdf.get_pages().values().next().unwrap())
+                .unwrap();
+            let operations = lopdf::content::Content::decode(&content)
+                .unwrap()
+                .operations;
+            assert!(
+                operations
+                    .iter()
+                    .any(|operation| operation.operator == "W*")
+            );
+            assert!(operations.iter().any(|operation| operation.operator == "f"));
+            assert!(operations.iter().any(|operation| operation.operator == "S"));
+            assert!(
+                !pdf.objects
+                    .values()
+                    .any(|object| object
+                        .as_stream()
+                        .is_ok_and(|stream| stream.dict.get(b"Subtype").is_ok_and(|value| value
+                            .as_name()
+                            .is_ok_and(|name| name == b"Image"))))
+            );
+        }
+    }
+}
+
 #[test]
 fn no_outline_and_unsupported_gradient_are_distinct_from_solid_black() {
     for kind in [1, 2, 99] {

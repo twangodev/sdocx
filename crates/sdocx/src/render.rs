@@ -19,6 +19,7 @@ use vector::{
     Transform, ViewBox, color_hex, coordinate, decimal,
 };
 
+mod arrows;
 mod code;
 mod embedded;
 pub mod fonts;
@@ -1363,18 +1364,33 @@ fn render_line(
         &line.metadata.uuid,
     )
     .fill(Paint::None);
-    if let Some(path) = path {
-        svg.push(style.add(Path::new().data(path)));
+    let body = if let Some(path) = path {
+        style.add(Path::new().data(path))
     } else {
-        svg.push(
-            style.add(
-                Line::new()
-                    .x1(line.begin[0])
-                    .y1(line.begin[1])
-                    .x2(line.end[0])
-                    .y2(line.end[1]),
-            ),
-        );
+        style.add(
+            Line::new()
+                .x1(line.begin[0])
+                .y1(line.begin[1])
+                .x2(line.end[0])
+                .y2(line.end[1]),
+        )
+    };
+    if !matches!(outline.0, Paint::None) && line.style.dash_pattern().is_ok() {
+        match arrows::Plan::for_line(line) {
+            Ok(Some(arrows)) => arrows.render(svg, outline.0, outline.1, body),
+            Ok(None) => svg.push(body),
+            Err(()) => {
+                svg.report_paint_issue(PaintDiagnostic {
+                    source_offset,
+                    object_uuid: line.metadata.uuid.clone(),
+                    role: PaintRole::Outline,
+                    kind: PaintDiagnosticKind::UnsupportedArrowGeometry,
+                });
+                svg.push(body);
+            }
+        }
+    } else {
+        svg.push(body);
     }
     Ok(())
 }

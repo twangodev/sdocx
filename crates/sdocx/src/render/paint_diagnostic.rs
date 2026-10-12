@@ -16,6 +16,8 @@ pub enum PaintDiagnosticKind {
     UnsupportedPaint,
     /// The saved dash enum or width does not define an admitted dash pattern.
     UnsupportedDashPattern,
+    /// Saved arrows or their endpoint/cleanup geometry are outside the admitted route.
+    UnsupportedArrowGeometry,
     /// An enabled paint has no retained source.
     MissingPaintSource,
     /// The saved gradient stops or parameters do not meet admission constraints.

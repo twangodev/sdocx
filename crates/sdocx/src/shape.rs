@@ -480,8 +480,7 @@ pub(crate) fn read_shape_base(
                 || style.dash_pattern().is_err()
                 || style.cap > 2
                 || style.join > 2
-                || style.begin_arrow != [0; 2]
-                || style.end_arrow != [0; 2]
+                || !style.has_supported_arrow_settings()
                 || effect.remaining() != 0
             {
                 unsupported
