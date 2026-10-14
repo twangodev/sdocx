@@ -1189,6 +1189,28 @@ fn dashed_outlines_remain_pdf_path_operations_without_new_images() {
 mod arrow_transport_tests {
     use super::*;
 
+    fn single_transform(node: roxmltree::Node<'_, '_>) -> Option<svgtypes::TransformListToken> {
+        let mut tokens = svgtypes::TransformListParser::from(node.attribute("transform")?);
+        let transform = tokens.next()?.ok()?;
+        tokens.next().is_none().then_some(transform)
+    }
+
+    fn arrow_at<'a, 'input>(
+        xml: &'a roxmltree::Document<'input>,
+        endpoint: [f64; 2],
+    ) -> (roxmltree::Node<'a, 'input>, f64) {
+        xml.descendants()
+            .filter(|node| {
+                matches!(single_transform(*node), Some(svgtypes::TransformListToken::Translate { tx, ty }) if [tx, ty] == endpoint)
+            })
+            .flat_map(|node| node.children())
+            .find_map(|node| match single_transform(node)? {
+                svgtypes::TransformListToken::Rotate { angle } => Some((node, angle)),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("missing arrow rotation at {endpoint:?}"))
+    }
+
     fn document(width: f32, kind: u8, size: u8) -> sdocx::Document {
         let mut settings = style(width);
         settings[5] = 3;
@@ -1222,10 +1244,7 @@ mod arrow_transport_tests {
             let rendered = sdocx::render_document_svg(&document, &Default::default());
             assert!(rendered[0].paint_diagnostics.is_empty(), "{case}");
             let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
-            let arrow = xml
-                .descendants()
-                .find(|node| node.attribute("transform") == Some("rotate(270)"))
-                .unwrap();
+            let (arrow, _) = arrow_at(&xml, [0.0, 0.0]);
             let events = case["events"].as_array().unwrap();
             if kind <= 3 {
                 let data = arrow
@@ -1347,17 +1366,19 @@ mod arrow_transport_tests {
             assert!(rendered[0].paint_diagnostics.is_empty());
             let xml = roxmltree::Document::parse(&rendered[0].svg).unwrap();
             for event in case["events"].as_array().unwrap() {
-                let expected = event["values"][2].as_f64().unwrap() as f32;
+                let endpoint = [
+                    event["values"][0].as_f64().unwrap(),
+                    event["values"][1].as_f64().unwrap(),
+                ];
+                let (_, actual) = arrow_at(&xml, endpoint);
+                let expected = event["values"][2].as_f64().unwrap();
+                let difference = ((actual - expected + 180.0).rem_euclid(360.0) - 180.0).abs();
+                // Budget four f32 rounding steps at a full turn for platform libm differences.
+                const ANGLE_TOLERANCE_DEGREES: f64 = 4.0 * f32::EPSILON as f64 * 360.0;
                 assert!(
-                    xml.descendants()
-                        .filter_map(|node| node.attribute("transform"))
-                        .filter_map(|text| text
-                            .strip_prefix("rotate(")?
-                            .strip_suffix(')')?
-                            .parse::<f32>()
-                            .ok())
-                        .any(|angle| angle.to_bits() == expected.to_bits()),
-                    "{case}"
+                    difference <= ANGLE_TOLERANCE_DEGREES,
+                    "arrow at {endpoint:?}: actual {actual}°, expected {expected}°, \
+                     difference {difference}°, tolerance {ANGLE_TOLERANCE_DEGREES}°; {case}"
                 );
             }
         }
