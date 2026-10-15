@@ -200,6 +200,17 @@ jobs:
         run: bunx playwright install --with-deps chromium firefox webkit
       - name: Run browser tests
         run: bun run test:e2e
+        env:
+          WRANGLER_LOG_PATH: ${{ runner.temp }}/sdocx-wrangler.log
+      - name: Upload browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure-diagnostics
+          path: |
+            web/test-results
+            ${{ runner.temp }}/sdocx-wrangler.log
+          retention-days: 7
 
   deploy-web:
     name: Deploy web
