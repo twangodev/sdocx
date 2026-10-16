@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/twangodev/sdocx/compare/sdocx-v1.1.0...sdocx-v1.2.0) (2026-10-15)
+
+
+### Features
+
+* **render:** add bounded vector arrowheads and tip cleanup ([381dbf1](https://github.com/twangodev/sdocx/commit/381dbf1febf57d117dfe7f34a68939a3a455fa69))
+* **render:** preserve native saved dash styles in vector outlines ([9e99097](https://github.com/twangodev/sdocx/commit/9e990972d30b3933a0839d777508e500d4637477))
+
 ## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-v1.0.0...sdocx-v1.1.0) (2026-10-09)
 
 

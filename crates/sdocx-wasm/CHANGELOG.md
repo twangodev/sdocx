@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.1](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.1.0...sdocx-wasm-v1.1.1) (2026-10-15)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * sdocx bumped from 1.1.0 to 1.2.0
+
 ## [1.1.0](https://github.com/twangodev/sdocx/compare/sdocx-wasm-v1.0.0...sdocx-wasm-v1.1.0) (2026-10-09)
 
 
