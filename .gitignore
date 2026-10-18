@@ -102,7 +102,10 @@ docs/_build/
 # Rust
 target/
 
+# Reverse Engineering
 /tmp/
+/scratch/
+
 /web/.svelte-kit/
 /web/build/
 /web/node_modules/

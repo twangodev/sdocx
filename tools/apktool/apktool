@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+tool_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+project_dir=$(cd -- "$tool_dir/../.." && pwd)
+image=sdocx-apktool:3.0.3
+
+if [[ ${1:-} == build-image ]]; then
+  exec docker build --tag "$image" "$tool_dir"
+fi
+
+mkdir -p "$project_dir/scratch/apk-input" "$project_dir/scratch/apk-output"
+exec docker run --rm --network none --cap-drop ALL \
+  --security-opt no-new-privileges --read-only --tmpfs /tmp \
+  --user "$(id -u):$(id -g)" \
+  --mount "type=bind,src=$project_dir/scratch/apk-input,dst=/input,readonly" \
+  --mount "type=bind,src=$project_dir/scratch/apk-output,dst=/output" \
+  "$image" "$@"
