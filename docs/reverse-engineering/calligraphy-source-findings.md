@@ -139,8 +139,10 @@ The [saved native capture](../../conformance/calligraphy-saved-native.json)
 executes this history/endPen path and all three RTV1 mesh buffers with two
 synthetic histories, including a second redraw on the same drawable. MotionEvent
 accessors, bounds operations and queue submission are explicit host boundaries;
-execution stops before `movePen`. The orientation-sensitive angle and reused
-state are native observations, not application-captured input or pixel evidence.
+execution stops before `movePen`. Its `sincos` callback uses Python's host
+`math` implementation, not Android libm. The orientation-sensitive angle and
+reused state are native observations, not application-captured input or pixel
+evidence.
 
 Current Rust `ink::prepare_stroke` selects Fountain/Marker2/Marker4 geometry;
 this profile borrows original samples with `InkSupport::Approximate`. Its
