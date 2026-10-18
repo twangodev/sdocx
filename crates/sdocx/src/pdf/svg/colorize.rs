@@ -136,7 +136,9 @@ fn recognize(group: &usvg::Group) -> Option<(Rect, &usvg::Group, [u8; 3], f32)> 
     let Node::Path(backdrop) = &source.children()[0] else {
         return None;
     };
-    if !is_opaque_black_backdrop(backdrop, filter_rect) {
+    if backdrop.abs_transform() != source.abs_transform()
+        || !is_opaque_black_backdrop(backdrop, filter_rect)
+    {
         return None;
     }
     if !source.children()[1..].iter().all(is_gray_source_node) {
@@ -387,6 +389,10 @@ mod tests {
             "<rect width=\"64\" height=\"64\" fill=\"black\"/>",
             "<path d=\"M0 0H64V64H4Z\" fill=\"black\"/>",
         );
+        let shifted_backdrop = source.replace(
+            "<rect width=\"64\" height=\"64\" fill=\"black\"/>",
+            "<rect width=\"64\" height=\"64\" fill=\"black\" transform=\"translate(1,0)\"/>",
+        );
         let image_tree = tree(&image);
         fn has_image(group: &usvg::Group) -> bool {
             group.children().iter().any(|node| match node {
@@ -401,7 +407,12 @@ mod tests {
         );
         assert!(recognize(ink_group(&image_tree)).is_none());
 
-        for svg in [non_srgb, two_primitives, same_bounds_nonrectangle] {
+        for svg in [
+            non_srgb,
+            two_primitives,
+            same_bounds_nonrectangle,
+            shifted_backdrop,
+        ] {
             let tree = tree(&svg);
             assert!(recognize(ink_group(&tree)).is_none());
         }
