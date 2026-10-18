@@ -171,13 +171,17 @@ class NativePencil3(NativeFountain):
         point_data = self.alloc(8 * count)
         pressure_data = self.alloc(4 * count)
         time_data = self.alloc(4 * count)
-        tilt_data = self.alloc(4 * count)
-        orientation_data = self.alloc(4 * count)
+        # ObjectStroke exposes optional axes as null channels. Keep that
+        # distinct from a present channel whose values happen to be zero.
+        tilt_data = self.alloc(4 * count) if stroke['tilts'] else 0
+        orientation_data = self.alloc(4 * count) if stroke['orientations'] else 0
         self.put(point_data, f'{2 * count}f', *point_bytes)
         self.put(pressure_data, f'{count}f', *stroke['pressures'])
         self.put(time_data, f'{count}i', *stroke['timestamps'])
-        self.put(tilt_data, f'{count}f', *stroke['tilts'])
-        self.put(orientation_data, f'{count}f', *stroke['orientations'])
+        if tilt_data:
+            self.put(tilt_data, f'{count}f', *stroke['tilts'])
+        if orientation_data:
+            self.put(orientation_data, f'{count}f', *stroke['orientations'])
         self.saved_stroke = stroke
         self.callbacks.update({
             'SPen::ObjectStroke::GetToolType() const': lambda: self.x(0, stroke['tool_type']),

@@ -98,7 +98,7 @@ remain separate source boundaries.
 The optional [`pencil_native.py`](../../conformance/pencil_native.py) witness
 executes native `drawPoint`, RTV1 `AddPoint` and bounds updates for six cases
 with explicit RNG outputs. It captures the five-float buffer order
-`x,y,half-size,signed-row,alpha`. Five additional saved-redraw cases execute
+`x,y,half-size,signed-row,alpha`. Ten additional saved-redraw cases execute
 native sampling using an AOSP bionic RNG model checked against CTS vectors.
 Samsung's actual runtime libc, queue execution and texture/compositing
 appearance remain outside this capture.
