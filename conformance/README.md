@@ -134,6 +134,7 @@ PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/inkpen_native
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/smpath_cubic_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_redraw_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python:conformance python3 conformance/oblique_fixed_width_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil_native.py
 python3 conformance/inkpen_paint_native.py --check-fixture
 ```
@@ -143,6 +144,9 @@ size/fixed-width setter cases. Base cubic captures check three measured lengths
 and 21 sampled positions bit-for-bit. Oblique's test-only mesh core matches
 19 native helper cases; four separate saved-redraw captures retain sample and
 terminal boundaries. Neither core is routed into production rendering.
+The six fixed-width redraw witnesses store the returned native RectF and a
+digest of callback mesh triples; `SetPenRect` is an explicit host stub, and
+Drawing clipping/rasterization are outside this oracle.
 
 Pencil3 has six direct particle-buffer cases and ten saved-redraw cases using
 an AOSP bionic RNG model. InkPen's seven-case paint replay executes embedded
