@@ -213,13 +213,14 @@ class N(NativeFountain):
  def cap(self,u,a,size,data):
   if a==self.syms['SPen::InkPen2StrokeDrawableGLV9::drawLine(float, float, long long, SPen::RectF*, bool, bool)']:
    self.captured.append(('line',self.f(0),self.f(1),self.x(2)))
+   self.drawable_thresholds.append(self.get(self.x(0)+44,'f')[0])
   elif a==self.syms['SPen::InkPen2StrokeDrawableGLV9::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)']:
    self.captured.append(('end',))
   elif a==self.syms['SPen::InkPen2StrokeDrawableRTV3::AddPoint(SPen::Vector2<float>, float)']:
    self.captured.append(('point',self.f(0),self.f(1),self.f(2)))
 
 def capture_one(case):
- n=N(); n.captured=[]; n.host_calls={}; n.u.hook_add(UC_HOOK_CODE,n.cap)
+ n=N(); n.captured=[]; n.drawable_thresholds=[]; n.host_calls={}; n.u.hook_add(UC_HOOK_CODE,n.cap)
  n.callbacks['SPen::ObjectStroke::GetPointCount() const']=lambda:n.x(0,len(pts))
  pts=[tuple(p) for p in case['points']]; times=case['timestamps']; pres=case['pressures']
  def ch(name,fmt,vals):
@@ -241,7 +242,7 @@ def capture_one(case):
 
  try:n.call('SPen::InkPen2StrokeDrawableGLV9::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)',[draw,stroke,rect,1],instruction_limit=2_000_000)
  except Exception as e:print('redraw-error',e,hex(n.u.reg_read(UC_ARM64_REG_PC)),[hex(n.u.reg_read(r)) for r in (arm64_const.UC_ARM64_REG_X0,arm64_const.UC_ARM64_REG_X1,arm64_const.UC_ARM64_REG_X2,arm64_const.UC_ARM64_REG_X3,arm64_const.UC_ARM64_REG_X8,arm64_const.UC_ARM64_REG_X9)]);raise
- start,end,cap=n.get(v,'QQQ'); assert start <= end <= cap and cap-start <= 4*9*4096, 'invalid RTV3 bounds'; assert (end-start)%36 == 0, 'RTV3 output is not complete nine-float records'; vals=n.get(start,'f'*((end-start)//4)); assert all(math.isfinite(v) for v in vals), 'non-finite RTV3 output'; return {'input_callback_trace':n.captured,'rtv3': [list(vals[i:i+9]) for i in range(0,len(vals),9)],'bounds':list(n.get(rect,'4f')),'initializers':n.init_arrays,'host_calls_during_initialization':n.initialization_host_calls,'host_calls_during_redraw':n.host_calls,'runtime_context':{'cpu_model':'UC_CPU_ARM64_MAX','hwcap':256,'hwcap2':0,'pagesize':4096,'arch':'arm64-v8a','locale':'C','gettid':1234,'mutex_model':'single-thread no-op mutex/condition operations'}}
+ start,end,cap=n.get(v,'QQQ'); assert start <= end <= cap and cap-start <= 4*9*4096, 'invalid RTV3 bounds'; assert (end-start)%36 == 0, 'RTV3 output is not complete nine-float records'; vals=n.get(start,'f'*((end-start)//4)); assert all(math.isfinite(v) for v in vals), 'non-finite RTV3 output'; return {'input_callback_trace':n.captured,'rtv3': [list(vals[i:i+9]) for i in range(0,len(vals),9)],'bounds':list(n.get(rect,'4f')),'initializers':n.init_arrays,'host_calls_during_initialization':n.initialization_host_calls,'host_calls_during_redraw':n.host_calls,'runtime_context':{'cpu_model':'UC_CPU_ARM64_MAX','hwcap':256,'hwcap2':0,'pagesize':4096,'arch':'arm64-v8a','locale':'C','gettid':1234,'mutex_model':'single-thread no-op mutex/condition operations','requested_fixture_tolerance':case['tolerance'],'requested_fixture_tolerance_applied':False,'drawable_threshold_offset':44,'drawable_threshold_at_drawline_entry':n.drawable_thresholds}}
 
 if __name__=='__main__':
  ap=argparse.ArgumentParser(description=__doc__); ap.add_argument('--fixture',type=Path,default=Path('conformance/inkpen2-saved.json')); group=ap.add_mutually_exclusive_group(required=True); group.add_argument('--write-fixture',action='store_true'); group.add_argument('--check-fixture',action='store_true'); args=ap.parse_args()

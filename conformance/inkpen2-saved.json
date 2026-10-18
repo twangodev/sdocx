@@ -578,7 +578,15 @@
           "arch": "arm64-v8a",
           "locale": "C",
           "gettid": 1234,
-          "mutex_model": "single-thread no-op mutex/condition operations"
+          "mutex_model": "single-thread no-op mutex/condition operations",
+          "requested_fixture_tolerance": 0.0,
+          "requested_fixture_tolerance_applied": false,
+          "drawable_threshold_offset": 44,
+          "drawable_threshold_at_drawline_entry": [
+            2.0,
+            2.0,
+            2.0
+          ]
         }
       }
     },
@@ -746,7 +754,15 @@
           "arch": "arm64-v8a",
           "locale": "C",
           "gettid": 1234,
-          "mutex_model": "single-thread no-op mutex/condition operations"
+          "mutex_model": "single-thread no-op mutex/condition operations",
+          "requested_fixture_tolerance": 0.0,
+          "requested_fixture_tolerance_applied": false,
+          "drawable_threshold_offset": 44,
+          "drawable_threshold_at_drawline_entry": [
+            2.0,
+            2.0,
+            2.0
+          ]
         }
       }
     },
@@ -1321,7 +1337,15 @@
           "arch": "arm64-v8a",
           "locale": "C",
           "gettid": 1234,
-          "mutex_model": "single-thread no-op mutex/condition operations"
+          "mutex_model": "single-thread no-op mutex/condition operations",
+          "requested_fixture_tolerance": 0.0,
+          "requested_fixture_tolerance_applied": false,
+          "drawable_threshold_offset": 44,
+          "drawable_threshold_at_drawline_entry": [
+            2.0,
+            2.0,
+            2.0
+          ]
         }
       }
     }
