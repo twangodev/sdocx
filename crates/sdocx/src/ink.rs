@@ -1,6 +1,8 @@
 //! Shared, sample-addressable ink geometry for exports and interactive replay.
 use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
+#[cfg(test)]
+mod calligraphy;
 mod fountain;
 mod fountain_v14;
 // Native numeric regression only until caller context and RTV1 paint transport
