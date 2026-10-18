@@ -33,6 +33,8 @@ mod parsed_cell_text;
 #[path = "native_table/page_text_ranges.rs"]
 mod page_text_ranges;
 
+#[path = "native_table/pdf_paper_placement.rs"]
+mod pdf_paper_placement;
 #[path = "native_table/pdf_paper_predicates.rs"]
 mod pdf_paper_predicates;
 
@@ -1838,6 +1840,24 @@ fn main() {
                 Path::new(&path),
                 Path::new(&base),
                 Path::new(&skia),
+            );
+            return;
+        }
+        Some("--pdf-paper-placement") => {
+            let composer = std::env::args_os()
+                .nth(3)
+                .expect("libSPenComposer.so path required");
+            let base = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            let view = std::env::args_os()
+                .nth(5)
+                .expect("libSPenView.so path required");
+            pdf_paper_placement::capture(
+                &mut machine,
+                Path::new(&composer),
+                Path::new(&base),
+                Path::new(&view),
             );
             return;
         }

@@ -238,6 +238,12 @@ notes; see [rendering-corpus-findings.md](rendering-corpus-findings.md). That
 inventory confirms local resource presence but does not establish rendering or
 the unusual nonzero-origin/changed-width view cases.
 
+The optional [placement oracle](../../conformance/pdf_paper_placement_native.py)
+executes the caller fragment through native `View::SetPosition` and clipping
+for 26 retained/synthetic inputs, including all twenty continuous placements.
+Width and canvas interfaces are host boundaries; PDF opening, source-box
+mapping and page pixels are outside that capture.
+
 The demonstrated boundaries are distinct: saved placement, effective source PDF
 box, interactive clip/cache region, and capture region. The static caller traces
 contain no general finite-value validator before placement width division.
