@@ -158,6 +158,39 @@ class Oracle(NativeFountain):
   begin,end,cap=self.get(vector,'QQQ'); assert end>=begin and end<=cap and (end-begin)%16==0
   values=self.get(begin,'f'*((end-begin)//4)); stamps=[values[i:i+4] for i in range(0,len(values),4)]
   return {'stamp_count':len(stamps),'stamps':[[f'{struct.unpack("<I",struct.pack("<f",v))[0]:08x}' for v in stamp] for stamp in stamps], 'host_render_callbacks':self.host_methods}
+ def saved_redraw_v2(self, size, history, endpoint, tool, event_values, initial_position=(0.0,0.0), tolerance=0.5, counter_seed=0):
+  # Unlike dispatch(), this executes the selected GLV2 constructor body and
+  # keeps its actual RTV1 subobject. MotionEvent, queue, canvas and bitmap host
+  # interfaces remain explicit boundaries, matching saved_redraw().
+  ctor='SPen::AirBrushPenStrokeDrawableGLV2::AirBrushPenStrokeDrawableGLV2(SPen::AirBrushPenData*, SPen::PenGLDataManager*)'
+  redraw='SPen::AirBrushPenStrokeDrawableGLV2::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)'
+  self.callbacks.pop(ctor,None)
+  self.heap=0x10000000; obj=self.alloc(512); data=self.alloc(64); settings=self.alloc(64); mgr=self.alloc(64); canvas=self.alloc(64); vector=self.alloc(24); output=self.alloc(4*8192); queuevt=self.alloc(64); queue=self.alloc(32); event=self.alloc(256); rect=self.alloc(32)
+  self.queue_post=self.alloc(16); self.queue_task_return=self.alloc(16); self.host_method=self.alloc(16)
+  self.queue=queue; self.put(queue,'Q',queuevt); self.put(queuevt+16,'Q',self.queue_post); self.callbacks['SPen::PenGLDataManager::GetMsgQueue()']=lambda:self.x(0,self.queue)
+  self.vector=vector; self.end={'x':endpoint[0],'y':endpoint[1],'pressure':0.75,'tilt':0.0,'orientation':0.0,'tool':tool,'source':0,'time':30}; self.end.update(event_values or {}); self.history=list(history)
+  self.call(ctor,[obj,data,mgr])
+  self.put(obj+24,'Q',mgr); self.put(obj+32,'Q',canvas); self.put(obj+72,'Q',data); self.put(data,'Q',settings); self.put(settings,'fI',size,0xff336699)
+  rt=self.get(obj+16,'Q')[0]; rt_vtable=self.get(rt,'Q')[0]; expected_vtable=self.syms['vtable for SPen::AirBrushPenStrokeDrawableRTV1']
+  assert rt_vtable==expected_vtable+16, (hex(rt_vtable),hex(expected_vtable))
+  self.put(rt+80,'Q',vector); self.put(vector,'QQQ',output,output,output+8192*4)
+  self.put(obj+216,'2f',*initial_position); self.put(obj+232,'I',counter_seed); self.put(obj+244,'f',tolerance)
+  self.call(redraw,[obj,event,rect])
+  begin,end,cap=self.get(vector,'QQQ'); assert end>=begin and end<=cap and (end-begin)%16==0
+  values=self.get(begin,'f'*((end-begin)//4)); stamps=[values[i:i+4] for i in range(0,len(values),4)]
+  packed=b''.join(struct.pack('<f',v) for row in stamps for v in row)
+  records=[[f'{struct.unpack("<I",struct.pack("<f",v))[0]:08x}' for v in stamp] for stamp in stamps]
+  # Build and upload through the exact RT object created by GLV2's constructor.
+  bitmap=self.alloc(64); bitmap_vtable=self.alloc(256); self.bitmap_method=self.alloc(16); self.bitmap_get=self.alloc(16); self.bitmap_upload=self.alloc(16); self.bitmap_obj=bitmap
+  self.put(bitmap,'Q',bitmap_vtable)
+  for offset in range(0,256,8): self.put(bitmap_vtable+offset,'Q',self.bitmap_method)
+  self.put(bitmap_vtable+168,'Q',self.bitmap_get); self.put(bitmap_vtable+48,'Q',self.bitmap_upload)
+  self.call('SPen::AirBrushPenStrokeDrawableRTV1::buildTextures(int, int)',[rt,96,96])
+  assert self.get(rt+224,'Q')[0]==bitmap
+  factory=self.bitmap_factory_args
+  self.call('SPen::AirBrushPenStrokeDrawableRTV1::setTextures(unsigned int, unsigned int)',[rt,96,96])
+  texture=self.bitmap_payload; assert len(texture)==96*96*4
+  return {'constructor':'SPen::AirBrushPenStrokeDrawableGLV2','constructor_executed_natively':True,'drawable_profile_version':2,'rt_subobject':'SPen::AirBrushPenStrokeDrawableRTV1','rt_object_offset':'GLV2+0x10','rt_vtable_address_point':hex(rt_vtable),'rt_vtable_symbol':hex(expected_vtable),'stamp_count':len(stamps),'stamps':records,'stamp_stream_sha256':hashlib.sha256(packed).hexdigest(),'texture_build_factory':factory,'texture_upload':{'dimensions':[96,96],'bytes':len(texture),'sha256':hashlib.sha256(texture).hexdigest(),'sample_red_bytes':[texture[(48*96+x)*4] for x in range(44,52)],'other_channels_nonzero':any(texture[i] for i in range(1,len(texture),4)) or any(texture[i] for i in range(2,len(texture),4)) or any(texture[i] for i in range(3,len(texture),4))}}
  def texture_build_witness(self):
   self.heap=0x10000000; rt=self.alloc(512); manager=self.alloc(64); queue=self.alloc(32); qvt=self.alloc(64); bmp=self.alloc(64); bvt=self.alloc(256); self.bitmap_method=self.alloc(16); self.bitmap_obj=bmp; self.bitmap_factory_args=None
   self.put(rt+136,'Q',manager); self.put(manager,'Q',0); self.put(queue,'Q',qvt); self.put(qvt+16,'Q',self.bitmap_method)
@@ -213,11 +246,21 @@ def capture():
   case['event']={'pressure':0.75,'tilt':0.0,'orientation':0.0,'source':0,'time':30}
   oracle=Oracle(); record=oracle.saved_redraw(case['size'],case['history'],case['endpoint'],case['tool'],case['event'])
   cases.append({'input':case,'runtime_context':{'drawable_profile_version':1,'data_size':case['size'],'data_color_argb':0xff336699,'previous_position':[0.0,0.0],'drawline_tolerance':0.5,'counter_seed':0},'native':record})
+ v2_cases=[]
+ for case in cases:
+  context=case['runtime_context']; inp=case['input']; oracle=Oracle()
+  native=oracle.saved_redraw_v2(inp['size'],inp['history'],inp['endpoint'],inp['tool'],inp['event'],context['previous_position'],context['drawline_tolerance'],context['counter_seed'])
+  assert native['stamps']==case['native']['stamps'], 'V2 saved redraw differs from V1: '+inp['id']
+  native.pop('stamps')
+  v2_cases.append({'input_id':inp['id'],'runtime_context':{**context,'drawable_profile_version':2},'native':native,'matches_v1_records_bitwise':True})
+ default_v2_selection=texture.dispatch()
+ assert default_v2_selection['constructor_version']==2 and not default_v2_selection['version_field_override']
  return {
   'schema':'sdocx.airbrush-saved-native.v1',
   'source':{'apk':'Samsung Notes 4.4.45.37','library':'libSPenAirBrushPen.so','sha256':EXPECTED},
   'supporting_libraries':{'libSPenPenCommon.so':'afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d','libSPenBase.so':'e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb'},
-  'native_context':{'Pen::Pen_default_version':texture.pen_default_version(),'AirBrushPen::AirBrushPen_default_version':texture.dispatch()['constructor_version'],'version_dispatch':[texture.dispatch(1),texture.dispatch(2)],'profile_constructor_boundary':'AirBrushPen constructor body and Pen::getVersion execute natively; GetStrokeDrawableGL selects a versioned constructor callback; each saved-redraw case separately executes the real V1 GL drawable constructor'},
+  'native_context':{'Pen::Pen_default_version':texture.pen_default_version(),'AirBrushPen::AirBrushPen_default_version':default_v2_selection['constructor_version'],'default_GetStrokeDrawableGL_selection':default_v2_selection,'version_dispatch':[texture.dispatch(1),texture.dispatch(2)],'profile_constructor_boundary':'Pen::Pen and AirBrushPen constructors plus Pen::getVersion execute natively; the default version-2 GetStrokeDrawableGL route selects the V2 constructor; V1 selection was separately observed after an explicit synthetic pen-version field override; saved-redraw cases execute the corresponding GL constructor body directly. No named application setter is established.'},
+  'default_v2_saved_redraw':{'profile_version':2,'record_storage':'per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays','rt_material_path':'actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures execute on that object','cases':v2_cases},
   'texture':{'build_factory':texture.texture_build_witness(),**texture.texture_witness(),'pixel_bytes_order':'little-endian uint32; observed R varying, G/B/A zero','shader_contract':'fragment preserves input RGB and multiplies input alpha by sampled pattern red','native_shader_resources':shaders},
   'host_stubs':{'motion_event':['GetHistorySize','GetHistoricalX','GetHistoricalY','GetX','GetY','GetToolType','GetPressure','GetTilt','GetOrientation','GetSource','GetEventTime','GetDownTime','GetButtonState','GetFlags'],'redraw':['queue task Run synchronous','PenGLDataManager::GetMsgQueue','PenReturnCallback constructor/destructor/GetBuffer/SetPenRect','PenDrawableRT::SetBuffer','Error::SetError','synthetic RT virtual slots'],'texture':['SPGraphicsFactory::CreateBitmap','synthetic bitmap methods','setTextures upload capture'],'runtime':['operator new/new[] and nothrow overloads use bounded Unicorn arena','malloc uses bounded Unicorn arena; free is no-op','memcpy/memmove/memset operate only in emulated memory','strlen bounded to 4096 bytes; atoi bounded to 128 bytes','sincosf uses host math.sin/math.cos','Android logging/cxa_atexit are stubs; cxa guards follow single-thread first-acquire then initialized behavior']},
   'boundaries':['synthetic MotionEvent historical/current coordinate callbacks listed per case','synthetic manager and queue host; queue task Run invoked synchronously','synthetic RT vtable methods except actual RTV1::AddPoint','synthetic bitmap factory and bitmap vtable; actual RTV1::setTextures provides upload bytes','bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached','ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run'],

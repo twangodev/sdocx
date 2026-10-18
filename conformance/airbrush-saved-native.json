@@ -12,6 +12,13 @@
   "native_context": {
     "Pen::Pen_default_version": 1,
     "AirBrushPen::AirBrushPen_default_version": 2,
+    "default_GetStrokeDrawableGL_selection": {
+      "constructor_version": 2,
+      "input_pen_version": 2,
+      "version_field_override": false,
+      "selected_native_constructor": "SPen::AirBrushPenStrokeDrawableGLV2::AirBrushPenStrokeDrawableGLV2(SPen::AirBrushPenData*, SPen::PenGLDataManager*)",
+      "returned_ptr": "0x10000470"
+    },
     "version_dispatch": [
       {
         "constructor_version": 2,
@@ -28,7 +35,188 @@
         "returned_ptr": "0x10000470"
       }
     ],
-    "profile_constructor_boundary": "AirBrushPen constructor body and Pen::getVersion execute natively; GetStrokeDrawableGL selects a versioned constructor callback; each saved-redraw case separately executes the real V1 GL drawable constructor"
+    "profile_constructor_boundary": "Pen::Pen and AirBrushPen constructors plus Pen::getVersion execute natively; the default version-2 GetStrokeDrawableGL route selects the V2 constructor; V1 selection was separately observed after an explicit synthetic pen-version field override; saved-redraw cases execute the corresponding GL constructor body directly. No named application setter is established."
+  },
+  "default_v2_saved_redraw": {
+    "profile_version": 2,
+    "record_storage": "per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays",
+    "rt_material_path": "actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures execute on that object",
+    "cases": [
+      {
+        "input_id": "stylus-straight-size10",
+        "runtime_context": {
+          "drawable_profile_version": 2,
+          "data_size": 10.0,
+          "data_color_argb": 4281558681,
+          "previous_position": [
+            0.0,
+            0.0
+          ],
+          "drawline_tolerance": 0.5,
+          "counter_seed": 0
+        },
+        "native": {
+          "constructor": "SPen::AirBrushPenStrokeDrawableGLV2",
+          "constructor_executed_natively": true,
+          "drawable_profile_version": 2,
+          "rt_subobject": "SPen::AirBrushPenStrokeDrawableRTV1",
+          "rt_object_offset": "GLV2+0x10",
+          "rt_vtable_address_point": "0x3036450",
+          "rt_vtable_symbol": "0x3036440",
+          "stamp_count": 40,
+          "stamp_stream_sha256": "80375fcd1614a9ebe5637fb23658d2badf37d79f822f1ade51bef4697620819a",
+          "texture_build_factory": {
+            "width": 96,
+            "height": 96,
+            "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
+            "data_ptr": "0x0",
+            "bool": 0,
+            "int": 0,
+            "bool2": 0,
+            "stack_args": [
+              6,
+              2
+            ]
+          },
+          "texture_upload": {
+            "dimensions": [
+              96,
+              96
+            ],
+            "bytes": 36864,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "sample_red_bytes": [
+              124,
+              93,
+              131,
+              168,
+              161,
+              125,
+              147,
+              198
+            ],
+            "other_channels_nonzero": false
+          }
+        },
+        "matches_v1_records_bitwise": true
+      },
+      {
+        "input_id": "stylus-diagonal-size6",
+        "runtime_context": {
+          "drawable_profile_version": 2,
+          "data_size": 6.0,
+          "data_color_argb": 4281558681,
+          "previous_position": [
+            0.0,
+            0.0
+          ],
+          "drawline_tolerance": 0.5,
+          "counter_seed": 0
+        },
+        "native": {
+          "constructor": "SPen::AirBrushPenStrokeDrawableGLV2",
+          "constructor_executed_natively": true,
+          "drawable_profile_version": 2,
+          "rt_subobject": "SPen::AirBrushPenStrokeDrawableRTV1",
+          "rt_object_offset": "GLV2+0x10",
+          "rt_vtable_address_point": "0x3036450",
+          "rt_vtable_symbol": "0x3036440",
+          "stamp_count": 49,
+          "stamp_stream_sha256": "88035ee8b7c7dab64cbccbf1b7db248311d8f6f2361ca7498afd8e05a7f6ceab",
+          "texture_build_factory": {
+            "width": 96,
+            "height": 96,
+            "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
+            "data_ptr": "0x0",
+            "bool": 0,
+            "int": 0,
+            "bool2": 0,
+            "stack_args": [
+              6,
+              2
+            ]
+          },
+          "texture_upload": {
+            "dimensions": [
+              96,
+              96
+            ],
+            "bytes": 36864,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "sample_red_bytes": [
+              124,
+              93,
+              131,
+              168,
+              161,
+              125,
+              147,
+              198
+            ],
+            "other_channels_nonzero": false
+          }
+        },
+        "matches_v1_records_bitwise": true
+      },
+      {
+        "input_id": "tool2-offset-size14",
+        "runtime_context": {
+          "drawable_profile_version": 2,
+          "data_size": 14.0,
+          "data_color_argb": 4281558681,
+          "previous_position": [
+            0.0,
+            0.0
+          ],
+          "drawline_tolerance": 0.5,
+          "counter_seed": 0
+        },
+        "native": {
+          "constructor": "SPen::AirBrushPenStrokeDrawableGLV2",
+          "constructor_executed_natively": true,
+          "drawable_profile_version": 2,
+          "rt_subobject": "SPen::AirBrushPenStrokeDrawableRTV1",
+          "rt_object_offset": "GLV2+0x10",
+          "rt_vtable_address_point": "0x3036450",
+          "rt_vtable_symbol": "0x3036440",
+          "stamp_count": 16,
+          "stamp_stream_sha256": "7dc8c858af8818b40467e60500048d74f14dfdfe7e3d0596707445b7df7e8241",
+          "texture_build_factory": {
+            "width": 96,
+            "height": 96,
+            "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
+            "data_ptr": "0x0",
+            "bool": 0,
+            "int": 0,
+            "bool2": 0,
+            "stack_args": [
+              6,
+              2
+            ]
+          },
+          "texture_upload": {
+            "dimensions": [
+              96,
+              96
+            ],
+            "bytes": 36864,
+            "sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+            "sample_red_bytes": [
+              124,
+              93,
+              131,
+              168,
+              161,
+              125,
+              147,
+              198
+            ],
+            "other_channels_nonzero": false
+          }
+        },
+        "matches_v1_records_bitwise": true
+      }
+    ]
   },
   "texture": {
     "build_factory": {

@@ -213,7 +213,8 @@ identify pen names/settings separately from the selected PDF export mode.
 
 The [AirBrush native capture](../../conformance/airbrush-saved-native.json)
 executes the real AirBrush constructor, whose version is 2; controlled version
-field overrides select V1/V2 drawable constructors. Its three explicitly V1
-saved-redraw captures retain exact stamp bits and the native 96×96 pattern
-upload hash. MotionEvent, queue and bitmap interfaces are synthetic host
-boundaries; these are not default-V2 geometry or GPU-pixel parity witnesses.
+field overrides select V1/V2 drawable constructors. Three synthetic saved-redraw
+cases execute both GL constructors and redraw paths with bit-identical stamps.
+The actual V2-owned RTV1 object builds and uploads the same 96×96 pattern.
+MotionEvent, queue and bitmap interfaces are synthetic host boundaries; these
+captures do not establish GPU pixels or full application parity.
