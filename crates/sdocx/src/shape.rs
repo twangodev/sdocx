@@ -7,6 +7,8 @@ use crate::shape_paint_source::{
 };
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
+#[cfg(test)]
+mod native_arc;
 mod outline;
 
 /// Paint supported by the shape renderer, or an uninterpreted native effect.
