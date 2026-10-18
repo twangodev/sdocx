@@ -120,6 +120,9 @@ class NativeCalligraphy(NativeFountain):
             record["ok"] = self.x(0) != 0
         if address == self.redraw_address:
             self.drawable_states.append({"phase": "redraw_entry", **self.drawable_state(self.x(0))})
+        if address == self.redraw_address + 0x180:
+            self.drawable_states.append({"phase": "history_loop_entry",
+                                         **self.drawable_state(self.drawable)})
         if address == self.end_pen_address:
             self.drawable_states.append({"phase": "end_pen_entry",
                                          **self.drawable_state(self.x(0)),
@@ -442,7 +445,7 @@ def main():
     output = []
     for case in cases:
         output.append({**case, "native": native.run(case)})
-    output_json = {"schema": "sdocx-montblanc-calligraphy-v1-saved-native-v2",
+    output_json = {"schema": "sdocx-montblanc-calligraphy-v1-saved-native-v3",
                "evidence": {"library": "libSPenMontblancCalligraphyPen.so", "sha256": LIB_SHA,
                             "entry": REDRAW, "native_scope": "GLV1 RedrawPen history and endPen; one case invokes it twice on the same constructed drawable, then stops before movePen",
                             "inputs": "Synthetic MotionEvent history arrays supplied by this harness, not captured from an application runtime",

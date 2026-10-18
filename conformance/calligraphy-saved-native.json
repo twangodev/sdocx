@@ -1,5 +1,5 @@
 {
-  "schema": "sdocx-montblanc-calligraphy-v1-saved-native-v2",
+  "schema": "sdocx-montblanc-calligraphy-v1-saved-native-v3",
   "evidence": {
     "library": "libSPenMontblancCalligraphyPen.so",
     "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
@@ -84,6 +84,34 @@
               "flags": {
                 "initial": 0,
                 "movement_armed": 0
+              }
+            },
+            {
+              "phase": "history_loop_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 1,
+                "movement_armed": 1
               }
             },
             {
@@ -3176,6 +3204,34 @@
               "angle_bits": "99e48b42",
               "flags": {
                 "initial": 0,
+                "movement_armed": 1
+              }
+            },
+            {
+              "phase": "history_loop_entry",
+              "path_start_bits": [
+                "00000040",
+                "00004040"
+              ],
+              "control_bits": [
+                "00008040",
+                "0000803f"
+              ],
+              "path_mid_bits": [
+                "0000d040",
+                "00004040"
+              ],
+              "accepted_bits": [
+                "00000040",
+                "00004040"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "99e48b42",
+              "flags": {
+                "initial": 1,
                 "movement_armed": 1
               }
             },
@@ -6844,6 +6900,34 @@
               }
             },
             {
+              "phase": "history_loop_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 1,
+                "movement_armed": 1
+              }
+            },
+            {
               "phase": "end_pen_entry",
               "path_start_bits": [
                 "00000000",
@@ -9969,6 +10053,34 @@
               "flags": {
                 "initial": 0,
                 "movement_armed": 0
+              }
+            },
+            {
+              "phase": "history_loop_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 1,
+                "movement_armed": 1
               }
             },
             {
@@ -16340,6 +16452,34 @@
               "flags": {
                 "initial": 0,
                 "movement_armed": 0
+              }
+            },
+            {
+              "phase": "history_loop_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 1,
+                "movement_armed": 1
               }
             },
             {
