@@ -188,6 +188,26 @@ fn line_particles(
     spacing: f32,
     rng: &mut BionicRandom,
 ) -> Vec<Particle> {
+    line_particles_with_phase(
+        start, control, end, point_size, alpha, spacing, spacing, rng,
+    )
+    .0
+}
+
+/// Sample one native path while preserving `drawLine`'s distance remainder.
+/// V1 carries `distance - path_length` from an accepted line into the next
+/// accepted line or `endPen`; restarting each path at one full step loses a
+/// boundary particle on curved multi-segment strokes.
+fn line_particles_with_phase(
+    start: [f32; 2],
+    control: [f32; 2],
+    end: [f32; 2],
+    point_size: f32,
+    alpha: f32,
+    spacing: f32,
+    initial_distance: f32,
+    rng: &mut BionicRandom,
+) -> (Vec<Particle>, f32) {
     use super::path::{Quad, P};
     let path = Quad::new(
         P {
@@ -204,7 +224,7 @@ fn line_particles(
         },
     );
     let mut particles = Vec::new();
-    let mut distance = spacing;
+    let mut distance = initial_distance;
     while distance <= path.length {
         let point = path.at(distance);
         particles.push(
@@ -224,6 +244,130 @@ fn line_particles(
         );
         distance += spacing;
     }
+    (particles, distance - path.length)
+}
+
+/// Reconstruct the native V1 saved-event lifecycle for the bounded finite
+/// profile used by the conformance fixture.  Values are derived from the
+/// saved stroke; fixture output is never consulted by this implementation.
+fn saved_redraw_particles(stroke: &SavedStroke, rng: &mut BionicRandom) -> Vec<Particle> {
+    if stroke.points.len() < 2 {
+        return Vec::new();
+    }
+    let pressure_for_move = |pressure: f32| {
+        if pressure.is_finite() {
+            pressure.min(1.0)
+        } else {
+            0.5
+        }
+    };
+    let initial_pressure = if matches!(stroke.tool_type, 1 | 3) {
+        0.5
+    } else {
+        pressure_for_move(stroke.pressures[0])
+    };
+    let initial_alpha = initial_pressure.clamp(0.1, 0.6) / 1.5;
+    let mut point_size = stroke.size.mul_add(initial_pressure, stroke.size) * 0.5;
+    let step = stroke.size * 0.08;
+    let mut distance_phase = step;
+    let mut particles = seven_start_dabs(stroke.points[0], stroke.size, initial_alpha, rng);
+
+    let mut raw = stroke.points[0];
+    let mut midpoint = raw;
+    let mut short_segment_flag = true;
+    let initial_tilt = if stroke.tilt_at(0).is_finite() {
+        stroke.tilt_at(0).min(0.79)
+    } else {
+        0.0
+    };
+    let mut tilt_ring = [initial_tilt; 50];
+    let mut tilt_index = 0usize;
+    for index in 1..stroke.points.len() - 1 {
+        let current = stroke.points[index];
+        let dx = current[0] - raw[0];
+        let dy = current[1] - raw[1];
+        let length = dx.mul_add(dx, dy * dy).sqrt();
+        // drawLine first rejects movement below member[104] * member[108]
+        // (member[104] is 0.01 * base-size and member[108] is 4), then applies
+        // its 50 * member[108] short-movement window. At 0x10851c the
+        // integer literal 0x42480000 is loaded; 0x108520 moves it to s2 as
+        // 50.0f, then 0x108524 multiplies by member[108].
+        if length < step * 0.5 {
+            continue;
+        }
+        let short = length < 4.0 * 50.0;
+        if matches!(stroke.tool_type, 1 | 3) && short {
+            let was_set = short_segment_flag;
+            short_segment_flag = !short_segment_flag;
+            if was_set {
+                continue;
+            }
+        } else if matches!(stroke.tool_type, 1 | 3) {
+            short_segment_flag = true;
+        }
+
+        let pressure = if matches!(stroke.tool_type, 1 | 3) {
+            0.5
+        } else {
+            pressure_for_move(stroke.pressures[index])
+        };
+        let alpha = pressure.clamp(0.1, 0.6) / 1.5;
+        let (line, phase) = line_particles_with_phase(
+            midpoint,
+            raw,
+            [(raw[0] + current[0]) * 0.5, (raw[1] + current[1]) * 0.5],
+            point_size,
+            alpha,
+            step,
+            distance_phase,
+            rng,
+        );
+        particles.extend(line);
+        distance_phase = phase;
+        midpoint = [(raw[0] + current[0]) * 0.5, (raw[1] + current[1]) * 0.5];
+        raw = current;
+
+        let source_tilt = stroke.tilt_at(index);
+        let tilt = if source_tilt.is_finite() {
+            source_tilt.min(0.79)
+        } else {
+            0.0
+        };
+        tilt_ring[tilt_index] = tilt;
+        tilt_index = (tilt_index + 1) % tilt_ring.len();
+        let average = tilt_ring.iter().copied().sum::<f32>() / 50.0;
+        let tilt_scale = if average > 0.0 && average >= 0.55 {
+            // Pinned rodata 0x12b50 is one ULP above the literal 0.48f32.
+            (average - 0.55) / f32::from_bits(0x3ef5_c290)
+        } else {
+            0.0
+        };
+        // Matches getPointSize(base, adjustedTilt): base * (1 + tiltScale).
+        let width_bias = (-2.0f32).mul_add(tilt_scale, 1.0);
+        let width_modulation = stroke.size * 3.0 * tilt_scale;
+        point_size = stroke.size.mul_add(width_bias, width_modulation);
+    }
+
+    let terminal_pressure = if matches!(stroke.tool_type, 1 | 3) {
+        0.5
+    } else if stroke.pressures.last().copied().unwrap_or(0.5).is_finite() {
+        stroke.pressures.last().copied().unwrap_or(0.5).min(1.0)
+    } else {
+        0.5
+    };
+    let terminal_alpha = terminal_pressure / 1.5;
+    let terminal = *stroke.points.last().unwrap();
+    let (line, _) = line_particles_with_phase(
+        midpoint,
+        raw,
+        terminal,
+        point_size,
+        terminal_alpha,
+        step,
+        distance_phase,
+        rng,
+    );
+    particles.extend(line);
     particles
 }
 
@@ -231,6 +375,7 @@ fn line_particles(
 mod tests {
     use super::*;
     use serde_json::Value;
+    use sha2::{Digest, Sha256};
 
     fn close_bits(actual: f32, expected: &Value, context: &str) {
         let expected = expected.as_f64().unwrap() as f32;
@@ -408,6 +553,257 @@ mod tests {
         }
         assert_eq!(particles.len(), 42);
         assert_eq!(expected.len() / 5, 42);
+    }
+
+    #[test]
+    fn three_point_saved_redraw_matches_native_terminal_curve_and_buffer() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil-v1-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["saved_cases"][2];
+        let expected = &fixture["saved_native_outputs"][2];
+        let stroke = saved_stroke_from_json(&case["stroke"]);
+        assert_eq!(stroke.validate(), Ok(()));
+        assert_eq!(stroke.points.len(), 3);
+
+        // The first historical drawLine call is within the native short-move
+        // debounce: it flips the object's flag and returns without changing
+        // the control point. endPen therefore samples directly from p0 to p2.
+        let mut rng = BionicRandom::seeded(1);
+        let alpha = expected["packed_attributes"][4].as_f64().unwrap() as f32;
+        let mut particles = seven_start_dabs(stroke.points[0], stroke.size, alpha, &mut rng);
+        particles.extend(line_particles(
+            stroke.points[0],
+            stroke.points[0],
+            stroke.points[2],
+            stroke.size * 0.75,
+            alpha,
+            stroke.size * 0.08,
+            &mut rng,
+        ));
+
+        let actual: Vec<f32> = particles.iter().flat_map(|p| p.attributes).collect();
+        let expected = expected["packed_attributes"].as_array().unwrap();
+        assert_eq!(actual.len(), expected.len());
+        for (i, value) in actual.into_iter().enumerate() {
+            close_bits(
+                value,
+                &expected[i],
+                &format!("saved three-point packed attribute {i}"),
+            );
+        }
+        assert_eq!(particles.len(), 76);
+    }
+
+    #[test]
+    fn four_and_five_point_saved_redraw_match_debounced_and_terminal_curves() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil-v1-native.json"
+        ))
+        .unwrap();
+        for index in [3, 4] {
+            let case = &fixture["saved_cases"][index];
+            let expected = &fixture["saved_native_outputs"][index];
+            let stroke = saved_stroke_from_json(&case["stroke"]);
+            assert_eq!(stroke.validate(), Ok(()));
+            assert_eq!(stroke.points.len(), index + 1);
+            let mut rng = BionicRandom::seeded(1);
+            let alpha = expected["packed_attributes"][4].as_f64().unwrap() as f32;
+            let mut particles = seven_start_dabs(stroke.points[0], stroke.size, alpha, &mut rng);
+
+            // The first short historical segment is skipped. The next one is
+            // accepted, producing a path from the last midpoint through the
+            // prior point to the new midpoint. endPen then joins that state
+            // to the final current sample.
+            let previous = stroke.points[0];
+            let accepted = stroke.points[2];
+            let midpoint = [
+                (previous[0] + accepted[0]) * 0.5,
+                (previous[1] + accepted[1]) * 0.5,
+            ];
+            let (internal, phase) = line_particles_with_phase(
+                previous,
+                previous,
+                midpoint,
+                stroke.size * 0.75,
+                alpha,
+                stroke.size * 0.08,
+                stroke.size * 0.08,
+                &mut rng,
+            );
+            let internal_count = internal.len();
+            particles.extend(internal);
+            let (terminal, _) = line_particles_with_phase(
+                midpoint,
+                accepted,
+                *stroke.points.last().unwrap(),
+                stroke.size,
+                alpha,
+                stroke.size * 0.08,
+                phase,
+                &mut rng,
+            );
+            let terminal_count = terminal.len();
+            particles.extend(terminal);
+            assert_eq!(
+                (internal_count, terminal_count),
+                if index == 3 { (34, 98) } else { (6, 21) },
+                "{} sample partition",
+                case["name"]
+            );
+
+            let actual: Vec<f32> = particles.iter().flat_map(|p| p.attributes).collect();
+            let expected = expected["packed_attributes"].as_array().unwrap();
+            assert_eq!(actual.len(), expected.len(), "{}", case["name"]);
+            for (i, value) in actual.into_iter().enumerate() {
+                close_bits(
+                    value,
+                    &expected[i],
+                    &format!("{} packed attribute {i}", case["name"].as_str().unwrap()),
+                );
+            }
+            assert_eq!(particles.len(), if index == 3 { 139 } else { 34 });
+        }
+    }
+
+    #[test]
+    fn saved_redraw_profile_emits_native_particles_for_all_bounded_cases() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil-v1-native.json"
+        ))
+        .unwrap();
+        for (case, expected) in fixture["saved_cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .zip(fixture["saved_native_outputs"].as_array().unwrap())
+        {
+            let stroke = saved_stroke_from_json(&case["stroke"]);
+            let mut rng = BionicRandom::seeded(1);
+            let particles = saved_redraw_particles(&stroke, &mut rng);
+            let actual: Vec<f32> = particles.iter().flat_map(|p| p.attributes).collect();
+            let expected = expected["packed_attributes"].as_array().unwrap();
+            assert_eq!(actual.len(), expected.len(), "{} length", case["name"]);
+            for (index, value) in actual.into_iter().enumerate() {
+                close_bits(
+                    value,
+                    &expected[index],
+                    &format!(
+                        "{} packed attribute {index}",
+                        case["name"].as_str().unwrap()
+                    ),
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn stationary_tool3_saved_redraw_matches_native_particle_buffer() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil-v1-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["saved_cases"][7];
+        let output = &fixture["saved_native_outputs"][7];
+        let stroke = saved_stroke_from_json(&case["stroke"]);
+        assert_eq!(stroke.tool_type, 3);
+        let mut rng = BionicRandom::seeded(1);
+        let particles = saved_redraw_particles(&stroke, &mut rng);
+        let actual: Vec<f32> = particles
+            .iter()
+            .flat_map(|particle| particle.attributes)
+            .collect();
+        let expected = output["packed_attributes"].as_array().unwrap();
+        assert_eq!(actual.len(), expected.len());
+        assert_eq!(particles.len(), 7);
+        for (index, value) in actual.into_iter().enumerate() {
+            close_bits(value, &expected[index], &format!("tool3 start dab {index}"));
+        }
+    }
+
+    #[test]
+    fn line_debounce_200_unit_boundary_matches_native_oracle_witnesses() {
+        for (distance, expected_count) in [(199.0, 628), (201.0, 635)] {
+            let stroke = SavedStroke {
+                points: vec![[0.0, 0.0], [distance, 0.0], [distance, 0.0]],
+                pressures: vec![0.5; 3],
+                timestamps: vec![0, 1, 2],
+                tilts: Some(vec![0.0; 3]),
+                orientations: None,
+                tool_type: 1,
+                size: 4.0,
+            };
+            let mut rng = BionicRandom::seeded(1);
+            let particles = saved_redraw_particles(&stroke, &mut rng);
+            assert_eq!(particles.len(), expected_count, "distance {distance}");
+        }
+    }
+
+    #[test]
+    fn tilt_ring_above_native_profile_threshold_changes_following_width() {
+        let stroke = SavedStroke {
+            points: vec![[0.0, 0.0], [250.0, 0.0], [500.0, 0.0], [600.0, 0.0]],
+            pressures: vec![0.5; 4],
+            timestamps: vec![0, 1, 2, 3],
+            tilts: Some(vec![0.79; 4]),
+            orientations: None,
+            tool_type: 1,
+            size: 4.0,
+        };
+        let mut rng = BionicRandom::seeded(1);
+        let particles = saved_redraw_particles(&stroke, &mut rng);
+        assert_eq!(particles.len(), 1881);
+        assert_eq!(particles[0].attributes[2].to_bits(), 2.5f32.to_bits());
+        assert_eq!(particles[7].attributes[2].to_bits(), 2.0f32.to_bits());
+        assert_eq!(
+            particles[397].attributes[2].to_bits(),
+            3.500002145767212f32.to_bits()
+        );
+    }
+
+    #[test]
+    fn saved_redraw_threshold_witnesses_match_compact_native_hashes() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil-v1-boundaries.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            let stroke = saved_stroke_from_json(&case["stroke"]);
+            let mut rng = BionicRandom::seeded(1);
+            let particles = saved_redraw_particles(&stroke, &mut rng);
+            let expected = &case["expected"];
+            assert_eq!(
+                particles.len(),
+                expected["particle_count"].as_u64().unwrap() as usize,
+                "{} count",
+                case["name"]
+            );
+            let packed: Vec<u8> = particles
+                .iter()
+                .flat_map(|particle| particle.attributes)
+                .flat_map(f32::to_le_bytes)
+                .collect();
+            let digest = format!("{:x}", Sha256::digest(&packed));
+            assert_eq!(
+                digest,
+                expected["packed_f32_le_sha256"].as_str().unwrap(),
+                "{} packed native bytes",
+                case["name"]
+            );
+            for (index, values) in expected["selected_particles"].as_object().unwrap() {
+                let particle = &particles[index.parse::<usize>().unwrap()];
+                for (attribute, expected_value) in
+                    particle.attributes.iter().zip(values.as_array().unwrap())
+                {
+                    close_bits(
+                        *attribute,
+                        expected_value,
+                        &format!("{} particle {index}", case["name"]),
+                    );
+                }
+            }
+        }
     }
 
     fn saved_stroke_from_json(value: &Value) -> SavedStroke {

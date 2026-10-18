@@ -414,6 +414,7 @@ def main():
     parser.add_argument('--library-dir', type=Path, default=Path('scratch/apk-analysis-native/arm64-v8a'))
     parser.add_argument('--objdump', type=Path, default=Path(shutil.which('aarch64-linux-gnu-objdump') or 'scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump'))
     parser.add_argument('--fixture', type=Path, default=Path('conformance/pencil-v1-native.json'))
+    parser.add_argument('--boundaries', type=Path, default=Path('conformance/pencil-v1-boundaries.json'))
     parser.add_argument('--write-fixture', action='store_true', help='execute and replace stored native outputs')
     args = parser.parse_args()
 
@@ -427,6 +428,25 @@ def main():
     for case in fixture.get('saved_cases', []):
         native = NativePencil3(args.library_dir, args.objdump)
         saved_results.append({'name': case['name'], **native.render_saved(case['stroke'])})
+    boundary_fixture = json.loads(args.boundaries.read_text())
+    if boundary_fixture is not None:
+        for case in boundary_fixture['cases']:
+            native = NativePencil3(args.library_dir, args.objdump)
+            result = native.render_saved(case['stroke'])
+            values = result['packed_attributes']
+            packed = struct.pack('<%sf' % len(values), *values)
+            expected = case['expected']
+            actual_hash = hashlib.sha256(packed).hexdigest()
+            actual_selected = {
+                key: values[int(key) * 5:(int(key) + 1) * 5]
+                for key in expected['selected_particles']
+            }
+            actual_ranges = [[x['start_float'], x['end_float']] for x in native.sample_boundaries]
+            if (len(values) // 5 != expected['particle_count']
+                    or actual_hash != expected['packed_f32_le_sha256']
+                    or actual_selected != expected['selected_particles']
+                    or actual_ranges != expected['line_float_ranges']):
+                raise AssertionError('Pencil3 compact boundary witness differs: ' + case['name'])
     if args.write_fixture:
         fixture['native_outputs'] = results
         if 'saved_cases' in fixture:
@@ -444,7 +464,8 @@ def main():
         raise AssertionError('Pencil3 native saved-redraw output differs from fixture')
     if BionicRandomVector() != [55436735, 1399865117, 2032643283, 571329216]:
         raise AssertionError('Bionic TYPE_3 model differs from Android 10 CTS vector')
-    print(f'{len(results)} direct and {len(saved_results)} saved Pencil3 V1 native cases match; '
+    print(f'{len(results)} direct, {len(saved_results)} saved and '
+          f'{len(boundary_fixture["cases"])} compact boundary Pencil3 V1 native cases match; '
           f'{sum(x["rand_calls"] for x in results)} injected RNG values; '
           f'{sum(len(x["rand_values"]) for x in saved_results)} modeled bionic RNG values')
 
