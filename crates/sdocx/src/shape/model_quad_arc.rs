@@ -69,24 +69,41 @@ mod tests {
 
     #[test]
     fn direct_model_unit_arc_matches_native_point_bits() {
-        let fixture: serde_json::Value = serde_json::from_str(include_str!(
-            "../../../../conformance/model-quad-arcs.json"
-        )).unwrap();
+        let fixture: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/model-quad-arcs.json"))
+                .unwrap();
         let cases = fixture["cases"].as_array().unwrap();
         for case in cases {
-            let input: Vec<f32> = case["input_bits"].as_array().unwrap().iter()
-                .map(|value| f32::from_bits(value.as_u64().unwrap() as u32)).collect();
+            let input: Vec<f32> = case["input_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f32::from_bits(value.as_u64().unwrap() as u32))
+                .collect();
             assert_eq!(input.len(), 10);
             let actual = expand(
-                input[..4].try_into().unwrap(), input[4..6].try_into().unwrap(),
-                input[6..8].try_into().unwrap(), input[8], input[9],
-            ).unwrap();
-            assert_eq!(actual.len() as u64, case["point_count"].as_u64().unwrap(), "{}", case["name"]);
+                input[..4].try_into().unwrap(),
+                input[4..6].try_into().unwrap(),
+                input[6..8].try_into().unwrap(),
+                input[8],
+                input[9],
+            )
+            .unwrap();
+            assert_eq!(
+                actual.len() as u64,
+                case["point_count"].as_u64().unwrap(),
+                "{}",
+                case["name"]
+            );
             let actual: Vec<u32> = actual.into_iter().flatten().map(f32::to_bits).collect();
-            let expected: Vec<u32> = case["point_bits"].as_array().unwrap().iter()
-                .map(|value| value.as_u64().unwrap() as u32).collect();
+            let expected: Vec<u32> = case["point_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_u64().unwrap() as u32)
+                .collect();
             assert_eq!(actual, expected, "{}", case["name"]);
         }
-        assert_eq!(cases.len(), 15);
+        assert_eq!(cases.len(), 16);
     }
 }
