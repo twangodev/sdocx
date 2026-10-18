@@ -35,12 +35,14 @@ mod parsed_cell_text;
 #[path = "native_table/page_text_ranges.rs"]
 mod page_text_ranges;
 
+#[path = "native_table/pdf_paper_form_matrix.rs"]
+mod pdf_paper_form_matrix;
 #[path = "native_table/pdf_paper_placement.rs"]
 mod pdf_paper_placement;
 #[path = "native_table/pdf_paper_predicates.rs"]
 mod pdf_paper_predicates;
-#[path = "native_table/pdf_paper_form_matrix.rs"]
-mod pdf_paper_form_matrix;
+#[path = "native_table/pdfium_create_page_save.rs"]
+mod pdfium_create_page_save;
 
 #[path = "native_table/shape_paths.rs"]
 mod shape_paths;
@@ -1902,8 +1904,35 @@ fn main() {
             return;
         }
         Some("--pdf-paper-form-matrix") => {
-            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            let pdfium = std::env::args_os()
+                .nth(3)
+                .expect("libSPenPdfiumB.so path required");
             pdf_paper_form_matrix::capture(&mut machine, Path::new(&pdfium));
+            return;
+        }
+        Some("--pdfium-create-page-save") => {
+            let pdfium = std::env::args_os()
+                .nth(3)
+                .expect("libSPenPdfiumB.so path required");
+            let rotation = std::env::args_os()
+                .nth(4)
+                .map(|value| {
+                    value
+                        .to_string_lossy()
+                        .parse::<u64>()
+                        .expect("rotation must be 0..3")
+                })
+                .unwrap_or(1);
+            assert!(rotation < 4, "rotation must be 0..3");
+            let output = std::env::args_os()
+                .nth(5)
+                .unwrap_or_else(|| "/tmp/sdocx-pdfium-created-page.pdf".into());
+            pdfium_create_page_save::capture(
+                &mut machine,
+                Path::new(&pdfium),
+                rotation,
+                Path::new(&output),
+            );
             return;
         }
         None => {}

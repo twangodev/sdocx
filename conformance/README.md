@@ -832,6 +832,17 @@ the capture. See the
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_form_matrix_native.py --check-fixture
 ```
 
+## PDFium native form serialization
+
+[`pdf-paper-pdfium-create-page.json`](pdf-paper-pdfium-create-page.json) captures
+native document/form/path serialization with explicit host imports. It covers a
+synthetic rotated page; source-PDF loading and Samsung export parity remain open.
+Requires the extracted libraries, Unicorn, `rustc`, `readelf`, and pinned host libm.
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_pdfium_create_page_native.py --check-fixture
+```
+
 ## Native shape path capture
 
 [`shape-paths.json`](shape-paths.json) records 31 native Skia path cases, six

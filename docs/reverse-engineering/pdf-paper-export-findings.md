@@ -609,3 +609,11 @@ Likewise, turning a PDF page into a bitmap would change the retained content
 contract, independently of whether note strokes remain vectors. Source content,
 note geometry, resource resolution, placement and export transport are separate
 data requirements demonstrated by these native routes.
+
+The [native serialization capture](../../conformance/pdf-paper-pdfium-create-page.json)
+executes PDFium page/form/path generation and saving for a synthetic 200×150
+page rotated 90°. Its counterrotated form has BBox `[0,0,150,200]` and placement
+`[0,1,-1,0,200,0]`; the emitted PDF renders a vector path. Allocation, formatting,
+C locale/time, host libm and the file-write sink are explicit providers; unknown
+imports abort. This does not load a source PDF or execute the full Samsung
+writer wrapper, and establishes no source CropBox/UserUnit or pixel parity.
