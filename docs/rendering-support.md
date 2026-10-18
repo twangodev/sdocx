@@ -110,7 +110,12 @@ establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and reused state; this profile
-also uses the generic approximation in Rust.
+also uses the generic approximation in Rust. Its test-only core reproduces
+captured core/fringe buffers and a 13-vector history prefix; terminal sampling,
+caller admission and paint integration remain outstanding.
+AirBrush has an explicit V1 test-only sampler matching all stamp bits in three
+synthetic native saved-redraw cases. Default-V2 material and vector paint
+integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
@@ -195,7 +200,9 @@ PDF-backed paper remains unrendered; retained records and bytes do not certify P
 validity or native composition.
 The [PDF preservation constraints](pdf-paper-preservation.md) connect the
 recovered contracts to the current Rust model and verified vector PDF transport;
-the library proof does not implement SDK PDF-paper support.
+a test-only SDK graft preserves the inline source graph and scoped vector
+resources. Native placement/asset binding and production PDF-paper rendering
+remain outstanding.
 
 The native [shape style contracts](reverse-engineering/shape-style-findings.md)
 and [image effect contracts](reverse-engineering/image-effects-findings.md)
