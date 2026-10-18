@@ -4,9 +4,9 @@
 
 Samsung Notes 4.4.45.37 APK SHA-256
 `daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667`.
-These are independently reviewed static ARM64 traces, without native execution,
-geometry captures or appearance comparison. Pencil3's extracted library matches
-its APK entry. Addresses are ELF virtual addresses.
+Static ARM64 traces are supplemented by bounded native geometry, event and
+texture execution and synthetic host GLES comparison below. Pencil3's extracted
+library matches its APK entry. Addresses are ELF virtual addresses.
 
 | Source | SHA-256 |
 | --- | --- |
@@ -111,7 +111,13 @@ remain separate source boundaries.
 The conformance witnesses include [`pencil_native.py`](../../conformance/pencil_native.py)
 for native `drawPoint`, RTV1 `AddPoint`, bounds and saved redraw; ten saved
 cases use an AOSP bionic RNG model checked against CTS vectors, not Samsung
-runtime libc execution. [`pencil_texture_native.py`](../../conformance/pencil_texture_native.py)
+runtime libc execution. The test-only Rust sampler matches all ten saved cases
+and eight compact boundary witnesses, including the 200-unit debounce cutoff
+and 50-entry tilt average. The compact witnesses hash every packed f32 attribute;
+the tilt-modulation divisor at `0x12b50` is exactly `0x3ef5c290`, not `0.48f32`.
+[`pencil_event_native.py`](../../conformance/pencil_event_native.py) separately
+executes the native saved-array constructor and source/tool/history getters.
+[`pencil_texture_native.py`](../../conformance/pencil_texture_native.py)
 executes native `buildTextures`/`setTextures` with explicit bitmap interfaces
 and asserts byte-exact brush-atlas and paper uploads. The sampler mapping is
 anchored to Renderer SHA-256

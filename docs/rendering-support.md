@@ -95,7 +95,9 @@ Profile admission and validation are narrower than the names above. See
 
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
-Pencil profiles currently use the generic pressure approximation.
+Pencil profiles currently use the generic pressure approximation. A test-only
+Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses;
+runtime paper coverage and vector paint integration remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic approximation. A test-only numeric core matches twenty-one
