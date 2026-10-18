@@ -8,6 +8,8 @@ use crate::shape_paint_source::{
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
 #[cfg(test)]
+mod model_quad_arc;
+#[cfg(test)]
 mod native_arc;
 mod outline;
 

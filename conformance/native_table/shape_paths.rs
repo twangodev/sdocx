@@ -649,6 +649,93 @@ pub(super) fn capture(machine: &mut Machine, model: &Path, base: &Path, skia: &P
     );
 }
 
+/// Capture Model's unit-quadratic builder directly, before the 0x211814
+/// outer mapping/rotation pass. Each case supplies the exact ten floating
+/// arguments observed at the native call boundary.
+pub(super) fn capture_model_quad_arcs(model: &Path, base: &Path, skia: &Path) {
+    const OUTPUT: u64 = MODEL + 0x2000;
+    let machine = Machine::new(model);
+    verify_host_math();
+    verify_library(model, LIBRARY_SHA256);
+    map_library(machine.engine, base, BASE, BASE_SHA256);
+    map_library(machine.engine, skia, SKIA, SKIA_SHA256);
+    for (path, address) in [(model, 0), (base, BASE), (skia, SKIA)] {
+        reject_unbound_imports(machine.engine, path, address);
+    }
+    bind_imports(machine.engine);
+    for (got, target) in [
+        (0x4a4560, HOST),
+        (0x4a4578, HOST + 16),
+        (0x4a4580, HOST + 16),
+        (0x4a4588, HOST),
+        (0x4a4850, HOST + 208),
+        (0x4a4858, HOST + 208),
+        (0x4a4ac0, HOST + 208),
+        (0x4a4ac8, HOST + 208),
+    ] {
+        write(machine.engine, got, &target.to_le_bytes());
+    }
+    for (plt, target) in [
+        (0x47f240, 0x2ef320),
+        (0x47f250, 0x2ef414),
+        (0x47f270, 0x2ef584),
+        (0x47f280, 0x2ef5d8),
+        (0x47f290, 0x2ef630),
+        (0x47f3a0, 0x2ef2d8),
+        (0x47f3b0, 0x2ef2e0),
+        (0x47f3c0, 0x2f1730),
+    ] {
+        bind_native(machine.engine, plt, target);
+    }
+    write(machine.engine, 0x4a6720, &(BASE + 0xb0f10).to_le_bytes());
+    let mut state = Box::new(HostState {
+        fill: 0,
+        cursor: HEAP,
+        allocations: BTreeMap::new(),
+        calls: BTreeMap::new(),
+    });
+    let _hooks = Hooks::new(machine.engine, state.as_mut());
+
+    let cases: [(&str, [u32; 10]); 15] = [
+        ("ellipse-quarter", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f800000,0,0,0x3f800000,0,0x42b40000]),
+        ("ellipse-oblique", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f0d89e1,0x3f55505d,0xbf4ef87d,0x3f16a991,0x4261bd44,0x42af068a]),
+        ("ellipse-oblique-negative", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f0d89e1,0x3f55505d,0x3d0f1f5f,0xbf7fd7fb,0x4261bd44,0xc3106eb1]),
+        ("ellipse-full", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f800000,0,0x3f7fffe6,0xbae4ca1a,0,0x43b3f333]),
+        ("ellipse-oblique-full", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f0d89e1,0x3f55505d,0x3f0de920,0x3f55110b,0x4261bd44,0x43b3f333]),
+        ("ellipse-zero-oblique", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f0d89e1,0x3f55505d,0x3f0d89e1,0x3f55505d,0x4261bd44,0]),
+        ("circle-quarter", [0x41200000,0x41a00000,0x42dc0000,0x42f00000,0x3f800000,0,0,0x3f800000,0,0x42b40000]),
+        ("circle-oblique", [0x41200000,0x41a00000,0x42dc0000,0x42f00000,0x3f4c7361,0x3f1a108c,0xbf708fb2,0x3eaf1d46,0x42140000,0x42f60000]),
+        ("circle-full", [0x41200000,0x41a00000,0x42dc0000,0x42f00000,0x3f800000,0,0x3f800000,0,0,0x43b40000]),
+        ("vertical-line", [0x41200000,0x41a00000,0x41200000,0x42f00000,0x3f4c7361,0x3f1a108c,0xbf708fb2,0x3eaf1d46,0x42140000,0x42f60000]),
+        ("horizontal-line", [0x41200000,0x41a00000,0x43520000,0x41a00000,0x3f4c7361,0x3f1a108c,0xbf708fb2,0x3eaf1d46,0x42140000,0x42f60000]),
+        ("tiny-negative-cross-positive-sweep", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f800000,0,0x3f800000,0xb8d1b717,0,0x43b3f333]),
+        ("tiny-negative-cross-negative-sweep", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f800000,0,0x3f800000,0xb8d1b717,0,0xc3b3f333]),
+        ("tiny-positive-cross-positive-sweep", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f800000,0,0x3f800000,0x38d1b717,0,0x43b3f333]),
+        ("tiny-positive-cross-negative-sweep", [0x41200000,0x41a00000,0x43520000,0x42f00000,0x3f800000,0,0x3f800000,0x38d1b717,0,0xc3b3f333]),
+    ];
+    let mut outputs = Vec::new();
+    for (name, input_bits) in cases {
+        for (index, bits) in input_bits[..8].iter().enumerate() {
+            register(machine.engine, 136 + index as i32, u64::from(*bits));
+        }
+        write(machine.engine, STACK, &input_bits[8].to_le_bytes());
+        write(machine.engine, STACK + 8, &input_bits[9].to_le_bytes());
+        write(machine.engine, OUTPUT, &[0; 256]);
+        let point_count = machine.call(0x211418, &[OUTPUT]);
+        assert!((1..=17).contains(&point_count), "unexpected native point count for {name}");
+        let point_bits: Vec<_> = (0..point_count * 2)
+            .map(|index| read_u32(machine.engine, OUTPUT + index * 4))
+            .collect();
+        outputs.push(format!(
+            "{{\"name\":{name:?},\"input_bits\":{input_bits:?},\"point_count\":{point_count},\"point_bits\":{point_bits:?}}}"
+        ));
+    }
+    println!(
+        "{{\"apk_version\":\"4.4.45.37\",\"model_library_sha256\":\"{LIBRARY_SHA256}\",\"base_library_sha256\":\"{BASE_SHA256}\",\"host_libm_sha256\":\"{LIBM_SHA256}\",\"boundary\":\"Direct Model:0x211418 entry with observed s0-s7 and stack+0/+8 arguments; returns its pre-0x211814 point buffer.\",\"cases\":[{}]}}",
+        outputs.join(",")
+    );
+}
+
 #[derive(Clone, Copy)]
 struct DrawingArcCase {
     name: &'static str,

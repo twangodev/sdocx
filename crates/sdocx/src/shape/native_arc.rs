@@ -134,7 +134,6 @@ fn build_quad_arc(start: [f32; 2], stop: [f32; 2], ccw: bool) -> Option<Vec<[f32
     // Match native FP fused multiply-add ordering for its dot/cross tests.
     let x = start[0].mul_add(stop[0], start[1] * stop[1]);
     let mut y = start[0].mul_add(stop[1], -(start[1] * stop[0]));
-    let abs_x = x.abs();
     let abs_y = y.abs();
     if abs_y <= VECTOR_EPSILON && x > 0.0 && ((y >= 0.0 && !ccw) || (y <= 0.0 && ccw)) {
         return Some(vec![[1.0, 0.0]]);
@@ -142,6 +141,15 @@ fn build_quad_arc(start: [f32; 2], stop: [f32; 2], ccw: bool) -> Option<Vec<[f32
     if ccw {
         y = -y;
     }
+    unit_quad_points(x, y)
+}
+
+/// Shared table/octant/root construction, after each native caller's distinct
+/// small-cross and direction tests. Model 0x21152c and Skia 0x1bb338 share
+/// these point constants and clipping arithmetic.
+pub(super) fn unit_quad_points(x: f32, y: f32) -> Option<Vec<[f32; 2]>> {
+    let abs_x = x.abs();
+    let abs_y = y.abs();
 
     let octant = if y == 0.0 {
         4

@@ -1795,6 +1795,20 @@ fn main() {
             );
             return;
         }
+        Some("--model-quad-arcs") => {
+            let base = std::env::args_os()
+                .nth(3)
+                .expect("libSPenBase.so path required");
+            let skia = std::env::args_os()
+                .nth(4)
+                .expect("libSPenSkia.so path required");
+            shape_paths::capture_model_quad_arcs(
+                Path::new(&path),
+                Path::new(&base),
+                Path::new(&skia),
+            );
+            return;
+        }
         Some("--shape-drawing-arcs") => {
             let drawing = std::env::args_os()
                 .nth(3)
