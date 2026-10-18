@@ -95,10 +95,22 @@ for Pencil profiles. [Native PDF stroke bitmaps](native-pdf-stroke-findings.md)
 are derived output; original vector channels and configured coverage inputs
 remain separate source boundaries.
 
-The optional [`pencil_native.py`](../../conformance/pencil_native.py) witness
-executes native `drawPoint`, RTV1 `AddPoint` and bounds updates for six cases
-with explicit RNG outputs. It captures the five-float buffer order
-`x,y,half-size,signed-row,alpha`. Ten additional saved-redraw cases execute
-native sampling using an AOSP bionic RNG model checked against CTS vectors.
-Samsung's actual runtime libc, queue execution and texture/compositing
-appearance remain outside this capture.
+The conformance witnesses include [`pencil_native.py`](../../conformance/pencil_native.py)
+for native `drawPoint`, RTV1 `AddPoint`, bounds and saved redraw; ten saved
+cases use an AOSP bionic RNG model checked against CTS vectors, not Samsung
+runtime libc execution. [`pencil_texture_native.py`](../../conformance/pencil_texture_native.py)
+executes native `buildTextures`/`setTextures` with explicit bitmap interfaces
+and asserts byte-exact brush-atlas and paper uploads. The sampler mapping is
+anchored to Renderer SHA-256
+`f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed`:
+`SetParam` at VA `0x5f840` and `getGlPname` at `0x5f9bc` read wrap, filter,
+and pname tables at `0x30170`, `0x301c0`, and `0x31768`. Decoding those bytes
+maps enum values to GL wraps `0x8370, 0x812f, 0x812d, 0x2901`, filters
+`0x2600, 0x2601`, and parameter IDs 0–2 to `0x2802, 0x2803, 0x8072`;
+Pencil3 requests nearest filtering, paper repeat wrapping, and brush
+clamp-to-edge defaults. [`pencil_paint_native.py`](../../conformance/pencil_paint_native.py)
+executes the embedded V1 shaders on host Mesa GLES with the native quad,
+textures and saved particle vectors; its projection, paper scale and color
+are synthetic, and its pixel fixture does not establish Android/device
+parity. The app's real render-queue execution and framebuffer remain outside
+these captures.
