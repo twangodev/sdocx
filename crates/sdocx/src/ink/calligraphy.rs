@@ -537,4 +537,83 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn direct_native_half_extent_is_clamped_by_addpoint() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-addpoint-direct-native.json"
+        ))
+        .unwrap();
+        let native = &fixture["case"]["native"];
+        let extent = f32::from_bits(bits(native["extent_bits"].as_str().unwrap()));
+        assert_eq!(extent.to_bits(), 0.5_f32.to_bits());
+        let vector: [f32; 4] = native["vector_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+        let pre = &native["pre_state"];
+        let center: [f32; 2] = pre["center_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+        let edge: Vec<f32> = pre["edge_state_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+            .collect();
+        let previous_edges: [[[f32; 2]; 2]; 3] = edge
+            .chunks_exact(4)
+            .map(|v| [[v[0], v[1]], [v[2], v[3]]])
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+        let actual = add_point(AddPointInput {
+            vector,
+            extent,
+            gate_center: center,
+            initial_edge: pre["initial_flag"].as_u64().unwrap() != 0,
+            previous_edges,
+        })
+        .unwrap();
+        let rects = native["rectangles"].as_array().unwrap();
+        assert_eq!(actual.rectangles.len(), rects.len());
+        for (slot, (actual_rect, native_rect)) in actual.rectangles.iter().zip(rects).enumerate() {
+            let expected: [u32; 8] = native_rect["rect_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| bits(value.as_str().unwrap()))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap();
+            assert_eq!(
+                rect_bits(*actual_rect),
+                expected,
+                "direct AddPoint Rect {slot}"
+            );
+            let buffer = match actual.buffers[slot] {
+                MeshBuffer::Core => "mesh_200",
+                MeshBuffer::FringeA => "mesh_208",
+                MeshBuffer::FringeB => "mesh_216",
+            };
+            assert_eq!(native_rect["buffer"], buffer);
+        }
+        assert_eq!(
+            actual.rectangles[0].corners[2][1].to_bits(),
+            1.0_f32.to_bits()
+        );
+        assert_ne!(
+            actual.rectangles[0].corners[2][1].to_bits(),
+            0.5_f32.to_bits()
+        );
+    }
+
 }

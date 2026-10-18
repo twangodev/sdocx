@@ -43,6 +43,7 @@ class NativeCalligraphy(NativeFountain):
         self.queue = 0
         self.output_labels = {}
         self.active_add_index = None
+        self.direct_extent_probe = False
         self.callbacks.update({
             "operator new(unsigned long)": lambda: self.x(0, self.alloc(self.x(0))),
             "operator delete(void*)": lambda: None,
@@ -99,6 +100,10 @@ class NativeCalligraphy(NativeFountain):
                         u.reg_read(__import__("unicorn").arm64_const.UC_ARM64_REG_LR))
             return
         if address == self.add_address:
+            if self.direct_extent_probe and not self.add_calls:
+                # Exercise the native AddPoint clamp with an explicit S0 input,
+                # while keeping RedrawPen's real drawable and output buffers.
+                self.f(0, 0.5)
             vector = self.x(1)
             if self.active_add_index is not None:
                 self.add_calls[self.active_add_index]["build_calls"] = len(self.build_calls) - self.add_calls[self.active_add_index]["build_start"]
@@ -127,6 +132,14 @@ class NativeCalligraphy(NativeFountain):
                 raise RuntimeError(f"buildMesh output vector was not associated with a known RTV1 member: {self.x(2):#x}")
             self.build_calls.append({"rect_bits": [self.get(rect + 4 * i, "I")[0].to_bytes(4, "little").hex() for i in range(8)],
                                      "buffer": buffer})
+            if self.direct_extent_probe:
+                from unicorn import arm64_const as R
+                if len(self.build_calls) == 5:
+                    u.reg_write(R.UC_ARM64_REG_PC, 0x200f1000)
+                    u.emu_stop()
+                else:
+                    u.reg_write(R.UC_ARM64_REG_PC, u.reg_read(R.UC_ARM64_REG_LR))
+                return
         if address in self.plt and self.plt[address] == "SPen::MotionEvent::GetHistoricalOrientation(int) const":
             self.orientation_reads.append(self.x(1))
         super().hook(u, address, size, data)
@@ -171,6 +184,8 @@ class NativeCalligraphy(NativeFountain):
                 self.add_calls[self.active_add_index]["build_calls"] = len(self.build_calls) - self.add_calls[self.active_add_index]["build_start"]
                 self.add_calls[self.active_add_index].pop("build_start")
                 self.active_add_index = None
+            if self.direct_extent_probe:
+                return {"add_points": self.add_calls.copy(), "build_calls": self.build_calls.copy()}
             meshes = []
             for offset in (200, 208, 216):
                 vector_address = self.get(rtv1 + offset, "Q")[0]
@@ -220,24 +235,48 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--write-fixture", action="store_true")
     group.add_argument("--check-fixture", action="store_true")
-    parser.add_argument("--fixture", type=Path, default=ROOT / "conformance/calligraphy-saved-native.json")
+    group.add_argument("--write-direct-extent-fixture", action="store_true")
+    group.add_argument("--check-direct-extent-fixture", action="store_true")
+    parser.add_argument("--fixture", type=Path)
     args = parser.parse_args()
+    if args.write_direct_extent_fixture or args.check_direct_extent_fixture:
+        native.direct_extent_probe = True
+        direct_case = {"id": "direct_addpoint_extent_half", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "size": 6.0}
+        run = native.run(direct_case)["fresh"]
+        compact = {"schema": "sdocx-calligraphy-v1-addpoint-direct-native-v1",
+                   "evidence": {"library": "libSPenMontblancCalligraphyPen.so", "sha256": LIB_SHA,
+                                "entry": ADD, "host_context": "The pinned RedrawPen supplies a real constructed RTV1 receiver and native nib vector. At the first AddPoint entry the harness explicitly replaces S0 with 0.5; native AddPoint executes through its five Rect arguments, while buildMesh bodies are skipped at their entry points.",
+                                "limitations": ["Synthetic AddPoint extent register override, not a naturally selected caller extent", "No vector append or mesh output in this probe"]},
+                   "case": {**direct_case, "native": {"extent_bits": run["add_points"][0]["extent_bits"],
+                                                        "vector_bits": run["add_points"][0]["vector_bits"],
+                                                        "pre_state": run["add_points"][0]["pre_state"],
+                                                        "rectangles": run["build_calls"]}}
+                  }
+        fixture = args.fixture or ROOT / "conformance/calligraphy-addpoint-direct-native.json"
+        encoded = json.dumps(compact, indent=2) + "\n"
+        if args.write_direct_extent_fixture:
+            fixture.write_text(encoded)
+        elif json.loads(fixture.read_text()) != compact:
+            raise SystemExit("native direct AddPoint output differs from the checked fixture")
+        print(f"direct AddPoint extent probe; fixture {fixture}")
+        return
+    fixture_path = args.fixture or ROOT / "conformance/calligraphy-saved-native.json"
     output = []
     for case in cases:
         output.append({**case, "native": native.run(case)})
-    fixture = {"schema": "sdocx-montblanc-calligraphy-v1-saved-native-v2",
+    output_json = {"schema": "sdocx-montblanc-calligraphy-v1-saved-native-v2",
                "evidence": {"library": "libSPenMontblancCalligraphyPen.so", "sha256": LIB_SHA,
                             "entry": REDRAW, "native_scope": "GLV1 RedrawPen history and endPen; one case invokes it twice on the same constructed drawable, then stops before movePen",
                             "inputs": "Synthetic MotionEvent history arrays supplied by this harness, not captured from an application runtime",
                             "host_context": "MotionEvent getters return explicit fixture values; MotionEvent constructor/destructor, RectF bounds operations, queue submit, bounded allocation and host math sincos callback are host operations",
                             "limitations": ["No APK Java callback construction", "No movePen lifecycle", "No GPU rendering or pixels"]},
                "cases": output}
-    encoded = json.dumps(fixture, indent=2) + "\n"
+    encoded = json.dumps(output_json, indent=2) + "\n"
     if args.write_fixture:
-        args.fixture.write_text(encoded)
-    elif json.loads(args.fixture.read_text()) != fixture:
+        fixture_path.write_text(encoded)
+    elif json.loads(fixture_path.read_text()) != output_json:
         raise SystemExit("native output differs from the checked fixture")
-    print(f"{len(output)} cases; fixture {args.fixture}")
+    print(f"{len(output)} cases; fixture {fixture_path}")
 
 
 if __name__ == "__main__":

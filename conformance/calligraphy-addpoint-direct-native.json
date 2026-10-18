@@ -1,0 +1,131 @@
+{
+  "schema": "sdocx-calligraphy-v1-addpoint-direct-native-v1",
+  "evidence": {
+    "library": "libSPenMontblancCalligraphyPen.so",
+    "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+    "entry": "SPen::MontblancCalligraphyPenStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)",
+    "host_context": "The pinned RedrawPen supplies a real constructed RTV1 receiver and native nib vector. At the first AddPoint entry the harness explicitly replaces S0 with 0.5; native AddPoint executes through its five Rect arguments, while buildMesh bodies are skipped at their entry points.",
+    "limitations": [
+      "Synthetic AddPoint extent register override, not a naturally selected caller extent",
+      "No vector append or mesh output in this probe"
+    ]
+  },
+  "case": {
+    "id": "direct_addpoint_extent_half",
+    "history": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        4.0,
+        1.0,
+        0.35
+      ],
+      [
+        9.0,
+        5.0,
+        0.7
+      ]
+    ],
+    "size": 6.0,
+    "native": {
+      "extent_bits": "0000003f",
+      "vector_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "0000803f"
+      ],
+      "pre_state": {
+        "center_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "initial_flag": 1,
+        "edge_state_bits": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ]
+      },
+      "rectangles": [
+        {
+          "rect_bits": [
+            "00000000",
+            "0000803f",
+            "00000000",
+            "000080bf",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "000080bf"
+          ],
+          "buffer": "mesh_200"
+        },
+        {
+          "rect_bits": [
+            "67d01040",
+            "67d05040",
+            "67d010c0",
+            "cea0a1bf",
+            "67d01040",
+            "67d05040",
+            "67d010c0",
+            "cea0a1bf"
+          ],
+          "buffer": "mesh_216"
+        },
+        {
+          "rect_bits": [
+            "67d010c0",
+            "67d050c0",
+            "67d01040",
+            "cea0a13f",
+            "67d010c0",
+            "67d050c0",
+            "67d01040",
+            "cea0a13f"
+          ],
+          "buffer": "mesh_216"
+        },
+        {
+          "rect_bits": [
+            "67d010c0",
+            "cea0a1bf",
+            "67d01040",
+            "67d05040",
+            "67d010c0",
+            "67d050c0",
+            "67d01040",
+            "cea0a13f"
+          ],
+          "buffer": "mesh_208"
+        },
+        {
+          "rect_bits": [
+            "67d010c0",
+            "cea0a1bf",
+            "67d01040",
+            "67d05040",
+            "67d010c0",
+            "67d050c0",
+            "67d01040",
+            "cea0a13f"
+          ],
+          "buffer": "mesh_208"
+        }
+      ]
+    }
+  }
+}

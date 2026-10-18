@@ -144,6 +144,10 @@ initial flag, cached edge state and per-call mesh count; its `sincos` callback
 uses Python's host `math` implementation, not Android libm. The
 orientation-sensitive angle and reused state are native observations, not
 application-captured input or pixel evidence.
+The [direct AddPoint capture](../../conformance/calligraphy-addpoint-direct-native.json)
+sets S0 to 0.5 at the first native call and records its five Rect arguments,
+skipping `buildMesh` bodies; it isolates the extent clamp and is a synthetic
+register probe, not a naturally selected caller extent.
 
 Current Rust `ink::prepare_stroke` selects Fountain/Marker2/Marker4 geometry;
 this profile borrows original samples with `InkSupport::Approximate`. Its
