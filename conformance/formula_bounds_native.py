@@ -44,13 +44,16 @@ def cstr(uc,p):
   out.append(c)
  return out.decode(errors='replace')
 
-def run(name,size,rot,rect):
+def run(name,size,rot,rect,apply_pen_type=True,apply_pen_size=True,seed_ctor_fields=False):
  if sha(MODEL)!='4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a': raise ValueError('Model hash mismatch')
  if sha(BASE)!='e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb': raise ValueError('Base hash mismatch')
  uc=Uc(UC_ARCH_ARM64,UC_MODE_ARM); uc.mem_map(BMODEL,0x600000); uc.mem_map(BBASE,0x200000); uc.mem_map(HEAP,0x10000); uc.mem_map(STACK,0x10000); uc.mem_map(HOST,0x1000)
  mapelf(uc,MODEL,BMODEL); mapelf(uc,BASE,BBASE)
  uc.reg_write(R.UC_ARM64_REG_TPIDR_EL0,TLS); w64(uc,TLS+40,0x1234)
  w64(uc,OWNER,VTABLE); w64(uc,VTABLE+136,HOST+0x100); w64(uc,VTABLE+168,HOST+0x200); w64(uc,IMPL,OWNER)
+ if seed_ctor_fields:
+  uc.mem_write(IMPL+292,bytes.fromhex('00004842'))
+  uc.mem_write(IMPL+328,bytes.fromhex('77777777'))
  for i,v in enumerate(rect): f32(uc,RAW+i*4,v)
  calls=[]
  def hook(u,a,sz,data):
@@ -76,14 +79,20 @@ def run(name,size,rot,rect):
  uc.hook_add(UC_HOOK_CODE,hook)
  # run native impl constructor, then setters
  call(uc,BMODEL+0x2e8788,[IMPL,OWNER])
- # supplied string receiver is only read through the explicitly stubbed CompareTo boundary
- call(uc,BMODEL+0x2ea3c0,[IMPL,HEAP+0x6000])
+ constructor_category=struct.unpack('<I',uc.mem_read(IMPL+328,4))[0]
+ constructor_size_bits=bytes(uc.mem_read(IMPL+292,4)).hex()
+ # The name receiver is observed only at this explicit comparison boundary.
+ # Omitting the setter models no resolved saved pen-name input.
+ if apply_pen_type:
+  call(uc,BMODEL+0x2ea3c0,[IMPL,HEAP+0x6000])
  category=struct.unpack('<I',uc.mem_read(IMPL+328,4))[0]
  f32(uc,HEAP+0x5000,rot)
- uc.reg_write(R.UC_ARM64_REG_S0,struct.unpack('<I',struct.pack('<f',size))[0]); call(uc,BMODEL+0x2ea300,[IMPL])
+ if apply_pen_size:
+  uc.reg_write(R.UC_ARM64_REG_S0,struct.unpack('<I',struct.pack('<f',size))[0]); call(uc,BMODEL+0x2ea300,[IMPL])
+ stored_size_bits=bytes(uc.mem_read(IMPL+292,4)).hex()
  out=call(uc,BMODEL+0x2e9488,[IMPL,0])
  out=vals(uc,[R.UC_ARM64_REG_S0,R.UC_ARM64_REG_S1,R.UC_ARM64_REG_S2,R.UC_ARM64_REG_S3])
- return {'name':name.rsplit('.',1)[-1], 'category':category,'size_f32_bits':struct.pack('<f',size).hex(),'rotation_f32_bits':struct.pack('<f',rot).hex(),'rect_f32_bits':[struct.pack('<f',v).hex() for v in out],'rect':out,'native_comparison_literals_seen':calls}
+ return {'name':(name.rsplit('.',1)[-1] if name else '<not-set>'), 'category':category,'size_f32_bits':stored_size_bits,'constructor_category':constructor_category,'constructor_size_f32_bits':constructor_size_bits,'rotation_f32_bits':struct.pack('<f',rot).hex(),'rect_f32_bits':[struct.pack('<f',v).hex() for v in out],'rect':out,'native_comparison_literals_seen':calls}
 
 def run_formula_lists(source,answer):
  uc=Uc(UC_ARCH_ARM64,UC_MODE_ARM); uc.mem_map(BMODEL,0x600000); uc.mem_map(BBASE,0x200000); uc.mem_map(HEAP,0x10000); uc.mem_map(STACK,0x10000); uc.mem_map(HOST,0x1000)
@@ -131,6 +140,72 @@ def run_formula_lists(source,answer):
  rect=vals(uc,[R.UC_ARM64_REG_S0,R.UC_ARM64_REG_S1,R.UC_ARM64_REG_S2,R.UC_ARM64_REG_S3])
  return {'source_count':len(source),'answer_count':len(answer),'source_visible':[x.get('visible',True) for x in source],'answer_visible':[x.get('visible',True) for x in answer],'rect':rect,'rect_f32_bits':[struct.pack('<f',v).hex() for v in rect],'helper_events':events}
 
+def run_unresolved_attach():
+ uc=Uc(UC_ARCH_ARM64,UC_MODE_ARM)
+ for address,size in ((BMODEL,0x600000),(BBASE,0x200000),(HEAP,0x10000),(STACK,0x10000),(HOST,0x1000)):
+  uc.mem_map(address,size)
+ mapelf(uc,MODEL,BMODEL); mapelf(uc,BASE,BBASE)
+ uc.reg_write(R.UC_ARM64_REG_TPIDR_EL0,TLS); w64(uc,TLS+40,0x1234)
+ w64(uc,OWNER,VTABLE); w64(uc,OWNER+32,IMPL)
+ w64(uc,VTABLE+136,HOST+0x100); w64(uc,VTABLE+160,HOST+0x300); w64(uc,VTABLE+168,HOST+0x200)
+ rect=[10.0,20.0,110.0,70.0]
+ for i,v in enumerate(rect): f32(uc,RAW+i*4,v)
+ f32(uc,HEAP+0x5000,0.0)
+ context=HEAP+0x7000; w64(uc,context+432,HEAP+0x7100)
+ events=[]; set_pen_type_calls=[]; bind_results=[]
+ def host_return(u): u.reg_write(R.UC_ARM64_REG_PC,u.reg_read(R.UC_ARM64_REG_LR))
+ def hook(u,a,sz,data):
+  if a==BMODEL+0x48b3f0:
+   ptr=u.reg_read(R.UC_ARM64_REG_X0); val=u.reg_read(R.UC_ARM64_REG_X1)&255; n=u.reg_read(R.UC_ARM64_REG_X2)
+   u.mem_write(ptr,bytes([val])*n); u.reg_write(R.UC_ARM64_REG_X0,ptr); host_return(u)
+  elif a==BMODEL+0x47de20:
+   events.append('ObjectBase::OnAttach'); u.reg_write(R.UC_ARM64_REG_X0,1); host_return(u)
+  elif a==BMODEL+0x47c470:
+   result=0; bind_results.append({'saved_id':u.reg_read(R.UC_ARM64_REG_X1),'resolved':False,'return':result})
+   u.reg_write(R.UC_ARM64_REG_W0,result); host_return(u)
+  elif a==BMODEL+0x47f090:
+   set_pen_type_calls.append(True); u.reg_write(R.UC_ARM64_REG_PC,BMODEL+0x2ea3c0)
+  elif a==BMODEL+0x47e1f0:
+   u.reg_write(R.UC_ARM64_REG_W0,1); host_return(u)
+  elif a==BMODEL+0x47e6e0:
+   events.append('RectF::Contains'); u.reg_write(R.UC_ARM64_REG_W0,1); host_return(u)
+  elif a==BMODEL+0x47f0d0: u.reg_write(R.UC_ARM64_REG_PC,BBASE+0xb15c0)
+  elif a==BMODEL+0x47e3d0: u.reg_write(R.UC_ARM64_REG_PC,BBASE+0xb1850)
+  elif a==BBASE+0xe66b0: u.reg_write(R.UC_ARM64_REG_PC,BBASE+0xb0f10)
+  elif a==BBASE+0xe7c50:
+   angle=struct.unpack('<d',struct.pack('<Q',u.reg_read(R.UC_ARM64_REG_D0)))[0]
+   u.mem_write(u.reg_read(R.UC_ARM64_REG_X0),struct.pack('<d',math.sin(angle)))
+   u.mem_write(u.reg_read(R.UC_ARM64_REG_X1),struct.pack('<d',math.cos(angle))); host_return(u)
+  elif a==HOST+0x100:
+   u.reg_write(R.UC_ARM64_REG_S0,struct.unpack('<I',u.mem_read(HEAP+0x5000,4))[0]); host_return(u)
+  elif a in (HOST+0x200,HOST+0x300):
+   for i,r in enumerate((R.UC_ARM64_REG_S0,R.UC_ARM64_REG_S1,R.UC_ARM64_REG_S2,R.UC_ARM64_REG_S3)):
+    u.reg_write(r,u32(u,RAW+i*4))
+   host_return(u)
+  elif BMODEL+0x470000<=a<BMODEL+0x490000:
+   raise RuntimeError(f'unexpected native import during OnAttach probe: {a-BMODEL:#x}')
+ uc.hook_add(UC_HOOK_CODE,hook)
+ # Seed constructor-owned fields so their post-ctor values cannot be attributed
+ # to the zeroed Unicorn mapping.
+ uc.mem_write(IMPL+292,bytes.fromhex('00004842')); uc.mem_write(IMPL+328,bytes.fromhex('77777777'))
+ call(uc,BMODEL+0x2e8788,[IMPL,OWNER])
+ ctor_size=bytes(uc.mem_read(IMPL+292,4)).hex(); ctor_category=u32(uc,IMPL+328)
+ w32(uc,IMPL+16,7)  # saved positive string ID, absent from the supplied pool
+ call(uc,BMODEL+0x2e65c4,[OWNER,context,0])
+ after_id=u32(uc,IMPL+16); after_category=u32(uc,IMPL+328); after_size=bytes(uc.mem_read(IMPL+292,4)).hex()
+ call(uc,BMODEL+0x2e9488,[IMPL,0])
+ rect_out=[struct.pack('<I',uc.reg_read(r)&0xffffffff).hex() for r in (R.UC_ARM64_REG_S0,R.UC_ARM64_REG_S1,R.UC_ARM64_REG_S2,R.UC_ARM64_REG_S3)]
+ return {'constructor_seed_size_f32_bits':'00004842','constructor_seed_category_u32_bits':'77777777',
+  'constructor_size_f32_bits':ctor_size,'constructor_category':ctor_category,
+  'attach_input_saved_pen_name_id':7,'attach_input_pen_name_pointer_null':True,'string_id_bind':bind_results,
+  'pen_name_id_after_attach':after_id,'category_after_attach':after_category,'pen_size_after_attach_f32_bits':after_size,
+  'set_pen_type_calls_during_attach':len(set_pen_type_calls),'drawn_rect_f32_bits':rect_out,
+  'boundary':['Native ObjectStrokeImpl ctor 0x2e8788, ObjectStroke::OnAttach 0x2e65c4, SetPenType 0x2ea3c0 and GetDrawnRect 0x2e9488',
+   'Host StringIDManager::Bind(int) returns unresolved for the supplied saved ID; host Base OnAttach/RectF::Contains and owner rectangle/rotation callbacks',
+   'Base sincos uses host libm; model context is otherwise a minimal explicit shell']}
+
+def w32(uc,address,value): uc.mem_write(address,struct.pack('<I',value))
+
 def capture():
  names=['Marker','Beautify','Beautify2','unknown','Crayon','Crayon2','BrushPen','Pencil2','Pencil3','PatternPen','InkPen','ObliquePen','OilBrush3','ColoredPencil','TapePen']
  categories=[]
@@ -158,6 +233,7 @@ def capture():
    'answer_rects_f32_bits':[[struct.pack('<f',v).hex() for v in row['rect']] for row in answer],
    'answer_visible':[row.get('visible',True) for row in answer],
    'native_union_f32_bits':actual['rect_f32_bits']})
+ default=run_unresolved_attach()
  return {'schema':'samsung-notes-formula-drawn-bounds-native-v1',
   'libraries':{'Model':sha(MODEL),'Base':sha(BASE)},
   'boundary':['Native Model ObjectStrokeImpl constructor 0x2e8788, SetPenType 0x2ea3c0, SetPenSize 0x2ea300 and GetDrawnRect 0x2e9488',
@@ -165,7 +241,9 @@ def capture():
    'Native Base RectF::IncreaseRect 0xb15c0, GetRotatedBound 0xb1850 and PointF::GetRotatedPoint 0xb0f10',
    'Host String::CompareTo compares exact supplied pen name with native literals; owner refresh/raw-rect/rotation callbacks supply explicit state; Base sincos callback uses host libm',
    'Host HistoryManager detached-list and ObjectList iterator callbacks supply the explicitly listed children; child visibility and GetDrawnRect responses are supplied callbacks'],
-  'stroke_rect_cases':categories,'formula_union_cases':unions}
+  'stroke_rect_cases':categories,
+  'constructor_default_case':default,
+  'formula_union_cases':unions}
 
 def main():
  global MODEL,BASE

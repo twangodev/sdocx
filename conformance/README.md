@@ -113,9 +113,15 @@ See [fountain vector parity](../docs/reverse-engineering/fountain-parity.md)
 for the verified native geometry and vector appearance limits.
 
 The Formula drawn-bounds oracle covers 30 pen-category/rotation cases and seven
-source/answer unions. Name comparison, owner state, host `sincos`, history-list
-iteration and child rectangles/visibility are supplied inputs; final image
-placement is outside the capture.
+source/answer unions. Native `GetDrawnRect`, Base rotated bounds, Formula
+visibility selection and rectangle union execute directly. Name comparison,
+owner state, host `sincos`, history-list iteration and child
+rectangles/visibility are supplied inputs; final image placement is outside
+the capture. Its constructor fallback case executes `ObjectStrokeImpl` then
+`ObjectStroke::OnAttach` with a positive saved pen-name ID that the supplied
+StringIDManager cannot resolve. Native attach resets that ID to -1 without
+calling `SetPenType`, leaving the constructor's category 2 and zero pen size.
+The empty-pool bind result remains an explicit host input.
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/formula_bounds_native.py --check-fixture
@@ -802,9 +808,12 @@ paper parity test. See [storage findings](../docs/reverse-engineering/pdf-paper-
 
 ## PDF paper form matrix
 
-`pdf-paper-form-matrix.json` captures the native matrix prefix with supplied
-page-box/rotation inputs; document construction, callback coordinate alignment
-and rendered export are outside the capture. See the
+`pdf-paper-form-matrix.json` executes native `CPDF_Page::UpdateDimensions` and
+the actual width/height getters from explicit host-supplied page dictionary
+values, then captures the native form-matrix prefix for each rotation. The
+point/matrix composition remains host-side; page-handle dispatch, document
+construction, callback coordinate alignment and rendered export are outside
+the capture. See the
 [placement findings](../docs/reverse-engineering/pdf-paper-placement-findings.md#standard-pdf-overlay-form-matrix).
 
 ```sh

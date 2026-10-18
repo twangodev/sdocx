@@ -553,6 +553,36 @@
       ]
     }
   ],
+  "constructor_default_case": {
+    "constructor_seed_size_f32_bits": "00004842",
+    "constructor_seed_category_u32_bits": "77777777",
+    "constructor_size_f32_bits": "00000000",
+    "constructor_category": 2,
+    "attach_input_saved_pen_name_id": 7,
+    "attach_input_pen_name_pointer_null": true,
+    "string_id_bind": [
+      {
+        "saved_id": 7,
+        "resolved": false,
+        "return": 0
+      }
+    ],
+    "pen_name_id_after_attach": 4294967295,
+    "category_after_attach": 2,
+    "pen_size_after_attach_f32_bits": "00000000",
+    "set_pen_type_calls_during_attach": 0,
+    "drawn_rect_f32_bits": [
+      "0000c040",
+      "00008041",
+      "0000e442",
+      "00009442"
+    ],
+    "boundary": [
+      "Native ObjectStrokeImpl ctor 0x2e8788, ObjectStroke::OnAttach 0x2e65c4, SetPenType 0x2ea3c0 and GetDrawnRect 0x2e9488",
+      "Host StringIDManager::Bind(int) returns unresolved for the supplied saved ID; host Base OnAttach/RectF::Contains and owner rectangle/rotation callbacks",
+      "Base sincos uses host libm; model context is otherwise a minimal explicit shell"
+    ]
+  },
   "formula_union_cases": [
     {
       "name": "one_source_visible",
