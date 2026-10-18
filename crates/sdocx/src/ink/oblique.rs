@@ -26,6 +26,13 @@ fn repeat_count(width: f32, length: f32) -> i32 {
 
 fn quadratic_samples(start: P, control: P, end: P, width: f32, terminal: bool) -> Vec<P> {
     let path = Quad::new(start, control, end);
+    // SmPath::getPosTan returns false for a zero-length path. The native
+    // redrawLine caller still emits its saved endpoint once after exhausting
+    // those failed samples; it does not evaluate a NaN parameter or emit the
+    // requested repeat count.
+    if path.length == 0.0 {
+        return vec![start];
+    }
     let count = repeat_count(width, path.length);
     let step = path.length / count as f32;
     let samples = if terminal { count + 1 } else { count };
@@ -42,6 +49,11 @@ fn quadratic_samples(start: P, control: P, end: P, width: f32, terminal: bool) -
 fn line_samples(start: P, end: P, width: f32) -> Vec<P> {
     let delta = end.sub(start);
     let length = delta.len();
+    // The native no-curve loop skips getPosTan samples when SmPath reports a
+    // zero-length line, then unconditionally draws the original endpoint.
+    if length == 0.0 {
+        return vec![end];
+    }
     let count = repeat_count(width, length);
     let step = length / count as f32;
     let scale = 32767.0_f32 * f32::from_bits(0x3800_00fd);
@@ -121,7 +133,15 @@ fn saved_redraw_paths(case: &Value) -> (Vec<Vec<P>>, Vec<P>) {
         }
         let midpoint = control.mid(current);
         let points = quadratic_samples(start, control, midpoint, width, false);
-        start = points[points.len() - 2];
+        // Nondegenerate quadratics retain their last successful interior
+        // sample as the next path's start. A zero-length native path has no
+        // successful getPosTan sample, so its single fallback endpoint is the
+        // only valid state to carry forward.
+        start = if points.len() >= 2 {
+            points[points.len() - 2]
+        } else {
+            points.last().copied().unwrap_or(start)
+        };
         control = current;
         previous = current;
         saved.push(points);
@@ -415,6 +435,19 @@ mod tests {
                 let expected_y = u32::from_str_radix(xy[1].as_str().unwrap(), 16).unwrap();
                 assert_eq!(actual.x.to_bits(), expected_x, "{id} AddPoint {i} x");
                 assert_eq!(actual.y.to_bits(), expected_y, "{id} AddPoint {i} y");
+            }
+            let add_calls = native["add_point_calls"].as_array().unwrap();
+            if let Some(last) = add_calls.last() {
+                let final_state = native["rt_previous_xy"].as_array().unwrap();
+                for axis in 0..2 {
+                    let actual = (final_state[axis].as_f64().unwrap() as f32).to_bits();
+                    let expected = u32::from_str_radix(
+                        last["xy_bits"][axis].as_str().unwrap(),
+                        16,
+                    )
+                    .unwrap();
+                    assert_eq!(actual, expected, "{id} final RTV1 previous axis {axis}");
+                }
             }
 
             // Rebuild callback triangles, resetting RTV1's previous point to

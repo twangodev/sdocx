@@ -263,7 +263,10 @@ class RedrawOracle(core.ObliqueCore):
         elif pc == ADD_POINT:
             # The native callback body remains executable; record its input.
             xy = self.u.reg_read(R.UC_ARM64_REG_S0), self.u.reg_read(R.UC_ARM64_REG_S1)
-            self.calls.append({"kind": "AddPoint", "xy_bits": [f"{x:08x}" for x in xy]})
+            this = self.u.reg_read(R.UC_ARM64_REG_X0)
+            previous = self.floats(this + 0x158, 2)
+            self.calls.append({"kind": "AddPoint", "xy_bits": [f"{x:08x}" for x in xy],
+                               "previous_xy_bits": [f"{struct.unpack('<I', struct.pack('<f', v))[0]:08x}" for v in previous]})
 
     def _host_stub(self, name):
         x0 = self.u.reg_read(R.UC_ARM64_REG_X0)
@@ -390,6 +393,8 @@ class RedrawOracle(core.ObliqueCore):
             "size_u32": struct.unpack("<I", self.u.mem_read(self.rt + 60, 4))[0],
             "size_conversion_instruction": "FCVTZU W9,S0 at 0x409e4 executed inside GLV4 RedrawPen",
             "inverse_scale": [self.floats(self.rt + 352, 1)[0], self.floats(self.rt + 356, 1)[0]],
+            "rt_previous_xy": self.floats(self.rt + 0x158, 2),
+            "pen_rect_raw": self.floats(self.rect, 4),
             "callback_triples": triples,
             "callback_triple_f32_bits": [[f32bits(v) for v in p] for p in triples],
             "sample_ends_vector3": self.sample_ends,
@@ -411,6 +416,13 @@ def generate(path):
         {"id": "three_points_line_low_size", "points": [[10.0, 20.0], [18.0, 25.0], [26.0, 20.0]], "timestamps": [0, 8, 16], "size": 0.75, "curve_enabled": False, "inverse_scale": [2.0, 0.5]},
         {"id": "coincident_curve", "points": [[10.0, 20.0], [10.0, 20.0], [10.0, 20.0]], "timestamps": [0, 8, 16], "size": 2.0, "curve_enabled": True},
         {"id": "tool_threshold_and_fractional_size", "points": [[4.0, 8.0], [16.0, 12.0], [28.0, 8.0]], "timestamps": [0, 8, 16], "size": 1.999, "curve_enabled": True, "tool_type": 1, "fixed_enabled": True, "fixed_value": 6.0, "inverse_scale": [0.25, 3.0]},
+        {"id": "curve_zero_quad_after_short_alternation", "points": [[0.0, 0.0]] * 5, "size": 4.0, "curve_enabled": True, "tool_type": 1},
+        {"id": "no_curve_duplicate_segments_tool3", "points": [[0.0, 0.0], [0.0, 0.0], [8.0, 0.0], [8.0, 0.0]], "size": 6.0, "curve_enabled": False, "tool_type": 3},
+        {"id": "terminal_cubic_tool3", "points": [[0.0, 0.0], [10.0, 0.0], [20.0, 10.0], [30.0, 0.0], [40.0, -10.0]], "size": 6.0, "curve_enabled": True, "tool_type": 3},
+        {"id": "terminal_cubic_width_band_12", "points": [[0.0, 0.0], [10.0, 0.0], [20.0, 10.0], [30.0, 0.0], [40.0, -10.0]], "size": 12.75, "curve_enabled": True, "tool_type": 2},
+        {"id": "curve_zero_quad_nonorigin_tool1", "points": [[5.0, 9.0]] * 5, "size": 4.0, "curve_enabled": True, "tool_type": 1},
+        {"id": "no_curve_duplicate_nonorigin_tool3", "points": [[5.0, 9.0], [5.0, 9.0], [13.0, 9.0], [13.0, 9.0]], "size": 6.0, "curve_enabled": False, "tool_type": 3},
+        {"id": "curve_zero_quad_followed_by_move_tool1", "points": [[5.0, 9.0]] * 5 + [[100.0, 9.0]], "size": 4.0, "curve_enabled": True, "tool_type": 1},
     ]
     native = []
     for case in cases:
