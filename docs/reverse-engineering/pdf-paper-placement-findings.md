@@ -269,12 +269,19 @@ The fixture keeps the Samsung form argument (`4 - page rotation`) separate
 from the page-rotation label. Its asymmetric nonzero-origin box confirms that
 the form matrix contains the box origin and compensates for rotation.
 
-This establishes the matrix kernel, not the complete note-to-source mapping.
-The fragment starts after page-handle dispatch and stops before XObject/document
-construction. The page-height call used by the text/path handlers dispatches
-to `CPDF_Page::GetPageHeight` in the pinned PDFium vtable; its method returns
-the raw effective-box height from the page field (`libSPenPdfiumB.so`,
-`0x472f5c`). The fixture's point/matrix composition is still host arithmetic;
-it does not execute a constructed page handle, the Standard exporter, or a
-render. The overlay callback coordinate basis and serialized or rendered
+This establishes a bounded geometry chain, not the complete note-to-source
+mapping. For its explicit host-supplied MediaBox, CropBox, and Rotate dictionary
+values, the fixture executes `CPDF_Page::UpdateDimensions` (`0x472c10`) and then
+the actual `GetPageWidth` (`0x472f54`) and `GetPageHeight` (`0x472f5c`) methods
+before executing the `NewFormObj` geometry fragment. `UpdateDimensions` stores
+rotation-adjusted dimensions: at quarter turns 1 and 3 it swaps the effective
+box width and height. The measured getter results therefore are `[200,150]` for
+rotations 0/180 and `[150,200]` for rotations 90/270 for the fixture's 200×150
+effective box. In particular, the handler's `H-y` conversion uses this rotated
+page height, not always raw `T-B`.
+
+The fixture still supplies page dictionary values and the sample handler point;
+its point/matrix composition is host arithmetic. It does not execute page-handle
+dispatch, the Standard exporter, XObject/document construction, serialization,
+or rendering. The overlay callback coordinate basis and serialized or rendered
 alignment remain unverified.

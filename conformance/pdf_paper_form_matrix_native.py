@@ -37,15 +37,16 @@ def capture():
     }
     result["model_library_sha256"] = MODEL_SHA256
     result["case_boundary"] = (
-        "The runner executes original PDFium instructions from FPDFPage_NewFormObj+0x50 to +0x104. "
-        "The CPDF_Page bbox fields and function argument are host-supplied; page-handle dispatch, "
+        "The runner executes pinned PDFium CPDF_Page::UpdateDimensions and GetPageWidth/GetPageHeight "
+        "with host-supplied page dictionary values, then original FPDFPage_NewFormObj instructions "
+        "from +0x50 to +0x104. Page-handle dispatch, "
         "document/XObject construction, complete Samsung writer, PDF serialization and rendering "
         "are excluded. Each page_rotation_quarter_turn is distinct from the OpenWriter form argument "
         "4-page_rotation; PDFium normalizes the latter modulo 4 to select the captured matrix. "
         "Candidate top-left point outputs compose the matrix with a host-supplied point and host-side "
-        "H-y arithmetic using raw effective-box height; disassembly maps FPDF_GetPageHeight to "
-        "CPDF_Page::GetPageHeight, which returns that raw height. The point and composition are still "
-        "host-side, not a native full-write capture."
+        "H-y arithmetic using the actual native GetPageHeight result after UpdateDimensions has "
+        "applied source rotation. Source page dictionary values and point remain host-supplied; the "
+        "point/matrix composition is host-side, not a native full-write capture."
     )
     return json.dumps(result, indent=2, separators=(",", ": ")) + "\n"
 
