@@ -3,6 +3,10 @@ use crate::{BoundingBox, Stroke, stroke_paint};
 use std::borrow::Cow;
 mod fountain;
 mod fountain_v14;
+// Native numeric regression only until caller context and RTV1 paint transport
+// are integrated; production InkPen rendering remains explicitly approximate.
+#[cfg(test)]
+mod inkpen;
 mod marker2;
 mod marker4;
 mod path;

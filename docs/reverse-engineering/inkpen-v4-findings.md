@@ -145,6 +145,32 @@ grows by 1 and supplies callback bounds (`0x31164–0x31194`).
 
 ## Derived geometry and current Rust boundary
 
+The optional [`inkpen_native.py`](../../conformance/inkpen_native.py) now
+executes the pinned V4 saved redraw, Base SmPath and actual RTV1 AddPoint.
+[`inkpen-v4.json`](../../conformance/inkpen-v4.json) records twenty-one finite
+cases covering tools 1–3, taps, short moves, both curve modes, timing and pressure
+variation, optional stylus channels and completion. Fresh per-case emulation
+matches the recorded native buffer triples and bounds. Object/drawable/RT
+state, channel getters, callback lifecycle and queue submission are supplied
+by the host; the terminal event clock models signed last-minus-first time.
+Only SmPath is constructed natively. This establishes the selected synthetic
+call-path observations, not Android lifecycle, Rust or appearance parity.
+
+The test-only Rust numeric core matches these configured-context fixtures and
+four native setter cases for fixed width and size clamps; it is not a shipped
+InkPen render route. Separate Base cubic captures
+(`smpath-cubic.json`) match three measured lengths and 21 sampled positions
+bit-for-bit. Native subdivision tests control deviations from the one-third
+and two-thirds chord points against 0.5, down to 1024-wide intervals in the
+15-bit parameter domain; position evaluation uses fused de Casteljau steps.
+The saved Drawing route owns its PenManager and creates a fresh InkPen on a
+cache miss (`Drawing:0x7f000`, `0x81acc`; `PenCommon:0x4cefc`, `0x4df50`).
+InkPen's factory/constructor calls the base Pen constructor, which initializes
+resolution to 1440×2560 (`InkPen:0x24ae4`, `0x24460`; `PenCommon:0x45f34`).
+Preview configures a separate Pen handle. This is static evidence for the
+saved Drawing route, not an executed Android export. RTV1 paint integration
+remains separate from this numeric reconstruction.
+
 `drawPoint`, `0x3095c–0x30a38`, optionally replaces radius with fixedWidth*0.5
 when data byte 9 is set, then replaces an ordered radius<1 with 1.
 It unions point±radius into bounds and calls RT slot 64. V4 actually installs

@@ -1,0 +1,382 @@
+{
+  "schema_version": 1,
+  "apk_version": "4.4.45.37",
+  "apk_sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667",
+  "base_library_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+  "capture_boundary": "Base constructor, moveTo, cubicTo, getLength, getPosTan, and their direct Base helpers execute on each supplied scalar curve. No pen, Drawing, Android, renderer, GPU, PDF, or pixel code executes. The host supplies bounded operator new/delete and memcpy/memmove/memset only.",
+  "native_methods": {
+    "SPen::SmPath::SmPath()": "Base:0xbd290",
+    "SPen::SmPath::moveTo(float, float)": "Base:0xbd6fc",
+    "SPen::SmPath::cubicTo(float, float, float, float, float, float)": "Base:0xbdcf0",
+    "SPen::SmPath::getLength()": "Base:0xbd370",
+    "SPen::SmPath::getPosTan(float, SPen::SmPoint*, SPen::SmPoint*)": "Base:0xbd3a0"
+  },
+  "sample_fractions": [
+    0.0,
+    0.125,
+    0.25,
+    0.5,
+    0.75,
+    0.875,
+    1.0
+  ],
+  "cases": [
+    {
+      "name": "asymmetric",
+      "controls": [
+        1.25,
+        -3.5,
+        18.0,
+        72.0,
+        -42.0,
+        15.0,
+        96.0,
+        41.0
+      ],
+      "native": {
+        "controls_f32": [
+          1.25,
+          -3.5,
+          18.0,
+          72.0,
+          -42.0,
+          15.0,
+          96.0,
+          41.0
+        ],
+        "length_bits": "0x430851b8",
+        "samples": [
+          {
+            "fraction": 0.0,
+            "distance_bits": "0x00000000",
+            "ok": true,
+            "position_bits": [
+              "0x3fa00000",
+              "0xc0600000"
+            ],
+            "tangent_bits": [
+              "0x3e5dc949",
+              "0x3f79ec60"
+            ]
+          },
+          {
+            "fraction": 0.125,
+            "distance_bits": "0x418851b8",
+            "ok": true,
+            "position_bits": [
+              "0x4082d78f",
+              "0x415a0cae"
+            ],
+            "tangent_bits": [
+              "0x3dc8c45f",
+              "0x3f7ec457"
+            ]
+          },
+          {
+            "fraction": 0.25,
+            "distance_bits": "0x420851b8",
+            "ok": true,
+            "position_bits": [
+              "0x407b1e88",
+              "0x41f3da3b"
+            ],
+            "tangent_bits": [
+              "0xbe246f98",
+              "0x3f7cad82"
+            ]
+          },
+          {
+            "fraction": 0.5,
+            "distance_bits": "0x428851b8",
+            "ok": true,
+            "position_bits": [
+              "0x41e1fc46",
+              "0x420679e7"
+            ],
+            "tangent_bits": [
+              "0x3f7ff70b",
+              "0xbc87682d"
+            ]
+          },
+          {
+            "fraction": 0.75,
+            "distance_bits": "0x42cc7a94",
+            "ok": true,
+            "position_bits": [
+              "0x427950c7",
+              "0x420edd2e"
+            ],
+            "tangent_bits": [
+              "0x3f7e2ee8",
+              "0x3df38f29"
+            ]
+          },
+          {
+            "fraction": 0.875,
+            "distance_bits": "0x42ee8f02",
+            "ok": true,
+            "position_bits": [
+              "0x429e27c1",
+              "0x42183b7e"
+            ],
+            "tangent_bits": [
+              "0x3f7cdb70",
+              "0x3e1ff652"
+            ]
+          },
+          {
+            "fraction": 1.0,
+            "distance_bits": "0x430851b8",
+            "ok": true,
+            "position_bits": [
+              "0x42bffff0",
+              "0x4223fffa"
+            ],
+            "tangent_bits": [
+              "0x3f7b92ed",
+              "0x3e3d977a"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "s-curve",
+      "controls": [
+        0.0,
+        0.0,
+        120.0,
+        220.0,
+        -80.0,
+        -140.0,
+        35.0,
+        55.0
+      ],
+      "native": {
+        "controls_f32": [
+          0.0,
+          0.0,
+          120.0,
+          220.0,
+          -80.0,
+          -140.0,
+          35.0,
+          55.0
+        ],
+        "length_bits": "0x4374733e",
+        "samples": [
+          {
+            "fraction": 0.0,
+            "distance_bits": "0x00000000",
+            "ok": true,
+            "position_bits": [
+              "0x00000000",
+              "0x00000000"
+            ],
+            "tangent_bits": [
+              "0x3ef52c1a",
+              "0x3f60bdc2"
+            ]
+          },
+          {
+            "fraction": 0.125,
+            "distance_bits": "0x41f4733e",
+            "ok": true,
+            "position_bits": [
+              "0x4169df1c",
+              "0x41d6b309"
+            ],
+            "tangent_bits": [
+              "0x3ef48db1",
+              "0x3f60e8e5"
+            ]
+          },
+          {
+            "fraction": 0.25,
+            "distance_bits": "0x4274733e",
+            "ok": true,
+            "position_bits": [
+              "0x41eabb1e",
+              "0x42580603"
+            ],
+            "tangent_bits": [
+              "0x3ef31764",
+              "0x3f614e40"
+            ]
+          },
+          {
+            "fraction": 0.5,
+            "distance_bits": "0x42f4733e",
+            "ok": true,
+            "position_bits": [
+              "0x41abb052",
+              "0x4222e5f1"
+            ],
+            "tangent_bits": [
+              "0xbef44160",
+              "0xbf60fda1"
+            ]
+          },
+          {
+            "fraction": 0.75,
+            "distance_bits": "0x4337566e",
+            "ok": true,
+            "position_bits": [
+              "0x4054081f",
+              "0x4016de75"
+            ],
+            "tangent_bits": [
+              "0x3f0958e8",
+              "0x3f580951"
+            ]
+          },
+          {
+            "fraction": 0.875,
+            "distance_bits": "0x4355e4d6",
+            "ok": true,
+            "position_bits": [
+              "0x4199ccf0",
+              "0x41e35b63"
+            ],
+            "tangent_bits": [
+              "0x3f037616",
+              "0x3f5baaf4"
+            ]
+          },
+          {
+            "fraction": 1.0,
+            "distance_bits": "0x4374733e",
+            "ok": true,
+            "position_bits": [
+              "0x420bffdf",
+              "0x425bffca"
+            ],
+            "tangent_bits": [
+              "0x3f020b4f",
+              "0x3f5c827a"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "collinear",
+      "controls": [
+        0.0,
+        0.0,
+        15.0,
+        20.0,
+        30.0,
+        40.0,
+        45.0,
+        60.0
+      ],
+      "native": {
+        "controls_f32": [
+          0.0,
+          0.0,
+          15.0,
+          20.0,
+          30.0,
+          40.0,
+          45.0,
+          60.0
+        ],
+        "length_bits": "0x42960000",
+        "samples": [
+          {
+            "fraction": 0.0,
+            "distance_bits": "0x00000000",
+            "ok": true,
+            "position_bits": [
+              "0x00000000",
+              "0x00000000"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          },
+          {
+            "fraction": 0.125,
+            "distance_bits": "0x41160000",
+            "ok": true,
+            "position_bits": [
+              "0x40b3fffc",
+              "0x40effffa"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          },
+          {
+            "fraction": 0.25,
+            "distance_bits": "0x41960000",
+            "ok": true,
+            "position_bits": [
+              "0x4133fffb",
+              "0x416ffffa"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          },
+          {
+            "fraction": 0.5,
+            "distance_bits": "0x42160000",
+            "ok": true,
+            "position_bits": [
+              "0x41b3fffb",
+              "0x41effffa"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          },
+          {
+            "fraction": 0.75,
+            "distance_bits": "0x42610000",
+            "ok": true,
+            "position_bits": [
+              "0x4206fffd",
+              "0x4233fffd"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          },
+          {
+            "fraction": 0.875,
+            "distance_bits": "0x42834000",
+            "ok": true,
+            "position_bits": [
+              "0x421d7ffd",
+              "0x4251fffb"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          },
+          {
+            "fraction": 1.0,
+            "distance_bits": "0x42960000",
+            "ok": true,
+            "position_bits": [
+              "0x4233fffa",
+              "0x426ffffa"
+            ],
+            "tangent_bits": [
+              "0x3f199999",
+              "0x3f4ccccc"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
