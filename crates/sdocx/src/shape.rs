@@ -7,12 +7,12 @@ use crate::shape_paint_source::{
 };
 use crate::{BoundingBox, Error, ObjectMetadata, ParseLimits, Result, RichTextBox, TextAreaType};
 
-#[cfg(test)]
 mod model_arc;
-#[cfg(test)]
 mod model_quad_arc;
-#[cfg(test)]
 mod native_arc;
+#[cfg(test)]
+mod native_normalize;
+pub(crate) mod native_path;
 mod outline;
 
 /// Paint supported by the shape renderer, or an uninterpreted native effect.
@@ -208,19 +208,34 @@ pub(crate) fn decode_shape(data: &[u8], limits: &ParseLimits) -> Result<Decoded<
     let geometry_bbox = read_bbox(&mut fixed)?;
     let rotation_degrees = finite_f32(&mut fixed, "shape rotation")?;
     let path_data = sized(&mut fixed, "shape path")?.to_vec();
+    let horizontal_flip = frame.properties.contains(0);
+    let vertical_flip = frame.properties.contains(1);
     let supported_path = if path_data.is_empty() {
         false
     } else {
-        let (size, supported) = visit_path(&path_data, |_| {})?;
-        if !supported || size != path_data.len() {
-            unsupported.push("unsupported native path commands or trailing data");
+        let normalized = native_path::normalize_model_path(
+            &path_data,
+            [
+                geometry_bbox.x_min,
+                geometry_bbox.y_min,
+                geometry_bbox.x_max,
+                geometry_bbox.y_max,
+            ],
+            rotation_degrees,
+            horizontal_flip,
+            vertical_flip,
+            true,
+        )?;
+        match normalized {
+            Some(_) => true,
+            None => {
+                unsupported.push("unsupported native path commands or trailing data");
+                false
+            }
         }
-        supported && size == path_data.len()
     };
     let control_points = read_points(&mut fixed)?;
     let drawn_bbox = read_bbox(&mut fixed)?;
-    let horizontal_flip = frame.properties.contains(0);
-    let vertical_flip = frame.properties.contains(1);
     let text_editable = frame.properties.contains(2);
     if fixed.remaining() != 0 {
         unsupported.push("shape geometry extensions");
@@ -387,7 +402,7 @@ pub(crate) fn decode_line(data: &[u8]) -> Result<Decoded<NativeLine>> {
     let mut path_data = Vec::new();
     if frame.fields.contains(3) {
         let bytes = &frame.flexible[fields.position()..];
-        let (size, supported) = visit_path(bytes, |_| {})?;
+        let (size, supported) = native_path::visit_drawing_path(bytes, |_| {})?;
         path_data = fields.read_bytes(size, "line path")?.to_vec();
         if !supported {
             unsupported.push("unsupported native path commands");

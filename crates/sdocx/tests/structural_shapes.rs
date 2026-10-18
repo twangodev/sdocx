@@ -1589,11 +1589,12 @@ fn connection_counts_and_shape_paths_are_bounded_before_allocation() {
 }
 
 #[test]
-fn unsupported_arc_oval_and_missing_move_paths_remain_bounded() {
+fn unrepresentable_arc_and_empty_paths_remain_bounded() {
     for path in [
-        native_path(&[(1, &[0.0, 0.0]), (5, &[0.0, 0.0, 40.0, 40.0, 0.0, 90.0])]),
-        native_path(&[(7, &[0.0, 0.0, 40.0, 40.0])]),
-        native_path(&[(2, &[30.0, 40.0])]),
+        native_path(&[
+            (1, &[0.0, 0.0]),
+            (5, &[0.0, 0.0, f64::MAX, 40.0, 0.0, 90.0]),
+        ]),
         native_path(&[]),
     ] {
         let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 8, &path))).unwrap();
@@ -1611,8 +1612,156 @@ fn unsupported_arc_oval_and_missing_move_paths_remain_bounded() {
     }
 }
 
+#[test]
+fn drawing_line_and_model_shape_paths_use_native_implicit_origin() {
+    let path = native_path(&[(2, &[30.0, 40.0])]);
+    for (kind, payload) in [
+        (7, shape_with_path_rotation(4, &path, 0.0)),
+        (8, line(2, 8, &path)),
+    ] {
+        let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+        assert!(!has_shape_warning(&parsed));
+        let retained = match parsed.document.pages[0].elements().next().unwrap() {
+            PageElement::Shape(shape) => &shape.path_data,
+            PageElement::Line(line) => &line.path_data,
+            _ => unreachable!(),
+        };
+        assert_eq!(retained, &path);
+        #[cfg(feature = "render")]
+        {
+            let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(rendered[0].geometry_diagnostics.is_empty());
+            assert_svg_path(&rendered[0].svg, "M 0.00 0.00 L 30.00 40.00");
+        }
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn drawing_path_after_close_starts_a_new_contour_at_the_closed_origin() {
+    // This matches the pinned Skia `close-then-{line,quad,cubic}` capture:
+    // after a nonempty contour is closed, the next draw verb gets an implicit
+    // Move to that contour's start point.
+    let path = native_path(&[
+        (1, &[-5.0, -6.0]),
+        (2, &[-7.0, -8.0]),
+        (6, &[]),
+        (2, &[30.0, 40.0]),
+    ]);
+    let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 8, &path))).unwrap();
+    let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+    assert!(rendered[0].geometry_diagnostics.is_empty());
+    assert_svg_path(&rendered[0].svg, "M -5 -6 L -7 -8 Z M -5 -6 L 30 40");
+}
+
+#[test]
+fn native_arc_paths_render_as_independent_quadratic_contours() {
+    let path = native_path(&[
+        (1, &[3.0, 4.0]),
+        (2, &[8.0, 9.0]),
+        (5, &[0.0, 0.0, 40.0, 40.0, 0.0, 90.0]),
+    ]);
+    for (kind, payload) in [(7, shape_with_path(1, &path)), (8, line(2, 8, &path))] {
+        let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
+        assert!(!has_shape_warning(&parsed));
+        let retained = match parsed.document.pages[0].elements().next().unwrap() {
+            PageElement::Shape(shape) => &shape.path_data,
+            PageElement::Line(line) => &line.path_data,
+            _ => unreachable!(),
+        };
+        assert_eq!(retained, &path);
+        #[cfg(feature = "render")]
+        {
+            let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+            assert!(rendered[0].geometry_diagnostics.is_empty());
+            let tree = roxmltree::Document::parse(&rendered[0].svg).unwrap();
+            let drawing = tree
+                .descendants()
+                .find(|node| node.has_tag_name("path"))
+                .unwrap();
+            let commands = drawing.attribute("d").unwrap();
+            assert_eq!(commands.matches('M').count(), 2, "{commands}");
+            assert_eq!(commands.matches('Q').count(), 2, "{commands}");
+            assert!(!commands.contains('A'), "{commands}");
+        }
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn saved_shape_arc_uses_model_load_while_line_keeps_drawing_path_consumer() {
+    let path = native_path(&[(5, &[5.0, 7.0, 190.0, 73.0, 37.0, 123.0])]);
+    let shape = sdocx::parse_bytes_detailed(&single(7, &shape_with_path(1, &path))).unwrap();
+    let line = sdocx::parse_bytes_detailed(&single(8, &line(2, 8, &path))).unwrap();
+    assert!(!has_shape_warning(&shape));
+    assert!(!has_shape_warning(&line));
+    assert_eq!(
+        as_shape(shape.document.pages[0].elements().next().unwrap()).path_data,
+        path
+    );
+    assert_eq!(
+        as_line(line.document.pages[0].elements().next().unwrap()).path_data,
+        path
+    );
+
+    let shape_svg = &sdocx::render_document_svg(&shape.document, &Default::default())[0].svg;
+    let line_svg = &sdocx::render_document_svg(&line.document, &Default::default())[0].svg;
+    let path_data = |svg: &str| {
+        let xml = roxmltree::Document::parse(svg).unwrap();
+        xml.descendants()
+            .find(|node| node.has_tag_name("path"))
+            .and_then(|node| node.attribute("d"))
+            .unwrap()
+            .to_owned()
+    };
+    assert_ne!(
+        path_data(shape_svg),
+        path_data(line_svg),
+        "ordinary saved shapes pass through Model normalization; lines consume their stored Drawing path"
+    );
+}
+
+#[test]
+fn native_oval_path_is_supported_for_lines() {
+    let path = native_path(&[(7, &[0.0, 0.0, 40.0, 40.0])]);
+    let parsed = sdocx::parse_bytes_detailed(&single(8, &line(2, 8, &path))).unwrap();
+    assert!(!has_shape_warning(&parsed));
+    assert_eq!(
+        as_line(parsed.document.pages[0].elements().next().unwrap()).path_data,
+        path
+    );
+    #[cfg(feature = "render")]
+    {
+        let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+        assert!(rendered[0].geometry_diagnostics.is_empty());
+        assert!(rendered[0].svg.contains("<path "));
+        assert!(!rendered[0].svg.contains("<line "));
+    }
+}
+
+#[test]
+fn native_oval_path_is_supported_for_shapes() {
+    let path = native_path(&[(7, &[0.0, 0.0, 40.0, 40.0])]);
+    let parsed = sdocx::parse_bytes_detailed(&single(7, &shape_with_path(1, &path))).unwrap();
+    assert!(!has_shape_warning(&parsed));
+    assert_eq!(
+        as_shape(parsed.document.pages[0].elements().next().unwrap()).path_data,
+        path
+    );
+    #[cfg(feature = "render")]
+    {
+        let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+        assert!(rendered[0].geometry_diagnostics.is_empty());
+        assert!(rendered[0].svg.contains("<path "));
+    }
+}
+
 fn shape_with_path(kind: u32, path: &[u8]) -> Vec<u8> {
-    let mut fixed = shape_fixed(kind, 30.0);
+    shape_with_path_rotation(kind, path, 30.0)
+}
+
+fn shape_with_path_rotation(kind: u32, path: &[u8], rotation: f32) -> Vec<u8> {
+    let mut fixed = shape_fixed(kind, rotation);
     // Replace the empty sized path; retain one adjustment control point.
     fixed.splice(
         40..45,
@@ -1621,8 +1770,57 @@ fn shape_with_path(kind: u32, path: &[u8]) -> Vec<u8> {
     [base(0.0), outline(), frame(7, 32, &fixed, &shape_fields())].concat()
 }
 
+fn captured_model_display_path(case_name: &str) -> String {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../conformance/shape-normalization.json"
+    ))
+    .unwrap();
+    let case = fixture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == case_name)
+        .unwrap_or_else(|| panic!("missing native normalization case {case_name}"));
+    let mut output = String::new();
+    for (index, segment) in case["display_segments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .enumerate()
+    {
+        let tag = segment[0].as_u64().unwrap();
+        let value = |index: usize| f32::from_bits(segment[index].as_u64().unwrap() as u32);
+        if index != 0 {
+            output.push(' ');
+        }
+        match tag {
+            1 => output.push_str(&format!("M {} {}", value(1), value(2))),
+            2 => output.push_str(&format!("L {} {}", value(1), value(2))),
+            3 => output.push_str(&format!(
+                "Q {} {} {} {}",
+                value(1),
+                value(2),
+                value(5),
+                value(6)
+            )),
+            4 => output.push_str(&format!(
+                "C {} {} {} {} {} {}",
+                value(1),
+                value(2),
+                value(3),
+                value(4),
+                value(5),
+                value(6)
+            )),
+            6 => output.push('Z'),
+            other => panic!("unexpected native display verb {other}"),
+        }
+    }
+    output
+}
+
 #[test]
-fn native_shape_paths_override_templates_and_already_include_rotation() {
+fn native_shape_paths_override_templates_and_follow_model_display_normalization() {
     let path = native_path(&[
         (1, &[10.0, 20.0]),
         (2, &[90.0, 25.0]),
@@ -1643,7 +1841,7 @@ fn native_shape_paths_override_templates_and_already_include_rotation() {
             let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
             assert_svg_path(
                 svg,
-                "M 10.00 20.00 L 90.00 25.00 Q 110.00 30.00 80.00 70.00 C 60.00 90.00 20.00 60.00 10.00 20.00 Z",
+                &captured_model_display_path("shape-test-path-rotated-input-frame"),
             );
             assert!(svg.contains("fill=\"#ff0000\" fill-opacity=\"0.2510\""));
             assert!(!svg.contains("rotate("));
@@ -1665,7 +1863,10 @@ fn saved_vector_paths_keep_fractional_commands_and_source_bytes() {
         (4, &[b, a, a, b, b, b]),
         (6, &[]),
     ]);
-    for (kind, payload) in [(7, shape_with_path(4, &path)), (8, line(2, 8, &path))] {
+    for (kind, payload) in [
+        (7, shape_with_path_rotation(4, &path, 0.0)),
+        (8, line(2, 8, &path)),
+    ] {
         let parsed = sdocx::parse_bytes_detailed(&single(kind, &payload)).unwrap();
         let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
         assert!(rendered[0].geometry_diagnostics.is_empty());
@@ -1770,8 +1971,10 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
     trailing.push(0xff);
     for (index, path) in [
         native_path(&[(1, &[1.0, 2.0]), (99, &[])]),
-        native_path(&[(1, &[1.0, 2.0]), (5, &[0.0; 6])]),
-        native_path(&[(2, &[1.0, 2.0])]),
+        native_path(&[
+            (1, &[1.0, 2.0]),
+            (5, &[0.0, 0.0, f64::MAX, 40.0, 0.0, 90.0]),
+        ]),
         trailing,
     ]
     .into_iter()
@@ -1791,8 +1994,10 @@ fn unsupported_shape_paths_do_not_fall_back_to_plausible_geometry() {
             assert_geometry_issue(
                 &parsed,
                 &rendered[0],
-                if index == 3 {
+                if index == 2 {
                     sdocx::GeometryDiagnosticKind::InvalidPath
+                } else if index == 1 {
+                    sdocx::GeometryDiagnosticKind::UnrepresentablePath
                 } else {
                     sdocx::GeometryDiagnosticKind::UnsupportedPath
                 },
@@ -1994,7 +2199,12 @@ fn assert_svg_path(svg: &str, expected: &str) {
         document
             .descendants()
             .filter_map(|node| node.attribute("d"))
-            .any(|data| commands(data) == expected)
+            .any(|data| commands(data) == expected),
+        "expected path {expected:?}; actual paths: {:?}",
+        document
+            .descendants()
+            .filter_map(|node| node.attribute("d"))
+            .collect::<Vec<_>>()
     );
 }
 

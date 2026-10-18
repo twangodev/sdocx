@@ -1,5 +1,5 @@
 //! Model's native unit-arc builder and distinct rectangle mapping (0x211418).
-//! Kept test-only until the outer Model arc and saved-load routes are verified.
+//! Used after the saved-load outer helper computes ellipse-ray parameters.
 
 const PI: f64 = f64::from_bits(0x4009_21fb_5444_2d18);
 

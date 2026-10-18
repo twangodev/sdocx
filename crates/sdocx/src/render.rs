@@ -1151,6 +1151,23 @@ fn render_element(
 // Both shape and line writers serialize the drawing path in page coordinates,
 // including rotation. Reject an unsupported path as a whole, never draw a prefix.
 fn native_svg_path(bytes: &[u8]) -> Result<Data, GeometryDiagnosticKind> {
+    let mut commands = Vec::new();
+    let parsed = crate::shape::native_path::visit_drawing_path(bytes, |command| {
+        commands.push(command);
+    });
+    let (size, supported) = parsed.map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
+    if size != bytes.len() {
+        return Err(GeometryDiagnosticKind::InvalidPath);
+    }
+    if !supported {
+        return Err(GeometryDiagnosticKind::UnsupportedPath);
+    }
+    native_svg_commands(commands)
+}
+
+fn native_svg_commands(
+    commands: impl IntoIterator<Item = crate::shape::NativePathCommand>,
+) -> Result<Data, GeometryDiagnosticKind> {
     use crate::shape::NativePathCommand;
 
     fn coordinates<const N: usize>(values: [f64; N]) -> Option<[f32; N]> {
@@ -1161,47 +1178,69 @@ fn native_svg_path(bytes: &[u8]) -> Result<Data, GeometryDiagnosticKind> {
             .then_some(values)
     }
 
-    fn append(data: Data, command: NativePathCommand) -> Option<Data> {
-        Some(match command {
+    let mut prepared = Vec::new();
+    let mut contour_start = None;
+    let mut after_close = false;
+    for command in commands {
+        match command {
             NativePathCommand::Move(point) => {
-                let [x, y] = coordinates(point)?;
+                contour_start = Some(point);
+                after_close = false;
+                prepared.push(NativePathCommand::Move(point));
+            }
+            NativePathCommand::Close => {
+                if contour_start.is_some() && !after_close {
+                    prepared.push(NativePathCommand::Close);
+                    after_close = true;
+                }
+            }
+            draw @ (NativePathCommand::Line(_)
+            | NativePathCommand::Quadratic(_)
+            | NativePathCommand::Cubic(_)) => {
+                if after_close {
+                    prepared.push(NativePathCommand::Move(
+                        contour_start.expect("closed contour"),
+                    ));
+                    after_close = false;
+                } else if contour_start.is_none() {
+                    contour_start = Some([0.0, 0.0]);
+                    prepared.push(NativePathCommand::Move([0.0, 0.0]));
+                }
+                prepared.push(draw);
+            }
+            primitive @ (NativePathCommand::Arc(_) | NativePathCommand::Oval(_)) => {
+                prepared.push(primitive);
+            }
+        }
+    }
+    let mut data = Data::new();
+    for command in prepared {
+        data = match command {
+            NativePathCommand::Move(point) => {
+                let [x, y] =
+                    coordinates(point).ok_or(GeometryDiagnosticKind::UnrepresentablePath)?;
                 data.move_to((x, y))
             }
             NativePathCommand::Line(point) => {
-                let [x, y] = coordinates(point)?;
+                let [x, y] =
+                    coordinates(point).ok_or(GeometryDiagnosticKind::UnrepresentablePath)?;
                 data.line_to((x, y))
             }
             NativePathCommand::Quadratic([[x1, y1], [x, y]]) => {
-                let [x1, y1, x, y] = coordinates([x1, y1, x, y])?;
+                let [x1, y1, x, y] = coordinates([x1, y1, x, y])
+                    .ok_or(GeometryDiagnosticKind::UnrepresentablePath)?;
                 data.quadratic_curve_to((x1, y1, x, y))
             }
             NativePathCommand::Cubic([[x1, y1], [x2, y2], [x, y]]) => {
-                let [x1, y1, x2, y2, x, y] = coordinates([x1, y1, x2, y2, x, y])?;
+                let [x1, y1, x2, y2, x, y] = coordinates([x1, y1, x2, y2, x, y])
+                    .ok_or(GeometryDiagnosticKind::UnrepresentablePath)?;
                 data.cubic_curve_to((x1, y1, x2, y2, x, y))
             }
             NativePathCommand::Close => data.close(),
-            NativePathCommand::Arc(_) | NativePathCommand::Oval(_) => data,
-        })
-    }
-
-    let mut data = Data::new();
-    let mut representable = true;
-    let parsed = crate::shape::visit_path(bytes, |command| {
-        if let Some(next) = append(std::mem::take(&mut data), command) {
-            data = next;
-        } else {
-            representable = false;
-        }
-    });
-    let (size, supported) = parsed.map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
-    if size != bytes.len() {
-        return Err(GeometryDiagnosticKind::InvalidPath);
-    }
-    if !supported {
-        return Err(GeometryDiagnosticKind::UnsupportedPath);
-    }
-    if !representable {
-        return Err(GeometryDiagnosticKind::UnrepresentablePath);
+            NativePathCommand::Arc(_) | NativePathCommand::Oval(_) => {
+                return Err(GeometryDiagnosticKind::UnsupportedPath);
+            }
+        };
     }
     Ok(data)
 }
@@ -1216,7 +1255,51 @@ fn render_shape(
     let path = if shape.path_data.is_empty() {
         None
     } else {
-        Some(native_svg_path(&shape.path_data)?)
+        let (consumed, _) = crate::shape::visit_path(&shape.path_data, |_| {})
+            .map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
+        if consumed != shape.path_data.len() {
+            return Err(GeometryDiagnosticKind::InvalidPath);
+        }
+        let normalized = crate::shape::native_path::normalize_model_path(
+            &shape.path_data,
+            [
+                shape.geometry_bbox.x_min,
+                shape.geometry_bbox.y_min,
+                shape.geometry_bbox.x_max,
+                shape.geometry_bbox.y_max,
+            ],
+            shape.rotation_degrees,
+            shape.horizontal_flip,
+            shape.vertical_flip,
+            true,
+        )
+        .map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
+        let Some(normalized) = normalized else {
+            let mut narrowed_finite = true;
+            crate::shape::visit_path(&shape.path_data, |command| {
+                use crate::shape::NativePathCommand;
+                let values: Vec<f64> = match command {
+                    NativePathCommand::Move([x, y]) | NativePathCommand::Line([x, y]) => {
+                        vec![x, y]
+                    }
+                    NativePathCommand::Quadratic([[x1, y1], [x, y]]) => vec![x1, y1, x, y],
+                    NativePathCommand::Cubic([[x1, y1], [x2, y2], [x, y]]) => {
+                        vec![x1, y1, x2, y2, x, y]
+                    }
+                    NativePathCommand::Arc(values) => values.to_vec(),
+                    NativePathCommand::Oval(values) => values.to_vec(),
+                    NativePathCommand::Close => Vec::new(),
+                };
+                narrowed_finite &= values.iter().all(|value| (*value as f32).is_finite());
+            })
+            .map_err(|_| GeometryDiagnosticKind::InvalidPath)?;
+            return Err(if narrowed_finite {
+                GeometryDiagnosticKind::UnsupportedPath
+            } else {
+                GeometryDiagnosticKind::UnrepresentablePath
+            });
+        };
+        Some(native_svg_commands(normalized.commands)?)
     };
     let bbox = shape.geometry_bbox;
     let width = bbox.x_max - bbox.x_min;

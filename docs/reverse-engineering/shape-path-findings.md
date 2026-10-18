@@ -765,23 +765,28 @@ consumer boundaries, not executed export or saved pathless-shape appearance.
 `NativeShape::path_data` and `NativeLine::path_data` retain raw WDoc path
 bytes. `shape::visit_path` already identifies all seven known verbs and their
 `f64` payloads, including typed `Arc([f64; 6])` and `Oval([f64; 4])`.
-Arc and oval are therefore retained and structurally understood; they are
-explicitly excluded from supported rendering. A path containing either is
-rejected as a whole by `render::native_svg_path`, so even its otherwise
-supported line/cubic prefix is not painted. A nonempty saved shape path does
-not fall back to a guessed basic template when rejected.
+The ordinary saved-shape route now mirrors the recovered Model-before-Drawing
+pipeline: `shape::native_path::normalize_model_path` narrows M/L/Q/C coordinates,
+expands Model Arc/Oval helpers, applies endpoint linking and input-frame
+rotation, and returns the derived display path while preserving raw
+`path_data`. The native normalization captures cover linked and unlinked
+arcs, full-turn source mutation, reversed bounds/orientation, ovals, and simple
+paths at zero and nonzero angles. Production typed-path tests compare active
+segment fields against these native display captures. `NativeShape` continues
+to expose serialized flip bits; derived orientation is not written back into
+those source properties.
 
-The visitor also requires an initial move for supported paths. Native arc
-and oval drawing create their own initial move, so this Rust condition
-excludes additional valid native contours independently of the unsupported
-verb check. Unknown commands remain opaque; trailing bytes prevent an exact
-render. Non-finite saved doubles are a Rust format error before rendering.
-
-Supported saved M/L/Q/C/Z paths directly narrow their `f64` coordinates to the
-`svg` 0.18 library's `f32` path parameters without fixed decimal rounding.
-A non-finite narrowed coordinate rejects the entire drawable path. Raw saved
-path bytes remain unchanged; float narrowing still separates source precision
-from SVG output and does not establish native appearance parity.
+The Drawing line consumer remains a separate route through
+`visit_drawing_path`; it expands Oval with Drawing's direction-1
+Move/eight-Quadratic/Close sequence and keeps Arc Drawing semantics distinct
+from Model's saved-shape normalization. Direct Skia captures show that an
+initial Line/Quad/Cubic on an empty path implicitly starts at `(0,0)`, so SVG
+emission supplies the corresponding initial move for saved commands lacking
+an explicit Move. Close on an empty path is a no-op; after a nonempty contour
+is closed, the next draw verb begins a new contour at its start point.
+Unsupported or unrepresentable helpers reject the drawable path as a whole;
+malformed/trailing bytes remain an invalid path. These command-level
+comparisons do not establish paired Samsung appearance parity.
 
 One typed retained command representation can describe saved geometry and
 feed vector outputs. Arc start/sweep angles must remain named scalar fields,

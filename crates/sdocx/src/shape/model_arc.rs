@@ -1,4 +1,4 @@
-//! Test-only reconstruction of Model's outer arc helper (0x211814).
+//! Model's outer arc helper (0x211814).
 //!
 //! Model treats its input angles as rays from the rectangle center. It
 //! intersects those rays with the ellipse, converts the intersections back to
