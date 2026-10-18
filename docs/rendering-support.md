@@ -98,7 +98,10 @@ separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
-uses the generic approximation, without a shipped native width-law guarantee.
+uses the generic approximation. A test-only numeric core matches twenty-one
+configured-context native redraw cases and four setter cases, including both
+curve modes, fixed width and a degenerate curve. The saved
+Drawing resolution is traced; RTV1 paint and admission integration remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.
@@ -106,8 +109,9 @@ The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-finding
 establishes orientation-derived nib geometry and reused state; this profile
 also uses the generic approximation in Rust.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
-establishes an integer-size diagonal core and separate fixed-width bounds;
-Oblique also uses the generic pressure approximation in Rust.
+establishes an integer-size diagonal core and separate fixed-width bounds.
+A hash-pinned helper oracle captures core/fringe geometry and triangles;
+Oblique still uses the generic pressure approximation in Rust.
 
 ## Text and embedded layout
 
@@ -133,7 +137,7 @@ extending its guarantees.
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |
 | Shapes and lines | Basic templates, supported saved move/line/quadratic/cubic/close paths, rotation, solid fills/outlines and embedded text; bounded type-7 linear/radial fill/outline gradients; named positive-width dashes and bounded straight-line arrowheads | Gradients require admitted common frames and consumed stops; rectangular/other gradients, type-8 gradient outlines, image fills, specialized templates, arc/oval commands, connectors, pen simulation and compound styles remain incomplete. Arrowheads require simple solid-color straight lines with admitted coordinates, widths, lengths and separate cleanup regions; curved/short/overlapping contexts remain diagnosed. Style inputs and SDK vector transport are checked separately from paired appearance coverage. See [outline styles](reverse-engineering/shape-style-findings.md#rust-dash-projection), [arrow admission](reverse-engineering/shape-style-findings.md#bounded-rust-arrow-projection), [paint admission](reverse-engineering/shape-fill-findings.md#consequences-for-this-codebase) and [shape/line findings](reverse-engineering/shape-line-findings.md). |
-| Images | Media resolution, placement, rotation and supported original-placement rectangular cropping | Pixel crops without original placement, border/original references, fill transforms, tiling and active nine-patch remain incomplete. Nonrectangular inherited image paths produce diagnostics; the traced native effect route uses a rectangle. See [image findings](reverse-engineering/image-findings.md) and [image-filled vector shapes](reverse-engineering/image-effects-findings.md#ordinary-image-effect-paths-differ-from-image-filled-vector-shapes). |
+| Images | Media resolution, placement, rotation, original-placement cropping and in-bounds source-pixel crop geometry | Crop-only bitmap resampling remains diagnosed; native filtering, out-of-bounds crops, border/original references, fill transforms, tiling and active nine-patch remain incomplete. Nonrectangular inherited image paths produce diagnostics; the traced native effect route uses a rectangle. See [image findings](reverse-engineering/image-findings.md) and [image-filled vector shapes](reverse-engineering/image-effects-findings.md#ordinary-image-effect-paths-differ-from-image-filled-vector-shapes). |
 | GIF image sources | No typed GIF asset admission or animation renderer | Native animation opens the current main file; reader replacement has separate loader/restart gates. See [GIF source findings](reverse-engineering/image-findings.md#native-gif-import-and-current-file-animation). |
 | Page paper | Solid color and supported built-in ruled/dotted templates | Image/URI-backed and rotated paper are rejected by [template admission](../crates/sdocx/src/page_background.rs); other templates are retained without drawing. |
 | Page custom objects | No typed custom-list decoding or rendering | Separate from layer objects and their diagnostics. Sticky notes can bind nested `.sdocx` source; original page/archive bytes remain required. See [custom source ownership](reverse-engineering/vector-retention-findings.md#page-custom-objects-and-attached-source). |

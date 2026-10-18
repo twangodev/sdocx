@@ -123,6 +123,33 @@ git show 40de721:conformance/fountain_v17_managed_render.py > /tmp/fountain_v17_
 Experiments import other scripts from that revision; use a separate checkout
 of `40de721` to rerun them together.
 
+## Additional native pen oracles
+
+These optional runners require the pinned APK libraries and local research
+runtime. They preserve explicit host-state and device-appearance boundaries:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/inkpen_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/inkpen_native.py --fixture conformance/inkpen-setters-v4.json --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/smpath_cubic_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_redraw_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil_native.py
+python3 conformance/inkpen_paint_native.py --check-fixture
+```
+
+The test-only InkPen core matches 21 curve/no-curve redraw cases and four
+size/fixed-width setter cases. Base cubic captures check three measured lengths
+and 21 sampled positions bit-for-bit. Oblique's test-only mesh core matches
+19 native helper cases; four separate saved-redraw captures retain sample and
+terminal boundaries. Neither core is routed into production rendering.
+
+Pencil3 has six direct particle-buffer cases and five saved-redraw cases using
+an AOSP bionic RNG model. InkPen's seven-case paint replay executes embedded
+shaders on the recorded host GLES implementation. These witnesses do not
+establish Samsung's runtime libc, Android pixels or SVG/PDF appearance parity.
+Use `--write-fixture` only to replace reviewed native observations.
+
 ## Visual comparison
 
 The local runner validates both file hashes and visible page counts, converts
