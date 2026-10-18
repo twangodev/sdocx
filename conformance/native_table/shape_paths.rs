@@ -447,6 +447,110 @@ fn quad_output(
             .unwrap_or_default()
     )
 }
+
+fn implicit_current_point_output(machine: &Machine, fill: u8, kind: u8) -> String {
+    let (name, function, values, close_first, seed_contour):
+        (&str, u64, &[f32], bool, bool) = match kind {
+        2 => ("line-to-empty", 0x1d5018, &[30.0, 40.0], false, false),
+        3 => (
+            "quad-to-empty",
+            0x1d51e0,
+            &[10.0, 20.0, 30.0, 40.0],
+            false,
+            false,
+        ),
+        4 => (
+            "cubic-to-empty",
+            0x1d5698,
+            &[10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
+            false,
+            false,
+        ),
+        5 => ("close-empty", 0x1d58b8, &[], false, false),
+        6 => ("close-then-line", 0x1d5018, &[30.0, 40.0], true, false),
+        7 => (
+            "close-then-quad",
+            0x1d51e0,
+            &[10.0, 20.0, 30.0, 40.0],
+            true,
+            false,
+        ),
+        8 => (
+            "close-then-cubic",
+            0x1d5698,
+            &[10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
+            true,
+            false,
+        ),
+        9 => ("line-close-then-line", 0x1d5018, &[30.0, 40.0], true, true),
+        10 => (
+            "line-close-then-quad",
+            0x1d51e0,
+            &[10.0, 20.0, 30.0, 40.0],
+            true,
+            true,
+        ),
+        11 => (
+            "line-close-then-cubic",
+            0x1d5698,
+            &[10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
+            true,
+            true,
+        ),
+        _ => unreachable!(),
+    };
+    write(machine.engine, PATH_OBJECT, &[fill; 64]);
+    write(machine.engine, ITERATOR, &[fill; 64]);
+    machine.call(SKIA + 0x1d383c, &[PATH_OBJECT]);
+    if seed_contour {
+        register(machine.engine, 136, u64::from((-5.0f32).to_bits()));
+        register(machine.engine, 137, u64::from((-6.0f32).to_bits()));
+        machine.call(SKIA + 0x1d4e90, &[PATH_OBJECT]);
+        register(machine.engine, 136, u64::from((-7.0f32).to_bits()));
+        register(machine.engine, 137, u64::from((-8.0f32).to_bits()));
+        machine.call(SKIA + 0x1d5018, &[PATH_OBJECT]);
+    }
+    if close_first {
+        machine.call(SKIA + 0x1d58b8, &[PATH_OBJECT]);
+    }
+    for (index, value) in values.iter().enumerate() {
+        register(machine.engine, 136 + index as i32, u64::from(value.to_bits()));
+    }
+    machine.call(SKIA + function, &[PATH_OBJECT]);
+    let point_count = machine.call(SKIA + 0x1d4c20, &[PATH_OBJECT]);
+    let verb_count = machine.call(SKIA + 0x1d4c90, &[PATH_OBJECT]);
+    machine.call(SKIA + 0x1d855c, &[ITERATOR]);
+    machine.call(SKIA + 0x1d858c, &[ITERATOR, PATH_OBJECT]);
+    let mut commands = Vec::new();
+    let mut done = false;
+    for _ in 0..8 {
+        write(machine.engine, OUTPUT, &[fill; 128]);
+        let verb = machine.call(SKIA + 0x1d41ac, &[ITERATOR, OUTPUT]);
+        let points = match verb {
+            0 => 1,
+            1 => 2,
+            2 | 3 => 3,
+            4 => 4,
+            5 | 6 => 0,
+            _ => panic!("unknown native verb {verb}"),
+        };
+        let point_bits: Vec<_> = (0..points * 2)
+            .map(|index| read_u32(machine.engine, OUTPUT + index * 4))
+            .collect();
+        commands.push(format!("{{\"verb\":{verb},\"point_bits\":{point_bits:?}}}"));
+        if verb == 6 {
+            done = true;
+            break;
+        }
+    }
+    assert!(done);
+    machine.call(SKIA + 0x1d3988, &[PATH_OBJECT]);
+    format!(
+        "{{\"name\":{name:?},\"point_count\":{point_count},\"verb_count\":{verb_count},\"commands\":[{}]}}",
+        commands.join(",")
+    )
+}
+
 fn outputs(machine: &Machine, fill: u8) -> String {
     let r = [10., 20., 210., 120.];
     let inputs = [
@@ -556,11 +660,16 @@ fn outputs(machine: &Machine, fill: u8) -> String {
             )
         })
         .collect();
+    let implicit_current_point = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        .into_iter()
+        .map(|kind| implicit_current_point_output(machine, fill, kind))
+        .collect::<Vec<_>>();
     format!(
-        "{{\"paths\":[\n{}\n],\"direct_quad_arcs\":[\n{}\n],\"model_arc_helpers\":[\n{}\n]}}",
+        "{{\"paths\":[\n{}\n],\"direct_quad_arcs\":[\n{}\n],\"model_arc_helpers\":[\n{}\n],\"implicit_current_point\":[{}]}}",
         paths.join(",\n"),
         quadratics.join(",\n"),
-        model.join(",\n")
+        model.join(",\n"),
+        implicit_current_point.join(",")
     )
 }
 pub(super) fn capture(machine: &mut Machine, model: &Path, base: &Path, skia: &Path) {
@@ -1475,6 +1584,112 @@ pub(super) fn capture_normalization(model: &Path, base: &Path, skia: &Path) {
             90.0f32.to_bits(),
         ],
     ];
+    let quad_arc_one_ulp_miss = [
+        [
+            3,
+            100.0f32.to_bits(),
+            20.0f32.to_bits(),
+            0,
+            0,
+            f32::from_bits(205.0f32.to_bits() + 1).to_bits(),
+            60.0f32.to_bits(),
+        ],
+        [
+            5,
+            5.0f32.to_bits(),
+            10.0f32.to_bits(),
+            200.0f32.to_bits(),
+            100.0f32.to_bits(),
+            0.0f32.to_bits(),
+            90.0f32.to_bits(),
+        ],
+    ];
+    let cubic_arc_exact = [
+        [
+            4,
+            100.0f32.to_bits(),
+            20.0f32.to_bits(),
+            170.0f32.to_bits(),
+            50.0f32.to_bits(),
+            205.0f32.to_bits(),
+            60.0f32.to_bits(),
+        ],
+        [
+            5,
+            5.0f32.to_bits(),
+            10.0f32.to_bits(),
+            200.0f32.to_bits(),
+            100.0f32.to_bits(),
+            0.0f32.to_bits(),
+            90.0f32.to_bits(),
+        ],
+    ];
+    let cubic_arc_one_ulp_miss = [
+        [
+            4,
+            100.0f32.to_bits(),
+            20.0f32.to_bits(),
+            170.0f32.to_bits(),
+            50.0f32.to_bits(),
+            f32::from_bits(205.0f32.to_bits() + 1).to_bits(),
+            60.0f32.to_bits(),
+        ],
+        [
+            5,
+            5.0f32.to_bits(),
+            10.0f32.to_bits(),
+            200.0f32.to_bits(),
+            100.0f32.to_bits(),
+            0.0f32.to_bits(),
+            90.0f32.to_bits(),
+        ],
+    ];
+    let simple_saved_path = [
+        [1, 13.25f32.to_bits(), 17.5f32.to_bits(), 0, 0, 0, 0],
+        [2, 45.125f32.to_bits(), 19.75f32.to_bits(), 0, 0, 0, 0],
+        [
+            3,
+            50.25f32.to_bits(),
+            30.5f32.to_bits(),
+            0,
+            0,
+            72.75f32.to_bits(),
+            62.5f32.to_bits(),
+        ],
+        [
+            4,
+            60.125f32.to_bits(),
+            75.5f32.to_bits(),
+            75.25f32.to_bits(),
+            80.75f32.to_bits(),
+            92.5f32.to_bits(),
+            99.125f32.to_bits(),
+        ],
+        [6, 0, 0, 0, 0, 0, 0],
+    ];
+    let simple_template_path = [
+        [1, 10.0f32.to_bits(), 20.0f32.to_bits(), 0, 0, 0, 0],
+        [2, 90.0f32.to_bits(), 25.0f32.to_bits(), 0, 0, 0, 0],
+        [
+            3,
+            110.0f32.to_bits(),
+            30.0f32.to_bits(),
+            0,
+            0,
+            80.0f32.to_bits(),
+            70.0f32.to_bits(),
+        ],
+        [
+            4,
+            60.0f32.to_bits(),
+            90.0f32.to_bits(),
+            20.0f32.to_bits(),
+            60.0f32.to_bits(),
+            10.0f32.to_bits(),
+            20.0f32.to_bits(),
+        ],
+        [6, 0, 0, 0, 0, 0, 0],
+    ];
     let cases = [
         NormalizeCase {
             name: "arc-quarter-extent",
@@ -1557,6 +1772,30 @@ pub(super) fn capture_normalization(model: &Path, base: &Path, skia: &Path) {
             input_frame: 0,
         },
         NormalizeCase {
+            name: "quadratic-endpoint-one-ulp-miss",
+            segments: &quad_arc_one_ulp_miss,
+            bounds: r,
+            angle: 0.0,
+            flips: [0, 0],
+            input_frame: 0,
+        },
+        NormalizeCase {
+            name: "cubic-endpoint-exact-link",
+            segments: &cubic_arc_exact,
+            bounds: r,
+            angle: 0.0,
+            flips: [0, 0],
+            input_frame: 0,
+        },
+        NormalizeCase {
+            name: "cubic-endpoint-one-ulp-miss",
+            segments: &cubic_arc_one_ulp_miss,
+            bounds: r,
+            angle: 0.0,
+            flips: [0, 0],
+            input_frame: 0,
+        },
+        NormalizeCase {
             name: "arc-inverse-frame-rotation",
             segments: &[[
                 5,
@@ -1619,6 +1858,60 @@ pub(super) fn capture_normalization(model: &Path, base: &Path, skia: &Path) {
             angle: 0.0,
             flips: [0, 0],
             input_frame: 0,
+        },
+        NormalizeCase {
+            name: "simple-saved-path-zero-angle-input-frame",
+            segments: &simple_saved_path,
+            bounds: r,
+            angle: 0.0,
+            flips: [0, 0],
+            input_frame: 1,
+        },
+        NormalizeCase {
+            name: "simple-saved-path-rotated-input-frame",
+            segments: &simple_saved_path,
+            bounds: r,
+            angle: 37.0,
+            flips: [0, 0],
+            input_frame: 1,
+        },
+        NormalizeCase {
+            name: "simple-template-path-rotated-input-frame",
+            segments: &simple_template_path,
+            bounds: [-10.0, 0.0, 90.0, 60.0],
+            angle: 30.0,
+            flips: [0, 0],
+            input_frame: 1,
+        },
+        NormalizeCase {
+            name: "shape-test-path-rotated-input-frame",
+            segments: &[
+                [1, 10.0f32.to_bits(), 20.0f32.to_bits(), 0, 0, 0, 0],
+                [2, 90.0f32.to_bits(), 25.0f32.to_bits(), 0, 0, 0, 0],
+                [
+                    3,
+                    110.0f32.to_bits(),
+                    30.0f32.to_bits(),
+                    0,
+                    0,
+                    80.0f32.to_bits(),
+                    70.0f32.to_bits(),
+                ],
+                [
+                    4,
+                    60.0f32.to_bits(),
+                    90.0f32.to_bits(),
+                    20.0f32.to_bits(),
+                    60.0f32.to_bits(),
+                    10.0f32.to_bits(),
+                    20.0f32.to_bits(),
+                ],
+                [6, 0, 0, 0, 0, 0, 0],
+            ],
+            bounds: [-10.0, 0.0, 90.0, 60.0],
+            angle: 30.0,
+            flips: [0, 0],
+            input_frame: 1,
         },
     ];
     let cases = cases
