@@ -9,6 +9,8 @@ use super::path::{P, Quad};
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct NibState {
     pub(super) angle_degrees: f32,
+    /// Retained drawable members +276/+280 in native order (sine, cosine).
+    /// `drawPoint` writes these into Vector4 in reverse order.
     pub(super) direction: [f32; 2],
     pub(super) initial_pending: bool,
     pub(super) movement_armed: bool,
@@ -31,6 +33,206 @@ pub(super) struct SavedHistoryOutput {
     /// Exclusive emitted-vector count after each supplied historical point.
     pub(super) sample_ends: Vec<usize>,
     pub(super) state: SavedHistoryState,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct EndPenOutput {
+    pub(super) vectors: Vec<[f32; 4]>,
+    /// Absent when native endPen takes the initial-point branch and builds no path.
+    pub(super) path_length: Option<f32>,
+    pub(super) point_extent: f32,
+}
+
+/// Apply RedrawPen's per-invocation initialization before its historical
+/// sample loop. The drawable retains nib controls/orientation across reuse,
+/// while accepted/start coordinates and the two lifecycle flags are reset
+/// from the first saved record.
+pub(super) fn prepare_saved_history(
+    history: &[[f32; 3]],
+    mut state: SavedHistoryState,
+) -> Option<SavedHistoryState> {
+    let first = history.first()?;
+    state.accepted = P {
+        x: first[0],
+        y: first[1],
+    };
+    state.start = state.accepted;
+    state.nib.initial_pending = true;
+    state.nib.movement_armed = true;
+    Some(state)
+}
+
+/// Reconstruct the separate terminal endPen sampling loop from retained
+/// drawable state and the final event endpoint. Its repeat scale uses full
+/// pen size; each emitted drawPoint uses half size and retains nib direction.
+pub(super) fn terminal_end_pen_vectors(
+    state: SavedHistoryState,
+    endpoint: P,
+    pen_size: f32,
+) -> Option<EndPenOutput> {
+    if !pen_size.is_finite() || pen_size < 0.0 {
+        return None;
+    }
+    if state.nib.initial_pending {
+        return Some(EndPenOutput {
+            vectors: vec![[
+                state.accepted.x,
+                state.accepted.y,
+                state.nib.direction[1],
+                state.nib.direction[0],
+            ]],
+            path_length: None,
+            point_extent: (pen_size * 0.5).max(1.0),
+        });
+    }
+    let path = if state.nib.movement_armed {
+        TerminalPath::Cubic(TerminalCubic::new([
+            state.start,
+            state.control,
+            state.control.mid(endpoint),
+            endpoint,
+        ]))
+    } else {
+        TerminalPath::Quadratic(Quad::new(state.start, state.control, endpoint))
+    };
+    let length = path.length();
+    if !length.is_finite() || length < 0.0 {
+        return None;
+    }
+    let count = repeat_count(length, pen_size)?;
+    let mut vectors = Vec::new();
+    let mut distance = 0.0_f32;
+    let step = length / count as f32;
+    for _ in 0..count {
+        // SmPath::getPosTan returns false for an empty subdivision list.
+        if length == 0.0 {
+            break;
+        }
+        let position = path.at(distance)?;
+        vectors.push([
+            position.x,
+            position.y,
+            state.nib.direction[1],
+            state.nib.direction[0],
+        ]);
+        distance += step;
+    }
+    Some(EndPenOutput {
+        vectors,
+        path_length: Some(length),
+        point_extent: (pen_size * 0.5).max(1.0),
+    })
+}
+
+enum TerminalPath {
+    Quadratic(Quad),
+    Cubic(TerminalCubic),
+}
+
+impl TerminalPath {
+    fn length(&self) -> f32 {
+        match self {
+            Self::Quadratic(path) => path.length,
+            Self::Cubic(path) => path.length,
+        }
+    }
+
+    fn at(&self, distance: f32) -> Option<P> {
+        match self {
+            Self::Quadratic(path) if path.length > 0.0 => Some(path.at(distance)),
+            Self::Cubic(path) if !path.segments.is_empty() => Some(path.at(distance)),
+            _ => None,
+        }
+    }
+}
+
+/// Base SmPath cubic subdivision used by GLV1 endPen.
+struct TerminalCubic {
+    points: [P; 4],
+    segments: Vec<(f32, u16)>,
+    length: f32,
+}
+
+impl TerminalCubic {
+    fn new(points: [P; 4]) -> Self {
+        let mut path = Self {
+            points,
+            segments: Vec::new(),
+            length: 0.0,
+        };
+        path.split(points, 0, 32767);
+        path
+    }
+
+    fn split(&mut self, p: [P; 4], t0: u16, t1: u16) {
+        let line = |a: P, b: P, t: f32| P {
+            x: (b.x - a.x).mul_add(t, a.x),
+            y: (b.y - a.y).mul_add(t, a.y),
+        };
+        let one = line(p[0], p[3], f32::from_bits(0x3eaa_aaab));
+        let two = line(p[0], p[3], f32::from_bits(0x3f2a_aaab));
+        let deviation_one = (p[1].x - one.x).abs().max((p[1].y - one.y).abs());
+        let deviation_two = (p[2].x - two.x).abs().max((p[2].y - two.y).abs());
+        if t1 - t0 >= 1024 && (deviation_one > 0.5 || deviation_two > 0.5) {
+            let a = p[0].mid(p[1]);
+            let b = p[1].mid(p[2]);
+            let c = p[2].mid(p[3]);
+            let d = a.mid(b);
+            let e = b.mid(c);
+            let f = d.mid(e);
+            let t = (t0 + t1) / 2;
+            self.split([p[0], a, d, f], t0, t);
+            self.split([f, e, c, p[3]], t, t1);
+        } else {
+            let next = self.length + p[0].sub(p[3]).len();
+            if next > self.length {
+                self.length = next;
+                self.segments.push((next, t1));
+            }
+        }
+    }
+
+    fn at(&self, distance: f32) -> P {
+        let index = self
+            .segments
+            .partition_point(|&(end, _)| end < distance)
+            .min(self.segments.len() - 1);
+        let (start, t0) = if index == 0 {
+            (0.0, 0)
+        } else {
+            self.segments[index - 1]
+        };
+        let (end, t1) = self.segments[index];
+        let scale = f32::from_bits(0x3800_00fd);
+        let t0 = t0 as f32 * scale;
+        let t1 = t1 as f32 * scale;
+        let t = t0 + (distance - start) * (t1 - t0) / (end - start);
+        let eval = |a: f32, b: f32, c: f32, d: f32| {
+            if t == 0.0 {
+                return a;
+            }
+            let x = (b - a).mul_add(t, a);
+            let y = (c - b).mul_add(t, b);
+            let z = (d - c).mul_add(t, c);
+            let q = (y - x).mul_add(t, x);
+            let r = (z - y).mul_add(t, y);
+            (r - q).mul_add(t, q)
+        };
+        P {
+            x: eval(
+                self.points[0].x,
+                self.points[1].x,
+                self.points[2].x,
+                self.points[3].x,
+            ),
+            y: eval(
+                self.points[0].y,
+                self.points[1].y,
+                self.points[2].y,
+                self.points[3].y,
+            ),
+        }
+    }
 }
 
 /// Reconstruct the finite history-to-AddPoint sampling stage. `history` starts
@@ -93,6 +295,7 @@ pub(super) fn saved_history_vectors(
                             last_direction[0],
                             last_direction[1],
                         ]);
+                        state.nib.direction = [last_direction[1], last_direction[0]];
                         state.start = position;
                         distance += distance_step;
                         angle += angle_step;
@@ -102,7 +305,7 @@ pub(super) fn saved_history_vectors(
                     .vectors
                     .push([midpoint.x, midpoint.y, last_direction[0], last_direction[1]]);
                 state.nib.angle_degrees = next_angle;
-                state.nib.direction = last_direction;
+                state.nib.direction = [last_direction[1], last_direction[0]];
             }
             state.control = current;
             state.nib.movement_armed = false;
@@ -397,7 +600,8 @@ pub(super) fn repeat_count(path_length: f32, second_argument: f32) -> Option<u32
 mod tests {
     use super::{
         AddPointInput, MeshBuffer, MeshBuffers, MeshRect, NibState, SavedHistoryState, add_point,
-        advance_angle, orientation_target, repeat_count, saved_history_vectors,
+        advance_angle, orientation_target, prepare_saved_history, repeat_count,
+        saved_history_vectors, terminal_end_pen_vectors,
     };
     use crate::ink::path::P;
 
@@ -792,5 +996,496 @@ mod tests {
             .map(|vector| vector.map(f32::to_bits))
             .collect();
         assert_eq!(actual_bits, expected);
+    }
+
+    #[test]
+    fn captured_saved_history_replays_from_fresh_and_reused_drawable_state() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            for (run_name, run) in case["native"].as_object().unwrap() {
+                let history_key = if run_name == "reused" {
+                    "reuse_history"
+                } else {
+                    "history"
+                };
+                let history: Vec<[f32; 3]> = case[history_key]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|row| {
+                        row.as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|value| value.as_f64().unwrap() as f32)
+                            .collect::<Vec<_>>()
+                            .try_into()
+                            .unwrap()
+                    })
+                    .collect();
+                let states = run["drawable_states"].as_array().unwrap();
+                let entry = states
+                    .iter()
+                    .find(|state| state["phase"] == "redraw_entry")
+                    .unwrap();
+                let read_pair = |name: &str| -> [f32; 2] {
+                    entry[name]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap()
+                };
+                let accepted = read_pair("accepted_bits");
+                let start = read_pair("path_start_bits");
+                let control = read_pair("control_bits");
+                let flags = &entry["flags"];
+                let redraw_state = SavedHistoryState {
+                    nib: NibState {
+                        angle_degrees: f32::from_bits(bits(entry["angle_bits"].as_str().unwrap())),
+                        direction: read_pair("direction_bits"),
+                        initial_pending: flags["initial"].as_u64().unwrap() != 0,
+                        movement_armed: flags["movement_armed"].as_u64().unwrap() != 0,
+                    },
+                    accepted: P {
+                        x: accepted[0],
+                        y: accepted[1],
+                    },
+                    start: P {
+                        x: start[0],
+                        y: start[1],
+                    },
+                    control: P {
+                        x: control[0],
+                        y: control[1],
+                    },
+                };
+                let prepared = prepare_saved_history(&history, redraw_state).unwrap();
+                let read_state = |state: &serde_json::Value| SavedHistoryState {
+                    nib: NibState {
+                        angle_degrees: f32::from_bits(bits(state["angle_bits"].as_str().unwrap())),
+                        direction: state["direction_bits"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                            .collect::<Vec<_>>()
+                            .try_into()
+                            .unwrap(),
+                        initial_pending: state["flags"]["initial"].as_u64().unwrap() != 0,
+                        movement_armed: state["flags"]["movement_armed"].as_u64().unwrap() != 0,
+                    },
+                    accepted: P {
+                        x: f32::from_bits(bits(state["accepted_bits"][0].as_str().unwrap())),
+                        y: f32::from_bits(bits(state["accepted_bits"][1].as_str().unwrap())),
+                    },
+                    start: P {
+                        x: f32::from_bits(bits(state["path_start_bits"][0].as_str().unwrap())),
+                        y: f32::from_bits(bits(state["path_start_bits"][1].as_str().unwrap())),
+                    },
+                    control: P {
+                        x: f32::from_bits(bits(state["control_bits"][0].as_str().unwrap())),
+                        y: f32::from_bits(bits(state["control_bits"][1].as_str().unwrap())),
+                    },
+                };
+                let state_bits = |state: SavedHistoryState| {
+                    (
+                        [state.accepted.x.to_bits(), state.accepted.y.to_bits()],
+                        [state.start.x.to_bits(), state.start.y.to_bits()],
+                        [state.control.x.to_bits(), state.control.y.to_bits()],
+                        state.nib.angle_degrees.to_bits(),
+                        state.nib.direction.map(f32::to_bits),
+                        state.nib.initial_pending,
+                        state.nib.movement_armed,
+                    )
+                };
+                if let Some(loop_entry) = states
+                    .iter()
+                    .find(|state| state["phase"] == "history_loop_entry")
+                {
+                    assert_eq!(
+                        state_bits(prepared),
+                        state_bits(read_state(loop_entry)),
+                        "{} {run_name} RedrawPen initialization",
+                        case["id"]
+                    );
+                }
+                let actual = saved_history_vectors(&history, prepared).unwrap();
+                let expected_ends: Vec<usize> = run["sample_ends"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|sample| sample["add_point_end"].as_u64().unwrap() as usize)
+                    .collect();
+                assert_eq!(
+                    actual.sample_ends, expected_ends,
+                    "{} {run_name} saved sample boundaries",
+                    case["id"]
+                );
+                let terminal_start = run["terminal_start"].as_u64().unwrap() as usize;
+                let expected: Vec<[u32; 4]> = run["add_points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .take(terminal_start)
+                    .map(|stamp| {
+                        stamp["vector_bits"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|value| bits(value.as_str().unwrap()))
+                            .collect::<Vec<_>>()
+                            .try_into()
+                            .unwrap()
+                    })
+                    .collect();
+                let actual_bits: Vec<[u32; 4]> = actual
+                    .vectors
+                    .iter()
+                    .map(|vector| vector.map(f32::to_bits))
+                    .collect();
+                assert_eq!(
+                    actual_bits, expected,
+                    "{} {run_name} saved history AddPoint vectors",
+                    case["id"]
+                );
+
+                // Link the emitted history stage to the state endPen actually
+                // receives on this same RedrawPen invocation.
+                let Some(end_state) = run["drawable_states"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|state| state["phase"] == "end_pen_entry")
+                else {
+                    panic!("{} {run_name} missing endPen snapshot", case["id"]);
+                };
+                let bits_pair = |state: &serde_json::Value, name: &str| -> [u32; 2] {
+                    state[name]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| bits(value.as_str().unwrap()))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap()
+                };
+                let state_bits_pair = |p: P| [p.x.to_bits(), p.y.to_bits()];
+                assert_eq!(
+                    state_bits_pair(actual.state.accepted),
+                    bits_pair(end_state, "accepted_bits"),
+                    "{} {run_name} history accepted state",
+                    case["id"]
+                );
+                assert_eq!(
+                    state_bits_pair(actual.state.start),
+                    bits_pair(end_state, "path_start_bits"),
+                    "{} {run_name} history start state",
+                    case["id"]
+                );
+                assert_eq!(
+                    state_bits_pair(actual.state.control),
+                    bits_pair(end_state, "control_bits"),
+                    "{} {run_name} history control state",
+                    case["id"]
+                );
+                assert_eq!(
+                    actual.state.nib.angle_degrees.to_bits(),
+                    bits(end_state["angle_bits"].as_str().unwrap()),
+                    "{} {run_name} history angle state",
+                    case["id"]
+                );
+                assert_eq!(
+                    actual.state.nib.direction.map(f32::to_bits),
+                    bits_pair(end_state, "direction_bits"),
+                    "{} {run_name} history direction state",
+                    case["id"]
+                );
+                assert_eq!(
+                    actual.state.nib.initial_pending,
+                    end_state["flags"]["initial"].as_u64().unwrap() != 0,
+                    "{} {run_name} history initial flag",
+                    case["id"]
+                );
+                assert_eq!(
+                    actual.state.nib.movement_armed,
+                    end_state["flags"]["movement_armed"].as_u64().unwrap() != 0,
+                    "{} {run_name} history movement flag",
+                    case["id"]
+                );
+
+                let endpoint = bits_pair(end_state, "event_end_bits").map(f32::from_bits);
+                let pen_size = f32::from_bits(bits(end_state["size_bits"].as_str().unwrap()));
+                let terminal = terminal_end_pen_vectors(
+                    actual.state,
+                    P {
+                        x: endpoint[0],
+                        y: endpoint[1],
+                    },
+                    pen_size,
+                )
+                .unwrap();
+                let combined: Vec<[u32; 4]> = actual
+                    .vectors
+                    .iter()
+                    .chain(terminal.vectors.iter())
+                    .map(|vector| vector.map(f32::to_bits))
+                    .collect();
+                let native_combined: Vec<[u32; 4]> = run["add_points"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|stamp| {
+                        stamp["vector_bits"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|value| bits(value.as_str().unwrap()))
+                            .collect::<Vec<_>>()
+                            .try_into()
+                            .unwrap()
+                    })
+                    .collect();
+                assert_eq!(
+                    combined, native_combined,
+                    "{} {run_name} linked history plus endPen AddPoint vectors",
+                    case["id"]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn native_terminal_endpen_samples_replay_from_saved_drawable_state() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            for (run_name, run) in case["native"].as_object().unwrap() {
+                let state = run["drawable_states"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|state| state["phase"] == "end_pen_entry")
+                    .unwrap();
+                let read_pair = |name: &str| -> [f32; 2] {
+                    state[name]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap()
+                };
+                let direction = read_pair("direction_bits");
+                let accepted = read_pair("accepted_bits");
+                let start = read_pair("path_start_bits");
+                let control = read_pair("control_bits");
+                let flags = &state["flags"];
+                let input = SavedHistoryState {
+                    nib: NibState {
+                        angle_degrees: f32::from_bits(bits(state["angle_bits"].as_str().unwrap())),
+                        direction,
+                        initial_pending: flags["initial"].as_u64().unwrap() != 0,
+                        movement_armed: flags["movement_armed"].as_u64().unwrap() != 0,
+                    },
+                    accepted: P {
+                        x: accepted[0],
+                        y: accepted[1],
+                    },
+                    start: P {
+                        x: start[0],
+                        y: start[1],
+                    },
+                    control: P {
+                        x: control[0],
+                        y: control[1],
+                    },
+                };
+                let endpoint_bits: [f32; 2] = state["event_end_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap();
+                let size = f32::from_bits(bits(state["size_bits"].as_str().unwrap()));
+                let actual = terminal_end_pen_vectors(
+                    input,
+                    P {
+                        x: endpoint_bits[0],
+                        y: endpoint_bits[1],
+                    },
+                    size,
+                )
+                .unwrap();
+                let terminal_start = run["terminal_start"].as_u64().unwrap() as usize;
+                let terminal = &run["add_points"].as_array().unwrap()[terminal_start..];
+                let expected: Vec<[u32; 4]> = terminal
+                    .iter()
+                    .map(|stamp| {
+                        stamp["vector_bits"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|value| bits(value.as_str().unwrap()))
+                            .collect::<Vec<_>>()
+                            .try_into()
+                            .unwrap()
+                    })
+                    .collect();
+                let actual_bits: Vec<[u32; 4]> = actual
+                    .vectors
+                    .iter()
+                    .map(|vector| vector.map(f32::to_bits))
+                    .collect();
+                for stamp in terminal {
+                    assert_eq!(
+                        actual.point_extent.to_bits(),
+                        bits(stamp["extent_bits"].as_str().unwrap()),
+                        "{} {run_name} endPen half-size extent",
+                        case["id"]
+                    );
+                }
+                let native_length = run["length_queries"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|query| query["caller_pc"] == "0x301deac");
+                if let Some(native_length) = native_length {
+                    assert_eq!(
+                        actual.path_length.unwrap().to_bits(),
+                        bits(native_length["length_bits"].as_str().unwrap()),
+                        "{} {run_name} endPen path length",
+                        case["id"]
+                    );
+                } else {
+                    assert!(input.nib.initial_pending, "{} {run_name}", case["id"]);
+                    assert_eq!(actual.path_length, None);
+                }
+                assert_eq!(
+                    actual_bits, expected,
+                    "{} {run_name} endPen AddPoint vectors",
+                    case["id"]
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn synthetic_zero_length_saved_step_matches_native_failed_query_fallback() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-zero-length-native.json"
+        ))
+        .unwrap();
+        let native = &fixture["case"]["native"];
+        assert_eq!(bits(native["redraw_line_length_bits"].as_str().unwrap()), 0);
+        assert_eq!(native["get_pos_tan"]["distance_bits"], "00000000");
+        assert_eq!(native["get_pos_tan"]["ok"], false);
+        assert_eq!(native["get_pos_tan"]["add_points_after"], 1);
+        let synthetic = &fixture["case"]["synthetic_state"];
+        let pair = |name: &str| -> [f32; 2] {
+            synthetic[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_f64().unwrap() as f32)
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap()
+        };
+        let actual = saved_history_vectors(
+            &[[1.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            SavedHistoryState {
+                nib: NibState {
+                    angle_degrees: synthetic["angle_degrees"].as_f64().unwrap() as f32,
+                    direction: [0.0, 1.0],
+                    initial_pending: false,
+                    movement_armed: true,
+                },
+                accepted: P {
+                    x: pair("accepted")[0],
+                    y: pair("accepted")[1],
+                },
+                start: P {
+                    x: pair("start")[0],
+                    y: pair("start")[1],
+                },
+                control: P {
+                    x: pair("control")[0],
+                    y: pair("control")[1],
+                },
+            },
+        )
+        .unwrap();
+        let expected: [u32; 4] = native["add_points"][0]["vector_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| bits(value.as_str().unwrap()))
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+        assert_eq!(actual.vectors.len(), 1);
+        assert_eq!(actual.vectors[0].map(f32::to_bits), expected);
+    }
+
+    #[test]
+    fn synthetic_zero_length_terminal_endpen_skips_failed_position_sample() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-zero-terminal-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["case"];
+        let native = &case["native"];
+        let length = native["length_queries"][0]["length_bits"].as_str().unwrap();
+        assert_eq!(bits(length), 0);
+        assert_eq!(native["position_queries"][0]["ok"], false);
+        assert_eq!(native["position_queries"][0]["add_points_after"], 0);
+        assert!(native["add_points"].as_array().unwrap().is_empty());
+
+        let state = &case["synthetic_state"];
+        let pair = |name: &str| -> [f32; 2] {
+            state[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                .collect::<Vec<_>>()
+                .try_into()
+                .unwrap()
+        };
+        let flags = &state["flags"];
+        let actual = terminal_end_pen_vectors(
+            SavedHistoryState {
+                nib: NibState {
+                    angle_degrees: f32::from_bits(bits(state["angle_bits"].as_str().unwrap())),
+                    direction: pair("direction_bits"),
+                    initial_pending: flags["initial"].as_u64().unwrap() != 0,
+                    movement_armed: flags["movement_armed"].as_u64().unwrap() != 0,
+                },
+                accepted: P { x: 0.0, y: 0.0 },
+                start: P {
+                    x: pair("path_start_bits")[0],
+                    y: pair("path_start_bits")[1],
+                },
+                control: P {
+                    x: pair("control_bits")[0],
+                    y: pair("control_bits")[1],
+                },
+            },
+            P { x: 0.0, y: 0.0 },
+            6.0,
+        )
+        .unwrap();
+        assert_eq!(actual.path_length.unwrap().to_bits(), 0);
+        assert!(actual.vectors.is_empty());
     }
 }
