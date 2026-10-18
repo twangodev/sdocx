@@ -947,6 +947,7 @@ dependencies = [
  "cesu8",
  "cssparser",
  "fontdb",
+ "imagesize",
  "krilla",
  "lopdf",
  "once_cell",

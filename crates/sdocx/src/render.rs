@@ -26,6 +26,7 @@ pub mod fonts;
 mod fountain;
 mod geometry;
 mod gradient;
+mod image_crop;
 pub use geometry::{GeometryDiagnostic, GeometryDiagnosticKind};
 mod paint_diagnostic;
 pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
@@ -1568,7 +1569,13 @@ fn image_drawn_bbox(image: &PlacedImage) -> BoundingBox {
 }
 
 fn render_placed_image(svg: &mut Scene, image: &PlacedImage, media_assets: &[MediaAsset]) {
-    if let (Some(_), Some(original)) = (image.crop_rect, image.original_bbox) {
+    let original = image.crop_rect.and_then(|crop| {
+        image.original_bbox.or_else(|| {
+            let asset = media_assets.get(image.media_index?)?;
+            image_crop::crop_only_placement(&asset.data, crop, image.bbox)
+        })
+    });
+    if let Some(original) = original {
         let bbox = image.bbox;
         let width = bbox.x_max - bbox.x_min;
         let height = bbox.y_max - bbox.y_min;

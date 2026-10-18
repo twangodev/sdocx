@@ -165,8 +165,14 @@ serialized first/last selection would not reproduce the native route above.
 ## Rendering limits
 
 Crop rectangles with an original-image placement are rendered by clipping the
-original placement to the displayed bounds. Pixel crops without that placement
-and border/original media IDs remain incomplete.
+original placement to the displayed bounds. Without that placement, the renderer
+now maps an admitted in-bounds source-pixel crop onto the displayed bounds using
+the encoded image dimensions, preserving the source bytes and vector clip/rotation.
+This follows the source-rectangle/full-destination mapping in Drawing
+`getResizedImageBitmap` (`0x86478`) and `drawImageBitmap` (`0x84b20`), without
+reproducing the native intermediate bitmap or its filtering. The conservative
+crop-only feature warning remains; out-of-bounds/unreadable crops and
+border/original media IDs remain incomplete.
 Fill transforms, tiling, transparency, active nine-patch, custom shape paths and several
 inherited properties remain incomplete. Alternative fill encodings and unknown
 fields before a fill are reported without guessing a reference. `.spi`, PDF,

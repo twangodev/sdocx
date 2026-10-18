@@ -9,12 +9,13 @@ repository = "https://github.com/twangodev/sdocx"
 readme = "../../README.md"
 
 [features]
-render = ["dep:base64", "dep:svg", "dep:fontdb", "dep:rustybuzz", "dep:write-fonts", "dep:cssparser", "dep:unicode-bidi", "dep:unicode-script", "dep:unicode-linebreak", "dep:unicode-segmentation", "dep:skrifa", "dep:read-fonts", "dep:bytemuck", "dep:bitflags", "dep:once_cell", "dep:smallvec"]
+render = ["dep:base64", "dep:svg", "dep:fontdb", "dep:rustybuzz", "dep:write-fonts", "dep:cssparser", "dep:unicode-bidi", "dep:unicode-script", "dep:unicode-linebreak", "dep:unicode-segmentation", "dep:skrifa", "dep:read-fonts", "dep:bytemuck", "dep:bitflags", "dep:once_cell", "dep:smallvec", "dep:imagesize"]
 pdf = ["render", "dep:krilla", "dep:usvg", "dep:png", "dep:resvg", "dep:tiny-skia"]
 serde = ["dep:serde"]
 
 [dependencies]
 sha2 = "0.10.9"
+imagesize = { version = "0.14.0", optional = true }
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 thiserror = "2.0.18"
 cesu8 = "1.1.0"

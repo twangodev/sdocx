@@ -1244,6 +1244,59 @@ fn saved_image_crop_preserves_fine_viewport_and_integer_original_bounds() {
 
 #[cfg(feature = "render")]
 #[test]
+fn pixel_crop_without_original_placement_selects_the_source_region() {
+    const SOURCE: &[u8] = include_bytes!("assets/crop-quadrants.png");
+    let tail: Vec<_> = [1_i32, 2, 3, 3]
+        .into_iter()
+        .flat_map(i32::to_le_bytes)
+        .collect();
+    let payload = image_with_fill(2, &fill(7), 0, &[], &frame(3, 1 << 1, &[], &tail));
+    let parsed = sdocx::parse_bytes_detailed(&archive(
+        &one_page(vec![object(3, &payload, &[])]),
+        Some(&[(7, "quadrants.png")]),
+        &[("quadrants.png", SOURCE)],
+    ))
+    .unwrap();
+    let mut document = parsed.document;
+    let mut image = placed(document.pages[0].elements().next().unwrap()).clone();
+    assert_eq!(image.crop_rect, Some([1, 2, 3, 3]));
+    assert_eq!(image.original_bbox, None);
+    image.bbox = sdocx::BoundingBox {
+        x_min: 10.0,
+        y_min: 20.0,
+        x_max: 50.0,
+        y_max: 50.0,
+    };
+    image.rotation_degrees = Some(0.0);
+    document.pages[0].objects = vec![PageElement::PlacedImage(image.clone()).into()];
+    let rendered = sdocx::render_page_svg(&document, 0, &Default::default()).unwrap();
+    let xml = roxmltree::Document::parse(&rendered.svg).unwrap();
+    let node = xml.descendants().find(|n| n.has_tag_name("image")).unwrap();
+    assert_eq!(svg_rectangle(node), [-10.0, -40.0, 80.0, 90.0]);
+    assert_eq!(node.parent().unwrap().attribute("overflow"), Some("hidden"));
+    let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+    let mut pixels = resvg::tiny_skia::Pixmap::new(rendered.width, rendered.height).unwrap();
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pixels.as_mut(),
+    );
+    // The selected bottom-row source pixels are blue/yellow, not red/green.
+    for (x, expected) in [(15, [0, 0, 255, 255]), (45, [255, 255, 0, 255])] {
+        let pixel = pixels.pixel(x, 45).unwrap();
+        assert_eq!(
+            [pixel.red(), pixel.green(), pixel.blue(), pixel.alpha()],
+            expected
+        );
+    }
+    assert_eq!(
+        document.metadata.media_assets[image.media_index.unwrap()].data,
+        SOURCE
+    );
+}
+
+#[cfg(feature = "render")]
+#[test]
 fn image_rendering_keeps_extent_and_cropped_transform_admission() {
     let mut document = sdocx::parse_bytes(&archive(
         &one_page(vec![object(3, &image(7), &[])]),
