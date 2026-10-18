@@ -156,6 +156,7 @@ runtime. They preserve explicit host-state and device-appearance boundaries:
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/inkpen_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/inkpen2_saved_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/inkpen_native.py --fixture conformance/inkpen-setters-v4.json --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/smpath_cubic_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_native.py --check-fixture

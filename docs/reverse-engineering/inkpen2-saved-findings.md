@@ -228,5 +228,10 @@ effects; [recording](stroke-recording-findings.md) remains separate authority.
 it retains original points. [stroke_paint](../../crates/sdocx/src/render.rs)
 uses generic width*(0.3+0.7*clamped pressure), not this time/history law.
 Saved samples/settings remain the source; generated caches are derived.
-Native execution, SmPath sampling precision, arbitrary incoming state, cache
-lifetime, other effects/versions, shaders and native PDF equality are unproved.
+The [native saved capture](../../conformance/inkpen2-saved.json) executes three
+configured redraw cases and reads the final nine-float RTV3 records separately
+from callback inputs. All 144 dependency initializers run; single-thread locale,
+platform services and supplied stroke interfaces remain host boundaries. This
+does not establish device display context, arbitrary incoming state, other
+effects/versions, shader appearance or native PDF equality. The Rust numeric
+core is still unadmitted and does not match every captured path.
