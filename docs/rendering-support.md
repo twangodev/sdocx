@@ -101,7 +101,8 @@ selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic approximation. A test-only numeric core matches twenty-one
 configured-context native redraw cases and four setter cases, including both
 curve modes, fixed width and a degenerate curve. The saved
-Drawing resolution is traced; RTV1 paint and admission integration remain outstanding.
+Drawing resets resolution from runtime display pixels; export dimensions, RTV1
+paint and admission integration remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.

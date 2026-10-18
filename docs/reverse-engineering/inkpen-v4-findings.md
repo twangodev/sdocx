@@ -167,9 +167,14 @@ The saved Drawing route owns its PenManager and creates a fresh InkPen on a
 cache miss (`Drawing:0x7f000`, `0x81acc`; `PenCommon:0x4cefc`, `0x4df50`).
 InkPen's factory/constructor calls the base Pen constructor, which initializes
 resolution to 1440×2560 (`InkPen:0x24ae4`, `0x24460`; `PenCommon:0x45f34`).
-Preview configures a separate Pen handle. This is static evidence for the
-saved Drawing route, not an executed Android export. RTV1 paint integration
-remains separate from this numeric reconstruction.
+That constructor default does not establish saved Drawing's runtime context:
+`drawObjectStroke` calls pen slot +112 with `Context::GetDisplay()` system
+width/height pixels (`Drawing:0x82394–0x823f4`; InkPen relocation `0x42118`
+resolves `Pen::SetScreenResolution`). Display's getters read caller-supplied
+fields (`Graphics:0xb0e10`, `0xb0e18`); the ordinary export's numeric dimensions
+remain unverified. The fixtures establish their explicit configured resolutions,
+not a universal 1440×2560 saved-export profile. RTV1 paint and production
+admission remain separate from this numeric reconstruction.
 
 `drawPoint`, `0x3095c–0x30a38`, optionally replaces radius with fixedWidth*0.5
 when data byte 9 is set, then replaces an ordered radius<1 with 1.
