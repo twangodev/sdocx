@@ -167,6 +167,7 @@ rounding and the collapsed-segment gate. Production rendering remains approximat
 [`oblique_redraw_native.py`](../../conformance/oblique_redraw_native.py) adds
 four fresh saved-redraw captures through native sampling, endPen and mesh
 callbacks, retaining per-sample boundaries and a separate terminal suffix.
+The test-only Rust traversal matches their complete callback buffers and boundaries.
 Host methods force cache misses and supply source arrays; Drawing admission,
 cache-hit behavior and final paint remain outside that capture.
 
