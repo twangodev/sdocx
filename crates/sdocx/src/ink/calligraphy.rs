@@ -4,12 +4,119 @@
 //! Inputs distinguish saved history from drawable state retained by the
 //! reused native object.
 
+use super::path::{P, Quad};
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct NibState {
     pub(super) angle_degrees: f32,
     pub(super) direction: [f32; 2],
     pub(super) initial_pending: bool,
     pub(super) movement_armed: bool,
+}
+
+/// Saved-history state consumed by the historical RedrawPen loop. The final
+/// MotionEvent and endPen path are intentionally supplied separately.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct SavedHistoryState {
+    pub(super) nib: NibState,
+    pub(super) accepted: P,
+    pub(super) start: P,
+    pub(super) control: P,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct SavedHistoryOutput {
+    /// Vector4(X, Y, cos(angle), sin(angle)) calls emitted by history redraw.
+    pub(super) vectors: Vec<[f32; 4]>,
+    /// Exclusive emitted-vector count after each supplied historical point.
+    pub(super) sample_ends: Vec<usize>,
+    pub(super) state: SavedHistoryState,
+}
+
+/// Reconstruct the finite history-to-AddPoint sampling stage. `history` starts
+/// with the event's first historical record; the native loop skips that first
+/// record and consumes the rest. The current event/endPen path is separate.
+pub(super) fn saved_history_vectors(
+    history: &[[f32; 3]],
+    mut state: SavedHistoryState,
+) -> Option<SavedHistoryOutput> {
+    if history.is_empty() {
+        return None;
+    }
+    let mut output = SavedHistoryOutput {
+        vectors: Vec::new(),
+        sample_ends: Vec::with_capacity(history.len().saturating_sub(1)),
+        state,
+    };
+    for &[x, y, orientation] in history.iter().skip(1) {
+        let current = P { x, y };
+        let dx = (x - state.accepted.x).abs();
+        let dy = (y - state.accepted.y).abs();
+        if dx < 1.5 && dy < 1.5 {
+            output.sample_ends.push(output.vectors.len());
+            continue;
+        }
+        if !state.nib.movement_armed {
+            state.nib.movement_armed = true;
+        } else if state.nib.initial_pending {
+            state.control = current;
+            state.nib.angle_degrees = orientation_target(orientation);
+            state.nib.initial_pending = false;
+            state.nib.movement_armed = false;
+        } else {
+            let midpoint = state.control.mid(current);
+            let path = Quad::new(state.start, state.control, midpoint);
+            if path.length.is_finite() && path.length >= 0.0 {
+                let target = orientation_target(orientation);
+                let (next_angle, repeat_angle) = advance_angle(state.nib.angle_degrees, target);
+                let count = repeat_count(path.length, repeat_angle)?;
+                let distance_step = path.length / count as f32;
+                let angle_step = (next_angle - state.nib.angle_degrees) / count as f32;
+                let mut distance = 0.0_f32;
+                let mut angle = state.nib.angle_degrees;
+                let mut last_direction = state.nib.direction;
+                if path.length == 0.0 {
+                    // Inferred from RedrawLine control flow: sincos runs once,
+                    // empty SmPath makes getPosTan fail, and midpoint
+                    // drawPoint remains.
+                    last_direction = direction_for_angle(angle);
+                } else {
+                    for _ in 0..count {
+                        if distance > path.length {
+                            break;
+                        }
+                        let position = path.at(distance);
+                        last_direction = direction_for_angle(angle);
+                        output.vectors.push([
+                            position.x,
+                            position.y,
+                            last_direction[0],
+                            last_direction[1],
+                        ]);
+                        state.start = position;
+                        distance += distance_step;
+                        angle += angle_step;
+                    }
+                }
+                output
+                    .vectors
+                    .push([midpoint.x, midpoint.y, last_direction[0], last_direction[1]]);
+                state.nib.angle_degrees = next_angle;
+                state.nib.direction = last_direction;
+            }
+            state.control = current;
+            state.nib.movement_armed = false;
+        }
+        state.accepted = current;
+        output.sample_ends.push(output.vectors.len());
+    }
+    output.state = state;
+    Some(output)
+}
+
+fn direction_for_angle(angle_degrees: f32) -> [f32; 2] {
+    let radians = angle_degrees as f64 * std::f64::consts::PI / 180.0;
+    [radians.cos() as f32, radians.sin() as f32]
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -222,7 +329,7 @@ impl NibState {
             angle_degrees: 0.0,
             direction: [1.0, 0.0],
             initial_pending: true,
-            movement_armed: false,
+            movement_armed: true,
         }
     }
 }
@@ -256,9 +363,9 @@ pub(super) fn advance_angle(old: f32, target: f32) -> (f32, f32) {
     (next, old.min(next))
 }
 
-/// Native getRepeat(path_length, second_argument), where the second argument
-/// changes the sampling interval. Historical redraw passes half pen size;
-/// terminal endPen passes full pen size.
+/// Native getRepeat's piecewise scale uses its second numeric argument. The
+/// saved redrawLine caller passes min(old_angle, next_angle); drawPoint extent
+/// is computed independently from half the pen size.
 pub(super) fn repeat_count(path_length: f32, second_argument: f32) -> Option<u32> {
     if !path_length.is_finite() || !second_argument.is_finite() {
         return None;
@@ -289,9 +396,10 @@ pub(super) fn repeat_count(path_length: f32, second_argument: f32) -> Option<u32
 #[cfg(test)]
 mod tests {
     use super::{
-        AddPointInput, MeshBuffer, MeshBuffers, MeshRect, NibState, add_point, advance_angle,
-        orientation_target, repeat_count,
+        AddPointInput, MeshBuffer, MeshBuffers, MeshRect, NibState, SavedHistoryState, add_point,
+        advance_angle, orientation_target, repeat_count, saved_history_vectors,
     };
+    use crate::ink::path::P;
 
     fn bits(hex: &str) -> u32 {
         u32::from_le_bytes(
@@ -537,6 +645,7 @@ mod tests {
             }
         }
     }
+
     #[test]
     fn direct_native_half_extent_is_clamped_by_addpoint() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
@@ -616,4 +725,72 @@ mod tests {
         );
     }
 
+    #[test]
+    fn five_history_native_samples_replay_from_saved_points_and_fresh_state() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-native.json"
+        ))
+        .unwrap();
+        let case = fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == "five_history_phase_boundaries")
+            .unwrap();
+        let history: Vec<[f32; 3]> = case["history"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| {
+                row.as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_f64().unwrap() as f32)
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap()
+            })
+            .collect();
+        let zero = P { x: 0.0, y: 0.0 };
+        let actual = saved_history_vectors(
+            &history,
+            SavedHistoryState {
+                nib: NibState::fresh(),
+                accepted: zero,
+                start: zero,
+                control: zero,
+            },
+        )
+        .unwrap();
+        let native = &case["native"]["fresh"];
+        let expected_ends: Vec<usize> = native["sample_ends"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|sample| sample["add_point_end"].as_u64().unwrap() as usize)
+            .collect();
+        assert_eq!(actual.sample_ends, expected_ends);
+        let expected: Vec<[u32; 4]> = native["add_points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .take(*expected_ends.last().unwrap())
+            .map(|stamp| {
+                stamp["vector_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| bits(value.as_str().unwrap()))
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap()
+            })
+            .collect();
+        let actual_bits: Vec<[u32; 4]> = actual
+            .vectors
+            .iter()
+            .map(|vector| vector.map(f32::to_bits))
+            .collect();
+        assert_eq!(actual_bits, expected);
+    }
 }
