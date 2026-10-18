@@ -1,9 +1,10 @@
 """Hash-pinned Samsung Notes AirBrush V1 saved-redraw and pattern oracle.
 
-This executes shipped redraw, SmPath, drawPoint, AddPoint, and texture upload
+This executes shipped redraw, SmPath, drawPoint, AddPoint, and pattern-building
 methods under Unicorn. MotionEvent history, queue scheduling, and bitmap/GPU
 vtables are explicit synthetic host boundaries. It captures CPU-side native
-records and uploaded pattern bytes; it does not establish GPU pixel parity.
+records and pattern bytes submitted to a synthetic queue; it does not establish
+texture upload or GPU pixel parity.
 """
 import argparse, json, math, struct, subprocess, hashlib
 from pathlib import Path
@@ -20,7 +21,7 @@ class Oracle(NativeFountain):
   super().__init__(LIB,ROOT/'scratch/apk-analysis-runtime/binutils-aarch64/usr/bin/aarch64-linux-gnu-objdump',('AirBrushPen',))
   self.callbacks['sincosf']=self.sincos
   self.host_methods=[]
-  self.bitmap_get=None; self.bitmap_upload=None; self.bitmap_method=None; self.bitmap_payload=None; self.bitmap_factory_args=None; self.bitmap_obj=None
+  self.bitmap_get=None; self.queue_submit=None; self.bitmap_method=None; self.bitmap_payload=None; self.bitmap_factory_args=None; self.bitmap_obj=None; self.bitmap_queue=None; self.queue_submission=None
   self.profile_constructors=[]
   self.relocation_traps={}
   self.cxa_guards=set()
@@ -130,9 +131,11 @@ class Oracle(NativeFountain):
   if address==getattr(self,'bitmap_method',None):
    u.reg_write(__import__('unicorn').arm64_const.UC_ARM64_REG_PC,u.reg_read(__import__('unicorn').arm64_const.UC_ARM64_REG_LR)); return
   if address==getattr(self,'bitmap_get',None):
+   self.x(0,self.bitmap_queue)
    u.reg_write(__import__('unicorn').arm64_const.UC_ARM64_REG_PC,u.reg_read(__import__('unicorn').arm64_const.UC_ARM64_REG_LR)); return
-  if address==getattr(self,'bitmap_upload',None):
+  if address==getattr(self,'queue_submit',None):
    ptr=self.x(1); raw=bytes(u.mem_read(ptr,96*96*4)); self.bitmap_payload=raw
+   self.queue_submission={'queue':hex(self.x(0)),'payload_ptr':hex(ptr),'size_arg':self.x(2),'payload_bytes':len(raw)}
    u.reg_write(__import__('unicorn').arm64_const.UC_ARM64_REG_PC,u.reg_read(__import__('unicorn').arm64_const.UC_ARM64_REG_LR)); return
   if address==getattr(self,'host_method',None):
    self.host_methods.append({'x0':hex(self.x(0)),'x1':hex(self.x(1)),'s0':self.f(0)})
@@ -180,17 +183,19 @@ class Oracle(NativeFountain):
   values=self.get(begin,'f'*((end-begin)//4)); stamps=[values[i:i+4] for i in range(0,len(values),4)]
   packed=b''.join(struct.pack('<f',v) for row in stamps for v in row)
   records=[[f'{struct.unpack("<I",struct.pack("<f",v))[0]:08x}' for v in stamp] for stamp in stamps]
-  # Build and upload through the exact RT object created by GLV2's constructor.
-  bitmap=self.alloc(64); bitmap_vtable=self.alloc(256); self.bitmap_method=self.alloc(16); self.bitmap_get=self.alloc(16); self.bitmap_upload=self.alloc(16); self.bitmap_obj=bitmap
+  # Build the pattern through the exact RT object created by GLV2's constructor.
+  # GetMsgQueue and queue slot 48 remain explicit synthetic host boundaries.
+  bitmap=self.alloc(64); bitmap_vtable=self.alloc(256); queue=self.alloc(32); queue_vtable=self.alloc(128)
+  self.bitmap_method=self.alloc(16); self.bitmap_get=self.alloc(16); self.queue_submit=self.alloc(16); self.bitmap_obj=bitmap; self.bitmap_queue=queue; self.queue_submission=None
   self.put(bitmap,'Q',bitmap_vtable)
   for offset in range(0,256,8): self.put(bitmap_vtable+offset,'Q',self.bitmap_method)
-  self.put(bitmap_vtable+168,'Q',self.bitmap_get); self.put(bitmap_vtable+48,'Q',self.bitmap_upload)
+  self.put(bitmap_vtable+168,'Q',self.bitmap_get); self.put(queue,'Q',queue_vtable); self.put(queue_vtable+48,'Q',self.queue_submit)
   self.call('SPen::AirBrushPenStrokeDrawableRTV1::buildTextures(int, int)',[rt,96,96])
   assert self.get(rt+224,'Q')[0]==bitmap
   factory=self.bitmap_factory_args
   self.call('SPen::AirBrushPenStrokeDrawableRTV1::setTextures(unsigned int, unsigned int)',[rt,96,96])
   texture=self.bitmap_payload; assert len(texture)==96*96*4
-  return {'constructor':'SPen::AirBrushPenStrokeDrawableGLV2','constructor_executed_natively':True,'drawable_profile_version':2,'rt_subobject':'SPen::AirBrushPenStrokeDrawableRTV1','rt_object_offset':'GLV2+0x10','rt_vtable_address_point':hex(rt_vtable),'rt_vtable_symbol':hex(expected_vtable),'stamp_count':len(stamps),'stamps':records,'stamp_stream_sha256':hashlib.sha256(packed).hexdigest(),'texture_build_factory':factory,'texture_upload':{'dimensions':[96,96],'bytes':len(texture),'sha256':hashlib.sha256(texture).hexdigest(),'sample_red_bytes':[texture[(48*96+x)*4] for x in range(44,52)],'other_channels_nonzero':any(texture[i] for i in range(1,len(texture),4)) or any(texture[i] for i in range(2,len(texture),4)) or any(texture[i] for i in range(3,len(texture),4))}}
+  return {'constructor':'SPen::AirBrushPenStrokeDrawableGLV2','constructor_executed_natively':True,'drawable_profile_version':2,'rt_subobject':'SPen::AirBrushPenStrokeDrawableRTV1','rt_object_offset':'GLV2+0x10','rt_vtable_address_point':hex(rt_vtable),'rt_vtable_symbol':hex(expected_vtable),'stamp_count':len(stamps),'stamps':records,'stamp_stream_sha256':hashlib.sha256(packed).hexdigest(),'texture_build_factory':factory,'cpu_pattern':{'dimensions':[96,96],'bytes':len(texture),'sha256':hashlib.sha256(texture).hexdigest(),'sample_red_bytes':[texture[(48*96+x)*4] for x in range(44,52)],'other_channels_nonzero':any(texture[i] for i in range(1,len(texture),4)) or any(texture[i] for i in range(2,len(texture),4)) or any(texture[i] for i in range(3,len(texture),4)),'captured_at':'synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168','queue_submission':self.queue_submission}}
  def texture_build_witness(self):
   self.heap=0x10000000; rt=self.alloc(512); manager=self.alloc(64); queue=self.alloc(32); qvt=self.alloc(64); bmp=self.alloc(64); bvt=self.alloc(256); self.bitmap_method=self.alloc(16); self.bitmap_obj=bmp; self.bitmap_factory_args=None
   self.put(rt+136,'Q',manager); self.put(manager,'Q',0); self.put(queue,'Q',qvt); self.put(qvt+16,'Q',self.bitmap_method)
@@ -201,9 +206,9 @@ class Oracle(NativeFountain):
   except Exception as e: print('TEXTURE_FAIL',repr(e),hex(self.u.reg_read(__import__('unicorn').arm64_const.UC_ARM64_REG_PC)),[hex(v) for v in self.trace]); raise
   return self.bitmap_factory_args
  def texture_witness(self):
-  self.heap=0x10000000; rt=self.alloc(512); bitmap=self.alloc(64); vt=self.alloc(256); self.bitmap_get=self.alloc(16); self.bitmap_upload=self.alloc(16); self.put(rt+224,'Q',bitmap); self.put(bitmap,'Q',vt); self.put(vt+168,'Q',self.bitmap_get); self.put(vt+48,'Q',self.bitmap_upload)
+  rt=self.alloc(512); bitmap=self.alloc(64); vt=self.alloc(256); queue=self.alloc(32); qvt=self.alloc(128); self.bitmap_get=self.alloc(16); self.queue_submit=self.alloc(16); self.bitmap_queue=queue; self.queue_submission=None; self.put(rt+224,'Q',bitmap); self.put(bitmap,'Q',vt); self.put(vt+168,'Q',self.bitmap_get); self.put(queue,'Q',qvt); self.put(qvt+48,'Q',self.queue_submit)
   self.call('SPen::AirBrushPenStrokeDrawableRTV1::setTextures(unsigned int, unsigned int)',[rt,96,96])
-  return {'texture_dimensions':[96,96],'packed_pixel_count':len(self.bitmap_payload)//4,'payload_bytes':len(self.bitmap_payload),'payload_sha256':hashlib.sha256(self.bitmap_payload).hexdigest(),'sample_red_bytes':[self.bitmap_payload[(48*96+x)*4] for x in range(44,52)],'other_byte_channels_nonzero':any(self.bitmap_payload[i] for i in range(1,len(self.bitmap_payload),4)) or any(self.bitmap_payload[i] for i in range(2,len(self.bitmap_payload),4)) or any(self.bitmap_payload[i] for i in range(3,len(self.bitmap_payload),4))}
+  return {'texture_dimensions':[96,96],'packed_pixel_count':len(self.bitmap_payload)//4,'payload_bytes':len(self.bitmap_payload),'payload_sha256':hashlib.sha256(self.bitmap_payload).hexdigest(),'sample_red_bytes':[self.bitmap_payload[(48*96+x)*4] for x in range(44,52)],'other_byte_channels_nonzero':any(self.bitmap_payload[i] for i in range(1,len(self.bitmap_payload),4)) or any(self.bitmap_payload[i] for i in range(2,len(self.bitmap_payload),4)) or any(self.bitmap_payload[i] for i in range(3,len(self.bitmap_payload),4)),'captured_at':'synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168','queue_submission':self.queue_submission}
  def pen_default_version(self):
   self.heap=0x10000000; pen=self.alloc(512); self.call('SPen::Pen::Pen()', [pen]); self.call('SPen::Pen::getVersion()', [pen]); return self.x(0)
  def dispatch(self,version=None):
@@ -260,10 +265,10 @@ def capture():
   'source':{'apk':'Samsung Notes 4.4.45.37','library':'libSPenAirBrushPen.so','sha256':EXPECTED},
   'supporting_libraries':{'libSPenPenCommon.so':'afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d','libSPenBase.so':'e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb'},
   'native_context':{'Pen::Pen_default_version':texture.pen_default_version(),'AirBrushPen::AirBrushPen_default_version':default_v2_selection['constructor_version'],'default_GetStrokeDrawableGL_selection':default_v2_selection,'version_dispatch':[texture.dispatch(1),texture.dispatch(2)],'profile_constructor_boundary':'Pen::Pen and AirBrushPen constructors plus Pen::getVersion execute natively; the default version-2 GetStrokeDrawableGL route selects the V2 constructor; V1 selection was separately observed after an explicit synthetic pen-version field override; saved-redraw cases execute the corresponding GL constructor body directly. No named application setter is established.'},
-  'default_v2_saved_redraw':{'profile_version':2,'record_storage':'per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays','rt_material_path':'actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures execute on that object','cases':v2_cases},
+  'default_v2_saved_redraw':{'profile_version':2,'record_storage':'per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays','rt_material_path':'actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures construct CPU pattern bytes and submit them through synthetic queue interfaces','cases':v2_cases},
   'texture':{'build_factory':texture.texture_build_witness(),**texture.texture_witness(),'pixel_bytes_order':'little-endian uint32; observed R varying, G/B/A zero','shader_contract':'fragment preserves input RGB and multiplies input alpha by sampled pattern red','native_shader_resources':shaders},
-  'host_stubs':{'motion_event':['GetHistorySize','GetHistoricalX','GetHistoricalY','GetX','GetY','GetToolType','GetPressure','GetTilt','GetOrientation','GetSource','GetEventTime','GetDownTime','GetButtonState','GetFlags'],'redraw':['queue task Run synchronous','PenGLDataManager::GetMsgQueue','PenReturnCallback constructor/destructor/GetBuffer/SetPenRect','PenDrawableRT::SetBuffer','Error::SetError','synthetic RT virtual slots'],'texture':['SPGraphicsFactory::CreateBitmap','synthetic bitmap methods','setTextures upload capture'],'runtime':['operator new/new[] and nothrow overloads use bounded Unicorn arena','malloc uses bounded Unicorn arena; free is no-op','memcpy/memmove/memset operate only in emulated memory','strlen bounded to 4096 bytes; atoi bounded to 128 bytes','sincosf uses host math.sin/math.cos','Android logging/cxa_atexit are stubs; cxa guards follow single-thread first-acquire then initialized behavior']},
-  'boundaries':['synthetic MotionEvent historical/current coordinate callbacks listed per case','synthetic manager and queue host; queue task Run invoked synchronously','synthetic RT vtable methods except actual RTV1::AddPoint','synthetic bitmap factory and bitmap vtable; actual RTV1::setTextures provides upload bytes','bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached','ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run'],
+  'host_stubs':{'motion_event':['GetHistorySize','GetHistoricalX','GetHistoricalY','GetX','GetY','GetToolType','GetPressure','GetTilt','GetOrientation','GetSource','GetEventTime','GetDownTime','GetButtonState','GetFlags'],'redraw':['queue task Run synchronous','PenGLDataManager::GetMsgQueue','PenReturnCallback constructor/destructor/GetBuffer/SetPenRect','PenDrawableRT::SetBuffer','Error::SetError','synthetic RT virtual slots'],'texture':['SPGraphicsFactory::CreateBitmap','synthetic SPSubBitmap::GetMsgQueue result','synthetic IGLMsgQueue vtable slot +48 payload capture'],'runtime':['operator new/new[] and nothrow overloads use bounded Unicorn arena','malloc uses bounded Unicorn arena; free is no-op','memcpy/memmove/memset operate only in emulated memory','strlen bounded to 4096 bytes; atoi bounded to 128 bytes','sincosf uses host math.sin/math.cos','Android logging/cxa_atexit are stubs; cxa guards follow single-thread first-acquire then initialized behavior']},
+  'boundaries':['synthetic MotionEvent historical/current coordinate callbacks listed per case','synthetic manager and queue host; queue task Run invoked synchronously','synthetic RT vtable methods except actual RTV1::AddPoint','synthetic SPGraphicsFactory::CreateBitmap; actual RTV1::setTextures constructs CPU pattern bytes and passes the pointer through a synthetic queue slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168; no texture object or GPU upload is exercised','bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached','ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run'],
   'cases':cases,
  }
 

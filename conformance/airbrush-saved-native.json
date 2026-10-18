@@ -40,7 +40,7 @@
   "default_v2_saved_redraw": {
     "profile_version": 2,
     "record_storage": "per-case SHA-256 plus exact equality against the full explicit V1 records; V2 records are omitted to avoid duplicate arrays",
-    "rt_material_path": "actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures execute on that object",
+    "rt_material_path": "actual GLV2 constructor owns an actual RTV1 RT subobject; actual RTV1 buildTextures and setTextures construct CPU pattern bytes and submit them through synthetic queue interfaces",
     "cases": [
       {
         "input_id": "stylus-straight-size10",
@@ -78,7 +78,7 @@
               2
             ]
           },
-          "texture_upload": {
+          "cpu_pattern": {
             "dimensions": [
               96,
               96
@@ -95,7 +95,14 @@
               147,
               198
             ],
-            "other_channels_nonzero": false
+            "other_channels_nonzero": false,
+            "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
+            "queue_submission": {
+              "queue": "0x10009450",
+              "payload_ptr": "0x10009520",
+              "size_arg": 0,
+              "payload_bytes": 36864
+            }
           }
         },
         "matches_v1_records_bitwise": true
@@ -136,7 +143,7 @@
               2
             ]
           },
-          "texture_upload": {
+          "cpu_pattern": {
             "dimensions": [
               96,
               96
@@ -153,7 +160,14 @@
               147,
               198
             ],
-            "other_channels_nonzero": false
+            "other_channels_nonzero": false,
+            "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
+            "queue_submission": {
+              "queue": "0x10009430",
+              "payload_ptr": "0x10009500",
+              "size_arg": 0,
+              "payload_bytes": 36864
+            }
           }
         },
         "matches_v1_records_bitwise": true
@@ -194,7 +208,7 @@
               2
             ]
           },
-          "texture_upload": {
+          "cpu_pattern": {
             "dimensions": [
               96,
               96
@@ -211,7 +225,14 @@
               147,
               198
             ],
-            "other_channels_nonzero": false
+            "other_channels_nonzero": false,
+            "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
+            "queue_submission": {
+              "queue": "0x10009430",
+              "payload_ptr": "0x10009500",
+              "size_arg": 0,
+              "payload_bytes": 36864
+            }
           }
         },
         "matches_v1_records_bitwise": true
@@ -250,6 +271,13 @@
       198
     ],
     "other_byte_channels_nonzero": false,
+    "captured_at": "synthetic IGLMsgQueue vtable slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168",
+    "queue_submission": {
+      "queue": "0x10000730",
+      "payload_ptr": "0x100007f0",
+      "size_arg": 0,
+      "payload_bytes": 36864
+    },
     "pixel_bytes_order": "little-endian uint32; observed R varying, G/B/A zero",
     "shader_contract": "fragment preserves input RGB and multiplies input alpha by sampled pattern red",
     "native_shader_resources": {
@@ -292,8 +320,8 @@
     ],
     "texture": [
       "SPGraphicsFactory::CreateBitmap",
-      "synthetic bitmap methods",
-      "setTextures upload capture"
+      "synthetic SPSubBitmap::GetMsgQueue result",
+      "synthetic IGLMsgQueue vtable slot +48 payload capture"
     ],
     "runtime": [
       "operator new/new[] and nothrow overloads use bounded Unicorn arena",
@@ -308,7 +336,7 @@
     "synthetic MotionEvent historical/current coordinate callbacks listed per case",
     "synthetic manager and queue host; queue task Run invoked synchronously",
     "synthetic RT vtable methods except actual RTV1::AddPoint",
-    "synthetic bitmap factory and bitmap vtable; actual RTV1::setTextures provides upload bytes",
+    "synthetic SPGraphicsFactory::CreateBitmap; actual RTV1::setTextures constructs CPU pattern bytes and passes the pointer through a synthetic queue slot +48 after synthetic SPSubBitmap::GetMsgQueue slot +168; no texture object or GPU upload is exercised",
     "bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached",
     "ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run"
   ],
