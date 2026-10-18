@@ -36,6 +36,17 @@ rechecked against both the property reader and the named getters:
 | Reveal mode | 492 | `IsRevealMode`, `0x2e7498` |
 | Straighten | 493 | `IsStraighten`, `0x2e7598` |
 
+The compact [`stroke-curve-flag` capture](../../conformance/stroke-curve-flag.json)
+executes `m_ApplyBinary_Property` (`0x2ed138`) with bit 0 clear/set, then
+calls `ObjectStroke::IsCurveEnabled` (`0x2e067c`). The native reader writes the
+masked bit to implementation byte `+40`; the getter follows wrapper `+32` to
+that implementation and reads the same byte. Five masks verify clearing and
+setting independently of other bits. The capture also pins the instructions in `Drawing::drawObjectStroke`
+(`0x81f08–0x81f20`) that call the getter, mask bit 0 and pass it to the
+drawable's `+16` virtual slot. Drawing is instruction-checked rather than
+executed in this small capture; saved parsing is separately represented by
+`decode_stroke` assigning `StrokeProperties::read(frame.properties)`.
+
 Bit 2 is the reader's separate output indicating stylus-channel presence.
 The SDK exposes it as `stylus_channels`. Bits 8 and 10 have inverse polarity:
 their absence sets `binary_added` and `generated` to true. This is the

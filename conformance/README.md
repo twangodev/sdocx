@@ -127,6 +127,14 @@ The empty-pool bind result remains an explicit host input.
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/formula_bounds_native.py --check-fixture
 ```
 
+The compact [`stroke-curve-flag.json`](stroke-curve-flag.json) oracle executes
+the native property reader/getter for bit 0 clear and set, and checks the
+hash-pinned Drawing instructions that forward the getter result:
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/stroke_curve_flag_native.py --check-fixture
+```
+
 The intermediate live drawing, GPU, cache, and lifecycle experiments were
 retired. Their findings remain in `docs/reverse-engineering/`; their scripts
 are available in Git at `40de721`. To recover an individual experiment:
