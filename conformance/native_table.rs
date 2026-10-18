@@ -8,6 +8,8 @@ mod columns;
 
 #[path = "native_table/code_layout.rs"]
 mod code_layout;
+#[path = "native_table/code_parent_layout.rs"]
+mod code_parent_layout;
 
 #[path = "native_table/cell_drawing.rs"]
 mod cell_drawing;
@@ -37,6 +39,8 @@ mod page_text_ranges;
 mod pdf_paper_placement;
 #[path = "native_table/pdf_paper_predicates.rs"]
 mod pdf_paper_predicates;
+#[path = "native_table/pdf_paper_form_matrix.rs"]
+mod pdf_paper_form_matrix;
 
 #[path = "native_table/shape_paths.rs"]
 mod shape_paths;
@@ -1843,6 +1847,32 @@ fn main() {
             );
             return;
         }
+        Some("--code-parent-layout") => {
+            let paths: Vec<_> = (3..15)
+                .map(|index| {
+                    std::env::args_os().nth(index).expect(
+                        "Base, Drawing, BodyText, C++, Text, Skia, Font, Libxml2, Widget, Content, View and Composer paths required",
+                    )
+                })
+                .collect();
+            code_parent_layout::capture(
+                machine,
+                Path::new(&path),
+                Path::new(&paths[0]),
+                Path::new(&paths[1]),
+                Path::new(&paths[2]),
+                Path::new(&paths[3]),
+                Path::new(&paths[4]),
+                Path::new(&paths[5]),
+                Path::new(&paths[6]),
+                Path::new(&paths[7]),
+                Path::new(&paths[8]),
+                Path::new(&paths[9]),
+                Path::new(&paths[10]),
+                Path::new(&paths[11]),
+            );
+            return;
+        }
         Some("--pdf-paper-placement") => {
             let composer = std::env::args_os()
                 .nth(3)
@@ -1869,6 +1899,11 @@ fn main() {
                 .nth(4)
                 .expect("libSPenWDoc.so path required");
             pdf_paper_predicates::capture(&mut machine, Path::new(&base), Path::new(&wdoc));
+            return;
+        }
+        Some("--pdf-paper-form-matrix") => {
+            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            pdf_paper_form_matrix::capture(&mut machine, Path::new(&pdfium));
             return;
         }
         None => {}

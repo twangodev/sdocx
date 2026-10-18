@@ -565,11 +565,23 @@ impl NativeFontEnvironment {
             (skia, SKIA, SKIA_SHA256),
         ];
         libraries.extend_from_slice(additional);
+        for &(path, address, hash) in preloaded {
+            let duplicates = libraries
+                .iter()
+                .filter(|(loaded_path, loaded_address, _)| {
+                    loaded_path == &path && *loaded_address == address
+                })
+                .count();
+            assert!(duplicates <= 1, "duplicate preloaded library entry");
+            if duplicates == 1 {
+                libraries.retain(|(loaded_path, loaded_address, _)| {
+                    loaded_path != &path || *loaded_address != address
+                });
+            }
+            verify_library(path, hash);
+        }
         for &(path, address, hash) in &libraries {
             map_library(machine.engine, path, address, hash);
-        }
-        for &(path, _, hash) in preloaded {
-            verify_library(path, hash);
         }
         libraries.extend_from_slice(preloaded);
         check(unsafe {

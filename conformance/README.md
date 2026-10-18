@@ -299,6 +299,7 @@ Native reference coverage is narrower than synthetic coverage:
 | [`table-clone-origin.json`](table-clone-origin.json) | Actual Model factory/copy, Widget affine conversion, bounded Composer placement and cold Drawing artwork for 11 cases across three allocation fills. | Retained DrawnText geometry, writer origin and Drawing member112 scroll are supplied. Scroll is separate from actual canvas translation/crop placement. Full Composer/parent measurement, shaping, Bodytext callbacks and final PDF transport are excluded. See [clone placement](../docs/reverse-engineering/table-code-findings.md#captured-table-clone-placement). |
 | [`table-cell-model-lifecycle.json`](table-cell-model-lifecycle.json) | Actual Model table/row/cell/content construction, Drawing frame preparation and Bodytext Model bridge for 17 cases across three allocation fills. Independent replay agrees. | Drawing/Bodytext storage and text adapter are supplied. Full listener callbacks, ObjectSpan origins, first text measurement, parsing/cloning and PDF run clipping are excluded. See [cell Model bridge](../docs/reverse-engineering/table-code-findings.md#cell-model-bridge-after-frame-preparation). |
 | [`table-code-layout.json`](table-code-layout.json) | Complete native Measure/measured-bounds/minimum/ClearMeasure for 18 cold/warm/cleared cases; Rust matches all cold and cleared geometry bits with supplied child metrics. | Source bounds, child layout/height/first-line interfaces and density-scaled constants are supplied. Warm native cache retention is captured separately; complete Rust warm-cache/child-placement/pagination parity is not established. See [code chrome](../docs/reverse-engineering/table-code-findings.md#code-block-chrome-and-split-inputs). |
+| [`code-parent-layout.json`](code-parent-layout.json) | Native-created Model/Drawing objects and Composer parent measurement at two width/density profiles. Replay with `PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/code_parent_layout_native.py --check-fixture`. | Child text metrics and context inputs are supplied; full text layout and pagination are outside the capture. |
 | [`table-page-text-ranges.json`](table-page-text-ranges.json) | Complete native boundary predicates and page range scan for 47 cases and 251 queries; inclusive UTF-16 ranges, overlap and exhausted/absent sections repeat across three allocation fills. | Page/line/cursor/first-empty getter values are supplied. No measured paragraph producer, document repagination or production measured-line indexer. See [page ranges](../docs/reverse-engineering/text-layout-findings.md#captured-page-text-ranges). |
 | [`table-bodytext-page-ranges.json`](table-bodytext-page-ranges.json) | Actual Model→Widget/shaping/measurement/paragraph placement→BodyTextPageIndexer: 12 profiles, 32 lines, 231 boundary queries and 36 initial/repeat/rescan stages. Independent five-fill replay agrees; the typed Rust indexer matches these outputs and the supplied 47-case kernel suite. | Only page-count/integer page records and caller source/context are supplied; line/fallback getters are native-produced. No page-bound conversion, object/obstacle producer, general document repagination or final writer; bounded parsed-body routing is checked separately. See [native-produced page ranges](../docs/reverse-engineering/text-layout-findings.md#captured-native-produced-page-ranges). |
 | [`table-text-paragraph-layout.json`](table-text-paragraph-layout.json) | Complete native paragraph layout chain with actual constructors, host ICU76.1/Unicode16 bidi/breaking, 25 cases, 38 lines and 81 placed UTF-16 entries; captures conditional natural widths and surrogate-cut emergency ranges. | Source, measured advances, kinds, metrics, spacing and ink are supplied. No font measurement/classification, objects/bullets, obstacles, pagination, clips, vector export or Android device ICU parity. Production retains separate SDK break/grapheme/height policy. See [paragraph loop](../docs/reverse-engineering/text-layout-findings.md#captured-paragraph-layout-loop). |
@@ -798,6 +799,17 @@ PDFData constructors, setters, serialization, resource availability, placement
 or rendering. Negative queries describe the supplied-record predicate, not
 document admission. This is optional native research evidence, not an SDK PDF
 paper parity test. See [storage findings](../docs/reverse-engineering/pdf-paper-storage-findings.md).
+
+## PDF paper form matrix
+
+`pdf-paper-form-matrix.json` captures the native matrix prefix with supplied
+page-box/rotation inputs; document construction, callback coordinate alignment
+and rendered export are outside the capture. See the
+[placement findings](../docs/reverse-engineering/pdf-paper-placement-findings.md#standard-pdf-overlay-form-matrix).
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_form_matrix_native.py --check-fixture
+```
 
 ## Native shape path capture
 

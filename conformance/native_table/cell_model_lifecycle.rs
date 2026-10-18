@@ -184,6 +184,15 @@ unsafe extern "C" fn platform(engine: Engine, address: u64, _: u32, _: *mut c_vo
     register(engine, REGISTER_X0, result);
 }
 pub(super) fn initialize(paths: &Paths, fill: u8) -> Machine {
+    initialize_with_bases(paths, fill, 0x06000000, BODY)
+}
+
+pub(super) fn initialize_with_bases(
+    paths: &Paths,
+    fill: u8,
+    cpp_base: u64,
+    body_base: u64,
+) -> Machine {
     let model = paths.model;
     let base = paths.base;
     let body = paths.body;
@@ -192,12 +201,12 @@ pub(super) fn initialize(paths: &Paths, fill: u8) -> Machine {
     machine.heap.allocation_fill = fill;
     frames::load_base(&machine, &base);
     machine.load_drawing(paths.drawing);
-    map_library(machine.engine, &body, BODY, BODY_SHA256);
-    map_library(machine.engine, cpp, 0x06000000, CPP_SHA256);
+    map_library(machine.engine, &body, body_base, BODY_SHA256);
+    map_library(machine.engine, cpp, cpp_base, CPP_SHA256);
     let mut providers: BTreeMap<String, u64> = Elf::new(&cpp)
         .symbols()
         .into_iter()
-        .map(|(n, v)| (n, v + 0x06000000))
+        .map(|(n, v)| (n, v + cpp_base))
         .collect();
     providers.extend(
         Elf::new(&base)
@@ -216,7 +225,7 @@ pub(super) fn initialize(paths: &Paths, fill: u8) -> Machine {
         Elf::new(&body)
             .symbols()
             .into_iter()
-            .map(|(n, v)| (n, v + 0x07000000)),
+            .map(|(n, v)| (n, v + body_base)),
     );
     for (name, address) in [
         ("strlen", STRLEN),
@@ -243,9 +252,9 @@ pub(super) fn initialize(paths: &Paths, fill: u8) -> Machine {
     }
     Elf::new(&model).bind(machine.engine, 0, &providers);
     Elf::new(&base).bind(machine.engine, frames::BASE, &providers);
-    Elf::new(&cpp).bind(machine.engine, 0x06000000, &providers);
+    Elf::new(&cpp).bind(machine.engine, cpp_base, &providers);
     Elf::new(paths.drawing).bind(machine.engine, DRAWING_BASE, &providers);
-    Elf::new(&body).bind(machine.engine, 0x07000000, &providers);
+    Elf::new(&body).bind(machine.engine, body_base, &providers);
     for plt in [0x47ac30, 0x47ac40, 0x020e55f0, 0x020e56f0, 0x020e5780] {
         bind_native(machine.engine, plt, NEW);
     }

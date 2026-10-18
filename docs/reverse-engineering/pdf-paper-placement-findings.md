@@ -250,3 +250,31 @@ contain no general finite-value validator before placement width division.
 Empty dimensions have narrower checks at specific producer/cache/renderer
 boundaries. Those observations describe this APK's behavior; they do not justify
 accepting unbounded or nonfinite geometry in a Rust SVG emitter.
+
+### Standard PDF overlay form matrix
+
+The Standard PDF writer has a separate placement path. `PdfiumExportHandler::OpenWriter`
+in `libSPenPdf.so` (`0x7c844–0x7c8a8`) loads the selected page, reads its
+quarter-turn rotation, and calls `FPDFPage_NewFormObj(page, 4 - rotation)`.
+Text and path handlers convert their Y coordinate using the page-height API
+before inserting objects into this form (`PdfiumTextHandler::DrawText`,
+`0xa2230`; `PdfiumPathHandler::DrawPath`, `0x9aa38`).
+
+A bounded execution of `FPDFPage_NewFormObj`'s geometry instructions in pinned
+`libSPenPdfiumB.so` (`0x58a064–0x58a118`) captures the form matrix from supplied
+effective-box coordinates `[L,B,R,T]`. The native matrix and translation are
+recorded for each page rotation in the
+[form-matrix conformance fixture](../../conformance/pdf-paper-form-matrix.json).
+The fixture keeps the Samsung form argument (`4 - page rotation`) separate
+from the page-rotation label. Its asymmetric nonzero-origin box confirms that
+the form matrix contains the box origin and compensates for rotation.
+
+This establishes the matrix kernel, not the complete note-to-source mapping.
+The fragment starts after page-handle dispatch and stops before XObject/document
+construction. The page-height call used by the text/path handlers dispatches
+to `CPDF_Page::GetPageHeight` in the pinned PDFium vtable; its method returns
+the raw effective-box height from the page field (`libSPenPdfiumB.so`,
+`0x472f5c`). The fixture's point/matrix composition is still host arithmetic;
+it does not execute a constructed page handle, the Standard exporter, or a
+render. The overlay callback coordinate basis and serialized or rendered
+alignment remain unverified.

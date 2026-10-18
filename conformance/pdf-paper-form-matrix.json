@@ -1,0 +1,189 @@
+{
+  "evidence": "executed bounded libSPenPdfiumB.so function-entry assembly fragment; CPDF_Page getter/page construction skipped; subsequent XObject/dictionary calls skipped",
+  "pdfium_sha256": "4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854",
+  "native_symbol": "FPDFPage_NewFormObj+0x50..+0x104 (0x58a064..0x58a118)",
+  "page_box_host_input": [
+    13.25,
+    29.5,
+    213.25,
+    179.5
+  ],
+  "host_input_top_left_point_for_composition": [
+    17.25,
+    41.5
+  ],
+  "page_r0": {
+    "page_rotation_quarter_turn": 0,
+    "open_writer_form_argument_4_minus_page_rotation": 4,
+    "native_form_turn_after_modulo_4": 0,
+    "matrix_abcd": [
+      1.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "matrix_abcd_f32_bits": [
+      "0x3f800000",
+      "0x00000000",
+      "0x00000000",
+      "0x3f800000"
+    ],
+    "matrix_ef": [
+      13.25,
+      29.5
+    ],
+    "matrix_ef_f32_bits": [
+      "0x41540000",
+      "0x41ec0000"
+    ],
+    "form_bbox_extent": [
+      200.0,
+      150.0
+    ],
+    "form_bbox_extent_f32_bits": [
+      "0x43480000",
+      "0x43160000"
+    ],
+    "host_composed_handler_input_after_H_minus_y": [
+      17.25,
+      108.5
+    ],
+    "host_composed_raw_page_point_using_raw_box_height": [
+      30.5,
+      138.0
+    ],
+    "host_composed_point_basis_boundary": "The handler's page-height call and H-y instruction are established by disassembly, but this point is host-supplied and the composition is host arithmetic, not a full writer capture."
+  },
+  "page_r90": {
+    "page_rotation_quarter_turn": 1,
+    "open_writer_form_argument_4_minus_page_rotation": 3,
+    "native_form_turn_after_modulo_4": 3,
+    "matrix_abcd": [
+      0.0,
+      1.0,
+      -1.0,
+      0.0
+    ],
+    "matrix_abcd_f32_bits": [
+      "0x00000000",
+      "0x3f800000",
+      "0xbf800000",
+      "0x00000000"
+    ],
+    "matrix_ef": [
+      213.25,
+      29.5
+    ],
+    "matrix_ef_f32_bits": [
+      "0x43554000",
+      "0x41ec0000"
+    ],
+    "form_bbox_extent": [
+      150.0,
+      200.0
+    ],
+    "form_bbox_extent_f32_bits": [
+      "0x43160000",
+      "0x43480000"
+    ],
+    "host_composed_handler_input_after_H_minus_y": [
+      17.25,
+      108.5
+    ],
+    "host_composed_raw_page_point_using_raw_box_height": [
+      104.75,
+      46.75
+    ],
+    "host_composed_point_basis_boundary": "The handler's page-height call and H-y instruction are established by disassembly, but this point is host-supplied and the composition is host arithmetic, not a full writer capture."
+  },
+  "page_r180": {
+    "page_rotation_quarter_turn": 2,
+    "open_writer_form_argument_4_minus_page_rotation": 2,
+    "native_form_turn_after_modulo_4": 2,
+    "matrix_abcd": [
+      -1.0,
+      0.0,
+      0.0,
+      -1.0
+    ],
+    "matrix_abcd_f32_bits": [
+      "0xbf800000",
+      "0x00000000",
+      "0x00000000",
+      "0xbf800000"
+    ],
+    "matrix_ef": [
+      213.25,
+      179.5
+    ],
+    "matrix_ef_f32_bits": [
+      "0x43554000",
+      "0x43338000"
+    ],
+    "form_bbox_extent": [
+      200.0,
+      150.0
+    ],
+    "form_bbox_extent_f32_bits": [
+      "0x43480000",
+      "0x43160000"
+    ],
+    "host_composed_handler_input_after_H_minus_y": [
+      17.25,
+      108.5
+    ],
+    "host_composed_raw_page_point_using_raw_box_height": [
+      196.0,
+      71.0
+    ],
+    "host_composed_point_basis_boundary": "The handler's page-height call and H-y instruction are established by disassembly, but this point is host-supplied and the composition is host arithmetic, not a full writer capture."
+  },
+  "page_r270": {
+    "page_rotation_quarter_turn": 3,
+    "open_writer_form_argument_4_minus_page_rotation": 1,
+    "native_form_turn_after_modulo_4": 1,
+    "matrix_abcd": [
+      0.0,
+      -1.0,
+      1.0,
+      0.0
+    ],
+    "matrix_abcd_f32_bits": [
+      "0x00000000",
+      "0xbf800000",
+      "0x3f800000",
+      "0x00000000"
+    ],
+    "matrix_ef": [
+      13.25,
+      179.5
+    ],
+    "matrix_ef_f32_bits": [
+      "0x41540000",
+      "0x43338000"
+    ],
+    "form_bbox_extent": [
+      150.0,
+      200.0
+    ],
+    "form_bbox_extent_f32_bits": [
+      "0x43160000",
+      "0x43480000"
+    ],
+    "host_composed_handler_input_after_H_minus_y": [
+      17.25,
+      108.5
+    ],
+    "host_composed_raw_page_point_using_raw_box_height": [
+      121.75,
+      162.25
+    ],
+    "host_composed_point_basis_boundary": "The handler's page-height call and H-y instruction are established by disassembly, but this point is host-supplied and the composition is host arithmetic, not a full writer capture."
+  },
+  "source_apk": {
+    "version": "4.4.45.37",
+    "sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
+  },
+  "model_library_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "case_boundary": "The runner executes original PDFium instructions from FPDFPage_NewFormObj+0x50 to +0x104. The CPDF_Page bbox fields and function argument are host-supplied; page-handle dispatch, document/XObject construction, complete Samsung writer, PDF serialization and rendering are excluded. Each page_rotation_quarter_turn is distinct from the OpenWriter form argument 4-page_rotation; PDFium normalizes the latter modulo 4 to select the captured matrix. Candidate top-left point outputs compose the matrix with a host-supplied point and host-side H-y arithmetic using raw effective-box height; disassembly maps FPDF_GetPageHeight to CPDF_Page::GetPageHeight, which returns that raw height. The point and composition are still host-side, not a native full-write capture."
+}
