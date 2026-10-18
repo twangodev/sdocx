@@ -121,7 +121,10 @@ the capture. Its constructor fallback case executes `ObjectStrokeImpl` then
 `ObjectStroke::OnAttach` with a positive saved pen-name ID that the supplied
 StringIDManager cannot resolve. Native attach resets that ID to -1 without
 calling `SetPenType`, leaving the constructor's category 2 and zero pen size.
-The empty-pool bind result remains an explicit host input.
+The empty-pool bind result remains an explicit host input. The same real
+constructor initializes implementation member 464 (the `StrokeType` value) to
+zero; native `GetStrokeType` returns zero, and native setters round-trip raw
+values 0 and 1.
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/formula_bounds_native.py --check-fixture

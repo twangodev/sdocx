@@ -216,6 +216,11 @@ The direct transfers in `Copy` (`0x2e391c`) and `CopyDrawingData`
 (`0x2eb144`), and comparisons in `Equals` (`0x2e4160`), omit member 312;
 this does not establish every indirect helper or callback's behavior.
 `GetStrokeType`, `0x2e16b0`, uses member 464 and does not name field 4.
+The real `ObjectStrokeImpl` constructor, `0x2e8788`, zeros member 464 at
+`0x2e884c`; an absent field 16 therefore retains `StrokeType` zero. Direct
+execution of the constructor and getter confirms zero, and `SetStrokeType`
+`0x2e15b0` accepts and round-trips raw values 0 and 1. The setter rejects
+values at or above 3, while the getter maps stored values at or above 3 to 0.
 
 Bit 6 has no established serialized field contract. The native reader tests
 bit 5 then bit 7 at `0x2ed940`/`0x2ed944`, without a bit-6 consume, skip

@@ -570,6 +570,22 @@
     "pen_name_id_after_attach": 4294967295,
     "category_after_attach": 2,
     "pen_size_after_attach_f32_bits": "00000000",
+    "stroke_type_default_impl_member_464": 0,
+    "stroke_type_default_getter": 0,
+    "stroke_type_setter_cases": [
+      {
+        "input": 0,
+        "setter_result": 1,
+        "impl_member_464": 0,
+        "getter": 0
+      },
+      {
+        "input": 1,
+        "setter_result": 1,
+        "impl_member_464": 1,
+        "getter": 1
+      }
+    ],
     "set_pen_type_calls_during_attach": 0,
     "drawn_rect_f32_bits": [
       "0000c040",

@@ -193,12 +193,23 @@ def run_unresolved_attach():
  w32(uc,IMPL+16,7)  # saved positive string ID, absent from the supplied pool
  call(uc,BMODEL+0x2e65c4,[OWNER,context,0])
  after_id=u32(uc,IMPL+16); after_category=u32(uc,IMPL+328); after_size=bytes(uc.mem_read(IMPL+292,4)).hex()
+ stroke_type_default_member=u32(uc,IMPL+464)
+ stroke_type_default_getter=call(uc,BMODEL+0x2e16b0,[OWNER])
+ stroke_type_setter_cases=[]
+ for raw_type in (0,1):
+  setter_result=call(uc,BMODEL+0x2e15b0,[OWNER,raw_type])
+  getter=call(uc,BMODEL+0x2e16b0,[OWNER])
+  stroke_type_setter_cases.append({'input':raw_type,'setter_result':setter_result,
+   'impl_member_464':u32(uc,IMPL+464),'getter':getter})
  call(uc,BMODEL+0x2e9488,[IMPL,0])
  rect_out=[struct.pack('<I',uc.reg_read(r)&0xffffffff).hex() for r in (R.UC_ARM64_REG_S0,R.UC_ARM64_REG_S1,R.UC_ARM64_REG_S2,R.UC_ARM64_REG_S3)]
  return {'constructor_seed_size_f32_bits':'00004842','constructor_seed_category_u32_bits':'77777777',
   'constructor_size_f32_bits':ctor_size,'constructor_category':ctor_category,
   'attach_input_saved_pen_name_id':7,'attach_input_pen_name_pointer_null':True,'string_id_bind':bind_results,
   'pen_name_id_after_attach':after_id,'category_after_attach':after_category,'pen_size_after_attach_f32_bits':after_size,
+  'stroke_type_default_impl_member_464':stroke_type_default_member,
+  'stroke_type_default_getter':stroke_type_default_getter,
+  'stroke_type_setter_cases':stroke_type_setter_cases,
   'set_pen_type_calls_during_attach':len(set_pen_type_calls),'drawn_rect_f32_bits':rect_out,
   'boundary':['Native ObjectStrokeImpl ctor 0x2e8788, ObjectStroke::OnAttach 0x2e65c4, SetPenType 0x2ea3c0 and GetDrawnRect 0x2e9488',
    'Host StringIDManager::Bind(int) returns unresolved for the supplied saved ID; host Base OnAttach/RectF::Contains and owner rectangle/rotation callbacks',
