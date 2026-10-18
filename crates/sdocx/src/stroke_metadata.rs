@@ -289,18 +289,42 @@ pub struct StrokeRendering {
 }
 
 /// Resolve saved IDs once per document; use the same resolver for debugger strokes.
-#[derive(Debug, Clone, Default)]
-pub struct StrokeResources(std::collections::BTreeMap<u32, String>);
+#[derive(Debug, Clone)]
+pub struct StrokeResources {
+    names: std::collections::BTreeMap<u32, String>,
+    complete: bool,
+}
+
+impl Default for StrokeResources {
+    fn default() -> Self {
+        Self {
+            names: std::collections::BTreeMap::new(),
+            complete: true,
+        }
+    }
+}
 
 impl StrokeResources {
     pub fn new(table: &crate::NoteStringTable) -> Self {
-        Self(
-            table
+        Self {
+            names: table
                 .entries
                 .iter()
                 .map(|entry| (entry.id, entry.text.clone()))
                 .collect(),
-        )
+            complete: true,
+        }
+    }
+
+    pub(crate) fn unresolved() -> Self {
+        Self {
+            names: std::collections::BTreeMap::new(),
+            complete: false,
+        }
+    }
+
+    pub(crate) fn is_complete(&self) -> bool {
+        self.complete
     }
 
     pub fn resolve(&self, stroke: &mut crate::Stroke) {
@@ -309,11 +333,21 @@ impl StrokeResources {
         };
         let lookup = |id: Option<i32>| {
             id.and_then(|id| u32::try_from(id).ok())
-                .and_then(|id| self.0.get(&id))
+                .and_then(|id| self.names.get(&id))
                 .cloned()
         };
         let modern = rendering.style.pen_name_id.filter(|id| *id != -1);
         rendering.pen_name = lookup(modern.or(rendering.style.legacy_pen_name_id));
         rendering.advanced_settings = lookup(rendering.style.advanced_pen_setting_id);
+    }
+
+    pub(crate) fn resolve_formula(&self, formula: &mut crate::FormulaMetadata) {
+        for child in formula
+            .strokes
+            .iter_mut()
+            .chain(&mut formula.answer_strokes)
+        {
+            self.resolve(&mut child.stroke);
+        }
     }
 }

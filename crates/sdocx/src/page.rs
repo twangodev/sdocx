@@ -23,6 +23,7 @@ pub(crate) fn parse_page(
     report: &mut ParseReport,
     media: &MediaResolver,
     document_metadata: &crate::DocumentMetadata,
+    stroke_resources: &crate::StrokeResources,
     observer: &mut dyn FnMut(Progress),
 ) -> Result<Page> {
     let header = &stored.header;
@@ -59,6 +60,7 @@ pub(crate) fn parse_page(
         archive_entry,
         report,
         document_metadata,
+        stroke_resources,
         progress: WorkProgress::new(observer, ProgressStage::Objects, total),
     };
     page.objects = decoder.decode_objects(data, &current_layer.objects)?;
@@ -97,6 +99,7 @@ struct PageDecoder<'a, 'p> {
     archive_entry: &'a str,
     report: &'a mut ParseReport,
     document_metadata: &'a crate::DocumentMetadata,
+    stroke_resources: &'a crate::StrokeResources,
     progress: WorkProgress<'p>,
 }
 
@@ -225,7 +228,7 @@ impl PageDecoder<'_, '_> {
                 }
                 content = Some(PageObjectContent::Container(Vec::new()));
             } else if object.object_type == ObjectType::Formula {
-                let formula = object
+                let mut formula = object
                     .formula_metadata_with_limits(data, self.limits)
                     .map_err(|error| match error {
                         Error::Format(message) => Error::Format(format!(
@@ -234,6 +237,7 @@ impl PageDecoder<'_, '_> {
                         )),
                         error => error,
                     })?;
+                self.stroke_resources.resolve_formula(&mut formula);
                 match formula.select_render_source(self.document_metadata, false, None) {
                     crate::formula::FormulaRenderSelection::StrokeFallback { strokes } => {
                         content = Some(PageObjectContent::Container(
@@ -250,6 +254,59 @@ impl PageDecoder<'_, '_> {
                         ));
                     }
                     crate::formula::FormulaRenderSelection::Hidden => {}
+                    crate::formula::FormulaRenderSelection::ImageSelected {
+                        result_rect: Some(result_rect),
+                        ..
+                    } => {
+                        let bounds = crate::formula::bounds::formula_drawn_bounds(
+                            &formula,
+                            self.stroke_resources.is_complete(),
+                        );
+                        let media_id = formula
+                            .latex_image_media_id
+                            .and_then(|id| u32::try_from(id).ok());
+                        let resolved_media =
+                            media_id.and_then(|id| self.media.resolve(Some(id)).ok());
+                        let placement = bounds.zip(resolved_media).and_then(
+                            |([left, top, _, _], (media_index, _))| {
+                                let rect = [
+                                    left + result_rect.x_min as f32,
+                                    top + result_rect.y_min as f32,
+                                    left + result_rect.x_max as f32,
+                                    top + result_rect.y_max as f32,
+                                ];
+                                rect.iter().all(|coord| coord.is_finite()).then_some((
+                                    media_index,
+                                    BoundingBox {
+                                        x_min: f64::from(rect[0]),
+                                        y_min: f64::from(rect[1]),
+                                        x_max: f64::from(rect[2]),
+                                        y_max: f64::from(rect[3]),
+                                    },
+                                ))
+                            },
+                        );
+                        if let Some((media_index, bbox)) = placement {
+                            content = Some(PageObjectContent::Element(PageElement::PlacedImage(
+                                crate::PlacedImage {
+                                    bbox,
+                                    rotation_degrees: None,
+                                    media_id,
+                                    media_index: Some(media_index),
+                                    crop_rect: None,
+                                    original_bbox: None,
+                                    border_media_id: None,
+                                    original_media_id: None,
+                                },
+                            )));
+                        } else {
+                            self.report.warning(
+                                DiagnosticCode::UnsupportedObjectType,
+                                Some(self.archive_entry.to_owned()),
+                                format!("page {}: Formula at 0x{:x}: native bitmap selected but its page origin cannot be derived from resolved visible child bounds and result rectangle", self.page_uuid, object.payload_offset),
+                            );
+                        }
+                    }
                     crate::formula::FormulaRenderSelection::ImageSelected { .. }
                     | crate::formula::FormulaRenderSelection::CachedImageSelected { .. }
                     | crate::formula::FormulaRenderSelection::Unsupported(_) => {

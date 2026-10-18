@@ -17,6 +17,16 @@ ARM64 copies match these APK entries byte for byte:
 | `libSPenBase.so` | `e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb` |
 | `libSPenDrawing.so` | `788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd` |
 
+The Rust page renderer now selects and decodes saved PNG assets, then places a
+selected image at the native Formula drawn-union origin plus its saved result
+rectangle. The normal page wrapper leaves Formula drawing origin at zero.
+Missing or failed PNG decode falls back to source and answer strokes. PNG
+decoding and caller output allocation each use a separate 64 MiB cap. Other
+raster formats and child-pen IDs from an unparsed string table remain
+unsupported; a missing ID
+in a fully decoded table uses the native null-name category. SVG/PDF fixture
+tests establish this implementation path, not device pixel parity.
+
 ## Image and stroke precedence
 
 `ObjectDrawing::drawObjectFormula` at `0x817b8` first calls
@@ -70,9 +80,14 @@ Transient preview state changes alpha to 76/255 in the resized bitmap at
 `0x841ac`–`0x841b4`. The state is time-dependent (`isPreviewState`, `0x83e2c`)
 and is not a persisted formula appearance flag.
 
-Image placement depends on the enclosing object/canvas transform and
-pen-dependent drawn bounds. The stored base rectangle alone is not a proven
-substitute for the native drawn rectangle.
+The ordinary `ObjectDrawing::drawObject` Formula arm at `0x7fe14` calls
+`drawObjectFormula`, which constructs a transient `ObjectFormulaDrawing` and
+calls `DrawObject` without `SetPos`. Its constructor zeroes drawing-data offsets
+8–23, including the position at offsets 16/20. In that page path the image
+destination in the current canvas is therefore the Formula drawn-rect origin
+plus the saved result rectangle; an enclosing page/canvas transform still
+applies. The stored base rectangle alone is not a substitute for the native
+drawn rectangle.
 
 ## Visible-stroke bounds
 
@@ -106,6 +121,11 @@ drawn-bound refresh at `0x2ea538`. Names share the full prefix
 | 10 | OilBrush3 | `size * 0.5 * f32(1.3) + 4` |
 | 11 | ColoredPencil | `size * 35 + 4` |
 | Remaining values | Null/unmatched name selects category 2 | `size * 0.5 + 4` |
+
+`ObjectStrokeImpl` construction at `0x2e8788` initializes category `+328` to 2
+and pen size `+292` to `0.0`. A missing name ID in a fully decoded saved string
+table therefore keeps the native null-name category; an unparsed table cannot
+establish whether an ID resolves.
 
 OilBrush3's literal is at `0x13ca52`; its comparison at `0x2ea4dc` selects 10
 at `0x2ea57c`, stored to `+328` at `0x2ea510`. Category 10 first multiplies
@@ -210,11 +230,10 @@ has been confirmed.
 ## SDK behavior and evidence limits
 
 Formula inspection decodes both stroke lists, image media ID and result
-rectangle. Saved-file vector output follows source then answer stroke-list
-order when the native image path is unavailable, including entries whose
-child ObjectBase visibility bit is clear; the native outer draw loop dispatches
-all list entries. A selected path still emits an
-unsupported-render diagnostic because page rendering lacks a native-equivalent
-bitmap result and `GetDrawnRect` origin. Ambiguous or opaque resources remain
-unsupported, and no LaTeX text is synthesized. Final appearance has not been
-checked against a paired Samsung SDOCX/PDF export.
+rectangle. Saved-file rendering decodes PNG resources under separate 64 MiB
+decoder and output-buffer caps, places them at the recovered native union
+origin plus the saved result rectangle, and falls back to source then answer
+stroke-list order when the path is missing or PNG decoding fails. Ambiguous or
+opaque resources, unsupported raster formats, and unresolved child-pen tables
+remain unsupported; no LaTeX text is synthesized. SVG/PDF fixture tests cover
+the implementation path, not paired Samsung device appearance or PDF parity.

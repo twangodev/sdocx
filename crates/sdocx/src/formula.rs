@@ -6,6 +6,10 @@ use crate::{
     MathAngleType, ObjectMetadata, ObjectType, ParseLimits, Result, StoredObject, Stroke,
 };
 
+pub(crate) mod bounds;
+#[cfg(feature = "render")]
+mod image;
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -166,10 +170,11 @@ impl FormulaMetadata {
     /// Select the saved Formula image or its native stroke fallback.
     ///
     /// `runtime_cache_available` reports a cache supplied by a live native
-    /// object; saved files do not serialize that bitmap. `bitmap_decodable`
-    /// must be the caller's actual raster-backend result for a resolved source
-    /// asset. A missing path or failed bitmap probe selects source then answer
-    /// stroke entries in stored order. An unresolved decode,
+    /// object; saved files do not serialize that bitmap. A caller-provided
+    /// `bitmap_decodable` takes precedence; with `render`, bound PNG assets are
+    /// fully decoded under separate 64 MiB decoder and output-buffer limits.
+    /// A missing path or failed bitmap probe selects source then answer stroke
+    /// entries in stored order. Unsupported raster formats, an unresolved decode,
     /// ambiguous binding or unsupported resource returns `Unsupported`
     /// rather than guessing. This resolves draw precedence only; image
     /// placement still needs the native drawn-rect origin, and this method
@@ -285,17 +290,31 @@ impl FormulaMetadata {
             FormulaRenderSelection::CachedImageSelected {
                 result_rect: self.latex_result_rect,
             }
-        } else if bitmap_decodable == Some(true) {
-            FormulaRenderSelection::ImageSelected {
-                resource_name: &resource.name,
-                mime_type,
-                data,
-                result_rect: self.latex_result_rect,
-            }
-        } else if bitmap_decodable == Some(false) {
-            fallback()
         } else {
-            FormulaRenderSelection::Unsupported(FormulaRenderUnsupported::UnsupportedImageResource)
+            let bitmap_decodable = bitmap_decodable.or_else(|| {
+                #[cfg(feature = "render")]
+                {
+                    image::decode_saved_png(mime_type, data)
+                }
+                #[cfg(not(feature = "render"))]
+                {
+                    None
+                }
+            });
+            if bitmap_decodable == Some(true) {
+                FormulaRenderSelection::ImageSelected {
+                    resource_name: &resource.name,
+                    mime_type,
+                    data,
+                    result_rect: self.latex_result_rect,
+                }
+            } else if bitmap_decodable == Some(false) {
+                fallback()
+            } else {
+                FormulaRenderSelection::Unsupported(
+                    FormulaRenderUnsupported::UnsupportedImageResource,
+                )
+            }
         }
     }
 
@@ -731,6 +750,23 @@ mod tests {
             }
             other => panic!("expected selected image, got {other:?}"),
         }
+    }
+
+    #[cfg(feature = "render")]
+    #[test]
+    fn automatic_png_probe_selects_only_decodable_saved_asset() {
+        let formula = formula(Some(12));
+        let mut metadata = media_document();
+        assert!(matches!(
+            formula.select_render_source(&metadata, false, None),
+            FormulaRenderSelection::ImageSelected { .. }
+        ));
+
+        metadata.media_assets[0].data = b"png signature is not a bitmap".to_vec();
+        assert_eq!(
+            fallback_ids(formula.select_render_source(&metadata, false, None)),
+            ["source", "hidden", "answer"]
+        );
     }
 
     #[test]

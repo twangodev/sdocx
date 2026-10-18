@@ -49,12 +49,12 @@ complete masks and trailing bytes retained. Parsing those fields does not
 establish native layout parity. See [table/code findings](table-code-findings.md)
 and [vector text support](../text-vector-support.md) for rendering scope.
 
-Math, formula and plot metadata have bounded inspection APIs. Formula records
-retain expressions, answers, image references, embedded strokes and label
-graphs. Expression evaluation and automatic formula/graph rendering are not
-established. See [math](math-findings.md), [formula](formula-findings.md),
-[formula rendering](formula-rendering-findings.md) and [plot](plot-findings.md)
-findings.
+Math, formula and plot metadata have bounded inspection APIs. Saved Formula
+PNGs render when their media binding decodes and native placement inputs are
+available; missing or undecodable images use embedded strokes. Other Formula
+raster formats, runtime caches, expression evaluation and graph rendering remain
+unsupported. See [math](math-findings.md), [formula](formula-findings.md),
+[formula rendering](formula-rendering-findings.md) and [plot](plot-findings.md).
 
 ## Metadata and integrity
 

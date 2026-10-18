@@ -152,6 +152,11 @@ fn utf16(value: &str) -> Vec<u8> {
 
 #[cfg(feature = "render")]
 fn note_with_pen_name() -> Vec<u8> {
+    note_with_pen_id(12)
+}
+
+#[cfg(feature = "render")]
+fn note_with_pen_id(pen_name_id: u32) -> Vec<u8> {
     let mut bytes = vec![0; 4];
     bytes.extend([1, 0, 2, 0, 4]); // one-byte property mask; field 10
     bytes.extend(5500_u32.to_le_bytes());
@@ -188,7 +193,7 @@ fn note_with_pen_name() -> Vec<u8> {
     let flex = bytes.len() as u32;
     bytes[..4].copy_from_slice(&flex.to_le_bytes());
     let mut table = 1_u16.to_le_bytes().to_vec();
-    table.extend(12_u32.to_le_bytes());
+    table.extend(pen_name_id.to_le_bytes());
     table.extend(utf16("com.samsung.android.sdk.pen.pen.preload.Marker"));
     bytes.extend((table.len() as u32).to_le_bytes());
     bytes.extend(table);
@@ -198,6 +203,21 @@ fn note_with_pen_name() -> Vec<u8> {
 
 #[cfg(feature = "render")]
 fn archive_with(page_bytes: &[u8], note: Option<&[u8]>, media: Option<&[u8]>) -> Vec<u8> {
+    archive_with_asset(
+        page_bytes,
+        note,
+        media,
+        media.map(|_| include_bytes!("assets/crop-quadrants.png").as_slice()),
+    )
+}
+
+#[cfg(feature = "render")]
+fn archive_with_asset(
+    page_bytes: &[u8],
+    note: Option<&[u8]>,
+    media: Option<&[u8]>,
+    image: Option<&[u8]>,
+) -> Vec<u8> {
     let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
     for (name, data) in [
         Some(("page.page", page_bytes)),
@@ -212,16 +232,14 @@ fn archive_with(page_bytes: &[u8], note: Option<&[u8]>, media: Option<&[u8]>) ->
             .unwrap();
         writer.write_all(data).unwrap();
     }
-    if media.is_some() {
+    if let Some(image) = image {
         writer
             .start_file(
                 "media/latex@fixture.png",
                 zip::write::SimpleFileOptions::default(),
             )
             .unwrap();
-        writer
-            .write_all(include_bytes!("assets/crop-quadrants.png"))
-            .unwrap();
+        writer.write_all(image).unwrap();
     }
     writer.finish().unwrap().into_inner()
 }
@@ -245,6 +263,14 @@ fn distinct_stroke(color: u32, x: f64, y: f64, visible: bool) -> Vec<u8> {
 }
 
 fn formula_with_strokes(image_id: i32, parent_visible: bool) -> Vec<u8> {
+    formula_with_strokes_and_result_rect(image_id, parent_visible, None)
+}
+
+fn formula_with_strokes_and_result_rect(
+    image_id: i32,
+    parent_visible: bool,
+    result_rect: Option<[f64; 4]>,
+) -> Vec<u8> {
     let source = distinct_stroke(0xff123456, 111.0, 222.0, true);
     let hidden = distinct_stroke(0xff00ff00, 200.0, 250.0, false);
     let answer_stroke = distinct_stroke(0xffabcdef, 333.0, 444.0, true);
@@ -262,23 +288,19 @@ fn formula_with_strokes(image_id: i32, parent_visible: bool) -> Vec<u8> {
     let base_bbox_offset = 14 + 4 + 2 + 36 + 8;
     parent[base_bbox_offset..base_bbox_offset + 32].copy_from_slice(&replacement);
     parent[11] = u8::from(parent_visible) << 3;
-    let flex = [
-        image_id.to_le_bytes().to_vec(),
-        list(&[source, hidden]),
-        list(&[answer_stroke]),
-    ]
-    .concat();
-    [
-        parent,
-        frame(
-            11,
-            &[3],
-            &[(1 << 2 | 1 << 7 | 1 << 8) as u16 as u8, 1],
-            &[],
-            &flex,
-        ),
-    ]
-    .concat()
+    let mut flex = Vec::new();
+    if let Some(rect) = result_rect {
+        flex.extend(bbox(rect));
+    }
+    flex.extend(image_id.to_le_bytes());
+    flex.extend(list(&[source, hidden]));
+    flex.extend(list(&[answer_stroke]));
+    let (properties, fields) = if result_rect.is_some() {
+        (&[3][..], &[0x86, 1][..])
+    } else {
+        (&[3][..], &[0x84, 1][..])
+    };
+    [parent, frame(11, properties, fields, &[], &flex)].concat()
 }
 
 #[cfg(feature = "render")]
@@ -518,6 +540,204 @@ fn bound_formula_media_suppresses_fallback_ink_and_keeps_unsupported_diagnostic(
             })
         }));
     }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn decoded_formula_png_uses_native_drawn_origin_and_saved_result_rect() {
+    let payload = formula_with_strokes_and_result_rect(77, true, Some([1.0, 2.0, 5.0, 6.0]));
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let manifest = bound_manifest_entry(77, "latex@fixture.png");
+    let parsed = sdocx::parse_bytes_detailed(&archive_with(
+        &page_bytes,
+        Some(&note_with_pen_name()),
+        Some(&manifest),
+    ))
+    .unwrap();
+
+    assert_eq!(parsed.document.pages[0].strokes().count(), 0);
+    let images: Vec<_> = parsed.document.pages[0]
+        .elements()
+        .filter_map(|element| match element {
+            sdocx::PageElement::PlacedImage(image) => Some(image),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(images.len(), 1);
+    assert_eq!(images[0].media_id, Some(77));
+    assert!(images[0].media_index.is_some());
+    let actual = [
+        images[0].bbox.x_min,
+        images[0].bbox.y_min,
+        images[0].bbox.x_max,
+        images[0].bbox.y_max,
+    ];
+    let expected = [
+        -42.502_349_853_515_625,
+        -17.839_996_337_890_625,
+        -38.502_349_853_515_625,
+        -13.839_996_337_890_625,
+    ];
+    for (actual, expected) in actual.into_iter().zip(expected) {
+        assert!(
+            (actual - expected).abs() < 0.000_01,
+            "{actual} != {expected}"
+        );
+    }
+
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    assert!(svg.contains("<image"), "{svg}");
+    assert!(
+        !svg.contains("<circle"),
+        "Formula ink duplicated its bitmap: {svg}"
+    );
+    #[cfg(feature = "pdf")]
+    {
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        assert!(pdf.objects.values().any(|object| {
+            object.as_stream().is_ok_and(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+            })
+        }));
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn corrupt_bound_formula_png_falls_back_to_both_ink_lists() {
+    let payload = formula_with_strokes_and_result_rect(77, true, Some([1.0, 2.0, 5.0, 6.0]));
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let manifest = bound_manifest_entry(77, "latex@fixture.png");
+    let parsed = sdocx::parse_bytes_detailed(&archive_with_asset(
+        &page_bytes,
+        Some(&note_with_pen_name()),
+        Some(&manifest),
+        Some(b"not a decodable PNG"),
+    ))
+    .unwrap();
+
+    let strokes: Vec<_> = parsed.document.pages[0].strokes().collect();
+    assert_eq!(strokes.len(), 3);
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    assert_eq!(svg.matches("<circle").count(), 3, "{svg}");
+    assert!(
+        !svg.contains("<image"),
+        "corrupt Formula image was emitted: {svg}"
+    );
+    #[cfg(feature = "pdf")]
+    {
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        assert!(!pdf.objects.values().any(|object| {
+            object.as_stream().is_ok_and(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+            })
+        }));
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn nonfinite_formula_image_placement_is_not_emitted() {
+    let payload = formula_with_strokes_and_result_rect(
+        77,
+        true,
+        Some([f64::MAX / 2.0, 2.0, f64::MAX / 2.0, 6.0]),
+    );
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let manifest = bound_manifest_entry(77, "latex@fixture.png");
+    let parsed = sdocx::parse_bytes_detailed(&archive_with(
+        &page_bytes,
+        Some(&note_with_pen_name()),
+        Some(&manifest),
+    ))
+    .unwrap();
+
+    assert!(
+        parsed.document.pages[0]
+            .elements()
+            .all(|element| !matches!(element, sdocx::PageElement::PlacedImage(_)))
+    );
+    assert!(parsed.report.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == DiagnosticCode::UnsupportedObjectType
+            && diagnostic.message.contains("Formula")
+            && diagnostic.message.contains("origin cannot be derived")
+    }));
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn complete_string_table_distinguishes_missing_pen_name_from_unparsed_table() {
+    let payload = formula_with_strokes_and_result_rect(77, true, Some([1.0, 2.0, 5.0, 6.0]));
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let manifest = bound_manifest_entry(77, "latex@fixture.png");
+
+    let known_missing = sdocx::parse_bytes_detailed(&archive_with(
+        &page_bytes,
+        Some(&note_with_pen_id(13)),
+        Some(&manifest),
+    ))
+    .unwrap();
+    let image = known_missing.document.pages[0]
+        .elements()
+        .find_map(|element| match element {
+            sdocx::PageElement::PlacedImage(image) => Some(image),
+            _ => None,
+        })
+        .expect("a complete table with an absent ID uses the native null-name category");
+    let expected = [
+        -40.963_775_634_765_625,
+        -16.301_406_860_351_562,
+        -36.963_775_634_765_625,
+        -12.301_406_860_351_562,
+    ];
+    for (actual, expected) in [
+        image.bbox.x_min,
+        image.bbox.y_min,
+        image.bbox.x_max,
+        image.bbox.y_max,
+    ]
+    .into_iter()
+    .zip(expected)
+    {
+        assert!(
+            (actual - expected).abs() < 0.000_01,
+            "{actual} != {expected}"
+        );
+    }
+
+    let incomplete_options = ParseOptions {
+        limits: ParseLimits {
+            max_note_metadata_entries: 0,
+            ..ParseLimits::default()
+        },
+        ..ParseOptions::default()
+    };
+    let incomplete = sdocx::parse_bytes_detailed_with_options(
+        &archive_with(&page_bytes, Some(&note_with_pen_name()), Some(&manifest)),
+        &incomplete_options,
+    )
+    .unwrap();
+    assert!(
+        incomplete.document.pages[0]
+            .elements()
+            .all(|element| !matches!(element, sdocx::PageElement::PlacedImage(_)))
+    );
+    assert!(incomplete.report.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == DiagnosticCode::UnsupportedObjectType
+            && diagnostic.message.contains("origin cannot be derived")
+    }));
 }
 
 #[test]
