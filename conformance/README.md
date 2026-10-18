@@ -161,6 +161,7 @@ PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/smpath_cubic_
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/oblique_redraw_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python:conformance python3 conformance/oblique_fixed_width_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/calligraphy_saved_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil_native.py
 python3 conformance/inkpen_paint_native.py --check-fixture
 ```

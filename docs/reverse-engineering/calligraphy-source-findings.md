@@ -135,6 +135,13 @@ XY (`0x20450`–`0x2047c`), handles initial/later cached edges, and calls `build
 into three render vectors at members 200/208/216 (`0x205e8`–`0x20618`). Derived
 centerline samples, nib state and mesh vertices are separate from saved channels.
 
+The [saved native capture](../../conformance/calligraphy-saved-native.json)
+executes this history/endPen path and all three RTV1 mesh buffers with two
+synthetic histories, including a second redraw on the same drawable. MotionEvent
+accessors, bounds operations and queue submission are explicit host boundaries;
+execution stops before `movePen`. The orientation-sensitive angle and reused
+state are native observations, not application-captured input or pixel evidence.
+
 Current Rust `ink::prepare_stroke` selects Fountain/Marker2/Marker4 geometry;
 this profile borrows original samples with `InkSupport::Approximate`. Its
 [retained metadata](stroke-metadata-findings.md) and channels distinguish optional
