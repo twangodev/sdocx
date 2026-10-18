@@ -57,6 +57,168 @@
             1,
             2
           ],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 0
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00008040",
+                "0000803f"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00001041",
+                "0000a040"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "99e48b42",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "00001041",
+                "0000a040"
+              ],
+              "size_bits": "0000c040"
+            }
+          ],
+          "position_queries": [
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "00000000",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 0
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6a204c3f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 1
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6a20cc3f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 2
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "50181940",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 3
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6a204c40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 4
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "84287f40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 5
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "4f189940",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 6
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "5c9cb240",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 7
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6920cc40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 8
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "76a4e540",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 9
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "8328ff40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 10
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "48560c41",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 11
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "4f181941",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 12
+            }
+          ],
+          "length_queries": [
+            {
+              "caller_pc": "0x301deac",
+              "length_bits": "56da2541"
+            }
+          ],
           "angle_bits": "99e48b42",
           "direction_bits": [
             "0000803f",
@@ -1657,6 +1819,11 @@
                   "00000000"
                 ],
                 "initial_flag": 1,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "00000000",
@@ -1689,6 +1856,11 @@
                   "00000000"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "00004040",
@@ -1721,6 +1893,11 @@
                   "0adf6e3e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "8f23593f",
                   "f1ed4e40",
@@ -1753,6 +1930,11 @@
                   "7be4fd3e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "8481d33f",
                   "8fbc5f40",
@@ -1785,6 +1967,11 @@
                   "e718493f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "11a01a40",
                   "3a467240",
@@ -1817,6 +2004,11 @@
                   "98ca8c3f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "411f4940",
                   "a6328340",
@@ -1849,6 +2041,11 @@
                   "48e8b73f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "cb767540",
                   "12fa8d40",
@@ -1881,6 +2078,11 @@
                   "3c9ae53f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "8fef8f40",
                   "8f669940",
@@ -1913,6 +2115,11 @@
                   "31250b40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "0f92a440",
                   "9892a540",
@@ -1945,6 +2152,11 @@
                   "d85c2740"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "fe95ba40",
                   "6caeb340",
@@ -1977,6 +2189,11 @@
                   "4ca14440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "4fd0cf40",
                   "a650c240",
@@ -2009,6 +2226,11 @@
                   "ccbc6240"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "5a69e440",
                   "665ed140",
@@ -2041,6 +2263,11 @@
                   "cabc8040"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "6e89f840",
                   "cabce040",
@@ -2922,6 +3149,161 @@
           "orientation_read_indices": [
             1,
             2
+          ],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00008040",
+                "0000803f"
+              ],
+              "path_mid_bits": [
+                "0000d040",
+                "00004040"
+              ],
+              "accepted_bits": [
+                "00001041",
+                "0000a040"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "99e48b42",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "00000040",
+                "00004040"
+              ],
+              "control_bits": [
+                "00000041",
+                "0000e040"
+              ],
+              "path_mid_bits": [
+                "0000d040",
+                "00004040"
+              ],
+              "accepted_bits": [
+                "00006041",
+                "00001041"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "ea149dc2",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "00006041",
+                "00001041"
+              ],
+              "size_bits": "0000c040"
+            }
+          ],
+          "position_queries": [
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "00000000",
+              "add_start": 0,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "3f29763f",
+              "add_start": 1,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "3f29f63f",
+              "add_start": 2,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "ef9e3840",
+              "add_start": 3,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "3f297640",
+              "add_start": 4,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "c7d99940",
+              "add_start": 5,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "ef9eb840",
+              "add_start": 6,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "1764d740",
+              "add_start": 7,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "3f29f640",
+              "add_start": 8,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "33770a41",
+              "add_start": 9,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "c7d91941",
+              "add_start": 10,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "5b3c2941",
+              "add_start": 11,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "ef9e3841",
+              "add_start": 12,
+              "ok": true
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "83014841",
+              "add_start": 13,
+              "ok": true
+            }
+          ],
+          "length_queries": [
+            {
+              "caller_pc": "0x301deac",
+              "length_bits": "17645741"
+            }
           ],
           "angle_bits": "ea149dc2",
           "direction_bits": [
@@ -4643,6 +5025,11 @@
                   "00004040"
                 ],
                 "initial_flag": 1,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "6f2c0641",
                   "f350f040",
@@ -4675,6 +5062,11 @@
                   "00004040"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "00000040",
                   "0000c040",
@@ -4707,6 +5099,11 @@
                   "e9d46540"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "477d3940",
                   "74ead240",
@@ -4739,6 +5136,11 @@
                   "44668440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "441d7040",
                   "4466e440",
@@ -4771,6 +5173,11 @@
                   "37879440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "c4039240",
                   "3787f440",
@@ -4803,6 +5210,11 @@
                   "1561a340"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "d2b1aa40",
                   "8ab00141",
@@ -4835,6 +5247,11 @@
                   "b786b140"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "4b0bc340",
                   "5cc30841",
@@ -4867,6 +5284,11 @@
                   "9ad8c140"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "ed63e040",
                   "4dec1041",
@@ -4899,6 +5321,11 @@
                   "d760d040"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "e8f2fb40",
                   "6c301841",
@@ -4931,6 +5358,11 @@
                   "7e4ddd40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "27f30a41",
                   "bfa61e41",
@@ -4963,6 +5395,11 @@
                   "9074ea40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "fe0a1941",
                   "483a2541",
@@ -4995,6 +5432,11 @@
                   "24dcf740"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "0a952841",
                   "12ee2b41",
@@ -5027,6 +5469,11 @@
                   "d4bb0141"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "0e393741",
                   "d4bb3141",
@@ -5059,6 +5506,11 @@
                   "10dd0641"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "ea149dc2"
+                ],
                 "edge_state_bits": [
                   "8a304541",
                   "10dd3641",
@@ -6004,6 +6456,339 @@
       }
     },
     {
+      "id": "one_history_initial_end",
+      "history": [
+        [
+          4.0,
+          5.0,
+          0.2
+        ]
+      ],
+      "size": 6.0,
+      "native": {
+        "fresh": {
+          "orientation_read_indices": [],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 0
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "00008040",
+                "0000a040"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00008040",
+                "0000a040"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 1,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "00008040",
+                "0000a040"
+              ],
+              "size_bits": "0000c040"
+            }
+          ],
+          "position_queries": [],
+          "length_queries": [],
+          "angle_bits": "00000000",
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "meshes": [
+            {
+              "buffer": "mesh_200",
+              "vertex_f32_bits": [
+                "00008040",
+                "00000040",
+                "00000000",
+                "00000000",
+                "00008040",
+                "00000041",
+                "00000000",
+                "0000803f",
+                "00008040",
+                "00000040",
+                "0000803f",
+                "00000000",
+                "00008040",
+                "00000041",
+                "00000000",
+                "0000803f",
+                "00008040",
+                "00000040",
+                "0000803f",
+                "00000000",
+                "00008040",
+                "00000041",
+                "0000803f",
+                "0000803f"
+              ],
+              "vertex_count": 6
+            },
+            {
+              "buffer": "mesh_208",
+              "vertex_f32_bits": [
+                "3468c840",
+                "1a342441",
+                "00000000",
+                "00000000",
+                "325fde3f",
+                "cc97b740",
+                "00000000",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "0000803f",
+                "00000000",
+                "325fde3f",
+                "cc97b740",
+                "00000000",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "0000803f",
+                "00000000",
+                "325fde3f",
+                "388386be",
+                "0000803f",
+                "0000803f",
+                "3468c840",
+                "1a342441",
+                "00000000",
+                "00000000",
+                "325fde3f",
+                "cc97b740",
+                "00000000",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "0000803f",
+                "00000000",
+                "325fde3f",
+                "cc97b740",
+                "00000000",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "0000803f",
+                "00000000",
+                "325fde3f",
+                "388386be",
+                "0000803f",
+                "0000803f"
+              ],
+              "vertex_count": 12
+            },
+            {
+              "buffer": "mesh_216",
+              "vertex_f32_bits": [
+                "325fde3f",
+                "cc97b740",
+                "00000000",
+                "00000000",
+                "3468c840",
+                "1a342441",
+                "00000000",
+                "0000803f",
+                "325fde3f",
+                "cc97b740",
+                "0000803f",
+                "00000000",
+                "3468c840",
+                "1a342441",
+                "00000000",
+                "0000803f",
+                "325fde3f",
+                "cc97b740",
+                "0000803f",
+                "00000000",
+                "3468c840",
+                "1a342441",
+                "0000803f",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "00000000",
+                "00000000",
+                "325fde3f",
+                "388386be",
+                "00000000",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "0000803f",
+                "00000000",
+                "325fde3f",
+                "388386be",
+                "00000000",
+                "0000803f",
+                "3468c840",
+                "34688840",
+                "0000803f",
+                "00000000",
+                "325fde3f",
+                "388386be",
+                "0000803f",
+                "0000803f"
+              ],
+              "vertex_count": 12
+            }
+          ],
+          "add_points": [
+            {
+              "vector_bits": [
+                "00008040",
+                "0000a040",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00008040",
+                  "0000a040"
+                ],
+                "initial_flag": 1,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "00000000"
+                ],
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ]
+              },
+              "build_calls": 5
+            }
+          ],
+          "sample_ends": [],
+          "terminal_start": 0,
+          "build_calls": [
+            {
+              "rect_bits": [
+                "00008040",
+                "00000041",
+                "00008040",
+                "00000040",
+                "00008040",
+                "00000041",
+                "00008040",
+                "00000040"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "3468c840",
+                "1a342441",
+                "325fde3f",
+                "cc97b740",
+                "3468c840",
+                "1a342441",
+                "325fde3f",
+                "cc97b740"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "325fde3f",
+                "388386be",
+                "3468c840",
+                "34688840",
+                "325fde3f",
+                "388386be",
+                "3468c840",
+                "34688840"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "325fde3f",
+                "cc97b740",
+                "3468c840",
+                "1a342441",
+                "325fde3f",
+                "388386be",
+                "3468c840",
+                "34688840"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "325fde3f",
+                "cc97b740",
+                "3468c840",
+                "1a342441",
+                "325fde3f",
+                "388386be",
+                "3468c840",
+                "34688840"
+              ],
+              "buffer": "mesh_208"
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "three_history_zero_orientation",
       "history": [
         [
@@ -6028,6 +6813,168 @@
           "orientation_read_indices": [
             1,
             2
+          ],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 0
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00008040",
+                "0000803f"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00001041",
+                "0000a040"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "0000b442",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "00001041",
+                "0000a040"
+              ],
+              "size_bits": "0000c040"
+            }
+          ],
+          "position_queries": [
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "00000000",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 0
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6a204c3f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 1
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6a20cc3f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 2
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "50181940",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 3
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6a204c40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 4
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "84287f40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 5
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "4f189940",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 6
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "5c9cb240",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 7
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "6920cc40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 8
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "76a4e540",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 9
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "8328ff40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 10
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "48560c41",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 11
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "4f181941",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 12
+            }
+          ],
+          "length_queries": [
+            {
+              "caller_pc": "0x301deac",
+              "length_bits": "56da2541"
+            }
           ],
           "angle_bits": "0000b442",
           "direction_bits": [
@@ -7629,6 +8576,11 @@
                   "00000000"
                 ],
                 "initial_flag": 1,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "00000000",
@@ -7661,6 +8613,11 @@
                   "00000000"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "00004040",
@@ -7693,6 +8650,11 @@
                   "0adf6e3e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "8f23593f",
                   "f1ed4e40",
@@ -7725,6 +8687,11 @@
                   "7be4fd3e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "8481d33f",
                   "8fbc5f40",
@@ -7757,6 +8724,11 @@
                   "e718493f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "11a01a40",
                   "3a467240",
@@ -7789,6 +8761,11 @@
                   "98ca8c3f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "411f4940",
                   "a6328340",
@@ -7821,6 +8798,11 @@
                   "48e8b73f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "cb767540",
                   "12fa8d40",
@@ -7853,6 +8835,11 @@
                   "3c9ae53f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "8fef8f40",
                   "8f669940",
@@ -7885,6 +8872,11 @@
                   "31250b40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "0f92a440",
                   "9892a540",
@@ -7917,6 +8909,11 @@
                   "d85c2740"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "fe95ba40",
                   "6caeb340",
@@ -7949,6 +8946,11 @@
                   "4ca14440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "4fd0cf40",
                   "a650c240",
@@ -7981,6 +8983,11 @@
                   "ccbc6240"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "5a69e440",
                   "665ed140",
@@ -8013,6 +9020,11 @@
                   "cabc8040"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "6e89f840",
                   "cabce040",
@@ -8929,6 +9941,270 @@
             2,
             3,
             4
+          ],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 0
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "e4f90a41",
+                "b4667f40"
+              ],
+              "control_bits": [
+                "00007041",
+                "00000041"
+              ],
+              "path_mid_bits": [
+                "e4f90a41",
+                "b4667f40"
+              ],
+              "accepted_bits": [
+                "0000b041",
+                "00003041"
+              ],
+              "direction_bits": [
+                "540b6f3f",
+                "633cb73e"
+              ],
+              "angle_bits": "99e48942",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "0000b041",
+                "00003041"
+              ],
+              "size_bits": "0000c040"
+            }
+          ],
+          "position_queries": [
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "00000000",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 0
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "d8ec603f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 1
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "d8ece03f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 2
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "a2b12840",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 3
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "d8ec6040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 4
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "07948c40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 5
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "a2b1a840",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 6
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "3dcfc440",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 7
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "d8ece040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 8
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "730afd40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 9
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "07940c41",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 10
+            },
+            {
+              "caller_pc": "0x301ebb8",
+              "distance_bits": "d4a21a41",
+              "ok": true,
+              "add_points_after": 2,
+              "add_point_start": 11
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "00000000",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 13
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "0c8e803f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 14
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "0c8e0040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 15
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "12d54040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 16
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "0c8e8040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 17
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "8fb1a040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 18
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "12d5c040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 19
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "95f8e040",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 20
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "0c8e0041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 21
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "ce9f1041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 22
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "90b12041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 23
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "52c33041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 24
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "14d54041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 25
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "d6e65041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 26
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "98f86041",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 27
+            }
+          ],
+          "length_queries": [
+            {
+              "caller_pc": "0x301eb1c",
+              "length_bits": "a2b12841"
+            },
+            {
+              "caller_pc": "0x301deac",
+              "length_bits": "560a7141"
+            }
           ],
           "angle_bits": "99e48942",
           "direction_bits": [
@@ -12210,6 +13486,11 @@
                   "00000000"
                 ],
                 "initial_flag": 1,
+                "nib_bits": [
+                  "bb7a703f",
+                  "4c90af3e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "00000000",
@@ -12242,6 +13523,11 @@
                   "00000000"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "fb59703f",
+                  "5543b03e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "39ac83bf",
                   "0c5c3440",
@@ -12274,6 +13560,11 @@
                   "f373573e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "1a39703f",
+                  "46f6b03e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "f97088be",
                   "bbba4140",
@@ -12306,6 +13597,11 @@
                   "5822ee3e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "1718703f",
+                  "1ea9b13e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "89b5053f",
                   "1eef5140",
@@ -12338,6 +13634,11 @@
                   "8f9c433f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "f3f66f3f",
+                  "de5bb23e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "d238ab3f",
                   "35f96440",
@@ -12370,6 +13671,11 @@
                   "91bf8d3f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "add56f3f",
+                  "850eb33e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "f27e0b40",
                   "ffd87a40",
@@ -12402,6 +13708,11 @@
                   "765cbf3f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "47b46f3f",
+                  "13c1b33e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "fe144340",
                   "3ec78940",
@@ -12434,6 +13745,11 @@
                   "e978ee3f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "bf926f3f",
+                  "8973b43e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "271e7440",
                   "d5819540",
@@ -12466,6 +13782,11 @@
                   "5fe40e40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "16716f3f",
+                  "e525b53e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "ff4a9140",
                   "3749a140",
@@ -12498,6 +13819,11 @@
                   "27562840"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "4c4f6f3f",
+                  "28d8b53e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "4b10a940",
                   "7cf5ad40",
@@ -12530,6 +13856,11 @@
                   "cd914340"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "602d6f3f",
+                  "528ab63e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "f85ec140",
                   "a386bb40",
@@ -12562,6 +13893,11 @@
                   "53976040"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48b42"
+                ],
                 "edge_state_bits": [
                   "0937da40",
                   "aefcc940",
@@ -12594,6 +13930,11 @@
                   "b4667f40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "7598f340",
                   "9a57d940",
@@ -12626,6 +13967,11 @@
                   "b4667f40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "57d20641",
                   "40a4e940",
@@ -12658,6 +14004,11 @@
                   "b4667f40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "57d20641",
                   "40a4e940",
@@ -12690,6 +14041,11 @@
                   "01899240"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "e5c30841",
                   "402dec40",
@@ -12722,6 +14078,11 @@
                   "f333a440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "13141741",
                   "32d8fd40",
@@ -12754,6 +14115,11 @@
                   "16c4b440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "aec52441",
                   "2b340741",
@@ -12786,6 +14152,11 @@
                   "4d49c440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "9ee13141",
                   "c6f60e41",
@@ -12818,6 +14189,11 @@
                   "4603d340"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "969a3e41",
                   "c3531641",
@@ -12850,6 +14226,11 @@
                   "e111e440"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "f4bc4d41",
                   "10db1e41",
@@ -12882,6 +14263,11 @@
                   "35c9f340"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "d71e5c41",
                   "bab62641",
@@ -12914,6 +14300,11 @@
                   "ac240141"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "3dd26941",
                   "ccf62d41",
@@ -12946,6 +14337,11 @@
                   "60160841"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "a7627741",
                   "80e83441",
@@ -12978,6 +14374,11 @@
                   "87ef0f41"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "52a68341",
                   "a7c13c41",
@@ -13010,6 +14411,11 @@
                   "a7211741"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "ad3d8b41",
                   "c7f34341",
@@ -13042,6 +14448,11 @@
                   "27ce1d41"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "1b8a9241",
                   "47a04a41",
@@ -13074,6 +14485,11 @@
                   "72162441"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "540b6f3f",
+                  "633cb73e",
+                  "99e48942"
+                ],
                 "edge_state_bits": [
                   "589e9941",
                   "92e85041",
@@ -14897,6 +16313,175 @@
             1,
             2
           ],
+          "drawable_states": [
+            {
+              "phase": "redraw_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "00000000",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 0
+              }
+            },
+            {
+              "phase": "end_pen_entry",
+              "path_start_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "control_bits": [
+                "00008040",
+                "00000040"
+              ],
+              "path_mid_bits": [
+                "00000000",
+                "00000000"
+              ],
+              "accepted_bits": [
+                "00000041",
+                "0000a040"
+              ],
+              "direction_bits": [
+                "0000803f",
+                "00000000"
+              ],
+              "angle_bits": "0000b442",
+              "flags": {
+                "initial": 0,
+                "movement_armed": 1
+              },
+              "event_end_bits": [
+                "00000041",
+                "0000a040"
+              ],
+              "size_bits": "0000803f"
+            }
+          ],
+          "position_queries": [
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "00000000",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 0
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "a0bb2c3f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 1
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "a0bbac3f",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 2
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "b88c0140",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 3
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "a0bb2c40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 4
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "88ea5740",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 5
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "b88c8140",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 6
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "2c249740",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 7
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "a0bbac40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 8
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "1453c240",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 9
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "88ead740",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 10
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "fc81ed40",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 11
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "b88c0141",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 12
+            },
+            {
+              "caller_pc": "0x301df10",
+              "distance_bits": "72580c41",
+              "ok": true,
+              "add_points_after": 1,
+              "add_point_start": 13
+            }
+          ],
+          "length_queries": [
+            {
+              "caller_pc": "0x301deac",
+              "length_bits": "2c241741"
+            }
+          ],
           "angle_bits": "0000b442",
           "direction_bits": [
             "0000803f",
@@ -16617,6 +18202,11 @@
                   "00000000"
                 ],
                 "initial_flag": 1,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "00000000",
@@ -16649,6 +18239,11 @@
                   "00000000"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "00000000",
                   "0000803f",
@@ -16681,6 +18276,11 @@
                   "4905bb3e"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "8425383f",
                   "52c1ae3f",
@@ -16713,6 +18313,11 @@
                   "7944383f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "e4a3b23f",
                   "3c22dc3f",
@@ -16745,6 +18350,11 @@
                   "f939883f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "25080240",
                   "fc1c0440",
@@ -16777,6 +18387,11 @@
                   "bb1fb33f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "665a2840",
                   "de8f1940",
@@ -16809,6 +18424,11 @@
                   "bdeadc3f"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "28774c40",
                   "5e752e40",
@@ -16841,6 +18461,11 @@
                   "1dd90240"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "dd8c6e40",
                   "1dd94240",
@@ -16873,6 +18498,11 @@
                   "b3c61640"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "f9648740",
                   "b3c65640",
@@ -16905,6 +18535,11 @@
                   "bd492a40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "6bae9640",
                   "bd496a40",
@@ -16937,6 +18572,11 @@
                   "ccc74340"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "abf5a940",
                   "e6e38140",
@@ -16969,6 +18609,11 @@
                   "4b525d40"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "d98fbc40",
                   "26a98e40",
@@ -17001,6 +18646,11 @@
                   "cf657640"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "153cce40",
                   "e8329b40",
@@ -17033,6 +18683,11 @@
                   "0d908740"
                 ],
                 "initial_flag": 0,
+                "nib_bits": [
+                  "0000803f",
+                  "00000000",
+                  "0000b442"
+                ],
                 "edge_state_bits": [
                   "dc35df40",
                   "0d90a740",

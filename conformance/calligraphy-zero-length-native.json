@@ -1,0 +1,135 @@
+{
+  "schema": "sdocx-calligraphy-v1-synthetic-zero-length-native-v1",
+  "evidence": {
+    "library": "libSPenMontblancCalligraphyPen.so",
+    "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+    "entry": "SPen::MontblancCalligraphyPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)",
+    "host_context": "GLV1 RedrawPen and endPen run with explicit MotionEvent callbacks; a hook at the first redrawLine entry sets S0/S1/S2 and saved start/control/mid points to zero, accepted to (-2, 0), orientation state to 90 degrees, initial=false, movement_armed=true.",
+    "limitations": [
+      "Synthetic drawable/register override at redrawLine, not constructor defaults or a captured user event",
+      "No GPU rendering or pixels"
+    ]
+  },
+  "case": {
+    "id": "synthetic_zero_length_saved_step",
+    "history": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        4.0,
+        1.0,
+        0.35
+      ],
+      [
+        9.0,
+        5.0,
+        0.7
+      ]
+    ],
+    "size": 6.0,
+    "synthetic_state": {
+      "start": [
+        0.0,
+        0.0
+      ],
+      "control": [
+        0.0,
+        0.0
+      ],
+      "midpoint": [
+        0.0,
+        0.0
+      ],
+      "endpoint_registers": [
+        0.0,
+        0.0
+      ],
+      "accepted": [
+        -2.0,
+        0.0
+      ],
+      "angle_degrees": 90.0,
+      "initial_pending": false,
+      "movement_armed": true
+    },
+    "native": {
+      "redraw_line_length_bits": "00000000",
+      "get_pos_tan": {
+        "caller_pc": "0x301ebb8",
+        "distance_bits": "00000000",
+        "ok": false,
+        "add_points_after": 1
+      },
+      "add_points": [
+        {
+          "vector_bits": [
+            "00000000",
+            "00000000",
+            "32318d24",
+            "0000803f"
+          ],
+          "extent_bits": "00004040",
+          "pre_state": {
+            "center_bits": [
+              "00000000",
+              "00000000"
+            ],
+            "initial_flag": 1,
+            "nib_bits": [
+              "0000803f",
+              "32318d24",
+              "0000b442"
+            ],
+            "edge_state_bits": [
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000",
+              "00000000"
+            ]
+          },
+          "build_start": 0,
+          "build_calls": 5
+        }
+      ],
+      "initial_drawable_state": {
+        "phase": "redraw_entry",
+        "path_start_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "control_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "path_mid_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "accepted_bits": [
+          "00000000",
+          "00000000"
+        ],
+        "direction_bits": [
+          "0000803f",
+          "00000000"
+        ],
+        "angle_bits": "00000000",
+        "flags": {
+          "initial": 0,
+          "movement_armed": 0
+        }
+      }
+    }
+  }
+}

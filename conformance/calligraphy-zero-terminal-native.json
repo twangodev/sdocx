@@ -1,0 +1,69 @@
+{
+  "schema": "sdocx-calligraphy-v1-synthetic-zero-terminal-native-v1",
+  "evidence": {
+    "library": "libSPenMontblancCalligraphyPen.so",
+    "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
+    "entry": "SPen::MontblancCalligraphyPenStrokeDrawableGLV1::endPen(SPen::MotionEvent const*, SPen::RectF*)",
+    "host_context": "A constructed GLV1 drawable with attached pen settings is called at endPen directly. The harness supplies zero path start/control/midpoint/accepted/endpoint, angle 0, initial=false, and movement_armed=true; MotionEvent getters are explicit host callbacks.",
+    "limitations": [
+      "Synthetic direct method-entry state, not a constructor default or saved user event",
+      "No RTV1 buffers were initialized or drawn",
+      "No GPU rendering or pixels"
+    ]
+  },
+  "case": {
+    "id": "synthetic_zero_length_terminal_endpen",
+    "history": [],
+    "end": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "size": 6.0,
+    "synthetic_state": {
+      "path_start_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "control_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "path_mid_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "accepted_bits": [
+        "00000000",
+        "00000000"
+      ],
+      "direction_bits": [
+        "0000803f",
+        "00000000"
+      ],
+      "angle_bits": "00000000",
+      "flags": {
+        "initial": 0,
+        "movement_armed": 1
+      }
+    },
+    "native": {
+      "length_queries": [
+        {
+          "caller_pc": "0x301deac",
+          "length_bits": "00000000"
+        }
+      ],
+      "position_queries": [
+        {
+          "caller_pc": "0x301df10",
+          "distance_bits": "00000000",
+          "ok": false,
+          "add_points_after": 0,
+          "add_point_start": 0
+        }
+      ],
+      "add_points": []
+    }
+  }
+}
