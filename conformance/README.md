@@ -112,6 +112,15 @@ pens in a mixed document are excluded, and an empty selection fails.
 See [fountain vector parity](../docs/reverse-engineering/fountain-parity.md)
 for the verified native geometry and vector appearance limits.
 
+The Formula drawn-bounds oracle covers 30 pen-category/rotation cases and seven
+source/answer unions. Name comparison, owner state, host `sincos`, history-list
+iteration and child rectangles/visibility are supplied inputs; final image
+placement is outside the capture.
+
+```sh
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/formula_bounds_native.py --check-fixture
+```
+
 The intermediate live drawing, GPU, cache, and lifecycle experiments were
 retired. Their findings remain in `docs/reverse-engineering/`; their scripts
 are available in Git at `40de721`. To recover an individual experiment:

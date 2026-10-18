@@ -1,0 +1,737 @@
+{
+  "schema": "samsung-notes-formula-drawn-bounds-native-v1",
+  "libraries": {
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+  },
+  "boundary": [
+    "Native Model ObjectStrokeImpl constructor 0x2e8788, SetPenType 0x2ea3c0, SetPenSize 0x2ea300 and GetDrawnRect 0x2e9488",
+    "Native Model FormulaImpl GetRectByStrokeList 0x431e4c, getUnionStrokeListRect 0x4324a4 and UnionF 0x275630",
+    "Native Base RectF::IncreaseRect 0xb15c0, GetRotatedBound 0xb1850 and PointF::GetRotatedPoint 0xb0f10",
+    "Host String::CompareTo compares exact supplied pen name with native literals; owner refresh/raw-rect/rotation callbacks supply explicit state; Base sincos callback uses host libm",
+    "Host HistoryManager detached-list and ObjectList iterator callbacks supply the explicitly listed children; child visibility and GetDrawnRect responses are supplied callbacks"
+  ],
+  "stroke_rect_cases": [
+    {
+      "pen_name": "Marker",
+      "category": 0,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "pen_name": "Marker",
+      "category": 0,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "c0c8c5c0",
+        "fa1482c1",
+        "8c5cfc42",
+        "3e85d442"
+      ]
+    },
+    {
+      "pen_name": "Beautify",
+      "category": 1,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "000040c1",
+        "000000c0",
+        "00000443",
+        "0000b842"
+      ]
+    },
+    {
+      "pen_name": "Beautify",
+      "category": 1,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "e84bcec1",
+        "5a770fc2",
+        "7dc91143",
+        "adbbfb42"
+      ]
+    },
+    {
+      "pen_name": "Beautify2",
+      "category": 1,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "000040c1",
+        "000000c0",
+        "00000443",
+        "0000b842"
+      ]
+    },
+    {
+      "pen_name": "Beautify2",
+      "category": 1,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "e84bcec1",
+        "5a770fc2",
+        "7dc91143",
+        "adbbfb42"
+      ]
+    },
+    {
+      "pen_name": "unknown",
+      "category": 2,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "00008040",
+        "00006041",
+        "0000e842",
+        "00009842"
+      ]
+    },
+    {
+      "pen_name": "unknown",
+      "category": 2,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "904f58c0",
+        "785957c1",
+        "7cc2f642",
+        "2febce42"
+      ]
+    },
+    {
+      "pen_name": "Crayon",
+      "category": 3,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "000000c0",
+        "00000041",
+        "0000f442",
+        "0000a442"
+      ]
+    },
+    {
+      "pen_name": "Crayon",
+      "category": 3,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "58853cc1",
+        "78e5aec1",
+        "56c80343",
+        "5eb9df42"
+      ]
+    },
+    {
+      "pen_name": "Crayon2",
+      "category": 3,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "000000c0",
+        "00000041",
+        "0000f442",
+        "0000a442"
+      ]
+    },
+    {
+      "pen_name": "Crayon2",
+      "category": 3,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "58853cc1",
+        "78e5aec1",
+        "56c80343",
+        "5eb9df42"
+      ]
+    },
+    {
+      "pen_name": "BrushPen",
+      "category": 4,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "pen_name": "BrushPen",
+      "category": 4,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "c0c8c5c0",
+        "fa1482c1",
+        "8c5cfc42",
+        "3e85d442"
+      ]
+    },
+    {
+      "pen_name": "Pencil2",
+      "category": 5,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "000000c0",
+        "00000041",
+        "0000f442",
+        "0000a442"
+      ]
+    },
+    {
+      "pen_name": "Pencil2",
+      "category": 5,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "58853cc1",
+        "78e5aec1",
+        "56c80343",
+        "5eb9df42"
+      ]
+    },
+    {
+      "pen_name": "Pencil3",
+      "category": 6,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "0000f0c1",
+        "0000a0c1",
+        "00001643",
+        "0000dc42"
+      ]
+    },
+    {
+      "pen_name": "Pencil3",
+      "category": 6,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "0efb4bc2",
+        "744c74c2",
+        "c4fe2a43",
+        "1d131743"
+      ]
+    },
+    {
+      "pen_name": "PatternPen",
+      "category": 7,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "0000f0c1",
+        "0000a0c1",
+        "00001643",
+        "0000dc42"
+      ]
+    },
+    {
+      "pen_name": "PatternPen",
+      "category": 7,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "0efb4bc2",
+        "744c74c2",
+        "c4fe2a43",
+        "1d131743"
+      ]
+    },
+    {
+      "pen_name": "InkPen",
+      "category": 8,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "pen_name": "InkPen",
+      "category": 8,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "c0c8c5c0",
+        "fa1482c1",
+        "8c5cfc42",
+        "3e85d442"
+      ]
+    },
+    {
+      "pen_name": "ObliquePen",
+      "category": 9,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "pen_name": "ObliquePen",
+      "category": 9,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "c0c8c5c0",
+        "fa1482c1",
+        "8c5cfc42",
+        "3e85d442"
+      ]
+    },
+    {
+      "pen_name": "OilBrush3",
+      "category": 10,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "9a995940",
+        "66665641",
+        "3333e942",
+        "33339942"
+      ]
+    },
+    {
+      "pen_name": "OilBrush3",
+      "category": 10,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "400b87c0",
+        "34cb64c1",
+        "b470f842",
+        "6699d042"
+      ]
+    },
+    {
+      "pen_name": "ColoredPencil",
+      "category": 11,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "000006c3",
+        "0000f8c2",
+        "00007e43",
+        "00005643"
+      ]
+    },
+    {
+      "pen_name": "ColoredPencil",
+      "category": 11,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "5ca444c3",
+        "b5b84ec3",
+        "2e529e43",
+        "5a5c9443"
+      ]
+    },
+    {
+      "pen_name": "TapePen",
+      "category": 12,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00000000",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "pen_name": "TapePen",
+      "category": 12,
+      "size_f32_bits": "00008040",
+      "rotation_f32_bits": "00001442",
+      "raw_rect_f32_bits": [
+        "00002041",
+        "0000a041",
+        "0000dc42",
+        "00008c42"
+      ],
+      "drawn_rect_f32_bits": [
+        "c0c8c5c0",
+        "fa1482c1",
+        "8c5cfc42",
+        "3e85d442"
+      ]
+    }
+  ],
+  "formula_union_cases": [
+    {
+      "name": "one_source_visible",
+      "source_rects_f32_bits": [
+        [
+          "00000040",
+          "00004041",
+          "0000ec42",
+          "00009c42"
+        ]
+      ],
+      "source_visible": [
+        true
+      ],
+      "answer_rects_f32_bits": [],
+      "answer_visible": [],
+      "native_union_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "name": "one_answer_visible",
+      "source_rects_f32_bits": [],
+      "source_visible": [],
+      "answer_rects_f32_bits": [
+        [
+          "00004040",
+          "00005041",
+          "0000ea42",
+          "00009a42"
+        ]
+      ],
+      "answer_visible": [
+        true
+      ],
+      "native_union_f32_bits": [
+        "00004040",
+        "00005041",
+        "0000ea42",
+        "00009a42"
+      ]
+    },
+    {
+      "name": "two_source_union",
+      "source_rects_f32_bits": [
+        [
+          "00000040",
+          "00004041",
+          "0000ec42",
+          "00009c42"
+        ],
+        [
+          "00004a43",
+          "00005443",
+          "00009f43",
+          "00008b43"
+        ]
+      ],
+      "source_visible": [
+        true,
+        true
+      ],
+      "answer_rects_f32_bits": [],
+      "answer_visible": [],
+      "native_union_f32_bits": [
+        "00000040",
+        "00004041",
+        "00009f43",
+        "00008b43"
+      ]
+    },
+    {
+      "name": "source_hidden_answer_visible",
+      "source_rects_f32_bits": [
+        [
+          "00000040",
+          "00004041",
+          "0000ec42",
+          "00009c42"
+        ]
+      ],
+      "source_visible": [
+        false
+      ],
+      "answer_rects_f32_bits": [
+        [
+          "00809743",
+          "00809c43",
+          "0080d043",
+          "0080bc43"
+        ]
+      ],
+      "answer_visible": [
+        true
+      ],
+      "native_union_f32_bits": [
+        "00809743",
+        "00809c43",
+        "0080d043",
+        "0080bc43"
+      ]
+    },
+    {
+      "name": "source_visible_answer_hidden",
+      "source_rects_f32_bits": [
+        [
+          "00000040",
+          "00004041",
+          "0000ec42",
+          "00009c42"
+        ]
+      ],
+      "source_visible": [
+        true
+      ],
+      "answer_rects_f32_bits": [
+        [
+          "00809743",
+          "00809c43",
+          "0080d043",
+          "0080bc43"
+        ]
+      ],
+      "answer_visible": [
+        false
+      ],
+      "native_union_f32_bits": [
+        "00000040",
+        "00004041",
+        "0000ec42",
+        "00009c42"
+      ]
+    },
+    {
+      "name": "both_empty",
+      "source_rects_f32_bits": [],
+      "source_visible": [],
+      "answer_rects_f32_bits": [],
+      "answer_visible": [],
+      "native_union_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    },
+    {
+      "name": "both_hidden",
+      "source_rects_f32_bits": [
+        [
+          "00000040",
+          "00004041",
+          "0000ec42",
+          "00009c42"
+        ]
+      ],
+      "source_visible": [
+        false
+      ],
+      "answer_rects_f32_bits": [
+        [
+          "00809743",
+          "00809c43",
+          "0080d043",
+          "0080bc43"
+        ]
+      ],
+      "answer_visible": [
+        false
+      ],
+      "native_union_f32_bits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    }
+  ]
+}
