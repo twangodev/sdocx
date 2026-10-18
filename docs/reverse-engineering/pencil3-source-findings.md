@@ -45,6 +45,19 @@ calls `rand` three times (`0x108398`, `0x1083d0`, `0x1083ec`). Two values
 produce size-dependent offsets around sampled XY. The third becomes a signed
 remainder by 16. RTV1::AddPoint receives the resulting tuple (`0x108454`).
 
+The saved array constructor in Base (`0xbfd84`) leaves the default event source
+at zero (`0xbf46c`); `GetSource`, `0xc0a9c`, reads that field. Executing the
+actual constructor and getters for the ten saved cases confirms source zero,
+including tool 2. Saved replay therefore bypasses the tool-2/source-`0x1002`
+pressure branches (`0x10751c–0x107544`, `0x1077e8–0x107804`). This does not
+establish live input-device sources.
+
+Ordinary Drawing also skips morphable configuration when `GetMorphable`
+returns null (`0x81eec–0x81ef0`). Pencil3's relocation `0x11a928` selects
+PenCommon's null-returning implementation (`0x46468`), so the saved fixed-opacity
+setter (`0x81f98–0x81fac`) is not reached for this pen. Input-color alpha and
+generated particle alpha remain separate shader inputs.
+
 That consumer appends X, Y, half-size, random remainder and alpha
 (`0x10c880`, `0x10ca30/40`, `0x10caf4`). Its descriptor and update bind a
 four-component point attribute plus alpha, with count=bufferFloats/5
