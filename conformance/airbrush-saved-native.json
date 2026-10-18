@@ -1,0 +1,894 @@
+{
+  "schema": "sdocx.airbrush-saved-native.v1",
+  "source": {
+    "apk": "Samsung Notes 4.4.45.37",
+    "library": "libSPenAirBrushPen.so",
+    "sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423"
+  },
+  "supporting_libraries": {
+    "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb"
+  },
+  "native_context": {
+    "Pen::Pen_default_version": 1,
+    "AirBrushPen::AirBrushPen_default_version": 2,
+    "version_dispatch": [
+      {
+        "constructor_version": 2,
+        "input_pen_version": 1,
+        "version_field_override": true,
+        "selected_native_constructor": "SPen::AirBrushPenStrokeDrawableGLV1::AirBrushPenStrokeDrawableGLV1(SPen::AirBrushPenData*, SPen::PenGLDataManager*)",
+        "returned_ptr": "0x10000470"
+      },
+      {
+        "constructor_version": 2,
+        "input_pen_version": 2,
+        "version_field_override": true,
+        "selected_native_constructor": "SPen::AirBrushPenStrokeDrawableGLV2::AirBrushPenStrokeDrawableGLV2(SPen::AirBrushPenData*, SPen::PenGLDataManager*)",
+        "returned_ptr": "0x10000470"
+      }
+    ],
+    "profile_constructor_boundary": "AirBrushPen constructor body and Pen::getVersion execute natively; GetStrokeDrawableGL selects a versioned constructor callback; each saved-redraw case separately executes the real V1 GL drawable constructor"
+  },
+  "texture": {
+    "build_factory": {
+      "width": 96,
+      "height": 96,
+      "name": "AirBrushPenStrokeDrawableRTV1::buildTextures",
+      "data_ptr": "0x0",
+      "bool": 0,
+      "int": 0,
+      "bool2": 0,
+      "stack_args": [
+        6,
+        2
+      ]
+    },
+    "texture_dimensions": [
+      96,
+      96
+    ],
+    "packed_pixel_count": 9216,
+    "payload_bytes": 36864,
+    "payload_sha256": "8c9fc495d6fd01b3e9b04d10d5e1f95d7b2969c7bbc0c7bfc66d94e325f18873",
+    "sample_red_bytes": [
+      124,
+      93,
+      131,
+      168,
+      161,
+      125,
+      147,
+      198
+    ],
+    "other_byte_channels_nonzero": false,
+    "pixel_bytes_order": "little-endian uint32; observed R varying, G/B/A zero",
+    "shader_contract": "fragment preserves input RGB and multiplies input alpha by sampled pattern red",
+    "native_shader_resources": {
+      "SPen::AirBrushPenStrokeDrawableShader::szVertexShader": {
+        "sha256": "4c4b4f5c7d750eb980f61d2a5f6d01dd9abeebcd8e3e7410a10aeb7b6d835ece",
+        "bytes": 386,
+        "source": "precision highp float; uniform mat4 ProjectionMatrix; attribute vec4 vertex; attribute vec4 transform; varying vec2 vUV; void main(void) { mat4 modelMatrix = mat4( transform.w, transform.z, 0.0, 0.0, -transform.z, transform.w, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, transform.x, transform.y, 0.0, 1.0); gl_Position = ProjectionMatrix * modelMatrix * vec4(vertex.xy, 0.0, 1.0); vUV = vertex.zw; }"
+      },
+      "SPen::AirBrushPenStrokeDrawableShader::szFragmentShader": {
+        "sha256": "2c38ca9bf6a0cc8cd72300c6d3aa25246d74cd55232c2b333de28f0746364ad6",
+        "bytes": 218,
+        "source": "precision highp float; uniform sampler2D sampler0; uniform vec4 inputColor; varying vec2 vUV; void main(void) { float pattern = texture2D(sampler0, vUV).r; gl_FragColor = vec4(inputColor.rgb, inputColor.a * pattern); }"
+      }
+    }
+  },
+  "host_stubs": {
+    "motion_event": [
+      "GetHistorySize",
+      "GetHistoricalX",
+      "GetHistoricalY",
+      "GetX",
+      "GetY",
+      "GetToolType",
+      "GetPressure",
+      "GetTilt",
+      "GetOrientation",
+      "GetSource",
+      "GetEventTime",
+      "GetDownTime",
+      "GetButtonState",
+      "GetFlags"
+    ],
+    "redraw": [
+      "queue task Run synchronous",
+      "PenGLDataManager::GetMsgQueue",
+      "PenReturnCallback constructor/destructor/GetBuffer/SetPenRect",
+      "PenDrawableRT::SetBuffer",
+      "Error::SetError",
+      "synthetic RT virtual slots"
+    ],
+    "texture": [
+      "SPGraphicsFactory::CreateBitmap",
+      "synthetic bitmap methods",
+      "setTextures upload capture"
+    ],
+    "runtime": [
+      "operator new/new[] and nothrow overloads use bounded Unicorn arena",
+      "malloc uses bounded Unicorn arena; free is no-op",
+      "memcpy/memmove/memset operate only in emulated memory",
+      "strlen bounded to 4096 bytes; atoi bounded to 128 bytes",
+      "sincosf uses host math.sin/math.cos",
+      "Android logging/cxa_atexit are stubs; cxa guards follow single-thread first-acquire then initialized behavior"
+    ]
+  },
+  "boundaries": [
+    "synthetic MotionEvent historical/current coordinate callbacks listed per case",
+    "synthetic manager and queue host; queue task Run invoked synchronously",
+    "synthetic RT vtable methods except actual RTV1::AddPoint",
+    "synthetic bitmap factory and bitmap vtable; actual RTV1::setTextures provides upload bytes",
+    "bounded strlen/atoi and allocator host callbacks; unresolved ABS64/GLOB_DAT imports trap if reached",
+    "ELF process loader/init_array, Android runtime, GPU context, shader execution, framebuffer and raster output are not run"
+  ],
+  "cases": [
+    {
+      "input": {
+        "id": "stylus-straight-size10",
+        "tool": 1,
+        "size": 10.0,
+        "history": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            20.0,
+            0.0
+          ]
+        ],
+        "endpoint": [
+          40.0,
+          0.0
+        ],
+        "event": {
+          "pressure": 0.75,
+          "tilt": 0.0,
+          "orientation": 0.0,
+          "source": 0,
+          "time": 30
+        }
+      },
+      "runtime_context": {
+        "drawable_profile_version": 1,
+        "data_size": 10.0,
+        "data_color_argb": 4281558681,
+        "previous_position": [
+          0.0,
+          0.0
+        ],
+        "drawline_tolerance": 0.5,
+        "counter_seed": 0
+      },
+      "native": {
+        "stamp_count": 40,
+        "stamps": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "3f800000"
+          ],
+          [
+            "3f665df4",
+            "00000000",
+            "3f2e9771",
+            "bf3b3a00"
+          ],
+          [
+            "3ff0560f",
+            "00000000",
+            "bf7f605b",
+            "3d8edc88"
+          ],
+          [
+            "403a9d3a",
+            "00000000",
+            "3f46f309",
+            "3f211b25"
+          ],
+          [
+            "407601b0",
+            "00000000",
+            "be0e8371",
+            "bf7d8235"
+          ],
+          [
+            "409ccbb8",
+            "00000000",
+            "bf12d5e8",
+            "3f51b3f3"
+          ],
+          [
+            "40be6dd8",
+            "00000000",
+            "3f7a67e2",
+            "be54e6c0"
+          ],
+          [
+            "40dbafd6",
+            "00000000",
+            "bf5b6f4e",
+            "bf03d98f"
+          ],
+          [
+            "40fb08db",
+            "00000000",
+            "3e8d2063",
+            "3f76153d"
+          ],
+          [
+            "410e3c72",
+            "00000000",
+            "3ee87188",
+            "bf6418fb"
+          ],
+          [
+            "41200000",
+            "00000000",
+            "bf708fb2",
+            "3eaf1d43"
+          ],
+          [
+            "412e8973",
+            "00000000",
+            "3f6ba63a",
+            "3ec80dd2"
+          ],
+          [
+            "413db4af",
+            "00000000",
+            "bed03fbd",
+            "bf69de20"
+          ],
+          [
+            "414d81b5",
+            "00000000",
+            "bea6b0d3",
+            "3f720d83"
+          ],
+          [
+            "415df085",
+            "00000000",
+            "3f6208e1",
+            "bef05e7d"
+          ],
+          [
+            "416f011e",
+            "00000000",
+            "bf7746ea",
+            "be8483ef"
+          ],
+          [
+            "417f79a5",
+            "00000000",
+            "3f07a8d5",
+            "3f5919a7"
+          ],
+          [
+            "4187320f",
+            "00000000",
+            "3e43630c",
+            "bf7b4bf0"
+          ],
+          [
+            "418edd75",
+            "00000000",
+            "bf4f1bcc",
+            "3f167903"
+          ],
+          [
+            "4196bf06",
+            "00000000",
+            "3f7e1780",
+            "3df9970b"
+          ],
+          [
+            "419ed6c1",
+            "00000000",
+            "bf248dba",
+            "bf441b7d"
+          ],
+          [
+            "41a724a6",
+            "00000000",
+            "bd565d73",
+            "3f7fa630"
+          ],
+          [
+            "41afa8b5",
+            "00000000",
+            "3f382696",
+            "bf31d534"
+          ],
+          [
+            "41b7b526",
+            "00000000",
+            "bf7ff605",
+            "3c8ef51a"
+          ],
+          [
+            "41bf3e6e",
+            "00000000",
+            "3f3e3eb4",
+            "3f2b4c2f"
+          ],
+          [
+            "41c6ee7d",
+            "00000000",
+            "bdb27eb2",
+            "bf7f069e"
+          ],
+          [
+            "41cec555",
+            "00000000",
+            "bf1d9bf4",
+            "3f49bb1a"
+          ],
+          [
+            "41d6c2f4",
+            "00000000",
+            "3f7cd921",
+            "be2030bf"
+          ],
+          [
+            "41dee75b",
+            "00000000",
+            "bf543bc0",
+            "bf0f275a"
+          ],
+          [
+            "41e7328c",
+            "00000000",
+            "3e665a57",
+            "3f797046"
+          ],
+          [
+            "41efa482",
+            "00000000",
+            "3f000000",
+            "bf5db3d7"
+          ],
+          [
+            "41f7ce4d",
+            "00000000",
+            "bf74d073",
+            "3e95b15c"
+          ],
+          [
+            "41ff5f4d",
+            "00000000",
+            "3f661769",
+            "3ee07202"
+          ],
+          [
+            "420386b8",
+            "00000000",
+            "beb77bd0",
+            "bf6eff2a"
+          ],
+          [
+            "42076c59",
+            "00000000",
+            "bebfcc12",
+            "3f6d5bff"
+          ],
+          [
+            "420b608b",
+            "00000000",
+            "3f6803ca",
+            "bed8616b"
+          ],
+          [
+            "420f634e",
+            "00000000",
+            "bf737861",
+            "be9e37dc"
+          ],
+          [
+            "421374a0",
+            "00000000",
+            "3ef83923",
+            "3f5fe708"
+          ],
+          [
+            "42179483",
+            "00000000",
+            "3e77bac5",
+            "bf786547"
+          ],
+          [
+            "421bc2f8",
+            "00000000",
+            "bf56b302",
+            "3f0b6da1"
+          ]
+        ],
+        "host_render_callbacks": []
+      }
+    },
+    {
+      "input": {
+        "id": "stylus-diagonal-size6",
+        "tool": 1,
+        "size": 6.0,
+        "history": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            12.0,
+            9.0
+          ]
+        ],
+        "endpoint": [
+          24.0,
+          18.0
+        ],
+        "event": {
+          "pressure": 0.75,
+          "tilt": 0.0,
+          "orientation": 0.0,
+          "source": 0,
+          "time": 30
+        }
+      },
+      "runtime_context": {
+        "drawable_profile_version": 1,
+        "data_size": 6.0,
+        "data_color_argb": 4281558681,
+        "previous_position": [
+          0.0,
+          0.0
+        ],
+        "drawline_tolerance": 0.5,
+        "counter_seed": 0
+      },
+      "native": {
+        "stamp_count": 49,
+        "stamps": [
+          [
+            "00000000",
+            "00000000",
+            "00000000",
+            "3f800000"
+          ],
+          [
+            "3e2aa7f8",
+            "3dfffbf3",
+            "3f2e9771",
+            "bf3b3a00"
+          ],
+          [
+            "3f2aa7f8",
+            "3efffbf3",
+            "bf7f605b",
+            "3d8edc88"
+          ],
+          [
+            "3fbffcf8",
+            "3f8ffdba",
+            "3f46f309",
+            "3f211b25"
+          ],
+          [
+            "3fed067b",
+            "3fb1c4dc",
+            "be0e8371",
+            "bf7d8235"
+          ],
+          [
+            "400f66d7",
+            "3fd71a44",
+            "bf12d5e8",
+            "3f51b3f3"
+          ],
+          [
+            "402aa94d",
+            "3ffffdf5",
+            "3f7a67e2",
+            "be54e6c0"
+          ],
+          [
+            "40484a9d",
+            "401637f6",
+            "bf5b6f4e",
+            "bf03d98f"
+          ],
+          [
+            "40684ac5",
+            "402e3813",
+            "3e8d2063",
+            "3f76153d"
+          ],
+          [
+            "408554e4",
+            "4047ff56",
+            "3ee87188",
+            "bf6418fb"
+          ],
+          [
+            "4097b3d3",
+            "40638dbd",
+            "bf708fb2",
+            "3eaf1d43"
+          ],
+          [
+            "40ab422e",
+            "408071a3",
+            "3f6ba63a",
+            "3ec80dd2"
+          ],
+          [
+            "40c00000",
+            "40900000",
+            "bed03fbd",
+            "bf69de20"
+          ],
+          [
+            "40cca7d7",
+            "40997de0",
+            "bea6b0d3",
+            "3f720d83"
+          ],
+          [
+            "40d9b712",
+            "40a3494e",
+            "3f6208e1",
+            "bef05e7d"
+          ],
+          [
+            "40e72db4",
+            "40ad6246",
+            "bf7746ea",
+            "be8483ef"
+          ],
+          [
+            "40f50bb9",
+            "40b7c8cc",
+            "3f07a8d5",
+            "3f5919a7"
+          ],
+          [
+            "4101a893",
+            "40c27cdc",
+            "3e43630c",
+            "bf7b4bf0"
+          ],
+          [
+            "4108fefb",
+            "40cd7e79",
+            "bf4f1bcc",
+            "3f167903"
+          ],
+          [
+            "41108917",
+            "40d8cda2",
+            "3f7e1780",
+            "3df9970b"
+          ],
+          [
+            "411846e5",
+            "40e46a57",
+            "bf248dba",
+            "bf441b7d"
+          ],
+          [
+            "41203865",
+            "40f05497",
+            "bd565d73",
+            "3f7fa630"
+          ],
+          [
+            "41285d98",
+            "40fc8c65",
+            "3f382696",
+            "bf31d534"
+          ],
+          [
+            "4130b67e",
+            "410488de",
+            "bf7ff605",
+            "3c8ef51a"
+          ],
+          [
+            "41394317",
+            "410af251",
+            "3f3e3eb4",
+            "3f2b4c2f"
+          ],
+          [
+            "41420362",
+            "41118289",
+            "bdb27eb2",
+            "bf7f069e"
+          ],
+          [
+            "414af760",
+            "41183988",
+            "bf1d9bf4",
+            "3f49bb1a"
+          ],
+          [
+            "41541f12",
+            "411f174d",
+            "3f7cd921",
+            "be2030bf"
+          ],
+          [
+            "415be7b4",
+            "4124edc6",
+            "bf543bc0",
+            "bf0f275a"
+          ],
+          [
+            "4162b04c",
+            "412a0439",
+            "3e665a57",
+            "3f797046"
+          ],
+          [
+            "41699345",
+            "412f2e74",
+            "3f000000",
+            "bf5db3d7"
+          ],
+          [
+            "417090a2",
+            "41346c79",
+            "bf74d073",
+            "3e95b15c"
+          ],
+          [
+            "4177a85d",
+            "4139be46",
+            "3f661769",
+            "3ee07202"
+          ],
+          [
+            "417eda7c",
+            "413f23dd",
+            "beb77bd0",
+            "bf6eff2a"
+          ],
+          [
+            "4183137d",
+            "41449d3d",
+            "bebfcc12",
+            "3f6d5bff"
+          ],
+          [
+            "4186c6ee",
+            "414a2a64",
+            "3f6803ca",
+            "bed8616b"
+          ],
+          [
+            "418a878e",
+            "414fcb55",
+            "bf737861",
+            "be9e37dc"
+          ],
+          [
+            "418e5560",
+            "41558010",
+            "3ef83923",
+            "3f5fe708"
+          ],
+          [
+            "41923061",
+            "415b4893",
+            "3e77bac5",
+            "bf786547"
+          ],
+          [
+            "41961894",
+            "416124de",
+            "bf56b302",
+            "3f0b6da1"
+          ],
+          [
+            "419a0df8",
+            "416714f4",
+            "3f7c1c5c",
+            "3e31d0d7"
+          ],
+          [
+            "419e108b",
+            "416d18d1",
+            "bf1a1063",
+            "bf4c7380"
+          ],
+          [
+            "41a2204f",
+            "41733077",
+            "bdd6123f",
+            "3f7e98ff"
+          ],
+          [
+            "41a63d45",
+            "41795be8",
+            "3f4134b7",
+            "bf27f368"
+          ],
+          [
+            "41aa676b",
+            "417f9b20",
+            "bf7fd816",
+            "bd0eefa0"
+          ],
+          [
+            "41ae9ec1",
+            "4182f710",
+            "3f3504f3",
+            "3f3504f4"
+          ],
+          [
+            "41b2e347",
+            "41862a76",
+            "bd0eef87",
+            "bf7fd816"
+          ],
+          [
+            "41b734ff",
+            "418967bf",
+            "bf27f369",
+            "3f4134b6"
+          ],
+          [
+            "41bb93e8",
+            "418caeee",
+            "3f7e98ff",
+            "bdd61233"
+          ]
+        ],
+        "host_render_callbacks": []
+      }
+    },
+    {
+      "input": {
+        "id": "tool2-offset-size14",
+        "tool": 2,
+        "size": 14.0,
+        "history": [
+          [
+            -5.0,
+            4.0
+          ],
+          [
+            7.0,
+            4.0
+          ]
+        ],
+        "endpoint": [
+          19.0,
+          4.0
+        ],
+        "event": {
+          "pressure": 0.75,
+          "tilt": 0.0,
+          "orientation": 0.0,
+          "source": 0,
+          "time": 30
+        }
+      },
+      "runtime_context": {
+        "drawable_profile_version": 1,
+        "data_size": 14.0,
+        "data_color_argb": 4281558681,
+        "previous_position": [
+          0.0,
+          0.0
+        ],
+        "drawline_tolerance": 0.5,
+        "counter_seed": 0
+      },
+      "native": {
+        "stamp_count": 16,
+        "stamps": [
+          [
+            "c0a00000",
+            "40800000",
+            "00000000",
+            "3f800000"
+          ],
+          [
+            "c0600184",
+            "40800000",
+            "3f2e9771",
+            "bf3b3a00"
+          ],
+          [
+            "c01556b3",
+            "40800000",
+            "bf7f605b",
+            "3d8edc88"
+          ],
+          [
+            "bf5558de",
+            "40800000",
+            "3f46f309",
+            "3f211b25"
+          ],
+          [
+            "3f800000",
+            "40800000",
+            "be0e8371",
+            "bf7d8235"
+          ],
+          [
+            "4010a32c",
+            "40800000",
+            "bf12d5e8",
+            "3f51b3f3"
+          ],
+          [
+            "4068f44f",
+            "40800000",
+            "3f7a67e2",
+            "be54e6c0"
+          ],
+          [
+            "40a479b2",
+            "40800000",
+            "bf5b6f4e",
+            "bf03d98f"
+          ],
+          [
+            "40d85039",
+            "40800000",
+            "3e8d2063",
+            "3f76153d"
+          ],
+          [
+            "4107fedd",
+            "40800000",
+            "3ee87188",
+            "bf6418fb"
+          ],
+          [
+            "411d0ea6",
+            "40800000",
+            "bf708fb2",
+            "3eaf1d43"
+          ],
+          [
+            "41331938",
+            "40800000",
+            "3f6ba63a",
+            "3ec80dd2"
+          ],
+          [
+            "414a1e96",
+            "40800000",
+            "bed03fbd",
+            "bf69de20"
+          ],
+          [
+            "41621ec0",
+            "40800000",
+            "bea6b0d3",
+            "3f720d83"
+          ],
+          [
+            "417b19b2",
+            "40800000",
+            "3f6208e1",
+            "bef05e7d"
+          ],
+          [
+            "418a87b8",
+            "40800000",
+            "bf7746ea",
+            "be8483ef"
+          ]
+        ],
+        "host_render_callbacks": []
+      }
+    }
+  ]
+}

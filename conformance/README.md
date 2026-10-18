@@ -165,6 +165,7 @@ PYTHONPATH=scratch/apk-analysis-runtime/python:conformance python3 conformance/o
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/calligraphy_saved_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pencil_native.py
 python3 conformance/inkpen_paint_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python:conformance python3 conformance/airbrush_saved_native.py --check-fixture
 ```
 
 The test-only InkPen core matches 21 curve/no-curve redraw cases and four
