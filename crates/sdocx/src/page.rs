@@ -22,6 +22,7 @@ pub(crate) fn parse_page(
     archive_entry: &str,
     report: &mut ParseReport,
     media: &MediaResolver,
+    document_metadata: &crate::DocumentMetadata,
     observer: &mut dyn FnMut(Progress),
 ) -> Result<Page> {
     let header = &stored.header;
@@ -29,8 +30,10 @@ pub(crate) fn parse_page(
         .layers
         .layers
         .iter()
-        .map(|layer| count_strokes(&layer.objects))
-        .sum();
+        .try_fold(0_usize, |count, layer| {
+            count_strokes(&layer.objects, data, limits)
+                .map(|layer_count| count.saturating_add(layer_count))
+        })?;
     check_limit(
         "strokes per page",
         limits.max_strokes_per_page,
@@ -55,19 +58,29 @@ pub(crate) fn parse_page(
         limits,
         archive_entry,
         report,
+        document_metadata,
         progress: WorkProgress::new(observer, ProgressStage::Objects, total),
     };
     page.objects = decoder.decode_objects(data, &current_layer.objects)?;
     Ok(page)
 }
 
-fn count_strokes(objects: &[StoredObject]) -> usize {
-    objects
-        .iter()
-        .map(|object| {
-            usize::from(object.object_type == ObjectType::Stroke) + count_strokes(&object.children)
-        })
-        .sum()
+fn count_strokes(objects: &[StoredObject], data: &[u8], limits: &ParseLimits) -> Result<usize> {
+    objects.iter().try_fold(0_usize, |count, object| {
+        let own_count = match object.object_type {
+            ObjectType::Stroke => 1,
+            ObjectType::Formula => {
+                let formula = object.formula_metadata_with_limits(data, limits)?;
+                formula
+                    .strokes
+                    .len()
+                    .saturating_add(formula.answer_strokes.len())
+            }
+            _ => 0,
+        };
+        let child_count = count_strokes(&object.children, data, limits)?;
+        Ok(count.saturating_add(own_count).saturating_add(child_count))
+    })
 }
 
 fn count_objects(objects: &[StoredObject]) -> usize {
@@ -83,6 +96,7 @@ struct PageDecoder<'a, 'p> {
     limits: &'a ParseLimits,
     archive_entry: &'a str,
     report: &'a mut ParseReport,
+    document_metadata: &'a crate::DocumentMetadata,
     progress: WorkProgress<'p>,
 }
 
@@ -210,6 +224,45 @@ impl PageDecoder<'_, '_> {
                 );
                 }
                 content = Some(PageObjectContent::Container(Vec::new()));
+            } else if object.object_type == ObjectType::Formula {
+                let formula = object
+                    .formula_metadata_with_limits(data, self.limits)
+                    .map_err(|error| match error {
+                        Error::Format(message) => Error::Format(format!(
+                            "page {}: formula at 0x{:x}: {message}",
+                            self.page_uuid, object.payload_offset
+                        )),
+                        error => error,
+                    })?;
+                match formula.select_render_source(self.document_metadata, false, None) {
+                    crate::formula::FormulaRenderSelection::StrokeFallback { strokes } => {
+                        content = Some(PageObjectContent::Container(
+                            strokes
+                                .into_iter()
+                                .map(|formula_stroke| PageObject {
+                                    render_layer: ObjectRenderLayer::Base,
+                                    source_offset: Some(object.payload_offset),
+                                    content: PageObjectContent::Stroke(
+                                        formula_stroke.stroke.clone(),
+                                    ),
+                                })
+                                .collect(),
+                        ));
+                    }
+                    crate::formula::FormulaRenderSelection::Hidden => {}
+                    crate::formula::FormulaRenderSelection::ImageSelected { .. }
+                    | crate::formula::FormulaRenderSelection::CachedImageSelected { .. }
+                    | crate::formula::FormulaRenderSelection::Unsupported(_) => {
+                        self.report.warning(
+                            DiagnosticCode::UnsupportedObjectType,
+                            Some(self.archive_entry.to_owned()),
+                            format!(
+                                "page {}: Formula at 0x{:x}: image route or media decode is not available to the page renderer; source retained in stored page data when requested",
+                                self.page_uuid, object.payload_offset
+                            ),
+                        );
+                    }
+                }
             } else if !matches!(object.object_type, ObjectType::Other(_)) {
                 self.report.warning(
                 DiagnosticCode::UnsupportedObjectType,
@@ -226,7 +279,7 @@ impl PageDecoder<'_, '_> {
             let mut children = self.decode_objects(data, &object.children)?;
             if let Some(mut content) = content {
                 if let PageObjectContent::Container(container) = &mut content {
-                    *container = std::mem::take(&mut children);
+                    container.append(&mut children);
                 }
                 let render_layer = if let Some(base) = base.as_ref()
                     && base.declares_render_layer()

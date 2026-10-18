@@ -202,6 +202,7 @@ fn parse_archive_from_reader<R: Read + Seek>(
             name,
             &mut report,
             &media,
+            &metadata,
             observer,
         )?;
 

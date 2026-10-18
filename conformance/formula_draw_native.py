@@ -178,8 +178,22 @@ def fallback_getter_order():
     parent, context, canvas, canvas_vtable, formula = (p.alloc(32) for _ in range(5))
     drawing_data = p.alloc(0x100)
     source_list, answer_list = p.alloc(32), p.alloc(32)
-    source_strokes = [p.alloc(16), p.alloc(16)]
-    answer_strokes = [p.alloc(16)]
+    source_strokes = [p.alloc(32), p.alloc(32)]
+    answer_strokes = [p.alloc(32)]
+    # ObjectBase::IsVisible reads ObjectBase+16 -> impl, impl+24 -> decoded
+    # base data, then the serialized visibility byte at +61. Materialize both
+    # states and execute the pinned Model getter before entering Drawing.
+    visibility_by_stroke = {}
+    for stroke, visible in zip(source_strokes + answer_strokes, (False, True, False)):
+        base_impl, base_data = p.alloc(32), p.alloc(80)
+        p.put(stroke + 16, 'Q', base_impl)
+        p.put(base_impl + 24, 'Q', base_data)
+        p.u.mem_write(base_data + 61, bytes([int(visible)]))
+        p.call('SPen::ObjectBase::IsVisible() const', [stroke])
+        actual_visible = bool(p.x(0))
+        if actual_visible != visible:
+            raise AssertionError(f'ObjectBase::IsVisible returned {actual_visible} for configured {visible}')
+        visibility_by_stroke[stroke] = actual_visible
     p.put(parent + 8, 'Q', context)
     p.put(canvas, 'Q', canvas_vtable)
     matrix = p.alloc(64)
@@ -223,7 +237,7 @@ def fallback_getter_order():
         'SPen::ObjectList::NextData(long) const': next_list,
         'SPen::ObjectList::EndTraversal(long) const': lambda: None,
         'SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)':
-            lambda: drawn_strokes.append(('draw-stroke', p.x(3), p.x(4))),
+            lambda: drawn_strokes.append(('draw-stroke', p.x(3), p.x(4), visibility_by_stroke[p.x(3)])),
         'SPen::Matrix3<float>::Matrix3(SPen::Matrix3<float> const&)': lambda: None,
     })
     p.call('SPen::ObjectDrawing::drawObjectFormula(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectFormula const*)',
@@ -273,7 +287,10 @@ if __name__ == '__main__':
     fallback = fallback_getter_order()
     if fallback['list_getters'] != ['source', 'answer']:
         raise AssertionError(f'unexpected formula stroke-list lookup order: {fallback}')
-    actual_strokes = [stroke for _, stroke, _ in fallback['draw_stroke_calls']]
+    actual_strokes = [stroke for _, stroke, *_ in fallback['draw_stroke_calls']]
     if actual_strokes != fallback['expected_stroke_order']:
         raise AssertionError(f'unexpected source/answer draw order: {fallback}')
+    actual_visibility = [visible for _, _, _, visible in fallback['draw_stroke_calls']]
+    if actual_visibility != [False, True, False]:
+        raise AssertionError(f'Formula fallback did not forward all stored strokes with their ObjectBase visibility: {fallback}')
     print(json.dumps({'fallback': fallback}, sort_keys=True))

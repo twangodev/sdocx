@@ -2,8 +2,8 @@ use crate::binary::Reader;
 use crate::frame::Frame;
 use crate::math::{checked_payload, read_count, read_latex};
 use crate::{
-    BoundingBox, Error, MathAngleType, ObjectMetadata, ObjectType, ParseLimits, Result,
-    StoredObject, Stroke,
+    ArchiveResourceContent, ArchiveResourceError, BoundingBox, DocumentMetadata, Error,
+    MathAngleType, ObjectMetadata, ObjectType, ParseLimits, Result, StoredObject, Stroke,
 };
 
 #[derive(Debug, Clone)]
@@ -34,6 +34,58 @@ pub struct FormulaMetadata {
     pub fixed_trailing_data: Vec<u8>,
     pub flexible_trailing_data: Vec<u8>,
     pub trailing_data: Vec<u8>,
+}
+
+/// The native draw-selection result for a saved Formula, before page placement.
+///
+/// An image-selected result suppresses both ink lists, even if a later renderer
+/// cannot paint the selected bitmap. `result_rect` is the saved destination;
+/// exact page placement also needs native `GetDrawnRect` origin recovery.
+#[derive(Debug)]
+#[allow(dead_code)] // Selection carries exact source inputs for renderer integration.
+#[non_exhaustive]
+pub(crate) enum FormulaRenderSelection<'a> {
+    /// The Formula itself is hidden, so native composition does not draw it.
+    Hidden,
+    /// A bound raster passed the caller's bitmap-decode probe and wins over ink.
+    ImageSelected {
+        /// Exact archive path selected by the document media binding.
+        resource_name: &'a str,
+        /// MIME type recognized by the archive media loader.
+        mime_type: &'a str,
+        /// Original encoded bytes from the archive.
+        data: &'a [u8],
+        /// Saved bitmap destination rectangle, if present.
+        result_rect: Option<BoundingBox>,
+    },
+    /// A runtime cache wins after a saved image path is found.
+    ///
+    /// The cached pixels are runtime-only and are not available from saved
+    /// archive source bytes, so this result suppresses ink without supplying
+    /// image data for Rust to paint.
+    CachedImageSelected {
+        /// Saved bitmap destination rectangle, if present.
+        result_rect: Option<BoundingBox>,
+    },
+    /// Native image path or bitmap retrieval failed; ink is returned in draw order.
+    StrokeFallback {
+        /// Source stroke entries followed by answer stroke entries in stored order.
+        strokes: Vec<&'a FormulaStroke>,
+    },
+    /// Selection cannot be determined safely from the available typed data.
+    Unsupported(FormulaRenderUnsupported),
+}
+
+/// A reason a Formula image selection cannot safely be reproduced.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub(crate) enum FormulaRenderUnsupported {
+    /// The saved image binding points at an ambiguous archive resource.
+    AmbiguousImageBinding,
+    /// The bound file is retained but is not a supported typed raster asset.
+    UnsupportedImageResource,
+    /// The bound asset index no longer identifies the selected archive path.
+    StaleImageResource,
 }
 
 #[derive(Debug, Clone)]
@@ -111,6 +163,142 @@ impl From<u32> for FormulaLabelRelationKind {
 }
 
 impl FormulaMetadata {
+    /// Select the saved Formula image or its native stroke fallback.
+    ///
+    /// `runtime_cache_available` reports a cache supplied by a live native
+    /// object; saved files do not serialize that bitmap. `bitmap_decodable`
+    /// must be the caller's actual raster-backend result for a resolved source
+    /// asset. A missing path or failed bitmap probe selects source then answer
+    /// stroke entries in stored order. An unresolved decode,
+    /// ambiguous binding or unsupported resource returns `Unsupported`
+    /// rather than guessing. This resolves draw precedence only; image
+    /// placement still needs the native drawn-rect origin, and this method
+    /// does not synthesize LaTeX text.
+    pub(crate) fn select_render_source<'a>(
+        &'a self,
+        metadata: &'a DocumentMetadata,
+        runtime_cache_available: bool,
+        bitmap_decodable: Option<bool>,
+    ) -> FormulaRenderSelection<'a> {
+        if !self.base.visible {
+            return FormulaRenderSelection::Hidden;
+        }
+
+        let fallback = || FormulaRenderSelection::StrokeFallback {
+            strokes: self.strokes.iter().chain(&self.answer_strokes).collect(),
+        };
+
+        let Some(media_id) = self.latex_image_media_id.filter(|id| *id >= 0) else {
+            return fallback();
+        };
+        let resource_name = if let Some(manifest) = &metadata.media_manifest {
+            let mut entries = manifest
+                .entries
+                .iter()
+                .filter(|entry| entry.bind_id == media_id as u32);
+            let Some(entry) = entries.next() else {
+                return fallback();
+            };
+            if entries.next().is_some() {
+                return FormulaRenderSelection::Unsupported(
+                    FormulaRenderUnsupported::AmbiguousImageBinding,
+                );
+            }
+            let name = format!("media/{}", entry.file_name);
+            if entry.file_name.is_empty() {
+                return fallback();
+            }
+            name
+        } else {
+            match metadata.resolve_archive_resource(media_id as u32) {
+                Ok(resource) => resource.resource.name.clone(),
+                Err(ArchiveResourceError::UnboundId { .. }) => return fallback(),
+                Err(ArchiveResourceError::MissingEntry { .. }) if !runtime_cache_available => {
+                    return fallback();
+                }
+                Err(
+                    ArchiveResourceError::AmbiguousBinding { .. }
+                    | ArchiveResourceError::AmbiguousEntry { .. },
+                ) => {
+                    return FormulaRenderSelection::Unsupported(
+                        FormulaRenderUnsupported::AmbiguousImageBinding,
+                    );
+                }
+                Err(
+                    ArchiveResourceError::DataUnavailable { .. }
+                    | ArchiveResourceError::MissingEntry { .. },
+                ) => {
+                    return FormulaRenderSelection::Unsupported(
+                        FormulaRenderUnsupported::UnsupportedImageResource,
+                    );
+                }
+            }
+        };
+        let mut resources = metadata
+            .archive_resources
+            .iter()
+            .filter(|resource| resource.name == resource_name);
+        let Some(resource) = resources.next() else {
+            return if runtime_cache_available {
+                FormulaRenderSelection::CachedImageSelected {
+                    result_rect: self.latex_result_rect,
+                }
+            } else {
+                fallback()
+            };
+        };
+        if resources.next().is_some() {
+            return FormulaRenderSelection::Unsupported(
+                FormulaRenderUnsupported::AmbiguousImageBinding,
+            );
+        }
+        let (mime_type, data) = match &resource.content {
+            ArchiveResourceContent::MediaAsset { media_index } => {
+                match metadata.media_assets.get(*media_index) {
+                    Some(asset) if asset.name == resource_name => {
+                        (asset.mime_type.as_str(), asset.data.as_slice())
+                    }
+                    _ if runtime_cache_available => {
+                        return FormulaRenderSelection::CachedImageSelected {
+                            result_rect: self.latex_result_rect,
+                        };
+                    }
+                    _ => {
+                        return FormulaRenderSelection::Unsupported(
+                            FormulaRenderUnsupported::StaleImageResource,
+                        );
+                    }
+                }
+            }
+            ArchiveResourceContent::Opaque { .. } if runtime_cache_available => {
+                return FormulaRenderSelection::CachedImageSelected {
+                    result_rect: self.latex_result_rect,
+                };
+            }
+            ArchiveResourceContent::Opaque { .. } => {
+                return FormulaRenderSelection::Unsupported(
+                    FormulaRenderUnsupported::UnsupportedImageResource,
+                );
+            }
+        };
+        if runtime_cache_available {
+            FormulaRenderSelection::CachedImageSelected {
+                result_rect: self.latex_result_rect,
+            }
+        } else if bitmap_decodable == Some(true) {
+            FormulaRenderSelection::ImageSelected {
+                resource_name: &resource.name,
+                mime_type,
+                data,
+                result_rect: self.latex_result_rect,
+            }
+        } else if bitmap_decodable == Some(false) {
+            fallback()
+        } else {
+            FormulaRenderSelection::Unsupported(FormulaRenderUnsupported::UnsupportedImageResource)
+        }
+    }
+
     pub fn parse_bytes(bytes: &[u8]) -> Result<Self> {
         Self::parse_bytes_with_limits(bytes, &ParseLimits::default())
     }
@@ -375,5 +563,217 @@ impl FormulaDecoder<'_> {
             });
         }
         Ok(graphs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ArchiveResource, MediaAsset, MediaManifest, MediaManifestEntry};
+
+    const PNG: &[u8] = include_bytes!("../tests/assets/crop-quadrants.png");
+
+    fn object_base(visible: bool, uuid: &str) -> ObjectMetadata {
+        ObjectMetadata {
+            format_version: 1,
+            uuid: uuid.to_owned(),
+            modified_time_raw: 0,
+            bbox: BoundingBox::default(),
+            replay_timestamp_raw: 0,
+            resize_mode_raw: 0,
+            rotatable: false,
+            selectable: true,
+            movable: true,
+            visible,
+            replayable: false,
+            out_of_canvas_enabled: false,
+            template: false,
+            flip_enabled: false,
+            float_drawn_rect: false,
+            locked: false,
+            removable: true,
+            rotation_degrees: None,
+            property_mask: Vec::new(),
+            field_mask: Vec::new(),
+            fixed_trailing_data: Vec::new(),
+            flexible_trailing_data: Vec::new(),
+        }
+    }
+
+    fn formula(media_id: Option<i32>) -> FormulaMetadata {
+        FormulaMetadata {
+            base: object_base(true, "formula"),
+            has_trigonometry_calculation: false,
+            plottable: false,
+            latex: Vec::new(),
+            latex_result_rect: Some(BoundingBox {
+                x_min: 10.0,
+                y_min: 20.0,
+                x_max: 30.0,
+                y_max: 40.0,
+            }),
+            nine_patch_rect: None,
+            latex_image_media_id: media_id,
+            latex_result: Vec::new(),
+            angle_type: None,
+            font_size: None,
+            strokes: vec![
+                formula_stroke(true, "source"),
+                formula_stroke(false, "hidden"),
+            ],
+            answer_strokes: vec![formula_stroke(true, "answer")],
+            answer: None,
+            answer_stroke_color: None,
+            relative_original_formula_rect: None,
+            relative_original_answer_rect: None,
+            expression_type_raw: None,
+            label_graphs: Vec::new(),
+            substitution_latex: Vec::new(),
+            property_mask: Vec::new(),
+            field_mask: Vec::new(),
+            fixed_trailing_data: Vec::new(),
+            flexible_trailing_data: Vec::new(),
+            trailing_data: Vec::new(),
+        }
+    }
+
+    fn formula_stroke(visible: bool, uuid: &str) -> FormulaStroke {
+        FormulaStroke {
+            base: object_base(visible, uuid),
+            stroke: Stroke {
+                rendering: None,
+                bbox: BoundingBox::default(),
+                points: Vec::new(),
+                pressures: Vec::new(),
+                timestamps: Vec::new(),
+                tilts: Vec::new(),
+                orientations: Vec::new(),
+                color: None,
+                pen_width: 1.0,
+            },
+            object_data: Vec::new(),
+        }
+    }
+
+    fn media_document() -> DocumentMetadata {
+        let name = "media/latex@abc.png".to_owned();
+        DocumentMetadata {
+            media_assets: vec![MediaAsset {
+                name: name.clone(),
+                archive_id: Some(12),
+                mime_type: "image/png".to_owned(),
+                data: PNG.to_vec(),
+            }],
+            media_manifest: Some(MediaManifest {
+                format_version: 3002,
+                entries: vec![MediaManifestEntry {
+                    bind_id: 12,
+                    file_name: "latex@abc.png".to_owned(),
+                    sha256: None,
+                    reference_count: 1,
+                    modified_time_raw: 0,
+                    is_attached: false,
+                    trailing_data: Vec::new(),
+                }],
+                trailing_data: Vec::new(),
+            }),
+            archive_resources: vec![ArchiveResource {
+                name,
+                archive_id: Some(12),
+                content: ArchiveResourceContent::MediaAsset { media_index: 0 },
+            }],
+            ..DocumentMetadata::default()
+        }
+    }
+
+    fn manifest_without_file() -> DocumentMetadata {
+        DocumentMetadata {
+            media_manifest: Some(MediaManifest {
+                format_version: 3002,
+                entries: vec![MediaManifestEntry {
+                    bind_id: 12,
+                    file_name: "latex@abc.png".to_owned(),
+                    sha256: None,
+                    reference_count: 1,
+                    modified_time_raw: 0,
+                    is_attached: false,
+                    trailing_data: Vec::new(),
+                }],
+                trailing_data: Vec::new(),
+            }),
+            ..DocumentMetadata::default()
+        }
+    }
+
+    fn fallback_ids(selection: FormulaRenderSelection<'_>) -> Vec<String> {
+        match selection {
+            FormulaRenderSelection::StrokeFallback { strokes } => strokes
+                .iter()
+                .map(|stroke| stroke.base.uuid.clone())
+                .collect(),
+            other => panic!("expected stroke fallback, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn bound_decodable_image_suppresses_both_ink_lists() {
+        let formula = formula(Some(12));
+        let metadata = media_document();
+        let selected = formula.select_render_source(&metadata, false, Some(true));
+        match selected {
+            FormulaRenderSelection::ImageSelected {
+                resource_name,
+                result_rect,
+                ..
+            } => {
+                assert_eq!(resource_name, "media/latex@abc.png");
+                assert_eq!(result_rect, formula.latex_result_rect);
+            }
+            other => panic!("expected selected image, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn missing_binding_uses_source_then_answer_lists_in_native_order() {
+        let formula = formula(Some(404));
+        let metadata = media_document();
+        let selected = formula.select_render_source(&metadata, false, None);
+        assert_eq!(fallback_ids(selected), ["source", "hidden", "answer"]);
+    }
+
+    #[test]
+    fn bitmap_decode_failure_uses_source_then_answer_strokes() {
+        let formula = formula(Some(12));
+        let metadata = media_document();
+        let selected = formula.select_render_source(&metadata, false, Some(false));
+        assert_eq!(fallback_ids(selected), ["source", "hidden", "answer"]);
+    }
+
+    #[test]
+    fn negative_media_id_uses_source_then_answer_strokes() {
+        let formula = formula(Some(-1));
+        let metadata = media_document();
+        let selected = formula.select_render_source(&metadata, false, None);
+        assert_eq!(fallback_ids(selected), ["source", "hidden", "answer"]);
+    }
+
+    #[test]
+    fn path_gate_precedes_runtime_cache_and_cache_precedes_file_decode() {
+        let value = formula(Some(12));
+        let metadata = manifest_without_file();
+        assert!(matches!(
+            value.select_render_source(&metadata, false, None),
+            FormulaRenderSelection::StrokeFallback { .. }
+        ));
+        assert!(matches!(
+            value.select_render_source(&metadata, true, None),
+            FormulaRenderSelection::CachedImageSelected { .. }
+        ));
+
+        let unbound = formula(Some(404));
+        assert!(matches!(
+            unbound.select_render_source(&metadata, true, None),
+            FormulaRenderSelection::StrokeFallback { .. }
+        ));
     }
 }

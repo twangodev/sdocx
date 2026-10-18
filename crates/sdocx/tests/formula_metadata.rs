@@ -1,8 +1,11 @@
 mod support;
 
+#[cfg(feature = "render")]
+use std::io::{Cursor, Write};
+
 use sdocx::{
     DiagnosticCode, Error, FormulaLabelRelationKind, FormulaMetadata, MathAngleType, ObjectType,
-    ParseLimits,
+    ParseLimits, ParseOptions,
 };
 use support::{archive, object, page};
 
@@ -134,6 +137,166 @@ fn all_fields() -> Vec<u8> {
     )
 }
 
+#[cfg(feature = "render")]
+fn utf16(value: &str) -> Vec<u8> {
+    let units: Vec<_> = value.encode_utf16().collect();
+    [
+        (units.len() as u16).to_le_bytes().as_slice(),
+        &units
+            .into_iter()
+            .flat_map(u16::to_le_bytes)
+            .collect::<Vec<_>>(),
+    ]
+    .concat()
+}
+
+#[cfg(feature = "render")]
+fn note_with_pen_name() -> Vec<u8> {
+    let mut bytes = vec![0; 4];
+    bytes.extend([1, 0, 2, 0, 4]); // one-byte property mask; field 10
+    bytes.extend(5500_u32.to_le_bytes());
+    bytes.extend(utf16("note"));
+    bytes.extend(1_u32.to_le_bytes());
+    bytes.extend([0; 16]);
+    for value in [1080_u32, 1527, 0, 0, 4000] {
+        bytes.extend(value.to_le_bytes());
+    }
+    let mut common = 5500_u32.to_le_bytes().to_vec();
+    common.extend([1, 0, b't']);
+    common.extend([0; 45]);
+    let note_frame = |kind: i16, fixed: &[u8]| {
+        let size = (12 + fixed.len()) as u32;
+        [
+            size.to_le_bytes().as_slice(),
+            kind.to_le_bytes().as_slice(),
+            size.to_le_bytes().as_slice(),
+            &[0, 0],
+            fixed,
+        ]
+        .concat()
+    };
+    let text = [
+        note_frame(0, &common),
+        note_frame(6, &[]),
+        note_frame(7, &[]),
+    ]
+    .concat();
+    for _ in 0..2 {
+        bytes.extend((text.len() as u32).to_le_bytes());
+        bytes.extend(&text);
+    }
+    let flex = bytes.len() as u32;
+    bytes[..4].copy_from_slice(&flex.to_le_bytes());
+    let mut table = 1_u16.to_le_bytes().to_vec();
+    table.extend(12_u32.to_le_bytes());
+    table.extend(utf16("com.samsung.android.sdk.pen.pen.preload.Marker"));
+    bytes.extend((table.len() as u32).to_le_bytes());
+    bytes.extend(table);
+    bytes.extend([0xee; 32]);
+    bytes
+}
+
+#[cfg(feature = "render")]
+fn archive_with(page_bytes: &[u8], note: Option<&[u8]>, media: Option<&[u8]>) -> Vec<u8> {
+    let mut writer = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    for (name, data) in [
+        Some(("page.page", page_bytes)),
+        note.map(|data| ("note.note", data)),
+        media.map(|data| ("media/mediaInfo.dat", data)),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        writer
+            .start_file(name, zip::write::SimpleFileOptions::default())
+            .unwrap();
+        writer.write_all(data).unwrap();
+    }
+    if media.is_some() {
+        writer
+            .start_file(
+                "media/latex@fixture.png",
+                zip::write::SimpleFileOptions::default(),
+            )
+            .unwrap();
+        writer
+            .write_all(include_bytes!("assets/crop-quadrants.png"))
+            .unwrap();
+    }
+    writer.finish().unwrap().into_inner()
+}
+
+fn distinct_stroke(color: u32, x: f64, y: f64, visible: bool) -> Vec<u8> {
+    let mut fixed = 1_u16.to_le_bytes().to_vec();
+    fixed.extend(x.to_le_bytes());
+    fixed.extend(y.to_le_bytes());
+    fixed.extend(0.75_f32.to_le_bytes());
+    fixed.extend(123_i32.to_le_bytes());
+    fixed.extend([1, 0]);
+    let style = [
+        color.to_le_bytes(),
+        2.5_f32.to_le_bytes(),
+        12_i32.to_le_bytes(),
+    ]
+    .concat();
+    let mut common = base();
+    common[11] = u8::from(visible) << 3;
+    [common, frame(1, &[1 << 3], &[140], &fixed, &style)].concat()
+}
+
+fn formula_with_strokes(image_id: i32, parent_visible: bool) -> Vec<u8> {
+    let source = distinct_stroke(0xff123456, 111.0, 222.0, true);
+    let hidden = distinct_stroke(0xff00ff00, 200.0, 250.0, false);
+    let answer_stroke = distinct_stroke(0xffabcdef, 333.0, 444.0, true);
+    let list = |strokes: &[Vec<u8>]| {
+        let mut bytes = (strokes.len() as u32).to_le_bytes().to_vec();
+        for stroke in strokes {
+            bytes.extend((stroke.len() as u32).to_le_bytes());
+            bytes.extend(stroke);
+        }
+        bytes
+    };
+    let mut parent = base();
+    // Deliberately unrelated Formula box; its child coordinates are native absolute coordinates.
+    let replacement = bbox([5.0, 7.0, 25.0, 30.0]);
+    let base_bbox_offset = 14 + 4 + 2 + 36 + 8;
+    parent[base_bbox_offset..base_bbox_offset + 32].copy_from_slice(&replacement);
+    parent[11] = u8::from(parent_visible) << 3;
+    let flex = [
+        image_id.to_le_bytes().to_vec(),
+        list(&[source, hidden]),
+        list(&[answer_stroke]),
+    ]
+    .concat();
+    [
+        parent,
+        frame(
+            11,
+            &[3],
+            &[(1 << 2 | 1 << 7 | 1 << 8) as u16 as u8, 1],
+            &[],
+            &flex,
+        ),
+    ]
+    .concat()
+}
+
+#[cfg(feature = "render")]
+fn bound_manifest_entry(id: u32, name: &str) -> Vec<u8> {
+    let mut record = id.to_le_bytes().to_vec();
+    record.extend(utf16(name));
+    record.extend([0, 0]);
+    record.extend(1_u16.to_le_bytes());
+    record.extend(0_i64.to_le_bytes());
+    record.push(0);
+    let mut bytes = 3002_u32.to_le_bytes().to_vec();
+    bytes.extend(1_u16.to_le_bytes());
+    bytes.extend((record.len() as u32).to_le_bytes());
+    bytes.extend(record);
+    bytes.extend(b"EOFX");
+    bytes
+}
+
 #[test]
 fn formula_inspection_decodes_native_field_order_strokes_and_label_graphs() {
     let payload = all_fields();
@@ -193,13 +356,168 @@ fn formula_inspection_decodes_native_field_order_strokes_and_label_graphs() {
     assert!(value.flexible_trailing_data.is_empty());
     assert!(value.trailing_data.is_empty());
     assert!(parsed.document.pages[0].elements().next().is_none());
+    assert_eq!(parsed.document.pages[0].strokes().count(), 2);
     assert!(
-        parsed
+        !parsed
             .report
             .diagnostics
             .iter()
             .any(|diagnostic| diagnostic.code == DiagnosticCode::UnsupportedObjectType)
     );
+    #[cfg(feature = "render")]
+    {
+        let rendered = sdocx::render_document_svg(&parsed.document, &Default::default());
+        assert_eq!(rendered.len(), 1);
+        assert_eq!(rendered[0].svg.matches("<circle").count(), 2);
+    }
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn absent_formula_image_renders_source_and_answer_lists_in_native_order() {
+    let payload = formula_with_strokes(-1, true);
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive_with(
+        &page_bytes,
+        Some(&note_with_pen_name()),
+        None,
+    ))
+    .unwrap();
+    let strokes: Vec<_> = parsed.document.pages[0].strokes().collect();
+    assert_eq!(strokes.len(), 3);
+    assert!(strokes.iter().all(|stroke| {
+        stroke
+            .rendering
+            .as_ref()
+            .is_some_and(|value| value.style.pen_name_id == Some(12))
+    }));
+    assert!(strokes.iter().all(|stroke| {
+        stroke
+            .rendering
+            .as_ref()
+            .and_then(|value| value.pen_name.as_deref())
+            == Some("com.samsung.android.sdk.pen.pen.preload.Marker")
+    }));
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    assert!(svg.contains("cx=\"111"), "{svg}");
+    assert!(svg.contains("cy=\"222"), "{svg}");
+    assert!(svg.contains("cx=\"333"), "{svg}");
+    assert!(svg.contains("cy=\"444"), "{svg}");
+    assert!(svg.contains("#123456"), "{svg}");
+    assert!(svg.contains("#abcdef"), "{svg}");
+    assert_eq!(svg.matches("<circle").count(), 3, "{svg}");
+    assert!(svg.contains("cx=\"200"), "hidden child was omitted: {svg}");
+    assert!(svg.contains("cy=\"250"), "hidden child was omitted: {svg}");
+    assert!(svg.contains("#00ff00"), "hidden child was omitted: {svg}");
+    #[cfg(feature = "pdf")]
+    {
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let content =
+            lopdf::content::Content::decode(&pdf.get_page_content(pdf.get_pages()[&1]).unwrap())
+                .unwrap();
+        assert!(
+            content
+                .operations
+                .iter()
+                .any(|operation| { matches!(operation.operator.as_str(), "c" | "v" | "y") }),
+            "Formula circles were not exported as PDF vector paths: {:?}",
+            content.operations
+        );
+        assert!(!pdf.objects.values().any(|object| {
+            object.as_stream().is_ok_and(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+            })
+        }));
+    }
+}
+
+#[test]
+fn hidden_formula_parent_hides_nested_fallback_strokes() {
+    let payload = formula_with_strokes(-1, false);
+    assert!(!FormulaMetadata::parse_bytes(&payload).unwrap().base.visible);
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let parsed = sdocx::parse_bytes_detailed(&archive(&page_bytes)).unwrap();
+    assert_eq!(parsed.document.pages[0].strokes().count(), 0);
+    assert!(parsed.document.pages[0].elements().next().is_none());
+}
+
+#[test]
+fn page_stroke_budget_aggregates_formula_lists_and_ordinary_strokes() {
+    let first = object(11, &formula_with_strokes(-1, true), &[]);
+    let second = object(11, &formula_with_strokes(-1, true), &[]);
+    let ordinary = object(1, &stroke(0xff000000), &[]);
+    let bytes = archive(&page(&[vec![first, second, ordinary]], 0, &[]));
+    let options = ParseOptions {
+        limits: ParseLimits {
+            max_strokes_per_page: 4,
+            ..ParseLimits::default()
+        },
+        ..Default::default()
+    };
+    assert!(matches!(
+        sdocx::parse_bytes_with_options(&bytes, &options),
+        Err(Error::LimitExceeded {
+            resource: "strokes per page",
+            limit: 4,
+            actual: 7,
+        })
+    ));
+}
+
+#[cfg(feature = "render")]
+#[test]
+fn bound_formula_media_suppresses_fallback_ink_and_keeps_unsupported_diagnostic() {
+    let payload = formula_with_strokes(77, true);
+    assert_eq!(
+        FormulaMetadata::parse_bytes(&payload)
+            .unwrap()
+            .latex_image_media_id,
+        Some(77)
+    );
+    let page_bytes = page(&[vec![object(11, &payload, &[])]], 0, &[]);
+    let manifest = bound_manifest_entry(77, "latex@fixture.png");
+    let parsed = sdocx::parse_bytes_detailed(&archive_with(
+        &page_bytes,
+        Some(&note_with_pen_name()),
+        Some(&manifest),
+    ))
+    .unwrap();
+    assert_eq!(parsed.document.pages[0].strokes().count(), 0);
+    assert!(parsed.report.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == DiagnosticCode::UnsupportedObjectType
+            && diagnostic.message.contains("Formula")
+            && diagnostic.message.contains("image route")
+    }));
+    let svg = &sdocx::render_document_svg(&parsed.document, &Default::default())[0].svg;
+    assert!(
+        !svg.contains("<circle"),
+        "formula strokes rendered despite bound media"
+    );
+    assert!(
+        !svg.contains("<image"),
+        "unsupported formula raster fabricated"
+    );
+    #[cfg(feature = "pdf")]
+    {
+        let options = sdocx::PdfOptions::new(std::sync::Arc::new(Default::default()));
+        let bytes =
+            sdocx::render_document_pdf(&parsed.document, &Default::default(), &options).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        assert!(!pdf.objects.values().any(|object| {
+            object.as_stream().is_ok_and(|stream| {
+                stream
+                    .dict
+                    .get(b"Subtype")
+                    .is_ok_and(|value| value.as_name().is_ok_and(|name| name == b"Image"))
+            })
+        }));
+    }
 }
 
 #[test]

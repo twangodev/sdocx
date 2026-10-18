@@ -210,5 +210,11 @@ has been confirmed.
 ## SDK behavior and evidence limits
 
 Formula inspection decodes both stroke lists, image media ID and result
-rectangle. Automatic formula rendering is absent. Final placement and
-appearance have not been checked against a paired Samsung SDOCX/PDF export.
+rectangle. Saved-file vector output follows source then answer stroke-list
+order when the native image path is unavailable, including entries whose
+child ObjectBase visibility bit is clear; the native outer draw loop dispatches
+all list entries. A selected path still emits an
+unsupported-render diagnostic because page rendering lacks a native-equivalent
+bitmap result and `GetDrawnRect` origin. Ambiguous or opaque resources remain
+unsupported, and no LaTeX text is synthesized. Final appearance has not been
+checked against a paired Samsung SDOCX/PDF export.
