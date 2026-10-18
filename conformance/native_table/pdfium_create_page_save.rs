@@ -1,10 +1,12 @@
 use super::*;
 use std::collections::{BTreeSet, HashMap};
+use std::io::{Read, Seek, SeekFrom, Write};
 
 #[link(name = "m")]
 unsafe extern "C" {
     fn frexpf(value: f32, exponent: *mut i32) -> f32;
     fn hypotf(left: f32, right: f32) -> f32;
+    fn sincosf(value: f32, sine: *mut f32, cosine: *mut f32);
 }
 
 #[link(name = "z")]
@@ -20,6 +22,9 @@ unsafe extern "C" {
 
 const PDFIUM_BASE: u64 = 0x0100_0000;
 const LIBCPP_BASE: u64 = 0x0200_0000;
+const SPENPDF_BASE: u64 = 0x0300_0000;
+const SPENBASE_BASE: u64 = 0x0400_0000;
+const PDF_WRITE_BLOCK_STUB: u64 = STUB + 0xf000;
 const STUB: u64 = 0x0800_0000;
 const C_LOCALE: u64 = STUB + 0x9200;
 const GLOBAL_C_LOCALE: u64 = STUB + 0x9210;
@@ -34,11 +39,15 @@ struct External {
     current_locale: u64,
     posix_cursor: u64,
     host_allocs: HashMap<u64, u64>,
+    files: HashMap<u64, std::fs::File>,
+    next_file: u64,
     tls: HashMap<u64, u64>,
     next_tls_key: u64,
+    clock_calls: u64,
     pdf_bytes: Vec<u8>,
     write_calls: usize,
 }
+
 
 fn cstring(engine: Engine, address: u64) -> String {
     let mut bytes = Vec::new();
@@ -93,6 +102,15 @@ fn compare_memory(engine: Engine, left: u64, right: u64, length: usize) -> i32 {
         .map(|(a, b)| i32::from(a) - i32::from(b))
         .find(|difference| *difference != 0)
         .unwrap_or(0)
+}
+
+fn write_stat(engine: Engine, address: u64, size: u64) {
+    let mut bytes = [0_u8; 128];
+    bytes[16..20].copy_from_slice(&(0o100444_u32).to_le_bytes());
+    bytes[48..56].copy_from_slice(&size.to_le_bytes());
+    bytes[56..60].copy_from_slice(&(4096_u32).to_le_bytes());
+    bytes[64..72].copy_from_slice(&size.div_ceil(512).to_le_bytes());
+    write(engine, address, &bytes);
 }
 
 fn va_integer_args(engine: Engine, va: u64, count: usize) -> Vec<u64> {
@@ -253,6 +271,111 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             result = compare_memory(engine, x0, x1, len) as i64 as u64;
         }
         "strcmp" => result = compare_c_strings(engine, x0, x1) as i64 as u64,
+        "atoi" => {
+            let bytes = cstring_bytes(engine, x0);
+            let mut index = 0;
+            while bytes.get(index).is_some_and(u8::is_ascii_whitespace) { index += 1; }
+            let sign = match bytes.get(index) { Some(b'-') => { index += 1; -1_i64 }, Some(b'+') => { index += 1; 1_i64 }, _ => 1_i64 };
+            let mut value = 0_i64;
+            while let Some(byte @ b'0'..=b'9') = bytes.get(index) {
+                value = value.checked_mul(10).and_then(|v| v.checked_add(i64::from(*byte - b'0'))).expect("bounded atoi overflow");
+                index += 1;
+            }
+            result = i32::try_from(value * sign).expect("bounded atoi result overflow") as i64 as u64;
+        }
+        "open" | "open64" | "__open_2" | "openat" => {
+            let (path_pointer, flags) = if name == "openat" { (x1, x2 as u32) } else { (x0, x1 as u32) };
+            let path = cstring(engine, path_pointer);
+            if name == "openat" {
+                assert!(path.starts_with('/') || x0 as i32 == -100, "unsupported relative openat directory");
+            }
+            let access = flags & 3;
+            let opened = if access == 0 { std::fs::File::open(&path) } else {
+                assert!(path.starts_with("/tmp/"), "native probe write escaped /tmp: {path}");
+                let mut options = std::fs::OpenOptions::new();
+                options.read(access == 2).write(true).create(flags & 0x40 != 0).truncate(flags & 0x200 != 0).append(flags & 0x400 != 0);
+                options.open(&path)
+            };
+            if let Ok(file) = opened {
+                let handle = 0x7000_0000_u64 + external.next_file * 0x100;
+                external.next_file += 1;
+                external.files.insert(handle, file);
+                external.platform_events.insert(format!("host-file-open:{path}:flags={flags:#x}"));
+                result = handle;
+            } else { result = u64::MAX; }
+        }
+        "fstat" | "fstat64" => {
+            let size = external.files.get(&x0).expect("unknown host fd").metadata().expect("fstat").len();
+            write_stat(engine, x1, size);
+            result = 0;
+        }
+        "read" | "__read_chk" => {
+            let length = x2 as usize;
+            assert!(length < 16 * 1024 * 1024);
+            if name.starts_with("__read_chk") { assert!(length <= x3(engine) as usize); }
+            let file = external.files.get_mut(&x0).expect("unknown host fd");
+            let mut buffer = vec![0; length];
+            let read = file.read(&mut buffer).expect("host read");
+            write(engine, x1, &buffer[..read]);
+            result = read as u64;
+        }
+        "lseek" | "lseek64" => {
+            let seek = match x2 as u32 { 0 => SeekFrom::Start(x1), 1 => SeekFrom::Current(x1 as i64), 2 => SeekFrom::End(x1 as i64), other => panic!("unsupported lseek origin {other}") };
+            result = external.files.get_mut(&x0).expect("unknown host fd").seek(seek).expect("host seek");
+        }
+        "close" => { external.files.remove(&x0).expect("unknown host fd"); result = 0; }
+        "fopen" | "fopen64" => {
+            let path = cstring(engine, x0);
+            let mode = cstring(engine, x1);
+            let opened = if mode.contains('w') || mode.contains('a') {
+                assert!(path.starts_with("/tmp/"), "native probe write escaped /tmp: {path}");
+                let mut options = std::fs::OpenOptions::new();
+                options.write(true).create(true).truncate(mode.contains('w')).append(mode.contains('a'));
+                options.open(&path)
+            } else { std::fs::File::open(&path) };
+            if let Ok(file) = opened {
+                let handle = 0x7000_0000_u64 + external.next_file * 0x100;
+                external.next_file += 1;
+                external.files.insert(handle, file);
+                external.platform_events.insert(format!("host-file-open:{path}:mode={mode}"));
+                result = handle;
+            }
+        }
+        "fwrite" => {
+            let unit = x1 as usize;
+            let count = x2 as usize;
+            let length = unit.checked_mul(count).expect("fwrite overflow");
+            assert!(length < 64 * 1024 * 1024);
+            let mut bytes = vec![0; length];
+            check(unsafe { uc_mem_read(engine, x0, bytes.as_mut_ptr().cast(), length) });
+            external.files.get_mut(&x3(engine)).expect("unknown FILE handle").write_all(&bytes).expect("host fwrite");
+            result = count as u64;
+        }
+        "fread" => {
+            let length = (x1 as usize).checked_mul(x2 as usize).expect("fread overflow");
+            assert!(length < 16 * 1024 * 1024);
+            let file = external.files.get_mut(&x3(engine)).expect("unknown FILE handle");
+            let mut bytes = vec![0; length];
+            let read = file.read(&mut bytes).expect("host fread");
+            write(engine, x0, &bytes[..read]);
+            result = (read / (x1 as usize).max(1)) as u64;
+        }
+        "fclose" => { external.files.remove(&x0).expect("unknown FILE handle"); result = 0; }
+        "feof" | "ferror" | "fflush" => result = 0,
+        "access" | "faccessat" => {
+            let path = if name == "faccessat@LIBC" { cstring(engine, x1) } else { cstring(engine, x0) };
+            external.platform_events.insert(format!("host-access-unavailable:{path}"));
+            result = u64::MAX;
+        }
+        "mkdir" | "mkdirat" => {
+            let path = if name == "mkdirat@LIBC" { cstring(engine, x1) } else { cstring(engine, x0) };
+            external.platform_events.insert(format!("host-mkdir-noop:{path}"));
+            result = 0;
+        }
+        "stat" | "stat64" | "__stat64" => {
+            let path = cstring(engine, x0);
+            if let Ok(metadata) = std::fs::metadata(path) { write_stat(engine, x1, metadata.len()); result = 0; } else { result = u64::MAX; }
+        }
         // PDF syntax classification here is the C-locale ASCII digit test.
         "iswdigit" => result = u64::from((0x30..=0x39).contains(&x0)),
         "__system_property_get" => {
@@ -340,8 +463,14 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
         "syslog" => {
             eprintln!("syslog format: {}", cstring(engine, x1));
         }
-        "fwrite" => {
-            eprintln!("fwrite bytes: {}", cstring(engine, x0));
+        "sincosf" => {
+            let angle = f32::from_bits(read_register(engine, 136) as u32);
+            let mut sine = 0.0;
+            let mut cosine = 0.0;
+            unsafe { sincosf(angle, &mut sine, &mut cosine) };
+            write(engine, x0, &sine.to_le_bytes());
+            write(engine, x1, &cosine.to_le_bytes());
+            result = 0;
         }
         "vfprintf" | "vasprintf" => {
             eprintln!(
@@ -410,6 +539,14 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
                 write(engine, x0, &0_i64.to_le_bytes());
             }
             external.platform_events.insert("time:epoch-zero".into());
+            result = 0;
+        }
+        "clock_gettime" => {
+            let ticks = external.clock_calls;
+            external.clock_calls += 1;
+            write(engine, x1, &(1 + ticks / 1000).to_le_bytes());
+            write(engine, x1 + 8, &((ticks % 1000) * 1_000_000).to_le_bytes());
+            external.platform_events.insert(format!("clock_gettime:deterministic-monotonic:clockid={x0}"));
             result = 0;
         }
         "localtime" => {
@@ -503,7 +640,7 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             assert_eq!(x0, 0xb2, "only AArch64 gettid is admitted");
             result = 1; // deterministic single-thread process identity
         }
-        "pthread_mutex_lock" | "pthread_mutex_unlock" | "pthread_cond_broadcast" => {
+        "pthread_mutex_init" | "pthread_mutexattr_init" | "pthread_mutexattr_destroy" | "pthread_mutexattr_settype" | "pthread_mutex_lock" | "pthread_mutex_unlock" | "pthread_cond_broadcast" => {
             // This driver executes single-threaded; these synchronization calls
             // are explicit no-ops and provide no concurrency evidence.
             result = 0;
@@ -514,8 +651,7 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
         | "__cxa_thread_atexit_impl"
         | "pthread_rwlock_rdlock"
         | "pthread_rwlock_wrlock"
-        | "pthread_rwlock_unlock"
-        | "fflush" => result = 0,
+        | "pthread_rwlock_unlock" => result = 0,
         "getauxval" => {
             external
                 .platform_events
@@ -616,7 +752,7 @@ fn capture_loaded_source(
     let filewrite = MODEL + 0x8000;
     let mut filewrite_struct = [0_u8; 16];
     filewrite_struct[..4].copy_from_slice(&1_u32.to_le_bytes());
-    filewrite_struct[8..].copy_from_slice(&(STUB + 0xa0).to_le_bytes());
+    filewrite_struct[8..].copy_from_slice(&PDF_WRITE_BLOCK_STUB.to_le_bytes());
     write(machine.engine, filewrite, &filewrite_struct);
     let empty_facade = MODEL + 0xa000;
     write(machine.engine, empty_facade, &[0; 64]);
@@ -662,12 +798,91 @@ fn symbol_version(name: &str) -> &str {
     name.split('@').next().unwrap_or(name)
 }
 
+fn exported_symbols(path: &Path, base: u64) -> HashMap<String, u64> {
+    let output = Command::new("readelf").args(["-Ws"]).arg(path).output().unwrap();
+    assert!(output.status.success());
+    let mut symbols = HashMap::new();
+    for line in String::from_utf8(output.stdout).unwrap().lines() {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.len() >= 8 && fields[6] != "UND" {
+            if let Ok(value) = u64::from_str_radix(fields[1], 16) {
+                symbols.entry(symbol_version(fields[7]).to_owned()).or_insert(base + value);
+            }
+        }
+    }
+    symbols
+}
+
+fn install_unresolved_host_stub(engine: Engine, name: &str, external: &mut External, next_stub: &mut u64) -> u64 {
+    if let Some((address, _)) = external.names.iter().find(|(_, imported)| symbol_version(imported) == name) {
+        return *address;
+    }
+    let address = *next_stub;
+    *next_stub += 16;
+    external.names.insert(address, name.to_owned());
+    write(engine, address, &0xd65f03c0_u32.to_le_bytes());
+    let mut hook = 0;
+    check(unsafe { uc_hook_add(engine, &mut hook, 4, host_external as *mut c_void, ptr::from_mut(external).cast(), address, address) });
+    address
+}
+
+fn bind_extra_dso(engine: Engine, path: &Path, base: u64, providers: &HashMap<String, u64>, external: &mut External, next_stub: &mut u64) {
+    let relocations = Command::new("readelf").args(["-rW"]).arg(path).output().unwrap();
+    assert!(relocations.status.success());
+    let symbols = Command::new("readelf").args(["-Ws"]).arg(path).output().unwrap();
+    assert!(symbols.status.success());
+    let function_imports = String::from_utf8(symbols.stdout).unwrap().lines().filter_map(|line| {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        (fields.len() >= 8 && fields[3] == "FUNC" && fields[6] == "UND").then(|| symbol_version(fields[7]).to_owned())
+    }).collect::<BTreeSet<_>>();
+    for line in String::from_utf8(relocations.stdout).unwrap().lines() {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.len() < 6 { continue; }
+        let kind = fields[2];
+        if !(kind.contains("JUMP_SLOT") || kind.contains("GLOB_DAT") || kind.contains("ABS64")) { continue; }
+        let offset = u64::from_str_radix(fields[0], 16).unwrap();
+        let symbol_value = u64::from_str_radix(fields[3], 16).unwrap_or(0);
+        let name = symbol_version(fields[4]);
+        let jump_slot = kind.contains("JUMP_SLOT");
+        let mut target = if symbol_value != 0 { base + symbol_value }
+        else if let Some(address) = providers.get(name) { *address }
+        else if name == "__sF" { STUB + 0x9000 }
+        else if name == "stdout" { STUB + 0x9010 }
+        else if jump_slot || function_imports.contains(name) { install_unresolved_host_stub(engine, fields[4], external, next_stub) }
+        else { panic!("unresolved {kind} data import {name} in {}", path.display()); };
+        if kind.contains("ABS64") && fields.len() >= 7 {
+            let amount = i64::from_str_radix(fields[6], 16).unwrap_or(0);
+            target = target.wrapping_add_signed(match fields[5] { "+" => amount, "-" => -amount, _ => 0 });
+        }
+        write(engine, base + offset, &target.to_le_bytes());
+    }
+}
+
+fn run_init_array(engine: Engine, path: &Path, base: u64, mut call: impl FnMut(u64)) {
+    let sections = Command::new("readelf").args(["-W", "-S"]).arg(path).output().unwrap();
+    assert!(sections.status.success());
+    for line in String::from_utf8(sections.stdout).unwrap().lines() {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.get(1) != Some(&".init_array") || fields.len() < 7 { continue; }
+        let address = u64::from_str_radix(fields[3], 16).unwrap();
+        let size = u64::from_str_radix(fields[5], 16).unwrap();
+        assert_eq!(size % 8, 0);
+        for offset in (0..size).step_by(8) {
+            let initializer = read_u64(engine, base + address + offset);
+            if initializer != 0 && initializer != u64::MAX { call(initializer); }
+        }
+        return;
+    }
+}
+
 pub(super) fn capture(
     machine: &mut Machine,
+    model: &Path,
     pdfium: &Path,
     source_rotation: u64,
     output_path: &Path,
     source_pdf: Option<&[u8]>,
+    standard_export_path: Option<&Path>,
 ) {
     map_library(
         machine.engine,
@@ -682,6 +897,13 @@ pub(super) fn capture(
         LIBCPP_BASE,
         "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
     );
+    let (spenpdf, spenbase) = if standard_export_path.is_some() {
+        let spenpdf = pdfium.with_file_name("libSPenPdf.so");
+        let spenbase = pdfium.with_file_name("libSPenBase.so");
+        map_library(machine.engine, &spenpdf, SPENPDF_BASE, "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04");
+        map_library(machine.engine, &spenbase, SPENBASE_BASE, "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb");
+        (Some(spenpdf), Some(spenbase))
+    } else { (None, None) };
     check(unsafe { uc_mem_map(machine.engine, STUB, 0x10000, 7) });
     check(unsafe { uc_mem_map(machine.engine, 0x4000_0000, 0x0100_0000, 7) });
     // Minimal addressable stdio globals for error logging only.
@@ -752,13 +974,16 @@ pub(super) fn capture(
         current_locale: GLOBAL_C_LOCALE,
         posix_cursor: 0x4000_0000,
         host_allocs: HashMap::new(),
+        files: HashMap::new(),
+        next_file: 1,
         tls: HashMap::new(),
         next_tls_key: 1,
+        clock_calls: 0,
         pdf_bytes: Vec::new(),
         write_calls: 0,
     });
     let mut next_stub = STUB + 0x100;
-    write(machine.engine, STUB + 0xa0, &0xd65f03c0_u32.to_le_bytes());
+    write(machine.engine, PDF_WRITE_BLOCK_STUB, &0xd65f03c0_u32.to_le_bytes());
     let mut write_hook = 0;
     check(unsafe {
         uc_hook_add(
@@ -767,8 +992,8 @@ pub(super) fn capture(
             4,
             native_pdf_write_block as *mut c_void,
             ptr::from_mut(external.as_mut()).cast(),
-            STUB + 0xa0,
-            STUB + 0xa0,
+            PDF_WRITE_BLOCK_STUB,
+            PDF_WRITE_BLOCK_STUB,
         )
     });
     for line in String::from_utf8(reloc.stdout).unwrap().lines() {
@@ -927,6 +1152,20 @@ pub(super) fn capture(
             );
         }
     }
+    if let (Some(spenpdf), Some(spenbase)) = (&spenpdf, &spenbase) {
+        let mut providers = HashMap::new();
+        for source in [
+            exported_symbols(spenpdf, SPENPDF_BASE),
+            exported_symbols(spenbase, SPENBASE_BASE),
+            exported_symbols(pdfium, PDFIUM_BASE),
+            exported_symbols(&libcxx, LIBCPP_BASE),
+            exported_symbols(model, 0),
+        ] {
+            for (name, address) in source { providers.entry(name).or_insert(address); }
+        }
+        bind_extra_dso(machine.engine, spenbase, SPENBASE_BASE, &providers, external.as_mut(), &mut next_stub);
+        bind_extra_dso(machine.engine, spenpdf, SPENPDF_BASE, &providers, external.as_mut(), &mut next_stub);
+    }
     register(machine.engine, REGISTER_TPIDR_EL0, TLS);
 
     // Recreate the shared-library initialization order for the C++ runtime and PDFium.
@@ -940,6 +1179,62 @@ pub(super) fn capture(
                 machine.call(initializer, &[]);
             }
         }
+    }
+
+    if let (Some(spenpdf), Some(spenbase), Some(source_path)) = (&spenpdf, &spenbase, standard_export_path) {
+        run_init_array(machine.engine, spenbase, SPENBASE_BASE, |initializer| { machine.call(initializer, &[]); });
+        run_init_array(machine.engine, spenpdf, SPENPDF_BASE, |initializer| { machine.call(initializer, &[]); });
+        machine.call(PDFIUM_BASE + 0x5a5504, &[]);
+        const IMPL_OBJECT: u64 = 0x5000_0000;
+        const HANDLER_OBJECT: u64 = IMPL_OBJECT + 0xf000;
+        const SOURCE_BASE: u64 = 0x3000_0000;
+        check(unsafe { uc_mem_map(machine.engine, IMPL_OBJECT, 0x10000, 7) });
+        machine.call(SPENPDF_BASE + 0x84354, &[IMPL_OBJECT]);
+        check(unsafe { uc_mem_map(machine.engine, SOURCE_BASE, 0x10000, 7) });
+        let source_name = source_path.to_string_lossy();
+        write(machine.engine, SOURCE_BASE, source_name.as_bytes());
+        write(machine.engine, SOURCE_BASE + source_name.len() as u64, &[0]);
+        machine.call(SPENPDF_BASE + 0x85184, &[IMPL_OBJECT, SOURCE_BASE, 0, 0]);
+        let load_result = machine.call(SPENPDF_BASE + 0x857fc, &[IMPL_OBJECT, 0]);
+        assert_eq!(load_result, 1, "PdfiumImpl::LoadPage failed");
+        let page_cache_begin = read_u64(machine.engine, IMPL_OBJECT + 1520);
+        let page = read_u64(machine.engine, page_cache_begin);
+        assert_ne!(page, 0, "PdfiumImpl page cache is empty");
+        machine.call(PDFIUM_BASE + 0x5a6c18, &[page]);
+        let loaded_width = f32::from_bits(read_register(machine.engine, 136) as u32);
+        machine.call(PDFIUM_BASE + 0x5a6c5c, &[page]);
+        let loaded_height = f32::from_bits(read_register(machine.engine, 136) as u32);
+        let source_rotation = machine.call(PDFIUM_BASE + 0x586ddc, &[page]);
+        write(machine.engine, HANDLER_OBJECT, &IMPL_OBJECT.to_le_bytes());
+        let writer_open = machine.call(SPENPDF_BASE + 0x7c844, &[HANDLER_OBJECT, 0, 0]);
+        assert_eq!(writer_open, 1, "PdfiumExportHandler::OpenWriter failed");
+        const PAINT: u64 = IMPL_OBJECT + 0xe000;
+        const POINTS: u64 = IMPL_OBJECT + 0xd100;
+        const VECTOR: u64 = IMPL_OBJECT + 0xd000;
+        machine.call(SPENPDF_BASE + 0x7571c, &[PAINT]);
+        machine.call(SPENPDF_BASE + 0x75854, &[PAINT, 0xff11_5cc9]);
+        register(machine.engine, 136, f32::to_bits(0.0) as u64);
+        machine.call(SPENPDF_BASE + 0x759f0, &[PAINT, 0]);
+        for (index, (x, y)) in [(17.25_f32, 29.5_f32), (93.75_f32, 46.5_f32), (61.25_f32, 109.75_f32)].into_iter().enumerate() {
+            write(machine.engine, POINTS + index as u64 * 8, &x.to_le_bytes());
+            write(machine.engine, POINTS + index as u64 * 8 + 4, &y.to_le_bytes());
+        }
+        write(machine.engine, VECTOR, &POINTS.to_le_bytes());
+        write(machine.engine, VECTOR + 8, &(POINTS + 24).to_le_bytes());
+        write(machine.engine, VECTOR + 16, &(POINTS + 24).to_le_bytes());
+        machine.call(SPENPDF_BASE + 0x9a470, &[HANDLER_OBJECT, IMPL_OBJECT]);
+        machine.call(SPENPDF_BASE + 0x9aa38, &[HANDLER_OBJECT, PAINT, VECTOR]);
+        let writer_close = machine.call(SPENPDF_BASE + 0x7c93c, &[HANDLER_OBJECT]);
+        assert_eq!(writer_close, 1, "PdfiumExportHandler::CloseWriter failed");
+        const EXPORT_BASE: u64 = SOURCE_BASE + 0x1000;
+        write(machine.engine, EXPORT_BASE, output_path.to_string_lossy().as_bytes());
+        write(machine.engine, EXPORT_BASE + output_path.to_string_lossy().len() as u64, &[0]);
+        let export_result = machine.call(SPENPDF_BASE + 0x7ca1c, &[HANDLER_OBJECT, EXPORT_BASE, 0, 0]);
+        assert_eq!(export_result, 0, "PdfiumExportHandler::Export failed");
+        let output = std::fs::read(output_path).expect("Samsung Export output");
+        assert!(!output.is_empty(), "Samsung Export emitted no file bytes");
+        println!("{{\"native_path\":\"PdfiumImpl ctor/Open/LoadPage -> PdfiumExportHandler::OpenWriter -> PdfiumPathHandler::DrawPath -> CloseWriter -> PdfiumExportHandler::Export(inclusive page range 0..0) -> PDFFileWriter/FDPF_SaveAsCopy\",\"load_result\":{},\"loaded_width\":{},\"loaded_height\":{},\"source_rotation\":{},\"writer_open\":{},\"writer_close\":{},\"export_result\":{},\"output_bytes\":{},\"handled_imports\":[{}],\"platform_events\":[{}]}}", load_result, loaded_width, loaded_height, source_rotation, writer_open, writer_close, export_result, output.len(), external.handled_imports.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","), external.platform_events.iter().map(|s| format!("\"{s}\"")).collect::<Vec<_>>().join(","));
+        return;
     }
 
     machine.call(PDFIUM_BASE + 0x5a5504, &[]);
@@ -998,7 +1293,7 @@ pub(super) fn capture(
     let filewrite = MODEL + 0x8000;
     let mut filewrite_struct = [0_u8; 16];
     filewrite_struct[..4].copy_from_slice(&1_u32.to_le_bytes());
-    filewrite_struct[8..].copy_from_slice(&(STUB + 0xa0).to_le_bytes());
+    filewrite_struct[8..].copy_from_slice(&PDF_WRITE_BLOCK_STUB.to_le_bytes());
     write(machine.engine, filewrite, &filewrite_struct);
     // Samsung's PdfiumExportHandler::Export passes an opaque stack-local
     // adapter at argument four. Pinned FPDF_SaveAsCopy reads its +32 slot and

@@ -839,12 +839,18 @@ PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_for
 
 [`pdf-paper-pdfium-create-page.json`](pdf-paper-pdfium-create-page.json) captures
 native document/form/path serialization with explicit host imports. It covers a
-synthetic rotated page; source-PDF loading and Samsung export parity remain open.
-Requires the extracted libraries, Unicorn, `rustc`, `readelf`, and pinned host libm.
+synthetic rotated page. [`pdf-paper-pdfium-standard-export.json`](pdf-paper-pdfium-standard-export.json)
+executes Samsung's `PdfiumImpl` open/load-page, native path handler and inclusive
+one-page `Export` route on four deterministic synthetic source PDFs. It checks
+the retained vector source path, boxes, rotation, UserUnit and emitted overlay
+form/matrix. This bounded oracle does not establish arbitrary-PDF or rendered
+Samsung-app parity. Requires the extracted libraries, Unicorn, `rustc`, `readelf`,
+and pinned host libm.
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_pdfium_create_page_native.py --check-fixture
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_pdfium_source_overlay_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_pdfium_standard_export_native.py --check-fixture
 ```
 
 ## Native shape path capture

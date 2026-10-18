@@ -128,13 +128,21 @@ def source_output(pdf: bytes, rotation: int, source_hash: str, output_path: Path
         raise SystemExit("source Rotate changed")
     if b"/UserUnit 2" not in page_body:
         raise SystemExit("source UserUnit changed")
+    dims = [150, 115] if rotation in (0, 180) else [115, 150]
     source_path = b"17 21 m 91 44 l 57 118 l h 0 0 1 rg f"
     if source_path not in page_stream:
         raise SystemExit("original source vector content was not retained")
-    overlay_path = b"17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
+    standard_export = "export_result" in native
+    if standard_export:
+        height = dims[1]
+        overlay_path = (
+            f"17.25 {height - 29.5:g} m 93.75 {height - 46.5:g} l "
+            f"61.25 {height - 109.75:g} l h f*"
+        ).encode("ascii")
+    else:
+        overlay_path = b"17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
     if overlay_path not in form_stream:
         raise SystemExit("native vector overlay path is missing")
-    dims = [150, 115] if rotation in (0, 180) else [115, 150]
     bbox_match = re.search(rb"/BBox\s*\[\s*([^\]]+)\]", form_body)
     if not bbox_match:
         raise SystemExit("native overlay form BBox missing")
@@ -145,12 +153,19 @@ def source_output(pdf: bytes, rotation: int, source_hash: str, output_path: Path
         raise SystemExit(f"native loaded dimensions disagree for rotation {rotation}")
     if native["source_rotation"] != rotation // 90:
         raise SystemExit(f"native source rotation changed for {rotation}")
-    if native["writer_form_argument_4_minus_rotation"] != 4 - rotation // 90:
-        raise SystemExit(f"native form rotation argument changed for {rotation}")
-    if native["rotation_after"] != rotation // 90 or native["save_result"] != 1:
-        raise SystemExit(f"native page rotation/save result changed for {rotation}")
-    if native["write_calls"] != 1 or native["pdf_bytes"] != len(pdf):
-        raise SystemExit(f"native writer callback output changed for {rotation}")
+    standard_export = "export_result" in native
+    if standard_export:
+        if native["load_result"] != 1 or native["writer_open"] != 1 or native["writer_close"] != 1 or native["export_result"] != 0:
+            raise SystemExit(f"Samsung StandardPDF export path failed for rotation {rotation}")
+        if native["output_bytes"] != len(pdf):
+            raise SystemExit(f"Samsung PDFFileWriter output length changed for {rotation}")
+    else:
+        if native["writer_form_argument_4_minus_rotation"] != 4 - rotation // 90:
+            raise SystemExit(f"native form rotation argument changed for {rotation}")
+        if native["rotation_after"] != rotation // 90 or native["save_result"] != 1:
+            raise SystemExit(f"native page rotation/save result changed for {rotation}")
+        if native["write_calls"] != 1 or native["pdf_bytes"] != len(pdf):
+            raise SystemExit(f"native writer callback output changed for {rotation}")
     return {
         "source_rotation_degrees": rotation,
         "input_pdf_sha256": source_hash,
@@ -160,13 +175,20 @@ def source_output(pdf: bytes, rotation: int, source_hash: str, output_path: Path
             "loaded_width": native["loaded_width"],
             "loaded_height": native["loaded_height"],
             "source_rotation_quarter_turns": native["source_rotation"],
-            "new_form_argument_quarter_turns": native["writer_form_argument_4_minus_rotation"],
-            "rotation_after": native["rotation_after"],
-            "form_object_count": native["form_object_count"],
-            "page_object_count": native["page_object_count"],
-            "page_generate_content_result": native["page_generate_content_result"],
-            "save_result": native["save_result"],
-            "write_calls": native["write_calls"],
+            **({
+                "samsung_load_result": native["load_result"],
+                "open_writer_result": native["writer_open"],
+                "close_writer_result": native["writer_close"],
+                "standard_export_result": native["export_result"],
+            } if standard_export else {
+                "new_form_argument_quarter_turns": native["writer_form_argument_4_minus_rotation"],
+                "rotation_after": native["rotation_after"],
+                "form_object_count": native["form_object_count"],
+                "page_object_count": native["page_object_count"],
+                "page_generate_content_result": native["page_generate_content_result"],
+                "save_result": native["save_result"],
+                "write_calls": native["write_calls"],
+            }),
             "host_imports": native["handled_imports"],
             "host_platform_events": native["platform_events"],
         },

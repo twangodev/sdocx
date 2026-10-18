@@ -1929,9 +1929,11 @@ fn main() {
                 .unwrap_or_else(|| "/tmp/sdocx-pdfium-created-page.pdf".into());
             pdfium_create_page_save::capture(
                 &mut machine,
+                Path::new(&path),
                 Path::new(&pdfium),
                 rotation,
                 Path::new(&output),
+                None,
                 None,
             );
             return;
@@ -1949,10 +1951,27 @@ fn main() {
             let source_bytes = fs::read(&source).expect("source PDF fixture");
             pdfium_create_page_save::capture(
                 &mut machine,
+                Path::new(&path),
                 Path::new(&pdfium),
                 0,
                 Path::new(&output),
                 Some(&source_bytes),
+                None,
+            );
+            return;
+        }
+        Some("--pdfium-standard-export") => {
+            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            let source = std::env::args_os().nth(4).expect("source PDF path required");
+            let output = std::env::args_os().nth(5).expect("output PDF path required");
+            pdfium_create_page_save::capture(
+                &mut machine,
+                Path::new(&path),
+                Path::new(&pdfium),
+                0,
+                Path::new(&output),
+                None,
+                Some(Path::new(&source)),
             );
             return;
         }
