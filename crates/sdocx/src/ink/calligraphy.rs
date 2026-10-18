@@ -18,6 +18,136 @@ pub(super) struct MeshRect {
     pub(super) corners: [[f32; 2]; 4],
 }
 
+/// Numeric inputs read by one RTV1 `AddPoint` call. These include its separate
+/// near-zero gate center, initial-edge flag, and three cached edge pairs.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct AddPointInput {
+    pub(super) vector: [f32; 4],
+    pub(super) extent: f32,
+    pub(super) gate_center: [f32; 2],
+    pub(super) initial_edge: bool,
+    pub(super) previous_edges: [[[f32; 2]; 2]; 3],
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct AddPointGeometry {
+    pub(super) buffers: [MeshBuffer; 5],
+    pub(super) rectangles: [MeshRect; 5],
+    pub(super) next_edges: [[[f32; 2]; 2]; 3],
+}
+
+/// Reconstruct RTV1::AddPoint's gate and its core/fringe Rect arguments.
+/// Previous centers and the cached fringe edges are explicit runtime inputs.
+pub(super) fn add_point(input: AddPointInput) -> Option<AddPointGeometry> {
+    let [x, y, signed_x, signed_y] = input.vector;
+    let extent = input.extent.max(1.0);
+    if !input.initial_edge {
+        let dx = x - input.gate_center[0];
+        let dy = y - input.gate_center[1];
+        let distance_squared = dx.mul_add(dx, dy * dy);
+        if distance_squared.sqrt() < f32::from_bits(0x3400_0000) {
+            return None;
+        }
+    }
+    let current = [
+        [(-signed_x).mul_add(extent, x), signed_y.mul_add(extent, y)],
+        [signed_x.mul_add(extent, x), (-signed_y).mul_add(extent, y)],
+    ];
+    let previous_core = if input.initial_edge {
+        current
+    } else {
+        input.previous_edges[0]
+    };
+    let (normal, tangent) = if input.initial_edge {
+        let diagonal = f32::from_bits(0x4010_d067);
+        ([diagonal, diagonal], [diagonal, diagonal])
+    } else {
+        let dx = x - input.gate_center[0];
+        let dy = y - input.gate_center[1];
+        let normal_length = dy.mul_add(dy, dx * dx).sqrt();
+        let tangent_length = dx.mul_add(dx, dy * dy).sqrt();
+        let normal_inverse = 1.0_f32 / normal_length;
+        let tangent_inverse = 1.0_f32 / tangent_length;
+        let scale = 3.2_f32;
+        (
+            [
+                (-dy * normal_inverse) * scale,
+                (dx * normal_inverse) * scale,
+            ],
+            [
+                (-dx * tangent_inverse) * scale,
+                (-dy * tangent_inverse) * scale,
+            ],
+        )
+    };
+    let upper = current[0];
+    let lower = current[1];
+    let upper_plus = [upper[0] + normal[0], upper[1] + normal[1]];
+    let upper_minus = [upper[0] - normal[0], upper[1] - normal[1]];
+    let lower_minus = [lower[0] - normal[0], lower[1] - normal[1]];
+    let lower_plus = [lower[0] + normal[0], lower[1] + normal[1]];
+    let upper_tangent_minus = [upper[0] - tangent[0], upper[1] - tangent[1]];
+    let upper_tangent_plus = [upper[0] + tangent[0], upper[1] + tangent[1]];
+    let lower_tangent_minus = [lower[0] - tangent[0], lower[1] - tangent[1]];
+    let lower_tangent_plus = [lower[0] + tangent[0], lower[1] + tangent[1]];
+    let previous_lower = if input.initial_edge {
+        [lower_minus, lower_plus]
+    } else {
+        input.previous_edges[1]
+    };
+    let previous_upper = if input.initial_edge {
+        [upper_plus, upper_minus]
+    } else {
+        input.previous_edges[2]
+    };
+    Some(AddPointGeometry {
+        buffers: [
+            MeshBuffer::Core,
+            MeshBuffer::FringeB,
+            MeshBuffer::FringeB,
+            MeshBuffer::FringeA,
+            MeshBuffer::FringeA,
+        ],
+        rectangles: [
+            MeshRect {
+                corners: [previous_core[0], previous_core[1], current[0], current[1]],
+            },
+            MeshRect {
+                corners: [
+                    previous_upper[0],
+                    previous_upper[1],
+                    upper_plus,
+                    upper_minus,
+                ],
+            },
+            MeshRect {
+                corners: [
+                    previous_lower[0],
+                    previous_lower[1],
+                    lower_minus,
+                    lower_plus,
+                ],
+            },
+            MeshRect {
+                corners: [upper_minus, upper_plus, lower_minus, lower_plus],
+            },
+            MeshRect {
+                corners: [
+                    upper_tangent_minus,
+                    upper_tangent_plus,
+                    lower_tangent_minus,
+                    lower_tangent_plus,
+                ],
+            },
+        ],
+        next_edges: [
+            current,
+            [lower_minus, lower_plus],
+            [upper_plus, upper_minus],
+        ],
+    })
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum MeshBuffer {
     Core,
@@ -159,8 +289,8 @@ pub(super) fn repeat_count(path_length: f32, second_argument: f32) -> Option<u32
 #[cfg(test)]
 mod tests {
     use super::{
-        MeshBuffer, MeshBuffers, MeshRect, NibState, advance_angle, orientation_target,
-        repeat_count,
+        AddPointInput, MeshBuffer, MeshBuffers, MeshRect, NibState, add_point, advance_angle,
+        orientation_target, repeat_count,
     };
 
     fn bits(hex: &str) -> u32 {
@@ -187,6 +317,11 @@ mod tests {
             })
             .map(f32::to_bits)
             .collect()
+    }
+
+    fn rect_bits(rect: MeshRect) -> [u32; 8] {
+        let [a, b, c, d] = rect.corners;
+        [a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]].map(f32::to_bits)
     }
 
     #[test]
@@ -263,6 +398,142 @@ mod tests {
                         .collect();
                     assert_eq!(actual, expected, "{} {run_name} {label}", case["id"]);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn captured_addpoints_reconstruct_core_edges_across_reused_drawable() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../conformance/calligraphy-saved-native.json"
+        ))
+        .unwrap();
+        for case in fixture["cases"].as_array().unwrap() {
+            for (_run_name, run) in case["native"].as_object().unwrap() {
+                let stamps = run["add_points"].as_array().unwrap();
+                let all_build_calls = run["build_calls"].as_array().unwrap();
+                let mut build_cursor = 0;
+                for (index, stamp) in stamps.iter().enumerate() {
+                    let vector: [f32; 4] = stamp["vector_bits"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    let extent = f32::from_bits(bits(stamp["extent_bits"].as_str().unwrap()));
+                    let pre = &stamp["pre_state"];
+                    let center: [f32; 2] = pre["center_bits"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    let edge: Vec<f32> = pre["edge_state_bits"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|value| f32::from_bits(bits(value.as_str().unwrap())))
+                        .collect();
+                    let previous_edges: [[[f32; 2]; 2]; 3] = edge
+                        .chunks_exact(4)
+                        .map(|v| [[v[0], v[1]], [v[2], v[3]]])
+                        .collect::<Vec<_>>()
+                        .try_into()
+                        .unwrap();
+                    let input = AddPointInput {
+                        vector,
+                        extent,
+                        gate_center: center,
+                        initial_edge: pre["initial_flag"].as_u64().unwrap() != 0,
+                        previous_edges,
+                    };
+                    let actual = add_point(input);
+                    let expected_builds = stamp["build_calls"].as_u64().unwrap() as usize;
+                    assert_eq!(
+                        actual.is_some(),
+                        expected_builds == 5,
+                        "{} {} AddPoint {index} emission gate",
+                        case["id"],
+                        _run_name
+                    );
+                    if let Some(geometry) = actual {
+                        assert_eq!(expected_builds, 5);
+                        for slot in 0..5 {
+                            let native_rect = &all_build_calls[build_cursor + slot];
+                            let buffer = match geometry.buffers[slot] {
+                                MeshBuffer::Core => "mesh_200",
+                                MeshBuffer::FringeA => "mesh_208",
+                                MeshBuffer::FringeB => "mesh_216",
+                            };
+                            assert_eq!(native_rect["buffer"], buffer);
+                            let expected: [u32; 8] = native_rect["rect_bits"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .map(|value| bits(value.as_str().unwrap()))
+                                .collect::<Vec<_>>()
+                                .try_into()
+                                .unwrap();
+                            if case["id"] == "five_history_phase_boundaries"
+                                && index > 0
+                                && slot == 0
+                            {
+                                let cached_core: [u32; 4] = previous_edges[0]
+                                    .iter()
+                                    .flat_map(|point| point.iter().copied())
+                                    .map(f32::to_bits)
+                                    .collect::<Vec<_>>()
+                                    .try_into()
+                                    .unwrap();
+                                assert_eq!(&expected[..4], cached_core);
+                                let current_core = [
+                                    (-vector[2]).mul_add(extent, vector[0]),
+                                    vector[3].mul_add(extent, vector[1]),
+                                    vector[2].mul_add(extent, vector[0]),
+                                    (-vector[3]).mul_add(extent, vector[1]),
+                                ]
+                                .map(f32::to_bits);
+                                assert_ne!(cached_core, current_core);
+                            }
+                            assert_eq!(
+                                rect_bits(geometry.rectangles[slot]),
+                                expected,
+                                "{} {} AddPoint {index} rect {slot}",
+                                case["id"],
+                                _run_name
+                            );
+                        }
+                        if let Some(next_stamp) = stamps.get(index + 1) {
+                            let next_edges: Vec<u32> = next_stamp["pre_state"]["edge_state_bits"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .map(|value| bits(value.as_str().unwrap()))
+                                .collect();
+                            let actual_edges: Vec<u32> = geometry
+                                .next_edges
+                                .iter()
+                                .flat_map(|pair| {
+                                    pair.iter().flat_map(|point| point.iter().copied())
+                                })
+                                .map(f32::to_bits)
+                                .collect();
+                            assert_eq!(
+                                actual_edges, next_edges,
+                                "{} {} AddPoint {index} edge cache",
+                                case["id"], _run_name
+                            );
+                        }
+                    } else {
+                        assert_eq!(expected_builds, 0);
+                    }
+                    build_cursor += expected_builds;
+                }
+                assert_eq!(build_cursor, all_build_calls.len());
             }
         }
     }

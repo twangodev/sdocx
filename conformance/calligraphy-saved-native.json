@@ -1,5 +1,5 @@
 {
-  "schema": "sdocx-montblanc-calligraphy-v1-saved-native-v1",
+  "schema": "sdocx-montblanc-calligraphy-v1-saved-native-v2",
   "evidence": {
     "library": "libSPenMontblancCalligraphyPen.so",
     "sha256": "75aa5312fba02e21ff01d713187d2fd8d015ac4781e2d58da85ae700114e6f42",
@@ -1650,7 +1650,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 1,
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ]
+              },
+              "build_start": 0,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1659,7 +1682,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "00000000",
+                  "00004040",
+                  "00000000",
+                  "000040c0",
+                  "67d010c0",
+                  "3468a8c0",
+                  "67d01040",
+                  "64be3cbf",
+                  "67d01040",
+                  "3468a840",
+                  "67d010c0",
+                  "64be3c3f"
+                ]
+              },
+              "build_start": 5,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1668,7 +1714,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8f23593f",
+                  "0adf6e3e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8f23593f",
+                  "f1ed4e40",
+                  "8f23593f",
+                  "0f1231c0",
+                  "732fd93f",
+                  "f544bbc0",
+                  "0040beb9",
+                  "602ea33e",
+                  "0040beb9",
+                  "e632ca40",
+                  "732fd93f",
+                  "6061173e"
+                ]
+              },
+              "build_start": 10,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1677,7 +1746,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8481d33f",
+                  "7be4fd3e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8481d33f",
+                  "8fbc5f40",
+                  "8481d33f",
+                  "714320c0",
+                  "c3532940",
+                  "1c79b1c0",
+                  "03b7283f",
+                  "54ad093f",
+                  "03b7283f",
+                  "aa35d140",
+                  "c3532940",
+                  "486ee83e"
+                ]
+              },
+              "build_start": 15,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1686,7 +1778,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "11a01a40",
+                  "e718493f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "11a01a40",
+                  "3a467240",
+                  "11a01a40",
+                  "c6b90dc0",
+                  "26426340",
+                  "4a9ba6c0",
+                  "f7fba33f",
+                  "1c0c473f",
+                  "f7fba33f",
+                  "84e1d840",
+                  "26426340",
+                  "b4254b3f"
+                ]
+              },
+              "build_start": 20,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1695,7 +1810,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "411f4940",
+                  "98ca8c3f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "411f4940",
+                  "a6328340",
+                  "411f4940",
+                  "6835f3bf",
+                  "cb3a8d40",
+                  "aac79ac0",
+                  "d791ef3f",
+                  "d6b3843f",
+                  "d791ef3f",
+                  "f62ce140",
+                  "cb3a8d40",
+                  "5ae1943f"
+                ]
+              },
+              "build_start": 25,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1704,7 +1842,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "cb767540",
+                  "48e8b73f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "cb767540",
+                  "12fa8d40",
+                  "cb767540",
+                  "b817c8bf",
+                  "6081a740",
+                  "b81d8ec0",
+                  "d6ea1b40",
+                  "6e47a83f",
+                  "d6ea1b40",
+                  "dc11ea40",
+                  "6081a740",
+                  "2289c73f"
+                ]
+              },
+              "build_start": 30,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1713,7 +1874,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8fef8f40",
+                  "3c9ae53f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8fef8f40",
+                  "8f669940",
+                  "8fef8f40",
+                  "c4659abf",
+                  "2e81c040",
+                  "91bf80c0",
+                  "e0bb3e40",
+                  "bc32ce3f",
+                  "e0bb3e40",
+                  "af8cf340",
+                  "2e81c040",
+                  "bc01fd3f"
+                ]
+              },
+              "build_start": 35,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1722,7 +1906,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "0f92a440",
+                  "31250b40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "0f92a440",
+                  "9892a540",
+                  "0f92a440",
+                  "3c6b53bf",
+                  "db98d840",
+                  "824065c0",
+                  "86166140",
+                  "c815f73f",
+                  "86166140",
+                  "72c5fd40",
+                  "db98d840",
+                  "7dbf1a40"
+                ]
+              },
+              "build_start": 40,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1731,7 +1938,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "fe95ba40",
+                  "d85c2740"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "fe95ba40",
+                  "6caeb340",
+                  "fe95ba40",
+                  "4019c5be",
+                  "60d6f140",
+                  "411145c0",
+                  "9c558340",
+                  "f1ca1340",
+                  "9c558340",
+                  "bcf20441",
+                  "60d6f140",
+                  "bfee3a40"
+                ]
+              },
+              "build_start": 45,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1740,7 +1970,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4fd0cf40",
+                  "4ca14440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "4fd0cf40",
+                  "a650c240",
+                  "4fd0cf40",
+                  "8029943d",
+                  "6cf70441",
+                  "9ffc23c0",
+                  "c7b19540",
+                  "373f2d40",
+                  "c7b19540",
+                  "ce4f0b41",
+                  "6cf70441",
+                  "61035c40"
+                ]
+              },
+              "build_start": 50,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1749,7 +2002,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "5a69e440",
+                  "ccbc6240"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "5a69e440",
+                  "665ed140",
+                  "5a69e440",
+                  "30f30a3f",
+                  "a16a1041",
+                  "549c02c0",
+                  "72fda740",
+                  "ec154840",
+                  "72fda740",
+                  "7b051241",
+                  "a16a1041",
+                  "ac637d40"
+                ]
+              },
+              "build_start": 55,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -1758,7 +2034,29 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "6e89f840",
+                  "cabc8040"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "6e89f840",
+                  "cabce040",
+                  "6e89f840",
+                  "28f3823f",
+                  "c0571b41",
+                  "b295c2bf",
+                  "5c63ba40",
+                  "013e6440",
+                  "5c63ba40",
+                  "800f1941",
+                  "c0571b41",
+                  "945a8f40"
+                ]
+              },
+              "build_calls": 5
             }
           ],
           "sample_ends": [
@@ -4338,7 +4636,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000040",
+                  "00004040"
+                ],
+                "initial_flag": 1,
+                "edge_state_bits": [
+                  "6f2c0641",
+                  "f350f040",
+                  "6f2c0641",
+                  "cc43c13f",
+                  "b0d22541",
+                  "56b480bf",
+                  "5c0ccd40",
+                  "fcce8040",
+                  "5c0ccd40",
+                  "7e672041",
+                  "b0d22541",
+                  "ead29f40"
+                ]
+              },
+              "build_start": 0,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4347,7 +4668,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000040",
+                  "00004040"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "00000040",
+                  "0000c040",
+                  "00000040",
+                  "00000000",
+                  "388386be",
+                  "67d010c0",
+                  "34688840",
+                  "67d01040",
+                  "34688840",
+                  "1a340441",
+                  "388386be",
+                  "992f6f40"
+                ]
+              },
+              "build_start": 5,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4356,7 +4700,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "477d3940",
+                  "e9d46540"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "477d3940",
+                  "74ead240",
+                  "477d3940",
+                  "a453173f",
+                  "18099540",
+                  "9a3f05c0",
+                  "bed0913f",
+                  "6ce95040",
+                  "bed0913f",
+                  "5b3a1441",
+                  "18099540",
+                  "65c07a40"
+                ]
+              },
+              "build_start": 10,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4365,7 +4732,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "441d7040",
+                  "44668440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "441d7040",
+                  "4466e440",
+                  "441d7040",
+                  "1099913f",
+                  "b243af40",
+                  "2260c7bf",
+                  "24b30140",
+                  "21497540",
+                  "24b30140",
+                  "48521d41",
+                  "b243af40",
+                  "f8278e40"
+                ]
+              },
+              "build_start": 15,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4374,7 +4764,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "c4039240",
+                  "37879440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "c4039240",
+                  "3787f440",
+                  "c4039240",
+                  "dc1cd23f",
+                  "de0ec840",
+                  "08cc89bf",
+                  "53f13740",
+                  "70818b40",
+                  "53f13740",
+                  "b8c02541",
+                  "de0ec840",
+                  "fe8c9d40"
+                ]
+              },
+              "build_start": 20,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4383,7 +4796,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "d2b1aa40",
+                  "1561a340"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "d2b1aa40",
+                  "8ab00141",
+                  "d2b1aa40",
+                  "2ac20640",
+                  "da7ddf40",
+                  "0ce222bf",
+                  "94cb6b40",
+                  "6c1e9b40",
+                  "94cb6b40",
+                  "358f2d41",
+                  "da7ddf40",
+                  "bea3ab40"
+                ]
+              },
+              "build_start": 25,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4392,7 +4828,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4b0bc340",
+                  "b786b140"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "4b0bc340",
+                  "5cc30841",
+                  "4b0bc340",
+                  "6e0d2340",
+                  "737cf640",
+                  "a07760be",
+                  "239a8f40",
+                  "2b11aa40",
+                  "239a8f40",
+                  "96083541",
+                  "737cf640",
+                  "44fcb840"
+                ]
+              },
+              "build_start": 30,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4401,7 +4860,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "ed63e040",
+                  "9ad8c140"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "ed63e040",
+                  "4dec1041",
+                  "ed63e040",
+                  "34b14340",
+                  "47140941",
+                  "88a8853e",
+                  "4c9fae40",
+                  "ac56bb40",
+                  "4c9fae40",
+                  "56ab3d41",
+                  "47140941",
+                  "885ac840"
+                ]
+              },
+              "build_start": 35,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4410,7 +4892,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "e8f2fb40",
+                  "d760d040"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "e8f2fb40",
+                  "6c301841",
+                  "e8f2fb40",
+                  "aec16040",
+                  "35db1541",
+                  "d0662e3f",
+                  "662fcc40",
+                  "d4f4ca40",
+                  "662fcc40",
+                  "6a7a4541",
+                  "35db1541",
+                  "dbccd540"
+                ]
+              },
+              "build_start": 40,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4419,7 +4924,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "27f30a41",
+                  "7e4ddd40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "27f30a41",
+                  "bfa61e41",
+                  "27f30a41",
+                  "fc9a7a40",
+                  "6ec62141",
+                  "dc90863f",
+                  "c03fe840",
+                  "c5f6d840",
+                  "c03fe840",
+                  "627b4c41",
+                  "6ec62141",
+                  "37a4e140"
+                ]
+              },
+              "build_start": 45,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4428,7 +4956,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "fe0a1941",
+                  "9074ea40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "fe0a1941",
+                  "483a2541",
+                  "fe0a1941",
+                  "90748a40",
+                  "81b12e41",
+                  "d0a4b63f",
+                  "7b640341",
+                  "ec3fe740",
+                  "7b640341",
+                  "f69f5341",
+                  "81b12e41",
+                  "34a9ed40"
+                ]
+              },
+              "build_start": 50,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4437,7 +4988,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "0a952841",
+                  "24dcf740"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "0a952841",
+                  "12ee2b41",
+                  "0a952841",
+                  "24dc9740",
+                  "18dc3c41",
+                  "1a55e73f",
+                  "fc4d1441",
+                  "02e3f540",
+                  "fc4d1441",
+                  "81f15a41",
+                  "18dc3c41",
+                  "46d5f940"
+                ]
+              },
+              "build_start": 55,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4446,7 +5020,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "0e393741",
+                  "d4bb0141"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "0e393741",
+                  "d4bb3141",
+                  "0e393741",
+                  "a877a340",
+                  "3c174a41",
+                  "518c0840",
+                  "e05a2441",
+                  "94540141",
+                  "e05a2441",
+                  "94546141",
+                  "3c174a41",
+                  "14230241"
+                ]
+              },
+              "build_start": 60,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -4455,7 +5052,29 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8a304541",
+                  "10dd0641"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8a304541",
+                  "10dd3641",
+                  "8a304541",
+                  "20baad40",
+                  "7fd75641",
+                  "fd351b40",
+                  "95893341",
+                  "a1ec0641",
+                  "95893341",
+                  "a1ec6641",
+                  "7fd75641",
+                  "7fcd0641"
+                ]
+              },
+              "build_calls": 5
             }
           ],
           "sample_ends": [
@@ -7003,7 +7622,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 1,
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ]
+              },
+              "build_start": 0,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7012,7 +7654,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "00000000",
+                  "00004040",
+                  "00000000",
+                  "000040c0",
+                  "67d010c0",
+                  "3468a8c0",
+                  "67d01040",
+                  "64be3cbf",
+                  "67d01040",
+                  "3468a840",
+                  "67d010c0",
+                  "64be3c3f"
+                ]
+              },
+              "build_start": 5,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7021,7 +7686,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8f23593f",
+                  "0adf6e3e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8f23593f",
+                  "f1ed4e40",
+                  "8f23593f",
+                  "0f1231c0",
+                  "732fd93f",
+                  "f544bbc0",
+                  "0040beb9",
+                  "602ea33e",
+                  "0040beb9",
+                  "e632ca40",
+                  "732fd93f",
+                  "6061173e"
+                ]
+              },
+              "build_start": 10,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7030,7 +7718,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8481d33f",
+                  "7be4fd3e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8481d33f",
+                  "8fbc5f40",
+                  "8481d33f",
+                  "714320c0",
+                  "c3532940",
+                  "1c79b1c0",
+                  "03b7283f",
+                  "54ad093f",
+                  "03b7283f",
+                  "aa35d140",
+                  "c3532940",
+                  "486ee83e"
+                ]
+              },
+              "build_start": 15,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7039,7 +7750,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "11a01a40",
+                  "e718493f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "11a01a40",
+                  "3a467240",
+                  "11a01a40",
+                  "c6b90dc0",
+                  "26426340",
+                  "4a9ba6c0",
+                  "f7fba33f",
+                  "1c0c473f",
+                  "f7fba33f",
+                  "84e1d840",
+                  "26426340",
+                  "b4254b3f"
+                ]
+              },
+              "build_start": 20,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7048,7 +7782,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "411f4940",
+                  "98ca8c3f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "411f4940",
+                  "a6328340",
+                  "411f4940",
+                  "6835f3bf",
+                  "cb3a8d40",
+                  "aac79ac0",
+                  "d791ef3f",
+                  "d6b3843f",
+                  "d791ef3f",
+                  "f62ce140",
+                  "cb3a8d40",
+                  "5ae1943f"
+                ]
+              },
+              "build_start": 25,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7057,7 +7814,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "cb767540",
+                  "48e8b73f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "cb767540",
+                  "12fa8d40",
+                  "cb767540",
+                  "b817c8bf",
+                  "6081a740",
+                  "b81d8ec0",
+                  "d6ea1b40",
+                  "6e47a83f",
+                  "d6ea1b40",
+                  "dc11ea40",
+                  "6081a740",
+                  "2289c73f"
+                ]
+              },
+              "build_start": 30,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7066,7 +7846,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8fef8f40",
+                  "3c9ae53f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8fef8f40",
+                  "8f669940",
+                  "8fef8f40",
+                  "c4659abf",
+                  "2e81c040",
+                  "91bf80c0",
+                  "e0bb3e40",
+                  "bc32ce3f",
+                  "e0bb3e40",
+                  "af8cf340",
+                  "2e81c040",
+                  "bc01fd3f"
+                ]
+              },
+              "build_start": 35,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7075,7 +7878,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "0f92a440",
+                  "31250b40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "0f92a440",
+                  "9892a540",
+                  "0f92a440",
+                  "3c6b53bf",
+                  "db98d840",
+                  "824065c0",
+                  "86166140",
+                  "c815f73f",
+                  "86166140",
+                  "72c5fd40",
+                  "db98d840",
+                  "7dbf1a40"
+                ]
+              },
+              "build_start": 40,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7084,7 +7910,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "fe95ba40",
+                  "d85c2740"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "fe95ba40",
+                  "6caeb340",
+                  "fe95ba40",
+                  "4019c5be",
+                  "60d6f140",
+                  "411145c0",
+                  "9c558340",
+                  "f1ca1340",
+                  "9c558340",
+                  "bcf20441",
+                  "60d6f140",
+                  "bfee3a40"
+                ]
+              },
+              "build_start": 45,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7093,7 +7942,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "4fd0cf40",
+                  "4ca14440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "4fd0cf40",
+                  "a650c240",
+                  "4fd0cf40",
+                  "8029943d",
+                  "6cf70441",
+                  "9ffc23c0",
+                  "c7b19540",
+                  "373f2d40",
+                  "c7b19540",
+                  "ce4f0b41",
+                  "6cf70441",
+                  "61035c40"
+                ]
+              },
+              "build_start": 50,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7102,7 +7974,30 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "5a69e440",
+                  "ccbc6240"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "5a69e440",
+                  "665ed140",
+                  "5a69e440",
+                  "30f30a3f",
+                  "a16a1041",
+                  "549c02c0",
+                  "72fda740",
+                  "ec154840",
+                  "72fda740",
+                  "7b051241",
+                  "a16a1041",
+                  "ac637d40"
+                ]
+              },
+              "build_start": 55,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -7111,7 +8006,29 @@
                 "00000000",
                 "0000803f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "6e89f840",
+                  "cabc8040"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "6e89f840",
+                  "cabce040",
+                  "6e89f840",
+                  "28f3823f",
+                  "c0571b41",
+                  "b295c2bf",
+                  "5c63ba40",
+                  "013e6440",
+                  "5c63ba40",
+                  "800f1941",
+                  "c0571b41",
+                  "945a8f40"
+                ]
+              },
+              "build_calls": 5
             }
           ],
           "sample_ends": [
@@ -11286,7 +12203,30 @@
                 "4c90af3e",
                 "bb7a703f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 1,
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ]
+              },
+              "build_start": 0,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11295,7 +12235,30 @@
                 "5543b03e",
                 "fb59703f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "39ac83bf",
+                  "0c5c3440",
+                  "39ac833f",
+                  "0c5c34c0",
+                  "95f49dbf",
+                  "3a96a2c0",
+                  "84a65240",
+                  "942e0ebf",
+                  "95f49d3f",
+                  "3a96a240",
+                  "84a652c0",
+                  "942e0e3f"
+                ]
+              },
+              "build_start": 5,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11304,7 +12267,30 @@
                 "46f6b03e",
                 "1a39703f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "832c443f",
+                  "f373573e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "f97088be",
+                  "bbba4140",
+                  "c148e63f",
+                  "3dcc26c0",
+                  "f25d2940",
+                  "f924b6c0",
+                  "3aab733f",
+                  "c08bf53e",
+                  "628f8ebf",
+                  "389cc340",
+                  "ccad143f",
+                  "80be70bd"
+                ]
+              },
+              "build_start": 10,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11313,7 +12299,30 @@
                 "1ea9b13e",
                 "1718703f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "7993c73f",
+                  "5822ee3e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "89b5053f",
+                  "1eef5140",
+                  "17262640",
+                  "886616c0",
+                  "0ec96440",
+                  "87b1acc0",
+                  "4006cf3f",
+                  "f857323f",
+                  "a4ace9be",
+                  "d275ca40",
+                  "b220c03f",
+                  "80296f3e"
+                ]
+              },
+              "build_start": 15,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11322,7 +12331,30 @@
                 "de5bb23e",
                 "f3f66f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "d43b1840",
+                  "8f9c433f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "d238ab3f",
+                  "35f96440",
+                  "3fdb5a40",
+                  "ee2a03c0",
+                  "26879040",
+                  "c6c7a1c0",
+                  "32a81440",
+                  "c0e6743f",
+                  "b895763e",
+                  "eaaed240",
+                  "76cf1b40",
+                  "5c52123f"
+                ]
+              },
+              "build_start": 20,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11331,7 +12363,30 @@
                 "850eb33e",
                 "add56f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "65614e40",
+                  "91bf8d3f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "f27e0b40",
+                  "ffd87a40",
+                  "eca18840",
+                  "dc32dabf",
+                  "7722af40",
+                  "866f95c0",
+                  "c2424440",
+                  "6058a13f",
+                  "6ef7793f",
+                  "4e4fdc40",
+                  "08805840",
+                  "844d743f"
+                ]
+              },
+              "build_start": 25,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11340,7 +12395,30 @@
                 "13c1b33e",
                 "47b46f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "381d8340",
+                  "765cbf3f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "fe144340",
+                  "3ec78940",
+                  "f1afa440",
+                  "0e64a8bf",
+                  "4f41ce40",
+                  "65ae87c0",
+                  "263d7640",
+                  "78f1cd3f",
+                  "84e4df3f",
+                  "a05ce740",
+                  "dd1b8b40",
+                  "72c7b03f"
+                ]
+              },
+              "build_start": 30,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11349,7 +12427,30 @@
                 "8973b43e",
                 "bf926f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "47c39b40",
+                  "e978ee3f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "271e7440",
+                  "d5819540",
+                  "7b77bd40",
+                  "032b72bf",
+                  "769de940",
+                  "915475c0",
+                  "80519140",
+                  "1e7ef83f",
+                  "30d21b40",
+                  "bde6f140",
+                  "0f35a640",
+                  "b473e43f"
+                ]
+              },
+              "build_start": 35,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11358,7 +12459,30 @@
                 "e525b53e",
                 "16716f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "a920b340",
+                  "5fe40e40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "ff4a9140",
+                  "3749a140",
+                  "53f6d440",
+                  "c12613bf",
+                  "189b0141",
+                  "47825bc0",
+                  "75b6a640",
+                  "e7ee1140",
+                  "42164640",
+                  "82a5fc40",
+                  "dd8abf40",
+                  "d7d90b40"
+                ]
+              },
+              "build_start": 40,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11367,7 +12491,30 @@
                 "28d8b53e",
                 "4c4f6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "6607cb40",
+                  "27562840"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "4b10a940",
+                  "7cf5ad40",
+                  "81feec40",
+                  "98ea33be",
+                  "de8d0e41",
+                  "900740c0",
+                  "46e1bc40",
+                  "3e8a2940",
+                  "1fe67140",
+                  "f82c0441",
+                  "862dd940",
+                  "11222740"
+                ]
+              },
+              "build_start": 45,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11376,7 +12523,30 @@
                 "528ab63e",
                 "602d6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8077e340",
+                  "cd914340"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "f85ec140",
+                  "a386bb40",
+                  "04c80241",
+                  "a0b2803e",
+                  "b6b31b41",
+                  "e9d022c0",
+                  "a4b8d340",
+                  "91fd4240",
+                  "94878f40",
+                  "217d0a41",
+                  "5c36f340",
+                  "09264440"
+                ]
+              },
+              "build_start": 50,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11385,7 +12555,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "f870fc40",
+                  "53976040"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "0937da40",
+                  "aefcc940",
+                  "74550f41",
+                  "2cd5343f",
+                  "420e2941",
+                  "16df03c0",
+                  "4c39eb40",
+                  "ac495e40",
+                  "6dc5a640",
+                  "6f431141",
+                  "52d40641",
+                  "fbe46240"
+                ]
+              },
+              "build_start": 55,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11394,7 +12587,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "e4f90a41",
+                  "b4667f40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "7598f340",
+                  "9a57d940",
+                  "8d271c41",
+                  "6a3c983f",
+                  "f69e3641",
+                  "0e65c6bf",
+                  "24b00141",
+                  "f16e7b40",
+                  "a4a9be40",
+                  "fc7f1841",
+                  "a3431441",
+                  "3caf8140"
+                ]
+              },
+              "build_start": 60,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11403,7 +12619,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "e4f90a41",
+                  "b4667f40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "57d20641",
+                  "40a4e940",
+                  "a92d2941",
+                  "026fd93f",
+                  "77564441",
+                  "04ca81bf",
+                  "db040e41",
+                  "022a8d40",
+                  "1153d740",
+                  "41392041",
+                  "25fb2141",
+                  "fed59240"
+                ]
+              },
+              "build_start": 65,
+              "build_calls": 0
             },
             {
               "vector_bits": [
@@ -11412,7 +12651,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "e4f90a41",
+                  "b4667f40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "57d20641",
+                  "40a4e940",
+                  "a92d2941",
+                  "026fd93f",
+                  "77564441",
+                  "04ca81bf",
+                  "db040e41",
+                  "022a8d40",
+                  "1153d740",
+                  "41392041",
+                  "25fb2141",
+                  "fed59240"
+                ]
+              },
+              "build_start": 65,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11421,7 +12683,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "8ef11941",
+                  "01899240"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "e5c30841",
+                  "402dec40",
+                  "371f2b41",
+                  "0693e33f",
+                  "60634641",
+                  "68396ebf",
+                  "0edb0f41",
+                  "b0908f40",
+                  "79ffda40",
+                  "976c2141",
+                  "0e082441",
+                  "52819540"
+                ]
+              },
+              "build_start": 70,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11430,7 +12715,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "bc412841",
+                  "f333a440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "13141741",
+                  "32d8fd40",
+                  "656f3941",
+                  "671f1540",
+                  "65535441",
+                  "4041c9be",
+                  "658b1e41",
+                  "7bb3a140",
+                  "2660f840",
+                  "fd7d2a41",
+                  "13f83141",
+                  "6ab4a640"
+                ]
+              },
+              "build_start": 75,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11439,7 +12747,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "57f33541",
+                  "16c4b440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "aec52441",
+                  "2b340741",
+                  "00214741",
+                  "ad3f3640",
+                  "db9f6141",
+                  "201ee03d",
+                  "25a22c41",
+                  "34bfb240",
+                  "d3460a41",
+                  "da033341",
+                  "89443f41",
+                  "f8c8b640"
+                ]
+              },
+              "build_start": 80,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11448,7 +12779,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "470f4341",
+                  "4d49c440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "9ee13141",
+                  "c6f60e41",
+                  "f03c5441",
+                  "1b4a5540",
+                  "ce516e41",
+                  "cc36143f",
+                  "12283a41",
+                  "42c3c240",
+                  "c0cc1741",
+                  "e0053b41",
+                  "7cf64b41",
+                  "58cfc540"
+                ]
+              },
+              "build_start": 85,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11457,7 +12811,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "3fc84f41",
+                  "4603d340"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "969a3e41",
+                  "c3531641",
+                  "e8f56041",
+                  "0dbe7240",
+                  "749b7a41",
+                  "00fa823f",
+                  "5c504741",
+                  "8dffd140",
+                  "0af52441",
+                  "06a44241",
+                  "22405841",
+                  "0007d440"
+                ]
+              },
+              "build_start": 90,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11466,7 +12843,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "9dea5e41",
+                  "e111e440"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "f4bc4d41",
+                  "10db1e41",
+                  "46187041",
+                  "a26d8a40",
+                  "8f9d8441",
+                  "42dfc43f",
+                  "6ff55641",
+                  "74a3e340",
+                  "1d9a3441",
+                  "f9754b41",
+                  "cbdf6641",
+                  "4e80e440"
+                ]
+              },
+              "build_start": 95,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11475,7 +12875,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "804c6d41",
+                  "35c9f340"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "d71e5c41",
+                  "bab62641",
+                  "297a7e41",
+                  "f6249a40",
+                  "55838b41",
+                  "95900040",
+                  "a8ed6541",
+                  "a201f440",
+                  "56924341",
+                  "10a55341",
+                  "58ab7441",
+                  "c890f340"
+                ]
+              },
+              "build_start": 100,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11484,7 +12907,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "e6ff7a41",
+                  "ac240141"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "3dd26941",
+                  "ccf62d41",
+                  "c8168641",
+                  "18a5a840",
+                  "1d109241",
+                  "ee451c40",
+                  "e73a7441",
+                  "9c930141",
+                  "94df5141",
+                  "dc375b41",
+                  "73e28041",
+                  "bcb50041"
+                ]
+              },
+              "build_start": 105,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11493,7 +12939,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "28488441",
+                  "60160841"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "a7627741",
+                  "80e83441",
+                  "fdde8c41",
+                  "8088b640",
+                  "7c899841",
+                  "75c43640",
+                  "7e348141",
+                  "63d70841",
+                  "a90d6041",
+                  "a37b6241",
+                  "d35b8741",
+                  "5d550741"
+                ]
+              },
+              "build_start": 110,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11502,7 +12971,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "273d8c41",
+                  "87ef0f41"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "52a68341",
+                  "a7c13c41",
+                  "fcd39441",
+                  "ce3ac640",
+                  "aa26a041",
+                  "06c85440",
+                  "4e818941",
+                  "cc081141",
+                  "49a77041",
+                  "0cad6a41",
+                  "00f98e41",
+                  "42d60e41"
+                ]
+              },
+              "build_start": 115,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11511,7 +13003,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "82d49341",
+                  "a7211741"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "ad3d8b41",
+                  "c7f34341",
+                  "576b9c41",
+                  "0e9fd440",
+                  "2862a741",
+                  "2d2d7040",
+                  "86749141",
+                  "c3931841",
+                  "dc468041",
+                  "03387241",
+                  "7e349641",
+                  "8baf1541"
+                ]
+              },
+              "build_start": 120,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11520,7 +13035,30 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "f0209b41",
+                  "27ce1d41"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "1b8a9241",
+                  "47a04a41",
+                  "c5b7a341",
+                  "0ef8e140",
+                  "c95cae41",
+                  "42d78440",
+                  "c1129941",
+                  "6d8c1f41",
+                  "17e58741",
+                  "ad307941",
+                  "1f2f9d41",
+                  "e10f1c41"
+                ]
+              },
+              "build_start": 125,
+              "build_calls": 5
             },
             {
               "vector_bits": [
@@ -11529,7 +13067,29 @@
                 "633cb73e",
                 "540b6f3f"
               ],
-              "extent_bits": "00004040"
+              "extent_bits": "00004040",
+              "pre_state": {
+                "center_bits": [
+                  "2d35a241",
+                  "72162441"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "589e9941",
+                  "92e85041",
+                  "02ccaa41",
+                  "a488ee40",
+                  "1c2eb541",
+                  "47ef9040",
+                  "e869a041",
+                  "00112641",
+                  "3e3c8f41",
+                  "40b57f41",
+                  "7200a441",
+                  "e41b2241"
+                ]
+              },
+              "build_calls": 5
             }
           ],
           "sample_ends": [
@@ -13304,6 +14864,3112 @@
                 "d4ae1141",
                 "8e3f9a41",
                 "88c9d140"
+              ],
+              "buffer": "mesh_208"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "subunit_extent_clamp",
+      "history": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          4.0,
+          2.0,
+          0.0
+        ],
+        [
+          8.0,
+          5.0,
+          0.0
+        ]
+      ],
+      "size": 1.0,
+      "native": {
+        "fresh": {
+          "orientation_read_indices": [
+            1,
+            2
+          ],
+          "angle_bits": "0000b442",
+          "direction_bits": [
+            "0000803f",
+            "00000000"
+          ],
+          "meshes": [
+            {
+              "buffer": "mesh_200",
+              "vertex_f32_bits": [
+                "00000000",
+                "000080bf",
+                "00000000",
+                "00000000",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "000080bf",
+                "0000803f",
+                "00000000",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "000080bf",
+                "0000803f",
+                "00000000",
+                "00000000",
+                "0000803f",
+                "0000803f",
+                "0000803f",
+                "00000000",
+                "000080bf",
+                "00000000",
+                "00000000",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "0000803f",
+                "8425383f",
+                "5c7d22bf",
+                "0000803f",
+                "00000000",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "0000803f",
+                "8425383f",
+                "5c7d22bf",
+                "0000803f",
+                "00000000",
+                "8425383f",
+                "52c1ae3f",
+                "0000803f",
+                "0000803f",
+                "8425383f",
+                "5c7d22bf",
+                "00000000",
+                "00000000",
+                "8425383f",
+                "52c1ae3f",
+                "00000000",
+                "0000803f",
+                "e4a3b23f",
+                "0e778fbe",
+                "0000803f",
+                "00000000",
+                "8425383f",
+                "52c1ae3f",
+                "00000000",
+                "0000803f",
+                "e4a3b23f",
+                "0e778fbe",
+                "0000803f",
+                "00000000",
+                "e4a3b23f",
+                "3c22dc3f",
+                "0000803f",
+                "0000803f",
+                "e4a3b23f",
+                "0e778fbe",
+                "00000000",
+                "00000000",
+                "e4a3b23f",
+                "3c22dc3f",
+                "00000000",
+                "0000803f",
+                "25080240",
+                "909f833d",
+                "0000803f",
+                "00000000",
+                "e4a3b23f",
+                "3c22dc3f",
+                "00000000",
+                "0000803f",
+                "25080240",
+                "909f833d",
+                "0000803f",
+                "00000000",
+                "25080240",
+                "fc1c0440",
+                "0000803f",
+                "0000803f",
+                "25080240",
+                "909f833d",
+                "00000000",
+                "00000000",
+                "25080240",
+                "fc1c0440",
+                "00000000",
+                "0000803f",
+                "665a2840",
+                "ec7ecc3e",
+                "0000803f",
+                "00000000",
+                "25080240",
+                "fc1c0440",
+                "00000000",
+                "0000803f",
+                "665a2840",
+                "ec7ecc3e",
+                "0000803f",
+                "00000000",
+                "665a2840",
+                "de8f1940",
+                "0000803f",
+                "0000803f",
+                "665a2840",
+                "ec7ecc3e",
+                "00000000",
+                "00000000",
+                "665a2840",
+                "de8f1940",
+                "00000000",
+                "0000803f",
+                "28774c40",
+                "7ad5393f",
+                "0000803f",
+                "00000000",
+                "665a2840",
+                "de8f1940",
+                "00000000",
+                "0000803f",
+                "28774c40",
+                "7ad5393f",
+                "0000803f",
+                "00000000",
+                "28774c40",
+                "5e752e40",
+                "0000803f",
+                "0000803f",
+                "28774c40",
+                "7ad5393f",
+                "00000000",
+                "00000000",
+                "28774c40",
+                "5e752e40",
+                "00000000",
+                "0000803f",
+                "dd8c6e40",
+                "3ab2853f",
+                "0000803f",
+                "00000000",
+                "28774c40",
+                "5e752e40",
+                "00000000",
+                "0000803f",
+                "dd8c6e40",
+                "3ab2853f",
+                "0000803f",
+                "00000000",
+                "dd8c6e40",
+                "1dd94240",
+                "0000803f",
+                "0000803f",
+                "dd8c6e40",
+                "3ab2853f",
+                "00000000",
+                "00000000",
+                "dd8c6e40",
+                "1dd94240",
+                "00000000",
+                "0000803f",
+                "f9648740",
+                "668dad3f",
+                "0000803f",
+                "00000000",
+                "dd8c6e40",
+                "1dd94240",
+                "00000000",
+                "0000803f",
+                "f9648740",
+                "668dad3f",
+                "0000803f",
+                "00000000",
+                "f9648740",
+                "b3c65640",
+                "0000803f",
+                "0000803f",
+                "f9648740",
+                "668dad3f",
+                "00000000",
+                "00000000",
+                "f9648740",
+                "b3c65640",
+                "00000000",
+                "0000803f",
+                "6bae9640",
+                "7a93d43f",
+                "0000803f",
+                "00000000",
+                "f9648740",
+                "b3c65640",
+                "00000000",
+                "0000803f",
+                "6bae9640",
+                "7a93d43f",
+                "0000803f",
+                "00000000",
+                "6bae9640",
+                "bd496a40",
+                "0000803f",
+                "0000803f",
+                "6bae9640",
+                "7a93d43f",
+                "00000000",
+                "00000000",
+                "6bae9640",
+                "bd496a40",
+                "00000000",
+                "0000803f",
+                "abf5a940",
+                "ccc70340",
+                "0000803f",
+                "00000000",
+                "6bae9640",
+                "bd496a40",
+                "00000000",
+                "0000803f",
+                "abf5a940",
+                "ccc70340",
+                "0000803f",
+                "00000000",
+                "abf5a940",
+                "e6e38140",
+                "0000803f",
+                "0000803f",
+                "abf5a940",
+                "ccc70340",
+                "00000000",
+                "00000000",
+                "abf5a940",
+                "e6e38140",
+                "00000000",
+                "0000803f",
+                "d98fbc40",
+                "4b521d40",
+                "0000803f",
+                "00000000",
+                "abf5a940",
+                "e6e38140",
+                "00000000",
+                "0000803f",
+                "d98fbc40",
+                "4b521d40",
+                "0000803f",
+                "00000000",
+                "d98fbc40",
+                "26a98e40",
+                "0000803f",
+                "0000803f",
+                "d98fbc40",
+                "4b521d40",
+                "00000000",
+                "00000000",
+                "d98fbc40",
+                "26a98e40",
+                "00000000",
+                "0000803f",
+                "153cce40",
+                "cf653640",
+                "0000803f",
+                "00000000",
+                "d98fbc40",
+                "26a98e40",
+                "00000000",
+                "0000803f",
+                "153cce40",
+                "cf653640",
+                "0000803f",
+                "00000000",
+                "153cce40",
+                "e8329b40",
+                "0000803f",
+                "0000803f",
+                "153cce40",
+                "cf653640",
+                "00000000",
+                "00000000",
+                "153cce40",
+                "e8329b40",
+                "00000000",
+                "0000803f",
+                "dc35df40",
+                "1a204f40",
+                "0000803f",
+                "00000000",
+                "153cce40",
+                "e8329b40",
+                "00000000",
+                "0000803f",
+                "dc35df40",
+                "1a204f40",
+                "0000803f",
+                "00000000",
+                "dc35df40",
+                "0d90a740",
+                "0000803f",
+                "0000803f",
+                "dc35df40",
+                "1a204f40",
+                "00000000",
+                "00000000",
+                "dc35df40",
+                "0d90a740",
+                "00000000",
+                "0000803f",
+                "abb8ef40",
+                "ea9e6740",
+                "0000803f",
+                "00000000",
+                "dc35df40",
+                "0d90a740",
+                "00000000",
+                "0000803f",
+                "abb8ef40",
+                "ea9e6740",
+                "0000803f",
+                "00000000",
+                "abb8ef40",
+                "75cfb340",
+                "0000803f",
+                "0000803f"
+              ],
+              "vertex_count": 84
+            },
+            {
+              "buffer": "mesh_208",
+              "vertex_f32_bits": [
+                "67d01040",
+                "67d05040",
+                "00000000",
+                "00000000",
+                "67d010c0",
+                "cea0a1bf",
+                "00000000",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "cea0a1bf",
+                "00000000",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "0000803f",
+                "0000803f",
+                "67d01040",
+                "67d05040",
+                "00000000",
+                "00000000",
+                "67d010c0",
+                "cea0a1bf",
+                "00000000",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "cea0a1bf",
+                "00000000",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "0000803f",
+                "0000803f",
+                "8ac33abf",
+                "cafd8640",
+                "00000000",
+                "00000000",
+                "a4c30a40",
+                "8274bebf",
+                "00000000",
+                "0000803f",
+                "8ac33abf",
+                "93fb0d40",
+                "0000803f",
+                "00000000",
+                "a4c30a40",
+                "8274bebf",
+                "00000000",
+                "0000803f",
+                "8ac33abf",
+                "93fb0d40",
+                "0000803f",
+                "00000000",
+                "a4c30a40",
+                "413a5fc0",
+                "0000803f",
+                "0000803f",
+                "899108c0",
+                "5033abbd",
+                "00000000",
+                "00000000",
+                "4ba46440",
+                "ec1a3440",
+                "00000000",
+                "0000803f",
+                "899108c0",
+                "9a5905c0",
+                "0000803f",
+                "00000000",
+                "4ba46440",
+                "ec1a3440",
+                "00000000",
+                "0000803f",
+                "899108c0",
+                "9a5905c0",
+                "0000803f",
+                "00000000",
+                "4ba46440",
+                "b26b503f",
+                "0000803f",
+                "0000803f",
+                "3076b8bd",
+                "5aba9140",
+                "00000000",
+                "00000000",
+                "96673840",
+                "f0a48ebf",
+                "00000000",
+                "0000803f",
+                "3076b8bd",
+                "b4742340",
+                "0000803f",
+                "00000000",
+                "96673840",
+                "f0a48ebf",
+                "00000000",
+                "0000803f",
+                "3076b8bd",
+                "b4742340",
+                "0000803f",
+                "00000000",
+                "96673840",
+                "785247c0",
+                "0000803f",
+                "0000803f",
+                "4823b8bf",
+                "a8b76f3e",
+                "00000000",
+                "00000000",
+                "c45a8740",
+                "c2264d40",
+                "00000000",
+                "0000803f",
+                "4823b8bf",
+                "0a09e2bf",
+                "0000803f",
+                "00000000",
+                "c45a8740",
+                "c2264d40",
+                "00000000",
+                "0000803f",
+                "4823b8bf",
+                "0a09e2bf",
+                "0000803f",
+                "00000000",
+                "c45a8740",
+                "844d9a3f",
+                "0000803f",
+                "0000803f",
+                "2609023f",
+                "fc199c40",
+                "00000000",
+                "00000000",
+                "008e6340",
+                "fce73fbf",
+                "00000000",
+                "0000803f",
+                "2609023f",
+                "f8333840",
+                "0000803f",
+                "00000000",
+                "008e6340",
+                "fce73fbf",
+                "00000000",
+                "0000803f",
+                "2609023f",
+                "f8333840",
+                "0000803f",
+                "00000000",
+                "008e6340",
+                "fef92fc0",
+                "0000803f",
+                "0000803f",
+                "583b48bf",
+                "825c0a3f",
+                "00000000",
+                "00000000",
+                "900f9b40",
+                "d8a26540",
+                "00000000",
+                "0000803f",
+                "583b48bf",
+                "bed1babf",
+                "0000803f",
+                "00000000",
+                "900f9b40",
+                "d8a26540",
+                "00000000",
+                "0000803f",
+                "583b48bf",
+                "bed1babf",
+                "0000803f",
+                "00000000",
+                "900f9b40",
+                "b045cb3f",
+                "0000803f",
+                "0000803f",
+                "5aa7883f",
+                "0023a640",
+                "00000000",
+                "00000000",
+                "90308640",
+                "2032c9be",
+                "00000000",
+                "0000803f",
+                "5aa7883f",
+                "00464c40",
+                "0000803f",
+                "00000000",
+                "90308640",
+                "2032c9be",
+                "00000000",
+                "0000803f",
+                "5aa7883f",
+                "00464c40",
+                "0000803f",
+                "00000000",
+                "90308640",
+                "442619c0",
+                "0000803f",
+                "0000803f",
+                "c0bb25be",
+                "9424563f",
+                "00000000",
+                "00000000",
+                "4488ad40",
+                "97967d40",
+                "00000000",
+                "0000803f",
+                "c0bb25be",
+                "b7ed94bf",
+                "0000803f",
+                "00000000",
+                "4488ad40",
+                "97967d40",
+                "00000000",
+                "0000803f",
+                "c0bb25be",
+                "b7ed94bf",
+                "0000803f",
+                "00000000",
+                "4488ad40",
+                "2d2dfb3f",
+                "0000803f",
+                "0000803f",
+                "e1c8cb3f",
+                "36dcaf40",
+                "00000000",
+                "00000000",
+                "f0849940",
+                "406c33bd",
+                "00000000",
+                "0000803f",
+                "e1c8cb3f",
+                "6eb85f40",
+                "0000803f",
+                "00000000",
+                "f0849940",
+                "406c33bd",
+                "00000000",
+                "0000803f",
+                "e1c8cb3f",
+                "6eb85f40",
+                "0000803f",
+                "00000000",
+                "f0849940",
+                "b0cd02c0",
+                "0000803f",
+                "0000803f",
+                "c8a0d93e",
+                "4dc58f3f",
+                "00000000",
+                "00000000",
+                "1cddbe40",
+                "0b848a40",
+                "00000000",
+                "0000803f",
+                "c8a0d93e",
+                "647560bf",
+                "0000803f",
+                "00000000",
+                "1cddbe40",
+                "0b848a40",
+                "00000000",
+                "0000803f",
+                "c8a0d93e",
+                "647560bf",
+                "0000803f",
+                "00000000",
+                "1cddbe40",
+                "16081540",
+                "0000803f",
+                "0000803f",
+                "f1690540",
+                "094db940",
+                "00000000",
+                "00000000",
+                "e4d7ab40",
+                "40c1983e",
+                "00000000",
+                "0000803f",
+                "f1690540",
+                "129a7240",
+                "0000803f",
+                "00000000",
+                "e4d7ab40",
+                "40c1983e",
+                "00000000",
+                "0000803f",
+                "f1690540",
+                "129a7240",
+                "0000803f",
+                "00000000",
+                "e4d7ab40",
+                "b0cfd9bf",
+                "0000803f",
+                "0000803f",
+                "a02f7b3f",
+                "626cb33f",
+                "00000000",
+                "00000000",
+                "e926cf40",
+                "04fe9540",
+                "00000000",
+                "0000803f",
+                "a02f7b3f",
+                "3c2719bf",
+                "0000803f",
+                "00000000",
+                "e926cf40",
+                "04fe9540",
+                "00000000",
+                "0000803f",
+                "a02f7b3f",
+                "3c2719bf",
+                "0000803f",
+                "00000000",
+                "e926cf40",
+                "09fc2b40",
+                "0000803f",
+                "0000803f",
+                "f81a2340",
+                "907dc240",
+                "00000000",
+                "00000000",
+                "763cbd40",
+                "1849223f",
+                "00000000",
+                "0000803f",
+                "f81a2340",
+                "907d8240",
+                "0000803f",
+                "00000000",
+                "763cbd40",
+                "1849223f",
+                "00000000",
+                "0000803f",
+                "f81a2340",
+                "907d8240",
+                "0000803f",
+                "00000000",
+                "763cbd40",
+                "74dbaebf",
+                "0000803f",
+                "0000803f",
+                "0c2bc13f",
+                "742fd63f",
+                "00000000",
+                "00000000",
+                "2f7fde40",
+                "d63aa140",
+                "00000000",
+                "0000803f",
+                "0c2bc13f",
+                "3042a7be",
+                "0000803f",
+                "00000000",
+                "2f7fde40",
+                "d63aa140",
+                "00000000",
+                "0000803f",
+                "0c2bc13f",
+                "3042a7be",
+                "0000803f",
+                "00000000",
+                "2f7fde40",
+                "ac754240",
+                "0000803f",
+                "0000803f",
+                "b02f3f40",
+                "a876cb40",
+                "00000000",
+                "00000000",
+                "fec4cd40",
+                "a898763f",
+                "00000000",
+                "0000803f",
+                "b02f3f40",
+                "a8768b40",
+                "0000803f",
+                "00000000",
+                "fec4cd40",
+                "a898763f",
+                "00000000",
+                "0000803f",
+                "b02f3f40",
+                "a8768b40",
+                "0000803f",
+                "00000000",
+                "fec4cd40",
+                "acb384bf",
+                "0000803f",
+                "0000803f",
+                "43b90040",
+                "2d39f83f",
+                "00000000",
+                "00000000",
+                "3400ed40",
+                "723bac40",
+                "00000000",
+                "0000803f",
+                "43b90040",
+                "60da78bd",
+                "0000803f",
+                "00000000",
+                "3400ed40",
+                "723bac40",
+                "00000000",
+                "0000803f",
+                "43b90040",
+                "60da78bd",
+                "0000803f",
+                "00000000",
+                "3400ed40",
+                "e4765840",
+                "0000803f",
+                "0000803f",
+                "c4f76240",
+                "f04ed740",
+                "00000000",
+                "00000000",
+                "746fe240",
+                "72e3b13f",
+                "00000000",
+                "0000803f",
+                "c4f76240",
+                "f04e9740",
+                "0000803f",
+                "00000000",
+                "746fe240",
+                "72e3b13f",
+                "00000000",
+                "0000803f",
+                "c4f76240",
+                "f04e9740",
+                "0000803f",
+                "00000000",
+                "746fe240",
+                "1c391cbf",
+                "0000803f",
+                "0000803f",
+                "43152940",
+                "3ad41240",
+                "00000000",
+                "00000000",
+                "b460ff40",
+                "af5dba40",
+                "00000000",
+                "0000803f",
+                "43152940",
+                "d4a1963e",
+                "0000803f",
+                "00000000",
+                "b460ff40",
+                "af5dba40",
+                "00000000",
+                "0000803f",
+                "43152940",
+                "d4a1963e",
+                "0000803f",
+                "00000000",
+                "b460ff40",
+                "5ebb7440",
+                "0000803f",
+                "0000803f",
+                "479b8240",
+                "f914e340",
+                "00000000",
+                "00000000",
+                "6b84f640",
+                "4cf5e83f",
+                "00000000",
+                "0000803f",
+                "479b8240",
+                "f814a340",
+                "0000803f",
+                "00000000",
+                "6b84f640",
+                "4cf5e83f",
+                "00000000",
+                "0000803f",
+                "479b8240",
+                "f814a340",
+                "0000803f",
+                "00000000",
+                "6b84f640",
+                "b05538be",
+                "0000803f",
+                "0000803f",
+                "0c485040",
+                "28692940",
+                "00000000",
+                "00000000",
+                "d67d0841",
+                "b89dc840",
+                "00000000",
+                "0000803f",
+                "0c485040",
+                "9ca4253f",
+                "0000803f",
+                "00000000",
+                "d67d0841",
+                "b89dc840",
+                "00000000",
+                "0000803f",
+                "0c485040",
+                "9ca4253f",
+                "0000803f",
+                "00000000",
+                "d67d0841",
+                "b89d8840",
+                "0000803f",
+                "0000803f",
+                "affb9240",
+                "24b7ee40",
+                "00000000",
+                "00000000",
+                "3dbe0441",
+                "575d0f40",
+                "00000000",
+                "0000803f",
+                "affb9240",
+                "24b7ae40",
+                "0000803f",
+                "00000000",
+                "3dbe0441",
+                "575d0f40",
+                "00000000",
+                "0000803f",
+                "affb9240",
+                "24b7ae40",
+                "0000803f",
+                "00000000",
+                "3dbe0441",
+                "60d5753e",
+                "0000803f",
+                "0000803f",
+                "b16f7540",
+                "04e53f40",
+                "00000000",
+                "00000000",
+                "29e01041",
+                "4e73d640",
+                "00000000",
+                "0000803f",
+                "b16f7540",
+                "0e947f3f",
+                "0000803f",
+                "00000000",
+                "29e01041",
+                "4e73d640",
+                "00000000",
+                "0000803f",
+                "b16f7540",
+                "0e947f3f",
+                "0000803f",
+                "00000000",
+                "29e01041",
+                "4d739640",
+                "0000803f",
+                "0000803f",
+                "b0eca240",
+                "f455fa40",
+                "00000000",
+                "00000000",
+                "84bf0d41",
+                "4d942940",
+                "00000000",
+                "0000803f",
+                "b0eca240",
+                "f455ba40",
+                "0000803f",
+                "00000000",
+                "84bf0d41",
+                "4d942940",
+                "00000000",
+                "0000803f",
+                "b0eca240",
+                "f455ba40",
+                "0000803f",
+                "00000000",
+                "84bf0d41",
+                "3451263f",
+                "0000803f",
+                "0000803f",
+                "f66f8c40",
+                "c18d5640",
+                "00000000",
+                "00000000",
+                "e1fd1841",
+                "3ad9e340",
+                "00000000",
+                "0000803f",
+                "f66f8c40",
+                "821bad3f",
+                "0000803f",
+                "00000000",
+                "e1fd1841",
+                "3ad9e340",
+                "00000000",
+                "0000803f",
+                "f66f8c40",
+                "821bad3f",
+                "0000803f",
+                "00000000",
+                "e1fd1841",
+                "3ad9a340",
+                "0000803f",
+                "0000803f",
+                "deb6b240",
+                "d4060341",
+                "00000000",
+                "00000000",
+                "3c5d1641",
+                "86224340",
+                "00000000",
+                "0000803f",
+                "deb6b240",
+                "a70dc640",
+                "0000803f",
+                "00000000",
+                "3c5d1641",
+                "86224340",
+                "00000000",
+                "0000803f",
+                "deb6b240",
+                "a70dc640",
+                "0000803f",
+                "00000000",
+                "3c5d1641",
+                "0c45863f",
+                "0000803f",
+                "0000803f",
+                "797a9d40",
+                "509b6d40",
+                "00000000",
+                "00000000",
+                "6efb2041",
+                "42d1f040",
+                "00000000",
+                "0000803f",
+                "797a9d40",
+                "9f36db3f",
+                "0000803f",
+                "00000000",
+                "6efb2041",
+                "42d1f040",
+                "00000000",
+                "0000803f",
+                "797a9d40",
+                "9f36db3f",
+                "0000803f",
+                "00000000",
+                "6efb2041",
+                "42d1b040",
+                "0000803f",
+                "0000803f"
+              ],
+              "vertex_count": 168
+            },
+            {
+              "buffer": "mesh_216",
+              "vertex_f32_bits": [
+                "67d010c0",
+                "cea0a1bf",
+                "00000000",
+                "00000000",
+                "67d01040",
+                "67d05040",
+                "00000000",
+                "0000803f",
+                "67d010c0",
+                "cea0a1bf",
+                "0000803f",
+                "00000000",
+                "67d01040",
+                "67d05040",
+                "00000000",
+                "0000803f",
+                "67d010c0",
+                "cea0a1bf",
+                "0000803f",
+                "00000000",
+                "67d01040",
+                "67d05040",
+                "0000803f",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "00000000",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "00000000",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "00000000",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "0000803f",
+                "0000803f",
+                "67d010c0",
+                "cea0a1bf",
+                "00000000",
+                "00000000",
+                "67d01040",
+                "67d05040",
+                "00000000",
+                "0000803f",
+                "a4c30a40",
+                "8274bebf",
+                "0000803f",
+                "00000000",
+                "67d01040",
+                "67d05040",
+                "00000000",
+                "0000803f",
+                "a4c30a40",
+                "8274bebf",
+                "0000803f",
+                "00000000",
+                "8ac33abf",
+                "cafd8640",
+                "0000803f",
+                "0000803f",
+                "67d01040",
+                "cea0a13f",
+                "00000000",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "00000000",
+                "0000803f",
+                "8ac33abf",
+                "93fb0d40",
+                "0000803f",
+                "00000000",
+                "67d010c0",
+                "67d050c0",
+                "00000000",
+                "0000803f",
+                "8ac33abf",
+                "93fb0d40",
+                "0000803f",
+                "00000000",
+                "a4c30a40",
+                "413a5fc0",
+                "0000803f",
+                "0000803f",
+                "a4c30a40",
+                "8274bebf",
+                "00000000",
+                "00000000",
+                "8ac33abf",
+                "cafd8640",
+                "00000000",
+                "0000803f",
+                "96673840",
+                "f0a48ebf",
+                "0000803f",
+                "00000000",
+                "8ac33abf",
+                "cafd8640",
+                "00000000",
+                "0000803f",
+                "96673840",
+                "f0a48ebf",
+                "0000803f",
+                "00000000",
+                "3076b8bd",
+                "5aba9140",
+                "0000803f",
+                "0000803f",
+                "8ac33abf",
+                "93fb0d40",
+                "00000000",
+                "00000000",
+                "a4c30a40",
+                "413a5fc0",
+                "00000000",
+                "0000803f",
+                "3076b8bd",
+                "b4742340",
+                "0000803f",
+                "00000000",
+                "a4c30a40",
+                "413a5fc0",
+                "00000000",
+                "0000803f",
+                "3076b8bd",
+                "b4742340",
+                "0000803f",
+                "00000000",
+                "96673840",
+                "785247c0",
+                "0000803f",
+                "0000803f",
+                "96673840",
+                "f0a48ebf",
+                "00000000",
+                "00000000",
+                "3076b8bd",
+                "5aba9140",
+                "00000000",
+                "0000803f",
+                "008e6340",
+                "fce73fbf",
+                "0000803f",
+                "00000000",
+                "3076b8bd",
+                "5aba9140",
+                "00000000",
+                "0000803f",
+                "008e6340",
+                "fce73fbf",
+                "0000803f",
+                "00000000",
+                "2609023f",
+                "fc199c40",
+                "0000803f",
+                "0000803f",
+                "3076b8bd",
+                "b4742340",
+                "00000000",
+                "00000000",
+                "96673840",
+                "785247c0",
+                "00000000",
+                "0000803f",
+                "2609023f",
+                "f8333840",
+                "0000803f",
+                "00000000",
+                "96673840",
+                "785247c0",
+                "00000000",
+                "0000803f",
+                "2609023f",
+                "f8333840",
+                "0000803f",
+                "00000000",
+                "008e6340",
+                "fef92fc0",
+                "0000803f",
+                "0000803f",
+                "008e6340",
+                "fce73fbf",
+                "00000000",
+                "00000000",
+                "2609023f",
+                "fc199c40",
+                "00000000",
+                "0000803f",
+                "90308640",
+                "2032c9be",
+                "0000803f",
+                "00000000",
+                "2609023f",
+                "fc199c40",
+                "00000000",
+                "0000803f",
+                "90308640",
+                "2032c9be",
+                "0000803f",
+                "00000000",
+                "5aa7883f",
+                "0023a640",
+                "0000803f",
+                "0000803f",
+                "2609023f",
+                "f8333840",
+                "00000000",
+                "00000000",
+                "008e6340",
+                "fef92fc0",
+                "00000000",
+                "0000803f",
+                "5aa7883f",
+                "00464c40",
+                "0000803f",
+                "00000000",
+                "008e6340",
+                "fef92fc0",
+                "00000000",
+                "0000803f",
+                "5aa7883f",
+                "00464c40",
+                "0000803f",
+                "00000000",
+                "90308640",
+                "442619c0",
+                "0000803f",
+                "0000803f",
+                "90308640",
+                "2032c9be",
+                "00000000",
+                "00000000",
+                "5aa7883f",
+                "0023a640",
+                "00000000",
+                "0000803f",
+                "f0849940",
+                "406c33bd",
+                "0000803f",
+                "00000000",
+                "5aa7883f",
+                "0023a640",
+                "00000000",
+                "0000803f",
+                "f0849940",
+                "406c33bd",
+                "0000803f",
+                "00000000",
+                "e1c8cb3f",
+                "36dcaf40",
+                "0000803f",
+                "0000803f",
+                "5aa7883f",
+                "00464c40",
+                "00000000",
+                "00000000",
+                "90308640",
+                "442619c0",
+                "00000000",
+                "0000803f",
+                "e1c8cb3f",
+                "6eb85f40",
+                "0000803f",
+                "00000000",
+                "90308640",
+                "442619c0",
+                "00000000",
+                "0000803f",
+                "e1c8cb3f",
+                "6eb85f40",
+                "0000803f",
+                "00000000",
+                "f0849940",
+                "b0cd02c0",
+                "0000803f",
+                "0000803f",
+                "f0849940",
+                "406c33bd",
+                "00000000",
+                "00000000",
+                "e1c8cb3f",
+                "36dcaf40",
+                "00000000",
+                "0000803f",
+                "e4d7ab40",
+                "40c1983e",
+                "0000803f",
+                "00000000",
+                "e1c8cb3f",
+                "36dcaf40",
+                "00000000",
+                "0000803f",
+                "e4d7ab40",
+                "40c1983e",
+                "0000803f",
+                "00000000",
+                "f1690540",
+                "094db940",
+                "0000803f",
+                "0000803f",
+                "e1c8cb3f",
+                "6eb85f40",
+                "00000000",
+                "00000000",
+                "f0849940",
+                "b0cd02c0",
+                "00000000",
+                "0000803f",
+                "f1690540",
+                "129a7240",
+                "0000803f",
+                "00000000",
+                "f0849940",
+                "b0cd02c0",
+                "00000000",
+                "0000803f",
+                "f1690540",
+                "129a7240",
+                "0000803f",
+                "00000000",
+                "e4d7ab40",
+                "b0cfd9bf",
+                "0000803f",
+                "0000803f",
+                "e4d7ab40",
+                "40c1983e",
+                "00000000",
+                "00000000",
+                "f1690540",
+                "094db940",
+                "00000000",
+                "0000803f",
+                "763cbd40",
+                "1849223f",
+                "0000803f",
+                "00000000",
+                "f1690540",
+                "094db940",
+                "00000000",
+                "0000803f",
+                "763cbd40",
+                "1849223f",
+                "0000803f",
+                "00000000",
+                "f81a2340",
+                "907dc240",
+                "0000803f",
+                "0000803f",
+                "f1690540",
+                "129a7240",
+                "00000000",
+                "00000000",
+                "e4d7ab40",
+                "b0cfd9bf",
+                "00000000",
+                "0000803f",
+                "f81a2340",
+                "907d8240",
+                "0000803f",
+                "00000000",
+                "e4d7ab40",
+                "b0cfd9bf",
+                "00000000",
+                "0000803f",
+                "f81a2340",
+                "907d8240",
+                "0000803f",
+                "00000000",
+                "763cbd40",
+                "74dbaebf",
+                "0000803f",
+                "0000803f",
+                "763cbd40",
+                "1849223f",
+                "00000000",
+                "00000000",
+                "f81a2340",
+                "907dc240",
+                "00000000",
+                "0000803f",
+                "fec4cd40",
+                "a898763f",
+                "0000803f",
+                "00000000",
+                "f81a2340",
+                "907dc240",
+                "00000000",
+                "0000803f",
+                "fec4cd40",
+                "a898763f",
+                "0000803f",
+                "00000000",
+                "b02f3f40",
+                "a876cb40",
+                "0000803f",
+                "0000803f",
+                "f81a2340",
+                "907d8240",
+                "00000000",
+                "00000000",
+                "763cbd40",
+                "74dbaebf",
+                "00000000",
+                "0000803f",
+                "b02f3f40",
+                "a8768b40",
+                "0000803f",
+                "00000000",
+                "763cbd40",
+                "74dbaebf",
+                "00000000",
+                "0000803f",
+                "b02f3f40",
+                "a8768b40",
+                "0000803f",
+                "00000000",
+                "fec4cd40",
+                "acb384bf",
+                "0000803f",
+                "0000803f",
+                "fec4cd40",
+                "a898763f",
+                "00000000",
+                "00000000",
+                "b02f3f40",
+                "a876cb40",
+                "00000000",
+                "0000803f",
+                "746fe240",
+                "72e3b13f",
+                "0000803f",
+                "00000000",
+                "b02f3f40",
+                "a876cb40",
+                "00000000",
+                "0000803f",
+                "746fe240",
+                "72e3b13f",
+                "0000803f",
+                "00000000",
+                "c4f76240",
+                "f04ed740",
+                "0000803f",
+                "0000803f",
+                "b02f3f40",
+                "a8768b40",
+                "00000000",
+                "00000000",
+                "fec4cd40",
+                "acb384bf",
+                "00000000",
+                "0000803f",
+                "c4f76240",
+                "f04e9740",
+                "0000803f",
+                "00000000",
+                "fec4cd40",
+                "acb384bf",
+                "00000000",
+                "0000803f",
+                "c4f76240",
+                "f04e9740",
+                "0000803f",
+                "00000000",
+                "746fe240",
+                "1c391cbf",
+                "0000803f",
+                "0000803f",
+                "746fe240",
+                "72e3b13f",
+                "00000000",
+                "00000000",
+                "c4f76240",
+                "f04ed740",
+                "00000000",
+                "0000803f",
+                "6b84f640",
+                "4cf5e83f",
+                "0000803f",
+                "00000000",
+                "c4f76240",
+                "f04ed740",
+                "00000000",
+                "0000803f",
+                "6b84f640",
+                "4cf5e83f",
+                "0000803f",
+                "00000000",
+                "479b8240",
+                "f914e340",
+                "0000803f",
+                "0000803f",
+                "c4f76240",
+                "f04e9740",
+                "00000000",
+                "00000000",
+                "746fe240",
+                "1c391cbf",
+                "00000000",
+                "0000803f",
+                "479b8240",
+                "f814a340",
+                "0000803f",
+                "00000000",
+                "746fe240",
+                "1c391cbf",
+                "00000000",
+                "0000803f",
+                "479b8240",
+                "f814a340",
+                "0000803f",
+                "00000000",
+                "6b84f640",
+                "b05538be",
+                "0000803f",
+                "0000803f",
+                "6b84f640",
+                "4cf5e83f",
+                "00000000",
+                "00000000",
+                "479b8240",
+                "f914e340",
+                "00000000",
+                "0000803f",
+                "3dbe0441",
+                "575d0f40",
+                "0000803f",
+                "00000000",
+                "479b8240",
+                "f914e340",
+                "00000000",
+                "0000803f",
+                "3dbe0441",
+                "575d0f40",
+                "0000803f",
+                "00000000",
+                "affb9240",
+                "24b7ee40",
+                "0000803f",
+                "0000803f",
+                "479b8240",
+                "f814a340",
+                "00000000",
+                "00000000",
+                "6b84f640",
+                "b05538be",
+                "00000000",
+                "0000803f",
+                "affb9240",
+                "24b7ae40",
+                "0000803f",
+                "00000000",
+                "6b84f640",
+                "b05538be",
+                "00000000",
+                "0000803f",
+                "affb9240",
+                "24b7ae40",
+                "0000803f",
+                "00000000",
+                "3dbe0441",
+                "60d5753e",
+                "0000803f",
+                "0000803f",
+                "3dbe0441",
+                "575d0f40",
+                "00000000",
+                "00000000",
+                "affb9240",
+                "24b7ee40",
+                "00000000",
+                "0000803f",
+                "84bf0d41",
+                "4d942940",
+                "0000803f",
+                "00000000",
+                "affb9240",
+                "24b7ee40",
+                "00000000",
+                "0000803f",
+                "84bf0d41",
+                "4d942940",
+                "0000803f",
+                "00000000",
+                "b0eca240",
+                "f455fa40",
+                "0000803f",
+                "0000803f",
+                "affb9240",
+                "24b7ae40",
+                "00000000",
+                "00000000",
+                "3dbe0441",
+                "60d5753e",
+                "00000000",
+                "0000803f",
+                "b0eca240",
+                "f455ba40",
+                "0000803f",
+                "00000000",
+                "3dbe0441",
+                "60d5753e",
+                "00000000",
+                "0000803f",
+                "b0eca240",
+                "f455ba40",
+                "0000803f",
+                "00000000",
+                "84bf0d41",
+                "3451263f",
+                "0000803f",
+                "0000803f",
+                "84bf0d41",
+                "4d942940",
+                "00000000",
+                "00000000",
+                "b0eca240",
+                "f455fa40",
+                "00000000",
+                "0000803f",
+                "3c5d1641",
+                "86224340",
+                "0000803f",
+                "00000000",
+                "b0eca240",
+                "f455fa40",
+                "00000000",
+                "0000803f",
+                "3c5d1641",
+                "86224340",
+                "0000803f",
+                "00000000",
+                "deb6b240",
+                "d4060341",
+                "0000803f",
+                "0000803f",
+                "b0eca240",
+                "f455ba40",
+                "00000000",
+                "00000000",
+                "84bf0d41",
+                "3451263f",
+                "00000000",
+                "0000803f",
+                "deb6b240",
+                "a70dc640",
+                "0000803f",
+                "00000000",
+                "84bf0d41",
+                "3451263f",
+                "00000000",
+                "0000803f",
+                "deb6b240",
+                "a70dc640",
+                "0000803f",
+                "00000000",
+                "3c5d1641",
+                "0c45863f",
+                "0000803f",
+                "0000803f"
+              ],
+              "vertex_count": 168
+            }
+          ],
+          "add_points": [
+            {
+              "vector_bits": [
+                "00000000",
+                "00000000",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 1,
+                "edge_state_bits": [
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000",
+                  "00000000"
+                ]
+              },
+              "build_start": 0,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "8425383f",
+                "4905bb3e",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "00000000",
+                  "00000000"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "00000000",
+                  "0000803f",
+                  "00000000",
+                  "000080bf",
+                  "67d010c0",
+                  "67d050c0",
+                  "67d01040",
+                  "cea0a13f",
+                  "67d01040",
+                  "67d05040",
+                  "67d010c0",
+                  "cea0a1bf"
+                ]
+              },
+              "build_start": 5,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "e4a3b23f",
+                "7944383f",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "8425383f",
+                  "4905bb3e"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "8425383f",
+                  "52c1ae3f",
+                  "8425383f",
+                  "5c7d22bf",
+                  "a4c30a40",
+                  "413a5fc0",
+                  "8ac33abf",
+                  "93fb0d40",
+                  "8ac33abf",
+                  "cafd8640",
+                  "a4c30a40",
+                  "8274bebf"
+                ]
+              },
+              "build_start": 10,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "25080240",
+                "f939883f",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "e4a3b23f",
+                  "7944383f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "e4a3b23f",
+                  "3c22dc3f",
+                  "e4a3b23f",
+                  "0e778fbe",
+                  "96673840",
+                  "785247c0",
+                  "3076b8bd",
+                  "b4742340",
+                  "3076b8bd",
+                  "5aba9140",
+                  "96673840",
+                  "f0a48ebf"
+                ]
+              },
+              "build_start": 15,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "665a2840",
+                "bb1fb33f",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "25080240",
+                  "f939883f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "25080240",
+                  "fc1c0440",
+                  "25080240",
+                  "909f833d",
+                  "008e6340",
+                  "fef92fc0",
+                  "2609023f",
+                  "f8333840",
+                  "2609023f",
+                  "fc199c40",
+                  "008e6340",
+                  "fce73fbf"
+                ]
+              },
+              "build_start": 20,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "28774c40",
+                "bdeadc3f",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "665a2840",
+                  "bb1fb33f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "665a2840",
+                  "de8f1940",
+                  "665a2840",
+                  "ec7ecc3e",
+                  "90308640",
+                  "442619c0",
+                  "5aa7883f",
+                  "00464c40",
+                  "5aa7883f",
+                  "0023a640",
+                  "90308640",
+                  "2032c9be"
+                ]
+              },
+              "build_start": 25,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "dd8c6e40",
+                "1dd90240",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "28774c40",
+                  "bdeadc3f"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "28774c40",
+                  "5e752e40",
+                  "28774c40",
+                  "7ad5393f",
+                  "f0849940",
+                  "b0cd02c0",
+                  "e1c8cb3f",
+                  "6eb85f40",
+                  "e1c8cb3f",
+                  "36dcaf40",
+                  "f0849940",
+                  "406c33bd"
+                ]
+              },
+              "build_start": 30,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "f9648740",
+                "b3c61640",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "dd8c6e40",
+                  "1dd90240"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "dd8c6e40",
+                  "1dd94240",
+                  "dd8c6e40",
+                  "3ab2853f",
+                  "e4d7ab40",
+                  "b0cfd9bf",
+                  "f1690540",
+                  "129a7240",
+                  "f1690540",
+                  "094db940",
+                  "e4d7ab40",
+                  "40c1983e"
+                ]
+              },
+              "build_start": 35,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "6bae9640",
+                "bd492a40",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "f9648740",
+                  "b3c61640"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "f9648740",
+                  "b3c65640",
+                  "f9648740",
+                  "668dad3f",
+                  "763cbd40",
+                  "74dbaebf",
+                  "f81a2340",
+                  "907d8240",
+                  "f81a2340",
+                  "907dc240",
+                  "763cbd40",
+                  "1849223f"
+                ]
+              },
+              "build_start": 40,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "abf5a940",
+                "ccc74340",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "6bae9640",
+                  "bd492a40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "6bae9640",
+                  "bd496a40",
+                  "6bae9640",
+                  "7a93d43f",
+                  "fec4cd40",
+                  "acb384bf",
+                  "b02f3f40",
+                  "a8768b40",
+                  "b02f3f40",
+                  "a876cb40",
+                  "fec4cd40",
+                  "a898763f"
+                ]
+              },
+              "build_start": 45,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "d98fbc40",
+                "4b525d40",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "abf5a940",
+                  "ccc74340"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "abf5a940",
+                  "e6e38140",
+                  "abf5a940",
+                  "ccc70340",
+                  "746fe240",
+                  "1c391cbf",
+                  "c4f76240",
+                  "f04e9740",
+                  "c4f76240",
+                  "f04ed740",
+                  "746fe240",
+                  "72e3b13f"
+                ]
+              },
+              "build_start": 50,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "153cce40",
+                "cf657640",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "d98fbc40",
+                  "4b525d40"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "d98fbc40",
+                  "26a98e40",
+                  "d98fbc40",
+                  "4b521d40",
+                  "6b84f640",
+                  "b05538be",
+                  "479b8240",
+                  "f814a340",
+                  "479b8240",
+                  "f914e340",
+                  "6b84f640",
+                  "4cf5e83f"
+                ]
+              },
+              "build_start": 55,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "dc35df40",
+                "0d908740",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "153cce40",
+                  "cf657640"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "153cce40",
+                  "e8329b40",
+                  "153cce40",
+                  "cf653640",
+                  "3dbe0441",
+                  "60d5753e",
+                  "affb9240",
+                  "24b7ae40",
+                  "affb9240",
+                  "24b7ee40",
+                  "3dbe0441",
+                  "575d0f40"
+                ]
+              },
+              "build_start": 60,
+              "build_calls": 5
+            },
+            {
+              "vector_bits": [
+                "abb8ef40",
+                "75cf9340",
+                "00000000",
+                "0000803f"
+              ],
+              "extent_bits": "0000803f",
+              "pre_state": {
+                "center_bits": [
+                  "dc35df40",
+                  "0d908740"
+                ],
+                "initial_flag": 0,
+                "edge_state_bits": [
+                  "dc35df40",
+                  "0d90a740",
+                  "dc35df40",
+                  "1a204f40",
+                  "84bf0d41",
+                  "3451263f",
+                  "b0eca240",
+                  "f455ba40",
+                  "b0eca240",
+                  "f455fa40",
+                  "84bf0d41",
+                  "4d942940"
+                ]
+              },
+              "build_calls": 5
+            }
+          ],
+          "sample_ends": [
+            {
+              "history_index": 1,
+              "add_point_end": 0
+            },
+            {
+              "history_index": 2,
+              "add_point_end": 0
+            }
+          ],
+          "terminal_start": 0,
+          "build_calls": [
+            {
+              "rect_bits": [
+                "00000000",
+                "0000803f",
+                "00000000",
+                "000080bf",
+                "00000000",
+                "0000803f",
+                "00000000",
+                "000080bf"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "67d01040",
+                "67d05040",
+                "67d010c0",
+                "cea0a1bf",
+                "67d01040",
+                "67d05040",
+                "67d010c0",
+                "cea0a1bf"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "67d010c0",
+                "67d050c0",
+                "67d01040",
+                "cea0a13f",
+                "67d010c0",
+                "67d050c0",
+                "67d01040",
+                "cea0a13f"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "67d010c0",
+                "cea0a1bf",
+                "67d01040",
+                "67d05040",
+                "67d010c0",
+                "67d050c0",
+                "67d01040",
+                "cea0a13f"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "67d010c0",
+                "cea0a1bf",
+                "67d01040",
+                "67d05040",
+                "67d010c0",
+                "67d050c0",
+                "67d01040",
+                "cea0a13f"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "00000000",
+                "0000803f",
+                "00000000",
+                "000080bf",
+                "8425383f",
+                "52c1ae3f",
+                "8425383f",
+                "5c7d22bf"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "67d01040",
+                "67d05040",
+                "67d010c0",
+                "cea0a1bf",
+                "8ac33abf",
+                "cafd8640",
+                "a4c30a40",
+                "8274bebf"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "67d010c0",
+                "67d050c0",
+                "67d01040",
+                "cea0a13f",
+                "a4c30a40",
+                "413a5fc0",
+                "8ac33abf",
+                "93fb0d40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "a4c30a40",
+                "8274bebf",
+                "8ac33abf",
+                "cafd8640",
+                "a4c30a40",
+                "413a5fc0",
+                "8ac33abf",
+                "93fb0d40"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "4ba46440",
+                "ec1a3440",
+                "899108c0",
+                "5033abbd",
+                "4ba46440",
+                "b26b503f",
+                "899108c0",
+                "9a5905c0"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "8425383f",
+                "52c1ae3f",
+                "8425383f",
+                "5c7d22bf",
+                "e4a3b23f",
+                "3c22dc3f",
+                "e4a3b23f",
+                "0e778fbe"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "8ac33abf",
+                "cafd8640",
+                "a4c30a40",
+                "8274bebf",
+                "3076b8bd",
+                "5aba9140",
+                "96673840",
+                "f0a48ebf"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "a4c30a40",
+                "413a5fc0",
+                "8ac33abf",
+                "93fb0d40",
+                "96673840",
+                "785247c0",
+                "3076b8bd",
+                "b4742340"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "96673840",
+                "f0a48ebf",
+                "3076b8bd",
+                "5aba9140",
+                "96673840",
+                "785247c0",
+                "3076b8bd",
+                "b4742340"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "c45a8740",
+                "c2264d40",
+                "4823b8bf",
+                "a8b76f3e",
+                "c45a8740",
+                "844d9a3f",
+                "4823b8bf",
+                "0a09e2bf"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "e4a3b23f",
+                "3c22dc3f",
+                "e4a3b23f",
+                "0e778fbe",
+                "25080240",
+                "fc1c0440",
+                "25080240",
+                "909f833d"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "3076b8bd",
+                "5aba9140",
+                "96673840",
+                "f0a48ebf",
+                "2609023f",
+                "fc199c40",
+                "008e6340",
+                "fce73fbf"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "96673840",
+                "785247c0",
+                "3076b8bd",
+                "b4742340",
+                "008e6340",
+                "fef92fc0",
+                "2609023f",
+                "f8333840"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "008e6340",
+                "fce73fbf",
+                "2609023f",
+                "fc199c40",
+                "008e6340",
+                "fef92fc0",
+                "2609023f",
+                "f8333840"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "900f9b40",
+                "d8a26540",
+                "583b48bf",
+                "825c0a3f",
+                "900f9b40",
+                "b045cb3f",
+                "583b48bf",
+                "bed1babf"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "25080240",
+                "fc1c0440",
+                "25080240",
+                "909f833d",
+                "665a2840",
+                "de8f1940",
+                "665a2840",
+                "ec7ecc3e"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "2609023f",
+                "fc199c40",
+                "008e6340",
+                "fce73fbf",
+                "5aa7883f",
+                "0023a640",
+                "90308640",
+                "2032c9be"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "008e6340",
+                "fef92fc0",
+                "2609023f",
+                "f8333840",
+                "90308640",
+                "442619c0",
+                "5aa7883f",
+                "00464c40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "90308640",
+                "2032c9be",
+                "5aa7883f",
+                "0023a640",
+                "90308640",
+                "442619c0",
+                "5aa7883f",
+                "00464c40"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "4488ad40",
+                "97967d40",
+                "c0bb25be",
+                "9424563f",
+                "4488ad40",
+                "2d2dfb3f",
+                "c0bb25be",
+                "b7ed94bf"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "665a2840",
+                "de8f1940",
+                "665a2840",
+                "ec7ecc3e",
+                "28774c40",
+                "5e752e40",
+                "28774c40",
+                "7ad5393f"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "5aa7883f",
+                "0023a640",
+                "90308640",
+                "2032c9be",
+                "e1c8cb3f",
+                "36dcaf40",
+                "f0849940",
+                "406c33bd"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "90308640",
+                "442619c0",
+                "5aa7883f",
+                "00464c40",
+                "f0849940",
+                "b0cd02c0",
+                "e1c8cb3f",
+                "6eb85f40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "f0849940",
+                "406c33bd",
+                "e1c8cb3f",
+                "36dcaf40",
+                "f0849940",
+                "b0cd02c0",
+                "e1c8cb3f",
+                "6eb85f40"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "1cddbe40",
+                "0b848a40",
+                "c8a0d93e",
+                "4dc58f3f",
+                "1cddbe40",
+                "16081540",
+                "c8a0d93e",
+                "647560bf"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "28774c40",
+                "5e752e40",
+                "28774c40",
+                "7ad5393f",
+                "dd8c6e40",
+                "1dd94240",
+                "dd8c6e40",
+                "3ab2853f"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "e1c8cb3f",
+                "36dcaf40",
+                "f0849940",
+                "406c33bd",
+                "f1690540",
+                "094db940",
+                "e4d7ab40",
+                "40c1983e"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "f0849940",
+                "b0cd02c0",
+                "e1c8cb3f",
+                "6eb85f40",
+                "e4d7ab40",
+                "b0cfd9bf",
+                "f1690540",
+                "129a7240"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "e4d7ab40",
+                "40c1983e",
+                "f1690540",
+                "094db940",
+                "e4d7ab40",
+                "b0cfd9bf",
+                "f1690540",
+                "129a7240"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "e926cf40",
+                "04fe9540",
+                "a02f7b3f",
+                "626cb33f",
+                "e926cf40",
+                "09fc2b40",
+                "a02f7b3f",
+                "3c2719bf"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "dd8c6e40",
+                "1dd94240",
+                "dd8c6e40",
+                "3ab2853f",
+                "f9648740",
+                "b3c65640",
+                "f9648740",
+                "668dad3f"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "f1690540",
+                "094db940",
+                "e4d7ab40",
+                "40c1983e",
+                "f81a2340",
+                "907dc240",
+                "763cbd40",
+                "1849223f"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "e4d7ab40",
+                "b0cfd9bf",
+                "f1690540",
+                "129a7240",
+                "763cbd40",
+                "74dbaebf",
+                "f81a2340",
+                "907d8240"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "763cbd40",
+                "1849223f",
+                "f81a2340",
+                "907dc240",
+                "763cbd40",
+                "74dbaebf",
+                "f81a2340",
+                "907d8240"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "2f7fde40",
+                "d63aa140",
+                "0c2bc13f",
+                "742fd63f",
+                "2f7fde40",
+                "ac754240",
+                "0c2bc13f",
+                "3042a7be"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "f9648740",
+                "b3c65640",
+                "f9648740",
+                "668dad3f",
+                "6bae9640",
+                "bd496a40",
+                "6bae9640",
+                "7a93d43f"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "f81a2340",
+                "907dc240",
+                "763cbd40",
+                "1849223f",
+                "b02f3f40",
+                "a876cb40",
+                "fec4cd40",
+                "a898763f"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "763cbd40",
+                "74dbaebf",
+                "f81a2340",
+                "907d8240",
+                "fec4cd40",
+                "acb384bf",
+                "b02f3f40",
+                "a8768b40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "fec4cd40",
+                "a898763f",
+                "b02f3f40",
+                "a876cb40",
+                "fec4cd40",
+                "acb384bf",
+                "b02f3f40",
+                "a8768b40"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "3400ed40",
+                "723bac40",
+                "43b90040",
+                "2d39f83f",
+                "3400ed40",
+                "e4765840",
+                "43b90040",
+                "60da78bd"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "6bae9640",
+                "bd496a40",
+                "6bae9640",
+                "7a93d43f",
+                "abf5a940",
+                "e6e38140",
+                "abf5a940",
+                "ccc70340"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "b02f3f40",
+                "a876cb40",
+                "fec4cd40",
+                "a898763f",
+                "c4f76240",
+                "f04ed740",
+                "746fe240",
+                "72e3b13f"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "fec4cd40",
+                "acb384bf",
+                "b02f3f40",
+                "a8768b40",
+                "746fe240",
+                "1c391cbf",
+                "c4f76240",
+                "f04e9740"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "746fe240",
+                "72e3b13f",
+                "c4f76240",
+                "f04ed740",
+                "746fe240",
+                "1c391cbf",
+                "c4f76240",
+                "f04e9740"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "b460ff40",
+                "af5dba40",
+                "43152940",
+                "3ad41240",
+                "b460ff40",
+                "5ebb7440",
+                "43152940",
+                "d4a1963e"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "abf5a940",
+                "e6e38140",
+                "abf5a940",
+                "ccc70340",
+                "d98fbc40",
+                "26a98e40",
+                "d98fbc40",
+                "4b521d40"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "c4f76240",
+                "f04ed740",
+                "746fe240",
+                "72e3b13f",
+                "479b8240",
+                "f914e340",
+                "6b84f640",
+                "4cf5e83f"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "746fe240",
+                "1c391cbf",
+                "c4f76240",
+                "f04e9740",
+                "6b84f640",
+                "b05538be",
+                "479b8240",
+                "f814a340"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "6b84f640",
+                "4cf5e83f",
+                "479b8240",
+                "f914e340",
+                "6b84f640",
+                "b05538be",
+                "479b8240",
+                "f814a340"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "d67d0841",
+                "b89dc840",
+                "0c485040",
+                "28692940",
+                "d67d0841",
+                "b89d8840",
+                "0c485040",
+                "9ca4253f"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "d98fbc40",
+                "26a98e40",
+                "d98fbc40",
+                "4b521d40",
+                "153cce40",
+                "e8329b40",
+                "153cce40",
+                "cf653640"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "479b8240",
+                "f914e340",
+                "6b84f640",
+                "4cf5e83f",
+                "affb9240",
+                "24b7ee40",
+                "3dbe0441",
+                "575d0f40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "6b84f640",
+                "b05538be",
+                "479b8240",
+                "f814a340",
+                "3dbe0441",
+                "60d5753e",
+                "affb9240",
+                "24b7ae40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "3dbe0441",
+                "575d0f40",
+                "affb9240",
+                "24b7ee40",
+                "3dbe0441",
+                "60d5753e",
+                "affb9240",
+                "24b7ae40"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "29e01041",
+                "4e73d640",
+                "b16f7540",
+                "04e53f40",
+                "29e01041",
+                "4d739640",
+                "b16f7540",
+                "0e947f3f"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "153cce40",
+                "e8329b40",
+                "153cce40",
+                "cf653640",
+                "dc35df40",
+                "0d90a740",
+                "dc35df40",
+                "1a204f40"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "affb9240",
+                "24b7ee40",
+                "3dbe0441",
+                "575d0f40",
+                "b0eca240",
+                "f455fa40",
+                "84bf0d41",
+                "4d942940"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "3dbe0441",
+                "60d5753e",
+                "affb9240",
+                "24b7ae40",
+                "84bf0d41",
+                "3451263f",
+                "b0eca240",
+                "f455ba40"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "84bf0d41",
+                "4d942940",
+                "b0eca240",
+                "f455fa40",
+                "84bf0d41",
+                "3451263f",
+                "b0eca240",
+                "f455ba40"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "e1fd1841",
+                "3ad9e340",
+                "f66f8c40",
+                "c18d5640",
+                "e1fd1841",
+                "3ad9a340",
+                "f66f8c40",
+                "821bad3f"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "dc35df40",
+                "0d90a740",
+                "dc35df40",
+                "1a204f40",
+                "abb8ef40",
+                "75cfb340",
+                "abb8ef40",
+                "ea9e6740"
+              ],
+              "buffer": "mesh_200"
+            },
+            {
+              "rect_bits": [
+                "b0eca240",
+                "f455fa40",
+                "84bf0d41",
+                "4d942940",
+                "deb6b240",
+                "d4060341",
+                "3c5d1641",
+                "86224340"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "84bf0d41",
+                "3451263f",
+                "b0eca240",
+                "f455ba40",
+                "3c5d1641",
+                "0c45863f",
+                "deb6b240",
+                "a70dc640"
+              ],
+              "buffer": "mesh_216"
+            },
+            {
+              "rect_bits": [
+                "3c5d1641",
+                "86224340",
+                "deb6b240",
+                "d4060341",
+                "3c5d1641",
+                "0c45863f",
+                "deb6b240",
+                "a70dc640"
+              ],
+              "buffer": "mesh_208"
+            },
+            {
+              "rect_bits": [
+                "6efb2041",
+                "42d1f040",
+                "797a9d40",
+                "509b6d40",
+                "6efb2041",
+                "42d1b040",
+                "797a9d40",
+                "9f36db3f"
               ],
               "buffer": "mesh_208"
             }

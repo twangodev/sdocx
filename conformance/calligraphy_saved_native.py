@@ -42,6 +42,7 @@ class NativeCalligraphy(NativeFountain):
         self.event_end = {}
         self.queue = 0
         self.output_labels = {}
+        self.active_add_index = None
         self.callbacks.update({
             "operator new(unsigned long)": lambda: self.x(0, self.alloc(self.x(0))),
             "operator delete(void*)": lambda: None,
@@ -99,8 +100,16 @@ class NativeCalligraphy(NativeFountain):
             return
         if address == self.add_address:
             vector = self.x(1)
+            if self.active_add_index is not None:
+                self.add_calls[self.active_add_index]["build_calls"] = len(self.build_calls) - self.add_calls[self.active_add_index]["build_start"]
+            drawable = self.x(0)
+            self.active_add_index = len(self.add_calls)
             self.add_calls.append({"vector_bits": [self.get(vector + 4 * i, "I")[0].to_bytes(4, "little").hex() for i in range(4)],
-                                   "extent_bits": struct.pack("<f", self.f(0)).hex()})
+                                   "extent_bits": struct.pack("<f", self.f(0)).hex(),
+                                   "pre_state": {"center_bits": [struct.pack("<f", self.get(drawable + offset, "f")[0]).hex() for offset in (296, 300)],
+                                                 "initial_flag": self.get(drawable + 304, "B")[0],
+                                                 "edge_state_bits": [self.get(drawable + 308 + 4 * i, "I")[0].to_bytes(4, "little").hex() for i in range(12)]},
+                                   "build_start": len(self.build_calls)})
         if address == self.syms[REDRAW] + 0x1cc:
             from unicorn import arm64_const as R
             self.sample_ends.append({"history_index": u.reg_read(R.UC_ARM64_REG_W23),
@@ -158,6 +167,10 @@ class NativeCalligraphy(NativeFountain):
                 print("native failure PC", hex(self.u.reg_read(R.UC_ARM64_REG_PC)), file=sys.stderr)
                 raise
             rtv1 = self.get(drawable + 16, "Q")[0]
+            if self.active_add_index is not None:
+                self.add_calls[self.active_add_index]["build_calls"] = len(self.build_calls) - self.add_calls[self.active_add_index]["build_start"]
+                self.add_calls[self.active_add_index].pop("build_start")
+                self.active_add_index = None
             meshes = []
             for offset in (200, 208, 216):
                 vector_address = self.get(rtv1 + offset, "Q")[0]
@@ -201,6 +214,7 @@ def main():
         {"id": "three_history_samples", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7]], "reuse_history": [[2.0, 3.0, 0.1], [8.0, 7.0, -0.2], [14.0, 9.0, 0.15]], "size": 6.0},
         {"id": "three_history_zero_orientation", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.0], [9.0, 5.0, 0.0]], "size": 6.0},
         {"id": "five_history_phase_boundaries", "history": [[0.0, 0.0, 0.0], [4.0, 1.0, 0.35], [9.0, 5.0, 0.7], [15.0, 8.0, -0.15], [22.0, 11.0, 0.3]], "size": 6.0},
+        {"id": "subunit_extent_clamp", "history": [[0.0, 0.0, 0.0], [4.0, 2.0, 0.0], [8.0, 5.0, 0.0]], "size": 1.0},
     ]
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
@@ -211,7 +225,7 @@ def main():
     output = []
     for case in cases:
         output.append({**case, "native": native.run(case)})
-    fixture = {"schema": "sdocx-montblanc-calligraphy-v1-saved-native-v1",
+    fixture = {"schema": "sdocx-montblanc-calligraphy-v1-saved-native-v2",
                "evidence": {"library": "libSPenMontblancCalligraphyPen.so", "sha256": LIB_SHA,
                             "entry": REDRAW, "native_scope": "GLV1 RedrawPen history and endPen; one case invokes it twice on the same constructed drawable, then stops before movePen",
                             "inputs": "Synthetic MotionEvent history arrays supplied by this harness, not captured from an application runtime",
