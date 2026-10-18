@@ -9,12 +9,11 @@ mod fountain_v14;
 mod inkpen;
 mod marker2;
 mod marker4;
-// Typed native geometry regression; caller context and vector paint admission remain.
 #[cfg(test)]
 mod oblique;
+mod path;
 #[cfg(test)]
 mod pencil;
-mod path;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -106,6 +105,103 @@ pub struct RectStamp {
     pub angle: f64,
 }
 
+/// One vertex in a native triangle coverage mesh. Coverage is a linear field
+/// value in `[0, 1]`, retained separately from the source stroke samples.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct CoverageVertex {
+    pub x: f32,
+    pub y: f32,
+    pub coverage: f32,
+}
+
+/// A triangle in the prepared vector coverage field.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct CoverageTriangle {
+    pub vertices: [CoverageVertex; 3],
+}
+
+/// Prepared triangle coverage and its relationship to saved input samples.
+/// `sample_ends` contains exclusive triangle counts after each saved redraw
+/// call, corresponding to source samples 1..N. The terminal output remains a
+/// distinct interval and render adapters attribute it to the final sample for
+/// stepwise replay.
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct CoverageMesh {
+    pub triangles: Vec<CoverageTriangle>,
+    pub sample_ends: Vec<usize>,
+    pub terminal_start: usize,
+    pub terminal_end: usize,
+    pub bounds: Option<BoundingBox>,
+}
+
+/// Prepare Oblique's captured saved-redraw mesh for an explicit native input
+/// context. The saved curve mode and runtime inverse scale are separate
+/// inputs because they come from Drawing and Canvas state, not point samples.
+#[cfg(test)]
+pub(crate) fn prepare_oblique_mesh(
+    points: &[crate::Point],
+    size: f32,
+    curve_enabled: bool,
+    tool_type: u32,
+    inverse_scale: [f32; 2],
+) -> Option<CoverageMesh> {
+    let input_points = points
+        .iter()
+        .map(|p| path::P {
+            x: p.x as f32,
+            y: p.y as f32,
+        })
+        .collect::<Vec<_>>();
+    let prepared = oblique::prepare(oblique::ObliqueInput::new(
+        &input_points,
+        size,
+        curve_enabled,
+        if tool_type <= 4 { tool_type } else { 0 },
+        oblique::ObliqueRuntime {
+            k: oblique::DEFAULT_K,
+            inverse_scale,
+        },
+    ))?;
+    let triangles = prepared
+        .triangles
+        .into_iter()
+        .map(|triangle| CoverageTriangle {
+            vertices: triangle.0.map(|vertex| CoverageVertex {
+                x: vertex.position.x,
+                y: vertex.position.y,
+                coverage: vertex.coverage,
+            }),
+        })
+        .collect::<Vec<_>>();
+    let mut bounds: Option<BoundingBox> = None;
+    for vertex in triangles.iter().flat_map(|triangle| triangle.vertices) {
+        let next = BoundingBox {
+            x_min: f64::from(vertex.x),
+            y_min: f64::from(vertex.y),
+            x_max: f64::from(vertex.x),
+            y_max: f64::from(vertex.y),
+        };
+        if let Some(old) = &mut bounds {
+            old.x_min = old.x_min.min(next.x_min);
+            old.y_min = old.y_min.min(next.y_min);
+            old.x_max = old.x_max.max(next.x_max);
+            old.y_max = old.y_max.max(next.y_max);
+        } else {
+            bounds = Some(next);
+        }
+    }
+    Some(CoverageMesh {
+        triangles,
+        sample_ends: prepared.sample_ends,
+        terminal_start: prepared.terminal.start,
+        terminal_end: prepared.terminal.end,
+        bounds,
+    })
+}
+
 /// Geometry and paint shared by SVG and Canvas adapters. The compatibility
 /// profile references original samples; it never changes the stored channels.
 #[derive(Debug, Clone)]
@@ -126,6 +222,10 @@ pub struct PreparedStroke<'a> {
     pub dot_directions: Option<Vec<crate::Point>>,
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub rect_stamp: Option<RectStamp>,
+    /// Native Oblique V4 coverage mesh when prepared with an explicit runtime
+    /// contract. Original source samples remain in `points`.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub coverage_mesh: Option<CoverageMesh>,
     pub segment_widths: Option<Vec<f64>>,
     pub width: f64,
     pub bounds: Option<BoundingBox>,
@@ -147,6 +247,10 @@ fn original_samples(points: &Cow<'_, [crate::Point]>) -> bool {
 /// Other profiles retain the explicit pressure approximation.
 pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
     let mut paint = stroke_paint(stroke, dark_mode);
+    #[cfg(test)]
+    let oblique = prepare_oblique_stroke(stroke);
+    #[cfg(not(test))]
+    let oblique: Option<(CoverageMesh, f64)> = None;
     let mut fountain = fountain::prepare(stroke);
     let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
     let native = fountain
@@ -164,21 +268,28 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         });
     let rect = marker4::prepare(stroke);
     let rect_stamp = rect.as_ref().map(|ink| ink.stamp);
-    let (points, sample_ends, dot_radii, opacity) =
-        if let Some((points, ends, radii, opacity)) = native {
-            paint.segment_widths = None;
-            (Cow::Owned(points), Some(ends), Some(radii), opacity)
-        } else if let Some(ink) = rect {
-            paint.segment_widths = None;
-            (
-                Cow::Owned(ink.points),
-                Some(ink.sample_ends),
-                None,
-                ink.opacity,
-            )
-        } else {
-            (Cow::Borrowed(stroke.points.as_slice()), None, None, 1.)
-        };
+    let (points, sample_ends, dot_radii, opacity) = if let Some((_, opacity)) = oblique.as_ref() {
+        paint.segment_widths = None;
+        (
+            Cow::Borrowed(stroke.points.as_slice()),
+            None,
+            None,
+            *opacity,
+        )
+    } else if let Some((points, ends, radii, opacity)) = native {
+        paint.segment_widths = None;
+        (Cow::Owned(points), Some(ends), Some(radii), opacity)
+    } else if let Some(ink) = rect {
+        paint.segment_widths = None;
+        (
+            Cow::Owned(ink.points),
+            Some(ink.sample_ends),
+            None,
+            ink.opacity,
+        )
+    } else {
+        (Cow::Borrowed(stroke.points.as_slice()), None, None, 1.)
+    };
     let profile = stroke
         .rendering
         .as_ref()
@@ -188,6 +299,7 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
                 .or_else(|| (name == "Eraser").then_some("Eraser"))
         })
         .and_then(|name| PEN_PROFILES.iter().find(|p| p.name == name));
+    let coverage_mesh = oblique.as_ref().map(|(mesh, _)| mesh.clone());
     let mut bounds: Option<BoundingBox> = None;
     for (index, point) in points.iter().enumerate() {
         // A vertex belongs to its incoming and outgoing segment. Include both
@@ -230,7 +342,7 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         }
     }
     PreparedStroke {
-        support: if dot_radii.is_some() {
+        support: if dot_radii.is_some() || oblique.is_some() {
             InkSupport::Reconstructed
         } else {
             InkSupport::Approximate
@@ -240,9 +352,13 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
         dot_radii,
         dot_directions,
         rect_stamp,
+        coverage_mesh,
         segment_widths: paint.segment_widths,
         width: paint.width,
-        bounds,
+        bounds: oblique
+            .as_ref()
+            .and_then(|(mesh, _)| mesh.bounds)
+            .or(bounds),
         color: paint.color,
         opacity,
         top_layer: stroke
@@ -251,6 +367,63 @@ pub fn prepare_stroke(stroke: &Stroke, dark_mode: bool) -> PreparedStroke<'_> {
             .is_some_and(|r| r.properties.top_layer_pen),
         profile: profile.map(|p| p.name),
     }
+}
+
+#[cfg(test)]
+fn prepare_oblique_stroke(stroke: &Stroke) -> Option<(CoverageMesh, f64)> {
+    let rendering = stroke.rendering.as_ref()?;
+    let name = rendering.pen_name.as_deref()?;
+    if name.strip_prefix("com.samsung.android.sdk.pen.pen.preload.") != Some("ObliquePen") {
+        return None;
+    }
+    if effective_oblique_version(rendering.advanced_settings.as_deref()) != 4
+        || rendering.style.stroke_type_raw == Some(1)
+    {
+        return None;
+    }
+    let size = (stroke.pen_width as f32).clamp(0.4, 800.0);
+    let tool_type = u32::from(rendering.tool_type_raw);
+    let mesh = prepare_oblique_mesh(
+        &stroke.points,
+        size,
+        rendering.properties.compressed,
+        tool_type,
+        [1.0, 1.0],
+    )?;
+    let opacity = rendering
+        .style
+        .color_argb
+        .map_or(1.0, |argb| f64::from((argb >> 24) as u8) / 255.0);
+    Some((mesh, opacity))
+}
+
+#[cfg(test)]
+fn effective_oblique_version(setting: Option<&str>) -> i32 {
+    let Some(setting) = setting else { return 4 };
+    let token = setting.split(';').next().unwrap_or("").trim_start();
+    if token.is_empty() {
+        return 4;
+    }
+    let bytes = token.as_bytes();
+    let digits_start = usize::from(bytes.first().is_some_and(|b| *b == b'+' || *b == b'-'));
+    let digits_end = token[digits_start..]
+        .bytes()
+        .take_while(u8::is_ascii_digit)
+        .count()
+        + digits_start;
+    let parsed = if digits_end > digits_start {
+        token[..digits_end].parse::<i32>().unwrap_or(0)
+    } else {
+        0
+    };
+    let current = if parsed == -1 {
+        4
+    } else if parsed == 0 {
+        1
+    } else {
+        parsed
+    };
+    current.clamp(1, 4)
 }
 
 #[cfg(test)]
@@ -269,6 +442,39 @@ mod tests {
             color: None,
             pen_width: 2.5,
         }
+    }
+    fn oblique_stroke() -> Stroke {
+        let mut input = stroke(&[(10., 12.), (22., 15.), (38., 9.)]);
+        input.pen_width = 5.0;
+        input.rendering = Some(crate::StrokeRendering {
+            metadata: None,
+            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.ObliquePen".into()),
+            advanced_settings: Some("4;".into()),
+            tool_type_raw: 8,
+            properties: crate::StrokeProperties {
+                compressed: false,
+                replay_only: false,
+                stylus_channels: false,
+                eraser: false,
+                fixed_width: true,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: true,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            },
+            style: crate::StrokeStyle {
+                color_argb: Some(0x8033_6699),
+                fixed_width: Some(24.0),
+                stroke_type_raw: Some(2),
+                ..crate::StrokeStyle::default()
+            },
+        });
+        input
     }
     #[test]
     fn shared_geometry_borrows_samples_and_bounds_both_sides_of_width_changes() {
@@ -292,6 +498,77 @@ mod tests {
                 .x_min,
             1.5
         );
+    }
+    #[test]
+    fn oblique_admission_uses_saved_curve_bit_and_keeps_fixed_width_out_of_mesh() {
+        let input = oblique_stroke();
+        let ink = prepare_stroke(&input, false);
+        assert_eq!(ink.profile, Some("ObliquePen"));
+        assert!(std::ptr::eq(ink.points.as_ptr(), input.points.as_ptr()));
+        assert_eq!(ink.opacity, 128.0 / 255.0);
+        let mesh = ink.coverage_mesh.as_ref().expect("native Oblique mesh");
+        assert!(!mesh.triangles.is_empty());
+        assert_eq!(mesh.terminal_end, mesh.triangles.len());
+        assert!(ink.dot_radii.is_none());
+        let same_tool_context = prepare_oblique_mesh(&input.points, 5.0, false, 0, [1.0, 1.0])
+            .expect("normalized tool context");
+        assert_eq!(mesh, &same_tool_context);
+        let mut no_fixed_width = input.clone();
+        let style = &mut no_fixed_width.rendering.as_mut().unwrap().style;
+        style.fixed_width = None;
+        no_fixed_width
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .fixed_width = false;
+        assert_eq!(
+            ink.coverage_mesh,
+            prepare_stroke(&no_fixed_width, false).coverage_mesh
+        );
+        let mut absent_stroke_type = input.clone();
+        absent_stroke_type
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .stroke_type_raw = None;
+        assert!(prepare_stroke(&absent_stroke_type, false).coverage_mesh.is_some());
+        let mut high_size = input.clone();
+        high_size.pen_width = 1_000.0;
+        assert_eq!(
+            prepare_stroke(&high_size, false).coverage_mesh,
+            prepare_oblique_mesh(&high_size.points, 800.0, false, 0, [1.0, 1.0])
+        );
+
+        let mut other_version = input.clone();
+        other_version.rendering.as_mut().unwrap().advanced_settings = Some("3;".into());
+        assert!(
+            prepare_stroke(&other_version, false)
+                .coverage_mesh
+                .is_none()
+        );
+        let mut clamped_version = input.clone();
+        clamped_version.rendering.as_mut().unwrap().advanced_settings = Some("9;".into());
+        assert!(prepare_stroke(&clamped_version, false).coverage_mesh.is_some());
+        let mut other_route = input;
+        other_route
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .stroke_type_raw = Some(1);
+        assert!(prepare_stroke(&other_route, false).coverage_mesh.is_none());
+    }
+
+    #[test]
+    fn oblique_advanced_setting_uses_effective_native_version() {
+        assert_eq!(effective_oblique_version(None), 4);
+        assert_eq!(effective_oblique_version(Some("")), 4);
+        assert_eq!(effective_oblique_version(Some("-1;")), 4);
+        assert_eq!(effective_oblique_version(Some("0;")), 1);
+        assert_eq!(effective_oblique_version(Some("2;")), 2);
+        assert_eq!(effective_oblique_version(Some("9;")), 4);
     }
     #[cfg(feature = "serde")]
     #[test]

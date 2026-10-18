@@ -469,6 +469,11 @@ impl Group {
     }
 }
 impl Path {
+    /// Request the SVG crisp-edges rasterization hint for mesh boundaries.
+    pub fn crisp_edges(mut self) -> Self {
+        self.0.attr("shape-rendering", "crispEdges");
+        self
+    }
     pub fn even_odd_clip(mut self) -> Self {
         self.0.attr("clip-rule", "evenodd");
         self

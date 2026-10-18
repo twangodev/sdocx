@@ -33,6 +33,8 @@ pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
 #[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
 mod harfrust;
 mod marker;
+#[allow(dead_code)]
+mod oblique;
 pub use marker::PointMarkerTarget;
 mod native_body_pages;
 mod placed;
@@ -3105,6 +3107,10 @@ fn render_stroke(
 fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, replay: bool) {
     let color = &paint.color;
     let base_width = paint.width;
+    #[cfg(test)]
+    if oblique::render(svg, paint, replay) {
+        return;
+    }
     if fountain::render(svg, paint, replay) {
         return;
     }

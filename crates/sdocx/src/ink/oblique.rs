@@ -1,9 +1,9 @@
-//! Typed Oblique V4 saved-redraw geometry; production dispatch remains gated.
+//! Typed Oblique V4 saved-redraw geometry; production preparation remains gated.
 
 use super::path::{Quad, P};
 use std::ops::Range;
 
-const DEFAULT_K: f32 = f32::from_bits(0x3f35_04f3);
+pub(super) const DEFAULT_K: f32 = f32::from_bits(0x3f35_04f3);
 // Defensive process budgets, not native admission thresholds.
 const MAX_INPUT_POINTS: usize = 65_536;
 const MAX_PATH_SAMPLES: usize = 1_000_000;
