@@ -133,3 +133,13 @@ textures and saved particle vectors; its projection, paper scale and color
 are synthetic, and its pixel fixture does not establish Android/device
 parity. The app's real render-queue execution and framebuffer remain outside
 these captures.
+
+Single-stamp transport probes also separate source sampling from export
+rasterization. Nearest texel selection matched all 25/100 tested fragment
+centers at 1×/2×, but vectorizing one brush row required 4,354 source-texel
+rectangles (about 247 KB of PDF for one stamp). Over opaque white, MuPDF and
+PDFium still differed from the host GLES stamp, with maximum channel errors
+of 68–73. These hand-built PDF probes do not exercise the SDK's shared
+SVG-to-PDF route; they establish neither device parity nor a production
+transport. The scripts and measurements remain in the ignored
+`tmp/vector-parity-plan/pencil-stamp-*` experiments.
