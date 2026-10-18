@@ -140,6 +140,36 @@ Otherwise curve-enabled tail chooses cubic versus quadratic by flag 89
 The separate no-curve terminal branch builds a line (`0x3fa20`–`0x3fb1c`);
 its interior and complete sampling law are outside this scope.
 
+## Executed core helper witness
+
+[`oblique_native.py`](../../conformance/oblique_native.py) separately executes
+the hash-pinned library under Unicorn. It runs the actual size conversion
+instruction `FCVTZU W9,S0` at `0x409e4` and the complete RTV1 `lineToMesh`
+helper at `0x45374` and `makeTriangles` at `0x455d0`, with explicit
+host-initialized size, coefficient K, inverse scale, previous/current
+coordinates and output references. A preallocated libc++ vector supplies
+triangle storage; every captured case stays within its original capacity.
+The oracle records all eight Vector3 outputs and the emitted triangle vertices.
+
+[`oblique-v4-core.json`](../../conformance/oblique-v4-core.json) records nineteen
+executed cases, including zero/fractional size, integer boundaries, different
+segment directions, coincident/near-coincident coordinates, varied K and
+non-unit inverse scales. A fresh native run matches
+the recorded float bits. This corroborates core/fringe geometry and triangle
+selection in the selected contexts. Coincident/sub-epsilon cases still emit
+24 vertices, compared with 30 in the above-epsilon witness; emitted vertices
+do not establish visible coverage. Full saved-stroke sampling, allocation
+growth, callback submission, cache behavior and visual parity remain outside
+this capture. A test-only Rust mesh core matches all corner/triangle bits;
+the expanded asymmetric and epsilon-neighbor cases check reciprocal/multiply
+rounding and the collapsed-segment gate. Production rendering remains approximate.
+
+[`oblique_redraw_native.py`](../../conformance/oblique_redraw_native.py) adds
+four fresh saved-redraw captures through native sampling, endPen and mesh
+callbacks, retaining per-sample boundaries and a separate terminal suffix.
+Host methods force cache misses and supply source arrays; Drawing admission,
+cache-hit behavior and final paint remain outside that capture.
+
 ## Source authority and Rust boundary
 
 Successful fresh reconstruction may cache derived callback data, record inverse

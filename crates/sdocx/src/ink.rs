@@ -9,6 +9,9 @@ mod fountain_v14;
 mod inkpen;
 mod marker2;
 mod marker4;
+// Native mesh regression; saved Oblique traversal and paint integration remain.
+#[cfg(test)]
+mod oblique;
 mod path;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
