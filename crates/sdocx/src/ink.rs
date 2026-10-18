@@ -12,6 +12,8 @@ mod marker4;
 // Native mesh regression; saved Oblique traversal and paint integration remain.
 #[cfg(test)]
 mod oblique;
+#[cfg(test)]
+mod pencil;
 mod path;
 
 /// A profile describes evidence, not just whether a pen name is recognized.
