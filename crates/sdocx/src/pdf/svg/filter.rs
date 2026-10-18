@@ -13,8 +13,20 @@ use super::util::KrillaTransformExt;
 pub(super) fn render(
     group: &usvg::Group,
     surface: &mut Surface,
-    process_context: &ProcessContext,
+    process_context: &mut ProcessContext,
 ) -> Option<()> {
+    if super::colorize::try_render(group, surface, process_context) {
+        return Some(());
+    }
+    if process_context.error.is_some() {
+        return None;
+    }
+    if process_context.svg_settings.reject_rasterized_filters {
+        process_context.error = Some(super::SvgError::Filter(
+            "generated filter has no supported vector PDF representation".into(),
+        ));
+        return None;
+    }
     let layer_bbox = group.layer_bounding_box().transform(group.transform())?;
 
     let raster_scale = {

@@ -451,6 +451,9 @@ fn render_pages_pdf_with_progress<'a>(
                     page_index,
                     message,
                 },
+                SvgError::Filter(message) => {
+                    PdfError::Conversion(format!("page {page_index}: {message}"))
+                }
             })?;
             for tag in page_tags {
                 tags.push(tag);
@@ -498,6 +501,7 @@ fn draw_retained_page(
         size,
         SvgSettings {
             reject_images: true,
+            reject_rasterized_filters: true,
             ..Default::default()
         },
         &mut |text, surface| {

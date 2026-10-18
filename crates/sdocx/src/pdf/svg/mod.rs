@@ -12,6 +12,7 @@ use self::text::Fonts;
 use self::util::RectExt;
 
 mod clip_path;
+mod colorize;
 mod filter;
 mod group;
 mod image;
@@ -30,6 +31,8 @@ pub(super) struct SvgSettings {
     /// mean better quality, but also bigger file sizes.
     pub filter_scale: f32,
     pub reject_images: bool,
+    /// Require generated document filters to stay vector content.
+    pub reject_rasterized_filters: bool,
 }
 
 impl Default for SvgSettings {
@@ -38,6 +41,7 @@ impl Default for SvgSettings {
             embed_text: true,
             filter_scale: 4.0,
             reject_images: false,
+            reject_rasterized_filters: false,
         }
     }
 }
@@ -60,6 +64,7 @@ pub(super) trait SurfaceExt {
 pub(super) enum SvgError {
     Text(String),
     Image(String),
+    Filter(String),
 }
 
 pub(super) fn raster_image(kind: &usvg::ImageKind) -> Result<Option<krilla::image::Image>, String> {
@@ -290,6 +295,64 @@ mod tests {
         page.finish();
         document.finish().unwrap();
     }
+    #[test]
+    fn unsupported_filter_fails_vector_export_but_keeps_svg_compatibility_fallback() {
+        let tree = tree(
+            r#"<defs><filter id="near-miss" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 0.1 0 0 0 0 0.2 0 0 0 0 0.3 0 1 0 0 0"/></filter></defs><g transform="translate(7 11)" opacity="0.5"><g filter="url(#near-miss)"><rect width="20" height="20" fill="white"/></g><text x="0" y="20">A</text></g>"#,
+        );
+        for strict in [false, true] {
+            let mut document = Document::new();
+            let mut page =
+                document.start_page_with(PageSettings::new(Size::from_wh(100.0, 100.0).unwrap()));
+            let mut surface = page.surface();
+            surface.push_transform(&Transform::from_translate(3.0, 5.0));
+            let before = surface.cur_transform();
+            let mut visits = 0;
+            let result = surface.draw_svg_with_text(
+                &tree,
+                Size::from_wh(100.0, 100.0).unwrap(),
+                SvgSettings {
+                    reject_rasterized_filters: strict,
+                    ..Default::default()
+                },
+                &mut |_, _| {
+                    visits += 1;
+                    Ok(true)
+                },
+            );
+            if strict {
+                assert!(matches!(result, Err(SvgError::Filter(_))), "{result:?}");
+                assert_eq!(visits, 0);
+            } else {
+                assert_eq!(result, Ok(()));
+                assert_eq!(visits, 1);
+            }
+            assert_eq!(surface.cur_transform(), before);
+            assert!(surface.get_fill().is_none());
+            assert!(surface.get_stroke().is_none());
+            surface.pop();
+            surface.finish();
+            page.finish();
+            let bytes = document.finish().unwrap();
+            let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+            let images = pdf
+                .objects
+                .values()
+                .filter_map(|object| match object {
+                    lopdf::Object::Dictionary(dict) => Some(dict),
+                    lopdf::Object::Stream(stream) => Some(&stream.dict),
+                    _ => None,
+                })
+                .filter(|dict| {
+                    dict.get(b"Subtype")
+                        .and_then(lopdf::Object::as_name)
+                        .is_ok_and(|name| name == b"Image")
+                })
+                .count();
+            assert_eq!(images > 0, !strict);
+        }
+    }
+
     #[test]
     fn rejected_image_stops_native_traversal_and_restores_surface_state() {
         use base64::Engine;
