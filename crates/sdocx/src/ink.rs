@@ -9,7 +9,7 @@ mod fountain_v14;
 mod inkpen;
 mod marker2;
 mod marker4;
-// Native mesh regression; saved Oblique traversal and paint integration remain.
+// Typed native geometry regression; caller context and vector paint admission remain.
 #[cfg(test)]
 mod oblique;
 #[cfg(test)]

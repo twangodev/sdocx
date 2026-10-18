@@ -3,7 +3,7 @@
   "provenance": "Actual embedded Oblique RTV1 MaskShader, StrokeShader, and CompositeShader from the hash-pinned Samsung library; captured native callback meshes and direct lineToMesh/makeTriangles vertices; replayed on host surfaceless Mesa GLES.",
   "library_sha256": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
   "input_sha256": {
-    "oblique_redraw": "6506e3dbd26df7ed8f50013ec9f3c561dc2d8128392bdefdceb08d0f566d46de",
+    "oblique_redraw": "28513031d35e55d645732485409f5e4fcbadb0ed6ea68b90aead2515d80ece3d",
     "oblique_v4_core": "fef1c5c638005cda77877b98045e413be8e8cb96db688f60659e346e9be0dcc3"
   },
   "shader_virtual_addresses": {
@@ -483,6 +483,58 @@
       "mask_red_max": 255,
       "stroke_max_rgba8_sha256": "dc18bf1466c5a40562c7a71ab9ae84a875ce3c1adba12162fae3d7b02b61edd1",
       "composite_rgba8_sha256": "14ae6cee2ef85a1b0abf0ebfd9cf0da031127eee075a878e1e0b04b18977076c",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 8,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:coincident_curve_tool3_nonorigin",
+      "vertex_count": 48,
+      "vertex_f32_sha256": "90f30f20ef198cde7b27c39cb4900b132776bc04fd097515812ba89f60a0bfde",
+      "sample_ends_vector3": [
+        0,
+        0,
+        0,
+        24
+      ],
+      "terminal_start_vector3": 24,
+      "terminal_end_vector3": 48,
+      "mask_rgba8_sha256": "f27107213b36a42b4fa34bd875ceea781a2bf2763afcd3963529a07ca37cacea",
+      "mask_red_nonzero_pixels": 14,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "8f061b5709be2bb05816caf68be9515f1b82de1a2d94594307337b2165d8c1ad",
+      "composite_rgba8_sha256": "40c52eae58f28d07fb2a136e23f76e3a55c38a1a542a40a6e98c800a1bfbb8da",
       "composite_samples": [
         [
           230,

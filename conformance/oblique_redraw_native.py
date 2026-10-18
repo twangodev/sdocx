@@ -421,6 +421,7 @@ def generate(path):
         {"id": "terminal_cubic_tool3", "points": [[0.0, 0.0], [10.0, 0.0], [20.0, 10.0], [30.0, 0.0], [40.0, -10.0]], "size": 6.0, "curve_enabled": True, "tool_type": 3},
         {"id": "terminal_cubic_width_band_12", "points": [[0.0, 0.0], [10.0, 0.0], [20.0, 10.0], [30.0, 0.0], [40.0, -10.0]], "size": 12.75, "curve_enabled": True, "tool_type": 2},
         {"id": "curve_zero_quad_nonorigin_tool1", "points": [[5.0, 9.0]] * 5, "size": 4.0, "curve_enabled": True, "tool_type": 1},
+        {"id": "coincident_curve_tool3_nonorigin", "points": [[17.0, 23.0]] * 5, "size": 4.0, "curve_enabled": True, "tool_type": 3},
         {"id": "no_curve_duplicate_nonorigin_tool3", "points": [[5.0, 9.0], [5.0, 9.0], [13.0, 9.0], [13.0, 9.0]], "size": 6.0, "curve_enabled": False, "tool_type": 3},
         {"id": "curve_zero_quad_followed_by_move_tool1", "points": [[5.0, 9.0]] * 5 + [[100.0, 9.0]], "size": 4.0, "curve_enabled": True, "tool_type": 1},
     ]
