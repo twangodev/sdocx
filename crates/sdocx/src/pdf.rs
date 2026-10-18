@@ -17,6 +17,9 @@ mod svg;
 #[cfg(test)]
 #[path = "pdf/font_identity_tests.rs"]
 mod font_identity_tests;
+#[cfg(test)]
+#[path = "pdf/paper.rs"]
+mod paper;
 
 use crate::render::{DocumentTextCache, NativePdfPainter, NativeTextRegistry};
 use crate::{
