@@ -841,6 +841,7 @@ Requires the extracted libraries, Unicorn, `rustc`, `readelf`, and pinned host l
 
 ```sh
 PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_pdfium_create_page_native.py --check-fixture
+PYTHONPATH=scratch/apk-analysis-runtime/python python3 conformance/pdf_paper_pdfium_source_overlay_native.py --check-fixture
 ```
 
 ## Native shape path capture

@@ -617,3 +617,10 @@ page rotated 90°. Its counterrotated form has BBox `[0,0,150,200]` and placemen
 C locale/time, host libm and the file-write sink are explicit providers; unknown
 imports abort. This does not load a source PDF or execute the full Samsung
 writer wrapper, and establishes no source CropBox/UserUnit or pixel parity.
+
+The [loaded-source capture](../../conformance/pdf-paper-pdfium-source-overlay.json)
+executes the real PDFium parser and overlay/save sequence at all four rotations.
+Its nonzero MediaBox/CropBox, UserUnit 2 and original vector path survive; native
+page dimensions use the rotated CropBox without multiplying by UserUnit. The
+form receives literal `4 - rotation`, including 4 for an unrotated source.
+This remains a synthetic PDFium API sequence, not the Samsung writer wrapper.

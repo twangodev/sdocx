@@ -232,6 +232,13 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             write(engine, x0, &bytes);
             result = x0;
         }
+        "memchr" => {
+            let len = x2 as usize;
+            assert!(len < 16 * 1024 * 1024, "bounded memchr exceeded");
+            result = (0..len)
+                .find(|offset| read_u64(engine, x0 + *offset as u64) as u8 == x1 as u8)
+                .map_or(0, |offset| x0 + offset as u64);
+        }
         "strlen" | "__strlen_chk" => {
             let mut length = 0;
             while length < 1_000_000 && read_u64(engine, x0 + length) as u8 != 0 {
@@ -246,6 +253,8 @@ unsafe extern "C" fn host_external(engine: Engine, address: u64, _: u32, data: *
             result = compare_memory(engine, x0, x1, len) as i64 as u64;
         }
         "strcmp" => result = compare_c_strings(engine, x0, x1) as i64 as u64,
+        // PDF syntax classification here is the C-locale ASCII digit test.
+        "iswdigit" => result = u64::from((0x30..=0x39).contains(&x0)),
         "__system_property_get" => {
             let key = cstring(engine, x0);
             let is_sdk = key == "ro.build.version.sdk";
@@ -558,6 +567,97 @@ unsafe extern "C" fn native_pdf_write_block(engine: Engine, _: u64, _: u32, data
     register(engine, REGISTER_X0, 1);
 }
 
+fn capture_loaded_source(
+    machine: &mut Machine,
+    external: &mut External,
+    source_pdf: &[u8],
+    output_path: &Path,
+) {
+    const SOURCE_BASE: u64 = 0x3000_0000;
+    check(unsafe { uc_mem_map(machine.engine, SOURCE_BASE, 0x10000, 7) });
+    assert!(source_pdf.len() < 0x10000, "synthetic source PDF too large");
+    write(machine.engine, SOURCE_BASE, source_pdf);
+    let doc = machine.call(
+        PDFIUM_BASE + 0x5a5c50,
+        &[SOURCE_BASE, source_pdf.len() as u64, 0],
+    );
+    assert_ne!(doc, 0, "FPDF_LoadMemDocument returned null");
+    let page = machine.call(PDFIUM_BASE + 0x5a6148, &[doc, 0]);
+    assert_ne!(page, 0, "FPDF_LoadPage returned null");
+    machine.call(PDFIUM_BASE + 0x5a6c18, &[page]);
+    let width = f32::from_bits(read_register(machine.engine, 136) as u32);
+    machine.call(PDFIUM_BASE + 0x5a6c5c, &[page]);
+    let height = f32::from_bits(read_register(machine.engine, 136) as u32);
+    let source_rotation = machine.call(PDFIUM_BASE + 0x586ddc, &[page]);
+    let form_argument = 4_u64 - source_rotation;
+    let object = machine.call(PDFIUM_BASE + 0x58a014, &[page, form_argument]);
+    assert_ne!(object, 0, "FPDFPage_NewFormObj returned null");
+
+    register(machine.engine, 136, f32::to_bits(17.25) as u64);
+    register(machine.engine, 137, f32::to_bits(29.5) as u64);
+    let path = machine.call(PDFIUM_BASE + 0x58a9b8, &[]);
+    assert_ne!(path, 0);
+    for (x, y) in [(93.75_f32, 46.5_f32), (61.25_f32, 109.75_f32)] {
+        register(machine.engine, 136, f32::to_bits(x) as u64);
+        register(machine.engine, 137, f32::to_bits(y) as u64);
+        machine.call(PDFIUM_BASE + 0x58ada4, &[path]);
+    }
+    machine.call(PDFIUM_BASE + 0x58af08, &[path]);
+    machine.call(PDFIUM_BASE + 0x58af70, &[path, 1, 1]);
+    machine.call(PDFIUM_BASE + 0x589504, &[path, 17, 92, 201, 255]);
+    machine.call(PDFIUM_BASE + 0x58a7fc, &[object, path]);
+    let form_object_count = machine.call(PDFIUM_BASE + 0x589f68, &[object]);
+    machine.call(PDFIUM_BASE + 0x58a900, &[object]);
+    machine.call(PDFIUM_BASE + 0x587134, &[page, object]);
+    let content_result = machine.call(PDFIUM_BASE + 0x588ae4, &[page]);
+    let page_object_count = machine.call(PDFIUM_BASE + 0x5874f8, &[page]);
+    let rotation_after = machine.call(PDFIUM_BASE + 0x586ddc, &[page]);
+
+    let filewrite = MODEL + 0x8000;
+    let mut filewrite_struct = [0_u8; 16];
+    filewrite_struct[..4].copy_from_slice(&1_u32.to_le_bytes());
+    filewrite_struct[8..].copy_from_slice(&(STUB + 0xa0).to_le_bytes());
+    write(machine.engine, filewrite, &filewrite_struct);
+    let empty_facade = MODEL + 0xa000;
+    write(machine.engine, empty_facade, &[0; 64]);
+    let saved = machine.call(PDFIUM_BASE + 0x59cbbc, &[doc, filewrite, 0, empty_facade]);
+    assert_eq!(saved, 1, "FPDF_SaveAsCopy failed");
+    assert!(!external.pdf_bytes.is_empty(), "native writer emitted no bytes");
+    std::fs::write(output_path, &external.pdf_bytes).unwrap();
+    let handled_imports = external
+        .handled_imports
+        .iter()
+        .map(|name| format!("\"{name}\""))
+        .collect::<Vec<_>>()
+        .join(",");
+    let platform_events = external
+        .platform_events
+        .iter()
+        .map(|event| format!("\"{event}\""))
+        .collect::<Vec<_>>()
+        .join(",");
+    println!(
+        "{{\"native_path\":\"FPDF_InitLibrary -> FPDF_LoadMemDocument -> FPDF_LoadPage -> GetPageWidthF/GetPageHeightF/GetRotation -> FPDFPage_NewFormObj(counterrotation) -> native path/form generation -> FPDF_SaveAsCopy -> FPDF_FILEWRITE.WriteBlock\",\"doc\":{},\"page\":{},\"loaded_width\":{},\"loaded_height\":{},\"form_object\":{},\"path_object\":{},\"source_rotation\":{},\"writer_form_argument_4_minus_rotation\":{},\"rotation_after\":{},\"form_object_count\":{},\"page_object_count\":{},\"page_generate_content_result\":{},\"save_result\":{},\"pdf_bytes\":{},\"write_calls\":{},\"handled_imports\":[{}],\"platform_events\":[{}]}}",
+        doc,
+        page,
+        width,
+        height,
+        object,
+        path,
+        source_rotation,
+        form_argument,
+        rotation_after,
+        form_object_count,
+        page_object_count,
+        content_result,
+        saved,
+        external.pdf_bytes.len(),
+        external.write_calls,
+        handled_imports,
+        platform_events
+    );
+}
+
 fn symbol_version(name: &str) -> &str {
     name.split('@').next().unwrap_or(name)
 }
@@ -567,6 +667,7 @@ pub(super) fn capture(
     pdfium: &Path,
     source_rotation: u64,
     output_path: &Path,
+    source_pdf: Option<&[u8]>,
 ) {
     map_library(
         machine.engine,
@@ -842,6 +943,12 @@ pub(super) fn capture(
     }
 
     machine.call(PDFIUM_BASE + 0x5a5504, &[]);
+    if let Some(source_pdf) = source_pdf {
+        external.pdf_bytes.clear();
+        external.write_calls = 0;
+        capture_loaded_source(machine, external.as_mut(), source_pdf, output_path);
+        return;
+    }
     let doc = machine.call(PDFIUM_BASE + 0x586484, &[]);
     assert_ne!(doc, 0, "FPDF_CreateNewDocument returned null");
     eprintln!("PDFium new document {doc:x}");

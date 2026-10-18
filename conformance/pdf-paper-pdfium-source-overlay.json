@@ -1,0 +1,413 @@
+{
+  "source_apk": {
+    "version": "4.4.45.37",
+    "sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
+  },
+  "model_library_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "pdfium_library_sha256": "4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854",
+  "libcxx_library_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+  "host_libm_sha256": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
+  "cases": [
+    {
+      "source_rotation_degrees": 0,
+      "input_pdf_sha256": "e7a9cdb5c17611bf7ee4be604ad90e984d4bd435a9aa0f3a22362197c0508db6",
+      "serialized_pdf_sha256": "5cf10bd08b13c3a862d97b889e0f276a06aa5a687831685832dc829acb412ca1",
+      "serialized_pdf_bytes": 1517,
+      "pdfium_native": {
+        "loaded_width": 150,
+        "loaded_height": 115,
+        "source_rotation_quarter_turns": 0,
+        "new_form_argument_quarter_turns": 4,
+        "rotation_after": 0,
+        "form_object_count": 1,
+        "page_object_count": 2,
+        "page_generate_content_result": 1,
+        "save_result": 1,
+        "write_calls": 1,
+        "host_imports": [
+          "__android_log_print",
+          "__ctype_get_mb_cur_max@LIBC",
+          "__cxa_atexit@LIBC",
+          "__strlen_chk@LIBC",
+          "__system_property_get@LIBC",
+          "__vsnprintf_chk@LIBC",
+          "compress",
+          "frexpf@LIBC",
+          "getauxval@LIBC",
+          "hypotf@LIBC",
+          "iswdigit@LIBC",
+          "mbtowc@LIBC",
+          "memchr@LIBC",
+          "memcmp@LIBC",
+          "memcpy@LIBC",
+          "memmove@LIBC",
+          "memset@LIBC",
+          "newlocale@LIBC",
+          "opendir@LIBC",
+          "pthread_cond_broadcast@LIBC",
+          "pthread_mutex_lock@LIBC",
+          "pthread_mutex_unlock@LIBC",
+          "strcmp@LIBC",
+          "strlen@LIBC",
+          "syscall@LIBC",
+          "uselocale@LIBC",
+          "vsnprintf@LIBC"
+        ],
+        "host_platform_events": [
+          "android-property:ro.arch=empty",
+          "ctype-mb-max:1-c-locale",
+          "getauxval:unavailable",
+          "newlocale:C:mask=0x1fbf",
+          "opendir-unavailable:/system/fonts"
+        ]
+      },
+      "retained_page": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          0,
+          5,
+          150,
+          120
+        ],
+        "rotate_degrees": 0,
+        "user_unit": 2,
+        "original_vector_content": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f",
+        "overlay_form_bbox": [
+          0.0,
+          0.0,
+          150.0,
+          115.0
+        ],
+        "page_form_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          5.0
+        ],
+        "overlay_vector_points": [
+          [
+            17.25,
+            29.5
+          ],
+          [
+            93.75,
+            46.5
+          ],
+          [
+            61.25,
+            109.75
+          ]
+        ],
+        "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
+      }
+    },
+    {
+      "source_rotation_degrees": 90,
+      "input_pdf_sha256": "6e92278832402105779fe6a765dee53c9cd3a680c09e3926617da9b8b5530ef2",
+      "serialized_pdf_sha256": "9d00b7d49aa5bc51a0e90596e4a703d6345cea6f115302c405ccde1889f82473",
+      "serialized_pdf_bytes": 1524,
+      "pdfium_native": {
+        "loaded_width": 115,
+        "loaded_height": 150,
+        "source_rotation_quarter_turns": 1,
+        "new_form_argument_quarter_turns": 3,
+        "rotation_after": 1,
+        "form_object_count": 1,
+        "page_object_count": 2,
+        "page_generate_content_result": 1,
+        "save_result": 1,
+        "write_calls": 1,
+        "host_imports": [
+          "__android_log_print",
+          "__ctype_get_mb_cur_max@LIBC",
+          "__cxa_atexit@LIBC",
+          "__strlen_chk@LIBC",
+          "__system_property_get@LIBC",
+          "__vsnprintf_chk@LIBC",
+          "compress",
+          "frexpf@LIBC",
+          "getauxval@LIBC",
+          "hypotf@LIBC",
+          "iswdigit@LIBC",
+          "mbtowc@LIBC",
+          "memchr@LIBC",
+          "memcmp@LIBC",
+          "memcpy@LIBC",
+          "memmove@LIBC",
+          "memset@LIBC",
+          "newlocale@LIBC",
+          "opendir@LIBC",
+          "pthread_cond_broadcast@LIBC",
+          "pthread_mutex_lock@LIBC",
+          "pthread_mutex_unlock@LIBC",
+          "strcmp@LIBC",
+          "strlen@LIBC",
+          "syscall@LIBC",
+          "uselocale@LIBC",
+          "vsnprintf@LIBC"
+        ],
+        "host_platform_events": [
+          "android-property:ro.arch=empty",
+          "ctype-mb-max:1-c-locale",
+          "getauxval:unavailable",
+          "newlocale:C:mask=0x1fbf",
+          "opendir-unavailable:/system/fonts"
+        ]
+      },
+      "retained_page": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          0,
+          5,
+          150,
+          120
+        ],
+        "rotate_degrees": 90,
+        "user_unit": 2,
+        "original_vector_content": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f",
+        "overlay_form_bbox": [
+          0.0,
+          0.0,
+          115.0,
+          150.0
+        ],
+        "page_form_matrix": [
+          0.0,
+          1.0,
+          -1.0,
+          0.0,
+          150.0,
+          5.0
+        ],
+        "overlay_vector_points": [
+          [
+            17.25,
+            29.5
+          ],
+          [
+            93.75,
+            46.5
+          ],
+          [
+            61.25,
+            109.75
+          ]
+        ],
+        "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
+      }
+    },
+    {
+      "source_rotation_degrees": 180,
+      "input_pdf_sha256": "ab055765faa07d5e1885eab0b436afb3a768d180a043f79fef040c29f092f329",
+      "serialized_pdf_sha256": "e00a6f3314e53a51e91519f0a117707044814b2aaaf3dc6857dac99e2e8f53bd",
+      "serialized_pdf_bytes": 1526,
+      "pdfium_native": {
+        "loaded_width": 150,
+        "loaded_height": 115,
+        "source_rotation_quarter_turns": 2,
+        "new_form_argument_quarter_turns": 2,
+        "rotation_after": 2,
+        "form_object_count": 1,
+        "page_object_count": 2,
+        "page_generate_content_result": 1,
+        "save_result": 1,
+        "write_calls": 1,
+        "host_imports": [
+          "__android_log_print",
+          "__ctype_get_mb_cur_max@LIBC",
+          "__cxa_atexit@LIBC",
+          "__strlen_chk@LIBC",
+          "__system_property_get@LIBC",
+          "__vsnprintf_chk@LIBC",
+          "compress",
+          "frexpf@LIBC",
+          "getauxval@LIBC",
+          "hypotf@LIBC",
+          "iswdigit@LIBC",
+          "mbtowc@LIBC",
+          "memchr@LIBC",
+          "memcmp@LIBC",
+          "memcpy@LIBC",
+          "memmove@LIBC",
+          "memset@LIBC",
+          "newlocale@LIBC",
+          "opendir@LIBC",
+          "pthread_cond_broadcast@LIBC",
+          "pthread_mutex_lock@LIBC",
+          "pthread_mutex_unlock@LIBC",
+          "strcmp@LIBC",
+          "strlen@LIBC",
+          "syscall@LIBC",
+          "uselocale@LIBC",
+          "vsnprintf@LIBC"
+        ],
+        "host_platform_events": [
+          "android-property:ro.arch=empty",
+          "ctype-mb-max:1-c-locale",
+          "getauxval:unavailable",
+          "newlocale:C:mask=0x1fbf",
+          "opendir-unavailable:/system/fonts"
+        ]
+      },
+      "retained_page": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          0,
+          5,
+          150,
+          120
+        ],
+        "rotate_degrees": 180,
+        "user_unit": 2,
+        "original_vector_content": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f",
+        "overlay_form_bbox": [
+          0.0,
+          0.0,
+          150.0,
+          115.0
+        ],
+        "page_form_matrix": [
+          -1.0,
+          0.0,
+          0.0,
+          -1.0,
+          150.0,
+          120.0
+        ],
+        "overlay_vector_points": [
+          [
+            17.25,
+            29.5
+          ],
+          [
+            93.75,
+            46.5
+          ],
+          [
+            61.25,
+            109.75
+          ]
+        ],
+        "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
+      }
+    },
+    {
+      "source_rotation_degrees": 270,
+      "input_pdf_sha256": "5561da86a2d266062feb9e79fec35282af2445206debf0abc1a1d950f34aa74f",
+      "serialized_pdf_sha256": "12517afa08fa46c2aaf4cc0e43d97ceec58b6e92afd3043a77ebcf1eaf81131d",
+      "serialized_pdf_bytes": 1523,
+      "pdfium_native": {
+        "loaded_width": 115,
+        "loaded_height": 150,
+        "source_rotation_quarter_turns": 3,
+        "new_form_argument_quarter_turns": 1,
+        "rotation_after": 3,
+        "form_object_count": 1,
+        "page_object_count": 2,
+        "page_generate_content_result": 1,
+        "save_result": 1,
+        "write_calls": 1,
+        "host_imports": [
+          "__android_log_print",
+          "__ctype_get_mb_cur_max@LIBC",
+          "__cxa_atexit@LIBC",
+          "__strlen_chk@LIBC",
+          "__system_property_get@LIBC",
+          "__vsnprintf_chk@LIBC",
+          "compress",
+          "frexpf@LIBC",
+          "getauxval@LIBC",
+          "hypotf@LIBC",
+          "iswdigit@LIBC",
+          "mbtowc@LIBC",
+          "memchr@LIBC",
+          "memcmp@LIBC",
+          "memcpy@LIBC",
+          "memmove@LIBC",
+          "memset@LIBC",
+          "newlocale@LIBC",
+          "opendir@LIBC",
+          "pthread_cond_broadcast@LIBC",
+          "pthread_mutex_lock@LIBC",
+          "pthread_mutex_unlock@LIBC",
+          "strcmp@LIBC",
+          "strlen@LIBC",
+          "syscall@LIBC",
+          "uselocale@LIBC",
+          "vsnprintf@LIBC"
+        ],
+        "host_platform_events": [
+          "android-property:ro.arch=empty",
+          "ctype-mb-max:1-c-locale",
+          "getauxval:unavailable",
+          "newlocale:C:mask=0x1fbf",
+          "opendir-unavailable:/system/fonts"
+        ]
+      },
+      "retained_page": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          0,
+          5,
+          150,
+          120
+        ],
+        "rotate_degrees": 270,
+        "user_unit": 2,
+        "original_vector_content": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f",
+        "overlay_form_bbox": [
+          0.0,
+          0.0,
+          115.0,
+          150.0
+        ],
+        "page_form_matrix": [
+          0.0,
+          -1.0,
+          1.0,
+          0.0,
+          0.0,
+          120.0
+        ],
+        "overlay_vector_points": [
+          [
+            17.25,
+            29.5
+          ],
+          [
+            93.75,
+            46.5
+          ],
+          [
+            61.25,
+            109.75
+          ]
+        ],
+        "overlay_vector_content": "17.25 29.5 m 93.75 46.5 l 61.25 109.75 l h B*"
+      }
+    }
+  ],
+  "evidence_boundary": "Executes pinned PDFium's real FPDF_LoadMemDocument parser on deterministic synthetic PDFs, then FPDF_LoadPage, width/height/rotation queries, NewFormObj with 4-minus-page-turn, native vector form generation, and FPDF_SaveAsCopy/FILEWRITE. Input boxes, source path, overlay points, and content are synthetic host data. The source MediaBox, CropBox, Rotate, UserUnit, and source vector content are checked in exact serialized output. This does not execute SPen::PdfiumExportHandler::OpenWriter or PdfiumImpl::LoadPage, exercise a full Samsung StandardPDF export, prove arbitrary source-PDF preservation, or establish rendered pixel parity. Android platform services are explicitly bounded host providers and unknown imports abort the probe."
+}
