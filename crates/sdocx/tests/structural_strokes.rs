@@ -318,7 +318,13 @@ fn supported_containers_and_unsupported_objects_keep_decoded_children() {
     let child = object(1, &payload, &[]);
     let parents = kinds
         .iter()
-        .map(|kind| object(*kind, &payload, std::slice::from_ref(&child)))
+        .map(|kind| {
+            // Formula now has a typed decoder; use its own empty payload
+            // while retaining the ordinary stored child traversal witness.
+            let formula = [base(), frame(11, 0, 0, &[], &[])].concat();
+            let parent_payload = if *kind == 11 { &formula } else { &payload };
+            object(*kind, parent_payload, std::slice::from_ref(&child))
+        })
         .collect::<Vec<_>>();
     let page_bytes = page(
         &[
@@ -337,13 +343,13 @@ fn supported_containers_and_unsupported_objects_keep_decoded_children() {
         .iter()
         .filter(|diagnostic| diagnostic.code == sdocx::DiagnosticCode::UnsupportedObjectType)
         .collect::<Vec<_>>();
-    let unsupported_count = kinds.iter().filter(|&&kind| kind != 4).count();
+    let unsupported_count = kinds.iter().filter(|&&kind| !matches!(kind, 4 | 11)).count();
     assert_eq!(warnings.len(), unsupported_count);
     let stored = &parsed.stored_pages[0].page.layers.layers[0].objects;
     for ((kind, object), warning) in kinds
         .iter()
         .zip(stored)
-        .filter(|(kind, _)| **kind != 4)
+        .filter(|(kind, _)| !matches!(**kind, 4 | 11))
         .zip(warnings)
     {
         assert_eq!(object.object_type.raw(), u32::from(*kind));
