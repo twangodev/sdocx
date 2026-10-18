@@ -1,0 +1,1519 @@
+{
+  "schema": "sdocx-oblique-paint-v1",
+  "provenance": "Actual embedded Oblique RTV1 MaskShader, StrokeShader, and CompositeShader from the hash-pinned Samsung library; captured native callback meshes and direct lineToMesh/makeTriangles vertices; replayed on host surfaceless Mesa GLES.",
+  "library_sha256": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+  "input_sha256": {
+    "oblique_redraw": "6506e3dbd26df7ed8f50013ec9f3c561dc2d8128392bdefdceb08d0f566d46de",
+    "oblique_v4_core": "fef1c5c638005cda77877b98045e413be8e8cb96db688f60659e346e9be0dcc3"
+  },
+  "shader_virtual_addresses": {
+    "quad_vertex": "0x22ea4",
+    "composite_fragment": "0x22f59",
+    "mask_vertex": "0x2307c",
+    "mask_fragment": "0x2316d",
+    "stroke_vertex": "0x23247",
+    "stroke_fragment": "0x23338"
+  },
+  "shader_sha256": {
+    "quad_vertex": "450060c5c25fa7811177b2ccf710fbd2040aeb7188556df8a3fe280f627a24a3",
+    "composite_fragment": "4de44ff681bffc612898fc8a853ef823ef57a1043e2f2eadfa05a7d6e10eda48",
+    "mask_vertex": "4ecac74d80c78b1a9c3a6644f97b08655b6b5341666b24ae58630aff8d4d7f42",
+    "mask_fragment": "8d7cb12394393b46ff366901dabd55ade34623e8ad1c5294357d8f1bb453b296",
+    "stroke_vertex": "67c594f9cd2487c85d5d47c743ddab092e78a26e9ad3e52a5bdbb7936714893a",
+    "stroke_fragment": "85a32f2f4e760df08216d26ee90f72759d938819a5f779c2d4515c428639a009"
+  },
+  "gles_host": {
+    "egl_version": "1.5",
+    "vendor": "Mesa",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1",
+    "shading_language": "OpenGL ES GLSL ES 3.20"
+  },
+  "host_render_profile": {
+    "viewport": [
+      64,
+      64
+    ],
+    "projection": "synthetic pixel-coordinate map x/y -> [-1,1]; preserves fixture geometry values",
+    "color_rgba": [
+      0.16,
+      0.42,
+      0.78,
+      0.55
+    ],
+    "background_rgba": [
+      0.9,
+      0.8,
+      0.7,
+      1.0
+    ],
+    "mask": "embedded MaskShader; captured vec3 triangles; GL_MAX, ONE/ONE; transparent RGBA8 target",
+    "stroke": "embedded StrokeShader; captured vec3 triangles; GL_MAX, ONE/ONE; transparent RGBA8 target",
+    "composite": "embedded CompositeShader; red mask sampled once; host color/background; FUNC_ADD, ONE, ONE_MINUS_SRC_ALPHA",
+    "limits": [
+      "does not call Samsung RendererFactory, native RTV1::Draw, host callbacks, or Android GL",
+      "projection, color, and background are explicit synthetic host settings",
+      "pixel hashes depend on Mesa/GLES version and are not Samsung device pixel evidence",
+      "interpolation checks exclude triangle-edge neighborhoods and compare only CPU barycentric z against mask red",
+      "does not establish vector export parity or page-level compositing"
+    ]
+  },
+  "cases": [
+    {
+      "id": "saved:three_points_curve",
+      "vertex_count": 912,
+      "vertex_f32_sha256": "104b086716ec2031e40e3d679d450b705a73fd369c71ef44d658b8d794c4da2d",
+      "sample_ends_vector3": [
+        0,
+        504
+      ],
+      "terminal_start_vector3": 504,
+      "terminal_end_vector3": 912,
+      "mask_rgba8_sha256": "84e4e067f2ed99b57454275957eea97e787475da970858d23ba62e3b5ad7a257",
+      "mask_red_nonzero_pixels": 126,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "89e503c8f79f5bc0ac1abc4c8d2d508c328d6a367e17b135f1e51210daa30425",
+      "composite_rgba8_sha256": "63d5f0203794f9f0c95ed3e2890075ad87591500a27b38573b17746075a03cfe",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          126,
+          151,
+          189,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 37,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:three_points_line_low_size",
+      "vertex_count": 912,
+      "vertex_f32_sha256": "463cb869b45c55f56836730ae4850a7970464efdbbbda3d6525816bae2c8f959",
+      "sample_ends_vector3": [
+        444,
+        888
+      ],
+      "terminal_start_vector3": 888,
+      "terminal_end_vector3": 912,
+      "mask_rgba8_sha256": "48e36e4741d4762c14a14a184fa5fb14bde2074cacbf0cc28db4f6a75c08b3ba",
+      "mask_red_nonzero_pixels": 113,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "d52f58447b483d43eb0ef1b1372823a23c2a0e964c738fcf19cdeb05dd9f8d42",
+      "composite_rgba8_sha256": "e1e4705c37ca8336172cfbaaa61860b801993288e084310a02a39f2ad93c72ac",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          142,
+          159,
+          188,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 59,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:coincident_curve",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "75d4fc3e68dd0b7f5179e90e75e56cab8c2ba046706b2a46126bd1ed3367a17e",
+      "sample_ends_vector3": [
+        0,
+        0
+      ],
+      "terminal_start_vector3": 0,
+      "terminal_end_vector3": 24,
+      "mask_rgba8_sha256": "9867b3000f93cf15dda00176f128566b2fc30e112237240c735327f8515c84a3",
+      "mask_red_nonzero_pixels": 10,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "5f7fdb4bb0d26f9a9fd19d9195f4c0465b3abe392c9e18723f104ec7f993f7a2",
+      "composite_rgba8_sha256": "d6611d23a8dc67485a0f167f0da1ae5221683bc5761b937fc782172ad0ece274",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 8,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:tool_threshold_and_fractional_size",
+      "vertex_count": 708,
+      "vertex_f32_sha256": "fb31520f71097b845aa849bce3bbc3df0f4d029c097e8861bd9c059ff82481cb",
+      "sample_ends_vector3": [
+        0,
+        0
+      ],
+      "terminal_start_vector3": 0,
+      "terminal_end_vector3": 708,
+      "mask_rgba8_sha256": "98d12da50e421db45c51ddd3445aeb685ade923c3d469a4965cb0cc3fece40ec",
+      "mask_red_nonzero_pixels": 290,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "04a6f442b67d84f3582a3fd0bc077f0bd035f21f53ceef4cd95d4784ca1ef65d",
+      "composite_rgba8_sha256": "d49989b67e4073a7717f180f1ff02b14728b44cb656be419a0bdbda3cd23d5a2",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 208,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:curve_zero_quad_after_short_alternation",
+      "vertex_count": 48,
+      "vertex_f32_sha256": "24a3f970324ea7024cb48b7084f724086d4f89bd13137c193a26912a05f8aa79",
+      "sample_ends_vector3": [
+        0,
+        0,
+        0,
+        24
+      ],
+      "terminal_start_vector3": 24,
+      "terminal_end_vector3": 48,
+      "mask_rgba8_sha256": "1f94ff77282b1df9d3575bf856bf21d6d5013a02ad2a26493ddd8d856b5e4ded",
+      "mask_red_nonzero_pixels": 1,
+      "mask_red_max": 128,
+      "stroke_max_rgba8_sha256": "85d9c50858ce8ab0aebab12dd6f015fd0b922e419e89072663711968854a7295",
+      "composite_rgba8_sha256": "51c0f3e2946db110a30653acec95a30d5d37b239ec893739f5dbc39740e649f6",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 1,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:no_curve_duplicate_segments_tool3",
+      "vertex_count": 456,
+      "vertex_f32_sha256": "7d87b2502b6aae260591513713ee36470e13fdcfb77f323d98fb7012ff0f16c2",
+      "sample_ends_vector3": [
+        24,
+        408,
+        432
+      ],
+      "terminal_start_vector3": 432,
+      "terminal_end_vector3": 456,
+      "mask_rgba8_sha256": "d9cb780ae36eeb818ff80caa0aca8d54630aa7f976681624e2f73bfe6e5f8597",
+      "mask_red_nonzero_pixels": 33,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "e5a58b92d8915771d18f41923ed0fa97e91f6d1fa87fff969ba593ef1a019943",
+      "composite_rgba8_sha256": "79db4e646e18cf59842f76bf1c8fa6ff987b4947d18849d283e83cccc288d669",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 9,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:terminal_cubic_tool3",
+      "vertex_count": 1800,
+      "vertex_f32_sha256": "8cebff3c0f3f8fbca27f000911250d643d75cb60202a07f60683b8587a3221fe",
+      "sample_ends_vector3": [
+        0,
+        474,
+        918,
+        1392
+      ],
+      "terminal_start_vector3": 1392,
+      "terminal_end_vector3": 1800,
+      "mask_rgba8_sha256": "5c19e281514d25ef6cbdaecb199e5361f28de2614b5c3be134abca55cb0caca3",
+      "mask_red_nonzero_pixels": 197,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "91215d07f8edba2222a0baa6349667d76ea612964ee85fd403453a3fc8faf496",
+      "composite_rgba8_sha256": "427fc6d7a41211ff34d8f1accc541644af4ebc874f7e30992f6204a80b8c90b6",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 93,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:terminal_cubic_width_band_12",
+      "vertex_count": 1680,
+      "vertex_f32_sha256": "fce5a33dbfcc2cd6e42a2b9b637457633c20b1262912920c7d0ad5c40b0ca311",
+      "sample_ends_vector3": [
+        0,
+        444,
+        858,
+        1272
+      ],
+      "terminal_start_vector3": 1272,
+      "terminal_end_vector3": 1680,
+      "mask_rgba8_sha256": "b328b92a9fbbde6bd96f580c5716e3aedf9cab27509dc45fe844c8d86e001836",
+      "mask_red_nonzero_pixels": 274,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "95a593017eb39580c248424c601e8e06449a2226df01094a53003d1d67d49234",
+      "composite_rgba8_sha256": "caeb0c2480701ef868e1051b14fc4b16c52dfa871e3a518dc442e46591f3d94a",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 135,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:curve_zero_quad_nonorigin_tool1",
+      "vertex_count": 48,
+      "vertex_f32_sha256": "cfbb1711cf9b0db526e449ad4ef9d9dc46db478a826dab813c93f9c784d07501",
+      "sample_ends_vector3": [
+        0,
+        0,
+        0,
+        24
+      ],
+      "terminal_start_vector3": 24,
+      "terminal_end_vector3": 48,
+      "mask_rgba8_sha256": "79842e4783648922c6326b8424b07d7544f60edc5ae924d942202c4424907e54",
+      "mask_red_nonzero_pixels": 14,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "dc18bf1466c5a40562c7a71ab9ae84a875ce3c1adba12162fae3d7b02b61edd1",
+      "composite_rgba8_sha256": "14ae6cee2ef85a1b0abf0ebfd9cf0da031127eee075a878e1e0b04b18977076c",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 8,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:no_curve_duplicate_nonorigin_tool3",
+      "vertex_count": 456,
+      "vertex_f32_sha256": "ba9d0ee619fba488dd5942b20f6c5a1d66afdc86f024d2e19be7a93f70f5e083",
+      "sample_ends_vector3": [
+        24,
+        408,
+        432
+      ],
+      "terminal_start_vector3": 432,
+      "terminal_end_vector3": 456,
+      "mask_rgba8_sha256": "c41ecde27c73c6ea92bf4ffc062a7f6a30850394cac5babb5fa5a1c7eb643704",
+      "mask_red_nonzero_pixels": 90,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "d6aec90d4ad47f1bf1c08674a1682f74264452aeecf393d2c492cde68253a3a5",
+      "composite_rgba8_sha256": "6b5a6feef3d059047fd98deba33a368043ea1c4370da4c791dcf3914c9fbd147",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 30,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "saved:curve_zero_quad_followed_by_move_tool1",
+      "vertex_count": 2106,
+      "vertex_f32_sha256": "787cf049da66d61f8ca6c716213131c84eeca0112a2554a95c99b11f21e57174",
+      "sample_ends_vector3": [
+        0,
+        0,
+        0,
+        24,
+        1038
+      ],
+      "terminal_start_vector3": 1038,
+      "terminal_end_vector3": 2106,
+      "mask_rgba8_sha256": "d5a08a09b2dfa86a1cefb2a5d9b630f2833b6e5980a1096c052d3615813d738e",
+      "mask_red_nonzero_pixels": 363,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "eeeab598c61d68b856f0899f4c5d9b14d0170822d78e0a3279c6fdb24e86c9fa",
+      "composite_rgba8_sha256": "a260f61fddbeba34c7ed75e17a98fe5e068e10aad611827580ceb3890dec203c",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 178,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:zero_width_diagonal",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "25d5149b524c3fe71ade95e91dc0c859fc30bdda37c200c74096913a8ffaedfb",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "052d535f6812024df319aadc514c142a06332afdec28d5af25648b4ceb840aa1",
+      "mask_red_nonzero_pixels": 58,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "ad296bf8cb43ee6fa16e0b567bdcc84fb439726d1285cf272a116a58b5c2246e",
+      "composite_rgba8_sha256": "82719e2eeff42dc0dfc0946a2f810a74a7dc2d2959fbf1b526063a2a3c9ebe85",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 46,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:fraction_below_one_horizontal",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "962cbca3291565177450e4643ae319d915cef95db05c6ee133070c8ad20bb05a",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "6c85ec3b881ed42e3cbf26158573601d95fd335c4a98e1503d2bc352f2b9ebe1",
+      "mask_red_nonzero_pixels": 44,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "1faeb157dd71adf70339f6bfadd9a591ed68941c729237cabd8fbc2c4913c105",
+      "composite_rgba8_sha256": "3de1747ddd7b5af3b76d4be7ace09207f1017dc93594060dc0de2043cf55ac0e",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 38,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:integer_boundary_low_vertical",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "f7efb1839b58305203ea6ab7e7fa1ff6a5ec1358f0216764350ea840f201e491",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "851033de0b4112a61037ca4b8cf5f729b138ac8a1dda253105abf50d9aae5783",
+      "mask_red_nonzero_pixels": 40,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "16c96131e2ef4641b79e5df0e1da446787943ff27f310ad2a45ddaeac1dc1495",
+      "composite_rgba8_sha256": "929f1282e687f682e005c717de5642b61aaf00ca1b69b8a0fb8deddbecd70bfa",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 28,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:integer_boundary_high_reverse",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "b1170c8541c53eef13f92e0c99a11797203200555c21f39a4ec0cd02550447ea",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "db4f3c9cde7e873001e669663064f6ddcb432c421f2f069ecb25f96a8e6aba09",
+      "mask_red_nonzero_pixels": 58,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "f01b292d50b0c7d78c44114d0c22ae33766618596a0fc197b07601d93611b61d",
+      "composite_rgba8_sha256": "c46e1dee85249834f579dc8705ff08a1cc6a725777b2ff3864967d8f130c62aa",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 48,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:size_eight_diagonal",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "796f3847281a74cd7a706799b8c091a75795474221197f01ce367692ebda2d43",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "6d962d5ffaf9e8757dac0b000fbd4e0c2cfbdc8b5e750d071fbc70bdaa4c12bc",
+      "mask_red_nonzero_pixels": 132,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "0036a2264417b27ecc7a1e3c0fe43d892a540d5e87d72fd1a9ef0e186496a46e",
+      "composite_rgba8_sha256": "569f08400ce5992c6647a4df554a28ab6ed85329bedfa213d1f8dc79d363741e",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 104,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:size_nine_coincident",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "6b4e159a67550b0ead6e2c207557e75a18e12624f0407a5b5c53af5dd94e7e74",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "89648b51aa0f720952abdeaf4d95b22d926e3d5dd1b2b618cacc179099f5333f",
+      "mask_red_nonzero_pixels": 26,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "c88cc34864c99e2e230f340db18a8045a2202dc12c7ed05bc0f4146481816b62",
+      "composite_rgba8_sha256": "2788a964b596236e49700776fd6e3d7a7d110452e0550a977f8d21908f421449",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 20,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:sub_epsilon_diagonal",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "d87f5f789b14fc5f68ffe2d83978c8ec88b3083e688feeace07dac948574ed88",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "cfdeedc49b1e613bffba9cbe0da541ffe448239e2c071d20de1ba704a238e7d3",
+      "mask_red_nonzero_pixels": 14,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "039afb0f98616a243c33c484245cabc9eac9e7fa930ebd1f5d7121af68094b98",
+      "composite_rgba8_sha256": "b5dc5af844ab1ca106665765c50b3bb1791d44c2b2fee2f61336529d38070b45",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 8,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:above_epsilon_diagonal",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "7fda041b1701267b1562ed174236c040b46c191a64e76413bb03c71cd8452331",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "cfdeedc49b1e613bffba9cbe0da541ffe448239e2c071d20de1ba704a238e7d3",
+      "mask_red_nonzero_pixels": 14,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "039afb0f98616a243c33c484245cabc9eac9e7fa930ebd1f5d7121af68094b98",
+      "composite_rgba8_sha256": "b5dc5af844ab1ca106665765c50b3bb1791d44c2b2fee2f61336529d38070b45",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 8,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:nonunit_inverse_scale_x2_yhalf",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "9d549124ed1ddf4c76a1f02545efb5c3a45696db2c8af53a96b683ba2a15fc9d",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "18a2116b549a17b0c4e11685cc170d3a35d5314cc89ea1c126043d09586da658",
+      "mask_red_nonzero_pixels": 87,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "cb07d7a4cc577eba7cb6e10e184794411a78aec0724c6881480ea3cd0932f96c",
+      "composite_rgba8_sha256": "1c623b49312e7d2d09ea5b1d2a134fb0a22b928a2a7528f27f40cf85c592bfbc",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 68,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:nonunit_inverse_scale_xquarter_y3",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "a2a2d93fb5be56038ce0c071e8b6b3d0a9f2eebc3afcd6f55b3743426cc39810",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "15cc01ee2410d96e5626779f9aee98a6a728210b64d5d8902c1fdcb5a8ad81fe",
+      "mask_red_nonzero_pixels": 182,
+      "mask_red_max": 255,
+      "stroke_max_rgba8_sha256": "16041932f0fb08bf3f2e779a72322885bca73316f30b0be98de47415e883cfa9",
+      "composite_rgba8_sha256": "58d8970dadfafc52f8f06000d8f9b7815870f56766bfcab2c74bd8a299bde5e2",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 158,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:asymmetric_negative_reverse_nonunit",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "168bf95b23e4f7981126033e84b859153a224743f1c48c72f99449043df4c662",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "mask_red_nonzero_pixels": 0,
+      "mask_red_max": 0,
+      "stroke_max_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "composite_rgba8_sha256": "511474971986ab6e4ed59a14e4fc556c875e402158cd1bcfa580fdf30ed94c84",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 0,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:negative_horizontal_reverse",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "c40c7f6f5008a354efcf6070bd25d1f7934b8fa1e010f747f42ff276fad42e39",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "mask_red_nonzero_pixels": 0,
+      "mask_red_max": 0,
+      "stroke_max_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "composite_rgba8_sha256": "511474971986ab6e4ed59a14e4fc556c875e402158cd1bcfa580fdf30ed94c84",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 0,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:negative_vertical_forward",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "2f4bb36c075b36825d0f2518960e286a0571b73e7f6cd26d741ec943e393f6a1",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "mask_red_nonzero_pixels": 0,
+      "mask_red_max": 0,
+      "stroke_max_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "composite_rgba8_sha256": "511474971986ab6e4ed59a14e4fc556c875e402158cd1bcfa580fdf30ed94c84",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 0,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:large_finite_stored_width",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "4a5f6ada05fb8bffa3819419e6f95464c88f8b1551ede31031427163cc49cd23",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "mask_red_nonzero_pixels": 0,
+      "mask_red_max": 0,
+      "stroke_max_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "composite_rgba8_sha256": "511474971986ab6e4ed59a14e4fc556c875e402158cd1bcfa580fdf30ed94c84",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 0,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:large_coordinates_asymmetric",
+      "vertex_count": 30,
+      "vertex_f32_sha256": "33455b4752b0b9fcf632499d12e4bd2e7abb6962b702ebf9e4ef508d78b21c17",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "mask_red_nonzero_pixels": 0,
+      "mask_red_max": 0,
+      "stroke_max_rgba8_sha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe",
+      "composite_rgba8_sha256": "511474971986ab6e4ed59a14e4fc556c875e402158cd1bcfa580fdf30ed94c84",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 0,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:epsilon_exact_x_sub_epsilon_y",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "4862b10c7544c8ba317d77ee8a787880095fd8f15ff981a0283a6a578f44c034",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "255a927299f15a38ca20d0626ca01c4aa46d4752111e68227d6b6a3d5ff26e71",
+      "mask_red_nonzero_pixels": 2,
+      "mask_red_max": 116,
+      "stroke_max_rgba8_sha256": "66d78cac014de7b3340d54ff9849dbaf27b5bc5cada00d9571570eb535147e66",
+      "composite_rgba8_sha256": "821fbb9e7ef894cd6e766c0e69dc75072535184762524779db610542191b24f9",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 2,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:epsilon_ulp_above_x_sub_epsilon_y",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "ebb3e60fc6ee7cc83bd0ac81d5f2e31af0674a2726cdc4a976e5a8d34887baf6",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "255a927299f15a38ca20d0626ca01c4aa46d4752111e68227d6b6a3d5ff26e71",
+      "mask_red_nonzero_pixels": 2,
+      "mask_red_max": 116,
+      "stroke_max_rgba8_sha256": "66d78cac014de7b3340d54ff9849dbaf27b5bc5cada00d9571570eb535147e66",
+      "composite_rgba8_sha256": "821fbb9e7ef894cd6e766c0e69dc75072535184762524779db610542191b24f9",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 2,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:epsilon_ulp_below_x_sub_epsilon_y",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "9638a8ecf06375e751a847d9b57734614dd068877cde2defb8ac20209c11d203",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "1f94ff77282b1df9d3575bf856bf21d6d5013a02ad2a26493ddd8d856b5e4ded",
+      "mask_red_nonzero_pixels": 1,
+      "mask_red_max": 128,
+      "stroke_max_rgba8_sha256": "85d9c50858ce8ab0aebab12dd6f015fd0b922e419e89072663711968854a7295",
+      "composite_rgba8_sha256": "51c0f3e2946db110a30653acec95a30d5d37b239ec893739f5dbc39740e649f6",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 1,
+      "barycentric_mismatches_over_1_of_255": 0
+    },
+    {
+      "id": "mesh:epsilon_split_axes_x_sub_y_above",
+      "vertex_count": 24,
+      "vertex_f32_sha256": "1bce5e5a01fcdaa7100e42486f4f4b2c748b8e6c6240d22d16e624e942185bd4",
+      "sample_ends_vector3": null,
+      "terminal_start_vector3": null,
+      "terminal_end_vector3": null,
+      "mask_rgba8_sha256": "138a578b6d74e0f925be77710ed15315215e0e404577213023a5da06aabd08fa",
+      "mask_red_nonzero_pixels": 2,
+      "mask_red_max": 140,
+      "stroke_max_rgba8_sha256": "22e20789fa2e13d33cc5ae9c739db99ddbf5db6945380c387d3e54ece0ce315f",
+      "composite_rgba8_sha256": "a1698e4aac25fc49c7a53258b0dfbbcf273fdf7aa05cbb11f7b20a55a43b7f34",
+      "composite_samples": [
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ],
+        [
+          230,
+          204,
+          178,
+          255
+        ]
+      ],
+      "barycentric_interior_pixels": 2,
+      "barycentric_mismatches_over_1_of_255": 0
+    }
+  ]
+}
