@@ -11,6 +11,8 @@ mod fountain_v14;
 // are integrated; production InkPen rendering remains explicitly approximate.
 #[cfg(test)]
 mod inkpen;
+#[cfg(test)]
+mod inkpen2;
 mod marker2;
 mod marker4;
 #[cfg(test)]

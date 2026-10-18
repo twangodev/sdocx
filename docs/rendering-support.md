@@ -108,6 +108,8 @@ paint and admission integration remain outstanding.
 The [InkPen2 V9 saved trace](reverse-engineering/inkpen2-saved-findings.md)
 establishes selected time/history radius and derived cache geometry; InkPen2
 also uses the generic approximation, separately from native live filtering.
+A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
+redraw cases; shape modes, caller admission and paint integration remain open.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
 establishes orientation-derived nib geometry and reused state; this profile
 also uses the generic approximation in Rust. Its test-only core reproduces
