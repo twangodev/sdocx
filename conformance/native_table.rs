@@ -1795,6 +1795,38 @@ fn main() {
             );
             return;
         }
+        Some("--shape-drawing-arcs") => {
+            let drawing = std::env::args_os()
+                .nth(3)
+                .expect("libSPenDrawing.so path required");
+            let base = std::env::args_os()
+                .nth(4)
+                .expect("libSPenBase.so path required");
+            let skia = std::env::args_os()
+                .nth(5)
+                .expect("libSPenSkia.so path required");
+            shape_paths::capture_drawing(
+                Path::new(&path),
+                Path::new(&drawing),
+                Path::new(&base),
+                Path::new(&skia),
+            );
+            return;
+        }
+        Some("--shape-normalization") => {
+            let base = std::env::args_os()
+                .nth(3)
+                .expect("libSPenBase.so path required");
+            let skia = std::env::args_os()
+                .nth(4)
+                .expect("libSPenSkia.so path required");
+            shape_paths::capture_normalization(
+                Path::new(&path),
+                Path::new(&base),
+                Path::new(&skia),
+            );
+            return;
+        }
         Some("--pdf-paper-predicates") => {
             let base = std::env::args_os()
                 .nth(3)
