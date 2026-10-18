@@ -118,6 +118,9 @@ caller admission and paint integration remain outstanding.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and pattern upload.
 GPU compositing, caller admission and vector paint integration remain outstanding.
+The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
+default GLV10 selection and 11-float instance records; source-driven sampling,
+material transport and production integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
 establishes an integer-size diagonal core and separate fixed-width bounds.
 Hash-pinned oracles capture saved traversal, core/fringe triangles and host GLES
