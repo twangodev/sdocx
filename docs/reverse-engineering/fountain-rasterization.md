@@ -147,10 +147,10 @@ it does not claim to reproduce every native intermediate texture format or
 device driver. Native Draw's branch selection was inspected in disassembly;
 its renderer/texture object lifecycle was not emulated in this GPU test.
 
-The SDK still draws opaque circular paths for its reconstructed V16 profile.
-Its geometry checks remain valid, but native pixel coverage requires a backend
-that implements these scale-dependent attributes, shader coverage and the
-correct compositing path. V14 additionally requires tangents and its separate
+The SDK projects V16 coverage into radial vector gradients at canonical unit
+inverse scale. Geometry and scalar coverage checks do not establish native
+pixel parity: PDF raster output differs from SVG, and device-dependent scale
+compensation remains unimplemented. V14 uses tangents and its separate
 saved-stroke geometry algorithm.
 
 ## Live-tip attributes and shader execution

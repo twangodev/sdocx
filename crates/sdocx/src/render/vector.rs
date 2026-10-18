@@ -90,6 +90,8 @@ elements!(
     ClipPath,
     LinearGradient,
     RadialGradient,
+    SvgFilter,
+    ColorMatrix,
     SvgMask,
     Stop,
     Path,
@@ -136,7 +138,14 @@ macro_rules! children {
         pub fn add(mut self, child: impl Into<Node>) -> Self { self.0.append(child.into()); self }
     })* };
 }
-children!(Group, Definitions, ClipPath, LinearGradient, RadialGradient);
+children!(
+    Group,
+    Definitions,
+    ClipPath,
+    LinearGradient,
+    RadialGradient,
+    SvgFilter
+);
 
 pub(super) struct Scene {
     elements: Vec<Node>,
@@ -306,6 +315,7 @@ pub(super) enum Gradient {}
 pub(super) enum Mask {}
 #[derive(Clone, Copy)]
 pub(super) enum Clip {}
+pub(super) enum Filter {}
 #[derive(Clone, Copy)]
 pub(super) struct Definition<K> {
     id: usize,
@@ -447,6 +457,14 @@ impl Group {
     }
     pub fn replay_stroke(mut self, index: StrokeIndex) -> Self {
         self.0.attr("data-replay-stroke", index.0);
+        self
+    }
+    pub fn filtered(mut self, id: &Definition<Filter>) -> Self {
+        self.0.attr("filter", id.url());
+        self
+    }
+    pub fn opacity(mut self, value: impl Into<Numeric>) -> Self {
+        self.0.number("opacity", value, 0.0..=1.0);
         self
     }
 }
@@ -669,6 +687,47 @@ impl SvgMask {
                 .set("maskUnits", "userSpaceOnUse")
                 .set("style", "mask-type:luminance"),
         ))
+    }
+}
+impl SvgFilter {
+    pub fn new(id: &Definition<Filter>) -> Self {
+        Self(Node::new(
+            svg_element::Filter::new()
+                .set("id", id.id())
+                .set("filterUnits", "userSpaceOnUse")
+                .set("primitiveUnits", "userSpaceOnUse")
+                .set("color-interpolation-filters", "sRGB"),
+        ))
+    }
+    pub fn region(
+        mut self,
+        x: impl Into<Numeric>,
+        y: impl Into<Numeric>,
+        width: impl Into<Numeric>,
+        height: impl Into<Numeric>,
+    ) -> Self {
+        self.0.number("x", x, -f64::MAX..=f64::MAX);
+        self.0.number("y", y, -f64::MAX..=f64::MAX);
+        self.0.number("width", width, f64::MIN_POSITIVE..=f64::MAX);
+        self.0
+            .number("height", height, f64::MIN_POSITIVE..=f64::MAX);
+        self
+    }
+}
+impl ColorMatrix {
+    pub fn matrix(values: [f64; 20]) -> Self {
+        let values = values
+            .into_iter()
+            .map(|value| Number::new(value).map(Number::text))
+            .collect::<Option<Vec<_>>>();
+        let mut node = Node::new(svg_element::FilterEffectColorMatrix::new());
+        node.attr("in", "SourceGraphic");
+        node.attr("type", "matrix");
+        node.optional(
+            "values",
+            values.map(|values| Value::from(values).to_string()),
+        );
+        Self(node)
     }
 }
 impl Stop {

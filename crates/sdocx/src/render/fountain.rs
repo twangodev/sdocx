@@ -1,11 +1,19 @@
-//! Scale-independent V14 fountain shading using only Svg vector primitives.
+//! Fountain V14/V16 coverage using only SVG vector primitives.
 use super::vector::{
-    Blend, Circle, ColorValue, Data, Definitions, Gradient, Group, LinearGradient, Mask, Paint,
-    Path, ReplayPart, Scene, Stop, Styled, SvgMask, Transform, coordinate, decimal,
+    Blend, Circle, ColorMatrix, ColorValue, Data, Definitions, Filter, Gradient, Group,
+    LinearGradient, Mask, Paint, Path, RadialGradient, ReplayPart, Scene, Stop, Styled, SvgFilter,
+    SvgMask, Transform, coordinate, decimal,
 };
 use crate::PreparedStroke;
+use std::collections::HashMap;
 
 pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) -> bool {
+    if paint.profile == Some("FountainPen")
+        && paint.dot_radii.is_some()
+        && paint.dot_directions.is_none()
+    {
+        return render_v16(svg, paint, replay);
+    }
     let (Some(directions), Some(radii), Some(bounds)) =
         (&paint.dot_directions, &paint.dot_radii, paint.bounds)
     else {
@@ -78,6 +86,184 @@ pub(super) fn render(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) 
     true
 }
 
+#[derive(Clone, Copy)]
+struct V16Stamp {
+    x: f32,
+    y: f32,
+    extent_x: f32,
+    extent_y: f32,
+    gradient: usize,
+}
+
+/// Retain the V16 RTV5 radial coverage as vector gradients at canonical unit
+/// inverse scale. This is the saved shader equation, not a device-pixel match
+/// for arbitrary SVG zoom or PDF viewing scale.
+fn render_v16(svg: &mut Scene, paint: &PreparedStroke<'_>, replay: bool) -> bool {
+    let (Some(radii), Some(bounds)) = (&paint.dot_radii, paint.bounds) else {
+        return false;
+    };
+    if radii.len() != paint.points.len() || radii.is_empty() {
+        return false;
+    }
+
+    // RTV5::AddPoint float32 arithmetic at sx=sy=1, in native instruction
+    // order: rx/ry, min and factor, width compensation, extents, then inner.
+    // A gradient is shared only when both shader coverage parameters have
+    // identical f32 bits.
+    let mut unique = Vec::<(u32, u32, super::vector::Definition<Gradient>)>::new();
+    let mut indices = HashMap::<(u32, u32), usize>::new();
+    let mut stamps = Vec::with_capacity(radii.len());
+    let mut extent_bounds = (
+        f32::INFINITY,
+        f32::INFINITY,
+        f32::NEG_INFINITY,
+        f32::NEG_INFINITY,
+    );
+    for (point, radius) in paint.points.iter().zip(radii) {
+        let radius = *radius as f32;
+        if !radius.is_finite() || radius <= 0. {
+            return false;
+        }
+        let rx = radius / 1.0_f32;
+        let ry = radius / 1.0_f32;
+        let minimum = rx.min(ry);
+        let factor = if minimum < 0.5 { 0.5 / minimum } else { 1.0 };
+        let alpha = 1.0 / factor;
+        let extent_x = rx * factor.max(1.0) + 0.5;
+        let extent_y = ry * factor.max(1.0) + 0.5;
+        let maximum = extent_x.max(extent_y);
+        let inner = 0.5 * (maximum - 1.0) / maximum;
+        let key = (alpha.to_bits(), inner.to_bits());
+        let gradient = if let Some(&index) = indices.get(&key) {
+            index
+        } else {
+            let index = unique.len();
+            unique.push((key.0, key.1, svg.definition::<Gradient>()));
+            indices.insert(key, index);
+            index
+        };
+        let x = point.x as f32;
+        let y = point.y as f32;
+        extent_bounds.0 = extent_bounds.0.min(x - extent_x);
+        extent_bounds.1 = extent_bounds.1.min(y - extent_y);
+        extent_bounds.2 = extent_bounds.2.max(x + extent_x);
+        extent_bounds.3 = extent_bounds.3.max(y + extent_y);
+        stamps.push(V16Stamp {
+            x,
+            y,
+            extent_x,
+            extent_y,
+            gradient,
+        });
+    }
+
+    // Use the prepared bounds as a guard against inconsistent input while
+    // expanding them to include RTV5's half-pixel coverage extent.
+    let x0 = extent_bounds.0.min((bounds.x_min - 1.) as f32) as f64 - 1.;
+    let y0 = extent_bounds.1.min((bounds.y_min - 1.) as f32) as f64 - 1.;
+    let x1 = extent_bounds.2.max((bounds.x_max + 1.) as f32) as f64 + 1.;
+    let y1 = extent_bounds.3.max((bounds.y_max + 1.) as f32) as f64 + 1.;
+    let width = x1 - x0;
+    let height = y1 - y0;
+    let filter = svg.definition::<Filter>();
+    let Some(color) = parse_rgb(&paint.color) else {
+        return false;
+    };
+    let matrix = ColorMatrix::matrix([
+        0.,
+        0.,
+        0.,
+        0.,
+        f64::from(color.r) / 255.,
+        0.,
+        0.,
+        0.,
+        0.,
+        f64::from(color.g) / 255.,
+        0.,
+        0.,
+        0.,
+        0.,
+        f64::from(color.b) / 255.,
+        1.,
+        0.,
+        0.,
+        0.,
+        0.,
+    ]);
+
+    let mut definitions = Definitions::new();
+    for (alpha_bits, inner_bits, id) in &unique {
+        let alpha = f32::from_bits(*alpha_bits);
+        let inner = f32::from_bits(*inner_bits);
+        let mut gradient = RadialGradient::new(id)
+            .cx(0)
+            .cy(0)
+            .r(1)
+            .add(Stop::new(0, ColorValue::WHITE).opacity(alpha));
+        if inner > 0. {
+            gradient = gradient.add(Stop::new(inner + inner, ColorValue::WHITE).opacity(alpha));
+        }
+        definitions = definitions.add(gradient.add(Stop::new(1, ColorValue::WHITE).opacity(0)));
+    }
+    definitions = definitions.add(
+        SvgFilter::new(&filter)
+            .region(x0, y0, width, height)
+            .add(matrix),
+    );
+    svg.scope(definitions, |_| {});
+    svg.scope(
+        Group::new().filtered(&filter).opacity(paint.opacity),
+        |svg| {
+            svg.scope(Group::new().isolated(), |svg| {
+                svg.push(
+                    super::vector::Rectangle::new()
+                        .x(x0)
+                        .y(y0)
+                        .width(width)
+                        .height(height)
+                        .fill(Paint::BLACK),
+                );
+                for (index, stamp) in stamps.iter().enumerate() {
+                    let Some((_, _, gradient)) = unique.get(stamp.gradient) else {
+                        continue;
+                    };
+                    let transform = Transform::matrix_unrounded([
+                        stamp.extent_x as f64,
+                        0.,
+                        0.,
+                        stamp.extent_y as f64,
+                        stamp.x as f64,
+                        stamp.y as f64,
+                    ]);
+                    svg.push(
+                        Group::new()
+                            .blend(Blend::Lighten)
+                            .isolated()
+                            .replay_part(replay.then_some(ReplayPart(index + 1)))
+                            .transformed(transform)
+                            .add(Circle::new().r(1).fill(Paint::BLACK))
+                            .add(Circle::new().r(1).fill(Paint::Gradient(*gradient))),
+                    );
+                }
+            });
+        },
+    );
+    true
+}
+
+fn parse_rgb(value: &str) -> Option<crate::Color> {
+    let hex = value.strip_prefix('#')?;
+    if hex.len() != 6 {
+        return None;
+    }
+    Some(crate::Color {
+        r: u8::from_str_radix(&hex[0..2], 16).ok()?,
+        g: u8::from_str_radix(&hex[2..4], 16).ok()?,
+        b: u8::from_str_radix(&hex[4..6], 16).ok()?,
+    })
+}
+
 #[cfg(all(test, feature = "serde"))]
 mod tests {
     use super::super::vector::Svg;
@@ -118,6 +304,34 @@ mod tests {
         pixmap
     }
 
+    fn v16_scene(stamps: &[(f64, f64, f64)], opacity: f64, replay: bool) -> String {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
+                .unwrap();
+        let stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        let mut paint = crate::prepare_stroke(&stroke, false);
+        paint.profile = Some("FountainPen");
+        paint.points = Cow::Owned(
+            stamps
+                .iter()
+                .map(|(x, y, _)| Point { x: *x, y: *y })
+                .collect(),
+        );
+        paint.dot_radii = Some(stamps.iter().map(|(_, _, r)| *r).collect());
+        paint.dot_directions = None;
+        paint.bounds = Some(BoundingBox {
+            x_min: 0.,
+            y_min: 0.,
+            x_max: 64.,
+            y_max: 64.,
+        });
+        paint.color = "#1a1a1a".into();
+        paint.opacity = opacity;
+        let mut svg = Scene::new(Svg::new().width(64).height(64));
+        assert!(render(&mut svg, &paint, replay));
+        svg.finish()
+    }
+
     #[test]
     fn fountain_gradient_follows_tangent_and_applies_opacity_once() {
         let horizontal = shaded_stamp(Point { x: 1., y: 0. }, 1);
@@ -144,6 +358,159 @@ mod tests {
         assert_eq!(image.pixel(48, 32), vertical.pixel(32, 48));
         assert!(!horizontal.contains("<image"));
         assert!(!horizontal.contains("<filter"));
+    }
+
+    #[test]
+    fn v16_unit_scale_radial_stops_match_rtv5_numeric_witnesses() {
+        // Independent RTV5 AddPoint + fragment-shader witnesses at sx=sy=1:
+        // r=.1 => extent 1, A=.2, inner=0; center=.2, u=.5 => .1.
+        // r=.5 => extent 1, A=1, inner=0.
+        // r=2 => extent 2.5, A=1, inner=.3 (u plateau ends at .6).
+        let svg = v16_scene(
+            &[
+                (12.5, 12.5, 0.1),
+                (24.5, 24.5, 0.499),
+                (36.5, 36.5, 0.5),
+                (48.5, 48.5, 0.501),
+                (55.5, 55.5, 2.0),
+            ],
+            1.,
+            false,
+        );
+        let xml = roxmltree::Document::parse(&svg).unwrap();
+        let gradients = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("radialGradient"))
+            .collect::<Vec<_>>();
+        // .1 and .499 have the same inner stop but distinct width alpha.
+        // .5 and .501 are distinct at float32, while repeat parameters share.
+        assert_eq!(gradients.len(), 5);
+        let stops = |gradient: roxmltree::Node<'_, '_>| {
+            gradient
+                .children()
+                .filter(|node| node.has_tag_name("stop"))
+                .map(|node| {
+                    (
+                        node.attribute("offset").unwrap().parse::<f32>().unwrap(),
+                        node.attribute("stop-opacity")
+                            .unwrap()
+                            .parse::<f32>()
+                            .unwrap(),
+                    )
+                })
+                .collect::<Vec<_>>()
+        };
+        let tiny = gradients
+            .iter()
+            .find(|gradient| (stops(**gradient)[0].1 - 0.2).abs() < 1e-6)
+            .unwrap();
+        let tiny_stops = stops(*tiny);
+        assert_eq!(tiny_stops, [(0., 0.2), (1., 0.)]);
+        assert!((0.2_f32 * (1.0_f32 - 0.5_f32) - 0.1_f32).abs() < f32::EPSILON);
+        let large = gradients
+            .iter()
+            .find(|gradient| {
+                let values = stops(**gradient);
+                values.len() == 3 && values[1].0 > 0.5
+            })
+            .unwrap();
+        let large_stops = stops(*large);
+        assert_eq!(large_stops[0], (0., 1.));
+        assert!((large_stops[1].0 - 0.6).abs() < 1e-6);
+        assert_eq!(large_stops[1].1, 1.);
+        assert_eq!(large_stops[2], (1., 0.));
+        assert!(!svg.contains("<image"));
+        assert_eq!(svg.matches("<filter ").count(), 1);
+        assert_eq!(svg.matches("<feColorMatrix").count(), 1);
+    }
+
+    #[test]
+    fn v16_overlap_uses_max_coverage_and_saved_alpha_once() {
+        let one_svg = v16_scene(&[(32.5, 32.5, 0.1)], 1., false);
+        let xml = roxmltree::Document::parse(&one_svg).unwrap();
+        let filters = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("filter"))
+            .collect::<Vec<_>>();
+        let matrices = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("feColorMatrix"))
+            .collect::<Vec<_>>();
+        assert_eq!(filters.len(), 1);
+        assert_eq!(matrices.len(), 1);
+        assert_eq!(filters[0].attribute("filterUnits"), Some("userSpaceOnUse"));
+        assert_eq!(
+            filters[0].attribute("color-interpolation-filters"),
+            Some("sRGB")
+        );
+        assert_eq!(matrices[0].attribute("in"), Some("SourceGraphic"));
+        assert_eq!(matrices[0].attribute("type"), Some("matrix"));
+        let matrix = svgtypes::NumberListParser::from(matrices[0].attribute("values").unwrap())
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(matrix.len(), 20);
+        assert!((matrix[4] - 26. / 255.).abs() < f64::EPSILON);
+        assert!((matrix[9] - 26. / 255.).abs() < f64::EPSILON);
+        assert!((matrix[14] - 26. / 255.).abs() < f64::EPSILON);
+        assert_eq!(&matrix[15..], &[1., 0., 0., 0., 0.]);
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.attribute("filter").is_some())
+                .count(),
+            1
+        );
+        assert_eq!(
+            xml.descendants()
+                .filter(|node| node.attribute("opacity").is_some())
+                .count(),
+            1
+        );
+        assert!(
+            xml.descendants()
+                .any(|node| node.has_tag_name("rect") && node.attribute("fill") == Some("#000000"))
+        );
+        assert!(!one_svg.contains("<image"));
+        assert!(!one_svg.contains("<feImage"));
+        let one = preview(&one_svg);
+        // Pixel center coincides with the stamp center: native shader A=.2.
+        assert!(
+            (one.pixel(32, 32).unwrap().alpha() as i32 - 51).abs() <= 1,
+            "one center alpha {}",
+            one.pixel(32, 32).unwrap().alpha()
+        );
+        let alpha = preview(&v16_scene(&[(32.5, 32.5, 0.1)], 0.5, false));
+        // Coverage is .2 and saved stroke opacity is .5, applied once.
+        assert!((alpha.pixel(32, 32).unwrap().alpha() as i32 - 26).abs() <= 1);
+
+        let overlap = preview(&v16_scene(
+            &[(32.5, 32.5, 0.1), (32.75, 32.5, 0.15)],
+            1.,
+            false,
+        ));
+        // At the first center, coverage values are .2 and .225 because the
+        // r=.15 stamp has alphaByWidth=.3 and local normalized distance .25.
+        // RTV5's max blend retains .225; source-over accumulation exceeds it.
+        assert!(
+            (overlap.pixel(32, 32).unwrap().alpha() as i32 - 57).abs() <= 1,
+            "overlap alpha was {}",
+            overlap.pixel(32, 32).unwrap().alpha()
+        );
+        let replay = v16_scene(&[(32.5, 32.5, 0.1), (32.75, 32.5, 0.15)], 1., true);
+        let xml = roxmltree::Document::parse(&replay).unwrap();
+        assert!(
+            xml.descendants()
+                .any(|node| { node.attribute("transform") == Some("matrix(1,0,0,1,32.5,32.5)") }),
+            "native fractional stamp centers must survive transform serialization"
+        );
+        let parts = xml
+            .descendants()
+            .filter(|node| node.attribute("data-replay-part").is_some())
+            .map(|node| node.attribute("data-replay-part").unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(parts, ["1", "2"]);
+        assert!(!replay.contains("<image"));
+        assert_eq!(replay.matches("<filter ").count(), 1);
+        assert_eq!(replay.matches("<feColorMatrix").count(), 1);
     }
 
     #[cfg(feature = "pdf")]
@@ -184,6 +551,52 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn v16_pdf_retains_radial_opacity_shading_and_lighten_without_images() {
+        let page = crate::RenderedPage {
+            text_diagnostics: Vec::new(),
+            object_diagnostics: Vec::new(),
+            geometry_diagnostics: Vec::new(),
+            paint_diagnostics: Vec::new(),
+            source_page_index: 0,
+            width: 64,
+            height: 64,
+            svg: v16_scene(&[(32.5, 32.5, 2.)], 0.5, false),
+        };
+        let bytes = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default()).unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let mut radial_shading = false;
+        let mut lighten = false;
+        for object in pdf.objects.values() {
+            let dict = match object {
+                lopdf::Object::Dictionary(dict) => dict,
+                lopdf::Object::Stream(stream) => &stream.dict,
+                _ => continue,
+            };
+            assert_ne!(
+                dict.get(b"Subtype").and_then(lopdf::Object::as_name).ok(),
+                Some(b"Image".as_slice())
+            );
+            if dict.has(b"ShadingType") {
+                radial_shading |= dict
+                    .get(b"ShadingType")
+                    .and_then(lopdf::Object::as_i64)
+                    .is_ok_and(|kind| kind == 3);
+            }
+            lighten |= dict.get(b"BM").and_then(lopdf::Object::as_name).ok()
+                == Some(b"Lighten".as_slice());
+        }
+        assert!(
+            radial_shading,
+            "V16 radial opacity must remain a PDF shading"
+        );
+        assert!(
+            lighten,
+            "V16 max coverage must retain its vector blend mode"
+        );
+    }
+
     #[test]
     fn saved_fountain_alpha_applies_once_to_overlapping_stamps() {
         let reference: serde_json::Value =
@@ -197,7 +610,7 @@ mod tests {
         ];
         stroke.pressures = vec![0.7; 3];
         stroke.timestamps = vec![0, 10, 20];
-        let render_stroke = |stroke: &Stroke| {
+        let render_stroke = |stroke: &Stroke, expect_filter: bool| {
             let mut svg = Scene::new(Svg::new().width(64).height(64));
             crate::render::render_stroke(
                 &mut svg,
@@ -207,20 +620,25 @@ mod tests {
             );
             let svg = svg.finish();
             assert!(!svg.contains("<image"));
-            assert!(!svg.contains("<filter"));
+            if expect_filter {
+                assert_eq!(svg.matches("<filter ").count(), 1);
+            } else {
+                assert!(!svg.contains("<filter"));
+            }
             preview(&svg)
         };
         for settings in ["14;", "18;0;100;"] {
             stroke.rendering.as_mut().unwrap().advanced_settings = Some(settings.into());
             stroke.rendering.as_mut().unwrap().style.color_argb = Some(0xff000000);
-            let opaque = render_stroke(&stroke);
+            let v16 = settings == "18;0;100;";
+            let opaque = render_stroke(&stroke, v16);
             assert!(opaque.pixels().iter().any(|p| p.alpha() == 255));
             for alpha in [0, 1, 64, 128, 254, 255] {
                 stroke.rendering.as_mut().unwrap().style.color_argb = Some(alpha << 24);
                 let paint = crate::prepare_stroke(&stroke, false);
                 assert!(paint.dot_radii.is_some());
                 assert_eq!(paint.opacity, (alpha as f32 / 255.) as f64);
-                let image = render_stroke(&stroke);
+                let image = render_stroke(&stroke, v16);
                 for (actual, full) in image.pixels().iter().zip(opaque.pixels()) {
                     let expected = full.alpha() as f64 * paint.opacity;
                     assert!(

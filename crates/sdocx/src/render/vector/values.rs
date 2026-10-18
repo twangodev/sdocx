@@ -256,6 +256,12 @@ impl Transform {
                 .collect(),
         }
     }
+    pub fn matrix_unrounded(values: [f64; 6]) -> Self {
+        Self {
+            kind: TransformKind::Matrix,
+            values: values.into_iter().map(Number::new).collect(),
+        }
+    }
     pub(super) fn text(self) -> Option<String> {
         let values = self
             .values

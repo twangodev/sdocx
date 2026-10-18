@@ -261,10 +261,18 @@ the resulting alpha once after maximum stamp coverage, as traced in
 [draw-time compositing](fountain-rasterization.md#draw-time-compositing).
 
 Shared Rust preparation retains reconstructed stamps and carries the converted
-alpha into SVG, PDF and replay paint. V14 applies it to the masked stroke; V16 applies it
-to the union path. A regression checks both profiles across the six alpha
-values, including overlapping stamps and fully transparent strokes, and
-rejects image/filter output. This does not add erasing or rainbow effects.
+alpha into SVG, PDF and replay paint. Both profiles apply it once after maximum
+stamp coverage. Regressions cover the six alpha values, overlapping stamps and
+fully transparent strokes, without raster images. V14 uses a luminance mask;
+V16 uses an isolated grayscale field and one sRGB color matrix. This does not
+add erasing or rainbow effects.
+
+V16 now expresses RTV5 radial coverage at canonical unit inverse scale using
+vector gradients and maximum blending. Scalar coverage and resvg overlap tests
+pass; production SVG witnesses render in Chromium 153 and Firefox 155, and PDF
+lowers the colorizer to vector radial shadings and a luminosity mask without
+image XObjects. This does not establish native pixel parity: PDF raster samples
+differ from SVG, and device-dependent scale compensation remains unimplemented. The paired measurements below predate this coverage change.
 
 ## V16 native PDF appearance
 

@@ -10,7 +10,7 @@ the native feature. Native evidence may establish a serialized field, an isolate
 arithmetic kernel, a bounded producer, or a real-document comparison; these are
 different guarantees. Successful parsing and an empty diagnostic report do not
 certify visual parity. Chromium preview and vector SVG/PDF are the supported
-rendering target; Firefox fountain-mask appearance remains a known limitation.
+rendering target; Firefox V14 fountain-mask appearance remains a known limitation.
 
 ## Object types and locations
 
@@ -78,7 +78,7 @@ libraries, not a renderer for every registered pen.
 | Feature | Rust rendering | Evidence and remaining limits |
 | --- | --- | --- |
 | Fountain V14, saved `14;` | Reconstructed stamps/directions; vector directional shading, mask and maximum blending; tools 1–3 and fixed width | Executed native geometry fixtures and real-document comparisons. Native partial-alpha appearance still differs; Firefox masks fail. |
-| Fountain V16, saved `18;0;100;` | Reconstructed circular stamps with pressure/tilt/time/movement and fixed width; tools 1–3 | Executed native geometry fixtures; native coverage and zoom compensation are not reproduced. This setting selects drawing V16, not V18; V14 directional shading is not applied. |
+| Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry and scalar coverage checks; V16 SVG witnesses render in Chromium and Firefox, and PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified; PDF raster samples differ from SVG. This setting selects drawing V16, not V18. |
 | Marker2 | Sampled circular stamps, constant radius and saved alpha | Static native tracing and synthetic arithmetic controls; V2 thin-edge shading and complete device appearance remain unverified. |
 | Marker4 V7, saved `7;` | Stylus midpoint sampling and fractional rounded rectangular tip | Executed native geometry fixtures and isolated real-document appearance evidence; public support remains approximate because filtering/zoom coverage differ. |
 | Marker4 V8, saved `8;` | Sampled rounded rectangular tip, tool-specific rotation and saved alpha | Static native tracing and one paired Samsung PDF comparison; filtering/zoom coverage remain approximate. |
