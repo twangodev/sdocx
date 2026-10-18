@@ -345,7 +345,11 @@ mod tests {
         let image_xobjects = pdf
             .objects
             .values()
-            .filter_map(|object| object.as_dict().ok())
+            .filter_map(|object| match object {
+                Object::Dictionary(dict) => Some(dict),
+                Object::Stream(stream) => Some(&stream.dict),
+                _ => None,
+            })
             .filter(|dict| {
                 dict.get(b"Subtype")
                     .and_then(Object::as_name)
