@@ -14,6 +14,7 @@ import argparse
 import hashlib
 import json
 import shutil
+import struct
 from pathlib import Path
 
 import fountain_native
@@ -96,9 +97,9 @@ class NativePencil3(NativeFountain):
             'SPen::MotionEvent::GetOrientation(int) const': lambda: self.motion_current('orientation', 'float'),
             'SPen::MotionEvent::GetEventTime() const': lambda: self.motion_current('event_time', 'int'),
             'SPen::MotionEvent::GetDownTime() const': lambda: self.motion_current('down_time', 'int'),
-            'SPen::MotionEvent::GetButtonState() const': lambda: self.x(0, 0),
-            'SPen::MotionEvent::GetSource() const': lambda: self.x(0, 0),
-            'SPen::MotionEvent::GetFlags() const': lambda: self.x(0, 0),
+            'SPen::MotionEvent::GetButtonState() const': lambda: self.x(0, self.event().get('button_state', 0)),
+            'SPen::MotionEvent::GetSource() const': lambda: self.x(0, self.event().get('source', 0)),
+            'SPen::MotionEvent::GetFlags() const': lambda: self.x(0, self.event().get('flags', 0)),
             'SPen::MotionEvent::SetTilt(float)': lambda: None,
             'SPen::MotionEvent::SetHistoricalTilt(int, float)': lambda: None,
             'SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)': self.make_endpoint_event,
@@ -273,20 +274,62 @@ class NativePencil3(NativeFountain):
     def make_endpoint_event(self):
         """Register native endPen's one-pointer event from its source endpoint.
 
-        V1 builds this temporary from the already-read final MotionEvent
-        channels at 0x107f68-0x108040. The fixture uses those saved channels
-        rather than inventing an Android MotionEvent ABI layout.
+        V1 materializes PointerProperties and PointerCoords from the current
+        MotionEvent getters at 0x107f68-0x108040. Decode those native call
+        arguments rather than substituting the saved fixture endpoint.
         """
         ptr = self.x(0)
         stroke = self.saved_stroke
+        action, pointer_count = self.x(2), self.x(3)
+        properties, coords = self.x(4), self.x(5)
+        if pointer_count != 1 or not properties or not coords:
+            raise AssertionError('Pencil3 endPen did not build one complete pointer')
+        pointer_id, tool_type = self.get(properties, 'ii')
+        down_time = self.x(1)
+        if down_time & (1 << 63):
+            down_time -= 1 << 64
+        event_time = self.get(coords, 'q')[0]
+        orientation = self.get(coords + 16, 'f')[0]
+        pressure = self.get(coords + 20, 'f')[0]
+        tilt = self.get(coords + 24, 'f')[0]
+        x, y = self.get(coords + 40, '2d')
+        button_state, source = self.x(6), self.x(7)
+        sp = self.u.reg_read(R.UC_ARM64_REG_SP)
+        flags = self.get(sp, 'i')[0]
+
+        def f32(value):
+            return struct.unpack('<f', struct.pack('<f', float(value)))[0]
+
+        expected = {
+            'pointer id': (pointer_id, 0),
+            'tool type': (tool_type, stroke['tool_type']),
+            'action': (action, 1),
+            'down time': (down_time, stroke['timestamps'][0]),
+            'event time': (event_time, stroke['timestamps'][-1]),
+            'x': (x, float(f32(stroke['points'][-1][0]))),
+            'y': (y, float(f32(stroke['points'][-1][1]))),
+            'pressure': (pressure, f32(stroke['pressures'][-1])),
+            'tilt': (tilt, f32(stroke['tilts'][-1]) if stroke['tilts'] else 0.0),
+            'orientation': (orientation, f32(stroke['orientations'][-1]) if stroke['orientations'] else 0.0),
+            'button state': (button_state, 0),
+            'source': (source, 0),
+            'flags': (flags, 0),
+        }
+        for name, (actual, wanted) in expected.items():
+            if actual != wanted:
+                raise AssertionError(f'native Pencil3 endpoint {name} mismatch: {actual!r} != {wanted!r}')
         self.events[ptr] = {
-            'tool': stroke['tool_type'],
-            'points': list(stroke['points'][-1]),
-            'pressures': [stroke['pressures'][-1]],
-            'times': [stroke['timestamps'][-1]],
-            'down_time': self.x(1),
-            'tilts': [stroke['tilts'][-1] if stroke['tilts'] else 0.0],
-            'orientations': [stroke['orientations'][-1] if stroke['orientations'] else 0.0],
+            'tool': tool_type,
+            'points': [x, y],
+            'pressures': [pressure],
+            'times': [event_time],
+            'down_time': down_time,
+            'tilts': [tilt],
+            'orientations': [orientation],
+            'button_state': button_state,
+            'source': source,
+            'flags': flags,
+            'action': action,
         }
 
     def event(self):
