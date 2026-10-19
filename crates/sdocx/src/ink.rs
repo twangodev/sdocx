@@ -5,8 +5,7 @@ use std::borrow::Cow;
 mod airbrush;
 #[cfg(test)]
 mod brushpen;
-#[cfg(test)]
-mod calligraphy;
+pub(crate) mod calligraphy;
 
 #[cfg(test)]
 pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>; 3]> {
