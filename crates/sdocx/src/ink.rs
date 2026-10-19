@@ -308,6 +308,18 @@ fn prepare_stroke_inner(
     let defaultpen = context.and_then(|_| defaultpen::prepare(stroke));
     let oblique = context.and_then(|context| prepare_oblique_stroke(stroke, context));
     let mut fountain = fountain::prepare(stroke);
+    if fountain.is_some()
+        && stroke.color.is_none()
+        && stroke
+            .rendering
+            .as_ref()
+            .and_then(|rendering| rendering.style.color_argb)
+            .is_none()
+    {
+        // Native Fountain ObjectStroke defaults an omitted ARGB color to
+        // opaque black. Apply the existing canvas dark-mode adaptation.
+        paint.color = if dark_mode { "#ffffff" } else { "#000000" }.into();
+    }
     let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
     let native = fountain
         .map(|ink| {
@@ -767,6 +779,43 @@ mod tests {
         input
     }
 
+    fn fountain_stroke(advanced_settings: &str) -> Stroke {
+        let mut input = stroke(&[(0., 0.), (10., 0.), (20., 0.)]);
+        input.pressures = vec![0.5; input.points.len()];
+        input.timestamps = vec![0, 10, 20];
+        input.pen_width = 2.5;
+        input.rendering = Some(crate::StrokeRendering {
+            metadata: None,
+            pen_name: Some(
+                "com.samsung.android.sdk.pen.pen.preload.FountainPen".into(),
+            ),
+            advanced_settings: Some(advanced_settings.into()),
+            tool_type_raw: 2,
+            properties: crate::StrokeProperties {
+                compressed: true,
+                replay_only: false,
+                stylus_channels: false,
+                eraser: false,
+                fixed_width: false,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: true,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            },
+            style: crate::StrokeStyle {
+                pen_size: (advanced_settings != "14;").then_some(2.5),
+                initial_tolerance: (advanced_settings == "14;").then_some(0.),
+                ..crate::StrokeStyle::default()
+            },
+        });
+        input
+    }
+
     #[test]
     fn defaultpen_redraw_returns_and_full_native_vectors_match_fixture() {
         let fixture: serde_json::Value = serde_json::from_str(include_str!(
@@ -868,6 +917,59 @@ mod tests {
             assert_eq!(prepared.color, ordinary_paint.color);
             assert_eq!(prepared.opacity, 1.0);
         }
+    }
+
+    #[test]
+    fn admitted_fountain_missing_color_uses_native_default_and_theme_adaptation() {
+        for version in ["14;", "18;0;100;"] {
+            let mut input = fountain_stroke(version);
+            assert!(input.color.is_none());
+            assert!(input
+                .rendering
+                .as_ref()
+                .unwrap()
+                .style
+                .color_argb
+                .is_none());
+            for (dark_mode, expected) in [(false, "#000000"), (true, "#ffffff")] {
+                let prepared = prepare_stroke(&input, dark_mode);
+                assert_eq!(prepared.support, InkSupport::Reconstructed, "{version}");
+                assert_eq!(prepared.color, expected, "{version}, dark={dark_mode}");
+                assert_eq!(prepared.opacity, 1.0, "{version}");
+            }
+
+            input.color = Some(crate::Color {
+                r: 0x33,
+                g: 0x66,
+                b: 0x99,
+            });
+            assert_eq!(prepare_stroke(&input, false).color, "#336699", "{version}");
+        }
+    }
+
+    #[test]
+    fn fountain_color_fallback_does_not_change_style_argb_or_unsupported_fallback() {
+        let mut explicit = fountain_stroke("18;0;100;");
+        explicit.color = Some(crate::Color { r: 3, g: 3, b: 3 });
+        explicit
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .color_argb = Some(0xff03_0303);
+        let prepared = prepare_stroke(&explicit, false);
+        assert_eq!(prepared.color, "#030303");
+        assert_eq!(prepared.opacity, 1.0);
+
+        let mut unsupported = fountain_stroke("17;0;100;");
+        let expected = stroke_paint(&unsupported, false).color;
+        let prepared = prepare_stroke(&unsupported, false);
+        assert_eq!(prepared.support, InkSupport::Approximate);
+        assert_eq!(prepared.color, expected);
+        assert_eq!(prepared.color, "#1a1a1a");
+
+        unsupported.rendering = None;
+        assert_eq!(prepare_stroke(&unsupported, false).color, "#1a1a1a");
     }
 
     #[test]

@@ -91,6 +91,14 @@ outer SDK loading is not exercised.
 | Rainbow, eraser and straighten effects | Metadata retained; native effect semantics not reproduced | Gates vary by profile. V8 accepts straighten/fixed-width bits without implementing their separate effect semantics. |
 | Live prediction and temporary tips | Saved samples and saved-vector replay only | Native live-state research does not establish a production live renderer. |
 
+Admitted Fountain V14/V16 strokes with neither public RGB nor saved ARGB use
+native default black through the existing page theme. The [color oracle](../conformance/fountain-saved-color-native.json)
+replays two embedded corpus frames and eight separate synthetic Drawing controls;
+it does not establish outer SDK loading or final native pixels. Paired 1×
+Chromium, Firefox, MuPDF and PDFium renders lower mean error against the host
+shader references for one real V14 stroke and one synthetic V16 control;
+PDF sampling differences remain.
+
 Profile admission and validation are narrower than the names above. See
 [stroke rendering](reverse-engineering/stroke-rendering-findings.md),
 [fountain parity](reverse-engineering/fountain-parity.md),

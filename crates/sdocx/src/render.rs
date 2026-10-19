@@ -3164,7 +3164,20 @@ fn render_stroke(
         crate::prepare_stroke(stroke, false)
     };
     if paint.coverage_mesh.is_none() {
-        paint.color = theme.foreground(stroke.color);
+        let native_fountain_default_color = paint.profile == Some("FountainPen")
+            && paint.support == crate::ink::InkSupport::Reconstructed
+            && stroke.color.is_none()
+            && stroke
+                .rendering
+                .as_ref()
+                .and_then(|rendering| rendering.style.color_argb)
+                .is_none();
+        let color = if native_fountain_default_color {
+            Some(Color { r: 0, g: 0, b: 0 })
+        } else {
+            stroke.color
+        };
+        paint.color = theme.foreground(color);
     }
     if let Some(index) = replay_index {
         svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
@@ -4421,6 +4434,110 @@ mod tests {
         assert_eq!(rendered.source_page_index, 0);
         assert!(rendered.svg.contains(r#"viewBox="0.0 0.0 100.0 100.0""#));
         assert!(render_layout_page_svg(&document, &layout, 1, &RenderOptions::default()).is_none());
+    }
+
+    #[cfg(feature = "serde")]
+    fn fountain_color_stroke(advanced_setting: &str) -> Stroke {
+        let reference: serde_json::Value =
+            serde_json::from_str(include_str!("../../../conformance/fountain-v14.json")).unwrap();
+        let mut stroke: Stroke = serde_json::from_value(reference["stroke"].clone()).unwrap();
+        stroke.points = vec![
+            Point { x: 10., y: 10. },
+            Point { x: 30., y: 20. },
+            Point { x: 40., y: 40. },
+        ];
+        stroke.pressures = vec![0.2, 0.7, 0.4];
+        stroke.timestamps = vec![0, 10, 20];
+        stroke.tilts = vec![0.4, 0.6, 0.5];
+        stroke.color = None;
+        let rendering = stroke.rendering.as_mut().unwrap();
+        rendering.advanced_settings = Some(advanced_setting.into());
+        rendering.style.color_argb = None;
+        rendering.style.color_type_raw = Some(0);
+        rendering.style.pen_size = Some(2.5);
+        rendering.style.initial_tolerance =
+            (advanced_setting == "14;").then_some(0.0);
+        stroke.pen_width = 2.5;
+        stroke
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn public_fountain_missing_color_uses_native_default_without_changing_other_fallbacks() {
+        let matrix_rgb = |svg: &str| {
+            let xml = roxmltree::Document::parse(svg).unwrap();
+            let matrix = xml
+                .descendants()
+                .find(|node| node.has_tag_name("feColorMatrix"))
+                .expect("Fountain SVG filter color matrix")
+                .attribute("values")
+                .unwrap();
+            let values = matrix
+                .split_whitespace()
+                .map(|value| value.parse::<f64>().unwrap())
+                .collect::<Vec<_>>();
+            assert_eq!(values.len(), 20);
+            [values[4], values[9], values[14]]
+        };
+
+        for setting in ["14;", "18;0;100;"] {
+            for (mode, expected) in [
+                (RenderColorMode::Light, [0., 0., 0.]),
+                (RenderColorMode::Dark, [1., 1., 1.]),
+            ] {
+                let mut page = page_with_uncolored_stroke();
+                page.objects = vec![fountain_color_stroke(setting).into()];
+                let svg = render_document_svg(
+                    &document(page),
+                    &RenderOptions {
+                        color_mode: mode,
+                        ..RenderOptions::default()
+                    },
+                )
+                .remove(0)
+                .svg;
+                assert_eq!(matrix_rgb(&svg), expected, "{setting}, {mode:?}");
+            }
+        }
+
+        let mut explicit = fountain_color_stroke("18;0;100;");
+        explicit.color = Some(Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        });
+        explicit
+            .rendering
+            .as_mut()
+            .unwrap()
+            .style
+            .color_argb = Some(0xff33_6699);
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![explicit.into()];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())
+            .remove(0)
+            .svg;
+        let actual = matrix_rgb(&svg);
+        for (actual, expected) in actual.into_iter().zip([51., 102., 153.].map(|v| v / 255.)) {
+            assert!((actual - expected).abs() < 1e-6);
+        }
+
+        let mut unsupported = fountain_color_stroke("17;0;100;");
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![unsupported.clone().into()];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())
+            .remove(0)
+            .svg;
+        assert!(svg.contains(r##"stroke="#1a1a1a""##));
+        assert!(!svg.contains("<feColorMatrix"));
+
+        unsupported.rendering = None;
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![unsupported.into()];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())
+            .remove(0)
+            .svg;
+        assert!(svg.contains(r##"stroke="#1a1a1a""##));
     }
 
     #[cfg(feature = "serde")]
