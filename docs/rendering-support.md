@@ -83,6 +83,7 @@ outer SDK loading is not exercised.
 | --- | --- | --- |
 | Fountain V14, saved `14;` | Reconstructed stamps/directions; vector directional shading, mask and maximum blending; tools 1–3 and fixed width | Native geometry, real-document comparisons and [six host shader field captures](../conformance/fountain-v14-field-native.json). Device-pixel fringe and partial-alpha appearance still differ; Firefox masks fail. |
 | Fountain V16, saved `18;0;100;` | Reconstructed stamps with pressure/tilt/time/movement and fixed width; tools 1–3; vector radial coverage at canonical unit inverse scale | Executed native geometry and scalar coverage checks; V16 SVG witnesses render in Chromium and Firefox, and PDF preserves vector gradients/masks. Device/zoom compensation and native pixel parity remain unverified; PDF raster samples differ from SVG. This setting selects drawing V16, not V18. |
+| DefaultPen, ordinary saved tools 1–3 | Native positions/radii rendered as ordered source-over circles | Native geometry and replay-boundary captures; paired vector exports improve on the generic fallback. Shader edge coverage and device pixel parity remain unverified. |
 | Marker2 | Sampled circular stamps, constant radius and saved alpha | Static native tracing and synthetic arithmetic controls; V2 thin-edge shading and complete device appearance remain unverified. |
 | Marker4 V7, saved `7;` | Stylus midpoint sampling and fractional rounded rectangular tip | Executed native geometry fixtures and isolated real-document appearance evidence; public support remains approximate because filtering/zoom coverage differ. |
 | Marker4 V8, saved `8;` | Sampled rounded rectangular tip, tool-specific rotation and saved alpha | Static native tracing and one paired Samsung PDF comparison; filtering/zoom coverage remain approximate. |
@@ -125,7 +126,7 @@ dispatch with the wrong queue; no host vector-slot assignment is needed.
 In the joined paint capture, renderer-message and vector-delete
 tasks remain deferred; complete queue/lifetime integration, vector edge coverage
 and device pixel parity remain outstanding.
-DefaultPen's test-only sampler checks
+DefaultPen's sampler checks
 position/radius streams in sixteen synthetic
 [cases including degenerate paths](../conformance/defaultpen-saved-native.json).
 Its [Drawing caller](../conformance/defaultpen-saved-caller-native.json) verifies
@@ -139,7 +140,9 @@ native blend setup and shader text that replaces input alpha with screen-space
 coverage. The [joined capture](../conformance/defaultpen-joined-paint-native.json)
 passes that Drawing-selected RT’s 132-byte vector through native upload and
 draw to a host RGBA8 target, with an explicit same-vector-object handoff.
-Natural queue/lifecycle setup, caller admission and vector paint remain outstanding.
+Admitted saved profiles render the native disks in order; other states retain
+the generic approximation. Natural queue/lifecycle setup and native shader edge
+coverage remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic approximation. A test-only numeric core matches twenty-one

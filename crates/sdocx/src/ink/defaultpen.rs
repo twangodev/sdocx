@@ -1,9 +1,17 @@
-//! Test-only DefaultPen saved-redraw sampler reconstructed from native RT AddPoint.
-//!
-//! The exercised contract is synthetic saved ObjectStroke replay. This module
-//! does not define app admission, paint, or GPU rendering.
+//! Saved DefaultPen geometry reconstructed from native RT AddPoint calls.
 use super::path::{P, Quad};
 use crate::Point;
+
+pub(super) struct DefaultInk {
+    pub points: Vec<[f32; 3]>,
+    /// Modeled cumulative counts per redrawLine return, including empty first
+    /// and last returns. The six-point native witness validates this schedule;
+    /// broader native source attribution remains unproven.
+    pub redraw_ends: Vec<usize>,
+    pub terminal_start: usize,
+}
+
+const MAX_INPUT_POINTS: usize = 100_000;
 
 fn repeat(length: f32, width: i32) -> usize {
     let scaled = if width <= 5 {
@@ -126,6 +134,9 @@ fn emit_cubic(out: &mut Vec<[f32; 3]>, points: [P; 4], size: f32) -> Option<()> 
         return Some(()); // Native getPosTan fails for an empty path.
     }
     let count = count(path.length, size)?;
+    if out.len().checked_add(count)? > MAX_SAMPLES_PER_PATH {
+        return None;
+    }
     let step = path.length / count as f32;
     let radius = (size * 0.5).max(1.0);
     let mut distance = 0.0_f32;
@@ -143,6 +154,9 @@ fn emit_quad(out: &mut Vec<[f32; 3]>, start: P, control: P, end: P, size: f32) -
         return Some(()); // Native getPosTan fails for an empty path.
     }
     let count = count(path.length, size)?;
+    if out.len().checked_add(count)? > MAX_SAMPLES_PER_PATH {
+        return None;
+    }
     let step = path.length / count as f32;
     let radius = (size * 0.5).max(1.0);
     let mut distance = 0.0_f32;
@@ -156,11 +170,22 @@ fn emit_quad(out: &mut Vec<[f32; 3]>, start: P, control: P, end: P, size: f32) -
 }
 
 /// Reconstructs the observed saved-redraw profile for supported source context.
-/// `source` is the MotionEvent source returned by the native Base event; the
-/// harness's constructor produces source 0. Unsupported sizes/point counts are
-/// not silently accepted by this bounded implementation.
-fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32; 3]>> {
-    if points.is_empty() || !size.is_finite() || size < 0.0 || size >= i32::MAX as f32 {
+/// `source` comes from the native ObjectStroke RedrawPen constructor path:
+/// DefaultPen's ObjectStroke overload calls MotionEvent(int, int, ...), which
+/// delegates to MotionEvent(), zeroing its source field before GetSource reads
+/// it. The pinned Drawing and saved-redraw captures both returned zero.
+pub(super) fn saved_with_boundaries(
+    points: &[Point],
+    size: f32,
+    tool: u32,
+    source: u32,
+) -> Option<DefaultInk> {
+    if points.is_empty()
+        || points.len() > MAX_INPUT_POINTS
+        || !size.is_finite()
+        || size < 0.0
+        || size >= i32::MAX as f32
+    {
         return None;
     }
     if !matches!(tool, 1..=3) {
@@ -184,8 +209,13 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
     }
     let input: Vec<P> = points.iter().copied().map(P::from).collect();
     let radius = (size * 0.5).max(1.0) + 0.5;
+    let redraw_count = points.len().saturating_sub(2);
     if points.len() == 2 {
-        return Some(vec![[input[0].x, input[0].y, radius]]);
+        return Some(DefaultInk {
+            points: vec![[input[0].x, input[0].y, radius]],
+            redraw_ends: Vec::new(),
+            terminal_start: 0,
+        });
     }
     // When every pre-terminal historical move is below the native 1.5-unit
     // axis gate, the wrapper leaves the start flag set and endPen emits one dot.
@@ -194,7 +224,11 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
         delta.x.abs() < 1.5 && delta.y.abs() < 1.5
     });
     if history_is_stationary {
-        return Some(vec![[input[0].x, input[0].y, radius]]);
+        return Some(DefaultInk {
+            points: vec![[input[0].x, input[0].y, radius]],
+            redraw_ends: vec![0; redraw_count],
+            terminal_start: 0,
+        });
     }
     let threshold = if tool == 1 || (tool == 2 && source == 0x1002) {
         50.0_f32
@@ -202,12 +236,16 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
         5.0_f32
     };
     let mut output = Vec::new();
+    let mut redraw_ends = Vec::with_capacity(redraw_count);
     let mut alternate = true;
     let mut start = input[0];
     let mut control = input[1];
     let mut retained = input[1];
     let mut endpoint = input[1];
     let mut cubic_end = false;
+    // RedrawPen calls redrawLine once for the initial historical event. The
+    // captured six-point caller emits no AddPoint at that first return.
+    redraw_ends.push(0);
 
     // RedrawPen visits all but the terminal event as history. The first
     // historical event seeds the drawable; later accepted events emit a
@@ -233,8 +271,9 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
         }
         cubic_end = alternate;
         endpoint = next;
+        redraw_ends.push(output.len());
     }
-
+    let terminal_start = output.len();
     let terminal = *input.last()?;
     if cubic_end {
         let midpoint = control.mid(terminal);
@@ -242,7 +281,67 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
     } else {
         emit_quad(&mut output, start, control, terminal, size)?;
     }
-    Some(output)
+    Some(DefaultInk {
+        points: output,
+        redraw_ends,
+        terminal_start,
+    })
+}
+
+#[cfg(test)]
+fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32; 3]>> {
+    saved_with_boundaries(points, size, tool, source).map(|ink| ink.points)
+}
+
+/// Canonical-page admission for the native DefaultPen profile. The pinned
+/// DefaultPen::SetAdvancedSetting is a no-op and GetStrokeDrawableGL always
+/// constructs/reuses the same unsuffixed drawable. Saved geometry is observed
+/// for tool types 1..=3 with curve on and off; other style/effect states fall
+/// back until their Drawing behavior is established.
+pub(super) fn prepare(stroke: &crate::Stroke) -> Option<DefaultInk> {
+    let rendering = stroke.rendering.as_ref()?;
+    if rendering.pen_name.as_deref()? != "com.samsung.android.sdk.pen.pen.preload.DefaultPen"
+        || !matches!(rendering.tool_type_raw, 1..=3)
+        || rendering.properties.fixed_width
+        || rendering.properties.replay_only
+        || rendering.properties.eraser
+        || rendering.properties.alpha_lock
+        || rendering.properties.fixed_opacity
+        || rendering.properties.rainbow_effect
+        || rendering.properties.straighten
+        || rendering.properties.reveal_mode
+        || rendering.properties.top_layer_pen
+        || rendering
+            .style
+            .stroke_type_raw
+            .is_some_and(|value| value != 0)
+        || rendering
+            .style
+            .color_type_raw
+            .is_some_and(|value| value != 0)
+        || rendering.style.fixed_width.is_some()
+    {
+        return None;
+    }
+    let size = rendering.style.pen_size?;
+    if !size.is_finite() {
+        return None;
+    }
+    // Native Drawing applies Pen::SetSize before selecting this drawable; its
+    // recovered clamp is [0.4, 800].
+    let size = size.clamp(0.4, 800.0);
+    let _public_color_override = stroke.color?;
+    // The shipped ObjectStroke overload creates this event natively, and its
+    // Base default constructor initializes source to zero. That differs from
+    // tool-2's source-0x1002 threshold branch.
+    let source = 0;
+    let ink = saved_with_boundaries(
+        &stroke.points,
+        size,
+        u32::from(rendering.tool_type_raw),
+        source,
+    )?;
+    Some(ink)
 }
 
 #[cfg(test)]

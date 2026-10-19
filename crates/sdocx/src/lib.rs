@@ -69,8 +69,8 @@ pub use formula::{
 };
 #[cfg(feature = "render")]
 pub use ink::{
-    CoverageMesh, CoverageTriangle, CoverageVertex, InkSupport, PEN_PROFILES, PenProfile,
-    PreparedStroke, RectStamp, prepare_stroke,
+    CoverageMesh, CoverageTriangle, CoverageVertex, InkSupport, OrderedDiskReplay, PEN_PROFILES,
+    PenProfile, PreparedStroke, RectStamp, prepare_stroke,
 };
 pub use integrity::{IntegrityCounts, IntegrityReport};
 pub use layer::LayerMetadata;

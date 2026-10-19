@@ -12,7 +12,6 @@ pub(crate) fn calligraphy_saved_native_mesh_for_test() -> Option<[Vec<[f32; 4]>;
     calligraphy::saved_native_mesh_bridge()
 }
 
-#[cfg(test)]
 mod defaultpen;
 mod fountain;
 mod fountain_v14;
@@ -155,6 +154,17 @@ pub struct CoverageMesh {
     pub bounds: Option<BoundingBox>,
 }
 
+/// Source-event boundaries for an ordered DefaultPen source-over disk stream.
+/// Redraw boundaries cover input points 2..N-2; the terminal EndPen suffix is
+/// rendered for the final input point. Empty ranges are retained.
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+pub struct OrderedDiskReplay {
+    pub redraw_ends: Vec<usize>,
+    pub terminal_start: usize,
+    pub terminal_part: usize,
+}
+
 /// Render preparation context whose coordinate contract is backed by the
 /// Standard PDF ObjectPDFWriter mode-0 matrix witness.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -254,6 +264,9 @@ pub struct PreparedStroke<'a> {
     /// Native circular stamps; one radius per prepared point.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_radii: Option<Vec<f64>>,
+    /// Ordered native DefaultPen disk instances rendered with source-over.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
+    pub ordered_disk_replay: Option<OrderedDiskReplay>,
     /// Native V14 stamp directions, including SmPath's small-vector behavior.
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub dot_directions: Option<Vec<crate::Point>>,
@@ -292,6 +305,7 @@ fn prepare_stroke_inner(
     context: Option<InkRenderContext>,
 ) -> PreparedStroke<'_> {
     let mut paint = stroke_paint(stroke, dark_mode);
+    let defaultpen = context.and_then(|_| defaultpen::prepare(stroke));
     let oblique = context.and_then(|context| prepare_oblique_stroke(stroke, context));
     let mut fountain = fountain::prepare(stroke);
     let dot_directions = fountain.as_mut().and_then(|ink| ink.directions.take());
@@ -310,28 +324,58 @@ fn prepare_stroke_inner(
         });
     let rect = marker4::prepare(stroke);
     let rect_stamp = rect.as_ref().map(|ink| ink.stamp);
-    let (points, sample_ends, dot_radii, opacity) = if let Some(ink) = oblique.as_ref() {
-        paint.segment_widths = None;
-        (
-            Cow::Borrowed(stroke.points.as_slice()),
-            None,
-            None,
-            ink.opacity,
-        )
-    } else if let Some((points, ends, radii, opacity)) = native {
-        paint.segment_widths = None;
-        (Cow::Owned(points), Some(ends), Some(radii), opacity)
-    } else if let Some(ink) = rect {
-        paint.segment_widths = None;
-        (
-            Cow::Owned(ink.points),
-            Some(ink.sample_ends),
-            None,
-            ink.opacity,
-        )
-    } else {
-        (Cow::Borrowed(stroke.points.as_slice()), None, None, 1.)
-    };
+    let (points, sample_ends, dot_radii, ordered_disk_replay, opacity) =
+        if let Some(ink) = defaultpen.as_ref() {
+            paint.segment_widths = None;
+            (
+                Cow::Owned(
+                    ink.points
+                        .iter()
+                        .map(|point| crate::Point {
+                            x: f64::from(point[0]),
+                            y: f64::from(point[1]),
+                        })
+                        .collect(),
+                ),
+                None,
+                Some(ink.points.iter().map(|point| f64::from(point[2])).collect()),
+                Some(OrderedDiskReplay {
+                    redraw_ends: ink.redraw_ends.clone(),
+                    terminal_start: ink.terminal_start,
+                    terminal_part: stroke.points.len(),
+                }),
+                1.0,
+            )
+        } else if let Some(ink) = oblique.as_ref() {
+            paint.segment_widths = None;
+            (
+                Cow::Borrowed(stroke.points.as_slice()),
+                None,
+                None,
+                None,
+                ink.opacity,
+            )
+        } else if let Some((points, ends, radii, opacity)) = native {
+            paint.segment_widths = None;
+            (Cow::Owned(points), Some(ends), Some(radii), None, opacity)
+        } else if let Some(ink) = rect {
+            paint.segment_widths = None;
+            (
+                Cow::Owned(ink.points),
+                Some(ink.sample_ends),
+                None,
+                None,
+                ink.opacity,
+            )
+        } else {
+            (
+                Cow::Borrowed(stroke.points.as_slice()),
+                None,
+                None,
+                None,
+                1.,
+            )
+        };
     let profile = stroke
         .rendering
         .as_ref()
@@ -398,12 +442,15 @@ fn prepare_stroke_inner(
         points,
         sample_ends,
         dot_radii,
+        ordered_disk_replay,
         dot_directions,
         rect_stamp,
         coverage_mesh,
         segment_widths: paint.segment_widths,
         width: paint.width,
         bounds: oblique_bounds.or(bounds),
+        // DefaultPen has no native coverage mesh. Retain the public stroke
+        // color/theme resolution used by the ordinary vector renderer.
         color: oblique_color.unwrap_or(paint.color),
         opacity,
         top_layer: stroke
@@ -679,6 +726,224 @@ mod tests {
             },
         });
         input
+    }
+    fn defaultpen_stroke() -> Stroke {
+        let mut input = stroke(&[(0., 0.), (10., 0.), (20., 0.), (30., 10.)]);
+        input.pen_width = 10.0;
+        input.color = Some(crate::Color {
+            r: 0x33,
+            g: 0x66,
+            b: 0x99,
+        });
+        input.rendering = Some(crate::StrokeRendering {
+            metadata: None,
+            pen_name: Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into()),
+            advanced_settings: None,
+            tool_type_raw: 1,
+            properties: crate::StrokeProperties {
+                compressed: true,
+                replay_only: false,
+                stylus_channels: false,
+                eraser: false,
+                fixed_width: false,
+                millisecond_timestamps: false,
+                top_layer_pen: false,
+                alpha_lock: false,
+                binary_added: true,
+                generated: false,
+                fixed_opacity: false,
+                rainbow_effect: false,
+                straighten: false,
+                reveal_mode: false,
+            },
+            style: crate::StrokeStyle {
+                color_argb: Some(0x0033_6699),
+                color_type_raw: Some(0),
+                pen_size: Some(10.0),
+                stroke_type_raw: Some(0),
+                ..crate::StrokeStyle::default()
+            },
+        });
+        input
+    }
+
+    #[test]
+    fn defaultpen_redraw_returns_and_full_native_vectors_match_fixture() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/defaultpen-redraw-boundaries-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["six_point_tool1_nonstationary"];
+        let input = &case["input"];
+        let f32_from_le_hex = |value: &str| {
+            let bytes = (0..4)
+                .map(|index| u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).unwrap())
+                .collect::<Vec<_>>();
+            f32::from_bits(u32::from_le_bytes(bytes.try_into().unwrap()))
+        };
+        let points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|point| crate::Point {
+                x: f32_from_le_hex(point[0].as_str().unwrap()) as f64,
+                y: f32_from_le_hex(point[1].as_str().unwrap()) as f64,
+            })
+            .collect::<Vec<_>>();
+        let size = f32_from_le_hex(input["pen_size_f32_bits"].as_str().unwrap());
+        let tool = input["tool_type"].as_u64().unwrap() as u32;
+        let ink = super::defaultpen::saved_with_boundaries(&points, size, tool, 0).unwrap();
+
+        let phase_rows = |phase: &str| {
+            case["native_redraw_callback_boundaries"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|row| row["phase"] == phase)
+                .collect::<Vec<_>>()
+        };
+        let draw_rows = phase_rows("draw_object_stroke");
+        let line_deltas = draw_rows
+            .iter()
+            .filter(|row| row["method"].as_str().unwrap().ends_with("redrawLine"))
+            .map(|row| row["callbacks_emitted"].as_u64().unwrap() as usize)
+            .collect::<Vec<_>>();
+        let expected_ends = line_deltas
+            .iter()
+            .scan(0usize, |total, count| {
+                *total += count;
+                Some(*total)
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(line_deltas, [0, 0, 7, 0]);
+        assert_eq!(ink.redraw_ends, expected_ends);
+        assert_eq!(ink.terminal_start, *expected_ends.last().unwrap());
+        let terminal = draw_rows
+            .iter()
+            .find(|row| row["method"].as_str().unwrap().ends_with("endPen"))
+            .unwrap();
+        assert_eq!(
+            ink.points.len() - ink.terminal_start,
+            terminal["callbacks_emitted"].as_u64().unwrap() as usize
+        );
+
+        for phase in ["draw_object_stroke", "saved_redraw"] {
+            let native = &case["phase_final_vectors"][phase];
+            let expected = native["triples_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|triple| {
+                    std::array::from_fn(|component| {
+                        f32_from_le_hex(triple[component].as_str().unwrap()).to_bits()
+                    })
+                })
+                .collect::<Vec<[u32; 3]>>();
+            let actual = ink
+                .points
+                .iter()
+                .map(|triple| triple.map(f32::to_bits))
+                .collect::<Vec<_>>();
+            assert_eq!(actual, expected, "full native {phase} triplets");
+        }
+        assert_eq!(ink.points.len(), 22);
+    }
+
+    #[test]
+    fn defaultpen_canonical_profile_keeps_ordered_native_disks_and_ignores_alpha() {
+        let input = defaultpen_stroke();
+        assert!(prepare_stroke(&input, false).ordered_disk_replay.is_none());
+        let prepared = prepare_stroke_for_context(&input, false, InkRenderContext::CanonicalPage);
+        assert_eq!(prepared.color, "#336699");
+        assert_eq!(prepared.opacity, 1.0);
+        assert_eq!(
+            prepared.ordered_disk_replay.as_ref().unwrap().redraw_ends,
+            vec![0, 0]
+        );
+        assert_eq!(
+            prepared
+                .ordered_disk_replay
+                .as_ref()
+                .unwrap()
+                .terminal_start,
+            0
+        );
+        assert_eq!(
+            prepared.ordered_disk_replay.as_ref().unwrap().terminal_part,
+            4
+        );
+        assert_eq!(prepared.dot_radii.as_ref().unwrap().len(), 11);
+        assert!(
+            prepared
+                .dot_radii
+                .as_ref()
+                .unwrap()
+                .iter()
+                .all(|radius| *radius == 5.5)
+        );
+        assert_eq!(prepared.support, InkSupport::Reconstructed);
+
+        let mut unsupported = input.clone();
+        unsupported
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .top_layer_pen = true;
+        assert!(
+            prepare_stroke_for_context(&unsupported, false, InkRenderContext::CanonicalPage)
+                .ordered_disk_replay
+                .is_none()
+        );
+        let mut unsupported = input.clone();
+        unsupported
+            .rendering
+            .as_mut()
+            .unwrap()
+            .properties
+            .compressed = false;
+        assert!(
+            prepare_stroke_for_context(&unsupported, false, InkRenderContext::CanonicalPage)
+                .ordered_disk_replay
+                .is_some()
+        );
+        for setting in [None, Some(""), Some("4;"), Some("nonsense")] {
+            for tool in 1..=3 {
+                for curve in [false, true] {
+                    let mut accepted = input.clone();
+                    let rendering = accepted.rendering.as_mut().unwrap();
+                    rendering.advanced_settings = setting.map(str::to_owned);
+                    rendering.tool_type_raw = tool;
+                    rendering.properties.compressed = curve;
+                    assert!(
+                        prepare_stroke_for_context(
+                            &accepted,
+                            false,
+                            InkRenderContext::CanonicalPage
+                        )
+                        .ordered_disk_replay
+                        .is_some(),
+                        "DefaultPen source profile: setting={setting:?}, tool={tool}, curve={curve}"
+                    );
+                }
+            }
+        }
+        for (source_size, expected_radius) in [(0.0, 1.5), (0.1, 1.5), (10.0, 5.5), (1000.0, 400.5)]
+        {
+            let mut source_sized = input.clone();
+            source_sized.rendering.as_mut().unwrap().style.pen_size = Some(source_size);
+            let prepared =
+                prepare_stroke_for_context(&source_sized, false, InkRenderContext::CanonicalPage);
+            assert!(prepared.ordered_disk_replay.is_some());
+            assert!(
+                prepared
+                    .dot_radii
+                    .as_ref()
+                    .unwrap()
+                    .iter()
+                    .all(|radius| *radius == expected_radius)
+            );
+        }
     }
     #[test]
     fn shared_geometry_borrows_samples_and_bounds_both_sides_of_width_changes() {

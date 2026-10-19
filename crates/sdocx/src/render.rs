@@ -3184,6 +3184,64 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
     if fountain::render(svg, paint, replay) {
         return;
     }
+    let mut invalid_ordered_replay = false;
+    if let (Some(replay_data), Some(radii)) = (&paint.ordered_disk_replay, &paint.dot_radii) {
+        let sample_count = replay_data.terminal_part;
+        let expected_redraws = sample_count.saturating_sub(2);
+        let structurally_valid = sample_count >= 2
+            && radii.len() == paint.points.len()
+            && replay_data.redraw_ends.len() == expected_redraws
+            && replay_data.terminal_part > 0
+            && replay_data.terminal_start <= paint.points.len()
+            && replay_data
+                .redraw_ends
+                .iter()
+                .all(|&end| end <= replay_data.terminal_start)
+            && replay_data
+                .redraw_ends
+                .windows(2)
+                .all(|pair| pair[0] <= pair[1])
+            && replay_data.redraw_ends.last().copied().unwrap_or(0) == replay_data.terminal_start
+            && paint
+                .points
+                .iter()
+                .all(|point| point.x.is_finite() && point.y.is_finite())
+            && radii
+                .iter()
+                .all(|radius| radius.is_finite() && *radius >= 0.0);
+        if structurally_valid {
+            let mut start = 0usize;
+            for (redraw, &end) in replay_data.redraw_ends.iter().enumerate() {
+                for index in start..end {
+                    let point = &paint.points[index];
+                    svg.push(
+                        Circle::new()
+                            .replay_part(replay.then_some(ReplayPart(redraw + 2)))
+                            .cx(point.x)
+                            .cy(point.y)
+                            .r(radii[index])
+                            .fill(Paint::from_hex(color)),
+                    );
+                }
+                start = end;
+            }
+            for index in replay_data.terminal_start..paint.points.len() {
+                let point = &paint.points[index];
+                svg.push(
+                    Circle::new()
+                        .replay_part(replay.then_some(ReplayPart(replay_data.terminal_part)))
+                        .cx(point.x)
+                        .cy(point.y)
+                        .r(radii[index])
+                        .fill(Paint::from_hex(color)),
+                );
+            }
+            return;
+        }
+        // Invalid metadata falls back to the original polyline below. It
+        // never emits a partial prefix or a truncated radii zip.
+        invalid_ordered_replay = true;
+    }
     if let Some(stamp) = paint.rect_stamp {
         let (sin, cos) = stamp.angle.sin_cos();
         let (w, h) = (stamp.width, stamp.height);
@@ -3216,7 +3274,7 @@ fn render_prepared_stroke(svg: &mut Scene, paint: &crate::PreparedStroke<'_>, re
         );
         return;
     }
-    if let Some(radii) = &paint.dot_radii {
+    if let Some(radii) = paint.dot_radii.as_ref().filter(|_| !invalid_ordered_replay) {
         let mut path = ReplayPath::default();
         for (p, r) in paint.points.iter().zip(radii) {
             let radius = coordinate(*r, 4);
@@ -3566,6 +3624,243 @@ mod tests {
                 .svg
                 .clone()
         }
+    }
+
+    #[test]
+    fn defaultpen_public_replay_keeps_each_native_instance_in_source_order() {
+        let native: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/defaultpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        let native = &native["cases"]["straight_curve_tool1_default"]["streams"]["draw_object_stroke"]
+            ["values_f32_bits"];
+        let native_values = native
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| {
+                let value = value.as_str().unwrap();
+                let bytes = std::array::from_fn(|index| {
+                    u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).unwrap()
+                });
+                f32::from_le_bytes(bytes.try_into().unwrap())
+            })
+            .collect::<Vec<_>>();
+        let expected = native_values
+            .chunks_exact(3)
+            .map(|triple| [triple[0], triple[1], triple[2]])
+            .collect::<Vec<_>>();
+        let points = [(0., 0.), (10., 0.), (20., 0.), (30., 10.)];
+        let stroke = Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into()),
+                advanced_settings: None,
+                tool_type_raw: 1,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(0x0033_6699),
+                    pen_size: Some(10.),
+                    stroke_type_raw: Some(0),
+                    color_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+            pressures: vec![0.25, 0.5, 0.75, 1.],
+            timestamps: vec![10, 20, 30, 40],
+            tilts: vec![0.; 4],
+            orientations: vec![0.; 4],
+            color: Some(Color {
+                r: 0x33,
+                g: 0x66,
+                b: 0x99,
+            }),
+            pen_width: 10.,
+        };
+        let rendered = render_objects(vec![stroke.into()], true);
+        let xml = roxmltree::Document::parse(&rendered).unwrap();
+        let circles = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("circle"))
+            .collect::<Vec<_>>();
+        assert_eq!(circles.len(), expected.len());
+        assert!(
+            circles
+                .iter()
+                .all(|node| node.attribute("fill") == Some("#336699"))
+        );
+        assert!(
+            circles
+                .iter()
+                .all(|node| node.attribute("data-replay-part") == Some("4"))
+        );
+        for (node, expected) in circles.iter().zip(expected) {
+            for (attribute, value) in [("cx", expected[0]), ("cy", expected[1]), ("r", expected[2])]
+            {
+                let actual = node.attribute(attribute).unwrap().parse::<f32>().unwrap();
+                assert!(
+                    (actual - value).abs() <= 0.000_051,
+                    "public SVG {attribute}={actual} differs from native callback {value}"
+                );
+            }
+        }
+        assert!(xml.descendants().any(
+            |node| node.has_tag_name("g") && node.attribute("data-replay-stroke") == Some("0")
+        ));
+    }
+
+    #[test]
+    fn defaultpen_terminal_only_cases_replay_at_the_terminal_event() {
+        for (points, terminal_part) in [
+            (vec![(0., 0.), (10., 0.)], 2),
+            (vec![(0., 0.), (0., 0.), (0., 0.), (0., 0.)], 4),
+        ] {
+            let mut stroke = Stroke {
+                rendering: Some(StrokeRendering {
+                    metadata: None,
+                    pen_name: Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into()),
+                    advanced_settings: Some("anything".into()),
+                    tool_type_raw: 2,
+                    properties: StrokeProperties {
+                        compressed: true,
+                        replay_only: false,
+                        stylus_channels: false,
+                        eraser: false,
+                        fixed_width: false,
+                        millisecond_timestamps: false,
+                        top_layer_pen: false,
+                        alpha_lock: false,
+                        binary_added: true,
+                        generated: false,
+                        fixed_opacity: false,
+                        rainbow_effect: false,
+                        straighten: false,
+                        reveal_mode: false,
+                    },
+                    style: StrokeStyle {
+                        pen_size: Some(10.),
+                        color_argb: Some(0xff00_0000),
+                        color_type_raw: Some(0),
+                        stroke_type_raw: Some(0),
+                        ..StrokeStyle::default()
+                    },
+                }),
+                bbox: BoundingBox::default(),
+                points: points.iter().map(|&(x, y)| Point { x, y }).collect(),
+                pressures: vec![1.; points.len()],
+                timestamps: (0..points.len() as i64).collect(),
+                tilts: vec![0.; points.len()],
+                orientations: vec![0.; points.len()],
+                color: Some(Color { r: 0, g: 0, b: 0 }),
+                pen_width: 10.,
+            };
+            // Keep the stored curve bit explicit even though these terminal-only
+            // captures produce one native EndPen stamp in either mode.
+            stroke.rendering.as_mut().unwrap().properties.compressed = true;
+            let svg = render_objects(vec![stroke.into()], true);
+            let xml = roxmltree::Document::parse(&svg).unwrap();
+            let circles = xml
+                .descendants()
+                .filter(|node| node.has_tag_name("circle"))
+                .collect::<Vec<_>>();
+            assert_eq!(circles.len(), 1);
+            let part = terminal_part.to_string();
+            assert_eq!(
+                circles[0].attribute("data-replay-part"),
+                Some(part.as_str())
+            );
+            let expected = (0.0, 0.0);
+            assert_eq!(
+                circles[0].attribute("cx").unwrap().parse::<f32>().unwrap(),
+                expected.0
+            );
+            assert_eq!(
+                circles[0].attribute("cy").unwrap().parse::<f32>().unwrap(),
+                expected.1
+            );
+        }
+    }
+
+    #[test]
+    fn defaultpen_keeps_theme_foreground_adaptation() {
+        let mut stroke = Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some("com.samsung.android.sdk.pen.pen.preload.DefaultPen".into()),
+                advanced_settings: None,
+                tool_type_raw: 1,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: false,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(0xff00_0000),
+                    pen_size: Some(10.),
+                    color_type_raw: Some(0),
+                    stroke_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: vec![Point { x: 0., y: 0. }, Point { x: 10., y: 0. }],
+            pressures: vec![1.; 2],
+            timestamps: vec![0, 10],
+            tilts: vec![0.; 2],
+            orientations: vec![0.; 2],
+            color: Some(Color { r: 0, g: 0, b: 0 }),
+            pen_width: 10.,
+        };
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.clone().into()];
+        let svg = render_document_svg(
+            &document(page),
+            &RenderOptions {
+                color_mode: RenderColorMode::Dark,
+                ..Default::default()
+            },
+        )[0]
+        .svg
+        .clone();
+        assert!(svg.contains(r##"fill="#ffffff""##));
+
+        // A caller-edited Stroke.color remains the public paint override even
+        // when the native style ARGB retained its earlier RGB channels.
+        stroke.color = Some(Color { r: 255, g: 0, b: 0 });
+        let mut page = page_with_uncolored_stroke();
+        page.objects = vec![stroke.into()];
+        let svg = render_document_svg(&document(page), &RenderOptions::default())[0]
+            .svg
+            .clone();
+        assert!(svg.contains(r##"fill="#ff0000""##));
     }
 
     fn expected_calligraphy_paths(strokes: &[Stroke], reset_each: bool) -> Vec<String> {
