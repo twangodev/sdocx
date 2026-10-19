@@ -1119,6 +1119,11 @@ fn sample_motion_events(
     tilts: &[f32],
     tool_type: i32,
     curve_enabled: bool,
+    // The pinned BrushPen morphable vtable resolves slots 8/9 to native
+    // no-op implementations (setter returns 1, getter returns 0). The saved
+    // wrapper oracle checks those virtual targets and compares a true
+    // ObjectStroke flag against its false baseline byte-for-byte; keep the
+    // source input explicit without inventing an opacity transition here.
     _fixed_opacity_enabled: bool,
 ) -> Option<Vec<AddPointInput>> {
     if gl_version != GL_VERSION
@@ -2061,6 +2066,23 @@ mod tests {
                     assert_eq!(terminal["emitted_addpoint_count"], 0);
                 }
             }
+            if fixed_opacity_enabled {
+                let contract = &case["native_fixed_opacity_contract"];
+                assert_eq!(contract["GetMorphable_result_is_pen_plus_96"], true);
+                assert_eq!(contract["setter_symbol_target_match"], true);
+                assert_eq!(contract["getter_symbol_target_match"], true);
+                assert_eq!(contract["vtable_slot_8_brush_elf_offset"], "0x566e0");
+                assert_eq!(contract["vtable_slot_9_brush_elf_offset"], "0x566e8");
+                let native_calls = contract["native_calls"].as_array().unwrap();
+                assert_eq!(native_calls.len(), 2);
+                for (call, input_value) in native_calls.iter().zip([false, true]) {
+                    assert_eq!(call["setter_input"], input_value);
+                    assert_eq!(call["setter_return_w0_u32"], 1);
+                    assert_eq!(call["getter_return_w0_u32"], 0);
+                    assert_eq!(call["pen_256_bytes_unchanged"], true);
+                    assert_eq!(call["settings_96_bytes_unchanged"], true);
+                }
+            }
             let object_getters =
                 &case["object_setters_and_getters"]["native_channel_getter_import_calls"];
             for getter in [
@@ -2148,6 +2170,33 @@ mod tests {
             .unwrap();
             let records = case["native_AddPoint_records"].as_array().unwrap();
             assert_eq!(samples.len(), records.len(), "{} count", case["label"]);
+            if fixed_opacity_enabled {
+                let baseline = fixture["cases"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|candidate| {
+                        candidate["label"]
+                            == "tool-2-curve-1-fixed-opacity-0-size-3.144-fixed-width-0"
+                    })
+                    .unwrap();
+                assert_eq!(
+                    case["native_output_buffer_f32_le_hex"],
+                    baseline["native_output_buffer_f32_le_hex"]
+                );
+                assert_eq!(
+                    case["native_AddPoint_records"],
+                    baseline["native_AddPoint_records"]
+                );
+                assert_eq!(
+                    case["native_fixed_opacity_buffer_comparison"]["native_buffer_bytes_equal"],
+                    true
+                );
+                assert_eq!(
+                    case["native_fixed_opacity_buffer_comparison"]["native_AddPoint_records_equal"],
+                    true
+                );
+            }
             let draw_calls = case["native_drawPattern_calls"].as_array().unwrap();
             let style_steps = case["native_drawPattern_style_transition_steps"]
                 .as_array()

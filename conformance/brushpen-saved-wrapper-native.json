@@ -15260,6 +15260,1874 @@
         "native_fixed_width_enabled_input": false,
         "native_setting_bytes_offsets_84_to_99": "00000000010000004c37494000009040"
       }
+    },
+    {
+      "bounds_f32": [
+        -1.1097272634506226,
+        -3.6994006633758545,
+        8.0,
+        6.0
+      ],
+      "drawLine_arguments": [
+        {
+          "callee": "SPen::BrushPenStrokeDrawableGLV10::drawLine(float, float, float, long long, SPen::RectF*, int, bool)",
+          "s0_s7_f32": [
+            3.0,
+            1.0,
+            0.6000000238418579,
+            -2.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "stack64_hex": "0000000000000000000000000000000002000000000000000000002000000000900d001000000000a00d00100000000003000000000000c00000000000000000",
+          "x0_x7": [
+            "0x10001290",
+            "0x13b",
+            "0x10000500",
+            "0x0",
+            "0x1",
+            "0x10000d74",
+            "0x0",
+            "0x0"
+          ]
+        },
+        {
+          "callee": "SPen::BrushPenStrokeDrawableGLV10::drawLine(float, float, float, long long, SPen::RectF*, int, bool)",
+          "s0_s7_f32": [
+            6.0,
+            4.0,
+            0.8500000238418579,
+            -0.5,
+            1.0,
+            1.0,
+            0.9705912470817566,
+            80.0
+          ],
+          "stack64_hex": "0000000000000000000000000000000002000000000000000000002000000000900d001000000000a00d00100000000003000000000000c00000000000000000",
+          "x0_x7": [
+            "0x10001290",
+            "0x154",
+            "0x10000500",
+            "0x200efce8",
+            "0x1",
+            "0x1",
+            "0x0",
+            "0x0"
+          ]
+        }
+      ],
+      "endPen_terminal_record": {
+        "draw_pattern_call_count": 0,
+        "draw_pattern_opacity_arguments": [],
+        "draw_pattern_radius_inputs_bits_le": [],
+        "drawable_path_selector_flag_226": 1,
+        "emitted_addpoint_count": 0,
+        "emitted_records_range": [
+          26,
+          26
+        ],
+        "entry_arguments_x0_x3": [
+          "0x10001290",
+          "0x200efe18",
+          "0x200efe08",
+          "0x1"
+        ],
+        "entry_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00009040",
+            "236": "00002040",
+            "240": "0000c040",
+            "244": "00008040",
+            "248": "00009040",
+            "252": "00002040",
+            "256": "69931f40",
+            "260": "d5748f40",
+            "264": "66e91e40",
+            "280": "ff000000",
+            "296": "2439593f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 340
+          }
+        },
+        "exit_drawable_fields": {
+          "f32_bits_le_by_offset": {
+            "232": "00009040",
+            "236": "00002040",
+            "240": "0000c040",
+            "244": "00008040",
+            "248": "0000c040",
+            "252": "00008040",
+            "256": "69931f40",
+            "260": "d5748f40",
+            "264": "66e91e40",
+            "280": "ff000000",
+            "296": "2439593f"
+          },
+          "flags_by_offset": {
+            "225": 0,
+            "226": 1,
+            "227": 1
+          },
+          "i64_by_offset": {
+            "288": 340
+          }
+        },
+        "path_calls": [
+          {
+            "arguments_bits_le": [
+              "00009040",
+              "00002040"
+            ],
+            "method": "moveTo"
+          },
+          {
+            "arguments_bits_le": [
+              "0000c040",
+              "00008040",
+              "0000c040",
+              "00008040",
+              "0000c040",
+              "00008040"
+            ],
+            "method": "cubicTo"
+          }
+        ],
+        "path_length_bits_le": "b6c30740",
+        "path_length_call_count": 1,
+        "path_length_f32": 2.1213202476501465,
+        "pen_path_selector_flag_88": 1,
+        "selected_path_method": "cubicTo"
+      },
+      "input": {
+        "curve_enabled": true,
+        "fixed_opacity_enabled": true,
+        "name": "synthetic-tool-2-fixed-opacity-noop",
+        "object_fixed_width_enabled": false,
+        "orientations": [
+          0.2,
+          0.35,
+          -0.42
+        ],
+        "points": [
+          [
+            1,
+            -2
+          ],
+          [
+            3,
+            1
+          ],
+          [
+            6,
+            4
+          ]
+        ],
+        "pressures": [
+          0.3,
+          0.6,
+          0.85
+        ],
+        "tilts": [
+          0.12,
+          0.32,
+          0.55
+        ],
+        "times": [
+          300,
+          315,
+          340
+        ],
+        "tool_type": 2,
+        "verify_fixed_opacity_native_contract": true
+      },
+      "label": "tool-2-curve-1-fixed-opacity-1-size-3.144-fixed-width-0",
+      "native_AddPoint_records": [
+        {
+          "append_index": 0,
+          "count_f32": 11,
+          "cumulative_sha256": "b9194c14e56f9f08c031534bef09c7337e0fcf0083847c3d3c68a26e4d28f8c9",
+          "instance_bits_le": [
+            "eae8633f",
+            "f685d9bf",
+            "0000803f",
+            "5c8f823e",
+            "b4b8e0bd",
+            "26e8993e",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 1,
+          "count_f32": 22,
+          "cumulative_sha256": "3266f325ca263b3f74d5304ff340edf539b759c60be8c51f15fcfe08da467e65",
+          "instance_bits_le": [
+            "e07f643f",
+            "be14d9bf",
+            "0000803f",
+            "d7a3a03f",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "4001553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 2,
+          "count_f32": 33,
+          "cumulative_sha256": "9d440d830c694e08b6975d94e7841abb18bab399627f0ab12bbccf6804a8d7d7",
+          "instance_bits_le": [
+            "c67c663f",
+            "1297d7bf",
+            "0000803f",
+            "ec511040",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "3f01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 3,
+          "count_f32": 44,
+          "cumulative_sha256": "f76f22eee69e86fe5fcb2f8f392cad4966c8c5be2ac47a6df77d4010b86fe09f",
+          "instance_bits_le": [
+            "50416a3f",
+            "aac3d4bf",
+            "0000803f",
+            "ec515040",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "3e01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 4,
+          "count_f32": 55,
+          "cumulative_sha256": "668d20f42abfcccc11a3ac04120ae6a2600ea6cc50c9713df8e26a82f033dd8b",
+          "instance_bits_le": [
+            "7444703f",
+            "4e41d0bf",
+            "0000803f",
+            "f6288840",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "3f01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 5,
+          "count_f32": 66,
+          "cumulative_sha256": "8b9c1c8f07fab596d2d70a1abe63a65ee948a7e1ee4c2cef35ca9ef734739874",
+          "instance_bits_le": [
+            "a616793f",
+            "a8a3c9bf",
+            "0000803f",
+            "f628a840",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "4001553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 6,
+          "count_f32": 77,
+          "cumulative_sha256": "8609072fc8f87fbf55551b9aad610a998991af69a7092a3a817307b94e4443b7",
+          "instance_bits_le": [
+            "7cb3823f",
+            "6c67c0bf",
+            "0000803f",
+            "f628c840",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "3f01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 7,
+          "count_f32": 88,
+          "cumulative_sha256": "7566063005ed9f1311dea17a17940d2b17976a9304031e1c41ae028d36bd4ec3",
+          "instance_bits_le": [
+            "97048b3f",
+            "c4edb3bf",
+            "0000803f",
+            "5c8f823e",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "3f01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 8,
+          "count_f32": 99,
+          "cumulative_sha256": "df1143157a4431a76007e849509558f21c72c1a501e19052352b330f28ac69c5",
+          "instance_bits_le": [
+            "83fe953f",
+            "e276a3bf",
+            "0000803f",
+            "d7a3a03f",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "4001553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 9,
+          "count_f32": 110,
+          "cumulative_sha256": "b42bee021487ce5492e47e0571c95956cd03993c40113a3f4c8bed56752b64d7",
+          "instance_bits_le": [
+            "743ba43f",
+            "781b8ebf",
+            "0000803f",
+            "ec511040",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "3f01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 10,
+          "count_f32": 121,
+          "cumulative_sha256": "74afe020f7cb030aed26629ee50a467aae7e05226f967e8f617c8f653eabe6da",
+          "instance_bits_le": [
+            "2475b63f",
+            "e18965bf",
+            "0000803f",
+            "ec515040",
+            "b4b8e0bd",
+            "26e8993e",
+            "d5000e3f",
+            "4101553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 11,
+          "count_f32": 132,
+          "cumulative_sha256": "ce32cc7abc434ec4059340aa09476351cffb63a126ef3e4d851d61584f6a763f",
+          "instance_bits_le": [
+            "fc8acd3f",
+            "594820bf",
+            "0000803f",
+            "f6288840",
+            "b4b8e0bd",
+            "26e8993e",
+            "d4000e3f",
+            "3f01553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 12,
+          "count_f32": 143,
+          "cumulative_sha256": "a21c4a529c687facc9107bce532a44d41661c4b4c141d50b82644263503cfd2c",
+          "instance_bits_le": [
+            "695a0e40",
+            "001c103b",
+            "0000803f",
+            "f628a840",
+            "93a6653e",
+            "1c90003f",
+            "d5000e3f",
+            "4001553f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 13,
+          "count_f32": 154,
+          "cumulative_sha256": "0af0befabc48d89705fa3fabff7b5bc77d4ab312024bdc27eefa789d19137c3e",
+          "instance_bits_le": [
+            "c5e71640",
+            "9e094f3e",
+            "7d05823f",
+            "f628c840",
+            "93a6653e",
+            "1c90003f",
+            "971a113f",
+            "a6e7523f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 14,
+          "count_f32": 165,
+          "cumulative_sha256": "064fc116fdcd2266f1ce3b6ed6c237059f9ef5bf7f2d0fb53ad1071aea61bc0a",
+          "instance_bits_le": [
+            "72dc1f40",
+            "5d87cf3e",
+            "2613843f",
+            "5c8f823e",
+            "93a6653e",
+            "1c90003f",
+            "f328143f",
+            "f2c4503f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 15,
+          "count_f32": 176,
+          "cumulative_sha256": "c994d22132639a48931c47045fab8c7a429c62b30a4f7e859dbc477ddf518919",
+          "instance_bits_le": [
+            "443c2940",
+            "35971c3f",
+            "1c29863f",
+            "d7a3a03f",
+            "93a6653e",
+            "1c90003f",
+            "752b173f",
+            "b0994e3f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 16,
+          "count_f32": 187,
+          "cumulative_sha256": "f087d48cd1d0cff7ccc5ed54b1ad4c2dfab78b685d82d8cb3a1b88f967049b21",
+          "instance_bits_le": [
+            "2f0b3340",
+            "4f40523f",
+            "8147883f",
+            "ec511040",
+            "93a6653e",
+            "1c90003f",
+            "b2211a3f",
+            "72664c3f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 17,
+          "count_f32": 198,
+          "cumulative_sha256": "b4e1697368229c66f59a2cb420b800b22fc978308bc495ecc331397d380a784c",
+          "instance_bits_le": [
+            "454d3d40",
+            "2c61843f",
+            "776e8a3f",
+            "ec515040",
+            "93a6653e",
+            "1c90003f",
+            "470b1d3f",
+            "d02b4a3f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 18,
+          "count_f32": 209,
+          "cumulative_sha256": "1d23d8697788595d7c5fefbdc0fbdee131d9de40cc9f65137956e802af09d73b",
+          "instance_bits_le": [
+            "c3064840",
+            "6110a03f",
+            "209e8c3f",
+            "f6288840",
+            "93a6653e",
+            "1c90003f",
+            "d7e71f3f",
+            "5aea473f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 19,
+          "count_f32": 220,
+          "cumulative_sha256": "452f1bc42571adf535edd055d08aab8228a13ede7f1cc2c9df6244de808646b8",
+          "instance_bits_le": [
+            "053c5340",
+            "812fbc3f",
+            "a0d68e3f",
+            "f628a840",
+            "93a6653e",
+            "1c90003f",
+            "12b7223f",
+            "afa2453f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 20,
+          "count_f32": 231,
+          "cumulative_sha256": "14c7e01352c71d1aeb49ec10028568116549789222e87486cabb2817769cdb76",
+          "instance_bits_le": [
+            "8ef15e40",
+            "54c0d83f",
+            "1a18913f",
+            "f628c840",
+            "93a6653e",
+            "1c90003f",
+            "b278253f",
+            "6555433f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 21,
+          "count_f32": 242,
+          "cumulative_sha256": "bb03fcc1787a4d943aabdab21157b053d5f672dea30ef24ea50acfb218fb4cf6",
+          "instance_bits_le": [
+            "0a2c6b40",
+            "a1c4f53f",
+            "b362933f",
+            "5c8f823e",
+            "93a6653e",
+            "1c90003f",
+            "742c283f",
+            "1203413f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 22,
+          "count_f32": 253,
+          "cumulative_sha256": "dd2e7a20565c4e2fe5f9ba27e5903766f996f619d71a5805a3a9aaf9f8491abf",
+          "instance_bits_le": [
+            "4cf07740",
+            "209f0940",
+            "8fb6953f",
+            "d7a3a03f",
+            "93a6653e",
+            "1c90003f",
+            "23d22a3f",
+            "53ac3e3f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 23,
+          "count_f32": 264,
+          "cumulative_sha256": "629302ba84e7e9add6779a5d2448e21590a3ede672be03b7e9b466a997b31b97",
+          "instance_bits_le": [
+            "a8a18240",
+            "84971840",
+            "d413983f",
+            "ec511040",
+            "93a6653e",
+            "1c90003f",
+            "91692d3f",
+            "bb513c3f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 24,
+          "count_f32": 275,
+          "cumulative_sha256": "c19463238ba2f201e13c13e34d269f07ea995f90035085dfa120a4cb1e5db59e",
+          "instance_bits_le": [
+            "20958940",
+            "6fcc2740",
+            "a87a9a3f",
+            "ec515040",
+            "93a6653e",
+            "1c90003f",
+            "9ef22f3f",
+            "e4f3393f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "append_index": 25,
+          "count_f32": 286,
+          "cumulative_sha256": "169127a90a2d46825dc3ac2f748f1698b57f220df14c589ff3336d4822afa854",
+          "instance_bits_le": [
+            "37d59040",
+            "d33e3740",
+            "32eb9c3f",
+            "f6288840",
+            "93a6653e",
+            "1c90003f",
+            "276d323f",
+            "5f93373f",
+            "00000000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "native_MotionEvent_constructor_calls": [
+        {
+          "arguments_decoded": {
+            "action_i32": 1,
+            "button_state_i32": 0,
+            "down_time_ms_i64": 300,
+            "last_stack_i32_argument": 0,
+            "meta_state_i32": 0,
+            "pointer_count_i32": 1
+          },
+          "arguments_x0_x7": [
+            "0x200efe18",
+            "0x12c",
+            "0x1",
+            "0x1",
+            "0x200efe68",
+            "0x200efe20",
+            "0x0",
+            "0x0"
+          ],
+          "final_stack_argument_i32": 0,
+          "pointer_coords_address": "0x200efe20",
+          "pointer_coords_decoded_from_Base_getter_offsets": {
+            "event_time_i64_ms": 340,
+            "orientation_f32": -0.41999998688697815,
+            "pressure_f32": 0.8500000238418579,
+            "raw_x_f64": 0.0,
+            "raw_y_f64": 0.0,
+            "tilt_f32": 0.550000011920929,
+            "x_f64": 6.0,
+            "y_f64": 4.0
+          },
+          "pointer_coords_first_72_bytes": "540100000000000000000000000000003d0ad7be9a99593fcdcc0c3f0000000000000000ffffffff0000000000001840000000000000104000000000000000000000000000000000",
+          "pointer_properties_address": "0x200efe68",
+          "pointer_properties_decoded": {
+            "pointer_id_i32": 0,
+            "tool_type_i32": 2
+          },
+          "pointer_properties_first_16_bytes": "00000000020000000000000000000000"
+        }
+      ],
+      "native_MotionEvent_getter_returns": [
+        {
+          "index": 0,
+          "name": "SPen::MotionEvent::GetX(int) const",
+          "return_d0_f64": 6.0,
+          "return_d0_f64_bits_le": "0000000000001840",
+          "this": "0x200efe18"
+        },
+        {
+          "index": 0,
+          "name": "SPen::MotionEvent::GetY(int) const",
+          "return_d0_f64": 4.0,
+          "return_d0_f64_bits_le": "0000000000001040",
+          "this": "0x200efe18"
+        },
+        {
+          "index": null,
+          "name": "SPen::MotionEvent::GetEventTime() const",
+          "return_x0": 40,
+          "this": "0x200efe18"
+        },
+        {
+          "index": 0,
+          "name": "SPen::MotionEvent::GetToolType(int) const",
+          "return_x0": 2,
+          "this": "0x200efe18"
+        },
+        {
+          "index": 0,
+          "name": "SPen::MotionEvent::GetPressure(int) const",
+          "return_s0_f32": 0.8500000238418579,
+          "return_s0_f32_bits_le": "9a99593f",
+          "this": "0x200efe18"
+        }
+      ],
+      "native_MotionEvent_method_call_counts": {
+        "SPen::MotionEvent::GetEventTime() const": 1,
+        "SPen::MotionEvent::GetPressure(int) const": 1,
+        "SPen::MotionEvent::GetToolType(int) const": 1,
+        "SPen::MotionEvent::GetX(int) const": 1,
+        "SPen::MotionEvent::GetY(int) const": 1,
+        "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+        "SPen::MotionEvent::~MotionEvent()": 1
+      },
+      "native_admission": {
+        "actual_GetSize_f32": 3.1440000534057617,
+        "actual_GetStrokeDrawableGL_vptr": "0x3097f18",
+        "actual_RT_vptr": "0x3098b30",
+        "actual_getVersion": 10,
+        "constructed_RTV1_vtable_symbol_plus_16": "0x3098b30",
+        "constructor": "SPen::BrushPen::BrushPen()",
+        "constructor_parser_inputs": [
+          {
+            "kind": "atoi",
+            "text": "10"
+          }
+        ],
+        "selected_GLVx_vtable_symbol_plus_16": "0x3097f18"
+      },
+      "native_drawPattern_calls": [
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "0000803f000000c0",
+          "input_point_xy_f32": [
+            1.0,
+            -2.0
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.34609854221343994,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "7b4b803fc78effbf",
+          "input_point_xy_f32": [
+            1.0023034811019897,
+            -1.9965447187423706
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.37748268246650696,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "ee49813f1b11febf",
+          "input_point_xy_f32": [
+            1.010068655014038,
+            -1.9848970174789429
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.41171273589134216,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "332c833fb33dfbbf",
+          "input_point_xy_f32": [
+            1.024786353111267,
+            -1.9628204107284546
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.4490467607975006,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "c52d863f58bbf6bf",
+          "input_point_xy_f32": [
+            1.0482717752456665,
+            -1.9275922775268555
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.4897662401199341,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "de968a3fb21df0bf",
+          "input_point_xy_f32": [
+            1.0827291011810303,
+            -1.875906229019165
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.5341781377792358,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "07bf903f75e1e6bf",
+          "input_point_xy_f32": [
+            1.1308296918869019,
+            -1.8037554025650024
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.5826173424720764,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "2210993fcd67dabf",
+          "input_point_xy_f32": [
+            1.1958048343658447,
+            -1.706292748451233
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.6354489922523499,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "0e0aa43febf0c9bf",
+          "input_point_xy_f32": [
+            1.2815568447113037,
+            -1.5776647329330444
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.6930713653564453,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "ff46b23f8195b4bf",
+          "input_point_xy_f32": [
+            1.3927916288375854,
+            -1.410812497138977
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.7559189796447754,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "af80c43ffa3e99bf",
+          "input_point_xy_f32": [
+            1.5351771116256714,
+            -1.1972343921661377
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.8244655728340149,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "8796db3f6c3c6dbf",
+          "input_point_xy_f32": [
+            1.7155312299728394,
+            -0.9267032146453857
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 0.8992279767990112,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "00000040000000bf",
+          "input_point_xy_f32": [
+            2.0,
+            -0.5
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.0,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "55530840f0aa9dbe",
+          "input_point_xy_f32": [
+            2.1300861835479736,
+            -0.30794477462768555
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.0157924890518188,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "100d11404e21e7bd",
+          "input_point_xy_f32": [
+            2.2664222717285156,
+            -0.11285649240016937
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.031834363937378,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "02311a4069b8ae3d",
+          "input_point_xy_f32": [
+            2.409241199493408,
+            0.08531267195940018
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.0481295585632324,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "1bc32340bfbe923e",
+          "input_point_xy_f32": [
+            2.5587832927703857,
+            0.28661152720451355
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.064682126045227,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "69c72d400e70fb3e",
+          "input_point_xy_f32": [
+            2.7152960300445557,
+            0.4910892844200134
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.0814961194992065,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "2542384051e4323f",
+          "input_point_xy_f32": [
+            2.8790371417999268,
+            0.6987963318824768
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.0985755920410156,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "a737434092e7683f",
+          "input_point_xy_f32": [
+            3.05027174949646,
+            0.9097834825515747
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.1159248352050781,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "6fac4e409ae28f3f",
+          "input_point_xy_f32": [
+            3.2292745113372803,
+            1.1241028308868408
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.1335480213165283,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "24a55a4050c0ab3f",
+          "input_point_xy_f32": [
+            3.4163293838500977,
+            1.341806411743164
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.1514495611190796,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "95266740b10ec83f",
+          "input_point_xy_f32": [
+            3.611729860305786,
+            1.5629483461380005
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.1696337461471558,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "ba35744083cfe43f",
+          "input_point_xy_f32": [
+            3.815779209136963,
+            1.7875827550888062
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.1881051063537598,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "dceb80404a020140",
+          "input_point_xy_f32": [
+            4.028791427612305,
+            2.0157647132873535
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.2068681716918945,
+          "rect_ptr": "0x10000500"
+        },
+        {
+          "boolean_argument_w5": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "input_SmPoint_ptr": "0x200efcf0",
+          "input_opacity_u32": 255,
+          "input_point_bytes_le": "ef088840dcd70f40",
+          "input_point_xy_f32": [
+            4.2510905265808105,
+            2.2475500106811523
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)",
+          "output_SmPoint_ptr": "0x200efce8",
+          "radius_argument_s0_f32": 1.2259275913238525,
+          "rect_ptr": "0x10000500"
+        }
+      ],
+      "native_drawPattern_style_transition_steps": [
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.0,
+            -2.0
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.0023034811019897,
+            -1.9965447187423706
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.010068655014038,
+            -1.9848970174789429
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.024786353111267,
+            -1.9628204107284546
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.0482717752456665,
+            -1.9275922775268555
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.0827291011810303,
+            -1.875906229019165
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.1308296918869019,
+            -1.8037554025650024
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.1958048343658447,
+            -1.706292748451233
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.2815568447113037,
+            -1.5776647329330444
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.3927916288375854,
+            -1.410812497138977
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.5351771116256714,
+            -1.1972343921661377
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            1.7155312299728394,
+            -0.9267032146453857
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.0,
+            -0.5
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.1300861835479736,
+            -0.30794477462768555
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0157924890518188
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.2664222717285156,
+            -0.11285649240016937
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.031834363937378
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.409241199493408,
+            0.08531267195940018
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0481295585632324
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.5587832927703857,
+            0.28661152720451355
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.064682126045227
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.7152960300445557,
+            0.4910892844200134
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0814961194992065
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            2.8790371417999268,
+            0.6987963318824768
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.0985755920410156
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            3.05027174949646,
+            0.9097834825515747
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.1159248352050781
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            3.2292745113372803,
+            1.1241028308868408
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.1335480213165283
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            3.4163293838500977,
+            1.341806411743164
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.1514495611190796
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            3.611729860305786,
+            1.5629483461380005
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.1696337461471558
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            3.815779209136963,
+            1.7875827550888062
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.1881051063537598
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            4.028791427612305,
+            2.0157647132873535
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.2068681716918945
+        },
+        {
+          "drawable": "0x10001290",
+          "fixed_width_enabled_byte_offset_89": 0,
+          "fixed_width_f32_offset_92": 3.1440000534057617,
+          "pc": "0x305c6e8",
+          "settings": "0x10000fe0",
+          "source_point_xy_s0_s1_f32": [
+            4.2510905265808105,
+            2.2475500106811523
+          ],
+          "working_opacity_w20_u32": 255,
+          "working_radius_s14_f32": 1.2259275913238525
+        }
+      ],
+      "native_fixed_opacity_buffer_comparison": {
+        "baseline_label": "tool-2-curve-1-fixed-opacity-0-size-3.144-fixed-width-0",
+        "comparison_scope": "this synthetic ObjectStroke row and pinned BrushPen constructor profile",
+        "native_AddPoint_records_equal": true,
+        "native_buffer_bytes_equal": true
+      },
+      "native_fixed_opacity_contract": {
+        "GetMorphable_result_is_pen_plus_96": true,
+        "getter_symbol_target_match": true,
+        "morphable_vptr": "0x3097be8",
+        "native_calls": [
+          {
+            "getter_return_w0_u32": 0,
+            "pen_256_bytes_unchanged": true,
+            "setter_input": false,
+            "setter_return_w0_u32": 1,
+            "settings_96_bytes_unchanged": true
+          },
+          {
+            "getter_return_w0_u32": 0,
+            "pen_256_bytes_unchanged": true,
+            "setter_input": true,
+            "setter_return_w0_u32": 1,
+            "settings_96_bytes_unchanged": true
+          }
+        ],
+        "setter_symbol_target_match": true,
+        "vtable_slot_8_brush_elf_offset": "0x566e0",
+        "vtable_slot_8_target": "0x30566e0",
+        "vtable_slot_9_brush_elf_offset": "0x566e8",
+        "vtable_slot_9_target": "0x30566e8"
+      },
+      "native_host_boundaries": {
+        "explicitly_bounded": [
+          "PenGLDataManager::GetMsgQueue returns a local queue object",
+          "PenReturnCallback buffer/rect attachment and destruction are host callbacks",
+          "SPen::String destructor is a no-op host boundary; parser numeric calls are modeled",
+          "__emutls_get_address uses a bounded per-control TLS allocation",
+          "pthread mutex lifecycle is modeled as local success",
+          "__cxa_guard_acquire/release use single-thread first-initialization semantics",
+          "matrix method returns the explicit identity matrix",
+          "no GLES shader/texture upload or pixels were executed"
+        ],
+        "host_stub_calls": {
+          "SPen::PenDrawableRT::SetBuffer(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)": 1,
+          "SPen::PenGLDataManager::GetMsgQueue()": 2,
+          "SPen::PenReturnCallback::PenReturnCallback(SPen::PenDrawableRT*, SPen::ISPPenCanvas*)": 1,
+          "SPen::PenReturnCallback::SetPenRect(SPen::RectF const&)": 1,
+          "SPen::PenReturnCallback::~PenReturnCallback()": 1,
+          "SPen::String::~String()": 7
+        },
+        "reached_import_calls": {
+          "ExtractFileName(char const*, char*, int)": 2,
+          "SPen::BrushPenStrokeDrawableGLV10::BrushPenStrokeDrawableGLV10(SPen::BrushPenData*, SPen::PenGLDataManager*)": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::drawLine(float, float, float, long long, SPen::RectF*, int, bool)": 2,
+          "SPen::BrushPenStrokeDrawableGLV10::drawPattern(SPen::SmPoint const*, int, float, SPen::SmPoint*, SPen::RectF*, bool)": 26,
+          "SPen::BrushPenStrokeDrawableGLV10::endPen(SPen::MotionEvent const*, SPen::RectF*, bool)": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::getInverseScale()": 1,
+          "SPen::BrushPenStrokeDrawableGLV10::makeDrawPoint(float, float, float, float, float, long long, SPen::RectF*, bool)": 2,
+          "SPen::BrushPenStrokeDrawableGLV10::redraw(SPen::ObjectStroke const*, SPen::RectF*, bool)": 1,
+          "SPen::BrushPenStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float, SPen::Vector2<float>, SPen::Vector2<float>, SPen::Vector2<float>, SPen::Vector3<float>)": 26,
+          "SPen::Error::SetError(unsigned long, int, char const*)": 2,
+          "SPen::Matrix3<float>::Matrix3()": 2,
+          "SPen::MotionEvent::GetEventTime() const": 1,
+          "SPen::MotionEvent::GetPressure(int) const": 1,
+          "SPen::MotionEvent::GetToolType(int) const": 1,
+          "SPen::MotionEvent::GetX(int) const": 1,
+          "SPen::MotionEvent::GetY(int) const": 1,
+          "SPen::MotionEvent::MotionEvent()": 1,
+          "SPen::MotionEvent::MotionEvent(long long, int, int, SPen::MotionEvent::PointerProperties*, SPen::MotionEvent::PointerCoords*, int, int, int)": 1,
+          "SPen::MotionEvent::~MotionEvent()": 1,
+          "SPen::ObjectBase::GetOriginalRuntimeHandle() const": 1,
+          "SPen::ObjectBase::GetRuntimeHandle() const": 1,
+          "SPen::ObjectBase::ObjectBase()": 1,
+          "SPen::ObjectBase::OnCoeditObjectChanged(int)": 1,
+          "SPen::ObjectBase::SetChanged()": 2,
+          "SPen::ObjectBase::SetRedrawingCacheDirtyFlag(bool)": 2,
+          "SPen::ObjectBase::SetRefreshDrawnRect()": 1,
+          "SPen::ObjectStroke::GetInitialToloerance() const": 1,
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1,
+          "SPen::ObjectStroke::GetToolType() const": 17,
+          "SPen::ObjectStrokeImpl::CopyTempPointToRealPoint()": 5,
+          "SPen::ObjectStrokeImpl::SetPenSize(float)": 1,
+          "SPen::Pen::Pen()": 1,
+          "SPen::Pen::getSettingData()": 1,
+          "SPen::Pen::getVersion()": 1,
+          "SPen::PenDrawableRT::SetBuffer(std::__ndk1::vector<float, std::__ndk1::allocator<float> >*, std::__ndk1::vector<float, std::__ndk1::allocator<float> >*)": 1,
+          "SPen::PenGLDataManager::GetMsgQueue()": 2,
+          "SPen::PenReturnCallback::GetBuffer()": 1,
+          "SPen::PenReturnCallback::PenReturnCallback(SPen::PenDrawableRT*, SPen::ISPPenCanvas*)": 1,
+          "SPen::PenReturnCallback::SetPenRect(SPen::RectF const&)": 1,
+          "SPen::PenReturnCallback::~PenReturnCallback()": 1,
+          "SPen::PenStrokeDataManager::GetInstance()": 1,
+          "SPen::PenStrokeDataManager::GetStrokeData(int)": 1,
+          "SPen::PenStrokeDrawableGL::PenStrokeDrawableGL()": 1,
+          "SPen::RectF::ExtendRect()": 1,
+          "SPen::RectF::IncreaseRect(float)": 2,
+          "SPen::RectF::MakeRect(SPen::PointF const*)": 52,
+          "SPen::RectF::Set(float, float, float, float)": 2,
+          "SPen::RectF::Union(SPen::RectF const&)": 1,
+          "SPen::SmPath::SmPath()": 1,
+          "SPen::SmPath::cubicTo(float, float, float, float, float, float)": 1,
+          "SPen::SmPath::getLength()": 3,
+          "SPen::SmPath::getPosTan(float, SPen::SmPoint*, SPen::SmPoint*)": 28,
+          "SPen::SmPath::helper_buildSegments()": 3,
+          "SPen::SmPath::helper_compute_cubic_segs(SPen::SmPoint const*, float, int, int, int)": 3,
+          "SPen::SmPath::helper_compute_quad_segs(SPen::SmPoint const*, float, int, int, int)": 2,
+          "SPen::SmPath::helper_distanceToSegment(float, float*)": 28,
+          "SPen::SmPath::incReserve(unsigned int)": 1,
+          "SPen::SmPath::moveTo(float, float)": 3,
+          "SPen::SmPath::nextVerb(SPen::SmPoint*)": 9,
+          "SPen::SmPath::quadTo(float, float, float, float)": 2,
+          "SPen::SmPath::resetPath(bool)": 3,
+          "SPen::SmPath::rewind()": 3,
+          "SPen::String::Append(char)": 2,
+          "SPen::String::Append(int)": 2,
+          "SPen::String::Append(unsigned short const*)": 5,
+          "SPen::String::Append(unsigned short)": 2,
+          "SPen::String::Clear()": 5,
+          "SPen::String::Construct()": 5,
+          "SPen::String::Construct(SPen::String const*)": 1,
+          "SPen::String::Construct(char const*)": 2,
+          "SPen::String::GetLength() const": 3,
+          "SPen::String::GetUTF8(char*, int) const": 3,
+          "SPen::String::GetUTF8Size() const": 1,
+          "SPen::String::ReverseFind(char const*) const": 6,
+          "SPen::String::Set(unsigned short const*)": 1,
+          "SPen::String::SetSubstring(SPen::String const*, int, int)": 2,
+          "SPen::String::SetSubstring(unsigned short const*, int, int)": 2,
+          "SPen::String::String()": 4,
+          "SPen::String::Token(char const*, SPen::String*)": 1,
+          "SPen::String::~String()": 7,
+          "SPen::StringImplBase::AllocateCapacity(int)": 3,
+          "SPen::StringImplBase::Itoa(int, char*, int)": 2,
+          "SPen::StringImplBase::Swprintf(unsigned short*, int, int)": 2,
+          "SPen::StringImplBase::Wcsncmp(unsigned short const*, unsigned short const*, int)": 258,
+          "SPen::StringImplBase::Wcstok(unsigned short*, unsigned short const*)": 1,
+          "SPen::helper_ChopCubicAtHalf(SPen::SmPoint const*, SPen::SmPoint*)": 1,
+          "__android_log_print": 2,
+          "__emutls_get_address": 8,
+          "atoi": 1,
+          "expf": 3,
+          "memcmp": 1,
+          "memcpy": 1,
+          "memset": 2,
+          "operator delete(void*)": 8,
+          "operator delete[](void*)": 15,
+          "operator new(unsigned long)": 21,
+          "operator new(unsigned long, std::nothrow_t const&)": 9,
+          "operator new[](unsigned long)": 1,
+          "operator new[](unsigned long, std::nothrow_t const&)": 22,
+          "sincosf": 2,
+          "std::__ndk1::recursive_mutex::lock()": 1,
+          "std::__ndk1::recursive_mutex::recursive_mutex()": 1,
+          "std::__ndk1::recursive_mutex::unlock()": 1,
+          "strlen": 20
+        }
+      },
+      "native_makeDrawPoint_calls": [
+        {
+          "boolean_x3": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "float_arguments_s0_s4_bits_le": [
+            "00004040",
+            "0000803f",
+            "0000803f",
+            "3cd6193f",
+            "5ac16640"
+          ],
+          "float_arguments_s0_s4_f32": [
+            3.0,
+            1.0,
+            1.0,
+            0.6009252071380615,
+            3.605551242828369
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::makeDrawPoint(float, float, float, float, float, long long, SPen::RectF*, bool)",
+          "rect_f32": [
+            1.0,
+            -2.0,
+            1.0,
+            -2.0
+          ],
+          "rect_x2": "0x10000500",
+          "timestamp_x1_i64": 315,
+          "x0_this": "0x10001290"
+        },
+        {
+          "boolean_x3": 1,
+          "drawable_pen_settings": {
+            "fixed_width_enabled_byte_offset_89": 0,
+            "fixed_width_f32_offset_92": 3.1440000534057617,
+            "ptr": "0x10000fe0"
+          },
+          "float_arguments_s0_s4_bits_le": [
+            "0000c040",
+            "00008040",
+            "0000803f",
+            "6739833f",
+            "b6c38740"
+          ],
+          "float_arguments_s0_s4_f32": [
+            6.0,
+            4.0,
+            1.0,
+            1.0251892805099487,
+            4.242640495300293
+          ],
+          "native_method": "SPen::BrushPenStrokeDrawableGLV10::makeDrawPoint(float, float, float, float, float, long long, SPen::RectF*, bool)",
+          "rect_f32": [
+            -0.10972726345062256,
+            -2.6994006633758545,
+            2.605803966522217,
+            0.373896062374115
+          ],
+          "rect_x2": "0x10000500",
+          "timestamp_x1_i64": 340,
+          "x0_this": "0x10001290"
+        }
+      ],
+      "native_output_buffer_f32_le_hex": "eae8633ff685d9bf0000803f5c8f823eb4b8e0bd26e8993e0000000000000000000000000000000000000000e07f643fbe14d9bf0000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000c67c663f1297d7bf0000803fec511040b4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000050416a3faac3d4bf0000803fec515040b4b8e0bd26e8993ed5000e3f3e01553f0000000000000000000000007444703f4e41d0bf0000803ff6288840b4b8e0bd26e8993ed5000e3f3f01553f000000000000000000000000a616793fa8a3c9bf0000803ff628a840b4b8e0bd26e8993ed5000e3f4001553f0000000000000000000000007cb3823f6c67c0bf0000803ff628c840b4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000097048b3fc4edb3bf0000803f5c8f823eb4b8e0bd26e8993ed5000e3f3f01553f00000000000000000000000083fe953fe276a3bf0000803fd7a3a03fb4b8e0bd26e8993ed5000e3f4001553f000000000000000000000000743ba43f781b8ebf0000803fec511040b4b8e0bd26e8993ed5000e3f3f01553f0000000000000000000000002475b63fe18965bf0000803fec515040b4b8e0bd26e8993ed5000e3f4101553f000000000000000000000000fc8acd3f594820bf0000803ff6288840b4b8e0bd26e8993ed4000e3f3f01553f000000000000000000000000695a0e40001c103b0000803ff628a84093a6653e1c90003fd5000e3f4001553f000000000000000000000000c5e716409e094f3e7d05823ff628c84093a6653e1c90003f971a113fa6e7523f00000000000000000000000072dc1f405d87cf3e2613843f5c8f823e93a6653e1c90003ff328143ff2c4503f000000000000000000000000443c294035971c3f1c29863fd7a3a03f93a6653e1c90003f752b173fb0994e3f0000000000000000000000002f0b33404f40523f8147883fec51104093a6653e1c90003fb2211a3f72664c3f000000000000000000000000454d3d402c61843f776e8a3fec51504093a6653e1c90003f470b1d3fd02b4a3f000000000000000000000000c30648406110a03f209e8c3ff628884093a6653e1c90003fd7e71f3f5aea473f000000000000000000000000053c5340812fbc3fa0d68e3ff628a84093a6653e1c90003f12b7223fafa2453f0000000000000000000000008ef15e4054c0d83f1a18913ff628c84093a6653e1c90003fb278253f6555433f0000000000000000000000000a2c6b40a1c4f53fb362933f5c8f823e93a6653e1c90003f742c283f1203413f0000000000000000000000004cf07740209f09408fb6953fd7a3a03f93a6653e1c90003f23d22a3f53ac3e3f000000000000000000000000a8a1824084971840d413983fec51104093a6653e1c90003f91692d3fbb513c3f000000000000000000000000209589406fcc2740a87a9a3fec51504093a6653e1c90003f9ef22f3fe4f3393f00000000000000000000000037d59040d33e374032eb9c3ff628884093a6653e1c90003f276d323f5f93373f000000000000000000000000",
+      "native_output_buffer_sha256": "169127a90a2d46825dc3ac2f748f1698b57f220df14c589ff3336d4822afa854",
+      "native_output_f32_count": 286,
+      "object_setters_and_getters": {
+        "calls": [
+          "SPen::ObjectStroke::SetPenSize(float)",
+          "SPen::ObjectStroke::SetToolType(SPen::ToolType)",
+          "SPen::ObjectStroke::SetCurveEnabled(bool)",
+          "SPen::ObjectStroke::SetFixedOpacityEnabled(bool)",
+          "SPen::ObjectStroke::GetPenSize() const",
+          "SPen::ObjectStroke::GetToolType() const",
+          "SPen::ObjectStroke::IsCurveEnabled() const",
+          "SPen::ObjectStroke::IsFixedOpacityEnabled() const"
+        ],
+        "native_channel_getter_import_calls": {
+          "SPen::ObjectStroke::GetOrientation() const": 1,
+          "SPen::ObjectStroke::GetPoint() const": 1,
+          "SPen::ObjectStroke::GetPointCount() const": 1,
+          "SPen::ObjectStroke::GetPressure() const": 1,
+          "SPen::ObjectStroke::GetTilt() const": 1,
+          "SPen::ObjectStroke::GetTimeStamp() const": 1
+        },
+        "native_curve_enabled": true,
+        "native_fixed_opacity_enabled": true,
+        "native_saved_size_f32": 3.1440000534057617,
+        "native_saved_tool_type": 2
+      },
+      "style_setters": {
+        "calls": [
+          "SPen::Pen::SetSize(float)",
+          "SPen::BrushPen::SetFixedWidth(float)",
+          "SPen::BrushPen::SetFixedWidthEnabled(bool)",
+          "SPen::BrushPen::SetCurveEnabled(bool)"
+        ],
+        "curve_enabled_input": true,
+        "fixed_opacity_enabled_input": true,
+        "fixed_width_argument": 3.144,
+        "fixed_width_enabled_argument": false,
+        "native_GetFixedWidth_f32": 3.1440000534057617,
+        "native_GetSize_f32": 3.1440000534057617,
+        "native_fixed_width_enabled_byte_offset_89": 0,
+        "native_fixed_width_enabled_input": false,
+        "native_setting_bytes_offsets_84_to_99": "00000000010000004c37494000009040"
+      }
     }
   ],
   "evidence_scope": "Synthetic ObjectStroke channel rows execute actual Model constructor/getters, BrushPen GLV10 saved redraw, Base MotionEvent construction/getters/destruction, and native endPen. Constructor arguments, pointed-to PointerProperties/PointerCoords, decoded channel fields, and native getter returns are captured. Native texture/GPU/pixel work is not executed; no captured note or production pen-id admission is claimed.",

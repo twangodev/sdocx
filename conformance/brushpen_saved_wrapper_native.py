@@ -186,7 +186,7 @@ class TracedBrush(core.NativeBrush):
         super().hook(u, address, size, data)
 
 
-def setup_pen(n, size, fixed_width_enabled, curve_enabled=True):
+def setup_pen(n, size, fixed_width_enabled, curve_enabled=True, verify_fixed_opacity_contract=False):
     pen, manager = n.alloc(256), n.alloc(128)
     queue, qvt = n.alloc(32), n.alloc(32)
     n.queue = queue
@@ -206,6 +206,55 @@ def setup_pen(n, size, fixed_width_enabled, curve_enabled=True):
     actual_fixed_width = n.f(0)
     setting_data = n.get(pen + 144, 'Q')[0]
     fixed_width_enabled_native = n.get(setting_data + 89, 'B')[0]
+    fixed_opacity_contract = None
+    if verify_fixed_opacity_contract:
+        n.call('SPen::BrushPen::GetMorphable()', [pen])
+        morphable = n.x(0)
+        if morphable != pen + 96:
+            raise AssertionError(f'BrushPen GetMorphable returned {morphable:#x}, expected {pen + 96:#x}')
+        morphable_vptr = n.get(morphable, 'Q')[0]
+        setter_target = n.get(morphable_vptr + 8 * 8, 'Q')[0]
+        getter_target = n.get(morphable_vptr + 9 * 8, 'Q')[0]
+        expected_setter = n.syms['SPen::IPenMorphable::SetFixedOpacityEnabled(bool)']
+        expected_getter = n.syms['SPen::IPenMorphable::IsFixedOpacityEnabled()']
+        brush_base = 3 * 0x1000000
+        if (setter_target != expected_setter or getter_target != expected_getter
+                or setter_target - brush_base != 0x566e0
+                or getter_target - brush_base != 0x566e8):
+            raise AssertionError('BrushPen morphable vtable does not select the pinned no-op targets')
+        n.syms['__probe_virtual_fixed_opacity_setter'] = setter_target
+        n.syms['__probe_virtual_fixed_opacity_getter'] = getter_target
+        pen_before = bytes(n.u.mem_read(pen, 256))
+        settings_before = bytes(n.u.mem_read(setting_data, 96))
+        observed = []
+        for enabled in (False, True):
+            n.call('__probe_virtual_fixed_opacity_setter', [morphable, int(enabled)])
+            setter_result = n.x(0) & 0xffffffff
+            n.call('__probe_virtual_fixed_opacity_getter', [morphable])
+            getter_result = n.x(0) & 0xffffffff
+            pen_unchanged = bytes(n.u.mem_read(pen, 256)) == pen_before
+            settings_unchanged = bytes(n.u.mem_read(setting_data, 96)) == settings_before
+            if (setter_result != 1 or getter_result != 0
+                    or not pen_unchanged or not settings_unchanged):
+                raise AssertionError('native BrushPen fixed-opacity virtual pair changed state')
+            observed.append({
+                'setter_input': enabled,
+                'setter_return_w0_u32': setter_result,
+                'getter_return_w0_u32': getter_result,
+                'pen_256_bytes_unchanged': pen_unchanged,
+                'settings_96_bytes_unchanged': settings_unchanged,
+            })
+        fixed_opacity_contract = {
+            'GetMorphable_result_is_pen_plus_96': True,
+            'morphable_vptr': hex(morphable_vptr),
+            'vtable_slot_8_target': hex(setter_target),
+            'vtable_slot_8_brush_elf_offset': '0x566e0',
+            'vtable_slot_9_target': hex(getter_target),
+            'vtable_slot_9_brush_elf_offset': '0x566e8',
+            'setter_symbol_target_match': True,
+            'getter_symbol_target_match': True,
+            'native_calls': observed,
+        }
     n.call(core.GET_VERSION, [pen])
     version = n.x(0)
     n.traced_version = version
@@ -245,6 +294,7 @@ def setup_pen(n, size, fixed_width_enabled, curve_enabled=True):
         'vector': vector, 'version': version, 'size': actual_size,
         'fixed_width': actual_fixed_width, 'fixed_width_enabled_input': fixed_width_enabled,
         'fixed_width_enabled_native': fixed_width_enabled_native,
+        'fixed_opacity_contract': fixed_opacity_contract,
         'setting_data': setting_data,
         'constructor_inputs': constructor_inputs,
         'vptr': vptr, 'expected_vptr': expected_vptr,
@@ -338,7 +388,9 @@ def run_case(size, fixed_width_enabled, case=CASES):
         ptr = pointers[key]
         n.put(impl + offset, 'QQQ', ptr, ptr + count * width, ptr + count * width)
 
-    state = setup_pen(n, size, fixed_width_enabled, curve_enabled)
+    state = setup_pen(
+        n, size, fixed_width_enabled, curve_enabled,
+        bool(case.get('verify_fixed_opacity_native_contract', False)))
     n.current_motion = {'source': 'native converted MotionEvent', 'count': count}
     n.current_object = {
         'points': case['points'], 'tool_type': saved_tool,
@@ -510,6 +562,8 @@ def run_case(size, fixed_width_enabled, case=CASES):
         'native_MotionEvent_getter_returns': n.motion_event_getters,
         'native_MotionEvent_method_call_counts': actual_motion_calls,
         'native_host_boundaries': n.boundaries(),
+        **({'native_fixed_opacity_contract': state['fixed_opacity_contract']}
+           if state['fixed_opacity_contract'] is not None else {}),
     }
 
 
@@ -530,6 +584,28 @@ def main():
                         tool_type=tool_type, curve_enabled=curve_enabled,
                         fixed_opacity_enabled=False, object_fixed_width_enabled=False)
             cases.append(run_case(3.144, False, case))
+    fixed_opacity_case = dict(
+        CASES,
+        name='synthetic-tool-2-fixed-opacity-noop',
+        tool_type=2,
+        curve_enabled=True,
+        fixed_opacity_enabled=True,
+        object_fixed_width_enabled=False,
+        verify_fixed_opacity_native_contract=True,
+    )
+    fixed_opacity_row = run_case(3.144, False, fixed_opacity_case)
+    baseline = cases[0]
+    if (fixed_opacity_row['native_output_buffer_f32_le_hex']
+            != baseline['native_output_buffer_f32_le_hex']
+            or fixed_opacity_row['native_AddPoint_records'] != baseline['native_AddPoint_records']):
+        raise AssertionError('native fixed-opacity true changed the captured baseline output buffer')
+    fixed_opacity_row['native_fixed_opacity_buffer_comparison'] = {
+        'baseline_label': baseline['label'],
+        'native_buffer_bytes_equal': True,
+        'native_AddPoint_records_equal': True,
+        'comparison_scope': 'this synthetic ObjectStroke row and pinned BrushPen constructor profile',
+    }
+    cases.append(fixed_opacity_row)
     result = {
         'schema': 'sdocx-brushpen-saved-wrapper-native-v1',
         'artifact': 'Samsung Notes 4.4.45.37 ARM64 BrushPen',
