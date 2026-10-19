@@ -95,21 +95,38 @@ n.call('SPen::ObjectStroke::GetStrokeType() const',[obj]); stroke_type=n.x(0)
 def run_case(case, obj, impl, rect, stroke_type):
     rows=case['rows']; count=len(rows)
     if not rows: raise ValueError('empty strokes are excluded: saved wrapper dereferences GetTimeStamp()[0] at 0x1ed04 before any zero-count return')
-    requested_tool_type=int(case.get('tool_type',2))
-    n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,2])
-    reset_setter_return=n.x(0)
-    n.call('SPen::ObjectStroke::GetToolType() const',[obj])
-    reset_getter=n.x(0)
-    if reset_setter_return!=1 or reset_getter!=2:
-        raise RuntimeError(f"failed to reset native ObjectStroke tool type before {case['id']}")
-    n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,requested_tool_type])
-    tool_setter_return=n.x(0)
-    n.call('SPen::ObjectStroke::GetToolType() const',[obj])
-    saved_tool_type=n.x(0)
-    tool_capture={'reset_to_2':{'setter_return':reset_setter_return,'getter':reset_getter},
-                  'requested':requested_tool_type,'setter_return':tool_setter_return,
-                  'getter':saved_tool_type,
-                  'boundary':'actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type'}
+    if 'raw_tool_type' in case:
+        # Simulate the post-load implementation field directly. No setter is
+        # called here: both pinned loader paths store the raw U16 at +316.
+        n.put(impl+316,'I',2)
+        n.call('SPen::ObjectStroke::GetToolType() const',[obj]); reset_getter=n.x(0)
+        if reset_getter!=2: raise RuntimeError(f"failed to reset raw native tool field before {case['id']}")
+        raw_tool_type=int(case['raw_tool_type'])
+        if not 0 <= raw_tool_type <= 0xffff: raise ValueError('raw tool type must fit U16')
+        n.put(impl+316,'I',raw_tool_type)
+        stored_raw=n.get(impl+316,'I')[0]
+        n.call('SPen::ObjectStroke::GetToolType() const',[obj]); saved_tool_type=n.x(0)
+        expected_tool=raw_tool_type if raw_tool_type < 5 else 0
+        if saved_tool_type!=expected_tool: raise RuntimeError(f"raw field/getter mismatch for {case['id']}")
+        tool_capture={'mode':'direct_raw_field','reset_field_value':2,'reset_getter':reset_getter,
+                      'raw_field_value':stored_raw,'getter':saved_tool_type,'setter_invoked':False,
+                      'boundary':'host writes ObjectStrokeImpl+316 to simulate post-load raw U16 state; actual native Model getter runs; no SetToolType or binary-loader invocation'}
+    else:
+        requested_tool_type=int(case.get('tool_type',2))
+        n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,2])
+        reset_setter_return=n.x(0)
+        n.call('SPen::ObjectStroke::GetToolType() const',[obj])
+        reset_getter=n.x(0)
+        if reset_setter_return!=1 or reset_getter!=2:
+            raise RuntimeError(f"failed to reset native ObjectStroke tool type before {case['id']}")
+        n.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,requested_tool_type])
+        tool_setter_return=n.x(0)
+        n.call('SPen::ObjectStroke::GetToolType() const',[obj])
+        saved_tool_type=n.x(0)
+        tool_capture={'reset_to_2':{'setter_return':reset_setter_return,'getter':reset_getter},
+                      'requested':requested_tool_type,'setter_return':tool_setter_return,
+                      'getter':saved_tool_type,
+                      'boundary':'actual Model ObjectStroke setter/getter execute; enum passed in integer W1; getter result feeds MotionEvent tool type'}
     n.native_motion_calls=[]; n.add_calls=[]; n.build_calls=[]; n.drawable_states=[]; n.orientation_reads=[]; n.sample_ends=[]; n.terminal_start=None; n.position_queries=[]; n.length_queries=[]; n.pending_position_returns={}; n.pending_length_returns={}; n.active_add_index=None; n.output_labels={}; n.current_size=6.0
     pen_data=n.alloc(0x100); settings=n.alloc(0x80); manager=n.alloc(0x80); drawable=n.alloc(0x600); n.drawable=drawable
     # Match the inherited Pen ABI used by the real Calligraphy style methods:

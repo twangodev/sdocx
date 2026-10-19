@@ -2325,6 +2325,62 @@ mod tests {
                     ],
                     "{id} MotionEvent tool getter values"
                 );
+            } else if let Some(raw) = case.get("raw_tool_type") {
+                let raw_tool = raw.as_i64().unwrap() as i32;
+                let capture = &case["native_tool"];
+                assert_eq!(capture["mode"], "direct_raw_field", "{id} raw tool mode");
+                assert_eq!(
+                    capture["reset_field_value"].as_i64().unwrap(),
+                    2,
+                    "{id} raw field baseline"
+                );
+                assert_eq!(
+                    capture["reset_getter"].as_i64().unwrap(),
+                    2,
+                    "{id} raw getter baseline"
+                );
+                assert_eq!(
+                    capture["raw_field_value"].as_i64().unwrap(),
+                    i64::from(raw_tool),
+                    "{id} raw field input"
+                );
+                assert_eq!(
+                    capture["setter_invoked"], false,
+                    "{id} bypasses Model setter"
+                );
+                assert!(
+                    capture.get("setter_return").is_none(),
+                    "{id} has no setter status"
+                );
+                let captured_tool = capture["getter"].as_i64().unwrap() as i32;
+                let expected_tool = if (0..=4).contains(&raw_tool) {
+                    raw_tool
+                } else {
+                    0
+                };
+                assert_eq!(
+                    captured_tool, expected_tool,
+                    "{id} native raw getter mapping"
+                );
+                assert_eq!(
+                    captured_tool, effective_tool,
+                    "{id} sampler uses effective getter"
+                );
+                let motion_reads = capture["motion_event_getter_values"]["first"]
+                    .as_array()
+                    .unwrap();
+                assert!(
+                    !motion_reads.is_empty(),
+                    "{id} native MotionEvent reads recorded"
+                );
+                assert_eq!(
+                    motion_reads
+                        .iter()
+                        .map(|entry| entry["return"].as_i64().unwrap() as i32)
+                        .collect::<Vec<_>>(),
+                    vec![effective_tool; motion_reads.len()],
+                    "{id} MotionEvent receives raw getter result"
+                );
             }
             let fixed_width = if let Some(style) = case.get("pen_style") {
                 let captured = &case["native_style"];
@@ -2559,7 +2615,7 @@ mod tests {
                 );
             }
         }
-        assert_eq!(ids.len(), 22);
+        assert_eq!(ids.len(), 30);
         for id in [
             "fixed-width-two",
             "fixed-width-half",
@@ -2578,6 +2634,11 @@ mod tests {
             let id = format!("tool-type-{tool}");
             assert!(ids.iter().any(|captured| captured == &id), "missing {id}");
         }
+        for tool in 0..=6 {
+            let id = format!("raw-tool-type-{tool}");
+            assert!(ids.iter().any(|captured| captured == &id), "missing {id}");
+        }
+        assert!(ids.iter().any(|captured| captured == "raw-tool-type-65535"));
     }
 
     #[test]
