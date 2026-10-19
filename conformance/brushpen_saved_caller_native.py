@@ -259,6 +259,8 @@ def dltrace(u,a,z,d):
 p.u.hook_add(UC_HOOK_CODE,dltrace)
 object_stroke_snapshots=[]
 factory_call_returns={}
+pending_brushpen_ctor_returns={}
+constructor_settings_snapshots=[]
 factory_created_pens=[]
 factory_version_history=[]
 selected_version_writes=[]
@@ -274,8 +276,10 @@ drawable_threshold_entries=[]
 drawable_entry_snapshots=[]
 paint_color_calls=[]
 pending_brushpen_buffer_returns={}
+runtime_normalization_events=[]
+active_normalization=None
 for _name,_address in p.syms.items():
- oblique_method=('BrushPenStrokeDrawableGL' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawLine(','::drawPoint(','::startPen(','::endPen('))) or _name in ('SPen::Pen::SetColor(int)','SPen::PenDrawableRT::SetPenData(float, int)')
+ oblique_method=('BrushPenStrokeDrawableGL' in _name and any(token in _name for token in ('::Draw(','::RedrawPen(','::drawLine(','::drawPoint(','::startPen(','::endPen(','::makeDrawPoint('))) or _name in ('SPen::Pen::SetColor(int)','SPen::PenDrawableRT::SetPenData(float, int)')
  motion_getter=_name.startswith('SPen::MotionEvent::Get') and ('()' in _name or '(int)' in _name)
  addpoint_method=_name.startswith('SPen::BrushPenStrokeDrawableRT') and any(token in _name for token in ('::AddPoint(','::ResetPointOffset(','::GetPointOffset('))
  if oblique_method or motion_getter or addpoint_method:
@@ -326,7 +330,52 @@ def snapshot_source_arrays(obj):
   arrays[name]={'count':count,'element_size':element_size,'data_hex':p.u.mem_read(data,size).hex() if size else ''}
  return arrays
 
+def log_runtime_normalization(u,a,z,d):
+ global active_normalization
+ if phase != 'draw_object_stroke':
+  return
+ pc=a-0x5000000
+ if pc==0x5c430:
+  settings_ptr=u.reg_read(R.UC_ARM64_REG_X9)
+  if not settings_ptr:
+   raise RuntimeError('native drawLine settings pointer is null at 0x5c430')
+  raw=bytes(u.mem_read(settings_ptr+32,8))
+  lo,hi=struct.unpack('<ii',raw)
+  selected_pen=factory_created_pens[-1] if factory_created_pens else 0
+  if not selected_pen: raise RuntimeError('normalization ran without the factory-created Drawing pen')
+  active_normalization={'draw_line_index':len(runtime_normalization_events),'settings_address':hex(settings_ptr),'settings_offset_from_pen':settings_ptr-selected_pen,'settings_plus32_plus36_bytes':raw.hex(),'settings_limit_plus32_i32':lo,'settings_limit_plus36_i32':hi,'drawLine_entry_speed_s8_f32_bits':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S8)).hex()}
+  runtime_normalization_events.append(active_normalization)
+ elif pc==0x5c440:
+  if active_normalization is None: raise RuntimeError('missing settings snapshot before selected minimum')
+  active_normalization['selected_minimum_i32']=struct.unpack('<i',struct.pack('<I',u.reg_read(R.UC_ARM64_REG_W9)))[0]
+ elif pc==0x5c444:
+  if active_normalization is None: raise RuntimeError('missing settings snapshot before scaled speed')
+  active_normalization['raw_speed_after_elapsed_division_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex()
+ elif pc==0x5c44c:
+  if active_normalization is None: raise RuntimeError('missing settings snapshot before half scaling')
+  active_normalization['scaled_speed_after_half_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex()
+ elif pc==0x5c468:
+  if active_normalization is None: raise RuntimeError('missing settings snapshot before settings normalization')
+  active_normalization['normalization_factor_1440_over_min_or_one_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S1)).hex()
+  active_normalization['speed_after_half_before_settings_normalization_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex()
+ elif pc==0x5c46c:
+  if active_normalization is None: raise RuntimeError('missing settings snapshot at normalized speed')
+  active_normalization['normalized_speed_before_clamp_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S1)).hex()
+ elif pc==0x5c638:
+  if active_normalization is None: raise RuntimeError('missing settings snapshot at makeDrawPoint argument setup')
+  active_normalization['makeDrawPoint_s3_before_tailcall_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S3)).hex()
+  active_normalization['makeDrawPoint_s4_before_tailcall_f32_bits']=struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S4)).hex()
+  active_normalization=None
+
 def log_vcall(u,a,z,d):
+ ctor_pc=p.syms.get('SPen::BrushPen::BrushPen()')
+ if a==ctor_pc and factory_call_returns:
+  pending_brushpen_ctor_returns[u.reg_read(R.UC_ARM64_REG_LR)]=u.reg_read(R.UC_ARM64_REG_X0)
+ if a in pending_brushpen_ctor_returns:
+  ctor_this=pending_brushpen_ctor_returns.pop(a)
+  settings_ptr=ctor_this+24
+  limits=struct.unpack('<ii',u.mem_read(settings_ptr+32,8))
+  constructor_settings_snapshots.append({'phase':phase,'constructor_this':hex(ctor_this),'settings_address':hex(settings_ptr),'settings_offset_from_pen':settings_ptr-ctor_this,'limits_plus32_plus36_i32':list(limits),'limits_bytes':u.mem_read(settings_ptr+32,8).hex(),'snapshot_point':'factory-created BrushPen ctor return, before Drawing screen-resolution setter'})
  if a in pending_motion_getters and pending_motion_getters[a]:
   call=pending_motion_getters[a].pop(0)
   call['return']={'x0':hex(u.reg_read(R.UC_ARM64_REG_X0)),'s0':hex(u.reg_read(R.UC_ARM64_REG_S0)),'d0':hex(u.reg_read(R.UC_ARM64_REG_D0))}
@@ -388,6 +437,7 @@ def log_vcall(u,a,z,d):
   if not (begin<=end<=capacity) or n>1_000_000 or n%4 or n<before: raise RuntimeError(f'invalid BrushPen callback vector return {begin:#x}/{end:#x}/{capacity:#x}')
   record.update({'after_count_bytes':n,'after_bytes':bytes(u.mem_read(begin,n)).hex() if n else '', 'delta_bytes':bytes(u.mem_read(begin+before,n-before)).hex() if n>before else ''}); brushpen_buffer_events.append(record)
 p.u.hook_add(UC_HOOK_CODE,log_vcall)
+p.u.hook_add(UC_HOOK_CODE,log_runtime_normalization)
 def watch_selected_pen_write(u, access, address, size, value, user):
  if factory_created_pens and address==factory_created_pens[-1]+88:
   selected_version_writes.append({'pc':hex(u.reg_read(R.UC_ARM64_REG_PC)),'before':bytes(u.mem_read(address,size)).hex(),'value':value,'size':size})
@@ -452,6 +502,29 @@ try:
  stream=bytes.fromhex(brushpen_buffer_events[-1]['after_bytes'])
  if len(stream) != 1144 or len(brushpen_buffer_events) != 26:
   raise RuntimeError(f'unexpected Drawing output size/callback count: {len(stream)}, {len(brushpen_buffer_events)}')
+ if len(runtime_normalization_events) != 2 or any('makeDrawPoint_s3_before_tailcall_f32_bits' not in row for row in runtime_normalization_events):
+  raise RuntimeError(f'expected two complete native runtime-normalization samples: {runtime_normalization_events}')
+ if len(constructor_settings_snapshots) != 1 or constructor_settings_snapshots[0]['constructor_this'] != hex(selected_pen):
+  raise RuntimeError(f'expected one settings snapshot from the Drawing-created BrushPen constructor: {constructor_settings_snapshots}')
+ if constructor_settings_snapshots[0]['settings_offset_from_pen'] != 24:
+  raise RuntimeError(f'unexpected native Pen settings pointer offset: {constructor_settings_snapshots[0]}')
+ if screen_resolution_calls and constructor_settings_snapshots[0]['limits_plus32_plus36_i32'] == [args.width,args.height]:
+  raise RuntimeError('constructor settings snapshot unexpectedly already equals post-Drawing resolution')
+ for row in runtime_normalization_events:
+  lo=row['settings_limit_plus32_i32']; hi=row['settings_limit_plus36_i32']; selected=row['selected_minimum_i32']
+  if selected != min(lo,hi): raise RuntimeError(f'native signed minimum mismatch: {row}')
+  if row['settings_offset_from_pen'] != constructor_settings_snapshots[0]['settings_offset_from_pen'] or row['settings_address'] != constructor_settings_snapshots[0]['settings_address']:
+   raise RuntimeError(f'native drawLine did not read the constructor-owned settings subobject: {row}')
+  factor=struct.unpack('<f',bytes.fromhex(row['normalization_factor_1440_over_min_or_one_f32_bits']))[0]
+  expected_factor=struct.unpack('<f',struct.pack('<f',1440.0/selected if selected else 1.0))[0]
+  if factor != expected_factor: raise RuntimeError(f'native settings normalization mismatch: {row}')
+  pre=struct.unpack('<f',bytes.fromhex(row['speed_after_half_before_settings_normalization_f32_bits']))[0]
+  normalized=struct.unpack('<f',bytes.fromhex(row['normalized_speed_before_clamp_f32_bits']))[0]
+  expected_speed=struct.unpack('<f',struct.pack('<f',pre*factor))[0]
+  if normalized != expected_speed: raise RuntimeError(f'native normalized speed mismatch: {row}')
+ make_entries=[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and any('::makeDrawPoint(' in sig for sig in row['signatures'])]
+ if len(make_entries)!=2 or any(runtime_normalization_events[i]['makeDrawPoint_s3_before_tailcall_f32_bits'] != struct.pack('<I',int(row['regs']['s3'],16)).hex() for i,row in enumerate(make_entries)):
+  raise RuntimeError('post-operation makeDrawPoint s3 trace does not match native callee arguments')
  if screen_resolution_calls != [{'width':args.width,'height':args.height}]:
   raise RuntimeError(f'unexpected native screen profile calls: {screen_resolution_calls}')
  if any(pending_motion_getters.values()):
@@ -462,7 +535,7 @@ try:
  native_hashes['libc++_shared.so']=hashlib.sha256(CPP.read_bytes()).hexdigest()
  helper_hashes={name:hashlib.sha256(pathlib.Path(module.__file__).read_bytes()).hexdigest() for name,module in [('oblique_canvas_native',oc),('elf_plt',elf_plt)]}
  input_record={'pen_name':pen_name,'advanced_setting_ascii':args.advanced_setting,'native_model_getter_snapshot':model_state,'size_level':30,'color_argb_u32':'0xff6cdd8f','size_f32_bits':source_size_bits,'stroke_type':input_case['stroke_type'],'tool_type':input_case['tool_type'],'curve_enabled':input_case['curve_enabled'],'point_count':len(points),'source_arrays':source_object_arrays}
- capture={'schema':'brushpen-saved-caller-native-v1','case_id':'brushpen-empty-advanced-setting-tool2','profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':input_record,'native_selection':{'loader_calls':loader_calls,'factory_symbol':'createPenInst','pen_address':hex(selected_pen),'version':selected_version,'size_f32_bits':struct.pack('<I',selected_size).hex(),'getStrokeDrawableGL_primary_vptr':hex(primary),'selected_drawable_subobject_vptr':hex(sub),'redraw_vtable_slot_target':hex(redraw_target),'redraw_target_symbols':redraw_names,'rt_address':hex(rt),'rt_vptr':hex(struct.unpack('<Q',p.u.mem_read(rt,8))[0]),'screen_resolution_calls':screen_resolution_calls,'draw_object_stroke_entries':[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and row['pc']==hex(redraw_target)],'native_call_entries':[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and any(token in sig for sig in row['signatures'] for token in ('::Draw(','::drawLine(','::drawPoint(','::startPen(','::endPen(','::AddPoint('))],'motion_getter_returns':native_motion_getter_returns,'native_path_entry_counts':{token:sum(token in sig for row in native_draw_entries if row['phase']=='draw_object_stroke' for sig in row['signatures']) for token in ('RedrawPen(','drawLine(','drawPoint(','startPen(','endPen(','AddPoint(')},'drawable_entry_snapshots':drawable_entry_snapshots,'drawable_threshold_entries':drawable_threshold_entries,'paint_color_calls':paint_color_calls,'drawable_memory_0_0x180':bytes(p.u.mem_read(selected_drawable,0x180)).hex(),'pen_memory_0_0xa8':bytes(p.u.mem_read(selected_pen,0xa8)).hex(),'rt_memory_0_0x130':bytes(p.u.mem_read(rt,0x130)).hex()},'producer':{'callback_count':len(brushpen_buffer_events),'rt_ids':sorted({r['rt'] for r in brushpen_buffer_events}),'instance_float_count':len(stream)//4,'buffer_bytes':len(stream),'buffer_sha256':hashlib.sha256(stream).hexdigest(),'buffer_hex':stream.hex(),'append_rows':[{'before_count_bytes':r['before_count_bytes'],'after_count_bytes':r['after_count_bytes'],'delta_bytes':r['delta_bytes'],'float_args':r['float_args']} for r in brushpen_buffer_events],'callback_entries':[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and any('::AddPoint(' in sig for sig in row['signatures'])]},'native_libraries_sha256':native_hashes,'native_helper_sha256':helper_hashes,'host_boundaries':['Pen/model input arrays and IContext/canvas/resource/queue are explicit synthetic host inputs; native Model getters, ObjectDrawing route, BrushPen factory/admission, MotionEvent getter path, GLV10 geometry and RTV1 AddPoint execute in the pinned native DSOs.','The queue adapter synchronously dispatches task vslot+16; renderer/GLES callbacks and pixel rendering are outside this capture. sincosf and expf imports are serviced by Python math callbacks, so target libm math execution is not claimed.','The empty advanced setting is explicitly supplied to native ObjectStroke::SetAdvancedPenSetting; this is not an SDK-deserialized app stroke. No Samsung device or user-captured stroke is claimed.']}
+ capture={'schema':'brushpen-saved-caller-native-v1','case_id':'brushpen-empty-advanced-setting-tool2','profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':input_record,'native_selection':{'loader_calls':loader_calls,'factory_symbol':'createPenInst','pen_address':hex(selected_pen),'version':selected_version,'size_f32_bits':struct.pack('<I',selected_size).hex(),'getStrokeDrawableGL_primary_vptr':hex(primary),'selected_drawable_subobject_vptr':hex(sub),'redraw_vtable_slot_target':hex(redraw_target),'redraw_target_symbols':redraw_names,'rt_address':hex(rt),'rt_vptr':hex(struct.unpack('<Q',p.u.mem_read(rt,8))[0]),'screen_resolution_calls':screen_resolution_calls,'draw_object_stroke_entries':[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and row['pc']==hex(redraw_target)],'native_call_entries':[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and any(token in sig for sig in row['signatures'] for token in ('::Draw(','::drawLine(','::drawPoint(','::startPen(','::endPen(','::makeDrawPoint(','::AddPoint('))],'motion_getter_returns':native_motion_getter_returns,'runtime_normalization_contract':{'library':'libSPenBrushPen.so','function_rva':'0x5c2f4','settings_pointer_load_rva':'0x5c428','limits_load_signed_pair_rva':'0x5c430','signed_min_csel_rva':'0x5c43c','speed_elapsed_division_rva':'0x5c440','zero_minimum_fallback_branch_rva':'0x5c44c','zero_minimum_factor_one_rva':'0x5c464','1440_over_min_division_rva':'0x5c45c','normalization_multiply_rva':'0x5c468','post_clamp_makeDrawPoint_s3_copy_rva':'0x5c630','zero_minimum_runtime_branch_exercised':False},'runtime_normalization_events':runtime_normalization_events,'constructor_settings_snapshots':constructor_settings_snapshots,'native_path_entry_counts':{token:sum(token in sig for row in native_draw_entries if row['phase']=='draw_object_stroke' for sig in row['signatures']) for token in ('RedrawPen(','drawLine(','drawPoint(','startPen(','endPen(','AddPoint(')},'drawable_entry_snapshots':drawable_entry_snapshots,'drawable_threshold_entries':drawable_threshold_entries,'paint_color_calls':paint_color_calls,'drawable_memory_0_0x180':bytes(p.u.mem_read(selected_drawable,0x180)).hex(),'pen_memory_0_0xa8':bytes(p.u.mem_read(selected_pen,0xa8)).hex(),'rt_memory_0_0x130':bytes(p.u.mem_read(rt,0x130)).hex()},'producer':{'callback_count':len(brushpen_buffer_events),'rt_ids':sorted({r['rt'] for r in brushpen_buffer_events}),'instance_float_count':len(stream)//4,'buffer_bytes':len(stream),'buffer_sha256':hashlib.sha256(stream).hexdigest(),'buffer_hex':stream.hex(),'append_rows':[{'before_count_bytes':r['before_count_bytes'],'after_count_bytes':r['after_count_bytes'],'delta_bytes':r['delta_bytes'],'float_args':r['float_args']} for r in brushpen_buffer_events],'callback_entries':[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and any('::AddPoint(' in sig for sig in row['signatures'])]},'native_libraries_sha256':native_hashes,'native_helper_sha256':helper_hashes,'host_boundaries':['Pen/model input arrays and IContext/canvas/resource/queue are explicit synthetic host inputs; native Model getters, ObjectDrawing route, BrushPen factory/admission, MotionEvent getter path, GLV10 geometry and RTV1 AddPoint execute in the pinned native DSOs.','The queue adapter synchronously dispatches task vslot+16; renderer/GLES callbacks and pixel rendering are outside this capture. sincosf and expf imports are serviced by Python math callbacks, so target libm math execution is not claimed.','The empty advanced setting is explicitly supplied to native ObjectStroke::SetAdvancedPenSetting; this is not an SDK-deserialized app stroke. No Samsung device or user-captured stroke is claimed.']}
  encoded=json.dumps(capture,indent=2,sort_keys=True)+'\n'
  if args.write_fixture:
   FIXTURE.write_text(encoded)
