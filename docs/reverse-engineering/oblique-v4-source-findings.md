@@ -100,6 +100,11 @@ at `0x81f20`/`0x81f50`/`0x81f7c`. Interface slots 16/32/48 bind thunks
 PenData bytes 8/9 and f32 member 12. Constructor defaults are curve enabled,
 fixed disabled, value zero (`0x36314`/`0x36324`); saved values replace them.
 
+V4 reads `IsShape` into drawable +48 (`0x40e04–0x40e10`). Its shape-specific
+short-distance branch also requires PenData fixed-enable byte 9
+(`0x412a8–0x412c8`); the earlier axis gate still applies. Production rejects
+that saved fixed-width enable, so this branch needs no broader shape exclusion.
+
 `drawPoint` selects local extent B as half fixed value when enabled, otherwise
 incoming half size (`0x41684`–`0x41694`). Its true-emission branch calls RTV1
 `AddPoint(Vector2<float>)` with XY only (`0x41698`–`0x416a4`), without passing
