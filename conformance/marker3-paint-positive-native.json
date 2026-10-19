@@ -1,0 +1,1972 @@
+{
+  "schema": "sdocx-marker3-v5-rtv1-paint-positive-native-v1",
+  "source": {
+    "base_sha256": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "pencommon_sha256": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "fountainpen_sha256": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "airbrushpen_sha256": "92ebe10993ebfcb42fa3f5c55e86f6d469ccac6638421bbd71f92e0558587423",
+    "graphics_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "renderer_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "marker3_sha256": "d9e63380088cadd4128f05d904bba109a3adff343c048d005beba4d83f5f15c5",
+    "libcxx_shared_sha256": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "evidence_scope": "Pinned Marker3 V5 factory selected RTV1. Native RTV1 Init, CreatePenCanvas, actual SPTextureBitmap::GetSubBitmap(0), SetBuffer, three native AddPoint calls, SendDataToGPU, Update(false), and Draw execute. Embedded mask/composite shaders and actual Renderer GL state/draw calls execute in host Mesa GLES; native handles are mapped to host Mesa objects. Synthetic direct point stream is injected at RT AddPoint, rather than produced by saved ObjectStroke replay. Native PenDrawableRT::SetPenData(float,int) on the selected RTV1 is executed and its emitted color uniforms are captured. The native factory uses TextureMemoryLayout 6 and TextureTargetLayout 2 to allocate the independent RGBA8 output target. Runtime checks prove mask and output FBO/texture IDs are distinct, the composite samples the mask texture, both FBOs are complete, and each wrapped GL call ends without an error. Full readback bytes are summarized by byte length and SHA-256; sample values are observational host Mesa output, not Samsung-device parity.",
+  "host_gles": {
+    "egl_version": "1.5",
+    "vendor": "Mesa",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "version": "OpenGL ES 3.2 Mesa 25.0.7-2+deb13u1",
+    "shading_language": "OpenGL ES GLSL ES 3.20"
+  },
+  "input": {
+    "canvas": [
+      128,
+      32
+    ],
+    "points": [
+      [
+        24.0,
+        16.0
+      ],
+      [
+        64.0,
+        16.0
+      ],
+      [
+        104.0,
+        16.0
+      ]
+    ],
+    "rt_size": 12,
+    "matrix": "identity",
+    "point_source": "direct synthetic calls to Marker3StrokeDrawableRTV1::AddPoint",
+    "saved_object_stroke_replay": false,
+    "color_state": {
+      "mode": "native PenDrawableRT::SetPenData(float,int)",
+      "argb": "0xff336699",
+      "size": 12.0
+    },
+    "output_texture_memory_layout": 6,
+    "output_texture_target_layout": 2
+  },
+  "topology": {
+    "mask_attachment": {
+      "framebuffer": 1,
+      "texture": 1
+    },
+    "color_attachment": {
+      "framebuffer": 2,
+      "texture": 2
+    },
+    "mask_draw_state": {
+      "program": 4,
+      "vao": 0,
+      "framebuffer": 1,
+      "activeTexture": 33984,
+      "texture2d": 0
+    },
+    "composite_draw_state": {
+      "program": 5,
+      "vao": 0,
+      "framebuffer": 2,
+      "activeTexture": 33984,
+      "texture2d": 1
+    },
+    "output_format": {
+      "internal": 32856,
+      "format": 6408,
+      "width": 128,
+      "height": 32
+    }
+  },
+  "native_vector_bytes": 24,
+  "host_boundaries": [
+    "PenGLDataManager is assigned to the native-created Pen by the harness",
+    "Queue tasks run synchronously; managed registration uses host token bookkeeping",
+    "libc/locale/thread primitives are bounded host services",
+    "Native GLES calls are forwarded to Mesa; no Android device or destruction lifecycle is captured"
+  ],
+  "native_color_rgba": [
+    0.20000000298023224,
+    0.4000000059604645,
+    0.6000000238418579,
+    1.0
+  ],
+  "runtime_shader_source_calls": [
+    {
+      "shader": 1,
+      "source": [
+        "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec2 aPosition; uniform mat4 ProjectionMatrix; out vec2 fragCoord; void main(void) { gl_Position = ProjectionMatrix * vec4(aPosition + aRectPoint.xy, 0.0, 1.0); fragCoord = vec2(aRectPoint.z, aRectPoint.w); }"
+      ]
+    },
+    {
+      "shader": 2,
+      "source": [
+        "#version 300 es \n precision mediump float; in vec2 fragCoord; uniform vec4 inputColor; const float radius = 0.5; vec2 center = vec2(0.5, 0.5); out float FragColor; void main(void) { float dist = distance(center, fragCoord.xy); float pixelDist = fwidth(dist) * 1.0; float smoothAlpha = 1.0 - clamp((dist - (radius - pixelDist)) / pixelDist, 0.0, 1.0); FragColor = smoothAlpha * inputColor.a; }"
+      ]
+    },
+    {
+      "shader": 1,
+      "source": [
+        "#version 300 es \n precision highp float; layout(location = 0) in vec4 aRectPoint; layout(location = 1) in vec2 aPosition; uniform mat4 ProjectionMatrix; out vec2 fragCoord; void main(void) { gl_Position = ProjectionMatrix * vec4(aPosition + aRectPoint.xy, 0.0, 1.0); fragCoord = vec2(aRectPoint.z, aRectPoint.w); }"
+      ]
+    },
+    {
+      "shader": 2,
+      "source": [
+        "#version 300 es \n precision mediump float; in vec2 fragCoord; uniform vec4 inputColor; const float radius = 0.5; vec2 center = vec2(0.5, 0.5); out float FragColor; void main(void) { float dist = distance(center, fragCoord.xy); float pixelDist = fwidth(dist) * 1.0; float smoothAlpha = 1.0 - clamp((dist - (radius - pixelDist)) / pixelDist, 0.0, 1.0); FragColor = smoothAlpha * inputColor.a; }"
+      ]
+    },
+    {
+      "shader": 1,
+      "source": [
+        "#version 300 es \n precision highp float; in vec4 position; out vec2 vUV; void main(void) { gl_Position = vec4(position.xy, 0.0, 1.0); vUV = position.zw; }"
+      ]
+    },
+    {
+      "shader": 2,
+      "source": [
+        "#version 300 es \n precision highp float; in vec2 vUV; uniform sampler2D StrokeTexture; uniform vec4 inputColor; uniform int isOneChannelTexture; out vec4 FragColor; void main(void) { float strokeAlpha = 0.0; if (isOneChannelTexture == 1) strokeAlpha = texture(StrokeTexture, vUV).r; else strokeAlpha = texture(StrokeTexture, vUV).a; if (strokeAlpha > 0.0) FragColor = vec4(inputColor.rgb, strokeAlpha); else discard; }"
+      ]
+    },
+    {
+      "shader": 1,
+      "source": [
+        "precision highp float; uniform mat4 uProjectionMatrix; attribute vec3 aVertex; varying float alphaAA; void main(void) { gl_Position = uProjectionMatrix * vec4(aVertex.xy, 0.0, 1.0); alphaAA = aVertex.z; }"
+      ]
+    },
+    {
+      "shader": 2,
+      "source": [
+        "precision mediump float; varying float alphaAA; uniform vec4 uColor; uniform vec4 uTintColor; uniform int uHasTintColor; void main(void) { float alpha = alphaAA * uColor.a; if (uHasTintColor == 1) { alpha *= uTintColor.a; gl_FragColor = vec4(uTintColor.rgb * alpha, alpha); } else { gl_FragColor = vec4(uColor.rgb * alpha, alpha); } }"
+      ]
+    }
+  ],
+  "gl_calls": [
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glLinkProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramBinary",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetString",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenBuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 1
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 0,
+      "usage": 35048,
+      "dataSha256": null
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glLinkProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramBinary",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glLinkProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramBinary",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetString",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenBuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 2
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 0,
+      "usage": 35048,
+      "dataSha256": null
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenBuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 3
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 0,
+      "usage": 35040,
+      "dataSha256": null
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenTextures",
+      "error": 0
+    },
+    {
+      "call": "glGenSamplers",
+      "native": [
+        100
+      ],
+      "mesa": [
+        1
+      ]
+    },
+    {
+      "call": "errorAfter:glGenSamplers",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 1
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10242,
+      "value": 33071
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10243,
+      "value": 33071
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10240,
+      "value": 9729
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10241,
+      "value": 9729
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 33082,
+      "value": 0
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 33083,
+      "value": 0
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "glTexImage2D",
+      "target": 3553,
+      "internalFormat": 33321,
+      "width": 128,
+      "height": 32,
+      "format": 6403,
+      "type": 5121,
+      "hasPixels": false,
+      "pixelBytes": 0,
+      "pixelsSha256": null
+    },
+    {
+      "call": "errorAfter:glTexImage2D",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 0
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10241,
+      "value": 9728
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 100,
+      "mesaSampler": 1,
+      "pname": 10240,
+      "value": 9728
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenFramebuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 0
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "glBindFramebuffer",
+      "target": 36160,
+      "id": 1
+    },
+    {
+      "call": "errorAfter:glBindFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glFramebufferTexture2D",
+      "framebuffer": 1,
+      "args": [
+        36160,
+        36064,
+        3553,
+        1,
+        0
+      ]
+    },
+    {
+      "call": "errorAfter:glFramebufferTexture2D",
+      "error": 0
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "target": 36160,
+      "framebuffer": 1,
+      "status": 36053
+    },
+    {
+      "call": "errorAfter:glCheckFramebufferStatus",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glShaderSource",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCompileShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetShaderiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glCreateProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glAttachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glBindAttribLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glLinkProgram",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDetachShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDeleteShader",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramBinary",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetProgramiv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetActiveUniform",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetUniformLocation",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetString",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenBuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 4
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 0,
+      "usage": 35048,
+      "dataSha256": null
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetBooleanv",
+      "error": 0
+    },
+    {
+      "call": "glDisable",
+      "cap": 3089
+    },
+    {
+      "call": "errorAfter:glDisable",
+      "error": 0
+    },
+    {
+      "call": "glBindFramebuffer",
+      "target": 36160,
+      "id": 1
+    },
+    {
+      "call": "errorAfter:glBindFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "target": 36160,
+      "framebuffer": 1,
+      "status": 36053
+    },
+    {
+      "call": "errorAfter:glCheckFramebufferStatus",
+      "error": 0
+    },
+    {
+      "call": "glViewport",
+      "values": [
+        0,
+        0,
+        128,
+        32
+      ]
+    },
+    {
+      "call": "errorAfter:glViewport",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glClearColor",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glClear",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glInvalidateFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 2
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 64,
+      "usage": 35048,
+      "dataSha256": "a0d18e1af8126bfc5e043bf227e092993b80239fe89a91a7fdff807c0626371f"
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34963,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 3
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 24,
+      "usage": 35040,
+      "dataSha256": "75dcbfc09e3270f81e34e573a659b3d4a3eba4b82d952db0a626d9b52f45c228"
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34963,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenTextures",
+      "error": 0
+    },
+    {
+      "call": "glGenSamplers",
+      "native": [
+        101
+      ],
+      "mesa": [
+        2
+      ]
+    },
+    {
+      "call": "errorAfter:glGenSamplers",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 2
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10242,
+      "value": 33071
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10243,
+      "value": 33071
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10240,
+      "value": 9729
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 10241,
+      "value": 9729
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 33082,
+      "value": 0
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "glSamplerParameteri",
+      "nativeSampler": 101,
+      "mesaSampler": 2,
+      "pname": 33083,
+      "value": 0
+    },
+    {
+      "call": "errorAfter:glSamplerParameteri",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "glTexImage2D",
+      "target": 3553,
+      "internalFormat": 32856,
+      "width": 128,
+      "height": 32,
+      "format": 6408,
+      "type": 5121,
+      "hasPixels": true,
+      "pixelBytes": 16384,
+      "pixelsSha256": "4fe7b59af6de3b665b67788cc2f99892ab827efae3a467342b3bb4e3bc8e5bfe"
+    },
+    {
+      "call": "errorAfter:glTexImage2D",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glPixelStorei",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 0
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "glFenceSync",
+      "condition": 37143,
+      "flags": 0
+    },
+    {
+      "call": "errorAfter:glFenceSync",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glFlush",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenFramebuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 0
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "glBindFramebuffer",
+      "target": 36160,
+      "id": 2
+    },
+    {
+      "call": "errorAfter:glBindFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glFramebufferTexture2D",
+      "framebuffer": 2,
+      "args": [
+        36160,
+        36064,
+        3553,
+        2,
+        0
+      ]
+    },
+    {
+      "call": "errorAfter:glFramebufferTexture2D",
+      "error": 0
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "target": 36160,
+      "framebuffer": 2,
+      "status": 36053
+    },
+    {
+      "call": "errorAfter:glCheckFramebufferStatus",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetString",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGenBuffers",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 5
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 0,
+      "usage": 35048,
+      "dataSha256": null
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindFramebuffer",
+      "target": 36160,
+      "id": 1
+    },
+    {
+      "call": "errorAfter:glBindFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "target": 36160,
+      "framebuffer": 1,
+      "status": 36053
+    },
+    {
+      "call": "errorAfter:glCheckFramebufferStatus",
+      "error": 0
+    },
+    {
+      "call": "glViewport",
+      "values": [
+        0,
+        0,
+        128,
+        32
+      ]
+    },
+    {
+      "call": "errorAfter:glViewport",
+      "error": 0
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "values": [
+        32776,
+        32776
+      ]
+    },
+    {
+      "call": "errorAfter:glBlendEquationSeparate",
+      "error": 0
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "values": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "call": "errorAfter:glBlendFuncSeparate",
+      "error": 0
+    },
+    {
+      "call": "glEnable",
+      "cap": 3042
+    },
+    {
+      "call": "errorAfter:glEnable",
+      "error": 0
+    },
+    {
+      "call": "glColorMask",
+      "values": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "call": "errorAfter:glColorMask",
+      "error": 0
+    },
+    {
+      "call": "glUseProgram",
+      "program": 4
+    },
+    {
+      "call": "errorAfter:glUseProgram",
+      "error": 0
+    },
+    {
+      "call": "glUniformMatrix4fv",
+      "location": 0,
+      "values": [
+        0.015625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0625,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -3.0518509447574615e-05,
+        0.0,
+        -1.0,
+        -1.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "call": "errorAfter:glUniformMatrix4fv",
+      "error": 0
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "values": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579,
+        1.0
+      ]
+    },
+    {
+      "call": "errorAfter:glUniform4fv",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 2
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glEnableVertexAttribArray",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribPointer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribDivisor",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 3
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glEnableVertexAttribArray",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribPointer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribDivisor",
+      "error": 0
+    },
+    {
+      "call": "glDrawArraysInstanced",
+      "values": [
+        5,
+        0,
+        4,
+        3
+      ],
+      "state": {
+        "program": 4,
+        "vao": 0,
+        "framebuffer": 1,
+        "activeTexture": 33984,
+        "texture2d": 0
+      }
+    },
+    {
+      "call": "maskReadback",
+      "nonzero": 372
+    },
+    {
+      "call": "errorAfter:glDrawArraysInstanced",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribDivisor",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDisableVertexAttribArray",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribDivisor",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glDisableVertexAttribArray",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glInvalidateFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindFramebuffer",
+      "target": 36160,
+      "id": 2
+    },
+    {
+      "call": "errorAfter:glBindFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "target": 36160,
+      "framebuffer": 2,
+      "status": 36053
+    },
+    {
+      "call": "errorAfter:glCheckFramebufferStatus",
+      "error": 0
+    },
+    {
+      "call": "glViewport",
+      "values": [
+        0,
+        0,
+        128,
+        32
+      ]
+    },
+    {
+      "call": "errorAfter:glViewport",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 1
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBufferData",
+      "target": 34962,
+      "size": 96,
+      "usage": 35048,
+      "dataSha256": "2437f9e5b045170c3dba003d7a6f5463c2705314567d206d6fe8a60dbdf87097"
+    },
+    {
+      "call": "errorAfter:glBufferData",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34963,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "glBindFramebuffer",
+      "target": 36160,
+      "id": 2
+    },
+    {
+      "call": "errorAfter:glBindFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glCheckFramebufferStatus",
+      "target": 36160,
+      "framebuffer": 2,
+      "status": 36053
+    },
+    {
+      "call": "errorAfter:glCheckFramebufferStatus",
+      "error": 0
+    },
+    {
+      "call": "glViewport",
+      "values": [
+        0,
+        0,
+        128,
+        32
+      ]
+    },
+    {
+      "call": "errorAfter:glViewport",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glClearColor",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glClear",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glInvalidateFramebuffer",
+      "error": 0
+    },
+    {
+      "call": "glBlendEquationSeparate",
+      "values": [
+        32774,
+        32774
+      ]
+    },
+    {
+      "call": "errorAfter:glBlendEquationSeparate",
+      "error": 0
+    },
+    {
+      "call": "glBlendFuncSeparate",
+      "values": [
+        770,
+        771,
+        1,
+        771
+      ]
+    },
+    {
+      "call": "errorAfter:glBlendFuncSeparate",
+      "error": 0
+    },
+    {
+      "call": "glEnable",
+      "cap": 3042
+    },
+    {
+      "call": "errorAfter:glEnable",
+      "error": 0
+    },
+    {
+      "call": "glColorMask",
+      "values": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "call": "errorAfter:glColorMask",
+      "error": 0
+    },
+    {
+      "call": "glUseProgram",
+      "program": 5
+    },
+    {
+      "call": "errorAfter:glUseProgram",
+      "error": 0
+    },
+    {
+      "call": "glActiveTexture",
+      "unit": 33984
+    },
+    {
+      "call": "errorAfter:glActiveTexture",
+      "error": 0
+    },
+    {
+      "call": "glBindTexture",
+      "target": 3553,
+      "id": 1
+    },
+    {
+      "call": "errorAfter:glBindTexture",
+      "error": 0
+    },
+    {
+      "call": "glBindSampler",
+      "unit": 0,
+      "nativeSampler": 100,
+      "mesaSampler": 1
+    },
+    {
+      "call": "errorAfter:glBindSampler",
+      "error": 0
+    },
+    {
+      "call": "glUniform1i",
+      "location": 0,
+      "value": 0
+    },
+    {
+      "call": "errorAfter:glUniform1i",
+      "error": 0
+    },
+    {
+      "call": "glUniform4fv",
+      "location": 1,
+      "values": [
+        0.20000000298023224,
+        0.4000000059604645,
+        0.6000000238418579,
+        1.0
+      ]
+    },
+    {
+      "call": "errorAfter:glUniform4fv",
+      "error": 0
+    },
+    {
+      "call": "glUniform1i",
+      "location": 2,
+      "value": 1
+    },
+    {
+      "call": "errorAfter:glUniform1i",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 1
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glEnableVertexAttribArray",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glVertexAttribPointer",
+      "error": 0
+    },
+    {
+      "call": "glDrawArrays",
+      "values": [
+        4,
+        0,
+        6
+      ],
+      "state": {
+        "program": 5,
+        "vao": 0,
+        "framebuffer": 2,
+        "activeTexture": 33984,
+        "texture2d": 1
+      }
+    },
+    {
+      "call": "errorAfter:glDrawArrays",
+      "error": 0
+    },
+    {
+      "call": "glBindBuffer",
+      "target": 34962,
+      "buffer": 0
+    },
+    {
+      "call": "errorAfter:glBindBuffer",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glGetIntegerv",
+      "error": 0
+    },
+    {
+      "call": "errorAfter:glInvalidateFramebuffer",
+      "error": 0
+    }
+  ],
+  "readback": {
+    "bytes": 16384,
+    "sha256": "766b4806426ffedc27000b5ced44dd04eed15535d375cbfe1b2ced10248db5aa",
+    "samples": [
+      {
+        "xy": [
+          24,
+          16
+        ],
+        "rgba": [
+          51,
+          102,
+          153,
+          255
+        ]
+      },
+      {
+        "xy": [
+          29,
+          16
+        ],
+        "rgba": [
+          43,
+          86,
+          128,
+          214
+        ]
+      },
+      {
+        "xy": [
+          30,
+          16
+        ],
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "xy": [
+          31,
+          16
+        ],
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "xy": [
+          64,
+          16
+        ],
+        "rgba": [
+          51,
+          102,
+          153,
+          255
+        ]
+      },
+      {
+        "xy": [
+          104,
+          16
+        ],
+        "rgba": [
+          51,
+          102,
+          153,
+          255
+        ]
+      },
+      {
+        "xy": [
+          0,
+          0
+        ],
+        "rgba": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "gl_error": 0
+}
