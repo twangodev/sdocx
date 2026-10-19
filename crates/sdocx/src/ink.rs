@@ -28,6 +28,8 @@ pub(crate) mod marker3;
 mod marker4;
 // Oblique is admitted only for an explicit canonical page-vector context.
 mod oblique;
+#[cfg(test)]
+mod oblique_v1;
 mod path;
 #[cfg(test)]
 mod pencil;
