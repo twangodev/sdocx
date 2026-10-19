@@ -176,6 +176,187 @@ struct Pass {
 }
 
 impl Pass {
+    fn v1_factor(distance: f32) -> f32 {
+        if distance < 4.2 {
+            1.
+        } else if distance < 9.5 {
+            (((distance as f64 - 4.2_f64) / -5.3_f64).mul_add(0.4_f64, 0.4_f64) + 0.6_f64) as f32
+        } else if distance < 35. {
+            (((distance as f64 - 9.5_f64) / -25.5_f64).mul_add(0.5_f64, 0.5_f64) + 0.1_f64) as f32
+        } else {
+            0.1
+        }
+    }
+
+    fn v1_candidate(&self, pressure: f32, distance: f32) -> f32 {
+        let half = (Self::v1_factor(distance) + pressure) * 0.5;
+        let candidate = half.mul_add(self.size, self.width) * 0.5;
+        let change = (self.width - candidate).abs();
+        if change > 1. {
+            if candidate < self.width {
+                self.width - 1.
+            } else {
+                self.width + 1.
+            }
+        } else if self.width < 1. && self.width > candidate {
+            self.width - 0.5
+        } else {
+            candidate
+        }
+    }
+
+    fn redraw_v1(
+        &mut self,
+        p: P,
+        raw_pressure: f32,
+        threshold: f32,
+        initialize: &mut bool,
+    ) -> Option<()> {
+        if (p.x - self.last_tested.x).abs() < 1.5 && (p.y - self.last_tested.y).abs() < 1.5 {
+            return Some(());
+        }
+        let distance = p.sub(self.last_tested).len();
+        if !distance.is_finite() {
+            return None;
+        }
+        if distance < threshold {
+            let old = self.alternate;
+            self.alternate = !self.alternate;
+            if old {
+                self.last_tested = p;
+                return Some(());
+            }
+        } else {
+            self.alternate = true;
+        }
+
+        let pressure = if self.tool == 1 || self.tool == 3 {
+            0.5
+        } else if raw_pressure > 1. {
+            1.
+        } else {
+            raw_pressure
+        };
+        if *initialize {
+            self.control = p;
+            self.width = self.size * pressure;
+            self.last_tested = p;
+            *initialize = false;
+            return Some(());
+        }
+
+        let target = self.v1_candidate(pressure, distance).max(self.size / 10.);
+        let control = self.control;
+        let mid = control.mid(p);
+        let quad = Quad::new(self.start, control, mid);
+        if !quad.length.is_finite() || !target.is_finite() {
+            return None;
+        }
+        let n = Self::repeat(
+            self.width.min(target).trunc(),
+            quad.length,
+            MAX_GENERATED_DOTS.saturating_sub(self.points.len()),
+        )?;
+        if quad.length > 0. {
+            let mut d = 0.;
+            let step = quad.length / n as f32;
+            let dw = (target - self.width) / n as f32;
+            let mut width = self.width;
+            for _ in 0..n {
+                if d > quad.length {
+                    break;
+                }
+                if !self.point(quad.at(d), width * 0.5) {
+                    return None;
+                }
+                d += step;
+                width += dw;
+            }
+        }
+        self.width = target;
+        self.start = mid;
+        self.control = p;
+        self.last_tested = p;
+        Some(())
+    }
+
+    fn terminal_v1(&mut self, end: P, raw_pressure: f32, initialize: bool) -> Option<usize> {
+        if initialize {
+            let begin = self.points.len();
+            if !self.point(end, self.size * 0.25) {
+                return None;
+            }
+            self.width = self.size * 0.5;
+            return Some(self.points.len() - begin);
+        }
+        let pressure = if self.tool == 1 || self.tool == 3 {
+            0.5
+        } else if raw_pressure > 1. {
+            1.
+        } else {
+            raw_pressure
+        };
+        let distance = end.sub(self.last_tested).len();
+        if !distance.is_finite() {
+            return None;
+        }
+        let target = self.v1_candidate(pressure, distance).max(self.size / 10.);
+        let control = self.control;
+        let midpoint = control.mid(end);
+        self.bounds.rect(&[self.start, control, midpoint, end], 1.);
+        let begin = self.points.len();
+        if self.alternate {
+            let path = Cubic::new([self.start, control, midpoint, end]);
+            path_emission(self, path.length, target, |d| path.at(d))?;
+        } else {
+            let path = Quad::new(self.start, control, end);
+            path_emission(self, path.length, target, |d| path.at(d))?;
+        }
+        Some(self.points.len() - begin)
+    }
+
+    fn redraw_v1_no_curve(&mut self, p: P, raw_pressure: f32, initialize: &mut bool) -> Option<()> {
+        let pressure = if self.tool == 1 {
+            0.5
+        } else if raw_pressure > 1. {
+            1.
+        } else {
+            raw_pressure
+        };
+        let target = self.size * pressure;
+        if *initialize {
+            self.width = target;
+            *initialize = false;
+        }
+        self.redraw_no_curve(p, target)
+    }
+
+    fn terminal_v1_no_curve(
+        &mut self,
+        end: P,
+        raw_pressure: f32,
+        initialize: bool,
+    ) -> Option<usize> {
+        let pressure = if self.tool == 1 {
+            0.5
+        } else if raw_pressure > 1. {
+            1.
+        } else {
+            raw_pressure
+        };
+        let begin = self.points.len();
+        if initialize {
+            if !self.point(end, self.size * pressure * 0.5) {
+                return None;
+            }
+        } else {
+            self.terminal_no_curve(end, pressure)?;
+        }
+        Some(self.points.len() - begin)
+    }
+}
+
+impl Pass {
     fn point(&mut self, p: P, radius: f32) -> bool {
         let radius = self.fixed_width_radius.unwrap_or(radius);
         let r = if radius < 1. { 1. } else { radius };
@@ -610,6 +791,96 @@ pub(super) fn prepare(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> 
     })
 }
 
+/// Test-only reconstruction of the saved InkPen V1 drawable. This remains a
+/// separate policy from V4 because V1 movement is distance/threshold based and
+/// does not consume timestamps or display resolution.
+fn prepare_v1(s: &Stroke, context: RuntimeContext) -> Option<InkPenInk> {
+    let r = s.rendering.as_ref()?;
+    let requested_size = r.style.pen_size.unwrap_or(0.);
+    if r.pen_name.as_deref() != Some(PEN)
+        || r.tool_type_raw > 4
+        || r.properties.eraser
+        || r.properties.fixed_width
+        || r.properties.straighten
+        || r.properties.rainbow_effect
+        || s.points.len() < 2
+        || s.points.len() > MAX_SAVED_SAMPLES
+        || s.points.len() != s.pressures.len()
+        || s.points.len() != s.timestamps.len()
+        || (!s.tilts.is_empty() && s.tilts.len() != s.points.len())
+        || (!s.orientations.is_empty() && s.orientations.len() != s.points.len())
+        || !requested_size.is_finite()
+        || requested_size < 0.
+        || s.points.iter().any(|p| {
+            !p.x.is_finite()
+                || !p.y.is_finite()
+                || !(p.x as f32).is_finite()
+                || !(p.y as f32).is_finite()
+        })
+        || s.pressures
+            .iter()
+            .any(|v| !v.is_finite() || !(*v as f32).is_finite())
+        || s.timestamps.iter().any(|v| i32::try_from(*v).is_err())
+    {
+        return None;
+    }
+
+    let size = requested_size.clamp(0.4, 800.);
+    let first: P = s.points[0].into();
+    let mut pass = Pass {
+        size,
+        tool: r.tool_type_raw,
+        screen_min: context.screen_width.min(context.screen_height),
+        last_tested: first,
+        start: first,
+        control: first,
+        previous_time: s.timestamps[0],
+        movement: 0.,
+        width: 0.,
+        fixed_width_radius: None,
+        alternate: false,
+        points: Vec::new(),
+        pre_add_radii: Vec::new(),
+        radii: Vec::new(),
+        bounds: Bounds::new(),
+    };
+    let mut sample_ends = vec![0];
+    let mut initialize = true;
+    let threshold = if r.tool_type_raw == 1 { 50. } else { 5. };
+
+    for index in 1..s.points.len() {
+        let p: P = s.points[index].into();
+        let raw_pressure = s.pressures[index] as f32;
+        if context.curve_enabled {
+            pass.redraw_v1(p, raw_pressure, threshold, &mut initialize)?;
+        } else {
+            pass.redraw_v1_no_curve(p, raw_pressure, &mut initialize)?;
+        }
+        sample_ends.push(pass.points.len());
+    }
+
+    let terminal_start = pass.points.len();
+    let final_point: P = (*s.points.last()?).into();
+    let terminal_count = if context.curve_enabled {
+        pass.terminal_v1(final_point, *s.pressures.last()? as f32, initialize)?
+    } else {
+        pass.terminal_v1_no_curve(final_point, *s.pressures.last()? as f32, initialize)?
+    };
+    let terminal_end = terminal_start + terminal_count;
+    if terminal_end != pass.points.len() {
+        return None;
+    }
+    pass.bounds.grow(1.);
+    Some(InkPenInk {
+        points: pass.points,
+        pre_add_radii: pass.pre_add_radii,
+        radii: pass.radii,
+        sample_ends,
+        terminal: terminal_start..terminal_end,
+        bounds: pass.bounds.finish(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -869,6 +1140,12 @@ mod tests {
     }
 
     fn native_caller_stroke(input: &Value) -> Stroke {
+        let pen_size = input
+            .get("pen_size_f32_bits")
+            .or_else(|| input.get("size_f32_bits"))
+            .and_then(Value::as_str)
+            .map(native_f32)
+            .expect("native caller case must include a size word");
         let properties = StrokeProperties {
             compressed: input["curve_enabled"].as_bool().unwrap(),
             replay_only: false,
@@ -902,7 +1179,7 @@ mod tests {
                 tool_type_raw: input["tool_type"].as_u64().unwrap() as u16,
                 properties,
                 style: StrokeStyle {
-                    pen_size: Some(native_f32(input["pen_size_f32_bits"].as_str().unwrap())),
+                    pen_size: Some(pen_size),
                     stroke_type_raw: Some(input["stroke_type"].as_u64().unwrap() as u16),
                     ..StrokeStyle::default()
                 },
@@ -931,7 +1208,7 @@ mod tests {
                 .map(f64::from)
                 .collect(),
             color: None,
-            pen_width: native_f32(input["pen_size_f32_bits"].as_str().unwrap()),
+            pen_width: pen_size,
         }
     }
 
@@ -1004,6 +1281,121 @@ mod tests {
             )
             .is_none()
         );
+    }
+
+    #[test]
+    fn matches_committed_drawing_selected_v1_null_setting_full_callback_bits() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        let case = &fixture["cases"]["straight_curve_tool1_null"];
+        assert_eq!(case["route"]["selected_drawable_vtable_id"], "v1");
+        assert_eq!(case["input"]["advanced_setting_state"], "null");
+
+        let input = native_caller_stroke(&case["input"]);
+        let resolution = &case["screen_resolution"][0];
+        let ink = prepare_v1(
+            &input,
+            RuntimeContext {
+                curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
+                screen_width: resolution["width"].as_u64().unwrap() as u32,
+                screen_height: resolution["height"].as_u64().unwrap() as u32,
+            },
+        )
+        .expect("the committed null-setting Drawing input must be handled by the explicit V1 core");
+        let drawing = &case["streams"]["draw_object_stroke"];
+        let stream = drawing["values_f32_bits"].as_array().unwrap();
+        assert_eq!(stream.len() % 3, 0);
+        assert_eq!(ink.points.len(), stream.len() / 3);
+        assert_eq!(drawing["callback_count"], ink.points.len());
+        assert_eq!(
+            case["streams"]["saved_redraw"]["same_bytes_as_drawing_phase"],
+            true
+        );
+        assert_eq!(case["streams"]["saved_redraw"]["sha256"], drawing["sha256"]);
+
+        for (i, point) in ink.points.iter().enumerate() {
+            assert_eq!(
+                (point.x as f32).to_bits(),
+                native_f32(stream[i * 3].as_str().unwrap()).to_bits(),
+                "V1 callback {i} x"
+            );
+            assert_eq!(
+                (point.y as f32).to_bits(),
+                native_f32(stream[i * 3 + 1].as_str().unwrap()).to_bits(),
+                "V1 callback {i} y"
+            );
+            assert_eq!(
+                ink.radii[i].to_bits(),
+                native_f32(stream[i * 3 + 2].as_str().unwrap()).to_bits(),
+                "V1 callback {i} radius"
+            );
+        }
+    }
+
+    #[test]
+    fn matches_native_v1_saved_matrix_and_rejects_preselection_singlepoint() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen-v1-saved-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "sdocx-inkpen-v1-saved-native-v1");
+        let cases = fixture["cases"].as_object().unwrap();
+        assert_eq!(cases.len(), 15);
+        let mut emitted_cases = 0;
+        let mut rejected_cases = 0;
+
+        for (name, case) in cases {
+            let input = native_caller_stroke(&case["input"]);
+            let width = case["profile"]["width"].as_u64().unwrap() as u32;
+            let height = case["profile"]["height"].as_u64().unwrap() as u32;
+            let context = RuntimeContext {
+                curve_enabled: case["input"]["curve_enabled"].as_bool().unwrap(),
+                screen_width: width,
+                screen_height: height,
+            };
+
+            if case["route"]["stream_emitted"] == false {
+                rejected_cases += 1;
+                assert_eq!(case["route"]["factory_created_pens"], 0, "{name}");
+                assert!(prepare_v1(&input, context).is_none(), "{name}");
+                continue;
+            }
+
+            emitted_cases += 1;
+            assert_eq!(case["route"]["selected_drawable_vtable_id"], "v1", "{name}");
+            let ink = prepare_v1(&input, context)
+                .unwrap_or_else(|| panic!("{name} V1 input must be admitted"));
+            let drawing = &case["streams"]["draw_object_stroke"];
+            let saved = &case["streams"]["saved_redraw"];
+            let stream = drawing["values_f32_bits"].as_array().unwrap();
+            assert_eq!(stream.len() % 3, 0, "{name} native triples");
+            assert_eq!(ink.points.len(), stream.len() / 3, "{name} total count");
+            assert_eq!(drawing["callback_count"], ink.points.len(), "{name}");
+            assert_eq!(saved["same_bytes_as_drawing_phase"], true, "{name}");
+            assert_eq!(saved["sha256"], drawing["sha256"], "{name}");
+
+            for (i, point) in ink.points.iter().enumerate() {
+                assert_eq!(
+                    (point.x as f32).to_bits(),
+                    native_f32(stream[i * 3].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} x"
+                );
+                assert_eq!(
+                    (point.y as f32).to_bits(),
+                    native_f32(stream[i * 3 + 1].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} y"
+                );
+                assert_eq!(
+                    ink.radii[i].to_bits(),
+                    native_f32(stream[i * 3 + 2].as_str().unwrap()).to_bits(),
+                    "{name} callback {i} radius"
+                );
+            }
+        }
+        assert_eq!(emitted_cases, 14);
+        assert_eq!(rejected_cases, 1);
     }
 
     #[test]
