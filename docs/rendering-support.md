@@ -131,6 +131,9 @@ position/radius streams in sixteen synthetic
 Its [Drawing caller](../conformance/defaultpen-saved-caller-native.json) verifies
 native Model getters, factory selection and identical 132-byte Drawing/saved
 streams on the same RT under an explicit 1920×1080 display profile.
+A [redraw-boundary capture](../conformance/defaultpen-redraw-boundaries-native.json)
+retains all 22 stamps and native history/end-call boundaries for a six-point
+stroke; saved replay constructs a native event with source 0.
 DefaultPen's [Draw capture](../conformance/defaultpen-draw-native.json) retains
 native blend setup and shader text that replaces input alpha with screen-space
 coverage. The [joined capture](../conformance/defaultpen-joined-paint-native.json)
