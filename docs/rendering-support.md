@@ -104,7 +104,9 @@ Pencil profiles currently use the generic pressure approximation. A test-only
 Pencil3 V1 sampler matches ten saved native cases and eight boundary witnesses.
 The [Drawing caller](../conformance/pencil3-saved-caller-native.json) captures
 null/V1 and empty/V3; V1 matches all 48 particles with a modeled bionic RNG.
-V3 remains unmodeled.
+The test-only [V3 particle kernel](../conformance/pencil3-v3-native.json)
+matches all 48 particles in two redraw phases, including private RNG state and
+reset behavior. Its full saved sampler and production paint remain incomplete.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime

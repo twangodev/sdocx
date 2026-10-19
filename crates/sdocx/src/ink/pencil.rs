@@ -18,6 +18,65 @@ pub(super) struct Particle {
     pub attributes: [f32; 5],
 }
 
+/// A Pencil3 V3 particle. V3 has the same packed lane count as V1, but it uses
+/// a private 64-bit LCG rather than the process bionic RNG modeled below.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(super) struct V3Particle {
+    pub attributes: [f32; 5],
+}
+
+/// Per-Redraw private Pencil3 V3 random state. Native RedrawPen resets the
+/// state at every draw, so this generator is deliberately independent from
+/// `BionicRandom` and has an explicit reset operation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct V3PrivateRandom {
+    state: u64,
+}
+
+impl V3PrivateRandom {
+    const INITIAL_STATE: u64 = 1;
+    const MULTIPLIER: u64 = 0x343fd;
+    const INCREMENT: u64 = 0x269ec3;
+
+    fn new() -> Self {
+        Self {
+            state: Self::INITIAL_STATE,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.state = Self::INITIAL_STATE;
+    }
+
+    fn advance(&mut self) -> u64 {
+        self.state = self
+            .state
+            .wrapping_mul(Self::MULTIPLIER)
+            .wrapping_add(Self::INCREMENT);
+        self.state
+    }
+
+    /// Build one V3 particle from actual drawPoint arguments. Native order is
+    /// three LCG advances (x, y, texture row), then an RTV1 AddPoint record.
+    fn particle(&mut self, point: [f32; 2], size: f32, alpha: f32) -> V3Particle {
+        let size1 = size + 1.0;
+        let range = size1.mul_add(size1.min(5.0), 30.0);
+        let divisor = range as u32;
+        let centering = divisor as f32 / 40.0;
+        let x_state = self.advance();
+        let x_random = ((x_state >> 16) & 0x7fff_ffff) as u32;
+        let y_state = self.advance();
+        let y_random = ((y_state >> 16) & 0x7fff_ffff) as u32;
+        let row_state = self.advance();
+        let x = point[0] + (x_random % divisor) as f32 / 20.0 - centering;
+        let y = point[1] + (y_random % divisor) as f32 / 20.0 - centering;
+        let row = ((row_state >> 16) & 0xf) as f32;
+        V3Particle {
+            attributes: [x, y, size1 * 0.5, row, alpha],
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(super) struct DrawPoint {
     pub point: [f32; 2],
@@ -208,7 +267,7 @@ fn line_particles_with_phase(
     initial_distance: f32,
     rng: &mut BionicRandom,
 ) -> (Vec<Particle>, f32) {
-    use super::path::{Quad, P};
+    use super::path::{P, Quad};
     let path = Quad::new(
         P {
             x: start[0],
@@ -380,6 +439,33 @@ mod tests {
     fn close_bits(actual: f32, expected: &Value, context: &str) {
         let expected = expected.as_f64().unwrap() as f32;
         assert_eq!(actual.to_bits(), expected.to_bits(), "{context}");
+    }
+
+    fn prefixed_hex_u32(value: &Value) -> u32 {
+        u32::from_str_radix(value.as_str().unwrap().trim_start_matches("0x"), 16).unwrap()
+    }
+
+    fn prefixed_hex_u64(value: &Value) -> u64 {
+        u64::from_str_radix(value.as_str().unwrap().trim_start_matches("0x"), 16).unwrap()
+    }
+
+    fn little_endian_hex_word(value: &Value) -> u32 {
+        let value = value.as_str().unwrap();
+        assert_eq!(value.len(), 8);
+        u32::from_le_bytes(std::array::from_fn(|index| {
+            u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).unwrap()
+        }))
+    }
+
+    fn little_endian_hex_pair(value: &Value) -> [f32; 2] {
+        let value = value.as_str().unwrap();
+        assert_eq!(value.len(), 16);
+        std::array::from_fn(|index| {
+            let start = index * 8;
+            f32::from_bits(u32::from_le_bytes(std::array::from_fn(|byte| {
+                u8::from_str_radix(&value[start + byte * 2..start + byte * 2 + 2], 16).unwrap()
+            })))
+        })
     }
 
     fn bounds_from_json(value: &Value) -> RectF {
@@ -946,6 +1032,204 @@ mod tests {
         assert_eq!(
             invalid.validate(),
             Err("present optional channel must align with saved points")
+        );
+    }
+
+    #[test]
+    fn v3_private_particle_kernel_matches_both_native_redraw_phases_and_resets() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/pencil3-v3-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "pencil3-v3-private-sampling-native-v1");
+        assert_eq!(fixture["selected_route"]["drawable_vtable_id"], "v3");
+        assert_eq!(fixture["native_libc_rng_callback_count"], 0);
+        assert_eq!(
+            fixture["v3_state_contract"]["constructor_initial_state_u64"],
+            "0x0000000000000001"
+        );
+        assert_eq!(
+            fixture["v3_state_contract"]["redraw_reset_constant_u64"],
+            "0x0000000000000001"
+        );
+        assert_eq!(
+            prefixed_hex_u64(&fixture["v3_state_contract"]["multiplier_u64"]),
+            V3PrivateRandom::MULTIPLIER
+        );
+        assert_eq!(
+            prefixed_hex_u64(&fixture["v3_state_contract"]["increment_u64"]),
+            V3PrivateRandom::INCREMENT
+        );
+        assert_eq!(fixture["v3_state_contract"]["advances_per_particle"], 3);
+
+        let mut phase_streams = Vec::new();
+        for phase_name in ["draw_object_stroke", "saved_redraw"] {
+            let phase = &fixture["phases"][phase_name];
+            let records = phase["records"].as_array().unwrap();
+            assert_eq!(records.len(), 48, "{phase_name} record count");
+            assert_eq!(phase["particle_count"], 48);
+
+            // Each native Redraw resets the same drawable-owned state even
+            // though the preceding phase left the receiver at a nonseed value.
+            assert_eq!(
+                prefixed_hex_u64(&phase["redraw_entry_state_before_reset_u64"]),
+                if phase_name == "draw_object_stroke" {
+                    1
+                } else {
+                    prefixed_hex_u64(
+                        &fixture["repeat_same_instance"]["pre_second_redraw_state_u64"],
+                    )
+                },
+                "{phase_name} pre-reset state"
+            );
+            assert_eq!(
+                prefixed_hex_u64(&phase["first_drawpoint_state_after_reset_u64"]),
+                1
+            );
+
+            let mut rng = V3PrivateRandom::new();
+            assert_eq!(rng.state, 1);
+            let mut packed = Vec::with_capacity(48 * 5 * 4);
+            for (record_index, record) in records.iter().enumerate() {
+                let native_before = prefixed_hex_u64(&record["native_private_state_before_u64"]);
+                assert_eq!(
+                    rng.state, native_before,
+                    "{phase_name} record {record_index} pre-state"
+                );
+                let observed_states = record["native_private_state_after_each_madd_u64"]
+                    .as_array()
+                    .unwrap();
+                assert_eq!(observed_states.len(), 3);
+                let mut traced_state = native_before;
+                for (advance_index, observed) in observed_states.iter().enumerate() {
+                    traced_state = traced_state
+                        .wrapping_mul(V3PrivateRandom::MULTIPLIER)
+                        .wrapping_add(V3PrivateRandom::INCREMENT);
+                    assert_eq!(
+                        prefixed_hex_u64(observed),
+                        traced_state,
+                        "{phase_name} record {record_index} MADD {advance_index}"
+                    );
+                }
+
+                let draw_input = &record["native_drawpoint_input"];
+                let particle = rng.particle(
+                    little_endian_hex_pair(&draw_input["point_xy_f32_bits_le"]),
+                    f32::from_bits(prefixed_hex_u32(&draw_input["size_s0_u32_hex"])),
+                    f32::from_bits(prefixed_hex_u32(&draw_input["alpha_s1_u32_hex"])),
+                );
+                assert_eq!(
+                    rng.state, traced_state,
+                    "{phase_name} record {record_index} final state"
+                );
+                let native_addpoint = record["native_addpoint_s0_s4_u32_hex"].as_array().unwrap();
+                assert_eq!(native_addpoint.len(), 5);
+                let attributes = particle.attributes;
+                assert_eq!(
+                    attributes[0].to_bits(),
+                    prefixed_hex_u32(&native_addpoint[0]),
+                    "{phase_name} record {record_index} x"
+                );
+                assert_eq!(
+                    attributes[1].to_bits(),
+                    prefixed_hex_u32(&native_addpoint[1]),
+                    "{phase_name} record {record_index} y"
+                );
+                // AddPoint's ABI passes texture row before full size; the
+                // packed RTV record stores half-size before row.
+                assert_eq!(
+                    attributes[3].to_bits(),
+                    prefixed_hex_u32(&native_addpoint[2]),
+                    "{phase_name} record {record_index} row"
+                );
+                assert_eq!(
+                    (attributes[2] * 2.0).to_bits(),
+                    prefixed_hex_u32(&native_addpoint[3]),
+                    "{phase_name} record {record_index} size"
+                );
+                assert_eq!(
+                    attributes[4].to_bits(),
+                    prefixed_hex_u32(&native_addpoint[4]),
+                    "{phase_name} record {record_index} alpha"
+                );
+                packed.extend(attributes.into_iter().flat_map(f32::to_le_bytes));
+            }
+
+            assert_eq!(
+                rng.state,
+                prefixed_hex_u64(&phase["modeled_final_private_state_u64"]),
+                "{phase_name} final private state"
+            );
+            let digest = format!("{:x}", Sha256::digest(&packed));
+            assert_eq!(
+                digest,
+                phase["native_stream_sha256"].as_str().unwrap(),
+                "{phase_name} packed stream hash"
+            );
+            if let Some(native_words) = phase["native_packed_stream_f32_bits_le"].as_array() {
+                assert_eq!(native_words.len(), 48 * 5, "{phase_name} packed word count");
+                let native_bytes = native_words
+                    .iter()
+                    .flat_map(|word| little_endian_hex_word(word).to_le_bytes())
+                    .collect::<Vec<_>>();
+                assert_eq!(packed, native_bytes, "{phase_name} all 240 packed words");
+            } else {
+                // The saved-redraw phase stores only per-callback captures;
+                // reorder the native AddPoint ABI lanes into its packed
+                // stream format and still compare the full 240-word buffer.
+                let native_bytes = records
+                    .iter()
+                    .flat_map(|record| {
+                        let args = record["native_addpoint_s0_s4_u32_hex"].as_array().unwrap();
+                        let x = prefixed_hex_u32(&args[0]);
+                        let y = prefixed_hex_u32(&args[1]);
+                        let row = prefixed_hex_u32(&args[2]);
+                        let full_size = f32::from_bits(prefixed_hex_u32(&args[3]));
+                        let alpha = prefixed_hex_u32(&args[4]);
+                        [x, y, (full_size * 0.5).to_bits(), row, alpha]
+                    })
+                    .flat_map(u32::to_le_bytes)
+                    .collect::<Vec<_>>();
+                assert_eq!(native_bytes.len(), 240 * 4);
+                assert_eq!(packed, native_bytes, "{phase_name} all 240 packed words");
+            }
+            phase_streams.push(packed);
+        }
+
+        assert_eq!(
+            phase_streams[0], phase_streams[1],
+            "same native instance must reset V3 RNG for saved redraw"
+        );
+        assert_eq!(
+            fixture["repeat_same_instance"]["same_native_stream_sha256"],
+            true
+        );
+        assert_eq!(
+            fixture["phases"]["saved_redraw"]["saved_stream_same_as_drawing"],
+            true
+        );
+
+        // A single generator reused across calls must reproduce the native
+        // lifecycle only after Redraw's explicit reset, not from carried state.
+        let first_record = &fixture["phases"]["draw_object_stroke"]["records"][0];
+        let input = &first_record["native_drawpoint_input"];
+        let args = (
+            little_endian_hex_pair(&input["point_xy_f32_bits_le"]),
+            f32::from_bits(prefixed_hex_u32(&input["size_s0_u32_hex"])),
+            f32::from_bits(prefixed_hex_u32(&input["alpha_s1_u32_hex"])),
+        );
+        let mut rng = V3PrivateRandom::new();
+        let first = rng.particle(args.0, args.1, args.2);
+        let carried = rng.particle(args.0, args.1, args.2);
+        assert_ne!(
+            first.attributes, carried.attributes,
+            "private state should advance within one redraw"
+        );
+        rng.reset();
+        let reset = rng.particle(args.0, args.1, args.2);
+        assert_eq!(
+            reset.attributes, first.attributes,
+            "native redraw reset should reproduce the first particle"
         );
     }
 }
