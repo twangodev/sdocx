@@ -43,6 +43,9 @@ pub(super) struct Output {
     /// Exclusive output count after each input sample, for attribution.
     pub sample_ends: Vec<usize>,
     pub terminal: std::ops::Range<usize>,
+    /// Native V9 drawable byte +100 after this redraw; callers may carry it
+    /// into the next stroke on the same drawable.
+    pub final_alternation: bool,
 }
 
 struct Core<'a> {
@@ -226,6 +229,7 @@ impl<'a> Core<'a> {
         }
         let end = self.output.vertices.len();
         self.output.terminal = start..end;
+        self.output.final_alternation = self.alternation;
         Some(self.output)
     }
 }
@@ -289,6 +293,7 @@ pub(super) fn redraw(input: Input<'_>) -> Option<Output> {
             vertices: Vec::new(),
             sample_ends: Vec::with_capacity(n),
             terminal: 0..0,
+            final_alternation: input.runtime.initial_alternation,
         },
         history: [0.; 5],
         history_index: 0,
@@ -979,5 +984,173 @@ mod tests {
             })
             .is_none()
         );
+    }
+
+    fn redraw_from_reuse_case(
+        case: &Value,
+        stroke_name: &str,
+        phase: &str,
+        initial_alternation: bool,
+    ) -> super::Output {
+        let stroke = &case["input"][stroke_name];
+        let points: Vec<P> = if let Some(points) = stroke["points_f32_bits"].as_array() {
+            points
+                .iter()
+                .map(|point| P {
+                    x: f32_from_le_hex(&point[0]),
+                    y: f32_from_le_hex(&point[1]),
+                })
+                .collect()
+        } else {
+            stroke["points"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|point| P {
+                    x: number(&point[0]),
+                    y: number(&point[1]),
+                })
+                .collect()
+        };
+        let times: Vec<i32> = stroke["timestamps_i32"]
+            .as_array()
+            .or_else(|| stroke["timestamps"].as_array())
+            .unwrap()
+            .iter()
+            .map(|time| time.as_i64().unwrap() as i32)
+            .collect();
+        let tools = vec![stroke["tool_type"].as_i64().unwrap() as i32; points.len()];
+        let pressures: Vec<f32> = if let Some(pressures) = stroke["pressure_f32_bits"].as_array() {
+            pressures.iter().map(f32_from_le_hex).collect()
+        } else {
+            stroke["pressure"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(number)
+                .collect()
+        };
+        let native = &case["native"];
+        let state = native["drawable_states"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["phase"] == phase)
+            .unwrap();
+        assert_eq!(
+            state["entry_alternation_u8"].as_u64().unwrap() != 0,
+            initial_alternation,
+            "{phase}: caller-provided persistent field"
+        );
+        let drawline = native["drawline_runtime_entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["phase"] == phase)
+            .unwrap();
+        let resolution = &native["screen_resolution_calls"][0];
+        let spacing = f32::from_le_bytes(
+            hex_bytes(state["entry_fields_f32_bits"]["88"].as_str().unwrap())
+                .try_into()
+                .unwrap(),
+        );
+        let runtime = Runtime {
+            inverse_scale: [1., 1.],
+            spacing,
+            tolerance: f32_from_le_hex(&drawline["plus44_tolerance_f32_bits"]),
+            tool_threshold: f32_from_le_hex(&drawline["plus96_tool_threshold_f32_bits"]),
+            resolution_min: (resolution["width"].as_i64().unwrap() as i32)
+                .min(resolution["height"].as_i64().unwrap() as i32),
+            initial_alternation,
+            initial_time: times[0],
+        };
+        let actual = redraw(Input {
+            points: &points,
+            times: &times,
+            tools: &tools,
+            pressures: &pressures,
+            rgb: [0; 3],
+            size: f32_from_le_hex(&case["input"]["first_stroke"]["size_f32_bits"]),
+            curve_enabled: true,
+            is_shape: false,
+            runtime,
+        })
+        .expect("captured native InkPen2 sequence input must be supported");
+        let stream = &native["streams"][phase];
+        assert_eq!(
+            actual.vertices.len(),
+            stream["record_count"].as_u64().unwrap() as usize
+        );
+        let actual_bytes: Vec<u8> = actual
+            .vertices
+            .iter()
+            .flat_map(|vertex| vertex.iter().flat_map(|value| value.to_le_bytes()))
+            .collect();
+        assert_eq!(
+            actual_bytes,
+            hex_bytes(stream["full_bytes_hex"].as_str().unwrap()),
+            "{phase}"
+        );
+        assert_eq!(
+            actual.final_alternation,
+            state["return_alternation_u8"].as_u64().unwrap() != 0,
+            "{phase}: retained native byte after redraw"
+        );
+        actual
+    }
+
+    fn output_bits(output: &super::Output) -> Vec<u32> {
+        output
+            .vertices
+            .iter()
+            .flat_map(|record| record.iter().map(|value| value.to_bits()))
+            .collect()
+    }
+
+    #[test]
+    fn saved_caller_reuse_carries_native_alternation_between_strokes() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-reuse-native.json"
+        ))
+        .unwrap();
+        let cases = &fixture["cases"];
+        let short = &cases["short_then_tool1_tool2"];
+        let mut persistent = false;
+        let _short_first =
+            redraw_from_reuse_case(short, "first_stroke", "draw_object_stroke", persistent);
+        persistent = _short_first.final_alternation;
+        let short_tool1 =
+            redraw_from_reuse_case(short, "baseline_tool1", "second_tool1_baseline", persistent);
+        persistent = short_tool1.final_alternation;
+        let short_tool2 =
+            redraw_from_reuse_case(short, "baseline_tool2", "third_tool2_baseline", persistent);
+
+        let long = &cases["long_then_tool1_tool2"];
+        persistent = false;
+        let _long_first =
+            redraw_from_reuse_case(long, "first_stroke", "draw_object_stroke", persistent);
+        persistent = _long_first.final_alternation;
+        let long_tool1 =
+            redraw_from_reuse_case(long, "baseline_tool1", "second_tool1_baseline", persistent);
+        persistent = long_tool1.final_alternation;
+        let long_tool2 =
+            redraw_from_reuse_case(long, "baseline_tool2", "third_tool2_baseline", persistent);
+
+        let fresh_tool1 = redraw_from_reuse_case(
+            &cases["fresh_tool1"],
+            "first_stroke",
+            "draw_object_stroke",
+            false,
+        );
+        let fresh_tool2 = redraw_from_reuse_case(
+            &cases["fresh_tool2"],
+            "first_stroke",
+            "draw_object_stroke",
+            false,
+        );
+        assert_ne!(output_bits(&short_tool1), output_bits(&fresh_tool1));
+        assert_eq!(output_bits(&long_tool1), output_bits(&fresh_tool1));
+        assert_eq!(output_bits(&short_tool2), output_bits(&fresh_tool2));
+        assert_eq!(output_bits(&long_tool2), output_bits(&fresh_tool2));
     }
 }
