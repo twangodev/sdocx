@@ -1,0 +1,441 @@
+{
+  "bitmap_factory_call": [
+    {
+      "entry": "0x40c04ac",
+      "stack_32_bytes": "0000000000000000000000000000000000000000000000000000000000000000",
+      "stack_args_8_9_u32": [
+        0,
+        0
+      ],
+      "x0_x7": [
+        "0x1002d090",
+        "0x140",
+        "0xb4",
+        "0x10065970",
+        "0x1002d570",
+        "0x0",
+        "0x0",
+        "0x0"
+      ]
+    },
+    {
+      "entry": "0x40c04ac",
+      "stack_32_bytes": "0600000000000000020000000000000010ef0e200000000008c5100500000000",
+      "stack_args_8_9_u32": [
+        6,
+        0
+      ],
+      "x0_x7": [
+        "0x1002d090",
+        "0x78",
+        "0x780",
+        "0x50119ac",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x0"
+      ]
+    },
+    {
+      "entry": "0x40c04ac",
+      "stack_32_bytes": "0600000000000000020000000000000010ef0e200000000008c5100500000000",
+      "stack_args_8_9_u32": [
+        6,
+        0
+      ],
+      "x0_x7": [
+        "0x1002d090",
+        "0x96",
+        "0x96",
+        "0x5011ffc",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x0"
+      ]
+    },
+    {
+      "entry": "0x40c04ac",
+      "stack_32_bytes": "0600000000000000020000000000000070eb0e200000000008c5100500000000",
+      "stack_args_8_9_u32": [
+        6,
+        0
+      ],
+      "x0_x7": [
+        "0x1002d090",
+        "0x78",
+        "0x780",
+        "0x50119ac",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x0"
+      ]
+    },
+    {
+      "entry": "0x40c04ac",
+      "stack_32_bytes": "0600000000000000020000000000000070eb0e200000000008c5100500000000",
+      "stack_args_8_9_u32": [
+        6,
+        0
+      ],
+      "x0_x7": [
+        "0x1002d090",
+        "0x96",
+        "0x96",
+        "0x5011ffc",
+        "0x0",
+        "0x0",
+        "0x0",
+        "0x0"
+      ]
+    }
+  ],
+  "expected_native_draw_boundary": {
+    "boundary": "native Draw reached SPSubBitmapRT::DeactivateFrameBufferRT and faulted because the host-created subbitmap has no writable framebuffer target",
+    "exception": "UcError",
+    "lr": "0x510cf24",
+    "message": "Invalid memory read (UC_ERR_READ_UNMAPPED)",
+    "pc": "0x408e0d0",
+    "subbitmap_target": "0x0",
+    "subbitmap_target_offset": 88,
+    "x0": "0x10065dd0",
+    "x1": "0x1",
+    "x2": "0x1"
+  },
+  "explicit_native_init_intervention": "call actual RTV1::Init on this native Drawing-selected receiver before native queued Run; no RT fields patched",
+  "harness_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+  "host_operation_adapters": [
+    {
+      "boundary": "host clip-target operation adapter; no drawing state asserted",
+      "enabled": 0,
+      "entry": "0x4093d14",
+      "result": 0,
+      "this": "0x10065e70"
+    },
+    {
+      "boundary": "host depth/stencil operation adapter",
+      "entry": "0x104a634",
+      "this": "0x10167480"
+    },
+    {
+      "boundary": "host framebuffer activation adapter",
+      "enable": 0,
+      "entry": "0x408dfc4",
+      "this": "0x10065aa0"
+    }
+  ],
+  "host_resources": [
+    {
+      "call": "RendererFactory::GetRendererDeviceCaps",
+      "host_adapter": "4096 IRendererDeviceCaps slot+16 contract reused from BrushPen TextureProbe",
+      "max_texture_size": 4096,
+      "returned": "0x1002d4c0"
+    },
+    {
+      "adapter_fields": {
+        "dimensions": [
+          320,
+          180
+        ],
+        "gl_target": 3553
+      },
+      "buffer_info_u32": [
+        0,
+        0,
+        320,
+        320
+      ],
+      "call": "RendererFactory::CreateTextureObject",
+      "descriptor_u32": [
+        320,
+        180,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "initial_source_is_null": false,
+      "label": "pencil-consumer-synthetic",
+      "returned_native_interface_adapter": "0x10065b20",
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    },
+    {
+      "call": "RendererFactory::GetRendererDeviceCaps",
+      "host_adapter": "4096 IRendererDeviceCaps slot+16 contract reused from BrushPen TextureProbe",
+      "max_texture_size": 4096,
+      "returned": "0x1002d4c0"
+    },
+    {
+      "adapter_fields": {
+        "dimensions": [
+          120,
+          1920
+        ],
+        "gl_target": 3553
+      },
+      "buffer_info_u32": [
+        0,
+        0,
+        120,
+        120
+      ],
+      "call": "RendererFactory::CreateTextureObject",
+      "descriptor_u32": [
+        120,
+        1920,
+        0,
+        2,
+        6,
+        1,
+        0,
+        0
+      ],
+      "initial_source_is_null": true,
+      "label": "Pencil3StrokeDrawableRTV1::buildTextures mPatternsTexture\u0000libunwind: malformed DW_CFA_def_cfa DWARF unwind, reg too big\n\u0000x27\u0000d25",
+      "returned_native_interface_adapter": "0x1006c8e0",
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    },
+    {
+      "call": "RendererFactory::GetRendererDeviceCaps",
+      "host_adapter": "4096 IRendererDeviceCaps slot+16 contract reused from BrushPen TextureProbe",
+      "max_texture_size": 4096,
+      "returned": "0x1002d4c0"
+    },
+    {
+      "adapter_fields": {
+        "dimensions": [
+          150,
+          150
+        ],
+        "gl_target": 3553
+      },
+      "buffer_info_u32": [
+        0,
+        0,
+        150,
+        150
+      ],
+      "call": "RendererFactory::CreateTextureObject",
+      "descriptor_u32": [
+        150,
+        150,
+        0,
+        2,
+        6,
+        1,
+        0,
+        0
+      ],
+      "initial_source_is_null": true,
+      "label": "Pencil3StrokeDrawableRTV1::buildTextures mTextureBG\u0000libunwind: malformed DW_CFA_expression DWARF unwind, reg too big\n\u0000d13\u0000%s. Sh",
+      "returned_native_interface_adapter": "0x1006cbc0",
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    },
+    {
+      "call": "RendererFactory::GetRendererDeviceCaps",
+      "host_adapter": "4096 IRendererDeviceCaps slot+16 contract reused from BrushPen TextureProbe",
+      "max_texture_size": 4096,
+      "returned": "0x1002d4c0"
+    },
+    {
+      "adapter_fields": {
+        "dimensions": [
+          120,
+          1920
+        ],
+        "gl_target": 3553
+      },
+      "buffer_info_u32": [
+        0,
+        0,
+        120,
+        120
+      ],
+      "call": "RendererFactory::CreateTextureObject",
+      "descriptor_u32": [
+        120,
+        1920,
+        0,
+        2,
+        6,
+        1,
+        537847552,
+        0
+      ],
+      "initial_source_is_null": true,
+      "label": "Pencil3StrokeDrawableRTV1::buildTextures mPatternsTexture\u0000libunwind: malformed DW_CFA_def_cfa DWARF unwind, reg too big\n\u0000x27\u0000d25",
+      "returned_native_interface_adapter": "0x101690b0",
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    },
+    {
+      "call": "RendererFactory::GetRendererDeviceCaps",
+      "host_adapter": "4096 IRendererDeviceCaps slot+16 contract reused from BrushPen TextureProbe",
+      "max_texture_size": 4096,
+      "returned": "0x1002d4c0"
+    },
+    {
+      "adapter_fields": {
+        "dimensions": [
+          150,
+          150
+        ],
+        "gl_target": 3553
+      },
+      "buffer_info_u32": [
+        0,
+        0,
+        150,
+        150
+      ],
+      "call": "RendererFactory::CreateTextureObject",
+      "descriptor_u32": [
+        150,
+        150,
+        0,
+        2,
+        6,
+        1,
+        537847552,
+        0
+      ],
+      "initial_source_is_null": true,
+      "label": "Pencil3StrokeDrawableRTV1::buildTextures mTextureBG\u0000libunwind: malformed DW_CFA_expression DWARF unwind, reg too big\n\u0000d13\u0000%s. Sh",
+      "returned_native_interface_adapter": "0x10169390",
+      "u32_pairs": [
+        4,
+        1,
+        5,
+        1
+      ]
+    }
+  ],
+  "inputs": {
+    "context": [
+      1920,
+      1080
+    ],
+    "depthmap_bitmap": "0x10165bc0",
+    "depthmap_texture": "0x10165cc0",
+    "native_pen_canvas": {
+      "bitmap": "0x10065990",
+      "bitmap_get_texture": "0x4092020",
+      "bitmap_get_writable": "0x4092010",
+      "bitmap_vptr": "0x40cfd28",
+      "canvas": "0x10065c70",
+      "canvas_bitmap_getter": "0x40aef08",
+      "canvas_vptr": "0x40d0cc8",
+      "expected_get_texture": "0x4092020",
+      "expected_getbitmap": "0x40aef08",
+      "expected_writable": "0x4092010"
+    },
+    "synthetic_background_dimensions": [
+      640,
+      360
+    ],
+    "synthetic_depthmap_dimensions": [
+      320,
+      180
+    ]
+  },
+  "libraries": {
+    "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+    "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+    "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+    "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+    "Pencil3": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+    "Renderer": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "native_assertions": {
+    "graphics_object_factory_return": {
+      "lr": "0x510c3b0",
+      "return_pc": "0x510c3b0",
+      "returned_graphics_object": "0x10168490"
+    },
+    "init_receiver": "0x10167480",
+    "init_return_x0": "0x0",
+    "native_setter_thunk": {
+      "entry": "0x510c85c",
+      "lr": "0x104695c",
+      "symbol": "non-virtual thunk to SPen::Pencil3StrokeDrawableRTV1::SetDepthMapBitmap(SPen::ISPBitmap*)",
+      "x0": "0x10167548",
+      "x1": "0x10165bc0"
+    },
+    "native_update_entry": {
+      "entry": "0x510cc94",
+      "lr": "0x10467f8",
+      "plus_208": "9084161000000000",
+      "plus_216": "70c3061000000000",
+      "plus_248": "0000000000000000",
+      "plus_256": "0000000000000000",
+      "symbol": "SPen::Pencil3StrokeDrawableRTV1::Update(bool)",
+      "x0": "0x10167480",
+      "x1": "0x0"
+    },
+    "queued_message_bitmap": "0x10165bc0",
+    "queued_message_canvas": "0x10065c70",
+    "queued_message_rt": "0x10167480",
+    "render_message_vtable": "0x10774c8",
+    "rt_dimensions_after_setter": [
+      320,
+      180
+    ],
+    "rt_field_208_graphics_object": "9084161000000000",
+    "rt_field_216_shader": "70c3061000000000",
+    "rt_field_248_after": "c05b161000000000",
+    "rt_field_248_before_update": "0000000000000000",
+    "rt_setter_bitmap": "0x10165bc0",
+    "rt_setter_body_pc": "0x510c7e4",
+    "rt_setter_this": "0x10167480",
+    "run_slot": "0x104676c",
+    "selected_saved_redraw_rt": "0x10167480",
+    "setter_matches_input_bitmap": true,
+    "setter_matches_rt_field": true
+  },
+  "pinned_source_hashes": {
+    "calligraphy_draw_native.py": "e98afde895bc83d3a4667578383b43e3f648a337b463a95c6a0451e17ff4a788",
+    "calligraphy_saved_native.py": "663f15668825ce6ed219830f3e671c408b85ad103477b444201f68f0b12c6517",
+    "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+    "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+    "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+    "pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+    "pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+  },
+  "queue_adapter": {
+    "execution": "synchronously invokes the actual queued ITask vtable+16 Run body; async scheduling and ownership lifecycle are not modeled",
+    "kind": "synthetic IGLMsgQueue",
+    "native_task_vptrs": [
+      "0x10774f8",
+      "0x10774c8"
+    ]
+  },
+  "runner_sha256": "0ea1c77cc0a3c0bb2f99b4dfee1f92b0925c826a5f75c0e1f48c7106f96c7ded",
+  "schema": "pencil3-paper-consumer-native-v1",
+  "scope": "Native Drawing caller, queued RenderMsg, actual selected RTV1 Init and SetDepthMapBitmap body are executed. The synthetic ISPBitmap adapter supplies GetBitmapReadable, Ref, and dimensions; its readable interface and texture objects, EGL/GLES interfaces, caps and queue scheduling are host supplied. Native Draw proceeds until the missing subbitmap framebuffer target faults; this is not completed paint or device output."
+}
