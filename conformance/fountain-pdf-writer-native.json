@@ -1,0 +1,2712 @@
+{
+  "boundary_caveats": [
+    "ObjectStroke is reconstructed explicitly through native Model setters; the saved frame is not loaded by this oracle.",
+    "Composer PDFPenFactory, PDFFountainPen constructor/verified vtable dispatch, PDFPen::getDrawPointData, and the selected initialized FountainPen plugin method execute natively.",
+    "IPDFWriter, PDFPath, and PDFPaint are mocked virtual sink objects; no PDFium writer or PDF document is run.",
+    "No public Samsung Notes JNI/UI/export-file reachability is established.",
+    "Runtime setup borrows fountain_saved_caller_native.py and its declared host stubs/callbacks, allocator, contexts, and dlopen/dlsym bindings; Composer Android-only imports are fail-stop traps.",
+    "PDFPath/PDFPaint ABI slots are evidenced from pinned libSPenPdf symbols/vtables; runtime records invocations at the substituted endpoint."
+  ],
+  "composer_sha256": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+  "fixture": "conformance/fountain-v14-real-native.json",
+  "fixture_provenance": {
+    "application": "Samsung Notes 4.4.45.37 ARM64",
+    "document": "tmp/stroke-conformance/handwritten.sdocx",
+    "document_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+    "interpretation": "Embedded subset contains saved source channels and the V14 style values consumed by the native redraw wrapper. Replay does not read either ignored source file; no note text, UUID, or media are embedded. This is not a native SDK parser/ObjectDrawing capture.",
+    "prepared_capture": "tmp/vector-parity-plan/fountain-real-parity-next/handwritten-prepared.json",
+    "prepared_capture_sha256": "902c7ed24ae68672051e3ccbbcf66ded545f51ac344eadbae4ba01d4442a78c6",
+    "prepared_entry_index": 1445
+  },
+  "model_sha256": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+  "pdf_fountain_vtable_address_point": "0x65658e0",
+  "pdf_fountain_vtable_elf_symbol": "_ZTVN4SPen14PDFFountainPenE",
+  "pdf_fountain_vtable_value_address": "0x65658d0",
+  "pdf_sha256": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+  "pdf_sink_abi": {
+    "evidence": "libSPenPdf.so exported PDFWriter/PDFPath/PDFPaint vtables and method relocations",
+    "paint_vtable_slots": {
+      "0x18": "SetColor(uint32): ARGB in w1",
+      "0x20": "SetStyle(PDFPaintStyle): style in w1"
+    },
+    "path_vtable_slot_0x28": "Circle(PointF,float,bool): this in x0, PointF x/y and radius in s0/s1/s2, bool in w1",
+    "writer_vtable_slots": {
+      "0x58": "CreatePaint",
+      "0x60": "DestroyPaint",
+      "0x68": "CreatePath",
+      "0x70": "DestroyPath",
+      "0x78": "DrawPath(IPDFPath const*,IPDFPaint*)"
+    }
+  },
+  "pins": {
+    "helpers": {
+      "conformance/elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "conformance/fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "conformance/fountain_saved_caller_native.py": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+      "conformance/native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+      "conformance/oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "input_fixtures": {
+      "conformance/fountain-saved-caller-native.json": "552dbabd5cf1b760cf63c8fba967c7a6fe14ca124155ccc929d0587a7ffa4695",
+      "conformance/fountain-v14-real-native.json": "c6204b33441eb77a53932e1c475e931e0f9688a8ad40788d05a7f41c58400ca3"
+    },
+    "native_libraries": {
+      "scratch/apk-analysis-native/arm64-v8a/libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenDefaultPen.so": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenObliquePen.so": "9b76bdb709db9f56c5d35a1a615fe41c57ceef73c559c91efaf5bf436f90e0ee",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenPdf.so": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+      "scratch/apk-analysis-native/arm64-v8a/libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "scratch/apk-analysis-native/arm64-v8a/libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    }
+  },
+  "profile_note": "The 18;0;100; input is an advanced-settings value whose verified Drawing profile is GLV16; this report does not name it native V18.",
+  "real_case_binding": {
+    "copied_fields": [
+      "points",
+      "pressures",
+      "timestamps",
+      "tilts",
+      "orientations",
+      "pen_name",
+      "advanced_settings",
+      "pen_width",
+      "color (source null replaced with explicit black when null)",
+      "initial_tolerance"
+    ],
+    "kind": "source-derived channel reconstruction, not full original stroke reconstruction",
+    "omitted_fields": [
+      "fixed_width=false is present in source identity but this harness does not call a native fixed-width setter; remaining ObjectStroke state is model default unless explicitly listed."
+    ],
+    "source_identity": {
+      "advanced_settings": "14;",
+      "fixed_width": false,
+      "initial_tolerance": 0.2549668848514557,
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+      "pen_width": 5.938240051269531,
+      "tool_type_raw": 2
+    },
+    "source_rendering": {
+      "advanced_settings": "14;",
+      "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+      "properties": {
+        "fixed_width": false
+      },
+      "style": {
+        "fixed_width": 5.938240051269531,
+        "initial_tolerance": 0.2549668848514557
+      },
+      "tool_type_raw": 2
+    }
+  },
+  "results": [
+    {
+      "advanced_settings": "14;",
+      "case": "synthetic-v14",
+      "constructor": {
+        "direct_symbol_offset": "0x373dbc",
+        "dispatch_route": "verified-vtable-slot+16",
+        "entry_trace": [
+          {
+            "context_matches_expected": true,
+            "receiver_matches_expected": true,
+            "scale_s0_f32_bits": "3f800000",
+            "writer_matches_expected": true
+          }
+        ],
+        "expected_vptr_offset": "0x5658e0",
+        "expected_vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "receiver_size": 64,
+        "symbol": "PDFFountainPen::PDFFountainPen(IContext const*,IPDFWriter*,float)",
+        "vptr_bytes": "943d370600000000983d370600000000bc3d370600000000",
+        "vptr_matches_expected": true,
+        "vptr_offset": "0x5658e0",
+        "vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "writeobject_virtual_slot_offset": "0x373dbc"
+      },
+      "events": [
+        {
+          "op": "IPDFWriter::CreatePaint",
+          "result": "paint"
+        },
+        {
+          "op": "IPDFWriter::CreatePath",
+          "result": "path"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 0.0,
+          "point_y": 0.0,
+          "radius": 0.5598912239074707,
+          "receiver": "path",
+          "s0_f32_bits": "00000000",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f0f5508"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 0.5378867983818054,
+          "point_y": 0.0,
+          "radius": 0.6744144558906555,
+          "receiver": "path",
+          "s0_f32_bits": "3f09b2f3",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f2ca66d"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 1.523443579673767,
+          "point_y": 0.0,
+          "radius": 0.7889376878738403,
+          "receiver": "path",
+          "s0_f32_bits": "3fc30033",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f49f7d2"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 2.186738967895508,
+          "point_y": 0.0,
+          "radius": 0.9034609198570251,
+          "receiver": "path",
+          "s0_f32_bits": "400bf388",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f674937"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 2.9695794582366943,
+          "point_y": 0.0,
+          "radius": 1.01798415184021,
+          "receiver": "path",
+          "s0_f32_bits": "403e0d97",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f824d4e"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 3.8719656467437744,
+          "point_y": 0.0,
+          "radius": 1.13250732421875,
+          "receiver": "path",
+          "s0_f32_bits": "4077ce49",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f90f600"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 4.893895626068115,
+          "point_y": 0.0,
+          "radius": 1.24703049659729,
+          "receiver": "path",
+          "s0_f32_bits": "409c9acb",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f9f9eb2"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 5.736327171325684,
+          "point_y": 0.005421782378107309,
+          "radius": 1.316309928894043,
+          "receiver": "path",
+          "s0_f32_bits": "40b78ffe",
+          "s1_f32_bits": "3bb1a935",
+          "s2_f32_bits": "3fa87cd8"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 6.552257537841797,
+          "point_y": 0.024095039814710617,
+          "radius": 1.385589361190796,
+          "receiver": "path",
+          "s0_f32_bits": "40d1ac18",
+          "s1_f32_bits": "3cc562f6",
+          "s2_f32_bits": "3fb15afe"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 7.36818790435791,
+          "point_y": 0.056083131581544876,
+          "radius": 1.4548687934875488,
+          "receiver": "path",
+          "s0_f32_bits": "40ebc832",
+          "s1_f32_bits": "3d65b76d",
+          "s2_f32_bits": "3fba3924"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 8.184118270874023,
+          "point_y": 0.10138607025146484,
+          "radius": 1.5241482257843018,
+          "receiver": "path",
+          "s0_f32_bits": "4102f226",
+          "s1_f32_bits": "3dcfa380",
+          "s2_f32_bits": "3fc3174a"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 9.000048637390137,
+          "point_y": 0.1600038707256317,
+          "radius": 1.5934276580810547,
+          "receiver": "path",
+          "s0_f32_bits": "41100033",
+          "s1_f32_bits": "3e23d80e",
+          "s2_f32_bits": "3fcbf570"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 9.815978050231934,
+          "point_y": 0.2319364845752716,
+          "radius": 1.6627070903778076,
+          "receiver": "path",
+          "s0_f32_bits": "411d0e3f",
+          "s1_f32_bits": "3e6d80c2",
+          "s2_f32_bits": "3fd4d396"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 10.631909370422363,
+          "point_y": 0.3171840310096741,
+          "radius": 1.7319865226745605,
+          "receiver": "path",
+          "s0_f32_bits": "412a1c4d",
+          "s1_f32_bits": "3ea265f2",
+          "s2_f32_bits": "3fddb1bc"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 11.447839736938477,
+          "point_y": 0.4157463014125824,
+          "radius": 1.8012659549713135,
+          "receiver": "path",
+          "s0_f32_bits": "41372a5a",
+          "s1_f32_bits": "3ed4dcb3",
+          "s2_f32_bits": "3fe68fe2"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 12.263771057128906,
+          "point_y": 0.5276235342025757,
+          "radius": 1.8705453872680664,
+          "receiver": "path",
+          "s0_f32_bits": "41443868",
+          "s1_f32_bits": "3f071256",
+          "s2_f32_bits": "3fef6e08"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 13.079700469970703,
+          "point_y": 0.652815580368042,
+          "radius": 1.9398248195648193,
+          "receiver": "path",
+          "s0_f32_bits": "41514674",
+          "s1_f32_bits": "3f271eec",
+          "s2_f32_bits": "3ff84c2e"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 13.8956298828125,
+          "point_y": 0.7913223505020142,
+          "radius": 2.0091042518615723,
+          "receiver": "path",
+          "s0_f32_bits": "415e5480",
+          "s1_f32_bits": "3f4a941a",
+          "s2_f32_bits": "4000952a"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 14.711559295654297,
+          "point_y": 0.9431439638137817,
+          "radius": 2.078383684158325,
+          "receiver": "path",
+          "s0_f32_bits": "416b628c",
+          "s1_f32_bits": "3f7171e2",
+          "s2_f32_bits": "4005043d"
+        },
+        {
+          "op": "PDFPaint::SetStyle(PDFPaintStyle)",
+          "receiver": "paint",
+          "style_w1": 0
+        },
+        {
+          "argb_w1": "0xff336699",
+          "op": "PDFPaint::SetColor(uint32)",
+          "receiver": "paint"
+        },
+        {
+          "op": "IPDFWriter::DrawPath",
+          "paint": "paint",
+          "path": "path"
+        },
+        {
+          "object": "paint",
+          "op": "IPDFWriter::DestroyPaint"
+        },
+        {
+          "object": "path",
+          "op": "IPDFWriter::DestroyPath"
+        }
+      ],
+      "factory_vptr_matches_expected": true,
+      "factory_vptr_offset": "0x5658e0",
+      "geometry_provider": "native Composer PDFPen::getDrawPointData and initialized PenManager/FountainPen plugin path",
+      "input": {
+        "argb": "0xff336699",
+        "initial_tolerance_f32_bits": "00000000",
+        "orientations": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+        "pen_size": 5.93824,
+        "point_count": 3,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ]
+        ],
+        "pressures": [
+          0.3,
+          0.6,
+          1.0
+        ],
+        "source_kind": "explicit ObjectStroke setter reconstruction",
+        "tilts": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          100,
+          101,
+          102
+        ]
+      },
+      "model_channel_sha256": {
+        "orientations": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+        "points": "e6b0d217a8efabce5dad5765b4ccebf6ef5144c71908cd2368f4a1684d984e06",
+        "pressures": "7e530fc489d6adb27a3cfe59ede890d851ccfc750d664708a5ef85d3d66ce6b5",
+        "tilts": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+        "timestamps": "9aec61055167a6a4ddb248095ca41f4a159553912570a5217815ed590392420e"
+      },
+      "model_point_count": 3,
+      "native_entry_trace": [
+        "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
+        "FountainPenStrokeDrawableGLV14::GetDrawnPointData thunk"
+      ],
+      "native_success": 1,
+      "saved_color_getter": "0xff336699",
+      "sink_circle_command_count": 19,
+      "sink_circle_command_payload_sha256": "460e35a945903e4a254fce951a495792014eee7e4a48c7b534f00c30050cdd34",
+      "sink_event_sequence": [
+        "IPDFWriter::CreatePaint",
+        "IPDFWriter::CreatePath",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPaint::SetStyle(PDFPaintStyle)",
+        "PDFPaint::SetColor(uint32)",
+        "IPDFWriter::DrawPath",
+        "IPDFWriter::DestroyPaint",
+        "IPDFWriter::DestroyPath"
+      ]
+    },
+    {
+      "advanced_settings": "18;0;100;",
+      "case": "synthetic-advanced-18-profile",
+      "constructor": {
+        "direct_symbol_offset": "0x373dbc",
+        "dispatch_route": "verified-vtable-slot+16",
+        "entry_trace": [
+          {
+            "context_matches_expected": true,
+            "receiver_matches_expected": true,
+            "scale_s0_f32_bits": "3f800000",
+            "writer_matches_expected": true
+          }
+        ],
+        "expected_vptr_offset": "0x5658e0",
+        "expected_vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "receiver_size": 64,
+        "symbol": "PDFFountainPen::PDFFountainPen(IContext const*,IPDFWriter*,float)",
+        "vptr_bytes": "943d370600000000983d370600000000bc3d370600000000",
+        "vptr_matches_expected": true,
+        "vptr_offset": "0x5658e0",
+        "vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "writeobject_virtual_slot_offset": "0x373dbc"
+      },
+      "events": [
+        {
+          "op": "IPDFWriter::CreatePaint",
+          "result": "paint"
+        },
+        {
+          "op": "IPDFWriter::CreatePath",
+          "result": "path"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 0.0,
+          "point_y": 0.0,
+          "radius": 0.5598912239074707,
+          "receiver": "path",
+          "s0_f32_bits": "00000000",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f0f5508"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 0.5378867983818054,
+          "point_y": 0.0,
+          "radius": 0.6744144558906555,
+          "receiver": "path",
+          "s0_f32_bits": "3f09b2f3",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f2ca66d"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 1.523443579673767,
+          "point_y": 0.0,
+          "radius": 0.7889376878738403,
+          "receiver": "path",
+          "s0_f32_bits": "3fc30033",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f49f7d2"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 2.186738967895508,
+          "point_y": 0.0,
+          "radius": 0.9034609198570251,
+          "receiver": "path",
+          "s0_f32_bits": "400bf388",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f674937"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 2.9695794582366943,
+          "point_y": 0.0,
+          "radius": 1.01798415184021,
+          "receiver": "path",
+          "s0_f32_bits": "403e0d97",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f824d4e"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 3.8719656467437744,
+          "point_y": 0.0,
+          "radius": 1.13250732421875,
+          "receiver": "path",
+          "s0_f32_bits": "4077ce49",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f90f600"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 4.893895626068115,
+          "point_y": 0.0,
+          "radius": 1.24703049659729,
+          "receiver": "path",
+          "s0_f32_bits": "409c9acb",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f9f9eb2"
+        },
+        {
+          "op": "PDFPaint::SetStyle(PDFPaintStyle)",
+          "receiver": "paint",
+          "style_w1": 0
+        },
+        {
+          "argb_w1": "0xff336699",
+          "op": "PDFPaint::SetColor(uint32)",
+          "receiver": "paint"
+        },
+        {
+          "op": "IPDFWriter::DrawPath",
+          "paint": "paint",
+          "path": "path"
+        },
+        {
+          "object": "paint",
+          "op": "IPDFWriter::DestroyPaint"
+        },
+        {
+          "object": "path",
+          "op": "IPDFWriter::DestroyPath"
+        }
+      ],
+      "factory_vptr_matches_expected": true,
+      "factory_vptr_offset": "0x5658e0",
+      "geometry_provider": "native Composer PDFPen::getDrawPointData and initialized PenManager/FountainPen plugin path",
+      "input": {
+        "argb": "0xff336699",
+        "initial_tolerance_f32_bits": "00000000",
+        "orientations": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+        "pen_size": 5.93824,
+        "point_count": 3,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ]
+        ],
+        "pressures": [
+          0.3,
+          0.6,
+          1.0
+        ],
+        "source_kind": "explicit ObjectStroke setter reconstruction",
+        "tilts": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          100,
+          101,
+          102
+        ]
+      },
+      "model_channel_sha256": {
+        "orientations": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+        "points": "e6b0d217a8efabce5dad5765b4ccebf6ef5144c71908cd2368f4a1684d984e06",
+        "pressures": "7e530fc489d6adb27a3cfe59ede890d851ccfc750d664708a5ef85d3d66ce6b5",
+        "tilts": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+        "timestamps": "9aec61055167a6a4ddb248095ca41f4a159553912570a5217815ed590392420e"
+      },
+      "model_point_count": 3,
+      "native_entry_trace": [
+        "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
+        "FountainPenStrokeDrawableGLV16::GetDrawnPointData thunk"
+      ],
+      "native_success": 1,
+      "saved_color_getter": "0xff336699",
+      "sink_circle_command_count": 7,
+      "sink_circle_command_payload_sha256": "aaeeff6d82e7f905b0d39ace033c705ef1e032a3f6bd257a70a2cf2905a593af",
+      "sink_event_sequence": [
+        "IPDFWriter::CreatePaint",
+        "IPDFWriter::CreatePath",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPaint::SetStyle(PDFPaintStyle)",
+        "PDFPaint::SetColor(uint32)",
+        "IPDFWriter::DrawPath",
+        "IPDFWriter::DestroyPaint",
+        "IPDFWriter::DestroyPath"
+      ]
+    },
+    {
+      "advanced_settings": "14;",
+      "case": "synthetic-size-color-pressure",
+      "constructor": {
+        "direct_symbol_offset": "0x373dbc",
+        "dispatch_route": "verified-vtable-slot+16",
+        "entry_trace": [
+          {
+            "context_matches_expected": true,
+            "receiver_matches_expected": true,
+            "scale_s0_f32_bits": "3f800000",
+            "writer_matches_expected": true
+          }
+        ],
+        "expected_vptr_offset": "0x5658e0",
+        "expected_vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "receiver_size": 64,
+        "symbol": "PDFFountainPen::PDFFountainPen(IContext const*,IPDFWriter*,float)",
+        "vptr_bytes": "943d370600000000983d370600000000bc3d370600000000",
+        "vptr_matches_expected": true,
+        "vptr_offset": "0x5658e0",
+        "vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "writeobject_virtual_slot_offset": "0x373dbc"
+      },
+      "events": [
+        {
+          "op": "IPDFWriter::CreatePaint",
+          "result": "paint"
+        },
+        {
+          "op": "IPDFWriter::CreatePath",
+          "result": "path"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 0.0,
+          "point_y": 0.0,
+          "radius": 0.8059040307998657,
+          "receiver": "path",
+          "s0_f32_bits": "00000000",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f4e4fba"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 0.5378867983818054,
+          "point_y": 0.0,
+          "radius": 1.0179840326309204,
+          "receiver": "path",
+          "s0_f32_bits": "3f09b2f3",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f824d4d"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 1.523443579673767,
+          "point_y": 0.0,
+          "radius": 1.230064034461975,
+          "receiver": "path",
+          "s0_f32_bits": "3fc30033",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3f9d72bd"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 2.186738967895508,
+          "point_y": 0.0,
+          "radius": 1.4421440362930298,
+          "receiver": "path",
+          "s0_f32_bits": "400bf388",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3fb8982d"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 2.9695794582366943,
+          "point_y": 0.0,
+          "radius": 1.6542240381240845,
+          "receiver": "path",
+          "s0_f32_bits": "403e0d97",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3fd3bd9d"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 3.8719656467437744,
+          "point_y": 0.0,
+          "radius": 1.8663040399551392,
+          "receiver": "path",
+          "s0_f32_bits": "4077ce49",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "3feee30d"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 4.893895626068115,
+          "point_y": 0.0,
+          "radius": 2.0783839225769043,
+          "receiver": "path",
+          "s0_f32_bits": "409c9acb",
+          "s1_f32_bits": "00000000",
+          "s2_f32_bits": "4005043e"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 5.736327171325684,
+          "point_y": 0.005421782378107309,
+          "radius": 2.21694278717041,
+          "receiver": "path",
+          "s0_f32_bits": "40b78ffe",
+          "s1_f32_bits": "3bb1a935",
+          "s2_f32_bits": "400de264"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 6.552257537841797,
+          "point_y": 0.024095039814710617,
+          "radius": 2.355501651763916,
+          "receiver": "path",
+          "s0_f32_bits": "40d1ac18",
+          "s1_f32_bits": "3cc562f6",
+          "s2_f32_bits": "4016c08a"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 7.36818790435791,
+          "point_y": 0.056083131581544876,
+          "radius": 2.494060516357422,
+          "receiver": "path",
+          "s0_f32_bits": "40ebc832",
+          "s1_f32_bits": "3d65b76d",
+          "s2_f32_bits": "401f9eb0"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 8.184118270874023,
+          "point_y": 0.10138607025146484,
+          "radius": 2.6326193809509277,
+          "receiver": "path",
+          "s0_f32_bits": "4102f226",
+          "s1_f32_bits": "3dcfa380",
+          "s2_f32_bits": "40287cd6"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 9.000048637390137,
+          "point_y": 0.1600038707256317,
+          "radius": 2.7711782455444336,
+          "receiver": "path",
+          "s0_f32_bits": "41100033",
+          "s1_f32_bits": "3e23d80e",
+          "s2_f32_bits": "40315afc"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 9.815978050231934,
+          "point_y": 0.2319364845752716,
+          "radius": 2.9097371101379395,
+          "receiver": "path",
+          "s0_f32_bits": "411d0e3f",
+          "s1_f32_bits": "3e6d80c2",
+          "s2_f32_bits": "403a3922"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 10.631909370422363,
+          "point_y": 0.3171840310096741,
+          "radius": 3.0482959747314453,
+          "receiver": "path",
+          "s0_f32_bits": "412a1c4d",
+          "s1_f32_bits": "3ea265f2",
+          "s2_f32_bits": "40431748"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 11.447839736938477,
+          "point_y": 0.4157463014125824,
+          "radius": 3.186854839324951,
+          "receiver": "path",
+          "s0_f32_bits": "41372a5a",
+          "s1_f32_bits": "3ed4dcb3",
+          "s2_f32_bits": "404bf56e"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 12.263771057128906,
+          "point_y": 0.5276235342025757,
+          "radius": 3.325413703918457,
+          "receiver": "path",
+          "s0_f32_bits": "41443868",
+          "s1_f32_bits": "3f071256",
+          "s2_f32_bits": "4054d394"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 13.079700469970703,
+          "point_y": 0.652815580368042,
+          "radius": 3.463972568511963,
+          "receiver": "path",
+          "s0_f32_bits": "41514674",
+          "s1_f32_bits": "3f271eec",
+          "s2_f32_bits": "405db1ba"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 13.8956298828125,
+          "point_y": 0.7913223505020142,
+          "radius": 3.6025314331054688,
+          "receiver": "path",
+          "s0_f32_bits": "415e5480",
+          "s1_f32_bits": "3f4a941a",
+          "s2_f32_bits": "40668fe0"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 14.711559295654297,
+          "point_y": 0.9431439638137817,
+          "radius": 3.7410902976989746,
+          "receiver": "path",
+          "s0_f32_bits": "416b628c",
+          "s1_f32_bits": "3f7171e2",
+          "s2_f32_bits": "406f6e06"
+        },
+        {
+          "op": "PDFPaint::SetStyle(PDFPaintStyle)",
+          "receiver": "paint",
+          "style_w1": 0
+        },
+        {
+          "argb_w1": "0xffaa2244",
+          "op": "PDFPaint::SetColor(uint32)",
+          "receiver": "paint"
+        },
+        {
+          "op": "IPDFWriter::DrawPath",
+          "paint": "paint",
+          "path": "path"
+        },
+        {
+          "object": "paint",
+          "op": "IPDFWriter::DestroyPaint"
+        },
+        {
+          "object": "path",
+          "op": "IPDFWriter::DestroyPath"
+        }
+      ],
+      "factory_vptr_matches_expected": true,
+      "factory_vptr_offset": "0x5658e0",
+      "geometry_provider": "native Composer PDFPen::getDrawPointData and initialized PenManager/FountainPen plugin path",
+      "input": {
+        "argb": "0xffaa2244",
+        "initial_tolerance_f32_bits": "00000000",
+        "orientations": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+        "pen_size": 11.87648,
+        "point_count": 3,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            20,
+            2
+          ]
+        ],
+        "pressures": [
+          0.2,
+          0.5,
+          0.9
+        ],
+        "source_kind": "explicit ObjectStroke setter reconstruction",
+        "tilts": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "timestamps": [
+          100,
+          101,
+          102
+        ]
+      },
+      "model_channel_sha256": {
+        "orientations": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+        "points": "e6b0d217a8efabce5dad5765b4ccebf6ef5144c71908cd2368f4a1684d984e06",
+        "pressures": "1da3225d96f11115f37494c64d56bf1f86a59ba38e8cfcb3af3c2da2d46ef5a4",
+        "tilts": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+        "timestamps": "9aec61055167a6a4ddb248095ca41f4a159553912570a5217815ed590392420e"
+      },
+      "model_point_count": 3,
+      "native_entry_trace": [
+        "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
+        "FountainPenStrokeDrawableGLV14::GetDrawnPointData thunk"
+      ],
+      "native_success": 1,
+      "saved_color_getter": "0xffaa2244",
+      "sink_circle_command_count": 19,
+      "sink_circle_command_payload_sha256": "c27ea34417d6d3f85d060d66975922ee2aa1eb9898b2c93e35827c36b020b7cf",
+      "sink_event_sequence": [
+        "IPDFWriter::CreatePaint",
+        "IPDFWriter::CreatePath",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPaint::SetStyle(PDFPaintStyle)",
+        "PDFPaint::SetColor(uint32)",
+        "IPDFWriter::DrawPath",
+        "IPDFWriter::DestroyPaint",
+        "IPDFWriter::DestroyPath"
+      ]
+    },
+    {
+      "advanced_settings": "14;",
+      "case": "embedded-real-v14",
+      "constructor": {
+        "direct_symbol_offset": "0x373dbc",
+        "dispatch_route": "verified-vtable-slot+16",
+        "entry_trace": [
+          {
+            "context_matches_expected": true,
+            "receiver_matches_expected": true,
+            "scale_s0_f32_bits": "3f800000",
+            "writer_matches_expected": true
+          }
+        ],
+        "expected_vptr_offset": "0x5658e0",
+        "expected_vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "receiver_size": 64,
+        "symbol": "PDFFountainPen::PDFFountainPen(IContext const*,IPDFWriter*,float)",
+        "vptr_bytes": "943d370600000000983d370600000000bc3d370600000000",
+        "vptr_matches_expected": true,
+        "vptr_offset": "0x5658e0",
+        "vtable_entry_offsets": [
+          "0x373d94",
+          "0x373d98",
+          "0x373dbc"
+        ],
+        "writeobject_virtual_slot_offset": "0x373dbc"
+      },
+      "events": [
+        {
+          "op": "IPDFWriter::CreatePaint",
+          "result": "paint"
+        },
+        {
+          "op": "IPDFWriter::CreatePath",
+          "result": "path"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 921.684814453125,
+          "point_y": 1436.595703125,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "44666bd4",
+          "s1_f32_bits": "44b39310",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 921.15625,
+          "point_y": 1437.224365234375,
+          "radius": 1.065285325050354,
+          "receiver": "path",
+          "s0_f32_bits": "44664a00",
+          "s1_f32_bits": "44b3a72e",
+          "s2_f32_bits": "3f885b45"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 920.8419799804688,
+          "point_y": 1437.9674072265625,
+          "radius": 1.1408640146255493,
+          "receiver": "path",
+          "s0_f32_bits": "446635e3",
+          "s1_f32_bits": "44b3bef5",
+          "s2_f32_bits": "3f9207d5"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 920.9317016601562,
+          "point_y": 1438.8369140625,
+          "radius": 1.1659471988677979,
+          "receiver": "path",
+          "s0_f32_bits": "44663ba1",
+          "s1_f32_bits": "44b3dac8",
+          "s2_f32_bits": "3f953dc2"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 921.1764526367188,
+          "point_y": 1439.6163330078125,
+          "radius": 1.191030502319336,
+          "receiver": "path",
+          "s0_f32_bits": "44664b4b",
+          "s1_f32_bits": "44b3f3b9",
+          "s2_f32_bits": "3f9873b0"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 921.5049438476562,
+          "point_y": 1440.3768310546875,
+          "radius": 1.1966917514801025,
+          "receiver": "path",
+          "s0_f32_bits": "44666051",
+          "s1_f32_bits": "44b40c0f",
+          "s2_f32_bits": "3f992d32"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 921.923583984375,
+          "point_y": 1441.1044921875,
+          "radius": 1.2023530006408691,
+          "receiver": "path",
+          "s0_f32_bits": "44667b1c",
+          "s1_f32_bits": "44b42358",
+          "s2_f32_bits": "3f99e6b4"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 922.4171752929688,
+          "point_y": 1441.7435302734375,
+          "radius": 1.2080142498016357,
+          "receiver": "path",
+          "s0_f32_bits": "44669ab3",
+          "s1_f32_bits": "44b437cb",
+          "s2_f32_bits": "3f9aa036"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 923.0220947265625,
+          "point_y": 1442.308837890625,
+          "radius": 1.1675746440887451,
+          "receiver": "path",
+          "s0_f32_bits": "4466c16a",
+          "s1_f32_bits": "44b449e2",
+          "s2_f32_bits": "3f957316"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 923.7168579101562,
+          "point_y": 1442.7391357421875,
+          "radius": 1.127135157585144,
+          "receiver": "path",
+          "s0_f32_bits": "4466ede1",
+          "s1_f32_bits": "44b457a7",
+          "s2_f32_bits": "3f9045f7"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 924.5028076171875,
+          "point_y": 1442.9722900390625,
+          "radius": 1.0584208965301514,
+          "receiver": "path",
+          "s0_f32_bits": "4467202e",
+          "s1_f32_bits": "44b45f1d",
+          "s2_f32_bits": "3f877a56"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 925.3411865234375,
+          "point_y": 1442.8946533203125,
+          "radius": 0.9897066354751587,
+          "receiver": "path",
+          "s0_f32_bits": "446755d6",
+          "s1_f32_bits": "44b45ca1",
+          "s2_f32_bits": "3f7d5d6a"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.0857543945312,
+          "point_y": 1442.494873046875,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467857d",
+          "s1_f32_bits": "44b44fd6",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.52880859375,
+          "point_y": 1441.7666015625,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467a1d8",
+          "s1_f32_bits": "44b43888",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.7456665039062,
+          "point_y": 1440.9676513671875,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467afb9",
+          "s1_f32_bits": "44b41ef7",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.8753662109375,
+          "point_y": 1440.161865234375,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467b806",
+          "s1_f32_bits": "44b4052e",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.9376831054688,
+          "point_y": 1439.3404541015625,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467bc03",
+          "s1_f32_bits": "44b3eae5",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.9647216796875,
+          "point_y": 1438.523193359375,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467bdbe",
+          "s1_f32_bits": "44b3d0be",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.959716796875,
+          "point_y": 1437.6800537109375,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467bd6c",
+          "s1_f32_bits": "44b3b5c3",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "force_close_w1": 0,
+          "op": "PDFPath::Circle(PointF,float,bool)",
+          "point_x": 926.929931640625,
+          "point_y": 1436.8741455078125,
+          "radius": 0.9897066950798035,
+          "receiver": "path",
+          "s0_f32_bits": "4467bb84",
+          "s1_f32_bits": "44b39bf9",
+          "s2_f32_bits": "3f7d5d6b"
+        },
+        {
+          "op": "PDFPaint::SetStyle(PDFPaintStyle)",
+          "receiver": "paint",
+          "style_w1": 0
+        },
+        {
+          "argb_w1": "0xff000000",
+          "op": "PDFPaint::SetColor(uint32)",
+          "receiver": "paint"
+        },
+        {
+          "op": "IPDFWriter::DrawPath",
+          "paint": "paint",
+          "path": "path"
+        },
+        {
+          "object": "paint",
+          "op": "IPDFWriter::DestroyPaint"
+        },
+        {
+          "object": "path",
+          "op": "IPDFWriter::DestroyPath"
+        }
+      ],
+      "factory_vptr_matches_expected": true,
+      "factory_vptr_offset": "0x5658e0",
+      "geometry_provider": "native Composer PDFPen::getDrawPointData and initialized PenManager/FountainPen plugin path",
+      "input": {
+        "argb": "0xff000000",
+        "initial_tolerance_f32_bits": "058b823e",
+        "orientations": [
+          -1.4778895378112793,
+          -1.4778895378112793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4737391471862793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4691004753112793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793,
+          -1.4190516471862793
+        ],
+        "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+        "pen_size": 5.938240051269531,
+        "point_count": 161,
+        "points": [
+          [
+            921.684814453125,
+            1436.595703125
+          ],
+          [
+            921.684814453125,
+            1436.595703125
+          ],
+          [
+            921.684814453125,
+            1436.595703125
+          ],
+          [
+            921.653564453125,
+            1436.533203125
+          ],
+          [
+            921.622314453125,
+            1436.501953125
+          ],
+          [
+            921.622314453125,
+            1436.501953125
+          ],
+          [
+            921.622314453125,
+            1436.439453125
+          ],
+          [
+            921.591064453125,
+            1436.408203125
+          ],
+          [
+            921.559814453125,
+            1436.345703125
+          ],
+          [
+            921.528564453125,
+            1436.283203125
+          ],
+          [
+            921.497314453125,
+            1436.189453125
+          ],
+          [
+            921.497314453125,
+            1436.126953125
+          ],
+          [
+            921.466064453125,
+            1436.064453125
+          ],
+          [
+            921.403564453125,
+            1436.033203125
+          ],
+          [
+            921.403564453125,
+            1435.970703125
+          ],
+          [
+            921.341064453125,
+            1435.908203125
+          ],
+          [
+            921.309814453125,
+            1435.845703125
+          ],
+          [
+            921.278564453125,
+            1435.751953125
+          ],
+          [
+            921.247314453125,
+            1435.689453125
+          ],
+          [
+            921.216064453125,
+            1435.626953125
+          ],
+          [
+            921.184814453125,
+            1435.595703125
+          ],
+          [
+            921.153564453125,
+            1435.533203125
+          ],
+          [
+            921.122314453125,
+            1435.470703125
+          ],
+          [
+            921.122314453125,
+            1435.470703125
+          ],
+          [
+            921.091064453125,
+            1435.439453125
+          ],
+          [
+            921.059814453125,
+            1435.439453125
+          ],
+          [
+            921.028564453125,
+            1435.439453125
+          ],
+          [
+            920.997314453125,
+            1435.376953125
+          ],
+          [
+            920.997314453125,
+            1435.376953125
+          ],
+          [
+            920.966064453125,
+            1435.376953125
+          ],
+          [
+            920.934814453125,
+            1435.376953125
+          ],
+          [
+            920.934814453125,
+            1435.376953125
+          ],
+          [
+            920.903564453125,
+            1435.376953125
+          ],
+          [
+            920.903564453125,
+            1435.376953125
+          ],
+          [
+            920.841064453125,
+            1435.376953125
+          ],
+          [
+            920.809814453125,
+            1435.408203125
+          ],
+          [
+            920.778564453125,
+            1435.439453125
+          ],
+          [
+            920.778564453125,
+            1435.470703125
+          ],
+          [
+            920.778564453125,
+            1435.470703125
+          ],
+          [
+            920.747314453125,
+            1435.564453125
+          ],
+          [
+            920.716064453125,
+            1435.595703125
+          ],
+          [
+            920.684814453125,
+            1435.689453125
+          ],
+          [
+            920.684814453125,
+            1435.751953125
+          ],
+          [
+            920.684814453125,
+            1435.751953125
+          ],
+          [
+            920.653564453125,
+            1435.845703125
+          ],
+          [
+            920.653564453125,
+            1436.064453125
+          ],
+          [
+            920.622314453125,
+            1436.126953125
+          ],
+          [
+            920.622314453125,
+            1436.220703125
+          ],
+          [
+            920.622314453125,
+            1436.220703125
+          ],
+          [
+            920.622314453125,
+            1436.439453125
+          ],
+          [
+            920.622314453125,
+            1436.533203125
+          ],
+          [
+            920.622314453125,
+            1436.783203125
+          ],
+          [
+            920.622314453125,
+            1436.876953125
+          ],
+          [
+            920.622314453125,
+            1437.158203125
+          ],
+          [
+            920.622314453125,
+            1437.345703125
+          ],
+          [
+            920.684814453125,
+            1437.595703125
+          ],
+          [
+            920.684814453125,
+            1437.783203125
+          ],
+          [
+            920.684814453125,
+            1437.783203125
+          ],
+          [
+            920.716064453125,
+            1437.970703125
+          ],
+          [
+            920.716064453125,
+            1438.189453125
+          ],
+          [
+            920.778564453125,
+            1438.408203125
+          ],
+          [
+            920.809814453125,
+            1438.626953125
+          ],
+          [
+            920.809814453125,
+            1438.626953125
+          ],
+          [
+            920.903564453125,
+            1438.845703125
+          ],
+          [
+            920.934814453125,
+            1439.095703125
+          ],
+          [
+            921.028564453125,
+            1439.283203125
+          ],
+          [
+            921.091064453125,
+            1439.533203125
+          ],
+          [
+            921.153564453125,
+            1439.720703125
+          ],
+          [
+            921.372314453125,
+            1439.939453125
+          ],
+          [
+            921.403564453125,
+            1440.158203125
+          ],
+          [
+            921.497314453125,
+            1440.376953125
+          ],
+          [
+            921.559814453125,
+            1440.564453125
+          ],
+          [
+            921.778564453125,
+            1440.783203125
+          ],
+          [
+            921.841064453125,
+            1441.001953125
+          ],
+          [
+            921.903564453125,
+            1441.189453125
+          ],
+          [
+            922.122314453125,
+            1441.376953125
+          ],
+          [
+            922.184814453125,
+            1441.470703125
+          ],
+          [
+            922.372314453125,
+            1441.720703125
+          ],
+          [
+            922.434814453125,
+            1441.814453125
+          ],
+          [
+            922.684814453125,
+            1442.064453125
+          ],
+          [
+            922.747314453125,
+            1442.158203125
+          ],
+          [
+            922.997314453125,
+            1442.376953125
+          ],
+          [
+            923.059814453125,
+            1442.439453125
+          ],
+          [
+            923.059814453125,
+            1442.439453125
+          ],
+          [
+            923.278564453125,
+            1442.533203125
+          ],
+          [
+            923.372314453125,
+            1442.626953125
+          ],
+          [
+            923.591064453125,
+            1442.751953125
+          ],
+          [
+            923.653564453125,
+            1442.814453125
+          ],
+          [
+            923.872314453125,
+            1442.876953125
+          ],
+          [
+            923.966064453125,
+            1442.970703125
+          ],
+          [
+            924.216064453125,
+            1443.033203125
+          ],
+          [
+            924.278564453125,
+            1443.064453125
+          ],
+          [
+            924.278564453125,
+            1443.064453125
+          ],
+          [
+            924.497314453125,
+            1443.095703125
+          ],
+          [
+            924.559814453125,
+            1443.126953125
+          ],
+          [
+            924.778564453125,
+            1443.158203125
+          ],
+          [
+            924.872314453125,
+            1443.189453125
+          ],
+          [
+            924.872314453125,
+            1443.189453125
+          ],
+          [
+            925.059814453125,
+            1443.189453125
+          ],
+          [
+            925.122314453125,
+            1443.189453125
+          ],
+          [
+            925.372314453125,
+            1443.189453125
+          ],
+          [
+            925.403564453125,
+            1443.189453125
+          ],
+          [
+            925.591064453125,
+            1443.126953125
+          ],
+          [
+            925.653564453125,
+            1443.064453125
+          ],
+          [
+            925.872314453125,
+            1443.001953125
+          ],
+          [
+            925.934814453125,
+            1442.939453125
+          ],
+          [
+            925.934814453125,
+            1442.939453125
+          ],
+          [
+            925.997314453125,
+            1442.751953125
+          ],
+          [
+            926.184814453125,
+            1442.689453125
+          ],
+          [
+            926.247314453125,
+            1442.626953125
+          ],
+          [
+            926.309814453125,
+            1442.376953125
+          ],
+          [
+            926.403564453125,
+            1442.283203125
+          ],
+          [
+            926.466064453125,
+            1442.033203125
+          ],
+          [
+            926.653564453125,
+            1441.783203125
+          ],
+          [
+            926.653564453125,
+            1441.595703125
+          ],
+          [
+            926.716064453125,
+            1441.376953125
+          ],
+          [
+            926.778564453125,
+            1441.158203125
+          ],
+          [
+            926.809814453125,
+            1440.908203125
+          ],
+          [
+            926.872314453125,
+            1440.689453125
+          ],
+          [
+            926.903564453125,
+            1440.408203125
+          ],
+          [
+            926.903564453125,
+            1440.158203125
+          ],
+          [
+            926.966064453125,
+            1439.939453125
+          ],
+          [
+            926.966064453125,
+            1439.689453125
+          ],
+          [
+            926.966064453125,
+            1439.408203125
+          ],
+          [
+            926.966064453125,
+            1439.158203125
+          ],
+          [
+            926.966064453125,
+            1438.876953125
+          ],
+          [
+            926.966064453125,
+            1438.626953125
+          ],
+          [
+            926.966064453125,
+            1438.408203125
+          ],
+          [
+            926.966064453125,
+            1438.189453125
+          ],
+          [
+            926.966064453125,
+            1437.939453125
+          ],
+          [
+            926.966064453125,
+            1437.720703125
+          ],
+          [
+            926.966064453125,
+            1437.501953125
+          ],
+          [
+            926.966064453125,
+            1437.439453125
+          ],
+          [
+            926.966064453125,
+            1437.126953125
+          ],
+          [
+            926.966064453125,
+            1437.064453125
+          ],
+          [
+            926.966064453125,
+            1437.064453125
+          ],
+          [
+            926.966064453125,
+            1436.814453125
+          ],
+          [
+            926.966064453125,
+            1436.751953125
+          ],
+          [
+            926.934814453125,
+            1436.658203125
+          ],
+          [
+            926.934814453125,
+            1436.439453125
+          ],
+          [
+            926.934814453125,
+            1436.439453125
+          ],
+          [
+            926.903564453125,
+            1436.408203125
+          ],
+          [
+            926.903564453125,
+            1436.314453125
+          ],
+          [
+            926.903564453125,
+            1436.251953125
+          ],
+          [
+            926.872314453125,
+            1436.189453125
+          ],
+          [
+            926.872314453125,
+            1436.189453125
+          ],
+          [
+            926.872314453125,
+            1436.095703125
+          ],
+          [
+            926.872314453125,
+            1436.033203125
+          ],
+          [
+            926.872314453125,
+            1435.970703125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.872314453125,
+            1435.939453125
+          ],
+          [
+            926.903564453125,
+            1435.970703125
+          ],
+          [
+            926.903564453125,
+            1435.970703125
+          ]
+        ],
+        "pressures": [
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.00024420025874860585,
+          0.0009766221337486058,
+          0.0017090440087486058,
+          0.002685606508748606,
+          0.003906309633748606,
+          0.005371153383748606,
+          0.007080137758748606,
+          0.009033262758748606,
+          0.010986387758748606,
+          0.013427794008748606,
+          0.015625059633748606,
+          0.018310606508748606,
+          0.020996153383748606,
+          0.020996153383748606,
+          0.023681700258748606,
+          0.026611387758748606,
+          0.029541075258748606,
+          0.032470762758748606,
+          0.032470762758748606,
+          0.035644590883748606,
+          0.038574278383748606,
+          0.041748106508748606,
+          0.044921934633748606,
+          0.044921934633748606,
+          0.048095762758748606,
+          0.051269590883748606,
+          0.054199278383748606,
+          0.057373106508748606,
+          0.057373106508748606,
+          0.060302794008748606,
+          0.0634766221337486,
+          0.0664063096337486,
+          0.0693359971337486,
+          0.0693359971337486,
+          0.0722656846337486,
+          0.0751953721337486,
+          0.0783692002587486,
+          0.0812988877587486,
+          0.0812988877587486,
+          0.0842285752587486,
+          0.0871582627587486,
+          0.0900879502587486,
+          0.0930176377587486,
+          0.0959473252587486,
+          0.0988770127587486,
+          0.1018067002587486,
+          0.1047363877587486,
+          0.1047363877587486,
+          0.1076660752587486,
+          0.1105957627587486,
+          0.1135254502587486,
+          0.1164551377587486,
+          0.1164551377587486,
+          0.1191406846337486,
+          0.1218262315087486,
+          0.1247559190087486,
+          0.1274414658837486,
+          0.1301270127587486,
+          0.1328125596337486,
+          0.1354981065087486,
+          0.1379395127587486,
+          0.1403809190087486,
+          0.1430664658837486,
+          0.1455078721337486,
+          0.1479492783837486,
+          0.1501465440087486,
+          0.1525879502587486,
+          0.1550293565087486,
+          0.1572266221337486,
+          0.1594238877587486,
+          0.1618652940087486,
+          0.1638184190087486,
+          0.1660156846337486,
+          0.1660156846337486,
+          0.1682129502587486,
+          0.1701660752587486,
+          0.1721192002587486,
+          0.1740723252587486,
+          0.1760254502587486,
+          0.1779785752587486,
+          0.1796875596337486,
+          0.1813965440087486,
+          0.1813965440087486,
+          0.1833496690087486,
+          0.1850586533837486,
+          0.1865234971337486,
+          0.1882324815087486,
+          0.1882324815087486,
+          0.1896973252587486,
+          0.1914063096337486,
+          0.1928711533837486,
+          0.1943359971337486,
+          0.1958008408837486,
+          0.1972656846337486,
+          0.1984863877587486,
+          0.1999512315087486,
+          0.1999512315087486,
+          0.2011719346337486,
+          0.2023926377587486,
+          0.2036133408837486,
+          0.2048340440087486,
+          0.2058106065087486,
+          0.2070313096337486,
+          0.2080078721337486,
+          0.2089844346337486,
+          0.2099609971337486,
+          0.2109375596337486,
+          0.2119141221337486,
+          0.2128906846337486,
+          0.2136231065087486,
+          0.2145996690087486,
+          0.2155762315087486,
+          0.2163086533837486,
+          0.2170410752587486,
+          0.2177734971337486,
+          0.2185059190087486,
+          0.2192383408837486,
+          0.2197266221337486,
+          0.2204590440087486,
+          0.2209473252587486,
+          0.2214356065087486,
+          0.2219238877587486,
+          0.2221680283837486,
+          0.2224121690087486,
+          0.2226563096337486,
+          0.2226563096337486,
+          0.2229004502587486,
+          0.2231445908837486,
+          0.2231445908837486,
+          0.2229004502587486,
+          0.2229004502587486,
+          0.2226563096337486,
+          0.2221680283837486,
+          0.2214356065087486,
+          0.2207031846337486,
+          0.2207031846337486,
+          0.2194824815087486,
+          0.2182617783837486,
+          0.2165527940087486,
+          0.2148438096337486,
+          0.2148438096337486,
+          0.2126465440087486,
+          0.2102051377587486,
+          0.2075195908837486,
+          0.2045899033837486,
+          0.2148438096337486,
+          0.2014160752587486,
+          0.1982422471337486,
+          0.1953125596337486,
+          0.1921387315087486,
+          0.1921387315087486
+        ],
+        "source_kind": "explicit ObjectStroke setter reconstruction",
+        "tilts": [
+          0.38547736406326294,
+          0.38547736406326294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.36814337968826294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35080939531326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294,
+          0.35276252031326294
+        ],
+        "timestamps": [
+          0,
+          0,
+          4,
+          6,
+          8,
+          10,
+          11,
+          13,
+          15,
+          17,
+          19,
+          21,
+          23,
+          25,
+          27,
+          29,
+          31,
+          33,
+          35,
+          37,
+          39,
+          42,
+          44,
+          44,
+          46,
+          48,
+          50,
+          52,
+          52,
+          54,
+          56,
+          58,
+          60,
+          60,
+          63,
+          64,
+          66,
+          68,
+          69,
+          71,
+          73,
+          75,
+          77,
+          77,
+          79,
+          81,
+          83,
+          85,
+          85,
+          87,
+          89,
+          91,
+          93,
+          95,
+          98,
+          100,
+          102,
+          102,
+          104,
+          106,
+          108,
+          110,
+          110,
+          112,
+          114,
+          116,
+          118,
+          120,
+          123,
+          125,
+          127,
+          129,
+          131,
+          133,
+          135,
+          137,
+          139,
+          141,
+          143,
+          145,
+          147,
+          150,
+          151,
+          152,
+          154,
+          156,
+          158,
+          160,
+          162,
+          164,
+          166,
+          168,
+          169,
+          170,
+          172,
+          174,
+          176,
+          177,
+          178,
+          180,
+          183,
+          185,
+          187,
+          189,
+          191,
+          193,
+          194,
+          195,
+          197,
+          199,
+          201,
+          203,
+          206,
+          208,
+          210,
+          212,
+          214,
+          216,
+          218,
+          220,
+          222,
+          224,
+          226,
+          228,
+          230,
+          233,
+          234,
+          236,
+          239,
+          241,
+          243,
+          245,
+          247,
+          249,
+          251,
+          252,
+          253,
+          255,
+          257,
+          259,
+          260,
+          261,
+          263,
+          265,
+          268,
+          269,
+          270,
+          272,
+          274,
+          276,
+          277,
+          278,
+          280,
+          282,
+          284,
+          285,
+          286,
+          288,
+          290,
+          292,
+          295
+        ]
+      },
+      "model_channel_sha256": {
+        "orientations": "b4e62757396f809cb772de883cf1c8c82e1f6ea698fb383c9e49fbbeae622aed",
+        "points": "ed197ef0bbeed0e51cd74ef87471856c8f242ca9b0a751c3a955791b8d8c65da",
+        "pressures": "c4bd863651470b61f9837c26308766cb3542d58dff1967d55042dba056b5c135",
+        "tilts": "d7b28dbab4ab6720684330250b77eed2db54512a3953fe196afd41e48e1635be",
+        "timestamps": "6734d4d96b14178f77f773143479032ab51d8caf4252e9a6c3242564b7577690"
+      },
+      "model_point_count": 161,
+      "native_entry_trace": [
+        "SPen::PDFPen::getDrawPointData(SPen::ObjectStroke const*, SPen::DrawnPointData&)",
+        "FountainPenStrokeDrawableGLV14::GetDrawnPointData thunk"
+      ],
+      "native_success": 1,
+      "saved_color_getter": "0xff000000",
+      "sink_circle_command_count": 20,
+      "sink_circle_command_payload_sha256": "5452f505455729970f04fdcbd7184a9610a360c0feb0119a043cf33bd28b1815",
+      "sink_event_sequence": [
+        "IPDFWriter::CreatePaint",
+        "IPDFWriter::CreatePath",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPath::Circle(PointF,float,bool)",
+        "PDFPaint::SetStyle(PDFPaintStyle)",
+        "PDFPaint::SetColor(uint32)",
+        "IPDFWriter::DrawPath",
+        "IPDFWriter::DestroyPaint",
+        "IPDFWriter::DestroyPath"
+      ]
+    }
+  ],
+  "schema": "sdocx-fountain-pdf-writer-native-v1",
+  "scope": "internal native per-pen PDF object writer with substituted IPDFWriter/path/paint virtual sink; no SDK JNI/UI/export-file claim",
+  "source_fixture": {
+    "path": "conformance/fountain-v14-real-native.json",
+    "sha256": "c6204b33441eb77a53932e1c475e931e0f9688a8ad40788d05a7f41c58400ca3",
+    "source_provenance": {
+      "application": "Samsung Notes 4.4.45.37 ARM64",
+      "document": "tmp/stroke-conformance/handwritten.sdocx",
+      "document_sha256": "77e3997a066afa0333d0f5020bb428efffeb783c741bc956ae596292e2d5cda3",
+      "interpretation": "Embedded subset contains saved source channels and the V14 style values consumed by the native redraw wrapper. Replay does not read either ignored source file; no note text, UUID, or media are embedded. This is not a native SDK parser/ObjectDrawing capture.",
+      "prepared_capture": "tmp/vector-parity-plan/fountain-real-parity-next/handwritten-prepared.json",
+      "prepared_capture_sha256": "902c7ed24ae68672051e3ccbbcf66ded545f51ac344eadbae4ba01d4442a78c6",
+      "prepared_entry_index": 1445
+    }
+  },
+  "source_sha256": "2a5d7ca1d535ce43e0d179b10043688cdb4e22a9bf8f75785640f7dc87339f25"
+}

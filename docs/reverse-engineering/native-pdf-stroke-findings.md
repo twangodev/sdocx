@@ -5,8 +5,9 @@
 Confirmed against Samsung Notes 4.4.45.37 ARM64 `libSPenComposer.so`,
 `libSPenDrawing.so` and `libSPenPdf.so`. Addresses below identify those
 libraries explicitly. The APK digest is recorded in the knowledge-base index.
-Evidence consists of native instructions and vtable relocations, without
-runtime or device-export validation of this path.
+The batch-export findings below use native instructions and vtable relocations,
+without runtime or device-export validation. The separate per-pen writer has
+the bounded execution evidence described below.
 
 The native vector list exporter batches strokes between individual object
 exports, as described in [capture composition findings](capture-composition-findings.md).
@@ -148,6 +149,37 @@ The evidence therefore does not establish that every native PDF highlighter
 uses normal blending, or that raster and vector export look identical.
 The Standard X implementation explicitly assigns Darken through a different
 PDF writer, as recorded in the linked composition findings.
+
+## Separate per-pen vector writer
+
+Composer also has a path-writing family distinct from the batch-to-bitmap
+exporter above. `ObjectPDFWriter::WriteObject` (`0x37b600`) dispatches stroke
+type 1 through `ObjectStrokePDFWriter::WriteObject` (`0x37e134`), which calls
+`PDFPenFactory::CreatePDFPen` (`0x375598`) and the returned pen's virtual slot
+`+16`. `NotePDFWriterVector::drawObjects` (`0x377880`) reaches this family;
+its connection to the public Notes Java/JNI export route remains unproven.
+
+The [Fountain writer oracle](../../conformance/fountain-pdf-writer-native.json)
+executes the native factory and a separately constructed `PDFFountainPen`,
+verifies their vtable identity and dispatches its native `WriteObject`
+(`0x373dbc`) through slot `+16`. Model setters reconstruct the saved channels;
+getters verify their bytes before native `PDFPen::getDrawPointData` and the
+initialized pen plugin produce geometry. This is not original-frame loading.
+
+The substituted PDF sink records circles, rather than rendered PDF bytes.
+Pinned PDF vtables identify writer slots `+0x58/+0x68/+0x78` as
+`CreatePaint/CreatePath/DrawPath`, path slot `+0x28` as
+`Circle(PointF,float,bool)`, and paint slots `+0x18/+0x20` as
+`SetColor/SetStyle`. Circle center and radius arrive in `s0/s1/s2`, with the
+bool in `w1`. The three synthetic cases emit 19, 7 and 19 circles; the
+source-derived 161-point V14 case emits 20. The seven-circle case uses raw
+settings `18;0;100;`, whose Drawing selection is V16.
+
+This confirms an internal native vector contract, with the inherited host
+context and adapter boundaries recorded in the fixture. It does not establish
+PDFium serialization, device pixels or use by Standard, print or another
+public Notes export mode. These circles therefore do not replace the GL
+coverage contract or serve as a device-export reference.
 
 ## SDK behavior and evidence limits
 

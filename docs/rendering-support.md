@@ -103,6 +103,10 @@ Chromium, Firefox, MuPDF and PDFium renders lower mean error against the host
 shader references for one real V14 stroke and one synthetic V16 control;
 PDF sampling differences remain.
 
+A separate [native Fountain PDF writer](../conformance/fountain-pdf-writer-native.json)
+emits circle paths into a mocked sink. Its connection to public Notes export and
+final PDFium output remain unverified; it is not the GL paint reference.
+
 Profile admission and validation are narrower than the names above. See
 [stroke rendering](reverse-engineering/stroke-rendering-findings.md),
 [fountain parity](reverse-engineering/fountain-parity.md),
