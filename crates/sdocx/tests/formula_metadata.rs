@@ -559,11 +559,15 @@ fn decoded_formula_png_uses_native_drawn_origin_and_saved_result_rect() {
     let images: Vec<_> = parsed.document.pages[0]
         .elements()
         .filter_map(|element| match element {
-            sdocx::PageElement::PlacedImage(image) => Some(image),
+            sdocx::PageElement::FormulaImage(image) => Some(image),
             _ => None,
         })
         .collect();
     assert_eq!(images.len(), 1);
+    assert_eq!(
+        sdocx::PageElement::FormulaImage(images[0].clone()).object_type(),
+        ObjectType::Formula
+    );
     assert_eq!(images[0].media_id, Some(77));
     assert!(images[0].media_index.is_some());
     let actual = [
@@ -667,7 +671,7 @@ fn nonfinite_formula_image_placement_is_not_emitted() {
     assert!(
         parsed.document.pages[0]
             .elements()
-            .all(|element| !matches!(element, sdocx::PageElement::PlacedImage(_)))
+            .all(|element| !matches!(element, sdocx::PageElement::FormulaImage(_)))
     );
     assert!(parsed.report.diagnostics.iter().any(|diagnostic| {
         diagnostic.code == DiagnosticCode::UnsupportedObjectType
@@ -692,10 +696,14 @@ fn complete_string_table_distinguishes_missing_pen_name_from_unparsed_table() {
     let image = known_missing.document.pages[0]
         .elements()
         .find_map(|element| match element {
-            sdocx::PageElement::PlacedImage(image) => Some(image),
+            sdocx::PageElement::FormulaImage(image) => Some(image),
             _ => None,
         })
         .expect("a complete table with an absent ID uses the native null-name category");
+    assert_eq!(
+        sdocx::PageElement::FormulaImage(image.clone()).object_type(),
+        ObjectType::Formula
+    );
     let expected = [
         -40.963_775_634_765_625,
         -16.301_406_860_351_562,
@@ -732,7 +740,7 @@ fn complete_string_table_distinguishes_missing_pen_name_from_unparsed_table() {
     assert!(
         incomplete.document.pages[0]
             .elements()
-            .all(|element| !matches!(element, sdocx::PageElement::PlacedImage(_)))
+            .all(|element| !matches!(element, sdocx::PageElement::FormulaImage(_)))
     );
     assert!(incomplete.report.diagnostics.iter().any(|diagnostic| {
         diagnostic.code == DiagnosticCode::UnsupportedObjectType

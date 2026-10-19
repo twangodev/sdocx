@@ -1103,6 +1103,7 @@ fn render_element(
             render_image(svg, *bbox, Some(*media_index), None, media_assets);
         }
         PageElement::PlacedImage(image) => render_placed_image(svg, image, media_assets),
+        PageElement::FormulaImage(image) => render_placed_image(svg, image, media_assets),
         PageElement::TextBox(text_box) => render_text_box(
             svg,
             text_box,

@@ -157,6 +157,9 @@ pub enum PageElement {
     },
     /// A structurally decoded image with an explicit native media reference.
     PlacedImage(PlacedImage),
+    /// A formula object's selected raster result. It is image-shaped for
+    /// rendering, but retains native object type 11 for Standard batching.
+    FormulaImage(PlacedImage),
     /// A rich text object.
     TextBox(RichTextBox),
     /// A native geometric shape, including its embedded text and styles.
@@ -170,6 +173,7 @@ impl PageElement {
     pub const fn object_type(&self) -> ObjectType {
         match self {
             Self::Image { .. } | Self::PlacedImage(_) => ObjectType::Image,
+            Self::FormulaImage(_) => ObjectType::Formula,
             Self::TextBox(_) => ObjectType::TextBox,
             Self::Shape(_) => ObjectType::Shape,
             Self::Line(_) => ObjectType::Line,

@@ -7,7 +7,32 @@ pub(crate) enum RenderPass {
     Masking,
 }
 
+/// A visible root object that ends the current Standard PDF bitmap batch.
+/// The native exporter flushes before writing images and text objects.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StandardBatchBoundary {
+    Image,
+    TextBox,
+}
+
 impl PageObject {
+    /// Classify only the original root object. Nested container children are
+    /// drawn into their parent's batch and do not trigger exporter flushes.
+    pub(crate) fn standard_batch_boundary(&self) -> Option<StandardBatchBoundary> {
+        match &self.content {
+            PageObjectContent::Element(element) => match element {
+                crate::PageElement::Image { .. } | crate::PageElement::PlacedImage(_) => {
+                    Some(StandardBatchBoundary::Image)
+                }
+                crate::PageElement::TextBox(_) => Some(StandardBatchBoundary::TextBox),
+                crate::PageElement::FormulaImage(_)
+                | crate::PageElement::Shape(_)
+                | crate::PageElement::Line(_) => None,
+            },
+            PageObjectContent::Stroke(_) | PageObjectContent::Container(_) => None,
+        }
+    }
+
     pub(crate) fn render_pass(&self) -> Option<RenderPass> {
         let stroke = match &self.content {
             PageObjectContent::Stroke(stroke) => Some(stroke),
@@ -136,6 +161,86 @@ mod tests {
             };
             assert_eq!(container.render_pass(), Some(expected));
         }
+    }
+
+    #[test]
+    fn standard_batch_boundaries_preserve_root_object_type() {
+        let image = object(
+            ObjectRenderLayer::Base,
+            PageObjectContent::Element(PageElement::Image {
+                bbox: BoundingBox::default(),
+                media_index: 0,
+            }),
+        );
+        let placed_image = object(
+            ObjectRenderLayer::Base,
+            PageObjectContent::Element(PageElement::PlacedImage(crate::PlacedImage {
+                bbox: BoundingBox::default(),
+                rotation_degrees: None,
+                media_id: None,
+                media_index: None,
+                crop_rect: None,
+                original_bbox: None,
+                border_media_id: None,
+                original_media_id: None,
+            })),
+        );
+        let formula_image = object(
+            ObjectRenderLayer::Base,
+            PageObjectContent::Element(PageElement::FormulaImage(crate::PlacedImage {
+                bbox: BoundingBox::default(),
+                rotation_degrees: None,
+                media_id: None,
+                media_index: None,
+                crop_rect: None,
+                original_bbox: None,
+                border_media_id: None,
+                original_media_id: None,
+            })),
+        );
+        let text = object(
+            ObjectRenderLayer::Base,
+            PageObjectContent::Element(PageElement::TextBox(crate::RichTextBox {
+                text_area_type: None,
+                bbox: BoundingBox::default(),
+                rotation_degrees: None,
+                text: String::new(),
+                color: None,
+                highlight_color: None,
+                underline: false,
+                font_size: None,
+                runs: Vec::new(),
+                spans: Vec::new(),
+                paragraphs: Vec::new(),
+                object_spans: Vec::new(),
+                text_sections: Vec::new(),
+                margins: None,
+                gravity: None,
+            })),
+        );
+
+        assert_eq!(
+            image.standard_batch_boundary(),
+            Some(StandardBatchBoundary::Image)
+        );
+        assert_eq!(
+            placed_image.standard_batch_boundary(),
+            Some(StandardBatchBoundary::Image)
+        );
+        assert_eq!(formula_image.standard_batch_boundary(), None);
+        assert_eq!(
+            text.standard_batch_boundary(),
+            Some(StandardBatchBoundary::TextBox)
+        );
+        let PageObjectContent::Element(element) = &formula_image.content else {
+            unreachable!();
+        };
+        assert_eq!(element.object_type(), crate::ObjectType::Formula);
+        let nested_image = object(
+            ObjectRenderLayer::Base,
+            PageObjectContent::Container(vec![image]),
+        );
+        assert_eq!(nested_image.standard_batch_boundary(), None);
     }
 
     #[test]

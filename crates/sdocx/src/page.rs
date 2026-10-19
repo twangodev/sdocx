@@ -287,7 +287,7 @@ impl PageDecoder<'_, '_> {
                             },
                         );
                         if let Some((media_index, bbox)) = placement {
-                            content = Some(PageObjectContent::Element(PageElement::PlacedImage(
+                            content = Some(PageObjectContent::Element(PageElement::FormulaImage(
                                 crate::PlacedImage {
                                     bbox,
                                     rotation_degrees: None,
