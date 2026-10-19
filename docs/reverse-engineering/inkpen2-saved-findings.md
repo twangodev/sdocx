@@ -71,6 +71,23 @@ sequence does **not** reset alternation +100. Cache recomputation can reuse a
 version-matched drawable; constructor-zero alternation applies only to a new
 V9. Reused incoming state may affect its first tool-1 decision.
 
+Saved `IsShape` comes from common ExtraData integer key
+`extra_key_stroke_shape` equal to 1. Model `IsShape` (`0x2e2754`) reads
+implementation byte +380; `SetAsShape` (`0x2e2604`) sets it and writes the key,
+or removes the key when disabling (`0x2e26d8–0x2e26f0`). A Unicorn setter/getter
+probe executes those branches with host String/ExtraData recording stubs.
+Disassembly of `ApplyBinary` (`0x2e4d8c`) and `NewApplyBinary` (`0x2e57a0`)
+shows exact integer 1 sets the byte; other integers remove the key, and missing
+keys skip mutation. Constructor-zero (`0x2e8788`) makes fresh instances false,
+but those loader branches do not clear previously true reused instances.
+Wrong-type behavior is inferred from typed lookup calls, not dynamically loaded.
+These offsets refer to pinned Model SHA-256
+`4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a`.
+Rust retains the typed Bundle through
+`Stroke.rendering.metadata.flexible_metadata().extra_data`; curve and straighten
+flags are separate. Synthetic caller getter values of zero do not establish
+that arbitrary saved strokes are non-shape.
+
 ## Interior movement and radius
 
 Indices 1..count-1 forward XY, sign-extended saved i32 time, bounds, tool==1
