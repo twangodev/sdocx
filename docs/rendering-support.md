@@ -209,6 +209,12 @@ open. Paired host exports improve on the pre-integration renderer, but broader
 light-background PDF cases show material coverage/color differences at low
 raster scales; SVG stays close in those captures. PDF transport remains under
 investigation.
+The selected V1 route remains test-only. Its
+[stress oracle](../conformance/oblique-v1-stress-native.json) and source-derived
+model match both phases' callback pairs, return-state boundaries and complete
+mesh buffers across 16 synthetic geometry cases. Public caller admission and
+paired native GLES versus SVG/PDF comparisons at 1×/2×, including overlap and
+partial opacity, remain required before production integration.
 
 ## Text and embedded layout
 
