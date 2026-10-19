@@ -1,0 +1,924 @@
+{
+  "cases": [
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "size_omitted_tol_omitted",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1000a7d0",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00000000",
+      "model_set_initial_tolerance_return_w0": null,
+      "model_setting_data_plus356_f32_bits": "00000000",
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1000ce20"
+        },
+        {
+          "input_s0": "00000000",
+          "return_w0": 1,
+          "this": "0x1000ce20"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00000000",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x1000d1d0"
+        },
+        {
+          "arg_s0_f32_bits": "00000000",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x1000d1d0"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1000db70",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1000a950"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x1000db70",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x1000ce20",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00000000",
+      "source_model_get_point_count": 3,
+      "style_initial_tolerance_input_f32_bits": "00000000",
+      "style_initial_tolerance_setter": "omit",
+      "style_pen_size_setter": "omit",
+      "tip_length_trace": [
+        {
+          "data": "0x1000d0b0",
+          "lr": "0x78798",
+          "manager": "0x1000d0a0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x1000a950"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00000000"
+        },
+        {
+          "drawable": "0x1000db70",
+          "drawable_plus44_f32_bits": "00000000",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x1000db70",
+          "rect": "0x200eed60",
+          "stroke": "0x1000a950"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x1000db70",
+          "rect": "0x200eee90",
+          "stroke": "0x1000a950"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "cdcccc3d",
+            "0000803f"
+          ],
+          "receiver": "0x1000e900"
+        },
+        {
+          "float_words_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "cdcccc3d",
+            "0000803f"
+          ],
+          "receiver": "0x1000e900"
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "size_zero_tol_zero",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1000f630",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00000000",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00000000",
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10011860"
+        },
+        {
+          "input_s0": "00000000",
+          "return_w0": 1,
+          "this": "0x10011860"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00000000",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x10011c10"
+        },
+        {
+          "arg_s0_f32_bits": "00000000",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x10011c10"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x100125b0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1000f7d0"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x100125b0",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x10011860",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00000000",
+      "source_model_get_point_count": 3,
+      "style_initial_tolerance_input_f32_bits": "00000000",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x10011af0",
+          "lr": "0x78798",
+          "manager": "0x10011ae0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x1000f7d0"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00000000"
+        },
+        {
+          "drawable": "0x100125b0",
+          "drawable_plus44_f32_bits": "00000000",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x100125b0",
+          "rect": "0x200eed60",
+          "stroke": "0x1000f7d0"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x100125b0",
+          "rect": "0x200eee90",
+          "stroke": "0x1000f7d0"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "cdcccc3d",
+            "0000803f"
+          ],
+          "receiver": "0x10013340"
+        },
+        {
+          "float_words_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "cdcccc3d",
+            "0000803f"
+          ],
+          "receiver": "0x10013340"
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "size_small_tol_native",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x10014130",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "058b823e",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "058b823e",
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x100164f0"
+        },
+        {
+          "input_s0": "cdcccc3d",
+          "return_w0": 1,
+          "this": "0x100164f0"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "058b823e",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x100168a0"
+        },
+        {
+          "arg_s0_f32_bits": "058b823e",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x100168a0"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10017240",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x10014290"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x10017240",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x100164f0",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "cdcccc3d",
+      "source_model_get_point_count": 3,
+      "style_initial_tolerance_input_f32_bits": "058b823e",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x10016780",
+          "lr": "0x78798",
+          "manager": "0x10016770",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x10014290"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "058b823e"
+        },
+        {
+          "drawable": "0x10017240",
+          "drawable_plus44_f32_bits": "058b823e",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x10017240",
+          "rect": "0x200eed60",
+          "stroke": "0x10014290"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x10017240",
+          "rect": "0x200eee90",
+          "stroke": "0x10014290"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "cdcccc3d",
+            "0000803f"
+          ],
+          "receiver": "0x10017fd0"
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "size_saved_tol_omitted",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x10018d20",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00000000",
+      "model_set_initial_tolerance_return_w0": null,
+      "model_setting_data_plus356_f32_bits": "00000000",
+      "native_pen_getsize_f32_bits": "1006be40",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1001b160"
+        },
+        {
+          "input_s0": "1006be40",
+          "return_w0": 1,
+          "this": "0x1001b160"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00000000",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x1001b510"
+        },
+        {
+          "arg_s0_f32_bits": "00000000",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x1001b510"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1001beb0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x10018f00"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x1001beb0",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x1001b160",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "1006be40",
+      "source_model_get_point_count": 3,
+      "style_initial_tolerance_input_f32_bits": "00000000",
+      "style_initial_tolerance_setter": "omit",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x1001b3f0",
+          "lr": "0x78798",
+          "manager": "0x1001b3e0",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x10018f00"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00000000"
+        },
+        {
+          "drawable": "0x1001beb0",
+          "drawable_plus44_f32_bits": "00000000",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x1001beb0",
+          "rect": "0x200eed60",
+          "stroke": "0x10018f00"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x1001beb0",
+          "rect": "0x200eee90",
+          "stroke": "0x10018f00"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "b29e9f3f",
+            "0000803f"
+          ],
+          "receiver": "0x1001cc40"
+        },
+        {
+          "float_words_s0_s3": [
+            "cdcc4c3e",
+            "00000000",
+            "b29e9f3f",
+            "0000803f"
+          ],
+          "receiver": "0x1001cc40"
+        }
+      ]
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "size10_tol_2_75",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1001da30",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "model_get_initial_tolerance_f32_bits": "00003040",
+      "model_set_initial_tolerance_return_w0": 1,
+      "model_setting_data_plus356_f32_bits": "00003040",
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1001fdf0"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x1001fdf0"
+        }
+      ],
+      "pen_tolerance_set_calls": [
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7878c",
+          "receiver": "0x100201a0"
+        },
+        {
+          "arg_s0_f32_bits": "00003040",
+          "arg_s1_f32_bits": "00000000",
+          "lr": "0x7885c",
+          "receiver": "0x100201a0"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10020b40",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1001db90"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x10020b40",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x1001fdf0",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "3dcccccd",
+          "00000000",
+          "3e4ccccd",
+          "00000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "style_initial_tolerance_input_f32_bits": "00003040",
+      "style_initial_tolerance_setter": "set",
+      "style_pen_size_setter": "set",
+      "tip_length_trace": [
+        {
+          "data": "0x10020080",
+          "lr": "0x78798",
+          "manager": "0x10020070",
+          "phase": "return",
+          "return_x0": "0x64",
+          "value_ptr": "0x64"
+        }
+      ],
+      "tolerance_trace": [
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "entry",
+          "this": "0x1001db90"
+        },
+        {
+          "event": "ObjectStroke::GetInitialToloerance",
+          "lr": "0x78778",
+          "phase": "return",
+          "result_s0": "00003040"
+        },
+        {
+          "drawable": "0x10020b40",
+          "drawable_plus44_f32_bits": "00003040",
+          "event": "GLV16 RedrawPen post-tolerance store",
+          "lr": "0x78778"
+        }
+      ],
+      "v16_redraw_calls": [
+        {
+          "flag_w3": 1,
+          "receiver": "0x10020b40",
+          "rect": "0x200eed60",
+          "stroke": "0x1001db90"
+        },
+        {
+          "flag_w3": 1,
+          "receiver": "0x10020b40",
+          "rect": "0x200eee90",
+          "stroke": "0x1001db90"
+        }
+      ],
+      "v16_rtv5_addpoint_host_boundary": [
+        {
+          "float_words_s0_s3": [
+            "00000000",
+            "00000000",
+            "0000403f",
+            "0000803f"
+          ],
+          "receiver": "0x100218d0"
+        }
+      ]
+    }
+  ],
+  "profile": [
+    1920,
+    1080
+  ],
+  "provenance": {
+    "helpers": {
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+      "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "in_memory_patch_anchors": [
+      {
+        "anchor": "caller-argparse",
+        "count": 1,
+        "new_sha256": "d69bf049af94091d3e1154d6dee8477d219e5d8876c42e27bf1a3ced66cae76a",
+        "old_sha256": "70766d86b647c618bc6b17dcfb34caac8d5abf04993148e868c7cfc859477abb"
+      },
+      {
+        "anchor": "capture-RTV5-host-import-boundary",
+        "count": 1,
+        "new_sha256": "2413b232c07873078acdf97928a2be4436c54a9ede7e9a5bd8eedabcdd01f557",
+        "old_sha256": "eb59838de787d7502840a1a5a1489c901b077bead453eda495232496f30b0801"
+      },
+      {
+        "anchor": "v16-case-matrix",
+        "count": 1,
+        "new_sha256": "8d121880009b2fcda69b12b7cfd36a6af0b4c852f3a5fc298e910cbd33726dbe",
+        "old_sha256": "fbb72f231f4ccac7a9e7ba975529dab43a144e83e6b14db40d3201597c774bc1"
+      },
+      {
+        "anchor": "close-spaced-source-points",
+        "count": 1,
+        "new_sha256": "3e5c03f355040a2ee0058645291cb6a8c8b539659e6dc70c95157b25bfe42421",
+        "old_sha256": "9b1544064fd469834b407fd33eff06e32472e739fffb8f44daa649eb48e92f35"
+      },
+      {
+        "anchor": "tolerance-set-getter-capture",
+        "count": 1,
+        "new_sha256": "99418d8a1cfba227c6deff1132034bf325e0e6e76fe7b8c17df687d81f284c93",
+        "old_sha256": "d7858b7a5b5e1316474ac0d7932c5cd9721cb1875b276b1d167c9282e4030759"
+      },
+      {
+        "anchor": "native-tolerance-trace-addresses",
+        "count": 1,
+        "new_sha256": "d3b69a21dbe811b5c1973b52236b880a0e09fe899942bd1a483f8733e56fc6c6",
+        "old_sha256": "16e46df34fcfa47c03d5d4e8b3553f9e45addc4ea5a8c09bf4379569237d1d08"
+      },
+      {
+        "anchor": "getter-return-store-observation",
+        "count": 1,
+        "new_sha256": "54b9e7bf35690737436cb98371c05b599e84b0382efadbddb09a079e0ef8edb1",
+        "old_sha256": "fd313a2c6b51f924b886e7ed3c1d1c67433601a16883e2b5cdd242448b192105"
+      },
+      {
+        "anchor": "per-case-tolerance-fields",
+        "count": 1,
+        "new_sha256": "10a4a1554a1b8053ecb950c66415665f5e0a559fd4032a744f7ed38da23e4a64",
+        "old_sha256": "9f6b8f822104672ee3f2ed9a3ef52cee5115c6218f24351636ffbacc9afcc761"
+      }
+    ],
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "native_contract": {
+      "argument_flow": "Model getter S0 is stored in GLV16 drawable+44, then supplied as S0 to both native PenTolerance::SetTolerance(float,float) calls; S1 is +0.0.",
+      "drawable_plus44_store_rva": "0x78780",
+      "model_tolerance_getter_call_rva": "0x78774",
+      "pen_tolerance_callsite_lr": [
+        "0x7878c",
+        "0x7885c"
+      ],
+      "redrawpen_rva": "0x7851c"
+    },
+    "native_runtime": "the pinned caller selects the real FountainPen GLV16 class and executes its ObjectStroke RedrawPen and redraw paths. Native RTV5 calls are intercepted at the pinned runner PLT host callback; the original collector remains active. IContext, allocator, queue, and canvas callbacks are host adapters; no RTV5 body or GPU raster claim.",
+    "observation": "GLV16 Model tolerance getter result is traced into drawable+44; both native PenTolerance::SetTolerance calls receive that field. Native-generated RTV5 S0-S3 args are retained at the PLT host boundary.",
+    "positive_size_example_source_fixture": "conformance/fountain-v14-real-native.json",
+    "positive_size_example_source_fixture_sha256": "c6204b33441eb77a53932e1c475e931e0f9688a8ad40788d05a7f41c58400ca3",
+    "runner": "conformance/fountain_saved_caller_native.py",
+    "runner_executed_source_sha256": "f65bc2981878103ddf389a698ef0fc8033d5836110f814d9dc22e2cc339f87b1",
+    "runner_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19",
+    "wrapper_sha256": "e869742d662d812220601e2158a5db6e64cb71d279a3faa0df90300333d5cd46"
+  },
+  "schema": "sdocx-fountain-v16-defaults-v1",
+  "source_input": {
+    "curve_enabled": true,
+    "orientation": [
+      0,
+      0,
+      0
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+    "points": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        0
+      ],
+      [
+        0.2,
+        0
+      ]
+    ],
+    "pressure": [
+      0.3,
+      0.6,
+      1.0
+    ],
+    "stroke_type": 0,
+    "tilt": [
+      0,
+      0,
+      0
+    ],
+    "timestamps": [
+      100,
+      110,
+      120
+    ],
+    "tool_type": 2,
+    "visible": true
+  }
+}
