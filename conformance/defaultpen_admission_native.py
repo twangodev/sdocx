@@ -80,10 +80,6 @@ def patched_caller(case: dict) -> str:
         raise RuntimeError("pinned native caller changed")
     replacements = [
         (
-            "ROOT=pathlib.Path(__file__).resolve().parents[1]",
-            f"ROOT=pathlib.Path({str(ROOT)!r})",
-        ),
-        (
             "case_id='straight_curve_tool1_default'\ninput_case={'points':[[0.,0.],[10.,0.],[20.,0.],[30.,10.]],'size':10.0,'curve_enabled':True,'tool_type':1,'stroke_type':0,'pressure':[.25,.5,.75,1.0],'timestamps':[10,20,30,40],'tilt':[0.]*4,'orientation':[0.]*4}",
             "case_id='admission_control'\ninput_case=" + repr(case),
         ),
@@ -121,6 +117,10 @@ def patched_caller(case: dict) -> str:
         if count != 1:
             raise RuntimeError(f"caller patch anchor count {count}, expected exactly one: {old[:100]!r}")
         source = source.replace(old, new, 1)
+    if "ROOT=pathlib.Path(__file__).resolve().parents[1]" not in source:
+        raise RuntimeError("caller root derivation must remain anchored to __file__")
+    if str(ROOT) in source or str(CALLER) in source:
+        raise RuntimeError("patched caller must not embed the checkout path")
     return source
 
 
@@ -152,11 +152,21 @@ def run_capture(case_id: str, case: dict) -> dict:
     ]
     env["PYTHONPATH"] = os.pathsep.join(search + [env.get("PYTHONPATH", "")])
     env["LD_LIBRARY_PATH"] = str(RUNTIME / "binutils-aarch64/usr/lib/x86_64-linux-gnu")
+    bootstrap = (
+        "import os,sys\n"
+        "caller=sys.argv.pop()\n"
+        "sys.argv[0]=caller\n"
+        "sys.path[0]=os.path.dirname(os.path.abspath(caller))\n"
+        "source=sys.stdin.read()\n"
+        "scope={'__name__':'__main__','__file__':caller,'__package__':None,'__spec__':None}\n"
+        "exec(compile(source,caller,'exec'),scope)\n"
+    )
     result = subprocess.run(
-        [sys.executable, "-c", code, "--print-capture"],
+        [sys.executable, "-c", bootstrap, "--print-capture", str(CALLER)],
         cwd=ROOT,
         env=env,
         text=True,
+        input=code,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True,

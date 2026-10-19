@@ -212,7 +212,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "cdcccc3e",
-      "patched_caller_code_sha256": "153d5a2c6ffd330b4e70029151097816aa82ebb0e138869668aa7a8db617d4df",
+      "patched_caller_code_sha256": "6eb7f93f40ef7df32438d2c30be62ee7f221d6195767e663d27439cf9214f222",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -658,7 +658,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "cdcccc3e",
-      "patched_caller_code_sha256": "299adca404eab30b0cbaa695b8854ca30df3e0872fa3d9f0a33796f8e98e1a74",
+      "patched_caller_code_sha256": "4b652284e87b383715d9eaa4f04536c8cadb789c2302eb25918943fd69ea0c6f",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -1104,7 +1104,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00004844",
-      "patched_caller_code_sha256": "4bc1026e6912b02ef5eeb164b84c3d32552f8b3910a85a59a1758646552dd7f9",
+      "patched_caller_code_sha256": "9f749f03fdb6b2710f9a1fa45696296e23986f70bc62af073f2bee14daf734e1",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -1418,7 +1418,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00004844",
-      "patched_caller_code_sha256": "0ef1f0da9a5c20615c081736051039fd266cece088f69601e0d4b20368a23fd9",
+      "patched_caller_code_sha256": "c62bb04eaf1bf382e4b1950b133c9cf85440fa252f5c227d9d84a57d1dc6c961",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -1732,7 +1732,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "cdcccc3e",
-      "patched_caller_code_sha256": "02f67dbe90e87d32eb8889498d1a9c06c1016b25d5392a7b39c481f265907970",
+      "patched_caller_code_sha256": "2bd73fd7342c48bbe1d869a77100007f5a03f8b1a1195bf665aa73f4f7070c11",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -2178,7 +2178,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00002041",
-      "patched_caller_code_sha256": "492b97b487ee8ef435caea46847ce845270e8c03273ae2df5d554f2cc2333cb7",
+      "patched_caller_code_sha256": "3801e9d2c696401fc33b5daa65e7c08965a09d01b2ea683de7e72e47928bc1d1",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -2591,7 +2591,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00002041",
-      "patched_caller_code_sha256": "093f38a332452463b2e6c28eb13c9ba927d110e8481d0883310f148300bed25f",
+      "patched_caller_code_sha256": "736d0f80bedd2193dd00cf1350ef78c8432ad109551f7e2de9be00b747366cc7",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -2990,7 +2990,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00002041",
-      "patched_caller_code_sha256": "7f2b02e775c96449853fad47ef3beeaab5fb4c62a054c0de7f9eb1e40bc3e116",
+      "patched_caller_code_sha256": "00461881e9ff10d01a2a041638881d2aa8a1e10f922d0716cf63254329c4d02f",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -3403,7 +3403,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00002041",
-      "patched_caller_code_sha256": "031486391384c14c89a0e7192c42d0217845e39a438d2a545e42b31849240c4b",
+      "patched_caller_code_sha256": "2c7422d680344c5080c55c8eb2385748d28210efacb3ca4ec65bfcfc6695c95c",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -3824,7 +3824,7 @@
         }
       ],
       "native_pen_size_after_drawing_f32_bits": "00002041",
-      "patched_caller_code_sha256": "cfbe16f0bb22b806f37ac1198f16a5c6485890eafea71fa5d31e47519ba27775",
+      "patched_caller_code_sha256": "5ead1be34f7e66091a219f0e5131ab8d1c48759f2af2f7cb25263be2e479cd6d",
       "profile": {
         "canvas_model_matrix_f32_bits": [
           "0000803f",
@@ -4048,7 +4048,7 @@
     },
     "input_scope": "Synthetic native ObjectStroke setter calls, not serialized SDocx parser input. Color setter is omitted in every case; the wrapper additionally calls native ObjectStroke::GetColor and records Pen::GetSize after Drawing plus PenDrawableRT::SetPenData arguments. In-memory patches alter only the input row, selected size/tool setter calls, fixed-count/source-getter checks, and output metadata.",
     "model_defaults_fixture_sha256": "b4142701a6e5ffc2c3a87653a4bea167d267279fe26211ee4f5e371442b331dc",
-    "runner_sha256": "c6798e73b2e43fae625723d855a08e62b9565bcec20c4da48958a02d18f57d05",
+    "runner_sha256": "145ced1fa73241b2e029acdd27fdd94776e023c402d403e2d25fb141ab069ebd",
     "runtime_scope": "Pinned native Model getters, Drawing caller, DefaultPen drawable and RT AddPoint execute under Unicorn. IContext is a synthetic 1920x1080 host profile; canvas/task queue, identity color conversion and graphics services are bounded host adapters."
   },
   "schema": "defaultpen-native-admission-controls-v1"
