@@ -124,7 +124,10 @@ profiles, including varied pressure, tilt, tools and context dimensions.
 A [V3 host paint join](../conformance/pencil-v3-paint-join.json) replays those
 captured streams through the extracted shader and masks at three scales, with
 synthetic projection, color and paper phase; native device/FBO paint is unverified.
-Production paint integration remains incomplete.
+A [native V3 draw handoff](../conformance/pencil3-draw-handoff-native.json)
+captures color, projection, paper scale and texture bindings across five explicit
+profiles using mocked renderer resources and context; native paper/scale producers
+and device pixels remain unverified. Production paint integration remains incomplete.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime

@@ -1,0 +1,1785 @@
+{
+  "cases": {
+    "paper-256x128-s0.5": {
+      "alternate_background_dimensions": null,
+      "caller_fixture_sha256": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+      "caller_host_boundaries": [
+        "Synthetic ObjectStroke values are supplied through native Model setters; Model getters and source-array reads, Drawing selection, native MotionEvent constructors/getters, selected Pencil3 saved redraw, and RTV1 AddPoint geometry execute natively. The selected drawable version is recorded per setting state.",
+        "The constructor-return bytes are captured before this ObjectStroke is applied; they are raw state, not asserted to be a Samsung device default. `Pen::GetSize()` is observed on a separately constructed Pencil3 before stroke application; the model default getter is also recorded before setters; the selected tool remains explicit synthetic input.",
+        "Native Pen::SetScreenResolution and Pen::getSettingData execute against the explicit IContext profile supplied 256x128 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+      "canvas_profile": {
+        "height": 128,
+        "host_matrix_returned_by_mock": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32_bits": [
+          "0000a03f",
+          "0000003e",
+          "00000000",
+          "00000000",
+          "000080be",
+          "0000403f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00005841",
+          "0000e8c0",
+          "00000000",
+          "0000803f"
+        ],
+        "width": 256
+      },
+      "case_id": "paper-256x128-s0.5",
+      "events": [
+        {
+          "event": "blend:Activate",
+          "x0": "0x100381c0",
+          "x1": "0x10037520",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "depth:Disable"
+        },
+        {
+          "event": "subbitmap:Begin",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "canvas:GetMatrix4",
+          "matrix_f32": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "out": "0x200eef38",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:uProjectionMatrix",
+          "matrix_f32": [
+            1.25,
+            0.125,
+            0.0,
+            0.0,
+            -0.25,
+            0.75,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            13.5,
+            -7.25,
+            0.0,
+            1.0
+          ],
+          "matrix_f32_bits": [
+            "0000a03f",
+            "0000003e",
+            "00000000",
+            "00000000",
+            "000080be",
+            "0000403f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00005841",
+            "0000e8c0",
+            "00000000",
+            "0000803f"
+          ],
+          "x0": "0x10037c20",
+          "x1": "0x200eef78",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:inputColor",
+          "rgba_f32": [
+            0.250980406999588,
+            0.501960813999176,
+            0.7529411911964417,
+            0.501960813999176
+          ],
+          "rgba_f32_bits": [
+            "8180803e",
+            "8180003f",
+            "c1c0403f",
+            "8180003f"
+          ],
+          "x0": "0x10037f80",
+          "x1": "0x1003542c",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "texture:brush:Bind",
+          "x0": "0x10037640",
+          "x1": "0x0",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:pointPattern",
+          "texture_unit_i32": 0,
+          "x0": "0x10037d40",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "texture:paper:Bind",
+          "x0": "0x10037880",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetWidth",
+          "return": 256,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetHeight",
+          "return": 128,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:paperTexture",
+          "texture_unit_i32": 1,
+          "x0": "0x10037e60",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:uPaperScale",
+          "x0": "0x100380a0",
+          "x1": "0x200eef30",
+          "x2": "0x0",
+          "xy_f32": [
+            3.4133334159851074,
+            1.7066667079925537
+          ],
+          "xy_f32_bits": [
+            "0e745a40",
+            "0e74da3f"
+          ]
+        },
+        {
+          "args": [
+            268665568,
+            0,
+            4,
+            48
+          ],
+          "event": "draw:DrawInstanced",
+          "x0": "0x100382e0",
+          "x1": "0x0",
+          "x2": "0x4"
+        },
+        {
+          "event": "subbitmap:Restore",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x3"
+        }
+      ],
+      "in_memory_patch": {
+        "argb_u32": "0x804080c0",
+        "replacement_sha256": "b1c0eeefb65d0c33fb2aed2b4f7e409f4e931b1e598831b8fc642f5e900d5be7",
+        "site_count": 1
+      },
+      "init_static_contract": {
+        "alpha_blend_function_enum": 0,
+        "alpha_destination_factor_enum": 7,
+        "alpha_source_factor_enum": 1,
+        "blend_enabled": true,
+        "color_blend_function_enum": 0,
+        "color_destination_factor_enum": 7,
+        "color_source_factor_enum": 6,
+        "source": "libSPenPencil3.so SPen::Pencil3StrokeDrawableRTV1::Init at ELF VA 0x10c4b8-0x10c4f8",
+        "texture_atlas_rows": 16,
+        "texture_dimensions": [
+          120,
+          120
+        ]
+      },
+      "input_particle_count": 48,
+      "input_stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+      "pinned_inputs_sha256": {
+        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenPencil3.so": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+        "pencil3-saved-caller-native.json": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+        "pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+        "pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+      },
+      "rt_background_scale_supplied_f32": 0.5,
+      "rt_color_after_native_SetPenData_f32": [
+        0.250980406999588,
+        0.501960813999176,
+        0.7529411911964417,
+        0.501960813999176
+      ],
+      "scope": "Actual pinned Pencil3StrokeDrawableRTV1::Draw executes in Unicorn over the actual Drawing-selected V3 AddPoint stream. Renderer interfaces, uploaded resource objects, the host canvas matrix, and GL execution are explicit mocks; this captures native handoff values, not device pixels.",
+      "selected_route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+        "selected_drawable_vtable_id": "v3",
+        "selected_rt_address": "0x10035400"
+      },
+      "shader_sources": {
+        "brush_uv": "vPointUV",
+        "fragment_alpha": "inputColor.a * brushMask * paper * vAlpha * 1.5",
+        "fragment_rgb": "inputColor.rgb",
+        "fragment_rva": "0xf9948",
+        "paper_uv": "vCanvasUV * uPaperScale",
+        "uniforms": [
+          "uProjectionMatrix",
+          "pointPattern",
+          "paperTexture",
+          "inputColor",
+          "uPaperScale"
+        ],
+        "vertex_rva": "0xf9730"
+      },
+      "source_argb_u32": "0x804080c0",
+      "source_color_forwarding": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002c950"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        }
+      ]
+    },
+    "paper-256x128-s2": {
+      "alternate_background_dimensions": null,
+      "caller_fixture_sha256": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+      "caller_host_boundaries": [
+        "Synthetic ObjectStroke values are supplied through native Model setters; Model getters and source-array reads, Drawing selection, native MotionEvent constructors/getters, selected Pencil3 saved redraw, and RTV1 AddPoint geometry execute natively. The selected drawable version is recorded per setting state.",
+        "The constructor-return bytes are captured before this ObjectStroke is applied; they are raw state, not asserted to be a Samsung device default. `Pen::GetSize()` is observed on a separately constructed Pencil3 before stroke application; the model default getter is also recorded before setters; the selected tool remains explicit synthetic input.",
+        "Native Pen::SetScreenResolution and Pen::getSettingData execute against the explicit IContext profile supplied 256x128 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+      "canvas_profile": {
+        "height": 128,
+        "host_matrix_returned_by_mock": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32_bits": [
+          "0000a03f",
+          "0000003e",
+          "00000000",
+          "00000000",
+          "000080be",
+          "0000403f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00005841",
+          "0000e8c0",
+          "00000000",
+          "0000803f"
+        ],
+        "width": 256
+      },
+      "case_id": "paper-256x128-s2",
+      "events": [
+        {
+          "event": "blend:Activate",
+          "x0": "0x100381c0",
+          "x1": "0x10037520",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "depth:Disable"
+        },
+        {
+          "event": "subbitmap:Begin",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "canvas:GetMatrix4",
+          "matrix_f32": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "out": "0x200eef38",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:uProjectionMatrix",
+          "matrix_f32": [
+            1.25,
+            0.125,
+            0.0,
+            0.0,
+            -0.25,
+            0.75,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            13.5,
+            -7.25,
+            0.0,
+            1.0
+          ],
+          "matrix_f32_bits": [
+            "0000a03f",
+            "0000003e",
+            "00000000",
+            "00000000",
+            "000080be",
+            "0000403f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00005841",
+            "0000e8c0",
+            "00000000",
+            "0000803f"
+          ],
+          "x0": "0x10037c20",
+          "x1": "0x200eef78",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:inputColor",
+          "rgba_f32": [
+            0.250980406999588,
+            0.501960813999176,
+            0.7529411911964417,
+            0.501960813999176
+          ],
+          "rgba_f32_bits": [
+            "8180803e",
+            "8180003f",
+            "c1c0403f",
+            "8180003f"
+          ],
+          "x0": "0x10037f80",
+          "x1": "0x1003542c",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "texture:brush:Bind",
+          "x0": "0x10037640",
+          "x1": "0x0",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:pointPattern",
+          "texture_unit_i32": 0,
+          "x0": "0x10037d40",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "texture:paper:Bind",
+          "x0": "0x10037880",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetWidth",
+          "return": 256,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetHeight",
+          "return": 128,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:paperTexture",
+          "texture_unit_i32": 1,
+          "x0": "0x10037e60",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:uPaperScale",
+          "x0": "0x100380a0",
+          "x1": "0x200eef30",
+          "x2": "0x0",
+          "xy_f32": [
+            0.8533333539962769,
+            0.4266666769981384
+          ],
+          "xy_f32_bits": [
+            "0e745a3f",
+            "0e74da3e"
+          ]
+        },
+        {
+          "args": [
+            268665568,
+            0,
+            4,
+            48
+          ],
+          "event": "draw:DrawInstanced",
+          "x0": "0x100382e0",
+          "x1": "0x0",
+          "x2": "0x4"
+        },
+        {
+          "event": "subbitmap:Restore",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x3"
+        }
+      ],
+      "in_memory_patch": {
+        "argb_u32": "0x804080c0",
+        "replacement_sha256": "b1c0eeefb65d0c33fb2aed2b4f7e409f4e931b1e598831b8fc642f5e900d5be7",
+        "site_count": 1
+      },
+      "init_static_contract": {
+        "alpha_blend_function_enum": 0,
+        "alpha_destination_factor_enum": 7,
+        "alpha_source_factor_enum": 1,
+        "blend_enabled": true,
+        "color_blend_function_enum": 0,
+        "color_destination_factor_enum": 7,
+        "color_source_factor_enum": 6,
+        "source": "libSPenPencil3.so SPen::Pencil3StrokeDrawableRTV1::Init at ELF VA 0x10c4b8-0x10c4f8",
+        "texture_atlas_rows": 16,
+        "texture_dimensions": [
+          120,
+          120
+        ]
+      },
+      "input_particle_count": 48,
+      "input_stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+      "pinned_inputs_sha256": {
+        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenPencil3.so": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+        "pencil3-saved-caller-native.json": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+        "pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+        "pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+      },
+      "rt_background_scale_supplied_f32": 2.0,
+      "rt_color_after_native_SetPenData_f32": [
+        0.250980406999588,
+        0.501960813999176,
+        0.7529411911964417,
+        0.501960813999176
+      ],
+      "scope": "Actual pinned Pencil3StrokeDrawableRTV1::Draw executes in Unicorn over the actual Drawing-selected V3 AddPoint stream. Renderer interfaces, uploaded resource objects, the host canvas matrix, and GL execution are explicit mocks; this captures native handoff values, not device pixels.",
+      "selected_route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+        "selected_drawable_vtable_id": "v3",
+        "selected_rt_address": "0x10035400"
+      },
+      "shader_sources": {
+        "brush_uv": "vPointUV",
+        "fragment_alpha": "inputColor.a * brushMask * paper * vAlpha * 1.5",
+        "fragment_rgb": "inputColor.rgb",
+        "fragment_rva": "0xf9948",
+        "paper_uv": "vCanvasUV * uPaperScale",
+        "uniforms": [
+          "uProjectionMatrix",
+          "pointPattern",
+          "paperTexture",
+          "inputColor",
+          "uPaperScale"
+        ],
+        "vertex_rva": "0xf9730"
+      },
+      "source_argb_u32": "0x804080c0",
+      "source_color_forwarding": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002c950"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        }
+      ]
+    },
+    "paper-640x360-s0.5": {
+      "alternate_background_dimensions": null,
+      "caller_fixture_sha256": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+      "caller_host_boundaries": [
+        "Synthetic ObjectStroke values are supplied through native Model setters; Model getters and source-array reads, Drawing selection, native MotionEvent constructors/getters, selected Pencil3 saved redraw, and RTV1 AddPoint geometry execute natively. The selected drawable version is recorded per setting state.",
+        "The constructor-return bytes are captured before this ObjectStroke is applied; they are raw state, not asserted to be a Samsung device default. `Pen::GetSize()` is observed on a separately constructed Pencil3 before stroke application; the model default getter is also recorded before setters; the selected tool remains explicit synthetic input.",
+        "Native Pen::SetScreenResolution and Pen::getSettingData execute against the explicit IContext profile supplied 640x360 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+      "canvas_profile": {
+        "height": 360,
+        "host_matrix_returned_by_mock": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32_bits": [
+          "0000a03f",
+          "0000003e",
+          "00000000",
+          "00000000",
+          "000080be",
+          "0000403f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00005841",
+          "0000e8c0",
+          "00000000",
+          "0000803f"
+        ],
+        "width": 640
+      },
+      "case_id": "paper-640x360-s0.5",
+      "events": [
+        {
+          "event": "blend:Activate",
+          "x0": "0x100381c0",
+          "x1": "0x10037520",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "depth:Disable"
+        },
+        {
+          "event": "subbitmap:Begin",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "canvas:GetMatrix4",
+          "matrix_f32": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "out": "0x200eef38",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:uProjectionMatrix",
+          "matrix_f32": [
+            1.25,
+            0.125,
+            0.0,
+            0.0,
+            -0.25,
+            0.75,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            13.5,
+            -7.25,
+            0.0,
+            1.0
+          ],
+          "matrix_f32_bits": [
+            "0000a03f",
+            "0000003e",
+            "00000000",
+            "00000000",
+            "000080be",
+            "0000403f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00005841",
+            "0000e8c0",
+            "00000000",
+            "0000803f"
+          ],
+          "x0": "0x10037c20",
+          "x1": "0x200eef78",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:inputColor",
+          "rgba_f32": [
+            0.250980406999588,
+            0.501960813999176,
+            0.7529411911964417,
+            0.501960813999176
+          ],
+          "rgba_f32_bits": [
+            "8180803e",
+            "8180003f",
+            "c1c0403f",
+            "8180003f"
+          ],
+          "x0": "0x10037f80",
+          "x1": "0x1003542c",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "texture:brush:Bind",
+          "x0": "0x10037640",
+          "x1": "0x0",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:pointPattern",
+          "texture_unit_i32": 0,
+          "x0": "0x10037d40",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "texture:paper:Bind",
+          "x0": "0x10037880",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetWidth",
+          "return": 640,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetHeight",
+          "return": 360,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:paperTexture",
+          "texture_unit_i32": 1,
+          "x0": "0x10037e60",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:uPaperScale",
+          "x0": "0x100380a0",
+          "x1": "0x200eef30",
+          "x2": "0x0",
+          "xy_f32": [
+            8.533333778381348,
+            4.800000190734863
+          ],
+          "xy_f32_bits": [
+            "89880841",
+            "9a999940"
+          ]
+        },
+        {
+          "args": [
+            268665568,
+            0,
+            4,
+            48
+          ],
+          "event": "draw:DrawInstanced",
+          "x0": "0x100382e0",
+          "x1": "0x0",
+          "x2": "0x4"
+        },
+        {
+          "event": "subbitmap:Restore",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x3"
+        }
+      ],
+      "in_memory_patch": {
+        "argb_u32": "0x804080c0",
+        "replacement_sha256": "b1c0eeefb65d0c33fb2aed2b4f7e409f4e931b1e598831b8fc642f5e900d5be7",
+        "site_count": 1
+      },
+      "init_static_contract": {
+        "alpha_blend_function_enum": 0,
+        "alpha_destination_factor_enum": 7,
+        "alpha_source_factor_enum": 1,
+        "blend_enabled": true,
+        "color_blend_function_enum": 0,
+        "color_destination_factor_enum": 7,
+        "color_source_factor_enum": 6,
+        "source": "libSPenPencil3.so SPen::Pencil3StrokeDrawableRTV1::Init at ELF VA 0x10c4b8-0x10c4f8",
+        "texture_atlas_rows": 16,
+        "texture_dimensions": [
+          120,
+          120
+        ]
+      },
+      "input_particle_count": 48,
+      "input_stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+      "pinned_inputs_sha256": {
+        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenPencil3.so": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+        "pencil3-saved-caller-native.json": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+        "pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+        "pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+      },
+      "rt_background_scale_supplied_f32": 0.5,
+      "rt_color_after_native_SetPenData_f32": [
+        0.250980406999588,
+        0.501960813999176,
+        0.7529411911964417,
+        0.501960813999176
+      ],
+      "scope": "Actual pinned Pencil3StrokeDrawableRTV1::Draw executes in Unicorn over the actual Drawing-selected V3 AddPoint stream. Renderer interfaces, uploaded resource objects, the host canvas matrix, and GL execution are explicit mocks; this captures native handoff values, not device pixels.",
+      "selected_route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+        "selected_drawable_vtable_id": "v3",
+        "selected_rt_address": "0x10035400"
+      },
+      "shader_sources": {
+        "brush_uv": "vPointUV",
+        "fragment_alpha": "inputColor.a * brushMask * paper * vAlpha * 1.5",
+        "fragment_rgb": "inputColor.rgb",
+        "fragment_rva": "0xf9948",
+        "paper_uv": "vCanvasUV * uPaperScale",
+        "uniforms": [
+          "uProjectionMatrix",
+          "pointPattern",
+          "paperTexture",
+          "inputColor",
+          "uPaperScale"
+        ],
+        "vertex_rva": "0xf9730"
+      },
+      "source_argb_u32": "0x804080c0",
+      "source_color_forwarding": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002c950"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        }
+      ]
+    },
+    "paper-640x360-s2": {
+      "alternate_background_dimensions": null,
+      "caller_fixture_sha256": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+      "caller_host_boundaries": [
+        "Synthetic ObjectStroke values are supplied through native Model setters; Model getters and source-array reads, Drawing selection, native MotionEvent constructors/getters, selected Pencil3 saved redraw, and RTV1 AddPoint geometry execute natively. The selected drawable version is recorded per setting state.",
+        "The constructor-return bytes are captured before this ObjectStroke is applied; they are raw state, not asserted to be a Samsung device default. `Pen::GetSize()` is observed on a separately constructed Pencil3 before stroke application; the model default getter is also recorded before setters; the selected tool remains explicit synthetic input.",
+        "Native Pen::SetScreenResolution and Pen::getSettingData execute against the explicit IContext profile supplied 640x360 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+      "canvas_profile": {
+        "height": 360,
+        "host_matrix_returned_by_mock": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32_bits": [
+          "0000a03f",
+          "0000003e",
+          "00000000",
+          "00000000",
+          "000080be",
+          "0000403f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00005841",
+          "0000e8c0",
+          "00000000",
+          "0000803f"
+        ],
+        "width": 640
+      },
+      "case_id": "paper-640x360-s2",
+      "events": [
+        {
+          "event": "blend:Activate",
+          "x0": "0x100381c0",
+          "x1": "0x10037520",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "depth:Disable"
+        },
+        {
+          "event": "subbitmap:Begin",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "canvas:GetMatrix4",
+          "matrix_f32": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "out": "0x200eef38",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:uProjectionMatrix",
+          "matrix_f32": [
+            1.25,
+            0.125,
+            0.0,
+            0.0,
+            -0.25,
+            0.75,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            13.5,
+            -7.25,
+            0.0,
+            1.0
+          ],
+          "matrix_f32_bits": [
+            "0000a03f",
+            "0000003e",
+            "00000000",
+            "00000000",
+            "000080be",
+            "0000403f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00005841",
+            "0000e8c0",
+            "00000000",
+            "0000803f"
+          ],
+          "x0": "0x10037c20",
+          "x1": "0x200eef78",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "uniform:inputColor",
+          "rgba_f32": [
+            0.250980406999588,
+            0.501960813999176,
+            0.7529411911964417,
+            0.501960813999176
+          ],
+          "rgba_f32_bits": [
+            "8180803e",
+            "8180003f",
+            "c1c0403f",
+            "8180003f"
+          ],
+          "x0": "0x10037f80",
+          "x1": "0x1003542c",
+          "x2": "0x10038410"
+        },
+        {
+          "event": "texture:brush:Bind",
+          "x0": "0x10037640",
+          "x1": "0x0",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:pointPattern",
+          "texture_unit_i32": 0,
+          "x0": "0x10037d40",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "texture:paper:Bind",
+          "x0": "0x10037880",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetWidth",
+          "return": 640,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetHeight",
+          "return": 360,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:paperTexture",
+          "texture_unit_i32": 1,
+          "x0": "0x10037e60",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:uPaperScale",
+          "x0": "0x100380a0",
+          "x1": "0x200eef30",
+          "x2": "0x0",
+          "xy_f32": [
+            2.133333444595337,
+            1.2000000476837158
+          ],
+          "xy_f32_bits": [
+            "89880840",
+            "9a99993f"
+          ]
+        },
+        {
+          "args": [
+            268665568,
+            0,
+            4,
+            48
+          ],
+          "event": "draw:DrawInstanced",
+          "x0": "0x100382e0",
+          "x1": "0x0",
+          "x2": "0x4"
+        },
+        {
+          "event": "subbitmap:Restore",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x3"
+        }
+      ],
+      "in_memory_patch": {
+        "argb_u32": "0x804080c0",
+        "replacement_sha256": "b1c0eeefb65d0c33fb2aed2b4f7e409f4e931b1e598831b8fc642f5e900d5be7",
+        "site_count": 1
+      },
+      "init_static_contract": {
+        "alpha_blend_function_enum": 0,
+        "alpha_destination_factor_enum": 7,
+        "alpha_source_factor_enum": 1,
+        "blend_enabled": true,
+        "color_blend_function_enum": 0,
+        "color_destination_factor_enum": 7,
+        "color_source_factor_enum": 6,
+        "source": "libSPenPencil3.so SPen::Pencil3StrokeDrawableRTV1::Init at ELF VA 0x10c4b8-0x10c4f8",
+        "texture_atlas_rows": 16,
+        "texture_dimensions": [
+          120,
+          120
+        ]
+      },
+      "input_particle_count": 48,
+      "input_stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+      "pinned_inputs_sha256": {
+        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenPencil3.so": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+        "pencil3-saved-caller-native.json": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+        "pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+        "pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+      },
+      "rt_background_scale_supplied_f32": 2.0,
+      "rt_color_after_native_SetPenData_f32": [
+        0.250980406999588,
+        0.501960813999176,
+        0.7529411911964417,
+        0.501960813999176
+      ],
+      "scope": "Actual pinned Pencil3StrokeDrawableRTV1::Draw executes in Unicorn over the actual Drawing-selected V3 AddPoint stream. Renderer interfaces, uploaded resource objects, the host canvas matrix, and GL execution are explicit mocks; this captures native handoff values, not device pixels.",
+      "selected_route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+        "selected_drawable_vtable_id": "v3",
+        "selected_rt_address": "0x10035400"
+      },
+      "shader_sources": {
+        "brush_uv": "vPointUV",
+        "fragment_alpha": "inputColor.a * brushMask * paper * vAlpha * 1.5",
+        "fragment_rgb": "inputColor.rgb",
+        "fragment_rva": "0xf9948",
+        "paper_uv": "vCanvasUV * uPaperScale",
+        "uniforms": [
+          "uProjectionMatrix",
+          "pointPattern",
+          "paperTexture",
+          "inputColor",
+          "uPaperScale"
+        ],
+        "vertex_rva": "0xf9730"
+      },
+      "source_argb_u32": "0x804080c0",
+      "source_color_forwarding": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002c950"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        }
+      ]
+    },
+    "paper-alt300x90": {
+      "alternate_background_dimensions": [
+        300,
+        90
+      ],
+      "caller_fixture_sha256": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+      "caller_host_boundaries": [
+        "Synthetic ObjectStroke values are supplied through native Model setters; Model getters and source-array reads, Drawing selection, native MotionEvent constructors/getters, selected Pencil3 saved redraw, and RTV1 AddPoint geometry execute natively. The selected drawable version is recorded per setting state.",
+        "The constructor-return bytes are captured before this ObjectStroke is applied; they are raw state, not asserted to be a Samsung device default. `Pen::GetSize()` is observed on a separately constructed Pencil3 before stroke application; the model default getter is also recorded before setters; the selected tool remains explicit synthetic input.",
+        "Native Pen::SetScreenResolution and Pen::getSettingData execute against the explicit IContext profile supplied 640x360 before AddPoint; identity color conversion, flags/version, canvases, bitmap/resource adapters, and task-queue registration are host stubs."
+      ],
+      "caller_source_sha256": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+      "canvas_profile": {
+        "height": 360,
+        "host_matrix_returned_by_mock": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32": [
+          1.25,
+          0.125,
+          0.0,
+          0.0,
+          -0.25,
+          0.75,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          13.5,
+          -7.25,
+          0.0,
+          1.0
+        ],
+        "matrix_f32_bits": [
+          "0000a03f",
+          "0000003e",
+          "00000000",
+          "00000000",
+          "000080be",
+          "0000403f",
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000",
+          "0000803f",
+          "00000000",
+          "00005841",
+          "0000e8c0",
+          "00000000",
+          "0000803f"
+        ],
+        "width": 640
+      },
+      "case_id": "paper-alt300x90",
+      "events": [
+        {
+          "event": "blend:Activate",
+          "x0": "0x10038400",
+          "x1": "0x10037520",
+          "x2": "0x10038650"
+        },
+        {
+          "event": "depth:Disable"
+        },
+        {
+          "event": "subbitmap:Begin",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038650"
+        },
+        {
+          "event": "canvas:GetMatrix4",
+          "matrix_f32": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "out": "0x200eef38",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x10038650"
+        },
+        {
+          "event": "uniform:uProjectionMatrix",
+          "matrix_f32": [
+            1.25,
+            0.125,
+            0.0,
+            0.0,
+            -0.25,
+            0.75,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            13.5,
+            -7.25,
+            0.0,
+            1.0
+          ],
+          "matrix_f32_bits": [
+            "0000a03f",
+            "0000003e",
+            "00000000",
+            "00000000",
+            "000080be",
+            "0000403f",
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000",
+            "0000803f",
+            "00000000",
+            "00005841",
+            "0000e8c0",
+            "00000000",
+            "0000803f"
+          ],
+          "x0": "0x10037e60",
+          "x1": "0x200eef78",
+          "x2": "0x10038650"
+        },
+        {
+          "event": "uniform:inputColor",
+          "rgba_f32": [
+            0.250980406999588,
+            0.501960813999176,
+            0.7529411911964417,
+            0.501960813999176
+          ],
+          "rgba_f32_bits": [
+            "8180803e",
+            "8180003f",
+            "c1c0403f",
+            "8180003f"
+          ],
+          "x0": "0x100381c0",
+          "x1": "0x1003542c",
+          "x2": "0x10038650"
+        },
+        {
+          "event": "texture:brush:Bind",
+          "x0": "0x10037640",
+          "x1": "0x0",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:pointPattern",
+          "texture_unit_i32": 0,
+          "x0": "0x10037f80",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "texture:alternate-background:Bind",
+          "x0": "0x10037ac0",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetWidth",
+          "return": 640,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "subbitmap:GetHeight",
+          "return": 360,
+          "x0": "0x10037520",
+          "x1": "0x1",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:paperTexture",
+          "texture_unit_i32": 1,
+          "x0": "0x100380a0",
+          "x1": "0x200eef78",
+          "x2": "0x0"
+        },
+        {
+          "event": "uniform:uPaperScale",
+          "x0": "0x100382e0",
+          "x1": "0x200eef30",
+          "x2": "0x0",
+          "xy_f32": [
+            1.0666667222976685,
+            2.0
+          ],
+          "xy_f32_bits": [
+            "8988883f",
+            "00000040"
+          ]
+        },
+        {
+          "args": [
+            268666144,
+            0,
+            4,
+            48
+          ],
+          "event": "draw:DrawInstanced",
+          "x0": "0x10038520",
+          "x1": "0x0",
+          "x2": "0x4"
+        },
+        {
+          "event": "subbitmap:Restore",
+          "x0": "0x10037520",
+          "x1": "0x0",
+          "x2": "0x3"
+        }
+      ],
+      "in_memory_patch": {
+        "argb_u32": "0x804080c0",
+        "replacement_sha256": "b1c0eeefb65d0c33fb2aed2b4f7e409f4e931b1e598831b8fc642f5e900d5be7",
+        "site_count": 1
+      },
+      "init_static_contract": {
+        "alpha_blend_function_enum": 0,
+        "alpha_destination_factor_enum": 7,
+        "alpha_source_factor_enum": 1,
+        "blend_enabled": true,
+        "color_blend_function_enum": 0,
+        "color_destination_factor_enum": 7,
+        "color_source_factor_enum": 6,
+        "source": "libSPenPencil3.so SPen::Pencil3StrokeDrawableRTV1::Init at ELF VA 0x10c4b8-0x10c4f8",
+        "texture_atlas_rows": 16,
+        "texture_dimensions": [
+          120,
+          120
+        ]
+      },
+      "input_particle_count": 48,
+      "input_stream_sha256": "09c1d78531504e2537a0f4c572b7cd38d3b2fa8df10d063f11bac82a11e10a52",
+      "pinned_inputs_sha256": {
+        "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+        "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+        "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+        "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+        "libSPenDrawing.so": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+        "libSPenFountainPen.so": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+        "libSPenGraphics.so": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+        "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+        "libSPenPenCommon.so": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+        "libSPenPencil3.so": "41a995cac7a597af53359401df26187d4299221f3460c91b56540596fc73d359",
+        "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4",
+        "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2",
+        "pencil3-saved-caller-native.json": "1bf118a229c9e67512ce68d66dd35a2121277121126b1e7cb9b02a387c517121",
+        "pencil3_saved_caller_native.py": "129001ce587c104e22e1675e759df9a04d942e884a93fb747b195d001b6a776e",
+        "pencil_native.py": "b4d88fb86da22c732e63466e6f1fc7c829aca9d0b2623abbcb3d0fc6f981795c"
+      },
+      "rt_background_scale_supplied_f32": 2.0,
+      "rt_color_after_native_SetPenData_f32": [
+        0.250980406999588,
+        0.501960813999176,
+        0.7529411911964417,
+        0.501960813999176
+      ],
+      "scope": "Actual pinned Pencil3StrokeDrawableRTV1::Draw executes in Unicorn over the actual Drawing-selected V3 AddPoint stream. Renderer interfaces, uploaded resource objects, the host canvas matrix, and GL execution are explicit mocks; this captures native handoff values, not device pixels.",
+      "selected_route": {
+        "drawing_return": 1,
+        "factory_symbol": "createPenInst",
+        "redraw_entry": "non-virtual thunk to SPen::Pencil3StrokeDrawableGLV3::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+        "same_rt_id": "rt0",
+        "saved_redraw_return": 1,
+        "selected_drawable_class": "SPen::Pencil3StrokeDrawableGLV3",
+        "selected_drawable_vtable_id": "v3",
+        "selected_rt_address": "0x10035400"
+      },
+      "shader_sources": {
+        "brush_uv": "vPointUV",
+        "fragment_alpha": "inputColor.a * brushMask * paper * vAlpha * 1.5",
+        "fragment_rgb": "inputColor.rgb",
+        "fragment_rva": "0xf9948",
+        "paper_uv": "vCanvasUV * uPaperScale",
+        "uniforms": [
+          "uProjectionMatrix",
+          "pointPattern",
+          "paperTexture",
+          "inputColor",
+          "uPaperScale"
+        ],
+        "vertex_rva": "0xf9730"
+      },
+      "source_argb_u32": "0x804080c0",
+      "source_color_forwarding": [
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "setup",
+          "this": "0x1002c950"
+        },
+        {
+          "argb_u32": "0xff000000",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104602c",
+          "method": "SPen::Pen::SetColor(int)",
+          "phase": "draw_object_stroke",
+          "this": "0x10034090"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "draw_object_stroke",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        },
+        {
+          "argb_u32": "0x804080c0",
+          "entry_pc": "0x104a558",
+          "method": "SPen::PenDrawableRT::SetPenData(float, int)",
+          "phase": "saved_redraw",
+          "size_f32_bits": "0x41200000",
+          "this": "0x10035400"
+        }
+      ]
+    }
+  },
+  "runner_sha256": "937b94266acddd4e9126e42056143f838215001f5d81a257c0e17ec8bfc1f688",
+  "schema": "sdocx-pencil3-draw-handoff-native-v1",
+  "scope": "Native Drawing-selected V3 stream and native RTV1::Draw binding calls. Renderer interfaces, uploaded texture objects, canvas matrix/size, and GL execution are explicit mocks; no default-constructor, device, or pixel claim."
+}
