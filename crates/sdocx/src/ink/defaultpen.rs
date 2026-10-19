@@ -188,7 +188,7 @@ pub(super) fn saved_with_boundaries(
     {
         return None;
     }
-    if !matches!(tool, 1..=3) {
+    if !matches!(tool, 0..=3) {
         return None;
     }
     // Coordinates are bounded so float32 squared-distance calculations cannot
@@ -296,12 +296,12 @@ fn saved(points: &[Point], size: f32, tool: u32, source: u32) -> Option<Vec<[f32
 /// Canonical-page admission for the native DefaultPen profile. The pinned
 /// DefaultPen::SetAdvancedSetting is a no-op and GetStrokeDrawableGL always
 /// constructs/reuses the same unsuffixed drawable. Saved geometry is observed
-/// for tool types 1..=3 with curve on and off; other style/effect states fall
-/// back until their Drawing behavior is established.
+/// for tool types 0..=3; tools 1..=3 also have curve-on/off witnesses. Other
+/// style/effect states fall back until their Drawing behavior is established.
 pub(super) fn prepare(stroke: &crate::Stroke) -> Option<DefaultInk> {
     let rendering = stroke.rendering.as_ref()?;
     if rendering.pen_name.as_deref()? != "com.samsung.android.sdk.pen.pen.preload.DefaultPen"
-        || !matches!(rendering.tool_type_raw, 1..=3)
+        || !matches!(rendering.tool_type_raw, 0..=3)
         || rendering.properties.fixed_width
         || rendering.properties.replay_only
         || rendering.properties.eraser
@@ -323,7 +323,8 @@ pub(super) fn prepare(stroke: &crate::Stroke) -> Option<DefaultInk> {
     {
         return None;
     }
-    let size = rendering.style.pen_size?;
+    // The native Model defaults an omitted size to zero before Drawing clamps it.
+    let size = rendering.style.pen_size.unwrap_or(0.0);
     if !size.is_finite() {
         return None;
     }

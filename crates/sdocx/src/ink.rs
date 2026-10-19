@@ -850,6 +850,72 @@ mod tests {
     }
 
     #[test]
+    fn defaultpen_admission_matches_native_default_size_tools_and_clamps() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/defaultpen-admission-native.json"
+        ))
+        .unwrap();
+        let float = |value: &serde_json::Value| {
+            let hex = value.as_str().unwrap();
+            f32::from_le_bytes(std::array::from_fn(|index| {
+                u8::from_str_radix(&hex[index * 2..index * 2 + 2], 16).unwrap()
+            }))
+        };
+        for (name, case) in fixture["cases"].as_object().unwrap() {
+            let input = &case["input"];
+            let mut stroke = defaultpen_stroke();
+            stroke.points = input["points_f32_bits"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|point| crate::Point {
+                    x: f64::from(float(&point[0])),
+                    y: f64::from(float(&point[1])),
+                })
+                .collect();
+            let rendering = stroke.rendering.as_mut().unwrap();
+            rendering.tool_type_raw = input["tool_type"].as_u64().unwrap() as u16;
+            rendering.style.pen_size = input["size_setter_called"]
+                .as_bool()
+                .unwrap()
+                .then(|| float(&input["pen_size_f32_bits"]));
+            let prepared =
+                prepare_stroke_for_context(&stroke, false, InkRenderContext::CanonicalPage);
+            assert!(prepared.ordered_disk_replay.is_some(), "{name}");
+            let radii = prepared.dot_radii.as_ref().unwrap();
+            let expected = case["streams"]["draw_object_stroke"]["values_f32_bits"]
+                .as_array()
+                .unwrap();
+            assert_eq!(prepared.points.len() * 3, expected.len(), "{name}");
+            for (index, ((point, radius), expected)) in prepared
+                .points
+                .iter()
+                .zip(radii)
+                .zip(expected.chunks_exact(3))
+                .enumerate()
+            {
+                for (actual, expected) in [point.x as f32, point.y as f32, *radius as f32]
+                    .into_iter()
+                    .zip(expected)
+                {
+                    assert_eq!(
+                        actual.to_bits(),
+                        float(expected).to_bits(),
+                        "{name}: {index}"
+                    );
+                }
+            }
+        }
+        let mut unsupported = defaultpen_stroke();
+        unsupported.rendering.as_mut().unwrap().tool_type_raw = 4;
+        assert!(
+            prepare_stroke_for_context(&unsupported, false, InkRenderContext::CanonicalPage)
+                .ordered_disk_replay
+                .is_none()
+        );
+    }
+
+    #[test]
     fn defaultpen_canonical_profile_keeps_ordered_native_disks_and_ignores_alpha() {
         let input = defaultpen_stroke();
         assert!(prepare_stroke(&input, false).ordered_disk_replay.is_none());
