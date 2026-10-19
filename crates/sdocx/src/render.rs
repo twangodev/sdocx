@@ -5296,6 +5296,7 @@ mod tests {
                 },
                 style: StrokeStyle {
                     color_argb: Some(0x80ff_ee00),
+                    pen_size: Some(8.),
                     ..StrokeStyle::default()
                 },
             }),
@@ -5312,6 +5313,44 @@ mod tests {
             }),
             pen_width: 8.,
         }
+    }
+
+    #[test]
+    fn marker_zero_saved_size_does_not_paint_a_generic_fallback() {
+        let mut page = page_with_uncolored_stroke();
+        page.width = 64;
+        page.height = 64;
+        page.objects.clear();
+        page.clear_elements();
+        let pixels = |page| {
+            let rendered =
+                render_document_svg(&document(page), &RenderOptions::default()).remove(0);
+            let tree = resvg::usvg::Tree::from_str(&rendered.svg, &Default::default()).unwrap();
+            let mut pixmap = resvg::tiny_skia::Pixmap::new(64, 64).unwrap();
+            resvg::render(
+                &tree,
+                resvg::tiny_skia::Transform::identity(),
+                &mut pixmap.as_mut(),
+            );
+            pixmap.data().to_vec()
+        };
+        let blank = pixels(page.clone());
+        for (saved_size, presentation_width) in [(Some(0.), 0.), (None, 0.8)] {
+            let mut ink = marker(false, 10.);
+            ink.points = [(10., 20.), (18., 25.), (26., 20.), (34., 25.)]
+                .map(|(x, y)| Point { x, y })
+                .to_vec();
+            ink.pressures = vec![1.; 4];
+            ink.timestamps = vec![0, 8, 16, 24];
+            ink.rendering.as_mut().unwrap().tool_type_raw = 1;
+            ink.rendering.as_mut().unwrap().style.pen_size = saved_size;
+            ink.pen_width = presentation_width;
+            let mut candidate = page.clone();
+            candidate.objects.push(ink.into());
+            assert_eq!(pixels(candidate), blank, "saved size {saved_size:?}");
+        }
+        page.objects.push(marker(false, 20.).into());
+        assert_ne!(pixels(page), blank, "nonzero size must still paint");
     }
 
     #[test]
