@@ -18,13 +18,21 @@ pub(crate) fn decode_stroke(data: &[u8], limits: &ParseLimits) -> Result<Stroke>
 
     let mut points = Vec::with_capacity(count);
     if count != 0 && compressed {
-        let mut x = fixed.read_f64("first x")?;
-        let mut y = fixed.read_f64("first y")?;
-        points.push(Point { x, y });
+        // NewApplyBinary stores the initial doubles in native float points,
+        // then rounds each compressed delta addition at float precision.
+        let mut x = fixed.read_f64("first x")? as f32;
+        let mut y = fixed.read_f64("first y")? as f32;
+        points.push(Point {
+            x: f64::from(x),
+            y: f64::from(y),
+        });
         for _ in 1..count {
-            x += signed_delta(fixed.read_u16("x delta")?, 32.0);
-            y += signed_delta(fixed.read_u16("y delta")?, 32.0);
-            points.push(Point { x, y });
+            x += signed_delta(fixed.read_u16("x delta")?, 32.0) as f32;
+            y += signed_delta(fixed.read_u16("y delta")?, 32.0) as f32;
+            points.push(Point {
+                x: f64::from(x),
+                y: f64::from(y),
+            });
         }
     } else {
         for _ in 0..count {
@@ -252,6 +260,37 @@ mod tests {
                 float_channel(&mut reader, deltas.len() + 1, true).unwrap(),
                 native_floats(control["pressure_data_hex"].as_str().unwrap()),
                 "native control {}",
+                control["id"]
+            );
+        }
+    }
+
+    #[test]
+    fn compressed_coordinates_match_native_float_steps_on_both_axes() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/object-stroke-channels-native.json"
+        ))
+        .unwrap();
+        let source = bytes(fixture["source"]["payload_hex"].as_str().unwrap());
+        let frame_offset = fixture["source"]["frame_offset"].as_u64().unwrap() as usize;
+        let controls = fixture["synthetic_xy_controls"].as_array().unwrap();
+        assert_eq!(controls.len(), 6);
+        for control in controls {
+            let mut payload = source[..frame_offset].to_vec();
+            payload.extend(bytes(control["frame_hex"].as_str().unwrap()));
+            let stroke = decode_stroke(&payload, &ParseLimits::default()).unwrap();
+            // Compare the public f64 values exactly, not a cast that could hide
+            // extra precision or drift between the native float stores.
+            let actual: Vec<u8> = stroke
+                .points
+                .iter()
+                .flat_map(|point| [point.x, point.y])
+                .flat_map(f64::to_le_bytes)
+                .collect();
+            assert_eq!(
+                actual,
+                bytes(control["points_lifted_f64_bits_hex"].as_str().unwrap()),
+                "native compressed coordinates: {}",
                 control["id"]
             );
         }

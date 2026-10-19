@@ -219,6 +219,70 @@ def make_synthetic_frame(base_frame, control):
     return bytes(frame)
 
 
+def make_synthetic_xy_frame(base_frame, control):
+    frame = bytearray(base_frame)
+    count = struct.unpack_from("<H", frame, 18)[0]
+    x_words = [int.from_bytes(bytes.fromhex(control["x_delta_words_le_hex"])[i:i + 2], "little")
+               for i in range(0, 2 * (count - 1), 2)]
+    y_words = [int.from_bytes(bytes.fromhex(control["y_delta_words_le_hex"])[i:i + 2], "little")
+               for i in range(0, 2 * (count - 1), 2)]
+    if len(x_words) != count - 1 or len(y_words) != count - 1:
+        raise ValueError("synthetic XY delta length mismatch")
+    struct.pack_into("<dd", frame, 20, struct.unpack("<d", bytes.fromhex(control["initial_x_f64_bits"]))[0],
+                     struct.unpack("<d", bytes.fromhex(control["initial_y_f64_bits"]))[0])
+    for index, (x_word, y_word) in enumerate(zip(x_words, y_words)):
+        struct.pack_into("<HH", frame, 36 + index * 4, x_word, y_word)
+    return bytes(frame)
+
+
+def point_models(frame):
+    count = struct.unpack_from("<H", frame, 18)[0]
+    x, y = struct.unpack_from("<dd", frame, 20)
+    f_x, f_y = f32(x), f32(y)
+    float_values = [(f_x, f_y)]
+    double_values = [(f32(x), f32(y))]
+    at = 36
+    for _ in range(1, count):
+        x_word, y_word = struct.unpack_from("<HH", frame, at)
+        at += 4
+        dx = (-1.0 if x_word & 0x8000 else 1.0) * (x_word & 0x7fff) / 32.0
+        dy = (-1.0 if y_word & 0x8000 else 1.0) * (y_word & 0x7fff) / 32.0
+        f_x, f_y = f32(f_x + dx), f32(f_y + dy)
+        x, y = x + dx, y + dy
+        float_values.append((f_x, f_y))
+        double_values.append((f32(x), f32(y)))
+    pack = lambda rows: b"".join(struct.pack("<ff", px, py) for px, py in rows)
+    return pack(float_values), pack(double_values), float_values
+
+
+def uncompressed_frame_from_source(source_frame, point_overrides):
+    count = struct.unpack_from("<H", source_frame, 18)[0]
+    x, y = struct.unpack_from("<dd", source_frame, 20)
+    raw_points = [(x, y)]
+    at = 36
+    for _ in range(1, count):
+        x_word, y_word = struct.unpack_from("<HH", source_frame, at)
+        at += 4
+        x += (-1.0 if x_word & 0x8000 else 1.0) * (x_word & 0x7fff) / 32.0
+        y += (-1.0 if y_word & 0x8000 else 1.0) * (y_word & 0x7fff) / 32.0
+        raw_points.append((x, y))
+    arrays, _ = independent_decode(source_frame)
+    for index, row in enumerate(point_overrides):
+        raw_points[index] = tuple(row)
+    stream = b"".join(struct.pack("<dd", *point) for point in raw_points)
+    stream += arrays["pressures"] + arrays["timestamps"] + arrays["tilts"] + arrays["orientations"]
+    # The compressed frame's post-channel tail consists of tool type plus the
+    # 24-byte flexible style record. It is retained byte-for-byte.
+    style_tail = source_frame[2488:]
+    if len(style_tail) != 26:
+        raise ValueError("unexpected saved style tail extent")
+    out = bytearray(source_frame[:20]) + stream + style_tail
+    out[11] &= 0xfe
+    struct.pack_into("<I", out, 0, len(out))
+    struct.pack_into("<I", out, 6, len(out) - 24)
+    return bytes(out), raw_points
+
+
 def expected_pressure(frame, round_each=True):
     count = struct.unpack_from("<H", frame, 18)[0]
     at = 20 + 16 + (count - 1) * 4
@@ -275,6 +339,82 @@ def generate(template):
         arrays[key] = {"count": POINT_COUNT, "element_size": GETTERS[key][1],
                        "independent_raw_decode_sha256": hashlib.sha256(raw).hexdigest(),
                        **native["arrays"][key]}
+
+    xy_cases = []
+    for control in template.get("synthetic_xy_control_definitions", []):
+        xy_frame = make_synthetic_xy_frame(frame, control)
+        xy_capture = native_capture(xy_frame)
+        actual_points = bytes.fromhex(xy_capture["arrays"]["points"]["data_hex"])
+        f32_points, f64_points, float_rows = point_models(xy_frame)
+        if xy_capture["consumed_bytes"] != FRAME_LENGTH:
+            raise ValueError(f"synthetic XY NewApply consumed wrong frame length: {control['id']}")
+        if actual_points != f32_points:
+            raise ValueError(f"native synthetic XY did not match f32 recurrence: {control['id']}")
+        first_diff_f64 = next((i for i in range(POINT_COUNT)
+                               if actual_points[i * 8:i * 8 + 8] != f64_points[i * 8:i * 8 + 8]), None)
+        first_x_diff_f64 = next((i for i in range(POINT_COUNT)
+                                 if actual_points[i * 8:i * 8 + 4] != f64_points[i * 8:i * 8 + 4]), None)
+        first_y_diff_f64 = next((i for i in range(POINT_COUNT)
+                                 if actual_points[i * 8 + 4:i * 8 + 8] != f64_points[i * 8 + 4:i * 8 + 8]), None)
+        native_rows = list(struct.iter_unpack("<ff", actual_points))
+        lifted_f64 = b"".join(struct.pack("<dd", float(x), float(y)) for x, y in native_rows)
+        xy_cases.append({"id": control["id"],
+                         "scope": "synthetic direct native handler input derived from the unchanged real frame; not a second saved-corpus capture",
+                         "frame_length": len(xy_frame),
+                         "frame_sha256": hashlib.sha256(xy_frame).hexdigest(),
+                         "frame_hex": xy_frame.hex(),
+                         "initial_x_f64_bits": control["initial_x_f64_bits"],
+                         "initial_y_f64_bits": control["initial_y_f64_bits"],
+                         "x_delta_words_le_hex": control["x_delta_words_le_hex"],
+                         "y_delta_words_le_hex": control["y_delta_words_le_hex"],
+                         "new_apply_return_bytes": xy_capture["consumed_bytes"],
+                         "new_apply_entry_return": xy_capture["native_calls"][0],
+                         "points_data_hex": actual_points.hex(),
+                         "points_sha256": hashlib.sha256(actual_points).hexdigest(),
+                         "points_lifted_f64_bits_hex": lifted_f64.hex(),
+                         "points_lifted_f64_sha256": hashlib.sha256(lifted_f64).hexdigest(),
+                         "native_matches_f32_step_model": actual_points == f32_points,
+                         "native_matches_double_accumulation_f32_store_model": actual_points == f64_points,
+                         "first_differing_point_from_double_model": first_diff_f64,
+                         "first_x_differing_point_from_double_model": first_x_diff_f64,
+                         "first_y_differing_point_from_double_model": first_y_diff_f64,
+                         "sample_x_native": [float_rows[i][0] for i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 203)],
+                         "sample_y_native": [float_rows[i][1] for i in (0, 1, 2, 3, 4, 5, 6, 7, 8, 16, 32, 64, 128, 203)],
+                         "source_point_channel_start": 20,
+                         "native_point_element_size": 8})
+
+    uncompressed = None
+    uncompressed_control = template.get("uncompressed_point_control_definition")
+    if uncompressed_control:
+        overrides = [tuple(struct.unpack("<dd", bytes.fromhex(row)))
+                     for row in uncompressed_control["first_point_pairs_f64_bits"]]
+        uncompressed_frame, source_points = uncompressed_frame_from_source(frame, overrides)
+        captured = native_capture(uncompressed_frame)
+        native_points = bytes.fromhex(captured["arrays"]["points"]["data_hex"])
+        expected_points = b"".join(struct.pack("<ff", f32(x), f32(y)) for x, y in source_points)
+        if captured["consumed_bytes"] != len(uncompressed_frame):
+            raise ValueError("native uncompressed NewApply did not consume its full frame")
+        if native_points != expected_points:
+            raise ValueError("native uncompressed f64 point inputs did not store as independent f32 points")
+        native_rows = list(struct.iter_unpack("<ff", native_points))
+        lifted_f64 = b"".join(struct.pack("<dd", float(x), float(y)) for x, y in native_rows)
+        uncompressed = {"id": uncompressed_control["id"],
+                        "scope": "synthetic direct native handler input; native uncompressed point elements are f64, getter storage is PointF f32; this does not establish whether the public parser should preserve source precision or mirror the native getter",
+                        "frame_length": len(uncompressed_frame),
+                        "frame_sha256": hashlib.sha256(uncompressed_frame).hexdigest(),
+                        "frame_hex": uncompressed_frame.hex(),
+                        "point_count": POINT_COUNT,
+                        "first_input_points_f64_bits": uncompressed_control["first_point_pairs_f64_bits"],
+                        "native_return_bytes": captured["consumed_bytes"],
+                        "native_entry_return": captured["native_calls"][0],
+                        "points_data_hex": native_points.hex(),
+                        "points_sha256": hashlib.sha256(native_points).hexdigest(),
+                        "points_lifted_f64_bits_hex": lifted_f64.hex(),
+                        "points_lifted_f64_sha256": hashlib.sha256(lifted_f64).hexdigest(),
+                        "native_matches_independent_f32_store_per_f64_input": native_points == expected_points,
+                        "native_getter_state": captured["native_state"],
+                        "layout": "uncompressed per-point <f64 x, f64 y>; frame flex offset updated to style record; tool/style tail retained"}
+
     return {
         "schema": "sdocx-object-stroke-channels-native-v1",
         "runner": {"path": "conformance/object_stroke_channels_native.py",
@@ -304,6 +444,11 @@ def generate(template):
                                    "xy_delta_semantics": "This frame matches f64 accumulation of signed deltas / 32 followed by f32 getter storage; a general native XY arithmetic contract is not established."},
         "synthetic_pressure_controls": expected_synthetic,
         "synthetic_control_definition": template.get("synthetic_control_definition", template.get("synthetic_pressure_controls", [])),
+        "synthetic_xy_controls": xy_cases,
+        "synthetic_xy_control_definitions": template.get("synthetic_xy_control_definitions", []),
+        "synthetic_payload_recipe": "For each synthetic frame, concatenate the unchanged original source payload prefix before source.frame_offset with the complete frame_hex field; channel witnesses do not depend on ignored tmp files.",
+        "uncompressed_point_control": uncompressed,
+        "uncompressed_point_control_definition": uncompressed_control,
     }
 
 
@@ -321,7 +466,7 @@ def main():
     else:
         if json.loads(FIXTURE.read_text()) != actual:
             raise SystemExit("native ObjectStroke channel fixture mismatch")
-        print("verified real 2514-byte native frame and three synthetic f32-delta controls")
+        print("verified real native frame, pressure controls, XY float controls, and uncompressed f64 input witness")
 
 if __name__ == "__main__":
     main()
