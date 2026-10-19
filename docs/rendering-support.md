@@ -328,6 +328,10 @@ completes native clip setup, upload, draw and deferred vector deletion with a
 distinct cleared native canvas on host Mesa. Its style/color and scheduling are
 explicit host inputs; general caller admission, vector paint, production
 integration and Samsung device parity remain outstanding.
+A [Drawing-to-paint capture](../conformance/brushpen-drawing-paint-native.json)
+joins synthetic Model input, native queued color/data tasks, the unchanged
+1,144-byte upload and same-RT uniform color to a complete host Mesa draw.
+It also checks target preclear and deferred deletion; production vector paint remains open.
 The [MagicPen Drawing caller](../conformance/magicpen-saved-caller-native.json)
 checks null/`1;` selecting V1 and empty/`2;` selecting V2. It retains actual
 RTV1 vectors separately from callback arguments for synthetic Model inputs;
