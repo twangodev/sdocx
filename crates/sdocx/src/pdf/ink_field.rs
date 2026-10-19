@@ -445,7 +445,89 @@ fn union_polygons(
                     "native ink polygon overlay adapter failed: {error:?}"
                 ))
             })?;
-        for polygon in &local {
+        for (polygon, &source_index) in local.iter().zip(indices) {
+            // Check the full world -> component-local -> integer-grid -> world
+            // round trip against each source polygon's own spans. A component
+            // can join shapes whose boxes merely touch; subtracting a remote
+            // origin or scaling by its extent can otherwise move a contour
+            // while it remains non-degenerate on the integer grid.
+            let source_polygon = &polygons[source_index];
+            let (min_x, min_y, max_x, max_y) = source_polygon.iter().fold(
+                (
+                    f64::INFINITY,
+                    f64::INFINITY,
+                    f64::NEG_INFINITY,
+                    f64::NEG_INFINITY,
+                ),
+                |(min_x, min_y, max_x, max_y), [x, y]| {
+                    (min_x.min(*x), min_y.min(*y), max_x.max(*x), max_y.max(*y))
+                },
+            );
+            let spans = [max_x - min_x, max_y - min_y];
+            let mut restored_polygon = Vec::with_capacity(polygon.len());
+            for (local_point, source_point) in polygon.iter().zip(source_polygon) {
+                let source = [source_point[0], source_point[1]];
+                let origin = [origin_x, origin_y];
+                for axis in 0..2 {
+                    let allowed_error = 4096.0 * f64::EPSILON * spans[axis]
+                        + 8.0 * f64::EPSILON * source[axis].abs();
+                    let half_grid_step = 0.5 * adapter.inv_scale().abs();
+                    if spans[axis] > 0.0 && half_grid_step > allowed_error {
+                        return Err(ContourFailure::LegacyRequired(format!(
+                            "native ink overlay grid is coarser than local precision budget (axis={axis}, half_step={half_grid_step}, allowed={allowed_error})"
+                        )));
+                    }
+                }
+                let integer = adapter.try_float_to_int(local_point).map_err(|error| {
+                    ContourFailure::LegacyRequired(format!(
+                        "native ink polygon coordinate is outside the overlay grid: {error:?}"
+                    ))
+                })?;
+                let restored_local = adapter.try_int_to_float(&integer).map_err(|error| {
+                    ContourFailure::LegacyRequired(format!(
+                        "native ink polygon round trip is outside the overlay grid: {error:?}"
+                    ))
+                })?;
+                for axis in 0..2 {
+                    let allowed_error = 4096.0 * f64::EPSILON * spans[axis]
+                        + 8.0 * f64::EPSILON * source[axis].abs();
+                    let restored_world = restored_local[axis] + origin[axis];
+                    let error = (restored_world - source[axis]).abs();
+                    if !error.is_finite() || error > allowed_error {
+                        return Err(ContourFailure::LegacyRequired(format!(
+                            "native ink polygon loses precision on world-to-grid round trip (axis={axis}, error={error}, allowed={allowed_error})"
+                        )));
+                    }
+                }
+                restored_polygon
+                    .push([restored_local[0] + origin[0], restored_local[1] + origin[1]]);
+            }
+            let signed_twice_area = |ring: &[[f64; 2]]| {
+                let origin = ring[0];
+                (1..ring.len() - 1)
+                    .map(|index| {
+                        let a = [ring[index][0] - origin[0], ring[index][1] - origin[1]];
+                        let b = [
+                            ring[index + 1][0] - origin[0],
+                            ring[index + 1][1] - origin[1],
+                        ];
+                        a[0] * b[1] - a[1] * b[0]
+                    })
+                    .sum::<f64>()
+            };
+            let original_area = signed_twice_area(source_polygon);
+            let restored_area = signed_twice_area(&restored_polygon);
+            if !original_area.is_finite()
+                || !restored_area.is_finite()
+                || original_area == 0.0
+                || restored_area == 0.0
+                || (restored_area - original_area).abs()
+                    > 4096.0 * f64::EPSILON * original_area.abs()
+            {
+                return Err(ContourFailure::LegacyRequired(
+                    "native ink polygon loses relative area precision on overlay round trip".into(),
+                ));
+            }
             let snapped = polygon
                 .iter()
                 .map(|point| {
@@ -1610,6 +1692,80 @@ mod tests {
         assert!(
             has_type1_shading_resource(&document),
             "precision fallback must retain the native Type 1 field"
+        );
+    }
+
+    #[test]
+    fn adapter_roundtrip_loss_uses_legacy_for_touching_extreme_aspect_islands() {
+        let remote = f64::from(1.0e20_f32);
+        let small = Triangle([
+            [0.0, 10_000.0, 1.0],
+            [10_000.0, 10_000.0, 1.0],
+            [0.0, 20_000.0, 1.0],
+        ]);
+        for remote_x in [remote, -remote] {
+            let large = Triangle([[0.0, 0.0, 1.0], [remote_x, 0.0, 1.0], [0.0, 10_000.0, 1.0]]);
+            let bounds = BoundingBox {
+                x_min: remote_x.min(0.0),
+                y_min: 0.0,
+                x_max: remote_x.max(10_000.0),
+                y_max: 20_000.0,
+            };
+            let triangles = [small, large];
+            let mesh_data = CoverageMesh {
+                triangles: triangles
+                    .map(|triangle| CoverageTriangle {
+                        vertices: triangle.0.map(|[x, y, coverage]| CoverageVertex {
+                            x: x as f32,
+                            y: y as f32,
+                            coverage: coverage as f32,
+                        }),
+                    })
+                    .to_vec(),
+                sample_ends: Vec::new(),
+                terminal_start: 0,
+                terminal_end: 1,
+                bounds: None,
+            };
+            let clipped = triangles
+                .iter()
+                .map(|triangle| clip_triangle(*triangle, 0.5 / 255.0).unwrap().unwrap())
+                .collect::<Vec<_>>();
+            let error = union_polygons(&clipped, bounds, &mut ContourWork::default())
+                .expect_err("adapter round trip must reject material local-geometry loss");
+            assert!(matches!(error, ContourFailure::LegacyRequired(_)));
+
+            let field = PdfInkField {
+                marker_id: 1,
+                mesh: &mesh_data,
+                color: [0, 0, 0],
+                bounds,
+            };
+            let mut document = Document::with_version("1.7");
+            assert!(field_form(&mut document, &field).is_ok());
+            assert!(
+                has_type1_shading_resource(&document),
+                "lossy adapter precision must preserve the field through the legacy vector route"
+            );
+        }
+
+        let normal = mesh([[0.0, 0.0, 1.0], [10_000.0, 0.0, 1.0], [0.0, 10_000.0, 1.0]]);
+        let normal_field = PdfInkField {
+            marker_id: 2,
+            mesh: &normal,
+            color: [0, 0, 0],
+            bounds: BoundingBox {
+                x_min: 0.0,
+                y_min: 0.0,
+                x_max: 10_000.0,
+                y_max: 10_000.0,
+            },
+        };
+        let mut normal_document = Document::with_version("1.7");
+        assert!(field_form(&mut normal_document, &normal_field).is_ok());
+        assert!(
+            !has_type1_shading_resource(&normal_document),
+            "well-scaled ordinary contours should remain on the contour route"
         );
     }
 
