@@ -122,14 +122,19 @@ AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. A native
 [texture capture](../conformance/airbrush-texture-native.json) now checks Renderer
-allocation, nearest/clamped sampling and exact GL upload bytes. GPU compositing,
-caller admission and vector paint integration remain outstanding.
+allocation, nearest/clamped sampling and exact GL upload bytes. An
+[instanced Draw capture](../conformance/airbrush-draw-native.json) checks native
+buffer uploads, attributes and blend calls with a separately captured stamp
+stream injected by the host. Rendered compositing, caller admission and vector
+paint integration remain outstanding.
 The [BrushPen native oracle](../conformance/brushpen-saved-native.json) captures
 default GLV10 selection and 11-float instance records. Its
 [texture capture](../conformance/brushpen-texture-native.json) reaches intercepted
-native GL upload and Draw-binding calls. A test-only source sampler matches
-every instance bit in ten synthetic MotionEvent cases and four
-[saved-wrapper style profiles](../conformance/brushpen-saved-wrapper-native.json).
+native texture/instance uploads, attribute setup, blend mapping and Draw-binding
+calls. A test-only source sampler matches
+every instance bit in ten synthetic MotionEvent cases and eight
+[saved-wrapper style profiles](../conformance/brushpen-saved-wrapper-native.json),
+including tools 1–3 and both curve modes.
 General style/caller admission,
 rendered texture/vector paint and production integration remain outstanding.
 The [Oblique V4 source trace](reverse-engineering/oblique-v4-source-findings.md)
