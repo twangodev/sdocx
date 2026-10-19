@@ -7,6 +7,18 @@ use super::path::{P, Quad};
 const MAX_POINTS: usize = 65_536;
 const MAX_STAMPS: usize = 1_000_000;
 
+/// Apply the captured AirBrush drawable color conversion to a raw ARGB value.
+/// Keep the two f32 operations separate: the native code multiplies the alpha
+/// byte by 50.0f, divides by 255.0f, truncates toward zero, then clamps the
+/// output alpha to [3, 50]. The source RGB bytes pass through unchanged.
+pub(super) fn saved_get_color(argb: u32) -> u32 {
+    let source_alpha = (argb >> 24) as u8;
+    let scaled_alpha = (source_alpha as f32 * 50.0_f32) / 255.0_f32;
+    let truncated_alpha = scaled_alpha as i32;
+    let output_alpha = truncated_alpha.clamp(3, 50) as u32;
+    (argb & 0x00ff_ffff) | (output_alpha << 24)
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Runtime {
     /// drawPoint's native counter seed, captured from drawable state.
@@ -324,6 +336,71 @@ mod tests {
                 .map(|byte| format!("{byte:02x}"))
                 .collect();
             assert_eq!(actual_hex, case["producer"]["buffer_hex"]);
+        }
+    }
+
+    #[test]
+    fn saved_native_color_matches_all_getter_inputs_and_drawing_controls() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/airbrush-color-native.json"
+        ))
+        .unwrap();
+        let source_rgb = u32::from_str_radix(
+            fixture["source_rgb_u24"]
+                .as_str()
+                .unwrap()
+                .trim_start_matches("0x"),
+            16,
+        )
+        .unwrap();
+
+        let sweep = fixture["selected_receiver_alpha_sweep"].as_array().unwrap();
+        assert_eq!(sweep.len(), 256);
+        for (source_alpha, row) in sweep.iter().enumerate() {
+            assert_eq!(
+                row["source_alpha_u8"].as_u64().unwrap(),
+                source_alpha as u64
+            );
+            let source_argb = ((source_alpha as u32) << 24) | source_rgb;
+            let expected = u32::from_str_radix(
+                row["returned_argb_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            assert_eq!(
+                saved_get_color(source_argb),
+                expected,
+                "source alpha {source_alpha}"
+            );
+            assert_eq!(saved_get_color(source_argb) & 0x00ff_ffff, source_rgb);
+        }
+
+        for control in fixture["full_drawing_controls"].as_array().unwrap() {
+            let source = u32::from_str_radix(
+                control["source_argb_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            let expected = u32::from_str_radix(
+                control["rt_setpendata_argb_u32"]
+                    .as_str()
+                    .unwrap()
+                    .trim_start_matches("0x"),
+                16,
+            )
+            .unwrap();
+            assert_eq!(saved_get_color(source), expected, "source {source:#010x}");
+            assert_eq!(source & 0x00ff_ffff, source_rgb);
+            assert_eq!(
+                control["direct_native_getter_argb_u32"],
+                control["rt_setpendata_argb_u32"]
+            );
         }
     }
 }
