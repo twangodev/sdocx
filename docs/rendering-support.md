@@ -159,7 +159,11 @@ null settings remain outside that model. A [nine-case size/tool capture](../conf
 checks omitted, zero, subminimum and oversized source sizes plus tool codes 0–4.
 The test-only model matches every captured callback word, using the saved style
 size (missing means zero) and native 0.4–800 clamp rather than the public width.
-Renderer reuse and vector edge coverage still require validation before production admission.
+A [reuse capture](../conformance/inkpen-reuse-native.json) checks short/long first
+strokes and a distinct-object control on the same pen, drawable and RT; every
+target stream matches the fresh 312 bytes. Direct redraw of the distinct object
+returns without callbacks after Drawing clears its cache-dirty flag. Broader
+reuse states and vector edge coverage remain open before production admission.
 The [property helper oracle](../conformance/object-stroke-curve-native.json)
 executes native property read/write and getter/setter controls, confirming
 serialized bit 0 selects curve state; full-record deserialization is not exercised.
