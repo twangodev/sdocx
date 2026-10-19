@@ -13,6 +13,7 @@ pub(super) struct Runtime {
     pub inverse_scale: [f32; 2],
     pub spacing: f32,
     pub tolerance: f32,
+    pub tool_threshold: f32,
     pub resolution_min: i32,
     pub initial_alternation: bool,
     pub initial_time: i32,
@@ -161,7 +162,7 @@ impl<'a> Core<'a> {
             }
             let time = i64::from(self.input.times[i]);
             let tool = self.input.tools[i];
-            if tool == 1 && distance < 20. {
+            if tool == 1 && distance < self.input.runtime.tool_threshold {
                 if self.alternation {
                     self.alternation = false;
                     self.output.sample_ends.push(self.output.vertices.len());
@@ -301,6 +302,124 @@ mod tests {
     use super::{Input, P, Runtime, redraw};
     use serde_json::Value;
 
+    fn hex_bytes(value: &str) -> Vec<u8> {
+        assert!(value.len().is_multiple_of(2));
+        value
+            .as_bytes()
+            .chunks_exact(2)
+            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+            .collect()
+    }
+
+    fn floats_from_le_hex(value: &str) -> Vec<f32> {
+        hex_bytes(value)
+            .chunks_exact(4)
+            .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()))
+            .collect()
+    }
+
+    fn floats_from_le_bytes(value: &[u8]) -> Vec<f32> {
+        value
+            .chunks_exact(4)
+            .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()))
+            .collect()
+    }
+
+    fn f32_from_le_hex(value: &Value) -> f32 {
+        let bytes = hex_bytes(value.as_str().unwrap());
+        f32::from_le_bytes(bytes.try_into().unwrap())
+    }
+
+    fn redraw_from_native_caller(case: &Value, phase: &str) -> super::Output {
+        let input = &case["input"];
+        let points: Vec<P> = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|point| {
+                let values = point
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(f32_from_le_hex)
+                    .collect::<Vec<_>>();
+                P {
+                    x: values[0],
+                    y: values[1],
+                }
+            })
+            .collect();
+        let times: Vec<i32> = input["timestamps_i32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|time| time.as_i64().unwrap() as i32)
+            .collect();
+        let tool = input["tool_type"].as_i64().unwrap() as i32;
+        let tools = vec![tool; points.len()];
+        let pressures: Vec<f32> = input["pressure_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(f32_from_le_hex)
+            .collect();
+        let native_calls = &case["native_calls"];
+        let entry = native_calls["selected_drawable_redraw_entry_state"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["phase"] == phase)
+            .expect("V9 native redraw entry state is required");
+        let drawline_entry = native_calls["drawline_threshold_entries"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["phase"] == phase)
+            .expect("V9 drawLine threshold entry is required");
+        assert_eq!(entry["entry_pc"], "0x504e1d0");
+        assert_eq!(
+            entry["receiver_address"],
+            native_calls["selected_drawable_state"]["address"]
+        );
+        let resolution = &native_calls["pen_screen_resolution"][0];
+        let snapshots = native_calls["ObjectStroke_getter_snapshots"]
+            .as_array()
+            .unwrap();
+        let before_redraw = snapshots
+            .iter()
+            .find(|snapshot| snapshot["label"] == "before_saved_RedrawPen")
+            .unwrap();
+        let inverse_scale = native_calls["drawable_getInverseScale_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(f32_from_le_hex)
+            .collect::<Vec<_>>();
+        redraw(Input {
+            points: &points,
+            times: &times,
+            tools: &tools,
+            pressures: &pressures,
+            size: f32_from_le_hex(&native_calls["drawable_getSize_f32_bits"]),
+            curve_enabled: before_redraw["curve_enabled"].as_i64().unwrap() != 0,
+            is_shape: before_redraw["shape"].as_i64().unwrap() != 0,
+            runtime: Runtime {
+                inverse_scale: [inverse_scale[0], inverse_scale[1]],
+                spacing: f32_from_le_hex(&entry["spacing_plus_88_f32_bits"]),
+                // RedrawPen entry fields are captured as provenance, but the
+                // native body seeds its sampling residual from spacing and
+                // DrawLine's tolerance is read after the body has normalized it.
+                tolerance: f32_from_le_hex(&drawline_entry["plus44_tolerance_f32_bits"]),
+                tool_threshold: f32_from_le_hex(&drawline_entry["plus96_tool_threshold_f32_bits"]),
+                resolution_min: (resolution["width"].as_i64().unwrap() as i32)
+                    .min(resolution["height"].as_i64().unwrap() as i32),
+                initial_alternation: entry["alternation_plus_100_u8"].as_u64().unwrap() != 0,
+                initial_time: times[0],
+            },
+        })
+        .expect("captured V9 caller input/runtime must be supported by the test model")
+    }
+
     fn number(value: &Value) -> f32 {
         value.as_f64().unwrap() as f32
     }
@@ -371,6 +490,7 @@ mod tests {
                     ],
                     spacing: number(&case["spacing"]),
                     tolerance,
+                    tool_threshold: 20.0,
                     resolution_min: case["resolution"][0].as_i64().unwrap() as i32,
                     initial_alternation: case["initial_alternation"].as_bool().unwrap(),
                     initial_time: timestamps[0],
@@ -403,6 +523,332 @@ mod tests {
     }
 
     #[test]
+    fn actual_drawing_routes_and_v9_callback_stream_match_numeric_capture() {
+        let caller: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/inkpen2-saved-caller-native.json"
+        ))
+        .unwrap();
+        let cases = caller["cases"].as_object().unwrap();
+        assert_eq!(
+            cases.len(),
+            4,
+            "native ObjectDrawing route coverage changed"
+        );
+
+        let null_v1 = &cases["route_control_null_v1"];
+        assert_eq!(
+            null_v1["native_calls"]["route"]["drawing_selected_drawable_version"],
+            "1"
+        );
+        assert_eq!(
+            null_v1["native_calls"]["selected_drawable_primary_vtable_id"],
+            "InkPen2StrokeDrawableGLV1"
+        );
+
+        let empty = &cases["route_control_empty_v9"];
+        let explicit = &cases["route_control_explicit9_v9"];
+        let nontrivial = &cases["line0_curve_short_history_explicit9_v9"];
+        let input = &nontrivial["input"];
+        let numeric: Value =
+            serde_json::from_str(include_str!("../../../../conformance/inkpen2-saved.json"))
+                .unwrap();
+        let numeric_case = &numeric["cases"][0];
+        let caller_points = input["points_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|point| {
+                point
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| floats_from_le_hex(value.as_str().unwrap())[0])
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let numeric_points = numeric_case["points"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|point| {
+                point
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_f64().unwrap() as f32)
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            caller_points
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            numeric_points
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            "actual ObjectStroke caller XY channels match the numeric oracle source"
+        );
+        assert_eq!(
+            input["timestamps_i32"], numeric_case["timestamps"],
+            "actual ObjectStroke caller time channels"
+        );
+        assert_eq!(input["tool_type"], 2);
+        let caller_pressures = input["pressure_f32_bits"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| floats_from_le_hex(value.as_str().unwrap())[0])
+            .collect::<Vec<_>>();
+        let numeric_pressures = numeric_case["pressures"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_f64().unwrap() as f32)
+            .collect::<Vec<_>>();
+        assert_eq!(
+            caller_pressures
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            numeric_pressures
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            "actual ObjectStroke caller pressure channels"
+        );
+        assert_eq!(
+            input["timestamps_i32"].as_array().unwrap().len(),
+            caller_points.len() / 2
+        );
+        assert_eq!(caller_pressures.len(), caller_points.len() / 2);
+        assert_eq!(
+            input["tilt_f32_bits"].as_array().unwrap().len(),
+            caller_points.len() / 2
+        );
+        assert_eq!(
+            input["orientation_f32_bits"].as_array().unwrap().len(),
+            caller_points.len() / 2
+        );
+        assert_eq!(
+            nontrivial["native_calls"]["drawable_getInverseScale_f32_bits"],
+            serde_json::json!(["0000803f", "0000803f"])
+        );
+        assert_eq!(
+            nontrivial["native_calls"]["drawable_getSize_f32_bits"],
+            input["pen_size_f32_bits"]
+        );
+        assert_eq!(
+            nontrivial["native_calls"]["pen_screen_resolution"][0]["width"],
+            1440
+        );
+        assert_eq!(
+            nontrivial["native_calls"]["pen_screen_resolution"][0]["height"],
+            2560
+        );
+        let redraw_entries = nontrivial["native_calls"]["selected_drawable_redraw_entry_state"]
+            .as_array()
+            .unwrap();
+        let drawing_entry = redraw_entries
+            .iter()
+            .find(|entry| entry["phase"] == "draw_object_stroke")
+            .unwrap();
+        let replay_entry = redraw_entries
+            .iter()
+            .find(|entry| entry["phase"] == "saved_redraw")
+            .unwrap();
+        assert_eq!(drawing_entry["tolerance_plus_44_f32_bits"], "00000040");
+        assert_eq!(drawing_entry["residual_plus_92_f32_bits"], "00000000");
+        assert_eq!(drawing_entry["alternation_plus_100_u8"], 0);
+        assert_eq!(replay_entry["tolerance_plus_44_f32_bits"], "00000000");
+        assert_eq!(replay_entry["residual_plus_92_f32_bits"], "409f383f");
+        assert_eq!(replay_entry["alternation_plus_100_u8"], 1);
+        for case in [empty, explicit, nontrivial] {
+            assert_eq!(
+                case["native_calls"]["route"]["drawing_selected_drawable_version"],
+                "9"
+            );
+            assert_eq!(
+                case["native_calls"]["selected_drawable_primary_vtable_id"],
+                "InkPen2StrokeDrawableGLV9"
+            );
+            assert_eq!(
+                case["native_calls"]["selected_drawable_object_redraw_return"],
+                1
+            );
+
+            let phases: &[&str] = if case["case_id"] == nontrivial["case_id"] {
+                &["draw_object_stroke", "saved_redraw"]
+            } else {
+                &["saved_redraw"]
+            };
+            for phase in phases {
+                let method_entries = case["native_method_entries"].as_array().unwrap();
+                let phase_entries = method_entries
+                    .iter()
+                    .filter(|entry| entry["phase"] == *phase)
+                    .collect::<Vec<_>>();
+                let end_pen = phase_entries
+                    .iter()
+                    .rposition(|entry| {
+                        entry["signatures"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .any(|signature| signature.as_str().unwrap().contains("::endPen("))
+                    })
+                    .expect("selected V9 saved redraw must enter endPen");
+                let terminal_callbacks = phase_entries[end_pen + 1..]
+                    .iter()
+                    .filter(|entry| {
+                        entry["signatures"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .any(|signature| signature.as_str().unwrap().contains("::drawPoint("))
+                    })
+                    .count();
+
+                let events = case["callback_buffer_events"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .filter(|event| event["phase"] == *phase)
+                    .collect::<Vec<_>>();
+                assert!(
+                    !events.is_empty(),
+                    "{}: V9 callback stream is empty",
+                    case["case_id"]
+                );
+                let mut previous = Vec::new();
+                for (index, event) in events.iter().enumerate() {
+                    let before = event["before_bytes"].as_str().unwrap();
+                    let after = event["after_bytes"].as_str().unwrap();
+                    let delta = event["delta_bytes"].as_str().unwrap();
+                    assert_eq!(
+                        hex_bytes(before),
+                        previous,
+                        "{}: callback {index} before",
+                        case["case_id"]
+                    );
+                    assert_eq!(
+                        hex_bytes(delta).len(),
+                        36,
+                        "{}: callback {index} RTV3 record",
+                        case["case_id"]
+                    );
+                    assert_eq!(
+                        hex_bytes(after),
+                        [previous.as_slice(), hex_bytes(delta).as_slice()].concat()
+                    );
+                    assert_eq!(
+                        event["before_count_bytes"].as_u64().unwrap() as usize,
+                        index * 36
+                    );
+                    assert_eq!(
+                        event["after_count_bytes"].as_u64().unwrap() as usize,
+                        (index + 1) * 36
+                    );
+                    previous = hex_bytes(after);
+                }
+                assert_eq!(previous.len(), events.len() * 36);
+                assert!(terminal_callbacks > 0);
+                let terminal_start = events.len() - terminal_callbacks;
+                assert_eq!(
+                    events[terminal_start]["before_count_bytes"]
+                        .as_u64()
+                        .unwrap() as usize,
+                    terminal_start * 36,
+                    "{}: callback stream must expose the endPen terminal boundary",
+                    case["case_id"]
+                );
+                let model = redraw_from_native_caller(case, phase);
+                assert_eq!(
+                    model.vertices.len(),
+                    events.len(),
+                    "{} {phase}: modeled callback count",
+                    case["case_id"]
+                );
+                assert_eq!(model.terminal.start, terminal_start);
+                assert_eq!(model.terminal.end, events.len());
+                assert_eq!(model.sample_ends.last(), Some(&terminal_start));
+                let native_floats = floats_from_le_bytes(&previous);
+                for (record_index, (actual, expected)) in model
+                    .vertices
+                    .iter()
+                    .zip(native_floats.chunks_exact(9))
+                    .enumerate()
+                {
+                    for lane in 0..9 {
+                        assert_eq!(
+                            actual[lane].to_bits(),
+                            expected[lane].to_bits(),
+                            "{}: native caller record {record_index}, lane {lane}",
+                            case["case_id"]
+                        );
+                    }
+                }
+            }
+        }
+
+        let empty_bytes = cases["route_control_empty_v9"]["callback_buffer_events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|event| event["phase"] == "saved_redraw")
+            .last()
+            .unwrap()["after_bytes"]
+            .as_str()
+            .unwrap();
+        let explicit_bytes = cases["route_control_explicit9_v9"]["callback_buffer_events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|event| event["phase"] == "saved_redraw")
+            .last()
+            .unwrap()["after_bytes"]
+            .as_str()
+            .unwrap();
+        assert_eq!(
+            empty_bytes, explicit_bytes,
+            "empty and explicit V9 controls share the same saved input and output"
+        );
+
+        let captured =
+            caller["cases"]["line0_curve_short_history_explicit9_v9"]["callback_buffer_events"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|event| event["phase"] == "saved_redraw")
+                .last()
+                .unwrap();
+        let actual = floats_from_le_hex(captured["after_bytes"].as_str().unwrap());
+        let expected = numeric_case["native"]["rtv3"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|record| {
+                record
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|lane| lane.as_f64().unwrap() as f32)
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(actual.len(), expected.len());
+        for (index, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+            assert_eq!(
+                actual.to_bits(),
+                expected.to_bits(),
+                "caller RTV3 lane {index}"
+            );
+        }
+        assert_eq!(actual.len(), 25 * 9);
+        assert_eq!(captured["after_count_bytes"].as_u64().unwrap(), 900);
+    }
+
+    #[test]
     fn rejects_unmodeled_shape_mode() {
         let point = [P { x: 0., y: 0. }];
         let time = [0];
@@ -421,6 +867,7 @@ mod tests {
                     inverse_scale: [1., 1.],
                     spacing: 1.,
                     tolerance: 2.,
+                    tool_threshold: 20.,
                     resolution_min: 1440,
                     initial_alternation: false,
                     initial_time: 0,
