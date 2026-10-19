@@ -612,11 +612,14 @@ mod tests {
         stroke.timestamps = vec![0, 10, 20];
         let render_stroke = |stroke: &Stroke, expect_filter: bool| {
             let mut svg = Scene::new(Svg::new().width(64).height(64));
+            let mut calligraphy_session = crate::ink::calligraphy::CalligraphySession::new();
             crate::render::render_stroke(
                 &mut svg,
                 stroke,
                 crate::RenderTheme::for_canvas(false),
                 None,
+                &mut calligraphy_session,
+                true,
             );
             let svg = svg.finish();
             assert!(!svg.contains("<image"));

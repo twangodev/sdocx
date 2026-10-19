@@ -44,6 +44,7 @@ pub(super) struct SavedHistoryOutput {
 pub(super) struct EndPenOutput {
     pub(super) vectors: Vec<[f32; 4]>,
     /// Absent when native endPen takes the initial-point branch and builds no path.
+    #[cfg(test)]
     pub(super) path_length: Option<f32>,
     pub(super) point_extent: f32,
     pub(super) state: SavedHistoryState,
@@ -59,6 +60,7 @@ pub(super) struct SavedObjectStrokeInput<'a> {
     pub(super) timestamps: &'a [i32],
     pub(super) tilt: Option<&'a [f32]>,
     pub(super) orientation: Option<&'a [f32]>,
+    #[cfg(test)]
     pub(super) tool_type: i32,
     pub(super) pen_size: f32,
     /// Enabled native fixed-width style value, before RTV1's minimum of 1.
@@ -69,15 +71,21 @@ pub(super) struct SavedObjectStrokeInput<'a> {
 /// and terminal event split used by the Calligraphy GLV1 wrapper.
 pub(super) struct SavedObjectStrokeOutput {
     pub(super) history: Option<SavedHistoryOutput>,
+    #[cfg(test)]
     pub(super) terminal: Option<EndPenOutput>,
     /// Combined actual AddPoint input records, with the common point extent.
     pub(super) vectors: Vec<[f32; 4]>,
     pub(super) extents: Vec<f32>,
     pub(super) final_state: SavedHistoryState,
+    #[cfg(test)]
     pub(super) event_time_ms: i64,
+    #[cfg(test)]
     pub(super) event_pressure: f32,
+    #[cfg(test)]
     pub(super) event_tilt: f32,
+    #[cfg(test)]
     pub(super) event_orientation: f32,
+    #[cfg(test)]
     pub(super) tool_type: i32,
 }
 
@@ -154,6 +162,7 @@ impl CalligraphySession {
         self.state = Some(CalligraphyState::fresh());
     }
 
+    #[cfg(test)]
     pub(crate) fn is_valid(&self) -> bool {
         self.state.is_some()
     }
@@ -164,6 +173,9 @@ impl CalligraphySession {
 /// a native typed mesh.
 pub(crate) enum CalligraphyAdmission {
     NotCalligraphy,
+    // Keep failure classification for tests/future diagnostics; render fallback
+    // currently has no diagnostic sink for exposing it.
+    #[cfg_attr(not(test), allow(dead_code))]
     Unsupported(CalligraphyUnsupported),
     Mesh(CalligraphyModelMesh),
 }
@@ -318,6 +330,7 @@ pub(crate) fn prepare_model_stroke(
         return CalligraphyAdmission::Unsupported(CalligraphyUnsupported::InvalidCoordinates);
     }
 
+    #[cfg(test)]
     let effective_tool_type = if rendering.tool_type_raw <= 4 {
         i32::from(rendering.tool_type_raw)
     } else {
@@ -329,6 +342,7 @@ pub(crate) fn prepare_model_stroke(
         timestamps: &timestamps,
         tilt: tilt.as_deref(),
         orientation: orientation.as_deref(),
+        #[cfg(test)]
         tool_type: effective_tool_type,
         // The inherited native Pen::SetSize clamps before RedrawPen reads it.
         pen_size: pen_size.clamp(0.4, 800.0),
@@ -384,6 +398,7 @@ pub(crate) fn prepare_model_stroke(
 /// Adapt the saved object's source arrays to Base MotionEvent history plus its
 /// separate terminal event. Callers must supply the drawable's retained state;
 /// this function does not assume every saved record starts from a new drawable.
+#[cfg(test)]
 pub(super) fn saved_object_stroke_redraw(
     input: SavedObjectStrokeInput<'_>,
     retained: SavedHistoryState,
@@ -412,16 +427,19 @@ fn saved_object_stroke_redraw_bounded(
         return None;
     }
     let paired_stylus = input.tilt.is_some() && input.orientation.is_some();
+    #[cfg(test)]
     let event_tilt = if paired_stylus {
         input.tilt?.last().copied()?
     } else {
         0.0
     };
+    #[cfg(test)]
     let event_orientation = if paired_stylus {
         input.orientation?.last().copied()?
     } else {
         0.0
     };
+    #[cfg(test)]
     let event_time_ms = i64::from(*input.timestamps.last()?) - i64::from(input.timestamps[0]);
     let history = if count > 1 {
         let history_rows: Vec<[f32; 3]> = input.points[..count - 1]
@@ -477,14 +495,20 @@ fn saved_object_stroke_redraw_bounded(
         .map_or(retained, |terminal| terminal.state);
     Some(SavedObjectStrokeOutput {
         history,
+        #[cfg(test)]
         terminal,
         vectors,
         extents,
         final_state,
+        #[cfg(test)]
         event_time_ms,
+        #[cfg(test)]
         event_pressure: *input.pressures.last()?,
+        #[cfg(test)]
         event_tilt,
+        #[cfg(test)]
         event_orientation,
+        #[cfg(test)]
         tool_type: input.tool_type,
     })
 }
@@ -511,6 +535,7 @@ pub(super) fn prepare_saved_history(
 /// Reconstruct the separate terminal endPen sampling loop from retained
 /// drawable state and the final event endpoint. Its repeat scale uses full
 /// pen size; each emitted drawPoint uses half size and retains nib direction.
+#[cfg(test)]
 pub(super) fn terminal_end_pen_vectors(
     state: SavedHistoryState,
     endpoint: P,
@@ -541,6 +566,7 @@ fn terminal_end_pen_vectors_bounded(
                 state.nib.direction[1],
                 state.nib.direction[0],
             ]],
+            #[cfg(test)]
             path_length: None,
             point_extent: (pen_size * 0.5).max(1.0),
             state,
@@ -595,6 +621,7 @@ fn terminal_end_pen_vectors_bounded(
     }
     Some(EndPenOutput {
         vectors,
+        #[cfg(test)]
         path_length: Some(length),
         point_extent: (pen_size * 0.5).max(1.0),
         state,
@@ -715,6 +742,7 @@ impl TerminalCubic {
 /// Reconstruct the finite history-to-AddPoint sampling stage. `history` starts
 /// with the event's first historical record; the native loop skips that first
 /// record and consumes the rest. The current event/endPen path is separate.
+#[cfg(test)]
 pub(super) fn saved_history_vectors(
     history: &[[f32; 3]],
     state: SavedHistoryState,
@@ -1030,6 +1058,7 @@ impl MeshBuffers {
 
 /// Adapt saved ObjectStroke channels and explicit retained drawable state to
 /// the three Vector4 buffers produced by the native RTV1 AddPoint path.
+#[cfg(test)]
 pub(super) fn saved_object_stroke_mesh(
     input: SavedObjectStrokeInput<'_>,
     state: CalligraphyState,

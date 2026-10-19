@@ -123,20 +123,22 @@ also uses the generic approximation, separately from native live filtering.
 A test-only V9 core matches every RTV3 float in three fresh, type-0 saved
 redraw cases; shape modes, caller admission and paint integration remain open.
 The [Calligraphy V1 source trace](reverse-engineering/calligraphy-source-findings.md)
-establishes orientation-derived nib geometry and reused state; this profile
-also uses the generic approximation in Rust. Its test-only linked core matches
-captured saved-array conversion, initialization, history/endPen state, vectors
-and core/fringe buffers for fresh/reused cases. A native
-[queued Draw capture](../conformance/calligraphy-draw-native.json) checks buffer
-uploads, draw order, uniforms and GLES blend calls under explicit host callbacks.
+establishes orientation-derived nib geometry and retained drawable state.
+Production SVG/PDF rendering now uses its three native mesh lanes for admitted
+ordinary saved strokes, preserving source RGB, core alpha gradients and native
+draw order without image objects. State follows Standard export bitmap batches;
+containers and Formula fallback lists retain their enclosing Drawing state.
 The [Drawing caller capture](../conformance/calligraphy-saved-caller-native.json)
-adds source conversion and retained-state evidence, including two strokes
-traversed by native `DrawObjectList` with per-stroke mesh snapshots. Saved-wrapper
-cases check fixed-width overrides and native tool setter/getter behavior.
-Full caller-state integration remains open.
-A test-only vector adapter preserves those uploaded triangles, native draw order
-and core alpha gradients through SVG/PDF without image objects. Caller admission,
-layer opacity, production integration and device pixel parity remain outstanding.
+checks fresh/reused source conversion and two-stroke native list traversal;
+Rust matches complete buffers and retained state. The
+[saved-wrapper capture](../conformance/calligraphy-saved-wrapper-native.json)
+covers fixed width, raw tool normalization and paired curve flags, while the
+[queued Draw capture](../conformance/calligraphy-draw-native.json) records uploads,
+uniforms and blend calls. Unsupported inputs retain the generic approximation;
+unknown state stays in fallback until a batch reset. Standalone `prepare_stroke`
+also retains that approximation because it has no Drawing lifetime. Object/group
+opacity, unsupported model routes, PDF raster edges and device pixel parity
+remain open; host captures and vector-only PDFs do not establish full parity.
 AirBrush has a test-only sampler matching all stamp bits in three synthetic
 native saved-redraw cases; native V2 reproduces V1 records and CPU pattern bytes
 at a synthetic SPTextureBitmap UpdateBitmap boundary. A native

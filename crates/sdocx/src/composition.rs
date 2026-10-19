@@ -29,12 +29,14 @@ impl PageObject {
                 | crate::PageElement::Shape(_)
                 | crate::PageElement::Line(_) => None,
             },
-            PageObjectContent::Stroke(_) | PageObjectContent::Container(_) => None,
+            PageObjectContent::Stroke(_)
+            | PageObjectContent::Container(_)
+            | PageObjectContent::Descendant(_) => None,
         }
     }
 
     pub(crate) fn render_pass(&self) -> Option<RenderPass> {
-        let stroke = match &self.content {
+        let stroke = match self.content.leaf() {
             PageObjectContent::Stroke(stroke) => Some(stroke),
             _ => None,
         };

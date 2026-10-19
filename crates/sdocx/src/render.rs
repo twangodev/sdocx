@@ -20,7 +20,6 @@ use vector::{
 };
 
 mod arrows;
-#[cfg(test)]
 mod calligraphy;
 mod code;
 mod embedded;
@@ -962,17 +961,29 @@ fn render_pass(
     pass: RenderPass,
     progress: &mut WorkProgress<'_>,
 ) {
+    let mut calligraphy = crate::ink::calligraphy::CalligraphySession::new();
     let mut stroke_index = 0;
     for (object_index, object) in context.page.objects.iter().enumerate() {
         if let Some(selected) = object.render_pass() {
             if selected == pass {
+                if pass == RenderPass::Base && object.standard_batch_boundary().is_some() {
+                    calligraphy.reset();
+                }
                 if let Some(body) = context.body_text
                     && body.object_index == object_index
                 {
                     body.paint(svg, context);
                     progress.advance(1);
                 } else {
-                    render_object(svg, context, object, &mut stroke_index, progress);
+                    render_object(
+                        svg,
+                        context,
+                        object,
+                        &mut stroke_index,
+                        &mut calligraphy,
+                        true,
+                        progress,
+                    );
                 }
             } else {
                 stroke_index += object.stroke_count();
@@ -986,15 +997,21 @@ fn render_object(
     context: &CompositionContext<'_>,
     object: &PageObject,
     stroke_index: &mut usize,
+    calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
+    native_allowed: bool,
     progress: &mut WorkProgress<'_>,
 ) {
-    match &object.content {
+    let native_allowed =
+        native_allowed && !matches!(object.content, PageObjectContent::Descendant(_));
+    match object.content.leaf() {
         PageObjectContent::Stroke(stroke) => {
             render_stroke(
                 svg,
                 stroke,
                 context.theme,
                 context.replay.then_some(*stroke_index),
+                calligraphy_session,
+                native_allowed,
             );
             *stroke_index += 1;
         }
@@ -1003,9 +1020,18 @@ fn render_object(
         }
         PageObjectContent::Container(children) => {
             for child in children {
-                render_object(svg, context, child, stroke_index, progress);
+                render_object(
+                    svg,
+                    context,
+                    child,
+                    stroke_index,
+                    calligraphy_session,
+                    native_allowed,
+                    progress,
+                );
             }
         }
+        PageObjectContent::Descendant(_) => unreachable!("leaf unwraps descendant content"),
     }
     progress.advance(1);
 }
@@ -3104,7 +3130,28 @@ fn render_stroke(
     stroke: &Stroke,
     theme: RenderTheme,
     replay_index: Option<usize>,
+    calligraphy_session: &mut crate::ink::calligraphy::CalligraphySession,
+    native_allowed: bool,
 ) {
+    if native_allowed {
+        match crate::ink::calligraphy::prepare_model_stroke(calligraphy_session, stroke) {
+            crate::ink::calligraphy::CalligraphyAdmission::Mesh(mesh) => {
+                let mut outcome = None;
+                if let Some(index) = replay_index {
+                    svg.scope(Group::new().replay_stroke(StrokeIndex(index)), |svg| {
+                        outcome = Some(calligraphy::render_model(svg, &mesh, true));
+                    });
+                } else {
+                    outcome = Some(calligraphy::render_model(svg, &mesh, false));
+                }
+                if outcome == Some(Ok(())) {
+                    return;
+                }
+            }
+            crate::ink::calligraphy::CalligraphyAdmission::NotCalligraphy
+            | crate::ink::calligraphy::CalligraphyAdmission::Unsupported(_) => {}
+        }
+    }
     let mut paint = crate::prepare_stroke(stroke, false);
     paint.color = theme.foreground(stroke.color);
     if let Some(index) = replay_index {
@@ -3280,6 +3327,451 @@ mod tests {
         RichTextSpan, RichTextSpanType, Stroke, StrokeProperties, StrokeRendering, StrokeStyle,
         layout_document,
     };
+
+    fn calligraphy_stroke(source: &serde_json::Value) -> Stroke {
+        let floats = |bits_key: &str, bytes_key: &str| {
+            let hex_words = if let Some(values) = source[bits_key].as_array() {
+                values
+                    .iter()
+                    .map(|value| value.as_str().unwrap().to_owned())
+                    .collect::<Vec<_>>()
+            } else {
+                source[bytes_key]
+                    .as_str()
+                    .unwrap()
+                    .as_bytes()
+                    .chunks_exact(8)
+                    .map(|word| std::str::from_utf8(word).unwrap().to_owned())
+                    .collect()
+            };
+            hex_words
+                .iter()
+                .map(|word| {
+                    let mut raw = [0_u8; 4];
+                    for (index, pair) in word.as_bytes().chunks_exact(2).enumerate() {
+                        raw[index] =
+                            u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap();
+                    }
+                    f32::from_le_bytes(raw)
+                })
+                .collect::<Vec<_>>()
+        };
+        let point_values = floats("points_f32_bits", "point_bytes_f32_le");
+        let points = point_values
+            .chunks_exact(2)
+            .map(|xy| Point {
+                x: f64::from(xy[0]),
+                y: f64::from(xy[1]),
+            })
+            .collect::<Vec<_>>();
+        let pressures = floats("pressure_f32_bits", "pressure_bytes_f32_le")
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let tilts = floats("tilt_f32_bits", "tilt_bytes_f32_le")
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let orientations = floats("orientation_f32_bits", "orientation_bytes_f32_le")
+            .into_iter()
+            .map(f64::from)
+            .collect();
+        let timestamps = source["timestamps_i32"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_i64().unwrap())
+            .collect();
+        let argb = source["argb_u32"].as_u64().unwrap() as u32;
+        let pen_size_bytes = source["pen_size_f32_bits"].as_str().unwrap();
+        let pen_size = f32::from_le_bytes(std::array::from_fn(|index| {
+            u8::from_str_radix(&pen_size_bytes[index * 2..index * 2 + 2], 16).unwrap()
+        }));
+        Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: source["pen_name"].as_str().map(str::to_owned),
+                advanced_settings: None,
+                tool_type_raw: source["tool_type"].as_u64().unwrap() as u16,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(pen_size),
+                    stroke_type_raw: Some(source["stroke_type"].as_u64().unwrap() as u16),
+                    color_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points,
+            pressures,
+            timestamps,
+            tilts,
+            orientations,
+            color: Some(Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            }),
+            pen_width: pen_size,
+        }
+    }
+
+    fn path_data(svg: &str) -> Vec<String> {
+        roxmltree::Document::parse(svg)
+            .unwrap()
+            .descendants()
+            .filter(|node| node.has_tag_name("path"))
+            .filter_map(|node| node.attribute("d").map(str::to_owned))
+            .collect()
+    }
+
+    fn gradient_path_data(svg: &str) -> Vec<String> {
+        roxmltree::Document::parse(svg)
+            .unwrap()
+            .descendants()
+            .filter(|node| node.has_tag_name("path"))
+            .filter(|node| {
+                node.attribute("fill")
+                    .is_some_and(|fill| fill.starts_with("url(#"))
+            })
+            .filter_map(|node| node.attribute("d").map(str::to_owned))
+            .collect()
+    }
+
+    fn render_objects(objects: Vec<crate::PageObject>, replay: bool) -> String {
+        let mut page = page_with_uncolored_stroke();
+        page.objects = objects;
+        let document = document(page);
+        if replay {
+            let layout = layout_document(&document);
+            super::render_layout_page_replay_svg(&document, &layout, 0, &RenderOptions::default())
+                .unwrap()
+                .svg
+        } else {
+            render_document_svg(&document, &RenderOptions::default())[0]
+                .svg
+                .clone()
+        }
+    }
+
+    fn expected_calligraphy_paths(strokes: &[Stroke], reset_each: bool) -> Vec<String> {
+        let mut scene = super::Scene::new(super::Svg::new().width(100).height(100));
+        let mut session = crate::ink::calligraphy::CalligraphySession::new();
+        for stroke in strokes {
+            if reset_each {
+                session.reset();
+            }
+            if let crate::ink::calligraphy::CalligraphyAdmission::Mesh(mesh) =
+                crate::ink::calligraphy::prepare_model_stroke(&mut session, stroke)
+            {
+                super::calligraphy::render_model(&mut scene, &mesh, false).unwrap();
+            }
+        }
+        path_data(&scene.finish())
+    }
+
+    #[test]
+    fn public_svg_render_uses_chained_calligraphy_sessions_and_root_boundaries() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/calligraphy-saved-caller-native.json"
+        ))
+        .unwrap();
+        let sources = fixture["cases"]["two-stroke-object-list-batch"]["input"]["sources"]
+            .as_array()
+            .unwrap();
+        let strokes = sources.iter().map(calligraphy_stroke).collect::<Vec<_>>();
+        assert_eq!(strokes.len(), 2);
+
+        let chained = render_objects(strokes.iter().cloned().map(Into::into).collect(), false);
+        assert_eq!(
+            path_data(&chained),
+            expected_calligraphy_paths(&strokes, false)
+        );
+        assert!(chained.contains("#112233"));
+
+        let mut promoted_calligraphy = strokes[0].clone();
+        for point in &mut promoted_calligraphy.points {
+            point.x += 37.0;
+        }
+        let promoted_descendant = crate::PageObject {
+            render_layer: crate::ObjectRenderLayer::Base,
+            source_offset: None,
+            content: crate::PageObjectContent::Descendant(Box::new(
+                crate::PageObjectContent::Stroke(promoted_calligraphy),
+            )),
+        };
+        let with_promoted_child = render_objects(
+            vec![
+                strokes[0].clone().into(),
+                promoted_descendant,
+                strokes[1].clone().into(),
+            ],
+            false,
+        );
+        assert_eq!(
+            gradient_path_data(&with_promoted_child),
+            gradient_path_data(&chained),
+            "a promoted non-container child is drawn generically and leaves the native session untouched"
+        );
+
+        let separated = render_objects(
+            vec![
+                strokes[0].clone().into(),
+                PageElement::Image {
+                    bbox: BoundingBox::default(),
+                    media_index: usize::MAX,
+                }
+                .into(),
+                strokes[1].clone().into(),
+            ],
+            false,
+        );
+        assert_eq!(
+            path_data(&separated),
+            expected_calligraphy_paths(&strokes, true),
+            "a root image boundary starts a fresh Standard bitmap Drawing"
+        );
+    }
+
+    #[cfg(feature = "pdf")]
+    #[test]
+    fn public_calligraphy_pdf_keeps_mesh_vector_only() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/calligraphy-saved-caller-native.json"
+        ))
+        .unwrap();
+        let sources = fixture["cases"]["two-stroke-object-list-batch"]["input"]["sources"]
+            .as_array()
+            .unwrap();
+        let strokes = sources.iter().map(calligraphy_stroke).collect::<Vec<_>>();
+        let document = document({
+            let mut page = page_with_uncolored_stroke();
+            page.objects = strokes.into_iter().map(Into::into).collect();
+            page
+        });
+        let bytes = crate::render_document_pdf(
+            &document,
+            &RenderOptions::default(),
+            &crate::PdfOptions::default(),
+        )
+        .unwrap();
+        let pdf = lopdf::Document::load_mem(&bytes).unwrap();
+        let images = pdf
+            .objects
+            .values()
+            .filter_map(|object| object.as_dict().ok())
+            .filter(|dict| {
+                dict.get(b"Subtype")
+                    .and_then(lopdf::Object::as_name)
+                    .is_ok_and(|name| name == b"Image")
+            })
+            .count();
+        assert_eq!(
+            images, 0,
+            "Calligraphy export must stay in vector paths/shadings"
+        );
+        assert!(pdf.objects.values().any(|object| {
+            object
+                .as_dict()
+                .ok()
+                .and_then(|dict| dict.get(b"Shading").ok())
+                .is_some()
+        }));
+    }
+
+    #[test]
+    fn unknown_calligraphy_input_poisons_until_a_root_boundary_resets_the_session() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/calligraphy-saved-caller-native.json"
+        ))
+        .unwrap();
+        let sources = fixture["cases"]["two-stroke-object-list-batch"]["input"]["sources"]
+            .as_array()
+            .unwrap();
+        let first = calligraphy_stroke(&sources[0]);
+        let second = calligraphy_stroke(&sources[1]);
+        let mut unsupported = first.clone();
+        unsupported.rendering.as_mut().unwrap().style.pen_size = None;
+
+        let first_only = render_objects(vec![first.clone().into()], false);
+        let poisoned = render_objects(
+            vec![
+                first.clone().into(),
+                unsupported.clone().into(),
+                second.clone().into(),
+            ],
+            false,
+        );
+        assert_eq!(
+            poisoned.matches("<linearGradient").count(),
+            first_only.matches("<linearGradient").count(),
+            "unsupported matching input prevents a later stroke from reusing stale native state"
+        );
+
+        let reset = render_objects(
+            vec![
+                first.clone().into(),
+                unsupported.clone().into(),
+                PageElement::Image {
+                    bbox: BoundingBox::default(),
+                    media_index: usize::MAX,
+                }
+                .into(),
+                second.clone().into(),
+            ],
+            false,
+        );
+        let mut expected_fresh_paths =
+            path_data(&render_objects(vec![first.clone().into()], false));
+        expected_fresh_paths.extend(path_data(&render_objects(vec![unsupported.into()], false)));
+        expected_fresh_paths.extend(path_data(&render_objects(
+            vec![second.clone().into()],
+            false,
+        )));
+        assert_eq!(
+            path_data(&reset),
+            expected_fresh_paths,
+            "the generic unsupported stroke remains visible, then a native type-3 boundary restores fresh Calligraphy geometry"
+        );
+    }
+
+    #[test]
+    fn replay_part_indices_follow_source_samples_and_terminal_sample() {
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../conformance/calligraphy-saved-wrapper-native.json"
+        ))
+        .unwrap();
+        let case = fixture["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["id"] == "six-paired-optionals")
+            .unwrap();
+        let rows = case["rows"].as_array().unwrap();
+        let points = rows
+            .iter()
+            .map(|row| [row[0].as_f64().unwrap(), row[1].as_f64().unwrap()])
+            .collect::<Vec<_>>();
+        let pressures = rows
+            .iter()
+            .map(|row| row[2].as_f64().unwrap())
+            .collect::<Vec<_>>();
+        let timestamps = rows
+            .iter()
+            .map(|row| row[3].as_i64().unwrap())
+            .collect::<Vec<_>>();
+        let argb = 0x7f11_2233;
+        let stroke = Stroke {
+            rendering: Some(StrokeRendering {
+                metadata: None,
+                pen_name: Some(
+                    "com.samsung.android.sdk.pen.pen.preload.MontblancCalligraphyPen".into(),
+                ),
+                advanced_settings: None,
+                tool_type_raw: 2,
+                properties: StrokeProperties {
+                    compressed: true,
+                    replay_only: false,
+                    stylus_channels: true,
+                    eraser: false,
+                    fixed_width: false,
+                    millisecond_timestamps: false,
+                    top_layer_pen: false,
+                    alpha_lock: false,
+                    binary_added: true,
+                    generated: false,
+                    fixed_opacity: false,
+                    rainbow_effect: false,
+                    straighten: false,
+                    reveal_mode: false,
+                },
+                style: StrokeStyle {
+                    color_argb: Some(argb),
+                    pen_size: Some(6.0),
+                    stroke_type_raw: Some(0),
+                    color_type_raw: Some(0),
+                    ..StrokeStyle::default()
+                },
+            }),
+            bbox: BoundingBox::default(),
+            points: points.iter().map(|[x, y]| Point { x: *x, y: *y }).collect(),
+            pressures,
+            timestamps,
+            tilts: case["tilt"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_f64().unwrap())
+                .collect(),
+            orientations: case["orientation"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|value| value.as_f64().unwrap())
+                .collect(),
+            color: Some(Color {
+                r: (argb >> 16) as u8,
+                g: (argb >> 8) as u8,
+                b: argb as u8,
+            }),
+            pen_width: 6.0,
+        };
+        let mut session = crate::ink::calligraphy::CalligraphySession::new();
+        let crate::ink::calligraphy::CalligraphyAdmission::Mesh(mesh) =
+            crate::ink::calligraphy::prepare_model_stroke(&mut session, &stroke)
+        else {
+            panic!("six-point Calligraphy fixture must produce a native mesh");
+        };
+        let mut expected_parts = std::collections::BTreeSet::new();
+        let mut previous = [0usize; 3];
+        for (sample, ends) in mesh.sample_ends.iter().enumerate() {
+            if (0..3).any(|lane| ends[lane] > previous[lane]) {
+                expected_parts.insert(sample + 2);
+            }
+            previous = *ends;
+        }
+        if (0..3).any(|lane| mesh.terminal_end[lane] > mesh.terminal_start[lane]) {
+            expected_parts.insert(mesh.sample_ends.len() + 2);
+        }
+        let source_count = mesh.sample_ends.len() + 2;
+        assert!(
+            expected_parts
+                .iter()
+                .any(|part| { *part >= 2 && *part < source_count }),
+            "fixture needs an emitted intermediate source sample: {expected_parts:?}"
+        );
+        let rendered = render_objects(vec![stroke.into()], true);
+        let xml = roxmltree::Document::parse(&rendered).unwrap();
+        let parts = xml
+            .descendants()
+            .filter(|node| node.has_tag_name("path"))
+            .filter_map(|node| node.attribute("data-replay-part"))
+            .filter_map(|part| part.parse::<usize>().ok())
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(
+            parts, expected_parts,
+            "every emitted native range must carry its exact source sample boundary"
+        );
+        assert!(xml.descendants().any(|node| {
+            node.has_tag_name("g") && node.attribute("data-replay-stroke") == Some("0")
+        }));
+    }
 
     #[test]
     fn native_paths_reject_unrepresentable_coordinates_without_drawing_a_prefix() {

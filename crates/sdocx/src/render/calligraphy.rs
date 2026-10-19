@@ -1,4 +1,4 @@
-//! Test-only vector transport for the captured Calligraphy mesh drawn through RTV1.
+//! Vector transport for the captured Calligraphy mesh drawn through RTV1.
 //!
 //! This consumes the renderer's already-generated triangles. It does not implement
 //! Calligraphy's saved-point geometry or decide when that geometry is admitted.
@@ -55,14 +55,106 @@ pub(super) enum AdapterError {
     InvalidViewport,
     NonFiniteVertex,
     UnrepresentableGradient,
+    InvalidSampleBoundaries,
 }
 
 /// Preserve each native mesh triangle as one SVG path. Ordinary sequential paint
 /// implements source-over in the actual renderer order: 232, 240, then 224.
+#[cfg(test)]
 pub(super) fn render(
     scene: &mut Scene,
     mesh: &NativeMeshBatch,
     viewport: Viewport,
+) -> Result<(), AdapterError> {
+    render_with_parts(scene, mesh, viewport, None, false)
+}
+
+pub(super) fn render_model(
+    scene: &mut Scene,
+    mesh: &crate::ink::calligraphy::CalligraphyModelMesh,
+    replay: bool,
+) -> Result<(), AdapterError> {
+    let triangles = |vertices: &[crate::ink::calligraphy::MeshVertex]| {
+        if vertices.len() % 3 != 0 {
+            return Err(AdapterError::InvalidSampleBoundaries);
+        }
+        Ok(vertices
+            .chunks_exact(3)
+            .map(|vertices| {
+                NativeTriangle(std::array::from_fn(|index| NativeVertex {
+                    position: vertices[index].position,
+                    w: vertices[index].coverage[1],
+                }))
+            })
+            .collect::<Vec<_>>())
+    };
+    // Output buffers follow AddPoint's buildMesh order. Native Renderer slots
+    // are core -> 224, fringe A -> 232, and fringe B -> 240; paint order is
+    // 232, 240, then 224.
+    let lanes = [
+        triangles(&mesh.buffers.core)?,
+        triangles(&mesh.buffers.fringe_a)?,
+        triangles(&mesh.buffers.fringe_b)?,
+    ];
+    let parts = lane_replay_parts(mesh, &lanes)?;
+    let batch = NativeMeshBatch {
+        core_232: lanes[1].clone(),
+        core_240: lanes[2].clone(),
+        fringe_224: lanes[0].clone(),
+        rgb: mesh.rgb,
+    };
+    render_with_parts(
+        scene,
+        &batch,
+        Viewport {
+            width: 1,
+            height: 1,
+            origin: [0.0; 2],
+            scale: [1.0; 2],
+        },
+        Some(parts),
+        replay,
+    )
+}
+
+fn lane_replay_parts(
+    mesh: &crate::ink::calligraphy::CalligraphyModelMesh,
+    lanes: &[Vec<NativeTriangle>; 3],
+) -> Result<[Vec<usize>; 3], AdapterError> {
+    let counts = lanes.each_ref().map(Vec::len);
+    let mut parts: [Vec<usize>; 3] = std::array::from_fn(|lane| vec![0; counts[lane]]);
+    let mut previous = [0usize; 3];
+    for (sample, ends) in mesh.sample_ends.iter().enumerate() {
+        for lane in 0..3 {
+            let end = ends[lane];
+            if end < previous[lane] || end > counts[lane] {
+                return Err(AdapterError::InvalidSampleBoundaries);
+            }
+            // History omits source point 0, then records each RedrawLine
+            // boundary starting at source point 1. ReplayPart is one-based.
+            parts[lane][previous[lane]..end].fill(sample + 2);
+            previous[lane] = end;
+        }
+    }
+    let source_count = mesh.sample_ends.len() + 2;
+    for lane in 0..3 {
+        let start = mesh.terminal_start[lane];
+        let end = mesh.terminal_end[lane];
+        if start != previous[lane] || end < start || end != counts[lane] {
+            return Err(AdapterError::InvalidSampleBoundaries);
+        }
+        // Terminal endPen output belongs to the final saved source point.
+        parts[lane][start..end].fill(source_count);
+    }
+    Ok(parts)
+}
+
+fn render_with_parts(
+    scene: &mut Scene,
+    mesh: &NativeMeshBatch,
+    viewport: Viewport,
+    parts: Option<[Vec<usize>; 3]>,
+    replay: bool,
 ) -> Result<(), AdapterError> {
     if viewport.width == 0
         || viewport.height == 0
@@ -78,17 +170,32 @@ pub(super) fn render(
     });
     let mut definitions = Definitions::new();
     let mut core_paths = Vec::new();
-    for triangle in mesh.core_232.iter().chain(&mesh.core_240) {
-        let (gradient, path) = core_path(scene, triangle, viewport, color)?;
-        if let Some(gradient) = gradient {
-            definitions = definitions.add(gradient);
-        }
-        if let Some(path) = path {
-            core_paths.push(path);
+    for (lane, triangles) in [&mesh.core_232, &mesh.core_240].into_iter().enumerate() {
+        for (index, triangle) in triangles.iter().enumerate() {
+            let part = parts
+                .as_ref()
+                .map(|parts| if lane == 0 { &parts[1] } else { &parts[2] })
+                .and_then(|parts| parts.get(index))
+                .copied()
+                .filter(|part| replay && *part > 0)
+                .map(crate::render::vector::ReplayPart);
+            let (gradient, path) = core_path(scene, triangle, viewport, color, part)?;
+            if let Some(gradient) = gradient {
+                definitions = definitions.add(gradient);
+            }
+            if let Some(path) = path {
+                core_paths.push(path);
+            }
         }
     }
     let mut fringe_paths = Vec::with_capacity(mesh.fringe_224.len());
-    for triangle in &mesh.fringe_224 {
+    for (index, triangle) in mesh.fringe_224.iter().enumerate() {
+        let part = parts
+            .as_ref()
+            .and_then(|parts| parts[0].get(index))
+            .copied()
+            .filter(|part| replay && *part > 0)
+            .map(crate::render::vector::ReplayPart);
         let points = transformed(triangle, viewport)?;
         if zero_area(points) {
             if !zero_area(native_points(triangle)) {
@@ -98,7 +205,9 @@ pub(super) fn render(
             fringe_paths.push(
                 Path::new()
                     .data(path_data(points))
-                    .fill(Paint::Solid(color)),
+                    .fill(Paint::Solid(color))
+                    .crisp_edges()
+                    .replay_part(part),
             );
         }
     }
@@ -159,6 +268,7 @@ fn core_path(
     triangle: &NativeTriangle,
     viewport: Viewport,
     color: ColorValue,
+    part: Option<crate::render::vector::ReplayPart>,
 ) -> Result<(Option<LinearGradient>, Option<Path>), AdapterError> {
     let points = transformed(triangle, viewport)?;
     if zero_area(points) {
@@ -173,7 +283,8 @@ fn core_path(
         let path = Path::new()
             .data(data)
             .fill(Paint::Solid(color))
-            .fill_opacity(native_alpha(w0));
+            .fill_opacity(native_alpha(w0))
+            .replay_part(part);
         return Ok((None, Some(path)));
     }
 
@@ -211,7 +322,11 @@ fn core_path(
         .add(Stop::new(0.3, Some(color)).opacity(1.0))
         .add(Stop::new(0.7, Some(color)).opacity(1.0))
         .add(Stop::new(1.0, Some(color)).opacity(0.0));
-    let path = Path::new().data(data).fill(Paint::Gradient(definition));
+    let path = Path::new()
+        .data(data)
+        .fill(Paint::Gradient(definition))
+        .crisp_edges()
+        .replay_part(part);
     Ok((Some(gradient), Some(path)))
 }
 
@@ -383,6 +498,11 @@ mod tests {
         let paths = svg.match_indices("<path").map(|x| x.0).collect::<Vec<_>>();
         assert_eq!(gradients.len(), 2);
         assert_eq!(paths.len(), 3);
+        assert!(
+            tags(&svg, "path")
+                .iter()
+                .all(|path| path.contains("shape-rendering=\"crispEdges\""))
+        );
         assert!(gradients[0] < gradients[1] && gradients[1] < paths[0]);
         assert!(svg.contains("stop-opacity=\"0\""));
         assert!(svg.contains("offset=\"0.3\""));
@@ -530,6 +650,28 @@ mod tests {
                 assert_eq!(native_alpha(0.7), 1.0);
             }
         }
+    }
+
+    #[test]
+    fn optionally_dump_actual_adapter_output_for_native_appearance_audit() {
+        let Ok(path) = std::env::var("SDOCX_CALLIGRAPHY_DUMP") else {
+            return;
+        };
+        let fixture = captured_fixture();
+        let mesh = captured_mesh(&fixture["cases"][0]);
+        let mut scene = Scene::new(super::super::vector::Svg::new().width(128).height(64));
+        render(
+            &mut scene,
+            &mesh,
+            Viewport {
+                width: 128,
+                height: 64,
+                origin: [0.0, 0.0],
+                scale: [1.0, 1.0],
+            },
+        )
+        .unwrap();
+        std::fs::write(path, scene.finish()).unwrap();
     }
 
     #[test]

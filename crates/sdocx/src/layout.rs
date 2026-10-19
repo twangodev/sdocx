@@ -170,7 +170,7 @@ impl LayoutPage {
     pub fn body_text_slice(&self) -> Option<&BodyTextSlice> {
         let slice = self.body_text.as_ref()?;
         matches!(
-            self.page.objects.get(slice.object_index)?.content,
+            self.page.objects.get(slice.object_index)?.content.leaf(),
             PageObjectContent::Element(PageElement::TextBox(_))
         )
         .then_some(slice)
@@ -244,7 +244,8 @@ impl LayoutPage {
     ) -> Option<Vec<Option<Range<usize>>>> {
         let metadata = self.body_text_slice()?;
         let object = self.page.objects.get(metadata.object_index)?;
-        let PageObjectContent::Element(PageElement::TextBox(inspection)) = &object.content else {
+        let PageObjectContent::Element(PageElement::TextBox(inspection)) = object.content.leaf()
+        else {
             return None;
         };
         if object.render_layer != crate::ObjectRenderLayer::Base || object.source_offset.is_some() {

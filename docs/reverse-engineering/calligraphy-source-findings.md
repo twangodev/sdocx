@@ -169,22 +169,26 @@ two-stroke native `DrawObjectList` case reuses one drawable and copies all three
 mesh buffers at each redraw return. Rust replay matches both strokes’ complete
 GLV1 state, AddPoint records, build rectangles and buffer words while chaining
 returned state. Constructor flags +80/+272 start false (`0x1d7b0`/`0x1d7e0`);
-saved redraw rearms them before sampling. Exporter batch ownership and
-production traversal still require separate integration.
+saved redraw rearms them before sampling. Production traversal uses Standard bitmap-batch ownership; promoted children
+of non-container records keep legacy fallback paint without changing native
+Calligraphy state.
 
 The [queued Draw fixture](../../conformance/calligraphy-draw-native.json) retains
-exact uploaded Vector4 bytes. The test-only
+exact uploaded Vector4 bytes. The production
 [vector adapter](../../crates/sdocx/src/render/calligraphy.rs) preserves the 232,
 240, then 224 triangle order and maps the fourth core vertex lane to the native
 piecewise alpha gradient. Tests check captured vertex positions and gradient
 values, and SDK PDF export retains vector shadings with no image objects. Host
 GLES replay of matching buffers/shaders supports this transport; it does not
-establish Android device pixels or saved-profile admission.
+establish Android device pixels or admission beyond the bounded model route.
 
-Current Rust `ink::prepare_stroke` selects Fountain/Marker2/Marker4 geometry;
-this profile borrows original samples with `InkSupport::Approximate`. Its
-[retained metadata](stroke-metadata-findings.md) and channels distinguish optional
-orientation, pen/settings identity and fixed width from pressure. Original
-source bytes/channels remain authoritative; generated geometry must not replace
-them. Drawable reuse and terminal gates prevent an unconditional claim of
-per-record deterministic native replay from source channels alone.
+Production SVG/PDF dispatch uses a caller-owned Calligraphy session for the
+canonical pen with ordinary stroke/color types, resolved size/ARGB and valid
+source channels. Finite sizes follow native `SetSize` clamping; fixed width is
+applied only when enabled. Sampling and triangle budgets fail back to the generic
+renderer. Unsupported matching input invalidates retained state until a verified
+batch reset. Standalone `ink::prepare_stroke` remains approximate because its
+API has no Drawing lifetime. Native mesh paths request crisp SVG edges to avoid
+adding path antialiasing along internal tessellation edges; PDF rasterization
+and device pixels remain separate validation gaps. Original source bytes and
+channels remain authoritative, and generated geometry never replaces them.

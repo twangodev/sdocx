@@ -359,7 +359,14 @@ impl PageDecoder<'_, '_> {
                     content,
                 });
             }
-            decoded_objects.extend(children);
+            if object.object_type != ObjectType::Container {
+                decoded_objects.extend(children.into_iter().map(|mut child| {
+                    child.content = PageObjectContent::Descendant(Box::new(child.content));
+                    child
+                }));
+            } else {
+                decoded_objects.extend(children);
+            }
             self.progress.advance(1);
         }
         Ok(decoded_objects)
@@ -473,4 +480,112 @@ fn check_limit(resource: &'static str, limit: usize, actual: usize) -> Result<()
 
 fn is_builtin_template_id(id: u32) -> bool {
     id != 0
+}
+
+#[cfg(test)]
+mod provenance_tests {
+    use super::*;
+    use crate::{ObjectRenderLayer, PageObjectContent, ProgressStage, StoredObject};
+    use std::collections::HashSet;
+
+    fn frame(kind: i16, properties: u8, fields: u32, fixed: &[u8], flexible: &[u8]) -> Vec<u8> {
+        let offset = 17 + fixed.len();
+        let mut bytes = ((offset + flexible.len()) as u32).to_le_bytes().to_vec();
+        bytes.extend_from_slice(&kind.to_le_bytes());
+        bytes.extend_from_slice(&(offset as u32).to_le_bytes());
+        bytes.extend_from_slice(&[1, properties, 4]);
+        bytes.extend_from_slice(&fields.to_le_bytes());
+        bytes.extend_from_slice(fixed);
+        bytes.extend_from_slice(flexible);
+        bytes
+    }
+
+    fn native_image_payload() -> Vec<u8> {
+        let mut base_fixed = 5500_u32.to_le_bytes().to_vec();
+        base_fixed.extend_from_slice(&0_u16.to_le_bytes());
+        base_fixed.extend_from_slice(&1234_i64.to_le_bytes());
+        for value in [0.0_f64, 0.0, 20.0, 20.0] {
+            base_fixed.extend_from_slice(&value.to_le_bytes());
+        }
+        base_fixed.extend_from_slice(&0_i32.to_le_bytes());
+        base_fixed.push(0);
+        let mut bytes = frame(0, 9, 1, &base_fixed, &0.0_f32.to_le_bytes());
+        bytes.extend(frame(6, 0, 0, &[], &[]));
+        let mut shape_fixed = 4_u32.to_le_bytes().to_vec();
+        for value in [0.0_f64, 0.0, 20.0, 20.0] {
+            shape_fixed.extend_from_slice(&value.to_le_bytes());
+        }
+        shape_fixed.extend_from_slice(&0.0_f32.to_le_bytes());
+        shape_fixed.extend_from_slice(&0_u32.to_le_bytes());
+        shape_fixed.push(0);
+        bytes.extend(frame(7, 0, 0, &shape_fixed, &[]));
+        bytes.extend(frame(3, 0, 0, &[], &[]));
+        bytes
+    }
+
+    fn object(
+        object_type: ObjectType,
+        payload_size: usize,
+        children: Vec<StoredObject>,
+    ) -> StoredObject {
+        StoredObject {
+            object_type,
+            declared_size: u32::try_from(payload_size + 32).unwrap(),
+            payload_offset: 0,
+            payload_size,
+            integrity_trailer: [0; 32],
+            children,
+        }
+    }
+
+    fn decode(objects: &[StoredObject], data: &[u8]) -> Vec<crate::PageObject> {
+        let media = MediaResolver::new(None, &[], &HashSet::new());
+        let limits = ParseLimits::default();
+        let document_metadata = crate::DocumentMetadata::default();
+        let stroke_resources = crate::StrokeResources::default();
+        let mut report = ParseReport::default();
+        let mut observer = |_| {};
+        let mut decoder = PageDecoder {
+            page_uuid: "provenance-test",
+            media: &media,
+            limits: &limits,
+            archive_entry: "page.page",
+            report: &mut report,
+            document_metadata: &document_metadata,
+            stroke_resources: &stroke_resources,
+            progress: WorkProgress::new(&mut observer, ProgressStage::Objects, 2),
+        };
+        decoder.decode_objects(data, objects).unwrap()
+    }
+
+    #[test]
+    fn decoder_marks_promoted_image_as_descendant_while_root_keeps_boundary() {
+        let payload = native_image_payload();
+        let image = object(ObjectType::Image, payload.len(), Vec::new());
+        let direct = decode(std::slice::from_ref(&image), &payload);
+        assert!(matches!(
+            direct[0].content,
+            PageObjectContent::Element(PageElement::PlacedImage(_))
+        ));
+        assert_eq!(direct[0].render_layer, ObjectRenderLayer::Base);
+        #[cfg(feature = "render")]
+        assert_eq!(
+            direct[0].standard_batch_boundary(),
+            Some(crate::composition::StandardBatchBoundary::Image)
+        );
+
+        let parent = object(ObjectType::Other(250), 0, vec![image]);
+        let promoted = decode(&[parent], &payload);
+        assert!(matches!(
+            promoted[0].content.leaf(),
+            PageObjectContent::Element(PageElement::PlacedImage(_))
+        ));
+        assert!(matches!(
+            promoted[0].content,
+            PageObjectContent::Descendant(_)
+        ));
+        assert_eq!(promoted[0].render_layer, ObjectRenderLayer::Base);
+        #[cfg(feature = "render")]
+        assert_eq!(promoted[0].standard_batch_boundary(), None);
+    }
 }
