@@ -123,9 +123,12 @@ Profile admission and validation are narrower than the names above. See
 
 A [Crayon2 saved-playback paint oracle](../conformance/crayon2-saved-playback-paint-native.json)
 joins native source getters, 285 packed records, queued upload and host Mesa Draw,
-with clipped/interior and transparent/opaque controls. Renderer size is host-written
-and RNG is modeled; Drawing settings, saved-color forwarding, production vector
-paint and device parity remain open.
+with clipped/interior and transparent/opaque controls. That V1 route supplies
+renderer size through a host write and uses modeled RNG. A separate
+[V2 Drawing oracle](../conformance/crayon2-drawing-admission-native.json)
+checks native settings dispatch and Model size/color forwarding through the same
+RT, shader uniform and six opaque/partial/zero-alpha readbacks. Persisted-note
+admission, production vector paint and device parity remain open.
 
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
