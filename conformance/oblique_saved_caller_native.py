@@ -16,18 +16,20 @@ LIBS=ROOT/'scratch/apk-analysis-native/arm64-v8a'; MODEL=LIBS/'libSPenModel.so';
 FIXTURE=ROOT/'conformance/oblique-saved-caller-native.json'
 SELECTED_VERSION_FIXTURE=ROOT/'conformance/oblique-saved-caller-selected-native.json'
 ADVANCED4_FIXTURE=ROOT/'conformance/oblique-saved-caller-advanced4-native.json'
+REUSE_FIXTURE=ROOT/'conformance/oblique-saved-caller-reuse-native.json'
 parser=argparse.ArgumentParser(description=__doc__)
 mode=parser.add_mutually_exclusive_group(required=True)
 mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 mode.add_argument('--check-profile-invariance',action='store_true')
-parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5'),default='two_point_curve')
+parser.add_argument('--case',choices=('two_point_curve','two_point_near','two_point_far','two_point_offset','three_points_curve','two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5','reuse_second'),default='two_point_curve')
 parser.add_argument('--redraw-version',choices=('selected','v4'),default='selected',help='use the selected drawable vtable entry, or the explicit GLV4 diagnostic probe')
 parser.add_argument('--advanced-setting',choices=('none','4'),default='none',help='apply saved ObjectStroke advanced setting before Drawing selects the drawable')
 parser.add_argument('--width',type=int,default=1920)
 parser.add_argument('--height',type=int,default=1080)
 parser.add_argument('--verbose',action='store_true',help='print native setup and instruction-boundary diagnostics')
+parser.add_argument('--two-stroke',action='store_true',help='draw three_points_curve then the fixed short reuse_second input in the same Drawing session')
 args=parser.parse_args()
 import builtins
 _console_print=builtins.print
@@ -36,6 +38,7 @@ def print(*values,**kwargs):
  if args.verbose or always:_console_print(*values,**kwargs)
 FIXTURE=SELECTED_VERSION_FIXTURE if args.redraw_version=='selected' else FIXTURE
 if args.redraw_version=='selected' and args.advanced_setting=='4': FIXTURE=ADVANCED4_FIXTURE
+if args.two_stroke or args.case=='reuse_second': FIXTURE=REUSE_FIXTURE
 if args.case in {'two_point_below5','two_point_at5','two_point_above5','two_point_offset_at5'} and (args.redraw_version!='selected' or args.advanced_setting!='4'):
  raise SystemExit('threshold witnesses are scoped to the Drawing-selected V4 route with saved setting 4;')
 INPUT_CASES={
@@ -48,8 +51,11 @@ INPUT_CASES={
  'two_point_above5': {'points':[[0.0,0.0],[5.001,0.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'two_point_offset_at5': {'points':[[10.0,20.0],[15.0,20.0]],'size':1.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.75],'timestamps':[100,110],'tilt':[0.1,0.2],'orientation':[0.0,0.3]},
  'three_points_curve': {'points':[[10.0,20.0],[18.0,25.0],[26.0,20.0]],'size':4.0,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.5,0.5,0.5],'timestamps':[0,8,16],'tilt':[0.0,0.0,0.0],'orientation':[0.0,0.0,0.0]},
+ 'reuse_second': {'points':[[30.0,2.0],[31.25,2.5]],'size':4.25,'curve_enabled':True,'tool_type':0,'stroke_type':0,'pressure':[0.6,0.8],'timestamps':[33,43],'tilt':[0.1,-0.2],'orientation':[0.3,0.5]},
 }
 input_case=INPUT_CASES[args.case]
+if args.two_stroke and (args.case!='three_points_curve' or args.redraw_version!='selected' or args.advanced_setting!='4'):
+ raise SystemExit('--two-stroke requires --case three_points_curve --redraw-version selected --advanced-setting 4')
 if not (0 < args.width < 65536 and 0 < args.height < 65536): raise SystemExit('profile dimensions must be positive u16 values')
 def mov_w0_ret(value):
  if not 0 <= value <= 0xffff: raise ValueError('screen dimension exceeds MOVZ immediate')
@@ -311,6 +317,23 @@ def snapshot_source_arrays(obj):
   arrays[name]={'count':count,'element_size':element_size,'data_hex':p.u.mem_read(data,size).hex() if size else ''}
  return arrays
 
+def make_stroke(data):
+ obj2=p.alloc(0x100); impl2=p.alloc(0x400)
+ p.call('SPen::ObjectStroke::ObjectStroke()',[obj2]); p.call('SPen::ObjectStrokeImpl::ObjectStrokeImpl(SPen::ObjectStroke*)',[impl2,obj2]); p.put(obj2+32,'Q',impl2)
+ p.f(0,data['size']); p.call('SPen::ObjectStroke::SetPenSize(float)',[obj2]); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj2,data['tool_type']]); p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[obj2,data['stroke_type']]); p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[obj2,int(data['curve_enabled'])])
+ count=len(data['points']); pts2=p.alloc(count*8); prs2=p.alloc(count*4); ts2=p.alloc(count*4); tilt2=p.alloc(count*4); orient2=p.alloc(count*4)
+ p.u.mem_write(pts2,struct.pack('<'+'f'*(count*2),*(v for xy in data['points'] for v in xy))); p.u.mem_write(prs2,struct.pack('<'+'f'*count,*data['pressure'])); p.u.mem_write(ts2,struct.pack('<'+'i'*count,*data['timestamps'])); p.u.mem_write(tilt2,struct.pack('<'+'f'*count,*data['tilt'])); p.u.mem_write(orient2,struct.pack('<'+'f'*count,*data['orientation']))
+ p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj2,pts2,prs2,ts2,tilt2,orient2,count]); p.call('SPen::ObjectBase::SetVisibility(bool)',[obj2,1])
+ pname2=p.alloc(32); p.call('SPen::String::String()',[pname2]); p.call('SPen::String::Construct()',[pname2]); cstr2=p.alloc(80); p.u.mem_write(cstr2,b'com.samsung.android.sdk.pen.pen.preload.ObliquePen\0'); p.call('SPen::String::Set(char const*)',[pname2,cstr2]); p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[obj2,pname2])
+ advanced2=p.alloc(32); p.call('SPen::String::String()',[advanced2]); p.call('SPen::String::Construct()',[advanced2]); advstr2=p.alloc(8); p.u.mem_write(advstr2,b'4;\0'); p.call('SPen::String::Set(char const*)',[advanced2,advstr2]); p.call('SPen::ObjectStroke::SetAdvancedPenSetting(SPen::String const*)',[obj2,advanced2])
+ return obj2,p.alloc(32)
+
+def snapshot_rt(label,drawable):
+ rt=struct.unpack('<Q',p.u.mem_read(drawable+16,8))[0]; vector=struct.unpack('<Q',p.u.mem_read(rt+264,8))[0] if rt else 0
+ bounds=struct.unpack('<3Q',p.u.mem_read(vector,24)) if vector else (0,0,0); n=bounds[1]-bounds[0]
+ if n>1_000_000 or n%12: raise RuntimeError(f'invalid {label} RT vector length {n}')
+ return {'label':label,'drawable':hex(drawable),'drawable_vptr':hex(struct.unpack('<Q',p.u.mem_read(drawable,8))[0]),'rt':hex(rt),'rt_id':rt_identity(rt),'drawable_fields_44_92':p.u.mem_read(drawable+44,49).hex(),'rt_previous_xy_344_356':p.u.mem_read(rt+344,16).hex(),'vector_bytes':n,'vector_sha256':hashlib.sha256(p.u.mem_read(bounds[0],n)).hexdigest() if n else hashlib.sha256(b'').hexdigest()}
+
 def log_vcall(u,a,z,d):
  if a in pending_motion_getters and pending_motion_getters[a]:
   call=pending_motion_getters[a].pop(0)
@@ -371,6 +394,7 @@ def screen_trace(u,a,z,d):
   call={'width':u.reg_read(R.UC_ARM64_REG_W1),'height':u.reg_read(R.UC_ARM64_REG_W2)}; screen_resolution_calls.append(call); print('Pen::SetScreenResolution entry',call)
 p.u.hook_add(UC_HOOK_CODE,screen_trace)
 p.u.hook_add(UC_HOOK_CODE,taskqueue)
+lifecycle_snapshots=[]
 
 obj=p.alloc(0x100); impl=p.alloc(0x400)
 try:
@@ -392,6 +416,26 @@ try:
   if selected_drawable_version!=expected_version: raise RuntimeError(f"advanced setting {args.advanced_setting!r} selected V{selected_drawable_version}, expected V{expected_version}")
   drawing_entries=[row for row in native_draw_entries if row['phase']=='draw_object_stroke' and row['pc']==hex(selected_object_redraw_target)]
   if not drawing_entries: raise RuntimeError('Drawing did not enter the selected drawable RedrawPen vtable target')
+ if args.two_stroke:
+  first_drawable=actual_drawable; first_rt=selected_rt; first_version=selected_drawable_version
+  lifecycle_snapshots.append(snapshot_rt('after_first_three_point_draw',first_drawable))
+  second_obj,second_rect=make_stroke(INPUT_CASES['reuse_second'])
+  snapshot_object_stroke('before_second_short_stroke',second_obj); second_arrays=snapshot_source_arrays(second_obj)
+  lifecycle_snapshots.append(snapshot_rt('before_second_short_draw',first_drawable))
+  phase='second_draw_object_stroke'
+  p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[p.drawing,p.draw_canvas,p.pen_canvas,second_obj,1],limit=5000000)
+  second_pen=factory_created_pens[-1]; p.call('SPen::ObliquePen::GetStrokeDrawableGL()',[second_pen]); actual_drawable=p.x(0); actual_pen=second_pen
+  selected_vptr=struct.unpack('<Q',p.u.mem_read(actual_drawable,8))[0]; selected_sub_vptr=struct.unpack('<Q',p.u.mem_read(actual_drawable+8,8))[0]
+  selected_object_redraw_target=struct.unpack('<Q',p.u.mem_read(selected_sub_vptr+40,8))[0]
+  selected_object_redraw_names=[name for name,address in p.syms.items() if address==selected_object_redraw_target]
+  selected_drawable_version=next((re.search(r'ObliquePenStrokeDrawableGLV(\d+)',name).group(1) for name in selected_object_redraw_names if re.search(r'ObliquePenStrokeDrawableGLV(\d+)',name)),'unknown')
+  selected_rt=struct.unpack('<Q',p.u.mem_read(actual_drawable+16,8))[0]; selected_rt_id=rt_identity(selected_rt)
+  if selected_drawable_version!='4': raise RuntimeError(f'second stroke selected V{selected_drawable_version}')
+  if actual_drawable!=first_drawable or selected_rt!=first_rt: raise RuntimeError('second native Drawing call replaced the selected drawable or RT')
+  second_entries=[row for row in native_draw_entries if row['phase']=='second_draw_object_stroke' and row['pc']==hex(selected_object_redraw_target)]
+  if not second_entries: raise RuntimeError('second Drawing call did not enter the selected drawable RedrawPen vtable target')
+  lifecycle_snapshots.append(snapshot_rt('after_second_short_draw',actual_drawable))
+  source_object_arrays=second_arrays; obj=second_obj; rect=second_rect
  snapshot_object_stroke('before_saved_RedrawPen',obj); p.call('SPen::Pen::GetSize()', [actual_pen]); pen_size_after_draw_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex(); print('native Pen::GetSize after draw S0 bits',pen_size_after_draw_bits); phase='saved_redraw'
  if args.redraw_version=='selected':
   if not selected_object_redraw_target: raise RuntimeError('selected drawable has no ObjectStroke RedrawPen vtable slot')
@@ -408,32 +452,70 @@ try:
  callbacks=[{k:v for k,v in row.items() if k not in ('vector_ptr','vector_bounds')} for row in captured_callbacks]
  p.call('SPen::ObliquePenStrokeDrawableGL::getSize()', [actual_drawable]); drawable_size_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex()
  p.call('SPen::ObliquePenStrokeDrawableGLV4::getInverseScale()', [actual_drawable]); inverse_scale_bits=[struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex(),struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S1)).hex()]
- if screen_resolution_calls != [{'width':args.width,'height':args.height}]: raise RuntimeError(f'unexpected native screen profile calls: {screen_resolution_calls}')
+ expected_profiles=2 if args.two_stroke else 1
+ if screen_resolution_calls != [{'width':args.width,'height':args.height}]*expected_profiles: raise RuntimeError(f'unexpected native screen profile calls: {screen_resolution_calls}')
  if not callbacks or not {'draw_object_stroke','saved_redraw'} <= set(r['phase'] for r in callbacks): raise RuntimeError(f'missing callback phases: {[r["phase"] for r in callbacks]}')
  if any(pending_motion_getters.values()): raise RuntimeError(f'MotionEvent getter calls missed native returns: {pending_motion_getters}')
  if not native_motion_getter_returns or not {'draw_object_stroke','saved_redraw'} <= set(r['phase_entry'] for r in native_motion_getter_returns): raise RuntimeError('missing live MotionEvent getter return evidence')
  # Only the original two-point witness has an established byte-for-byte
  # caller/redraw equivalence. Other probes retain both streams independently
  # because their purpose is to expose native lifecycle/history differences.
- if args.redraw_version=='selected' and captured_final_vectors['draw_object_stroke']['vector_bytes']!=captured_final_vectors['saved_redraw']['vector_bytes']: raise RuntimeError('Drawing and selected-vtable saved RedrawPen final callback streams differ')
+ draw_phase='second_draw_object_stroke' if args.two_stroke else 'draw_object_stroke'
+ if args.redraw_version=='selected' and captured_final_vectors[draw_phase]['vector_bytes']!=captured_final_vectors['saved_redraw']['vector_bytes']: raise RuntimeError('Drawing and selected-vtable saved RedrawPen final callback streams differ')
  native_hashes={name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in paths.items()}
  native_hashes['libc++_shared.so']=hashlib.sha256(CPP.read_bytes()).hexdigest()
  native_hashes['libSPenComposer.so']=hashlib.sha256((LIBS/'libSPenComposer.so').read_bytes()).hexdigest()
  traced_methods=[{k:v for k,v in row.items() if k in ('signatures','phase','pc','regs','motion_event_entry_bytes')} for row in native_draw_entries if any(token in name for name in row['signatures'] for token in ('::RedrawPen(','::endPen(','::drawPoint('))]
- result={'schema':'sdocx-oblique-saved-caller-native-case-v1','case_id':args.case,'profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':{'kind':'synthetic native ObjectStroke setter input; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.ObliquePen','stroke_type':input_case['stroke_type'],'tool_type':input_case['tool_type'],'curve_enabled':input_case['curve_enabled'],'pen_size_f32_bits':source_size_bits,'points_f32_bits':[[struct.pack('<f',v).hex() for v in xy] for xy in points],'pressure_f32_bits':[struct.pack('<f',v).hex() for v in input_case['pressure']],'timestamps_i32':input_case['timestamps'],'tilt_f32_bits':[struct.pack('<f',v).hex() for v in input_case['tilt']],'orientation_f32_bits':[struct.pack('<f',v).hex() for v in input_case['orientation']],'advanced_setting':('4;' if args.advanced_setting=='4' else None)},'native_calls':{'ObjectDrawing::drawObjectStroke_return':1,'selected_drawable_object_redraw_return':1,'route':{'runner_mode':args.redraw_version,'advanced_setting':('4;' if args.advanced_setting=='4' else None),'drawing_selected_drawable_version':selected_drawable_version,'saved_redraw_invoked_version':('4' if args.redraw_version=='v4' else selected_drawable_version)},'source_ObjectStroke_arrays':source_object_arrays,'motion_event_getter_returns':native_motion_getter_returns,'loader':loader_calls,'pen_screen_resolution':screen_resolution_calls,'source_ObjectStroke_GetPenSize_f32_bits':source_size_bits,'ObjectStroke_getter_snapshots':object_stroke_snapshots,'selected_drawable_redraw_lifecycle_method_entries':traced_methods,'drawing_selected_rt_id':selected_rt_id,'phase_rt_ids':{ph:sorted({rt_identity(v) for v in addresses}) for ph,addresses in phase_rt_addresses.items()},'pen_GetSize_after_draw_f32_bits':pen_size_after_draw_bits,'drawable_getSize_f32_bits':drawable_size_bits,'drawable_getInverseScale_f32_bits':inverse_scale_bits},'callback_add_point_calls':callbacks,'phase_final_vectors':captured_final_vectors,'libraries':native_hashes,'host_boundaries':['ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height','context vslot +80 is an explicit identity color-conversion host callback','context vslots +144/+152 return explicit flags/version values 1 and 1.0','canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively'],'scope':'Native Drawing caller plus direct saved RedrawPen under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.'}
+ result={'schema':'sdocx-oblique-saved-caller-native-case-v1','case_id':args.case,'profile':{'width':args.width,'height':args.height,'canvas_model_matrix_f32_bits':[struct.pack('<f',v).hex() for v in (1,0,0,0,1,0,0,0,1)]},'input':{'kind':'synthetic native ObjectStroke setter input; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.ObliquePen','stroke_type':input_case['stroke_type'],'tool_type':input_case['tool_type'],'curve_enabled':input_case['curve_enabled'],'pen_size_f32_bits':source_size_bits,'points_f32_bits':[[struct.pack('<f',v).hex() for v in xy] for xy in points],'pressure_f32_bits':[struct.pack('<f',v).hex() for v in input_case['pressure']],'timestamps_i32':input_case['timestamps'],'tilt_f32_bits':[struct.pack('<f',v).hex() for v in input_case['tilt']],'orientation_f32_bits':[struct.pack('<f',v).hex() for v in input_case['orientation']],'advanced_setting':('4;' if args.advanced_setting=='4' else None)},'native_calls':{'lifecycle_snapshots':lifecycle_snapshots,'first_drawable_version':first_version if args.two_stroke else None,'second_input':INPUT_CASES['reuse_second'] if args.two_stroke else None,'second_source_ObjectStroke_arrays':second_arrays if args.two_stroke else None,'ObjectDrawing::drawObjectStroke_return':1,'selected_drawable_object_redraw_return':1,'route':{'runner_mode':args.redraw_version,'advanced_setting':('4;' if args.advanced_setting=='4' else None),'drawing_selected_drawable_version':selected_drawable_version,'saved_redraw_invoked_version':('4' if args.redraw_version=='v4' else selected_drawable_version)},'source_ObjectStroke_arrays':source_object_arrays,'motion_event_getter_returns':native_motion_getter_returns,'loader':loader_calls,'pen_screen_resolution':screen_resolution_calls,'source_ObjectStroke_GetPenSize_f32_bits':source_size_bits,'ObjectStroke_getter_snapshots':object_stroke_snapshots,'selected_drawable_redraw_lifecycle_method_entries':traced_methods,'drawing_selected_rt_id':selected_rt_id,'phase_rt_ids':{ph:sorted({rt_identity(v) for v in addresses}) for ph,addresses in phase_rt_addresses.items()},'pen_GetSize_after_draw_f32_bits':pen_size_after_draw_bits,'drawable_getSize_f32_bits':drawable_size_bits,'drawable_getInverseScale_f32_bits':inverse_scale_bits},'callback_add_point_calls':callbacks,'phase_final_vectors':captured_final_vectors,'libraries':native_hashes,'host_boundaries':['ObjectDrawing context vslot +16 supplies the screen-profile object; its vtable +32/+40 returns explicit width/height','context vslot +80 is an explicit identity color-conversion host callback','context vslots +144/+152 return explicit flags/version values 1 and 1.0','canvas/bitmap/context/resource/ownership adapters and managed task queue registration are host; queued task Run methods and Drawing/Oblique geometry execute natively'],'scope':'Native Drawing caller plus direct saved RedrawPen under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.'}
  if args.redraw_version=='selected':
   result['native_calls']['selected_drawable_object_redraw_entry']=selected_object_redraw_names[0] if selected_object_redraw_names else None
   result['native_calls']['selected_drawable_primary_vtable_id']='ObliquePenStrokeDrawableGLV'+selected_drawable_version
   result['scope']=f'Native Drawing caller plus direct RedrawPen through the selected GLV{selected_drawable_version} vtable slot under an explicit synthetic profile. This does not exercise SDK deserialization, Samsung device defaults, renderer pixels, or SVG/PDF export.'
+ if not args.two_stroke:
+  for key in ('lifecycle_snapshots','first_drawable_version','second_input','second_source_ObjectStroke_arrays'):
+   result['native_calls'].pop(key)
  encoded=json.dumps(result,indent=2,sort_keys=True)+'\n'
+ def assert_reuse_reference(reused,fresh):
+  if reused['native_calls']['first_drawable_version']!='4': raise RuntimeError('reuse witness did not begin with selected V4 drawable')
+  snapshots=reused['native_calls']['lifecycle_snapshots']
+  if [row['label'] for row in snapshots] != ['after_first_three_point_draw','before_second_short_draw','after_second_short_draw']:
+   raise RuntimeError('reuse witness is missing native RT lifecycle boundaries')
+  if snapshots[0]['drawable']!=snapshots[2]['drawable'] or snapshots[0]['rt']!=snapshots[2]['rt']:
+   raise RuntimeError('reuse witness did not preserve selected drawable/RT identity')
+  start_xy=[struct.pack('<f',value).hex() for value in INPUT_CASES['reuse_second']['points'][0]]
+  if snapshots[0]['rt_previous_xy_344_356'][:16]!=bytes.fromhex('0000d0410000a041').hex():
+   raise RuntimeError('first stroke RT did not retain its expected 26,20 endpoint before reuse')
+  if snapshots[2]['rt_previous_xy_344_356'][:16]!=bytes.fromhex('0000f04100000040').hex():
+   raise RuntimeError('second stroke RT did not retain its observed 30,2 previous point')
+  actual=reused['phase_final_vectors']['second_draw_object_stroke']; expected=fresh['phase_final_vectors']['draw_object_stroke']
+  for key in ('vector_bytes','sha256','vector_count_bytes','k_bits','stored_size_u32','inverse_scale_bits'):
+   if actual.get(key)!=expected.get(key): raise RuntimeError(f'reuse/fresh native output differs in {key}')
+  reused_calls=[row for row in reused['callback_add_point_calls'] if row['phase']=='second_draw_object_stroke']
+  fresh_calls=[row for row in fresh['callback_add_point_calls'] if row['phase']=='draw_object_stroke']
+  callback_fields=('xy_bits','previous_xy_bits','pre_append_count_bytes','stored_size_u32','k_bits','inverse_scale_bits','vector_count_bytes','vector_delta_bytes')
+  if len(reused_calls)!=len(fresh_calls): raise RuntimeError('reuse/fresh callback counts differ')
+  if not reused_calls or reused_calls[0]['previous_xy_bits']!=start_xy or reused_calls[0]['pre_append_count_bytes']!=0:
+   raise RuntimeError('second stroke did not begin with a clean vector and its own start coordinate')
+  for index,(actual_call,expected_call) in enumerate(zip(reused_calls,fresh_calls)):
+   if any(actual_call.get(key)!=expected_call.get(key) for key in callback_fields): raise RuntimeError(f'reuse/fresh callback {index} differs')
+
  if args.write_fixture:
-  if FIXTURE.exists():
-   old=json.loads(FIXTURE.read_text())
-   cases=old.get('cases',{}) if old.get('schema')=='sdocx-oblique-saved-caller-native-v1' else {old.get('case_id','two_point_curve'):old}
-  else: cases={}
-  cases[args.case]=result
-  FIXTURE.write_text(json.dumps({'schema':'sdocx-oblique-saved-caller-native-v1','cases':cases},indent=2,sort_keys=True)+'\n')
-  print(f'wrote {FIXTURE.relative_to(ROOT)} case {args.case}',_always=True)
+  if FIXTURE==REUSE_FIXTURE:
+   fixture=json.loads(FIXTURE.read_text()) if FIXTURE.exists() else {'schema':'sdocx-oblique-saved-caller-reuse-native-v1'}
+   if fixture.get('schema')!='sdocx-oblique-saved-caller-reuse-native-v1': raise RuntimeError('unexpected reuse fixture schema')
+   slot='reused' if args.two_stroke else 'fresh_reference'
+   fixture[slot]=result
+   if 'reused' in fixture and 'fresh_reference' in fixture: assert_reuse_reference(fixture['reused'],fixture['fresh_reference'])
+   FIXTURE.write_text(json.dumps(fixture,indent=2,sort_keys=True)+'\n')
+   print(f'wrote {FIXTURE.relative_to(ROOT)} {slot}',_always=True)
+  else:
+   if FIXTURE.exists():
+    old=json.loads(FIXTURE.read_text())
+    cases=old.get('cases',{}) if old.get('schema')=='sdocx-oblique-saved-caller-native-v1' else {old.get('case_id','two_point_curve'):old}
+   else: cases={}
+   cases[args.case]=result
+   FIXTURE.write_text(json.dumps({'schema':'sdocx-oblique-saved-caller-native-v1','cases':cases},indent=2,sort_keys=True)+'\n')
+   print(f'wrote {FIXTURE.relative_to(ROOT)} case {args.case}',_always=True)
  elif args.check_profile_invariance:
   baseline=json.loads(FIXTURE.read_text())['cases'][args.case]
   baseline_callbacks=baseline['callback_add_point_calls']
@@ -447,7 +529,12 @@ try:
  elif args.check_fixture:
   if not FIXTURE.exists(): raise SystemExit('native caller fixture missing')
   fixture=json.loads(FIXTURE.read_text())
-  expected=fixture.get('cases',{}).get(args.case)
+  if FIXTURE==REUSE_FIXTURE:
+   if 'reused' not in fixture or 'fresh_reference' not in fixture: raise SystemExit('reuse fixture requires both --two-stroke and fresh --case reuse_second captures')
+   expected=fixture.get('reused' if args.two_stroke else 'fresh_reference')
+   try: assert_reuse_reference(fixture['reused'],fixture['fresh_reference'])
+   except RuntimeError as error: raise SystemExit(str(error))
+  else: expected=fixture.get('cases',{}).get(args.case)
   if expected!=result: raise SystemExit(f'native caller fixture mismatch for {args.case}')
   print(f'verified {FIXTURE.relative_to(ROOT)} case {args.case}',_always=True)
  else: print(encoded,end='',_always=True)
