@@ -6,7 +6,10 @@ mode=parser.add_mutually_exclusive_group(required=True)
 mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
+parser.add_argument('--skip-batch',action='store_true',help='skip the native outer ObjectList batch capture')
 cli_args=parser.parse_args()
+if cli_args.write_fixture and cli_args.skip_batch:
+ raise SystemExit('--write-fixture cannot be combined with --skip-batch')
 FIXTURE=ROOT/'conformance/calligraphy-saved-caller-native.json'
 from unicorn import arm64_const as R
 from unicorn import UC_HOOK_CODE
@@ -73,17 +76,27 @@ p.u.mem_write(0x200f2200,bytes.fromhex('c0035fd6'))
 p.put(vtable+144,'Q',0x200f2200); p.put(vtable+152,'Q',0x200f2200)
 ctx_child,ctx_child_vt=p.alloc(64),p.alloc(128);p.put(ctx_child,'Q',ctx_child_vt)
 ctx_get=0x200f2300;ctx_color=0x200f2340;ctx_child32=0x200f2380;ctx_child40=0x200f23c0
-p.put(vtable+16,'Q',ctx_get);p.put(vtable+80,'Q',ctx_color);p.put(ctx_child_vt+32,'Q',ctx_child32);p.put(ctx_child_vt+40,'Q',ctx_child40)
+ctx_queue=0x200f23e0
+bitmap_width=0x200f2400;bitmap_height=0x200f2420
+renderer_context_query=0x200f2440
+renderer_clear_queue=0x200f2460
+p.put(vtable+16,'Q',ctx_get);p.put(vtable+24,'Q',ctx_queue);p.put(vtable+80,'Q',ctx_color);p.put(ctx_child_vt+32,'Q',ctx_child32);p.put(ctx_child_vt+40,'Q',ctx_child40)
 queue_vtable=p.alloc(64); p.put(queue,'Q',queue_vtable); p.put(queue_vtable+16,'Q',0x20001000)
 p._task_returns=[]
+p._task_invocations=[]
 p.u.mem_write(0x20001000,bytes.fromhex('1f2003d5c0035fd6'))
 p.u.mem_write(0x20001040,bytes.fromhex('1f2003d5c0035fd6'))
 p.put(p.context_vtable+16,'Q',0x20001040)
 def caller_context_hooks(u,a,size,data):
  if a==ctx_get: p.x(0,ctx_child)
+ elif a==ctx_queue: p.x(0,queue)
  elif a==ctx_color: p.x(0,p.x(1))
  elif a==ctx_child32: p.x(0,1920)
  elif a==ctx_child40: p.x(0,1080)
+ elif a==bitmap_width: p.x(0,1920)
+ elif a==bitmap_height: p.x(0,1080)
+ elif a==renderer_context_query: p.x(0,0)
+ elif a==renderer_clear_queue: p._renderer_clear_calls.append({'receiver':hex(p.x(0)),'lr':hex(p.u.reg_read(R.UC_ARM64_REG_LR))})
  else:return
  u.reg_write(R.UC_ARM64_REG_PC,u.reg_read(R.UC_ARM64_REG_LR))
 p.u.hook_add(UC_HOOK_CODE,caller_context_hooks)
@@ -93,6 +106,7 @@ def taskqueue(u,a,z,d):
  elif a==0x20001000:
   task=p.x(1);vt=struct.unpack('<Q',u.mem_read(task,8))[0];method=struct.unpack('<Q',u.mem_read(vt+16,8))[0]
   if not method:raise RuntimeError('queued native task has null Run method')
+  p._task_invocations.append({'task':hex(task),'vtable':hex(vt),'run':hex(method),'bytes':bytes(u.mem_read(task,64)).hex()})
   caller=u.reg_read(R.UC_ARM64_REG_LR);p._task_returns.append(caller);p.x(0,task);u.reg_write(R.UC_ARM64_REG_LR,0x20001020);u.reg_write(R.UC_ARM64_REG_PC,method)
  elif a==0x20001020:
   p.x(0,1);u.reg_write(R.UC_ARM64_REG_PC,p._task_returns.pop())
@@ -130,16 +144,23 @@ trace_names=['SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPP
 addrs={p.syms[nm]:nm for nm in trace_names if nm in p.syms}
 seen=[]
 caller_records={'add_points':[],'sample_ends':[],'build_calls':[],'drawable':None,'event':None,'rtv1_lifecycle':[],'redraw_sessions':[]}
+clock_calls=[]
+def deterministic_clock_gettime():
+ clock_id=p.x(0);out=p.x(1);tick=len(clock_calls);clock_calls.append(clock_id)
+ p.put(out,'qq',1700000000,tick*1000000);p.x(0,0)
+p.callbacks['clock_gettime']=deterministic_clock_gettime
 screen_resolution_calls=[]
 screen_resolution_addr=p.syms['SPen::Pen::SetScreenResolution(int, int)']
 pen_data_addr=p.syms.get('SPen::PenManager::GetPenData(SPen::String*)',0);pending_pen_data={};pen_data_returns=[]
 event_getters={n:p.syms[n] for n in ('SPen::MotionEvent::GetHistorySize() const','SPen::MotionEvent::GetPointerCount() const','SPen::MotionEvent::GetEventTime() const','SPen::MotionEvent::GetX(int) const','SPen::MotionEvent::GetY(int) const','SPen::MotionEvent::GetHistoricalX(int, int) const','SPen::MotionEvent::GetHistoricalY(int, int) const','SPen::MotionEvent::GetHistoricalPressure(int) const','SPen::MotionEvent::GetPressure(int) const') if n in p.syms};pending_event_getters={};event_getter_calls=[]
 redraw_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableGLV1::RedrawPen(SPen::MotionEvent const*, SPen::RectF*)']
+draw_stroke_addr=p.syms['SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)']
 add_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::AddPoint(SPen::Vector4<float>, float)']
 build_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::buildMesh(SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Rect const&, std::__ndk1::vector<SPen::Vector4<float>, std::__ndk1::allocator<SPen::Vector4<float> > >*)']
 clear_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Clear()']
 update_addr=p.syms['SPen::MontblancCalligraphyPenStrokeDrawableRTV1::Update(bool)']
 pending_redraw_returns={}
+native_batch_active=False
 def tr(u,a,z,data):
  if a in pending_redraw_returns:
   session=pending_redraw_returns.pop(a)
@@ -147,6 +168,10 @@ def tr(u,a,z,data):
   session['end_build_call_index']=len(caller_records['build_calls'])
   session['terminal_start_add_point_index']=caller_records['terminal_start']
   session['glv1_state_after_hex']=bytes(u.mem_read(session['drawable_address'],512)).hex()
+  if native_batch_active:
+   session['rtv1_state_after']=snapshot_rtv1_state(session['drawable_address'])
+   build_start=session['start_build_call_index'];build_end=session['end_build_call_index']
+   session['rtv1_mesh_at_redraw_return']=capture_mesh(session['drawable_address'],caller_records['build_calls'][build_start:build_end])
   caller_records['redraw_sessions'].append(session)
  if a in pending_pen_data:
   rec=pending_pen_data.pop(a);rec['return']=hex(p.x(0));pen_data_returns.append(rec)
@@ -156,6 +181,8 @@ def tr(u,a,z,data):
   caller=u.reg_read(R.UC_ARM64_REG_LR);name=next(n for n,v in event_getters.items() if v==a);rec={'method':name,'args':[hex(p.x(i)) for i in range(3)],'entry_s0':struct.pack('<I',u.reg_read(R.UC_ARM64_REG_S0)).hex()};pending_event_getters[caller]=rec
  if a in addrs:
   seen.append(addrs[a])
+ if a==draw_stroke_addr:
+  caller_records.setdefault('draw_stroke_calls',[]).append({'drawing':hex(p.x(0)),'canvas':hex(p.x(1)),'pen_canvas':hex(p.x(2)),'stroke':hex(p.x(3)),'flag':bool(p.x(4))})
  if a==redraw_addr:
   caller_records['rtv1_lifecycle'].append({'event':'GLV1::RedrawPen(MotionEvent)','drawable':hex(p.x(0)),'motion_event':hex(p.x(1))})
  if a==clear_addr:caller_records['rtv1_lifecycle'].append({'event':'RTV1::Clear','receiver':hex(p.x(0))})
@@ -167,6 +194,8 @@ def tr(u,a,z,data):
   session={'drawable':hex(p.x(0)),'drawable_address':p.x(0),'motion_event':hex(p.x(1)),
            'start_add_point_index':len(caller_records['add_points']),'start_build_call_index':len(caller_records['build_calls']),
            'glv1_state_before_hex':bytes(u.mem_read(p.x(0),512)).hex()}
+  if native_batch_active:
+   session['rtv1_state_before']=snapshot_rtv1_state(p.x(0))
   pending_redraw_returns[ret]=session
  if a==redraw_addr+0x1cc:caller_records['sample_ends'].append({'history_index':u.reg_read(R.UC_ARM64_REG_W23),'add_count':len(caller_records['add_points'])})
  if a==redraw_addr+0x300:caller_records['terminal_start']=len(caller_records['add_points'])
@@ -246,10 +275,82 @@ try:
  p.call('SPen::DrawingFactory::CreateDrawing(SPen::IContext const*)',[ctx],limit=1000000);short_fresh_drawing=p.x(0)
  short_fresh_capture=draw_capture(short_fresh_drawing,obj3)
  short_fresh_manager=hex(p.get(short_fresh_drawing+16,'Q')[0])
+ # Preserve the direct-caller fixture observations before the outer batch
+ # appends its own MotionEvent, screen-resolution, and sample-boundary calls.
+ direct_event_entry_bytes=caller_records['event_entry_bytes']
+ direct_event_getter_calls=list(event_getter_calls)
+ direct_screen_resolution_calls=list(screen_resolution_calls)
+ direct_terminal_start=caller_records['terminal_start']
+ if cli_args.skip_batch:
+  batch_capture=None
+ else:
+  uuid_calls=[];uuid_context=p.alloc(80);uuid_sequence=[0]
+  def host_uuid_create():
+   pointer=p.x(0);p.put(pointer,'Q',uuid_context);uuid_calls.append({'method':'uuid_create','out_slot':hex(pointer),'uuid_context':hex(uuid_context)});p.x(0,0)
+  def host_uuid_make():
+   uuid_calls.append({'method':'uuid_make','args':[hex(p.x(i)) for i in range(4)]});p.x(0,0)
+  def host_uuid_export():
+   uuid_sequence[0]+=1;destination=p.get(p.x(2),'Q')[0];value=f'00000000-0000-4000-8000-{uuid_sequence[0]:012x}\0'.encode();p.u.mem_write(destination,value);uuid_calls.append({'method':'uuid_export','destination':hex(destination),'value':value[:-1].decode()});p.x(0,0)
+  p.callbacks['uuid_create']=host_uuid_create;p.callbacks['uuid_make']=host_uuid_make;p.callbacks['uuid_export']=host_uuid_export;p.callbacks['uuid_destroy']=lambda:p.x(0,0)
+  renderer_holder=p.alloc(32);renderer_holder_vtable=p.alloc(128);p.put(renderer_holder,'Q',renderer_holder_vtable);p.put(renderer_holder_vtable+32,'Q',renderer_context_query)
+  p._renderer_clear_calls=[];p.put(renderer_holder_vtable+40,'Q',renderer_clear_queue)
+  p.callbacks['SPen::RendererFactory::GetContextHolder()']=lambda:p.x(0,renderer_holder)
+  # ObjectInstanceManager's native tree/map headers are Model DSO static
+  # objects. Run only this mapped library's actual initializer array before
+  # constructing list-owned ObjectBase state.
+  runtime.run_init(runtime.paths['Model'],runtime.bases['Model'])
+  # Exercise the native outer list dispatcher with two different strokes. The
+  # list and visibility flags are created through shipped Model methods; the
+  # bitmap/factory boundary remains the same explicit host canvas adapter.
+  batch_drawing_result=p.call('SPen::DrawingFactory::CreateDrawing(SPen::IContext const*)',[ctx],limit=1000000);batch_drawing=p.x(0)
+  list_bitmap=p.alloc(160);list_bitmap_vtable=p.alloc(256);p.put(list_bitmap,'Q',list_bitmap_vtable);p.put(list_bitmap+8,'Q',ctx);p.put(list_bitmap_vtable+72,'Q',bitmap_width);p.put(list_bitmap_vtable+80,'Q',bitmap_height)
+  object_list=p.alloc(32);p.call('SPen::ObjectList::ObjectList()',[object_list]);p.call('SPen::ObjectList::Construct()',[object_list])
+  object_list_status=p.x(0)
+  if not object_list_status:raise RuntimeError('native ObjectList::Construct failed')
+  batch_strokes=[obj,obj3]
+  batch_objects=[]
+  for ordinal,stroke in enumerate(batch_strokes):
+   # Reuse the already populated native ObjectStroke/ObjectStrokeImpl records,
+   # then attach the native ObjectBaseImpl required by ObjectList traversal.
+   p.call('SPen::ObjectBase::Construct(SPen::Object::Type)',[stroke,1])
+   base_construct_return=p.x(0)
+   if not base_construct_return:raise RuntimeError(f'native ObjectBase::Construct(Type=1) failed for list input {ordinal}')
+   p.call('SPen::ObjectBase::SetVisibility(bool)',[stroke,1])
+   p.f(0,1.0);p.call('SPen::ObjectBase::SetAlpha(float)',[stroke]);alpha_set_return=p.x(0)
+   p.call('SPen::ObjectBase::GetType() const',[stroke]);object_type=p.x(0)
+   p.call('SPen::ObjectBase::IsVisible() const',[stroke]);visible=p.x(0)
+   p.call('SPen::ObjectBase::GetAlpha() const',[stroke]);alpha_bits=struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex()
+   source_count=3 if ordinal==0 else 2
+   source_channels={}
+   for label,method,element_size in [('points','SPen::ObjectStroke::GetPoint() const',8),('pressure','SPen::ObjectStroke::GetPressure() const',4),('timestamps','SPen::ObjectStroke::GetTimeStamp() const',4),('tilt','SPen::ObjectStroke::GetTilt() const',4),('orientation','SPen::ObjectStroke::GetOrientation() const',4)]:
+    p.call(method,[stroke]);data=p.x(0);source_channels[label]={'count':source_count,'element_size':element_size,'bytes':bytes(p.u.mem_read(data,source_count*element_size)).hex()}
+   batch_objects.append({'address':hex(stroke),'source_role':'three-point-curve' if ordinal==0 else 'different-short-stroke','type':object_type,'visible':bool(visible),'alpha_f32_bits':alpha_bits,'base_construct_return':base_construct_return,'alpha_set_return':alpha_set_return,'source_channels':source_channels,'construct':'native ObjectBase::Construct(Type=1) attached to existing native ObjectStroke/ObjectStrokeImpl with actual saved channel setters'})
+   p.call('SPen::ObjectList::Add(SPen::ObjectBase const*)',[object_list,stroke])
+  p.call('SPen::ObjectList::GetCount() const',[object_list]);batch_list_count=p.x(0)
+  batch_add_start=len(caller_records['add_points']);batch_build_start=len(caller_records['build_calls']);batch_draw_start=len(caller_records.get('draw_stroke_calls',[]));batch_redraw_start=len(caller_records['redraw_sessions']);batch_pen_start=len(pen_data_returns);batch_lifecycle_start=len(caller_records['rtv1_lifecycle'])
+  native_batch_active=True
+  try:batch_return=p.call('SPen::ObjectDrawing::DrawObjectList(SPen::ISPBitmap*, SPen::ObjectList const*, SPen::Rect const*, SPen::Matrix3<float> const*, bool, std::__ndk1::function<bool (int, int)>*)',[batch_drawing,list_bitmap,object_list,0,0,0,0],limit=10000000)
+  finally:native_batch_active=False
+  batch_adds=caller_records['add_points'][batch_add_start:];batch_builds=caller_records['build_calls'][batch_build_start:]
+  batch_draw_calls=caller_records.get('draw_stroke_calls',[])[batch_draw_start:];batch_sessions=caller_records['redraw_sessions'][batch_redraw_start:]
+  batch_runs=[]
+  for ordinal,(draw_call,session) in enumerate(zip(batch_draw_calls,batch_sessions,strict=True)):
+   start_add=session['start_add_point_index'];end_add=session['end_add_point_index'];start_build=session['start_build_call_index'];end_build=session['end_build_call_index'];drawable=int(session['drawable'],16)
+   batch_runs.append({'ordinal':ordinal,'stroke':draw_call['stroke'],'drawable':session['drawable'],'add_points':caller_records['add_points'][start_add:end_add],'build_calls':caller_records['build_calls'][start_build:end_build],'rtv1_mesh':session['rtv1_mesh_at_redraw_return'],'glv1_prestate_hex':session['glv1_state_before_hex'],'glv1_poststate_hex':session['glv1_state_after_hex'],'rtv1_state_before':session['rtv1_state_before'],'rtv1_state_after':session['rtv1_state_after']})
+  if batch_list_count!=2 or len(batch_draw_calls)!=2 or len(batch_sessions)!=2 or len(batch_runs)!=2:
+   raise RuntimeError(f'native DrawObjectList did not traverse both source strokes: list={batch_list_count}, draw={len(batch_draw_calls)}, redraw={len(batch_sessions)}, runs={len(batch_runs)}')
+  if [int(call['stroke'],16) for call in batch_draw_calls]!=batch_strokes:
+   raise RuntimeError('native DrawObjectList changed ObjectList source order')
+  if batch_runs[0]['drawable']!=batch_runs[1]['drawable']:
+   raise RuntimeError('native DrawObjectList did not reuse the cached profile drawable within one list batch')
+  if batch_runs[0]['rtv1_state_after']!=batch_runs[1]['rtv1_state_before']:
+   raise RuntimeError('second native saved stroke did not enter with first stroke RTV1 nib state intact')
+  batch_sessions=[{key:value for key,value in session.items() if key!='rtv1_mesh_at_redraw_return'} for session in batch_sessions]
+  batch_capture={'native_return':p.x(0),'object_list_construct_return':object_list_status,'list_count':batch_list_count,'objects':batch_objects,'drawing':hex(batch_drawing),'manager':hex(p.get(batch_drawing+16,'Q')[0]),'draw_object_stroke_calls':batch_draw_calls,'redraw_sessions':batch_sessions,'runs':batch_runs,'same_drawable_reused':batch_runs[0]['drawable']==batch_runs[1]['drawable'],'add_point_count':len(batch_adds),'build_call_count':len(batch_builds),'pen_data_manager_results':pen_data_returns[batch_pen_start:],'rtv1_lifecycle':caller_records['rtv1_lifecycle'][batch_lifecycle_start:],'renderer_context_clear_calls':p._renderer_clear_calls,'host_clock_calls':clock_calls,'host_uuid_calls':uuid_calls,'model_initializer_scope':['libSPenModel.so .init_array'],'source_inputs':['three-point-curve-fresh-drawing.input','reused_drawing_streams.different_short_stroke.input'],'host_boundaries':['Drawing::DrawObjectList and ObjectList traversal/add, ObjectBase state, ObjectDrawing::drawObjectStroke, PenManager lookup, GLV1 RedrawPen, RTV1 AddPoint and buildMesh, and Model static initializers execute from pinned native DSOs','ISPBitmap width/height and canvas/context factories are explicit host callbacks; RendererFactory context holder/queue clear, clock_gettime, UUID generation/identity, task queue registration/dispatch adapter remain host boundaries']}
  library_hashes={name:hashlib.sha256(libpath.read_bytes()).hexdigest() for name,libpath in runtime.paths.items()}
  library_hashes['libc++_shared.so']=hashlib.sha256((LIBS/'libc++_shared.so').read_bytes()).hexdigest()
  library_hashes['libSPenMontblancCalligraphyPen.so']=hashlib.sha256(path.read_bytes()).hexdigest()
- result={'schema':'sdocx-calligraphy-saved-caller-case-v1','case_id':'three-point-curve-fresh-drawing','input':{'kind':'synthetic native ObjectStroke setters; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.MontblancCalligraphyPen','points_f32_bits':['00000000','00000000','00008040','0000803f','00001041','0000a040'],'pressure_f32_bits':['9a99993e','9a99193f','cdcc4c3f'],'timestamps_i32':[100,115,130],'tilt_f32_bits':['cdcccc3d','cdcc4c3e','9a99993e'],'orientation_f32_bits':['00000000','3333b33e','3333333f'],'pen_size_f32_bits':'0000c040','argb_u32':0x80112233,'tool_type':2,'stroke_type':0,'curve_enabled_setter_arg':1},'model_getters':model_channels,'context':{'profile_width':1920,'profile_height':1080,'color_get_color_selector3':'identity','flags_u32':1,'version_f32_bits':'0000803f'},'initializer_scope':{'executed':['libSPenMontblancCalligraphyPen.so .init_array'],'not_executed':'Mapped support DSO init arrays are not run by this capture; helper exposes an opt-in runner but this fixture does not invoke it.'},'motion_event':{'constructor_and_getters_native':True,'entry_bytes':caller_records['event_entry_bytes'],'native_redraw_getter_calls':event_getter_calls,'getter_results_scope':'only getters intercepted during native RedrawPen; no post-destruction manual calls','note':'MotionEvent time getter reports relative saved timestamps [0,15,30] while downTime is 100; coordinate getter ABI was recorded with both historical argument orders.'},'cache_observation':{'first_drawing':hex(old_drawing),'first_manager':first_manager,'first_pen_data':first_pen_data,'first_drawable':hex(first_drawable),'same_drawing_repeat':repeat_summary,'fresh_drawing':hex(d),'fresh_manager':fresh_manager,'fresh_pen_data':fresh_pen_data['return'] if fresh_pen_data else None,'fresh_drawable':hex(fresh_drawable),'distinct_manager':fresh_manager!=first_manager,'distinct_pen_data':(fresh_pen_data['return'] if fresh_pen_data else None)!=first_pen_data},'native_capture':{'draw_object_stroke_return':fresh_return,'screen_resolution_calls':screen_resolution_calls,'first_draw':{'add_points':first_add_points,'redraw_session':first_redraw_session,'build_calls':first_build_calls,'rtv1_mesh':first_mesh},'same_drawing_repeat':repeat_summary,'fresh_drawing':{'add_points':fresh_add_points,'observed_sample_boundary_hooks':caller_records['sample_ends'][sample2:],'terminal_start_add_point_index':caller_records['terminal_start'],'build_calls':fresh_build_calls,'rtv1_mesh':fresh_mesh}},'libraries':library_hashes,'host_boundaries':['explicit synthetic IContext display profile 1920x1080, identity color conversion, flags=1/version=1.0','Canvas/bitmap/context ownership and queued-task registration remain host adapters; the native task Run methods, ObjectDrawing::drawObjectStroke, PenManager lookup, MotionEvent constructor/getters, Calligraphy GLV1 redraw, RTV1 AddPoint and buildMesh execute','ManagedObject::OnRelease/OnRestore relocations target BRK traps to prove they are not needed on the capture path; __sF is zeroed host data; unresolved imports are left zero and recorded below','the outer Composer DrawObjectList bitmap traversal and DrawingFactory::ReleaseDrawing resource teardown are not exercised']}
+ result={'schema':'sdocx-calligraphy-saved-caller-case-v1','case_id':'three-point-curve-fresh-drawing','input':{'kind':'synthetic native ObjectStroke setters; no serialized SDocx parser input','pen_name':'com.samsung.android.sdk.pen.pen.preload.MontblancCalligraphyPen','points_f32_bits':['00000000','00000000','00008040','0000803f','00001041','0000a040'],'pressure_f32_bits':['9a99993e','9a99193f','cdcc4c3f'],'timestamps_i32':[100,115,130],'tilt_f32_bits':['cdcccc3d','cdcc4c3e','9a99993e'],'orientation_f32_bits':['00000000','3333b33e','3333333f'],'pen_size_f32_bits':'0000c040','argb_u32':0x80112233,'tool_type':2,'stroke_type':0,'curve_enabled_setter_arg':1},'model_getters':model_channels,'context':{'profile_width':1920,'profile_height':1080,'color_get_color_selector3':'identity','flags_u32':1,'version_f32_bits':'0000803f'},'initializer_scope':{'executed':['libSPenMontblancCalligraphyPen.so .init_array'],'not_executed':'Mapped support DSO init arrays are not run by this capture; helper exposes an opt-in runner but this fixture does not invoke it.'},'motion_event':{'constructor_and_getters_native':True,'entry_bytes':direct_event_entry_bytes,'native_redraw_getter_calls':direct_event_getter_calls,'getter_results_scope':'only getters intercepted during native RedrawPen; no post-destruction manual calls','note':'MotionEvent time getter reports relative saved timestamps [0,15,30] while downTime is 100; coordinate getter ABI was recorded with both historical argument orders.'},'cache_observation':{'first_drawing':hex(old_drawing),'first_manager':first_manager,'first_pen_data':first_pen_data,'first_drawable':hex(first_drawable),'same_drawing_repeat':repeat_summary,'fresh_drawing':hex(d),'fresh_manager':fresh_manager,'fresh_pen_data':fresh_pen_data['return'] if fresh_pen_data else None,'fresh_drawable':hex(fresh_drawable),'distinct_manager':fresh_manager!=first_manager,'distinct_pen_data':(fresh_pen_data['return'] if fresh_pen_data else None)!=first_pen_data},'native_capture':{'draw_object_stroke_return':fresh_return,'screen_resolution_calls':direct_screen_resolution_calls,'first_draw':{'add_points':first_add_points,'redraw_session':first_redraw_session,'build_calls':first_build_calls,'rtv1_mesh':first_mesh},'same_drawing_repeat':repeat_summary,'fresh_drawing':{'add_points':fresh_add_points,'observed_sample_boundary_hooks':fresh_capture['sample_boundaries'],'terminal_start_add_point_index':direct_terminal_start,'build_calls':fresh_build_calls,'rtv1_mesh':fresh_mesh}},'libraries':library_hashes,'host_boundaries':['explicit synthetic IContext display profile 1920x1080, identity color conversion, flags=1/version=1.0','Canvas/bitmap/context ownership and queued-task registration remain host adapters; the native task Run methods, ObjectDrawing::drawObjectStroke, PenManager lookup, MotionEvent constructor/getters, Calligraphy GLV1 redraw, RTV1 AddPoint and buildMesh execute','ManagedObject::OnRelease/OnRestore relocations target BRK traps to prove they are not needed on the capture path; __sF is zeroed host data; unresolved imports are left zero and recorded below','the outer Composer DrawObjectList bitmap traversal and DrawingFactory::ReleaseDrawing resource teardown are not exercised']}
  unresolved_counts=collections.Counter((lib,typ,name) for lib,where,name,typ in runtime.unresolved_imports)
  result['unresolved_imports']=[{'dso':lib,'relocation_type':f'R_AARCH64_{"ABS64" if typ==0x101 else "GLOB_DAT"}','symbol':name,'relocation_count':count} for (lib,typ,name),count in sorted(unresolved_counts.items())]
  emutls_counts=collections.Counter((row['size'],row['align'],row['existing_nonnull'],row['template_nonnull'],row['template_sha256'],row['template_nonzero'],row['template_bytes_hex']) for row in runtime.emutls_descriptors)
@@ -283,10 +384,15 @@ try:
  if normalized_add_points(first_add_points)!=normalized_add_points(fresh_add_points):
   raise RuntimeError('same-input fresh Drawing changed AddPoint values or prestate')
  fixture_data={'schema':'sdocx-calligraphy-saved-caller-native-v1','cases':{result['case_id']:result}}
+ if batch_capture is not None:
+  fixture_data['cases']['two-stroke-object-list-batch']={'schema':'sdocx-calligraphy-object-list-batch-v1','case_id':'two-stroke-object-list-batch','input':{'kind':'native Model ObjectList of two existing synthetic ObjectStroke records','sources':[result['input'],result['reused_drawing_streams']['different_short_stroke']['input']]},'context':result['context'],'libraries':library_hashes,'scope':'Native ObjectList construction/Add and Drawing::DrawObjectList are executed. Model static initializers run before ObjectBase construction. This is an explicit synthetic host bitmap/context replay, not an Android export lifecycle capture.','capture':batch_capture}
  if cli_args.write_fixture:FIXTURE.write_text(json.dumps(fixture_data,indent=2,sort_keys=True)+'\n');print('wrote',FIXTURE.relative_to(ROOT))
  elif cli_args.check_fixture:
-  if not FIXTURE.exists() or json.loads(FIXTURE.read_text())!=fixture_data:raise SystemExit('saved caller fixture mismatch')
-  print(f"verified {FIXTURE.relative_to(ROOT)}: {len(fresh_add_points)} AddPoint calls, {len(fresh_mesh['buffers'])} native vectors")
+  if not FIXTURE.exists():raise SystemExit('saved caller fixture is missing')
+  expected_fixture=json.loads(FIXTURE.read_text())
+  if cli_args.skip_batch:expected_fixture['cases'].pop('two-stroke-object-list-batch',None)
+  if expected_fixture!=fixture_data:raise SystemExit('saved caller fixture mismatch')
+  print(f"verified {FIXTURE.relative_to(ROOT)}: {len(fresh_add_points)} fresh AddPoint calls, {len(fresh_mesh['buffers'])} native vectors" + (f"; batch {len(batch_capture['runs'])} strokes, {batch_capture['add_point_count']} AddPoint calls" if batch_capture is not None else "; batch skipped"))
  else:print(json.dumps(fixture_data,indent=2,sort_keys=True))
 except:
  raise
