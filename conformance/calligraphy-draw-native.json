@@ -5,6 +5,7 @@
     "renderer_library_sha256": "f38df5db5e64f80c0641b6cee980e14533bd78e8e6eb34f250bd703d28119aed",
     "graphics_library_sha256": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
     "host_context": "Pinned saved RedrawPen/endPen execute through actual WorkerTask::Member2 queue Run, RTV1::Update, and native GraphicsObject::UpdateBuffer. Native RTV1::Draw and Renderer GLES GraphicsObject, BlendStateObject, OpenGLShaderProgram, and ParameterBindingImpl methods execute. Host supplies explicit MotionEvent values, an identity-transform ISPSubBitmap callback interface, synthetic EGL context/GLES object handles/status, source-derived uniform reflection, and intercepted GLES imports. After queued Update, host code redirects PC at movePen+0x3b4 to the native epilogue (+0x3e4); at redraw+0x1f5b4 the queue callback returns through a host trampoline. These redirects skip remaining canvas-size/density metadata; they are not native early returns. Draw then uses the resulting RTV1 state.",
+    "capture_normalization": "Draw subclass instruments AddPoint/buildMesh directly and does not delegate those same internal addresses to NativeCalligraphy.hook, preventing duplicated host records; uploaded bytes remain native RTV1 vectors.",
     "limits": [
       "No Android EGL/GLES driver or device pixels",
       "Shader compile/link success, uniform reflection and locations are host-adapter values; type is derived from pinned captured GLSL",
@@ -36,8 +37,8 @@
         "argb": "0x80112233"
       },
       "saved_redraw": {
-        "native_add_point_count": 26,
-        "native_build_mesh_count": 130,
+        "native_add_point_count": 13,
+        "native_build_mesh_count": 65,
         "orientation_reads": 4
       },
       "set_pen_data": {
@@ -363,8 +364,8 @@
       },
       "native_run_counts": {
         "queue_runs": 4,
-        "add_points": 26,
-        "build_meshes": 130,
+        "add_points": 13,
+        "build_meshes": 65,
         "orientation_reads": 4
       }
     },
@@ -391,8 +392,8 @@
         "argb": "0x4044aaee"
       },
       "saved_redraw": {
-        "native_add_point_count": 26,
-        "native_build_mesh_count": 130,
+        "native_add_point_count": 13,
+        "native_build_mesh_count": 65,
         "orientation_reads": 4
       },
       "set_pen_data": {
@@ -718,8 +719,8 @@
       },
       "native_run_counts": {
         "queue_runs": 4,
-        "add_points": 26,
-        "build_meshes": 130,
+        "add_points": 13,
+        "build_meshes": 65,
         "orientation_reads": 4
       }
     },
@@ -747,8 +748,8 @@
         "saved_wrapper_case": "three-samples"
       },
       "saved_redraw": {
-        "native_add_point_count": 26,
-        "native_build_mesh_count": 130,
+        "native_add_point_count": 13,
+        "native_build_mesh_count": 65,
         "orientation_reads": 2,
         "native_add_points": [
           {
@@ -785,43 +786,7 @@
                 "00000000"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "00000000",
-              "00000000",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "00000000",
-                "00000000"
-              ],
-              "initial_flag": 1,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000",
-                "00000000"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -857,43 +822,7 @@
                 "64be3c3f"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "103b313f",
-              "e55d723e",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "00000000",
-                "00000000"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "00000000",
-                "00004040",
-                "00000000",
-                "000040c0",
-                "67d010c0",
-                "3468a8c0",
-                "67d01040",
-                "64be3cbf",
-                "67d01040",
-                "3468a840",
-                "67d010c0",
-                "64be3c3f"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -929,43 +858,7 @@
                 "50c3553e"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "103bb13f",
-              "0b6df83e",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "103b313f",
-                "e55d723e"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "103b313f",
-                "de254f40",
-                "103b313f",
-                "22da30c0",
-                "aa1edd3f",
-                "e651b9c0",
-                "688eafbe",
-                "387c873e",
-                "688eafbe",
-                "c477c840",
-                "aa1edd3f",
-                "50c3553e"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1001,43 +894,7 @@
                 "685ff23e"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "4cec0440",
-              "25dd3e3f",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "103bb13f",
-                "0b6df83e"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "103bb13f",
-                "a10d5f40",
-                "103bb13f",
-                "5ff220c0",
-                "60cf1d40",
-                "0adab0c0",
-                "845d9b3e",
-                "a87afe3e",
-                "845d9b3e",
-                "aae7cf40",
-                "60cf1d40",
-                "685ff23e"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1073,43 +930,7 @@
                 "b817403f"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "103b3140",
-              "ab45823f",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "4cec0440",
-                "25dd3e3f"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "4cec0440",
-                "49b76f40",
-                "4cec0440",
-                "b74810c0",
-                "3c034d40",
-                "09fda7c0",
-                "7055733f",
-                "90a23d3f",
-                "7055733f",
-                "52b4d740",
-                "3c034d40",
-                "b817403f"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1145,43 +966,7 @@
                 "7213853f"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "d4895d40",
-              "8da0a63f",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "103b3140",
-                "ab45823f"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "103b3140",
-                "6b918040",
-                "103b3140",
-                "55bafdbf",
-                "ad2a7c40",
-                "24bb9ec0",
-                "e696cc3f",
-                "caef7e3f",
-                "e696cc3f",
-                "fadddf40",
-                "ad2a7c40",
-                "7213853f"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1217,43 +1002,7 @@
                 "94adab3f"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "4dec8440",
-              "3a7fcc3f",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "d4895d40",
-                "8da0a63f"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "d4895d40",
-                "23a88940",
-                "d4895d40",
-                "735fd9bf",
-                "c2a29540",
-                "9b1495c0",
-                "25ce0f40",
-                "8593a13f",
-                "25ce0f40",
-                "e164e840",
-                "c2a29540",
-                "94adab3f"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1289,43 +1038,7 @@
                 "4ad9d33f"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "ae139b40",
-              "afe1f33f",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "4dec8440",
-                "3a7fcc3f"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "4dec8440",
-                "ce1f9340",
-                "4dec8440",
-                "c680b3bf",
-                "c929ad40",
-                "ad098bc0",
-                "a25d3940",
-                "2825c53f",
-                "a25d3940",
-                "4a49f140",
-                "c929ad40",
-                "4ad9d33f"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1361,43 +1074,7 @@
                 "9c95fd3f"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "113bb140",
-              "f7630e40",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "ae139b40",
-                "afe1f33f"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "ae139b40",
-                "6cf89c40",
-                "ae139b40",
-                "511e8cbf",
-                "5caac440",
-                "999a80c0",
-                "00fa6240",
-                "c32dea3f",
-                "00fa6240",
-                "718bfa40",
-                "5caac440",
-                "9c95fd3f"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1433,43 +1110,7 @@
                 "be701440"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "7362c740",
-              "fb982340",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "113bb140",
-                "f7630e40"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "113bb140",
-                "fc31a740",
-                "113bb140",
-                "247046bf",
-                "6c24dc40",
-                "438f6bc0",
-                "b6518640",
-                "31570840",
-                "b6518640",
-                "cc150241",
-                "6c24dc40",
-                "be701440"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1505,43 +1146,7 @@
                 "02de2a40"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "d689dd40",
-              "e58f3940",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "7362c740",
-                "fb982340"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "7362c740",
-                "7eccb140",
-                "7362c740",
-                "2838e3be",
-                "f297f340",
-                "ff2155c0",
-                "f42c9b40",
-                "f5531c40",
-                "f42c9b40",
-                "fe140741",
-                "f297f340",
-                "02de2a40"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1577,43 +1182,7 @@
                 "20124240"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "37b1f340",
-              "b1485040",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "d689dd40",
-                "e58f3940"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "d689dd40",
-                "f2c7bc40",
-                "d689dd40",
-                "6003cebd",
-                "74820541",
-                "dfed3dc0",
-                "c40eb040",
-                "a90d3140",
-                "c40eb040",
-                "6a430c41",
-                "74820541",
-                "20124240"
-              ]
-            },
-            "build_calls": 10
+            "build_calls": 5
           },
           {
             "vector_bits": [
@@ -1649,43 +1218,7 @@
                 "9e0c5a40"
               ]
             },
-            "build_calls": 0
-          },
-          {
-            "vector_bits": [
-              "4cec0441",
-              "64c36740",
-              "00000000",
-              "0000803f"
-            ],
-            "extent_bits": "00004040",
-            "pre_state": {
-              "center_bits": [
-                "37b1f340",
-                "b1485040"
-              ],
-              "initial_flag": 0,
-              "nib_bits": [
-                "0000803f",
-                "00000000",
-                "99e48b42"
-              ],
-              "edge_state_bits": [
-                "37b1f340",
-                "5824c840",
-                "37b1f340",
-                "8845823e",
-                "a4351141",
-                "61f325c0",
-                "26f7c440",
-                "c3844640",
-                "26f7c440",
-                "30a11141",
-                "a4351141",
-                "9e0c5a40"
-              ]
-            },
-            "build_calls": 0
+            "build_calls": 5
           }
         ],
         "native_build_rectangles": [
@@ -1704,32 +1237,6 @@
           },
           {
             "rect_bits": [
-              "00000000",
-              "00004040",
-              "00000000",
-              "000040c0",
-              "00000000",
-              "00004040",
-              "00000000",
-              "000040c0"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "67d01040",
-              "3468a840",
-              "67d010c0",
-              "64be3c3f",
-              "67d01040",
-              "3468a840",
-              "67d010c0",
-              "64be3c3f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "67d01040",
               "3468a840",
               "67d010c0",
@@ -1753,45 +1260,6 @@
               "64be3cbf"
             ],
             "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
-              "67d010c0",
-              "3468a8c0",
-              "67d01040",
-              "64be3cbf",
-              "67d010c0",
-              "3468a8c0",
-              "67d01040",
-              "64be3cbf"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
-              "67d010c0",
-              "64be3c3f",
-              "67d01040",
-              "3468a840",
-              "67d010c0",
-              "3468a8c0",
-              "67d01040",
-              "64be3cbf"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "67d010c0",
-              "64be3c3f",
-              "67d01040",
-              "3468a840",
-              "67d010c0",
-              "3468a8c0",
-              "67d01040",
-              "64be3cbf"
-            ],
-            "buffer": "mesh_208"
           },
           {
             "rect_bits": [
@@ -1834,32 +1302,6 @@
           },
           {
             "rect_bits": [
-              "00000000",
-              "00004040",
-              "00000000",
-              "000040c0",
-              "103b313f",
-              "de254f40",
-              "103b313f",
-              "22da30c0"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "67d01040",
-              "3468a840",
-              "67d010c0",
-              "64be3c3f",
-              "688eafbe",
-              "c477c840",
-              "aa1edd3f",
-              "50c3553e"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "67d01040",
               "3468a840",
               "67d010c0",
@@ -1886,19 +1328,6 @@
           },
           {
             "rect_bits": [
-              "67d010c0",
-              "3468a8c0",
-              "67d01040",
-              "64be3cbf",
-              "aa1edd3f",
-              "e651b9c0",
-              "688eafbe",
-              "387c873e"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "aa1edd3f",
               "50c3553e",
               "688eafbe",
@@ -1907,32 +1336,6 @@
               "e651b9c0",
               "688eafbe",
               "387c873e"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "aa1edd3f",
-              "50c3553e",
-              "688eafbe",
-              "c477c840",
-              "aa1edd3f",
-              "e651b9c0",
-              "688eafbe",
-              "387c873e"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "6d186e40",
-              "38b38840",
-              "e57a15c0",
-              "4de50c40",
-              "6d186e40",
-              "2233ddbf",
-              "e57a15c0",
-              "b31a73c0"
             ],
             "buffer": "mesh_208"
           },
@@ -1964,32 +1367,6 @@
           },
           {
             "rect_bits": [
-              "103b313f",
-              "de254f40",
-              "103b313f",
-              "22da30c0",
-              "103bb13f",
-              "a10d5f40",
-              "103bb13f",
-              "5ff220c0"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "688eafbe",
-              "c477c840",
-              "aa1edd3f",
-              "50c3553e",
-              "845d9b3e",
-              "aae7cf40",
-              "60cf1d40",
-              "685ff23e"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "688eafbe",
               "c477c840",
               "aa1edd3f",
@@ -2016,19 +1393,6 @@
           },
           {
             "rect_bits": [
-              "aa1edd3f",
-              "e651b9c0",
-              "688eafbe",
-              "387c873e",
-              "60cf1d40",
-              "0adab0c0",
-              "845d9b3e",
-              "a87afe3e"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "60cf1d40",
               "685ff23e",
               "845d9b3e",
@@ -2037,32 +1401,6 @@
               "0adab0c0",
               "845d9b3e",
               "a87afe3e"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "60cf1d40",
-              "685ff23e",
-              "845d9b3e",
-              "aae7cf40",
-              "60cf1d40",
-              "0adab0c0",
-              "845d9b3e",
-              "a87afe3e"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "9eaf8c40",
-              "bc1f9240",
-              "5848d0bf",
-              "cadb1940",
-              "9eaf8c40",
-              "0f81b7bf",
-              "5848d0bf",
-              "362466c0"
             ],
             "buffer": "mesh_208"
           },
@@ -2094,32 +1432,6 @@
           },
           {
             "rect_bits": [
-              "103bb13f",
-              "a10d5f40",
-              "103bb13f",
-              "5ff220c0",
-              "4cec0440",
-              "49b76f40",
-              "4cec0440",
-              "b74810c0"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "845d9b3e",
-              "aae7cf40",
-              "60cf1d40",
-              "685ff23e",
-              "7055733f",
-              "52b4d740",
-              "3c034d40",
-              "b817403f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "845d9b3e",
               "aae7cf40",
               "60cf1d40",
@@ -2146,19 +1458,6 @@
           },
           {
             "rect_bits": [
-              "60cf1d40",
-              "0adab0c0",
-              "845d9b3e",
-              "a87afe3e",
-              "3c034d40",
-              "09fda7c0",
-              "7055733f",
-              "90a23d3f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "3c034d40",
               "b817403f",
               "7055733f",
@@ -2167,32 +1466,6 @@
               "09fda7c0",
               "7055733f",
               "90a23d3f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "3c034d40",
-              "b817403f",
-              "7055733f",
-              "52b4d740",
-              "3c034d40",
-              "09fda7c0",
-              "7055733f",
-              "90a23d3f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "d44ea240",
-              "1ce79b40",
-              "3c146bbf",
-              "59a02740",
-              "d44ea240",
-              "8e6390bf",
-              "3c146bbf",
-              "a75f58c0"
             ],
             "buffer": "mesh_208"
           },
@@ -2224,32 +1497,6 @@
           },
           {
             "rect_bits": [
-              "4cec0440",
-              "49b76f40",
-              "4cec0440",
-              "b74810c0",
-              "103b3140",
-              "6b918040",
-              "103b3140",
-              "55bafdbf"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "7055733f",
-              "52b4d740",
-              "3c034d40",
-              "b817403f",
-              "e696cc3f",
-              "fadddf40",
-              "ad2a7c40",
-              "7213853f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "7055733f",
               "52b4d740",
               "3c034d40",
@@ -2276,19 +1523,6 @@
           },
           {
             "rect_bits": [
-              "3c034d40",
-              "09fda7c0",
-              "7055733f",
-              "90a23d3f",
-              "ad2a7c40",
-              "24bb9ec0",
-              "e696cc3f",
-              "caef7e3f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "ad2a7c40",
               "7213853f",
               "e696cc3f",
@@ -2297,32 +1531,6 @@
               "24bb9ec0",
               "e696cc3f",
               "caef7e3f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "ad2a7c40",
-              "7213853f",
-              "e696cc3f",
-              "fadddf40",
-              "ad2a7c40",
-              "24bb9ec0",
-              "e696cc3f",
-              "caef7e3f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "16eab740",
-              "3a09a640",
-              "d0e055be",
-              "39333640",
-              "16eab740",
-              "36b64fbf",
-              "d0e055be",
-              "c8cc49c0"
             ],
             "buffer": "mesh_208"
           },
@@ -2354,32 +1562,6 @@
           },
           {
             "rect_bits": [
-              "103b3140",
-              "6b918040",
-              "103b3140",
-              "55bafdbf",
-              "d4895d40",
-              "23a88940",
-              "d4895d40",
-              "735fd9bf"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "e696cc3f",
-              "fadddf40",
-              "ad2a7c40",
-              "7213853f",
-              "25ce0f40",
-              "e164e840",
-              "c2a29540",
-              "94adab3f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "e696cc3f",
               "fadddf40",
               "ad2a7c40",
@@ -2406,19 +1588,6 @@
           },
           {
             "rect_bits": [
-              "ad2a7c40",
-              "24bb9ec0",
-              "e696cc3f",
-              "caef7e3f",
-              "c2a29540",
-              "9b1495c0",
-              "25ce0f40",
-              "8593a13f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "c2a29540",
               "94adab3f",
               "25ce0f40",
@@ -2427,32 +1596,6 @@
               "9b1495c0",
               "25ce0f40",
               "8593a13f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "c2a29540",
-              "94adab3f",
-              "25ce0f40",
-              "e164e840",
-              "c2a29540",
-              "9b1495c0",
-              "25ce0f40",
-              "8593a13f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "a881cd40",
-              "fa85b040",
-              "6041003f",
-              "97944540",
-              "a881cd40",
-              "54a0f7be",
-              "6041003f",
-              "686b3ac0"
             ],
             "buffer": "mesh_208"
           },
@@ -2484,32 +1627,6 @@
           },
           {
             "rect_bits": [
-              "d4895d40",
-              "23a88940",
-              "d4895d40",
-              "735fd9bf",
-              "4dec8440",
-              "ce1f9340",
-              "4dec8440",
-              "c680b3bf"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "25ce0f40",
-              "e164e840",
-              "c2a29540",
-              "94adab3f",
-              "a25d3940",
-              "4a49f140",
-              "c929ad40",
-              "4ad9d33f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "25ce0f40",
               "e164e840",
               "c2a29540",
@@ -2536,19 +1653,6 @@
           },
           {
             "rect_bits": [
-              "c2a29540",
-              "9b1495c0",
-              "25ce0f40",
-              "8593a13f",
-              "c929ad40",
-              "ad098bc0",
-              "a25d3940",
-              "2825c53f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "c929ad40",
               "4ad9d33f",
               "a25d3940",
@@ -2557,32 +1661,6 @@
               "ad098bc0",
               "a25d3940",
               "2825c53f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "c929ad40",
-              "4ad9d33f",
-              "a25d3940",
-              "4a49f140",
-              "c929ad40",
-              "ad098bc0",
-              "a25d3940",
-              "2825c53f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "c815e340",
-              "4a5dbb40",
-              "460b9b3f",
-              "a4c45540",
-              "c815e340",
-              "a85614be",
-              "460b9b3f",
-              "5c3b2ac0"
             ],
             "buffer": "mesh_208"
           },
@@ -2614,32 +1692,6 @@
           },
           {
             "rect_bits": [
-              "4dec8440",
-              "ce1f9340",
-              "4dec8440",
-              "c680b3bf",
-              "ae139b40",
-              "6cf89c40",
-              "ae139b40",
-              "511e8cbf"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "a25d3940",
-              "4a49f140",
-              "c929ad40",
-              "4ad9d33f",
-              "00fa6240",
-              "718bfa40",
-              "5caac440",
-              "9c95fd3f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "a25d3940",
               "4a49f140",
               "c929ad40",
@@ -2666,19 +1718,6 @@
           },
           {
             "rect_bits": [
-              "c929ad40",
-              "ad098bc0",
-              "a25d3940",
-              "2825c53f",
-              "5caac440",
-              "999a80c0",
-              "00fa6240",
-              "c32dea3f"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "5caac440",
               "9c95fd3f",
               "00fa6240",
@@ -2687,32 +1726,6 @@
               "999a80c0",
               "00fa6240",
               "c32dea3f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "5caac440",
-              "9c95fd3f",
-              "00fa6240",
-              "718bfa40",
-              "5caac440",
-              "999a80c0",
-              "00fa6240",
-              "c32dea3f"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "b3a6f840",
-              "1a8fc640",
-              "a402f63f",
-              "7cc36640",
-              "b3a6f840",
-              "40e3513e",
-              "a402f63f",
-              "853c19c0"
             ],
             "buffer": "mesh_208"
           },
@@ -2744,32 +1757,6 @@
           },
           {
             "rect_bits": [
-              "ae139b40",
-              "6cf89c40",
-              "ae139b40",
-              "511e8cbf",
-              "113bb140",
-              "fc31a740",
-              "113bb140",
-              "247046bf"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "00fa6240",
-              "718bfa40",
-              "5caac440",
-              "9c95fd3f",
-              "b6518640",
-              "cc150241",
-              "6c24dc40",
-              "be701440"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "00fa6240",
               "718bfa40",
               "5caac440",
@@ -2796,19 +1783,6 @@
           },
           {
             "rect_bits": [
-              "5caac440",
-              "999a80c0",
-              "00fa6240",
-              "c32dea3f",
-              "6c24dc40",
-              "438f6bc0",
-              "b6518640",
-              "31570840"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "6c24dc40",
               "be701440",
               "b6518640",
@@ -2817,32 +1791,6 @@
               "438f6bc0",
               "b6518640",
               "31570840"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "6c24dc40",
-              "be701440",
-              "b6518640",
-              "cc150241",
-              "6c24dc40",
-              "438f6bc0",
-              "b6518640",
-              "31570840"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "571a0741",
-              "561bd240",
-              "e8822840",
-              "43917840",
-              "571a0741",
-              "b0da103f",
-              "e8822840",
-              "be6e07c0"
             ],
             "buffer": "mesh_208"
           },
@@ -2874,32 +1822,6 @@
           },
           {
             "rect_bits": [
-              "113bb140",
-              "fc31a740",
-              "113bb140",
-              "247046bf",
-              "7362c740",
-              "7eccb140",
-              "7362c740",
-              "2838e3be"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "b6518640",
-              "cc150241",
-              "6c24dc40",
-              "be701440",
-              "f42c9b40",
-              "fe140741",
-              "f297f340",
-              "02de2a40"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "b6518640",
               "cc150241",
               "6c24dc40",
@@ -2926,19 +1848,6 @@
           },
           {
             "rect_bits": [
-              "6c24dc40",
-              "438f6bc0",
-              "b6518640",
-              "31570840",
-              "f297f340",
-              "ff2155c0",
-              "f42c9b40",
-              "f5531c40"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "f297f340",
               "02de2a40",
               "f42c9b40",
@@ -2947,32 +1856,6 @@
               "ff2155c0",
               "f42c9b40",
               "f5531c40"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "f297f340",
-              "02de2a40",
-              "f42c9b40",
-              "fe140741",
-              "f297f340",
-              "ff2155c0",
-              "f42c9b40",
-              "f5531c40"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "f8df1141",
-              "fd01de40",
-              "ec095640",
-              "ff968540",
-              "f8df1141",
-              "e60f703f",
-              "ec095640",
-              "07a4e9bf"
             ],
             "buffer": "mesh_208"
           },
@@ -3004,32 +1887,6 @@
           },
           {
             "rect_bits": [
-              "7362c740",
-              "7eccb140",
-              "7362c740",
-              "2838e3be",
-              "d689dd40",
-              "f2c7bc40",
-              "d689dd40",
-              "6003cebd"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "f42c9b40",
-              "fe140741",
-              "f297f340",
-              "02de2a40",
-              "c40eb040",
-              "6a430c41",
-              "74820541",
-              "20124240"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "f42c9b40",
               "fe140741",
               "f297f340",
@@ -3056,19 +1913,6 @@
           },
           {
             "rect_bits": [
-              "f297f340",
-              "ff2155c0",
-              "f42c9b40",
-              "f5531c40",
-              "74820541",
-              "dfed3dc0",
-              "c40eb040",
-              "a90d3140"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "74820541",
               "20124240",
               "c40eb040",
@@ -3077,32 +1921,6 @@
               "dfed3dc0",
               "c40eb040",
               "a90d3140"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "74820541",
-              "20124240",
-              "c40eb040",
-              "6a430c41",
-              "74820541",
-              "dfed3dc0",
-              "c40eb040",
-              "a90d3140"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "5ca41c41",
-              "0443ea40",
-              "f4ca8140",
-              "e04c8f40",
-              "5ca41c41",
-              "130ca93f",
-              "f4ca8140",
-              "7fccc2bf"
             ],
             "buffer": "mesh_208"
           },
@@ -3134,32 +1952,6 @@
           },
           {
             "rect_bits": [
-              "d689dd40",
-              "f2c7bc40",
-              "d689dd40",
-              "6003cebd",
-              "37b1f340",
-              "5824c840",
-              "37b1f340",
-              "8845823e"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "c40eb040",
-              "6a430c41",
-              "74820541",
-              "20124240",
-              "26f7c440",
-              "30a11141",
-              "a4351141",
-              "9e0c5a40"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "c40eb040",
               "6a430c41",
               "74820541",
@@ -3186,19 +1978,6 @@
           },
           {
             "rect_bits": [
-              "74820541",
-              "dfed3dc0",
-              "c40eb040",
-              "a90d3140",
-              "a4351141",
-              "61f325c0",
-              "26f7c440",
-              "c3844640"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "a4351141",
               "9e0c5a40",
               "26f7c440",
@@ -3207,32 +1986,6 @@
               "61f325c0",
               "26f7c440",
               "c3844640"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "a4351141",
-              "9e0c5a40",
-              "26f7c440",
-              "30a11141",
-              "a4351141",
-              "61f325c0",
-              "26f7c440",
-              "c3844640"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "a0672741",
-              "69def640",
-              "2e939840",
-              "476a9940",
-              "a0672741",
-              "a579db3f",
-              "2e939840",
-              "e1569abf"
             ],
             "buffer": "mesh_208"
           },
@@ -3264,32 +2017,6 @@
           },
           {
             "rect_bits": [
-              "37b1f340",
-              "5824c840",
-              "37b1f340",
-              "8845823e",
-              "4cec0441",
-              "b2e1d340",
-              "4cec0441",
-              "900d1f3f"
-            ],
-            "buffer": "mesh_200"
-          },
-          {
-            "rect_bits": [
-              "26f7c440",
-              "30a11141",
-              "a4351141",
-              "9e0c5a40",
-              "17e6d940",
-              "6c2e1741",
-              "8ce51c41",
-              "19cd7240"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "26f7c440",
               "30a11141",
               "a4351141",
@@ -3316,19 +2043,6 @@
           },
           {
             "rect_bits": [
-              "a4351141",
-              "61f325c0",
-              "26f7c440",
-              "c3844640",
-              "8ce51c41",
-              "e7320dc0",
-              "17e6d940",
-              "afb95c40"
-            ],
-            "buffer": "mesh_216"
-          },
-          {
-            "rect_bits": [
               "8ce51c41",
               "19cd7240",
               "17e6d940",
@@ -3337,32 +2051,6 @@
               "e7320dc0",
               "17e6d940",
               "afb95c40"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "8ce51c41",
-              "19cd7240",
-              "17e6d940",
-              "6c2e1741",
-              "8ce51c41",
-              "e7320dc0",
-              "17e6d940",
-              "afb95c40"
-            ],
-            "buffer": "mesh_208"
-          },
-          {
-            "rect_bits": [
-              "df293241",
-              "19ea0141",
-              "725daf40",
-              "31efa340",
-              "df293241",
-              "66a80740",
-              "725daf40",
-              "768660bf"
             ],
             "buffer": "mesh_208"
           },
@@ -3704,8 +2392,8 @@
       },
       "native_run_counts": {
         "queue_runs": 4,
-        "add_points": 26,
-        "build_meshes": 130,
+        "add_points": 13,
+        "build_meshes": 65,
         "orientation_reads": 2
       }
     }

@@ -475,6 +475,11 @@ class NativeDrawCalligraphy(saved_calligraphy.NativeCalligraphy):
         # RedrawPen has completed saved history and endPen at this boundary;
         # movePen consumes the separate trailing host event lifecycle.
         if address == self.syms[REDRAW] + 0x34c:
+            if self.active_add_index is not None:
+                self.add_calls[self.active_add_index]["build_calls"] = (
+                    len(self.build_calls) - self.add_calls[self.active_add_index]["build_start"])
+                self.add_calls[self.active_add_index].pop("build_start")
+                self.active_add_index = None
             if not self.execute_move_pen:
                 from unicorn import arm64_const as R
                 u.reg_write(R.UC_ARM64_REG_PC, 0x200f1000)
@@ -538,6 +543,10 @@ class NativeDrawCalligraphy(saved_calligraphy.NativeCalligraphy):
                                                  "nib_bits": [self.get(self.drawable + offset, "I")[0].to_bytes(4, "little").hex() for offset in (276, 280, 284)],
                                                  "edge_state_bits": [self.get(drawable + 308 + 4 * i, "I")[0].to_bytes(4, "little").hex() for i in range(12)]},
                                    "build_start": len(self.build_calls)})
+            # NativeCalligraphy.hook records this same internal symbol. Do not
+            # delegate it a second time; its instrumentation otherwise doubles
+            # AddPoint records without changing native execution.
+            return
         if address == self.syms[REDRAW] + 0x1cc:
             from unicorn import arm64_const as R
             self.sample_ends.append({"history_index": u.reg_read(R.UC_ARM64_REG_W23),
@@ -563,6 +572,8 @@ class NativeDrawCalligraphy(saved_calligraphy.NativeCalligraphy):
                 else:
                     u.reg_write(R.UC_ARM64_REG_PC, u.reg_read(R.UC_ARM64_REG_LR))
                 return
+            # Avoid duplicate BuildMesh instrumentation in NativeCalligraphy.
+            return
         if address in self.plt and self.plt[address] == "SPen::MotionEvent::GetHistoricalOrientation(int) const":
             self.orientation_reads.append(self.x(1))
         super().hook(u, address, size, data)
@@ -1109,6 +1120,7 @@ def capture():
                          "renderer_library_sha256": fountain_native.HASHES["Renderer"],
                          "graphics_library_sha256": fountain_native.HASHES["Graphics"],
                          "host_context": "Pinned saved RedrawPen/endPen execute through actual WorkerTask::Member2 queue Run, RTV1::Update, and native GraphicsObject::UpdateBuffer. Native RTV1::Draw and Renderer GLES GraphicsObject, BlendStateObject, OpenGLShaderProgram, and ParameterBindingImpl methods execute. Host supplies explicit MotionEvent values, an identity-transform ISPSubBitmap callback interface, synthetic EGL context/GLES object handles/status, source-derived uniform reflection, and intercepted GLES imports. After queued Update, host code redirects PC at movePen+0x3b4 to the native epilogue (+0x3e4); at redraw+0x1f5b4 the queue callback returns through a host trampoline. These redirects skip remaining canvas-size/density metadata; they are not native early returns. Draw then uses the resulting RTV1 state.",
+                         "capture_normalization": "Draw subclass instruments AddPoint/buildMesh directly and does not delegate those same internal addresses to NativeCalligraphy.hook, preventing duplicated host records; uploaded bytes remain native RTV1 vectors.",
                          "limits": ["No Android EGL/GLES driver or device pixels", "Shader compile/link success, uniform reflection and locations are host-adapter values; type is derived from pinned captured GLSL", "Identity subbitmap transform and bind/unbind are synthetic host inputs", "GL import calls are native call arguments, not executed driver state"]},
             "cases": results}
 
