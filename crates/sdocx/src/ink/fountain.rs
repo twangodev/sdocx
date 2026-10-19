@@ -214,8 +214,8 @@ impl Pass<'_> {
     }
     fn end(&mut self, p: P, time: i64) {
         if self.first {
-            let w = self.history.width(time, self.size * 0.5);
-            self.dot(self.previous, w * 0.5);
+            let width = self.history.width(time, self.size * 0.5);
+            self.dot(self.previous, width * 0.5);
         } else {
             let q = Quad::new(self.midpoint, self.previous, p);
             let mut d = self.residual;
@@ -233,6 +233,17 @@ impl Pass<'_> {
 pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     let r = s.rendering.as_ref()?;
     let v14 = r.advanced_settings.as_deref() == Some("14;");
+    // V16 SetSize/GetSize operates on the saved style size and clamps it
+    // natively. V14's existing prepared-size input remains Stroke.pen_width.
+    let size = if v14 {
+        s.pen_width
+    } else {
+        let saved_size = r.style.pen_size.unwrap_or(0.);
+        if !saved_size.is_finite() || saved_size < 0. {
+            return None;
+        }
+        saved_size.clamp(0.4, 800.)
+    };
     let input_supported = matches!(r.tool_type_raw, 1..=3);
     let fixed_width_supported = !r.properties.fixed_width
         || r.style
@@ -255,9 +266,9 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
             .iter()
             .any(|&time| i32::try_from(time).is_err())
         || (!s.tilts.is_empty() && s.tilts.len() != s.points.len())
-        || !s.pen_width.is_finite()
-        || s.pen_width <= 0.
-        || s.pen_width > 1024.
+        || !size.is_finite()
+        || size <= 0.
+        || (v14 && size > 1024.)
         || s.points
             .iter()
             .any(|p| !p.x.is_finite() || !p.y.is_finite() || p.x.abs() > 1e7 || p.y.abs() > 1e7)
@@ -268,7 +279,11 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     {
         return None;
     }
-    let tolerance = r.style.initial_tolerance?;
+    let tolerance = match (v14, r.style.initial_tolerance) {
+        (true, Some(value)) | (false, Some(value)) => value,
+        (true, None) => return None,
+        (false, None) => 0.,
+    };
     if !(0. ..=1000.).contains(&tolerance) {
         return None;
     }
@@ -293,12 +308,9 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
     let mut ratio_count = 0;
     let mut output = None;
     for _ in 0..2 {
-        let width = history.width(
-            s.timestamps[0],
-            (s.pen_width * 0.5) * pressure_at(0).min(1.),
-        );
+        let width = history.width(s.timestamps[0], (size * 0.5) * pressure_at(0).min(1.));
         let mut pass = Pass {
-            size: s.pen_width,
+            size,
             short_move_threshold: if r.tool_type_raw == 1 { 50. } else { 5. },
             previous: first,
             midpoint: first,
@@ -329,7 +341,11 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
             pass.dots.sample_ends[i] = pass.dots.points.len();
         }
         let last = s.points.len() - 1;
-        pass.end(s.points[last].into(), s.timestamps[last]);
+        // MotionEvent::GetEventTime returns the latest event time relative to
+        // the MotionEvent constructor's base timestamp. ObjectStroke channel
+        // timestamps remain absolute in the width-history entries.
+        let terminal_event_time = s.timestamps[last] - s.timestamps[0];
+        pass.end(s.points[last].into(), terminal_event_time);
         pass.dots.sample_ends[last] = pass.dots.points.len();
         output = Some(pass.dots);
         if !history.replay {
@@ -348,6 +364,7 @@ pub(super) fn prepare(s: &Stroke) -> Option<Dots> {
 mod tests {
     use super::*;
     use serde::Deserialize;
+    use serde_json::Value;
     #[derive(Deserialize)]
     struct Reference {
         stroke: Stroke,
@@ -369,6 +386,22 @@ mod tests {
     fn reference() -> Reference {
         serde_json::from_str(include_str!("../../../../conformance/fountain-v16.json")).unwrap()
     }
+    fn little_endian_u32(value: &Value) -> u32 {
+        let value = value.as_str().unwrap();
+        assert_eq!(value.len(), 8);
+        u32::from_le_bytes(std::array::from_fn(|index| {
+            u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).unwrap()
+        }))
+    }
+
+    fn little_endian_f32(value: &Value) -> f32 {
+        f32::from_bits(little_endian_u32(value))
+    }
+
+    fn source_array_f32(value: &Value) -> f32 {
+        f32::from_bits(u32::from_str_radix(value.as_str().unwrap(), 16).unwrap())
+    }
+
     #[test]
     fn generated_geometry_matches_native_saved_stroke_helpers() {
         for reference in [
@@ -376,10 +409,26 @@ mod tests {
             serde_json::from_str(include_str!("../../../../conformance/fountain-v14.json"))
                 .unwrap(),
         ] {
+            let v14 = reference
+                .stroke
+                .rendering
+                .as_ref()
+                .unwrap()
+                .advanced_settings
+                .as_deref()
+                == Some("14;");
             for case in reference.cases {
                 let mut stroke = reference.stroke.clone();
                 stroke.pen_width = case.size;
-                stroke.rendering.as_mut().unwrap().style.initial_tolerance = Some(case.tolerance);
+                let style = &mut stroke.rendering.as_mut().unwrap().style;
+                style.initial_tolerance = Some(case.tolerance);
+                if v14 {
+                    // V14 keeps the preexisting Stroke.pen_width contract.
+                    style.pen_size = Some(99.);
+                } else {
+                    // V16 samples the native saved style size.
+                    style.pen_size = Some(case.size);
+                }
                 if let Some(tool) = case.tool_type_raw {
                     stroke.rendering.as_mut().unwrap().tool_type_raw = tool;
                 }
@@ -424,6 +473,142 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn v16_native_size_and_tolerance_defaults_match_all_native_argument_records() {
+        for encoded in [
+            include_str!("../../../../conformance/fountain-v16-defaults-native.json"),
+            include_str!("../../../../conformance/fountain-v16-event-time-native.json"),
+        ] {
+            let fixture: Value = serde_json::from_str(encoded).unwrap();
+            // In the captured no-line size-10 case, ObjectStroke times are
+            // 100/110/120 while MotionEvent::GetEventTime returns 20, relative to
+            // its constructor base of 100. The terminal history lookup therefore
+            // precedes the first history entry and returns its initial width.
+            for case in fixture["cases"].as_array().unwrap() {
+                let name = case["case"].as_str().unwrap();
+                let mut stroke = reference().stroke;
+                let rendering = stroke.rendering.as_mut().unwrap();
+                rendering.advanced_settings =
+                    Some(case["advanced_setting"].as_str().unwrap().into());
+                rendering.tool_type_raw = fixture["source_input"]["tool_type"]
+                    .as_u64()
+                    .or_else(|| fixture["tool_type"].as_u64())
+                    .unwrap() as u16;
+                rendering.style.pen_size = if case["style_pen_size_setter"] == "omit" {
+                    None
+                } else {
+                    Some(little_endian_f32(
+                        &case["source_model_get_pen_size_f32_bits"],
+                    ))
+                };
+                rendering.style.initial_tolerance =
+                    if case["style_initial_tolerance_setter"] == "omit" {
+                        None
+                    } else {
+                        Some(little_endian_f32(
+                            &case["model_get_initial_tolerance_f32_bits"],
+                        ))
+                    };
+
+                let source = &case["source_arrays"];
+                let point_words = source["points_f32_bits"].as_array().unwrap();
+                stroke.points = point_words
+                    .chunks_exact(2)
+                    .map(|pair| Point {
+                        x: f64::from(source_array_f32(&pair[0])),
+                        y: f64::from(source_array_f32(&pair[1])),
+                    })
+                    .collect();
+                stroke.pressures = source["pressure_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| f64::from(source_array_f32(value)))
+                    .collect();
+                stroke.tilts = source["tilt_f32_bits"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| f64::from(source_array_f32(value)))
+                    .collect();
+                stroke.timestamps = source["timestamps_i32"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|value| value.as_i64().unwrap())
+                    .collect();
+
+                // Deliberately disagree with the native saved style. V16 geometry
+                // must follow style.pen_size, not the display/public width field.
+                stroke.pen_width = 99.;
+                let dots = prepare(&stroke).unwrap_or_else(|| panic!("{name} rejected"));
+                let native = case["v16_rtv5_addpoint_host_boundary"].as_array().unwrap();
+                assert_eq!(dots.points.len(), native.len(), "{name} record count");
+                for (index, ((point, radius), callback)) in
+                    dots.points.iter().zip(&dots.radii).zip(native).enumerate()
+                {
+                    let words = callback["float_words_s0_s3"].as_array().unwrap();
+                    assert_eq!(
+                        (point.x as f32).to_bits(),
+                        little_endian_u32(&words[0]),
+                        "{name} record {index} x"
+                    );
+                    assert_eq!(
+                        (point.y as f32).to_bits(),
+                        little_endian_u32(&words[1]),
+                        "{name} record {index} y"
+                    );
+                    assert_eq!(
+                        (*radius as f32).to_bits(),
+                        little_endian_u32(&words[2]),
+                        "{name} record {index} vector z"
+                    );
+                    assert_eq!(little_endian_u32(&words[3]), 1.0f32.to_bits());
+                }
+                let model_tolerance = stroke
+                    .rendering
+                    .as_ref()
+                    .unwrap()
+                    .style
+                    .initial_tolerance
+                    .unwrap_or(0.);
+                assert_eq!(
+                    model_tolerance.to_bits(),
+                    little_endian_f32(&case["model_get_initial_tolerance_f32_bits"]).to_bits(),
+                    "{name} Model tolerance getter"
+                );
+                let raw_size = stroke
+                    .rendering
+                    .as_ref()
+                    .unwrap()
+                    .style
+                    .pen_size
+                    .unwrap_or(0.);
+                assert_eq!(
+                    raw_size.max(0.4).min(800.).to_bits(),
+                    little_endian_f32(&case["native_pen_getsize_f32_bits"]).to_bits(),
+                    "{name} native Pen GetSize"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn v16_rejects_negative_or_nonfinite_style_size_before_native_clamp() {
+        let mut stroke = reference().stroke;
+        stroke.points = vec![Point { x: 0., y: 0. }];
+        stroke.pressures = vec![0.5];
+        stroke.timestamps = vec![0];
+        stroke.pen_width = 99.;
+        stroke.rendering.as_mut().unwrap().style.initial_tolerance = None;
+        for size in [-0.1, f32::NAN, f32::INFINITY] {
+            stroke.rendering.as_mut().unwrap().style.pen_size = Some(size);
+            assert!(prepare(&stroke).is_none(), "{size:?}");
+        }
+        stroke.rendering.as_mut().unwrap().style.pen_size = Some(900.);
+        assert_eq!(prepare(&stroke).unwrap().radii, vec![100.]);
     }
     #[test]
     fn unsupported_settings_and_unbounded_inputs_use_the_fallback() {
