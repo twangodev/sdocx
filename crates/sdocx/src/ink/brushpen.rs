@@ -53,6 +53,9 @@ struct Glv10RuntimeProfile {
     neutral_tilt_min: f32,
     constructor_opacity: f32,
     motion_distance_threshold: f32,
+    /// Native per-pen limits updated by the Drawing screen-resolution setter.
+    /// GLV10 scales drawLine speed by 1440 / min(limit0, limit1).
+    motion_settings_limits: [i32; 2],
 }
 
 const SAVED_GLV10_CONSTRUCTOR_PROFILE: Glv10RuntimeProfile = Glv10RuntimeProfile {
@@ -74,6 +77,7 @@ const SAVED_GLV10_CONSTRUCTOR_PROFILE: Glv10RuntimeProfile = Glv10RuntimeProfile
     neutral_tilt_min: 0.0001,
     constructor_opacity: 255.0,
     motion_distance_threshold: 2.6,
+    motion_settings_limits: [1440, 2560],
 };
 
 /// SmPath cubic representation selected by endPen's retained path flag.
@@ -314,7 +318,11 @@ struct AdmittedMotionReplay {
 /// Replay the historical-event loop in GLV10::redraw. It starts after the
 /// initial point and consumes indices 1 through len-2; the final current
 /// MotionEvent is reserved for endPen.
-fn motion_history_transitions(points: &[P], times: &[i64]) -> Option<Vec<MotionHistoryTransition>> {
+fn motion_history_transitions(
+    profile: Glv10RuntimeProfile,
+    points: &[P],
+    times: &[i64],
+) -> Option<Vec<MotionHistoryTransition>> {
     if points.len() < 3 || times.len() != points.len() {
         return None;
     }
@@ -325,7 +333,7 @@ fn motion_history_transitions(points: &[P], times: &[i64]) -> Option<Vec<MotionH
         let current = points[event_index];
         let elapsed_ms = (times[event_index] - times[event_index - 1]) as f32;
         let (speed, smoothed_speed) =
-            motion_line_scalar(previous, current, prior_speed, elapsed_ms)?;
+            motion_line_scalar(profile, previous, current, prior_speed, elapsed_ms)?;
         transitions.push(MotionHistoryTransition {
             event_index,
             previous,
@@ -421,7 +429,7 @@ fn admitted_motion_transitions(
             (GLV10_FIRST_TIME_FALLBACK_NUMERATOR / fallback_time_counter).trunc()
         };
         let (speed, smoothed_speed) =
-            motion_line_scalar_us(accepted_current, current, prior_speed, elapsed_us)?;
+            motion_line_scalar_us(profile, accepted_current, current, prior_speed, elapsed_us)?;
         admitted.push(AdmittedMotionTransition {
             event_index,
             accepted_current,
@@ -491,6 +499,7 @@ fn motion_tilt(
 /// prior scalar, stores that clamped step, and averages old/new for the
 /// makeDrawPoint exponent. The first segment starts with prior scalar zero.
 fn motion_line_scalar(
+    profile: Glv10RuntimeProfile,
     previous: P,
     current: P,
     previous_scalar: f32,
@@ -511,6 +520,7 @@ fn motion_line_scalar(
         return None;
     }
     motion_line_scalar_us(
+        profile,
         previous,
         current,
         previous_scalar,
@@ -519,6 +529,7 @@ fn motion_line_scalar(
 }
 
 fn motion_line_scalar_us(
+    profile: Glv10RuntimeProfile,
     previous: P,
     current: P,
     previous_scalar: f32,
@@ -541,8 +552,20 @@ fn motion_line_scalar_us(
     let dx = current.x - previous.x;
     let dy = current.y - previous.y;
     let distance = dx.mul_add(dx, dy * dy).sqrt();
+    // GLV10 drawLine order at ELF 0x5c434..0x5c468: distance * 10000,
+    // divide by elapsed microseconds, multiply by 0.5, then multiply by
+    // 1440 / min(the two native settings limits). The Drawing caller updates
+    // these limits from screen resolution; a fresh constructor retains 1440,
+    // 2560. Keep the division and final multiply separate for f32 parity.
     let rate = (distance * GLV10_MOTION_DISTANCE_SCALE) / delta_time_us;
-    let mut next = rate * 0.5;
+    let half_rate = rate * 0.5;
+    let minimum_limit = profile.motion_settings_limits[0].min(profile.motion_settings_limits[1]);
+    let normalization = if minimum_limit == 0 {
+        1.0
+    } else {
+        1440.0_f32 / minimum_limit as f32
+    };
+    let mut next = half_rate * normalization;
     let change = next - previous_scalar;
     if change > GLV10_MOTION_SCALAR_DELTA_MAX {
         next = previous_scalar + GLV10_MOTION_SCALAR_DELTA_MAX;
@@ -1337,6 +1360,24 @@ mod tests {
         f32::from_bits(u32::from_le_bytes(bytes))
     }
 
+    fn bytes_from_hex(hex: &str) -> Vec<u8> {
+        assert_eq!(hex.len() % 2, 0);
+        hex.as_bytes()
+            .chunks_exact(2)
+            .map(|pair| {
+                let text = std::str::from_utf8(pair).unwrap();
+                u8::from_str_radix(text, 16).unwrap()
+            })
+            .collect()
+    }
+
+    fn f32s_from_hex(hex: &str) -> Vec<f32> {
+        bytes_from_hex(hex)
+            .chunks_exact(4)
+            .map(|bytes| f32::from_le_bytes(bytes.try_into().unwrap()))
+            .collect()
+    }
+
     fn recorded_call(call: &Value) -> AddPointInput {
         let vector = call["vector4_bits_le"]
             .as_array()
@@ -1480,7 +1521,7 @@ mod tests {
                 .iter()
                 .map(|time| time.as_i64().unwrap())
                 .collect::<Vec<_>>();
-            let history = motion_history_transitions(&source_points, &times).unwrap();
+            let history = motion_history_transitions(profile, &source_points, &times).unwrap();
             assert_eq!(history.len(), source_points.len() - 2);
             assert_eq!(history[0].event_index, 1);
             assert_eq!(history[0].previous.x.to_bits(), previous.x.to_bits());
@@ -1886,6 +1927,7 @@ mod tests {
         assert_eq!(profile.first_draw_width.to_bits(), 0x3f61_47ae);
         assert_eq!(profile.steady_draw_width.to_bits(), 0x3f80_0000);
         assert_eq!(profile.motion_distance_threshold.to_bits(), 0x4026_6666);
+        assert_eq!(profile.motion_settings_limits, [1440, 2560]);
     }
 
     #[test]
@@ -1978,6 +2020,77 @@ mod tests {
         assert!(
             mismatches.is_empty(),
             "source parity mismatches: {mismatches:?}"
+        );
+    }
+
+    #[test]
+    fn glv10_drawing_caller_screen_limits_reconstruct_full_native_buffer() {
+        let fixture: Value = serde_json::from_str(include_str!(
+            "../../../../conformance/brushpen-saved-caller-native.json"
+        ))
+        .unwrap();
+        assert_eq!(fixture["schema"], "brushpen-saved-caller-native-v1");
+        assert_eq!(fixture["profile"]["width"], 1920);
+        assert_eq!(fixture["profile"]["height"], 1080);
+
+        let source = &fixture["input"]["source_arrays"];
+        let points_flat = f32s_from_hex(source["points"]["data_hex"].as_str().unwrap());
+        assert_eq!(points_flat.len() % 2, 0);
+        let points = points_flat
+            .chunks_exact(2)
+            .map(|xy| P { x: xy[0], y: xy[1] })
+            .collect::<Vec<_>>();
+        let times_bytes = bytes_from_hex(source["timestamps"]["data_hex"].as_str().unwrap());
+        let times = times_bytes
+            .chunks_exact(4)
+            .map(|bytes| i32::from_le_bytes(bytes.try_into().unwrap()) as i64)
+            .collect::<Vec<_>>();
+        let pressures = f32s_from_hex(source["pressures"]["data_hex"].as_str().unwrap());
+        let orientations = f32s_from_hex(source["orientations"]["data_hex"].as_str().unwrap());
+        let tilts = f32s_from_hex(source["tilts"]["data_hex"].as_str().unwrap());
+
+        let mut profile = SAVED_GLV10_CONSTRUCTOR_PROFILE;
+        profile.runtime_size = f32_bits(&fixture["input"]["size_f32_bits"]);
+        profile.motion_settings_limits = [
+            fixture["profile"]["width"].as_i64().unwrap() as i32,
+            fixture["profile"]["height"].as_i64().unwrap() as i32,
+        ];
+        assert_eq!(
+            SAVED_GLV10_CONSTRUCTOR_PROFILE.motion_settings_limits,
+            [1440, 2560]
+        );
+        assert_eq!(profile.motion_settings_limits, [1920, 1080]);
+
+        let samples = sample_object_stroke_wrapper(
+            GL_VERSION,
+            profile,
+            profile.runtime_size,
+            0.0,
+            false,
+            fixture["input"]["curve_enabled"].as_bool().unwrap(),
+            false,
+            &points,
+            &times,
+            &pressures,
+            &orientations,
+            &tilts,
+            fixture["input"]["tool_type"].as_i64().unwrap() as i32,
+        )
+        .expect("captured Drawing source should be admitted by the bounded GLV10 profile");
+        let packed = sampled_instances(GL_VERSION, &samples).unwrap();
+        let actual_bytes = packed
+            .instances
+            .iter()
+            .flat_map(|instance| instance.values.iter())
+            .flat_map(|value| value.to_le_bytes())
+            .collect::<Vec<_>>();
+        let expected_bytes = bytes_from_hex(fixture["producer"]["buffer_hex"].as_str().unwrap());
+        assert_eq!(actual_bytes.len(), 1144);
+        assert_eq!(samples.len(), 26);
+        assert_eq!(actual_bytes, expected_bytes);
+        assert_eq!(
+            fixture["producer"]["buffer_sha256"].as_str().unwrap(),
+            "57405d81981cd9deb40190fc185572dc9d5885ff5a92cf885e1ef53d652cee92"
         );
     }
 
