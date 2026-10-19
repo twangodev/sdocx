@@ -148,8 +148,11 @@ checks native `min(screen width,height) / 1440` through task dispatch to the RT
 field in four contexts; application paper inputs, paint and device pixels remain
 unverified. A [bitmap-consumer replay](../conformance/pencil3-paper-consumer-native.json)
 joins the Drawing producer to the queued RT depth-map setter and cached dimensions.
-It explicitly initializes that RT and stops at a missing host framebuffer target;
-completed paint and production paint integration remain unverified.
+That capture stops at a missing host framebuffer target. A separate
+[native paper paint oracle](../conformance/pencil3-paper-paint-native.json)
+completes same-RT Mesa Draw with the native paper resource and white/zero controls,
+retaining full RGBA readbacks. Bitmap/texture ownership and lifecycle remain host
+adapters; production vector paint and device parity remain open.
 A [one-particle vector sampling witness](../conformance/pencil-vector-sampling.json)
 matches the host shader at three scales with group-scoped SVG `crispEdges`,
 including embedded paper. Public PDF export drops that hint; general runtime
