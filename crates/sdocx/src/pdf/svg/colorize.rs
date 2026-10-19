@@ -22,7 +22,7 @@ use super::{ProcessContext, group};
 /// Returns `false` when any part of the filter or source graph falls outside
 /// the structurally verified subset, allowing the normal filter renderer to
 /// handle it. Successful lowering preserves the source paths, radial/linear
-/// shadings, child Lighten groups, filtered group transform, filter-region
+/// shadings, child grayscale blend groups, filtered group transform, filter-region
 /// clip, and the filtered group's opacity.
 pub(super) fn try_render(
     source_group: &usvg::Group,
@@ -48,8 +48,8 @@ pub(super) fn try_render(
     let old_stroke = surface.get_stroke().cloned();
 
     // A filter result is one composited object. The mask contents retain the
-    // original Lighten groups; filtered-group opacity is applied once outside
-    // that result, as required by SVG group compositing.
+    // original grayscale blend groups; filtered-group opacity is applied once
+    // outside that result, as required by SVG group compositing.
     surface.push_isolated();
     surface.push_transform(&source_group.transform().to_krilla());
     surface.push_clip_path(&filter_rect.to_clip_path(), &FillRule::NonZero);
@@ -239,8 +239,10 @@ fn is_gray_source_node(node: &Node) -> bool {
             path.stroke().is_none() && path.fill().is_some_and(|fill| is_gray_paint(fill.paint()))
         }
         Node::Group(group) => {
-            (group.blend_mode() == BlendMode::Normal || group.blend_mode() == BlendMode::Lighten)
-                && group.clip_path().is_none()
+            matches!(
+                group.blend_mode(),
+                BlendMode::Normal | BlendMode::Lighten | BlendMode::Multiply
+            ) && group.clip_path().is_none()
                 && group.mask().is_none()
                 && group.filters().is_empty()
                 && group.children().iter().all(is_gray_source_node)
@@ -373,6 +375,45 @@ mod tests {
     }
 
     #[test]
+    fn grayscale_multiply_colorizer_retains_vector_blending() {
+        // Multiply is closed over grayscale. The opaque black root backdrop
+        // keeps the entire source opaque, including translucent child paints.
+        // Preserve group ordering/isolation rather than distributing blends.
+        let svg = FILTER_SVG.replace(
+            r#"<circle r="1" fill="url(#g0)"/>"#,
+            r#"<circle r="1" fill="url(#g0)"/><g style="mix-blend-mode:multiply;isolation:isolate"><circle r="1" fill="url(#g1)"/></g>"#,
+        );
+        let tree = tree(&svg);
+        assert!(recognize(ink_group(&tree)).is_some());
+        let page = crate::RenderedPage::new(0, 64, 64, svg);
+        let bytes = crate::render_svg_pages_pdf(&[page], &crate::PdfOptions::default()).unwrap();
+        let pdf = PdfDocument::load_mem(&bytes).unwrap();
+        let mut multiply = false;
+        let mut lighten = false;
+        let mut shading = false;
+        for object in pdf.objects.values() {
+            let dict = match object {
+                Object::Dictionary(dict) => dict,
+                Object::Stream(stream) => &stream.dict,
+                _ => continue,
+            };
+            assert_ne!(
+                dict.get(b"Subtype").and_then(Object::as_name).ok(),
+                Some(b"Image".as_slice())
+            );
+            multiply |=
+                dict.get(b"BM").and_then(Object::as_name).ok() == Some(b"Multiply".as_slice());
+            lighten |=
+                dict.get(b"BM").and_then(Object::as_name).ok() == Some(b"Lighten".as_slice());
+            shading |= dict.has(b"ShadingType");
+        }
+        assert!(
+            multiply && lighten && shading,
+            "preserve the source blend and gradients"
+        );
+    }
+
+    #[test]
     fn rejects_non_colorizer_filters_and_unsafe_source_graphs() {
         let source = FILTER_SVG;
         let non_srgb = source.replace(
@@ -393,6 +434,13 @@ mod tests {
             "<rect width=\"64\" height=\"64\" fill=\"black\"/>",
             "<rect width=\"64\" height=\"64\" fill=\"black\" transform=\"translate(1,0)\"/>",
         );
+        let multiply = source.replace("mix-blend-mode:lighten", "mix-blend-mode:multiply");
+        let colored_multiply = multiply.replace("stop-color=\"white\"", "stop-color=\"red\"");
+        let translucent_backdrop = multiply.replace(
+            "<rect width=\"64\" height=\"64\" fill=\"black\"/>",
+            "<rect width=\"64\" height=\"64\" fill=\"black\" fill-opacity=\"0.5\"/>",
+        );
+        let unsupported_blend = source.replace("mix-blend-mode:lighten", "mix-blend-mode:screen");
         let image_tree = tree(&image);
         fn has_image(group: &usvg::Group) -> bool {
             group.children().iter().any(|node| match node {
@@ -412,6 +460,9 @@ mod tests {
             two_primitives,
             same_bounds_nonrectangle,
             shifted_backdrop,
+            colored_multiply,
+            translucent_backdrop,
+            unsupported_blend,
         ] {
             let tree = tree(&svg);
             assert!(recognize(ink_group(&tree)).is_none());
