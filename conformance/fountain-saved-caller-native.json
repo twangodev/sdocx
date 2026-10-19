@@ -1,0 +1,3199 @@
+{
+  "cases": [
+    {
+      "advanced_setting": "14;",
+      "case": "v14_omitted",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1358",
+      "drawing_manager": "0x1000a7d0",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1000ce10"
+        },
+        {
+          "input_s0": "00000000",
+          "return_w0": 1,
+          "this": "0x1000ce10"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1000d950",
+          "entry": "SPen::FountainPenStrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1000a950"
+        }
+      ],
+      "rtv_addpoint_entries": [
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "00000000",
+            "00000000",
+            "cdcccc3d",
+            "00000000",
+            "0000803f",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "00000000",
+              "0000803f"
+            ],
+            "position_xyz_f32_bits": [
+              "00000000",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "f3b2093f",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "f3b2093f",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3300c33f",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "3300c33f",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "88f30b40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "88f30b40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "970d3e40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "970d3e40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "49ce7740",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "49ce7740",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "cb9a9c40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "cb9a9c40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fe8fb740",
+            "35a9b13b",
+            "cdcccc3d",
+            "e6f87f3f",
+            "f040713c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "e6f87f3f",
+              "f040713c"
+            ],
+            "position_xyz_f32_bits": [
+              "fe8fb740",
+              "35a9b13b",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "18acd140",
+            "f662c53c",
+            "cdcccc3d",
+            "70e07f3f",
+            "0d33fe3c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "70e07f3f",
+              "0d33fe3c"
+            ],
+            "position_xyz_f32_bits": [
+              "18acd140",
+              "f662c53c",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "32c8eb40",
+            "6db7653d",
+            "cdcccc3d",
+            "9db67f3f",
+            "e2c8413d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "9db67f3f",
+              "e2c8413d"
+            ],
+            "position_xyz_f32_bits": [
+              "32c8eb40",
+              "6db7653d",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "26f20241",
+            "80a3cf3d",
+            "e642d23d",
+            "837b7f3f",
+            "6628823d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "837b7f3f",
+              "6628823d"
+            ],
+            "position_xyz_f32_bits": [
+              "26f20241",
+              "80a3cf3d",
+              "e642d23d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "33001041",
+            "0ed8233e",
+            "93d1db3d",
+            "482f7f3f",
+            "f751a33d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "482f7f3f",
+              "f751a33d"
+            ],
+            "position_xyz_f32_bits": [
+              "33001041",
+              "0ed8233e",
+              "93d1db3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3f0e1d41",
+            "c2806d3e",
+            "4060e53d",
+            "18d27e3f",
+            "8e5ac43d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "18d27e3f",
+              "8e5ac43d"
+            ],
+            "position_xyz_f32_bits": [
+              "3f0e1d41",
+              "c2806d3e",
+              "4060e53d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4d1c2a41",
+            "f265a23e",
+            "edeeee3d",
+            "2d647e3f",
+            "c13be53d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "2d647e3f",
+              "c13be53d"
+            ],
+            "position_xyz_f32_bits": [
+              "4d1c2a41",
+              "f265a23e",
+              "edeeee3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "5a2a3741",
+            "b3dcd43e",
+            "9a7df83d",
+            "c6e57d3f",
+            "9df7023e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "c6e57d3f",
+              "9df7023e"
+            ],
+            "position_xyz_f32_bits": [
+              "5a2a3741",
+              "b3dcd43e",
+              "9a7df83d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "68384441",
+            "5612073f",
+            "2406013e",
+            "31577d3f",
+            "7537133e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "31577d3f",
+              "7537133e"
+            ],
+            "position_xyz_f32_bits": [
+              "68384441",
+              "5612073f",
+              "2406013e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "74465141",
+            "ec1e273f",
+            "7bcd053e",
+            "beb87c3f",
+            "6d5a233e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "beb87c3f",
+              "6d5a233e"
+            ],
+            "position_xyz_f32_bits": [
+              "74465141",
+              "ec1e273f",
+              "7bcd053e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "80545e41",
+            "1a944a3f",
+            "d2940a3e",
+            "ca0a7c3f",
+            "ab5d333e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "ca0a7c3f",
+              "ab5d333e"
+            ],
+            "position_xyz_f32_bits": [
+              "80545e41",
+              "1a944a3f",
+              "d2940a3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "8c626b41",
+            "e271713f",
+            "295c0f3e",
+            "b64d7b3f",
+            "753e433e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "b64d7b3f",
+              "753e433e"
+            ],
+            "position_xyz_f32_bits": [
+              "8c626b41",
+              "e271713f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "7fb47a41",
+            "cc20913f",
+            "295c0f3e",
+            "54077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "54077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "7fb47a41",
+              "cc20913f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fbdf8441",
+            "2333a93f",
+            "295c0f3e",
+            "56077b3f",
+            "acd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "acd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "fbdf8441",
+              "2333a93f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "547a8b41",
+            "4054be3f",
+            "295c0f3e",
+            "57077b3f",
+            "add2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "57077b3f",
+              "add2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "547a8b41",
+              "4054be3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4b299141",
+            "2384d03f",
+            "295c0f3e",
+            "55077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "4b299141",
+              "2384d03f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "e0ec9541",
+            "cec2df3f",
+            "295c0f3e",
+            "56077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "e0ec9541",
+              "cec2df3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "9ca59e41",
+            "8dabfb3f",
+            "295c0f3e",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "9ca59e41",
+              "8dabfb3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "0000a041",
+            "00000040",
+            "295c0f3e",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "0000a041",
+              "00000040",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1000e6f0"
+        }
+      ],
+      "selected_drawable": "0x1000d950",
+      "selected_drawable_class": "GLV14",
+      "selected_pen": "0x1000ce10",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00000000",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "omit"
+    },
+    {
+      "advanced_setting": "14;",
+      "case": "v14_zero",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1358",
+      "drawing_manager": "0x1000fe60",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10012080"
+        },
+        {
+          "input_s0": "00000000",
+          "return_w0": 1,
+          "this": "0x10012080"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10012bc0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x10010000"
+        }
+      ],
+      "rtv_addpoint_entries": [
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "00000000",
+            "00000000",
+            "cdcccc3d",
+            "00000000",
+            "0000803f",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "00000000",
+              "0000803f"
+            ],
+            "position_xyz_f32_bits": [
+              "00000000",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "f3b2093f",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "f3b2093f",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3300c33f",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "3300c33f",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "88f30b40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "88f30b40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "970d3e40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "970d3e40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "49ce7740",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "49ce7740",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "cb9a9c40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "cb9a9c40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fe8fb740",
+            "35a9b13b",
+            "cdcccc3d",
+            "e6f87f3f",
+            "f040713c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "e6f87f3f",
+              "f040713c"
+            ],
+            "position_xyz_f32_bits": [
+              "fe8fb740",
+              "35a9b13b",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "18acd140",
+            "f662c53c",
+            "cdcccc3d",
+            "70e07f3f",
+            "0d33fe3c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "70e07f3f",
+              "0d33fe3c"
+            ],
+            "position_xyz_f32_bits": [
+              "18acd140",
+              "f662c53c",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "32c8eb40",
+            "6db7653d",
+            "cdcccc3d",
+            "9db67f3f",
+            "e2c8413d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "9db67f3f",
+              "e2c8413d"
+            ],
+            "position_xyz_f32_bits": [
+              "32c8eb40",
+              "6db7653d",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "26f20241",
+            "80a3cf3d",
+            "e642d23d",
+            "837b7f3f",
+            "6628823d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "837b7f3f",
+              "6628823d"
+            ],
+            "position_xyz_f32_bits": [
+              "26f20241",
+              "80a3cf3d",
+              "e642d23d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "33001041",
+            "0ed8233e",
+            "93d1db3d",
+            "482f7f3f",
+            "f751a33d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "482f7f3f",
+              "f751a33d"
+            ],
+            "position_xyz_f32_bits": [
+              "33001041",
+              "0ed8233e",
+              "93d1db3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3f0e1d41",
+            "c2806d3e",
+            "4060e53d",
+            "18d27e3f",
+            "8e5ac43d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "18d27e3f",
+              "8e5ac43d"
+            ],
+            "position_xyz_f32_bits": [
+              "3f0e1d41",
+              "c2806d3e",
+              "4060e53d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4d1c2a41",
+            "f265a23e",
+            "edeeee3d",
+            "2d647e3f",
+            "c13be53d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "2d647e3f",
+              "c13be53d"
+            ],
+            "position_xyz_f32_bits": [
+              "4d1c2a41",
+              "f265a23e",
+              "edeeee3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "5a2a3741",
+            "b3dcd43e",
+            "9a7df83d",
+            "c6e57d3f",
+            "9df7023e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "c6e57d3f",
+              "9df7023e"
+            ],
+            "position_xyz_f32_bits": [
+              "5a2a3741",
+              "b3dcd43e",
+              "9a7df83d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "68384441",
+            "5612073f",
+            "2406013e",
+            "31577d3f",
+            "7537133e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "31577d3f",
+              "7537133e"
+            ],
+            "position_xyz_f32_bits": [
+              "68384441",
+              "5612073f",
+              "2406013e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "74465141",
+            "ec1e273f",
+            "7bcd053e",
+            "beb87c3f",
+            "6d5a233e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "beb87c3f",
+              "6d5a233e"
+            ],
+            "position_xyz_f32_bits": [
+              "74465141",
+              "ec1e273f",
+              "7bcd053e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "80545e41",
+            "1a944a3f",
+            "d2940a3e",
+            "ca0a7c3f",
+            "ab5d333e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "ca0a7c3f",
+              "ab5d333e"
+            ],
+            "position_xyz_f32_bits": [
+              "80545e41",
+              "1a944a3f",
+              "d2940a3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "8c626b41",
+            "e271713f",
+            "295c0f3e",
+            "b64d7b3f",
+            "753e433e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "b64d7b3f",
+              "753e433e"
+            ],
+            "position_xyz_f32_bits": [
+              "8c626b41",
+              "e271713f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "7fb47a41",
+            "cc20913f",
+            "295c0f3e",
+            "54077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "54077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "7fb47a41",
+              "cc20913f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fbdf8441",
+            "2333a93f",
+            "295c0f3e",
+            "56077b3f",
+            "acd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "acd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "fbdf8441",
+              "2333a93f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "547a8b41",
+            "4054be3f",
+            "295c0f3e",
+            "57077b3f",
+            "add2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "57077b3f",
+              "add2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "547a8b41",
+              "4054be3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4b299141",
+            "2384d03f",
+            "295c0f3e",
+            "55077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "4b299141",
+              "2384d03f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "e0ec9541",
+            "cec2df3f",
+            "295c0f3e",
+            "56077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "e0ec9541",
+              "cec2df3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "9ca59e41",
+            "8dabfb3f",
+            "295c0f3e",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "9ca59e41",
+              "8dabfb3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "0000a041",
+            "00000040",
+            "295c0f3e",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "0000a041",
+              "00000040",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10013960"
+        }
+      ],
+      "selected_drawable": "0x10012bc0",
+      "selected_drawable_class": "GLV14",
+      "selected_pen": "0x10012080",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00000000",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "set"
+    },
+    {
+      "advanced_setting": "14;",
+      "case": "v14_small",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1358",
+      "drawing_manager": "0x10015190",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10017540"
+        },
+        {
+          "input_s0": "cdcccc3d",
+          "return_w0": 1,
+          "this": "0x10017540"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10018080",
+          "entry": "SPen::FountainPenStrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x100152f0"
+        }
+      ],
+      "rtv_addpoint_entries": [
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "00000000",
+            "00000000",
+            "cdcccc3d",
+            "00000000",
+            "0000803f",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "00000000",
+              "0000803f"
+            ],
+            "position_xyz_f32_bits": [
+              "00000000",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "f3b2093f",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "f3b2093f",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3300c33f",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "3300c33f",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "88f30b40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "88f30b40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "970d3e40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "970d3e40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "49ce7740",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "49ce7740",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "cb9a9c40",
+            "00000000",
+            "cdcccc3d",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "cb9a9c40",
+              "00000000",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fe8fb740",
+            "35a9b13b",
+            "cdcccc3d",
+            "e6f87f3f",
+            "f040713c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "e6f87f3f",
+              "f040713c"
+            ],
+            "position_xyz_f32_bits": [
+              "fe8fb740",
+              "35a9b13b",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "18acd140",
+            "f662c53c",
+            "cdcccc3d",
+            "70e07f3f",
+            "0d33fe3c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "70e07f3f",
+              "0d33fe3c"
+            ],
+            "position_xyz_f32_bits": [
+              "18acd140",
+              "f662c53c",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "32c8eb40",
+            "6db7653d",
+            "cdcccc3d",
+            "9db67f3f",
+            "e2c8413d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "9db67f3f",
+              "e2c8413d"
+            ],
+            "position_xyz_f32_bits": [
+              "32c8eb40",
+              "6db7653d",
+              "cdcccc3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "26f20241",
+            "80a3cf3d",
+            "e642d23d",
+            "837b7f3f",
+            "6628823d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "837b7f3f",
+              "6628823d"
+            ],
+            "position_xyz_f32_bits": [
+              "26f20241",
+              "80a3cf3d",
+              "e642d23d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "33001041",
+            "0ed8233e",
+            "93d1db3d",
+            "482f7f3f",
+            "f751a33d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "482f7f3f",
+              "f751a33d"
+            ],
+            "position_xyz_f32_bits": [
+              "33001041",
+              "0ed8233e",
+              "93d1db3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3f0e1d41",
+            "c2806d3e",
+            "4060e53d",
+            "18d27e3f",
+            "8e5ac43d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "18d27e3f",
+              "8e5ac43d"
+            ],
+            "position_xyz_f32_bits": [
+              "3f0e1d41",
+              "c2806d3e",
+              "4060e53d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4d1c2a41",
+            "f265a23e",
+            "edeeee3d",
+            "2d647e3f",
+            "c13be53d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "2d647e3f",
+              "c13be53d"
+            ],
+            "position_xyz_f32_bits": [
+              "4d1c2a41",
+              "f265a23e",
+              "edeeee3d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "5a2a3741",
+            "b3dcd43e",
+            "9a7df83d",
+            "c6e57d3f",
+            "9df7023e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "c6e57d3f",
+              "9df7023e"
+            ],
+            "position_xyz_f32_bits": [
+              "5a2a3741",
+              "b3dcd43e",
+              "9a7df83d"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "68384441",
+            "5612073f",
+            "2406013e",
+            "31577d3f",
+            "7537133e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "31577d3f",
+              "7537133e"
+            ],
+            "position_xyz_f32_bits": [
+              "68384441",
+              "5612073f",
+              "2406013e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "74465141",
+            "ec1e273f",
+            "7bcd053e",
+            "beb87c3f",
+            "6d5a233e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "beb87c3f",
+              "6d5a233e"
+            ],
+            "position_xyz_f32_bits": [
+              "74465141",
+              "ec1e273f",
+              "7bcd053e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "80545e41",
+            "1a944a3f",
+            "d2940a3e",
+            "ca0a7c3f",
+            "ab5d333e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "ca0a7c3f",
+              "ab5d333e"
+            ],
+            "position_xyz_f32_bits": [
+              "80545e41",
+              "1a944a3f",
+              "d2940a3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "8c626b41",
+            "e271713f",
+            "295c0f3e",
+            "b64d7b3f",
+            "753e433e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "b64d7b3f",
+              "753e433e"
+            ],
+            "position_xyz_f32_bits": [
+              "8c626b41",
+              "e271713f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "7fb47a41",
+            "cc20913f",
+            "295c0f3e",
+            "54077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "54077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "7fb47a41",
+              "cc20913f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fbdf8441",
+            "2333a93f",
+            "295c0f3e",
+            "56077b3f",
+            "acd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "acd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "fbdf8441",
+              "2333a93f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "547a8b41",
+            "4054be3f",
+            "295c0f3e",
+            "57077b3f",
+            "add2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "57077b3f",
+              "add2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "547a8b41",
+              "4054be3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4b299141",
+            "2384d03f",
+            "295c0f3e",
+            "55077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "4b299141",
+              "2384d03f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "e0ec9541",
+            "cec2df3f",
+            "295c0f3e",
+            "56077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "e0ec9541",
+              "cec2df3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "9ca59e41",
+            "8dabfb3f",
+            "295c0f3e",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "9ca59e41",
+              "8dabfb3f",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "0000a041",
+            "00000040",
+            "295c0f3e",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "0000a041",
+              "00000040",
+              "295c0f3e"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x10018e20"
+        }
+      ],
+      "selected_drawable": "0x10018080",
+      "selected_drawable_class": "GLV14",
+      "selected_pen": "0x10017540",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "cdcccc3d",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "set"
+    },
+    {
+      "advanced_setting": "14;",
+      "case": "v14_normal",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1358",
+      "drawing_manager": "0x1001a650",
+      "drawing_return": 1,
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1001ca80"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x1001ca80"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1001d5c0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV14::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1001a830"
+        }
+      ],
+      "rtv_addpoint_entries": [
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "00000000",
+            "00000000",
+            "165f713f",
+            "00000000",
+            "0000803f",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "00000000",
+              "0000803f"
+            ],
+            "position_xyz_f32_bits": [
+              "00000000",
+              "00000000",
+              "165f713f"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "f3b2093f",
+            "00000000",
+            "165f913f",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "f3b2093f",
+              "00000000",
+              "165f913f"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3300c33f",
+            "00000000",
+            "a10eaa3f",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "3300c33f",
+              "00000000",
+              "a10eaa3f"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "88f30b40",
+            "00000000",
+            "2cbec23f",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "88f30b40",
+              "00000000",
+              "2cbec23f"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "970d3e40",
+            "00000000",
+            "b76ddb3f",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "970d3e40",
+              "00000000",
+              "b76ddb3f"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "49ce7740",
+            "00000000",
+            "421df43f",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "49ce7740",
+              "00000000",
+              "421df43f"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "cb9a9c40",
+            "00000000",
+            "67660640",
+            "0000803f",
+            "00000000",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "0000803f",
+              "00000000"
+            ],
+            "position_xyz_f32_bits": [
+              "cb9a9c40",
+              "00000000",
+              "67660640"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fe8fb740",
+            "35a9b13b",
+            "dedd0d40",
+            "e6f87f3f",
+            "f040713c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "e6f87f3f",
+              "f040713c"
+            ],
+            "position_xyz_f32_bits": [
+              "fe8fb740",
+              "35a9b13b",
+              "dedd0d40"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "18acd140",
+            "f662c53c",
+            "55551540",
+            "70e07f3f",
+            "0d33fe3c",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "70e07f3f",
+              "0d33fe3c"
+            ],
+            "position_xyz_f32_bits": [
+              "18acd140",
+              "f662c53c",
+              "55551540"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "32c8eb40",
+            "6db7653d",
+            "cccc1c40",
+            "9db67f3f",
+            "e2c8413d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "9db67f3f",
+              "e2c8413d"
+            ],
+            "position_xyz_f32_bits": [
+              "32c8eb40",
+              "6db7653d",
+              "cccc1c40"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "26f20241",
+            "80a3cf3d",
+            "43442440",
+            "837b7f3f",
+            "6628823d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "837b7f3f",
+              "6628823d"
+            ],
+            "position_xyz_f32_bits": [
+              "26f20241",
+              "80a3cf3d",
+              "43442440"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "33001041",
+            "0ed8233e",
+            "babb2b40",
+            "482f7f3f",
+            "f751a33d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "482f7f3f",
+              "f751a33d"
+            ],
+            "position_xyz_f32_bits": [
+              "33001041",
+              "0ed8233e",
+              "babb2b40"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "3f0e1d41",
+            "c2806d3e",
+            "31333340",
+            "18d27e3f",
+            "8e5ac43d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "18d27e3f",
+              "8e5ac43d"
+            ],
+            "position_xyz_f32_bits": [
+              "3f0e1d41",
+              "c2806d3e",
+              "31333340"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4d1c2a41",
+            "f265a23e",
+            "a8aa3a40",
+            "2d647e3f",
+            "c13be53d",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "2d647e3f",
+              "c13be53d"
+            ],
+            "position_xyz_f32_bits": [
+              "4d1c2a41",
+              "f265a23e",
+              "a8aa3a40"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "5a2a3741",
+            "b3dcd43e",
+            "1f224240",
+            "c6e57d3f",
+            "9df7023e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "c6e57d3f",
+              "9df7023e"
+            ],
+            "position_xyz_f32_bits": [
+              "5a2a3741",
+              "b3dcd43e",
+              "1f224240"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "68384441",
+            "5612073f",
+            "96994940",
+            "31577d3f",
+            "7537133e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "31577d3f",
+              "7537133e"
+            ],
+            "position_xyz_f32_bits": [
+              "68384441",
+              "5612073f",
+              "96994940"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "74465141",
+            "ec1e273f",
+            "0d115140",
+            "beb87c3f",
+            "6d5a233e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "beb87c3f",
+              "6d5a233e"
+            ],
+            "position_xyz_f32_bits": [
+              "74465141",
+              "ec1e273f",
+              "0d115140"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "80545e41",
+            "1a944a3f",
+            "84885840",
+            "ca0a7c3f",
+            "ab5d333e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "ca0a7c3f",
+              "ab5d333e"
+            ],
+            "position_xyz_f32_bits": [
+              "80545e41",
+              "1a944a3f",
+              "84885840"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "8c626b41",
+            "e271713f",
+            "fbff5f40",
+            "b64d7b3f",
+            "753e433e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "b64d7b3f",
+              "753e433e"
+            ],
+            "position_xyz_f32_bits": [
+              "8c626b41",
+              "e271713f",
+              "fbff5f40"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "7fb47a41",
+            "cc20913f",
+            "00006040",
+            "54077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "54077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "7fb47a41",
+              "cc20913f",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "fbdf8441",
+            "2333a93f",
+            "00006040",
+            "56077b3f",
+            "acd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "acd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "fbdf8441",
+              "2333a93f",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "547a8b41",
+            "4054be3f",
+            "00006040",
+            "57077b3f",
+            "add2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "57077b3f",
+              "add2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "547a8b41",
+              "4054be3f",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "4b299141",
+            "2384d03f",
+            "00006040",
+            "55077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "4b299141",
+              "2384d03f",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "e0ec9541",
+            "cec2df3f",
+            "00006040",
+            "56077b3f",
+            "aad2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "56077b3f",
+              "aad2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "e0ec9541",
+              "cec2df3f",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "9ca59e41",
+            "8dabfb3f",
+            "00006040",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "9ca59e41",
+              "8dabfb3f",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        },
+        {
+          "entry": "SPen::FountainPenStrokeDrawableRTV4::AddPoint(SPen::Vector3<float>, SPen::Vector2<float>, float)",
+          "float_words_s0_s5": [
+            "0000a041",
+            "00000040",
+            "00006040",
+            "55077b3f",
+            "abd2483e",
+            "0000803f"
+          ],
+          "native_addpoint_channels": {
+            "direction_xy_f32_bits": [
+              "55077b3f",
+              "abd2483e"
+            ],
+            "position_xyz_f32_bits": [
+              "0000a041",
+              "00000040",
+              "00006040"
+            ],
+            "transparency_f32_bits": "0000803f"
+          },
+          "receiver": "0x1001e360"
+        }
+      ],
+      "selected_drawable": "0x1001d5c0",
+      "selected_drawable_class": "GLV14",
+      "selected_pen": "0x1001ca80",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "set"
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "v16_omitted",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1001fb90",
+      "drawing_return": 1,
+      "evidence_scope": "class-selection-and-size-handoff-only; V16 geometry not captured",
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10021d80"
+        },
+        {
+          "input_s0": "00000000",
+          "return_w0": 1,
+          "this": "0x10021d80"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10022ad0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1001fcf0"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x10022ad0",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x10021d80",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00000000",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "omit"
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "v16_zero",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x10024660",
+      "drawing_return": 1,
+      "evidence_scope": "class-selection-and-size-handoff-only; V16 geometry not captured",
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10026850"
+        },
+        {
+          "input_s0": "00000000",
+          "return_w0": 1,
+          "this": "0x10026850"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x100275a0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x100247c0"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x100275a0",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x10026850",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00000000",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "set"
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "v16_small",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x10029130",
+      "drawing_return": 1,
+      "evidence_scope": "class-selection-and-size-handoff-only; V16 geometry not captured",
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "cdcccc3e",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x1002b4f0"
+        },
+        {
+          "input_s0": "cdcccc3d",
+          "return_w0": 1,
+          "this": "0x1002b4f0"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x1002c240",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x10029290"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x1002c240",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x1002b4f0",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "cdcccc3d",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "set"
+    },
+    {
+      "advanced_setting": "18;0;100;",
+      "case": "v16_normal",
+      "drawable_error": null,
+      "drawable_vtable": "0xd1578",
+      "drawing_manager": "0x1002ddd0",
+      "drawing_return": 1,
+      "evidence_scope": "class-selection-and-size-handoff-only; V16 geometry not captured",
+      "loader_calls": [
+        {
+          "fn": "dlopen",
+          "lr": "0x104ece8",
+          "name": "libSPenFountainPen.so"
+        },
+        {
+          "fn": "dlsym",
+          "handle": "0x50000001",
+          "lr": "0x104df74",
+          "name": "createPenInst"
+        }
+      ],
+      "native_pen_getsize_f32_bits": "00002041",
+      "native_pen_setsize_calls": [
+        {
+          "input_s0": "d578693e",
+          "return_w0": 1,
+          "this": "0x10030290"
+        },
+        {
+          "input_s0": "00002041",
+          "return_w0": 1,
+          "this": "0x10030290"
+        }
+      ],
+      "redraw_entries": [
+        {
+          "drawable": "0x10030fe0",
+          "entry": "SPen::FountainPenStrokeDrawableGLV16::RedrawPen(SPen::ObjectStroke const*, SPen::RectF*)",
+          "stroke": "0x1002e030"
+        }
+      ],
+      "rtv_addpoint_entries": [],
+      "selected_drawable": "0x10030fe0",
+      "selected_drawable_class": "GLV16",
+      "selected_pen": "0x10030290",
+      "source_arrays": {
+        "orientation_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "points_f32_bits": [
+          "00000000",
+          "00000000",
+          "41200000",
+          "00000000",
+          "41a00000",
+          "40000000"
+        ],
+        "pressure_f32_bits": [
+          "3e99999a",
+          "3f19999a",
+          "3f800000"
+        ],
+        "tilt_f32_bits": [
+          "00000000",
+          "00000000",
+          "00000000"
+        ],
+        "timestamps_i32": [
+          100,
+          110,
+          120
+        ]
+      },
+      "source_model_get_pen_size_f32_bits": "00002041",
+      "source_model_get_point_count": 3,
+      "style_pen_size_setter": "set"
+    }
+  ],
+  "profile": [
+    1920,
+    1080
+  ],
+  "provenance": {
+    "helpers": {
+      "elf_plt.py": "816eceff5b532b35c8ef9ea904a8aa64767422b0799347a18fbd4602b70f373b",
+      "fountain_native.py": "40cb917c7f286302d8519e9b953c3c21b7fe6ea0b6b0a80ccc13e2e724cfad30",
+      "native_drawing_runtime.py": "65dd0a4294332b68410d9436762c4f0ad84a0ad4b2a21a742e7b098e089fba91",
+      "oblique_canvas_native.py": "1cabf3f8bf907ce6fd48952682b4cad5208827cec4aa0bd0a1ec864aa750a1f2"
+    },
+    "libraries": {
+      "Base": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+      "Composer": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+      "DefaultPen": "1b37056c81646c407e9e0697c78e31b50ffab0bdb896966d1e89feb02385544f",
+      "Drawing": "788bf413ddeb0b9d352062c5f1b7b8ed11babca911df72691da58ff1a0a5a4bd",
+      "FountainPen": "1fed4e071caffcb88a4df4ca345b6df5e3374852c9ef18044793fc2e340ac6ec",
+      "Graphics": "aac858ce3a9d0353d760b4b0ef09f1e88b0d4a87f5e0906fe8d53936ee8a6621",
+      "Model": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+      "PenCommon": "afd39c0d55ec5cf47153be48222c8a9ddc0057fc772dd870af9ced74a59ec33d",
+      "libc++_shared": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+    },
+    "runner_boundary": "Native Model ObjectStroke setters/getters, DrawingFactory, ObjectDrawing::drawObjectStroke, PenManager lookup, and selected FountainPen RedrawPen execute. V14 enters native RTV4 AddPoint; V16 evidence is limited to selected GLV16 class and size handoff, with no V16 geometry capture. IContext dimensions, queue dispatch, allocator, CanvasProbe drawing callbacks, and non-null synthetic dlopen/dlsym handles are host adapters; no raster output is claimed.",
+    "wrapper_sha256": "b0837c86483aa438923f9d4d1c6451b1ebc1c5fec4c5f7c447b928a25a8f7b19"
+  },
+  "schema": "sdocx-fountain-saved-caller-v1",
+  "source_input": {
+    "curve_enabled": true,
+    "orientation": [
+      0,
+      0,
+      0
+    ],
+    "pen_name": "com.samsung.android.sdk.pen.pen.preload.FountainPen",
+    "points": [
+      [
+        0,
+        0
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        20,
+        2
+      ]
+    ],
+    "pressure": [
+      0.3,
+      0.6,
+      1.0
+    ],
+    "stroke_type": 0,
+    "tilt": [
+      0,
+      0,
+      0
+    ],
+    "timestamps": [
+      100,
+      110,
+      120
+    ],
+    "tool_type": 2,
+    "visible": true
+  }
+}
