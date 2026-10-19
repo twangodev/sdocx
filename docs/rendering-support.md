@@ -118,7 +118,10 @@ native Model getters, factory selection and identical 132-byte Drawing/saved
 streams on the same RT under an explicit 1920×1080 display profile.
 DefaultPen's [Draw capture](../conformance/defaultpen-draw-native.json) retains
 native blend setup and shader text that replaces input alpha with screen-space
-coverage. Caller admission and vector paint remain outstanding.
+coverage. The [joined capture](../conformance/defaultpen-joined-paint-native.json)
+passes that Drawing-selected RT’s 132-byte vector through native upload and
+draw to a host RGBA8 target, with an explicit same-vector-object handoff.
+Natural queue/lifecycle setup, caller admission and vector paint remain outstanding.
 The [InkPen V4 source trace](reverse-engineering/inkpen-v4-findings.md) establishes
 selected saved curve width/sampling and cache boundaries; ordinary InkPen also
 uses the generic approximation. A test-only numeric core matches twenty-one
