@@ -37,6 +37,8 @@ mod page_text_ranges;
 
 #[path = "native_table/pdf_paper_form_matrix.rs"]
 mod pdf_paper_form_matrix;
+#[path = "native_table/pdf_paper_body_writer_matrix.rs"]
+mod pdf_paper_body_writer_matrix;
 #[path = "native_table/pdf_paper_placement.rs"]
 mod pdf_paper_placement;
 #[path = "native_table/pdf_paper_predicates.rs"]
@@ -2076,6 +2078,7 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
             );
             return;
         }
@@ -2102,6 +2105,7 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
             );
             return;
         }
@@ -2121,6 +2125,33 @@ fn main() {
                 None,
                 None,
                 None,
+                None,
+            );
+            return;
+        }
+        Some("--pdf-paper-body-writer-matrix") => {
+            let pdfium = std::env::args_os().nth(3).expect("libSPenPdfiumB.so path required");
+            let composer = std::env::args_os().nth(4).expect("libSPenComposer.so path required");
+            let base = std::env::args_os().nth(5).expect("libSPenBase.so path required");
+            let source = std::env::args_os().nth(6).expect("synthetic source PDF path required");
+            let source_sha256 = std::env::args_os().nth(7).expect("source PDF SHA-256 required").into_string().expect("source PDF SHA-256 must be UTF-8");
+            let note_width = std::env::args_os().nth(8).expect("note width required").to_string_lossy().parse::<u32>().expect("note width must be u32");
+            let note_height = std::env::args_os().nth(9).expect("note height required").to_string_lossy().parse::<u32>().expect("note height must be u32");
+            let output = std::env::args_os().nth(10).expect("unused output path required");
+            verify_library(Path::new(&source), &source_sha256);
+            pdfium_create_page_save::capture(
+                &mut machine,
+                Path::new(&path),
+                Path::new(&pdfium),
+                0,
+                Path::new(&output),
+                None,
+                Some(Path::new(&source)),
+                Some(&source_sha256),
+                None,
+                None,
+                None,
+                Some((Path::new(&composer), Path::new(&base), note_width, note_height)),
             );
             return;
         }
@@ -2144,6 +2175,7 @@ fn main() {
                 Some(Path::new(&source)),
                 Some(&expected_sha256),
                 Some(0.400775),
+                None,
                 None,
                 None,
             );
@@ -2170,6 +2202,7 @@ fn main() {
                 Some(0.400775),
                 Some(Path::new(&overlay_png)),
                 Some(&overlay_png_sha256),
+                None,
             );
             return;
         }

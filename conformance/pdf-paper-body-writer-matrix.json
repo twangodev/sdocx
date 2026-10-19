@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "apk": {
+    "version": "4.4.45.37",
+    "sha256": "daed1eff8c8ee9dfb8afe2771e39e893a8808f3230d6d522a8aa647db09b8667"
+  },
+  "native_library_sha256": {
+    "libSPenModel.so": "4fbcf6d4213e929f1535d32abb487743643fd5d0dfc366e50dfeb2e7d8015b7a",
+    "libSPenComposer.so": "52b83157198368da3a3855a721bfc7d3aafde4e644ce25b5d6eab3b6b510d39f",
+    "libSPenBase.so": "e10da0116946691cf68302437ef261282e1dfe0eec15bf2dfa66093286985deb",
+    "libSPenPdf.so": "cdc62f9e02a3ef60e0dc504dbb13c4352accb811fb1ec629a7c8648954dd8f04",
+    "libSPenPdfiumB.so": "4bd55ef116541205cb8aaf04812a317fe11911c0ff5a5d44526d98d6b0e48854",
+    "libc++_shared.so": "4397241b4bd20a8e579bfb41d21107857e12985f6a01ca0c2a5f83380d1270b4"
+  },
+  "note_page_wh_host_input": [
+    1812,
+    15372
+  ],
+  "synthetic_drawn_text_marker_host_input": {
+    "rect": [
+      10,
+      20,
+      40,
+      60
+    ],
+    "position": [
+      23,
+      17
+    ]
+  },
+  "page_rectangle_boundary": "Host supplies rectangle origin [0,0]; native PDFium provides the loaded page width and height used for its right/bottom edges.",
+  "source_geometry_boundary": "Host generator supplies MediaBox/CropBox/Rotate/UserUnit and asymmetric source vector; pinned native PdfiumImpl parses dimensions/rotation from the actual generated PDF.",
+  "matrix_composition_boundary": "Pinned native Composer executes addBodyText and BodyTextPDFWriter through RectF Offset/Scale into a host Drawing::DrawObject sink; a separate pinned native PdfiumImpl GetObjectMatrix/GetObjectPosition call consumes that captured rect. No full DrawObject-to-AddImage dispatch, FPDF insertion, content generation, serialization, or pixels are captured.",
+  "cases": [
+    {
+      "native_path": "PdfiumImpl Open/LoadPage -> Composer addBodyText/BodyTextPDFWriter -> RectF Offset/Scale -> separate PdfiumImpl::GetObjectMatrix/GetObjectPosition",
+      "loaded_page_rect": [
+        0,
+        0,
+        115,
+        150
+      ],
+      "source_rotation_quarter_turns": 1,
+      "note_page_wh": [
+        1812,
+        15372
+      ],
+      "native_write_body_text_scale": 0.06346578,
+      "host_expected_note_scale": 0.06346578,
+      "synthetic_marker_note_rect": [
+        10,
+        20,
+        40,
+        60
+      ],
+      "synthetic_marker_position": [
+        23,
+        17
+      ],
+      "body_writer_draw_object_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_input_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_ratio": 1,
+      "get_object_matrix_executed": true,
+      "get_object_matrix_result": 1,
+      "matrix": [
+        -8.322533e-08,
+        1.9039736,
+        -2.5386312,
+        -1.1096709e-07,
+        4.886865,
+        7.094371
+      ],
+      "get_object_position_executed": true,
+      "get_object_position_result": 1,
+      "position_rect": [
+        2.348234,
+        7.094371,
+        4.886865,
+        8.998344
+      ],
+      "host_boundaries": [
+        "WPage dimensions and one DrawnText marker are host supplied to native Composer",
+        "The native BodyTextPDFWriter scale field is observed at the real function entry; the independently computed expected ratio is host-derived",
+        "Drawing::DrawObject is a host sink; its captured native rect is passed to the separate native PDFium matrix helpers"
+      ],
+      "boundary": "PDFium loads the generated source PDF through native PdfiumImpl; its loaded dimensions and rotation feed actual Composer addBodyText and BodyTextPDFWriter calls. A read-only hook observes the scale field passed to the real BodyTextPDFWriter::WriteBodyText entry. Native Base RectF operations transform the host synthetic marker before the host DrawObject sink. The actual PdfiumImpl AddImage matrix/position callees execute on that rect, but Drawing::DrawObject to AddImage, FPDF insertion, content generation, serialization and pixels do not execute.",
+      "source_pdf_sha256": "6e92278832402105779fe6a765dee53c9cd3a680c09e3926617da9b8b5530ef2",
+      "host_generated_source_pdf": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          0,
+          5,
+          150,
+          120
+        ],
+        "rotate_degrees": 90,
+        "user_unit": 2,
+        "source_vector_path": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f"
+      },
+      "interpretation": "The source PDF parser reports CropBox dimensions 150x115, rotated to 115x150; the factor UserUnit=2 is not present in those dimensions. The paired offset-CropBox case shifts native PDFium matrix and position translations by its origin delta. Composer transforms only the supplied note marker and imported page rectangle; the final native PDFium helper call is separate from Drawing::DrawObject."
+    },
+    {
+      "native_path": "PdfiumImpl Open/LoadPage -> Composer addBodyText/BodyTextPDFWriter -> RectF Offset/Scale -> separate PdfiumImpl::GetObjectMatrix/GetObjectPosition",
+      "loaded_page_rect": [
+        0,
+        0,
+        115,
+        150
+      ],
+      "source_rotation_quarter_turns": 1,
+      "note_page_wh": [
+        1812,
+        15372
+      ],
+      "native_write_body_text_scale": 0.06346578,
+      "host_expected_note_scale": 0.06346578,
+      "synthetic_marker_note_rect": [
+        10,
+        20,
+        40,
+        60
+      ],
+      "synthetic_marker_position": [
+        23,
+        17
+      ],
+      "body_writer_draw_object_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_input_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_ratio": 1,
+      "get_object_matrix_executed": true,
+      "get_object_matrix_result": 1,
+      "matrix": [
+        -8.322529e-08,
+        1.9039726,
+        -2.5386314,
+        -1.1096711e-07,
+        14.886866,
+        22.094372
+      ],
+      "get_object_position_executed": true,
+      "get_object_position_result": 1,
+      "position_rect": [
+        12.348234,
+        22.094372,
+        14.886866,
+        23.998344
+      ],
+      "host_boundaries": [
+        "WPage dimensions and one DrawnText marker are host supplied to native Composer",
+        "The native BodyTextPDFWriter scale field is observed at the real function entry; the independently computed expected ratio is host-derived",
+        "Drawing::DrawObject is a host sink; its captured native rect is passed to the separate native PDFium matrix helpers"
+      ],
+      "boundary": "PDFium loads the generated source PDF through native PdfiumImpl; its loaded dimensions and rotation feed actual Composer addBodyText and BodyTextPDFWriter calls. A read-only hook observes the scale field passed to the real BodyTextPDFWriter::WriteBodyText entry. Native Base RectF operations transform the host synthetic marker before the host DrawObject sink. The actual PdfiumImpl AddImage matrix/position callees execute on that rect, but Drawing::DrawObject to AddImage, FPDF insertion, content generation, serialization and pixels do not execute.",
+      "source_pdf_sha256": "625116d701f0fb35ce96da62aa54efb8d80926fd1b4c1820bfb3fa1fa1986ebe",
+      "host_generated_source_pdf": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          10,
+          20,
+          160,
+          135
+        ],
+        "rotate_degrees": 90,
+        "user_unit": 2,
+        "source_vector_path": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f"
+      },
+      "interpretation": "The source PDF parser reports CropBox dimensions 150x115, rotated to 115x150; the factor UserUnit=2 is not present in those dimensions. The paired offset-CropBox case shifts native PDFium matrix and position translations by its origin delta. Composer transforms only the supplied note marker and imported page rectangle; the final native PDFium helper call is separate from Drawing::DrawObject."
+    },
+    {
+      "native_path": "PdfiumImpl Open/LoadPage -> Composer addBodyText/BodyTextPDFWriter -> RectF Offset/Scale -> separate PdfiumImpl::GetObjectMatrix/GetObjectPosition",
+      "loaded_page_rect": [
+        0,
+        0,
+        115,
+        150
+      ],
+      "source_rotation_quarter_turns": 3,
+      "note_page_wh": [
+        1812,
+        15372
+      ],
+      "native_write_body_text_scale": 0.06346578,
+      "host_expected_note_scale": 0.06346578,
+      "synthetic_marker_note_rect": [
+        10,
+        20,
+        40,
+        60
+      ],
+      "synthetic_marker_position": [
+        23,
+        17
+      ],
+      "body_writer_draw_object_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_input_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_ratio": 1,
+      "get_object_matrix_executed": true,
+      "get_object_matrix_result": 1,
+      "matrix": [
+        2.2704691e-08,
+        -1.9039764,
+        2.5386353,
+        3.0272922e-08,
+        145.11313,
+        117.90563
+      ],
+      "get_object_position_executed": true,
+      "get_object_position_result": 1,
+      "position_rect": [
+        145.11313,
+        116.001656,
+        147.65176,
+        117.90563
+      ],
+      "host_boundaries": [
+        "WPage dimensions and one DrawnText marker are host supplied to native Composer",
+        "The native BodyTextPDFWriter scale field is observed at the real function entry; the independently computed expected ratio is host-derived",
+        "Drawing::DrawObject is a host sink; its captured native rect is passed to the separate native PDFium matrix helpers"
+      ],
+      "boundary": "PDFium loads the generated source PDF through native PdfiumImpl; its loaded dimensions and rotation feed actual Composer addBodyText and BodyTextPDFWriter calls. A read-only hook observes the scale field passed to the real BodyTextPDFWriter::WriteBodyText entry. Native Base RectF operations transform the host synthetic marker before the host DrawObject sink. The actual PdfiumImpl AddImage matrix/position callees execute on that rect, but Drawing::DrawObject to AddImage, FPDF insertion, content generation, serialization and pixels do not execute.",
+      "source_pdf_sha256": "5561da86a2d266062feb9e79fec35282af2445206debf0abc1a1d950f34aa74f",
+      "host_generated_source_pdf": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          0,
+          5,
+          150,
+          120
+        ],
+        "rotate_degrees": 270,
+        "user_unit": 2,
+        "source_vector_path": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f"
+      },
+      "interpretation": "The source PDF parser reports CropBox dimensions 150x115, rotated to 115x150; the factor UserUnit=2 is not present in those dimensions. The paired offset-CropBox case shifts native PDFium matrix and position translations by its origin delta. Composer transforms only the supplied note marker and imported page rectangle; the final native PDFium helper call is separate from Drawing::DrawObject."
+    },
+    {
+      "native_path": "PdfiumImpl Open/LoadPage -> Composer addBodyText/BodyTextPDFWriter -> RectF Offset/Scale -> separate PdfiumImpl::GetObjectMatrix/GetObjectPosition",
+      "loaded_page_rect": [
+        0,
+        0,
+        115,
+        150
+      ],
+      "source_rotation_quarter_turns": 3,
+      "note_page_wh": [
+        1812,
+        15372
+      ],
+      "native_write_body_text_scale": 0.06346578,
+      "host_expected_note_scale": 0.06346578,
+      "synthetic_marker_note_rect": [
+        10,
+        20,
+        40,
+        60
+      ],
+      "synthetic_marker_position": [
+        23,
+        17
+      ],
+      "body_writer_draw_object_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_input_rect": [
+        2.0943708,
+        2.348234,
+        3.9983442,
+        4.886865
+      ],
+      "matrix_ratio": 1,
+      "get_object_matrix_executed": true,
+      "get_object_matrix_result": 1,
+      "matrix": [
+        2.270451e-08,
+        -1.9039612,
+        2.5386353,
+        3.0272922e-08,
+        155.11313,
+        132.90562
+      ],
+      "get_object_position_executed": true,
+      "get_object_position_result": 1,
+      "position_rect": [
+        155.11313,
+        131.00166,
+        157.65176,
+        132.90562
+      ],
+      "host_boundaries": [
+        "WPage dimensions and one DrawnText marker are host supplied to native Composer",
+        "The native BodyTextPDFWriter scale field is observed at the real function entry; the independently computed expected ratio is host-derived",
+        "Drawing::DrawObject is a host sink; its captured native rect is passed to the separate native PDFium matrix helpers"
+      ],
+      "boundary": "PDFium loads the generated source PDF through native PdfiumImpl; its loaded dimensions and rotation feed actual Composer addBodyText and BodyTextPDFWriter calls. A read-only hook observes the scale field passed to the real BodyTextPDFWriter::WriteBodyText entry. Native Base RectF operations transform the host synthetic marker before the host DrawObject sink. The actual PdfiumImpl AddImage matrix/position callees execute on that rect, but Drawing::DrawObject to AddImage, FPDF insertion, content generation, serialization and pixels do not execute.",
+      "source_pdf_sha256": "cae38e8ce7f1320d3362a76e1e5f7f23bd1b462b849a08baa436976263488c9a",
+      "host_generated_source_pdf": {
+        "media_box": [
+          -20,
+          -10,
+          180,
+          140
+        ],
+        "crop_box": [
+          10,
+          20,
+          160,
+          135
+        ],
+        "rotate_degrees": 270,
+        "user_unit": 2,
+        "source_vector_path": "17 21 m 91 44 l 57 118 l h 0 0 1 rg f"
+      },
+      "interpretation": "The source PDF parser reports CropBox dimensions 150x115, rotated to 115x150; the factor UserUnit=2 is not present in those dimensions. The paired offset-CropBox case shifts native PDFium matrix and position translations by its origin delta. Composer transforms only the supplied note marker and imported page rectangle; the final native PDFium helper call is separate from Drawing::DrawObject."
+    }
+  ]
+}

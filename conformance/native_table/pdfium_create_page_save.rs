@@ -116,6 +116,7 @@ const PDFIUM_BASE: u64 = 0x0100_0000;
 const LIBCPP_BASE: u64 = 0x0200_0000;
 const SPENPDF_BASE: u64 = 0x0300_0000;
 const SPENBASE_BASE: u64 = 0x0400_0000;
+const MATRIX_DATA_BASE: u64 = 0x6400_0000;
 const LIBPNG_BASE: u64 = 0x0500_0000;
 const LIBPNG_SHA256: &str = "898abcc6ddbe3a4ad7e076484df666b732913db95a7abc7d6e99bfd835f555eb";
 const PDF_WRITE_BLOCK_STUB: u64 = STUB + 0xf000;
@@ -1264,6 +1265,7 @@ pub(super) fn capture(
     note_page_scale: Option<f32>,
     overlay_png_path: Option<&Path>,
     expected_overlay_png_sha256: Option<&str>,
+    body_writer_matrix: Option<(&Path, &Path, u32, u32)>,
 ) {
     verify_loaded_host_zlib();
     machine.prepare_pdfium_arena();
@@ -1617,6 +1619,34 @@ pub(super) fn capture(
         machine.call(PDFIUM_BASE + 0x5a6c5c, &[page]);
         let loaded_height = f32::from_bits(read_register(machine.engine, 136) as u32);
         let source_rotation = machine.call(PDFIUM_BASE + 0x586ddc, &[page]);
+        if let Some((composer, base, note_width, note_height)) = body_writer_matrix {
+            check(unsafe { uc_mem_map(machine.engine, MATRIX_DATA_BASE, 0x10000, 7) });
+            let page_rect = [0.0_f32, 0.0, loaded_width, loaded_height];
+            let (overlay_rect, note_scale) = super::pdf_paper_body_writer_matrix::transform(
+                model,
+                composer,
+                base,
+                page_rect,
+                note_width,
+                note_height,
+            );
+            let host_expected_note_scale = loaded_width / note_width as f32;
+            let info = MATRIX_DATA_BASE;
+            write(machine.engine, info, &[0; 128]);
+            write(machine.engine, info + 44, unsafe { std::slice::from_raw_parts(overlay_rect.as_ptr().cast::<u8>(), 16) });
+            write(machine.engine, info + 60, &1.0_f32.to_bits().to_le_bytes());
+            write(machine.engine, info + 64, unsafe { std::slice::from_raw_parts(overlay_rect.as_ptr().cast::<u8>(), 16) });
+            let matrix = MATRIX_DATA_BASE + 0x1000;
+            let matrix_result = machine.call(SPENPDF_BASE + 0x89ff8, &[IMPL_OBJECT, page, info, matrix]);
+            let matrix_values = (0..6).map(|index| read_float(machine.engine, matrix + index * 4)).collect::<Vec<_>>();
+            let position = MATRIX_DATA_BASE + 0x1100;
+            let position_result = machine.call(SPENPDF_BASE + 0x89f14, &[IMPL_OBJECT, page, info, position]);
+            let position_values = (0..4).map(|index| read_float(machine.engine, position + index * 4)).collect::<Vec<_>>();
+            assert_eq!(matrix_result, 1, "PdfiumImpl::GetObjectMatrix rejected the BodyText rect");
+            assert_eq!(position_result, 1, "PdfiumImpl::GetObjectPosition rejected the BodyText rect");
+            println!("{{\"native_path\":\"PdfiumImpl Open/LoadPage -> Composer addBodyText/BodyTextPDFWriter -> RectF Offset/Scale -> separate PdfiumImpl::GetObjectMatrix/GetObjectPosition\",\"loaded_page_rect\":[0,0,{},{}],\"source_rotation_quarter_turns\":{},\"note_page_wh\":[{},{}],\"native_write_body_text_scale\":{},\"host_expected_note_scale\":{},\"synthetic_marker_note_rect\":[10,20,40,60],\"synthetic_marker_position\":[23,17],\"body_writer_draw_object_rect\":[{},{},{},{}],\"matrix_input_rect\":[{},{},{},{}],\"matrix_ratio\":1,\"get_object_matrix_executed\":true,\"get_object_matrix_result\":{},\"matrix\":{:?},\"get_object_position_executed\":true,\"get_object_position_result\":{},\"position_rect\":{:?},\"host_boundaries\":[\"WPage dimensions and one DrawnText marker are host supplied to native Composer\",\"The native BodyTextPDFWriter scale field is observed at the real function entry; the independently computed expected ratio is host-derived\",\"Drawing::DrawObject is a host sink; its captured native rect is passed to the separate native PDFium matrix helpers\"],\"boundary\":\"PDFium loads the generated source PDF through native PdfiumImpl; its loaded dimensions and rotation feed actual Composer addBodyText and BodyTextPDFWriter calls. A read-only hook observes the scale field passed to the real BodyTextPDFWriter::WriteBodyText entry. Native Base RectF operations transform the host synthetic marker before the host DrawObject sink. The actual PdfiumImpl AddImage matrix/position callees execute on that rect, but Drawing::DrawObject to AddImage, FPDF insertion, content generation, serialization and pixels do not execute.\"}}", loaded_width, loaded_height, source_rotation, note_width, note_height, note_scale, host_expected_note_scale, overlay_rect[0], overlay_rect[1], overlay_rect[2], overlay_rect[3], overlay_rect[0], overlay_rect[1], overlay_rect[2], overlay_rect[3], matrix_result, matrix_values, position_result, position_values);
+            return;
+        }
         write(machine.engine, HANDLER_OBJECT, &IMPL_OBJECT.to_le_bytes());
         let writer_open = machine.call(SPENPDF_BASE + 0x7c844, &[HANDLER_OBJECT, 0, 0]);
         assert_eq!(writer_open, 1, "PdfiumExportHandler::OpenWriter failed");
