@@ -6,10 +6,10 @@ the native reconstruction; no global width adjustment is applied.
 
 Saved V14 (`14;`) and V16 (`18;0;100;`) profiles support input modes 1, 2,
 and 3, fixed width, and saved stroke opacity. Their geometry is verified against
-the native library. V14 shading is verified in Chromium and vector PDF output;
-Firefox currently fails mask visibility and maximum-blending checks. Appearance
-is not identical across SVG consumers. Native pixel identity is not established:
-the measured partial-alpha differences below remain despite matching geometry.
+the native library. Bounded V14/V16 witnesses render in Chromium and Firefox
+with vector-only PDF export. Appearance is not identical across SVG consumers.
+Native pixel identity is not established: the measured partial-alpha differences
+below remain despite matching geometry.
 
 ## Geometry and appearance
 
@@ -24,17 +24,17 @@ linearly to 0.07 at its tangent-aligned ends. `render/fountain.rs` expresses
 that function as an SVG linear gradient,
 transformed with each stamp's native radius and direction.
 
-Opaque grayscale stamps blend with Lighten over black in a luminance mask.
-This implements maximum coverage in the vector interior instead of accumulating
-opacity where stamps overlap. Stroke color and opacity are applied once to the
-result. PDF export preserves the masks as vector forms, the gradients as PDF
-shadings, and the Lighten blend mode. There are no image or filter elements in
-the generated fountain SVG, and no bitmap API or custom rasterizer.
+Opaque grayscale stamps blend with Lighten over black to implement maximum
+coverage instead of accumulating opacity where stamps overlap. An SVG colorizer
+filter maps coverage to stroke color; group opacity applies once to the result.
+PDF export lowers that filter to a vector luminosity mask and preserves gradient
+shadings and Lighten blending. The generated fountain output contains no image
+elements or bitmap strokes.
 
-These are scale-independent vector shapes. The SVG/PDF consumer owns edge
-antialiasing. The APK's device-pixel expansion and subpixel compensation are
-not baked into document geometry, so this is not a claim of byte-identical
-screen output at every zoom level.
+The SVG/PDF consumer owns edge antialiasing. V14 retains the directional field
+without the native device-pixel fringe; V16 expresses radial coverage at
+canonical unit inverse scale. Small-field PDF sampling, zoom-dependent coverage
+and native device pixels remain unverified.
 
 ## Validation on 2026-09-25
 
