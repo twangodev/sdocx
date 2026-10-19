@@ -1125,6 +1125,20 @@ mod tests {
         let short_tool2 =
             redraw_from_reuse_case(short, "baseline_tool2", "third_tool2_baseline", persistent);
 
+        // Drawing retains the drawable across separately constructed source
+        // objects too. Source-object identity is not a reset boundary.
+        let distinct = &cases["distinct_objects_short_tool1_tool2"];
+        persistent = false;
+        for (input, phase, expected) in [
+            ("first_stroke", "draw_object_stroke", &_short_first),
+            ("baseline_tool1", "second_tool1_baseline", &short_tool1),
+            ("baseline_tool2", "third_tool2_baseline", &short_tool2),
+        ] {
+            let actual = redraw_from_reuse_case(distinct, input, phase, persistent);
+            assert_eq!(output_bits(&actual), output_bits(expected), "{phase}");
+            persistent = actual.final_alternation;
+        }
+
         let long = &cases["long_then_tool1_tool2"];
         persistent = false;
         let _long_first =

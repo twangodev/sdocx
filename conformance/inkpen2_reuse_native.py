@@ -25,7 +25,7 @@ mode.add_argument('--write-fixture',action='store_true')
 mode.add_argument('--check-fixture',action='store_true')
 mode.add_argument('--print-capture',action='store_true')
 
-parser.add_argument('--scenario',choices=('all','reuse','fresh'),default='all')
+parser.add_argument('--scenario',choices=('all','reuse','fresh','distinct'),default='all')
 parser.add_argument('--first-path',choices=('short','long'),default='short')
 parser.add_argument('--tool',type=int,choices=(1,2),default=1,help='tool for the fresh-control stroke')
 parser.add_argument('--width',type=int,default=1920)
@@ -35,11 +35,34 @@ parser.add_argument('--verbose',action='store_true',help='print native setup and
 args=parser.parse_args()
 if args.scenario=='all':
  action='--write-fixture' if args.write_fixture else ('--check-fixture' if args.check_fixture else '--print-capture')
- runs=[('fresh','--tool','1'),('fresh','--tool','2'),('reuse','--first-path','short'),('reuse','--first-path','long')]
+ runs=[('fresh','--tool','1'),('fresh','--tool','2'),('reuse','--first-path','short'),('reuse','--first-path','long'),('distinct','--first-path','short')]
+ if args.check_fixture:
+  saved=json.loads(FIXTURE.read_text())
+  expected_helpers=saved.get('capture_helpers_sha256',{})
+  current_helpers={name:hashlib.sha256((ROOT/'conformance'/name).read_bytes()).hexdigest() for name in ('oblique_canvas_native.py','fountain_native.py','elf_plt.py')}
+  if expected_helpers!=current_helpers: raise SystemExit('reuse fixture helper source hashes differ')
  for scenario,*extra in runs:
   command=[sys.executable,str(pathlib.Path(__file__).resolve()),action,'--scenario',scenario,*extra,'--width',str(args.width),'--height',str(args.height)]
   if args.verbose: command.append('--verbose')
   subprocess.run(command,cwd=ROOT,check=True,env=os.environ.copy())
+ if args.write_fixture:
+  saved=json.loads(FIXTURE.read_text())
+  saved['capture_helpers_sha256']={name:hashlib.sha256((ROOT/'conformance'/name).read_bytes()).hexdigest() for name in ('oblique_canvas_native.py','fountain_native.py','elf_plt.py')}
+  FIXTURE.write_text(json.dumps(saved,indent=2,sort_keys=True)+'\n')
+ if args.check_fixture:
+  saved=json.loads(FIXTURE.read_text()); cases=saved['cases']
+  distinct=cases['distinct_objects_short_tool1_tool2']['native']; reused=cases['short_then_tool1_tool2']['native']
+  ids=list(distinct['source_object_identities'].values())
+  if len(ids)!=3 or len(set(ids))!=3: raise SystemExit('distinct-object case does not contain three unique native source identities')
+  phase_ids=list(distinct['phase_object_identities'].values())
+  if len(phase_ids)!=3 or any(item!=phase_ids[0] for item in phase_ids[1:]): raise SystemExit('distinct-object sequence replaced the cached Pen/drawable/RT receiver')
+  for phase in ('draw_object_stroke','second_tool1_baseline','third_tool2_baseline'):
+   if distinct['streams'][phase]['sha256']!=reused['streams'][phase]['sha256']:
+    raise SystemExit(f'distinct source-object stream differs from same-object control at {phase}')
+   if distinct['drawable_states'][('draw_object_stroke','second_tool1_baseline','third_tool2_baseline').index(phase)]['return_alternation_u8']!=reused['drawable_states'][('draw_object_stroke','second_tool1_baseline','third_tool2_baseline').index(phase)]['return_alternation_u8']:
+    raise SystemExit(f'distinct source-object +100 state differs from same-object control at {phase}')
+  if not distinct.get('source_object_setters'): raise SystemExit('distinct source case is missing its native setter invocation record')
+  print('verified distinct source identities, stable native receiver, streams, and +100 state')
  raise SystemExit(0)
 args.case='line0_curve_short_history'
 args.advanced_setting='9'
@@ -56,6 +79,8 @@ input_case=dict(INPUT_CASES[args.case])
 input_case.update({'tool_type':1,'points':[[0.0,0.0],[2.0,0.0]],'pressure':[0.2,0.4],'timestamps':[0,10],'tilt':[0.0]*2,'orientation':[0.0]*2})
 if args.scenario=='fresh':
  input_case.update({'tool_type':args.tool,'points':[[0.0,0.0],[8.0,0.0],[16.0,3.0],[24.0,3.0]],'pressure':[0.2,0.4,0.6,0.8],'timestamps':[0,10,20,30],'tilt':[0.0]*4,'orientation':[0.0]*4})
+elif args.scenario=='distinct':
+ input_case.update({'tool_type':1,'points':[[0.0,0.0],[2.0,0.0]],'pressure':[0.2,0.4],'timestamps':[0,10],'tilt':[0.0]*2,'orientation':[0.0]*2})
 elif args.first_path=='long':
  input_case.update({'tool_type':1,'points':[[0.0,0.0],[8.0,0.0],[16.0,3.0],[24.0,3.0],[32.0,5.0]],'pressure':[0.2,0.4,0.6,0.8,1.0],'timestamps':[0,10,20,30,40],'tilt':[0.0]*5,'orientation':[0.0]*5})
 if not (0 < args.width < 65536 and 0 < args.height < 65536): raise SystemExit('profile dimensions must be positive u16 values')
@@ -311,7 +336,7 @@ def snapshot_object_stroke(label, obj):
   p.call(name,[obj]); return p.x(0)
  def get_f(name):
   p.call(name,[obj]); return struct.pack('<I',p.u.reg_read(R.UC_ARM64_REG_S0)).hex()
- state={'label':label,'size_bits':size,'point_count':count,'curve_enabled':curve,'tool_type':tool,'stroke_type':stroke,
+ state={'label':label,'object_address':hex(obj),'size_bits':size,'point_count':count,'curve_enabled':curve,'tool_type':tool,'stroke_type':stroke,
         'shape':get_i('SPen::ObjectStroke::IsShape() const'),
         'line_type':get_i('SPen::ObjectStroke::GetLineType() const'),
         'fixed_width_enabled':get_i('SPen::ObjectStroke::IsFixedWidthEnabled() const'),
@@ -359,6 +384,8 @@ def persist_case(case_id, phases, scenario):
  phase_identities={'draw_object_stroke':{'pen':hex(first_pen),'drawable':hex(first_drawable),'rt':hex(first_rt)}}
  if 'second_pen' in globals(): phase_identities['second_tool1_baseline']={'pen':hex(second_pen),'drawable':hex(second_drawable),'rt':hex(second_rt)}
  if 'third_pen' in globals(): phase_identities['third_tool2_baseline']={'pen':hex(third_pen),'drawable':hex(third_drawable),'rt':hex(third_rt)}
+ object_label_by_phase={'draw_object_stroke':'before_drawObjectStroke','second_tool1_baseline':'second_tool1_baseline','third_tool2_baseline':'third_tool2_baseline'}
+ object_identities={phase_name:next(row['object_address'] for row in object_stroke_snapshots if row['label']==object_label_by_phase[phase_name]) for phase_name in phases}
  if selected_drawable_version!='9' or not selected_redraw_names: raise RuntimeError('selected drawable vtable is not native V9 RedrawPen')
  case={'schema':'sdocx-inkpen2-reuse-case-v1','case_id':case_id,'scenario':scenario,
   'profile':{'width':args.width,'height':args.height,'advanced_setting':'9;','selected_drawable':'InkPen2StrokeDrawableGLV9'},
@@ -379,6 +406,9 @@ def persist_case(case_id, phases, scenario):
    'libraries':{name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in paths.items()},
    'libc++_shared.so':hashlib.sha256(CPP.read_bytes()).hexdigest()},
   'scope':f'Native synthetic ObjectStroke Drawing caller with explicit {args.width}x{args.height} profile and saved advanced setting 9;. Host canvas/context/queue/resource ownership adapters remain. Fresh controls are isolated emulator executions. The causal +100 restoration intervention is not part of these native sequences.'}
+ if args.scenario=='distinct':
+  case['native']['source_object_identities']=object_identities
+  case['native']['source_object_setters']=source_object_setters
  fixture=json.loads(FIXTURE.read_text()) if FIXTURE.exists() else {'schema':'sdocx-inkpen2-reuse-native-v1','cases':{}}
  if fixture.get('schema')!='sdocx-inkpen2-reuse-native-v1': raise RuntimeError('unexpected reuse fixture schema')
  if args.write_fixture:
@@ -553,10 +583,44 @@ try:
   count=len(points); pt=p.alloc(count*8); pr=p.alloc(count*4); ts=p.alloc(count*4); ti=p.alloc(count*4); ori=p.alloc(count*4)
   p.u.mem_write(pt,struct.pack('<'+'f'*(count*2),*(v for xy in points for v in xy))); p.u.mem_write(pr,struct.pack('<'+'f'*count,*pressure)); p.u.mem_write(ts,struct.pack('<'+'i'*count,*times))
   p.u.mem_write(ti,bytes(count*4)); p.u.mem_write(ori,bytes(count*4)); p.call('SPen::ObjectStroke::SetPoint(SPen::PointF const*, float const*, int const*, float const*, float const*, int)',[obj,pt,pr,ts,ti,ori,count])
+ def new_saved_stroke(tool):
+  fresh=p.alloc(0x100); implementation=p.alloc(0x400)
+  p.call('SPen::ObjectStroke::ObjectStroke()',[fresh])
+  p.call('SPen::ObjectStrokeImpl::ObjectStrokeImpl(SPen::ObjectStroke*)',[implementation,fresh])
+  p.put(fresh+32,'Q',implementation)
+  p.f(0,input_case['size']); p.call('SPen::ObjectStroke::SetPenSize(float)',[fresh])
+  p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[fresh,tool])
+  p.call('SPen::ObjectStroke::SetStrokeType(SPen::StrokeType)',[fresh,0])
+  p.call('SPen::ObjectStroke::SetCurveEnabled(bool)',[fresh,1])
+  p.call('SPen::ObjectBase::SetVisibility(bool)',[fresh,1])
+  name=p.alloc(32); p.call('SPen::String::String()',[name]); p.call('SPen::String::Construct()',[name])
+  namebuf=p.alloc(80); p.u.mem_write(namebuf,b'com.samsung.android.sdk.pen.pen.preload.InkPen2\0')
+  p.call('SPen::String::Set(char const*)',[name,namebuf]); p.call('SPen::ObjectStroke::SetPenName(SPen::String const*)',[fresh,name])
+  setting=p.alloc(32); p.call('SPen::String::String()',[setting]); p.call('SPen::String::Construct()',[setting])
+  settingbuf=p.alloc(8); p.u.mem_write(settingbuf,b'9;\0')
+  p.call('SPen::String::Set(char const*)',[setting,settingbuf]); p.call('SPen::ObjectStroke::SetAdvancedPenSetting(SPen::String const*)',[fresh,setting])
+  source_object_setters.append({'object_address':hex(fresh),'implementation_address':hex(implementation),
+   'requested_native_calls':[{'method':'ObjectStroke::ObjectStroke()','args':[]},
+    {'method':'ObjectStrokeImpl::ObjectStrokeImpl(ObjectStroke*)','args':[hex(fresh)]},
+    {'method':'ObjectStroke::SetPenSize(float)','args':[input_case['size']]},
+    {'method':'ObjectStroke::SetToolType(ToolType)','args':[tool]},
+    {'method':'ObjectStroke::SetStrokeType(StrokeType)','args':[0]},
+    {'method':'ObjectStroke::SetCurveEnabled(bool)','args':[1]},
+    {'method':'ObjectBase::SetVisibility(bool)','args':[1]},
+    {'method':'ObjectStroke::SetPenName(String const*)','value':'com.samsung.android.sdk.pen.pen.preload.InkPen2'},
+    {'method':'ObjectStroke::SetAdvancedPenSetting(String const*)','value':'9;'}]})
+  return fresh
  baseline_points=[[0.0,0.0],[8.0,0.0],[16.0,3.0],[24.0,3.0]]; baseline_pressure=[0.2,0.4,0.6,0.8]; baseline_times=[0,10,20,30]
- set_points(baseline_points,baseline_pressure,baseline_times); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,1]); snapshot_object_stroke('second_tool1_baseline',obj); phase='second_tool1_baseline'
+ source_object_setters=[]
+ if args.scenario=='distinct':
+  obj=new_saved_stroke(1); set_points(baseline_points,baseline_pressure,baseline_times); snapshot_object_stroke('second_tool1_baseline',obj); phase='second_tool1_baseline'
+ else:
+  set_points(baseline_points,baseline_pressure,baseline_times); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,1]); snapshot_object_stroke('second_tool1_baseline',obj); phase='second_tool1_baseline'
  p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[p.drawing,p.draw_canvas,p.pen_canvas,obj,1],limit=5000000); second_result=p.x(0); second_pen=factory_created_pens[-1]; second_drawable=struct.unpack('<Q',p.u.mem_read(second_pen+112,8))[0]; second_rt=struct.unpack('<Q',p.u.mem_read(second_drawable+16,8))[0]; second_terminal=next(row for row in reversed(inkpen2_buffer_events) if row['phase']=='second_tool1_baseline')['after_bytes']
- set_points(baseline_points,baseline_pressure,baseline_times); p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,2]); snapshot_object_stroke('third_tool2_baseline',obj); phase='third_tool2_baseline'
+ if args.scenario=='distinct': obj=new_saved_stroke(2)
+ set_points(baseline_points,baseline_pressure,baseline_times)
+ if args.scenario!='distinct': p.call('SPen::ObjectStroke::SetToolType(SPen::ToolType)',[obj,2])
+ snapshot_object_stroke('third_tool2_baseline',obj); phase='third_tool2_baseline'
  p.call('SPen::ObjectDrawing::drawObjectStroke(SPen::ISPCanvas&, SPen::ISPPenCanvas&, SPen::ObjectStroke const*, bool)',[p.drawing,p.draw_canvas,p.pen_canvas,obj,1],limit=5000000); third_result=p.x(0); third_pen=factory_created_pens[-1]; third_drawable=struct.unpack('<Q',p.u.mem_read(third_pen+112,8))[0]; third_rt=struct.unpack('<Q',p.u.mem_read(third_drawable+16,8))[0]; third_terminal=next(row for row in reversed(inkpen2_buffer_events) if row['phase']=='third_tool2_baseline')['after_bytes']
  if any(value!=1 for value in (second_result,third_result)): raise RuntimeError(f'native Drawing reuse failed: {second_result}, {third_result}')
  if (second_pen,second_drawable,second_rt)!=(first_pen,first_drawable,first_rt) or (third_pen,third_drawable,third_rt)!=(first_pen,first_drawable,first_rt):
@@ -564,7 +628,11 @@ try:
  if any(row['receiver']!=watch_drawable for row in redraw_returns if row['phase'] in ('draw_object_stroke','second_tool1_baseline','third_tool2_baseline')):
   raise RuntimeError('native RedrawPen receiver identity changed during sequence')
  first_key='short_then_tool1_tool2' if args.first_path=='short' else 'long_then_tool1_tool2'
- persist_case(first_key,('draw_object_stroke','second_tool1_baseline','third_tool2_baseline'),'same-Drawing same-drawable reuse')
+ if args.scenario=='distinct':
+  distinct_case_id='distinct_objects_short_tool1_tool2'
+  persist_case(distinct_case_id,('draw_object_stroke','second_tool1_baseline','third_tool2_baseline'),'distinct ObjectStroke objects, shared Drawing/drawable')
+ else:
+  persist_case(first_key,('draw_object_stroke','second_tool1_baseline','third_tool2_baseline'),'same-Drawing same-drawable reuse')
  raise SystemExit(0)
 except Exception:
  raise

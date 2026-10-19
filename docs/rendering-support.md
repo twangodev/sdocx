@@ -230,7 +230,8 @@ checks null settings selecting V1, empty/explicit settings selecting V9, and a
 25-record V9 buffer match. The Rust core checks both Drawing and saved replay
 using native body-normalized sampling state. The [reuse oracle](../conformance/inkpen2-reuse-native.json)
 and Rust sequence test retain the native alternation byte between strokes:
-a short preceding stroke changes tool-1 output, while the captured long
+a shared Drawing retains it across distinct source objects too. A short
+preceding stroke changes tool-1 output, while the captured long
 history and tool-2 controls match fresh receivers. General caller/runtime
 state, shape modes and paint integration remain open. The
 [RTV3 paint capture](../conformance/inkpen2-paint-native.json) checks native
