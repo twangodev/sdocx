@@ -33,6 +33,8 @@ mod paint_diagnostic;
 pub use paint_diagnostic::{PaintDiagnostic, PaintDiagnosticKind, PaintRole};
 #[allow(clippy::all, dead_code, unused_imports, unexpected_cfgs)]
 mod harfrust;
+#[cfg(all(test, feature = "serde"))]
+mod inkpen2;
 mod marker;
 #[cfg(all(test, feature = "serde"))]
 mod marker3;
