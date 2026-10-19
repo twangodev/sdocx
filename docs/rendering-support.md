@@ -121,6 +121,12 @@ Profile admission and validation are narrower than the names above. See
 [Marker4 V7](reverse-engineering/marker4-v7.md), and
 [Marker4 V8](reverse-engineering/marker4-rendering-findings.md).
 
+A [Crayon2 saved-playback paint oracle](../conformance/crayon2-saved-playback-paint-native.json)
+joins native source getters, 285 packed records, queued upload and host Mesa Draw,
+with clipped/interior and transparent/opaque controls. Renderer size is host-written
+and RNG is modeled; Drawing settings, saved-color forwarding, production vector
+paint and device parity remain open.
+
 The [Pencil3 V1 source trace](reverse-engineering/pencil3-source-findings.md)
 separates saved samples from generated particles and configured paper coverage.
 Pencil profiles currently use the generic pressure approximation. A test-only
